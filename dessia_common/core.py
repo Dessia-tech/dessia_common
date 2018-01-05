@@ -40,7 +40,7 @@ class ResultsDBClient:
     def CloseDB(self):
         self.db.close()
         
-    def AddModel3DResult(self,result): 
+    def AddResult(self,result): 
         connection=self.db.open()
         try:
             mk=getattr(connection.root,self.model_name).maxKey()
