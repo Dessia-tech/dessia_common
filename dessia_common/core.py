@@ -23,7 +23,7 @@ class ResultsDBClient:
         self.address=address
         self.storage = client(address)
         self.db = ZODB.DB(self.storage)
-        self.model_name
+        self.model_name=model_name
         #self.db = ZODB.config.databaseFromString(conf)
         
         connection=self.db.open()
