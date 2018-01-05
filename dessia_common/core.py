@@ -28,9 +28,9 @@ class ResultsDBClient:
         
         connection=self.db.open()
         try:
-            getattr(connection.root,self.name)
+            getattr(connection.root,self.model_name)
         except AttributeError:
-            setattr(connection.root,self.name,IOBTree())
+            setattr(connection.root,self.model_name,IOBTree())
             transaction.commit()
         connection.close()
         
@@ -43,27 +43,27 @@ class ResultsDBClient:
     def AddModel3DResult(self,result): 
         connection=self.db.open()
         try:
-            mk=getattr(connection.root,self.name).maxKey()
+            mk=getattr(connection.root,self.model_name).maxKey()
             k=random.randint(0,mk+1)
-            if k in getattr(connection.root,self.name):
+            if k in getattr(connection.root,self.model_name):
                 k=mk+1
         except ValueError:
             k=0
 
-        getattr(connection.root,self.name)[k]=result
+        getattr(connection.root,self.model_name)[k]=result
         transaction.commit()
         connection.close()
         return k
     
     def get_result(self,id_result):
         connection=self.db.open()
-        result=getattr(connection.root,self.name)[id_result]
+        result=getattr(connection.root,self.model_name)[id_result]
         connection.close()
         return result
 
     def _get_results(self):
         connection=self.db.open()
-        results=dict(getattr(connection.root,self.name))
+        results=dict(getattr(connection.root,self.model_name))
         connection.close()
         return results
     
