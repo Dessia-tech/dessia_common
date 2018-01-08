@@ -58,7 +58,6 @@ class ResultsDBClient:
     def get_result(self,id_result):
         connection=self.db.open()
         result=getattr(connection.root,self.model_name)[id_result]
-        connection.close()
         return result
 
     def _get_results(self):
