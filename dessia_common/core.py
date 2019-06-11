@@ -10,6 +10,21 @@ from functools import reduce
 from copy import deepcopy
 import collections
 
+class Metadata:
+    def __init__(self, name, **kwargs):
+        self.name = name
+        if kwargs:
+            self.add_data(**kwargs)
+        self.id_ = None
+        self.last_update = None
+
+    def add_data(self, **kwargs):
+        [self.__setattr__(keyword, value) for keyword, value in kwargs.items()]
+
+    def del_data(self, attribute_name):
+        self.__delattr__(attribute_name)
+        
+
 def number2factor(number):
     """
     Temporary function : Add to some tools package
