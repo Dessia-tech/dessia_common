@@ -11,6 +11,24 @@ from copy import deepcopy
 import collections
 
 class Metadata:
+    """
+    Gathers object custom data
+    """
+    _standalone_in_db = False
+    _jsonschema = {"definitions": {},
+                   "$schema": "http://json-schema.org/draft-07/schema#",
+                   "type": "object",
+                   "title": "powerpack.mechanical.MechModule Base Schema",
+                   "required": ["name"],
+                   "properties": {
+                       "name" : {
+                           "type" : "string",
+                           "order" : 0,
+                           "editable" : True,
+                           "Description" : "Object name"
+                           }
+                       }
+                   }
     def __init__(self, name, **kwargs):
         self.name = name
         if kwargs:
@@ -23,7 +41,16 @@ class Metadata:
 
     def del_data(self, attribute_name):
         self.__delattr__(attribute_name)
-        
+
+    def to_dict(self):
+        # !!! Enable python object in metadata ?
+        return self.__dict__
+
+    @classmethod
+    def dict_to_object(cls, d):
+        name = d.pop('name')
+        metadata = cls(name, **d)
+        return metadata
 
 def number2factor(number):
     """
