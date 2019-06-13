@@ -4,6 +4,9 @@
 
 """
 
+import inspect
+import networkx as nx
+
 class Model:
     def __init__(self, object_class, object_id=None):
         self.object_class = object_class
@@ -12,8 +15,8 @@ class Function:
     def __init__(self, function):
         self.function = function
         self.input_args = []
-        for arg in inspect.getargspec(function).args:
-            
+        for arg_name, parameter in inspect.signature(function).parameters.items():
+            self.input_args.append(InputFunctionVariable(self, arg_name))
         
 
 class Pipe:
@@ -39,6 +42,28 @@ class WorkFlow:
         self.functions = functions
         self.pipes = pipes
         
+    def graph(self):
+        graph = nx.DiGraph()
+        graph.add_nodes_from(self.models)
+        graph.add_nodes_from(self.functions)
+        for function in self.functions:
+            for input_parameter in function.input_args:
+                graph.add_node(input_parameter)
+                graph.add_edge(input_parameter, function)
+        return graph
+        
+    def plot_graph(self):
+        
+        graph = self.graph()
+        pos = nx.kamada_kawai_layout(graph)
+        nx.draw_networkx_nodes(graph, pos, self.functions, node_shape='s')
+        nx.draw_networkx_edges(graph, pos)
+
+        labels = {f: f.function.__name__ for f in self.functions}
+        for function in self.functions:
+            for input_paramter in function.input_args:
+                labels[input_paramter] = input_paramter.arg_name
+        nx.draw_networkx_labels(graph, pos, labels)
 
 class InputFunctionVariable:
     def __init__(self, function, arg_name):
@@ -55,9 +80,9 @@ class OutputFunctionVariable:
 
 
 class ModelAttribute:
-    def __init__(self, model, name):
+    def __init__(self, model, attribute_name):
         self.model = model
-        self.name = name
+        self.attribute_name = attribute_name
     
         
 import math
@@ -68,3 +93,5 @@ def sinus_f(x):
 sinus = Function(sinus_f)
 
 workflow = WorkFlow([], [sinus], [])
+
+workflow.plot_graph()
