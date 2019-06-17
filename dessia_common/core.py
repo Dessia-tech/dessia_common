@@ -15,21 +15,29 @@ class Metadata:
     Gathers object custom data
     """
     _standalone_in_db = False
-    _jsonschema = {"definitions": {},
-                   "$schema": "http://json-schema.org/draft-07/schema#",
-                   "type": "object",
-                   "title": "powerpack.mechanical.MechModule Base Schema",
-                   "required": ["name"],
-                   "properties": {
-                       "name" : {
-                           "type" : "string",
-                           "order" : 0,
-                           "editable" : True,
-                           "Description" : "Object name"
-                           }
-                       }
-                   }
-    def __init__(self, name, **kwargs):
+    _jsonschema = {
+        "definitions": {},
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "title": "powerpack.mechanical.MechModule Base Schema",
+        "required": ["name"],
+        "properties": {
+            "name" : {
+                "type" : "string",
+                "order" : 0,
+                "editable" : True,
+                "examples" : ["Object name"],
+                "Description" : "Object name"
+                },
+            "id_" : {
+                "type" : "string",
+                "order" : 1,
+                "editable" : False,
+                "Description" : "Object id"
+                }
+            }
+        }
+    def __init__(self, name='', **kwargs):
         self.name = name
         if kwargs:
             self.add_data(**kwargs)
@@ -48,8 +56,10 @@ class Metadata:
 
     @classmethod
     def dict_to_object(cls, d):
-        name = d.pop('name')
-        metadata = cls(name, **d)
+        name = d['name']
+        kwargs = deepcopy(d)
+        kwargs.pop('name')
+        metadata = cls(name, **kwargs)
         return metadata
 
 def number2factor(number):
@@ -148,3 +158,5 @@ def dict_merge(old_dct, merge_dct, add_keys=True, extend_lists=True):
             dct[key] = value
 
     return dct
+
+EMPTY_METADATA = Metadata()
