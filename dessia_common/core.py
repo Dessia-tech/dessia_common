@@ -29,20 +29,20 @@ class Metadata:
                 "examples" : ["Object name"],
                 "Description" : "Object name"
                 },
-            "id_" : {
-                "type" : "string",
-                "order" : 1,
-                "editable" : False,
-                "Description" : "Object id"
-                }
+#            "id_" : {
+#                "type" : "string",
+#                "order" : 1,
+#                "editable" : False,
+#                "Description" : "Object id"
+#                }
             }
         }
     def __init__(self, name='', **kwargs):
         self.name = name
         if kwargs:
             self.add_data(**kwargs)
-        self.id_ = None
-        self.last_update = None
+#        self.id_ = None
+#        self.last_update = None
 
     def add_data(self, **kwargs):
         [self.__setattr__(keyword, value) for keyword, value in kwargs.items()]
