@@ -159,4 +159,4 @@ def dict_merge(old_dct, merge_dct, add_keys=True, extend_lists=True):
 
     return dct
 
-EMPTY_METADATA = Metadata()
+#EMPTY_METADATA = Metadata()
