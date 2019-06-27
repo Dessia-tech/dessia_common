@@ -27,7 +27,7 @@ class Metadata:
                 "order" : 0,
                 "editable" : True,
                 "examples" : ["Object name"],
-                "Description" : "Object name"
+                "description" : "Object name"
                 },
 #            "id_" : {
 #                "type" : "string",
