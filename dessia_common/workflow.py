@@ -12,6 +12,12 @@ class Model:
         self.object_class = object_class
         self.object_id = object_id
 
+class InstanciateModel:
+    def __init__(self, object_class):
+        self.object_class = object_class
+
+
+
 class ModelMethod:
     def __init__(self, model, method_name):
         self.model = model
@@ -56,13 +62,12 @@ class Pipe:
 
 
 class WorkFlow:
-    def __init__(self, models, functions, pipes):
-        self.models = models
-        self.functions = functions
+    def __init__(self, blocks, pipes):
+        self.blocks = blocks
         self.pipes = pipes
         
         self.variables = []
-        for function in self.functions:
+        for block in self.blocks:
             self.variables.extend(function.input_args)
             self.variables.append(function.output)
             

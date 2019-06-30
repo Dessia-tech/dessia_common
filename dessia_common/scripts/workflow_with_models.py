@@ -43,11 +43,11 @@ model2_method1 = workflow.ModelMethod(model2, 'model2_method1')
 model2_method2 = workflow.ModelMethod(model2, 'model2_method2')
 
 workflow = workflow.WorkFlow([model1_method1,
-                              model1_method1,
-                              model1_method1,
-                              model1_method1],
+                              model1_method2,
+                              model2_method1,
+                              model2_method2],
                              [],
-                             [pipe1])
+                             [])
 
 workflow.plot_graph()
 
