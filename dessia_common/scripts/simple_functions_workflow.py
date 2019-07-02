@@ -23,4 +23,4 @@ workflow = workflow.WorkFlow([sinus, arcsin], [pipe1])
 
 workflow.plot_graph()
 
-workflow_run = workflow.run([math.pi/3, 3])
+workflow_run = workflow.run([math.pi/3])

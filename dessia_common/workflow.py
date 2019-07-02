@@ -23,6 +23,9 @@ class InstanciateModel:
         self.object_class = object_class
         
         inputs = []
+        for arg_name, parameter in inspect.signature(self.object_class.__init__).parameters.items():
+            if arg_name != 'self':
+                inputs.append(Variable(arg_name))
         outputs = [Variable('Instanciated object')]
         Block.__init__(self, inputs, outputs)
         
@@ -32,13 +35,20 @@ class InstanciateModel:
 
 
 class ModelMethod(Block):
-    def __init__(self, model, method_name):
-        self.model = model
+    def __init__(self, model_class, method_name):
+        self.model_class = model_class
         self.method_name = method_name
         inputs = [Variable('model at input')]
+        for arg_name, parameter in inspect.signature(getattr(self.model_class, self.method_name)).parameters.items():
+            if arg_name != 'self':
+                inputs.append(Variable(arg_name))
         outputs = [Variable('method result'),
                    Variable('model at output')]
         Block.__init__(self, inputs, outputs)
+        
+    def evaluate(self, values):
+        print('values', values[1:])
+        return getattr(values[0], self.method_name)(*values[1:])
         
 class Function(Block):
     def __init__(self, function):
@@ -103,10 +113,8 @@ class WorkFlow:
         graph.add_nodes_from(self.blocks)
         for block in self.blocks:
             for input_parameter in block.inputs:
-                graph.add_node(input_parameter)
                 graph.add_edge(input_parameter, block)
             for output_parameter in block.outputs:
-                graph.add_node(output_parameter)
                 graph.add_edge(block, output_parameter)
                 
         for pipe in self.pipes:
@@ -120,16 +128,17 @@ class WorkFlow:
         nx.draw_networkx_nodes(self.graph, pos, self.blocks,
                                node_shape='s', node_color='grey')
         nx.draw_networkx_nodes(self.graph, pos, self.variables)
-        nx.draw_networkx_nodes(self.graph, pos, self.input_variables, node_color='r')
+#        nx.draw_networkx_nodes(self.graph, pos, self.input_variables, node_color='r')
         nx.draw_networkx_edges(self.graph, pos)
         
 
-#        labels = {}#b: b.function.__name__ for b in self.block}
-#        for block in self.blocks:
-#            for input_paramter in function.input_args:
-#                labels[input_paramter] = input_paramter.arg_name
+        labels = {}#b: b.function.__name__ for b in self.block}
+        for block in self.blocks:
+            labels[block] = block.__class__.__name__
+            for variable in self.variables:
+                labels[variable] = variable.name
 #            labels[function.output] = 'Output function'
-#        nx.draw_networkx_labels(self.graph, pos, labels)
+        nx.draw_networkx_labels(self.graph, pos, labels)
 
 
     def run(self, input_variables_values):
