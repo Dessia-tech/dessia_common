@@ -7,3 +7,29 @@ steps:
   commands:
   - git fetch --tags
   - python setup.py install
+
+- name: develop
+  image: python:3
+  commands:
+  - python setup.py develop
+
+- name: generate sdist
+  image: python:3
+  commands:
+  - git fetch --tags
+  - python setup.py sdist --formats=gztar,zip
+
+- name: upload sdist to seafile
+  image: dessia/drone-seafile
+  when:
+    branch: master
+  settings:
+    server_url: https://partage.dessia.tech
+    repo_id:
+      from_secret: seafile_repo_id
+    seafile_token:
+      from_secret: seafile_token
+    files: dist/*
+    root_directory: /dessia-common/
+
+
