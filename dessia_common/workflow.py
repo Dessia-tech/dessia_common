@@ -30,8 +30,7 @@ class InstanciateModel:
         Block.__init__(self, inputs, outputs)
         
     def evaluate(self, values):
-        print('values', values)
-        return self.object_class(*values)
+        return [self.object_class(*values)]
 
 
 class ModelMethod(Block):
@@ -42,13 +41,12 @@ class ModelMethod(Block):
         for arg_name, parameter in inspect.signature(getattr(self.model_class, self.method_name)).parameters.items():
             if arg_name != 'self':
                 inputs.append(Variable(arg_name))
-        outputs = [Variable('method result'),
-                   Variable('model at output')]
+        outputs = [Variable('method result of {}'.format(self.method_name)),
+                   Variable('model at output {}'.format(self.method_name))]
         Block.__init__(self, inputs, outputs)
         
     def evaluate(self, values):
-        print('values', values[1:])
-        return getattr(values[0], self.method_name)(*values[1:])
+        return [getattr(values[0], self.method_name)(*values[1:]), values[0]]
         
 class Function(Block):
     def __init__(self, function):
@@ -64,13 +62,30 @@ class Function(Block):
         return self.function(*values)
 
         
+class ForEach(Block):
+    def __init__(self, workflow):
+        self.workflow = workflow
+        input_variable = Variable('Foreach input')
+        output_variable = Variable('Foreach output')
+        
+        Block.__init__(self, [input_variable], [output_variable])
 
-
+    def evaluate(self, values):
+        output_values = []
+        for value in values[0]:
+            workflow_run = self.workflow.run([value])
+            output_values.append(workflow_run.output_value)
+        return [output_values]
+            
 
 class ModelAttribute:
-    def __init__(self, model, attribute_name):
-        self.model = model
+    def __init__(self, attribute_name):
         self.attribute_name = attribute_name
+        
+        Block.__init__(self, [Variable('Model')], [Variable('Model attribute')])
+
+    def evaluate(self, values):
+        return [getattr(values[0], self.attribute_name)]
 
 class Pipe:
     def __init__(self,
@@ -80,8 +95,9 @@ class Pipe:
         self.output_variable = output_variable
 
 
-class WorkFlow:
-    def __init__(self, blocks, pipes):
+
+class WorkFlow(Block):
+    def __init__(self, blocks, pipes, output):
         self.blocks = blocks
         self.pipes = pipes
         
@@ -92,12 +108,13 @@ class WorkFlow:
             
         self._utd_graph = False
 
-        self.input_variables = []
+        input_variables = []
         
         for variable in self.variables:
             if len(nx.ancestors(self.graph, variable)) == 0:
-                self.input_variables.append(variable)
+                input_variables.append(variable)
 
+        Block.__init__(self, input_variables, [output])
                 
     def _get_graph(self):
         if not self._utd_graph:        
@@ -127,8 +144,9 @@ class WorkFlow:
         pos = nx.kamada_kawai_layout(self.graph)
         nx.draw_networkx_nodes(self.graph, pos, self.blocks,
                                node_shape='s', node_color='grey')
-        nx.draw_networkx_nodes(self.graph, pos, self.variables)
-#        nx.draw_networkx_nodes(self.graph, pos, self.input_variables, node_color='r')
+        nx.draw_networkx_nodes(self.graph, pos, self.variables, node_color='b')
+        nx.draw_networkx_nodes(self.graph, pos, self.inputs, node_color='g')
+        nx.draw_networkx_nodes(self.graph, pos, self.outputs, node_color='r')
         nx.draw_networkx_edges(self.graph, pos)
         
 
@@ -145,15 +163,14 @@ class WorkFlow:
         activated_items = {p: False for p in self.pipes}
         activated_items.update({v: False for v in self.variables})
         activated_items.update({b: False for b in self.blocks})
-#        activated_items.update({m: False for m in self.models})
-
-        if len(input_variables_values) != len(self.input_variables):
+        print(input_variables_values, self.inputs)
+        if len(input_variables_values) != len(self.inputs):
             raise ValueError
             
         values = {}
         
         for input_value, variable in zip(input_variables_values,
-                                         self.input_variables):
+                                         self.inputs):
             values[variable] = input_value
             activated_items[variable] = True
         
@@ -180,9 +197,9 @@ class WorkFlow:
                             break
                         
                     if all_inputs_activated:
-                        output_value = block.evaluate([values[i]\
+                        output_values = block.evaluate([values[i]\
                                                           for i in block.inputs])
-                        for output in block.outputs:                            
+                        for output, output_value in zip(block.outputs, output_values):                            
                             values[output] = output_value
                             activated_items[output] = True
                         
@@ -197,3 +214,4 @@ class WorkflowRun:
         self.workflow = workflow
         self.values = values
         
+        self.output_value = self.values[self.workflow.outputs[0]]
