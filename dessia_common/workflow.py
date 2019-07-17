@@ -4,8 +4,14 @@
 
 """
 
+#import os
 import inspect
 import networkx as nx
+import tempfile
+import pkg_resources
+
+from jinja2 import Environment, PackageLoader, select_autoescape
+import webbrowser
 
 
 class Variable:
@@ -138,6 +144,27 @@ class WorkFlow(Block):
             graph.add_edge(pipe.input_variable, pipe.output_variable)
         return graph
         
+    def block_indices_connected_by_pipe(self, pipe):
+        for iblock, block in enumerate(self.blocks):
+            if pipe.input_variable in block.inputs:
+                ib1 = iblock
+                ti1 = 0
+                iv1 = block.inputs.index(pipe.input_variable)
+            if pipe.input_variable in block.outputs:
+                ib1 = iblock
+                ti1 = 1
+                iv1 = block.outputs.index(pipe.input_variable)
+
+            if pipe.output_variable in block.inputs:
+                ib2 = iblock
+                ti2 = 0
+                iv2 = block.inputs.index(pipe.output_variable)
+            if pipe.output_variable in block.outputs:
+                ib2 = iblock
+                ti2 = 1
+                iv2 = block.outputs.index(pipe.output_variable)
+            
+        return (ib1, ti1, iv1), (ib2, ti2, iv2)
     
     def plot_graph(self):
         
@@ -163,7 +190,7 @@ class WorkFlow(Block):
         activated_items = {p: False for p in self.pipes}
         activated_items.update({v: False for v in self.variables})
         activated_items.update({b: False for b in self.blocks})
-        print(input_variables_values, self.inputs)
+#        print(input_variables_values, self.inputs)
         if len(input_variables_values) != len(self.inputs):
             raise ValueError
             
@@ -207,7 +234,47 @@ class WorkFlow(Block):
                         something_activated = True
                         
         return WorkflowRun(self, values)
+         
+    def plot(self):
+        env = Environment(loader=PackageLoader('dessia_common', 'templates'),
+                          autoescape=select_autoescape(['html', 'xml']))
+
+
+        template = env.get_template('workflow.html')
+
+#        temp_folder = tempfile.mkdtemp()
+        
+        mx_path = pkg_resources.resource_filename(pkg_resources.Requirement('dessia_common'),
+                                                  'dessia_common/templates/mxgraph')
+        
+        nodes = []
+        for block in self.blocks:
+            nodes.append({'name': block.__class__.__name__,
+                          'inputs': [{'name': i.name, 'workflow_input': i in self.inputs}\
+                                     for i in block.inputs],
+                          'outputs': [{'name': o.name,
+                                       'workflow_output': o in self.outputs}\
+                                      for o in block.outputs]})
             
+        edges = []
+        for pipe in self.pipes:
+#            (ib1, t1, ip1), (ib2, t2, ip2) = self.block_indices_connected_by_pipe
+            edges.append(self.block_indices_connected_by_pipe(pipe))
+        
+        options = {}
+        s = template.render(
+            mx_path=mx_path,
+            nodes=nodes,
+            edges=edges,
+            options=options)
+
+        temp_file = tempfile.mkstemp(suffix='.html')[1]
+#        print(temp_file, nodes)
+        
+        with open(temp_file, 'wb') as file:
+            file.write(s.encode('utf-8'))
+
+        webbrowser.open('file://' + temp_file)
                             
 class WorkflowRun:
     def __init__(self, workflow, values):
