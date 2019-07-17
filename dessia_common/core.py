@@ -159,4 +159,17 @@ def dict_merge(old_dct, merge_dct, add_keys=True, extend_lists=True):
 
     return dct
 
-#EMPTY_METADATA = Metadata()
+
+def stringify_dict_keys(d):
+    if type(d) == list or type(d) == tuple:
+        new_d = []
+        for di in d:
+            new_d.append(stringify_dict_keys(di))
+        
+    elif type(d) ==dict:
+        new_d = {}
+        for k,v in d.items():
+            new_d[str(k)] = stringify_dict_keys(v)
+    else:
+        return d
+    return new_d
