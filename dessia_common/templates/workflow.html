@@ -110,11 +110,11 @@
 							port.geometry.offset = new mxPoint(-5, -5);
 							port.geometry.relative = true;
 							{% if input['workflow_input'] %}
-								var color = "#FF0000"
+								var color = "#FF0000";
 							{% else %}
-								var color = "#C0C0C0"
+								var color = "#C0C0C0";
 							{% endif %}
-							port.style =	'align=left;verticalAlign=middle;fontSize=10;routingCenterX=-0.5;'+
+							port.style = 'align=left;verticalAlign=middle;fontSize=10;routingCenterX=-0.5;'+
 								'spacingLeft=12;fillColor='+color;
 							input_ports_node.push(port);
 						{% endfor %}

@@ -18,6 +18,17 @@ import webbrowser
 class Variable:
     def __init__(self, name):
         self.name = name
+        
+    def copy(self):
+        return Variable(self.name)
+        
+class VariableWithDefaultValue(Variable):
+    def __init__(self, name, default_value):
+        Variable.__init__(self, name)
+        self.default_value = default_value
+        
+    def copy(self):
+        return VariableWithDefaultValue(self.name, self.default_value)
 
 class Block:
     def __init__(self, inputs, outputs):
@@ -37,7 +48,8 @@ class InstanciateModel:
         Block.__init__(self, inputs, outputs)
         
     def evaluate(self, values):
-        return [self.object_class(*values)]
+        args = {var.name: values[var] for var in self.inputs}
+        return [self.object_class(**args)]
 
 
 class ModelMethod(Block):
@@ -45,15 +57,40 @@ class ModelMethod(Block):
         self.model_class = model_class
         self.method_name = method_name
         inputs = [Variable('model at input')]
-        for arg_name, parameter in inspect.signature(getattr(self.model_class, self.method_name)).parameters.items():
-            if arg_name != 'self':
-                inputs.append(Variable(arg_name))
+#        for arg_name, parameter in inspect.signature(getattr(self.model_class,
+#                                                             self.method_name)).parameters.items():
+#            if arg_name != 'self':
+#                inputs.append(Variable(arg_name))
+                
+                
+                
+        args_specs = inspect.getfullargspec(getattr(self.model_class, self.method_name))
+
+        nargs = len(args_specs.args) - 1
+        
+        if args_specs.defaults is not None:
+            ndefault_args = len(args_specs.defaults)
+        else:
+            ndefault_args = 0
+        
+        for iargument, argument in enumerate(args_specs.args[1:]):
+            if not argument in ['self']:
+                if iargument >= nargs - ndefault_args:
+#                    arguments.append((argument, args_specs.defaults[ndefault_args-nargs+iargument]))
+                    inputs.append(VariableWithDefaultValue(argument,
+                                                           args_specs.defaults[ndefault_args-nargs+iargument]))
+
+                else: 
+                    inputs.append(Variable(argument))
+            
         outputs = [Variable('method result of {}'.format(self.method_name)),
                    Variable('model at output {}'.format(self.method_name))]
         Block.__init__(self, inputs, outputs)
         
     def evaluate(self, values):
-        return [getattr(values[0], self.method_name)(*values[1:]), values[0]]
+        args = {var.name: values[var] for var in self.inputs[1:] if var in values}
+        return [getattr(values[self.inputs[0]], self.method_name)(**args),
+                values[self.inputs[0]]]
         
 class Function(Block):
     def __init__(self, function):
@@ -70,17 +107,32 @@ class Function(Block):
 
         
 class ForEach(Block):
-    def __init__(self, workflow):
+    def __init__(self, workflow, workflow_iterable_input):
         self.workflow = workflow
-        input_variable = Variable('Foreach input')
+        self.workflow_iterable_input = workflow_iterable_input
+        inputs = []
+        for workflow_input in self.workflow.inputs:
+            if workflow_input == workflow_iterable_input:
+                inputs.append(Variable('Iterable input: '+workflow_input.name))
+            else:
+                input_ = workflow_input.copy()
+                input_.name = 'binding '+input_.name
+                inputs.append(input_)
+                
+#        input_iterable_variable = Variable('Foreach input iterable')
+#        input_variables = [input_iterable_variable] + self.workflow.inputs
         output_variable = Variable('Foreach output')
         
-        Block.__init__(self, [input_variable], [output_variable])
+        Block.__init__(self, inputs, [output_variable])
 
     def evaluate(self, values):
+        values_workflow = {var2: values[var1] for var1, var2 in zip(self.inputs,
+                                                                    self.workflow.inputs)}
         output_values = []
-        for value in values[0]:
-            workflow_run = self.workflow.run([value])
+        for value in values_workflow[self.workflow_iterable_input]:
+            values_workflow2 = {var.name: val for var, val in values.items() if var != self.workflow_iterable_input}
+            values_workflow2[self.workflow_iterable_input] = value
+            workflow_run = self.workflow.run(values_workflow2)
             output_values.append(workflow_run.output_value)
         return [output_values]
             
@@ -92,7 +144,7 @@ class ModelAttribute:
         Block.__init__(self, [Variable('Model')], [Variable('Model attribute')])
 
     def evaluate(self, values):
-        return [getattr(values[0], self.attribute_name)]
+        return [getattr(values[self.inputs[0]], self.attribute_name)]
 
 class Pipe:
     def __init__(self,
@@ -192,16 +244,21 @@ class WorkFlow(Block):
         activated_items = {p: False for p in self.pipes}
         activated_items.update({v: False for v in self.variables})
         activated_items.update({b: False for b in self.blocks})
-#        print(input_variables_values, self.inputs)
-        if len(input_variables_values) != len(self.inputs):
-            raise ValueError
             
         values = {}
         
-        for input_value, variable in zip(input_variables_values,
-                                         self.inputs):
-            values[variable] = input_value
-            activated_items[variable] = True
+#        for input_value, variable in zip(input_variables_values,
+#                                         self.inputs):
+        for variable in self.inputs:
+            if variable in input_variables_values:                
+                values[variable] = input_variables_values[variable]
+                activated_items[variable] = True
+            elif hasattr(variable, 'default_value'):
+                values[variable] = variable.default_value
+                activated_items[variable] = True
+            else:
+                print('Variable {} has no value or default value'.format(variable.name))
+                raise ValueError
         
         something_activated = True
         
@@ -212,7 +269,6 @@ class WorkFlow(Block):
         log += (log_line + '\n')
         if verbose:
             print(log_line)
-        
         
         while something_activated:
             something_activated = False
@@ -240,8 +296,8 @@ class WorkFlow(Block):
                             log += log_line + '\n'
                             if verbose:
                                 print(log_line)
-                        output_values = block.evaluate([values[i]\
-                                                          for i in block.inputs])
+                        output_values = block.evaluate({i: values[i]\
+                                                        for i in block.inputs})
                         for output, output_value in zip(block.outputs, output_values):                            
                             values[output] = output_value
                             activated_items[output] = True
@@ -272,7 +328,9 @@ class WorkFlow(Block):
         nodes = []
         for block in self.blocks:
             nodes.append({'name': block.__class__.__name__,
-                          'inputs': [{'name': i.name, 'workflow_input': i in self.inputs}\
+                          'inputs': [{'name': i.name,
+                                      'workflow_input': i in self.inputs,
+                                      'has_default': hasattr(block, 'default')}\
                                      for i in block.inputs],
                           'outputs': [{'name': o.name,
                                        'workflow_output': o in self.outputs}\

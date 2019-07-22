@@ -4,10 +4,8 @@
 A simple workflow composed of functions
 """
 
-import math
+#import math
 import dessia_common.workflow as workflow
-
-
 
 
 class Generator:
@@ -29,8 +27,8 @@ class Optimizer:
     def __init__(self, model_to_optimize):
         self.model_to_optimize = model_to_optimize
         
-    def optimize(self):
-        self.model_to_optimize.value += 1000
+    def optimize(self, optimization_value=3):
+        self.model_to_optimize.value += optimization_value
     
 instanciate_generator = workflow.InstanciateModel(Generator)
 generator_generate = workflow.ModelMethod(Generator, 'generate')
@@ -48,14 +46,14 @@ optimization_workflow = workflow.WorkFlow([instanciate_optimizer, optimization,
                                           [pipe1_opt, pipe2_opt],
                                           model_fetcher.outputs[0])
 
-parallel_optimization = workflow.ForEach(optimization_workflow)
+parallel_optimization = workflow.ForEach(optimization_workflow, instanciate_optimizer.inputs[0])
 
 pipe_1 = workflow.Pipe(instanciate_generator.outputs[0], generator_generate.inputs[0])
 pipe_2 = workflow.Pipe(generator_generate.outputs[1], attribute_selection.inputs[0])
 pipe_3 = workflow.Pipe(attribute_selection.outputs[0], parallel_optimization.inputs[0])
 
 
-workflow = workflow.WorkFlow([instanciate_generator,
+demo_workflow = workflow.WorkFlow([instanciate_generator,
                               generator_generate,
                               attribute_selection,
                               parallel_optimization
@@ -64,6 +62,10 @@ workflow = workflow.WorkFlow([instanciate_generator,
                              parallel_optimization.outputs[0]
                              )
 
-workflow.plot_graph()
+demo_workflow.plot_graph()
 
-workflow_run = workflow.run([math.pi/3, 40], verbose=True)
+input_values = {instanciate_generator.inputs[0]: 3.21,
+                instanciate_generator.inputs[1]: 25,
+                }
+
+demo_workflow_run = demo_workflow.run(input_values, verbose=True)
