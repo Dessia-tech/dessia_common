@@ -6,6 +6,7 @@
 
 #import os
 import inspect
+import time
 import networkx as nx
 import tempfile
 import pkg_resources
@@ -186,7 +187,8 @@ class WorkFlow(Block):
         nx.draw_networkx_labels(self.graph, pos, labels)
 
 
-    def run(self, input_variables_values):
+    def run(self, input_variables_values, verbose=False):
+        log = ''
         activated_items = {p: False for p in self.pipes}
         activated_items.update({v: False for v in self.variables})
         activated_items.update({b: False for b in self.blocks})
@@ -202,6 +204,15 @@ class WorkFlow(Block):
             activated_items[variable] = True
         
         something_activated = True
+        
+        start_time = time.time()
+        
+        log_line = 'Starting workflow run at {}'.format(time.strftime('%d/%m/%Y %H:%M:%S UTC',
+                                                                      time.gmtime(start_time)))
+        log += (log_line + '\n')
+        if verbose:
+            print(log_line)
+        
         
         while something_activated:
             something_activated = False
@@ -224,6 +235,11 @@ class WorkFlow(Block):
                             break
                         
                     if all_inputs_activated:
+                        if verbose:
+                            log_line = 'Evaluating block {}'.format(block.__class__.__name__)
+                            log += log_line + '\n'
+                            if verbose:
+                                print(log_line)
                         output_values = block.evaluate([values[i]\
                                                           for i in block.inputs])
                         for output, output_value in zip(block.outputs, output_values):                            
@@ -232,8 +248,14 @@ class WorkFlow(Block):
                         
                         activated_items[block] = True
                         something_activated = True
-                        
-        return WorkflowRun(self, values)
+                       
+        end_time = time.time()
+        log_line = 'Workflow terminated in {} s'.format(end_time - start_time)
+        
+        log += log_line + '\n'
+        if verbose:
+            print(log_line)
+        return WorkflowRun(self, values, start_time, end_time, log)
          
     def plot(self):
         env = Environment(loader=PackageLoader('dessia_common', 'templates'),
@@ -277,8 +299,14 @@ class WorkFlow(Block):
         webbrowser.open('file://' + temp_file)
                             
 class WorkflowRun:
-    def __init__(self, workflow, values):
+    def __init__(self, workflow, values, start_time, end_time, log):
         self.workflow = workflow
         self.values = values
         
         self.output_value = self.values[self.workflow.outputs[0]]
+        
+        self.start_time = start_time
+        self.end_time = end_time
+        self.execution_time = end_time - start_time
+        self.log = log
+    

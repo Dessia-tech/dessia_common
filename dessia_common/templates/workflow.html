@@ -35,13 +35,13 @@
 				var graph = new mxGraph(container);
 				graph.setConnectable(true);
 				graph.setTooltips(true);
-				graph.gridSize = 80;
+				// graph.gridSize = 80;
 
 
 				// Sets the default edge style
 				var style = graph.getStylesheet().getDefaultEdgeStyle();
 				// style[mxConstants.STYLE_EDGE] = mxEdgeStyle.ElbowConnector;
-				style[mxConstants.STYLE_EDGE] = mxEdgeStyle.SegmentConnector;
+				// style[mxConstants.STYLE_EDGE] = mxEdgeStyle.SegmentConnector;
 
 				style = graph.getStylesheet().getDefaultVertexStyle();
 				style[mxConstants.STYLE_FILLCOLOR] = '#ffffff';

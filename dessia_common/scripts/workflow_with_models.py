@@ -66,4 +66,4 @@ workflow = workflow.WorkFlow([instanciate_generator,
 
 workflow.plot_graph()
 
-workflow_run = workflow.run([math.pi/3, 4])
+workflow_run = workflow.run([math.pi/3, 40], verbose=True)
