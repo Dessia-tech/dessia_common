@@ -9,7 +9,7 @@ import dessia_common.workflow as workflow
 
 
 class Generator:
-    def __init__(self, parameter, nb_solutions):
+    def __init__(self, parameter, nb_solutions=25):
         self.parameter = parameter
         self.nb_solutions = nb_solutions
         
@@ -65,7 +65,7 @@ demo_workflow = workflow.WorkFlow([instanciate_generator,
 demo_workflow.plot_graph()
 
 input_values = {instanciate_generator.inputs[0]: 3.21,
-                instanciate_generator.inputs[1]: 25,
+#                instanciate_generator.inputs[1]: 25,
                 }
 
 demo_workflow_run = demo_workflow.run(input_values, verbose=True)

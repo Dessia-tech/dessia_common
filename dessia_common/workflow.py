@@ -41,9 +41,28 @@ class InstanciateModel:
         self.object_class = object_class
         
         inputs = []
-        for arg_name, parameter in inspect.signature(self.object_class.__init__).parameters.items():
-            if arg_name != 'self':
-                inputs.append(Variable(arg_name))
+#        for arg_name, parameter in inspect.signature(self.object_class.__init__).parameters.items():
+#            if arg_name != 'self':
+#                inputs.append(Variable(arg_name))
+        
+        args_specs = inspect.getfullargspec(self.object_class.__init__)
+
+        nargs = len(args_specs.args) - 1
+        
+        if args_specs.defaults is not None:
+            ndefault_args = len(args_specs.defaults)
+        else:
+            ndefault_args = 0
+        
+        for iargument, argument in enumerate(args_specs.args[1:]):
+            if not argument in ['self']:
+                if iargument >= nargs - ndefault_args:
+                    inputs.append(VariableWithDefaultValue(argument,
+                                                           args_specs.defaults[ndefault_args-nargs+iargument]))
+
+                else: 
+                    inputs.append(Variable(argument))
+        
         outputs = [Variable('Instanciated object')]
         Block.__init__(self, inputs, outputs)
         
@@ -76,7 +95,6 @@ class ModelMethod(Block):
         for iargument, argument in enumerate(args_specs.args[1:]):
             if not argument in ['self']:
                 if iargument >= nargs - ndefault_args:
-#                    arguments.append((argument, args_specs.defaults[ndefault_args-nargs+iargument]))
                     inputs.append(VariableWithDefaultValue(argument,
                                                            args_specs.defaults[ndefault_args-nargs+iargument]))
 
