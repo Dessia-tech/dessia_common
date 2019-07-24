@@ -69,3 +69,11 @@ input_values = {instanciate_generator.inputs[0]: 3.21,
                 }
 
 demo_workflow_run = demo_workflow.run(input_values, verbose=True)
+
+
+demo_workflow_dict = demo_workflow.to_dict()
+import json
+demo_workflow_json = json.dumps(demo_workflow_dict)
+demo_workflow_dict_from_json = json.loads(demo_workflow_json)
+deserialized_demo_workflow = workflow.WorkFlow.dict_to_object(demo_workflow_dict_from_json)
+assert demo_workflow == deserialized_demo_workflow

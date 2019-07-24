@@ -5,11 +5,13 @@
 """
 
 #import os
+import sys
 import inspect
 import time
 import networkx as nx
 import tempfile
 import pkg_resources
+from importlib import import_module
 
 from jinja2 import Environment, PackageLoader, select_autoescape
 import webbrowser
@@ -31,12 +33,32 @@ class VariableWithDefaultValue(Variable):
         return VariableWithDefaultValue(self.name, self.default_value)
 
 class Block:
+    _standalone_in_db = False
+
     def __init__(self, inputs, outputs):
         self.inputs = inputs
         self.outputs = outputs
-        
+    
+    def __hash__(self):
+        return len(self.__class__.__name__)
+    
+    
+    def __eq__(self, other_block):        
+        if not self.__class__.__name__ == other_block.__class__.__name__:
+            return False
+        return True
+    
+    def to_dict(self):
+        return {'block_class': self.__class__.__name__}
+    
+    @classmethod
+    def dict_to_object(cls, dict_):
+        if dict_['block_class'] in ['InstanciateModel', 'ModelMethod',
+                                    'ForEach', 'Function', 'ModelAttribute']:
+            return eval(dict_['block_class']).dict_to_object(dict_)
 
-class InstanciateModel:
+
+class InstanciateModel(Block):
     def __init__(self, object_class):
         self.object_class = object_class
         
@@ -65,6 +87,31 @@ class InstanciateModel:
         
         outputs = [Variable('Instanciated object')]
         Block.__init__(self, inputs, outputs)
+        
+    def __hash__(self):
+        return len(self.object_class.__name__)
+        
+    def __eq__(self, other_block):
+        if not Block.__eq__(self, other_block):
+            return False
+#        print('hh1', self.object_class.__class__.__name__, other_block.object_class.__class__.__name__)
+#        print('hh2', self.object_class.__class__.__name__ == other_block.__class__.__name__) 
+        return self.object_class.__class__.__name__ == other_block.object_class.__class__.__name__
+        
+    def to_dict(self):
+        d = Block.to_dict(self)
+        d.update({'object_class': self.object_class.__name__,
+                  'object_class_module': self.object_class.__module__})
+        return d
+    
+    @classmethod
+    def dict_to_object(cls, dict_):
+        # TODO: Eval is dangerous: check that it is a class before
+#        if dict_['object_class_module'] not in sys.modules:
+        class_ = getattr(import_module(dict_['object_class_module']),
+                         dict_['object_class'])
+        return cls(class_)
+        
         
     def evaluate(self, values):
         args = {var.name: values[var] for var in self.inputs}
@@ -105,6 +152,31 @@ class ModelMethod(Block):
                    Variable('model at output {}'.format(self.method_name))]
         Block.__init__(self, inputs, outputs)
         
+    def __hash__(self):
+        return len(self.model_class.__name__) + 7*len(self.method_name)
+        
+    def __eq__(self, other_block):
+        if not Block.__eq__(self, other_block):
+            return False
+        return self.model_class.__name__ == other_block.model_class.__name__\
+               and self.method_name == other_block.method_name
+    
+        
+    def to_dict(self):
+        d = Block.to_dict(self)
+        d.update({'model_class': self.model_class.__name__,
+                  'model_module': self.model_class.__module__,
+                  'method_name': self.method_name
+                  })
+        return d
+    
+    @classmethod
+    def dict_to_object(cls, dict_):
+        class_ = getattr(import_module(dict_['model_module']),
+                         dict_['model_class'])
+        return cls(class_, dict_['method_name'])
+
+        
     def evaluate(self, values):
         args = {var.name: values[var] for var in self.inputs[1:] if var in values}
         return [getattr(values[self.inputs[0]], self.method_name)(**args),
@@ -125,6 +197,7 @@ class Function(Block):
 
         
 class ForEach(Block):
+    
     def __init__(self, workflow, workflow_iterable_input):
         self.workflow = workflow
         self.workflow_iterable_input = workflow_iterable_input
@@ -143,6 +216,31 @@ class ForEach(Block):
         
         Block.__init__(self, inputs, [output_variable])
 
+    def __hash__(self):
+        return hash(self.workflow)
+        
+    def __eq__(self, other_block):
+        if not Block.__eq__(self, other_block):
+            return False
+        return self.workflow == other_block.workflow\
+               and self.workflow.variable_indices(self.workflow_iterable_input)\
+                   == other_block.workflow.variable_indices(other_block.workflow_iterable_input)
+
+    def to_dict(self):
+        d = Block.to_dict(self)
+        d.update({'workflow': self.workflow.to_dict(),
+                  'workflow_iterable_input': self.workflow.variable_indices(self.workflow_iterable_input)
+                  })
+        return d
+    
+    @classmethod
+    def dict_to_object(cls, dict_):
+        workflow = WorkFlow.dict_to_object(dict_['workflow'])
+        ib, _, ip = dict_['workflow_iterable_input']
+        
+        workflow_iterable_input = workflow.blocks[ib].inputs[ip]
+        return cls(workflow, workflow_iterable_input)
+
     def evaluate(self, values):
         values_workflow = {var2: values[var1] for var1, var2 in zip(self.inputs,
                                                                     self.workflow.inputs)}
@@ -155,11 +253,29 @@ class ForEach(Block):
         return [output_values]
             
 
-class ModelAttribute:
+class ModelAttribute(Block):
     def __init__(self, attribute_name):
         self.attribute_name = attribute_name
         
         Block.__init__(self, [Variable('Model')], [Variable('Model attribute')])
+
+    def __hash__(self):
+        return len(self.attribute_name)
+        
+    def __eq__(self, other_block):
+        if not Block.__eq__(self, other_block):
+            return False
+        return self.attribute_name == other_block.attribute_name
+    
+
+    def to_dict(self):
+        d = Block.to_dict(self)
+        d.update({'attribute_name': self.attribute_name})
+        return d
+    
+    @classmethod
+    def dict_to_object(cls, dict_):
+        return cls(dict_['attribute_name'])
 
     def evaluate(self, values):
         return [getattr(values[self.inputs[0]], self.attribute_name)]
@@ -171,9 +287,50 @@ class Pipe:
         self.input_variable = input_variable
         self.output_variable = output_variable
 
+    
+    def to_dict(self):
+        return {'input_variable': self.input_variable,
+                'output_variable': self.output_variable}
 
 
 class WorkFlow(Block):
+    _standalone_in_db = True
+    
+    _dessia_methods = ['run']
+    
+    _jsonschema = {
+    "definitions": {},
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "title": "Workflow",
+    "required": [
+        "blocks",
+        "pipes",
+        "outputs",
+      ],
+      "properties": {
+        "blocks": {"type": "array",
+                   "items" : {
+                           "classes" : ["dessia_common.workflow.InstanciateModel",
+                                        "dessia_common.workflow.ModelMethod",
+                                        "dessia_common.workflow.ForEach",
+                                        "dessia_common.workflow.ModelAttribute",
+                                        ],
+                           "editable" : True,
+                           },
+                     },
+        "pipes": {"type": "array",
+                  'items': {'type': 'array',
+                            'items': {'type': 'number'}}
+                  },
+        "outputs": {"type": "array",
+                  'items': {'type': 'array',
+                            'items': {'type': 'number'}}
+                  }
+                  
+      
+        }}
+    
     def __init__(self, blocks, pipes, output):
         self.blocks = blocks
         self.pipes = pipes
@@ -192,6 +349,60 @@ class WorkFlow(Block):
                 input_variables.append(variable)
 
         Block.__init__(self, input_variables, [output])
+        
+    def __hash__(self):
+        return len(self.blocks)+11*len(self.pipes)+sum(self.variable_indices(self.outputs[0]))
+        
+    def __eq__(self, other_workflow):
+        if not Block.__eq__(self, other_workflow):
+            return False
+        graph_matcher = nx.algorithms.isomorphism.GraphMatcher(
+                            self.graph,
+                            other_workflow.graph,
+                            )
+        
+        isomorphic = graph_matcher.is_isomorphic()
+        if isomorphic:
+            for mapping in graph_matcher.isomorphisms_iter():
+                mapping_valid = True
+                for element1, element2 in mapping.items():
+                    if not isinstance(element1, Variable) and (element1 != element2):
+                        mapping_valid = False
+                        break
+                if mapping_valid:
+                    if mapping[self.outputs[0]] == other_workflow.outputs[0]:
+                        return True
+            return False
+        else:
+            return False
+          
+    def to_dict(self):
+        
+        blocks = [b.to_dict() for b in self.blocks]
+        
+        pipes = []
+        for pipe in self.pipes:
+            pipes.append((self.variable_indices(pipe.input_variable),
+                          self.variable_indices(pipe.output_variable)))
+            
+        d = {'blocks': blocks,
+             'pipes': pipes,
+             'output': self.variable_indices(self.outputs[0])}
+        return d
+    
+    @classmethod
+    def dict_to_object(cls, dict_):
+        blocks = [Block.dict_to_object(d) for d in dict_['blocks']]
+        
+        pipes = []
+        for (ib1, _, ip1), (ib2, _, ip2) in dict_['pipes']:
+            variable1 = blocks[ib1].outputs[ip1]
+            variable2 = blocks[ib2].inputs[ip2]
+            pipes.append(Pipe(variable1, variable2))
+        
+        output = blocks[dict_['output'][0]].outputs[dict_['output'][2]]
+        
+        return cls(blocks, pipes, output)
                 
     def _get_graph(self):
         if not self._utd_graph:        
@@ -215,27 +426,18 @@ class WorkFlow(Block):
             graph.add_edge(pipe.input_variable, pipe.output_variable)
         return graph
         
-    def block_indices_connected_by_pipe(self, pipe):
+    def variable_indices(self, variable):
         for iblock, block in enumerate(self.blocks):
-            if pipe.input_variable in block.inputs:
+            if variable in block.inputs:
                 ib1 = iblock
                 ti1 = 0
-                iv1 = block.inputs.index(pipe.input_variable)
-            if pipe.input_variable in block.outputs:
+                iv1 = block.inputs.index(variable)
+            if variable in block.outputs:
                 ib1 = iblock
                 ti1 = 1
-                iv1 = block.outputs.index(pipe.input_variable)
-
-            if pipe.output_variable in block.inputs:
-                ib2 = iblock
-                ti2 = 0
-                iv2 = block.inputs.index(pipe.output_variable)
-            if pipe.output_variable in block.outputs:
-                ib2 = iblock
-                ti2 = 1
-                iv2 = block.outputs.index(pipe.output_variable)
+                iv1 = block.outputs.index(variable)
             
-        return (ib1, ti1, iv1), (ib2, ti2, iv2)
+        return (ib1, ti1, iv1)
     
     def plot_graph(self):
         
@@ -375,6 +577,8 @@ class WorkFlow(Block):
         webbrowser.open('file://' + temp_file)
                             
 class WorkflowRun:
+    
+    
     def __init__(self, workflow, values, start_time, end_time, log):
         self.workflow = workflow
         self.values = values
