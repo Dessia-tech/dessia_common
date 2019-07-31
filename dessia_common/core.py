@@ -9,8 +9,6 @@ Created on Fri Jan  5 12:17:30 2018
 from functools import reduce
 from copy import deepcopy
 import collections
-from dessia_common import __version__
-from packaging import version
 
 class Metadata:
     """
@@ -41,7 +39,7 @@ class Metadata:
         }
     def __init__(self, name='', version=None, **kwargs):
         self.name = name
-        self.name = version
+        self.version = version
         if kwargs:
             self.add_data(**kwargs)
 
