@@ -9,6 +9,8 @@ Created on Fri Jan  5 12:17:30 2018
 from functools import reduce
 from copy import deepcopy
 import collections
+from dessia_common import __version__
+from packaging import version
 
 class Metadata:
     """
@@ -29,20 +31,19 @@ class Metadata:
                 "examples" : ["Object name"],
                 "description" : "Object name"
                 },
-#            "id_" : {
-#                "type" : "string",
-#                "order" : 1,
-#                "editable" : False,
-#                "Description" : "Object id"
-#                }
+            "version" : {
+                "type" : "string",
+                "order" : 1,
+                "editable" : False,
+                "Description" : "Object version"
+                }
             }
         }
-    def __init__(self, name='', **kwargs):
+    def __init__(self, name='', version=None, **kwargs):
         self.name = name
+        self.name = version
         if kwargs:
             self.add_data(**kwargs)
-#        self.id_ = None
-#        self.last_update = None
 
     def add_data(self, **kwargs):
         [self.__setattr__(keyword, value) for keyword, value in kwargs.items()]
@@ -56,10 +57,15 @@ class Metadata:
 
     @classmethod
     def dict_to_object(cls, d):
-        name = d['name']
         kwargs = deepcopy(d)
+        name = d['name']
         kwargs.pop('name')
-        metadata = cls(name, **kwargs)
+        if 'version' in d:
+            version = d['version']
+        else:
+            version = None
+        
+        metadata = cls(name, version, **kwargs)
         return metadata
 
 def number2factor(number):
