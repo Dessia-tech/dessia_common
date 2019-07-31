@@ -37,7 +37,7 @@ class Metadata:
                 }
             }
         }
-    def __init__(self, name='', version=None, **kwargs):
+    def __init__(self, name='', version='', **kwargs):
         self.name = name
         self.version = version
         if kwargs:
@@ -61,7 +61,7 @@ class Metadata:
         if 'version' in d:
             version = d['version']
         else:
-            version = None
+            version = ''
         
         metadata = cls(name, version, **kwargs)
         return metadata
