@@ -56,13 +56,11 @@ class Metadata:
     @classmethod
     def dict_to_object(cls, d):
         kwargs = deepcopy(d)
-        name = d['name']
-        kwargs.pop('name')
-        if 'version' in d:
-            version = d['version']
-        else:
+        name = kwargs.pop('name')
+        try:
+            version = kwargs.pop('version')
+        except KeyError:
             version = ''
-        
         metadata = cls(name, version, **kwargs)
         return metadata
 
