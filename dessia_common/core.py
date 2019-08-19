@@ -56,9 +56,12 @@ class Metadata:
 
     @classmethod
     def dict_to_object(cls, d):
-        name = d['name']
         kwargs = deepcopy(d)
-        kwargs.pop('name')
+        if 'name' in d:
+            name = d['name']
+            kwargs.pop('name')
+        else:
+            name = ''
         metadata = cls(name, **kwargs)
         return metadata
 
