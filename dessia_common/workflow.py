@@ -559,7 +559,8 @@ class WorkFlow(Block):
         edges = []
         for pipe in self.pipes:
 #            (ib1, t1, ip1), (ib2, t2, ip2) = self.block_indices_connected_by_pipe
-            edges.append(self.block_indices_connected_by_pipe(pipe))
+            edges.append((self.variable_indices(pipe.input_variable),
+                          self.variable_indices(pipe.output_variable)))
         
         options = {}
         s = template.render(
