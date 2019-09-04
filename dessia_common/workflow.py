@@ -15,9 +15,10 @@ from importlib import import_module
 
 from jinja2 import Environment, PackageLoader, select_autoescape
 import webbrowser
+import dessia_common as dc
 
 
-class Variable:
+class Variable(dc.DessiaObject):
     def __init__(self, name):
         self.name = name
         
@@ -32,7 +33,7 @@ class VariableWithDefaultValue(Variable):
     def copy(self):
         return VariableWithDefaultValue(self.name, self.default_value)
 
-class Block:
+class Block(dc.DessiaObject):
     _standalone_in_db = False
 
     def __init__(self, inputs, outputs):
@@ -280,7 +281,7 @@ class ModelAttribute(Block):
     def evaluate(self, values):
         return [getattr(values[self.inputs[0]], self.attribute_name)]
 
-class Pipe:
+class Pipe(dc.DessiaObject):
     def __init__(self,
                  input_variable,
                  output_variable):
@@ -562,6 +563,7 @@ class WorkFlow(Block):
             edges.append((self.variable_indices(pipe.input_variable),
                           self.variable_indices(pipe.output_variable)))
         
+        print(edges)
         options = {}
         s = template.render(
             mx_path=mx_path,
@@ -577,7 +579,7 @@ class WorkFlow(Block):
 
         webbrowser.open('file://' + temp_file)
                             
-class WorkflowRun:
+class WorkflowRun(dc.DessiaObject):
     
     
     def __init__(self, workflow, values, start_time, end_time, log):

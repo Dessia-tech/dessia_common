@@ -176,3 +176,10 @@ def stringify_dict_keys(d):
     else:
         return d
     return new_d
+
+class DessiaObject:
+    def to_dict(self):
+        if hasattr(self.Dict):
+            return self.Dict()
+        return self.__dict__
+        
