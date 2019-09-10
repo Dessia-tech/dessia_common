@@ -178,8 +178,16 @@ def stringify_dict_keys(d):
     return new_d
 
 class DessiaObject:
+    _standalone_in_db = False
     def to_dict(self):
-        if hasattr(self.Dict):
+        if hasattr(self, 'Dict'):
             return self.Dict()
-        return self.__dict__
-        
+        elif hasattr(self, 'to_dict'):
+            return self.to_dict()
+        return self.to_dict
+    
+    @classmethod
+    def dict_to_object(cls, dict_):
+        if hasattr(cls, 'DictToObject'):
+            return cls.DictToObject(dict_)
+        raise NotImplementedError('Class has no dict_to_object/DictToObject method')

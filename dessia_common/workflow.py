@@ -34,6 +34,37 @@ class VariableWithDefaultValue(Variable):
         return VariableWithDefaultValue(self.name, self.default_value)
 
 class Block(dc.DessiaObject):
+#    _jsonschema = {
+#        "definitions": {},
+#        "$schema": "http://json-schema.org/draft-07/schema#",
+#        "type": "object",
+#        "title": "Block",
+#        "required": ["inputs", "outputs"],
+#        "properties": {
+#            "inputs": {
+#                "type": "array",
+#                "items" : {
+#                    "type" : "object",
+#                    "classes" : ["dessia_common.workflow.Variable",
+#                                 "dessia_common.workflow.VariableWithDefaultValue"],
+#                    "editable" : False,
+#                    },
+#                },
+#            "outputs": {
+#                "type": "array",
+#                'items': {
+#                    'type': 'array',
+#                    'items': {
+#                        'type': 'object',
+#                        "classes" : ["dessia_common.workflow.Variable",
+#                                     "dessia_common.workflow.VariableWithDefaultValue"],
+#                        "editable" : False
+#                        },
+#                    
+#                    }
+#                }
+#            }
+#        }
     _standalone_in_db = False
 
     def __init__(self, inputs, outputs):
@@ -54,12 +85,27 @@ class Block(dc.DessiaObject):
 
     @classmethod
     def dict_to_object(cls, dict_):
+        print(dict_)
         if dict_['block_class'] in ['InstanciateModel', 'ModelMethod',
                                     'ForEach', 'Function', 'ModelAttribute']:
             return eval(dict_['block_class']).dict_to_object(dict_)
 
 
 class InstanciateModel(Block):
+#    _jsonschema = dc.dict_merge(Block._jsonschema, {
+#        "title" : "dessia_common.workflow.WorkFlow Base Schema",
+#        "required": ['object_class'],
+#        "properties": {
+#            "object_class": {
+#                "type" : "object",
+#                "classes" : ["powerpack.electrical.CombinationSpecsEvolution"],
+#                "unit" : "ohm",
+#                "description" : "Rint2 specification",
+#                "editable" : True,
+#                "order" : 13
+#                }
+#            }
+#        })
     def __init__(self, object_class):
         self.object_class = object_class
 
@@ -269,10 +315,12 @@ class WorkFlow(Block):
             "blocks": {
                 "type": "array",
                 "items" : {
-                    "classes" : ["dessia_common.workflow.InstanciateModel",
-                                 "dessia_common.workflow.ModelMethod",
-                                 "dessia_common.workflow.ForEach",
-                                 "dessia_common.workflow.ModelAttribute"],
+                    "type" : "object",
+                    "classes" : ["dessia_common.workflow.Block"],
+#                    "classes" : ["dessia_common.workflow.InstanciateModel",
+#                                 "dessia_common.workflow.ModelMethod",
+#                                 "dessia_common.workflow.ForEach",
+#                                 "dessia_common.workflow.ModelAttribute"],
                     "editable" : True,
                     },
                 },
@@ -296,11 +344,14 @@ class WorkFlow(Block):
     def __init__(self, blocks, pipes, output):
         self.blocks = blocks
         self.pipes = pipes
+        
+        self.coordinates = {}
 
         self.variables = []
         for block in self.blocks:
             self.variables.extend(block.inputs)
             self.variables.extend(block.outputs)
+            self.coordinates[block] = (0, 0)
 
         self._utd_graph = False
 
@@ -351,6 +402,7 @@ class WorkFlow(Block):
 
     @classmethod
     def dict_to_object(cls, dict_):
+        print(dict_['blocks'])
         blocks = [Block.dict_to_object(d) for d in dict_['blocks']]
 
         pipes = []
@@ -397,6 +449,11 @@ class WorkFlow(Block):
                 iv1 = block.outputs.index(variable)
 
         return (ib1, ti1, iv1)
+
+    def layout(self, n_x_anchors):
+        for iblock, block in enumerate(self.blocks):
+            self.coordinates[block] = (iblock % n_x_anchors, iblock // n_x_anchors)
+            
 
     def plot_graph(self):
 
