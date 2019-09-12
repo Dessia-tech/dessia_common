@@ -186,6 +186,16 @@ class DessiaObject:
             return self.to_dict()
         return self.to_dict
     
+    @property
+    def _display_angular(self):
+        display = []
+        if hasattr(self, 'CADExport')\
+            or hasattr(self, 'FreeCADExport')\
+            or hasattr(self, 'cad_export'):
+            display.append({'angular_component': 'app-cad-viewer'})
+        
+        return display
+    
     @classmethod
     def dict_to_object(cls, dict_):
         if hasattr(cls, 'DictToObject'):
