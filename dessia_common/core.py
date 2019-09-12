@@ -178,12 +178,20 @@ def stringify_dict_keys(d):
 
 class DessiaObject:
     _standalone_in_db = False
+    
+    def __init__(self, **kwargs):
+        for property_name, property_value in kwargs.items():
+            setattr(self, property_name, property_value)
+    
+    
     def to_dict(self):
         if hasattr(self, 'Dict'):
             return self.Dict()
-        elif hasattr(self, 'to_dict'):
+        elif hasattr(self, 'to_dict') and (self.to_dict is not DessiaObject.to_dict):
             return self.to_dict()
-        return self.to_dict
+        else:
+            # Default to dict
+            return self.__dict__.copy()
     
     @property
     def _display_angular(self):
