@@ -168,10 +168,35 @@ def stringify_dict_keys(d):
         for di in d:
             new_d.append(stringify_dict_keys(di))
         
-    elif type(d) ==dict:
+    elif type(d) == dict:
         new_d = {}
         for k,v in d.items():
             new_d[str(k)] = stringify_dict_keys(v)
     else:
         return d
     return new_d
+
+class DessiaObject:
+    _standalone_in_db = False
+    def to_dict(self):
+        if hasattr(self, 'Dict'):
+            return self.Dict()
+        elif hasattr(self, 'to_dict'):
+            return self.to_dict()
+        return self.to_dict
+    
+    @property
+    def _display_angular(self):
+        display = []
+        if hasattr(self, 'CADExport')\
+            or hasattr(self, 'FreeCADExport')\
+            or hasattr(self, 'cad_export'):
+            display.append({'angular_component': 'app-cad-viewer'})
+        
+        return display
+    
+    @classmethod
+    def dict_to_object(cls, dict_):
+        if hasattr(cls, 'DictToObject'):
+            return cls.DictToObject(dict_)
+        raise NotImplementedError('Class has no dict_to_object/DictToObject method')

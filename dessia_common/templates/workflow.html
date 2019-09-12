@@ -2,7 +2,7 @@
   Copyright (c) 2006-2013, JGraph Ltd
 
   Hello, World! example for mxGraph. This example demonstrates using
-  the isPort hook for visually connecting to another cell.
+  the isPort hook for visually connecting to another Edge.
 -->
 <html>
 <head>
@@ -35,20 +35,30 @@
 				var graph = new mxGraph(container);
 				graph.setConnectable(true);
 				graph.setTooltips(true);
-				// graph.gridSize = 80;
+				graph.setPanning(true);
+				graph.setAllowDanglingEdges(true);
+				graph.setDisconnectOnMove(false);
 
 
 				// Sets the default edge style
-				var style = graph.getStylesheet().getDefaultEdgeStyle();
-				// style[mxConstants.STYLE_EDGE] = mxEdgeStyle.ElbowConnector;
-				// style[mxConstants.STYLE_EDGE] = mxEdgeStyle.SegmentConnector;
-
-				style = graph.getStylesheet().getDefaultVertexStyle();
-				style[mxConstants.STYLE_FILLCOLOR] = '#ffffff';
+				var edgeStyle = graph.getStylesheet().getDefaultEdgeStyle();
+				edgeStyle[mxConstants.STYLE_EDGE] = mxEdgeStyle.ElbowConnector;
+				edgeStyle[mxConstants.STYLE_STROKECOLOR] = '#537CB0';
+				edgeStyle[mxConstants.STYLE_ROUNDED] = true;
 
 				// Uses the entity perimeter (below) as default
-				style[mxConstants.STYLE_VERTICAL_ALIGN] = mxConstants.ALIGN_TOP;
+				edgeStyle[mxConstants.STYLE_VERTICAL_ALIGN] = mxConstants.ALIGN_TOP;
 
+				var vertexStyle = graph.getStylesheet().getDefaultVertexStyle();
+
+				vertexStyle[mxConstants.STYLE_FILLCOLOR] = '#FFF';
+				vertexStyle[mxConstants.STYLE_STROKECOLOR] = '#537CB0';
+				mxConstants.DEFAULT_VALID_COLOR = '#FFCC00';
+				mxConstants.VERTEX_SELECTION_COLOR = '#FFCC00';
+				mxConstants.EDGE_SELECTION_COLOR = '#FFCC00';
+				mxConstants.HANDLE_FILLCOLOR = '#FFCC00';
+
+				vertexStyle[mxConstants.STYLE_ROUNDED] = true;
 
 				// Ports are not used as terminals for edges, they are
 				// only used to compute the graphical connection point
@@ -68,9 +78,6 @@
 						return this.convertValueToString(this.model.getTerminal(cell, true)) + ' => ' +
 							this.convertValueToString(this.model.getTerminal(cell, false))
 					}
-					// else {
-					//
-					// }
 
 					return mxGraph.prototype.getTooltipForCell.apply(this, arguments);
 				};
@@ -88,90 +95,83 @@
 				// is normally the first child of the root (ie. layer 0).
 				var parent = graph.getDefaultParent();
 
-				var layout = new mxHierarchicalLayout(graph, 'west');//, mxConstants.DIRECTION_EAST);
-
 				// Adds cells to the model in a single step
 				graph.getModel().beginUpdate();
 				try
 				{
-
 					var blocks = [];
 					var input_ports = [];
 					var output_ports = [];
-					{% for node in nodes%}
-						var block = graph.insertVertex(parent, null, '{{node['name']}}', 50, 50, 200, 80);
-						// v1.setConnectable(false);
-						blocks.push(block);
-						var input_ports_node = [];
 
+					var js_nodes = [];
+					var js_edges = [];
+
+					{% for node in nodes %}
+						var js_node = graph.insertVertex(parent, null, '{{node['name']}}', 50, 50, 200, 80);
+						js_nodes.push(js_node)
+						var input_ports_node = [];
 						var n_inputs = {{node['inputs']|length}};
+						var output_ports_node = [];
+						var n_outputs = {{node['outputs']|length}};
+
 						{% for input in node['inputs'] %}
-							var port = graph.insertVertex(block, null, '{{input['name']}}', 0, ({{loop.index}})/(1+n_inputs), 10, 10);
-							port.geometry.offset = new mxPoint(-5, -5);
-							port.geometry.relative = true;
-							{% if input['workflow_input'] %}
-								var color = "#FF0000"
-							{% else %}
-								var color = "#C0C0C0"
-							{% endif %}
-							port.style =	'align=left;verticalAlign=middle;fontSize=10;routingCenterX=-0.5;'+
-								'spacingLeft=12;fillColor='+color;
+							var port = graph.insertVertex(js_node, null, '{{input['name']}}', 0, ({{loop.index}})/(1+n_inputs), 10, 10);
 							input_ports_node.push(port);
 						{% endfor %}
 						input_ports.push(input_ports_node);
 
-
-						var output_ports_node = [];
-						var n_outputs = {{node['outputs']|length}};
 						{% for output in node['outputs'] %}
-							var port = graph.insertVertex(block, null, '{{output['name']}}', 1, ({{loop.index}})/(1+n_outputs), 10, 10);
-							port.geometry.offset = new mxPoint(-5, -5);
-							port.geometry.relative = true;
-							{% if output['workflow_output'] %}
-								var color = "#00FF00"
-							{% else %}
-								var color = "#C0C0C0"
-							{% endif %}
-							port.style =	'align=right;verticalAlign=middle;fontSize=10;routingCenterX=0.5;'+
-								'spacingRight=12;fillColor='+color;
+							var port = graph.insertVertex(js_node, null, '{{output['name']}}', 1, ({{loop.index}})/(1+n_outputs), 10, 10);
 							output_ports_node.push(port);
 						{% endfor %}
 						output_ports.push(output_ports_node);
-
 					{% endfor %}
 
-					// var edges2 = []
-					{% for edge in edges%}
+					for (let [i_node, js_node] of js_nodes.entries()){
+						for (let port of js_node.children){
+							if (input_ports[i_node].indexOf(port)>=0){
+								port.geometry.offset = new mxPoint(-5, -5);
+								port.geometry.relative = true;
+								var align = "left";
+								var color = "#FF0000";
+							}
+							else if (output_ports[i_node].indexOf(port)>=0){
+								port.geometry.offset = new mxPoint(-5, -5);
+								port.geometry.relative = true;
+								var align = "right";
+								var color = "#C0C0C0";
+							}
+							port.style = 'align='+align+';verticalAlign=middle;fontSize=10;routingCenterX=-0.5;'+
+								'spacingLeft=12;fillColor='+color;
+						}
+					}
 
-						// var block1 = nodes2[{{edge[0][0]}}];
+					{% for edge in edges %}
 						{% if not edge[0][1] %}
 								var port1 = input_ports[{{edge[0][0]}}][{{edge[0][2]}}];
 						{% else %}
 								var port1 = output_ports[{{edge[0][0]}}][{{edge[0][2]}}];
 						{% endif %}
-						// var block2 = nodes2[{{edge[1][0]}}];
 						{% if not edge[1][1] %}
 								var port2 = input_ports[{{edge[1][0]}}][{{edge[1][2]}}];
 						{% else %}
 								var port2 = output_ports[{{edge[1][0]}}][{{edge[1][2]}}];
 						{% endif %}
 
-						graph.insertEdge(parent, null, '', port1, port2);
+						var js_edge = graph.insertEdge(parent, null, '', port1, port2);
+						js_edges.push(js_edge);
 					{% endfor %}
 
 
-				layout.execute(parent);
+				// layout.execute(parent);
 				graph.refresh();
+
 				}
 				finally
 				{
-
 					// Updates the display
 					graph.getModel().endUpdate();
 				}
-
-
-				// document.body.insertBefore(button, container.nextSibling);
 			}
 		};
 	</script>
