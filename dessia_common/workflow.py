@@ -341,6 +341,7 @@ class WorkFlow(Block):
             }
         }
 
+
     def __init__(self, blocks, pipes, output):
         self.blocks = blocks
         self.pipes = pipes
@@ -362,6 +363,8 @@ class WorkFlow(Block):
                 input_variables.append(variable)
 
         Block.__init__(self, input_variables, [output])
+        
+        self.render()
 
     def __hash__(self):
         return len(self.blocks)+11*len(self.pipes)+sum(self.variable_indices(self.outputs[0]))
@@ -385,6 +388,15 @@ class WorkFlow(Block):
                         return True
             return False
         return False
+    
+    def _set_display(self):
+        nodes, edges = self.render()
+        display_angular = [{'angular_component': 'mx-workflow',
+                            'nodes': nodes,
+                            'edges': edges}]
+        return display_angular
+
+    _display_angular = property(_set_display)
 
     def to_dict(self):
 
@@ -544,17 +556,8 @@ class WorkFlow(Block):
         if verbose:
             print(log_line)
         return WorkflowRun(self, values, start_time, end_time, log)
-
-    def plot(self):
-        env = Environment(loader=PackageLoader('dessia_common', 'templates'),
-                          autoescape=select_autoescape(['html', 'xml']))
-
-
-        template = env.get_template('workflow.html')
-
-        mx_path = pkg_resources.resource_filename(pkg_resources.Requirement('dessia_common'),
-                                                  'dessia_common/templates/mxgraph')
-
+    
+    def render(self):
         nodes = []
         for block in self.blocks:
             nodes.append({'name': block.__class__.__name__,
@@ -570,7 +573,21 @@ class WorkFlow(Block):
         for pipe in self.pipes:
             edges.append((self.variable_indices(pipe.input_variable),
                           self.variable_indices(pipe.output_variable)))
+        
+        return nodes, edges
+        
 
+    def plot(self):
+        env = Environment(loader=PackageLoader('dessia_common', 'templates'),
+                          autoescape=select_autoescape(['html', 'xml']))
+
+
+        template = env.get_template('workflow.html')
+
+        mx_path = pkg_resources.resource_filename(pkg_resources.Requirement('dessia_common'),
+                                                  'dessia_common/templates/mxgraph')
+
+        nodes, edges = self.render()
         options = {}
         rendered_template = template.render(mx_path=mx_path,
                                             nodes=nodes,
