@@ -187,12 +187,26 @@ class DessiaObject:
     def to_dict(self):
         if hasattr(self, 'Dict'):
             return self.Dict()
-        elif hasattr(self, 'to_dict') and (self.to_dict is not DessiaObject.to_dict):
-            return self.to_dict()
         else:
             # Default to dict
             return self.__dict__.copy()
-    
+
+    @classmethod
+    def dict_to_object(cls, dict_):
+        if hasattr(cls, 'DictToObject'):
+            return cls.DictToObject(dict_)
+        else:
+            # Using default
+            return cls(**dict_)
+#        raise NotImplementedError('Class has no dict_to_object/DictToObject method')            
+
+#    def cad_export(self, fcstd_filepath='An unamed flat washer', python_path='python', 
+#                      freecad_lib_path='/usr/lib/freecad/lib', export_types=['fcstd']):
+#        model = self.volmdlr_model()
+#        model.FreeCADExport(fcstd_filepath, python_path=python_path,
+#                            freecad_lib_path=freecad_lib_path, export_types=export_types)
+
+
     @property
     def _display_angular(self):
         display = []
@@ -203,8 +217,3 @@ class DessiaObject:
         
         return display
     
-    @classmethod
-    def dict_to_object(cls, dict_):
-        if hasattr(cls, 'DictToObject'):
-            return cls.DictToObject(dict_)
-        raise NotImplementedError('Class has no dict_to_object/DictToObject method')
