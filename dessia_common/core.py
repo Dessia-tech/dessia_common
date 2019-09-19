@@ -211,8 +211,8 @@ class DessiaObject:
     def _display_angular(self):
         display = []
         if hasattr(self, 'CADExport')\
-            or hasattr(self, 'FreeCADExport')\
-            or hasattr(self, 'cad_export'):
+        or hasattr(self, 'FreeCADExport')\
+        or hasattr(self, 'cad_export'):
             display.append({'angular_component': 'app-cad-viewer'})
         
         return display

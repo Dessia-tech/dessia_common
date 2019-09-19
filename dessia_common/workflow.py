@@ -19,6 +19,20 @@ import dessia_common as dc
 
 
 class Variable(dc.DessiaObject):
+    _jsonschema = {
+        "definitions": {},
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "title": "Variable",
+        "required": ["name"],
+        "properties": {
+            "name": {
+                "type": "string",
+                "editable": True,
+                }
+            }
+        }
+    _standalone_in_db = False
     def __init__(self, name):
         self.name = name
 
@@ -26,6 +40,17 @@ class Variable(dc.DessiaObject):
         return Variable(self.name)
 
 class VariableWithDefaultValue(Variable):
+#    _jsonschema = dc.dict_merge(Variable._jsonschema, {
+#        "title" : "Default value Variable",
+#        "type": "object",
+#        "required": ["name"],
+#        "properties": {
+#            "value": {
+#                "type": "string",
+#                "editable": True,
+#                }
+#            }
+#        })
     def __init__(self, name, default_value):
         Variable.__init__(self, name)
         self.default_value = default_value
@@ -34,37 +59,39 @@ class VariableWithDefaultValue(Variable):
         return VariableWithDefaultValue(self.name, self.default_value)
 
 class Block(dc.DessiaObject):
-#    _jsonschema = {
-#        "definitions": {},
-#        "$schema": "http://json-schema.org/draft-07/schema#",
-#        "type": "object",
-#        "title": "Block",
-#        "required": ["inputs", "outputs"],
-#        "properties": {
-#            "inputs": {
-#                "type": "array",
-#                "items" : {
-#                    "type" : "object",
-#                    "classes" : ["dessia_common.workflow.Variable",
-#                                 "dessia_common.workflow.VariableWithDefaultValue"],
-#                    "editable" : False,
-#                    },
-#                },
-#            "outputs": {
-#                "type": "array",
-#                'items': {
-#                    'type': 'array',
-#                    'items': {
-#                        'type': 'object',
-#                        "classes" : ["dessia_common.workflow.Variable",
-#                                     "dessia_common.workflow.VariableWithDefaultValue"],
-#                        "editable" : False
-#                        },
-#                    
-#                    }
-#                }
-#            }
-#        }
+    _jsonschema = {
+        "definitions": {},
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "title": "Block",
+        "required": ["inputs", "outputs"],
+        "properties": {
+            "inputs": {
+                "type": "array",
+                "editable": False,
+                "items" : {
+                    "type" : "object",
+                    "classes" : ["dessia_common.workflow.Variable",
+                                 "dessia_common.workflow.VariableWithDefaultValue"],
+                    "editable" : False,
+                    },
+                },
+            "outputs": {
+                "type": "array",
+                "editable": False,
+                'items': {
+                    'type': 'array',
+                    'items': {
+                        'type': 'object',
+                        "classes" : ["dessia_common.workflow.Variable",
+                                     "dessia_common.workflow.VariableWithDefaultValue"],
+                        "editable" : False
+                        },
+                    
+                    }
+                }
+            }
+        }
     _standalone_in_db = False
 
     def __init__(self, inputs, outputs):
@@ -92,20 +119,17 @@ class Block(dc.DessiaObject):
 
 
 class InstanciateModel(Block):
-#    _jsonschema = dc.dict_merge(Block._jsonschema, {
-#        "title" : "dessia_common.workflow.WorkFlow Base Schema",
-#        "required": ['object_class'],
-#        "properties": {
-#            "object_class": {
-#                "type" : "object",
-#                "classes" : ["powerpack.electrical.CombinationSpecsEvolution"],
-#                "unit" : "ohm",
-#                "description" : "Rint2 specification",
-#                "editable" : True,
-#                "order" : 13
-#                }
-#            }
-#        })
+    _jsonschema = dc.dict_merge(Block._jsonschema, {
+        "title" : "Instantiate model Base Schema",
+        "required": ['object_class'],
+        "properties": {
+            "object_class": {
+                "type" : "string",
+                "editable" : True,
+                "examples" : ['Nom']
+                }
+            }
+        })
     def __init__(self, object_class):
         self.object_class = object_class
 
@@ -146,6 +170,23 @@ class InstanciateModel(Block):
 
 
 class ModelMethod(Block):
+    _jsonschema = dc.dict_merge(Block._jsonschema, {
+        "title" : "Model method Base Schema",
+        "required": ['model_class', 'method_name'],
+        "properties": {
+            "model_class": {
+                "type" : "string",
+                "editable" : True,
+                "examples" : ['Nom']
+                },
+            
+            "method_name": {
+                "type" : "string",
+                "editable" : True,
+                "examples" : ['Nom']
+                }
+            }
+        })
     def __init__(self, model_class, method_name):
         self.model_class = model_class
         self.method_name = method_name
@@ -238,7 +279,7 @@ class ForEach(Block):
 
     @classmethod
     def dict_to_object(cls, dict_):
-        workflow = WorkFlow.dict_to_object(dict_['workflow'])
+        workflow = Workflow.dict_to_object(dict_['workflow'])
         ib, _, ip = dict_['workflow_iterable_input']
 
         workflow_iterable_input = workflow.blocks[ib].inputs[ip]
@@ -286,6 +327,27 @@ class ModelAttribute(Block):
         return [getattr(values[self.inputs[0]], self.attribute_name)]
 
 class Pipe(dc.DessiaObject):
+    _jsonschema = {
+        "definitions": {},
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "title": "Block",
+        "required": ["input_variable", "output_variable"],
+        "properties": {
+            "input_variable": {
+                "type": "object",
+                "editable": True,
+                "classes" : ["dessia_common.workflow.Variable",
+                             "dessia_common.workflow.VariableWithDefaultValue"],
+                },
+            "output_variable": {
+                "type": "object",
+                "editable": True,
+                "classes" : ["dessia_common.workflow.Variable",
+                             "dessia_common.workflow.VariableWithDefaultValue"],
+                }
+            }
+        }
     def __init__(self,
                  input_variable,
                  output_variable):
@@ -298,7 +360,7 @@ class Pipe(dc.DessiaObject):
                 'output_variable': self.output_variable}
 
 
-class WorkFlow(Block):
+class Workflow(Block):
     _standalone_in_db = True
 
     _dessia_methods = ['run']
@@ -314,25 +376,31 @@ class WorkFlow(Block):
         "properties": {
             "blocks": {
                 "type": "array",
+                "order": 0,
+                "editable" : True,
                 "items" : {
                     "type" : "object",
-                    "classes" : ["dessia_common.workflow.Block"],
-#                    "classes" : ["dessia_common.workflow.InstanciateModel",
-#                                 "dessia_common.workflow.ModelMethod",
-#                                 "dessia_common.workflow.ForEach",
-#                                 "dessia_common.workflow.ModelAttribute"],
+#                    "classes" : ["dessia_common.workflow.Block"],
+                    "classes" : ["dessia_common.workflow.InstanciateModel",
+                                 "dessia_common.workflow.ModelMethod",
+                                 "dessia_common.workflow.ForEach",
+                                 "dessia_common.workflow.ModelAttribute"],
                     "editable" : True,
                     },
                 },
             "pipes": {
                 "type": "array",
+                "order": 1,
+                "editable" : True,
                 "items": {
-                    'type': 'array',
-                    'items': {'type': 'number'}
+                    'type': 'objects',
+                    'classes' : ["dessia_common.workflow.Pipe"],
+                    "editable": True
                     }
                 },
             "outputs": {
                 "type": "array",
+                "order": 2,
                 'items': {
                     'type': 'array',
                     'items': {'type': 'number'}
@@ -340,6 +408,7 @@ class WorkFlow(Block):
                 }
             }
         }
+
 
     def __init__(self, blocks, pipes, output):
         self.blocks = blocks
@@ -362,6 +431,8 @@ class WorkFlow(Block):
                 input_variables.append(variable)
 
         Block.__init__(self, input_variables, [output])
+        
+        self.render()
 
     def __hash__(self):
         return len(self.blocks)+11*len(self.pipes)+sum(self.variable_indices(self.outputs[0]))
@@ -385,6 +456,14 @@ class WorkFlow(Block):
                         return True
             return False
         return False
+
+    @property
+    def _display_angular(self):
+        nodes, edges = self.render()
+        display_angular = [{'angular_component': 'mx-workflow',
+                            'nodes': nodes,
+                            'edges': edges}]
+        return display_angular
 
     def to_dict(self):
 
@@ -544,17 +623,8 @@ class WorkFlow(Block):
         if verbose:
             print(log_line)
         return WorkflowRun(self, values, start_time, end_time, log)
-
-    def plot(self):
-        env = Environment(loader=PackageLoader('dessia_common', 'templates'),
-                          autoescape=select_autoescape(['html', 'xml']))
-
-
-        template = env.get_template('workflow.html')
-
-        mx_path = pkg_resources.resource_filename(pkg_resources.Requirement('dessia_common'),
-                                                  'dessia_common/templates/mxgraph')
-
+    
+    def render(self):
         nodes = []
         for block in self.blocks:
             nodes.append({'name': block.__class__.__name__,
@@ -570,7 +640,21 @@ class WorkFlow(Block):
         for pipe in self.pipes:
             edges.append((self.variable_indices(pipe.input_variable),
                           self.variable_indices(pipe.output_variable)))
+        
+        return nodes, edges
+        
 
+    def plot(self):
+        env = Environment(loader=PackageLoader('dessia_common', 'templates'),
+                          autoescape=select_autoescape(['html', 'xml']))
+
+
+        template = env.get_template('workflow.html')
+
+        mx_path = pkg_resources.resource_filename(pkg_resources.Requirement('dessia_common'),
+                                                  'dessia_common/templates/mxgraph')
+
+        nodes, edges = self.render()
         options = {}
         rendered_template = template.render(mx_path=mx_path,
                                             nodes=nodes,
