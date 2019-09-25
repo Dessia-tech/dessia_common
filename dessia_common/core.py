@@ -9,6 +9,7 @@ Created on Fri Jan  5 12:17:30 2018
 from functools import reduce
 from copy import deepcopy
 import collections
+import volmdlr as vm
 
 class Metadata:
     """
@@ -189,7 +190,13 @@ class DessiaObject:
             return self.Dict()
         else:
             # Default to dict
-            return self.__dict__.copy()
+            d = {}
+            for k, v in self.__dict__.items():
+                if isinstance(v, DessiaObject):
+                    d[k] = v.to_dict()
+                else:
+                    d[k] = v
+            return d
 
     @classmethod
     def dict_to_object(cls, dict_):
@@ -197,15 +204,24 @@ class DessiaObject:
             return cls.DictToObject(dict_)
         else:
             # Using default
+            # TODO: use jsonschema 
             return cls(**dict_)
 #        raise NotImplementedError('Class has no dict_to_object/DictToObject method')            
 
-#    def cad_export(self, fcstd_filepath='An unamed flat washer', python_path='python', 
-#                      freecad_lib_path='/usr/lib/freecad/lib', export_types=['fcstd']):
-#        model = self.volmdlr_model()
-#        model.FreeCADExport(fcstd_filepath, python_path=python_path,
-#                            freecad_lib_path=freecad_lib_path, export_types=export_types)
-
+    def cad_export(self,
+                   fcstd_filepath=None,
+                   python_path='python', 
+                   freecad_lib_path='/usr/lib/freecad/lib',
+                   export_types=['fcstd']):
+        if fcstd_filepath is None:
+            fcstd_filepath = 'An unnamed {}'.format(self.__class__.__name__)
+            
+        if hasattr(self, 'volmdlr_primitives'):
+            model = vm.VolumeModel([('', self.volmdlr_primitives())])
+            model.FreeCADExport(fcstd_filepath, python_path=python_path,
+                                freecad_lib_path=freecad_lib_path, export_types=export_types)
+        else:
+            raise NotImplementedError
 
     @property
     def _display_angular(self):
@@ -217,3 +233,41 @@ class DessiaObject:
         
         return display
     
+class InteractiveObjectCreator:
+    def __init__(self):
+        self.base_class_name = input('Base class of object (default=DessiaObject):')
+        if self.base_class_name == '':
+            self.base_class_name = 'DessiaObject'
+        
+        valid = False
+        while not valid:
+            self.class_name = input('Class name: ')
+            if self.class_name == '':
+                print('invalid class name')
+            else:
+                valid = True
+                
+        self.properties = {}
+        self.create_properties_jsonschema()
+        
+    def create_properties_jsonschema(self):
+        finished = False
+        schema = {}
+        while not finished:
+            print('New jsonschema property')
+            name = input('Name: ')
+            if name == '':
+                print('invalid name!')
+                continue
+            schema['name'] = name
+            print('Select a type')
+            print('1) number')
+            print('2) boolean')
+            print('3) string')
+            print('4) object')
+            print('5) array')
+                
+            type_ = input('Type (1-5): ')
+            
+        return schema
+                
