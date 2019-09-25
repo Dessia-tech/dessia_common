@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Dessia Workflow</title>
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/jointjs/2.1.0/joint.css" />
+</head>
+<body>
+    <!-- content -->
+    <div id="myholder"></div>
+
+    <!-- dependencies -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/3.10.1/lodash.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/backbone.js/1.3.3/backbone.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jointjs/2.1.0/joint.js"></script>
+
+    <!-- code -->
+    <script type="text/javascript">
+
+        // var graph = new joint.dia.Graph;
+				//
+        // var paper = new joint.dia.Paper({
+        //     el: document.getElementById('myholder'),
+        //     model: graph,
+        //     width: 600,
+        //     height: 100,
+        //     gridSize: 1
+        // });
+				//
+        // var rect = new joint.shapes.standard.Rectangle();
+        // rect.position(100, 30);
+        // rect.resize(100, 40);
+        // rect.attr({
+        //     body: {
+        //         fill: 'blue'
+        //     },
+        //     label: {
+        //         text: 'Hello',
+        //         fill: 'white'
+        //     }
+        // });
+        // rect.addTo(graph);
+				//
+        // var rect2 = rect.clone();
+        // rect2.translate(300, 0);
+        // rect2.attr('label/text', 'World!');
+        // rect2.addTo(graph);
+				//
+        // var link = new joint.shapes.standard.Link();
+        // link.source(rect);
+        // link.target(rect2);
+        // link.addTo(graph);
+
+
+				var graph = new joint.dia.Graph;
+				// new joint.dia.Paper({ el: $('#paper-create'), width: 650, height: 200, gridSize: 1, model: graph });
+				var paper = new joint.dia.Paper({
+            el: document.getElementById('myholder'),
+            model: graph,
+            width: 1600,
+            height: 900,
+            gridSize: 25,
+						drawGrid: true,
+        });
+
+				paper.options.defaultConnector = {
+    			name: 'jumpover',
+    			args: {
+        			radius: 20
+    				}
+					}
+
+					paper.options.defaultRouter = {
+    				name: 'manhattan',
+    				args: {
+        		padding: 10
+    			}
+				};
+
+
+				joint.dia.Link.define('standard.Link', {
+					    attrs: {
+					        line: {
+					            connection: true,
+					            stroke: '#333',
+					            strokeWidth: 2,
+					            strokeLinejoin: 'round',
+					            targetMarker: {
+					                'type': 'path',
+					                'd': 'M 10 -5 0 0 10 5 z'
+					            }
+					        },
+					        wrapper: {
+					            connection: true,
+					            strokeWidth: 10,
+					            strokeLinejoin: 'round'
+					        }
+					    }
+					}, {
+					    markup: [{
+					        tagName: 'path',
+					        selector: 'wrapper',
+					        attributes: {
+					            'fill': 'none',
+					            'cursor': 'pointer',
+					            'stroke': 'transparent'
+					        }
+					    }, {
+					        tagName: 'path',
+					        selector: 'line',
+					        attributes: {
+					            'fill': 'none',
+					            'pointer-events': 'none'
+					        }
+					    }]
+					});
+
+				var blocks = []
+				{% for node in nodes %}
+					var block = new joint.shapes.devs.Model({
+							position: { x: 400*({{loop.index}}-1)+50, y: 50 },
+							size: { width: 200, height: 100 },
+							inPorts: {{node['inputs'] | safe}},
+							outPorts: {{node['outputs'] | safe}},
+							ports: {
+									groups: {
+											'in': {
+													attrs: {
+															'.port-body': {
+																fill: '#00FF00',
+																stroke: 'black',
+																strokeWidth: 2,
+																height: 10,
+																width: 10,
+																magnet: true
+															}
+													},
+													markup: '<rect class="port-body"/>'
+											},
+											'out': {
+													attrs: {
+															'.port-body': {
+																	fill: '#E74C3C',
+																	stroke: 'black',
+																	strokeWidth: 2,
+																	height: 10,
+																	width: 10,
+																	magnet: true
+															}
+													},
+													markup: '<rect class="port-body"/>'
+											}
+									}
+							},
+							attrs: {
+									'.label': { text: '{{node["name"]}}', 'ref-x': .5, 'ref-y': .05 },
+									rect: { fill: '#ccc' }
+							}
+					});
+
+				graph.addCell(block);
+				blocks.push(block);
+
+			{% endfor %}
+
+
+
+				{% for edge in edges %}
+					block1 = blocks[{{edge[0][0]}}];
+					port1 = block1.getPorts()[{{edge[0][1]}}]
+					block2 = blocks[{{edge[1][0]}}];
+					port2 = block2.getPorts()[{{edge[1][1]}}]
+
+					var link = new joint.shapes.standard.Link({
+					      source: {
+					        id: block1.id,
+					        port: port1.id
+					      },
+					      target: {
+					        id: block2.id,
+					        port: port2.id
+					      }
+					    });
+					// Assume graph has the srcModel and dstModel with in and out ports.
+					graph.addCell(link)
+				{% endfor %}
+
+
+
+    </script>
+</body>
+</html>

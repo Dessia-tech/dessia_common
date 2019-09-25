@@ -41,7 +41,7 @@ model_fetcher = workflow.ModelAttribute('model_to_optimize')
 
 pipe1_opt = workflow.Pipe(instanciate_optimizer.outputs[0], optimization.inputs[0])
 pipe2_opt = workflow.Pipe(optimization.outputs[1], model_fetcher.inputs[0])
-optimization_workflow = workflow.WorkFlow([instanciate_optimizer, optimization,
+optimization_workflow = workflow.Workflow([instanciate_optimizer, optimization,
                                            model_fetcher],
                                           [pipe1_opt, pipe2_opt],
                                           model_fetcher.outputs[0])
@@ -53,14 +53,14 @@ pipe_2 = workflow.Pipe(generator_generate.outputs[1], attribute_selection.inputs
 pipe_3 = workflow.Pipe(attribute_selection.outputs[0], parallel_optimization.inputs[0])
 
 
-demo_workflow = workflow.WorkFlow([instanciate_generator,
-                              generator_generate,
-                              attribute_selection,
-                              parallel_optimization
-                              ],
-                             [pipe_1, pipe_2, pipe_3],
-                             parallel_optimization.outputs[0]
-                             )
+demo_workflow = workflow.Workflow([instanciate_generator,
+                                   generator_generate,
+                                   attribute_selection,
+                                   parallel_optimization
+                                   ],
+                                 [pipe_1, pipe_2, pipe_3],
+                                 parallel_optimization.outputs[0]
+                                 )
 
 demo_workflow.plot_graph()
 
@@ -75,5 +75,5 @@ demo_workflow_dict = demo_workflow.to_dict()
 import json
 demo_workflow_json = json.dumps(demo_workflow_dict)
 demo_workflow_dict_from_json = json.loads(demo_workflow_json)
-deserialized_demo_workflow = workflow.WorkFlow.dict_to_object(demo_workflow_dict_from_json)
+deserialized_demo_workflow = workflow.Workflow.dict_to_object(demo_workflow_dict_from_json)
 assert demo_workflow == deserialized_demo_workflow
