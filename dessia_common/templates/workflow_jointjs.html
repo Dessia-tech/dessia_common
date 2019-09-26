@@ -118,34 +118,52 @@
 				var blocks = []
 				{% for node in nodes %}
 					var block = new joint.shapes.devs.Model({
-							position: { x: 400*({{loop.index}}-1)+50, y: 50 },
-							size: { width: 200, height: 100 },
+							position: { x: 300*({{loop.index}}-1)+50, y: 50 },
+							size: { width: 220, height: 120 },
 							inPorts: {{node['inputs'] | safe}},
 							outPorts: {{node['outputs'] | safe}},
 							ports: {
 									groups: {
 											'in': {
+												label: {
+																// text: {'font-size': 1},
+						                    // label layout definition:
+						                    position: {
+						                        name: 'right', args: {
+						                            x: 12,
+																				y: 5,
+						                        }}},
 													attrs: {
+															'.port-label': {fontSize: 8},
 															'.port-body': {
 																fill: '#00FF00',
 																stroke: 'black',
 																strokeWidth: 2,
 																height: 10,
 																width: 10,
-																magnet: true
+																magnet: 'passive'
 															}
 													},
 													markup: '<rect class="port-body"/>'
 											},
 											'out': {
+												label: {
+						                    // label layout definition:
+						                    position: {
+						                        name: 'left', args: {
+						                            x: -12,
+																				y: 5,
+						                        }}},
 													attrs: {
+															'.port-label': {fontSize: 8},
 															'.port-body': {
 																	fill: '#E74C3C',
 																	stroke: 'black',
 																	strokeWidth: 2,
 																	height: 10,
 																	width: 10,
-																	magnet: true
+																	magnet: true,
+																	'ref-x': -10
 															}
 													},
 													markup: '<rect class="port-body"/>'
@@ -153,7 +171,9 @@
 									}
 							},
 							attrs: {
-									'.label': { text: '{{node["name"]}}', 'ref-x': .5, 'ref-y': .05 },
+									'.label': { text: '{{node["name"]}}',
+									 					'ref-x': .5, 'ref-y': .05,
+														'font-size': 12 },
 									rect: { fill: '#ccc' }
 							}
 					});
