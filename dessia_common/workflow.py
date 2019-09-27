@@ -459,8 +459,8 @@ class Workflow(Block):
 
     @property
     def _display_angular(self):
-        nodes, edges = self.render()
-        display_angular = [{'angular_component': 'mx-workflow',
+        nodes, edges = self.jointjs_data()
+        display_angular = [{'angular_component': 'workflow',
                             'nodes': nodes,
                             'edges': edges}]
         return display_angular
