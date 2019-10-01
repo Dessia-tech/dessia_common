@@ -380,7 +380,6 @@ class Workflow(Block):
                 "editable" : True,
                 "items" : {
                     "type" : "object",
-#                    "classes" : ["dessia_common.workflow.Block"],
                     "classes" : ["dessia_common.workflow.InstanciateModel",
                                  "dessia_common.workflow.ModelMethod",
                                  "dessia_common.workflow.ForEach",
@@ -427,7 +426,7 @@ class Workflow(Block):
         input_variables = []
 
         for variable in self.variables:
-            if len(nx.ancestors(self.graph, variable)) == 0: # !!! Why not just if nx.ancestors(self.graph, variable) ?
+            if len(nx.ancestors(self.graph, variable)) == 0: # !!! Why not just : if nx.ancestors(self.graph, variable) ?
                 input_variables.append(variable)
 
         Block.__init__(self, input_variables, [output])

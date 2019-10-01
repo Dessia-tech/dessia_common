@@ -7,9 +7,10 @@ Created on Fri Jan  5 12:17:30 2018
 """
 
 from functools import reduce
-from copy import deepcopy
 import collections
 import volmdlr as vm
+from copy import deepcopy
+from typing import List, Sequence, Iterable, TypeVar, GenericMeta
 
 class Metadata:
     """
@@ -197,6 +198,35 @@ class DessiaObject:
                 else:
                     d[k] = v
             return d
+    
+    @classmethod
+    def _method_jsonschemas(cls):
+        jsonschemas = {}
+        valid_method_names = [m for m in dir(cls)\
+                              if not m.startswith('_')]
+        for method_name in valid_method_names:
+            method = getattr(cls, method_name)
+            if method.__annotations__:
+                jsonschemas[method_name] = deepcopy(JSONSCHEMA_HEADER)
+                for key, value in method.__annotations__.items():
+                    print(key, type(value))
+                    current_dict = jsonschemas[method_name]['properties']
+                    if value in TYPING_EQUIVALENCES.keys():
+                        current_dict[key] = {'type': TYPING_EQUIVALENCES[value]}
+                    elif type(value) is TypeVar:
+                        classnames = [c.__module__ + '.' + c.__name__ for c in value.__constraints__]
+                        current_dict[key] = {'type': 'object',
+                                             'classes': classnames}
+                    elif hasattr(value, '__iter__') and value.__origin__ in [List, Sequence, Iterable]:
+                        classname = value.__args__[0].__module__ + '.' + value.__args__[0].__name__
+                        current_dict[key] = {'type': 'object',
+                                             'classes': [classname]}
+                    else:
+                        classname = value.__module__ + '.' + value.__name__
+                        current_dict[key] = {'type': 'object',
+                                             'classes': [classname]}
+        return jsonschemas
+                
 
     @classmethod
     def dict_to_object(cls, dict_):
@@ -270,4 +300,13 @@ class InteractiveObjectCreator:
             type_ = input('Type (1-5): ')
             
         return schema
-                
+    
+JSONSCHEMA_HEADER = {"definitions": {},
+                     "$schema": "http://json-schema.org/draft-07/schema#",
+                     "type": "object",
+                     "properties": {}}
+
+TYPING_EQUIVALENCES = {int: 'number',
+                       float: 'number',
+                       bool: 'boolean',
+                       str: 'string'}
