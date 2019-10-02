@@ -11,6 +11,7 @@ import collections
 import volmdlr as vm
 from copy import deepcopy
 from typing import List, Sequence, Iterable, TypeVar, GenericMeta
+import inspect
 
 class Metadata:
     """
@@ -201,15 +202,48 @@ class DessiaObject:
     
     @classmethod
     def _method_jsonschemas(cls):
+#            args_specs = inspect.getfullargspec(getattr(class_, method_name))
+#            nargs = len(args_specs.args) - 1
+#            
+#            if args_specs.defaults is not None:
+#                ndefault_args = len(args_specs.defaults)
+#            else:
+#                ndefault_args = 0
+#            
+#            for iargument, argument in enumerate(args_specs.args[1:]):
+#                if not argument in ['self', 'progress_callback']:
+#                    if iargument >= nargs - ndefault_args:
+#                        arguments.append((argument, args_specs.defaults[ndefault_args-nargs+iargument]))
+#                    else:
+#                        arguments.append(argument)
+#                        
+#            class_methods[method_name] = arguments
+#        allowed_methods[full_path] = class_methods
+        
         jsonschemas = {}
         valid_method_names = [m for m in dir(cls)\
                               if not m.startswith('_')]
         for method_name in valid_method_names:
+            
             method = getattr(cls, method_name)
+            args_specs = inspect.getfullargspec(method)
+            nargs = len(args_specs.args) - 1
+            if args_specs.defaults is not None:
+                ndefault_args = len(args_specs.defaults)
+            else:
+                ndefault_args = 0
+            default_arguments = {}
+            required_arguments = []
+            for iargument, argument in enumerate(args_specs.args[1:]):
+                if not argument in ['self', 'progress_callback']:
+                    if iargument >= nargs - ndefault_args:
+                        default_arguments[argument] = args_specs.defaults[ndefault_args-nargs+iargument]
+                    else:
+                        required_arguments.append(argument)
             if method.__annotations__:
                 jsonschemas[method_name] = deepcopy(JSONSCHEMA_HEADER)
+                jsonschemas[method_name]['required'] = required_arguments
                 for key, value in method.__annotations__.items():
-                    print(key, type(value))
                     current_dict = jsonschemas[method_name]['properties']
                     if value in TYPING_EQUIVALENCES.keys():
                         current_dict[key] = {'type': TYPING_EQUIVALENCES[value]}
@@ -225,6 +259,8 @@ class DessiaObject:
                         classname = value.__module__ + '.' + value.__name__
                         current_dict[key] = {'type': 'object',
                                              'classes': [classname]}
+                    if key in default_arguments.keys():
+                        current_dict[key]['default_value'] = default_arguments[key]
         return jsonschemas
                 
 
