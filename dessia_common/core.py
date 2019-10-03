@@ -334,20 +334,22 @@ class InteractiveObjectCreator:
 
 def jsonschema_from_annotation(annotation, jsonschema_element):
     key, value = annotation
-    print(value, value.__dict__)
     if value in TYPING_EQUIVALENCES.keys():
         # Python Built-in type
-        jsonschema_element[key] = {'type': TYPING_EQUIVALENCES[value]}
+        jsonschema_element[key] = {'type': TYPING_EQUIVALENCES[value],
+                                   'title': key}
     elif isinstance(value, TypeVar):
         # Several  classes are possible
         classnames = [c.__module__+'.'+c.__name__ for c in value.__constraints__]
         jsonschema_element[key] = {'type': 'object',
-                             'classes': classnames}
+                                   'classes': classnames,
+                                   'title': key}
     elif hasattr(value, '_name')\
     and value._name in ['List', 'Sequence', 'Iterable']:
         items_type = value.__args__[0]
         if items_type in TYPING_EQUIVALENCES.keys():
             jsonschema_element[key] = {'type': 'array',
+                                       'title': key,
                                        'items': {
                                            'type': TYPING_EQUIVALENCES[items_type]
                                            }
@@ -356,6 +358,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element):
             classname = items_type.__module__ + '.' + items_type.__name__
             # List of a certain type
             jsonschema_element[key] = {'type': 'array',
+                                       'title': key,
                                        'items': {
                                            'type': 'object',
                                            'classes': [classname]
@@ -363,9 +366,9 @@ def jsonschema_from_annotation(annotation, jsonschema_element):
                                        }
     else:
         # Dessia custom classes
-        print(value)
         classname = value.__module__ + '.' + value.__name__
         jsonschema_element[key] = {'type': 'object',
+                                   'title': key,
                                    'classes': [classname]}
     return jsonschema_element
 

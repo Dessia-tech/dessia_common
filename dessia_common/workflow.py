@@ -3,9 +3,6 @@
 """
 
 """
-
-#import os
-#import sys
 import inspect
 import time
 import tempfile
@@ -39,24 +36,29 @@ class Variable(dc.DessiaObject):
     def copy(self):
         return Variable(self.name)
 
+class TypedVariable(Variable):
+    def __init__(self, name, type_):
+        Variable.__init__(self, name)
+        self.type_ = type_
+    
+    def copy(self):
+        return TypedVariable(self.name, self.type_)
+
 class VariableWithDefaultValue(Variable):
-#    _jsonschema = dc.dict_merge(Variable._jsonschema, {
-#        "title" : "Default value Variable",
-#        "type": "object",
-#        "required": ["name"],
-#        "properties": {
-#            "value": {
-#                "type": "string",
-#                "editable": True,
-#                }
-#            }
-#        })
     def __init__(self, name, default_value):
         Variable.__init__(self, name)
         self.default_value = default_value
 
     def copy(self):
         return VariableWithDefaultValue(self.name, self.default_value)
+
+class TypedVariableWithDefaultValue(TypedVariable):
+    def __init__(self, name, type_, default_value):
+        TypedVariable.__init__(self, name, type_)
+        self.default_value = default_value
+    
+    def copy(self):
+        return TypedVariableWithDefaultValue(self.name, self.type_, self.default_value)
 
 class Block(dc.DessiaObject):
     _jsonschema = {
@@ -72,7 +74,9 @@ class Block(dc.DessiaObject):
                 "items" : {
                     "type" : "object",
                     "classes" : ["dessia_common.workflow.Variable",
-                                 "dessia_common.workflow.VariableWithDefaultValue"],
+                                 "dessia_common.workflow.TypedVariable"
+                                 "dessia_common.workflow.VariableWithDefaultValue",
+                                 "dessia_common.workflow.TypedVariableWithDefaultValue"],
                     "editable" : False,
                     },
                 },
@@ -84,7 +88,9 @@ class Block(dc.DessiaObject):
                     'items': {
                         'type': 'object',
                         "classes" : ["dessia_common.workflow.Variable",
-                                     "dessia_common.workflow.VariableWithDefaultValue"],
+                                     "dessia_common.workflow.TypedVariable"
+                                     "dessia_common.workflow.VariableWithDefaultValue",
+                                     "dessia_common.workflow.TypedVariableWithDefaultValue"],
                         "editable" : False
                         },
                     
@@ -116,6 +122,23 @@ class Block(dc.DessiaObject):
         if dict_['block_class'] in ['InstanciateModel', 'ModelMethod',
                                     'ForEach', 'Function', 'ModelAttribute']:
             return eval(dict_['block_class']).dict_to_object(dict_)
+    
+    @property
+    def _method_jsonschemas(self):
+        jsonschemas = {'run': dc.JSONSCHEMA_HEADER}
+        properties_dict = jsonschemas['run']['properties']
+        required_inputs = []
+        for i, input_ in enumerate(self.inputs):
+            current_dict = {}
+            if not isinstance(input_, (VariableWithDefaultValue, TypedVariableWithDefaultValue)):
+                required_inputs.append(input_)
+            else:
+                current_dict['default_value'] = input_.default_value
+            
+            annotation = (input_.name, input_.type_)
+            current_dict.update(dc.jsonschema_from_annotation(annotation, current_dict))
+            properties_dict[str(i)] = current_dict
+        return jsonschemas
 
 
 class InstanciateModel(Block):
@@ -135,11 +158,9 @@ class InstanciateModel(Block):
 
         inputs = []
 
-        args_specs = inspect.getfullargspec(self.object_class.__init__)
+        inputs = set_inputs(self.object_class.__init__, inputs)
 
-        inputs = set_inputs(args_specs, inputs)
-
-        outputs = [Variable('Instanciated object')]
+        outputs = [TypedVariable('Instanciated object', self.object_class)]
         Block.__init__(self, inputs, outputs)
 
     def __hash__(self):
@@ -190,13 +211,13 @@ class ModelMethod(Block):
     def __init__(self, model_class, method_name):
         self.model_class = model_class
         self.method_name = method_name
-        inputs = [Variable('model at input')]
-        args_specs = inspect.getfullargspec(getattr(self.model_class, self.method_name))
+        inputs = [TypedVariable('model at input', model_class)]
+        method = getattr(self.model_class, self.method_name)
 
-        inputs = set_inputs(args_specs, inputs)
+        inputs = set_inputs(method, inputs)
 
-        outputs = [Variable('method result of {}'.format(self.method_name)),
-                   Variable('model at output {}'.format(self.method_name))]
+        outputs = [TypedVariable('method result of {}'.format(self.method_name), method.__annotations__['return']),
+                   TypedVariable('model at output {}'.format(self.method_name), model_class)]
         Block.__init__(self, inputs, outputs)
 
     def __hash__(self):
@@ -233,8 +254,8 @@ class Function(Block):
         self.function = function
         inputs = []
         for arg_name in inspect.signature(function).parameters.keys():
-            inputs.append(Variable(arg_name))
-        outputs = [Variable('Output function')]
+            inputs.append(Variable(arg_name, function.__annotations__[arg_name]))
+        outputs = [Variable('Output function', function.__annotations__['return'])]
 
         Block.__init__(self, inputs, outputs)
 
@@ -338,13 +359,17 @@ class Pipe(dc.DessiaObject):
                 "type": "object",
                 "editable": True,
                 "classes" : ["dessia_common.workflow.Variable",
-                             "dessia_common.workflow.VariableWithDefaultValue"],
+                             "dessia_common.workflow.TypedVariable"
+                             "dessia_common.workflow.VariableWithDefaultValue",
+                             "dessia_common.workflow.TypedVariableWithDefaultValue"],
                 },
             "output_variable": {
                 "type": "object",
                 "editable": True,
                 "classes" : ["dessia_common.workflow.Variable",
-                             "dessia_common.workflow.VariableWithDefaultValue"],
+                             "dessia_common.workflow.TypedVariable"
+                             "dessia_common.workflow.VariableWithDefaultValue",
+                             "dessia_common.workflow.TypedVariableWithDefaultValue"],
                 }
             }
         }
@@ -430,8 +455,6 @@ class Workflow(Block):
                 input_variables.append(variable)
 
         Block.__init__(self, input_variables, [output])
-        
-#        self.render()
 
     def __hash__(self):
         return len(self.blocks)+11*len(self.pipes)+sum(self.variable_indices(self.outputs[0]))
@@ -480,7 +503,6 @@ class Workflow(Block):
 
     @classmethod
     def dict_to_object(cls, dict_):
-        print(dict_['blocks'])
         blocks = [Block.dict_to_object(d) for d in dict_['blocks']]
 
         pipes = []
@@ -699,9 +721,6 @@ class Workflow(Block):
 
         template = env.get_template('workflow_jointjs.html')
 
-#        jointjs_path = pkg_resources.resource_filename(pkg_resources.Requirement('dessia_common'),
-#                                                  'dessia_common/templates/jointjs')
-
         nodes, edges = self.jointjs_data()
         options = {}
         rendered_template = template.render(nodes=nodes,
@@ -728,7 +747,8 @@ class WorkflowRun(dc.DessiaObject):
         self.execution_time = end_time - start_time
         self.log = log
 
-def set_inputs(args_specs, inputs=[]):
+def set_inputs(method, inputs=[]):
+    args_specs = inspect.getfullargspec(method)
     nargs = len(args_specs.args) - 1
 
     if args_specs.defaults is not None:
@@ -737,17 +757,13 @@ def set_inputs(args_specs, inputs=[]):
         ndefault_args = 0
 
     for iargument, argument in enumerate(args_specs.args[1:]):
-        if not argument in ['self']:
+        if not argument in ['self', 'progress_callback']:
             if iargument >= nargs - ndefault_args:
                 default_value = args_specs.defaults[ndefault_args-nargs+iargument]
-                inputs.append(VariableWithDefaultValue(argument,
-                                                       default_value))
+                inputs.append(TypedVariableWithDefaultValue(argument,
+                                                            method.__annotations__[argument],
+                                                            default_value))
 
             else:
-                inputs.append(Variable(argument))
-    for variable in inputs:
-        msg = str(type(variable)) +  ' : ' + variable.name
-        if hasattr(variable, 'default_value'):
-            msg = msg + ' (Default : ' + str(variable.default_value) + ')'
-        print(msg)
+                inputs.append(TypedVariable(argument, method.__annotations__[argument]))
     return inputs
