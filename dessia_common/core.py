@@ -8,10 +8,10 @@ Created on Fri Jan  5 12:17:30 2018
 
 from functools import reduce
 import collections
-import volmdlr as vm
 from copy import deepcopy
-from typing import List, Sequence, Iterable, TypeVar, GenericMeta
+from typing import List, Sequence, Iterable, TypeVar
 import inspect
+import volmdlr as vm
 
 class Metadata:
     """
@@ -47,18 +47,27 @@ class Metadata:
             self.add_data(**kwargs)
 
     def add_data(self, **kwargs):
-        [self.__setattr__(keyword, value) for keyword, value in kwargs.items()]
+        """
+        Adds given kwargs to object dict
+        """
+        for keyword, value in kwargs.items():
+            self.__setattr__(keyword, value)
 
     def del_data(self, attribute_name):
+        """
+        Removes given attribute and its value from object dict
+        """
         self.__delattr__(attribute_name)
 
     def to_dict(self):
-        # !!! Enable python object in metadata ?
+        """
+        !!! Enable python object in metadata ?
+        """
         return self.__dict__
 
     @classmethod
-    def dict_to_object(cls, d):
-        kwargs = deepcopy(d)
+    def dict_to_object(cls, dict_):
+        kwargs = deepcopy(dict_)
         name = kwargs.pop('name')
         try:
             version = kwargs.pop('version')
@@ -146,10 +155,8 @@ def dict_merge(old_dct, merge_dct, add_keys=True, extend_lists=True):
     """
     dct = deepcopy(old_dct)
     if not add_keys:
-        merge_dct = {
-            k: merge_dct[k]
-            for k in set(dct).intersection(set(merge_dct))
-        }
+        merge_dct = {k: merge_dct[k]\
+                     for k in set(dct).intersection(set(merge_dct))}
 
     for key, value in merge_dct.items():
         if (isinstance(dct.get(key), dict) and isinstance(value, collections.Mapping)):
@@ -165,67 +172,60 @@ def dict_merge(old_dct, merge_dct, add_keys=True, extend_lists=True):
     return dct
 
 
-def stringify_dict_keys(d):
-    if type(d) == list or type(d) == tuple:
-        new_d = []
-        for di in d:
-            new_d.append(stringify_dict_keys(di))
-        
-    elif type(d) == dict:
-        new_d = {}
-        for k,v in d.items():
-            new_d[str(k)] = stringify_dict_keys(v)
+def stringify_dict_keys(obj):
+    if isinstance(obj, (list, tuple)):
+        new_obj = []
+        for elt in obj:
+            new_obj.append(stringify_dict_keys(elt))
+
+    elif isinstance(obj, dict):
+        new_obj = {}
+        for key, value in obj.items():
+            new_obj[str(key)] = stringify_dict_keys(value)
     else:
-        return d
-    return new_d
+        return obj
+    return new_obj
 
 class DessiaObject:
+    """
+    Base abstract class for Dessia's object.
+    Gathers generic methods and attributes
+    """
     _standalone_in_db = False
-    
+
     def __init__(self, **kwargs):
         for property_name, property_value in kwargs.items():
             setattr(self, property_name, property_value)
-    
-    
+
+
     def to_dict(self):
+        """
+        Generic to_dict method
+        """
         if hasattr(self, 'Dict'):
             return self.Dict()
-        else:
-            # Default to dict
-            d = {}
-            for k, v in self.__dict__.items():
-                if isinstance(v, DessiaObject):
-                    d[k] = v.to_dict()
-                else:
-                    d[k] = v
-            return d
-    
+
+        # Default to dict
+        dict_ = {}
+        for key, value in self.__dict__.items():
+            if isinstance(value, DessiaObject):
+                dict_[key] = value.to_dict()
+            else:
+                dict_[key] = value
+        return dict_
+
     @classmethod
     def _method_jsonschemas(cls):
-#            args_specs = inspect.getfullargspec(getattr(class_, method_name))
-#            nargs = len(args_specs.args) - 1
-#            
-#            if args_specs.defaults is not None:
-#                ndefault_args = len(args_specs.defaults)
-#            else:
-#                ndefault_args = 0
-#            
-#            for iargument, argument in enumerate(args_specs.args[1:]):
-#                if not argument in ['self', 'progress_callback']:
-#                    if iargument >= nargs - ndefault_args:
-#                        arguments.append((argument, args_specs.defaults[ndefault_args-nargs+iargument]))
-#                    else:
-#                        arguments.append(argument)
-#                        
-#            class_methods[method_name] = arguments
-#        allowed_methods[full_path] = class_methods
-        
+        """
+        Generates dynamic jsonschemas for methods of class
+        """
         jsonschemas = {}
         valid_method_names = [m for m in dir(cls)\
                               if not m.startswith('_')]
         for method_name in valid_method_names:
-            
             method = getattr(cls, method_name)
+
+            # Find default value and required arguments of method
             args_specs = inspect.getfullargspec(method)
             nargs = len(args_specs.args) - 1
             if args_specs.defaults is not None:
@@ -237,51 +237,46 @@ class DessiaObject:
             for iargument, argument in enumerate(args_specs.args[1:]):
                 if not argument in ['self', 'progress_callback']:
                     if iargument >= nargs - ndefault_args:
-                        default_arguments[argument] = args_specs.defaults[ndefault_args-nargs+iargument]
+                        default_value = args_specs.defaults[ndefault_args-nargs+iargument]
+                        default_arguments[argument] = default_value
                     else:
                         required_arguments.append(argument)
+
             if method.__annotations__:
                 jsonschemas[method_name] = deepcopy(JSONSCHEMA_HEADER)
                 jsonschemas[method_name]['required'] = required_arguments
-                for key, value in method.__annotations__.items():
+                for annotation in method.__annotations__.items():
                     current_dict = jsonschemas[method_name]['properties']
-                    if value in TYPING_EQUIVALENCES.keys():
-                        current_dict[key] = {'type': TYPING_EQUIVALENCES[value]}
-                    elif type(value) is TypeVar:
-                        classnames = [c.__module__ + '.' + c.__name__ for c in value.__constraints__]
-                        current_dict[key] = {'type': 'object',
-                                             'classes': classnames}
-                    elif hasattr(value, '__iter__') and value.__origin__ in [List, Sequence, Iterable]:
-                        classname = value.__args__[0].__module__ + '.' + value.__args__[0].__name__
-                        current_dict[key] = {'type': 'object',
-                                             'classes': [classname]}
-                    else:
-                        classname = value.__module__ + '.' + value.__name__
-                        current_dict[key] = {'type': 'object',
-                                             'classes': [classname]}
-                    if key in default_arguments.keys():
-                        current_dict[key]['default_value'] = default_arguments[key]
+                    current_dict.update(jsonschema_from_annotation(annotation, current_dict))
+                    if annotation[0] in default_arguments.keys():
+                        # Set default value for non-required arguments
+                        current_dict[annotation[0]]['default_value'] = default_arguments[annotation[0]]
         return jsonschemas
-                
+
 
     @classmethod
     def dict_to_object(cls, dict_):
+        """
+        Generic dict_to_object method
+        """
         if hasattr(cls, 'DictToObject'):
             return cls.DictToObject(dict_)
-        else:
-            # Using default
-            # TODO: use jsonschema 
-            return cls(**dict_)
-#        raise NotImplementedError('Class has no dict_to_object/DictToObject method')            
+        # Using default
+        # TODO: use jsonschema
+        return cls(**dict_)
+#        raise NotImplementedError('Class has no dict_to_object/DictToObject method')
 
     def cad_export(self,
                    fcstd_filepath=None,
-                   python_path='python', 
+                   python_path='python',
                    freecad_lib_path='/usr/lib/freecad/lib',
                    export_types=['fcstd']):
+        """
+        Generic CAD export method
+        """
         if fcstd_filepath is None:
             fcstd_filepath = 'An unnamed {}'.format(self.__class__.__name__)
-            
+
         if hasattr(self, 'volmdlr_primitives'):
             model = vm.VolumeModel([('', self.volmdlr_primitives())])
             model.FreeCADExport(fcstd_filepath, python_path=python_path,
@@ -296,15 +291,15 @@ class DessiaObject:
         or hasattr(self, 'FreeCADExport')\
         or hasattr(self, 'cad_export'):
             display.append({'angular_component': 'app-cad-viewer'})
-        
+
         return display
-    
+
 class InteractiveObjectCreator:
     def __init__(self):
         self.base_class_name = input('Base class of object (default=DessiaObject):')
         if self.base_class_name == '':
             self.base_class_name = 'DessiaObject'
-        
+
         valid = False
         while not valid:
             self.class_name = input('Class name: ')
@@ -312,10 +307,10 @@ class InteractiveObjectCreator:
                 print('invalid class name')
             else:
                 valid = True
-                
+
         self.properties = {}
         self.create_properties_jsonschema()
-        
+
     def create_properties_jsonschema(self):
         finished = False
         schema = {}
@@ -332,11 +327,48 @@ class InteractiveObjectCreator:
             print('3) string')
             print('4) object')
             print('5) array')
-                
-            type_ = input('Type (1-5): ')
-            
+
+#            type_ = input('Type (1-5): ')
+
         return schema
-    
+
+def jsonschema_from_annotation(annotation, jsonschema_element):
+    key, value = annotation
+    print(value, value.__dict__)
+    if value in TYPING_EQUIVALENCES.keys():
+        # Python Built-in type
+        jsonschema_element[key] = {'type': TYPING_EQUIVALENCES[value]}
+    elif isinstance(value, TypeVar):
+        # Several  classes are possible
+        classnames = [c.__module__+'.'+c.__name__ for c in value.__constraints__]
+        jsonschema_element[key] = {'type': 'object',
+                             'classes': classnames}
+    elif hasattr(value, '_name')\
+    and value._name in ['List', 'Sequence', 'Iterable']:
+        items_type = value.__args__[0]
+        if items_type in TYPING_EQUIVALENCES.keys():
+            jsonschema_element[key] = {'type': 'array',
+                                       'items': {
+                                           'type': TYPING_EQUIVALENCES[items_type]
+                                           }
+                                       }
+        else:
+            classname = items_type.__module__ + '.' + items_type.__name__
+            # List of a certain type
+            jsonschema_element[key] = {'type': 'array',
+                                       'items': {
+                                           'type': 'object',
+                                           'classes': [classname]
+                                           }
+                                       }
+    else:
+        # Dessia custom classes
+        print(value)
+        classname = value.__module__ + '.' + value.__name__
+        jsonschema_element[key] = {'type': 'object',
+                                   'classes': [classname]}
+    return jsonschema_element
+
 JSONSCHEMA_HEADER = {"definitions": {},
                      "$schema": "http://json-schema.org/draft-07/schema#",
                      "type": "object",
