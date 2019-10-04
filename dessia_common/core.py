@@ -365,11 +365,28 @@ def jsonschema_from_annotation(annotation, jsonschema_element):
                                            }
                                        }
     else:
-        # Dessia custom classes
-        classname = value.__module__ + '.' + value.__name__
-        jsonschema_element[key] = {'type': 'object',
-                                   'title': prettyname(key),
-                                   'classes': [classname]}
+        if hasattr(value, '_standalone_in_db'):
+            # Dessia custom classes
+            classname = value.__module__ + '.' + value.__name__
+            jsonschema_element[key] = {'type': 'object',
+                                       'title': prettyname(key),
+                                       'classes': [classname]}
+        else:
+            # Dataclasses
+            jsonschema_element[key] = jsonschema_from_dataclass(value)
+                
+    return jsonschema_element
+
+def jsonschema_from_dataclass(class_):
+    jsonschema_element = {'type': 'object',
+                          'properties' : {}}
+    for field in class_.__dataclass_fields__.values():
+        if field.type in TYPING_EQUIVALENCES.keys():
+            current_dict = {'type': TYPING_EQUIVALENCES[field.type],
+                            'title': prettyname(field.name)}
+        else:
+            current_dict = jsonschema_from_dataclass(field.type)
+        jsonschema_element['properties'][field.name] = current_dict
     return jsonschema_element
 
 def prettyname(namestr):
