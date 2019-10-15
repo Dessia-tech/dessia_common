@@ -118,7 +118,6 @@ class Block(dc.DessiaObject):
 
     @classmethod
     def dict_to_object(cls, dict_):
-        print(dict_)
         if dict_['block_class'] in ['InstanciateModel', 'ModelMethod',
                                     'ForEach', 'Function', 'ModelAttribute']:
             return eval(dict_['block_class']).dict_to_object(dict_)
@@ -130,14 +129,20 @@ class Block(dc.DessiaObject):
         required_inputs = []
         for i, input_ in enumerate(self.inputs):
             current_dict = {}
+            annotation = (str(i), input_.type_)
+            annotation_jsonschema = dc.jsonschema_from_annotation(annotation=annotation,
+                                                                  jsonschema_element=current_dict,
+                                                                  order=i,
+                                                                  title=dc.prettyname(input_.name))
+            current_dict.update(annotation_jsonschema[str(i)])
             if not isinstance(input_, (VariableWithDefaultValue, TypedVariableWithDefaultValue)):
-                required_inputs.append(input_)
+                required_inputs.append(str(i))
             else:
-                current_dict['default_value'] = input_.default_value
-            
-            annotation = (input_.name, input_.type_)
-            current_dict.update(dc.jsonschema_from_annotation(annotation, current_dict))
-            properties_dict[str(i)] = current_dict
+                current_dict.update(dc.set_default_value(current_dict,
+                                                         str(i),
+                                                         input_.default_value))
+            properties_dict[str(i)] = current_dict[str(i)]
+        jsonschemas['run']['required'] = required_inputs
         return jsonschemas
 
 
@@ -187,7 +192,12 @@ class InstanciateModel(Block):
 
     def evaluate(self, values):
         args = {var.name: values[var] for var in self.inputs}
-        return [self.object_class(**args)]
+        print(args)
+        try:
+            return [self.object_class.dict_to_object(args)]
+        except TypeError:
+            return [self.object_class(**args)]
+#        return [obj]
 
 
 class ModelMethod(Block):
@@ -514,6 +524,26 @@ class Workflow(Block):
         output = blocks[dict_['output'][0]].outputs[dict_['output'][2]]
 
         return cls(blocks, pipes, output)
+    
+    def dict_to_arguments(self, dict_, method):
+        arguments_values = {}
+        for i, input_ in enumerate(self.inputs):
+            if not isinstance(input_, (VariableWithDefaultValue, TypedVariableWithDefaultValue))\
+            or (isinstance(input_, (VariableWithDefaultValue, TypedVariableWithDefaultValue))
+                and str(i) in dict_):
+                value = dict_[str(i)]
+                arguments_values[input_.name] = value
+#                if hasattr(value, 'to_dict'):
+#                    serialized_value = value.to_dict()
+#                elif isinstance(value, (list, tuple)):
+#                    serialized_value = [v.to_dict()
+#                                        if hasattr(v, 'to_dict') else v
+#                                        for v in value]
+#                else:
+#                    serialized_value = value
+#                arguments_values[input_.name] = serialized_value
+        arguments = {'input_variables_values': arguments_values}
+        return arguments
 
     def _get_graph(self):
         if not self._utd_graph:
@@ -590,7 +620,12 @@ class Workflow(Block):
                 values[variable] = variable.default_value
                 activated_items[variable] = True
             else:
-                raise ValueError
+                if variable.name in input_variables_values:
+                    values[variable] = input_variables_values[variable.name]
+                    activated_items[variable] = True
+                else:
+                    raise ValueError
+                    
 
         something_activated = True
 

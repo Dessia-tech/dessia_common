@@ -214,12 +214,13 @@ class DessiaObject:
                 dict_[key] = value
         return dict_
 
-    @classmethod
-    def _method_jsonschemas(cls):
+    @property
+    def _method_jsonschemas(self):
         """
         Generates dynamic jsonschemas for methods of class
         """
         jsonschemas = {}
+        cls = type(self)
         valid_method_names = [m for m in dir(cls)\
                               if not m.startswith('_')]
         for method_name in valid_method_names:
@@ -245,12 +246,16 @@ class DessiaObject:
             if method.__annotations__:
                 jsonschemas[method_name] = deepcopy(JSONSCHEMA_HEADER)
                 jsonschemas[method_name]['required'] = required_arguments
-                for annotation in method.__annotations__.items():
-                    current_dict = jsonschemas[method_name]['properties']
-                    current_dict.update(jsonschema_from_annotation(annotation, current_dict))
+                for i, annotation in enumerate(method.__annotations__.items()): # !!! Not actually ordered
+#                    current_dict = jsonschemas[method_name]['properties']
+                    jsonschema_element = jsonschema_from_annotation(annotation, {}, i)[annotation[0]]
+                    
+#                    current_dict.update(jsonschema_from_annotation(annotation, current_dict, i))
+                    jsonschemas[method_name]['properties'][str(i)] = jsonschema_element
                     if annotation[0] in default_arguments.keys():
-                        # Set default value for non-required arguments
-                        current_dict[annotation[0]]['default_value'] = default_arguments[annotation[0]]
+                        jsonschemas[method_name]['properties'].update(set_default_value(jsonschemas[method_name]['properties'],
+                                                                                        str(i),
+                                                                                        default_arguments[annotation[0]]))
         return jsonschemas
 
 
@@ -332,24 +337,32 @@ class InteractiveObjectCreator:
 
         return schema
 
-def jsonschema_from_annotation(annotation, jsonschema_element):
+def jsonschema_from_annotation(annotation, jsonschema_element, order, title=None):
     key, value = annotation
+    if title is None:
+        title = prettyname(key)
     if value in TYPING_EQUIVALENCES.keys():
         # Python Built-in type
         jsonschema_element[key] = {'type': TYPING_EQUIVALENCES[value],
-                                   'title': prettyname(key)}
+                                   'title': title,
+                                   'editable' : True, # !!! Dynamic editable field ?
+                                   'order' : order}
     elif isinstance(value, TypeVar):
         # Several  classes are possible
         classnames = [c.__module__+'.'+c.__name__ for c in value.__constraints__]
         jsonschema_element[key] = {'type': 'object',
                                    'classes': classnames,
-                                   'title': prettyname(key)}
+                                   'title': title,
+                                   'editable' : True, # !!! Dynamic editable field ?
+                                   'order' : order}
     elif hasattr(value, '_name')\
     and value._name in ['List', 'Sequence', 'Iterable']:
         items_type = value.__args__[0]
         if items_type in TYPING_EQUIVALENCES.keys():
             jsonschema_element[key] = {'type': 'array',
-                                       'title': prettyname(key),
+                                       'title': title,
+                                       'order' : order,
+                                       'editable' : True, # !!! Dynamic editable field ?
                                        'items': {
                                            'type': TYPING_EQUIVALENCES[items_type]
                                            }
@@ -358,7 +371,9 @@ def jsonschema_from_annotation(annotation, jsonschema_element):
             classname = items_type.__module__ + '.' + items_type.__name__
             # List of a certain type
             jsonschema_element[key] = {'type': 'array',
-                                       'title': prettyname(key),
+                                       'title': title,
+                                       'order' : order,
+                                       'editable' : True, # !!! Dynamic editable field ?
                                        'items': {
                                            'type': 'object',
                                            'classes': [classname]
@@ -369,25 +384,69 @@ def jsonschema_from_annotation(annotation, jsonschema_element):
             # Dessia custom classes
             classname = value.__module__ + '.' + value.__name__
             jsonschema_element[key] = {'type': 'object',
-                                       'title': prettyname(key),
+                                       'title': title,
+                                       'order' : order,
+                                       'editable' : True, # !!! Dynamic editable field ?
                                        'classes': [classname]}
         else:
             # Dataclasses
             jsonschema_element[key] = jsonschema_from_dataclass(value)
+            jsonschema_element[key]['title'] = title
+            jsonschema_element[key]['order'] = order
+            jsonschema_element[key]['editable'] = True # !!! Dynamic editable field ?
                 
     return jsonschema_element
 
 def jsonschema_from_dataclass(class_):
     jsonschema_element = {'type': 'object',
                           'properties' : {}}
-    for field in class_.__dataclass_fields__.values():
+    for i, field in enumerate(class_.__dataclass_fields__.values()): # !!! Not actually ordered !
         if field.type in TYPING_EQUIVALENCES.keys():
             current_dict = {'type': TYPING_EQUIVALENCES[field.type],
-                            'title': prettyname(field.name)}
+                            'title': prettyname(field.name),
+                            'order': i,
+                            'editable': True} # !!! Dynamic editable field ?
         else:
             current_dict = jsonschema_from_dataclass(field.type)
+            current_dict['order'] = i
+            current_dict['editable'] = True # !!! Dynamic editable field ?
         jsonschema_element['properties'][field.name] = current_dict
     return jsonschema_element
+
+def set_default_value(jsonschema_element, key, default_value):
+    if isinstance(default_value, tuple(TYPING_EQUIVALENCES.keys()))\
+    or default_value is None:
+        jsonschema_element[key]['default_value'] = default_value
+    elif isinstance(default_value, (list, tuple)):
+        raise NotImplementedError('List as default values not implemented')
+    else:
+        object_dict = default_value.to_dict()
+        jsonschema_element[key]['default_value'] = object_dict
+    return jsonschema_element
+
+def serialize_dict(dict_):
+    serialized_dict = {}
+    for key, value in dict_.items():
+        if hasattr(value, 'to_dict'):
+            serialized_value = value.to_dict()
+        elif isinstance(value, dict):
+            serialized_value = serialize_dict(value)
+        elif isinstance(value, (list, tuple)):
+            serialized_value = []
+            for val in value:
+                if hasattr(val, 'to_dict'):
+                    serialized_value.append(val.to_dict())
+                elif isinstance(val, dict):
+                    serialized_value.append(serialize_dict(val))
+                elif isinstance(val, (list, tuple)):
+                    raise NotImplementedError('serialized function not implemented for nested sequences')
+                else:
+                    serialized_value.append(val)
+        else:
+            serialized_value = value
+        serialized_dict[key] = serialized_value
+    return serialized_dict
+    
 
 def prettyname(namestr):
     prettyname = ''
