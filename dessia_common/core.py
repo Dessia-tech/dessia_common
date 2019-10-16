@@ -9,9 +9,10 @@ Created on Fri Jan  5 12:17:30 2018
 from functools import reduce
 import collections
 from copy import deepcopy
-from typing import List, Sequence, Iterable, TypeVar
+from typing import List, Sequence, Iterable, TypeVar, Union
 import inspect
 import volmdlr as vm
+from importlib import import_module
 
 class Metadata:
     """
@@ -432,21 +433,65 @@ def serialize_dict(dict_):
         elif isinstance(value, dict):
             serialized_value = serialize_dict(value)
         elif isinstance(value, (list, tuple)):
-            serialized_value = []
-            for val in value:
-                if hasattr(val, 'to_dict'):
-                    serialized_value.append(val.to_dict())
-                elif isinstance(val, dict):
-                    serialized_value.append(serialize_dict(val))
-                elif isinstance(val, (list, tuple)):
-                    raise NotImplementedError('serialized function not implemented for nested sequences')
-                else:
-                    serialized_value.append(val)
+            serialized_value = serialize_sequence(value)
         else:
             serialized_value = value
         serialized_dict[key] = serialized_value
     return serialized_dict
+
+def serialize_sequence(seq):
+    serialized_sequence = []
+    for value in seq:
+        if hasattr(value, 'to_dict'):
+            serialized_sequence.append(value.to_dict())
+        elif isinstance(value, dict):
+            serialized_sequence.append(serialize_dict(value))
+        elif isinstance(value, (list, tuple)):
+            serialized_sequence.append(serialize_sequence(value))
+        else:
+            serialized_sequence.append(value)
+    return serialized_sequence
     
+def deserialize_argument(type_, argument):
+    if isinstance(type_, TypeVar):
+        # Get all classes
+        classes = list(type_.__constraints__)
+        instantiated = False
+        while instantiated is False:
+            # Find the last class in the hierarchy
+            hierarchy_lengths = [len(cls.mro()) for cls in classes]
+            children_class_index = hierarchy_lengths.index(max(hierarchy_lengths))
+            children_class = classes[children_class_index]
+            try:
+                # Try to deserialize
+                # Throws KeyError if we try to put wrong dict into dict_to_object
+                # This means we try to instantiate a children class with a parent dict_to_object
+                deserialized_argument = children_class.dict_to_object(argument)
+                
+                # If it succeeds we have the right class and instantiated object
+                instantiated = True
+            except KeyError:
+                # This is not the right class, we should go see the parent
+                classes.remove(children_class)
+    elif hasattr(type_, '_name')\
+    and type_._name in ['List', 'Sequence', 'Iterable']:
+        sequence_subtype = type_.__args__[0]
+        deserialized_argument = [deserialize_argument(sequence_subtype, arg) for arg in argument]
+    else:
+         if type_ in TYPING_EQUIVALENCES.keys():
+             if isinstance(argument, type_):
+                 deserialized_argument = argument
+             else:
+                 raise TypeError('Given built-in type and argument are incompatible : {} and {}'.format(type(argument), type_))
+         elif hasattr(type_, '__dataclass_fields__'):
+             try:
+                 _ = type_(**argument)
+                 deserialized_argument = argument
+             except TypeError:
+                 raise
+         else:
+             deserialized_argument = type_.dict_to_object(argument)
+    return deserialized_argument
 
 def prettyname(namestr):
     prettyname = ''
