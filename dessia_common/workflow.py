@@ -192,12 +192,7 @@ class InstanciateModel(Block):
 
     def evaluate(self, values):
         args = {var.name: values[var] for var in self.inputs}
-        print(args)
-        try:
-            return [self.object_class.dict_to_object(args)]
-        except TypeError:
-            return [self.object_class(**args)]
-#        return [obj]
+        return [self.object_class(**args)]
 
 
 class ModelMethod(Block):
@@ -532,16 +527,8 @@ class Workflow(Block):
             or (isinstance(input_, (VariableWithDefaultValue, TypedVariableWithDefaultValue))
                 and str(i) in dict_):
                 value = dict_[str(i)]
-                arguments_values[input_.name] = value
-#                if hasattr(value, 'to_dict'):
-#                    serialized_value = value.to_dict()
-#                elif isinstance(value, (list, tuple)):
-#                    serialized_value = [v.to_dict()
-#                                        if hasattr(v, 'to_dict') else v
-#                                        for v in value]
-#                else:
-#                    serialized_value = value
-#                arguments_values[input_.name] = serialized_value
+                deserialized_value = dc.deserialize_argument(input_.type_, value)
+                arguments_values[input_.name] = deserialized_value
         arguments = {'input_variables_values': arguments_values}
         return arguments
 
