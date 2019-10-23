@@ -290,14 +290,12 @@ class DessiaObject:
         else:
             raise NotImplementedError
 
-    @property
     def _display_angular(self):
         display = []
         if hasattr(self, 'CADExport')\
         or hasattr(self, 'FreeCADExport')\
         or hasattr(self, 'cad_export'):
             display.append({'angular_component': 'app-cad-viewer'})
-
         return display
 
 class InteractiveObjectCreator:
@@ -484,11 +482,8 @@ def deserialize_argument(type_, argument):
              else:
                  raise TypeError('Given built-in type and argument are incompatible : {} and {}'.format(type(argument), type_))
          elif hasattr(type_, '__dataclass_fields__'):
-             try:
-                 _ = type_(**argument)
-                 deserialized_argument = argument
-             except TypeError:
-                 raise
+             _ = type_(**argument)
+             deserialized_argument = argument
          else:
              deserialized_argument = type_.dict_to_object(argument)
     return deserialized_argument
