@@ -259,8 +259,8 @@ class Function(Block):
         self.function = function
         inputs = []
         for arg_name in inspect.signature(function).parameters.keys():
-            inputs.append(Variable(arg_name, function.__annotations__[arg_name]))
-        outputs = [Variable('Output function', function.__annotations__['return'])]
+            inputs.append(TypedVariable(arg_name, function.__annotations__[arg_name]))
+        outputs = [TypedVariable('Output function', function.__annotations__['return'])]
 
         Block.__init__(self, inputs, outputs)
 
@@ -324,6 +324,24 @@ class ForEach(Block):
             output_values.append(workflow_run.output_value)
         return [output_values]
 
+class TradeOff(Block):
+    def __init__(self, filters):
+        self.filters = filters
+        inputs = [Variable('input_list')]
+        outputs = [Variable('output_list')]
+        Block.__init__(self, inputs, outputs)
+    
+    def evaluate(self, values):
+        ouput_values = []
+        for value in values:
+            valid = False
+            for filter_ in self.filters:
+                attribute_path = filter_['path']
+                operator = filter_['operator']
+                attribute = getattr()
+#                if operator == 'lte' and value:
+        return ouput_values
+                    
 
 class ModelAttribute(Block):
     def __init__(self, attribute_name):
@@ -653,6 +671,7 @@ class Workflow(Block):
                         output_values = block.evaluate({i: values[i]\
                                                         for i in block.inputs})
                         for output, output_value in zip(block.outputs, output_values):
+                            print(output_value)
                             values[output] = output_value
                             activated_items[output] = True
 
@@ -755,9 +774,69 @@ class Workflow(Block):
             file.write(rendered_template.encode('utf-8'))
 
         webbrowser.open('file://' + temp_file)
+        
+    def find_variable(self, variable_name):
+        for variable in self.inputs + self.outputs:
+            if variable.name == variable_name:
+                return variable, variable.type_
+        for block in self.blocks:
+            for block_variable in block.outputs:
+                if block_variable.name == variable_name and isinstance(block, ModelAttribute):
+                    for variable in self.inputs + self.outputs:
+                        if variable.name == block.attribute_name:
+                            return block_variable, variable.type_
+        return None, None
 
 
 class WorkflowRun(dc.DessiaObject):
+    _standalone_in_db = True
+    _jsonschema = {
+        "definitions": {},
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "title": "WorkflowRun Base Schema",
+        "required": [],
+        "properties": {
+            "workflow" : {
+                "type" : "object",
+                "title" : "Workflow",
+                "classes" : ["dessia_common.workflow.Workflow"],
+                "order" : 0,
+                "editable" : False,
+                "description" : "Workflow"
+                },
+            'values': {
+                "type" : "object",
+                "properties": {},
+                "title" : "Values",
+                "description" : "Input and output values",
+                "editable" : False,
+                "order" : 1
+                },
+            'start_time': {
+                "type": "number",
+                "title" : "Start Time",
+                "editable": False,
+                "description": "Start time of simulation",
+                "order" : 2
+                },
+            'end_time': {
+                "type": "number",
+                "title" : "End Time",
+                "editable": False,
+                "description": "End time of simulation",
+                "order" : 3
+                 },
+            'log': {
+                "type": "string",
+                "title" : "Log",
+                "editable": False,
+                "description": "Log",
+                "order" : 4
+                 }
+             }
+         }
+    
     def __init__(self, workflow, values, start_time, end_time, log):
         self.workflow = workflow
         self.values = values
@@ -768,6 +847,48 @@ class WorkflowRun(dc.DessiaObject):
         self.end_time = end_time
         self.execution_time = end_time - start_time
         self.log = log
+    
+    def to_dict(self):
+        dict_ = {}
+        dict_['workflow'] = self.workflow.to_dict()
+        values_dict = {}
+        for key, value in self.values.items():
+            if isinstance(value, dc.DessiaObject):
+                values_dict[key.name] = value.to_dict()
+            elif isinstance(value, (list, tuple)):
+                values_dict[key.name] = dc.serialize_sequence(value)
+            else:
+                values_dict[key.name] = value
+        dict_['values'] = values_dict
+        dict_['start_time'] = self.start_time
+        dict_['end_time'] = self.end_time
+        dict_['execution_time'] = self.execution_time
+        dict_['log'] = self.log
+        return dict_
+
+    @classmethod
+    def dict_to_object(cls, dict_):
+        workflow = Workflow.dict_to_object(dict_['workflow'])
+        values = {}
+        for variable_name, variable_dict in dict_['values'].items():
+            variable, variable_type = workflow.find_variable(variable_name)
+            if variable is not None:
+                print(variable.name, variable_type)
+                if variable_dict is not None:
+                    value = dc.deserialize_argument(variable_type, variable_dict)
+                else:
+                    value = None
+                values[variable] = value
+            else:
+                print(variable_name)
+        start_time = dict_['start_time']
+        end_time = dict_['end_time']
+        log = dict_['log']
+        return cls(workflow=workflow,
+                   values=values,
+                   start_time=start_time,
+                   end_time=end_time,
+                   log=log)
 
 def set_inputs(method, inputs=[]):
     args_specs = inspect.getfullargspec(method)
