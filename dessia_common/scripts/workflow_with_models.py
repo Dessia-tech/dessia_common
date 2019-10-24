@@ -8,10 +8,15 @@ A simple workflow composed of functions
 import dessia_common.workflow as workflow
 from typing import List
 
+class Submodel:
+    def __init__(self, subvalue:int, name:str=''):
+        self.subvalue = subvalue
+        self.name = name
 
 class Model:
-    def __init__(self, value:int):
+    def __init__(self, value:int, submodel:Submodel):
         self.value = value
+        self.submodel = submodel
 
 class Generator:
     def __init__(self, parameter:int, nb_solutions:int=25):
@@ -19,7 +24,8 @@ class Generator:
         self.nb_solutions = nb_solutions
         
     def generate(self)->None:
-        self.models = [Model(self.parameter+i) for i in range(self.nb_solutions)]
+        submodels = [Submodel(self.parameter*i) for i in range(self.nb_solutions)]
+        self.models = [Model(self.parameter+i, submodels[i]) for i in range(self.nb_solutions)]
 
 class Optimizer:
     def __init__(self, model_to_optimize:Model):
@@ -47,7 +53,10 @@ optimization_workflow = workflow.Workflow([instanciate_optimizer, optimization,
 
 parallel_optimization = workflow.ForEach(optimization_workflow, instanciate_optimizer.inputs[0])
 
-filter_sort = workflow.TradeOff()
+filters = [{'attribute' : 'value', 'operator' : 'gt', 'bound' : 9},
+           {'attribute' : 'submodel.subvalue', 'operator' : 'lt', 'bound' : 100}]
+
+filter_sort = workflow.TradeOff(filters)
 
 pipe_1 = workflow.Pipe(instanciate_generator.outputs[0], generator_generate.inputs[0])
 pipe_2 = workflow.Pipe(generator_generate.outputs[1], attribute_selection.inputs[0])
@@ -65,7 +74,7 @@ demo_workflow = workflow.Workflow([instanciate_generator,
 
 demo_workflow.plot_graph()
 
-input_values = {instanciate_generator.inputs[0]: 3.21}
+input_values = {instanciate_generator.inputs[0]: 5}
 
 demo_workflow_run = demo_workflow.run(input_values, verbose=True)
 
