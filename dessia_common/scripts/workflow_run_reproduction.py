@@ -120,7 +120,9 @@ input_values = {block_ebo.inputs[0]: cells.CELL1_2RC,
                                       comb_profile_end]}
 
 workflow = wf.Workflow(blocks, pipes, optimize_ebo.outputs[0])
-#workflow.run(input_values)
+workflow_run = workflow.run(input_values)
+d = workflow_run.to_dict()
+w = wf.WorkflowRun.dict_to_object(d)
 #methods_jsonschemas = workflow._method_jsonschemas
 #run_default_dict = models.get_jsonschema_default_dict(methods_jsonschemas['run'])
 #serialized_run_default_dict = workflow.dict_to_arguments(run_default_dict, 'run')['input_variables_values']
