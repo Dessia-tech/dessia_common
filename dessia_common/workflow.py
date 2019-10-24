@@ -119,7 +119,8 @@ class Block(dc.DessiaObject):
     @classmethod
     def dict_to_object(cls, dict_):
         if dict_['block_class'] in ['InstanciateModel', 'ModelMethod',
-                                    'ForEach', 'Function', 'ModelAttribute']:
+                                    'ForEach', 'Function', 'ModelAttribute',
+                                    'TradeOff']:
             return eval(dict_['block_class']).dict_to_object(dict_)
     
     @property
@@ -331,16 +332,54 @@ class TradeOff(Block):
         outputs = [Variable('output_list')]
         Block.__init__(self, inputs, outputs)
     
+    def __eq__(self, other_block):
+        if not Block.__eq__(self, other_block):
+            return False
+        return self.filters == other_block.filters
+    
+    def __hash__(self):
+        return sum([hash(v) for f in self.filters for v in f.values()])
+    
+    def _display_angular(self):
+        displays = [{'angular_component': 'results',
+                     'filters': self.filters}]
+        return displays
+    
+    def to_dict(self):
+        dict_ = Block.to_dict(self)
+        dict_.update({'filters': self.filters})
+        return dict_
+
+    @classmethod
+    def dict_to_object(cls, dict_):
+        return cls(dict_['filters'])
+    
     def evaluate(self, values):
         ouput_values = []
-        for value in values:
-            valid = False
+        objects = values[self.inputs[0]]
+        for object_ in objects:
+            valid = True
             for filter_ in self.filters:
-                attribute_path = filter_['path']
+                attribute_path = filter_['attribute']
                 operator = filter_['operator']
-                attribute = getattr()
-#                if operator == 'lte' and value:
-        return ouput_values
+                bound = filter_['bound']
+                attribute = dc.getdeepattr(object_, attribute_path)
+                if operator == 'lte' and attribute > bound:
+                    valid = False
+                if operator == 'gte' and attribute < bound:
+                    valid = False
+
+                if operator == 'lt' and attribute >= bound:
+                    valid = False
+                if operator == 'gt' and attribute <= bound:
+                    valid = False
+
+                if operator == 'eq' and attribute != bound:
+                    valid = False
+
+            if valid:
+                ouput_values.append(object_)
+        return [ouput_values]
                     
 
 class ModelAttribute(Block):
@@ -502,13 +541,16 @@ class Workflow(Block):
             return False
         return False
 
-    @property
     def _display_angular(self):
         nodes, edges = self.jointjs_data()
-        display_angular = [{'angular_component': 'workflow',
-                            'nodes': nodes,
-                            'edges': edges}]
-        return display_angular
+        displays = []
+        for block in self.blocks:
+            if isinstance(block, TradeOff):
+                displays.extend(block._display_angular())
+        displays.extend({'angular_component': 'workflow',
+                         'nodes': nodes,
+                         'edges': edges})
+        return displays
 
     def to_dict(self):
 
@@ -526,7 +568,10 @@ class Workflow(Block):
 
     @classmethod
     def dict_to_object(cls, dict_):
+        print(dict_)
         blocks = [Block.dict_to_object(d) for d in dict_['blocks']]
+
+        print(blocks)
 
         pipes = []
         for (ib1, _, ip1), (ib2, _, ip2) in dict_['pipes']:
@@ -684,7 +729,9 @@ class Workflow(Block):
         log += log_line + '\n'
         if verbose:
             print(log_line)
-        return WorkflowRun(self, values, start_time, end_time, log)
+        
+        workflow_run_values = [values[variable] for variable in self.variables]
+        return WorkflowRun(self, workflow_run_values, start_time, end_time, log)
     
     def mxgraph_data(self):
         nodes = []
@@ -775,17 +822,14 @@ class Workflow(Block):
 
         webbrowser.open('file://' + temp_file)
         
-    def find_variable(self, variable_name):
-        for variable in self.inputs + self.outputs:
-            if variable.name == variable_name:
-                return variable, variable.type_
+    def find_variable_type(self, variable):
         for block in self.blocks:
-            for block_variable in block.outputs:
-                if block_variable.name == variable_name and isinstance(block, ModelAttribute):
-                    for variable in self.inputs + self.outputs:
-                        if variable.name == block.attribute_name:
-                            return block_variable, variable.type_
-        return None, None
+            for block_variable in block.outputs: # !!! just ouputs is  a workaround
+                if block_variable.name == variable.name and isinstance(block, ModelAttribute): # !!! isinstance is just a workaround
+                    for var in self.inputs + self.outputs:
+                        if var.name == block.attribute_name:
+                            return var.type_
+        return None
 
 
 class WorkflowRun(dc.DessiaObject):
@@ -806,8 +850,11 @@ class WorkflowRun(dc.DessiaObject):
                 "description" : "Workflow"
                 },
             'values': {
-                "type" : "object",
-                "properties": {},
+                "type" : "array",
+                "items": {
+                    "type" : "object",
+                    "classes" : "*"
+                    },
                 "title" : "Values",
                 "description" : "Input and output values",
                 "editable" : False,
@@ -841,7 +888,9 @@ class WorkflowRun(dc.DessiaObject):
         self.workflow = workflow
         self.values = values
 
-        self.output_value = self.values[self.workflow.outputs[0]]
+        output_index = workflow.variables.index(workflow.outputs[0])
+        self.output_value = values[output_index]
+#        self.output_value = self.values[self.workflow.outputs[0]]
 
         self.start_time = start_time
         self.end_time = end_time
@@ -851,15 +900,15 @@ class WorkflowRun(dc.DessiaObject):
     def to_dict(self):
         dict_ = {}
         dict_['workflow'] = self.workflow.to_dict()
-        values_dict = {}
-        for key, value in self.values.items():
-            if isinstance(value, dc.DessiaObject):
-                values_dict[key.name] = value.to_dict()
-            elif isinstance(value, (list, tuple)):
-                values_dict[key.name] = dc.serialize_sequence(value)
-            else:
-                values_dict[key.name] = value
-        dict_['values'] = values_dict
+        dict_['values'] = dc.serialize_sequence(self.values)
+#        values_types = []
+#        for variable in self.workflow.variables:
+#            if isinstance(variable, (TypedVariable, TypedVariableWithDefaultValue)):
+#                values_types.append(variable.type_)
+#            else:
+#                type_ = self.workflow.find_variable_type(variable)
+#                values_types.append(type_)
+        dict_['values_types'] = dc.recursive_type(self.values)
         dict_['start_time'] = self.start_time
         dict_['end_time'] = self.end_time
         dict_['execution_time'] = self.execution_time
@@ -869,18 +918,12 @@ class WorkflowRun(dc.DessiaObject):
     @classmethod
     def dict_to_object(cls, dict_):
         workflow = Workflow.dict_to_object(dict_['workflow'])
-        values = {}
-        for variable_name, variable_dict in dict_['values'].items():
-            variable, variable_type = workflow.find_variable(variable_name)
-            if variable is not None:
-                print(variable.name, variable_type)
-                if variable_dict is not None:
-                    value = dc.deserialize_argument(variable_type, variable_dict)
-                else:
-                    value = None
-                values[variable] = value
-            else:
-                print(variable_name)
+        values = dc.recursive_instantiation(dict_['values_types'], dict_['values'])
+#        for i, (value, type_) in enumerate(zip(dict_['values'], dict_['values_types'])):
+#            if value is not None and type_ is not None:
+#                values.append(dc.deserialize_argument(type_, value))
+#            else:
+#                values.append(None)
         start_time = dict_['start_time']
         end_time = dict_['end_time']
         log = dict_['log']
