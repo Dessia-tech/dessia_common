@@ -497,6 +497,47 @@ def prettyname(namestr):
             prettyname += ' '
     return prettyname
 
+def getdeepattr(obj, attr):
+    return reduce(getattr, [obj] + attr.split('.'))
+
+def recursive_type(obj):
+    if isinstance(obj, tuple(list(TYPING_EQUIVALENCES.keys()) + [dict])):
+        type_ = TYPES_STRINGS[type(obj)]
+    elif isinstance(obj, DessiaObject):
+        type_ = obj.__module__ + '.' + obj.__class__.__name__
+    elif isinstance(obj, (list, tuple)):
+        type_ = []
+        for element in obj:
+            type_.append(recursive_type(element))
+    elif obj is None:
+        type_ = None
+    else:
+        print(obj)
+        raise NotImplementedError
+    return type_
+
+def recursive_instantiation(types, values):
+    instantiated_values = []
+    for type_, value in zip(types, values):
+        if type_ in TYPES_STRINGS.values():
+            instantiated_values.append(eval(type_)(value))
+#        if type_ in list(TYPING_EQUIVALENCES.keys()) + [dict, None]:
+#            instantiated_values.append(value)
+        elif isinstance(type_, str):
+            exec('import ' + type_.split('.')[0])
+            class_ = eval(type_)
+            if inspect.isclass(class_):
+                instantiated_values.append(class_.dict_to_object(value))
+            else:
+                raise NotImplementedError
+        elif isinstance(type_, (list, tuple)):
+            instantiated_values.append(recursive_instantiation(type_, value))
+        elif type_ is None:
+            instantiated_values.append(value)
+        else:
+            print(type_)
+            raise NotImplementedError
+    return instantiated_values
 JSONSCHEMA_HEADER = {"definitions": {},
                      "$schema": "http://json-schema.org/draft-07/schema#",
                      "type": "object",
@@ -506,3 +547,6 @@ TYPING_EQUIVALENCES = {int: 'number',
                        float: 'number',
                        bool: 'boolean',
                        str: 'string'}
+
+TYPES_STRINGS = {int: 'int', float: 'float', bool: 'boolean', str: 'str',
+                 list: 'list', tuple: 'tuple', dict: 'dict'}
