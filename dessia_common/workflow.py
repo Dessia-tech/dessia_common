@@ -120,7 +120,7 @@ class Block(dc.DessiaObject):
     def dict_to_object(cls, dict_):
         if dict_['block_class'] in ['InstanciateModel', 'ModelMethod',
                                     'ForEach', 'Function', 'ModelAttribute',
-                                    'TradeOff']:
+                                    'Filter']:
             return eval(dict_['block_class']).dict_to_object(dict_)
     
     @property
@@ -325,7 +325,7 @@ class ForEach(Block):
             output_values.append(workflow_run.output_value)
         return [output_values]
 
-class TradeOff(Block):
+class Filter(Block):
     def __init__(self, filters):
         self.filters = filters
         inputs = [Variable('input_list')]
@@ -542,20 +542,16 @@ class Workflow(Block):
         return False
 
     def _display_angular(self):
-        nodes, edges = self.jointjs_data()
         displays = []
-        for block in self.blocks:
-            if isinstance(block, TradeOff):
-                displays.extend(block._display_angular())
-        displays.extend({'angular_component': 'workflow',
+        nodes, edges = self.jointjs_data()
+        displays.extend([{'angular_component': 'workflow',
                          'nodes': nodes,
-                         'edges': edges})
+                         'edges': edges}])
         return displays
 
     def to_dict(self):
 
         blocks = [b.to_dict() for b in self.blocks]
-
         pipes = []
         for pipe in self.pipes:
             pipes.append((self.variable_indices(pipe.input_variable),
@@ -568,11 +564,7 @@ class Workflow(Block):
 
     @classmethod
     def dict_to_object(cls, dict_):
-        print(dict_)
         blocks = [Block.dict_to_object(d) for d in dict_['blocks']]
-
-        print(blocks)
-
         pipes = []
         for (ib1, _, ip1), (ib2, _, ip2) in dict_['pipes']:
             variable1 = blocks[ib1].outputs[ip1]
@@ -730,8 +722,10 @@ class Workflow(Block):
         if verbose:
             print(log_line)
         
-        workflow_run_values = [values[variable] for variable in self.variables]
-        return WorkflowRun(self, workflow_run_values, start_time, end_time, log)
+#        workflow_run_values = [values[variable] for variable in self.variables]
+#        self.variables.index(self.outputs[0])
+        output_value = values[self.outputs[0]]
+        return WorkflowRun(self, output_value, start_time, end_time, log)
     
     def mxgraph_data(self):
         nodes = []
@@ -849,7 +843,7 @@ class WorkflowRun(dc.DessiaObject):
                 "editable" : False,
                 "description" : "Workflow"
                 },
-            'values': {
+            'output_value': {
                 "type" : "array",
                 "items": {
                     "type" : "object",
@@ -884,12 +878,12 @@ class WorkflowRun(dc.DessiaObject):
              }
          }
     
-    def __init__(self, workflow, values, start_time, end_time, log):
+    def __init__(self, workflow, output_value, start_time, end_time, log):
         self.workflow = workflow
-        self.values = values
+#        self.values = values
 
-        output_index = workflow.variables.index(workflow.outputs[0])
-        self.output_value = values[output_index]
+#        output_index = workflow.variables.index(workflow.outputs[0])
+        self.output_value = output_value
 #        self.output_value = self.values[self.workflow.outputs[0]]
 
         self.start_time = start_time
@@ -897,10 +891,28 @@ class WorkflowRun(dc.DessiaObject):
         self.execution_time = end_time - start_time
         self.log = log
     
+    def __eq__(self, other_workflow_run):
+        equal = (self.workflow == other_workflow_run.workflow
+                 and self.output_value == other_workflow_run.output_value)
+        return equal
+    
+    def __hash__(self):
+        return hash(self.workflow) + sum([hash(v) for v in self.output_value])
+
+    def _display_angular(self):
+        displays = self.workflow._display_angular()
+        
+        for block in self.workflow.blocks:
+            if isinstance(block, Filter):
+                filter_display = block._display_angular()
+                filter_display[0]['values'] = 'output_value'
+                displays.extend(filter_display)
+        return displays
+    
     def to_dict(self):
         dict_ = {}
         dict_['workflow'] = self.workflow.to_dict()
-        dict_['values'] = dc.serialize_sequence(self.values)
+        dict_['output_value'] = dc.serialize_sequence(self.output_value)
 #        values_types = []
 #        for variable in self.workflow.variables:
 #            if isinstance(variable, (TypedVariable, TypedVariableWithDefaultValue)):
@@ -908,7 +920,7 @@ class WorkflowRun(dc.DessiaObject):
 #            else:
 #                type_ = self.workflow.find_variable_type(variable)
 #                values_types.append(type_)
-        dict_['values_types'] = dc.recursive_type(self.values)
+        dict_['output_value_type'] = dc.recursive_type(self.output_value)
         dict_['start_time'] = self.start_time
         dict_['end_time'] = self.end_time
         dict_['execution_time'] = self.execution_time
@@ -918,7 +930,7 @@ class WorkflowRun(dc.DessiaObject):
     @classmethod
     def dict_to_object(cls, dict_):
         workflow = Workflow.dict_to_object(dict_['workflow'])
-        values = dc.recursive_instantiation(dict_['values_types'], dict_['values'])
+        output_value = dc.recursive_instantiation(dict_['output_value_type'], dict_['output_value'])
 #        for i, (value, type_) in enumerate(zip(dict_['values'], dict_['values_types'])):
 #            if value is not None and type_ is not None:
 #                values.append(dc.deserialize_argument(type_, value))
@@ -928,7 +940,7 @@ class WorkflowRun(dc.DessiaObject):
         end_time = dict_['end_time']
         log = dict_['log']
         return cls(workflow=workflow,
-                   values=values,
+                   output_value=output_value,
                    start_time=start_time,
                    end_time=end_time,
                    log=log)
