@@ -53,10 +53,10 @@ optimization_workflow = workflow.Workflow([instanciate_optimizer, optimization,
 
 parallel_optimization = workflow.ForEach(optimization_workflow, instanciate_optimizer.inputs[0])
 
-filters = [{'attribute' : 'value', 'operator' : 'gt', 'bound' : 9},
-           {'attribute' : 'submodel.subvalue', 'operator' : 'lt', 'bound' : 100}]
+filters = [{'attribute' : 'value', 'operator' : 'gt', 'bound' : 0},
+           {'attribute' : 'submodel.subvalue', 'operator' : 'lt', 'bound' : 200}]
 
-filter_sort = workflow.TradeOff(filters)
+filter_sort = workflow.Filter(filters)
 
 pipe_1 = workflow.Pipe(instanciate_generator.outputs[0], generator_generate.inputs[0])
 pipe_2 = workflow.Pipe(generator_generate.outputs[1], attribute_selection.inputs[0])

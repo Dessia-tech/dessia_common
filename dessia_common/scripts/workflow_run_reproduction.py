@@ -10,6 +10,8 @@ from powerpack.optimization import electrical as eo
 from dessia_common import Metadata, workflow as wf
 from software_api import models
 from dessia_api_client import Client
+import dessia_common as dc
+
 
 # =============================================================================
 # Vehicle specs
@@ -102,11 +104,18 @@ block_ebo = wf.InstanciateModel(eo.ElecBatteryOptimizer)
 optimize_ebo = wf.ModelMethod(eo.ElecBatteryOptimizer, 'Optimize')
 attribute_selection_ebo = wf.ModelAttribute('powerpack_electric_simulators')
 
-blocks.extend([block_ebo, optimize_ebo, attribute_selection_ebo])
+filters = [{'attribute' : 'bms.battery.number_module_parallel', 'operator' : 'gt', 'bound' : 2},
+           {'attribute' : 'bms.battery.number_module_serie', 'operator' : 'lte', 'bound' : 10},
+           {'attribute' : 'bms.number_cells', 'operator' : 'gte', 'bound' : 750},
+           {'attribute' : 'bms.number_cells', 'operator' : 'lte', 'bound' : 800},
+           {'attribute' : 'bms.battery.number_cells', 'operator' : 'gt', 'bound' : 700}]
+
+filter_sort = wf.Filter(filters)
+
+blocks.extend([block_ebo, optimize_ebo, attribute_selection_ebo, filter_sort])
 pipes = [wf.Pipe(block_ebo.outputs[0], optimize_ebo.inputs[0]),
-         wf.Pipe(optimize_ebo.outputs[1], attribute_selection_ebo.inputs[0])]
-
-
+         wf.Pipe(optimize_ebo.outputs[1], attribute_selection_ebo.inputs[0]),
+         wf.Pipe(attribute_selection_ebo.outputs[0], filter_sort.inputs[0])]
 
 input_values = {block_ebo.inputs[0]: cells.CELL1_2RC,
                 block_ebo.inputs[1]: limits_voltage_module,
@@ -119,10 +128,10 @@ input_values = {block_ebo.inputs[0]: cells.CELL1_2RC,
                                       comb_profile_wltp,
                                       comb_profile_end]}
 
-workflow = wf.Workflow(blocks, pipes, optimize_ebo.outputs[0])
+workflow = wf.Workflow(blocks, pipes, filter_sort.outputs[0])
 workflow_run = workflow.run(input_values)
-d = workflow_run.to_dict()
-w = wf.WorkflowRun.dict_to_object(d)
+#d = workflow_run.to_dict()
+#w = wf.WorkflowRun.dict_to_object(d)
 #methods_jsonschemas = workflow._method_jsonschemas
 #run_default_dict = models.get_jsonschema_default_dict(methods_jsonschemas['run'])
 #serialized_run_default_dict = workflow.dict_to_arguments(run_default_dict, 'run')['input_variables_values']
