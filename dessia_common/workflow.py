@@ -32,6 +32,12 @@ class Variable(dc.DessiaObject):
     _standalone_in_db = False
     def __init__(self, name):
         self.name = name
+    
+    def __hash__(self):
+        return hash(self.name)
+    
+    def __eq__(self, other_variable):
+        return self.name == other_variable.name
 
     def copy(self):
         return Variable(self.name)
@@ -41,6 +47,12 @@ class TypedVariable(Variable):
         Variable.__init__(self, name)
         self.type_ = type_
     
+    def __hash__(self):
+        return hash(self.name) + hash(self.type_)
+    
+    def __eq__(self, other_variable):
+        return self.name == other_variable.name and self.type_ == other_variable.type_
+    
     def copy(self):
         return TypedVariable(self.name, self.type_)
 
@@ -48,6 +60,12 @@ class VariableWithDefaultValue(Variable):
     def __init__(self, name, default_value):
         Variable.__init__(self, name)
         self.default_value = default_value
+    
+    def __hash__(self):
+        return hash(self.name) + hash(self.default_value)
+    
+    def __eq__(self, other_variable):
+        return self.name == other_variable.name and self.default_value == other_variable.default_value
 
     def copy(self):
         return VariableWithDefaultValue(self.name, self.default_value)
@@ -56,6 +74,14 @@ class TypedVariableWithDefaultValue(TypedVariable):
     def __init__(self, name, type_, default_value):
         TypedVariable.__init__(self, name, type_)
         self.default_value = default_value
+    
+    def __hash__(self):
+        return hash(self.name) + hash(self.type_) + hash(self.default_value)
+    
+    def __eq__(self, other_variable):
+        return (self.name == other_variable.name\
+                and self.type_ == other_variable.type_\
+                and self.default_value == other_variable.default_value)
     
     def copy(self):
         return TypedVariableWithDefaultValue(self.name, self.type_, self.default_value)
@@ -264,6 +290,12 @@ class Function(Block):
         outputs = [TypedVariable('Output function', function.__annotations__['return'])]
 
         Block.__init__(self, inputs, outputs)
+    
+    def __hash__(self):
+        return hash(self.function)
+    
+    def __eq__(self, other_block):
+        return self.method == other_block.method
 
     def evaluate(self, values):
         return self.function(*values)
@@ -519,13 +551,17 @@ class Workflow(Block):
         Block.__init__(self, input_variables, [output])
 
     def __hash__(self):
-        return len(self.blocks)+11*len(self.pipes)+sum(self.variable_indices(self.outputs[0]))
+        base_hash = len(self.blocks)+11*len(self.pipes)+sum(self.variable_indices(self.outputs[0]))
+        block_hash = sum([hash(b) for b in self.blocks])
+        return base_hash + block_hash
 
     def __eq__(self, other_workflow):
         if not Block.__eq__(self, other_workflow):
             return False
+            
         graph_matcher = nx.algorithms.isomorphism.GraphMatcher(self.graph,
-                                                               other_workflow.graph)
+                                                               other_workflow.graph,
+                                                               node_match=node_matcher)
 
         isomorphic = graph_matcher.is_isomorphic()
         if isomorphic:
@@ -892,12 +928,22 @@ class WorkflowRun(dc.DessiaObject):
         self.log = log
     
     def __eq__(self, other_workflow_run):
-        equal = (self.workflow == other_workflow_run.workflow
-                 and self.output_value == other_workflow_run.output_value)
-        return equal
+        if hasattr(self.output_value, '__iter__'):
+            equal_output = (hasattr(self.output_value, '__iter__')\
+                            and all([v == other_v\
+                                     for v, other_v\
+                                     in zip(self.output_value,
+                                            other_workflow_run.output_value)]))
+        else:
+            equal_output = self.output_value == other_workflow_run.output_value
+        return self.workflow == other_workflow_run.workflow and equal_output
     
     def __hash__(self):
-        return hash(self.workflow) + sum([hash(v) for v in self.output_value])
+        if hasattr(self.output_value, '__iter__'):
+            hash_output = sum([hash(v) for v in self.output_value])
+        else:
+            hash_output = hash(self.output_value)
+        return hash(self.workflow) + hash_output
 
     def _display_angular(self):
         displays = self.workflow._display_angular()
@@ -965,3 +1011,9 @@ def set_inputs(method, inputs=[]):
             else:
                 inputs.append(TypedVariable(argument, method.__annotations__[argument]))
     return inputs
+
+def node_matcher(n1, n2):
+    if n1.__class__.__name__ != n2.__class__.__name__:
+        return False
+    else:
+        return n1 == n2
