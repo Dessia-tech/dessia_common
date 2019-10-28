@@ -37,6 +37,8 @@ class Variable(dc.DessiaObject):
         return hash(self.name)
     
     def __eq__(self, other_variable):
+        if self.__class__ != other_variable.__class__:
+            return False
         return self.name == other_variable.name
 
     def copy(self):
@@ -51,6 +53,8 @@ class TypedVariable(Variable):
         return hash(self.name) + hash(self.type_)
     
     def __eq__(self, other_variable):
+        if self.__class__ != other_variable.__class__:
+            return False
         return self.name == other_variable.name and self.type_ == other_variable.type_
     
     def copy(self):
@@ -65,6 +69,8 @@ class VariableWithDefaultValue(Variable):
         return hash(self.name) + hash(self.default_value)
     
     def __eq__(self, other_variable):
+        if self.__class__ != other_variable.__class__:
+            return False
         return self.name == other_variable.name and self.default_value == other_variable.default_value
 
     def copy(self):
@@ -79,6 +85,8 @@ class TypedVariableWithDefaultValue(TypedVariable):
         return hash(self.name) + hash(self.type_) + hash(self.default_value)
     
     def __eq__(self, other_variable):
+        if self.__class__ != other_variable.__class__:
+            return False
         return (self.name == other_variable.name\
                 and self.type_ == other_variable.type_\
                 and self.default_value == other_variable.default_value)
