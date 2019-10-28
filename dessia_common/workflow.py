@@ -556,26 +556,36 @@ class Workflow(Block):
         return base_hash + block_hash
 
     def __eq__(self, other_workflow):
+        if hash(self) != hash(other_workflow):
+            return False
+        
         if not Block.__eq__(self, other_workflow):
             return False
-            
-        graph_matcher = nx.algorithms.isomorphism.GraphMatcher(self.graph,
-                                                               other_workflow.graph,
-                                                               node_match=node_matcher)
-
-        isomorphic = graph_matcher.is_isomorphic()
-        if isomorphic:
-            for mapping in graph_matcher.isomorphisms_iter():
-                mapping_valid = True
-                for element1, element2 in mapping.items():
-                    if not isinstance(element1, Variable) and (element1 != element2):
-                        mapping_valid = False
-                        break
-                if mapping_valid:
-                    if mapping[self.outputs[0]] == other_workflow.outputs[0]:
-                        return True
-            return False
-        return False
+        
+        # TODO: temp , reuse graph!!!!
+        for block1, block2 in zip(self.blocks, other_workflow.blocks):
+            if block1 != block2:
+                return False
+        
+        return True
+        
+#        graph_matcher = nx.algorithms.isomorphism.GraphMatcher(self.graph,
+#                                                               other_workflow.graph,
+#                                                               node_match=node_matcher)
+#
+#        isomorphic = graph_matcher.is_isomorphic()
+#        if isomorphic:
+#            for mapping in graph_matcher.isomorphisms_iter():
+#                mapping_valid = True
+#                for element1, element2 in mapping.items():
+#                    if not isinstance(element1, Variable) and (element1 != element2):
+#                        mapping_valid = False
+#                        break
+#                if mapping_valid:
+#                    if mapping[self.outputs[0]] == other_workflow.outputs[0]:
+#                        return True
+#            return False
+#        return False
 
     def _display_angular(self):
         displays = []
