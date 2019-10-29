@@ -34,7 +34,7 @@ class Variable(dc.DessiaObject):
         self.name = name
     
     def equivalent_hash(self):
-        return hash(self.name)
+        return int(hash(self.name) % 10e5)
     
     def equivalent(self, other_variable):
         if self.__class__ != other_variable.__class__:
@@ -50,7 +50,7 @@ class TypedVariable(Variable):
         self.type_ = type_
     
     def equivalent_hash(self):
-        return hash(self.name) + hash(self.type_)
+        return int((hash(self.name) + hash(self.type_.__name__)) % 10e5)
     
     def equivalent(self, other_variable):
         if self.__class__ != other_variable.__class__:
@@ -66,7 +66,7 @@ class VariableWithDefaultValue(Variable):
         self.default_value = default_value
     
     def equivalent_hash(self):
-        return hash(self.name) + hash(self.default_value)
+        return int((hash(self.name) + hash(self.default_value)) % 10e5)
     
     def equivalent(self, other_variable):
         if self.__class__ != other_variable.__class__:
@@ -82,7 +82,9 @@ class TypedVariableWithDefaultValue(TypedVariable):
         self.default_value = default_value
     
     def equivalent_hash(self):
-        return hash(self.name) + hash(self.type_) + hash(self.default_value)
+        return int((hash(self.name)\
+                    + hash(self.type_.__name__)\
+                    + hash(self.default_value)) % 10e5)
     
     def equivalent(self, other_variable):
         if self.__class__ != other_variable.__class__:
@@ -300,7 +302,7 @@ class Function(Block):
         Block.__init__(self, inputs, outputs)
     
     def equivalent_hash(self):
-        return hash(self.function)
+        return int(hash(self.function.__name__) % 10e5)
     
     def equivalent(self, other_block):
         return self.method == other_block.method
@@ -327,7 +329,7 @@ class ForEach(Block):
         Block.__init__(self, inputs, [output_variable])
 
     def equivalent_hash(self):
-        return hash(self.workflow)
+        return int(hash(self.workflow) % 10e5)
 
     def equivalent(self, other_block):
         if not Block.equivalent(self, other_block):
@@ -378,7 +380,7 @@ class Filter(Block):
         return self.filters == other_block.filters
     
     def equivalent_hash(self):
-        return sum([hash(v) for f in self.filters for v in f.values()])
+        return int(sum([hash(v) for f in self.filters for v in f.values()]) % 10e5)
     
     def _display_angular(self):
         displays = [{'angular_component': 'results',
@@ -560,7 +562,7 @@ class Workflow(Block):
 
     def __hash__(self):
         base_hash = len(self.blocks)+11*len(self.pipes)+sum(self.variable_indices(self.outputs[0]))
-        block_hash = sum([b.equivalent_hash() for b in self.blocks])
+        block_hash = int(sum([b.equivalent_hash() for b in self.blocks]) % 10e5)
         return base_hash + block_hash
 
     def __eq__(self, other_workflow):
@@ -958,10 +960,10 @@ class WorkflowRun(dc.DessiaObject):
     
     def __hash__(self):
         if hasattr(self.output_value, '__iter__'):
-            hash_output = sum([hash(v) for v in self.output_value])
+            hash_output = int(sum([hash(v) for v in self.output_value]) % 10e5)
         else:
             hash_output = hash(self.output_value)
-        return hash(self.workflow) + hash_output
+        return hash(self.workflow) + int(hash_output % 10e5)
 
     def _display_angular(self):
         displays = self.workflow._display_angular()
@@ -1030,8 +1032,8 @@ def set_inputs(method, inputs=[]):
                 inputs.append(TypedVariable(argument, method.__annotations__[argument]))
     return inputs
 
-def node_matcher(n1, n2):
-    if n1.__class__.__name__ != n2.__class__.__name__:
-        return False
-    else:
-        return n1.equivalent(n2)
+#def node_matcher(n1, n2):
+#    if n1.__class__.__name__ != n2.__class__.__name__:
+#        return False
+#    else:
+#        return n1.equivalent(n2)
