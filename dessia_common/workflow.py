@@ -560,7 +560,7 @@ class Workflow(Block):
 
     def __hash__(self):
         base_hash = len(self.blocks)+11*len(self.pipes)+sum(self.variable_indices(self.outputs[0]))
-        block_hash = sum([hash(b) for b in self.blocks])
+        block_hash = sum([b.equivalent_hash() for b in self.blocks])
         return base_hash + block_hash
 
     def __eq__(self, other_workflow):
