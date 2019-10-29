@@ -33,10 +33,10 @@ class Variable(dc.DessiaObject):
     def __init__(self, name):
         self.name = name
     
-    def __hash__(self):
+    def equivalent_hash(self):
         return hash(self.name)
     
-    def __eq__(self, other_variable):
+    def equivalent(self, other_variable):
         if self.__class__ != other_variable.__class__:
             return False
         return self.name == other_variable.name
@@ -49,10 +49,10 @@ class TypedVariable(Variable):
         Variable.__init__(self, name)
         self.type_ = type_
     
-    def __hash__(self):
+    def equivalent_hash(self):
         return hash(self.name) + hash(self.type_)
     
-    def __eq__(self, other_variable):
+    def equivalent(self, other_variable):
         if self.__class__ != other_variable.__class__:
             return False
         return self.name == other_variable.name and self.type_ == other_variable.type_
@@ -65,10 +65,10 @@ class VariableWithDefaultValue(Variable):
         Variable.__init__(self, name)
         self.default_value = default_value
     
-    def __hash__(self):
+    def equivalent_hash(self):
         return hash(self.name) + hash(self.default_value)
     
-    def __eq__(self, other_variable):
+    def equivalent(self, other_variable):
         if self.__class__ != other_variable.__class__:
             return False
         return self.name == other_variable.name and self.default_value == other_variable.default_value
@@ -81,10 +81,10 @@ class TypedVariableWithDefaultValue(TypedVariable):
         TypedVariable.__init__(self, name, type_)
         self.default_value = default_value
     
-    def __hash__(self):
+    def equivalent_hash(self):
         return hash(self.name) + hash(self.type_) + hash(self.default_value)
     
-    def __eq__(self, other_variable):
+    def equivalent(self, other_variable):
         if self.__class__ != other_variable.__class__:
             return False
         return (self.name == other_variable.name\
@@ -138,11 +138,11 @@ class Block(dc.DessiaObject):
         self.inputs = inputs
         self.outputs = outputs
 
-    def __hash__(self):
+    def equivalent_hash(self):
         return len(self.__class__.__name__)
 
 
-    def __eq__(self, other_block):
+    def equivalent(self, other_block):
         if not self.__class__.__name__ == other_block.__class__.__name__:
             return False
         return True
@@ -203,11 +203,11 @@ class InstanciateModel(Block):
         outputs = [TypedVariable('Instanciated object', self.object_class)]
         Block.__init__(self, inputs, outputs)
 
-    def __hash__(self):
+    def equivalent_hash(self):
         return len(self.object_class.__name__)
 
-    def __eq__(self, other_block):
-        if not Block.__eq__(self, other_block):
+    def equivalent(self, other_block):
+        if not Block.equivalent(self, other_block):
             return False
         return self.object_class.__class__.__name__ == other_block.object_class.__class__.__name__
 
@@ -260,11 +260,11 @@ class ModelMethod(Block):
                    TypedVariable('model at output {}'.format(self.method_name), model_class)]
         Block.__init__(self, inputs, outputs)
 
-    def __hash__(self):
+    def equivalent_hash(self):
         return len(self.model_class.__name__) + 7*len(self.method_name)
 
-    def __eq__(self, other_block):
-        if not Block.__eq__(self, other_block):
+    def equivalent(self, other_block):
+        if not Block.equivalent(self, other_block):
             return False
         return self.model_class.__name__ == other_block.model_class.__name__\
                and self.method_name == other_block.method_name
@@ -299,10 +299,10 @@ class Function(Block):
 
         Block.__init__(self, inputs, outputs)
     
-    def __hash__(self):
+    def equivalent_hash(self):
         return hash(self.function)
     
-    def __eq__(self, other_block):
+    def equivalent(self, other_block):
         return self.method == other_block.method
 
     def evaluate(self, values):
@@ -326,11 +326,11 @@ class ForEach(Block):
 
         Block.__init__(self, inputs, [output_variable])
 
-    def __hash__(self):
+    def equivalent_hash(self):
         return hash(self.workflow)
 
-    def __eq__(self, other_block):
-        if not Block.__eq__(self, other_block):
+    def equivalent(self, other_block):
+        if not Block.equivalent(self, other_block):
             return False
         return self.workflow == other_block.workflow\
                and self.workflow.variable_indices(self.workflow_iterable_input)\
@@ -372,12 +372,12 @@ class Filter(Block):
         outputs = [Variable('output_list')]
         Block.__init__(self, inputs, outputs)
     
-    def __eq__(self, other_block):
-        if not Block.__eq__(self, other_block):
+    def equivalent(self, other_block):
+        if not Block.equivalent(self, other_block):
             return False
         return self.filters == other_block.filters
     
-    def __hash__(self):
+    def equivalent_hash(self):
         return sum([hash(v) for f in self.filters for v in f.values()])
     
     def _display_angular(self):
@@ -428,11 +428,11 @@ class ModelAttribute(Block):
 
         Block.__init__(self, [Variable('Model')], [Variable('Model attribute')])
 
-    def __hash__(self):
+    def equivalent_hash(self):
         return len(self.attribute_name)
 
-    def __eq__(self, other_block):
-        if not Block.__eq__(self, other_block):
+    def equivalent(self, other_block):
+        if not Block.equivalent(self, other_block):
             return False
         return self.attribute_name == other_block.attribute_name
 
@@ -564,7 +564,7 @@ class Workflow(Block):
         return base_hash + block_hash
 
     def __eq__(self, other_workflow):
-        if not Block.__eq__(self, other_workflow):
+        if not Block.equivalent(self, other_workflow):
             return False
             
         graph_matcher = nx.algorithms.isomorphism.GraphMatcher(self.graph,
@@ -1024,4 +1024,4 @@ def node_matcher(n1, n2):
     if n1.__class__.__name__ != n2.__class__.__name__:
         return False
     else:
-        return n1 == n2
+        return n1.equivalent(n2)
