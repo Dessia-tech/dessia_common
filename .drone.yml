@@ -32,4 +32,15 @@ steps:
     files: dist/*
     root_directory: /dessia-common/
 
-
+- name: notify
+  when:
+    status:
+    - failure 
+  image: drillster/drone-email
+  settings:
+    host: mail.dessia.tech
+    username: software@dessia.tech
+    password:
+     from_secret: email_password
+    from: software@dessia.tech
+    recipients: [ root@dessia.tech ]
