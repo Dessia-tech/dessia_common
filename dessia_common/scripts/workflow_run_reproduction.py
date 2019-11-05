@@ -54,31 +54,31 @@ p_end = electrical.Evolution([-2e4]*10)
 
 ce_end = electrical.CombinationEvolution(evolution1=[t_end],
                                    evolution2=[p_end],
-                                   metadata=Metadata('End Profile'))
+                                   name='End Profile')
 ce_wltp1 = electrical.CombinationEvolution(evolution1=[t_wltp1],
                                      evolution2=[p_wltp1],
-                                     metadata=Metadata('WLTP1 profile'))
+                                     name='WLTP1 profile')
 ce_wltp2 = electrical.CombinationEvolution(evolution1=[t_wltp2],
                                      evolution2=[p_wltp2],
-                                     metadata=Metadata('WLTP2 profile'))
+                                     name='WLTP2 profile')
 ce_wltp3 = electrical.CombinationEvolution(evolution1=[t_wltp3],
                                      evolution2=[p_wltp3],
-                                     metadata=Metadata('WLTP3 profile'))
+                                     name='WLTP3 profile')
 ce_load = electrical.CombinationEvolution(evolution1=[t_load],
                                     evolution2=[p_load],
-                                    metadata=Metadata('Load Profile'))
+                                    name='Load Profile')
 
 load_bat = electrical.PowerProfile(soc_init=0.05*180000,
                              combination_evolutions=[ce_load],
                              loop=True,
                              soc_end=0.95*180000,
                              charger=True,
-                             metadata=Metadata('Load profile'))
+                             name='Load profile')
 end_bat = electrical.PowerProfile(combination_evolutions=[ce_end],
                             loop=False,
                             power_accuracy=0.2,
                             soc_init=0.1*180000,
-                            metadata=Metadata('End profile'))
+                            name='End profile')
 wltp_bat = electrical.PowerProfile(combination_evolutions=[ce_wltp1, ce_wltp2, ce_wltp3],
                              loop=True,
                              power_accuracy=0.2,
@@ -86,14 +86,14 @@ wltp_bat = electrical.PowerProfile(combination_evolutions=[ce_wltp1, ce_wltp2, c
                              max_loop=1,
                              soc_end=0.1*180000,
                              use_selection=False,
-                             metadata=Metadata('WLTP profile'))
+                             name='WLTP profile')
 
 comb_profile_wltp = electrical.CombinationPowerProfile([wltp_bat],
-                                                 metadata=Metadata('wltp_profil'))
+                                                 name='wltp_profil')
 comb_profile_load = electrical.CombinationPowerProfile([load_bat],
-                                                 metadata=Metadata('load_profil'))
+                                                 name='load_profil')
 comb_profile_end = electrical.CombinationPowerProfile([end_bat],
-                                                metadata=Metadata('end_soc_profil'))
+                                                name='end_soc_profil')
 
 # =============================================================================
 # Electrical Optimizer

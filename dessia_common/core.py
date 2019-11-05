@@ -15,67 +15,121 @@ import volmdlr as vm
 from importlib import import_module
 
 class Metadata:
+    def __init__(self, name):
+        pass
+
+
+class DessiaObject:
     """
-    Gathers object custom data
+    Base abstract class for Dessia's object.
+    Gathers generic methods and attributes
     """
     _standalone_in_db = False
-    _jsonschema = {
-        "definitions": {},
-        "$schema": "http://json-schema.org/draft-07/schema#",
-        "type": "object",
-        "title": "powerpack.mechanical.MechModule Base Schema",
-        "required": ["name"],
-        "properties": {
-            "name" : {
-                "type" : "string",
-                "order" : 0,
-                "editable" : True,
-                "examples" : ["Object name"],
-                "description" : "Object name"
-                },
-            "version" : {
-                "type" : "string",
-                "order" : 1,
-                "editable" : False,
-                "Description" : "Object version"
-                }
-            }
-        }
-    def __init__(self, name='', version='', **kwargs):
-        self.name = name
-        self.version = version
-        if kwargs:
-            self.add_data(**kwargs)
 
-    def add_data(self, **kwargs):
-        """
-        Adds given kwargs to object dict
-        """
-        for keyword, value in kwargs.items():
-            self.__setattr__(keyword, value)
-
-    def del_data(self, attribute_name):
-        """
-        Removes given attribute and its value from object dict
-        """
-        self.__delattr__(attribute_name)
+    def __init__(self, **kwargs):
+        for property_name, property_value in kwargs.items():
+            setattr(self, property_name, property_value)
 
     def to_dict(self):
         """
-        !!! Enable python object in metadata ?
+        Generic to_dict method
         """
-        return self.__dict__
+        if hasattr(self, 'Dict'):
+            # !!! This prevent us to call DessiaObject.to_dict() from an inheriting object
+            # because of the infinite recursion it creates.
+            # TODO Change Dict methods to to_dict everywhere
+            return self.Dict()
+
+        # Default to dict
+        dict_ = {}
+        for key, value in self.__dict__.items():
+            if isinstance(value, DessiaObject):
+                dict_[key] = value.to_dict()
+            else:
+                dict_[key] = value
+        return dict_
+
+    @property
+    def _method_jsonschemas(self):
+        """
+        Generates dynamic jsonschemas for methods of class
+        """
+        jsonschemas = {}
+        cls = type(self)
+        valid_method_names = [m for m in dir(cls)\
+                              if not m.startswith('_')]
+        for method_name in valid_method_names:
+            method = getattr(cls, method_name)
+
+            # Find default value and required arguments of method
+            args_specs = inspect.getfullargspec(method)
+            nargs = len(args_specs.args) - 1
+            if args_specs.defaults is not None:
+                ndefault_args = len(args_specs.defaults)
+            else:
+                ndefault_args = 0
+            default_arguments = {}
+            required_arguments = []
+            for iargument, argument in enumerate(args_specs.args[1:]):
+                if not argument in ['self', 'progress_callback']:
+                    if iargument >= nargs - ndefault_args:
+                        default_value = args_specs.defaults[ndefault_args-nargs+iargument]
+                        default_arguments[argument] = default_value
+                    else:
+                        required_arguments.append(argument)
+
+            if method.__annotations__:
+                jsonschemas[method_name] = deepcopy(JSONSCHEMA_HEADER)
+                jsonschemas[method_name]['required'] = required_arguments
+                for i, annotation in enumerate(method.__annotations__.items()): # !!! Not actually ordered
+                    jsonschema_element = jsonschema_from_annotation(annotation, {}, i)[annotation[0]]
+                    jsonschemas[method_name]['properties'][str(i)] = jsonschema_element
+                    if annotation[0] in default_arguments.keys():
+                        default = set_default_value(jsonschemas[method_name]['properties'],
+                                                    str(i),
+                                                    default_arguments[annotation[0]])
+                        jsonschemas[method_name]['properties'].update(default)
+        return jsonschemas
+
 
     @classmethod
     def dict_to_object(cls, dict_):
-        kwargs = deepcopy(dict_)
-        name = kwargs.pop('name')
-        try:
-            version = kwargs.pop('version')
-        except KeyError:
-            version = ''
-        metadata = cls(name, version, **kwargs)
-        return metadata
+        """
+        Generic dict_to_object method
+        """
+        if hasattr(cls, 'DictToObject'):
+            return cls.DictToObject(dict_)
+        # Using default
+        # TODO: use jsonschema
+        return cls(**dict_)
+#        raise NotImplementedError('Class has no dict_to_object/DictToObject method')
+
+    def cad_export(self,
+                   fcstd_filepath=None,
+                   python_path='python',
+                   freecad_lib_path='/usr/lib/freecad/lib',
+                   export_types=['fcstd']):
+        """
+        Generic CAD export method
+        """
+        if fcstd_filepath is None:
+            fcstd_filepath = 'An unnamed {}'.format(self.__class__.__name__)
+
+        if hasattr(self, 'volmdlr_primitives'):
+            model = vm.VolumeModel([('', self.volmdlr_primitives())])
+            model.FreeCADExport(fcstd_filepath, python_path=python_path,
+                                freecad_lib_path=freecad_lib_path, export_types=export_types)
+        else:
+            raise NotImplementedError
+
+    def _display_angular(self):
+        display = []
+        if hasattr(self, 'CADExport')\
+        or hasattr(self, 'FreeCADExport')\
+        or hasattr(self, 'cad_export'):
+            display.append({'angular_component': 'app-cad-viewer'})
+        return display
+
 
 def number2factor(number):
     """
@@ -187,117 +241,6 @@ def stringify_dict_keys(obj):
         return obj
     return new_obj
 
-class DessiaObject:
-    """
-    Base abstract class for Dessia's object.
-    Gathers generic methods and attributes
-    """
-    _standalone_in_db = False
-
-    def __init__(self, **kwargs):
-        for property_name, property_value in kwargs.items():
-            setattr(self, property_name, property_value)
-
-
-    def to_dict(self):
-        """
-        Generic to_dict method
-        """
-        if hasattr(self, 'Dict'):
-            return self.Dict()
-
-        # Default to dict
-        dict_ = {}
-        for key, value in self.__dict__.items():
-            if isinstance(value, DessiaObject):
-                dict_[key] = value.to_dict()
-            else:
-                dict_[key] = value
-        return dict_
-
-    @property
-    def _method_jsonschemas(self):
-        """
-        Generates dynamic jsonschemas for methods of class
-        """
-        jsonschemas = {}
-        cls = type(self)
-        valid_method_names = [m for m in dir(cls)\
-                              if not m.startswith('_')]
-        for method_name in valid_method_names:
-            method = getattr(cls, method_name)
-
-            # Find default value and required arguments of method
-            args_specs = inspect.getfullargspec(method)
-            nargs = len(args_specs.args) - 1
-            if args_specs.defaults is not None:
-                ndefault_args = len(args_specs.defaults)
-            else:
-                ndefault_args = 0
-            default_arguments = {}
-            required_arguments = []
-            for iargument, argument in enumerate(args_specs.args[1:]):
-                if not argument in ['self', 'progress_callback']:
-                    if iargument >= nargs - ndefault_args:
-                        default_value = args_specs.defaults[ndefault_args-nargs+iargument]
-                        default_arguments[argument] = default_value
-                    else:
-                        required_arguments.append(argument)
-
-            if method.__annotations__:
-                jsonschemas[method_name] = deepcopy(JSONSCHEMA_HEADER)
-                jsonschemas[method_name]['required'] = required_arguments
-                for i, annotation in enumerate(method.__annotations__.items()): # !!! Not actually ordered
-#                    current_dict = jsonschemas[method_name]['properties']
-                    jsonschema_element = jsonschema_from_annotation(annotation, {}, i)[annotation[0]]
-                    
-#                    current_dict.update(jsonschema_from_annotation(annotation, current_dict, i))
-                    jsonschemas[method_name]['properties'][str(i)] = jsonschema_element
-                    if annotation[0] in default_arguments.keys():
-                        jsonschemas[method_name]['properties'].update(set_default_value(jsonschemas[method_name]['properties'],
-                                                                                        str(i),
-                                                                                        default_arguments[annotation[0]]))
-        return jsonschemas
-
-
-    @classmethod
-    def dict_to_object(cls, dict_):
-        """
-        Generic dict_to_object method
-        """
-        if hasattr(cls, 'DictToObject'):
-            return cls.DictToObject(dict_)
-        # Using default
-        # TODO: use jsonschema
-        return cls(**dict_)
-#        raise NotImplementedError('Class has no dict_to_object/DictToObject method')
-
-    def cad_export(self,
-                   fcstd_filepath=None,
-                   python_path='python',
-                   freecad_lib_path='/usr/lib/freecad/lib',
-                   export_types=['fcstd']):
-        """
-        Generic CAD export method
-        """
-        if fcstd_filepath is None:
-            fcstd_filepath = 'An unnamed {}'.format(self.__class__.__name__)
-
-        if hasattr(self, 'volmdlr_primitives'):
-            model = vm.VolumeModel([('', self.volmdlr_primitives())])
-            model.FreeCADExport(fcstd_filepath, python_path=python_path,
-                                freecad_lib_path=freecad_lib_path, export_types=export_types)
-        else:
-            raise NotImplementedError
-
-    def _display_angular(self):
-        display = []
-        if hasattr(self, 'CADExport')\
-        or hasattr(self, 'FreeCADExport')\
-        or hasattr(self, 'cad_export'):
-            display.append({'angular_component': 'app-cad-viewer'})
-        return display
-
 class InteractiveObjectCreator:
     def __init__(self):
         self.base_class_name = input('Base class of object (default=DessiaObject):')
@@ -393,7 +336,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element, order, title=None
             jsonschema_element[key]['title'] = title
             jsonschema_element[key]['order'] = order
             jsonschema_element[key]['editable'] = True # !!! Dynamic editable field ?
-                
+
     return jsonschema_element
 
 def jsonschema_from_dataclass(class_):
@@ -449,7 +392,7 @@ def serialize_sequence(seq):
         else:
             serialized_sequence.append(value)
     return serialized_sequence
-    
+
 def deserialize_argument(type_, argument):
     if isinstance(type_, TypeVar):
         # Get all classes
@@ -465,7 +408,7 @@ def deserialize_argument(type_, argument):
                 # Throws KeyError if we try to put wrong dict into dict_to_object
                 # This means we try to instantiate a children class with a parent dict_to_object
                 deserialized_argument = children_class.dict_to_object(argument)
-                
+
                 # If it succeeds we have the right class and instantiated object
                 instantiated = True
             except KeyError:
