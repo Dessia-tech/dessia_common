@@ -32,10 +32,10 @@ class Variable(dc.DessiaObject):
     _standalone_in_db = False
     def __init__(self, name):
         self.name = name
-    
+
     def equivalent_hash(self):
         return int(hash(self.name) % 10e5)
-    
+
     def equivalent(self, other_variable):
         if self.__class__ != other_variable.__class__:
             return False
@@ -48,15 +48,15 @@ class TypedVariable(Variable):
     def __init__(self, name, type_):
         Variable.__init__(self, name)
         self.type_ = type_
-    
+
     def equivalent_hash(self):
         return int((hash(self.name) + hash(self.type_.__name__)) % 10e5)
-    
+
     def equivalent(self, other_variable):
         if self.__class__ != other_variable.__class__:
             return False
         return self.name == other_variable.name and self.type_ == other_variable.type_
-    
+
     def copy(self):
         return TypedVariable(self.name, self.type_)
 
@@ -64,10 +64,10 @@ class VariableWithDefaultValue(Variable):
     def __init__(self, name, default_value):
         Variable.__init__(self, name)
         self.default_value = default_value
-    
+
     def equivalent_hash(self):
         return int((hash(self.name) + hash(self.default_value)) % 10e5)
-    
+
     def equivalent(self, other_variable):
         if self.__class__ != other_variable.__class__:
             return False
@@ -80,19 +80,19 @@ class TypedVariableWithDefaultValue(TypedVariable):
     def __init__(self, name, type_, default_value):
         TypedVariable.__init__(self, name, type_)
         self.default_value = default_value
-    
+
     def equivalent_hash(self):
         return int((hash(self.name)\
                     + hash(self.type_.__name__)\
                     + hash(self.default_value)) % 10e5)
-    
+
     def equivalent(self, other_variable):
         if self.__class__ != other_variable.__class__:
             return False
         return (self.name == other_variable.name\
                 and self.type_ == other_variable.type_\
                 and self.default_value == other_variable.default_value)
-    
+
     def copy(self):
         return TypedVariableWithDefaultValue(self.name, self.type_, self.default_value)
 
@@ -129,7 +129,7 @@ class Block(dc.DessiaObject):
                                      "dessia_common.workflow.TypedVariableWithDefaultValue"],
                         "editable" : False
                         },
-                    
+
                     }
                 }
             }
@@ -158,7 +158,7 @@ class Block(dc.DessiaObject):
                                     'ForEach', 'Function', 'ModelAttribute',
                                     'Filter']:
             return eval(dict_['block_class']).dict_to_object(dict_)
-    
+
     @property
     def _method_jsonschemas(self):
         jsonschemas = {'run': dc.JSONSCHEMA_HEADER}
@@ -242,7 +242,7 @@ class ModelMethod(Block):
                 "editable" : True,
                 "examples" : ['Nom']
                 },
-            
+
             "method_name": {
                 "type" : "string",
                 "editable" : True,
@@ -300,10 +300,10 @@ class Function(Block):
         outputs = [TypedVariable('Output function', function.__annotations__['return'])]
 
         Block.__init__(self, inputs, outputs)
-    
+
     def equivalent_hash(self):
         return int(hash(self.function.__name__) % 10e5)
-    
+
     def equivalent(self, other_block):
         return self.method == other_block.method
 
@@ -373,20 +373,20 @@ class Filter(Block):
         inputs = [Variable('input_list')]
         outputs = [Variable('output_list')]
         Block.__init__(self, inputs, outputs)
-    
+
     def equivalent(self, other_block):
         if not Block.equivalent(self, other_block):
             return False
         return self.filters == other_block.filters
-    
+
     def equivalent_hash(self):
         return int(sum([hash(v) for f in self.filters for v in f.values()]) % 10e5)
-    
+
     def _display_angular(self):
         displays = [{'angular_component': 'results',
                      'filters': self.filters}]
         return displays
-    
+
     def to_dict(self):
         dict_ = Block.to_dict(self)
         dict_.update({'filters': self.filters})
@@ -395,7 +395,7 @@ class Filter(Block):
     @classmethod
     def dict_to_object(cls, dict_):
         return cls(dict_['filters'])
-    
+
     def evaluate(self, values):
         ouput_values = []
         objects = values[self.inputs[0]]
@@ -422,7 +422,7 @@ class Filter(Block):
             if valid:
                 ouput_values.append(object_)
         return [ouput_values]
-                    
+
 
 class ModelAttribute(Block):
     def __init__(self, attribute_name):
@@ -541,7 +541,7 @@ class Workflow(Block):
     def __init__(self, blocks, pipes, output):
         self.blocks = blocks
         self.pipes = pipes
-        
+
         self.coordinates = {}
 
         self.variables = []
@@ -568,17 +568,17 @@ class Workflow(Block):
     def __eq__(self, other_workflow):
         if hash(self) != hash(other_workflow):
             return False
-        
+
         if not Block.__eq__(self, other_workflow):
             return False
-        
+
         # TODO: temp , reuse graph!!!!
         for block1, block2 in zip(self.blocks, other_workflow.blocks):
             if block1 != block2:
                 return False
-        
+
         return True
-        
+
 #        graph_matcher = nx.algorithms.isomorphism.GraphMatcher(self.graph,
 #                                                               other_workflow.graph,
 #                                                               node_match=node_matcher)
@@ -630,7 +630,7 @@ class Workflow(Block):
         output = blocks[dict_['output'][0]].outputs[dict_['output'][2]]
 
         return cls(blocks, pipes, output)
-    
+
     def dict_to_arguments(self, dict_, method):
         arguments_values = {}
         for i, input_ in enumerate(self.inputs):
@@ -681,7 +681,7 @@ class Workflow(Block):
     def layout(self, n_x_anchors):
         for iblock, block in enumerate(self.blocks):
             self.coordinates[block] = (iblock % n_x_anchors, iblock // n_x_anchors)
-            
+
 
     def plot_graph(self):
 
@@ -723,7 +723,7 @@ class Workflow(Block):
                     activated_items[variable] = True
                 else:
                     raise ValueError
-                    
+
 
         something_activated = True
 
@@ -777,12 +777,12 @@ class Workflow(Block):
         log += log_line + '\n'
         if verbose:
             print(log_line)
-        
+
 #        workflow_run_values = [values[variable] for variable in self.variables]
 #        self.variables.index(self.outputs[0])
         output_value = values[self.outputs[0]]
         return WorkflowRun(self, output_value, start_time, end_time, log)
-    
+
     def mxgraph_data(self):
         nodes = []
         for block in self.blocks:
@@ -799,7 +799,7 @@ class Workflow(Block):
         for pipe in self.pipes:
             edges.append((self.variable_indices(pipe.input_variable),
                           self.variable_indices(pipe.output_variable)))
-        
+
         return nodes, edges
 
 
@@ -816,16 +816,16 @@ class Workflow(Block):
             if is1:
                 block = self.blocks[ib1]
                 ip1 += len(block.inputs)
-            
+
             ib2, is2, ip2 = self.variable_indices(pipe.output_variable)
             if is2:
                 block = self.blocks[ib2]
                 ip2 += len(block.inputs)
-            
+
             edges.append(((ib1, ip1), (ib2, ip2)))
-        
+
         return nodes, edges
-        
+
 
     def plot_mxgraph(self):
         env = Environment(loader=PackageLoader('dessia_common', 'templates'),
@@ -871,7 +871,7 @@ class Workflow(Block):
             file.write(rendered_template.encode('utf-8'))
 
         webbrowser.open('file://' + temp_file)
-        
+
     def find_variable_type(self, variable):
         for block in self.blocks:
             for block_variable in block.outputs: # !!! just ouputs is  a workaround
@@ -933,7 +933,7 @@ class WorkflowRun(dc.DessiaObject):
                  }
              }
          }
-    
+
     def __init__(self, workflow, output_value, start_time, end_time, log):
         self.workflow = workflow
 #        self.values = values
@@ -946,7 +946,7 @@ class WorkflowRun(dc.DessiaObject):
         self.end_time = end_time
         self.execution_time = end_time - start_time
         self.log = log
-    
+
     def __eq__(self, other_workflow_run):
         if hasattr(self.output_value, '__iter__'):
             equal_output = (hasattr(self.output_value, '__iter__')\
@@ -957,7 +957,7 @@ class WorkflowRun(dc.DessiaObject):
         else:
             equal_output = self.output_value == other_workflow_run.output_value
         return self.workflow == other_workflow_run.workflow and equal_output
-    
+
     def __hash__(self):
         if hasattr(self.output_value, '__iter__'):
             hash_output = int(sum([hash(v) for v in self.output_value]) % 10e5)
@@ -967,14 +967,17 @@ class WorkflowRun(dc.DessiaObject):
 
     def _display_angular(self):
         displays = self.workflow._display_angular()
-        
+
         for block in self.workflow.blocks:
             if isinstance(block, Filter):
                 filter_display = block._display_angular()
-                filter_display[0]['values'] = 'output_value'
+                values = [{f['attribute'] : dc.getdeepattr(v, f['attribute'])\
+                           for f in filter_display[0]['filters']}\
+                          for v in self.output_value]
+                filter_display[0]['values'] = values
                 displays.extend(filter_display)
         return displays
-    
+
     def to_dict(self):
         dict_ = {}
         dict_['workflow'] = self.workflow.to_dict()
