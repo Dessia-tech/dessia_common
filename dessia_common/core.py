@@ -14,10 +14,6 @@ import inspect
 import volmdlr as vm
 from importlib import import_module
 
-class Metadata:
-    def __init__(self, name):
-        pass
-
 
 class DessiaObject:
     """
@@ -25,6 +21,7 @@ class DessiaObject:
     Gathers generic methods and attributes
     """
     _standalone_in_db = False
+
 
     def __init__(self, **kwargs):
         for property_name, property_value in kwargs.items():
@@ -36,7 +33,7 @@ class DessiaObject:
         """
         if hasattr(self, 'Dict'):
             # !!! This prevent us to call DessiaObject.to_dict() from an inheriting object
-            # because of the infinite recursion it creates.
+            # which implement a Dict method, because of the infinite recursion it creates.
             # TODO Change Dict methods to to_dict everywhere
             return self.Dict()
 
@@ -48,6 +45,18 @@ class DessiaObject:
             else:
                 dict_[key] = value
         return dict_
+
+
+    @classmethod
+    def dict_to_object(cls, dict_):
+        """
+        Generic dict_to_object method
+        """
+        if hasattr(cls, 'DictToObject'):
+            return cls.DictToObject(dict_)
+        # Using default
+        # TODO: use jsonschema
+        return cls(**dict_)
 
     @property
     def _method_jsonschemas(self):
@@ -91,18 +100,72 @@ class DessiaObject:
                         jsonschemas[method_name]['properties'].update(default)
         return jsonschemas
 
-
     @classmethod
-    def dict_to_object(cls, dict_):
-        """
-        Generic dict_to_object method
-        """
-        if hasattr(cls, 'DictToObject'):
-            return cls.DictToObject(dict_)
-        # Using default
-        # TODO: use jsonschema
-        return cls(**dict_)
-#        raise NotImplementedError('Class has no dict_to_object/DictToObject method')
+    def _jsonschema(cls):
+        # Get __init__ method and its annotations
+        init = cls.__init__
+        annotations = init.__annotations__
+
+        # Get editable and ordered variables
+        if hasattr(cls, '_editable_variables') and cls._editable_variables is not None:
+            editable_variables = cls._editable_variables
+        else:
+            editable_variables = list(annotations.keys())
+
+        if hasattr(cls, '_ordered_variables') and cls._ordered_variables is not None:
+            ordered_variables = cls._ordered_variables
+        else:
+            ordered_variables = editable_variables
+
+        if hasattr(cls, '_titled_variables'):
+            titled_variables = cls._titled_variables
+        unordered_count = 0
+
+        # Initialize jsonschema
+        jsonschema = deepcopy(JSONSCHEMA_HEADER)
+
+        # Find default value and required arguments of class construction
+        args_specs = inspect.getfullargspec(init)
+        nargs = len(args_specs.args) - 1
+        if args_specs.defaults is not None:
+            ndefault_args = len(args_specs.defaults)
+        else:
+            ndefault_args = 0
+        default_arguments = {}
+        required_arguments = []
+        for iargument, argument in enumerate(args_specs.args[1:]):
+            if not argument in ['self', 'progress_callback']:
+                if iargument >= nargs - ndefault_args:
+                    default_value = args_specs.defaults[ndefault_args-nargs+iargument]
+                    default_arguments[argument] = default_value
+                else:
+                    required_arguments.append(argument)
+        jsonschema['required'] = required_arguments
+
+        # Set jsonschema
+        for annotation in annotations.items():
+            name, value = annotation
+            if name in ordered_variables:
+                order = ordered_variables.index(name)
+            else:
+                order = len(ordered_variables) + unordered_count
+                unordered_count += 1
+            if titled_variables is not None and name in titled_variables:
+                title = titled_variables[name]
+            else:
+                title = None
+            jsonschema_element = jsonschema_from_annotation(annotation=annotation,
+                                                            jsonschema_element={},
+                                                            order=order,
+                                                            editable=name in editable_variables,
+                                                            title=title)
+            jsonschema['properties'].update(jsonschema_element)
+            if name in default_arguments.keys():
+                default = set_default_value(jsonschema['properties'],
+                                            name,
+                                            default_arguments[name])
+                jsonschema['properties'].update(default)
+        return jsonschema
 
     def cad_export(self,
                    fcstd_filepath=None,
@@ -279,15 +342,18 @@ class InteractiveObjectCreator:
 
         return schema
 
-def jsonschema_from_annotation(annotation, jsonschema_element, order, title=None):
+def jsonschema_from_annotation(annotation, jsonschema_element,
+                               order, editable=None, title=None):
     key, value = annotation
     if title is None:
         title = prettyname(key)
+    if editable is None:
+        editable = True
     if value in TYPING_EQUIVALENCES.keys():
         # Python Built-in type
         jsonschema_element[key] = {'type': TYPING_EQUIVALENCES[value],
                                    'title': title,
-                                   'editable' : True, # !!! Dynamic editable field ?
+                                   'editable' : editable,
                                    'order' : order}
     elif isinstance(value, TypeVar):
         # Several  classes are possible
@@ -295,7 +361,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element, order, title=None
         jsonschema_element[key] = {'type': 'object',
                                    'classes': classnames,
                                    'title': title,
-                                   'editable' : True, # !!! Dynamic editable field ?
+                                   'editable' : editable,
                                    'order' : order}
     elif hasattr(value, '_name')\
     and value._name in ['List', 'Sequence', 'Iterable']:
@@ -304,7 +370,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element, order, title=None
             jsonschema_element[key] = {'type': 'array',
                                        'title': title,
                                        'order' : order,
-                                       'editable' : True, # !!! Dynamic editable field ?
+                                       'editable' : editable,
                                        'items': {
                                            'type': TYPING_EQUIVALENCES[items_type]
                                            }
@@ -315,7 +381,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element, order, title=None
             jsonschema_element[key] = {'type': 'array',
                                        'title': title,
                                        'order' : order,
-                                       'editable' : True, # !!! Dynamic editable field ?
+                                       'editable' : editable,
                                        'items': {
                                            'type': 'object',
                                            'classes': [classname]
@@ -328,14 +394,14 @@ def jsonschema_from_annotation(annotation, jsonschema_element, order, title=None
             jsonschema_element[key] = {'type': 'object',
                                        'title': title,
                                        'order' : order,
-                                       'editable' : True, # !!! Dynamic editable field ?
+                                       'editable' : editable,
                                        'classes': [classname]}
         else:
             # Dataclasses
             jsonschema_element[key] = jsonschema_from_dataclass(value)
             jsonschema_element[key]['title'] = title
             jsonschema_element[key]['order'] = order
-            jsonschema_element[key]['editable'] = True # !!! Dynamic editable field ?
+            jsonschema_element[key]['editable'] = editable
 
     return jsonschema_element
 
