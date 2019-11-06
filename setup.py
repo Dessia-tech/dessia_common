@@ -26,7 +26,7 @@ def get_version():
         return version.group(1)
 
     d = dirname(__file__)
-    
+
     if isdir(join(d, '.git')):
         cmd = 'git describe --tags'
         try:
@@ -38,6 +38,8 @@ def get_version():
         # PEP 440 compatibility
         if '-' in version:
             future_version = version.split('-')[0].split('.')
+            if 'post' in future_version[-1]:
+                future_version = future_version[:-1]
             future_version[-1] = str(int(future_version[-1])+1)
             future_version = '.'.join(future_version)
             number_commits = version.split('-')[1]
@@ -48,7 +50,7 @@ def get_version():
         # Extract the version from the PKG-INFO file.
         with open(join(d, 'PKG-INFO')) as f:
             version = version_re.search(f.read()).group(1)
-                 
+
     return version
 
 
