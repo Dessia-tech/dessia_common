@@ -101,7 +101,10 @@ class DessiaObject:
         return jsonschemas
 
     @classmethod
-    def _jsonschema(cls):
+    def jsonschema(cls):
+        if hasattr(cls, '_jsonschema'):
+            return cls._jsonschema
+
         # Get __init__ method and its annotations
         init = cls.__init__
         annotations = init.__annotations__
@@ -119,6 +122,8 @@ class DessiaObject:
 
         if hasattr(cls, '_titled_variables'):
             titled_variables = cls._titled_variables
+        else:
+            titled_variables = None
         unordered_count = 0
 
         # Initialize jsonschema
