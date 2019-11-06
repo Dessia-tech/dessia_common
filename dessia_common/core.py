@@ -14,68 +14,185 @@ import inspect
 import volmdlr as vm
 from importlib import import_module
 
-class Metadata:
+
+class DessiaObject:
     """
-    Gathers object custom data
+    Base abstract class for Dessia's object.
+    Gathers generic methods and attributes
     """
     _standalone_in_db = False
-    _jsonschema = {
-        "definitions": {},
-        "$schema": "http://json-schema.org/draft-07/schema#",
-        "type": "object",
-        "title": "powerpack.mechanical.MechModule Base Schema",
-        "required": ["name"],
-        "properties": {
-            "name" : {
-                "type" : "string",
-                "order" : 0,
-                "editable" : True,
-                "examples" : ["Object name"],
-                "description" : "Object name"
-                },
-            "version" : {
-                "type" : "string",
-                "order" : 1,
-                "editable" : False,
-                "Description" : "Object version"
-                }
-            }
-        }
-    def __init__(self, name='', version='', **kwargs):
-        self.name = name
-        self.version = version
-        if kwargs:
-            self.add_data(**kwargs)
 
-    def add_data(self, **kwargs):
-        """
-        Adds given kwargs to object dict
-        """
-        for keyword, value in kwargs.items():
-            self.__setattr__(keyword, value)
 
-    def del_data(self, attribute_name):
-        """
-        Removes given attribute and its value from object dict
-        """
-        self.__delattr__(attribute_name)
+    def __init__(self, **kwargs):
+        for property_name, property_value in kwargs.items():
+            setattr(self, property_name, property_value)
 
     def to_dict(self):
         """
-        !!! Enable python object in metadata ?
+        Generic to_dict method
         """
-        return self.__dict__
+        if hasattr(self, 'Dict'):
+            # !!! This prevent us to call DessiaObject.to_dict() from an inheriting object
+            # which implement a Dict method, because of the infinite recursion it creates.
+            # TODO Change Dict methods to to_dict everywhere
+            return self.Dict()
+
+        # Default to dict
+        dict_ = {}
+        for key, value in self.__dict__.items():
+            if isinstance(value, DessiaObject):
+                dict_[key] = value.to_dict()
+            else:
+                dict_[key] = value
+        return dict_
+
 
     @classmethod
     def dict_to_object(cls, dict_):
-        kwargs = deepcopy(dict_)
-        name = kwargs.pop('name')
-        try:
-            version = kwargs.pop('version')
-        except KeyError:
-            version = ''
-        metadata = cls(name, version, **kwargs)
-        return metadata
+        """
+        Generic dict_to_object method
+        """
+        if hasattr(cls, 'DictToObject'):
+            return cls.DictToObject(dict_)
+        # Using default
+        # TODO: use jsonschema
+        return cls(**dict_)
+
+    @property
+    def _method_jsonschemas(self):
+        """
+        Generates dynamic jsonschemas for methods of class
+        """
+        jsonschemas = {}
+        cls = type(self)
+        valid_method_names = [m for m in dir(cls)\
+                              if not m.startswith('_')]
+        for method_name in valid_method_names:
+            method = getattr(cls, method_name)
+
+            # Find default value and required arguments of method
+            args_specs = inspect.getfullargspec(method)
+            nargs = len(args_specs.args) - 1
+            if args_specs.defaults is not None:
+                ndefault_args = len(args_specs.defaults)
+            else:
+                ndefault_args = 0
+            default_arguments = {}
+            required_arguments = []
+            for iargument, argument in enumerate(args_specs.args[1:]):
+                if not argument in ['self', 'progress_callback']:
+                    if iargument >= nargs - ndefault_args:
+                        default_value = args_specs.defaults[ndefault_args-nargs+iargument]
+                        default_arguments[argument] = default_value
+                    else:
+                        required_arguments.append(argument)
+
+            if method.__annotations__:
+                jsonschemas[method_name] = deepcopy(JSONSCHEMA_HEADER)
+                jsonschemas[method_name]['required'] = required_arguments
+                for i, annotation in enumerate(method.__annotations__.items()): # !!! Not actually ordered
+                    jsonschema_element = jsonschema_from_annotation(annotation, {}, i)[annotation[0]]
+                    jsonschemas[method_name]['properties'][str(i)] = jsonschema_element
+                    if annotation[0] in default_arguments.keys():
+                        default = set_default_value(jsonschemas[method_name]['properties'],
+                                                    str(i),
+                                                    default_arguments[annotation[0]])
+                        jsonschemas[method_name]['properties'].update(default)
+        return jsonschemas
+
+    @classmethod
+    def _jsonschema(cls):
+        # Get __init__ method and its annotations
+        init = cls.__init__
+        annotations = init.__annotations__
+
+        # Get editable and ordered variables
+        if hasattr(cls, '_editable_variables') and cls._editable_variables is not None:
+            editable_variables = cls._editable_variables
+        else:
+            editable_variables = list(annotations.keys())
+
+        if hasattr(cls, '_ordered_variables') and cls._ordered_variables is not None:
+            ordered_variables = cls._ordered_variables
+        else:
+            ordered_variables = editable_variables
+
+        if hasattr(cls, '_titled_variables'):
+            titled_variables = cls._titled_variables
+        unordered_count = 0
+
+        # Initialize jsonschema
+        jsonschema = deepcopy(JSONSCHEMA_HEADER)
+
+        # Find default value and required arguments of class construction
+        args_specs = inspect.getfullargspec(init)
+        nargs = len(args_specs.args) - 1
+        if args_specs.defaults is not None:
+            ndefault_args = len(args_specs.defaults)
+        else:
+            ndefault_args = 0
+        default_arguments = {}
+        required_arguments = []
+        for iargument, argument in enumerate(args_specs.args[1:]):
+            if not argument in ['self', 'progress_callback']:
+                if iargument >= nargs - ndefault_args:
+                    default_value = args_specs.defaults[ndefault_args-nargs+iargument]
+                    default_arguments[argument] = default_value
+                else:
+                    required_arguments.append(argument)
+        jsonschema['required'] = required_arguments
+
+        # Set jsonschema
+        for annotation in annotations.items():
+            name, value = annotation
+            if name in ordered_variables:
+                order = ordered_variables.index(name)
+            else:
+                order = len(ordered_variables) + unordered_count
+                unordered_count += 1
+            if titled_variables is not None and name in titled_variables:
+                title = titled_variables[name]
+            else:
+                title = None
+            jsonschema_element = jsonschema_from_annotation(annotation=annotation,
+                                                            jsonschema_element={},
+                                                            order=order,
+                                                            editable=name in editable_variables,
+                                                            title=title)
+            jsonschema['properties'].update(jsonschema_element)
+            if name in default_arguments.keys():
+                default = set_default_value(jsonschema['properties'],
+                                            name,
+                                            default_arguments[name])
+                jsonschema['properties'].update(default)
+        return jsonschema
+
+    def cad_export(self,
+                   fcstd_filepath=None,
+                   python_path='python',
+                   freecad_lib_path='/usr/lib/freecad/lib',
+                   export_types=['fcstd']):
+        """
+        Generic CAD export method
+        """
+        if fcstd_filepath is None:
+            fcstd_filepath = 'An unnamed {}'.format(self.__class__.__name__)
+
+        if hasattr(self, 'volmdlr_primitives'):
+            model = vm.VolumeModel([('', self.volmdlr_primitives())])
+            model.FreeCADExport(fcstd_filepath, python_path=python_path,
+                                freecad_lib_path=freecad_lib_path, export_types=export_types)
+        else:
+            raise NotImplementedError
+
+    def _display_angular(self):
+        display = []
+        if hasattr(self, 'CADExport')\
+        or hasattr(self, 'FreeCADExport')\
+        or hasattr(self, 'cad_export'):
+            display.append({'angular_component': 'app-cad-viewer'})
+        return display
+
 
 def number2factor(number):
     """
@@ -187,117 +304,6 @@ def stringify_dict_keys(obj):
         return obj
     return new_obj
 
-class DessiaObject:
-    """
-    Base abstract class for Dessia's object.
-    Gathers generic methods and attributes
-    """
-    _standalone_in_db = False
-
-    def __init__(self, **kwargs):
-        for property_name, property_value in kwargs.items():
-            setattr(self, property_name, property_value)
-
-
-    def to_dict(self):
-        """
-        Generic to_dict method
-        """
-        if hasattr(self, 'Dict'):
-            return self.Dict()
-
-        # Default to dict
-        dict_ = {}
-        for key, value in self.__dict__.items():
-            if isinstance(value, DessiaObject):
-                dict_[key] = value.to_dict()
-            else:
-                dict_[key] = value
-        return dict_
-
-    @property
-    def _method_jsonschemas(self):
-        """
-        Generates dynamic jsonschemas for methods of class
-        """
-        jsonschemas = {}
-        cls = type(self)
-        valid_method_names = [m for m in dir(cls)\
-                              if not m.startswith('_')]
-        for method_name in valid_method_names:
-            method = getattr(cls, method_name)
-
-            # Find default value and required arguments of method
-            args_specs = inspect.getfullargspec(method)
-            nargs = len(args_specs.args) - 1
-            if args_specs.defaults is not None:
-                ndefault_args = len(args_specs.defaults)
-            else:
-                ndefault_args = 0
-            default_arguments = {}
-            required_arguments = []
-            for iargument, argument in enumerate(args_specs.args[1:]):
-                if not argument in ['self', 'progress_callback']:
-                    if iargument >= nargs - ndefault_args:
-                        default_value = args_specs.defaults[ndefault_args-nargs+iargument]
-                        default_arguments[argument] = default_value
-                    else:
-                        required_arguments.append(argument)
-
-            if method.__annotations__:
-                jsonschemas[method_name] = deepcopy(JSONSCHEMA_HEADER)
-                jsonschemas[method_name]['required'] = required_arguments
-                for i, annotation in enumerate(method.__annotations__.items()): # !!! Not actually ordered
-#                    current_dict = jsonschemas[method_name]['properties']
-                    jsonschema_element = jsonschema_from_annotation(annotation, {}, i)[annotation[0]]
-                    
-#                    current_dict.update(jsonschema_from_annotation(annotation, current_dict, i))
-                    jsonschemas[method_name]['properties'][str(i)] = jsonschema_element
-                    if annotation[0] in default_arguments.keys():
-                        jsonschemas[method_name]['properties'].update(set_default_value(jsonschemas[method_name]['properties'],
-                                                                                        str(i),
-                                                                                        default_arguments[annotation[0]]))
-        return jsonschemas
-
-
-    @classmethod
-    def dict_to_object(cls, dict_):
-        """
-        Generic dict_to_object method
-        """
-        if hasattr(cls, 'DictToObject'):
-            return cls.DictToObject(dict_)
-        # Using default
-        # TODO: use jsonschema
-        return cls(**dict_)
-#        raise NotImplementedError('Class has no dict_to_object/DictToObject method')
-
-    def cad_export(self,
-                   fcstd_filepath=None,
-                   python_path='python',
-                   freecad_lib_path='/usr/lib/freecad/lib',
-                   export_types=['fcstd']):
-        """
-        Generic CAD export method
-        """
-        if fcstd_filepath is None:
-            fcstd_filepath = 'An unnamed {}'.format(self.__class__.__name__)
-
-        if hasattr(self, 'volmdlr_primitives'):
-            model = vm.VolumeModel([('', self.volmdlr_primitives())])
-            model.FreeCADExport(fcstd_filepath, python_path=python_path,
-                                freecad_lib_path=freecad_lib_path, export_types=export_types)
-        else:
-            raise NotImplementedError
-
-    def _display_angular(self):
-        display = []
-        if hasattr(self, 'CADExport')\
-        or hasattr(self, 'FreeCADExport')\
-        or hasattr(self, 'cad_export'):
-            display.append({'angular_component': 'app-cad-viewer'})
-        return display
-
 class InteractiveObjectCreator:
     def __init__(self):
         self.base_class_name = input('Base class of object (default=DessiaObject):')
@@ -336,15 +342,18 @@ class InteractiveObjectCreator:
 
         return schema
 
-def jsonschema_from_annotation(annotation, jsonschema_element, order, title=None):
+def jsonschema_from_annotation(annotation, jsonschema_element,
+                               order, editable=None, title=None):
     key, value = annotation
     if title is None:
         title = prettyname(key)
+    if editable is None:
+        editable = True
     if value in TYPING_EQUIVALENCES.keys():
         # Python Built-in type
         jsonschema_element[key] = {'type': TYPING_EQUIVALENCES[value],
                                    'title': title,
-                                   'editable' : True, # !!! Dynamic editable field ?
+                                   'editable' : editable,
                                    'order' : order}
     elif isinstance(value, TypeVar):
         # Several  classes are possible
@@ -352,7 +361,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element, order, title=None
         jsonschema_element[key] = {'type': 'object',
                                    'classes': classnames,
                                    'title': title,
-                                   'editable' : True, # !!! Dynamic editable field ?
+                                   'editable' : editable,
                                    'order' : order}
     elif hasattr(value, '_name')\
     and value._name in ['List', 'Sequence', 'Iterable']:
@@ -361,7 +370,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element, order, title=None
             jsonschema_element[key] = {'type': 'array',
                                        'title': title,
                                        'order' : order,
-                                       'editable' : True, # !!! Dynamic editable field ?
+                                       'editable' : editable,
                                        'items': {
                                            'type': TYPING_EQUIVALENCES[items_type]
                                            }
@@ -372,7 +381,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element, order, title=None
             jsonschema_element[key] = {'type': 'array',
                                        'title': title,
                                        'order' : order,
-                                       'editable' : True, # !!! Dynamic editable field ?
+                                       'editable' : editable,
                                        'items': {
                                            'type': 'object',
                                            'classes': [classname]
@@ -385,15 +394,15 @@ def jsonschema_from_annotation(annotation, jsonschema_element, order, title=None
             jsonschema_element[key] = {'type': 'object',
                                        'title': title,
                                        'order' : order,
-                                       'editable' : True, # !!! Dynamic editable field ?
+                                       'editable' : editable,
                                        'classes': [classname]}
         else:
             # Dataclasses
             jsonschema_element[key] = jsonschema_from_dataclass(value)
             jsonschema_element[key]['title'] = title
             jsonschema_element[key]['order'] = order
-            jsonschema_element[key]['editable'] = True # !!! Dynamic editable field ?
-                
+            jsonschema_element[key]['editable'] = editable
+
     return jsonschema_element
 
 def jsonschema_from_dataclass(class_):
@@ -449,7 +458,7 @@ def serialize_sequence(seq):
         else:
             serialized_sequence.append(value)
     return serialized_sequence
-    
+
 def deserialize_argument(type_, argument):
     if isinstance(type_, TypeVar):
         # Get all classes
@@ -465,7 +474,7 @@ def deserialize_argument(type_, argument):
                 # Throws KeyError if we try to put wrong dict into dict_to_object
                 # This means we try to instantiate a children class with a parent dict_to_object
                 deserialized_argument = children_class.dict_to_object(argument)
-                
+
                 # If it succeeds we have the right class and instantiated object
                 instantiated = True
             except KeyError:
