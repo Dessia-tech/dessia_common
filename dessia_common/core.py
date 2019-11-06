@@ -23,7 +23,8 @@ class DessiaObject:
     _standalone_in_db = False
 
 
-    def __init__(self, **kwargs):
+    def __init__(self, name:str='', **kwargs):
+        self.name = name
         for property_name, property_value in kwargs.items():
             setattr(self, property_name, property_value)
 
@@ -58,52 +59,11 @@ class DessiaObject:
         # TODO: use jsonschema
         return cls(**dict_)
 
-    @property
-    def _method_jsonschemas(self):
-        """
-        Generates dynamic jsonschemas for methods of class
-        """
-        jsonschemas = {}
-        cls = type(self)
-        valid_method_names = [m for m in dir(cls)\
-                              if not m.startswith('_')]
-        for method_name in valid_method_names:
-            method = getattr(cls, method_name)
-
-            # Find default value and required arguments of method
-            args_specs = inspect.getfullargspec(method)
-            nargs = len(args_specs.args) - 1
-            if args_specs.defaults is not None:
-                ndefault_args = len(args_specs.defaults)
-            else:
-                ndefault_args = 0
-            default_arguments = {}
-            required_arguments = []
-            for iargument, argument in enumerate(args_specs.args[1:]):
-                if not argument in ['self', 'progress_callback']:
-                    if iargument >= nargs - ndefault_args:
-                        default_value = args_specs.defaults[ndefault_args-nargs+iargument]
-                        default_arguments[argument] = default_value
-                    else:
-                        required_arguments.append(argument)
-
-            if method.__annotations__:
-                jsonschemas[method_name] = deepcopy(JSONSCHEMA_HEADER)
-                jsonschemas[method_name]['required'] = required_arguments
-                for i, annotation in enumerate(method.__annotations__.items()): # !!! Not actually ordered
-                    jsonschema_element = jsonschema_from_annotation(annotation, {}, i)[annotation[0]]
-                    jsonschemas[method_name]['properties'][str(i)] = jsonschema_element
-                    if annotation[0] in default_arguments.keys():
-                        default = set_default_value(jsonschemas[method_name]['properties'],
-                                                    str(i),
-                                                    default_arguments[annotation[0]])
-                        jsonschemas[method_name]['properties'].update(default)
-        return jsonschemas
-
     @classmethod
     def jsonschema(cls):
         if hasattr(cls, '_jsonschema'):
-            return cls._jsonschema
+            _jsonschema = dict_merge(DessiaObject.jsonschema(), cls._jsonschema)
+            return _jsonschema
 
         # Get __init__ method and its annotations
         init = cls.__init__
@@ -127,25 +87,10 @@ class DessiaObject:
         unordered_count = 0
 
         # Initialize jsonschema
-        jsonschema = deepcopy(JSONSCHEMA_HEADER)
+        _jsonschema = deepcopy(JSONSCHEMA_HEADER)
 
-        # Find default value and required arguments of class construction
-        args_specs = inspect.getfullargspec(init)
-        nargs = len(args_specs.args) - 1
-        if args_specs.defaults is not None:
-            ndefault_args = len(args_specs.defaults)
-        else:
-            ndefault_args = 0
-        default_arguments = {}
-        required_arguments = []
-        for iargument, argument in enumerate(args_specs.args[1:]):
-            if not argument in ['self', 'progress_callback']:
-                if iargument >= nargs - ndefault_args:
-                    default_value = args_specs.defaults[ndefault_args-nargs+iargument]
-                    default_arguments[argument] = default_value
-                else:
-                    required_arguments.append(argument)
-        jsonschema['required'] = required_arguments
+        required_arguments, default_arguments = inspect_arguments(init, merge=False)
+        _jsonschema['required'] = required_arguments
 
         # Set jsonschema
         for annotation in annotations.items():
@@ -164,13 +109,61 @@ class DessiaObject:
                                                             order=order,
                                                             editable=name in editable_variables,
                                                             title=title)
-            jsonschema['properties'].update(jsonschema_element)
+            _jsonschema['properties'].update(jsonschema_element)
             if name in default_arguments.keys():
-                default = set_default_value(jsonschema['properties'],
+                default = set_default_value(_jsonschema['properties'],
                                             name,
                                             default_arguments[name])
-                jsonschema['properties'].update(default)
-        return jsonschema
+                _jsonschema['properties'].update(default)
+        return _jsonschema
+
+    @property
+    def _method_jsonschemas(self):
+        """
+        Generates dynamic jsonschemas for methods of class
+        """
+        jsonschemas = {}
+        cls = type(self)
+        valid_method_names = [m for m in dir(cls)\
+                              if not m.startswith('_')]
+        for method_name in valid_method_names:
+            method = getattr(cls, method_name)
+
+            required_arguments, default_arguments = inspect_arguments(method, merge=False)
+
+            if method.__annotations__:
+                jsonschemas[method_name] = deepcopy(JSONSCHEMA_HEADER)
+                jsonschemas[method_name]['required'] = required_arguments
+                for i, annotation in enumerate(method.__annotations__.items()): # !!! Not actually ordered
+                    jsonschema_element = jsonschema_from_annotation(annotation, {}, i)[annotation[0]]
+                    jsonschemas[method_name]['properties'][str(i)] = jsonschema_element
+                    if annotation[0] in default_arguments.keys():
+                        default = set_default_value(jsonschemas[method_name]['properties'],
+                                                    str(i),
+                                                    default_arguments[annotation[0]])
+                        jsonschemas[method_name]['properties'].update(default)
+        return jsonschemas
+
+    def dict_to_arguments(self, dict_, method):
+        method_object = getattr(self, method)
+        args_specs = inspect.getfullargspec(method_object)
+        allowed_args = args_specs.args
+        self_index = allowed_args.index('self')
+        allowed_args.pop(self_index)
+
+        arguments = {}
+        for i, arg in enumerate(allowed_args):
+            if str(i) in dict_:
+                value = dict_[str(i)]
+                if hasattr(value, 'to_dict'):
+                    serialized_value = value.to_dict()
+                else:
+                    serialized_value = value
+                arguments[arg] = serialized_value
+        return arguments
+
+    def is_valid(self):
+        return True
 
     def cad_export(self,
                    fcstd_filepath=None,
@@ -464,6 +457,30 @@ def serialize_sequence(seq):
             serialized_sequence.append(value)
     return serialized_sequence
 
+def inspect_arguments(method, merge=False):
+    # Find default value and required arguments of class construction
+    args_specs = inspect.getfullargspec(method)
+    nargs = len(args_specs.args) - 1
+
+    if args_specs.defaults is not None:
+        ndefault_args = len(args_specs.defaults)
+    else:
+        ndefault_args = 0
+
+    default_arguments = {}
+    arguments = []
+    for iargument, argument in enumerate(args_specs.args[1:]):
+        if not argument in ['self', 'progress_callback']:
+            if iargument >= nargs - ndefault_args:
+                default_value = args_specs.defaults[ndefault_args-nargs+iargument]
+                if merge:
+                    arguments.append((argument, default_value))
+                else:
+                    default_arguments[argument] = default_value
+            else:
+                arguments.append(argument)
+    return arguments, default_arguments
+
 def deserialize_argument(type_, argument):
     if isinstance(type_, TypeVar):
         # Get all classes
@@ -552,6 +569,7 @@ def recursive_instantiation(types, values):
             print(type_)
             raise NotImplementedError
     return instantiated_values
+
 JSONSCHEMA_HEADER = {"definitions": {},
                      "$schema": "http://json-schema.org/draft-07/schema#",
                      "type": "object",
