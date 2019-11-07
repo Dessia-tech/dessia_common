@@ -28,6 +28,10 @@ class DessiaObject:
         for property_name, property_value in kwargs.items():
             setattr(self, property_name, property_value)
 
+    def base_dict(self):
+        dict_ = {'name' : self.name}
+        return dict_
+
     def to_dict(self):
         """
         Generic to_dict method
