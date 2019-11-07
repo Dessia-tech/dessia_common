@@ -136,9 +136,11 @@ class Block(dc.DessiaObject):
         }
     _standalone_in_db = False
 
-    def __init__(self, inputs, outputs):
+    def __init__(self, inputs, outputs, name=''):
         self.inputs = inputs
         self.outputs = outputs
+
+        dc.DessiaObject.__init__(self, name=name)
 
     def equivalent_hash(self):
         return len(self.__class__.__name__)
@@ -538,7 +540,7 @@ class Workflow(Block):
         }
 
 
-    def __init__(self, blocks, pipes, output):
+    def __init__(self, blocks, pipes, output, name=''):
         self.blocks = blocks
         self.pipes = pipes
 
@@ -558,7 +560,7 @@ class Workflow(Block):
             if len(nx.ancestors(self.graph, variable)) == 0: # !!! Why not just : if nx.ancestors(self.graph, variable) ?
                 input_variables.append(variable)
 
-        Block.__init__(self, input_variables, [output])
+        Block.__init__(self, input_variables, [output], name=name)
 
     def __hash__(self):
         base_hash = len(self.blocks)+11*len(self.pipes)+sum(self.variable_indices(self.outputs[0]))
@@ -606,16 +608,16 @@ class Workflow(Block):
         return displays
 
     def to_dict(self):
-
+        dict_ = dc.DessiaObject.base_dict(self)
         blocks = [b.to_dict() for b in self.blocks]
         pipes = []
         for pipe in self.pipes:
             pipes.append((self.variable_indices(pipe.input_variable),
                           self.variable_indices(pipe.output_variable)))
 
-        dict_ = {'blocks': blocks,
-                 'pipes': pipes,
-                 'output': self.variable_indices(self.outputs[0])}
+        dict_.update({'blocks': blocks,
+                      'pipes': pipes,
+                      'output': self.variable_indices(self.outputs[0])})
         return dict_
 
     @classmethod
@@ -629,7 +631,7 @@ class Workflow(Block):
 
         output = blocks[dict_['output'][0]].outputs[dict_['output'][2]]
 
-        return cls(blocks, pipes, output)
+        return cls(blocks, pipes, output, name=dict_['name'])
 
     def dict_to_arguments(self, dict_, method):
         arguments_values = {}
@@ -934,7 +936,7 @@ class WorkflowRun(dc.DessiaObject):
              }
          }
 
-    def __init__(self, workflow, output_value, start_time, end_time, log):
+    def __init__(self, workflow, output_value, start_time, end_time, log, name=''):
         self.workflow = workflow
 #        self.values = values
 
@@ -946,6 +948,8 @@ class WorkflowRun(dc.DessiaObject):
         self.end_time = end_time
         self.execution_time = end_time - start_time
         self.log = log
+
+        dc.DessiaObject.__init__(self, name=name)
 
     def __eq__(self, other_workflow_run):
         if hasattr(self.output_value, '__iter__'):
@@ -979,40 +983,23 @@ class WorkflowRun(dc.DessiaObject):
         return displays
 
     def to_dict(self):
-        dict_ = {}
-        dict_['workflow'] = self.workflow.to_dict()
-        dict_['output_value'] = dc.serialize_sequence(self.output_value)
-#        values_types = []
-#        for variable in self.workflow.variables:
-#            if isinstance(variable, (TypedVariable, TypedVariableWithDefaultValue)):
-#                values_types.append(variable.type_)
-#            else:
-#                type_ = self.workflow.find_variable_type(variable)
-#                values_types.append(type_)
-        dict_['output_value_type'] = dc.recursive_type(self.output_value)
-        dict_['start_time'] = self.start_time
-        dict_['end_time'] = self.end_time
-        dict_['execution_time'] = self.execution_time
-        dict_['log'] = self.log
+        dict_ = dc.DessiaObject.base_dict(self)
+        dict_.update({'workflow' : self.workflow.to_dict(),
+                      'output_value' : dc.serialize_sequence(self.output_value),
+                      'output_value_type' : dc.recursive_type(self.output_value),
+                      'start_time' : self.start_time,
+                      'end_time' : self.end_time,
+                      'execution_time' : self.execution_time,
+                      'log' : self.log})
         return dict_
 
     @classmethod
     def dict_to_object(cls, dict_):
         workflow = Workflow.dict_to_object(dict_['workflow'])
         output_value = dc.recursive_instantiation(dict_['output_value_type'], dict_['output_value'])
-#        for i, (value, type_) in enumerate(zip(dict_['values'], dict_['values_types'])):
-#            if value is not None and type_ is not None:
-#                values.append(dc.deserialize_argument(type_, value))
-#            else:
-#                values.append(None)
-        start_time = dict_['start_time']
-        end_time = dict_['end_time']
-        log = dict_['log']
-        return cls(workflow=workflow,
-                   output_value=output_value,
-                   start_time=start_time,
-                   end_time=end_time,
-                   log=log)
+        return cls(workflow=workflow, output_value=output_value,
+                   start_time=dict_['start_time'], end_time=dict_['end_time'],
+                   log=dict_['log'], name=dict_['name'])
 
 def set_inputs(method, inputs=[]):
     args_specs = inspect.getfullargspec(method)
