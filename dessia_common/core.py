@@ -350,7 +350,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
     if title is None:
         title = prettyname(key)
     if editable is None:
-        editable = True
+        editable = key not in ['return']
     if value in TYPING_EQUIVALENCES.keys():
         # Python Built-in type
         jsonschema_element[key] = {'type': TYPING_EQUIVALENCES[value],
