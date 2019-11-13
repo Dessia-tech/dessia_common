@@ -23,6 +23,7 @@ class DessiaObject:
     _standalone_in_db = False
 
 
+
     def __init__(self, name:str='', **kwargs):
         self.name = name
         for property_name, property_value in kwargs.items():
@@ -31,6 +32,19 @@ class DessiaObject:
     def base_dict(self):
         dict_ = {'name' : self.name}
         return dict_
+
+    @classmethod
+    def base_jsonschema(cls):
+        jsonschema = JSONSCHEMA_HEADER.copy()
+        jsonschema['properties']['name'] = {
+                'type': 'string',
+                "title" : "Object Name",
+                "description" : "Object name",
+                "editable" : True,
+                "order" : 0,
+                "default_value" : "Object Name"
+                }
+        return jsonschema
 
     def to_dict(self):
         """
@@ -66,7 +80,8 @@ class DessiaObject:
     @classmethod
     def jsonschema(cls):
         if hasattr(cls, '_jsonschema'):
-            _jsonschema = dict_merge(DessiaObject.jsonschema(), cls._jsonschema)
+            _jsonschema = dict_merge(DessiaObject.base_jsonschema(), cls._jsonschema)
+#            _jsonschema = cls._jsonschema
             return _jsonschema
 
         # Get __init__ method and its annotations
