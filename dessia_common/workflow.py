@@ -642,6 +642,7 @@ class Workflow(Block):
                 value = dict_[str(i)]
                 deserialized_value = dc.deserialize_argument(input_.type_, value)
                 arguments_values[input_.name] = deserialized_value
+
         arguments = {'input_variables_values': arguments_values}
         return arguments
 

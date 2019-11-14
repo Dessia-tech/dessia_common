@@ -41,7 +41,6 @@ class DessiaObject:
                 "title" : "Object Name",
                 "description" : "Object name",
                 "editable" : True,
-                "order" : 0,
                 "default_value" : "Object Name"
                 }
         return jsonschema
@@ -80,8 +79,8 @@ class DessiaObject:
     @classmethod
     def jsonschema(cls):
         if hasattr(cls, '_jsonschema'):
-            _jsonschema = dict_merge(DessiaObject.base_jsonschema(), cls._jsonschema)
-#            _jsonschema = cls._jsonschema
+#            _jsonschema = dict_merge(DessiaObject.base_jsonschema(), cls._jsonschema)
+            _jsonschema = cls._jsonschema
             return _jsonschema
 
         # Get __init__ method and its annotations

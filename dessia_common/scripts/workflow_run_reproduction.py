@@ -130,7 +130,7 @@ input_values = {block_ebo.inputs[0]: cells.CELL1_2RC,
                 optimize_ebo.inputs[1]: 5}
 
 workflow = wf.Workflow(blocks, pipes, filter_sort.outputs[0])
-#workflow_run = workflow.run(input_values)
+workflow_run = workflow.run(input_values)
 #d = workflow_run.to_dict()
 #w = wf.WorkflowRun.dict_to_object(d)
 #methods_jsonschemas = workflow._method_jsonschemas
