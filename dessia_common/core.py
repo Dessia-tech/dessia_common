@@ -182,6 +182,9 @@ class DessiaObject:
 
     def is_valid(self):
         return True
+    
+    def volmdlr_volume_model(self):
+        return vm.VolumeModel(self.volmdlr_primitives())
 
     def cad_export(self,
                    fcstd_filepath=None,
@@ -195,11 +198,14 @@ class DessiaObject:
             fcstd_filepath = 'An unnamed {}'.format(self.__class__.__name__)
 
         if hasattr(self, 'volmdlr_primitives'):
-            model = vm.VolumeModel([('', self.volmdlr_primitives())])
+            model = self.volmdlr_volume_model()
             model.FreeCADExport(fcstd_filepath, python_path=python_path,
                                 freecad_lib_path=freecad_lib_path, export_types=export_types)
         else:
             raise NotImplementedError
+            
+    def babylonjs(self):
+        self.volmdlr_volume_model().BabylonShow()
 
     def _display_angular(self):
         display = []
