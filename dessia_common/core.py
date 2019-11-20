@@ -22,8 +22,6 @@ class DessiaObject:
     """
     _standalone_in_db = False
 
-
-
     def __init__(self, name:str='', **kwargs):
         self.name = name
         for property_name, property_value in kwargs.items():
@@ -182,7 +180,7 @@ class DessiaObject:
 
     def is_valid(self):
         return True
-    
+
     def volmdlr_volume_model(self):
         return vm.VolumeModel(self.volmdlr_primitives())
 
@@ -203,7 +201,7 @@ class DessiaObject:
                                 freecad_lib_path=freecad_lib_path, export_types=export_types)
         else:
             raise NotImplementedError
-            
+
     def babylonjs(self):
         self.volmdlr_volume_model().BabylonShow()
 
@@ -597,6 +595,7 @@ def recursive_instantiation(types, values):
 JSONSCHEMA_HEADER = {"definitions": {},
                      "$schema": "http://json-schema.org/draft-07/schema#",
                      "type": "object",
+                     "required" : [],
                      "properties": {}}
 
 TYPING_EQUIVALENCES = {int: 'number',
