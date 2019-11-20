@@ -595,12 +595,12 @@ class Workflow(Block):
         if hash(self) != hash(other_workflow):
             return False
 
-        if not Block.__eq__(self, other_workflow):
+        if not Block.equivalent(self, other_workflow):
             return False
 
         # TODO: temp , reuse graph!!!!
         for block1, block2 in zip(self.blocks, other_workflow.blocks):
-            if block1 != block2:
+            if not block1.equivalent(block2):
                 return False
 
         return True
