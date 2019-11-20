@@ -705,6 +705,10 @@ class Workflow(Block):
 
         return (ib1, ti1, iv1)
 
+    def index(self, variable):
+        index = self.variables.index(variable)
+        return index
+
     def layout(self, n_x_anchors):
         for iblock, block in enumerate(self.blocks):
             self.coordinates[block] = (iblock % n_x_anchors, iblock // n_x_anchors)
