@@ -10,6 +10,7 @@ from importlib import import_module
 import webbrowser
 import networkx as nx
 import pkg_resources
+import typing
 
 from jinja2 import Environment, PackageLoader, select_autoescape
 import dessia_common as dc
@@ -48,6 +49,30 @@ class TypedVariable(Variable):
     def __init__(self, name, type_):
         Variable.__init__(self, name)
         self.type_ = type_
+
+    def __getstate__(self):
+        dict_ = self.__dict__.copy()
+        if hasattr(self.type_, '_name') and self.type_._name == 'List':
+            arg = self.type_.__args__[0]
+            if arg.__module__ == 'builtins':
+                full_argname = '__builtins__.' + arg.__name__
+            else:
+                full_argname = arg.__module__ + '.' + arg.__name__
+            dict_['type_'] = 'List[' + full_argname + ']'
+        return dict_
+
+    def __setstate__(self, dict_):
+        if isinstance(dict_['type_'], str):
+            splitted_type = dict_['type_'].split('[')
+            if splitted_type[0] == 'List':
+                full_argname = splitted_type[1].split(']')[0]
+                splitted_argname = full_argname.rsplit('.', 1)
+                if splitted_argname[0] != '__builtins__':
+                    exec('import ' + splitted_argname[0])
+                    type_ = eval(full_argname)
+                else:
+                    type_ = eval(splitted_argname[1])
+                self.type_ = typing.List[type_]
 
     def equivalent_hash(self):
         return int((hash(self.name) + hash(self.type_.__name__)) % 10e5)
@@ -129,7 +154,6 @@ class Block(dc.DessiaObject):
                                      "dessia_common.workflow.TypedVariableWithDefaultValue"],
                         "editable" : False
                         },
-
                     }
                 }
             }
@@ -641,7 +665,7 @@ class Workflow(Block):
                 and str(i) in dict_):
                 value = dict_[str(i)]
                 deserialized_value = dc.deserialize_argument(input_.type_, value)
-                arguments_values[input_.name] = deserialized_value
+                arguments_values[i] = deserialized_value
 
         arguments = {'input_variables_values': arguments_values}
         return arguments
@@ -713,20 +737,15 @@ class Workflow(Block):
 
         values = {}
 
-        for variable in self.inputs:
-            if variable in input_variables_values:
-                values[variable] = input_variables_values[variable]
+        for index, variable in enumerate(self.inputs):
+            if index in input_variables_values:
+                values[variable] = input_variables_values[index]
                 activated_items[variable] = True
             elif hasattr(variable, 'default_value'):
                 values[variable] = variable.default_value
                 activated_items[variable] = True
             else:
-                if variable.name in input_variables_values:
-                    values[variable] = input_variables_values[variable.name]
-                    activated_items[variable] = True
-                else:
-                    raise ValueError
-
+                raise ValueError
 
         something_activated = True
 
@@ -753,7 +772,6 @@ class Workflow(Block):
                 if not activated_items[block]:
                     all_inputs_activated = True
                     for function_input in block.inputs:
-
                         if not activated_items[function_input]:
                             all_inputs_activated = False
                             break
@@ -767,7 +785,6 @@ class Workflow(Block):
                         output_values = block.evaluate({i: values[i]\
                                                         for i in block.inputs})
                         for output, output_value in zip(block.outputs, output_values):
-                            print(output_value)
                             values[output] = output_value
                             activated_items[output] = True
 

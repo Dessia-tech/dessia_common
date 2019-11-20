@@ -117,20 +117,19 @@ pipes = [wf.Pipe(block_ebo.outputs[0], optimize_ebo.inputs[0]),
          wf.Pipe(optimize_ebo.outputs[1], attribute_selection_ebo.inputs[0]),
          wf.Pipe(attribute_selection_ebo.outputs[0], filter_sort.inputs[0])]
 
-input_values = {block_ebo.inputs[0]: cells.CELL1_2RC,
-                block_ebo.inputs[1]: limits_voltage_module,
-                block_ebo.inputs[2]: limits_current_module,
-                block_ebo.inputs[3]: limits_voltage_battery,
-                block_ebo.inputs[4]: limits_current_battery,
-                block_ebo.inputs[5]: [33, 34],
-                block_ebo.inputs[6]: [24, 25],
-                block_ebo.inputs[7]: [comb_profile_load,
-                                      comb_profile_wltp,
-                                      comb_profile_end],
-                optimize_ebo.inputs[1]: 5}
-
 workflow = wf.Workflow(blocks, pipes, filter_sort.outputs[0])
-workflow_run = workflow.run(input_values)
+input_values = {0: cells.CELL1_2RC,
+                1: limits_voltage_module,
+                2: limits_current_module,
+                3: limits_voltage_battery,
+                4: limits_current_battery,
+                5: [33, 34],
+                6: [24, 25],
+                7: [comb_profile_load,
+                    comb_profile_wltp,
+                    comb_profile_end],
+                12: 5}
+#workflow_run = workflow.run(input_values)
 #d = workflow_run.to_dict()
 #w = wf.WorkflowRun.dict_to_object(d)
 #methods_jsonschemas = workflow._method_jsonschemas
