@@ -392,7 +392,6 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
     elif hasattr(value, '_name')\
     and value._name in ['List', 'Sequence', 'Iterable']:
         items_type = value.__args__[0]
-        print('List', items_type, hasattr(items_type, '_standalone_in_db'))
         if items_type in TYPING_EQUIVALENCES.keys():
             jsonschema_element[key] = {'type': 'array',
                                        'title': title,
@@ -403,7 +402,6 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
                                            }
                                        }
         elif hasattr(value, '_standalone_in_db') or not hasattr(items_type, '__dataclass_fields__'):
-            print(items_type)
             classname = items_type.__module__ + '.' + items_type.__name__
             # List of a certain type
             jsonschema_element[key] = {'type': 'array',
