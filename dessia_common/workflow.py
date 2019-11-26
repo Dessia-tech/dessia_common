@@ -706,7 +706,7 @@ class Workflow(Block):
         return (ib1, ti1, iv1)
 
     def index(self, variable):
-        index = self.variables.index(variable)
+        index = self.inputs.index(variable)
         return index
 
     def layout(self, n_x_anchors):
@@ -740,7 +740,6 @@ class Workflow(Block):
         activated_items.update({b: False for b in self.blocks})
 
         values = {}
-
         for index, variable in enumerate(self.inputs):
             if index in input_variables_values:
                 values[variable] = input_variables_values[index]

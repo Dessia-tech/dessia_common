@@ -129,7 +129,7 @@ input_values = {0: cells.CELL1_2RC,
                     comb_profile_wltp,
                     comb_profile_end],
                 12: 5}
-#workflow_run = workflow.run(input_values)
+workflow_run = workflow.run(input_values)
 #d = workflow_run.to_dict()
 #w = wf.WorkflowRun.dict_to_object(d)
 #methods_jsonschemas = workflow._method_jsonschemas

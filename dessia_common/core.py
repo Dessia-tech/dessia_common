@@ -54,12 +54,9 @@ class DessiaObject:
             return self.Dict()
 
         # Default to dict
-        dict_ = {}
-        for key, value in self.__dict__.items():
-            if isinstance(value, DessiaObject):
-                dict_[key] = value.to_dict()
-            else:
-                dict_[key] = value
+        dict_ = serialize_dict(self.__dict__)
+        dict_['object_class'] = self.__module__ + '.' + self.__class__.__name__
+
         return dict_
 
 
@@ -70,9 +67,16 @@ class DessiaObject:
         """
         if hasattr(cls, 'DictToObject'):
             return cls.DictToObject(dict_)
+
+        if cls is not DessiaObject:
+            obj = dict_to_object(dict_, cls)
+            return obj
+        elif 'object_class' in dict_:
+            obj = dict_to_object(dict_)
+            return obj
         # Using default
         # TODO: use jsonschema
-        return cls(**dict_)
+        return obj
 
     @classmethod
     def jsonschema(cls):
@@ -84,6 +88,8 @@ class DessiaObject:
         # Get __init__ method and its annotations
         init = cls.__init__
         annotations = init.__annotations__
+
+#        print(annotations)
 
         # Get editable and ordered variables
         if hasattr(cls, '_editable_variables') and cls._editable_variables is not None:
@@ -540,6 +546,34 @@ def deserialize_argument(type_, argument):
          else:
              deserialized_argument = type_.dict_to_object(argument)
     return deserialized_argument
+
+def dict_to_object(dict_, class_=None):
+    working_dict = dict_.copy()
+    object_class = working_dict.pop('object_class', None)
+    if class_ is None:
+        module = object_class.rsplit('.', 1)[0]
+        exec('import ' + module)
+        class_ = eval(object_class)
+    obj = class_(**working_dict)
+
+    for key, value in working_dict.items():
+        if isinstance(value, dict):
+            subobj = dict_to_object(value)
+        elif isinstance(value, (list, tuple)):
+            subobj = sequence_to_objects(value)
+        else:
+            subobj = value
+        setattr(obj, key, subobj)
+    return obj
+
+def sequence_to_objects(sequence):
+    deserialized_sequence = []
+    for element in sequence:
+        if isinstance(element, dict):
+            deserialized_sequence.append(dict_to_object(element))
+        elif isinstance(element, (list, tuple)):
+            deserialized_sequence.append(sequence_to_objects(element))
+    return deserialized_sequence
 
 def prettyname(namestr):
     prettyname = ''
