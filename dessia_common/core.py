@@ -5,7 +5,8 @@ Created on Fri Jan  5 12:17:30 2018
 
 @author: Steven Masfaraud masfaraud@dessia.tech
 """
-
+import math
+import random
 from functools import reduce
 import collections
 from copy import deepcopy
@@ -218,6 +219,35 @@ class DessiaObject:
         or hasattr(self, 'cad_export'):
             display.append({'angular_component': 'app-cad-viewer'})
         return display
+
+class Parameter(DessiaObject):
+    def __init__(self, lower_bound, upper_bound, periodicity=None, name=''):
+        DessiaObject.__init__(self, name=name,
+                              lower_bound=lower_bound,
+                              upper_bound=upper_bound,
+                              periodicity=periodicity)
+    def random_value(self):
+        return random.uniform(self.lower_bound, self.upper_bound)
+
+    def are_values_equal(self, value1, value2, tol=1e-2):
+        if self.periodicity is not None:
+            value1 = value1 % self.periodicity
+            value2 = value2 % self.periodicity
+
+        return math.isclose(value1, value2, abs_tol=tol)
+
+    def normalize(self, value):
+        normalized_value = (value - self.lower_bound)/(self.upper_bound - self.lower_bound)
+        return normalized_value
+
+    def original_value(self, normalized_value):
+        value = normalized_value*(self.upper_bound - self.lower_bound) + self.lower_bound
+        return value
+
+    def optimizer_bounds(self):
+        if self.periodicity is not None:
+            return (self.lower_bound-0.5*self.periodicity,
+                    self.upper_bound+0.5*self.periodicity)
 
 
 def number2factor(number):
@@ -584,11 +614,12 @@ def sequence_to_objects(sequence):
 
 def prettyname(namestr):
     prettyname = ''
-    strings = namestr.split('_')
-    for i, string in enumerate(strings):
-        prettyname += string[0].upper() + string[1:]
-        if i < len(strings)-1:
-            prettyname += ' '
+    if namestr:
+        strings = namestr.split('_')
+        for i, string in enumerate(strings):
+            prettyname += string[0].upper() + string[1:]
+            if i < len(strings)-1:
+                prettyname += ' '
     return prettyname
 
 def getdeepattr(obj, attr):
