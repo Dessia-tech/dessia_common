@@ -22,32 +22,34 @@ class Variable(dc.DessiaObject):
         "$schema": "http://json-schema.org/draft-07/schema#",
         "type": "object",
         "title": "Variable",
-        "required": ["name"],
+        "required": ["_name"],
         "properties": {
-            "name": {
+            "_name": {
                 "type": "string",
                 "editable": True,
                 }
             }
         }
     _standalone_in_db = False
-    def __init__(self, name):
-        self.name = name
+    def __init__(self, _name, name=''):
+        self._name = _name
+
+        dc.DessiaObject.__init__(self, name=name)
 
     def equivalent_hash(self):
-        return int(hash(self.name) % 10e5)
+        return int(hash(self._name) % 10e5)
 
     def equivalent(self, other_variable):
         if self.__class__ != other_variable.__class__:
             return False
-        return self.name == other_variable.name
+        return self._name == other_variable._name
 
     def copy(self):
-        return Variable(self.name)
+        return Variable(self._name, name=self.name)
 
 class TypedVariable(Variable):
-    def __init__(self, name, type_):
-        Variable.__init__(self, name)
+    def __init__(self, _name, type_, name=''):
+        Variable.__init__(self, _name, name=name)
         self.type_ = type_
 
     def __getstate__(self):
@@ -75,51 +77,51 @@ class TypedVariable(Variable):
                 self.type_ = typing.List[type_]
 
     def equivalent_hash(self):
-        return int((hash(self.name) + hash(self.type_.__name__)) % 10e5)
+        return int((hash(self._name) + hash(self.type_.__name__)) % 10e5)
 
     def equivalent(self, other_variable):
         if self.__class__ != other_variable.__class__:
             return False
-        return self.name == other_variable.name and self.type_ == other_variable.type_
+        return self._name == other_variable._name and self.type_ == other_variable.type_
 
     def copy(self):
-        return TypedVariable(self.name, self.type_)
+        return TypedVariable(self._name, self.type_, name=self.name)
 
 class VariableWithDefaultValue(Variable):
-    def __init__(self, name, default_value):
-        Variable.__init__(self, name)
+    def __init__(self, _name, default_value, name=''):
+        Variable.__init__(self, _name, name='')
         self.default_value = default_value
 
     def equivalent_hash(self):
-        return int((hash(self.name) + hash(self.default_value)) % 10e5)
+        return int((hash(self._name) + hash(self.default_value)) % 10e5)
 
     def equivalent(self, other_variable):
         if self.__class__ != other_variable.__class__:
             return False
-        return self.name == other_variable.name and self.default_value == other_variable.default_value
+        return self._name == other_variable._name and self.default_value == other_variable.default_value
 
     def copy(self):
-        return VariableWithDefaultValue(self.name, self.default_value)
+        return VariableWithDefaultValue(self._name, self.default_value, name=self.name)
 
 class TypedVariableWithDefaultValue(TypedVariable):
-    def __init__(self, name, type_, default_value):
-        TypedVariable.__init__(self, name, type_)
+    def __init__(self, _name, type_, default_value, name=''):
+        TypedVariable.__init__(self, _name, type_, name=name)
         self.default_value = default_value
 
     def equivalent_hash(self):
-        return int((hash(self.name)\
+        return int((hash(self._name)\
                     + hash(self.type_.__name__)\
                     + hash(self.default_value)) % 10e5)
 
     def equivalent(self, other_variable):
         if self.__class__ != other_variable.__class__:
             return False
-        return (self.name == other_variable.name\
+        return (self._name == other_variable._name\
                 and self.type_ == other_variable.type_\
                 and self.default_value == other_variable.default_value)
 
     def copy(self):
-        return TypedVariableWithDefaultValue(self.name, self.type_, self.default_value)
+        return TypedVariableWithDefaultValue(self._name, self.type_, self.default_value, name=self.name)
 
 class Block(dc.DessiaObject):
     _jsonschema = {
@@ -176,7 +178,9 @@ class Block(dc.DessiaObject):
         return True
 
     def to_dict(self):
-        return {'block_class': self.__class__.__name__}
+        dict_ = dc.DessiaObject.base_dict(self)
+        dict_['block_class'] = self.__class__.__name__
+        return dict_
 
     @classmethod
     def dict_to_object(cls, dict_):
@@ -193,6 +197,7 @@ class Block(dc.DessiaObject):
         for i, input_ in enumerate(self.inputs):
             current_dict = {}
             annotation = (str(i), input_.type_)
+
             annotation_jsonschema = dc.jsonschema_from_annotation(annotation=annotation,
                                                                   jsonschema_element=current_dict,
                                                                   order=i,
@@ -221,15 +226,14 @@ class InstanciateModel(Block):
                 }
             }
         })
-    def __init__(self, object_class):
+    def __init__(self, object_class, name=''):
         self.object_class = object_class
-
         inputs = []
 
-        inputs = set_inputs(self.object_class.__init__, inputs)
+        inputs = set_inputs(self.object_class.__init__, inputs, name)
 
         outputs = [TypedVariable('Instanciated object', self.object_class)]
-        Block.__init__(self, inputs, outputs)
+        Block.__init__(self, inputs, outputs, name=name)
 
     def equivalent_hash(self):
         return len(self.object_class.__name__)
@@ -250,11 +254,11 @@ class InstanciateModel(Block):
         # TODO: Eval is dangerous: check that it is a class before
         class_ = getattr(import_module(dict_['object_class_module']),
                          dict_['object_class'])
-        return cls(class_)
+        return cls(class_, name=dict_['name'])
 
 
     def evaluate(self, values):
-        args = {var.name: values[var] for var in self.inputs}
+        args = {var._name: values[var] for var in self.inputs}
         return [self.object_class(**args)]
 
 
@@ -276,17 +280,17 @@ class ModelMethod(Block):
                 }
             }
         })
-    def __init__(self, model_class, method_name):
+    def __init__(self, model_class, method_name, name=''):
         self.model_class = model_class
         self.method_name = method_name
         inputs = [TypedVariable('model at input', model_class)]
         method = getattr(self.model_class, self.method_name)
 
-        inputs = set_inputs(method, inputs)
+        inputs = set_inputs(method, inputs, name)
 
         outputs = [TypedVariable('method result of {}'.format(self.method_name), method.__annotations__['return']),
                    TypedVariable('model at output {}'.format(self.method_name), model_class)]
-        Block.__init__(self, inputs, outputs)
+        Block.__init__(self, inputs, outputs, name=name)
 
     def equivalent_hash(self):
         return len(self.model_class.__name__) + 7*len(self.method_name)
@@ -309,23 +313,23 @@ class ModelMethod(Block):
     def dict_to_object(cls, dict_):
         class_ = getattr(import_module(dict_['model_module']),
                          dict_['model_class'])
-        return cls(class_, dict_['method_name'])
+        return cls(class_, dict_['method_name'], dict_['name'])
 
 
     def evaluate(self, values):
-        args = {var.name: values[var] for var in self.inputs[1:] if var in values}
+        args = {var._name: values[var] for var in self.inputs[1:] if var in values}
         return [getattr(values[self.inputs[0]], self.method_name)(**args),
                 values[self.inputs[0]]]
 
 class Function(Block):
-    def __init__(self, function):
+    def __init__(self, function, name=''):
         self.function = function
         inputs = []
         for arg_name in inspect.signature(function).parameters.keys():
             inputs.append(TypedVariable(arg_name, function.__annotations__[arg_name]))
         outputs = [TypedVariable('Output function', function.__annotations__['return'])]
 
-        Block.__init__(self, inputs, outputs)
+        Block.__init__(self, inputs, outputs, name=name)
 
     def equivalent_hash(self):
         return int(hash(self.function.__name__) % 10e5)
@@ -339,20 +343,20 @@ class Function(Block):
 
 class ForEach(Block):
 
-    def __init__(self, workflow, workflow_iterable_input):
+    def __init__(self, workflow, workflow_iterable_input, name=''):
         self.workflow = workflow
         self.workflow_iterable_input = workflow_iterable_input
         inputs = []
         for workflow_input in self.workflow.inputs:
             if workflow_input == workflow_iterable_input:
-                inputs.append(Variable('Iterable input: '+workflow_input.name))
+                inputs.append(Variable('Iterable input: '+workflow_input._name))
             else:
                 input_ = workflow_input.copy()
-                input_.name = 'binding '+input_.name
+                input_._name = 'binding '+input_._name
                 inputs.append(input_)
         output_variable = Variable('Foreach output')
 
-        Block.__init__(self, inputs, [output_variable])
+        Block.__init__(self, inputs, [output_variable], name=name)
 
     def equivalent_hash(self):
         return int(hash(self.workflow) % 10e5)
@@ -385,7 +389,7 @@ class ForEach(Block):
                                                                     self.workflow.inputs)}
         output_values = []
         for value in values_workflow[self.workflow_iterable_input]:
-            values_workflow2 = {var.name: val\
+            values_workflow2 = {var._name: val\
                                 for var, val in values.items()\
                                 if var != self.workflow_iterable_input}
             values_workflow2[self.workflow_iterable_input] = value
@@ -394,11 +398,11 @@ class ForEach(Block):
         return [output_values]
 
 class Filter(Block):
-    def __init__(self, filters):
+    def __init__(self, filters, name=''):
         self.filters = filters
         inputs = [Variable('input_list')]
         outputs = [Variable('output_list')]
-        Block.__init__(self, inputs, outputs)
+        Block.__init__(self, inputs, outputs, name=name)
 
     def equivalent(self, other_block):
         if not Block.equivalent(self, other_block):
@@ -420,7 +424,7 @@ class Filter(Block):
 
     @classmethod
     def dict_to_object(cls, dict_):
-        return cls(dict_['filters'])
+        return cls(dict_['filters'], dict_['name'])
 
     def evaluate(self, values):
         ouput_values = []
@@ -451,10 +455,10 @@ class Filter(Block):
 
 
 class ModelAttribute(Block):
-    def __init__(self, attribute_name):
+    def __init__(self, attribute_name, name=''):
         self.attribute_name = attribute_name
 
-        Block.__init__(self, [Variable('Model')], [Variable('Model attribute')])
+        Block.__init__(self, [Variable('Model')], [Variable('Model attribute')], name=name)
 
     def equivalent_hash(self):
         return len(self.attribute_name)
@@ -472,7 +476,7 @@ class ModelAttribute(Block):
 
     @classmethod
     def dict_to_object(cls, dict_):
-        return cls(dict_['attribute_name'])
+        return cls(dict_['attribute_name'], dict_['name'])
 
     def evaluate(self, values):
         return [getattr(values[self.inputs[0]], self.attribute_name)]
@@ -729,7 +733,7 @@ class Workflow(Block):
         for block in self.blocks:
             labels[block] = block.__class__.__name__
             for variable in self.variables:
-                labels[variable] = variable.name
+                labels[variable] = variable._name
         nx.draw_networkx_labels(self.graph, pos, labels)
 
 
@@ -810,11 +814,11 @@ class Workflow(Block):
         nodes = []
         for block in self.blocks:
             nodes.append({'name': block.__class__.__name__,
-                          'inputs': [{'name': i.name,
+                          'inputs': [{'name': i._name,
                                       'workflow_input': i in self.inputs,
                                       'has_default': hasattr(block, 'default')}\
                                      for i in block.inputs],
-                          'outputs': [{'name': o.name,
+                          'outputs': [{'name': o._name,
                                        'workflow_output': o in self.outputs}\
                                       for o in block.outputs]})
 
@@ -830,8 +834,8 @@ class Workflow(Block):
         nodes = []
         for block in self.blocks:
             nodes.append({'name': block.__class__.__name__,
-                          'inputs': [i.name for i in block.inputs],
-                          'outputs': [o.name for o in block.outputs]})
+                          'inputs': [i._name for i in block.inputs],
+                          'outputs': [o._name for o in block.outputs]})
 
         edges = []
         for pipe in self.pipes:
@@ -898,9 +902,9 @@ class Workflow(Block):
     def find_variable_type(self, variable):
         for block in self.blocks:
             for block_variable in block.outputs: # !!! just ouputs is  a workaround
-                if block_variable.name == variable.name and isinstance(block, ModelAttribute): # !!! isinstance is just a workaround
+                if block_variable._name == variable._name and isinstance(block, ModelAttribute): # !!! isinstance is just a workaround
                     for var in self.inputs + self.outputs:
-                        if var.name == block.attribute_name:
+                        if var._name == block.attribute_name:
                             return var.type_
         return None
 
@@ -1022,7 +1026,7 @@ class WorkflowRun(dc.DessiaObject):
                    start_time=dict_['start_time'], end_time=dict_['end_time'],
                    log=dict_['log'], name=dict_['name'])
 
-def set_inputs(method, inputs=[]):
+def set_inputs(method, inputs=[], block_name=''):
     args_specs = inspect.getfullargspec(method)
     nargs = len(args_specs.args) - 1
 
@@ -1035,12 +1039,15 @@ def set_inputs(method, inputs=[]):
         if not argument in ['self', 'progress_callback']:
             if iargument >= nargs - ndefault_args:
                 default_value = args_specs.defaults[ndefault_args-nargs+iargument]
-                inputs.append(TypedVariableWithDefaultValue(argument,
-                                                            method.__annotations__[argument],
-                                                            default_value))
+                inputs.append(TypedVariableWithDefaultValue(_name=argument,
+                                                            type_=method.__annotations__[argument],
+                                                            default_value=default_value,
+                                                            name=block_name + ' - ' + argument))
 
             else:
-                inputs.append(TypedVariable(argument, method.__annotations__[argument]))
+                inputs.append(TypedVariable(_name=argument,
+                                            type_=method.__annotations__[argument],
+                                            name=block_name + ' - ' + argument))
     return inputs
 
 #def node_matcher(n1, n2):
