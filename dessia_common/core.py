@@ -12,7 +12,6 @@ import collections
 from copy import deepcopy
 from typing import List, Sequence, Iterable, TypeVar, Union
 import inspect
-import volmdlr as vm
 from importlib import import_module
 
 
@@ -27,6 +26,10 @@ class DessiaObject:
         self.name = name
         for property_name, property_value in kwargs.items():
             setattr(self, property_name, property_value)
+
+    @property
+    def full_classname(self):
+        return full_classname(self)
 
     def base_dict(self):
         dict_ = {'name' : self.name}
@@ -189,6 +192,7 @@ class DessiaObject:
         return True
 
     def volmdlr_volume_model(self):
+        import volmdlr as vm ### Avoid circular imports, is this OK ?
         return vm.VolumeModel(self.volmdlr_primitives())
 
     def cad_export(self,
@@ -591,19 +595,23 @@ def dict_to_object(dict_, class_=None):
         module = object_class.rsplit('.', 1)[0]
         exec('import ' + module)
         class_ = eval(object_class)
-    class_argspec = inspect.getargspec(class_)
-    init_dict = {k:v for k, v in working_dict.items() if k in class_argspec}
-    obj = class_(**init_dict)
 
+    if hasattr(class_, 'dict_to_object') and class_.dict_to_object.__func__ is not DessiaObject.dict_to_object.__func__:
+        obj = class_.dict_to_object(dict_)
+        return obj
+
+    class_argspec = inspect.getfullargspec(class_)
+    init_dict = {k:v for k, v in working_dict.items() if k in class_argspec.args}
+
+    subobjects = {}
     for key, value in init_dict.items():
-#        if key in class_argspec.args:
         if isinstance(value, dict):
-            subobj = dict_to_object(value)
+            subobjects[key] = dict_to_object(value)
         elif isinstance(value, (list, tuple)):
-            subobj = sequence_to_objects(value)
+            subobjects[key] = sequence_to_objects(value)
         else:
-            subobj = value
-        setattr(obj, key, subobj)
+            subobjects[key] = value
+    obj = class_(**subobjects)
     return obj
 
 def sequence_to_objects(sequence):
@@ -613,6 +621,8 @@ def sequence_to_objects(sequence):
             deserialized_sequence.append(dict_to_object(element))
         elif isinstance(element, (list, tuple)):
             deserialized_sequence.append(sequence_to_objects(element))
+        else:
+            deserialized_sequence.append(element)
     return deserialized_sequence
 
 def prettyname(namestr):
@@ -666,6 +676,9 @@ def recursive_instantiation(types, values):
             print(type_)
             raise NotImplementedError
     return instantiated_values
+
+def full_classname(object_):
+    return object_.__class__.__module__ + '.' + object_.__class__.__name__
 
 JSONSCHEMA_HEADER = {"definitions": {},
                      "$schema": "http://json-schema.org/draft-07/schema#",
