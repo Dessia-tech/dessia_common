@@ -26,7 +26,7 @@ steps:
     branch: 
       - master
   commands:
-    - git clone https://git.dessia.tech/OpenSource/dessia_common.git git-opensource
+    - git clone https://git.dessia.tech/OpenSource/dessia-common.git git-opensource
     - tar -vxf dist/*.tar.gz --strip-components=1 -C git-opensource
     - cd git-opensource
     - git config --global user.email "root@dessia.tech"
