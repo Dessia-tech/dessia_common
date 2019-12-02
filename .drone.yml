@@ -2,11 +2,12 @@ kind: pipeline
 name: default
 
 steps:
-- name: install
+- name: install and run scripts
   image: python:3
   commands:
   - git fetch --tags
   - python setup.py install
+  - python scripts/dessia_object.py
 
 - name: develop
   image: python:3
