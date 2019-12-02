@@ -100,9 +100,9 @@ comb_profile_end = electrical.CombinationPowerProfile([end_bat],
 # =============================================================================
 input_values = {}
 blocks = []
-block_ebo = wf.InstanciateModel(eo.ElecBatteryOptimizer)
-optimize_ebo = wf.ModelMethod(eo.ElecBatteryOptimizer, 'Optimize')
-attribute_selection_ebo = wf.ModelAttribute('powerpack_electric_simulators')
+block_ebo = wf.InstanciateModel(eo.ElecBatteryOptimizer, name='EBO')
+optimize_ebo = wf.ModelMethod(eo.ElecBatteryOptimizer, 'Optimize', 'Optimize EBO')
+attribute_selection_ebo = wf.ModelAttribute('powerpack_electric_simulators', 'Attribute Selection EBO')
 
 filters = [{'attribute' : 'bms.battery.number_module_parallel', 'operator' : 'gt', 'bound' : 2},
            {'attribute' : 'bms.battery.number_module_serie', 'operator' : 'lte', 'bound' : 10},
@@ -110,7 +110,7 @@ filters = [{'attribute' : 'bms.battery.number_module_parallel', 'operator' : 'gt
            {'attribute' : 'bms.number_cells', 'operator' : 'lte', 'bound' : 800},
            {'attribute' : 'bms.battery.number_cells', 'operator' : 'gt', 'bound' : 700}]
 
-filter_sort = wf.Filter(filters)
+filter_sort = wf.Filter(filters, 'Filters EBO')
 
 blocks.extend([block_ebo, optimize_ebo, attribute_selection_ebo, filter_sort])
 pipes = [wf.Pipe(block_ebo.outputs[0], optimize_ebo.inputs[0]),
@@ -129,7 +129,7 @@ input_values = {0: cells.CELL1_2RC,
                     comb_profile_wltp,
                     comb_profile_end],
                 12: 5}
-workflow_run = workflow.run(input_values)
+#workflow_run = workflow.run(input_values)
 #d = workflow_run.to_dict()
 #w = wf.WorkflowRun.dict_to_object(d)
 #methods_jsonschemas = workflow._method_jsonschemas

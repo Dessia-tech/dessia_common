@@ -5,13 +5,13 @@ Created on Fri Jan  5 12:17:30 2018
 
 @author: Steven Masfaraud masfaraud@dessia.tech
 """
-
+import math
+import random
 from functools import reduce
 import collections
 from copy import deepcopy
 from typing import List, Sequence, Iterable, TypeVar, Union
 import inspect
-import volmdlr as vm
 from importlib import import_module
 
 
@@ -26,6 +26,10 @@ class DessiaObject:
         self.name = name
         for property_name, property_value in kwargs.items():
             setattr(self, property_name, property_value)
+
+    @property
+    def full_classname(self):
+        return full_classname(self)
 
     def base_dict(self):
         dict_ = {'name' : self.name}
@@ -188,6 +192,7 @@ class DessiaObject:
         return True
 
     def volmdlr_volume_model(self):
+        import volmdlr as vm ### Avoid circular imports, is this OK ?
         return vm.VolumeModel(self.volmdlr_primitives())
 
     def cad_export(self,
@@ -218,6 +223,35 @@ class DessiaObject:
         or hasattr(self, 'cad_export'):
             display.append({'angular_component': 'app-cad-viewer'})
         return display
+
+class Parameter(DessiaObject):
+    def __init__(self, lower_bound, upper_bound, periodicity=None, name=''):
+        DessiaObject.__init__(self, name=name,
+                              lower_bound=lower_bound,
+                              upper_bound=upper_bound,
+                              periodicity=periodicity)
+    def random_value(self):
+        return random.uniform(self.lower_bound, self.upper_bound)
+
+    def are_values_equal(self, value1, value2, tol=1e-2):
+        if self.periodicity is not None:
+            value1 = value1 % self.periodicity
+            value2 = value2 % self.periodicity
+
+        return math.isclose(value1, value2, abs_tol=tol)
+
+    def normalize(self, value):
+        normalized_value = (value - self.lower_bound)/(self.upper_bound - self.lower_bound)
+        return normalized_value
+
+    def original_value(self, normalized_value):
+        value = normalized_value*(self.upper_bound - self.lower_bound) + self.lower_bound
+        return value
+
+    def optimizer_bounds(self):
+        if self.periodicity is not None:
+            return (self.lower_bound-0.5*self.periodicity,
+                    self.upper_bound+0.5*self.periodicity)
 
 
 def number2factor(number):
@@ -561,16 +595,23 @@ def dict_to_object(dict_, class_=None):
         module = object_class.rsplit('.', 1)[0]
         exec('import ' + module)
         class_ = eval(object_class)
-    obj = class_(**working_dict)
 
-    for key, value in working_dict.items():
+    if hasattr(class_, 'dict_to_object') and class_.dict_to_object.__func__ is not DessiaObject.dict_to_object.__func__:
+        obj = class_.dict_to_object(dict_)
+        return obj
+
+    class_argspec = inspect.getfullargspec(class_)
+    init_dict = {k:v for k, v in working_dict.items() if k in class_argspec.args}
+
+    subobjects = {}
+    for key, value in init_dict.items():
         if isinstance(value, dict):
-            subobj = dict_to_object(value)
+            subobjects[key] = dict_to_object(value)
         elif isinstance(value, (list, tuple)):
-            subobj = sequence_to_objects(value)
+            subobjects[key] = sequence_to_objects(value)
         else:
-            subobj = value
-        setattr(obj, key, subobj)
+            subobjects[key] = value
+    obj = class_(**subobjects)
     return obj
 
 def sequence_to_objects(sequence):
@@ -580,15 +621,18 @@ def sequence_to_objects(sequence):
             deserialized_sequence.append(dict_to_object(element))
         elif isinstance(element, (list, tuple)):
             deserialized_sequence.append(sequence_to_objects(element))
+        else:
+            deserialized_sequence.append(element)
     return deserialized_sequence
 
 def prettyname(namestr):
     prettyname = ''
-    strings = namestr.split('_')
-    for i, string in enumerate(strings):
-        prettyname += string[0].upper() + string[1:]
-        if i < len(strings)-1:
-            prettyname += ' '
+    if namestr:
+        strings = namestr.split('_')
+        for i, string in enumerate(strings):
+            prettyname += string[0].upper() + string[1:]
+            if i < len(strings)-1:
+                prettyname += ' '
     return prettyname
 
 def getdeepattr(obj, attr):
@@ -632,6 +676,9 @@ def recursive_instantiation(types, values):
             print(type_)
             raise NotImplementedError
     return instantiated_values
+
+def full_classname(object_):
+    return object_.__class__.__module__ + '.' + object_.__class__.__name__
 
 JSONSCHEMA_HEADER = {"definitions": {},
                      "$schema": "http://json-schema.org/draft-07/schema#",
