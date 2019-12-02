@@ -593,14 +593,16 @@ def dict_to_object(dict_, class_=None):
         class_ = eval(object_class)
     obj = class_(**working_dict)
 
+    class_argspec = inspect.getargspec(class_)
     for key, value in working_dict.items():
-        if isinstance(value, dict):
-            subobj = dict_to_object(value)
-        elif isinstance(value, (list, tuple)):
-            subobj = sequence_to_objects(value)
-        else:
-            subobj = value
-        setattr(obj, key, subobj)
+        if key in class_argspec.args:
+            if isinstance(value, dict):
+                subobj = dict_to_object(value)
+            elif isinstance(value, (list, tuple)):
+                subobj = sequence_to_objects(value)
+            else:
+                subobj = value
+            setattr(obj, key, subobj)
     return obj
 
 def sequence_to_objects(sequence):
