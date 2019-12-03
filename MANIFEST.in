@@ -1,0 +1,7 @@
+exclude compile.py
+recursive-include scripts/ *.py
+recursive-exclude dessia_common/ *protected.py
+global-exclude *_protected.pyx
+prune .git
+
+
