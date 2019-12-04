@@ -289,18 +289,22 @@ def serialize_sequence(seq):
 
 def dict_to_object(dict_, class_=None):
     working_dict = dict_.copy()
-    object_class = working_dict.pop('object_class', None)
-    if class_ is None:
+#    object_class = working_dict.pop('object_class', None)
+    if class_ is None and 'object_class' in working_dict:
+        object_class = working_dict['object_class']
         module = object_class.rsplit('.', 1)[0]
         exec('import ' + module)
         class_ = eval(object_class)
 
-    if hasattr(class_, 'dict_to_object') and class_.dict_to_object.__func__ is not DessiaObject.dict_to_object.__func__:
-        obj = class_.dict_to_object(dict_)
-        return obj
-
-    class_argspec = inspect.getfullargspec(class_)
-    init_dict = {k:v for k, v in working_dict.items() if k in class_argspec.args}
+    if class_ is not None:
+        if hasattr(class_, 'dict_to_object')\
+        and class_.dict_to_object.__func__ is not DessiaObject.dict_to_object.__func__:
+            obj = class_.dict_to_object(dict_)
+            return obj
+        class_argspec = inspect.getfullargspec(class_)
+        init_dict = {k:v for k, v in working_dict.items() if k in class_argspec.args}
+    else:
+        init_dict = working_dict
 
     subobjects = {}
     for key, value in init_dict.items():
@@ -310,7 +314,11 @@ def dict_to_object(dict_, class_=None):
             subobjects[key] = sequence_to_objects(value)
         else:
             subobjects[key] = value
-    obj = class_(**subobjects)
+
+    if class_ is not None:
+        obj = class_(**subobjects)
+    else:
+        obj = subobjects
     return obj
 
 def sequence_to_objects(sequence):
