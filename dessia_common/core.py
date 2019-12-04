@@ -80,8 +80,16 @@ class DessiaObject(protected_module.DessiaObject if _open_source==True else obje
         return True
 
     def volmdlr_volume_model(self):
-        import volmdlr as vm ### Avoid circular imports, is this OK ?
-        return vm.VolumeModel(self.volmdlr_primitives())
+        
+        if hasattr(self, 'volmdlr_primitives'):
+            import volmdlr as vm ### Avoid circular imports, is this OK ?
+            if hasattr(self, 'volmdlr_primitives_step_frames'):
+                return vm.MovingVolumeModel(self.volmdlr_primitives(),
+                                            self.volmdlr_primitives_step_frames())
+                
+            return vm.VolumeModel(self.volmdlr_primitives())
+
+        raise NotImplementedError('object of type {} does not implement volmdlr_primitives'.format(self.__class__.__name__))
 
     def cad_export(self,
                    fcstd_filepath=None,
@@ -101,8 +109,8 @@ class DessiaObject(protected_module.DessiaObject if _open_source==True else obje
         else:
             raise NotImplementedError
 
-    def babylonjs(self):
-        self.volmdlr_volume_model().BabylonShow()
+    def babylonjs(self, use_cdn=True, debug=False):
+        self.volmdlr_volume_model().BabylonShow(use_cdn=use_cdn, debug=debug)
 
     def _display_angular(self):
         display = []
