@@ -9,6 +9,7 @@ from functools import reduce
 import collections
 from copy import deepcopy
 import inspect
+import json
 #from typing import List, Sequence, Iterable, TypeVar, Union
 
 #from importlib import import_module
@@ -16,7 +17,8 @@ import inspect
 try:
     _open_source = True
     import dessia_common.core_protected as protected_module
-#    from dessia_common.core_protected import 
+    from dessia_common.core_protected import inspect_arguments
+#    from dessia_common.core_protected import
 except (ModuleNotFoundError, ImportError) as _:
     _open_source = False
 
@@ -75,6 +77,18 @@ class DessiaObject(protected_module.DessiaObject if _open_source==True else obje
         # TODO: use jsonschema
         return obj
 
+    def save_to_file(self, filepath, indent = 0):
+        with open(filepath+'.json', 'w') as file:
+            json.dump(self.to_dict(), file, indent=indent)
+
+    @classmethod
+    def load_from_file(cls, filepath):
+        if type(filepath) is str:
+            with open(filepath, 'r') as file:
+                dict_ = json.load(file)
+        else:
+            dict_ = json.loads(filepath.read().decode('utf-8'))
+        return cls.dict_to_object(dict_)
 
     def is_valid(self):
         return True
@@ -289,6 +303,7 @@ def dict_to_object(dict_, class_=None):
         class_ = eval(object_class)
 
     if class_ is not None:
+        print(class_.dict_to_object.__func__ is not DessiaObject.dict_to_object.__func__)
         if hasattr(class_, 'dict_to_object')\
         and class_.dict_to_object.__func__ is not DessiaObject.dict_to_object.__func__:
             obj = class_.dict_to_object(dict_)
