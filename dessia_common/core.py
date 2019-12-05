@@ -28,6 +28,7 @@ class DessiaObject(protected_module.DessiaObject if _open_source==True else obje
     Gathers generic methods and attributes
     """
     _standalone_in_db = False
+    _non_serializable_attributes = []
 
     def __init__(self, name:str='', **kwargs):
         self.name = name
@@ -42,10 +43,16 @@ class DessiaObject(protected_module.DessiaObject if _open_source==True else obje
         dict_ = {'name' : self.name}
         return dict_
 
+    def __getstate__(self):
+        dict_ = {k : v for k, v in self.__dict__.items()\
+                 if k not in self._non_serializable_attributes}
+        return dict_
+
     def to_dict(self):
         """
         Generic to_dict method
         """
+        dict_ = self.__getstate__()
         if hasattr(self, 'Dict'):
             # !!! This prevent us to call DessiaObject.to_dict() from an inheriting object
             # which implement a Dict method, because of the infinite recursion it creates.
@@ -53,10 +60,10 @@ class DessiaObject(protected_module.DessiaObject if _open_source==True else obje
             return self.Dict()
 
         # Default to dict
-        dict_ = serialize_dict(self.__dict__)
-        dict_['object_class'] = self.__module__ + '.' + self.__class__.__name__
+        serialized_dict = serialize_dict(dict_)
+        serialized_dict['object_class'] = self.__module__ + '.' + self.__class__.__name__
 
-        return dict_
+        return serialized_dict
 
 
     @classmethod
@@ -94,13 +101,13 @@ class DessiaObject(protected_module.DessiaObject if _open_source==True else obje
         return True
 
     def volmdlr_volume_model(self):
-        
+
         if hasattr(self, 'volmdlr_primitives'):
             import volmdlr as vm ### Avoid circular imports, is this OK ?
             if hasattr(self, 'volmdlr_primitives_step_frames'):
                 return vm.MovingVolumeModel(self.volmdlr_primitives(),
                                             self.volmdlr_primitives_step_frames())
-                
+
             return vm.VolumeModel(self.volmdlr_primitives())
 
         raise NotImplementedError('object of type {} does not implement volmdlr_primitives'.format(self.__class__.__name__))
