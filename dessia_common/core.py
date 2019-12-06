@@ -53,9 +53,28 @@ class DessiaObject(protected_module.DessiaObject if _open_source==True else obje
         return True
 
     def __hash__(self):
-        hash_ = sum([hash(v) for k, v in self.__dict__.items()\
-                     if k not in self._non_eq_attributes])
-        return hash_ % 1e5
+        hash_ = 0
+        for key, value in self.__dict__.items():
+            if key not in self._non_eq_attributes:
+                if isinstance(value, list):
+                    for vi in value:
+                        if isinstance(vi, list):
+                            hash_ += sum([hash(vj) for vj in vi])
+                        elif isinstance(vi, dict):
+                            hash_ += sum([hash(kj) + hash(vj) for kj, vj in vi.items()])
+                        else:
+                            hash_ += hash(vi)
+                elif isinstance(value, dict):
+                    for ki, vi in value.items():
+                        if isinstance(vi, list):
+                            hash_ += sum([hash(vj) for vj in vi]) + hash(ki)
+                        elif isinstance(vi, dict):
+                            hash_ += sum([hash(kj) + hash(vj) for kj, vj in vi.items()]) + hash(ki)
+                        else:
+                            hash_ += hash(vi) + hash(ki)
+                else:
+                    hash_ += hash(value)
+        return int(hash_ % 1e5)
 
     @property
     def full_classname(self):
