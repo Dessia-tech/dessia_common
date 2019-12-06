@@ -337,7 +337,6 @@ def serialize_sequence(seq):
 
 def dict_to_object(dict_, class_=None):
     working_dict = dict_.copy()
-#    object_class = working_dict.pop('object_class', None)
     if class_ is None and 'object_class' in working_dict:
         object_class = working_dict['object_class']
         module = object_class.rsplit('.', 1)[0]
@@ -345,7 +344,6 @@ def dict_to_object(dict_, class_=None):
         class_ = eval(object_class)
 
     if class_ is not None:
-        print(class_.dict_to_object.__func__ is not DessiaObject.dict_to_object.__func__)
         if hasattr(class_, 'dict_to_object')\
         and class_.dict_to_object.__func__ is not DessiaObject.dict_to_object.__func__:
             obj = class_.dict_to_object(dict_)

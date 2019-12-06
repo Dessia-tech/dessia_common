@@ -38,8 +38,6 @@ class DessiaObject:
         init = cls.__init__
         annotations = init.__annotations__
 
-#        print(annotations)
-
         # Get editable and ordered variables
         if hasattr(cls, '_editable_variables') and cls._editable_variables is not None:
             editable_variables = cls._editable_variables
@@ -137,7 +135,6 @@ class DessiaObject:
 def jsonschema_from_annotation(annotation, jsonschema_element,
                                order, editable=None, title=None):
     key, value = annotation
-    print(annotation)
     if title is None:
         title = prettyname(key)
     if editable is None:
@@ -156,38 +153,35 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
                                    'title': title,
                                    'editable' : editable,
                                    'order' : order}
-    elif hasattr(value, '_name'):
-#        elif value._name == 'Dict':
-
-        if value._name in ['List', 'Sequence', 'Iterable']:
-            items_type = value.__args__[0]
-            if items_type in TYPING_EQUIVALENCES.keys():
-                jsonschema_element[key] = {'type': 'array',
-                                           'title': title,
-                                           'order' : order,
-                                           'editable' : editable,
-                                           'items': {
-                                               'type': TYPING_EQUIVALENCES[items_type]
-                                               }
+    elif hasattr(value, '_name') and value._name in ['List', 'Sequence', 'Iterable']:
+        items_type = value.__args__[0]
+        if items_type in TYPING_EQUIVALENCES.keys():
+            jsonschema_element[key] = {'type': 'array',
+                                       'title': title,
+                                       'order' : order,
+                                       'editable' : editable,
+                                       'items': {
+                                           'type': TYPING_EQUIVALENCES[items_type]
                                            }
-            elif hasattr(value, '_standalone_in_db') or not hasattr(items_type, '__dataclass_fields__'):
-                classname = items_type.__module__ + '.' + items_type.__name__
-                # List of a certain type
-                jsonschema_element[key] = {'type': 'array',
-                                           'title': title,
-                                           'order' : order,
-                                           'editable' : editable,
-                                           'items': {
-                                               'type': 'object',
-                                               'classes': [classname]
-                                               }
+                                       }
+        elif hasattr(value, '_standalone_in_db') or not hasattr(items_type, '__dataclass_fields__'):
+            classname = items_type.__module__ + '.' + items_type.__name__
+            # List of a certain type
+            jsonschema_element[key] = {'type': 'array',
+                                       'title': title,
+                                       'order' : order,
+                                       'editable' : editable,
+                                       'items': {
+                                           'type': 'object',
+                                           'classes': [classname]
                                            }
-            else:
-                jsonschema_element[key] = {'type': 'array',
-                                           'title': title,
-                                           'order' : order,
-                                           'editable' : editable,
-                                           'items': jsonschema_from_dataclass(items_type)}
+                                       }
+        else:
+            jsonschema_element[key] = {'type': 'array',
+                                       'title': title,
+                                       'order' : order,
+                                       'editable' : editable,
+                                       'items': jsonschema_from_dataclass(items_type)}
 
     else:
         if hasattr(value, '_standalone_in_db'):
