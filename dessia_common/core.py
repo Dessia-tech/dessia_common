@@ -29,11 +29,33 @@ class DessiaObject(protected_module.DessiaObject if _open_source==True else obje
     """
     _standalone_in_db = False
     _non_serializable_attributes = []
+    _non_eq_attributes = ['name']
 
     def __init__(self, name:str='', **kwargs):
         self.name = name
         for property_name, property_value in kwargs.items():
             setattr(self, property_name, property_value)
+
+    def __eq__(self, other_object):
+        if self.__class__ != other_object.__class__\
+        or self.__dict__.keys() != other_object.__dict__.keys():
+            return False
+
+        dict_ = {k : v for k, v in self.__dict__.items()\
+                 if k not in self._non_eq_attributes}
+        other_dict = {k : v for k, v in other_object.__dict__.items()\
+                      if k not in self._non_eq_attributes}
+
+        for key, value in dict_.items():
+            other_value = other_dict[key]
+            if value != other_value:
+                return False
+        return True
+
+    def __hash__(self):
+        hash_ = sum([hash(v) for k, v in self.__dict__.items()\
+                     if k not in self._non_eq_attributes])
+        return hash_ % 1e5
 
     @property
     def full_classname(self):
@@ -99,6 +121,11 @@ class DessiaObject(protected_module.DessiaObject if _open_source==True else obje
 
     def is_valid(self):
         return True
+
+    def copy(self):
+        class_argspec = inspect.getfullargspec(self.__class__)
+        dict_ = {arg : self.__dict__[arg] for arg in class_argspec.args if arg != 'self'}
+        return self.__class__(**dict_)
 
     def volmdlr_volume_model(self):
 
