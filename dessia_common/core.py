@@ -124,7 +124,17 @@ class DessiaObject(protected_module.DessiaObject if _open_source==True else obje
 
     def copy(self):
         class_argspec = inspect.getfullargspec(self.__class__)
-        dict_ = {arg : self.__dict__[arg] for arg in class_argspec.args if arg != 'self'}
+        dict_ = {}
+        for arg in class_argspec.args:
+            if arg != 'self':
+                value = self.__dict__[arg]
+                if hasattr(value, 'copy'):
+                    dict_[arg] = value.copy()
+                elif hasattr(value, 'Copy'):
+                    # Backward compatibility
+                    dict_[arg] = value.Copy()
+                else:
+                    dict_[arg] = value
         return self.__class__(**dict_)
 
     def volmdlr_volume_model(self):
