@@ -156,15 +156,17 @@ class DessiaObject(protected_module.DessiaObject if _open_source==True else obje
                     dict_[arg] = value
         return self.__class__(**dict_)
 
-    def volmdlr_volume_model(self):
+    def volmdlr_volume_model(self, frame=None):
 
         if hasattr(self, 'volmdlr_primitives'):
             import volmdlr as vm ### Avoid circular imports, is this OK ?
             if hasattr(self, 'volmdlr_primitives_step_frames'):
                 return vm.MovingVolumeModel(self.volmdlr_primitives(),
                                             self.volmdlr_primitives_step_frames())
-
-            return vm.VolumeModel(self.volmdlr_primitives())
+            else:
+                if frame is None:
+                    frame = vm.OXYZ            
+            return vm.VolumeModel(self.volmdlr_primitives(frame=frame))
 
         raise NotImplementedError('object of type {} does not implement volmdlr_primitives'.format(self.__class__.__name__))
 
