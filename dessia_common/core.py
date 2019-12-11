@@ -30,13 +30,19 @@ class DessiaObject(protected_module.DessiaObject if _open_source==True else obje
     _standalone_in_db = False
     _non_serializable_attributes = []
     _non_eq_attributes = ['name']
+    _custom_eq = False
 
     def __init__(self, name:str='', **kwargs):
+        if self._standalone_in_db and not self._custom_eq:
+            raise ValueError('Standalone in database classes must define their custom __hash__ and __eq__')
+
         self.name = name
         for property_name, property_value in kwargs.items():
             setattr(self, property_name, property_value)
 
     def __eq__(self, other_object):
+        if not self._custom_eq:
+            return object.__eq__(self, other_object)
         if self.__class__ != other_object.__class__\
         or self.__dict__.keys() != other_object.__dict__.keys():
             return False
@@ -53,6 +59,8 @@ class DessiaObject(protected_module.DessiaObject if _open_source==True else obje
         return True
 
     def __hash__(self):
+        if not self._custom_eq:
+            return object.__hash__(self)
         hash_ = 0
         for key, value in self.__dict__.items():
             if key not in self._non_eq_attributes:
