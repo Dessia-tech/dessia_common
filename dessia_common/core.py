@@ -30,6 +30,7 @@ class DessiaObject(protected_module.DessiaObject if _open_source==True else obje
     _standalone_in_db = False
     _non_serializable_attributes = []
     _non_eq_attributes = ['name']
+    _non_hash_attributes = ['name']
     _custom_eq = False
 
     def __init__(self, name:str='', **kwargs):
@@ -63,23 +64,11 @@ class DessiaObject(protected_module.DessiaObject if _open_source==True else obje
             return object.__hash__(self)
         hash_ = 0
         for key, value in self.__dict__.items():
-            if key not in self._non_eq_attributes:
+            if key not in set(self._non_eq_attributes + self._non_hash_attributes):
                 if isinstance(value, list):
-                    for vi in value:
-                        if isinstance(vi, list):
-                            hash_ += sum([hash(vj) for vj in vi])
-                        elif isinstance(vi, dict):
-                            hash_ += sum([hash(kj) + hash(vj) for kj, vj in vi.items()])
-                        else:
-                            hash_ += hash(vi)
+                    hash_ += list_hash(value)
                 elif isinstance(value, dict):
-                    for ki, vi in value.items():
-                        if isinstance(vi, list):
-                            hash_ += sum([hash(vj) for vj in vi]) + hash(ki)
-                        elif isinstance(vi, dict):
-                            hash_ += sum([hash(kj) + hash(vj) for kj, vj in vi.items()]) + hash(ki)
-                        else:
-                            hash_ += hash(vi) + hash(ki)
+                    hash_ += dict_hash(value)
                 else:
                     hash_ += hash(value)
         return int(hash_ % 1e5)
@@ -173,7 +162,7 @@ class DessiaObject(protected_module.DessiaObject if _open_source==True else obje
                                             self.volmdlr_primitives_step_frames())
             else:
                 if frame is None:
-                    frame = vm.OXYZ            
+                    frame = vm.OXYZ
             return vm.VolumeModel(self.volmdlr_primitives(frame=frame))
 
         raise NotImplementedError('object of type {} does not implement volmdlr_primitives'.format(self.__class__.__name__))
@@ -406,6 +395,28 @@ def dict_to_object(dict_, class_=None):
     else:
         obj = subobjects
     return obj
+
+def list_hash(list_):
+    hash_ = 0
+    for element in list_:
+        if isinstance(element, list):
+            hash_ += list_hash(element)
+        elif isinstance(element, dict):
+            hash_ += dict_hash(element)
+        else:
+            hash_ += hash(element)
+    return hash_
+
+def dict_hash(dict_):
+    hash_ = 0
+    for key, value in dict_.items():
+        if isinstance(value, list):
+            hash_ += list_hash(value)
+        elif isinstance(value, dict):
+            hash_ += dict_hash(value)
+        else:
+            hash_ += hash(key) + hash(value)
+    return hash_
 
 def sequence_to_objects(sequence):
     deserialized_sequence = []
