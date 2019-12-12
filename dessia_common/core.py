@@ -63,7 +63,7 @@ class DessiaObject(protected_module.DessiaObject if _open_source==True else obje
         return True
 
     def __hash__(self):
-        if not self._custom_eq:
+        if not self._generic_eq:
             return object.__hash__(self)
         hash_ = 0
         for key, value in self.__dict__.items():
