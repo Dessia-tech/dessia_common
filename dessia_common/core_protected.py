@@ -168,7 +168,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
                                    'type' : 'array'}
         jsonschema_element[key]['items'] = items
     else:
-        if hasattr(value, '_standalone_in_db'):
+        if hasattr(value, '_standalone_in_db') and value._standalone_in_db:
             # Dessia custom classes
             classname = value.__module__ + '.' + value.__name__
             jsonschema_element[key] = {'type': 'object',
@@ -176,6 +176,11 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
                                        'order' : order,
                                        'editable' : editable,
                                        'classes': [classname]}
+        elif hasattr(value, '_standalone_in_db') and not value._standalone_in_db:
+            jsonschema_element[key] = value.jsonschema().copy()
+            jsonschema_element[key].update({'editable' : editable,
+                                            'order' : order,
+                                            'title' : title})
         else:
             # Dataclasses
             jsonschema_element[key] = jsonschema_from_dataclass(value)
@@ -185,16 +190,20 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
     return jsonschema_element
 
 def jsonschema_sequence_recursion(value, title=None, order=None, editable=False):
+    if title is None:
+        title = 'Items'
     jsonschema_element = {'type': 'array', 'editable' : editable}
 
     items_type = value.__args__[0]
     if hasattr(items_type, '_name') and items_type._name in ['List', 'Sequence', 'Iterable']:
-        jsonschema_element['items'] = jsonschema_sequence_recursion(value=items_type)
+        jsonschema_element['items'] = jsonschema_sequence_recursion(value=items_type,
+                                                                    title=title)
     else:
         annotation = ('items', items_type)
         jsonschema_element.update(jsonschema_from_annotation(annotation,
                                                              jsonschema_element,
-                                                             order=0))
+                                                             order=0,
+                                                             title=title))
     return jsonschema_element
 
 def prettyname(namestr):
@@ -207,14 +216,17 @@ def prettyname(namestr):
                 prettyname += ' '
     return prettyname
 
-def jsonschema_from_dataclass(class_):
+def jsonschema_from_dataclass(class_, title=None):
+    if title is None:
+        title = prettyname(class_)
     jsonschema_element = {'type': 'object',
                           'properties' : {}}
     for i, field in enumerate(class_.__dataclass_fields__.values()): # !!! Not actually ordered !
         annotation = (field.name, field.type)
         jsonschema_element['properties'].update(jsonschema_from_annotation(annotation,
                                                                            jsonschema_element['properties'],
-                                                                           order=i))
+                                                                           order=i,
+                                                                           title=title))
     return jsonschema_element
 
 def set_default_value(jsonschema_element, key, default_value):

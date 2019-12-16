@@ -147,11 +147,12 @@ class DessiaObject(protected_module.DessiaObject if _open_source==True else obje
         for arg in class_argspec.args:
             if arg != 'self':
                 value = self.__dict__[arg]
-                if hasattr(value, 'copy'):
-                    dict_[arg] = value.copy()
-                elif hasattr(value, 'Copy'):
+
+                if hasattr(value, 'Copy'):
                     # Backward compatibility
                     dict_[arg] = value.Copy()
+                elif hasattr(value, 'copy'): # TODO : Check if not DessiaObject.copy
+                    dict_[arg] = value.copy()
                 else:
                     dict_[arg] = value
         return self.__class__(**dict_)
