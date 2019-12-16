@@ -172,6 +172,7 @@ class DessiaObject(protected_module.DessiaObject if _open_source==True else obje
 
     def cad_export(self,
                    fcstd_filepath=None,
+                   istep=0,
                    python_path='python',
                    freecad_lib_path='/usr/lib/freecad/lib',
                    export_types=['fcstd']):
@@ -181,8 +182,10 @@ class DessiaObject(protected_module.DessiaObject if _open_source==True else obje
         if fcstd_filepath is None:
             fcstd_filepath = 'An unnamed {}'.format(self.__class__.__name__)
 
-        if hasattr(self, 'volmdlr_primitives'):
+        if hasattr(self, 'volmdlr_volume_model'):
             model = self.volmdlr_volume_model()
+            if model.__class__.__name__ == 'MovingVolumeModel':
+                model = model.step_volume_model(istep)
             model.FreeCADExport(fcstd_filepath, python_path=python_path,
                                 freecad_lib_path=freecad_lib_path, export_types=export_types)
         else:
