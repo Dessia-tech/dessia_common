@@ -17,7 +17,7 @@ import json
 try:
     _open_source = True
     import dessia_common.core_protected as protected_module
-    from dessia_common.core_protected import inspect_arguments
+    from dessia_common.core_protected import inspect_arguments, recursive_instantiation
 #    from dessia_common.core_protected import
 except (ModuleNotFoundError, ImportError) as _:
     _open_source = False
