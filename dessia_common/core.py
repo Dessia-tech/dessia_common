@@ -17,8 +17,7 @@ import json
 try:
     _open_source = False
     import dessia_common.core_protected as protected_module
-    from dessia_common.core_protected import inspect_arguments, recursive_instantiation
-#    from dessia_common.core_protected import
+    from dessia_common.core_protected import inspect_arguments, recursive_instantiation, recursive_type
 except (ModuleNotFoundError, ImportError) as _:
     _open_source = True
 
@@ -380,16 +379,17 @@ def dict_to_object(dict_, class_=None):
         class_ = eval(object_class)
 
     if class_ is not None:
-        print('Class not None', hasattr(class_, 'dict_to_object'), class_.dict_to_object.__func__ is not DessiaObject.dict_to_object.__func__)
         if hasattr(class_, 'dict_to_object')\
         and class_.dict_to_object.__func__ is not DessiaObject.dict_to_object.__func__:
             obj = class_.dict_to_object(dict_)
             return obj
-        class_argspec = inspect.getfullargspec(class_)
-        init_dict = {k:v for k, v in working_dict.items() if k in class_argspec.args}
-        print(init_dict)
+        if class_._init_variables is None:
+            class_argspec = inspect.getfullargspec(class_)
+            init_dict = {k:v for k, v in working_dict.items() if k in class_argspec.args}
+        else:
+            init_dict = {k:v for k, v in working_dict.items() if k in class_._init_variables}
+        # !!! Class method to generate init_dict ??
     else:
-        print('Class None')
         init_dict = working_dict
 
     subobjects = {}
@@ -401,7 +401,6 @@ def dict_to_object(dict_, class_=None):
         else:
             subobjects[key] = value
 
-    print(subobjects)
     if class_ is not None:
         obj = class_(**subobjects)
     else:
