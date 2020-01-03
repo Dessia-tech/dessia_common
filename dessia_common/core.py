@@ -15,14 +15,14 @@ import json
 #from importlib import import_module
 
 try:
-    _open_source = True
+    _open_source = False
     import dessia_common.core_protected as protected_module
     from dessia_common.core_protected import inspect_arguments, recursive_instantiation
 #    from dessia_common.core_protected import
 except (ModuleNotFoundError, ImportError) as _:
-    _open_source = False
+    _open_source = True
 
-class DessiaObject(protected_module.DessiaObject if _open_source==True else object):
+class DessiaObject(protected_module.DessiaObject if not _open_source else object):
     """
     Base abstract class for Dessia's object.
     Gathers generic methods and attributes
