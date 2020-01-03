@@ -36,7 +36,10 @@ class DessiaObject:
 
         # Get __init__ method and its annotations
         init = cls.__init__
-        annotations = init.__annotations__
+        if cls._init_variables is None:
+            annotations = init.__annotations__
+        else:
+            annotations = cls._init_variables
 
         # Get editable and ordered variables
         if hasattr(cls, '_editable_variables') and cls._editable_variables is not None:
@@ -63,7 +66,7 @@ class DessiaObject:
 
         # Set jsonschema
         for annotation in annotations.items():
-            name, value = annotation
+            name = annotation[0]
             if name in ordered_variables:
                 order = ordered_variables.index(name)
             else:

@@ -32,6 +32,7 @@ class DessiaObject(protected_module.DessiaObject if _open_source==True else obje
     _non_eq_attributes = ['name']
     _non_hash_attributes = ['name']
     _generic_eq = False
+    _init_variables = None
 
     def __init__(self, name:str='', **kwargs):
         implements_eq = (hasattr(self, '__eq__') and hasattr(self, '__hash__')
@@ -160,7 +161,7 @@ class DessiaObject(protected_module.DessiaObject if _open_source==True else obje
     def volmdlr_volume_model(self, frame=None):
 
         if hasattr(self, 'volmdlr_primitives'):
-            import volmdlr as vm ### Avoid circular imports, is this OK ?
+            import volmdlr as vm # !!! Avoid circular imports, is this OK ?
             if hasattr(self, 'volmdlr_primitives_step_frames'):
                 return vm.MovingVolumeModel(self.volmdlr_primitives(),
                                             self.volmdlr_primitives_step_frames())
@@ -379,13 +380,16 @@ def dict_to_object(dict_, class_=None):
         class_ = eval(object_class)
 
     if class_ is not None:
+        print('Class not None', hasattr(class_, 'dict_to_object'), class_.dict_to_object.__func__ is not DessiaObject.dict_to_object.__func__)
         if hasattr(class_, 'dict_to_object')\
         and class_.dict_to_object.__func__ is not DessiaObject.dict_to_object.__func__:
             obj = class_.dict_to_object(dict_)
             return obj
         class_argspec = inspect.getfullargspec(class_)
         init_dict = {k:v for k, v in working_dict.items() if k in class_argspec.args}
+        print(init_dict)
     else:
+        print('Class None')
         init_dict = working_dict
 
     subobjects = {}
@@ -397,6 +401,7 @@ def dict_to_object(dict_, class_=None):
         else:
             subobjects[key] = value
 
+    print(subobjects)
     if class_ is not None:
         obj = class_(**subobjects)
     else:
