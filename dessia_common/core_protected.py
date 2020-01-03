@@ -159,7 +159,8 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
     elif hasattr(value, '_name') and value._name in ['List', 'Sequence', 'Iterable']:
         jsonschema_element[key] = jsonschema_sequence_recursion(value=value,
                                                                 order=order,
-                                                                title=title)
+                                                                title=title,
+                                                                editable=editable)
     elif hasattr(value, '_name') and value._name == 'Tuple':
         items = []
         for type_ in value.__args__:
@@ -192,12 +193,13 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
 def jsonschema_sequence_recursion(value, title=None, order=None, editable=False):
     if title is None:
         title = 'Items'
-    jsonschema_element = {'type': 'array', 'editable' : editable}
+    jsonschema_element = {'type': 'array', 'editable' : editable, 'title' : title}
 
     items_type = value.__args__[0]
     if hasattr(items_type, '_name') and items_type._name in ['List', 'Sequence', 'Iterable']:
         jsonschema_element['items'] = jsonschema_sequence_recursion(value=items_type,
-                                                                    title=title)
+                                                                    title=title,
+                                                                    editable=editable)
     else:
         annotation = ('items', items_type)
         jsonschema_element.update(jsonschema_from_annotation(annotation,
@@ -218,7 +220,7 @@ def prettyname(namestr):
 
 def jsonschema_from_dataclass(class_, title=None):
     if title is None:
-        title = prettyname(class_)
+        title = prettyname(class_.__name__)
     jsonschema_element = {'type': 'object',
                           'properties' : {}}
     for i, field in enumerate(class_.__dataclass_fields__.values()): # !!! Not actually ordered !

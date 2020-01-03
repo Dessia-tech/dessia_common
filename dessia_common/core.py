@@ -18,8 +18,11 @@ from typing import TypeVar, List
 try:
     _open_source = True
     import dessia_common.core_protected as protected_module
-    from dessia_common.core_protected import inspect_arguments, recursive_instantiation, recursive_type
-#    from dessia_common.core_protected import
+    from dessia_common.core_protected import inspect_arguments, recursive_instantiation,\
+                                             recursive_type, JSONSCHEMA_HEADER,\
+                                             jsonschema_from_annotation,prettyname,\
+                                             set_default_value, TYPING_EQUIVALENCES,\
+                                             deserialize_argument
 except (ModuleNotFoundError, ImportError) as _:
     _open_source = False
 
@@ -233,7 +236,7 @@ class Parameter(DessiaObject):
         if self.periodicity is not None:
             return (self.lower_bound-0.5*self.periodicity,
                     self.upper_bound+0.5*self.periodicity)
-            
+
 class Evolution(DessiaObject):
     """
     Defines a generic evolution
@@ -244,7 +247,7 @@ class Evolution(DessiaObject):
     _non_eq_attributes = ['name']
     _non_hash_attributes = ['name']
     _generic_eq = True
-    
+
     def __init__(self, evolution:List[float]=None, name:str=''):
         if evolution is None:
             evolution = []
