@@ -189,7 +189,7 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
         if fcstd_filepath is None:
             fcstd_filepath = 'An unnamed {}'.format(self.__class__.__name__)
 
-        if hasattr(self, 'volmdlr_volume_model'):
+        if hasattr(self, 'volmdlr_primitives'):
             model = self.volmdlr_volume_model()
             if model.__class__.__name__ == 'MovingVolumeModel':
                 model = model.step_volume_model(istep)
@@ -205,7 +205,7 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
         display = []
         if hasattr(self, 'CADExport')\
         or hasattr(self, 'FreeCADExport')\
-        or hasattr(self, 'cad_export'):
+        or hasattr(self, 'volmdlr_primitives'):
             display.append({'angular_component': 'app-cad-viewer'})
         return display
 
