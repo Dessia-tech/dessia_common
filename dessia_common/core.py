@@ -10,6 +10,7 @@ import collections
 from copy import deepcopy
 import inspect
 import json
+from typing import TypeVar, List
 #from typing import List, Sequence, Iterable, TypeVar, Union
 
 #from importlib import import_module
@@ -17,7 +18,11 @@ import json
 try:
     _open_source = False
     import dessia_common.core_protected as protected_module
-    from dessia_common.core_protected import inspect_arguments, recursive_instantiation, recursive_type
+    from dessia_common.core_protected import inspect_arguments, recursive_instantiation,\
+                                             recursive_type, JSONSCHEMA_HEADER,\
+                                             jsonschema_from_annotation,prettyname,\
+                                             set_default_value, TYPING_EQUIVALENCES,\
+                                             deserialize_argument
 except (ModuleNotFoundError, ImportError) as _:
     _open_source = True
 
@@ -119,6 +124,7 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
             obj = dict_to_object(dict_, cls)
             return obj
         elif 'object_class' in dict_:
+            print(dict_.keys())
             obj = dict_to_object(dict_)
             return obj
         # Using default
@@ -231,6 +237,37 @@ class Parameter(DessiaObject):
         if self.periodicity is not None:
             return (self.lower_bound-0.5*self.periodicity,
                     self.upper_bound+0.5*self.periodicity)
+
+class Evolution(DessiaObject):
+    """
+    Defines a generic evolution
+
+    :param evolution: float list
+    :type evolution: list
+    """
+    _non_eq_attributes = ['name']
+    _non_hash_attributes = ['name']
+    _generic_eq = True
+
+    def __init__(self, evolution:List[float]=None, name:str=''):
+        if evolution is None:
+            evolution = []
+        self.evolution = evolution
+
+        DessiaObject.__init__(self, name=name)
+
+    def _display_angular(self):
+        displays = [{'angular_component': 'app-evolution1d',
+                     'table_show': False,
+                     'evolution': [self.evolution],
+                     'label_y': ['evolution']}]
+        return displays
+
+    def update(self, evolution):
+        """
+        Update the evolution list
+        """
+        self.evolution = evolution
 
 
 def number2factor(number):
