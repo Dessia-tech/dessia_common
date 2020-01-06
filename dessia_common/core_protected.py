@@ -100,22 +100,24 @@ class DessiaObject:
         cls = type(self)
         valid_method_names = [m for m in dir(cls)\
                               if not m.startswith('_')]
+
         for method_name in valid_method_names:
             method = getattr(cls, method_name)
 
-            required_arguments, default_arguments = inspect_arguments(method, merge=False)
+            if not isinstance(method, property):
+                required_arguments, default_arguments = inspect_arguments(method, merge=False)
 
-            if method.__annotations__:
-                jsonschemas[method_name] = deepcopy(JSONSCHEMA_HEADER)
-                jsonschemas[method_name]['required'] = required_arguments
-                for i, annotation in enumerate(method.__annotations__.items()): # !!! Not actually ordered
-                    jsonschema_element = jsonschema_from_annotation(annotation, {}, i)[annotation[0]]
-                    jsonschemas[method_name]['properties'][str(i)] = jsonschema_element
-                    if annotation[0] in default_arguments.keys():
-                        default = set_default_value(jsonschemas[method_name]['properties'],
-                                                    str(i),
-                                                    default_arguments[annotation[0]])
-                        jsonschemas[method_name]['properties'].update(default)
+                if method.__annotations__:
+                    jsonschemas[method_name] = deepcopy(JSONSCHEMA_HEADER)
+                    jsonschemas[method_name]['required'] = required_arguments
+                    for i, annotation in enumerate(method.__annotations__.items()): # !!! Not actually ordered
+                        jsonschema_element = jsonschema_from_annotation(annotation, {}, i)[annotation[0]]
+                        jsonschemas[method_name]['properties'][str(i)] = jsonschema_element
+                        if annotation[0] in default_arguments.keys():
+                            default = set_default_value(jsonschemas[method_name]['properties'],
+                                                        str(i),
+                                                        default_arguments[annotation[0]])
+                            jsonschemas[method_name]['properties'].update(default)
         return jsonschemas
 
     def base_dict_to_arguments(self, dict_, method):
