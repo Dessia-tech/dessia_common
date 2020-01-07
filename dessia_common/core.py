@@ -10,19 +10,23 @@ import collections
 from copy import deepcopy
 import inspect
 import json
+from typing import TypeVar, List
 #from typing import List, Sequence, Iterable, TypeVar, Union
 
 #from importlib import import_module
 
 try:
-    _open_source = True
-    import dessia_common.core_protected as protected_module
-    from dessia_common.core_protected import inspect_arguments, recursive_instantiation
-#    from dessia_common.core_protected import
-except (ModuleNotFoundError, ImportError) as _:
     _open_source = False
+    import dessia_common.core_protected as protected_module
+    from dessia_common.core_protected import inspect_arguments, recursive_instantiation,\
+                                             recursive_type, JSONSCHEMA_HEADER,\
+                                             jsonschema_from_annotation,prettyname,\
+                                             set_default_value, TYPING_EQUIVALENCES,\
+                                             deserialize_argument
+except (ModuleNotFoundError, ImportError) as _:
+    _open_source = True
 
-class DessiaObject(protected_module.DessiaObject if _open_source==True else object):
+class DessiaObject(protected_module.DessiaObject if not _open_source else object):
     """
     Base abstract class for Dessia's object.
     Gathers generic methods and attributes
@@ -32,6 +36,7 @@ class DessiaObject(protected_module.DessiaObject if _open_source==True else obje
     _non_eq_attributes = ['name']
     _non_hash_attributes = ['name']
     _generic_eq = False
+    _init_variables = None
 
     def __init__(self, name:str='', **kwargs):
         implements_eq = (hasattr(self, '__eq__') and hasattr(self, '__hash__')
@@ -119,6 +124,7 @@ class DessiaObject(protected_module.DessiaObject if _open_source==True else obje
             obj = dict_to_object(dict_, cls)
             return obj
         elif 'object_class' in dict_:
+            print(dict_.keys())
             obj = dict_to_object(dict_)
             return obj
         # Using default
@@ -160,7 +166,7 @@ class DessiaObject(protected_module.DessiaObject if _open_source==True else obje
     def volmdlr_volume_model(self, frame=None):
 
         if hasattr(self, 'volmdlr_primitives'):
-            import volmdlr as vm ### Avoid circular imports, is this OK ?
+            import volmdlr as vm # !!! Avoid circular imports, is this OK ?
             if hasattr(self, 'volmdlr_primitives_step_frames'):
                 return vm.MovingVolumeModel(self.volmdlr_primitives(),
                                             self.volmdlr_primitives_step_frames())
@@ -183,7 +189,7 @@ class DessiaObject(protected_module.DessiaObject if _open_source==True else obje
         if fcstd_filepath is None:
             fcstd_filepath = 'An unnamed {}'.format(self.__class__.__name__)
 
-        if hasattr(self, 'volmdlr_volume_model'):
+        if hasattr(self, 'volmdlr_primitives'):
             model = self.volmdlr_volume_model()
             if model.__class__.__name__ == 'MovingVolumeModel':
                 model = model.step_volume_model(istep)
@@ -199,7 +205,7 @@ class DessiaObject(protected_module.DessiaObject if _open_source==True else obje
         display = []
         if hasattr(self, 'CADExport')\
         or hasattr(self, 'FreeCADExport')\
-        or hasattr(self, 'cad_export'):
+        or hasattr(self, 'volmdlr_primitives'):
             display.append({'angular_component': 'app-cad-viewer'})
         return display
 
@@ -231,6 +237,37 @@ class Parameter(DessiaObject):
         if self.periodicity is not None:
             return (self.lower_bound-0.5*self.periodicity,
                     self.upper_bound+0.5*self.periodicity)
+
+class Evolution(DessiaObject):
+    """
+    Defines a generic evolution
+
+    :param evolution: float list
+    :type evolution: list
+    """
+    _non_eq_attributes = ['name']
+    _non_hash_attributes = ['name']
+    _generic_eq = True
+
+    def __init__(self, evolution:List[float]=None, name:str=''):
+        if evolution is None:
+            evolution = []
+        self.evolution = evolution
+
+        DessiaObject.__init__(self, name=name)
+
+    def _display_angular(self):
+        displays = [{'angular_component': 'app-evolution1d',
+                     'table_show': False,
+                     'evolution': [self.evolution],
+                     'label_y': ['evolution']}]
+        return displays
+
+    def update(self, evolution):
+        """
+        Update the evolution list
+        """
+        self.evolution = evolution
 
 
 def number2factor(number):
@@ -383,8 +420,12 @@ def dict_to_object(dict_, class_=None):
         and class_.dict_to_object.__func__ is not DessiaObject.dict_to_object.__func__:
             obj = class_.dict_to_object(dict_)
             return obj
-        class_argspec = inspect.getfullargspec(class_)
-        init_dict = {k:v for k, v in working_dict.items() if k in class_argspec.args}
+        if class_._init_variables is None:
+            class_argspec = inspect.getfullargspec(class_)
+            init_dict = {k:v for k, v in working_dict.items() if k in class_argspec.args}
+        else:
+            init_dict = {k:v for k, v in working_dict.items() if k in class_._init_variables}
+        # !!! Class method to generate init_dict ??
     else:
         init_dict = working_dict
 

@@ -1004,6 +1004,7 @@ class WorkflowRun(dc.DessiaObject):
                            for f in filter_display[0]['filters']}\
                           for v in self.output_value]
                 filter_display[0]['values'] = values
+                filter_display[0]['references_attribute'] = 'output_value'
                 displays.extend(filter_display)
         return displays
 

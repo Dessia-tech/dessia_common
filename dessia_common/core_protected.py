@@ -36,7 +36,10 @@ class DessiaObject:
 
         # Get __init__ method and its annotations
         init = cls.__init__
-        annotations = init.__annotations__
+        if cls._init_variables is None:
+            annotations = init.__annotations__
+        else:
+            annotations = cls._init_variables
 
         # Get editable and ordered variables
         if hasattr(cls, '_editable_variables') and cls._editable_variables is not None:
@@ -63,7 +66,7 @@ class DessiaObject:
 
         # Set jsonschema
         for annotation in annotations.items():
-            name, value = annotation
+            name = annotation[0]
             if name in ordered_variables:
                 order = ordered_variables.index(name)
             else:
@@ -97,22 +100,24 @@ class DessiaObject:
         cls = type(self)
         valid_method_names = [m for m in dir(cls)\
                               if not m.startswith('_')]
+
         for method_name in valid_method_names:
             method = getattr(cls, method_name)
 
-            required_arguments, default_arguments = inspect_arguments(method, merge=False)
+            if not isinstance(method, property):
+                required_arguments, default_arguments = inspect_arguments(method, merge=False)
 
-            if method.__annotations__:
-                jsonschemas[method_name] = deepcopy(JSONSCHEMA_HEADER)
-                jsonschemas[method_name]['required'] = required_arguments
-                for i, annotation in enumerate(method.__annotations__.items()): # !!! Not actually ordered
-                    jsonschema_element = jsonschema_from_annotation(annotation, {}, i)[annotation[0]]
-                    jsonschemas[method_name]['properties'][str(i)] = jsonschema_element
-                    if annotation[0] in default_arguments.keys():
-                        default = set_default_value(jsonschemas[method_name]['properties'],
-                                                    str(i),
-                                                    default_arguments[annotation[0]])
-                        jsonschemas[method_name]['properties'].update(default)
+                if method.__annotations__:
+                    jsonschemas[method_name] = deepcopy(JSONSCHEMA_HEADER)
+                    jsonschemas[method_name]['required'] = required_arguments
+                    for i, annotation in enumerate(method.__annotations__.items()): # !!! Not actually ordered
+                        jsonschema_element = jsonschema_from_annotation(annotation, {}, i)[annotation[0]]
+                        jsonschemas[method_name]['properties'][str(i)] = jsonschema_element
+                        if annotation[0] in default_arguments.keys():
+                            default = set_default_value(jsonschemas[method_name]['properties'],
+                                                        str(i),
+                                                        default_arguments[annotation[0]])
+                            jsonschemas[method_name]['properties'].update(default)
         return jsonschemas
 
     def base_dict_to_arguments(self, dict_, method):
@@ -159,7 +164,8 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
     elif hasattr(value, '_name') and value._name in ['List', 'Sequence', 'Iterable']:
         jsonschema_element[key] = jsonschema_sequence_recursion(value=value,
                                                                 order=order,
-                                                                title=title)
+                                                                title=title,
+                                                                editable=editable)
     elif hasattr(value, '_name') and value._name == 'Tuple':
         items = []
         for type_ in value.__args__:
@@ -192,12 +198,13 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
 def jsonschema_sequence_recursion(value, title=None, order=None, editable=False):
     if title is None:
         title = 'Items'
-    jsonschema_element = {'type': 'array', 'editable' : editable}
+    jsonschema_element = {'type': 'array', 'editable' : editable, 'title' : title}
 
     items_type = value.__args__[0]
     if hasattr(items_type, '_name') and items_type._name in ['List', 'Sequence', 'Iterable']:
         jsonschema_element['items'] = jsonschema_sequence_recursion(value=items_type,
-                                                                    title=title)
+                                                                    title=title,
+                                                                    editable=editable)
     else:
         annotation = ('items', items_type)
         jsonschema_element.update(jsonschema_from_annotation(annotation,
@@ -218,7 +225,7 @@ def prettyname(namestr):
 
 def jsonschema_from_dataclass(class_, title=None):
     if title is None:
-        title = prettyname(class_)
+        title = prettyname(class_.__name__)
     jsonschema_element = {'type': 'object',
                           'properties' : {}}
     for i, field in enumerate(class_.__dataclass_fields__.values()): # !!! Not actually ordered !
