@@ -53,7 +53,7 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
         if not self._generic_eq:
             return object.__eq__(self, other_object)
         if self.__class__ != other_object.__class__\
-        or self.__dict__.keys() != other_object.__dict__.keys():
+        or self.__dict__.keys() != other_object.__dict__.keys(): # TODO : Check this line. Keys not ordered and/or just need to test used keys
             return False
 
         dict_ = {k : v for k, v in self.__dict__.items()\
