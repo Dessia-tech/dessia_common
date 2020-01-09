@@ -25,6 +25,7 @@ steps:
   when:
     branch: 
       - master
+    event: push
   commands:
     - git clone https://git.dessia.tech/OpenSource/dessia-common.git git-opensource
     - tar -vxf dist/*.tar.gz --strip-components=1 -C git-opensource
@@ -39,6 +40,7 @@ steps:
   image: dessia/drone-seafile
   when:
     branch: master
+    event: push
   settings:
     server_url: https://partage.dessia.tech
     repo_id:
@@ -55,8 +57,8 @@ steps:
   image: drillster/drone-email
   settings:
     host: mail.dessia.tech
-    username: software@dessia.tech
+    username: technical@dessia.tech
     password:
      from_secret: email_password
-    from: software@dessia.tech
+    from: technical@dessia.tech
     recipients: [ root@dessia.tech ]

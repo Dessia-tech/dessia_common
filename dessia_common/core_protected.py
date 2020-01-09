@@ -109,9 +109,12 @@ class DessiaObject:
 
                 if method.__annotations__:
                     jsonschemas[method_name] = deepcopy(JSONSCHEMA_HEADER)
-                    jsonschemas[method_name]['required'] = required_arguments
+                    jsonschemas[method_name]['required'] = []
                     for i, annotation in enumerate(method.__annotations__.items()): # !!! Not actually ordered
+                        if annotation[0] in required_arguments:
+                            jsonschemas[method_name]['required'].append(str(i))
                         jsonschema_element = jsonschema_from_annotation(annotation, {}, i)[annotation[0]]
+
                         jsonschemas[method_name]['properties'][str(i)] = jsonschema_element
                         if annotation[0] in default_arguments.keys():
                             default = set_default_value(jsonschemas[method_name]['properties'],
@@ -174,7 +177,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
                                    'type' : 'array'}
         jsonschema_element[key]['items'] = items
     else:
-        if hasattr(value, '_standalone_in_db') and value._standalone_in_db:
+        if hasattr(value, '_standalone_in_db'): # and value._standalone_in_db:
             # Dessia custom classes
             classname = value.__module__ + '.' + value.__name__
             jsonschema_element[key] = {'type': 'object',
@@ -182,11 +185,11 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
                                        'order' : order,
                                        'editable' : editable,
                                        'classes': [classname]}
-        elif hasattr(value, '_standalone_in_db') and not value._standalone_in_db:
-            jsonschema_element[key] = value.jsonschema().copy()
-            jsonschema_element[key].update({'editable' : editable,
-                                            'order' : order,
-                                            'title' : title})
+        # elif hasattr(value, '_standalone_in_db') and not value._standalone_in_db:
+        #     jsonschema_element[key] = value.jsonschema().copy()
+        #     jsonschema_element[key].update({'editable' : editable,
+        #                                     'order' : order,
+        #                                     'title' : title})
         else:
             # Dataclasses
             jsonschema_element[key] = jsonschema_from_dataclass(value)
