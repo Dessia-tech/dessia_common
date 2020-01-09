@@ -57,8 +57,8 @@ steps:
   image: drillster/drone-email
   settings:
     host: mail.dessia.tech
-    username: software@dessia.tech
+    username: technical@dessia.tech
     password:
      from_secret: email_password
-    from: software@dessia.tech
+    from: technical@dessia.tech
     recipients: [ root@dessia.tech ]
