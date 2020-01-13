@@ -16,7 +16,7 @@ class DessiaObject:
 
     @classmethod
     def base_jsonschema(cls):
-        jsonschema = JSONSCHEMA_HEADER.copy()
+        jsonschema = deepcopy(JSONSCHEMA_HEADER)
         jsonschema['properties']['name'] = {
                 'type': 'string',
                 "title" : "Object Name",
