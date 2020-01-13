@@ -11,6 +11,7 @@ import webbrowser
 import networkx as nx
 import pkg_resources
 import typing
+from copy import deepcopy
 
 from jinja2 import Environment, PackageLoader, select_autoescape
 import dessia_common as dc
@@ -191,7 +192,7 @@ class Block(dc.DessiaObject):
 
     @property
     def _method_jsonschemas(self):
-        jsonschemas = {'run': dc.JSONSCHEMA_HEADER}
+        jsonschemas = {'run': deepcopy(dc.JSONSCHEMA_HEADER)}
         properties_dict = jsonschemas['run']['properties']
         required_inputs = []
         for i, input_ in enumerate(self.inputs):
