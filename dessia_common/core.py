@@ -37,6 +37,7 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
     _non_hash_attributes = ['name']
     _generic_eq = False
     _init_variables = None
+    _export_formats = None
 
     def __init__(self, name:str='', **kwargs):
         implements_eq = (hasattr(self, '__eq__') and hasattr(self, '__hash__')
