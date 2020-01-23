@@ -41,8 +41,8 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
 
     def __init__(self, name:str='', **kwargs):
         implements_eq = (hasattr(self, '__eq__') and hasattr(self, '__hash__')
-                         and self.__class_.__eq__ is not object.__eq__
-                         and self.__class_.__hash__ is not object.__hash__)
+                         and self.__class__.__eq__ is not object.__eq__
+                         and self.__class__.__hash__ is not object.__hash__)
         if self._standalone_in_db and not self._generic_eq and not implements_eq:
             raise ValueError('Standalone in database classes must define their custom __hash__ and __eq__')
 
