@@ -28,13 +28,13 @@ steps:
     event: push
   commands:
     - git clone https://gitea.dessia.tech/OpenSource/dessia-common.git git-opensource
-    - tar -vxf dist/*.tar.gz --strip-components=1 -C git-opensource
     - cd git-opensource
     - git branch from_proprietary
     - git checkout from_proprietary
     - git pull
     - git config --global user.email "root@dessia.tech"
     - git config --global user.name "Root commit bot" 
+    - tar -vxf ../dist/*.tar.gz --strip-components=1 -C .
     - git add -A
     - if ! [[ -z $(git status -s -uno) ]]; then git commit -m "Automated commit from "${DRONE_COMMIT_MESSAGE##\"%%\\n\"}; fi
     - git push origin from_proprietary
