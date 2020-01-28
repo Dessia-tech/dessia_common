@@ -25,6 +25,9 @@ try:
                                              deserialize_argument
 except (ModuleNotFoundError, ImportError) as _:
     _open_source = True
+    
+class ConsistencyError(Exception):
+    pass
 
 class DessiaObject(protected_module.DessiaObject if not _open_source else object):
     """
