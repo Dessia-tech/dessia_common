@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ConsistencyError in core
 - _export_formats to DessiaObject
 
+### Fixed
+- Check equality of methods working on classes
+
 ## [0.1.2] - 2019-12-20
 
 ### Added
