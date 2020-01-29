@@ -221,7 +221,10 @@ def prettyname(namestr):
     if namestr:
         strings = namestr.split('_')
         for i, string in enumerate(strings):
-            prettyname += string[0].upper() + string[1:]
+            if len(string) > 1:
+                prettyname += string[0].upper() + string[1:]
+            else:
+                prettyname += string
             if i < len(strings)-1:
                 prettyname += ' '
     return prettyname
