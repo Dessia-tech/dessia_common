@@ -25,7 +25,7 @@ try:
                                              deserialize_argument
 except (ModuleNotFoundError, ImportError) as _:
     _open_source = True
-    
+
 class ConsistencyError(Exception):
     pass
 
@@ -207,10 +207,18 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
 
     def _display_angular(self):
         display = []
-        if hasattr(self, 'CADExport')\
-        or hasattr(self, 'FreeCADExport')\
-        or hasattr(self, 'volmdlr_primitives'):
-            display.append({'angular_component': 'app-cad-viewer'})
+        # if hasattr(self, 'CADExport')\
+        # or hasattr(self, 'FreeCADExport'):
+        #     display.append({'angular_component': 'app-cad-viewer'})
+
+        if hasattr(self, 'babylon_data'):
+            display.append({'angular_component' : 'app-step-viewer',
+                            'data' : self.babylon_data()})
+        elif hasattr(self, 'volmdlr_primitives')\
+        or (self.__class__.volmdlr_volume_model is not DessiaObject.volmdlr_volume_model):
+            model = self.volmdlr_volume_model()
+            display.append({'angular_component' : 'app-step-viewer',
+                            'data' : model.babylon_data()})
         return display
 
 class Parameter(DessiaObject):
@@ -272,7 +280,7 @@ class Evolution(DessiaObject):
         Update the evolution list
         """
         self.evolution = evolution
-        
+
 class CombinationEvolution(DessiaObject):
     _non_eq_attributes = ['name']
     _non_hash_attributes = ['name']
