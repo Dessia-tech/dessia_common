@@ -29,6 +29,9 @@ except (ModuleNotFoundError, ImportError) as _:
 class ConsistencyError(Exception):
     pass
 
+class SerializationError(Exception):
+    pass
+
 class DessiaObject(protected_module.DessiaObject if not _open_source else object):
     """
     Base abstract class for Dessia's object.
@@ -90,7 +93,8 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
         return full_classname(self)
 
     def base_dict(self):
-        dict_ = {'name' : self.name}
+        dict_ = {'name' : self.name,
+                 'object_class' : self.__module__ + '.' + self.__class__.__name__}
         return dict_
 
     def __getstate__(self):
@@ -110,8 +114,8 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
             return self.Dict()
 
         # Default to dict
-        serialized_dict = serialize_dict(dict_)
-        serialized_dict['object_class'] = self.__module__ + '.' + self.__class__.__name__
+        serialized_dict = self.base_dict()
+        serialized_dict.update(serialize_dict(dict_))
 
         return serialized_dict
 
@@ -423,6 +427,12 @@ def dict_merge(old_dct, merge_dct, add_keys=True, extend_lists=True):
 
     return dct
 
+def is_jsonable(x):
+    try:
+        json.dumps(x)
+        return True
+    except:
+        return False
 
 def stringify_dict_keys(obj):
     if isinstance(obj, (list, tuple)):
@@ -448,6 +458,8 @@ def serialize_dict(dict_):
         elif isinstance(value, (list, tuple)):
             serialized_value = serialize_sequence(value)
         else:
+            if not is_jsonable(value):
+                raise SerializationError('Value {} {} is not json serializable'.format(key, value))
             serialized_value = value
         serialized_dict[key] = serialized_value
     return serialized_dict
@@ -465,13 +477,20 @@ def serialize_sequence(seq):
             serialized_sequence.append(value)
     return serialized_sequence
 
+def get_python_class_from_class_name(class_name):
+    #TODO: add protection because this is arbitratry code evaluation!
+    module = class_name.rsplit('.', 1)[0]
+    exec('import ' + module)
+    return eval(class_name)
+        
 def dict_to_object(dict_, class_=None):
     working_dict = dict_.copy()
     if class_ is None and 'object_class' in working_dict:
-        object_class = working_dict['object_class']
-        module = object_class.rsplit('.', 1)[0]
-        exec('import ' + module)
-        class_ = eval(object_class)
+        # object_class = working_dict['object_class']
+        # module = object_class.rsplit('.', 1)[0]
+        # exec('import ' + module)
+        # class_ = eval(object_class)
+        class_ = get_python_class_from_class_name(working_dict['object_class'])
 
     if class_ is not None:
         if hasattr(class_, 'dict_to_object')\
