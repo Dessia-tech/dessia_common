@@ -132,7 +132,6 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
             obj = dict_to_object(dict_, cls)
             return obj
         elif 'object_class' in dict_:
-            print(dict_.keys())
             obj = dict_to_object(dict_)
             return obj
         # Using default
