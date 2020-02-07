@@ -6,6 +6,7 @@
 import inspect
 import time
 import tempfile
+import json
 from importlib import import_module
 import webbrowser
 import networkx as nx
@@ -574,13 +575,22 @@ class Workflow(Block):
         self.pipes = pipes
 
         self.coordinates = {}
-
+        
+        self.nonblock_variables = []
         self.variables = []
         for block in self.blocks:
             self.variables.extend(block.inputs)
             self.variables.extend(block.outputs)
             self.coordinates[block] = (0, 0)
-
+            
+        for pipe in self.pipes:
+            if not pipe.input_variable in self.variables:
+                self.variables.append(pipe.input_variable)
+                self.nonblock_variables.append(pipe.input_variable)
+            if not pipe.output_variable in self.variables:
+                self.variables.append(pipe.output_variable)
+                self.nonblock_variables.append(pipe.output_variable)
+                
         self._utd_graph = False
 
         input_variables = []
@@ -703,12 +713,16 @@ class Workflow(Block):
                 ib1 = iblock
                 ti1 = 0
                 iv1 = block.inputs.index(variable)
+                return (ib1, ti1, iv1)
             if variable in block.outputs:
                 ib1 = iblock
                 ti1 = 1
                 iv1 = block.outputs.index(variable)
-
-        return (ib1, ti1, iv1)
+                return (ib1, ti1, iv1)
+            
+        # Free variable not attached to block
+        return self.nonblock_variables.index(variable)
+        
 
     def index(self, variable):
         index = self.inputs.index(variable)
@@ -832,52 +846,72 @@ class Workflow(Block):
 
 
     def jointjs_data(self):
-        nodes = []
+        blocks = []
         for block in self.blocks:
-            nodes.append({'name': block.__class__.__name__,
-                          'inputs': [i._name for i in block.inputs],
-                          'outputs': [o._name for o in block.outputs]})
+            blocks.append({'name': block.__class__.__name__,
+                           'inputs': [{'name': i._name,
+                                       'is_workflow_input': i in self.inputs,
+                                       'is_workflow_output': i in self.outputs}\
+                                      for i in block.inputs],
+                           'outputs': [o._name for o in block.outputs]})
+            
+        nonblock_variables = []
+        for variable in self.nonblock_variables:
+            nonblock_variables.append({'name': variable._name,
+                                       'is_workflow_input': variable in self.inputs})
 
         edges = []
         for pipe in self.pipes:
-            ib1, is1, ip1 = self.variable_indices(pipe.input_variable)
-            if is1:
-                block = self.blocks[ib1]
-                ip1 += len(block.inputs)
+            input_index = self.variable_indices(pipe.input_variable)
+            if type(input_index) == int:
+                node1 = input_index
+            else:
+                ib1, is1, ip1 = input_index
+                if is1:
+                    block = self.blocks[ib1]
+                    ip1 += len(block.inputs)
+                    
+                node1 = [ib1, ip1]
 
-            ib2, is2, ip2 = self.variable_indices(pipe.output_variable)
-            if is2:
-                block = self.blocks[ib2]
-                ip2 += len(block.inputs)
+            output_index = self.variable_indices(pipe.output_variable)
+            if type(output_index) == int:
+                node2 = output_index
+            else:
+                ib2, is2, ip2 = output_index
+                if is2:
+                    block = self.blocks[ib2]
+                    ip2 += len(block.inputs)
+                    
+                node2 = [ib2, ip2]
 
-            edges.append(((ib1, ip1), (ib2, ip2)))
+            edges.append([node1, node2])
 
-        return nodes, edges
-
-
-    def plot_mxgraph(self):
-        env = Environment(loader=PackageLoader('dessia_common', 'templates'),
-                          autoescape=select_autoescape(['html', 'xml']))
+        return blocks, nonblock_variables, edges
 
 
-        template = env.get_template('workflow.html')
+    # def plot_mxgraph(self):
+    #     env = Environment(loader=PackageLoader('dessia_common', 'templates'),
+    #                       autoescape=select_autoescape(['html', 'xml']))
 
-        mx_path = pkg_resources.resource_filename(pkg_resources.Requirement('dessia_common'),
-                                                  'dessia_common/templates/mxgraph')
 
-        nodes, edges = self.mxgraph_data()
-        options = {}
-        rendered_template = template.render(mx_path=mx_path,
-                                            nodes=nodes,
-                                            edges=edges,
-                                            options=options)
+    #     template = env.get_template('workflow.html')
 
-        temp_file = tempfile.mkstemp(suffix='.html')[1]
+    #     mx_path = pkg_resources.resource_filename(pkg_resources.Requirement('dessia_common'),
+    #                                               'dessia_common/templates/mxgraph')
 
-        with open(temp_file, 'wb') as file:
-            file.write(rendered_template.encode('utf-8'))
+    #     nodes, edges = self.mxgraph_data()
+    #     options = {}
+    #     rendered_template = template.render(mx_path=mx_path,
+    #                                         nodes=nodes,
+    #                                         edges=edges,
+    #                                         options=options)
 
-        webbrowser.open('file://' + temp_file)
+    #     temp_file = tempfile.mkstemp(suffix='.html')[1]
+
+    #     with open(temp_file, 'wb') as file:
+    #         file.write(rendered_template.encode('utf-8'))
+
+    #     webbrowser.open('file://' + temp_file)
 
 
     def plot_jointjs(self):
@@ -887,9 +921,10 @@ class Workflow(Block):
 
         template = env.get_template('workflow_jointjs.html')
 
-        nodes, edges = self.jointjs_data()
+        blocks, nonblock_variables, edges = self.jointjs_data()
         options = {}
-        rendered_template = template.render(nodes=nodes,
+        rendered_template = template.render(blocks=json.dumps(blocks),
+                                            nonblock_variables=json.dumps(nonblock_variables),
                                             edges=edges,
                                             options=options)
 
