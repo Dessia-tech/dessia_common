@@ -1076,10 +1076,12 @@ class WorkflowRun(dc.DessiaObject):
         for block in self.workflow.blocks:
             if isinstance(block, Filter):
                 filter_display = block._display_angular()
-                values = [{f['attribute'] : dc.getdeepattr(v, f['attribute'])\
-                           for f in filter_display[0]['filters']}\
-                          for v in self.output_value]
-                filter_display[0]['values'] = values
+                values = [(i, {f['attribute'] : dc.getdeepattr(v, f['attribute'])
+                               for f in filter_display[0]['filters']})\
+                          for i, v in enumerate(self.output_value)]
+                filter_display[0]['datasets'] = [{'label' : 'Results',
+                                                  'values' : values,
+                                                  'color' : "#99b4d6"}]
                 filter_display[0]['references_attribute'] = 'output_value'
                 displays.extend(filter_display)
         return displays
