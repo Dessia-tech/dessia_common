@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - is_jsonable
 - get_python_class_from_class_name
 - base_dict returns class name
+- nonblock variables in workflow
 
 ### Changed
 - Checks for volume_model implementation
