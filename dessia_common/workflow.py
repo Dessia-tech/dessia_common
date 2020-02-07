@@ -77,6 +77,26 @@ class TypedVariable(Variable):
                 else:
                     type_ = eval(splitted_argname[1])
                 self.type_ = typing.List[type_]
+                
+    def to_dict(self):
+        dict_ = self.__getstate__()
+        dict_.update(dc.DessiaObject.base_dict(self))
+        
+        if self.type_ == float:
+            dict_['type_'] = 'float'
+        else:
+            dict_['type_'] = self._type.__class__.__name__
+        
+        return dict_
+    
+    @classmethod
+    def dict_to_object(cls, dict_):
+        if dict_['type_'] == 'float':
+            dict_['type_'] = float
+        else:
+            dict_['type_'] = dc.get_python_class_from_class_name(dict_['type_'])
+        del dict_['object_class']
+        return cls(**dict_)
 
     def equivalent_hash(self):
         return int((hash(self._name) + hash(self.type_.__name__)) % 10e5)
@@ -228,6 +248,7 @@ class InstanciateModel(Block):
                 }
             }
         })
+    
     def __init__(self, object_class, name=''):
         self.object_class = object_class
         inputs = []
@@ -523,7 +544,6 @@ class Pipe(dc.DessiaObject):
 
 class Workflow(Block):
     _standalone_in_db = True
-
     _dessia_methods = ['run']
 
     _jsonschema = {
@@ -640,9 +660,10 @@ class Workflow(Block):
 
     def _display_angular(self):
         displays = []
-        nodes, edges = self.jointjs_data()
+        blocks, nonblock_variables, edges = self.jointjs_data()
         displays.extend([{'angular_component': 'workflow',
-                         'nodes': nodes,
+                         'blocks': blocks,
+                         'nonblock_variables': nonblock_variables,
                          'edges': edges}])
         return displays
 
@@ -656,16 +677,35 @@ class Workflow(Block):
 
         dict_.update({'blocks': blocks,
                       'pipes': pipes,
-                      'output': self.variable_indices(self.outputs[0])})
+                      'output': self.variable_indices(self.outputs[0]),
+                      'nonblock_variables': [v.to_dict() for v in self.nonblock_variables]})
+        
         return dict_
 
     @classmethod
     def dict_to_object(cls, dict_):
         blocks = [Block.dict_to_object(d) for d in dict_['blocks']]
+        if 'nonblock_variables' in dict_:
+            print([d for d in dict_['nonblock_variables']])
+            nonblock_variables = [dc.DessiaObject.dict_to_object(d) for d in dict_['nonblock_variables']]
+        else:
+            nonblock_variables = []
+            
         pipes = []
-        for (ib1, _, ip1), (ib2, _, ip2) in dict_['pipes']:
-            variable1 = blocks[ib1].outputs[ip1]
-            variable2 = blocks[ib2].inputs[ip2]
+        for source, target in dict_['pipes']:
+            print(source, target, type(source))
+            if type(source) == int:
+                variable1 = nonblock_variables[source]
+            else:
+                ib1, _, ip1 = source
+                variable1 = blocks[ib1].outputs[ip1]
+                
+            if type(target) == int:
+                variable2 = nonblock_variables[target]
+            else:
+                ib2, _, ip2 = target
+                variable2 = blocks[ib2].inputs[ip2]
+                
             pipes.append(Pipe(variable1, variable2))
 
         output = blocks[dict_['output'][0]].outputs[dict_['output'][2]]

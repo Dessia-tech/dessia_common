@@ -92,8 +92,6 @@
 				var block = new joint.shapes.devs.Model({
 						position: { x: 300*(blocks_data.indexOf(block_data))+250, y: 150 },
 						size: { width: 220, height: 120 },
-						// inPorts: input_ports,
-						// outPorts: output_ports,
 						ports: {
 								groups: {
 										'in': {
@@ -170,7 +168,7 @@
 		        attrs: { text: { text: port_output_data['name'] } },
 		    	};
 					block.addPort(port);
-					if (port_input_data['is_workflow_input']){
+					if (port_output_data['is_workflow_output']){
 						block.portProp(port, 'attrs/.port-body/fill', '#ff1919');
 					}
 				}
@@ -195,22 +193,15 @@
 			});
 
 
-		// var output_ports = [];
-		// for (port_output_data of block_data['inputs']){
-		// 	input_ports.push(port_output_data['name'])
-		// }
-
 		graph.addCell(variable);
 		nonblock_variables.push(variable);
 		}
 
-		// console.log('edges_data', edges_data)
 
 		for (edge of edges_data){
-			// console.log('edge', edge)
 			var node1 = edge[0];
 			if (typeof(node1) == 'number'){
-				source = {'id': nonblock_variables[node1]};
+				var source = {'id': nonblock_variables[node1]};
 			}
 			else{
 				var block1 = blocks[node1[0]];
@@ -223,7 +214,7 @@
 
 			var node2 = edge[1];
 			if (typeof(node2) == 'number'){
-				target = {'id': nonblock_variables[node2]};
+				var target = {'id': nonblock_variables[node2]};
 			}
 			else{
 				var block2 = blocks[node2[0]];
@@ -233,8 +224,6 @@
 					port: port2.id
 				}
 			}
-			// console.log('source', source);
-			// console.log('target', target);
 
 			var link = new joint.shapes.standard.Link({
 			      source: source,
