@@ -1,4 +1,6 @@
+---
 kind: pipeline
+type: docker
 name: default
 
 steps:
@@ -18,7 +20,7 @@ steps:
   image: python:3
   commands:
   - git fetch --tags
-  - python setup.py sdist --formats=gztar,zip
+  - python setup.py sdist
 
 - name: push opensource from sdist
   image: alpine/git
