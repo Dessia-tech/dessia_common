@@ -6,6 +6,7 @@
 import inspect
 import time
 import tempfile
+import json
 from importlib import import_module
 import webbrowser
 import networkx as nx
@@ -76,6 +77,26 @@ class TypedVariable(Variable):
                 else:
                     type_ = eval(splitted_argname[1])
                 self.type_ = typing.List[type_]
+
+    def to_dict(self):
+        dict_ = self.__getstate__()
+        dict_.update(dc.DessiaObject.base_dict(self))
+
+        if self.type_ == float:
+            dict_['type_'] = 'float'
+        else:
+            dict_['type_'] = self._type.__class__.__name__
+
+        return dict_
+
+    @classmethod
+    def dict_to_object(cls, dict_):
+        if dict_['type_'] == 'float':
+            dict_['type_'] = float
+        else:
+            dict_['type_'] = dc.get_python_class_from_class_name(dict_['type_'])
+        del dict_['object_class']
+        return cls(**dict_)
 
     def equivalent_hash(self):
         return int((hash(self._name) + hash(self.type_.__name__)) % 10e5)
@@ -227,6 +248,7 @@ class InstanciateModel(Block):
                 }
             }
         })
+
     def __init__(self, object_class, name=''):
         self.object_class = object_class
         inputs = []
@@ -522,7 +544,6 @@ class Pipe(dc.DessiaObject):
 
 class Workflow(Block):
     _standalone_in_db = True
-
     _dessia_methods = ['run']
 
     _jsonschema = {
@@ -575,11 +596,20 @@ class Workflow(Block):
 
         self.coordinates = {}
 
+        self.nonblock_variables = []
         self.variables = []
         for block in self.blocks:
             self.variables.extend(block.inputs)
             self.variables.extend(block.outputs)
             self.coordinates[block] = (0, 0)
+
+        for pipe in self.pipes:
+            if not pipe.input_variable in self.variables:
+                self.variables.append(pipe.input_variable)
+                self.nonblock_variables.append(pipe.input_variable)
+            if not pipe.output_variable in self.variables:
+                self.variables.append(pipe.output_variable)
+                self.nonblock_variables.append(pipe.output_variable)
 
         self._utd_graph = False
 
@@ -630,9 +660,10 @@ class Workflow(Block):
 
     def _display_angular(self):
         displays = []
-        nodes, edges = self.jointjs_data()
+        blocks, nonblock_variables, edges = self.jointjs_data()
         displays.extend([{'angular_component': 'workflow',
-                         'nodes': nodes,
+                         'blocks': blocks,
+                         'nonblock_variables': nonblock_variables,
                          'edges': edges}])
         return displays
 
@@ -646,16 +677,35 @@ class Workflow(Block):
 
         dict_.update({'blocks': blocks,
                       'pipes': pipes,
-                      'output': self.variable_indices(self.outputs[0])})
+                      'output': self.variable_indices(self.outputs[0]),
+                      'nonblock_variables': [v.to_dict() for v in self.nonblock_variables]})
+
         return dict_
 
     @classmethod
     def dict_to_object(cls, dict_):
         blocks = [Block.dict_to_object(d) for d in dict_['blocks']]
+        if 'nonblock_variables' in dict_:
+            print([d for d in dict_['nonblock_variables']])
+            nonblock_variables = [dc.DessiaObject.dict_to_object(d) for d in dict_['nonblock_variables']]
+        else:
+            nonblock_variables = []
+
         pipes = []
-        for (ib1, _, ip1), (ib2, _, ip2) in dict_['pipes']:
-            variable1 = blocks[ib1].outputs[ip1]
-            variable2 = blocks[ib2].inputs[ip2]
+        for source, target in dict_['pipes']:
+            print(source, target, type(source))
+            if type(source) == int:
+                variable1 = nonblock_variables[source]
+            else:
+                ib1, _, ip1 = source
+                variable1 = blocks[ib1].outputs[ip1]
+
+            if type(target) == int:
+                variable2 = nonblock_variables[target]
+            else:
+                ib2, _, ip2 = target
+                variable2 = blocks[ib2].inputs[ip2]
+
             pipes.append(Pipe(variable1, variable2))
 
         output = blocks[dict_['output'][0]].outputs[dict_['output'][2]]
@@ -703,12 +753,16 @@ class Workflow(Block):
                 ib1 = iblock
                 ti1 = 0
                 iv1 = block.inputs.index(variable)
+                return (ib1, ti1, iv1)
             if variable in block.outputs:
                 ib1 = iblock
                 ti1 = 1
                 iv1 = block.outputs.index(variable)
+                return (ib1, ti1, iv1)
 
-        return (ib1, ti1, iv1)
+        # Free variable not attached to block
+        return self.nonblock_variables.index(variable)
+
 
     def index(self, variable):
         index = self.inputs.index(variable)
@@ -832,52 +886,76 @@ class Workflow(Block):
 
 
     def jointjs_data(self):
-        nodes = []
+        blocks = []
         for block in self.blocks:
-            nodes.append({'name': block.__class__.__name__,
-                          'inputs': [i._name for i in block.inputs],
-                          'outputs': [o._name for o in block.outputs]})
+            # !!! Is it necessary to add is_workflow_input/output for outputs/inputs ??
+            blocks.append({'name': block.__class__.__name__,
+                           'inputs': [{'name': i._name,
+                                       'is_workflow_input': i in self.inputs,
+                                       'is_workflow_output': i in self.outputs}\
+                                      for i in block.inputs],
+                           'outputs': [{'name': o._name,
+                                        'is_workflow_input': o in self.inputs,
+                                        'is_workflow_output': o in self.outputs}\
+                                       for o in block.outputs]})
+
+        nonblock_variables = []
+        for variable in self.nonblock_variables:
+            nonblock_variables.append({'name': variable._name,
+                                       'is_workflow_input': variable in self.inputs})
 
         edges = []
         for pipe in self.pipes:
-            ib1, is1, ip1 = self.variable_indices(pipe.input_variable)
-            if is1:
-                block = self.blocks[ib1]
-                ip1 += len(block.inputs)
+            input_index = self.variable_indices(pipe.input_variable)
+            if type(input_index) == int:
+                node1 = input_index
+            else:
+                ib1, is1, ip1 = input_index
+                if is1:
+                    block = self.blocks[ib1]
+                    ip1 += len(block.inputs)
 
-            ib2, is2, ip2 = self.variable_indices(pipe.output_variable)
-            if is2:
-                block = self.blocks[ib2]
-                ip2 += len(block.inputs)
+                node1 = [ib1, ip1]
 
-            edges.append(((ib1, ip1), (ib2, ip2)))
+            output_index = self.variable_indices(pipe.output_variable)
+            if type(output_index) == int:
+                node2 = output_index
+            else:
+                ib2, is2, ip2 = output_index
+                if is2:
+                    block = self.blocks[ib2]
+                    ip2 += len(block.inputs)
 
-        return nodes, edges
+                node2 = [ib2, ip2]
+
+            edges.append([node1, node2])
+
+        return blocks, nonblock_variables, edges
 
 
-    def plot_mxgraph(self):
-        env = Environment(loader=PackageLoader('dessia_common', 'templates'),
-                          autoescape=select_autoescape(['html', 'xml']))
+    # def plot_mxgraph(self):
+    #     env = Environment(loader=PackageLoader('dessia_common', 'templates'),
+    #                       autoescape=select_autoescape(['html', 'xml']))
 
 
-        template = env.get_template('workflow.html')
+    #     template = env.get_template('workflow.html')
 
-        mx_path = pkg_resources.resource_filename(pkg_resources.Requirement('dessia_common'),
-                                                  'dessia_common/templates/mxgraph')
+    #     mx_path = pkg_resources.resource_filename(pkg_resources.Requirement('dessia_common'),
+    #                                               'dessia_common/templates/mxgraph')
 
-        nodes, edges = self.mxgraph_data()
-        options = {}
-        rendered_template = template.render(mx_path=mx_path,
-                                            nodes=nodes,
-                                            edges=edges,
-                                            options=options)
+    #     nodes, edges = self.mxgraph_data()
+    #     options = {}
+    #     rendered_template = template.render(mx_path=mx_path,
+    #                                         nodes=nodes,
+    #                                         edges=edges,
+    #                                         options=options)
 
-        temp_file = tempfile.mkstemp(suffix='.html')[1]
+    #     temp_file = tempfile.mkstemp(suffix='.html')[1]
 
-        with open(temp_file, 'wb') as file:
-            file.write(rendered_template.encode('utf-8'))
+    #     with open(temp_file, 'wb') as file:
+    #         file.write(rendered_template.encode('utf-8'))
 
-        webbrowser.open('file://' + temp_file)
+    #     webbrowser.open('file://' + temp_file)
 
 
     def plot_jointjs(self):
@@ -887,9 +965,10 @@ class Workflow(Block):
 
         template = env.get_template('workflow_jointjs.html')
 
-        nodes, edges = self.jointjs_data()
+        blocks, nonblock_variables, edges = self.jointjs_data()
         options = {}
-        rendered_template = template.render(nodes=nodes,
+        rendered_template = template.render(blocks=json.dumps(blocks),
+                                            nonblock_variables=json.dumps(nonblock_variables),
                                             edges=edges,
                                             options=options)
 

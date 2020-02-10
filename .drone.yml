@@ -1,4 +1,6 @@
+---
 kind: pipeline
+type: docker
 name: default
 
 steps:
@@ -18,14 +20,15 @@ steps:
   image: python:3
   commands:
   - git fetch --tags
-  - python setup.py sdist --formats=gztar,zip
+  - python setup.py sdist
 
 - name: push opensource from sdist
   image: alpine/git
   when:
     branch: 
-      - master
-    event: push
+    - master
+    event:
+    - push
   commands:
     - git clone https://gitea.dessia.tech/OpenSource/dessia-common.git git-opensource
     - cd git-opensource
@@ -36,6 +39,7 @@ steps:
     - git config --global user.name "Root commit bot"
     - tar -vxf ../dist/*.tar.gz --strip-components=1 -C .
     - git add -A
+    - echo ${DRONE_COMMIT_MESSAGE##\"%%\\n\"}
     - if ! [[ -z $(git status -s -uno) ]]; then git commit -m "Automated commit from "${DRONE_COMMIT_MESSAGE##\"%%\\n\"}; fi
     - git push origin from_proprietary
 
