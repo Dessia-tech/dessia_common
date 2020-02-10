@@ -87,7 +87,7 @@
 
 
 			var blocks = [];
-			for (block_data of blocks_data){
+			for (const [i, block_data] of blocks_data.entries()){
 
 				var block = new joint.shapes.devs.Model({
 						position: { x: 300*(blocks_data.indexOf(block_data))+250, y: 150 },
@@ -147,9 +147,10 @@
 				});
 
 				// var input_ports = [];
+				let j = 0;
 				for (port_input_data of block_data['inputs']){
 					var port = {
-						id: block.id+port_input_data['name'],
+						id: String(i)+String(j),
 		        group: 'in',
 		        args: {},
 		        attrs: { text: { text: port_input_data['name'] } },
@@ -158,11 +159,12 @@
 					if (port_input_data['is_workflow_input']){
 						block.portProp(port, 'attrs/.port-body/fill', '#00FF00');
 					}
+					j++;
 				}
 
 				for (port_output_data of block_data['outputs']){
 					var port = {
-						id: block.id+port_output_data['name'],
+						id: String(i)+String(j),
 		        group: 'out',
 		        args: {},
 		        attrs: { text: { text: port_output_data['name'] } },
@@ -171,6 +173,7 @@
 					if (port_output_data['is_workflow_output']){
 						block.portProp(port, 'attrs/.port-body/fill', '#ff1919');
 					}
+					j++;
 				}
 
 
