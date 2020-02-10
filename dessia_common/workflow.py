@@ -77,18 +77,18 @@ class TypedVariable(Variable):
                 else:
                     type_ = eval(splitted_argname[1])
                 self.type_ = typing.List[type_]
-                
+
     def to_dict(self):
         dict_ = self.__getstate__()
         dict_.update(dc.DessiaObject.base_dict(self))
-        
+
         if self.type_ == float:
             dict_['type_'] = 'float'
         else:
             dict_['type_'] = self._type.__class__.__name__
-        
+
         return dict_
-    
+
     @classmethod
     def dict_to_object(cls, dict_):
         if dict_['type_'] == 'float':
@@ -248,7 +248,7 @@ class InstanciateModel(Block):
                 }
             }
         })
-    
+
     def __init__(self, object_class, name=''):
         self.object_class = object_class
         inputs = []
@@ -595,14 +595,14 @@ class Workflow(Block):
         self.pipes = pipes
 
         self.coordinates = {}
-        
+
         self.nonblock_variables = []
         self.variables = []
         for block in self.blocks:
             self.variables.extend(block.inputs)
             self.variables.extend(block.outputs)
             self.coordinates[block] = (0, 0)
-            
+
         for pipe in self.pipes:
             if not pipe.input_variable in self.variables:
                 self.variables.append(pipe.input_variable)
@@ -610,7 +610,7 @@ class Workflow(Block):
             if not pipe.output_variable in self.variables:
                 self.variables.append(pipe.output_variable)
                 self.nonblock_variables.append(pipe.output_variable)
-                
+
         self._utd_graph = False
 
         input_variables = []
@@ -679,7 +679,7 @@ class Workflow(Block):
                       'pipes': pipes,
                       'output': self.variable_indices(self.outputs[0]),
                       'nonblock_variables': [v.to_dict() for v in self.nonblock_variables]})
-        
+
         return dict_
 
     @classmethod
@@ -690,7 +690,7 @@ class Workflow(Block):
             nonblock_variables = [dc.DessiaObject.dict_to_object(d) for d in dict_['nonblock_variables']]
         else:
             nonblock_variables = []
-            
+
         pipes = []
         for source, target in dict_['pipes']:
             print(source, target, type(source))
@@ -699,13 +699,13 @@ class Workflow(Block):
             else:
                 ib1, _, ip1 = source
                 variable1 = blocks[ib1].outputs[ip1]
-                
+
             if type(target) == int:
                 variable2 = nonblock_variables[target]
             else:
                 ib2, _, ip2 = target
                 variable2 = blocks[ib2].inputs[ip2]
-                
+
             pipes.append(Pipe(variable1, variable2))
 
         output = blocks[dict_['output'][0]].outputs[dict_['output'][2]]
@@ -759,10 +759,10 @@ class Workflow(Block):
                 ti1 = 1
                 iv1 = block.outputs.index(variable)
                 return (ib1, ti1, iv1)
-            
+
         # Free variable not attached to block
         return self.nonblock_variables.index(variable)
-        
+
 
     def index(self, variable):
         index = self.inputs.index(variable)
@@ -888,13 +888,17 @@ class Workflow(Block):
     def jointjs_data(self):
         blocks = []
         for block in self.blocks:
+            # !!! Is it necessary to add is_workflow_input/output for outputs/inputs ??
             blocks.append({'name': block.__class__.__name__,
                            'inputs': [{'name': i._name,
                                        'is_workflow_input': i in self.inputs,
                                        'is_workflow_output': i in self.outputs}\
                                       for i in block.inputs],
-                           'outputs': [o._name for o in block.outputs]})
-            
+                           'outputs': [{'name': o._name,
+                                        'is_workflow_input': o in self.inputs,
+                                        'is_workflow_output': o in self.outputs}\
+                                       for o in block.outputs]})
+
         nonblock_variables = []
         for variable in self.nonblock_variables:
             nonblock_variables.append({'name': variable._name,
@@ -910,7 +914,7 @@ class Workflow(Block):
                 if is1:
                     block = self.blocks[ib1]
                     ip1 += len(block.inputs)
-                    
+
                 node1 = [ib1, ip1]
 
             output_index = self.variable_indices(pipe.output_variable)
@@ -921,7 +925,7 @@ class Workflow(Block):
                 if is2:
                     block = self.blocks[ib2]
                     ip2 += len(block.inputs)
-                    
+
                 node2 = [ib2, ip2]
 
             edges.append([node1, node2])
