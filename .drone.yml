@@ -23,8 +23,7 @@ steps:
 - name: push opensource from sdist
   image: alpine/git
   when:
-    branch: 
-      - master
+    branch: master
     event: push
   commands:
     - git clone https://gitea.dessia.tech/OpenSource/dessia-common.git git-opensource
