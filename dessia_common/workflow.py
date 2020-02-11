@@ -795,11 +795,12 @@ class Workflow(Block):
 
 
         imposed_variable_values_dict = {}
-        for variable, value in imposed_variable_values.items():
+        for variable, value in self.imposed_variable_values.items():
             if hasattr(value, 'to_dict'):
                 imposed_variable_values_dict[self.variable_indices(variable)] = value.to_dict()
             else:
                 imposed_variable_values_dict[self.variable_indices(variable)] = value
+
 
         return dict_
 
@@ -1031,12 +1032,15 @@ class Workflow(Block):
     def jointjs_data(self):
         blocks = []
         for block in self.blocks:
+            # !!! Is it necessary to add is_workflow_input/output for outputs/inputs ??
             blocks.append({'name': block.__class__.__name__,
                            'inputs': [{'name': i._name,
-                                       'is_workflow_input': i in self.inputs,
-                                       'is_workflow_output': i in self.outputs}\
+                                       'is_workflow_input': i in self.inputs}\
                                       for i in block.inputs],
-                           'outputs': [o._name for o in block.outputs]})
+
+                           'outputs': [{'name': o._name,
+                                        'is_workflow_output': o in self.outputs}\
+                                       for o in block.outputs]})
 
         nonblock_variables = []
         for variable in self.nonblock_variables:
