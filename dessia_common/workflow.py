@@ -695,7 +695,7 @@ class Workflow(Block):
         }
 
 
-    def __init__(self, blocks, pipes, output, imposed_variable_values=None, name=''):
+    def __init__(self, blocks, pipes, output, *, imposed_variable_values=None, name=''):
         self.blocks = blocks
         self.pipes = pipes
 
@@ -854,7 +854,7 @@ class Workflow(Block):
         else:
             imposed_variable_values = None
 
-        return cls(blocks, pipes, output, imposed_variable_values, name=dict_['name'])
+        return cls(blocks, pipes, output, imposed_variable_values=imposed_variable_values, name=dict_['name'])
 
     def dict_to_arguments(self, dict_, method):
         arguments_values = {}
@@ -912,10 +912,32 @@ class Workflow(Block):
         index = self.inputs.index(variable)
         return index
 
-    def layout(self, n_x_anchors):
-        for iblock, block in enumerate(self.blocks):
-            self.coordinates[block] = (iblock % n_x_anchors, iblock // n_x_anchors)
+    def layout(self, anchor_size=250):
+        coordinates = {}
+        elements_by_distance = {}
+        for element in self.blocks+self.nonblock_variables:
+            distance = 0
+            path = nx.shortest_path(self.graph, element, self.outputs[0])
+            for path_element in path[1:-1]:
+                if path_element in self.blocks:
+                    distance += 1
+                elif path_element in self.nonblock_variables:
+                    distance += 1
+                    
+            if distance in elements_by_distance:                
+                elements_by_distance[distance].append(element)
+            else:
+                elements_by_distance[distance] = [element]
+        
+        
+        for i, distance in enumerate(sorted(elements_by_distance.keys())[::-1]):
+            for j, element in enumerate(elements_by_distance[distance]):
+                
+                coordinates[element] = (i*anchor_size, j*anchor_size)
+        # for iblock, block in enumerate(self.blocks):
+        #     self.coordinates[block] = (iblock % n_x_anchors, iblock // n_x_anchors)
 
+        return coordinates
 
     def plot_graph(self):
 
@@ -1030,6 +1052,7 @@ class Workflow(Block):
 
 
     def jointjs_data(self):
+        coordinates = self.layout()
         blocks = []
         for block in self.blocks:
             # !!! Is it necessary to add is_workflow_input/output for outputs/inputs ??
@@ -1040,12 +1063,14 @@ class Workflow(Block):
 
                            'outputs': [{'name': o._name,
                                         'is_workflow_output': o in self.outputs}\
-                                       for o in block.outputs]})
+                                       for o in block.outputs],
+                           'position': coordinates[block]})
 
         nonblock_variables = []
         for variable in self.nonblock_variables:
             nonblock_variables.append({'name': variable._name,
-                                       'is_workflow_input': variable in self.inputs})
+                                       'is_workflow_input': variable in self.inputs,
+                                       'position': coordinates[variable]})
 
         edges = []
         for pipe in self.pipes:
