@@ -93,7 +93,12 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
         return full_classname(self)
 
     def base_dict(self):
+        if hasattr(self.__class__.__module__, '__version__'):
+            pkg_version = self.__class__.__module__.__version__
+        else:
+            pkg_version = None
         dict_ = {'name' : self.name,
+                 'package_version' : pkg_version,
                  'object_class' : self.__module__ + '.' + self.__class__.__name__}
         return dict_
 
@@ -481,7 +486,7 @@ def get_python_class_from_class_name(class_name):
     module = class_name.rsplit('.', 1)[0]
     exec('import ' + module)
     return eval(class_name)
-        
+
 def dict_to_object(dict_, class_=None):
     working_dict = dict_.copy()
     if class_ is None and 'object_class' in working_dict:
