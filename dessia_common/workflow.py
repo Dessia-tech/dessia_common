@@ -96,6 +96,7 @@ class TypedVariable(Variable):
         else:
             dict_['type_'] = dc.get_python_class_from_class_name(dict_['type_'])
         del dict_['object_class']
+        del dict_['package_version']
         return cls(**dict_)
 
     def equivalent_hash(self):
@@ -284,6 +285,63 @@ class InstanciateModel(Block):
         args = {var._name: values[var] for var in self.inputs}
         return [self.object_class(**args)]
 
+class ClassMethod(Block):
+    _jsonschema = dc.dict_merge(Block._jsonschema, {
+        "title" : "Class method Base Schema",
+        "required": ['class_', 'method_name'],
+        "properties": {
+            "class_": {
+                "type" : "string",
+                "editable" : True,
+                "examples" : ['Nom']
+                },
+
+            "method_name": {
+                "type" : "string",
+                "editable" : True,
+                "examples" : ['Nom']
+                }
+            }
+        })
+    def __init__(self, class_, method_name, name=''):
+        self.class_ = class_
+        self.method_name = method_name
+        inputs = []
+        method = getattr(self.class_, self.method_name)
+        inputs = set_inputs(method, inputs, name)
+
+        outputs = [TypedVariable('method result of {}'.format(self.method_name),
+                                 method.__annotations__['return'])]
+        Block.__init__(self, inputs, outputs, name=name)
+
+    def equivalent_hash(self):
+        return len(self.class_.__name__) + 7*len(self.method_name)
+
+    def equivalent(self, other_block):
+        if not Block.equivalent(self, other_block):
+            return False
+        return self.class_.__name__ == other_block.class_.__name__\
+               and self.method_name == other_block.method_name
+
+
+    def to_dict(self):
+        dict_ = Block.to_dict(self)
+        dict_.update({'model_class': self.class_.__name__,
+                      'model_module': self.class_.__module__,
+                      'method_name': self.method_name})
+        return dict_
+
+    @classmethod
+    def dict_to_object(cls, dict_):
+        class_ = getattr(import_module(dict_['model_module']),
+                         dict_['model_class'])
+        return cls(class_, dict_['method_name'], dict_['name'])
+
+
+    def evaluate(self, values):
+        args = {var._name: values[var] for var in self.inputs[1:] if var in values}
+        return [getattr(self.class_, self.method_name)(**args)]
+
 
 class ModelMethod(Block):
     _jsonschema = dc.dict_merge(Block._jsonschema, {
@@ -362,6 +420,54 @@ class Function(Block):
 
     def evaluate(self, values):
         return self.function(*values)
+
+class Sequence(Block):
+    # _jsonschema = dc.dict_merge(Block._jsonschema, {
+    #     "title" : "Sequence Base Schema",
+    #     "required": ['class_', 'method_name'],
+    #     "properties": {
+    #         "class_": {
+    #             "type" : "string",
+    #             "editable" : True,
+    #             "examples" : ['Nom']
+    #             },
+
+    #         "method_name": {
+    #             "type" : "string",
+    #             "editable" : True,
+    #             "examples" : ['Nom']
+    #             }
+    #         }
+    #     })
+
+    def __init__(self, number_arguments, name=''):
+        self.number_arguments = number_arguments
+        inputs = [Variable() for i in range (self.number_arguments)]
+
+        outputs = [TypedVariable('sequence of {}'.format(self.method_name),
+                                 list)]
+        Block.__init__(self, inputs, outputs, name=name)
+
+    def equivalent_hash(self):
+        return self.number_arguments
+
+    def equivalent(self, other_block):
+        if not Block.equivalent(self, other_block):
+            return False
+        return self.number_arguments == other_block.number_arguments
+
+
+    def to_dict(self):
+        dict_ = Block.to_dict(self)
+        dict_.update({'number_arguments': self.number_arguments})
+        return dict_
+
+    @classmethod
+    def dict_to_object(cls, dict_):
+        return cls(dict_['number_arguments'], dict_['name'])
+
+    def evaluate(self, values):
+        return [values[var] for var in self.inputs]
 
 
 class ForEach(Block):
@@ -590,9 +696,14 @@ class Workflow(Block):
         }
 
 
-    def __init__(self, blocks, pipes, output, name=''):
+    def __init__(self, blocks, pipes, output, *, imposed_variable_values=None, name=''):
         self.blocks = blocks
         self.pipes = pipes
+
+        if imposed_variable_values is None:
+            self.imposed_variable_values = {}
+        else:
+            self.imposed_variable_values = imposed_variable_values
 
         self.coordinates = {}
 
@@ -627,6 +738,7 @@ class Workflow(Block):
         return base_hash + block_hash
 
     def __eq__(self, other_workflow):
+        # TODO: implement imposed_variable_values in equality
         if hash(self) != hash(other_workflow):
             return False
 
@@ -675,10 +787,21 @@ class Workflow(Block):
             pipes.append((self.variable_indices(pipe.input_variable),
                           self.variable_indices(pipe.output_variable)))
 
+
+
         dict_.update({'blocks': blocks,
                       'pipes': pipes,
                       'output': self.variable_indices(self.outputs[0]),
                       'nonblock_variables': [v.to_dict() for v in self.nonblock_variables]})
+
+
+        imposed_variable_values_dict = {}
+        for variable, value in self.imposed_variable_values.items():
+            if hasattr(value, 'to_dict'):
+                imposed_variable_values_dict[self.variable_indices(variable)] = value.to_dict()
+            else:
+                imposed_variable_values_dict[self.variable_indices(variable)] = value
+
 
         return dict_
 
@@ -710,7 +833,29 @@ class Workflow(Block):
 
         output = blocks[dict_['output'][0]].outputs[dict_['output'][2]]
 
-        return cls(blocks, pipes, output, name=dict_['name'])
+
+        if 'imposed_variable_values' in dict_:
+            imposed_variable_values = {}
+            for variable_index, serialized_value in dict_['imposed_variable_values']:
+                if 'object_class' in serialized_value:
+                    value = dc.DessiaObject.dict_to_object(serialized_value)
+                else:
+                    value = serialized_value
+
+                if type(variable_index) == int:
+                    variable = nonblock_variables[variable_index]
+                else:
+                    iblock, side, iport = variable_index
+                    if side:
+                        variable = blocks[iblock].outputs[iport]
+                    else:
+                        variable = blocks[iblock].inputs[iport]
+
+                imposed_variable_values[variable] = value
+        else:
+            imposed_variable_values = None
+
+        return cls(blocks, pipes, output, imposed_variable_values=imposed_variable_values, name=dict_['name'])
 
     def dict_to_arguments(self, dict_, method):
         arguments_values = {}
@@ -768,10 +913,32 @@ class Workflow(Block):
         index = self.inputs.index(variable)
         return index
 
-    def layout(self, n_x_anchors):
-        for iblock, block in enumerate(self.blocks):
-            self.coordinates[block] = (iblock % n_x_anchors, iblock // n_x_anchors)
+    def layout(self, anchor_size=250):
+        coordinates = {}
+        elements_by_distance = {}
+        for element in self.blocks+self.nonblock_variables:
+            distance = 0
+            path = nx.shortest_path(self.graph, element, self.outputs[0])
+            for path_element in path[1:-1]:
+                if path_element in self.blocks:
+                    distance += 1
+                elif path_element in self.nonblock_variables:
+                    distance += 1
+                    
+            if distance in elements_by_distance:                
+                elements_by_distance[distance].append(element)
+            else:
+                elements_by_distance[distance] = [element]
+        
+        
+        for i, distance in enumerate(sorted(elements_by_distance.keys())[::-1]):
+            for j, element in enumerate(elements_by_distance[distance]):
+                
+                coordinates[element] = (i*anchor_size, j*anchor_size)
+        # for iblock, block in enumerate(self.blocks):
+        #     self.coordinates[block] = (iblock % n_x_anchors, iblock // n_x_anchors)
 
+        return coordinates
 
     def plot_graph(self):
 
@@ -886,23 +1053,25 @@ class Workflow(Block):
 
 
     def jointjs_data(self):
+        coordinates = self.layout()
         blocks = []
         for block in self.blocks:
             # !!! Is it necessary to add is_workflow_input/output for outputs/inputs ??
             blocks.append({'name': block.__class__.__name__,
                            'inputs': [{'name': i._name,
-                                       'is_workflow_input': i in self.inputs,
-                                       'is_workflow_output': i in self.outputs}\
+                                       'is_workflow_input': i in self.inputs}\
                                       for i in block.inputs],
+
                            'outputs': [{'name': o._name,
-                                        'is_workflow_input': o in self.inputs,
                                         'is_workflow_output': o in self.outputs}\
-                                       for o in block.outputs]})
+                                       for o in block.outputs],
+                           'position': coordinates[block]})
 
         nonblock_variables = []
         for variable in self.nonblock_variables:
             nonblock_variables.append({'name': variable._name,
-                                       'is_workflow_input': variable in self.inputs})
+                                       'is_workflow_input': variable in self.inputs,
+                                       'position': coordinates[variable]})
 
         edges = []
         for pipe in self.pipes:

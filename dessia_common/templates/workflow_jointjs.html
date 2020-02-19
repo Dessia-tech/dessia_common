@@ -9,9 +9,9 @@
     <div id="myholder" ></div>
 
     <!-- dependencies -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/3.10.1/lodash.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/backbone.js/1.3.3/backbone.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/backbone.js/1.4.0/backbone.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jointjs/3.1.1/joint.js"></script>
 
     <!-- code -->
@@ -90,7 +90,8 @@
 			for (const [i, block_data] of blocks_data.entries()){
 
 				var block = new joint.shapes.devs.Model({
-						position: { x: 300*(blocks_data.indexOf(block_data))+250, y: 150 },
+						position: { x: block_data['position'][0],
+						 						y: block_data['position'][1]},
 						size: { width: 220, height: 120 },
 						ports: {
 								groups: {
@@ -184,8 +185,8 @@
 		var nonblock_variables = []
 		for (nonblock_variable_data of nonblock_variables_data){
 			var variable = new joint.shapes.devs.Model({
-					position: {x: 50,
-						 				 y: 50+50*nonblock_variables_data.indexOf(nonblock_variable_data)},
+					position: {x: nonblock_variable_data['position'][0],
+						 				 y: nonblock_variable_data['position'][1]},
 					size: { width: 100, height: 20 },
 					attrs: {
 							'.label': { text: nonblock_variable_data["name"],
