@@ -96,6 +96,7 @@ class TypedVariable(Variable):
         else:
             dict_['type_'] = dc.get_python_class_from_class_name(dict_['type_'])
         del dict_['object_class']
+        del dict_['package_version']
         return cls(**dict_)
 
     def equivalent_hash(self):
