@@ -6,7 +6,8 @@ Created on Wed Feb 19 15:56:12 2020
 @author: jezequel
 """
 
-from typing import List
+from typing import List, Tuple
+import numpy as np
 import pandas as pd
 from dessia_common import DessiaObject, Parameter
 
@@ -24,7 +25,7 @@ class VectoredObject(DessiaObject):
     def __init__(self, name: str = '', **kwargs):
         DessiaObject.__init__(self, name=name, **kwargs)
 
-    def vectorize(self, parameters, coefficients, bounds):
+    def vectorize(self, parameters:List[Parameter], coefficients:List[float], bounds:List[Tuple[float, float]]):
         """
         Computes an adimensionnal vector representing the vectored object.
 
@@ -188,7 +189,7 @@ class Catalog(DessiaObject):
                      'references_attribute': 'objects'}]
         return displays
 
-    def export_csv(self, attribute_name, indices, file):
+    def export_csv(self, attribute_name:str, indices:List[int], file:str):
         """
         Exports a reduced list of objects to .csv file
 
@@ -210,7 +211,7 @@ class Catalog(DessiaObject):
         data_frame.to_csv(file, index=False)
 
 
-    def parameters(self, argnames):
+    def parameters(self, argnames:List[str]):
         """
         Computes Parameter objects from catalog structural data
 
@@ -250,7 +251,7 @@ class Catalog(DessiaObject):
                 costs[(i, j)] = value
         return costs
 
-    def apply_objective(self, objective):
+    def apply_objective(self, objective:Objective):
         """
         Given an Objective object, applies it to every object of the catalog.
 
@@ -276,7 +277,7 @@ def pareto_frontier(catalog:Catalog):
             is_efficient[index] = True
     return is_efficient
 
-def from_csv(filename, class_=VectoredObject, end=None, remove_duplicates=False):
+def from_csv(filename:str, class_:type=VectoredObject, end:int=None, remove_duplicates:bool=False):
     """
     Generates MBSEs from given .csv file.
     """
