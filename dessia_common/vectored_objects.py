@@ -77,6 +77,7 @@ class Objective(DessiaObject):
     def apply(self, vectored_object: VectoredObject):
         """
         Applies objective function to given vectored object
+
         :param vectored_object: Vectored object on which to apply objective
         :type vectored_object: VectoredObject
 
@@ -232,13 +233,19 @@ class Catalog(DessiaObject):
     def build_costs(self):
         """
         Build list of costs that are used to compute Pareto frontier.
+
         The cost of an attribute that is to be minimised is, for each object of catalog,
         its value minus the lower bound of of its values in the whole dataset.
         On the contrary, the cost of an attribute that is to be maximised is,
         the upper_bound of the dataset for this parameter minus the value
         of the attribute of each object of the catalog.
 
-        :return: List of float
+        For a Pareto frontier of dimensions n_costs, each vectored object of the catalog
+        (n_points vectored objects in the catalog) will give a numpy array of dimensions (,n_costs)
+
+        All put together build_costs method results in a numpy array :
+
+        :return: A(n_points, n_costs)
         """
         pareto_parameters = self.parameters(self.pareto_attributes)
         costs = np.zeros((len(self.objects), len(pareto_parameters)))
@@ -264,6 +271,7 @@ class Catalog(DessiaObject):
 def pareto_frontier(catalog:Catalog):
     """
     Find the pareto-efficient points
+
     :param costs: An (n_points, n_costs) array
     :return: A (n_points, ) boolean array, indicating whether each point is Pareto efficient
     """
