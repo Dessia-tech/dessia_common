@@ -1,2 +1,3 @@
 from .core import *
-__version__='0.0.1'
+import pkg_resources
+__version__ = pkg_resources.require("dessia_common")[0].version
