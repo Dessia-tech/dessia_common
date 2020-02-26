@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1]
+### Added
+- First version of sphinx documentation
+
+## [0.3.0]
+### Added
+- VectoredObjects
+
 ## [0.2.3]
 ### Added
 - nonblock variables in workflow
