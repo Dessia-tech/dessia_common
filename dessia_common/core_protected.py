@@ -123,7 +123,7 @@ class DessiaObject:
                             jsonschemas[method_name]['properties'].update(default)
         return jsonschemas
 
-    def base_dict_to_arguments(self, dict_, method):
+    def dict_to_arguments(self, dict_, method):
         method_object = getattr(self, method)
         args_specs = inspect.getfullargspec(method_object)
         allowed_args = args_specs.args
