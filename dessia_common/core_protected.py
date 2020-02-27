@@ -134,11 +134,8 @@ class DessiaObject:
         for i, arg in enumerate(allowed_args):
             if str(i) in dict_:
                 value = dict_[str(i)]
-                if hasattr(value, 'to_dict'):
-                    serialized_value = value.to_dict()
-                else:
-                    serialized_value = value
-                arguments[arg] = serialized_value
+                deserialized_value = deserialize_argument(args_specs.annotations[arg], value)
+                arguments[arg] = deserialized_value
         return arguments
 
 
