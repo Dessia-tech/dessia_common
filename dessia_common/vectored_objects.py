@@ -95,7 +95,7 @@ class Catalog(DessiaObject):
 
     :param pareto_attributes: List of strings representing names of variables
                               used for pareto computations.
-    :type pareto_attrivutes: [str]
+    :type pareto_attributes: [str]
     :param minimise: List of booleans representing if pareto for this variable
                      should be searched in maximum or minimum direction.
     :type minimise: [bool]
@@ -113,11 +113,13 @@ class Catalog(DessiaObject):
     """
     _generic_eq = True
     _standalone_in_db = True
-    _editable_variables = ['minimise', 'pareto_attributes', 'n_near_values', 'objectives', 'name']
+    _editable_variables = ['minimise', 'pareto_attributes', 'n_near_values',
+                           'objectives', 'enable_pareto', 'enable_objectives', 'name']
     _export_formats = ['csv']
     def __init__(self, pareto_attributes: List[str], minimise: List[bool],
                  objectives: List[Objective], n_near_values: int,
                  objects: List[VectoredObject] = None, choice_args: List[str] = None,
+                 enable_pareto: bool = True, enable_objectives: bool = True,
                  name: str = ''):
         DessiaObject.__init__(self, name=name)
 
@@ -129,6 +131,9 @@ class Catalog(DessiaObject):
 
         self.objectives = objectives
         self.n_near_values = n_near_values
+
+        self.enable_pareto = enable_pareto
+        self.enable_objectives = enable_objectives
 
     def _display_angular(self):
         """
@@ -142,46 +147,51 @@ class Catalog(DessiaObject):
                        and not hasattr(self.__class__, arg)\
                        and arg in self.choice_args]
 
+        values = [{f['attribute'] : getattr(o, f['attribute']) for f in filters}\
+                  for o in self.objects]
+
         # Pareto
         pareto_indices = pareto_frontier(catalog=self)
 
         all_near_indices = []
         already_used = []
-        for objective in self.objectives:
-            ratings = [(i, objective.apply(o)) for i, o in enumerate(self.objects)]
-            i = 0
-            near_indices = []
-            while i < self.n_near_values and ratings:
-                new_min_index = ratings.index(min(ratings, key=lambda t: t[1]))
-                new_min = ratings.pop(new_min_index)
-                if new_min[0] not in already_used:
-                    near_indices.append(new_min[0])
-                    already_used.append(new_min[0])
-                    i += 1
-            all_near_indices.append(near_indices)
+        if self.enable_objectives:
+            for objective in self.objectives:
+                ratings = [(i, objective.apply(o)) for i, o in enumerate(self.objects)]
+                i = 0
+                near_indices = []
+                while i < self.n_near_values and ratings:
+                    new_min_index = ratings.index(min(ratings, key=lambda t: t[1]))
+                    new_min = ratings.pop(new_min_index)
+                    if new_min[0] not in already_used:
+                        near_indices.append(new_min[0])
+                        already_used.append(new_min[0])
+                        i += 1
+                all_near_indices.append(near_indices)
 
-        values = [{f['attribute'] : getattr(o, f['attribute']) for f in filters}\
-                  for o in self.objects]
-
+        # Dominated points
         dominated_values = [(i, value) for i, value in enumerate(values)
                             if not pareto_indices[i] and i not in already_used]
-        near_values = [[(i, value) for i, value in enumerate(values) if i in near_indices]
-                       for near_indices in all_near_indices]
-        pareto_values = [(i, value) for i, value in enumerate(values)\
-                         if pareto_indices[i] and i not in already_used]
-
         datasets = [{'label' : 'Dominated points',
                      'color' : "#99b4d6",
-                     'values' : dominated_values},
-                    {'label' : 'Pareto frontier',
-                     'color' : '#ffcc00',
-                     'values' : pareto_values}]
+                     'values' : dominated_values}]
 
-        near_datasets = [{'label' : 'Near Values ' + str(i),
-                          'color' : None,
-                          'values' : nv} for i, nv in enumerate(near_values)]
+        # Pareto
+        if self.enable_pareto:
+            pareto_values = [(i, value) for i, value in enumerate(values)\
+                             if pareto_indices[i] and i not in already_used]
+            datasets.append({'label' : 'Pareto frontier',
+                             'color' : '#ffcc00',
+                             'values' : pareto_values})
 
-        datasets.extend(near_datasets)
+        # Objectives
+        if self.enable_objectives:
+            near_values = [[(i, value) for i, value in enumerate(values) if i in near_indices]
+                           for near_indices in all_near_indices]
+            near_datasets = [{'label' : 'Near Values ' + str(i),
+                              'color' : None,
+                              'values' : nv} for i, nv in enumerate(near_values)]
+            datasets.extend(near_datasets)
 
         # Displays
         displays = [{'angular_component': 'results',

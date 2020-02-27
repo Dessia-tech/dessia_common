@@ -809,14 +809,14 @@ class Workflow(Block):
     def dict_to_object(cls, dict_):
         blocks = [Block.dict_to_object(d) for d in dict_['blocks']]
         if 'nonblock_variables' in dict_:
-            print([d for d in dict_['nonblock_variables']])
+            # print([d for d in dict_['nonblock_variables']])
             nonblock_variables = [dc.DessiaObject.dict_to_object(d) for d in dict_['nonblock_variables']]
         else:
             nonblock_variables = []
 
         pipes = []
         for source, target in dict_['pipes']:
-            print(source, target, type(source))
+            # print(source, target, type(source))
             if type(source) == int:
                 variable1 = nonblock_variables[source]
             else:
