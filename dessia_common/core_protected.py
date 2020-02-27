@@ -126,9 +126,9 @@ class DessiaObject:
     def dict_to_arguments(self, dict_, method):
         method_object = getattr(self, method)
         args_specs = inspect.getfullargspec(method_object)
-        allowed_args = args_specs.args
-        self_index = allowed_args.index('self')
-        allowed_args.pop(self_index)
+        allowed_args = args_specs.args[1:]
+        # self_index = allowed_args.index('self')
+        # allowed_args.pop(self_index)
 
         arguments = {}
         for i, arg in enumerate(allowed_args):
@@ -265,7 +265,7 @@ def inspect_arguments(method, merge=False):
     default_arguments = {}
     arguments = []
     for iargument, argument in enumerate(args_specs.args[1:]):
-        if not argument in ['self', 'progress_callback']:
+        if not argument in ['self', 'cls', 'progress_callback']:
             if iargument >= nargs - ndefault_args:
                 default_value = args_specs.defaults[ndefault_args-nargs+iargument]
                 if merge:
