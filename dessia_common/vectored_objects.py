@@ -70,9 +70,10 @@ class Objective(DessiaObject):
     _generic_eq = True
     _standalone_in_db = False
     def __init__(self, coeff_names: List[str], coeff_values: List[float],
-                 scaled: bool = False, name: str = ''):
+                 coeff_min: List[bool], scaled: bool = False, name: str = ''):
         self.coeff_names = coeff_names
         self.coeff_values = coeff_values
+        self.coeff_min = coeff_min
 
         self.scaled = scaled
 
@@ -87,26 +88,42 @@ class Objective(DessiaObject):
 
         :return: float, Rating of given object according to this objective
         """
-        # if scaled:
-        #     values = vectored_object.scale(parameters)
-        # else:
-        #     values = [getattr(vectored_object, p.name) for p in parameters]
-        # objectives = [v*coeff for v, coeff in zip(values, self.coeff_values)]
-        objectives = [getattr(vectored_object, arg)*coefficient
-                      for arg, coefficient in zip(self.coeff_names, self.coeff_values)]
+        objectives = [getattr(vectored_object, arg)*coeff
+                      for arg, coeff in zip(self.coeff_names, self.coeff_values)]
         objective = sum(objectives)
         return objective
 
     def apply_to_catalog(self, catalog):
-        if self.scaled:
-            parameters = catalog.parameters(self.coeff_names)
-            ratings = []
-            for vectored_object in catalog.objects:
-                values = vectored_object.scale(parameters)
-                objective = sum([v*coeff for v, coeff in zip(values, self.coeff_values)])
-                ratings.append(objective)
-            return ratings
-        ratings = [self.apply(vo, parameters) for vo in catalog.objects]
+        parameters = catalog.parameters(self.coeff_names)
+        ratings = []
+        for vectored_object in catalog.objects:
+            rating = 0
+            for param, coeff, minimise in zip(parameters, self.coeff_values, self.coeff_min):
+                value = getattr(vectored_object, param.name)
+                if self.scaled:
+                    value = parameter.normalize(value)
+                    if minimise:
+                        rating += (1 - value)*coeff
+                    else:
+                        rating += value*coeff
+                else:
+                    if minimise:
+                        rating += (param.upper_bound - value)*coeff
+                    else:
+                        rating += (value - param.lower_bound)*coeff
+            ratings.append(rating)
+
+
+
+        # if self.scaled:
+        #     parameters = catalog.parameters(self.coeff_names)
+        #     ratings = []
+        #     for vectored_object in catalog.objects:
+        #         values = vectored_object.scale(parameters)
+        #         objective = sum([v*coeff for v, coeff in zip(values, self.coeff_values)])
+        #         ratings.append(objective)
+        #     return ratings
+        # ratings = [self.apply(vo, parameters) for vo in catalog.objects]
         return ratings
 
 
@@ -301,7 +318,6 @@ class Catalog(DessiaObject):
         # parameters = self.parameters(objective.coeff_names)
         # ratings = [objective.apply(o, parameters) for o in self.objects]
         # return ratings
-
 
 def pareto_frontier(catalog:Catalog):
     """
