@@ -98,8 +98,10 @@ class DessiaObject:
         """
         jsonschemas = {}
         cls = type(self)
-        valid_method_names = [m for m in dir(cls)\
-                              if not m.startswith('_')]
+        class_ = self.__class__
+        valid_method_names = [m for m in dir(class_)\
+                              if not m.startswith('_')
+                              and m in self._allowed_methods]
 
         for method_name in valid_method_names:
             method = getattr(cls, method_name)
