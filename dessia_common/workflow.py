@@ -924,16 +924,16 @@ class Workflow(Block):
                     distance += 1
                 elif path_element in self.nonblock_variables:
                     distance += 1
-                    
-            if distance in elements_by_distance:                
+
+            if distance in elements_by_distance:
                 elements_by_distance[distance].append(element)
             else:
                 elements_by_distance[distance] = [element]
-        
-        
+
+
         for i, distance in enumerate(sorted(elements_by_distance.keys())[::-1]):
             for j, element in enumerate(elements_by_distance[distance]):
-                
+
                 coordinates[element] = (i*anchor_size, j*anchor_size)
         # for iblock, block in enumerate(self.blocks):
         #     self.coordinates[block] = (iblock % n_x_anchors, iblock // n_x_anchors)
@@ -1262,18 +1262,24 @@ class WorkflowRun(dc.DessiaObject):
     def to_dict(self):
         dict_ = dc.DessiaObject.base_dict(self)
         dict_.update({'workflow' : self.workflow.to_dict(),
-                      'output_value' : dc.serialize_sequence(self.output_value),
-                      'output_value_type' : dc.recursive_type(self.output_value),
                       'start_time' : self.start_time,
                       'end_time' : self.end_time,
                       'execution_time' : self.execution_time,
                       'log' : self.log})
+
+        if self.output_value is not None:
+            dict_.update({'output_value' : dc.serialize_sequence(self.output_value),
+                          'output_value_type' : dc.recursive_type(self.output_value)})
+
         return dict_
 
     @classmethod
     def dict_to_object(cls, dict_):
         workflow = Workflow.dict_to_object(dict_['workflow'])
-        output_value = dc.recursive_instantiation(dict_['output_value_type'], dict_['output_value'])
+        if 'output_value' in dict_ and 'output_value_type' in dict_:
+            output_value = dc.recursive_instantiation(dict_['output_value_type'], dict_['output_value'])
+        else:
+            output_value = None
         return cls(workflow=workflow, output_value=output_value,
                    start_time=dict_['start_time'], end_time=dict_['end_time'],
                    log=dict_['log'], name=dict_['name'])
