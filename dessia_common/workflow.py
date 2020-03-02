@@ -650,7 +650,7 @@ class Pipe(dc.DessiaObject):
 
 class Workflow(Block):
     _standalone_in_db = True
-    _dessia_methods = ['run']
+    _allowed_methods = ['run']
 
     _jsonschema = {
         "definitions": {},

@@ -97,12 +97,20 @@ class DessiaObject:
         Generates dynamic jsonschemas for methods of class
         """
         jsonschemas = {}
-        cls = type(self)
-        valid_method_names = [m for m in dir(cls)\
-                              if not m.startswith('_')]
+        class_ = self.__class__
+
+        # !!! Backward compatibility. Will need to be changed
+        if hasattr(class_, '_dessia_methods'):
+            allowed_methods = class_._dessia_methods
+        else:
+            allowed_methods = class_._allowed_methods
+
+        valid_method_names = [m for m in dir(class_)\
+                              if not m.startswith('_')
+                              and m in allowed_methods]
 
         for method_name in valid_method_names:
-            method = getattr(cls, method_name)
+            method = getattr(class_, method_name)
 
             if not isinstance(method, property):
                 required_arguments, default_arguments = inspect_arguments(method, merge=False)
