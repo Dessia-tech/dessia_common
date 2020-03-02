@@ -52,6 +52,7 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
     _generic_eq = False
     _init_variables = None
     _export_formats = None
+    _allowed_methods = []
 
     def __init__(self, name:str='', **kwargs):
         implements_eq = (hasattr(self, '__eq__') and hasattr(self, '__hash__')
@@ -186,7 +187,7 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
                 else:
                     dict_[arg] = value
         return self.__class__(**dict_)
-    
+
     def __deepcopy__(self, memo=None):
         class_argspec = inspect.getfullargspec(self.__class__)
         if memo is None:
@@ -196,7 +197,7 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
             if arg != 'self':
                 dict_[arg] = deepcopy_value(getattr(self, arg), memo)
 
-                    
+
         return self.__class__(**dict_)
 
     def volmdlr_volume_model(self, frame=None):
@@ -596,14 +597,14 @@ def serialization_test(obj):
     obj2 = obj.dict_to_object(d)
     if obj != obj2:
         raise ModelError('object in no more equal to himself after serialization/deserialization!')
-    
+
 def deepcopy_value(value, memo):
     try:
         if value in memo:
             return memo[value]
     except TypeError:
         pass
-    
+
     if hasattr(value, '__deepcopy__'):
         copied_value = value.__deepcopy__(memo=memo)
         memo[value] = copied_value
@@ -617,6 +618,5 @@ def deepcopy_value(value, memo):
                 copied_list.append(cv)
             return copied_list
         else:
-            return copy.deepcopy(value)                            
-    
-    
+            return copy.deepcopy(value)
+
