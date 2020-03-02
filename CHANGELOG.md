@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.3.1]
 ### Added
 - First version of sphinx documentation
+- generic dict to arguments
+- copy/deeepcopy
 
 ## [0.3.0]
 ### Added

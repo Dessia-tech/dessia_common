@@ -3,8 +3,10 @@
 """
 
 """
+import warnings
 import math
 import random
+import copy
 from functools import reduce
 import collections
 from copy import deepcopy
@@ -26,10 +28,16 @@ try:
 except (ModuleNotFoundError, ImportError) as _:
     _open_source = True
 
+class ModelError(Exception):
+    pass
+
 class ConsistencyError(Exception):
     pass
 
 class SerializationError(Exception):
+    pass
+
+class DeserializationError(Exception):
     pass
 
 class DessiaObject(protected_module.DessiaObject if not _open_source else object):
@@ -44,6 +52,7 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
     _generic_eq = False
     _init_variables = None
     _export_formats = None
+    _allowed_methods = []
 
     def __init__(self, name:str='', **kwargs):
         implements_eq = (hasattr(self, '__eq__') and hasattr(self, '__hash__')
@@ -160,19 +169,35 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
         return True
 
     def copy(self):
+        warnings.warn(
+            "copy method is deprecated use copy module instead",
+            DeprecationWarning
+        )
+        return self.__copy__()
+
+    def __copy__(self):
         class_argspec = inspect.getfullargspec(self.__class__)
         dict_ = {}
         for arg in class_argspec.args:
             if arg != 'self':
                 value = self.__dict__[arg]
 
-                if hasattr(value, 'Copy'):
-                    # Backward compatibility
-                    dict_[arg] = value.Copy()
-                elif hasattr(value, 'copy'): # TODO : Check if not DessiaObject.copy
-                    dict_[arg] = value.copy()
+                if hasattr(value, '__copy__'):
+                    dict_[arg] = value.__copy__()
                 else:
                     dict_[arg] = value
+        return self.__class__(**dict_)
+
+    def __deepcopy__(self, memo=None):
+        class_argspec = inspect.getfullargspec(self.__class__)
+        if memo is None:
+            memo = {}
+        dict_ = {}
+        for arg in class_argspec.args:
+            if arg != 'self':
+                dict_[arg] = deepcopy_value(getattr(self, arg), memo)
+
+
         return self.__class__(**dict_)
 
     def volmdlr_volume_model(self, frame=None):
@@ -565,3 +590,33 @@ def getdeepattr(obj, attr):
 
 def full_classname(object_):
     return object_.__class__.__module__ + '.' + object_.__class__.__name__
+
+def serialization_test(obj):
+    # TODO: debug infinite recursion?
+    d = obj.to_dict()
+    obj2 = obj.dict_to_object(d)
+    if obj != obj2:
+        raise ModelError('object in no more equal to himself after serialization/deserialization!')
+
+def deepcopy_value(value, memo):
+    try:
+        if value in memo:
+            return memo[value]
+    except TypeError:
+        pass
+
+    if hasattr(value, '__deepcopy__'):
+        copied_value = value.__deepcopy__(memo=memo)
+        memo[value] = copied_value
+        return copied_value
+    else:
+        if type(value) == list:
+            copied_list = []
+            for v in value:
+                cv = deepcopy_value(v, memo)
+                memo[v] = cv
+                copied_list.append(cv)
+            return copied_list
+        else:
+            return copy.deepcopy(value)
+

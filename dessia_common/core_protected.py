@@ -97,12 +97,20 @@ class DessiaObject:
         Generates dynamic jsonschemas for methods of class
         """
         jsonschemas = {}
-        cls = type(self)
-        valid_method_names = [m for m in dir(cls)\
-                              if not m.startswith('_')]
+        class_ = self.__class__
+
+        # !!! Backward compatibility. Will need to be changed
+        if hasattr(class_, '_dessia_methods'):
+            allowed_methods = class_._dessia_methods
+        else:
+            allowed_methods = class_._allowed_methods
+
+        valid_method_names = [m for m in dir(class_)\
+                              if not m.startswith('_')
+                              and m in allowed_methods]
 
         for method_name in valid_method_names:
-            method = getattr(cls, method_name)
+            method = getattr(class_, method_name)
 
             if not isinstance(method, property):
                 required_arguments, default_arguments = inspect_arguments(method, merge=False)
@@ -123,22 +131,19 @@ class DessiaObject:
                             jsonschemas[method_name]['properties'].update(default)
         return jsonschemas
 
-    def base_dict_to_arguments(self, dict_, method):
+    def dict_to_arguments(self, dict_, method):
         method_object = getattr(self, method)
         args_specs = inspect.getfullargspec(method_object)
-        allowed_args = args_specs.args
-        self_index = allowed_args.index('self')
-        allowed_args.pop(self_index)
+        allowed_args = args_specs.args[1:]
+        # self_index = allowed_args.index('self')
+        # allowed_args.pop(self_index)
 
         arguments = {}
         for i, arg in enumerate(allowed_args):
             if str(i) in dict_:
                 value = dict_[str(i)]
-                if hasattr(value, 'to_dict'):
-                    serialized_value = value.to_dict()
-                else:
-                    serialized_value = value
-                arguments[arg] = serialized_value
+                deserialized_value = deserialize_argument(args_specs.annotations[arg], value)
+                arguments[arg] = deserialized_value
         return arguments
 
 
@@ -268,7 +273,7 @@ def inspect_arguments(method, merge=False):
     default_arguments = {}
     arguments = []
     for iargument, argument in enumerate(args_specs.args[1:]):
-        if not argument in ['self', 'progress_callback']:
+        if not argument in ['self', 'cls', 'progress_callback']:
             if iargument >= nargs - ndefault_args:
                 default_value = args_specs.defaults[ndefault_args-nargs+iargument]
                 if merge:
