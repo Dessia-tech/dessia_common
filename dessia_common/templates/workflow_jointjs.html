@@ -158,8 +158,14 @@
 		    	};
 					block.addPort(port);
 					if (port_input_data['is_workflow_input']){
-						block.portProp(port, 'attrs/.port-body/fill', '#00FF00');
+						if (port_input_data['has_default_value']){
+							block.portProp(port, 'attrs/.port-body/fill', '#FFA500');
+						}
+						else {
+							block.portProp(port, 'attrs/.port-body/fill', '#00FF00');
+						}
 					}
+
 					j++;
 				}
 
