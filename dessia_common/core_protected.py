@@ -82,7 +82,7 @@ class DessiaObject:
                 jsonschema_element = jsonschema_from_annotation(annotation=annotation,
                                                                 jsonschema_element={},
                                                                 order=order,
-                                                                editable=name in non_editable_attributes,
+                                                                editable=name not in non_editable_attributes,
                                                                 title=title)
                 _jsonschema['properties'].update(jsonschema_element)
                 if name in default_arguments.keys():
