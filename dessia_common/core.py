@@ -47,6 +47,7 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
     """
     _standalone_in_db = False
     _non_serializable_attributes = []
+    _non_editable_attributes = []
     _non_eq_attributes = ['name']
     _non_hash_attributes = ['name']
     _generic_eq = False
