@@ -41,8 +41,7 @@ class SerializationError(Exception):
 class DeserializationError(Exception):
     pass
 
-DEPRECATED_ATTRIBUTES = {'_editable_variables'  : '_non_editable_attributes',
-                         '_dessia_methods' : '_allowed_methods'}
+# DEPRECATED_ATTRIBUTES = {'_editable_variss' : '_allowed_methods'}
 def deprecated(use_instead=None):
     def decorated(function):
         def wrapper(*args, **kwargs):
