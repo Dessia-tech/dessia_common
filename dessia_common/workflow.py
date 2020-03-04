@@ -33,7 +33,7 @@ class Variable(dc.DessiaObject):
             }
         }
     _standalone_in_db = False
-    
+
     def __init__(self, _name, name=''):
         self._name = _name
 
@@ -653,7 +653,7 @@ class OutputDisconnectedWorkflowElement(Exception):
 
 class Workflow(Block):
     _standalone_in_db = True
-    _dessia_methods = ['run']
+    _allowed_methods = ['run']
 
     _jsonschema = {
         "definitions": {},
@@ -777,35 +777,35 @@ class Workflow(Block):
 #                        return True
 #            return False
 #        return False
-        
+
     def __deepcopy__(self, memo=None):
         if memo is None:
             memo = {}
-        
+
         blocks = [b.__deepcopy__(memo=memo) for b in self.blocks]
         nonblock_variables = [v.__deepcopy(memo=memo) for v in self.nonblock_variables]
         pipes = []
         for pipe in self.pipes:
             input_index = self.variable_indices(pipe.input_variable)
             pipe_input = self.variable_from_index(input_index, blocks, nonblock_variables)
-                
+
             output_index = self.variable_indices(pipe.output_variable)
             pipe_output = self.variable_from_index(output_index, blocks, nonblock_variables)
-                    
+
             copied_pipe = Pipe(pipe_input, pipe_output)
             memo[pipe] = copied_pipe
-            
+
             pipes.append(copied_pipe)
-           
+
         output = self.variable_from_index(self.variable_indices(self.output),
                                           blocks, nonblock_variables)
-        
-            
+
+
         imposed_variable_values = {}
         for variable, value in self.imposed_variable_values.items():
             imposed_variable_values[memo[variable]] = value
-            
-            
+
+
         copied_workflow = Workflow(blocks, pipes, output,
                                    imposed_variable_values=imposed_variable_values,
                                    name=self.name)
@@ -913,7 +913,7 @@ class Workflow(Block):
 
     @classmethod
     def variable_from_index(cls, index, blocks, nonblock_variables):
-                    
+
         if type(index) == int:
             variable = nonblock_variables[index]
         else:
@@ -968,12 +968,12 @@ class Workflow(Block):
         for block in self.blocks:
             if not block in ancestors:
                 disconnected_elements.append(block)
- 
+
         for variable in self.nonblock_variables:
             if not variable in ancestors:
                 disconnected_elements.append(variable)
         return disconnected_elements
-        
+
 
     def index(self, variable):
         index = self.inputs.index(variable)
@@ -996,15 +996,15 @@ class Workflow(Block):
                         distance += 1
                 distances.append(distance)
             distance = max(distances)
-            if distance in elements_by_distance:                
+            if distance in elements_by_distance:
                 elements_by_distance[distance].append(element)
             else:
                 elements_by_distance[distance] = [element]
-        
+
         max_distance = max(elements_by_distance.keys())
-        
+
         horizontal_spacing = max(min_horizontal_spacing, max_length/max_distance)
-        
+
         for i, distance in enumerate(sorted(elements_by_distance.keys())[::-1]):
             n = len(elements_by_distance[distance])
             # if n == 0:
@@ -1340,18 +1340,24 @@ class WorkflowRun(dc.DessiaObject):
     def to_dict(self):
         dict_ = dc.DessiaObject.base_dict(self)
         dict_.update({'workflow' : self.workflow.to_dict(),
-                      'output_value' : dc.serialize_sequence(self.output_value),
-                      'output_value_type' : dc.recursive_type(self.output_value),
                       'start_time' : self.start_time,
                       'end_time' : self.end_time,
                       'execution_time' : self.execution_time,
                       'log' : self.log})
+
+        if self.output_value is not None:
+            dict_.update({'output_value' : dc.serialize_sequence(self.output_value),
+                          'output_value_type' : dc.recursive_type(self.output_value)})
+
         return dict_
 
     @classmethod
     def dict_to_object(cls, dict_):
         workflow = Workflow.dict_to_object(dict_['workflow'])
-        output_value = dc.recursive_instantiation(dict_['output_value_type'], dict_['output_value'])
+        if 'output_value' in dict_ and 'output_value_type' in dict_:
+            output_value = dc.recursive_instantiation(dict_['output_value_type'], dict_['output_value'])
+        else:
+            output_value = None
         return cls(workflow=workflow, output_value=output_value,
                    start_time=dict_['start_time'], end_time=dict_['end_time'],
                    log=dict_['log'], name=dict_['name'])
