@@ -13,6 +13,7 @@ from copy import deepcopy
 import inspect
 import json
 from typing import TypeVar, List
+import traceback as tb
 #from typing import List, Sequence, Iterable, TypeVar, Union
 
 #from importlib import import_module
@@ -39,6 +40,27 @@ class SerializationError(Exception):
 
 class DeserializationError(Exception):
     pass
+
+DEPRECATED_ATTRIBUTES = {'_editable_variables'  : '_non_editable_attributes',
+                         '_dessia_methods' : '_allowed_methods'}
+def deprecated(use_instead=None):
+    def decorated(function):
+        def wrapper(*args, **kwargs):
+            deprecation_warning(function.__name__, 'Function', use_instead)
+            print('Traceback : ')
+            tb.print_stack(limit=2)
+            return function(*args, **kwargs)
+        return wrapper
+    return decorated
+
+def deprecation_warning(name, object_type, use_instead=None):
+    warnings.simplefilter('always', DeprecationWarning)
+    msg = "\n\n{} {} is deprecated.\n".format(object_type, name)
+    msg += "It will be removed in a future version.\n"
+    if use_instead is not None:
+        msg += "Use {} instead.\n".format(use_instead)
+    warnings.warn(msg, DeprecationWarning)
+    return msg
 
 class DessiaObject(protected_module.DessiaObject if not _open_source else object):
     """
@@ -97,6 +119,16 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
                 else:
                     hash_ += hash(value)
         return int(hash_ % 1e5)
+
+    # def __getattribute__(self, name):
+    #     if name in DEPRECATED_ATTRIBUTES:
+    #         deprecation_warning(name, 'Attribute', DEPRECATED_ATTRIBUTES[name])
+    #     return object.__getattribute__(self, name)
+
+    # def __setattribute__(self, name, value):
+    #     if name in DEPRECATED_ATTRIBUTES:
+    #         deprecation_warning(name, 'Attribute', DEPRECATED_ATTRIBUTES[name])
+    #     return object.__setattribute__(self, name, value)
 
     @property
     def full_classname(self):
@@ -169,11 +201,8 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
     def is_valid(self):
         return True
 
+    @deprecated('copy module')
     def copy(self):
-        warnings.warn(
-            "copy method is deprecated use copy module instead",
-            DeprecationWarning
-        )
         return self.__copy__()
 
     def __copy__(self):
