@@ -256,7 +256,11 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
             model = self.volmdlr_volume_model()
             display.append({'angular_component' : 'app-step-viewer',
                             'data' : model.babylon_data()})
-        return display
+            
+        if hasattr(self, 'plot_data'):
+            display.append()
+        return display.append({'angular_component' : 'app-plot-data',
+                               'data' : self.plot_data()})
 
 class Parameter(DessiaObject):
     def __init__(self, lower_bound, upper_bound, periodicity=None, name=''):
