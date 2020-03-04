@@ -205,6 +205,9 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
         return self.__copy__()
 
     def __copy__(self):
+        """
+        Generic copy use inits of objects
+        """
         class_argspec = inspect.getfullargspec(self.__class__)
         dict_ = {}
         for arg in class_argspec.args:
@@ -218,15 +221,16 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
         return self.__class__(**dict_)
 
     def __deepcopy__(self, memo=None):
+        """
+        Generic deep copy use inits of objects
+        """
         class_argspec = inspect.getfullargspec(self.__class__)
         if memo is None:
             memo = {}
         dict_ = {}
         for arg in class_argspec.args:
             if arg != 'self':
-                dict_[arg] = deepcopy_value(getattr(self, arg), memo)
-
-
+                dict_[arg] = deepcopy_value(getattr(self, arg), memo=memo)
         return self.__class__(**dict_)
 
     def volmdlr_volume_model(self, frame=None):
@@ -628,13 +632,17 @@ def serialization_test(obj):
         raise ModelError('object in no more equal to himself after serialization/deserialization!')
 
 def deepcopy_value(value, memo):
+    # Escaping unhashable types (list) that would be handled after
     try:
         if value in memo:
             return memo[value]
     except TypeError:
+        print(value, 'error')
         pass
 
-    if hasattr(value, '__deepcopy__'):
+    if type(value) == type:# For class
+        return value
+    elif hasattr(value, '__deepcopy__'):
         copied_value = value.__deepcopy__(memo=memo)
         memo[value] = copied_value
         return copied_value
@@ -642,10 +650,11 @@ def deepcopy_value(value, memo):
         if type(value) == list:
             copied_list = []
             for v in value:
-                cv = deepcopy_value(v, memo)
+                cv = deepcopy_value(v, memo=memo)
                 memo[v] = cv
                 copied_list.append(cv)
             return copied_list
         else:
-            return copy.deepcopy(value)
-
+            new_value = copy.deepcopy(value, memo=memo)
+            memo[value] = new_value
+            return new_value

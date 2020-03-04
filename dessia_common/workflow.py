@@ -33,6 +33,7 @@ class Variable(dc.DessiaObject):
             }
         }
     _standalone_in_db = False
+
     def __init__(self, _name, name=''):
         self._name = _name
 
@@ -442,9 +443,9 @@ class Sequence(Block):
 
     def __init__(self, number_arguments, name=''):
         self.number_arguments = number_arguments
-        inputs = [Variable() for i in range (self.number_arguments)]
+        inputs = [Variable('Sequence element {}'.format(i)) for i in range(self.number_arguments)]
 
-        outputs = [TypedVariable('sequence of {}'.format(self.method_name),
+        outputs = [TypedVariable('sequence',
                                  list)]
         Block.__init__(self, inputs, outputs, name=name)
 
@@ -647,6 +648,8 @@ class Pipe(dc.DessiaObject):
         return {'input_variable': self.input_variable,
                 'output_variable': self.output_variable}
 
+class OutputDisconnectedWorkflowElement(Exception):
+    pass
 
 class Workflow(Block):
     _standalone_in_db = True
@@ -712,7 +715,11 @@ class Workflow(Block):
         for block in self.blocks:
             self.variables.extend(block.inputs)
             self.variables.extend(block.outputs)
-            self.coordinates[block] = (0, 0)
+            try:
+                self.coordinates[block] = (0, 0)
+            except ValueError:
+                print(block, block.name)
+                raise ValueError
 
         for pipe in self.pipes:
             if not pipe.input_variable in self.variables:
@@ -731,6 +738,7 @@ class Workflow(Block):
                 input_variables.append(variable)
 
         Block.__init__(self, input_variables, [output], name=name)
+        self.output = self.outputs[0]
 
     def __hash__(self):
         base_hash = len(self.blocks)+11*len(self.pipes)+sum(self.variable_indices(self.outputs[0]))
@@ -769,6 +777,39 @@ class Workflow(Block):
 #                        return True
 #            return False
 #        return False
+
+    def __deepcopy__(self, memo=None):
+        if memo is None:
+            memo = {}
+
+        blocks = [b.__deepcopy__(memo=memo) for b in self.blocks]
+        nonblock_variables = [v.__deepcopy(memo=memo) for v in self.nonblock_variables]
+        pipes = []
+        for pipe in self.pipes:
+            input_index = self.variable_indices(pipe.input_variable)
+            pipe_input = self.variable_from_index(input_index, blocks, nonblock_variables)
+
+            output_index = self.variable_indices(pipe.output_variable)
+            pipe_output = self.variable_from_index(output_index, blocks, nonblock_variables)
+
+            copied_pipe = Pipe(pipe_input, pipe_output)
+            memo[pipe] = copied_pipe
+
+            pipes.append(copied_pipe)
+
+        output = self.variable_from_index(self.variable_indices(self.output),
+                                          blocks, nonblock_variables)
+
+
+        imposed_variable_values = {}
+        for variable, value in self.imposed_variable_values.items():
+            imposed_variable_values[memo[variable]] = value
+
+
+        copied_workflow = Workflow(blocks, pipes, output,
+                                   imposed_variable_values=imposed_variable_values,
+                                   name=self.name)
+        return copied_workflow
 
     def _display_angular(self):
         displays = []
@@ -870,6 +911,19 @@ class Workflow(Block):
         arguments = {'input_variables_values': arguments_values}
         return arguments
 
+    @classmethod
+    def variable_from_index(cls, index, blocks, nonblock_variables):
+
+        if type(index) == int:
+            variable = nonblock_variables[index]
+        else:
+            ib, side, ip = index
+            if not side:
+                variable = blocks[ib].inputs[ip]
+            else:
+                variable = blocks[ib].outputs[ip]
+        return variable
+
     def _get_graph(self):
         if not self._utd_graph:
             self._cached_graph = self._graph()
@@ -908,35 +962,58 @@ class Workflow(Block):
         # Free variable not attached to block
         return self.nonblock_variables.index(variable)
 
+    def output_disconnected_elements(self):
+        disconnected_elements = []
+        ancestors = nx.ancestors(self.graph, self.output)
+        for block in self.blocks:
+            if not block in ancestors:
+                disconnected_elements.append(block)
+
+        for variable in self.nonblock_variables:
+            if not variable in ancestors:
+                disconnected_elements.append(variable)
+        return disconnected_elements
+
 
     def index(self, variable):
         index = self.inputs.index(variable)
         return index
 
-    def layout(self, anchor_size=250):
+    def layout(self, min_horizontal_spacing=300, min_vertical_spacing=200, max_height=800, max_length=1500):
+        # block_width = 220
+        # block_height = 120
         coordinates = {}
         elements_by_distance = {}
         for element in self.blocks+self.nonblock_variables:
-            distance = 0
-            path = nx.shortest_path(self.graph, element, self.outputs[0])
-            for path_element in path[1:-1]:
-                if path_element in self.blocks:
-                    distance += 1
-                elif path_element in self.nonblock_variables:
-                    distance += 1
-
+            distances = []
+            paths = nx.all_simple_paths(self.graph, element, self.outputs[0])
+            for path in paths:
+                distance = 0
+                for path_element in path[1:-1]:
+                    if path_element in self.blocks:
+                        distance += 1
+                    elif path_element in self.nonblock_variables:
+                        distance += 1
+                distances.append(distance)
+            distance = max(distances)
             if distance in elements_by_distance:
                 elements_by_distance[distance].append(element)
             else:
                 elements_by_distance[distance] = [element]
 
+        max_distance = max(elements_by_distance.keys())
+
+        horizontal_spacing = max(min_horizontal_spacing, max_length/max_distance)
 
         for i, distance in enumerate(sorted(elements_by_distance.keys())[::-1]):
+            n = len(elements_by_distance[distance])
+            # if n == 0:
+            #     n = 1
+            vertical_spacing = min(min_vertical_spacing, max_height/n)
+            horizontal_anchor_size = max_distance
             for j, element in enumerate(elements_by_distance[distance]):
-
-                coordinates[element] = (i*anchor_size, j*anchor_size)
-        # for iblock, block in enumerate(self.blocks):
-        #     self.coordinates[block] = (iblock % n_x_anchors, iblock // n_x_anchors)
+                # print(i, j*vertical_anchor_size)
+                coordinates[element] = (i*horizontal_spacing, (j+0.5)*vertical_spacing)
 
         return coordinates
 
@@ -974,7 +1051,7 @@ class Workflow(Block):
                 values[variable] = variable.default_value
                 activated_items[variable] = True
             else:
-                raise ValueError
+                raise ValueError('Value {} has no value'.format(variable.name))
 
         something_activated = True
 
@@ -1059,7 +1136,8 @@ class Workflow(Block):
             # !!! Is it necessary to add is_workflow_input/output for outputs/inputs ??
             blocks.append({'name': block.__class__.__name__,
                            'inputs': [{'name': i._name,
-                                       'is_workflow_input': i in self.inputs}\
+                                       'is_workflow_input': i in self.inputs,
+                                       'has_default_value': hasattr(i, 'default_value')}\
                                       for i in block.inputs],
 
                            'outputs': [{'name': o._name,
