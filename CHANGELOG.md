@@ -6,12 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Plot data in display of DessiaObject
+- Deprecation decorator
+
 ### Changed
 - dessia_methods to allowed_methods
 - return & progress_callback removed from _method_jsonschema
+- copy as one DessiaObject method with deep attribute
+- _editable_variables to _non_editable_attributes
+
 
 ### Fixed
 - (Quickfix) Check if output_value is None
+
 
 ## [0.3.1]
 ### Added
