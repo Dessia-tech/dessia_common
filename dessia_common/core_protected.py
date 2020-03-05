@@ -145,7 +145,10 @@ class DessiaObject:
         for i, arg in enumerate(allowed_args):
             if str(i) in dict_:
                 value = dict_[str(i)]
-                deserialized_value = deserialize_argument(args_specs.annotations[arg], value)
+                try:
+                    deserialized_value = deserialize_argument(args_specs.annotations[arg], value)
+                except TypeError:
+                    raise TypeError('Error in deserialisation of value: {} of expected type {}'.format(value, args_specs.annotations[arg]))
                 arguments[arg] = deserialized_value
         return arguments
 
@@ -317,18 +320,17 @@ def deserialize_argument(type_, argument):
             if isinstance(argument, type_):
                 deserialized_argument = argument
             else:
-                raise TypeError('Given built-in type and argument are incompatible : {} and {}'.format(type(argument), type_))
+                if type(argument) == int and type_ == float:
+                    # explicit conversion in this case
+                    deserialized_argument = float(argument)
+                else:
+                    raise TypeError('Given built-in type and argument are incompatible : {} and {} in {}'.format(type(argument), type_, argument))
         elif hasattr(type_, '__dataclass_fields__'):
             _ = type_(**argument)
             deserialized_argument = argument
         else:
             deserialized_argument = type_.dict_to_object(argument)
     return deserialized_argument
-
-
-
-
-
 
 
 def recursive_type(obj):
