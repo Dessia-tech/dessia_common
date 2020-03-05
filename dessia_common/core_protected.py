@@ -43,15 +43,15 @@ class DessiaObject:
             annotations = cls._init_variables
 
         # Get editable and ordered variables
-        if hasattr(cls, '_editable_variables') and cls._editable_variables is not None:
-            editable_variables = cls._editable_variables
+        if hasattr(cls, '_non_editable_attributes') and cls._non_editable_attributes is not None:
+            non_editable_attributes = cls._non_editable_attributes
         else:
-            editable_variables = list(annotations.keys())
+            non_editable_attributes = list(annotations.keys())
 
         if hasattr(cls, '_ordered_variables') and cls._ordered_variables is not None:
             ordered_variables = cls._ordered_variables
         else:
-            ordered_variables = editable_variables
+            ordered_variables = non_editable_attributes
 
         if hasattr(cls, '_titled_variables'):
             titled_variables = cls._titled_variables
@@ -82,7 +82,7 @@ class DessiaObject:
                 jsonschema_element = jsonschema_from_annotation(annotation=annotation,
                                                                 jsonschema_element={},
                                                                 order=order,
-                                                                editable=name in editable_variables,
+                                                                editable=name not in non_editable_attributes,
                                                                 title=title)
                 _jsonschema['properties'].update(jsonschema_element)
                 if name in default_arguments.keys():
