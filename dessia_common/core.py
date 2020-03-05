@@ -290,9 +290,8 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
                             'data' : model.babylon_data()})
             
         if hasattr(self, 'plot_data'):
-            
-            display.append({'angular_component' : 'app-plot-data',
-                               'data' : self.plot_data()})
+            display.append({'angular_component' : 'app-d3-plot-data',
+                            'data' : self.plot_data()})
         return display
 
 class Parameter(DessiaObject):
