@@ -90,7 +90,7 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
     def __eq__(self, other_object):
         if not self._generic_eq:
             return object.__eq__(self, other_object)
-        if self.__class__ != other_object.__class__\
+        if full_classname(self.__class__) != full_classname(other_object.__class__)\
         or self.__dict__.keys() != other_object.__dict__.keys(): # TODO : Check this line. Keys not ordered and/or just need to test used keys
             return False
 
@@ -102,6 +102,7 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
         for key, value in dict_.items():
             other_value = other_dict[key]
             if value != other_value:
+                print(key, value, other_value)
                 return False
         return True
 
@@ -200,9 +201,11 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
     def is_valid(self):
         return True
 
-    @deprecated('copy module')
-    def copy(self):
-        return self.__copy__()
+    def copy(self, deep=True):
+        if deep:
+            return self.__deepcopy__()
+        else:
+            return self.__copy__()
 
     def __copy__(self):
         """
@@ -285,6 +288,11 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
             model = self.volmdlr_volume_model()
             display.append({'angular_component' : 'app-step-viewer',
                             'data' : model.babylon_data()})
+            
+        if hasattr(self, 'plot_data'):
+            
+            display.append({'angular_component' : 'app-plot-data',
+                               'data' : self.plot_data()})
         return display
 
 class Parameter(DessiaObject):
