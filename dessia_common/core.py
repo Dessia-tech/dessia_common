@@ -644,7 +644,6 @@ def deepcopy_value(value, memo):
         if value in memo:
             return memo[value]
     except TypeError:
-        print(value, 'error')
         pass
 
     if type(value) == type:# For class
@@ -665,3 +664,28 @@ def deepcopy_value(value, memo):
             new_value = copy.deepcopy(value, memo=memo)
             memo[value] = new_value
             return new_value
+
+
+def serialize_typing(typing_):
+    if hasattr(typing_, '_name') and typing_._name == 'List':
+        arg = typing_.__args__[0]
+        if arg.__module__ == 'builtins':
+            full_argname = '__builtins__.' + arg.__name__
+        else:
+            full_argname = arg.__module__ + '.' + arg.__name__
+        return 'List[' + full_argname + ']'
+        
+def deserialize_typing(serialized_typing):
+    if isinstance(serialized_typing, str):
+        splitted_type = serialized_typing.split('[')
+        if splitted_type[0] == 'List':
+            full_argname = splitted_type[1].split(']')[0]
+            splitted_argname = full_argname.rsplit('.', 1)
+            if splitted_argname[0] != '__builtins__':
+                exec('import ' + splitted_argname[0])
+                type_ = eval(full_argname)
+            else:
+                type_ = eval(splitted_argname[1])
+            return List[type_]
+        
+    raise NotImplementedError
