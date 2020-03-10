@@ -71,7 +71,7 @@ class TypedVariable(Variable):
         if self.type_ == float:
             dict_['type_'] = 'float'
         else:
-            dict_['type_'] = self._type.__class__.__name__
+            dict_['type_'] = self.type_.__class__.__name__
 
         return dict_
 
@@ -195,7 +195,7 @@ class Block(dc.DessiaObject):
     def dict_to_object(cls, dict_):
         if dict_['block_class'] in ['InstanciateModel', 'ModelMethod',
                                     'ForEach', 'Function', 'ModelAttribute',
-                                    'Filter']:
+                                    'Filter', 'Sequence']:
             return eval(dict_['block_class']).dict_to_object(dict_)
 
     @property
@@ -278,7 +278,7 @@ class InstanciateModel(Block):
 
 
     def evaluate(self, values):
-        args = {var._name: values[var] for var in self.inputs}
+        args = {var.name: values[var] for var in self.inputs}
         return [self.object_class(**args)]
     
     
@@ -384,7 +384,7 @@ class ModelMethod(Block):
 
 
     def evaluate(self, values):
-        args = {var._name: values[var] for var in self.inputs[1:] if var in values}
+        args = {var.name: values[var] for var in self.inputs[1:] if var in values}
         return [getattr(values[self.inputs[0]], self.method_name)(**args),
                 values[self.inputs[0]]]
 
@@ -791,11 +791,11 @@ class Workflow(Block):
 
     def _display_angular(self):
         displays = []
-        blocks, nonblock_variables, edges = self.jointjs_data()
+        data = self.jointjs_data()
         displays.extend([{'angular_component': 'workflow',
-                         'blocks': blocks,
-                         'nonblock_variables': nonblock_variables,
-                         'edges': edges}])
+                         'blocks': data['blocks'],
+                         'nonblock_variables': data['nonblock_variables'],
+                         'edges': data['edges']}])
         return displays
 
     def to_dict(self):
@@ -828,6 +828,7 @@ class Workflow(Block):
     @classmethod
     def dict_to_object(cls, dict_):
         blocks = [Block.dict_to_object(d) for d in dict_['blocks']]
+        print(blocks)
         if 'nonblock_variables' in dict_:
             nonblock_variables = [dc.DessiaObject.dict_to_object(d) for d in dict_['nonblock_variables']]
         else:

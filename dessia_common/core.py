@@ -102,7 +102,6 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
         for key, value in dict_.items():
             other_value = other_dict[key]
             if value != other_value:
-                print(key, value, other_value)
                 return False
         return True
 
