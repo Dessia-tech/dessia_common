@@ -260,7 +260,7 @@ class Catalog(DessiaObject):
             data_frame.to_csv(file, index=False)
         msg = 'Class {} should implement _init_variables'.format(self.__class__)
         msg += ' in order to be exportable'
-        raise ValueError(msg):
+        raise ValueError(msg)
 
 
     def parameters(self, argnames:List[str]):
