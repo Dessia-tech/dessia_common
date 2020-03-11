@@ -251,15 +251,16 @@ class Catalog(DessiaObject):
         :type indices: [int]
         :param file: Target file
         """
-        # attributes = ['e', 'tgte', 'h', 'ref', 'nw', 'REFrlt', 'NPSHeval',
-        #               'coutTotal_horsQuincaill', 'Fwrlt',
-        #               'radialSpringConfidenceRatio', 'Sk', 'contrainte', 'Sp']
-        attributes = list(self._init_variables.keys()) # !!! Unordered
-        attribute = getattr(self, attribute_name)
-        lines = [attribute[i].to_array() for i in indices]
-        array = np.array(lines)
-        data_frame = pd.DataFrame(array, columns=attributes)
-        data_frame.to_csv(file, index=False)
+        if self._init_variables is not None:
+            attributes = list(self._init_variables.keys()) # !!! Unordered
+            attribute = getattr(self, attribute_name)
+            lines = [attribute[i].to_array() for i in indices]
+            array = np.array(lines)
+            data_frame = pd.DataFrame(array, columns=attributes)
+            data_frame.to_csv(file, index=False)
+        msg = 'Class {} should implement _init_variables'.format(self.__class__)
+        msg += ' in order to be exportable'
+        raise ValueError(msg):
 
 
     def parameters(self, argnames:List[str]):
