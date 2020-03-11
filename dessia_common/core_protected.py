@@ -9,6 +9,7 @@ from copy import deepcopy
 
 from typing import TypeVar
 
+
 class DessiaObject:
     """
 
@@ -18,12 +19,12 @@ class DessiaObject:
     def base_jsonschema(cls):
         jsonschema = deepcopy(JSONSCHEMA_HEADER)
         jsonschema['properties']['name'] = {
-                'type': 'string',
-                "title" : "Object Name",
-                "description" : "Object name",
-                "editable" : True,
-                "default_value" : "Object Name"
-                }
+            'type': 'string',
+            "title" : "Object Name",
+            "description" : "Object name",
+            "editable" : True,
+            "default_value" : "Object Name"
+            }
         return jsonschema
 
 
@@ -42,15 +43,15 @@ class DessiaObject:
             annotations = cls._init_variables
 
         # Get editable and ordered variables
-        if hasattr(cls, '_editable_variables') and cls._editable_variables is not None:
-            editable_variables = cls._editable_variables
+        if hasattr(cls, '_non_editable_attributes') and cls._non_editable_attributes is not None:
+            non_editable_attributes = cls._non_editable_attributes
         else:
-            editable_variables = list(annotations.keys())
+            non_editable_attributes = list(annotations.keys())
 
         if hasattr(cls, '_ordered_variables') and cls._ordered_variables is not None:
             ordered_variables = cls._ordered_variables
         else:
-            ordered_variables = editable_variables
+            ordered_variables = non_editable_attributes
 
         if hasattr(cls, '_titled_variables'):
             titled_variables = cls._titled_variables
@@ -81,7 +82,7 @@ class DessiaObject:
                 jsonschema_element = jsonschema_from_annotation(annotation=annotation,
                                                                 jsonschema_element={},
                                                                 order=order,
-                                                                editable=name in editable_variables,
+                                                                editable=name not in non_editable_attributes,
                                                                 title=title)
                 _jsonschema['properties'].update(jsonschema_element)
                 if name in default_arguments.keys():
@@ -119,16 +120,18 @@ class DessiaObject:
                     jsonschemas[method_name] = deepcopy(JSONSCHEMA_HEADER)
                     jsonschemas[method_name]['required'] = []
                     for i, annotation in enumerate(method.__annotations__.items()): # !!! Not actually ordered
-                        if annotation[0] in required_arguments:
-                            jsonschemas[method_name]['required'].append(str(i))
-                        jsonschema_element = jsonschema_from_annotation(annotation, {}, i)[annotation[0]]
+                        argname = annotation[0]
+                        if argname not in _FORBIDDEN_ARGNAMES:
+                            if argname in required_arguments:
+                                jsonschemas[method_name]['required'].append(str(i))
+                            jsonschema_element = jsonschema_from_annotation(annotation, {}, i)[argname]
 
-                        jsonschemas[method_name]['properties'][str(i)] = jsonschema_element
-                        if annotation[0] in default_arguments.keys():
-                            default = set_default_value(jsonschemas[method_name]['properties'],
-                                                        str(i),
-                                                        default_arguments[annotation[0]])
-                            jsonschemas[method_name]['properties'].update(default)
+                            jsonschemas[method_name]['properties'][str(i)] = jsonschema_element
+                            if argname in default_arguments.keys():
+                                default = set_default_value(jsonschemas[method_name]['properties'],
+                                                            str(i),
+                                                            default_arguments[argname])
+                                jsonschemas[method_name]['properties'].update(default)
         return jsonschemas
 
     def dict_to_arguments(self, dict_, method):
@@ -142,7 +145,10 @@ class DessiaObject:
         for i, arg in enumerate(allowed_args):
             if str(i) in dict_:
                 value = dict_[str(i)]
-                deserialized_value = deserialize_argument(args_specs.annotations[arg], value)
+                try:
+                    deserialized_value = deserialize_argument(args_specs.annotations[arg], value)
+                except TypeError:
+                    raise TypeError('Error in deserialisation of value: {} of expected type {}'.format(value, args_specs.annotations[arg]))
                 arguments[arg] = deserialized_value
         return arguments
 
@@ -222,17 +228,17 @@ def jsonschema_sequence_recursion(value, title=None, order=None, editable=False)
     return jsonschema_element
 
 def prettyname(namestr):
-    prettyname = ''
+    pretty_name = ''
     if namestr:
         strings = namestr.split('_')
         for i, string in enumerate(strings):
             if len(string) > 1:
-                prettyname += string[0].upper() + string[1:]
+                pretty_name += string[0].upper() + string[1:]
             else:
-                prettyname += string
+                pretty_name += string
             if i < len(strings)-1:
-                prettyname += ' '
-    return prettyname
+                pretty_name += ' '
+    return pretty_name
 
 def jsonschema_from_dataclass(class_, title=None):
     if title is None:
@@ -273,7 +279,7 @@ def inspect_arguments(method, merge=False):
     default_arguments = {}
     arguments = []
     for iargument, argument in enumerate(args_specs.args[1:]):
-        if not argument in ['self', 'cls', 'progress_callback']:
+        if argument not in _FORBIDDEN_ARGNAMES:
             if iargument >= nargs - ndefault_args:
                 default_value = args_specs.defaults[ndefault_args-nargs+iargument]
                 if merge:
@@ -310,22 +316,21 @@ def deserialize_argument(type_, argument):
         sequence_subtype = type_.__args__[0]
         deserialized_argument = [deserialize_argument(sequence_subtype, arg) for arg in argument]
     else:
-         if type_ in TYPING_EQUIVALENCES.keys():
-             if isinstance(argument, type_):
-                 deserialized_argument = argument
-             else:
-                 raise TypeError('Given built-in type and argument are incompatible : {} and {}'.format(type(argument), type_))
-         elif hasattr(type_, '__dataclass_fields__'):
-             _ = type_(**argument)
-             deserialized_argument = argument
-         else:
-             deserialized_argument = type_.dict_to_object(argument)
+        if type_ in TYPING_EQUIVALENCES.keys():
+            if isinstance(argument, type_):
+                deserialized_argument = argument
+            else:
+                if type(argument) == int and type_ == float:
+                    # explicit conversion in this case
+                    deserialized_argument = float(argument)
+                else:
+                    raise TypeError('Given built-in type and argument are incompatible : {} and {} in {}'.format(type(argument), type_, argument))
+        elif hasattr(type_, '__dataclass_fields__'):
+            _ = type_(**argument)
+            deserialized_argument = argument
+        else:
+            deserialized_argument = type_.dict_to_object(argument)
     return deserialized_argument
-
-
-
-
-
 
 
 def recursive_type(obj):
@@ -361,7 +366,7 @@ def recursive_instantiation(types, values):
         elif isinstance(type_, (list, tuple)):
             instantiated_values.append(recursive_instantiation(type_, value))
         elif type_ is None:
-             instantiated_values.append(value)
+            instantiated_values.append(value)
         else:
             print(type_)
             raise NotImplementedError
@@ -382,3 +387,5 @@ TYPING_EQUIVALENCES = {int: 'number',
 
 TYPES_STRINGS = {int: 'int', float: 'float', bool: 'boolean', str: 'str',
                  list: 'list', tuple: 'tuple', dict: 'dict'}
+
+_FORBIDDEN_ARGNAMES = ['self', 'cls', 'progress_callback', 'return']

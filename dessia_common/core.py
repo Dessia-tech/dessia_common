@@ -13,6 +13,7 @@ from copy import deepcopy
 import inspect
 import json
 from typing import TypeVar, List
+import traceback as tb
 #from typing import List, Sequence, Iterable, TypeVar, Union
 
 #from importlib import import_module
@@ -40,6 +41,26 @@ class SerializationError(Exception):
 class DeserializationError(Exception):
     pass
 
+# DEPRECATED_ATTRIBUTES = {'_editable_variss' : '_allowed_methods'}
+def deprecated(use_instead=None):
+    def decorated(function):
+        def wrapper(*args, **kwargs):
+            deprecation_warning(function.__name__, 'Function', use_instead)
+            print('Traceback : ')
+            tb.print_stack(limit=2)
+            return function(*args, **kwargs)
+        return wrapper
+    return decorated
+
+def deprecation_warning(name, object_type, use_instead=None):
+    warnings.simplefilter('always', DeprecationWarning)
+    msg = "\n\n{} {} is deprecated.\n".format(object_type, name)
+    msg += "It will be removed in a future version.\n"
+    if use_instead is not None:
+        msg += "Use {} instead.\n".format(use_instead)
+    warnings.warn(msg, DeprecationWarning)
+    return msg
+
 class DessiaObject(protected_module.DessiaObject if not _open_source else object):
     """
     Base abstract class for Dessia's object.
@@ -47,6 +68,7 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
     """
     _standalone_in_db = False
     _non_serializable_attributes = []
+    _non_editable_attributes = []
     _non_eq_attributes = ['name']
     _non_hash_attributes = ['name']
     _generic_eq = False
@@ -68,7 +90,7 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
     def __eq__(self, other_object):
         if not self._generic_eq:
             return object.__eq__(self, other_object)
-        if self.__class__ != other_object.__class__\
+        if full_classname(self) != full_classname(other_object)\
         or self.__dict__.keys() != other_object.__dict__.keys(): # TODO : Check this line. Keys not ordered and/or just need to test used keys
             return False
 
@@ -96,6 +118,16 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
                 else:
                     hash_ += hash(value)
         return int(hash_ % 1e5)
+
+    # def __getattribute__(self, name):
+    #     if name in DEPRECATED_ATTRIBUTES:
+    #         deprecation_warning(name, 'Attribute', DEPRECATED_ATTRIBUTES[name])
+    #     return object.__getattribute__(self, name)
+
+    # def __setattribute__(self, name, value):
+    #     if name in DEPRECATED_ATTRIBUTES:
+    #         deprecation_warning(name, 'Attribute', DEPRECATED_ATTRIBUTES[name])
+    #     return object.__setattribute__(self, name, value)
 
     @property
     def full_classname(self):
@@ -168,14 +200,16 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
     def is_valid(self):
         return True
 
-    def copy(self):
-        warnings.warn(
-            "copy method is deprecated use copy module instead",
-            DeprecationWarning
-        )
-        return self.__copy__()
+    def copy(self, deep=True):
+        if deep:
+            return self.__deepcopy__()
+        else:
+            return self.__copy__()
 
     def __copy__(self):
+        """
+        Generic copy use inits of objects
+        """
         class_argspec = inspect.getfullargspec(self.__class__)
         dict_ = {}
         for arg in class_argspec.args:
@@ -189,15 +223,16 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
         return self.__class__(**dict_)
 
     def __deepcopy__(self, memo=None):
+        """
+        Generic deep copy use inits of objects
+        """
         class_argspec = inspect.getfullargspec(self.__class__)
         if memo is None:
             memo = {}
         dict_ = {}
         for arg in class_argspec.args:
             if arg != 'self':
-                dict_[arg] = deepcopy_value(getattr(self, arg), memo)
-
-
+                dict_[arg] = deepcopy_value(getattr(self, arg), memo=memo)
         return self.__class__(**dict_)
 
     def volmdlr_volume_model(self, frame=None):
@@ -252,6 +287,10 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
             model = self.volmdlr_volume_model()
             display.append({'angular_component' : 'app-step-viewer',
                             'data' : model.babylon_data()})
+
+        if hasattr(self, 'plot_data'):
+            display.append({'angular_component' : 'app-d3-plot-data',
+                            'data' : self.plot_data()})
         return display
 
 class Parameter(DessiaObject):
@@ -599,24 +638,32 @@ def serialization_test(obj):
         raise ModelError('object in no more equal to himself after serialization/deserialization!')
 
 def deepcopy_value(value, memo):
+    # Escaping unhashable types (list) that would be handled after
     try:
         if value in memo:
             return memo[value]
     except TypeError:
+        print(value, 'error')
         pass
 
-    if hasattr(value, '__deepcopy__'):
-        copied_value = value.__deepcopy__(memo=memo)
+    if type(value) == type:# For class
+        return value
+    elif hasattr(value, '__deepcopy__'):
+        try:
+            copied_value = value.__deepcopy__(memo)
+        except TypeError:
+            copied_value = value.__deepcopy__()
         memo[value] = copied_value
         return copied_value
     else:
         if type(value) == list:
             copied_list = []
             for v in value:
-                cv = deepcopy_value(v, memo)
+                cv = deepcopy_value(v, memo=memo)
                 memo[v] = cv
                 copied_list.append(cv)
             return copied_list
         else:
-            return copy.deepcopy(value)
-
+            new_value = copy.deepcopy(value, memo=memo)
+            memo[value] = new_value
+            return new_value
