@@ -12,11 +12,10 @@ import collections
 from copy import deepcopy
 import inspect
 import json
-from typing import TypeVar, List
+from typing import List
 import traceback as tb
-#from typing import List, Sequence, Iterable, TypeVar, Union
 
-#from importlib import import_module
+from importlib import import_module
 
 try:
     _open_source = False
@@ -102,7 +101,6 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
         for key, value in dict_.items():
             other_value = other_dict[key]
             if value != other_value:
-                print(key, value, other_value)
                 return False
         return True
 
@@ -116,6 +114,8 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
                     hash_ += list_hash(value)
                 elif isinstance(value, dict):
                     hash_ += dict_hash(value)
+                elif isinstance(value, str):
+                    hash_ += sum([ord(v) for v in value])
                 else:
                     hash_ += hash(value)
         return int(hash_ % 1e5)
@@ -246,8 +246,11 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
             else:
                 if frame is None:
                     frame = vm.OXYZ
-            return vm.VolumeModel(self.volmdlr_primitives(frame=frame))
-
+            try:
+                return vm.VolumeModel(self.volmdlr_primitives(frame=frame))
+            except TypeError:
+                return vm.VolumeModel(self.volmdlr_primitives())
+    
         raise NotImplementedError('object of type {} does not implement volmdlr_primitives'.format(self.__class__.__name__))
 
     def cad_export(self,
@@ -612,7 +615,7 @@ def dict_hash(dict_):
             hash_ += hash(key) + hash(value)
     return hash_
 
-def sequence_to_objects(sequence):
+def sequence_to_objects(sequence):# TODO: rename to deserialize sequence?
     deserialized_sequence = []
     for element in sequence:
         if isinstance(element, dict):
@@ -674,9 +677,17 @@ def serialize_typing(typing_):
         else:
             full_argname = arg.__module__ + '.' + arg.__name__
         return 'List[' + full_argname + ']'
+    
+    if type(typing_) == type:
+        return typing_.__module__ + '.' + typing_.__name__
+
+    raise NotImplementedError('{} of type {}'.format(typing_, type(typing_)))
         
 def deserialize_typing(serialized_typing):
     if isinstance(serialized_typing, str):
+        if serialized_typing == 'float' or serialized_typing == 'builtins.float':
+            return float
+        
         splitted_type = serialized_typing.split('[')
         if splitted_type[0] == 'List':
             full_argname = splitted_type[1].split(']')[0]
@@ -688,4 +699,32 @@ def deserialize_typing(serialized_typing):
                 type_ = eval(splitted_argname[1])
             return List[type_]
         
-    raise NotImplementedError
+    raise NotImplementedError('{}'.format(serialized_typing))
+    
+def deserialize(serialized_element):
+    if isinstance(serialized_element, dict):
+        element = dict_to_object(serialized_element)
+    elif isinstance(serialized_element, (list, tuple)):
+        element = sequence_to_objects(serialized_element)    
+    else:
+        element = serialized_element
+        
+    return element
+    
+    
+TYPES_FROM_STRING = {'unicode': str,
+                     'float': str,
+                     'int': int}
+
+def type_from_annotation(type_, module):
+    """
+    Clean up a proposed type if there are strigified
+    """
+    if type(type_) == str:
+        # Evaluating types
+        if type_ in TYPES_FROM_STRING:
+            type_ = TYPES_FROM_STRING[type_]
+        else:
+            # Evaluating
+            type_ = getattr(import_module(module), type_)           
+    return type_
