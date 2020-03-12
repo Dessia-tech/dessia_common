@@ -8,7 +8,7 @@ import inspect
 from copy import deepcopy
 
 from typing import TypeVar
-
+import dessia_common.core
 
 class DessiaObject:
     """
@@ -79,6 +79,8 @@ class DessiaObject:
                 title = None
 
             if name != 'return':
+                
+                annotation = (annotation[0], dessia_common.core.type_from_annotation(annotation[1], cls))
                 jsonschema_element = jsonschema_from_annotation(annotation=annotation,
                                                                 jsonschema_element={},
                                                                 order=order,
@@ -155,7 +157,11 @@ class DessiaObject:
 
 def jsonschema_from_annotation(annotation, jsonschema_element,
                                order, editable=None, title=None):
+
     key, value = annotation
+    if type(value) == str:
+        raise ValueError
+        
     if title is None:
         title = prettyname(key)
     if editable is None:
@@ -345,8 +351,7 @@ def recursive_type(obj):
     elif obj is None:
         type_ = None
     else:
-        print(obj)
-        raise NotImplementedError
+        raise NotImplementedError(obj)
     return type_
 
 def recursive_instantiation(types, values):
@@ -368,8 +373,7 @@ def recursive_instantiation(types, values):
         elif type_ is None:
             instantiated_values.append(value)
         else:
-            print(type_)
-            raise NotImplementedError
+            raise NotImplementedError(type_)
     return instantiated_values
 
 
