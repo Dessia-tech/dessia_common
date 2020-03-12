@@ -270,8 +270,8 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
         else:
             raise NotImplementedError
 
-    def babylonjs(self, use_cdn=True, debug=False):
-        self.volmdlr_volume_model().babylonjs(use_cdn=use_cdn, debug=debug)
+    def babylonjs(self, page_name=None, use_cdn=True, debug=False):
+        self.volmdlr_volume_model().babylonjs(page_name=page_name, use_cdn=use_cdn, debug=debug)
 
     def _display_angular(self):
         display = []
