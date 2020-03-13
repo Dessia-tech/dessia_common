@@ -250,7 +250,7 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
                 return vm.VolumeModel(self.volmdlr_primitives(frame=frame))
             except TypeError:
                 return vm.VolumeModel(self.volmdlr_primitives())
-    
+
         raise NotImplementedError('object of type {} does not implement volmdlr_primitives'.format(self.__class__.__name__))
 
     def cad_export(self,
@@ -284,16 +284,16 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
         #     display.append({'angular_component': 'app-cad-viewer'})
 
         if hasattr(self, 'babylon_data'):
-            display.append({'angular_component' : 'app-step-viewer',
+            display.append({'angular_component' : 'cad_viewer',
                             'data' : self.babylon_data()})
         elif hasattr(self, 'volmdlr_primitives')\
         or (self.__class__.volmdlr_volume_model is not DessiaObject.volmdlr_volume_model):
             model = self.volmdlr_volume_model()
-            display.append({'angular_component' : 'app-step-viewer',
+            display.append({'angular_component' : 'cad_viewer',
                             'data' : model.babylon_data()})
 
         if hasattr(self, 'plot_data'):
-            display.append({'angular_component' : 'app-d3-plot-data',
+            display.append({'angular_component' : 'plot_data',
                             'data' : self.plot_data()})
         return display
 
@@ -680,17 +680,17 @@ def serialize_typing(typing_):
         else:
             full_argname = arg.__module__ + '.' + arg.__name__
         return 'List[' + full_argname + ']'
-    
+
     if type(typing_) == type:
         return typing_.__module__ + '.' + typing_.__name__
 
     raise NotImplementedError('{} of type {}'.format(typing_, type(typing_)))
-        
+
 def deserialize_typing(serialized_typing):
     if isinstance(serialized_typing, str):
         if serialized_typing == 'float' or serialized_typing == 'builtins.float':
             return float
-        
+
         splitted_type = serialized_typing.split('[')
         if splitted_type[0] == 'List':
             full_argname = splitted_type[1].split(']')[0]
@@ -701,20 +701,20 @@ def deserialize_typing(serialized_typing):
             else:
                 type_ = eval(splitted_argname[1])
             return List[type_]
-        
+
     raise NotImplementedError('{}'.format(serialized_typing))
-    
+
 def deserialize(serialized_element):
     if isinstance(serialized_element, dict):
         element = dict_to_object(serialized_element)
     elif isinstance(serialized_element, (list, tuple)):
-        element = sequence_to_objects(serialized_element)    
+        element = sequence_to_objects(serialized_element)
     else:
         element = serialized_element
-        
+
     return element
-    
-    
+
+
 TYPES_FROM_STRING = {'unicode': str,
                      'float': str,
                      'int': int}
@@ -729,5 +729,5 @@ def type_from_annotation(type_, module):
             type_ = TYPES_FROM_STRING[type_]
         else:
             # Evaluating
-            type_ = getattr(import_module(module), type_)           
+            type_ = getattr(import_module(module), type_)
     return type_
