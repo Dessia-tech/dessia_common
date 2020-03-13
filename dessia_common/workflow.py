@@ -13,6 +13,7 @@ import networkx as nx
 # import pkg_resources
 # import typing
 from copy import deepcopy
+import typeguard
 
 from jinja2 import Environment, PackageLoader, select_autoescape
 import dessia_common as dc
@@ -469,21 +470,23 @@ class ForEach(Block):
                and self.workflow.variable_indices(self.workflow_iterable_input)\
                    == other_block.workflow.variable_indices(other_block.workflow_iterable_input)
 
-    # def to_dict(self):
-    #     dict_ = Block.to_dict(self)
-    #     dict_.update({
-    #         'workflow': self.workflow.to_dict(),
-    #         'workflow_iterable_input': self.workflow.variable_indices(self.workflow_iterable_input)
-    #         })
-    #     return dict_
 
-    # @classmethod
-    # def dict_to_object(cls, dict_):
-    #     workflow = Workflow.dict_to_object(dict_['workflow'])
-    #     ib, _, ip = dict_['workflow_iterable_input']
+    def to_dict(self):
+        dict_ = dc.DessiaObject.base_dict(self)
+        dict_.update({
+            'workflow': self.workflow.to_dict(),
+            'workflow_iterable_input': self.workflow.variable_indices(self.workflow_iterable_input)
+            })
+        return dict_
 
-    #     workflow_iterable_input = workflow.blocks[ib].inputs[ip]
-    #     return cls(workflow, workflow_iterable_input)
+    @classmethod
+    @set_block_variable_names_from_dict
+    def dict_to_object(cls, dict_):
+        workflow = Workflow.dict_to_object(dict_['workflow'])
+        ib, _, ip = dict_['workflow_iterable_input']
+
+        workflow_iterable_input = workflow.blocks[ib].inputs[ip]
+        return cls(workflow, workflow_iterable_input, name=dict_['name'])
 
     def evaluate(self, values):
         values_workflow = {var2: values[var1] for var1, var2 in zip(self.inputs,
@@ -497,6 +500,7 @@ class ForEach(Block):
             workflow_run = self.workflow.run(values_workflow2)
             output_values.append(workflow_run.output_value)
         return [output_values]
+
 
 class Filter(Block):
     def __init__(self, filters, name=''):
@@ -518,14 +522,17 @@ class Filter(Block):
                      'filters': self.filters}]
         return displays
 
-    # def to_dict(self):
-    #     dict_ = Block.to_dict(self)
-    #     dict_.update({'filters': self.filters})
-    #     return dict_
+    
+    def to_dict(self):
+        dict_ = dc.DessiaObject.base_dict(self)
+        dict_.update({'filters': self.filters})
+        return dict_    
 
-    # @classmethod
-    # def dict_to_object(cls, dict_):
-    #     return cls(dict_['filters'], dict_['name'])
+    @classmethod
+    @set_block_variable_names_from_dict
+    def dict_to_object(cls, dict_):
+        return cls(dict_['filters'], dict_['name'])
+    
 
     def evaluate(self, values):
         ouput_values = []
@@ -1099,13 +1106,20 @@ class Workflow(Block):
         values = {}
         # Imposed variables values activation
         for variable, value in self.imposed_variable_values.items():
+            # Type checking
+            value_type_check(value, variable.type_)
+                # raise ValueError('Bad type', value, variable.type_)
             values[variable] = value
             activated_items[variable] = True
             
         # Input activation
         for index, variable in enumerate(self.inputs):
             if index in input_variables_values:
-                values[variable] = input_variables_values[index]
+                value = input_variables_values[index]
+                typeguard.check_type(variable.name, value, variable.type_)
+                    # raise ValueError('Bad type', value, variable.type_)
+
+                values[variable] = value
                 activated_items[variable] = True
             elif hasattr(variable, 'default_value'):
                 values[variable] = variable.default_value
@@ -1145,7 +1159,7 @@ class Workflow(Block):
 
                     if all_inputs_activated:
                         if verbose:
-                            log_line = 'Evaluating block {}'.format(block.__class__.__name__)
+                            log_line = 'Evaluating block {}'.format(block.name)
                             log += log_line + '\n'
                             if verbose:
                                 print(log_line)
@@ -1318,14 +1332,29 @@ class Workflow(Block):
 
         webbrowser.open('file://' + temp_file)
 
-    # def find_variable_type(self, variable):
-    #     for block in self.blocks:
-    #         for block_variable in block.outputs: # !!! just ouputs is  a workaround
-    #             if block_variable.name == variable.name and isinstance(block, ModelAttribute): # !!! isinstance is just a workaround
-    #                 for var in self.inputs + self.outputs:
-    #                     if var.name == block.attribute_name:
-    #                         return var.type_
-    #     return None
+
+    
+    def is_valid(self):
+        # Checking types of each end of pipes
+        for pipe in self.pipes:
+            if hasattr(pipe.input_variable, 'type_') and hasattr(pipe.output_variable, 'type_'):
+                type1 = pipe.input_variable.type_
+                type2 = pipe.output_variable.type_
+                if type1 != type2:
+                    # print(type1, type2)
+                    try:
+                        consistent = issubclass(pipe.input_variable.type_, pipe.output_variable.type_)
+                        
+                    except TypeError:
+                        # TODO: need of a real typing check
+                        consistent = True
+        
+                        if not consistent:
+                            raise TypeError('inconsistent pipe type from pipe input {} to pipe output {}: {} incompatible with {}'.format(
+                                pipe.input_variable.name, pipe.output_variable.name,
+                                pipe.input_variable.type_, pipe.output_variable.type_)
+                                )
+        return True
 
     def package_mix(self):
         """
@@ -1546,8 +1575,16 @@ def set_inputs_from_function(method, inputs=[], block_name=''):
 
     return inputs
 
-#def node_matcher(n1, n2):
-#    if n1.__class__.__name__ != n2.__class__.__name__:
-#        return False
-#    else:
-#        return n1.equivalent(n2)
+def value_type_check(value, type_):
+    try:
+        typeguard.check_type('', value, type_)
+    except TypeError:
+        return False
+    try:# TODO: Subscripted generics cannot be used...
+        if not isinstance(value, type_):
+            return False
+    except TypeError:
+        pass
+            
+    return True
+    
