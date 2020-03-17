@@ -341,7 +341,7 @@ def from_csv(filename:str, class_:type=VectoredObject, end:int=None, remove_dupl
     """
     Generates MBSEs from given .csv file.
     """
-    array = np.genfromtxt(filename, dtype=None, delimiter=',', names=True)
+    array = np.genfromtxt(filename, dtype=None, delimiter=',', names=True, encoding=None)
 
     objects = []
     for i, line in enumerate(array):
