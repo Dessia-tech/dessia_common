@@ -1015,7 +1015,10 @@ class Workflow(Block):
                 return (ib1, ti1, iv1)
 
         # Free variable not attached to block
-        return self.nonblock_variables.index(variable)
+        if variable in self.nonblock_variables:
+            return self.nonblock_variables.index(variable)
+
+        raise WorkflowError('Some thing is wrong with variable {}'.format(variable.name))
 
     def output_disconnected_elements(self):
         disconnected_elements = []
