@@ -103,6 +103,7 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
             if value != other_value:
                 return False
         return True
+    
 
     def __hash__(self):
         if not self._generic_eq:
