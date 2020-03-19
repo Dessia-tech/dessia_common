@@ -347,6 +347,11 @@ class ParameterSet(DessiaObject):
         parameters = [Parameter(min(v), max(v), name=k) for k, v in self.values.items()]
         return parameters
 
+    @property
+    def means(self):
+        means = {k: sum(v)/len(v) for k, v in self.values.items()}
+        return means
+
 
 class Evolution(DessiaObject):
     """

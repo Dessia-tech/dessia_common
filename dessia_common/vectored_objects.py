@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 from dessia_common import DessiaObject, Parameter
 
+
 class VectoredObject(DessiaObject):
     """
     Defines a "vectored object". This is a vectored representation of a structured data value.
@@ -22,10 +23,11 @@ class VectoredObject(DessiaObject):
     """
     _generic_eq = True
     _standalone_in_db = True
+
     def __init__(self, name: str = '', **kwargs):
         DessiaObject.__init__(self, name=name, **kwargs)
 
-    def scale(self, parameters:List[Parameter]): #, bounds:List[Tuple[float, float]]):
+    def scale(self, parameters: List[Parameter]):  # , bounds:List[Tuple[float, float]]):
         """
         Computes an adimensionnal vector representing the vectored object.
 
@@ -36,16 +38,10 @@ class VectoredObject(DessiaObject):
         """
         scaled = [p.normalize(getattr(self, p.name)) for p in parameters]
         return scaled
-        # vector = []
-        # for parameter, interval in zip(parameters, bounds):
-        #     for parameter in parameters:
-        #         value = getattr(self, parameter.name)
-        #         if (interval[0] is not None and value < interval[0])\
-        #             or (interval[1] is not None and value > interval[1]):
-        #             return None
-        #         normalized_value = parameter.normalize(value)
-        #         vector.append(normalized_value)
-        # return vector
+
+    def mean_scale(self, parameters, means):
+        scaled = [getattr(self, p.name)/m for p, m in zip(parameters, means)]
+        return scaled
 
     def to_array(self):
         """
@@ -69,6 +65,7 @@ class Objective(DessiaObject):
     """
     _generic_eq = True
     _standalone_in_db = False
+
     def __init__(self, coeff_names: List[str], coeff_values: List[float],
                  scaled: bool = False, name: str = ''):
         self.coeff_names = coeff_names
@@ -88,39 +85,19 @@ class Objective(DessiaObject):
 
         :return: float, Rating of given object according to this objective
         """
-        objectives = [getattr(vectored_object, arg)*coeff
+        objectives = [getattr(vectored_object, arg) * coeff
                       for arg, coeff in zip(self.coeff_names, self.coeff_values)]
         objective = sum(objectives)
         return objective
 
     def apply_to_catalog(self, catalog):
-        parameters = catalog.parameters(self.coeff_names)
-        # ratings = []
-        # for vectored_object in catalog.objects:
-        #     rating = 0
-        #     for param, coeff, minimise in zip(parameters, self.coeff_values, self.coeff_min):
-        #         value = getattr(vectored_object, param.name)
-        #         if self.scaled:
-        #             value = parameter.normalize(value)
-        #             if minimise:
-        #                 rating += (1 - value)*coeff
-        #             else:
-        #                 rating += value*coeff
-        #         else:
-        #             if minimise:
-        #                 rating += (param.upper_bound - value)*coeff
-        #             else:
-        #                 rating += (value - param.lower_bound)*coeff
-        #     ratings.append(rating)
-
-
-
         if self.scaled:
             parameters = catalog.parameters(self.coeff_names)
+            means = [catalog.mean(p) for p in parameters]
             ratings = []
             for vectored_object in catalog.objects:
-                values = vectored_object.scale(parameters)
-                objective = sum([v*coeff for v, coeff in zip(values, self.coeff_values)])
+                values = vectored_object.mean_scale(parameters, means)
+                objective = sum([v * coeff for v, coeff in zip(values, self.coeff_values)])
                 ratings.append(objective)
             return ratings
         ratings = [self.apply(vo) for vo in catalog.objects]
@@ -154,6 +131,7 @@ class Catalog(DessiaObject):
     _editable_variables = ['minimise', 'pareto_attributes', 'n_near_values',
                            'objectives', 'enable_pareto', 'enable_objectives', 'name']
     _export_formats = ['csv']
+
     def __init__(self, pareto_attributes: List[str], minimise: List[bool],
                  objectives: List[Objective], n_near_values: int,
                  objects: List[VectoredObject] = None, choice_args: List[str] = None,
@@ -179,13 +157,13 @@ class Catalog(DessiaObject):
 
         :return: List of displays dictionnaries
         """
-        filters = [{'attribute' : arg, 'operator' : 'gt', 'bound' : 0}\
-                   for arg, value in self.objects[0].__dict__.items()\
-                   if arg != 'name' and not isinstance(value, str)\
-                       and not hasattr(self.__class__, arg)\
-                       and arg in self.choice_args]
+        filters = [{'attribute': arg, 'operator': 'gt', 'bound': 0} \
+                   for arg, value in self.objects[0].__dict__.items() \
+                   if arg != 'name' and not isinstance(value, str) \
+                   and not hasattr(self.__class__, arg) \
+                   and arg in self.choice_args]
 
-        values = [{f['attribute'] : getattr(o, f['attribute']) for f in filters}\
+        values = [{f['attribute']: getattr(o, f['attribute']) for f in filters} \
                   for o in self.objects]
 
         # Pareto
@@ -212,25 +190,25 @@ class Catalog(DessiaObject):
         # Dominated points
         dominated_values = [(i, value) for i, value in enumerate(values)
                             if not pareto_indices[i] and i not in already_used]
-        datasets = [{'label' : 'Dominated points',
-                     'color' : "#99b4d6",
-                     'values' : dominated_values}]
+        datasets = [{'label': 'Dominated points',
+                     'color': "#99b4d6",
+                     'values': dominated_values}]
 
         # Pareto
         if self.enable_pareto:
-            pareto_values = [(i, value) for i, value in enumerate(values)\
+            pareto_values = [(i, value) for i, value in enumerate(values) \
                              if pareto_indices[i] and i not in already_used]
-            datasets.append({'label' : 'Pareto frontier',
-                             'color' : '#ffcc00',
-                             'values' : pareto_values})
+            datasets.append({'label': 'Pareto frontier',
+                             'color': '#ffcc00',
+                             'values': pareto_values})
 
         # Objectives
         if self.enable_objectives:
             near_values = [[(i, value) for i, value in enumerate(values) if i in near_indices]
                            for near_indices in all_near_indices]
-            near_datasets = [{'label' : 'Near Values ' + str(i),
-                              'color' : None,
-                              'values' : nv} for i, nv in enumerate(near_values)]
+            near_datasets = [{'label': 'Near Values ' + str(i),
+                              'color': None,
+                              'values': nv} for i, nv in enumerate(near_values)]
             datasets.extend(near_datasets)
 
         # Displays
@@ -240,7 +218,7 @@ class Catalog(DessiaObject):
                      'references_attribute': 'objects'}]
         return displays
 
-    def export_csv(self, attribute_name:str, indices:List[int], file:str):
+    def export_csv(self, attribute_name: str, indices: List[int], file: str):
         """
         Exports a reduced list of objects to .csv file
 
@@ -252,7 +230,7 @@ class Catalog(DessiaObject):
         :param file: Target file
         """
         if self._init_variables is not None:
-            attributes = list(self._init_variables.keys()) # !!! Unordered
+            attributes = list(self._init_variables.keys())  # !!! Unordered
             attribute = getattr(self, attribute_name)
             lines = [attribute[i].to_array() for i in indices]
             array = np.array(lines)
@@ -262,8 +240,7 @@ class Catalog(DessiaObject):
         msg += ' in order to be exportable'
         raise ValueError(msg)
 
-
-    def parameters(self, argnames:List[str]):
+    def parameters(self, argnames: List[str]):
         """
         Computes Parameter objects from catalog structural data
 
@@ -275,11 +252,25 @@ class Catalog(DessiaObject):
         """
         parameters = []
         for arg in argnames:
-            values = [getattr(o, arg) for o in self.objects]
+            values = self.parameter_values(arg)
             parameters.append(Parameter(lower_bound=min(values),
                                         upper_bound=max(values),
                                         name=arg))
         return parameters
+
+    def parameter_values(self, parameter_name):
+        return [getattr(o, parameter_name) for o in self.objects]
+
+    def mean(self, parameter):
+        values = self.parameter_values(parameter.name)
+        return sum(values)/len(values)
+
+    # def mean_values(self, argnames: List[str]):
+    #     means = []
+    #     for arg in argnames:
+    #         values = [getattr(o, arg) for o in self.objects]
+    #         means.append(sum(values)/len(values))
+    #     return means
 
     def build_costs(self):
         """
@@ -316,11 +307,12 @@ class Catalog(DessiaObject):
     #     :return: List of float. Ratings to the applied objective
     #     """
     #     ratings = objective.apply_to_catalog(self)
-        # parameters = self.parameters(objective.coeff_names)
-        # ratings = [objective.apply(o, parameters) for o in self.objects]
-        # return ratings
+    # parameters = self.parameters(objective.coeff_names)
+    # ratings = [objective.apply(o, parameters) for o in self.objects]
+    # return ratings
 
-def pareto_frontier(catalog:Catalog):
+
+def pareto_frontier(catalog: Catalog):
     """
     Find the pareto-efficient points
 
@@ -337,7 +329,8 @@ def pareto_frontier(catalog:Catalog):
             is_efficient[index] = True
     return is_efficient
 
-def from_csv(filename:str, class_:type=VectoredObject, end:int=None, remove_duplicates:bool=False):
+
+def from_csv(filename: str, class_: type = VectoredObject, end: int = None, remove_duplicates: bool = False):
     """
     Generates MBSEs from given .csv file.
     """
