@@ -24,7 +24,7 @@ steps:
 
 - name: push opensource from sdist
   image: alpine/git
-  trigger:
+  when:
     branch: 
     - master
     event: 
@@ -46,7 +46,7 @@ steps:
 
 - name: copy tag to opensource
   image: alpine/git
-  trigger:
+  when:
     event:
     - tag
   commands:
@@ -63,7 +63,7 @@ steps:
 
 - name: upload sdist to seafile
   image: dessia/drone-seafile
-  trigger:
+  when:
     branch:
     - master
     event: 
@@ -78,7 +78,7 @@ steps:
     root_directory: /dessia-common/
 
 - name: notify
-  trigger:
+  when:
     status:
     - failure
   image: drillster/drone-email
