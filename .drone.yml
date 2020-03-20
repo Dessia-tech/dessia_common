@@ -43,6 +43,24 @@ steps:
   - if ! [[ -z $(git status -s -uno) ]]; then git commit -m "Automated commit from "${DRONE_COMMIT_MESSAGE##\"%%\\n\"}; fi
   - git push origin from_proprietary
 
+- name: copy tag to opensource
+  when:
+    branch:
+    - master
+    event:
+    - tag
+  commands:
+  - git clone https://gitea.dessia.tech/OpenSource/dessia-common.git git-opensource
+  - cd git-opensource
+  - git branch from_proprietary
+  - git checkout from_proprietary
+  - git pull origin from_proprietary
+  - git config --global user.email "root@dessia.tech"
+  - git config --global user.name "Root commit bot"
+  - git tag -a ${DRONE_TAG} -m ${DRONE_TAG}
+  - git push origin --tags
+
+
 - name: upload sdist to seafile
   image: dessia/drone-seafile
   when:
