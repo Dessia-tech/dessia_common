@@ -6,7 +6,7 @@ Created on Wed Feb 19 15:56:12 2020
 @author: jezequel
 """
 
-from typing import List, Tuple
+from typing import List
 import numpy as np
 import pandas as pd
 from dessia_common import DessiaObject, Parameter
@@ -76,19 +76,19 @@ class Objective(DessiaObject):
 
         DessiaObject.__init__(self, name=name)
 
-    def apply(self, vectored_object: VectoredObject):
-        """
-        Applies objective function to given vectored object
-
-        :param vectored_object: Vectored object on which to apply objective
-        :type vectored_object: VectoredObject
-
-        :return: float, Rating of given object according to this objective
-        """
-        objectives = [getattr(vectored_object, arg) * coeff
-                      for arg, coeff in zip(self.coeff_names, self.coeff_values)]
-        objective = sum(objectives)
-        return objective
+    # def apply(self, vectored_object: VectoredObject):
+    #     """
+    #     Applies objective function to given vectored object
+    #
+    #     :param vectored_object: Vectored object on which to apply objective
+    #     :type vectored_object: VectoredObject
+    #
+    #     :return: float, Rating of given object according to this objective
+    #     """
+    #     objectives = [getattr(vectored_object, arg) * coeff
+    #                   for arg, coeff in zip(self.coeff_names, self.coeff_values)]
+    #     objective = sum(objectives)
+    #     return objective
 
     def apply_to_catalog(self, catalog):
         if self.scaled:
@@ -134,12 +134,12 @@ class Catalog(DessiaObject):
 
     def __init__(self, pareto_attributes: List[str], minimise: List[bool],
                  objectives: List[Objective], n_near_values: int,
-                 objects: List[VectoredObject] = None, choice_args: List[str] = None,
+                 array: np.ndarray, choice_args: List[str] = None,
                  enable_pareto: bool = True, enable_objectives: bool = True,
                  name: str = ''):
         DessiaObject.__init__(self, name=name)
 
-        self.objects = objects
+        self.array = array
         self.choice_args = choice_args
 
         self.pareto_attributes = pareto_attributes
@@ -157,13 +157,13 @@ class Catalog(DessiaObject):
 
         :return: List of displays dictionnaries
         """
-        filters = [{'attribute': arg, 'operator': 'gt', 'bound': 0} \
-                   for arg, value in self.objects[0].__dict__.items() \
-                   if arg != 'name' and not isinstance(value, str) \
-                   and not hasattr(self.__class__, arg) \
+        filters = [{'attribute': arg, 'operator': 'gt', 'bound': 0}
+                   for arg, value in self.objects[0].__dict__.items()
+                   if arg != 'name' and not isinstance(value, str)
+                   and not hasattr(self.__class__, arg)
                    and arg in self.choice_args]
 
-        values = [{f['attribute']: getattr(o, f['attribute']) for f in filters} \
+        values = [{f['attribute']: getattr(o, f['attribute']) for f in filters}
                   for o in self.objects]
 
         # Pareto
@@ -196,7 +196,7 @@ class Catalog(DessiaObject):
 
         # Pareto
         if self.enable_pareto:
-            pareto_values = [(i, value) for i, value in enumerate(values) \
+            pareto_values = [(i, value) for i, value in enumerate(values)
                              if pareto_indices[i] and i not in already_used]
             datasets.append({'label': 'Pareto frontier',
                              'color': '#ffcc00',
@@ -222,7 +222,7 @@ class Catalog(DessiaObject):
         """
         Exports a reduced list of objects to .csv file
 
-        :param attibute_name: Name of the attribute in which the list is stored
+        :param attribute_name: Name of the attribute in which the list is stored
         :type attribute_name: str
         :param indices: List of integers that represents selected indices of object
                         in attribute_name sequence
@@ -316,7 +316,7 @@ def pareto_frontier(catalog: Catalog):
     """
     Find the pareto-efficient points
 
-    :param costs: An (n_points, n_costs) array
+    :param catalog: Catalog object on which to apply pareto_frontier computation
     :return: A (n_points, ) boolean array, indicating whether each point is Pareto efficient
     """
     costs = catalog.build_costs()
@@ -330,23 +330,30 @@ def pareto_frontier(catalog: Catalog):
     return is_efficient
 
 
-def from_csv(filename: str, class_: type = VectoredObject, end: int = None, remove_duplicates: bool = False):
+def from_csv(filename: str, end: int = None, remove_duplicates: bool = False):
     """
     Generates MBSEs from given .csv file.
     """
     array = np.genfromtxt(filename, dtype=None, delimiter=',', names=True, encoding=None)
-
-    objects = []
+    variables = [v for v in array.dtype.fields.keys()]
+    lines = []
     for i, line in enumerate(array):
         if end is not None and i >= end:
             break
-        kwargs = {}
-        for variable_name in array.dtype.fields.keys():
-            pyval = line[variable_name].item()
-            if isinstance(pyval, bytes):
-                pyval = str(pyval)
-            kwargs[variable_name] = pyval
-        object_ = class_(name='object' + str(i), **kwargs)
-        if not remove_duplicates or (remove_duplicates and object_ not in objects):
-            objects.append(object_)
-    return objects
+        # for variable in array.dtype.fields.keys():
+            # pyval = line[variable].item()
+            # if isinstance(pyval, bytes):
+            #     pyval = str(pyval)
+        if not remove_duplicates or (remove_duplicates and line.tolist() not in lines):
+            lines.append(line.tolist())
+    generated_array = np.array(lines)
+
+    #     for variable_name in array.dtype.fields.keys():
+    #         pyval = line[variable_name].item()
+    #         if isinstance(pyval, bytes):
+    #             pyval = str(pyval)
+    #         kwargs[variable_name] = pyval
+    #     # object_ = class_(name='object' + str(i), **kwargs)
+    #     if not remove_duplicates or (remove_duplicates and object_ not in objects):
+    #         objects.append(object_)
+    return generated_array, variables
