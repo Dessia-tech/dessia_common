@@ -112,6 +112,7 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
             if value != other_value:
                 return False
         return True
+    
 
     def __hash__(self):
         if not self._generic_eq:
@@ -760,13 +761,15 @@ def deserialize(serialized_element):
 
 
 TYPES_FROM_STRING = {'unicode': str,
-                     'float': str,
-                     'int': int}
+                     'str': str,
+                     'float': float,
+                     'int': int,
+                     'bool': bool}
 
 
 def type_from_annotation(type_, module):
     """
-    Clean up a proposed type if there are strigified
+    Clean up a proposed type if there are stringified
     """
     if type(type_) == str:
         # Evaluating types
@@ -774,5 +777,5 @@ def type_from_annotation(type_, module):
             type_ = TYPES_FROM_STRING[type_]
         else:
             # Evaluating
-            type_ = getattr(import_module(module), type_)
+            type_ = getattr(import_module(module), type_)   
     return type_
