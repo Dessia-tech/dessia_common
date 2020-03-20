@@ -5,19 +5,19 @@ name: default
 
 steps:
 - name: install and run scripts
-  image: python:3
+  image: python:3.7
   commands:
   - git fetch --tags
   - python setup.py install
   - python scripts/dessia_object.py
 
 - name: develop
-  image: python:3
+  image: python:3.7
   commands:
   - python setup.py develop
 
 - name: generate sdist
-  image: python:3
+  image: python:3.7
   commands:
   - git fetch --tags
   - python setup.py sdist
@@ -39,9 +39,29 @@ steps:
   - git config --global user.name "Root commit bot"
   - tar -vxf ../dist/*.tar.gz --strip-components=1 -C .
   - git add -A
+  - git reset -- .drone.yml
   - echo ${DRONE_COMMIT_MESSAGE##\"%%\\n\"}
   - if ! [[ -z $(git status -s -uno) ]]; then git commit -m "Automated commit from "${DRONE_COMMIT_MESSAGE##\"%%\\n\"}; fi
   - git push origin from_proprietary
+
+- name: copy tag to opensource
+  image: alpine/git
+  when:
+    branch:
+    - master
+    event:
+    - tag
+  commands:
+  - git clone https://gitea.dessia.tech/OpenSource/dessia-common.git git-opensource
+  - cd git-opensource
+  - git branch from_proprietary
+  - git checkout from_proprietary
+  - git pull origin from_proprietary
+  - git config --global user.email "root@dessia.tech"
+  - git config --global user.name "Root commit bot"
+  - git tag -a ${DRONE_TAG} -m ${DRONE_TAG}
+  - git push origin --tags
+
 
 - name: upload sdist to seafile
   image: dessia/drone-seafile
