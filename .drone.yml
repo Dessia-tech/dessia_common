@@ -25,8 +25,10 @@ steps:
 - name: push opensource from sdist
   image: alpine/git
   trigger:
-    branch: master
-    event: push
+    branch: 
+    - master
+    event: 
+    - push
   commands:
   - git clone https://gitea.dessia.tech/OpenSource/dessia-common.git git-opensource
   - cd git-opensource
@@ -45,7 +47,8 @@ steps:
 - name: copy tag to opensource
   image: alpine/git
   trigger:
-    event: tag
+    event:
+    - tag
   commands:
   - git clone https://gitea.dessia.tech/OpenSource/dessia-common.git git-opensource
   - cd git-opensource
@@ -61,8 +64,10 @@ steps:
 - name: upload sdist to seafile
   image: dessia/drone-seafile
   trigger:
-    branch: master
-    event: push
+    branch:
+    - master
+    event: 
+    - push
   settings:
     server_url: https://partage.dessia.tech
     repo_id:
@@ -74,7 +79,8 @@ steps:
 
 - name: notify
   trigger:
-    status: failure
+    status:
+    - failure
   image: drillster/drone-email
   settings:
     host: mail.dessia.tech
