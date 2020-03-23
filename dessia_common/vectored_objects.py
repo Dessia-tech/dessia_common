@@ -134,7 +134,7 @@ class Catalog(DessiaObject):
 
     def __init__(self, pareto_attributes: List[str], minimise: List[bool],
                  objectives: List[Objective], n_near_values: int,
-                 array: np.ndarray, choice_args: List[str] = None,
+                 array: List[List[float]], choice_args: List[str] = None,
                  enable_pareto: bool = True, enable_objectives: bool = True,
                  name: str = ''):
         DessiaObject.__init__(self, name=name)
