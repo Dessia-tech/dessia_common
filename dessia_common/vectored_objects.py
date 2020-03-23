@@ -137,8 +137,7 @@ class Catalog(DessiaObject):
     """
     _generic_eq = True
     _standalone_in_db = True
-    _editable_variables = ['minimise', 'pareto_attributes', 'n_near_values',
-                           'objectives', 'enable_pareto', 'enable_objectives', 'name']
+    _non_editable_attributes = ['array', 'variables', 'choice_variables']
     _export_formats = ['csv']
 
     def __init__(self, array: List[List[float]], variables: List[str],
