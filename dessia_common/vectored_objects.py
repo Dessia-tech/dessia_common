@@ -12,43 +12,43 @@ import pandas as pd
 from dessia_common import DessiaObject, Parameter
 
 
-class VectoredObject(DessiaObject):
-    """
-    Defines a "vectored object". This is a vectored representation of a structured data value.
-    It is the MBSE view of a generically structured object.
-
-    :param name: Name of instance.
-    :type name: str
-    :param kwargs: Dictionnary that associates variable names to their values for this instance.
-    """
-    _generic_eq = True
-    _standalone_in_db = True
-
-    def __init__(self, name: str = '', **kwargs):
-        DessiaObject.__init__(self, name=name, **kwargs)
-
-    def scale(self, parameters: List[Parameter]):  # , bounds:List[Tuple[float, float]]):
-        """
-        Computes an adimensionnal vector representing the vectored object.
-
-        :param parameters: List of Parameter objects
-        :type parameters: [Parameter]
-
-        :return: Vector of dimension n, n being the dimension of the structural data
-        """
-        scaled = [p.normalize(getattr(self, p.name)) for p in parameters]
-        return scaled
-
-    def mean_scale(self, parameters, means):
-        scaled = [getattr(self, p.name)/m for p, m in zip(parameters, means)]
-        return scaled
-
-    def to_array(self):
-        """
-        TODO
-        """
-        values = [getattr(self, name) for name in self._init_variables]
-        return values
+# class VectoredObject(DessiaObject):
+#     """
+#     Defines a "vectored object". This is a vectored representation of a structured data value.
+#     It is the MBSE view of a generically structured object.
+#
+#     :param name: Name of instance.
+#     :type name: str
+#     :param kwargs: Dictionnary that associates variable names to their values for this instance.
+#     """
+#     _generic_eq = True
+#     _standalone_in_db = True
+#
+#     def __init__(self, name: str = '', **kwargs):
+#         DessiaObject.__init__(self, name=name, **kwargs)
+#
+#     def scale(self, parameters: List[Parameter]):  # , bounds:List[Tuple[float, float]]):
+#         """
+#         Computes an adimensionnal vector representing the vectored object.
+#
+#         :param parameters: List of Parameter objects
+#         :type parameters: [Parameter]
+#
+#         :return: Vector of dimension n, n being the dimension of the structural data
+#         """
+#         scaled = [p.normalize(getattr(self, p.name)) for p in parameters]
+#         return scaled
+#
+#     def mean_scale(self, parameters, means):
+#         scaled = [getattr(self, p.name)/m for p, m in zip(parameters, means)]
+#         return scaled
+#
+#     def to_array(self):
+#         """
+#         TODO
+#         """
+#         values = [getattr(self, name) for name in self._init_variables]
+#         return values
 
 
 class Objective(DessiaObject):
@@ -91,16 +91,25 @@ class Objective(DessiaObject):
     #     return objective
 
     def apply_to_catalog(self, catalog):
-        if self.scaled:
-            parameters = catalog.parameters(self.coeff_names)
-            means = [catalog.mean(p) for p in parameters]
-            ratings = []
-            for vectored_object in catalog.objects:
-                values = vectored_object.mean_scale(parameters, means)
-                objective = sum([v * coeff for v, coeff in zip(values, self.coeff_values)])
-                ratings.append(objective)
-            return ratings
-        ratings = [self.apply(vo) for vo in catalog.objects]
+        parameters = catalog.parameters(self.coeff_names)
+        ratings = []
+        means = catalog.means([p.name for p in parameters])
+        for line in catalog.array:
+            values = [catalog.get_value_by_name(line, p.name) for p in parameters]
+            objective = sum([v * c / m if self.scaled else v * c for v, c, m in zip(values, self.coeff_values, means)])
+            ratings.append(objective)
+
+        # if self.scaled:
+        #     # means = catalog.means([p.name for p in parameters])
+        #     for line in catalog.array:
+        #         values = [catalog.get_value_by_name(line, p.name) for p in parameters]
+        #         objective = sum([v * c / m for v, c, m in zip(values, self.coeff_values, means)])
+        #         ratings.append(objective)
+        #     return ratings
+        # for line in catalog.array:
+        #     values = [catalog.get_value_by_name(line, p.name) for p in parameters]
+        #     objective = sum([v * c for v, c in zip(values, self.coeff_values)])
+        #     ratings.append(objective)
         return ratings
 
 
@@ -118,10 +127,10 @@ class Catalog(DessiaObject):
     :type objectives: [Objective]
     :param n_near_values: Integer that gives the number of best solutions given by objectives
     :type n_near_values: int
-    :param objects: List of vectored objects.
-    :type objects: [VectoredObject]
-    :param choice_args: List of string. List of variable names that represent choice arguments
-    :type choice_args: [str]
+    # :param objects: List of vectored objects.
+    # :type objects: [VectoredObject]
+    :param choice_variables: List of string. List of variable names that represent choice arguments
+    :type choice_variables: [str]
     :param name: Name of the catalog
     :type name: str
 
@@ -132,15 +141,17 @@ class Catalog(DessiaObject):
                            'objectives', 'enable_pareto', 'enable_objectives', 'name']
     _export_formats = ['csv']
 
-    def __init__(self, pareto_attributes: List[str], minimise: List[bool],
+    def __init__(self, array: List[List[float]], variables: List[str],
+                 pareto_attributes: List[str], minimise: List[bool],
                  objectives: List[Objective], n_near_values: int,
-                 array: List[List[float]], choice_args: List[str] = None,
+                 choice_variables: List[str] = None,
                  enable_pareto: bool = True, enable_objectives: bool = True,
                  name: str = ''):
         DessiaObject.__init__(self, name=name)
 
         self.array = array
-        self.choice_args = choice_args
+        self.variables = variables
+        self.choice_variables = choice_variables
 
         self.pareto_attributes = pareto_attributes
         self.minimise = minimise
@@ -157,14 +168,11 @@ class Catalog(DessiaObject):
 
         :return: List of displays dictionnaries
         """
-        filters = [{'attribute': arg, 'operator': 'gt', 'bound': 0}
-                   for arg, value in self.objects[0].__dict__.items()
-                   if arg != 'name' and not isinstance(value, str)
-                   and not hasattr(self.__class__, arg)
-                   and arg in self.choice_args]
+        filters = [{'attribute': variable, 'operator': 'gt', 'bound': 0} for j, variable in enumerate(self.variables)
+                   if not isinstance(self.array[0][j], str) and variable in self.choice_variables]
 
-        values = [{f['attribute']: getattr(o, f['attribute']) for f in filters}
-                  for o in self.objects]
+        values = [{f['attribute']: self.get_value_by_name(line, f['attribute']) for f in filters}
+                  for line in self.array]
 
         # Pareto
         pareto_indices = pareto_frontier(catalog=self)
@@ -240,37 +248,43 @@ class Catalog(DessiaObject):
         msg += ' in order to be exportable'
         raise ValueError(msg)
 
-    def parameters(self, argnames: List[str]):
+    def parameters(self, variables: List[str]):
         """
         Computes Parameter objects from catalog structural data
 
-        :param argnames: List of string. Names of arguments of which
+        :param variables: List of string. Names of arguments of which
                          it should create a parameter.
-        :type argnames: [string]
+        :type variables: [string]
 
         :return: List of Parameter objects
         """
         parameters = []
-        for arg in argnames:
-            values = self.parameter_values(arg)
+        for variable in variables:
+            values = self.get_values(variable)
             parameters.append(Parameter(lower_bound=min(values),
                                         upper_bound=max(values),
-                                        name=arg))
+                                        name=variable))
         return parameters
 
-    def parameter_values(self, parameter_name):
-        return [getattr(o, parameter_name) for o in self.objects]
+    def get_values(self, variable):
+        values = [self.get_value_by_name(line, variable) for line in self.array]
+        return values
 
-    def mean(self, parameter):
-        values = self.parameter_values(parameter.name)
-        return sum(values)/len(values)
+    def get_value_by_name(self, line, name):
+        j = self.variables.index(name)
+        value = line[j]
+        return value
 
-    # def mean_values(self, argnames: List[str]):
-    #     means = []
-    #     for arg in argnames:
-    #         values = [getattr(o, arg) for o in self.objects]
-    #         means.append(sum(values)/len(values))
-    #     return means
+    def mean(self, variable):
+        values = self.get_values(variable)
+        mean = sum(values)/len(values)
+        return mean
+
+    def means(self, variables: List[str]):
+        means = []
+        for variable in variables:
+            means.append(self.mean(variable))
+        return means
 
     def build_costs(self):
         """
@@ -290,26 +304,15 @@ class Catalog(DessiaObject):
         :return: A(n_points, n_costs)
         """
         pareto_parameters = self.parameters(self.pareto_attributes)
-        costs = np.zeros((len(self.objects), len(pareto_parameters)))
-        for i, object_ in enumerate(self.objects):
+        costs = np.zeros((len(self.array), len(pareto_parameters)))
+        for i, line in enumerate(self.array):
             for j, parameter in enumerate(pareto_parameters):
                 if self.minimise[j]:
-                    value = getattr(object_, parameter.name) - parameter.lower_bound
+                    value = self.get_value_by_name(line, parameter.name) - parameter.lower_bound
                 else:
-                    value = parameter.upper_bound - getattr(object_, parameter.name)
+                    value = parameter.upper_bound - self.get_value_by_name(line, parameter.name)
                 costs[(i, j)] = value
         return costs
-
-    # def apply_objective(self, objective:Objective):
-    #     """
-    #     Given an Objective object, applies it to every object of the catalog.
-
-    #     :return: List of float. Ratings to the applied objective
-    #     """
-    #     ratings = objective.apply_to_catalog(self)
-    # parameters = self.parameters(objective.coeff_names)
-    # ratings = [objective.apply(o, parameters) for o in self.objects]
-    # return ratings
 
 
 def pareto_frontier(catalog: Catalog):
@@ -346,7 +349,7 @@ def from_csv(filename: str, end: int = None, remove_duplicates: bool = False):
             #     pyval = str(pyval)
         if not remove_duplicates or (remove_duplicates and line.tolist() not in lines):
             lines.append(line.tolist())
-    generated_array = np.array(lines)
+    # generated_array = np.array(lines)
 
     #     for variable_name in array.dtype.fields.keys():
     #         pyval = line[variable_name].item()
@@ -356,4 +359,5 @@ def from_csv(filename: str, end: int = None, remove_duplicates: bool = False):
     #     # object_ = class_(name='object' + str(i), **kwargs)
     #     if not remove_duplicates or (remove_duplicates and object_ not in objects):
     #         objects.append(object_)
-    return generated_array, variables
+    return lines, variables
+
