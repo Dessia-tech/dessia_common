@@ -159,7 +159,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
                                order, editable=None, title=None):
 
     key, value = annotation
-    if type(value) == str:
+    if isinstance(value, str):
         raise ValueError
         
     if title is None:
@@ -326,7 +326,7 @@ def deserialize_argument(type_, argument):
             if isinstance(argument, type_):
                 deserialized_argument = argument
             else:
-                if type(argument) == int and type_ == float:
+                if isinstance(argument, int) and type_ == float:
                     # explicit conversion in this case
                     deserialized_argument = float(argument)
                 else:

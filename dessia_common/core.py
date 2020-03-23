@@ -103,6 +103,7 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
             if value != other_value:
                 return False
         return True
+    
 
     def __hash__(self):
         if not self._generic_eq:
@@ -191,7 +192,7 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
 
     @classmethod
     def load_from_file(cls, filepath):
-        if type(filepath) is str:
+        if isinstance(filepath, str):
             with open(filepath, 'r') as file:
                 dict_ = json.load(file)
         else:
@@ -649,7 +650,7 @@ def deepcopy_value(value, memo):
     except TypeError:
         pass
 
-    if type(value) == type:# For class
+    if isinstance(value, type):# For class
         return value
     elif hasattr(value, '__deepcopy__'):
         try:
@@ -659,7 +660,7 @@ def deepcopy_value(value, memo):
         memo[value] = copied_value
         return copied_value
     else:
-        if type(value) == list:
+        if isinstance(value, list):
             copied_list = []
             for v in value:
                 cv = deepcopy_value(v, memo=memo)
@@ -680,8 +681,7 @@ def serialize_typing(typing_):
         else:
             full_argname = arg.__module__ + '.' + arg.__name__
         return 'List[' + full_argname + ']'
-
-    if type(typing_) == type:
+    if isinstance(typing_, type):
         return typing_.__module__ + '.' + typing_.__name__
 
     raise NotImplementedError('{} of type {}'.format(typing_, type(typing_)))
@@ -716,14 +716,16 @@ def deserialize(serialized_element):
 
 
 TYPES_FROM_STRING = {'unicode': str,
-                     'float': str,
-                     'int': int}
+                     'str': str,
+                     'float': float,
+                     'int': int,
+                     'bool': bool}
 
 def type_from_annotation(type_, module):
     """
-    Clean up a proposed type if there are strigified
+    Clean up a proposed type if there are stringified
     """
-    if type(type_) == str:
+    if isinstance(type_, str):
         # Evaluating types
         if type_ in TYPES_FROM_STRING:
             type_ = TYPES_FROM_STRING[type_]
