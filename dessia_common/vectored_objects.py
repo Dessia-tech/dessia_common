@@ -25,7 +25,7 @@ class VectoredObject(DessiaObject):
     def __init__(self, name: str = '', **kwargs):
         DessiaObject.__init__(self, name=name, **kwargs)
 
-    def vectorize(self, parameters:List[Parameter], coefficients:List[float], bounds:List[Tuple[float, float]]):
+    def scale(self, parameters:List[Parameter]): #, bounds:List[Tuple[float, float]]):
         """
         Computes an adimensionnal vector representing the vectored object.
 
@@ -34,17 +34,18 @@ class VectoredObject(DessiaObject):
 
         :return: Vector of dimension n, n being the dimension of the structural data
         """
-        vector = []
-        if coefficients is None:
-            coefficients = [1]*len(parameters)
-        for parameter, coefficient, interval in zip(parameters, coefficients, bounds):
-            value = getattr(self, parameter.name)
-            if (interval[0] is not None and value < interval[0])\
-                or (interval[1] is not None and value > interval[1]):
-                return None
-            normalized_value = coefficient*parameter.normalize(value)
-            vector.append(normalized_value)
-        return vector
+        scaled = [p.normalize(getattr(self, p.name)) for p in parameters]
+        return scaled
+        # vector = []
+        # for parameter, interval in zip(parameters, bounds):
+        #     for parameter in parameters:
+        #         value = getattr(self, parameter.name)
+        #         if (interval[0] is not None and value < interval[0])\
+        #             or (interval[1] is not None and value > interval[1]):
+        #             return None
+        #         normalized_value = parameter.normalize(value)
+        #         vector.append(normalized_value)
+        # return vector
 
     def to_array(self):
         """
@@ -68,9 +69,13 @@ class Objective(DessiaObject):
     """
     _generic_eq = True
     _standalone_in_db = False
-    def __init__(self, coeff_names: List[str], coeff_values: List[float], name: str = ''):
+    def __init__(self, coeff_names: List[str], coeff_values: List[float],
+                 scaled: bool = False, name: str = ''):
         self.coeff_names = coeff_names
         self.coeff_values = coeff_values
+        # self.coeff_min = coeff_min
+
+        self.scaled = scaled
 
         DessiaObject.__init__(self, name=name)
 
@@ -83,10 +88,43 @@ class Objective(DessiaObject):
 
         :return: float, Rating of given object according to this objective
         """
-        objectives = [getattr(vectored_object, arg)*coefficient
-                      for arg, coefficient in zip(self.coeff_names, self.coeff_values)]
+        objectives = [getattr(vectored_object, arg)*coeff
+                      for arg, coeff in zip(self.coeff_names, self.coeff_values)]
         objective = sum(objectives)
         return objective
+
+    def apply_to_catalog(self, catalog):
+        parameters = catalog.parameters(self.coeff_names)
+        # ratings = []
+        # for vectored_object in catalog.objects:
+        #     rating = 0
+        #     for param, coeff, minimise in zip(parameters, self.coeff_values, self.coeff_min):
+        #         value = getattr(vectored_object, param.name)
+        #         if self.scaled:
+        #             value = parameter.normalize(value)
+        #             if minimise:
+        #                 rating += (1 - value)*coeff
+        #             else:
+        #                 rating += value*coeff
+        #         else:
+        #             if minimise:
+        #                 rating += (param.upper_bound - value)*coeff
+        #             else:
+        #                 rating += (value - param.lower_bound)*coeff
+        #     ratings.append(rating)
+
+
+
+        if self.scaled:
+            parameters = catalog.parameters(self.coeff_names)
+            ratings = []
+            for vectored_object in catalog.objects:
+                values = vectored_object.scale(parameters)
+                objective = sum([v*coeff for v, coeff in zip(values, self.coeff_values)])
+                ratings.append(objective)
+            return ratings
+        ratings = [self.apply(vo) for vo in catalog.objects]
+        return ratings
 
 
 class Catalog(DessiaObject):
@@ -157,16 +195,18 @@ class Catalog(DessiaObject):
         already_used = []
         if self.enable_objectives:
             for objective in self.objectives:
-                ratings = [(i, objective.apply(o)) for i, o in enumerate(self.objects)]
-                i = 0
+                ratings = objective.apply_to_catalog(self)
+                indexed_ratings = [(i, r) for i, r in enumerate(ratings)]
+                # ratings = [(i, objective.apply(o)) for i, o in enumerate(self.objects)]
+                count = 0
                 near_indices = []
-                while i < self.n_near_values and ratings:
-                    new_min_index = ratings.index(min(ratings, key=lambda t: t[1]))
-                    new_min = ratings.pop(new_min_index)
-                    if new_min[0] not in already_used:
-                        near_indices.append(new_min[0])
-                        already_used.append(new_min[0])
-                        i += 1
+                while count < self.n_near_values and indexed_ratings:
+                    min_index = indexed_ratings.index(min(indexed_ratings, key=lambda t: t[1]))
+                    min_tuple = indexed_ratings.pop(min_index)
+                    if min_tuple[0] not in already_used:
+                        near_indices.append(min_tuple[0])
+                        already_used.append(min_tuple[0])
+                        count += 1
                 all_near_indices.append(near_indices)
 
         # Dominated points
@@ -211,15 +251,16 @@ class Catalog(DessiaObject):
         :type indices: [int]
         :param file: Target file
         """
-        # attributes = ['e', 'tgte', 'h', 'ref', 'nw', 'REFrlt', 'NPSHeval',
-        #               'coutTotal_horsQuincaill', 'Fwrlt',
-        #               'radialSpringConfidenceRatio', 'Sk', 'contrainte', 'Sp']
-        attributes = list(self._init_variables.keys()) # !!! Unordered
-        attribute = getattr(self, attribute_name)
-        lines = [attribute[i].to_array() for i in indices]
-        array = np.array(lines)
-        data_frame = pd.DataFrame(array, columns=attributes)
-        data_frame.to_csv(file, index=False)
+        if self._init_variables is not None:
+            attributes = list(self._init_variables.keys()) # !!! Unordered
+            attribute = getattr(self, attribute_name)
+            lines = [attribute[i].to_array() for i in indices]
+            array = np.array(lines)
+            data_frame = pd.DataFrame(array, columns=attributes)
+            data_frame.to_csv(file, index=False)
+        msg = 'Class {} should implement _init_variables'.format(self.__class__)
+        msg += ' in order to be exportable'
+        raise ValueError(msg)
 
 
     def parameters(self, argnames:List[str]):
@@ -268,15 +309,16 @@ class Catalog(DessiaObject):
                 costs[(i, j)] = value
         return costs
 
-    def apply_objective(self, objective:Objective):
-        """
-        Given an Objective object, applies it to every object of the catalog.
+    # def apply_objective(self, objective:Objective):
+    #     """
+    #     Given an Objective object, applies it to every object of the catalog.
 
-        :return: List of float. Ratings to the applied objective
-        """
-        ratings = [objective.apply(o) for o in self.objects]
-        return ratings
-
+    #     :return: List of float. Ratings to the applied objective
+    #     """
+    #     ratings = objective.apply_to_catalog(self)
+        # parameters = self.parameters(objective.coeff_names)
+        # ratings = [objective.apply(o, parameters) for o in self.objects]
+        # return ratings
 
 def pareto_frontier(catalog:Catalog):
     """

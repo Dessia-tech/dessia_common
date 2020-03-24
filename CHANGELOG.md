@@ -24,11 +24,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - return & progress_callback removed from _method_jsonschema
 - copy as one DessiaObject method with deep attribute
 - _editable_variables to _non_editable_attributes
-
+- handling of new frontend display values
 
 ### Fixed
 - (Quickfix) Check if output_value is None
-
+- revert to working version of vectored_object scale
 
 ## [0.3.1]
 ### Added
