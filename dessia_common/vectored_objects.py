@@ -12,45 +12,6 @@ import pandas as pd
 from dessia_common import DessiaObject, Parameter
 
 
-# class VectoredObject(DessiaObject):
-#     """
-#     Defines a "vectored object". This is a vectored representation of a structured data value.
-#     It is the MBSE view of a generically structured object.
-#
-#     :param name: Name of instance.
-#     :type name: str
-#     :param kwargs: Dictionnary that associates variable names to their values for this instance.
-#     """
-#     _generic_eq = True
-#     _standalone_in_db = True
-#
-#     def __init__(self, name: str = '', **kwargs):
-#         DessiaObject.__init__(self, name=name, **kwargs)
-#
-#     def scale(self, parameters: List[Parameter]):  # , bounds:List[Tuple[float, float]]):
-#         """
-#         Computes an adimensionnal vector representing the vectored object.
-#
-#         :param parameters: List of Parameter objects
-#         :type parameters: [Parameter]
-#
-#         :return: Vector of dimension n, n being the dimension of the structural data
-#         """
-#         scaled = [p.normalize(getattr(self, p.name)) for p in parameters]
-#         return scaled
-#
-#     def mean_scale(self, parameters, means):
-#         scaled = [getattr(self, p.name)/m for p, m in zip(parameters, means)]
-#         return scaled
-#
-#     def to_array(self):
-#         """
-#         TODO
-#         """
-#         values = [getattr(self, name) for name in self._init_variables]
-#         return values
-
-
 class Objective(DessiaObject):
     """
     Defines an objective function
@@ -76,20 +37,6 @@ class Objective(DessiaObject):
 
         DessiaObject.__init__(self, name=name)
 
-    # def apply(self, vectored_object: VectoredObject):
-    #     """
-    #     Applies objective function to given vectored object
-    #
-    #     :param vectored_object: Vectored object on which to apply objective
-    #     :type vectored_object: VectoredObject
-    #
-    #     :return: float, Rating of given object according to this objective
-    #     """
-    #     objectives = [getattr(vectored_object, arg) * coeff
-    #                   for arg, coeff in zip(self.coeff_names, self.coeff_values)]
-    #     objective = sum(objectives)
-    #     return objective
-
     def apply_to_catalog(self, catalog):
         parameters = catalog.parameters(self.coeff_names)
         ratings = []
@@ -98,18 +45,6 @@ class Objective(DessiaObject):
             values = [catalog.get_value_by_name(line, p.name) for p in parameters]
             objective = sum([v * c / m if self.scaled else v * c for v, c, m in zip(values, self.coeff_values, means)])
             ratings.append(objective)
-
-        # if self.scaled:
-        #     # means = catalog.means([p.name for p in parameters])
-        #     for line in catalog.array:
-        #         values = [catalog.get_value_by_name(line, p.name) for p in parameters]
-        #         objective = sum([v * c / m for v, c, m in zip(values, self.coeff_values, means)])
-        #         ratings.append(objective)
-        #     return ratings
-        # for line in catalog.array:
-        #     values = [catalog.get_value_by_name(line, p.name) for p in parameters]
-        #     objective = sum([v * c for v, c in zip(values, self.coeff_values)])
-        #     ratings.append(objective)
         return ratings
 
 
@@ -182,7 +117,6 @@ class Catalog(DessiaObject):
             for objective in self.objectives:
                 ratings = objective.apply_to_catalog(self)
                 indexed_ratings = [(i, r) for i, r in enumerate(ratings)]
-                # ratings = [(i, objective.apply(o)) for i, o in enumerate(self.objects)]
                 count = 0
                 near_indices = []
                 while count < self.n_near_values and indexed_ratings:
@@ -342,21 +276,7 @@ def from_csv(filename: str, end: int = None, remove_duplicates: bool = False):
     for i, line in enumerate(array):
         if end is not None and i >= end:
             break
-        # for variable in array.dtype.fields.keys():
-            # pyval = line[variable].item()
-            # if isinstance(pyval, bytes):
-            #     pyval = str(pyval)
         if not remove_duplicates or (remove_duplicates and line.tolist() not in lines):
             lines.append(line.tolist())
-    # generated_array = np.array(lines)
-
-    #     for variable_name in array.dtype.fields.keys():
-    #         pyval = line[variable_name].item()
-    #         if isinstance(pyval, bytes):
-    #             pyval = str(pyval)
-    #         kwargs[variable_name] = pyval
-    #     # object_ = class_(name='object' + str(i), **kwargs)
-    #     if not remove_duplicates or (remove_duplicates and object_ not in objects):
-    #         objects.append(object_)
     return lines, variables
 
