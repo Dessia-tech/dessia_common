@@ -129,33 +129,38 @@ class Catalog(DessiaObject):
                 all_near_indices.append(near_indices)
 
         # Dominated points
+        dominated_points = [i for i in range(len(values)) if not pareto_indices[i] and i not in already_used]
         dominated_values = [(i, value) for i, value in enumerate(values)
                             if not pareto_indices[i] and i not in already_used]
         datasets = [{'label': 'Dominated points',
                      'color': "#99b4d6",
-                     'values': dominated_values}]
+                     'values': dominated_points}]
 
         # Pareto
         if self.enable_pareto:
+            pareto_points = [i for i in range(len(values)) if pareto_indices[i]]
             pareto_values = [(i, value) for i, value in enumerate(values)
                              if pareto_indices[i] and i not in already_used]
             datasets.append({'label': 'Pareto frontier',
                              'color': '#ffcc00',
-                             'values': pareto_values})
+                             'values': pareto_points})
 
         # Objectives
         if self.enable_objectives:
+            near_points = [[i for i in range(len(values)) if i in near_indices]
+                           for near_indices in all_near_indices]
             near_values = [[(i, value) for i, value in enumerate(values) if i in near_indices]
                            for near_indices in all_near_indices]
             near_datasets = [{'label': 'Near Values ' + str(i),
                               'color': None,
-                              'values': nv} for i, nv in enumerate(near_values)]
+                              'values': nv} for i, nv in enumerate(near_points)]
             datasets.extend(near_datasets)
 
         # Displays
         displays = [{'angular_component': 'results',
                      'filters': filters,
                      'datasets': datasets,
+                     'values': values,
                      'references_attribute': 'objects'}]
         return displays
 
@@ -279,4 +284,3 @@ def from_csv(filename: str, end: int = None, remove_duplicates: bool = False):
         if not remove_duplicates or (remove_duplicates and line.tolist() not in lines):
             lines.append(line.tolist())
     return lines, variables
-
