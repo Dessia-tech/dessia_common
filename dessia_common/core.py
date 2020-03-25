@@ -601,6 +601,8 @@ def list_hash(list_):
             hash_ += list_hash(element)
         elif isinstance(element, dict):
             hash_ += dict_hash(element)
+        elif isinstance(element, str):
+            hash_ += sum([ord(e) for e in element])
         else:
             hash_ += hash(element)
     return hash_
