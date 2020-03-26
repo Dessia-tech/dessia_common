@@ -208,7 +208,6 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
         #                                     'order' : order,
         #                                     'title' : title})
         else:
-            print(value)
             # Dataclasses
             jsonschema_element[key] = jsonschema_from_dataclass(value)
             jsonschema_element[key].update({'title' : title,
