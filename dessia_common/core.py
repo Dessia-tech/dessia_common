@@ -200,7 +200,7 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
 
     @classmethod
     def load_from_file(cls, filepath):
-        if type(filepath) is str:
+        if isinstance(filepath, str):
             with open(filepath, 'r') as file:
                 dict_ = json.load(file)
         else:
@@ -259,9 +259,8 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
                 return vm.VolumeModel(self.volmdlr_primitives(frame=frame))
             except TypeError:
                 return vm.VolumeModel(self.volmdlr_primitives())
-
-        raise NotImplementedError(
-            'object of type {} does not implement volmdlr_primitives'.format(self.__class__.__name__))
+        msg = 'Object of type {} does not implement volmdlr_primitives'.format(self.__class__.__name__)
+        raise NotImplementedError(msg)
 
     def cad_export(self,
                    fcstd_filepath=None,
@@ -289,22 +288,18 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
 
     def _display_angular(self):
         display = []
-        # if hasattr(self, 'CADExport')\
-        # or hasattr(self, 'FreeCADExport'):
-        #     display.append({'angular_component': 'app-cad-viewer'})
-
         if hasattr(self, 'babylon_data'):
-            display.append({'angular_component': 'app-step-viewer',
-                            'data': self.babylon_data()})
-        elif hasattr(self, 'volmdlr_primitives') \
-                or (self.__class__.volmdlr_volume_model is not DessiaObject.volmdlr_volume_model):
+            display.append({'angular_component' : 'cad_viewer',
+                            'data' : self.babylon_data()})
+        elif hasattr(self, 'volmdlr_primitives')\
+        or (self.__class__.volmdlr_volume_model is not DessiaObject.volmdlr_volume_model):
             model = self.volmdlr_volume_model()
-            display.append({'angular_component': 'app-step-viewer',
-                            'data': model.babylon_data()})
+            display.append({'angular_component' : 'cad_viewer',
+                            'data' : model.babylon_data()})
 
         if hasattr(self, 'plot_data'):
-            display.append({'angular_component': 'app-d3-plot-data',
-                            'data': self.plot_data()})
+            display.append({'angular_component' : 'plot_data',
+                            'data' : self.plot_data()})
         return display
 
 
@@ -640,6 +635,8 @@ def list_hash(list_):
             hash_ += list_hash(element)
         elif isinstance(element, dict):
             hash_ += dict_hash(element)
+        elif isinstance(element, str):
+            hash_ += sum([ord(e) for e in element])
         else:
             hash_ += hash(element)
     return hash_
@@ -693,7 +690,7 @@ def deepcopy_value(value, memo):
     except TypeError:
         pass
 
-    if type(value) == type:  # For class
+    if isinstance(value, type):# For class
         return value
     elif hasattr(value, '__deepcopy__'):
         try:
@@ -703,7 +700,7 @@ def deepcopy_value(value, memo):
         memo[value] = copied_value
         return copied_value
     else:
-        if type(value) == list:
+        if isinstance(value, list):
             copied_list = []
             for v in value:
                 cv = deepcopy_value(v, memo=memo)
@@ -724,10 +721,8 @@ def serialize_typing(typing_):
         else:
             full_argname = arg.__module__ + '.' + arg.__name__
         return 'List[' + full_argname + ']'
-
-    if type(typing_) == type:
+    if isinstance(typing_, type):
         return typing_.__module__ + '.' + typing_.__name__
-
     raise NotImplementedError('{} of type {}'.format(typing_, type(typing_)))
 
 
@@ -772,11 +767,11 @@ def type_from_annotation(type_, module):
     """
     Clean up a proposed type if there are stringified
     """
-    if type(type_) == str:
+    if isinstance(type_, str):
         # Evaluating types
         if type_ in TYPES_FROM_STRING:
             type_ = TYPES_FROM_STRING[type_]
         else:
             # Evaluating
-            type_ = getattr(import_module(module), type_)   
+            type_ = getattr(import_module(module), type_)
     return type_

@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+
+## [0.3.3]
+## Added
+- WorkflowBlock 
+- Type checking in workflow
+- imposed variable values
+
+## [0.3.2]
 ### Added
 - Plot data in display of DessiaObject
 - Deprecation decorator
@@ -15,11 +24,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - return & progress_callback removed from _method_jsonschema
 - copy as one DessiaObject method with deep attribute
 - _editable_variables to _non_editable_attributes
-
+- handling of new frontend display values
 
 ### Fixed
 - (Quickfix) Check if output_value is None
-
+- revert to working version of vectored_object scale
 
 ## [0.3.1]
 ### Added
