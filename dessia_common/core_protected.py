@@ -193,6 +193,9 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
         jsonschema_element[key] = {'additionalItems' : False,
                                    'type' : 'array'}
         jsonschema_element[key]['items'] = items
+    elif hasattr(value, '_name') and value._name == 'Dict':
+        # Dynamially created dict structure
+        print()
     else:
         if hasattr(value, '_standalone_in_db'): # and value._standalone_in_db:
             # Dessia custom classes

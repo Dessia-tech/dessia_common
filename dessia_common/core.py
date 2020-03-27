@@ -560,7 +560,6 @@ def serialize_dict(dict_):
         elif isinstance(value, (list, tuple)):
             serialized_value = serialize_sequence(value)
         else:
-            print(type(value))
             if not is_jsonable(value):
                 raise SerializationError('Value {} {} is not json serializable'.format(key, value))
             serialized_value = value
