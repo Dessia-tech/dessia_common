@@ -6,7 +6,7 @@ Created on Wed Feb 19 15:56:12 2020
 @author: jezequel
 """
 
-from typing import List
+from typing import List, Dict
 import numpy as np
 import pandas as pd
 from dessia_common import DessiaObject, Parameter
@@ -48,6 +48,27 @@ class Objective(DessiaObject):
         return ratings
 
 
+class ParetoSettings(DessiaObject):
+    _generic_eq = True
+
+    def __init__(self, minimized_attributes: Dict[str, float], enabled: bool = True, name=''):
+        self.enabled = enabled
+
+        self.minimized_attributes = minimized_attributes
+
+        DessiaObject.__init__(self, name=name)
+
+
+class ObjectiveSettings(DessiaObject):
+    _generic_eq = True
+
+    def __init__(self, n_near_values: int, enabled: bool = True, name=''):
+        self.n_near_values = n_near_values
+        self.enabled = enabled
+
+        DessiaObject.__init__(self, name=name)
+
+
 class Catalog(DessiaObject):
     """
     Defines a Catalog object that gathers a collection of VectoredObjects
@@ -55,9 +76,9 @@ class Catalog(DessiaObject):
     :param pareto_attributes: List of strings representing names of variables
                               used for pareto computations.
     :type pareto_attributes: [str]
-    :param minimise: List of booleans representing if pareto for this variable
+    :param minimize: List of booleans representing if pareto for this variable
                      should be searched in maximum or minimum direction.
-    :type minimise: [bool]
+    :type minimize: [bool]
     :param objectives: List of objectives to apply to catalog vectored objects
     :type objectives: [Objective]
     :param n_near_values: Integer that gives the number of best solutions given by objectives
@@ -76,10 +97,9 @@ class Catalog(DessiaObject):
     _export_formats = ['csv']
 
     def __init__(self, array: List[List[float]], variables: List[str],
-                 pareto_attributes: List[str], minimise: List[bool],
-                 objectives: List[Objective], n_near_values: int,
+                 pareto_settings: ParetoSettings, objective_settings: ObjectiveSettings,
+                 objectives: List[Objective],
                  choice_variables: List[str] = None,
-                 enable_pareto: bool = True, enable_objectives: bool = True,
                  name: str = ''):
         DessiaObject.__init__(self, name=name)
 
@@ -87,14 +107,10 @@ class Catalog(DessiaObject):
         self.variables = variables
         self.choice_variables = choice_variables
 
-        self.pareto_attributes = pareto_attributes
-        self.minimise = minimise
+        self.pareto_settings = pareto_settings
 
         self.objectives = objectives
-        self.n_near_values = n_near_values
-
-        self.enable_pareto = enable_pareto
-        self.enable_objectives = enable_objectives
+        self.objective_settings = objective_settings
 
     def _display_angular(self):
         """
@@ -113,13 +129,13 @@ class Catalog(DessiaObject):
 
         all_near_indices = []
         already_used = []
-        if self.enable_objectives:
+        if self.objective_settings.enabled:
             for objective in self.objectives:
                 ratings = objective.apply_to_catalog(self)
                 indexed_ratings = [(i, r) for i, r in enumerate(ratings)]
                 count = 0
                 near_indices = []
-                while count < self.n_near_values and indexed_ratings:
+                while count < self.objective_settings.n_near_values and indexed_ratings:
                     min_index = indexed_ratings.index(min(indexed_ratings, key=lambda t: t[1]))
                     min_tuple = indexed_ratings.pop(min_index)
                     if min_tuple[0] not in already_used:
@@ -137,7 +153,7 @@ class Catalog(DessiaObject):
                      'values': dominated_points}]
 
         # Pareto
-        if self.enable_pareto:
+        if self.pareto_settings.enabled:
             pareto_points = [i for i in range(len(values)) if pareto_indices[i]]
             pareto_values = [(i, value) for i, value in enumerate(values)
                              if pareto_indices[i] and i not in already_used]
@@ -146,7 +162,7 @@ class Catalog(DessiaObject):
                              'values': pareto_points})
 
         # Objectives
-        if self.enable_objectives:
+        if self.objective_settings.enabled:
             near_points = [[i for i in range(len(values)) if i in near_indices]
                            for near_indices in all_near_indices]
             near_values = [[(i, value) for i, value in enumerate(values) if i in near_indices]
@@ -228,7 +244,7 @@ class Catalog(DessiaObject):
         """
         Build list of costs that are used to compute Pareto frontier.
 
-        The cost of an attribute that is to be minimised is, for each object of catalog,
+        The cost of an attribute that is to be minimized is, for each object of catalog,
         its value minus the lower bound of of its values in the whole dataset.
         On the contrary, the cost of an attribute that is to be maximised is,
         the upper_bound of the dataset for this parameter minus the value
@@ -241,11 +257,11 @@ class Catalog(DessiaObject):
 
         :return: A(n_points, n_costs)
         """
-        pareto_parameters = self.parameters(self.pareto_attributes)
+        pareto_parameters = self.parameters(self.pareto_settings.attributes)
         costs = np.zeros((len(self.array), len(pareto_parameters)))
         for i, line in enumerate(self.array):
             for j, parameter in enumerate(pareto_parameters):
-                if self.minimise[j]:
+                if self.pareto_settings.minimized_attributes[parameter.name]:
                     value = self.get_value_by_name(line, parameter.name) - parameter.lower_bound
                 else:
                     value = parameter.upper_bound - self.get_value_by_name(line, parameter.name)
