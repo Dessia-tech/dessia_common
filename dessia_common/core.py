@@ -20,25 +20,30 @@ from importlib import import_module
 try:
     _open_source = False
     import dessia_common.core_protected as protected_module
-    from dessia_common.core_protected import inspect_arguments, recursive_instantiation,\
-                                             recursive_type, JSONSCHEMA_HEADER,\
-                                             jsonschema_from_annotation,prettyname,\
-                                             set_default_value, TYPING_EQUIVALENCES,\
-                                             deserialize_argument
+    from dessia_common.core_protected import inspect_arguments, recursive_instantiation, \
+        recursive_type, JSONSCHEMA_HEADER, \
+        jsonschema_from_annotation, prettyname, \
+        set_default_value, TYPING_EQUIVALENCES, \
+        deserialize_argument
 except (ModuleNotFoundError, ImportError) as _:
     _open_source = True
+
 
 class ModelError(Exception):
     pass
 
+
 class ConsistencyError(Exception):
     pass
+
 
 class SerializationError(Exception):
     pass
 
+
 class DeserializationError(Exception):
     pass
+
 
 # DEPRECATED_ATTRIBUTES = {'_editable_variss' : '_allowed_methods'}
 def deprecated(use_instead=None):
@@ -48,8 +53,11 @@ def deprecated(use_instead=None):
             print('Traceback : ')
             tb.print_stack(limit=2)
             return function(*args, **kwargs)
+
         return wrapper
+
     return decorated
+
 
 def deprecation_warning(name, object_type, use_instead=None):
     warnings.simplefilter('always', DeprecationWarning)
@@ -59,6 +67,7 @@ def deprecation_warning(name, object_type, use_instead=None):
         msg += "Use {} instead.\n".format(use_instead)
     warnings.warn(msg, DeprecationWarning)
     return msg
+
 
 class DessiaObject(protected_module.DessiaObject if not _open_source else object):
     """
@@ -75,7 +84,7 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
     _export_formats = None
     _allowed_methods = []
 
-    def __init__(self, name:str='', **kwargs):
+    def __init__(self, name: str = '', **kwargs):
         implements_eq = (hasattr(self, '__eq__') and hasattr(self, '__hash__')
                          and self.__class__.__eq__ is not object.__eq__
                          and self.__class__.__hash__ is not object.__hash__)
@@ -89,13 +98,13 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
     def __eq__(self, other_object):
         if not self._generic_eq:
             return object.__eq__(self, other_object)
-        if full_classname(self) != full_classname(other_object)\
-        or self.__dict__.keys() != other_object.__dict__.keys(): # TODO : Check this line. Keys not ordered and/or just need to test used keys
+        if full_classname(self) != full_classname(other_object) \
+                or self.__dict__.keys() != other_object.__dict__.keys():  # TODO : Check this line. Keys not ordered and/or just need to test used keys
             return False
 
-        dict_ = {k : v for k, v in self.__dict__.items()\
+        dict_ = {k: v for k, v in self.__dict__.items()
                  if k not in self._non_eq_attributes}
-        other_dict = {k : v for k, v in other_object.__dict__.items()\
+        other_dict = {k: v for k, v in other_object.__dict__.items()
                       if k not in self._non_eq_attributes}
 
         for key, value in dict_.items():
@@ -140,13 +149,13 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
             pkg_version = self.__class__.__module__.__version__
         else:
             pkg_version = None
-        dict_ = {'name' : self.name,
-                 'package_version' : pkg_version,
-                 'object_class' : self.__module__ + '.' + self.__class__.__name__}
+        dict_ = {'name': self.name,
+                 'package_version': pkg_version,
+                 'object_class': self.__module__ + '.' + self.__class__.__name__}
         return dict_
 
     def __getstate__(self):
-        dict_ = {k : v for k, v in self.__dict__.items()\
+        dict_ = {k: v for k, v in self.__dict__.items()
                  if k not in self._non_serializable_attributes}
         return dict_
 
@@ -167,7 +176,6 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
 
         return serialized_dict
 
-
     @classmethod
     def dict_to_object(cls, dict_):
         """
@@ -186,8 +194,8 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
         # TODO: use jsonschema
         return obj
 
-    def save_to_file(self, filepath, indent = 0):
-        with open(filepath+'.json', 'w') as file:
+    def save_to_file(self, filepath, indent=0):
+        with open(filepath + '.json', 'w') as file:
             json.dump(self.to_dict(), file, indent=indent)
 
     @classmethod
@@ -240,7 +248,7 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
     def volmdlr_volume_model(self, frame=None):
 
         if hasattr(self, 'volmdlr_primitives'):
-            import volmdlr as vm # !!! Avoid circular imports, is this OK ?
+            import volmdlr as vm  # !!! Avoid circular imports, is this OK ?
             if hasattr(self, 'volmdlr_primitives_step_frames'):
                 return vm.MovingVolumeModel(self.volmdlr_primitives(),
                                             self.volmdlr_primitives_step_frames())
@@ -251,8 +259,8 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
                 return vm.VolumeModel(self.volmdlr_primitives(frame=frame))
             except TypeError:
                 return vm.VolumeModel(self.volmdlr_primitives())
-
-        raise NotImplementedError('object of type {} does not implement volmdlr_primitives'.format(self.__class__.__name__))
+        msg = 'Object of type {} does not implement volmdlr_primitives'.format(self.__class__.__name__)
+        raise NotImplementedError(msg)
 
     def cad_export(self,
                    fcstd_filepath=None,
@@ -280,10 +288,6 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
 
     def _display_angular(self):
         display = []
-        # if hasattr(self, 'CADExport')\
-        # or hasattr(self, 'FreeCADExport'):
-        #     display.append({'angular_component': 'app-cad-viewer'})
-
         if hasattr(self, 'babylon_data'):
             display.append({'angular_component' : 'cad_viewer',
                             'data' : self.babylon_data()})
@@ -298,12 +302,14 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
                             'data' : self.plot_data()})
         return display
 
+
 class Parameter(DessiaObject):
     def __init__(self, lower_bound, upper_bound, periodicity=None, name=''):
         DessiaObject.__init__(self, name=name,
                               lower_bound=lower_bound,
                               upper_bound=upper_bound,
                               periodicity=periodicity)
+
     def random_value(self):
         return random.uniform(self.lower_bound, self.upper_bound)
 
@@ -315,17 +321,33 @@ class Parameter(DessiaObject):
         return math.isclose(value1, value2, abs_tol=tol)
 
     def normalize(self, value):
-        normalized_value = (value - self.lower_bound)/(self.upper_bound - self.lower_bound)
+        normalized_value = (value - self.lower_bound) / (self.upper_bound - self.lower_bound)
         return normalized_value
 
     def original_value(self, normalized_value):
-        value = normalized_value*(self.upper_bound - self.lower_bound) + self.lower_bound
+        value = normalized_value * (self.upper_bound - self.lower_bound) + self.lower_bound
         return value
 
     def optimizer_bounds(self):
         if self.periodicity is not None:
-            return (self.lower_bound-0.5*self.periodicity,
-                    self.upper_bound+0.5*self.periodicity)
+            return (self.lower_bound - 0.5 * self.periodicity,
+                    self.upper_bound + 0.5 * self.periodicity)
+
+
+class ParameterSet(DessiaObject):
+    def __init__(self, values):
+        self.values = values
+
+    @property
+    def parameters(self):
+        parameters = [Parameter(min(v), max(v), name=k) for k, v in self.values.items()]
+        return parameters
+
+    @property
+    def means(self):
+        means = {k: sum(v)/len(v) for k, v in self.values.items()}
+        return means
+
 
 class Evolution(DessiaObject):
     """
@@ -338,7 +360,7 @@ class Evolution(DessiaObject):
     _non_hash_attributes = ['name']
     _generic_eq = True
 
-    def __init__(self, evolution:List[float]=None, name:str=''):
+    def __init__(self, evolution: List[float] = None, name: str = ''):
         if evolution is None:
             evolution = []
         self.evolution = evolution
@@ -358,13 +380,14 @@ class Evolution(DessiaObject):
         """
         self.evolution = evolution
 
+
 class CombinationEvolution(DessiaObject):
     _non_eq_attributes = ['name']
     _non_hash_attributes = ['name']
     _generic_eq = True
 
-    def __init__(self, evolution1:List[Evolution], evolution2:List[Evolution],
-                 title1:str='x', title2:str='y', name:str=''):
+    def __init__(self, evolution1: List[Evolution], evolution2: List[Evolution],
+                 title1: str = 'x', title2: str = 'y', name: str = ''):
 
         self.evolution1 = evolution1
         self.evolution2 = evolution2
@@ -378,9 +401,9 @@ class CombinationEvolution(DessiaObject):
 
     def _display_angular(self):
         displays = [{'angular_component': 'app-evolution2d-combination-evolution',
-                    'table_show': False,
-                    'evolution_x': [self.x_], 'label_x': ['title1'],
-                    'evolution_y': [self.y_], 'label_y': ['title2']}]
+                     'table_show': False,
+                     'evolution_x': [self.x_], 'label_x': ['title1'],
+                     'evolution_y': [self.y_], 'label_y': ['title2']}]
         return displays
 
     def update(self, evol1, evol2):
@@ -410,39 +433,41 @@ def number2factor(number):
     Temporary function : Add to some tools package
     Finds all the ways to combine elements
     """
-    factor_range = range(1, int(number**0.5) + 1)
+    factor_range = range(1, int(number ** 0.5) + 1)
 
     if number:
         factors = list(set(reduce(list.__add__,
-                                  ([i, number//i] for i in factor_range if number % i == 0))))
+                                  ([i, number // i] for i in factor_range if number % i == 0))))
 
-        grids = [(factor_x, int(number/factor_x))
+        grids = [(factor_x, int(number / factor_x))
                  for factor_x in factors
-                 if (number/factor_x).is_integer()]
+                 if (number / factor_x).is_integer()]
     else:
         grids = []
     return grids
+
 
 def number3factor(number, complete=True):
     """
     Temporary function : Add to some tools package
     Finds all the ways to combine elements
     """
-    factor_range = range(1, int(number**0.5) + 1)
+    factor_range = range(1, int(number ** 0.5) + 1)
 
     if number:
         factors = list(set(reduce(list.__add__,
-                                  ([i, number//i] for i in factor_range if number % i == 0))))
+                                  ([i, number // i] for i in factor_range if number % i == 0))))
         if not complete:
             grids = get_incomplete_factors(number, factors)
 
         else:
-            grids = [(factor_x, factor_y, int(number/(factor_x*factor_y)))\
-                     for factor_x in factors\
-                     for factor_y in factors\
-                     if (number/(factor_x*factor_y)).is_integer()]
+            grids = [(factor_x, factor_y, int(number / (factor_x * factor_y)))
+                     for factor_x in factors
+                     for factor_y in factors
+                     if (number / (factor_x * factor_y)).is_integer()]
         return grids
     return []
+
 
 def get_incomplete_factors(number, factors):
     """
@@ -452,13 +477,14 @@ def get_incomplete_factors(number, factors):
     sets = []
     for factor_x in factors:
         for factor_y in factors:
-            value = number/(factor_x*factor_y)
+            value = number / (factor_x * factor_y)
             if value.is_integer():
                 grid = (factor_x, factor_y, int(value))
                 if set(grid) not in sets:
                     sets.append(set(grid))
                     grids.append(grid)
     return grids
+
 
 def dict_merge(old_dct, merge_dct, add_keys=True, extend_lists=True):
     """ Recursive dict merge. Inspired by :meth:``dict.update()``, instead of
@@ -484,7 +510,7 @@ def dict_merge(old_dct, merge_dct, add_keys=True, extend_lists=True):
     """
     dct = deepcopy(old_dct)
     if not add_keys:
-        merge_dct = {k: merge_dct[k]\
+        merge_dct = {k: merge_dct[k]
                      for k in set(dct).intersection(set(merge_dct))}
 
     for key, value in merge_dct.items():
@@ -500,12 +526,14 @@ def dict_merge(old_dct, merge_dct, add_keys=True, extend_lists=True):
 
     return dct
 
+
 def is_jsonable(x):
     try:
         json.dumps(x)
         return True
     except:
         return False
+
 
 def stringify_dict_keys(obj):
     if isinstance(obj, (list, tuple)):
@@ -521,6 +549,7 @@ def stringify_dict_keys(obj):
         return obj
     return new_obj
 
+
 def serialize_dict(dict_):
     serialized_dict = {}
     for key, value in dict_.items():
@@ -531,11 +560,13 @@ def serialize_dict(dict_):
         elif isinstance(value, (list, tuple)):
             serialized_value = serialize_sequence(value)
         else:
+            print(type(value))
             if not is_jsonable(value):
                 raise SerializationError('Value {} {} is not json serializable'.format(key, value))
             serialized_value = value
         serialized_dict[key] = serialized_value
     return serialized_dict
+
 
 def serialize_sequence(seq):
     serialized_sequence = []
@@ -550,11 +581,13 @@ def serialize_sequence(seq):
             serialized_sequence.append(value)
     return serialized_sequence
 
+
 def get_python_class_from_class_name(class_name):
-    #TODO: add protection because this is arbitratry code evaluation!
+    # TODO: add protection because this is arbitratry code evaluation!
     module = class_name.rsplit('.', 1)[0]
     exec('import ' + module)
     return eval(class_name)
+
 
 def dict_to_object(dict_, class_=None):
     working_dict = dict_.copy()
@@ -566,15 +599,15 @@ def dict_to_object(dict_, class_=None):
         class_ = get_python_class_from_class_name(working_dict['object_class'])
 
     if class_ is not None:
-        if hasattr(class_, 'dict_to_object')\
-        and class_.dict_to_object.__func__ is not DessiaObject.dict_to_object.__func__:
+        if hasattr(class_, 'dict_to_object') \
+                and class_.dict_to_object.__func__ is not DessiaObject.dict_to_object.__func__:
             obj = class_.dict_to_object(dict_)
             return obj
         if class_._init_variables is None:
             class_argspec = inspect.getfullargspec(class_)
-            init_dict = {k:v for k, v in working_dict.items() if k in class_argspec.args}
+            init_dict = {k: v for k, v in working_dict.items() if k in class_argspec.args}
         else:
-            init_dict = {k:v for k, v in working_dict.items() if k in class_._init_variables}
+            init_dict = {k: v for k, v in working_dict.items() if k in class_._init_variables}
         # !!! Class method to generate init_dict ??
     else:
         init_dict = working_dict
@@ -594,6 +627,7 @@ def dict_to_object(dict_, class_=None):
         obj = subobjects
     return obj
 
+
 def list_hash(list_):
     hash_ = 0
     for element in list_:
@@ -607,6 +641,7 @@ def list_hash(list_):
             hash_ += hash(element)
     return hash_
 
+
 def dict_hash(dict_):
     hash_ = 0
     for key, value in dict_.items():
@@ -618,7 +653,8 @@ def dict_hash(dict_):
             hash_ += hash(key) + hash(value)
     return hash_
 
-def sequence_to_objects(sequence):# TODO: rename to deserialize sequence?
+
+def sequence_to_objects(sequence):  # TODO: rename to deserialize sequence?
     deserialized_sequence = []
     for element in sequence:
         if isinstance(element, dict):
@@ -630,12 +666,13 @@ def sequence_to_objects(sequence):# TODO: rename to deserialize sequence?
     return deserialized_sequence
 
 
-
 def getdeepattr(obj, attr):
     return reduce(getattr, [obj] + attr.split('.'))
 
+
 def full_classname(object_):
     return object_.__class__.__module__ + '.' + object_.__class__.__name__
+
 
 def serialization_test(obj):
     # TODO: debug infinite recursion?
@@ -643,6 +680,7 @@ def serialization_test(obj):
     obj2 = obj.dict_to_object(d)
     if obj != obj2:
         raise ModelError('object in no more equal to himself after serialization/deserialization!')
+
 
 def deepcopy_value(value, memo):
     # Escaping unhashable types (list) that would be handled after
@@ -685,8 +723,8 @@ def serialize_typing(typing_):
         return 'List[' + full_argname + ']'
     if isinstance(typing_, type):
         return typing_.__module__ + '.' + typing_.__name__
-
     raise NotImplementedError('{} of type {}'.format(typing_, type(typing_)))
+
 
 def deserialize_typing(serialized_typing):
     if isinstance(serialized_typing, str):
@@ -706,6 +744,7 @@ def deserialize_typing(serialized_typing):
 
     raise NotImplementedError('{}'.format(serialized_typing))
 
+
 def deserialize(serialized_element):
     if isinstance(serialized_element, dict):
         element = dict_to_object(serialized_element)
@@ -722,6 +761,7 @@ TYPES_FROM_STRING = {'unicode': str,
                      'float': float,
                      'int': int,
                      'bool': bool}
+
 
 def type_from_annotation(type_, module):
     """

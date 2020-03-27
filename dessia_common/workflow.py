@@ -13,7 +13,7 @@ import networkx as nx
 # import pkg_resources
 # import typing
 from copy import deepcopy
-import typeguard
+# import typeguard
 
 from jinja2 import Environment, PackageLoader, select_autoescape
 import dessia_common as dc
@@ -30,13 +30,14 @@ class Variable(dc.DessiaObject):
             "_name": {
                 "type": "string",
                 "editable": True,
-                }
             }
         }
+    }
     _standalone_in_db = False
 
     def __init__(self, name=''):
         dc.DessiaObject.__init__(self, name=name)
+
 
 class TypedVariable(Variable):
     def __init__(self, type_, name=''):
@@ -1119,7 +1120,7 @@ class Workflow(Block):
         for index, variable in enumerate(self.inputs):
             if index in input_variables_values:
                 value = input_variables_values[index]
-                typeguard.check_type(variable.name, value, variable.type_)
+                # typeguard.check_type(variable.name, value, variable.type_)
                     # raise ValueError('Bad type', value, variable.type_)
 
                 values[variable] = value
@@ -1516,12 +1517,12 @@ class WorkflowRun(dc.DessiaObject):
         for block in self.workflow.blocks:
             if isinstance(block, Filter):
                 filter_display = block._display_angular()
-                values = [(i, {f['attribute'] : dc.getdeepattr(v, f['attribute'])
-                               for f in filter_display[0]['filters']})\
-                          for i, v in enumerate(self.output_value)]
-                filter_display[0]['datasets'] = [{'label' : 'Results',
-                                                  'values' : values,
-                                                  'color' : "#99b4d6"}]
+                values = [{f['attribute'] : dc.getdeepattr(v, f['attribute']) for f in filter_display[0]['filters']}
+                          for v in self.output_value]
+                filter_display[0]['values'] = values
+                filter_display[0]['datasets'] = [{'label': 'Results',
+                                                  'values': list(range(len(values))),
+                                                  'color': "#99b4d6"}]
                 filter_display[0]['references_attribute'] = 'output_value'
                 displays.extend(filter_display)
         return displays
