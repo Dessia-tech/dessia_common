@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Changed
 - Changes in WorklowRun _display_angular to handle new datasets structure
+- Removed VectoredObject. Catalog now know List of List as data array
+- Datasets values are now indices of corresponding points in all values of data array
 
 ## [0.3.3]
 ## Added
