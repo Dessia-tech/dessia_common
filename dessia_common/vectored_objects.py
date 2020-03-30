@@ -6,53 +6,10 @@ Created on Wed Feb 19 15:56:12 2020
 @author: jezequel
 """
 
-from typing import List, Tuple
+from typing import List
 import numpy as np
 import pandas as pd
 from dessia_common import DessiaObject, Parameter
-
-class VectoredObject(DessiaObject):
-    """
-    Defines a "vectored object". This is a vectored representation of a structured data value.
-    It is the MBSE view of a generically structured object.
-
-    :param name: Name of instance.
-    :type name: str
-    :param kwargs: Dictionnary that associates variable names to their values for this instance.
-    """
-    _generic_eq = True
-    _standalone_in_db = True
-    def __init__(self, name: str = '', **kwargs):
-        DessiaObject.__init__(self, name=name, **kwargs)
-
-    def scale(self, parameters:List[Parameter]): #, bounds:List[Tuple[float, float]]):
-        """
-        Computes an adimensionnal vector representing the vectored object.
-
-        :param parameters: List of Parameter objects
-        :type parameters: [Parameter]
-
-        :return: Vector of dimension n, n being the dimension of the structural data
-        """
-        scaled = [p.normalize(getattr(self, p.name)) for p in parameters]
-        return scaled
-        # vector = []
-        # for parameter, interval in zip(parameters, bounds):
-        #     for parameter in parameters:
-        #         value = getattr(self, parameter.name)
-        #         if (interval[0] is not None and value < interval[0])\
-        #             or (interval[1] is not None and value > interval[1]):
-        #             return None
-        #         normalized_value = parameter.normalize(value)
-        #         vector.append(normalized_value)
-        # return vector
-
-    def to_array(self):
-        """
-        TODO
-        """
-        values = [getattr(self, name) for name in self._init_variables]
-        return values
 
 
 class Objective(DessiaObject):
@@ -69,6 +26,7 @@ class Objective(DessiaObject):
     """
     _generic_eq = True
     _standalone_in_db = False
+
     def __init__(self, coeff_names: List[str], coeff_values: List[float],
                  scaled: bool = False, name: str = ''):
         self.coeff_names = coeff_names
@@ -79,51 +37,14 @@ class Objective(DessiaObject):
 
         DessiaObject.__init__(self, name=name)
 
-    def apply(self, vectored_object: VectoredObject):
-        """
-        Applies objective function to given vectored object
-
-        :param vectored_object: Vectored object on which to apply objective
-        :type vectored_object: VectoredObject
-
-        :return: float, Rating of given object according to this objective
-        """
-        objectives = [getattr(vectored_object, arg)*coeff
-                      for arg, coeff in zip(self.coeff_names, self.coeff_values)]
-        objective = sum(objectives)
-        return objective
-
     def apply_to_catalog(self, catalog):
         parameters = catalog.parameters(self.coeff_names)
-        # ratings = []
-        # for vectored_object in catalog.objects:
-        #     rating = 0
-        #     for param, coeff, minimise in zip(parameters, self.coeff_values, self.coeff_min):
-        #         value = getattr(vectored_object, param.name)
-        #         if self.scaled:
-        #             value = parameter.normalize(value)
-        #             if minimise:
-        #                 rating += (1 - value)*coeff
-        #             else:
-        #                 rating += value*coeff
-        #         else:
-        #             if minimise:
-        #                 rating += (param.upper_bound - value)*coeff
-        #             else:
-        #                 rating += (value - param.lower_bound)*coeff
-        #     ratings.append(rating)
-
-
-
-        if self.scaled:
-            parameters = catalog.parameters(self.coeff_names)
-            ratings = []
-            for vectored_object in catalog.objects:
-                values = vectored_object.scale(parameters)
-                objective = sum([v*coeff for v, coeff in zip(values, self.coeff_values)])
-                ratings.append(objective)
-            return ratings
-        ratings = [self.apply(vo) for vo in catalog.objects]
+        ratings = []
+        means = catalog.means([p.name for p in parameters])
+        for line in catalog.array:
+            values = [catalog.get_value_by_name(line, p.name) for p in parameters]
+            objective = sum([v * c / m if self.scaled else v * c for v, c, m in zip(values, self.coeff_values, means)])
+            ratings.append(objective)
         return ratings
 
 
@@ -141,28 +62,30 @@ class Catalog(DessiaObject):
     :type objectives: [Objective]
     :param n_near_values: Integer that gives the number of best solutions given by objectives
     :type n_near_values: int
-    :param objects: List of vectored objects.
-    :type objects: [VectoredObject]
-    :param choice_args: List of string. List of variable names that represent choice arguments
-    :type choice_args: [str]
+    # :param objects: List of vectored objects.
+    # :type objects: [VectoredObject]
+    :param choice_variables: List of string. List of variable names that represent choice arguments
+    :type choice_variables: [str]
     :param name: Name of the catalog
     :type name: str
 
     """
     _generic_eq = True
     _standalone_in_db = True
-    _editable_variables = ['minimise', 'pareto_attributes', 'n_near_values',
-                           'objectives', 'enable_pareto', 'enable_objectives', 'name']
+    _non_editable_attributes = ['array', 'variables', 'choice_variables']
     _export_formats = ['csv']
-    def __init__(self, pareto_attributes: List[str], minimise: List[bool],
+
+    def __init__(self, array: List[List[float]], variables: List[str],
+                 pareto_attributes: List[str], minimise: List[bool],
                  objectives: List[Objective], n_near_values: int,
-                 objects: List[VectoredObject] = None, choice_args: List[str] = None,
+                 choice_variables: List[str] = None,
                  enable_pareto: bool = True, enable_objectives: bool = True,
                  name: str = ''):
         DessiaObject.__init__(self, name=name)
 
-        self.objects = objects
-        self.choice_args = choice_args
+        self.array = array
+        self.variables = variables
+        self.choice_variables = choice_variables
 
         self.pareto_attributes = pareto_attributes
         self.minimise = minimise
@@ -179,14 +102,11 @@ class Catalog(DessiaObject):
 
         :return: List of displays dictionnaries
         """
-        filters = [{'attribute' : arg, 'operator' : 'gt', 'bound' : 0}\
-                   for arg, value in self.objects[0].__dict__.items()\
-                   if arg != 'name' and not isinstance(value, str)\
-                       and not hasattr(self.__class__, arg)\
-                       and arg in self.choice_args]
+        filters = [{'attribute': variable, 'operator': 'gt', 'bound': 0} for j, variable in enumerate(self.variables)
+                   if not isinstance(self.array[0][j], str) and variable in self.choice_variables]
 
-        values = [{f['attribute'] : getattr(o, f['attribute']) for f in filters}\
-                  for o in self.objects]
+        values = [{f['attribute']: self.get_value_by_name(line, f['attribute']) for f in filters}
+                  for line in self.array]
 
         # Pareto
         pareto_indices = pareto_frontier(catalog=self)
@@ -197,7 +117,6 @@ class Catalog(DessiaObject):
             for objective in self.objectives:
                 ratings = objective.apply_to_catalog(self)
                 indexed_ratings = [(i, r) for i, r in enumerate(ratings)]
-                # ratings = [(i, objective.apply(o)) for i, o in enumerate(self.objects)]
                 count = 0
                 near_indices = []
                 while count < self.n_near_values and indexed_ratings:
@@ -210,41 +129,46 @@ class Catalog(DessiaObject):
                 all_near_indices.append(near_indices)
 
         # Dominated points
+        dominated_points = [i for i in range(len(values)) if not pareto_indices[i] and i not in already_used]
         dominated_values = [(i, value) for i, value in enumerate(values)
                             if not pareto_indices[i] and i not in already_used]
-        datasets = [{'label' : 'Dominated points',
-                     'color' : "#99b4d6",
-                     'values' : dominated_values}]
+        datasets = [{'label': 'Dominated points',
+                     'color': "#99b4d6",
+                     'values': dominated_points}]
 
         # Pareto
         if self.enable_pareto:
-            pareto_values = [(i, value) for i, value in enumerate(values)\
+            pareto_points = [i for i in range(len(values)) if pareto_indices[i]]
+            pareto_values = [(i, value) for i, value in enumerate(values)
                              if pareto_indices[i] and i not in already_used]
-            datasets.append({'label' : 'Pareto frontier',
-                             'color' : '#ffcc00',
-                             'values' : pareto_values})
+            datasets.append({'label': 'Pareto frontier',
+                             'color': '#ffcc00',
+                             'values': pareto_points})
 
         # Objectives
         if self.enable_objectives:
+            near_points = [[i for i in range(len(values)) if i in near_indices]
+                           for near_indices in all_near_indices]
             near_values = [[(i, value) for i, value in enumerate(values) if i in near_indices]
                            for near_indices in all_near_indices]
-            near_datasets = [{'label' : 'Near Values ' + str(i),
-                              'color' : None,
-                              'values' : nv} for i, nv in enumerate(near_values)]
+            near_datasets = [{'label': 'Near Values ' + str(i),
+                              'color': None,
+                              'values': nv} for i, nv in enumerate(near_points)]
             datasets.extend(near_datasets)
 
         # Displays
         displays = [{'angular_component': 'results',
                      'filters': filters,
                      'datasets': datasets,
+                     'values': values,
                      'references_attribute': 'objects'}]
         return displays
 
-    def export_csv(self, attribute_name:str, indices:List[int], file:str):
+    def export_csv(self, attribute_name: str, indices: List[int], file: str):
         """
         Exports a reduced list of objects to .csv file
 
-        :param attibute_name: Name of the attribute in which the list is stored
+        :param attribute_name: Name of the attribute in which the list is stored
         :type attribute_name: str
         :param indices: List of integers that represents selected indices of object
                         in attribute_name sequence
@@ -252,7 +176,7 @@ class Catalog(DessiaObject):
         :param file: Target file
         """
         if self._init_variables is not None:
-            attributes = list(self._init_variables.keys()) # !!! Unordered
+            attributes = list(self._init_variables.keys())  # !!! Unordered
             attribute = getattr(self, attribute_name)
             lines = [attribute[i].to_array() for i in indices]
             array = np.array(lines)
@@ -262,24 +186,43 @@ class Catalog(DessiaObject):
         msg += ' in order to be exportable'
         raise ValueError(msg)
 
-
-    def parameters(self, argnames:List[str]):
+    def parameters(self, variables: List[str]):
         """
         Computes Parameter objects from catalog structural data
 
-        :param argnames: List of string. Names of arguments of which
+        :param variables: List of string. Names of arguments of which
                          it should create a parameter.
-        :type argnames: [string]
+        :type variables: [string]
 
         :return: List of Parameter objects
         """
         parameters = []
-        for arg in argnames:
-            values = [getattr(o, arg) for o in self.objects]
+        for variable in variables:
+            values = self.get_values(variable)
             parameters.append(Parameter(lower_bound=min(values),
                                         upper_bound=max(values),
-                                        name=arg))
+                                        name=variable))
         return parameters
+
+    def get_values(self, variable):
+        values = [self.get_value_by_name(line, variable) for line in self.array]
+        return values
+
+    def get_value_by_name(self, line, name):
+        j = self.variables.index(name)
+        value = line[j]
+        return value
+
+    def mean(self, variable):
+        values = self.get_values(variable)
+        mean = sum(values)/len(values)
+        return mean
+
+    def means(self, variables: List[str]):
+        means = []
+        for variable in variables:
+            means.append(self.mean(variable))
+        return means
 
     def build_costs(self):
         """
@@ -299,32 +242,22 @@ class Catalog(DessiaObject):
         :return: A(n_points, n_costs)
         """
         pareto_parameters = self.parameters(self.pareto_attributes)
-        costs = np.zeros((len(self.objects), len(pareto_parameters)))
-        for i, object_ in enumerate(self.objects):
+        costs = np.zeros((len(self.array), len(pareto_parameters)))
+        for i, line in enumerate(self.array):
             for j, parameter in enumerate(pareto_parameters):
                 if self.minimise[j]:
-                    value = getattr(object_, parameter.name) - parameter.lower_bound
+                    value = self.get_value_by_name(line, parameter.name) - parameter.lower_bound
                 else:
-                    value = parameter.upper_bound - getattr(object_, parameter.name)
+                    value = parameter.upper_bound - self.get_value_by_name(line, parameter.name)
                 costs[(i, j)] = value
         return costs
 
-    # def apply_objective(self, objective:Objective):
-    #     """
-    #     Given an Objective object, applies it to every object of the catalog.
 
-    #     :return: List of float. Ratings to the applied objective
-    #     """
-    #     ratings = objective.apply_to_catalog(self)
-        # parameters = self.parameters(objective.coeff_names)
-        # ratings = [objective.apply(o, parameters) for o in self.objects]
-        # return ratings
-
-def pareto_frontier(catalog:Catalog):
+def pareto_frontier(catalog: Catalog):
     """
     Find the pareto-efficient points
 
-    :param costs: An (n_points, n_costs) array
+    :param catalog: Catalog object on which to apply pareto_frontier computation
     :return: A (n_points, ) boolean array, indicating whether each point is Pareto efficient
     """
     costs = catalog.build_costs()
@@ -337,23 +270,17 @@ def pareto_frontier(catalog:Catalog):
             is_efficient[index] = True
     return is_efficient
 
-def from_csv(filename:str, class_:type=VectoredObject, end:int=None, remove_duplicates:bool=False):
+
+def from_csv(filename: str, end: int = None, remove_duplicates: bool = False):
     """
     Generates MBSEs from given .csv file.
     """
-    array = np.genfromtxt(filename, dtype=None, delimiter=',', names=True)
-
-    objects = []
+    array = np.genfromtxt(filename, dtype=None, delimiter=',', names=True, encoding=None)
+    variables = [v for v in array.dtype.fields.keys()]
+    lines = []
     for i, line in enumerate(array):
         if end is not None and i >= end:
             break
-        kwargs = {}
-        for variable_name in array.dtype.fields.keys():
-            pyval = line[variable_name].item()
-            if isinstance(pyval, bytes):
-                pyval = str(pyval)
-            kwargs[variable_name] = pyval
-        object_ = class_(name='object' + str(i), **kwargs)
-        if not remove_duplicates or (remove_duplicates and object_ not in objects):
-            objects.append(object_)
-    return objects
+        if not remove_duplicates or (remove_duplicates and line.tolist() not in lines):
+            lines.append(line.tolist())
+    return lines, variables
