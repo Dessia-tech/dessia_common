@@ -51,10 +51,15 @@ class Objective(DessiaObject):
 class ParetoSettings(DessiaObject):
     _generic_eq = True
 
-    def __init__(self, minimized_attributes: Dict[str, float], enabled: bool = True, name=''):
+    def __init__(self, minimized_attributes: Dict[str, float], order=None, enabled: bool = True, name=''):
         self.enabled = enabled
 
         self.minimized_attributes = minimized_attributes
+
+        if order is None:
+            self.attributes = minimized_attributes.keys()
+        else:
+            self.attributes = order
 
         DessiaObject.__init__(self, name=name)
 
