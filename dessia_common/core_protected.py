@@ -43,20 +43,20 @@ class DessiaObject:
             annotations = cls._init_variables
 
         # Get editable and ordered variables
-        if hasattr(cls, '_non_editable_attributes') and cls._non_editable_attributes is not None:
-            non_editable_attributes = cls._non_editable_attributes
-        else:
-            non_editable_attributes = list(annotations.keys())
+        # if cls._non_editable_attributes:
+        #     non_editable_attributes = cls._non_editable_attributes
+        # else:
+        #     non_editable_attributes = list(annotations.keys())
 
-        if hasattr(cls, '_ordered_variables') and cls._ordered_variables is not None:
-            ordered_variables = cls._ordered_variables
+        if cls._ordered_attributes:
+            ordered_attributes = cls._ordered_attributes
         else:
-            ordered_variables = non_editable_attributes
+            ordered_attributes = list(annotations.keys())
 
-        if hasattr(cls, '_titled_variables'):
-            titled_variables = cls._titled_variables
-        else:
-            titled_variables = None
+        # if cls.titled_attributes:
+        # titled_attributes = cls._titled_attributes
+        # else:
+        #     titled_attributes = None
         unordered_count = 0
 
         # Initialize jsonschema
@@ -68,13 +68,14 @@ class DessiaObject:
         # Set jsonschema
         for annotation in annotations.items():
             name = annotation[0]
-            if name in ordered_variables:
-                order = ordered_variables.index(name)
+            if name in ordered_attributes:
+                order = ordered_attributes.index(name)
             else:
-                order = len(ordered_variables) + unordered_count
+                order = len(ordered_attributes) + unordered_count
                 unordered_count += 1
-            if titled_variables is not None and name in titled_variables:
-                title = titled_variables[name]
+            # if titled_attributes is not None and name in titled_attributes:
+            if name in cls._titled_attributes:
+                title = cls._titled_attributes[name]
             else:
                 title = None
 
@@ -84,7 +85,7 @@ class DessiaObject:
                 jsonschema_element = jsonschema_from_annotation(annotation=annotation,
                                                                 jsonschema_element={},
                                                                 order=order,
-                                                                editable=name not in non_editable_attributes,
+                                                                editable=name not in cls._non_editable_attributes,
                                                                 title=title)
                 _jsonschema['properties'].update(jsonschema_element)
                 if name in default_arguments.keys():
@@ -171,16 +172,16 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
         # Python Built-in type
         jsonschema_element[key] = {'type': TYPING_EQUIVALENCES[value],
                                    'title': title,
-                                   'editable' : editable,
-                                   'order' : order}
+                                   'editable': editable,
+                                   'order': order}
     elif isinstance(value, TypeVar):
         # Several  classes are possible
         classnames = [c.__module__+'.'+c.__name__ for c in value.__constraints__]
         jsonschema_element[key] = {'type': 'object',
                                    'classes': classnames,
                                    'title': title,
-                                   'editable' : editable,
-                                   'order' : order}
+                                   'editable': editable,
+                                   'order': order}
     elif hasattr(value, '_name') and value._name in ['List', 'Sequence', 'Iterable']:
         jsonschema_element[key] = jsonschema_sequence_recursion(value=value,
                                                                 order=order,
@@ -189,21 +190,30 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
     elif hasattr(value, '_name') and value._name == 'Tuple':
         items = []
         for type_ in value.__args__:
-            items.append({'type' : TYPING_EQUIVALENCES[type_]})
-        jsonschema_element[key] = {'additionalItems' : False,
-                                   'type' : 'array'}
+            items.append({'type': TYPING_EQUIVALENCES[type_]})
+        jsonschema_element[key] = {'additionalItems': False,
+                                   'type': 'array'}
         jsonschema_element[key]['items'] = items
     elif hasattr(value, '_name') and value._name == 'Dict':
         # Dynamially created dict structure
-        print()
+        print(value.__dict__)
+        key_type, value_type = value.__args__
+        if key_type != str:
+            raise NotImplementedError('Non strings keys not supported')  # !!! Should we support other types ? Numeric ?
+        jsonschema_element[key] = {'type': 'object',
+                                   'order': order,
+                                   'editable': editable,
+                                   'title': title,
+                                   'patternProperties': {'.*': {'type': TYPING_EQUIVALENCES[value_type]}}}
+
     else:
         if hasattr(value, '_standalone_in_db'): # and value._standalone_in_db:
             # Dessia custom classes
             classname = value.__module__ + '.' + value.__name__
             jsonschema_element[key] = {'type': 'object',
                                        'title': title,
-                                       'order' : order,
-                                       'editable' : editable,
+                                       'order': order,
+                                       'editable': editable,
                                        'classes': [classname]}
         # elif hasattr(value, '_standalone_in_db') and not value._standalone_in_db:
         #     jsonschema_element[key] = value.jsonschema().copy()
@@ -213,9 +223,9 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
         else:
             # Dataclasses
             jsonschema_element[key] = jsonschema_from_dataclass(value)
-            jsonschema_element[key].update({'title' : title,
-                                            'order' : order,
-                                            'editable' : editable})
+            jsonschema_element[key].update({'title': title,
+                                            'order': order,
+                                            'editable': editable})
     return jsonschema_element
 
 def jsonschema_sequence_recursion(value, title=None, order=None, editable=False):
