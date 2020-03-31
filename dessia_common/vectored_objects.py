@@ -26,35 +26,37 @@ class Objective(DessiaObject):
     """
     _generic_eq = True
     _standalone_in_db = False
+    _ordered_attributes = ['name', 'scaled', 'coefficients']
 
-    def __init__(self, coeff_names: List[str], coeff_values: List[float],
+    def __init__(self, coefficients: Dict[str, float],
                  scaled: bool = False, name: str = ''):
-        self.coeff_names = coeff_names
-        self.coeff_values = coeff_values
-        # self.coeff_min = coeff_min
-
+        self.coefficients = coefficients
+        self.coeff_names = list(coefficients.keys())
         self.scaled = scaled
 
         DessiaObject.__init__(self, name=name)
 
     def apply_to_catalog(self, catalog):
-        parameters = catalog.parameters(self.coeff_names)
+        ordered_names = sorted(self.coeff_names, key=lambda s: catalog.get_variable_index(s))
+        parameters = catalog.parameters(ordered_names)
         ratings = []
         means = catalog.means([p.name for p in parameters])
         for line in catalog.array:
-            values = [catalog.get_value_by_name(line, p.name) for p in parameters]
-            objective = sum([v * c / m if self.scaled else v * c for v, c, m in zip(values, self.coeff_values, means)])
+            objective = sum([catalog.get_value_by_name(line, p.name) * self.coefficients[p.name] / m if self.scaled
+                             else catalog.get_value_by_name(line, p.name) * self.coefficients[p.name]
+                             for p, m in zip(parameters, means)])
             ratings.append(objective)
         return ratings
 
 
 class ParetoSettings(DessiaObject):
     _generic_eq = True
-    _ordered_attributes = ['enabled', 'minimized_attributes']
+    _ordered_attributes = ['name', 'enabled', 'minimized_attributes']
+    _non_editable_attributes = ['available_attributes']
 
-    def __init__(self, minimized_attributes: Dict[str, bool], enabled: bool = True, name=''):
+    def __init__(self, minimized_attributes: Dict[str, bool],
+                 enabled: bool = True, name: str = ''):
         self.enabled = enabled
-
         self.minimized_attributes = minimized_attributes
 
         DessiaObject.__init__(self, name=name)
@@ -221,12 +223,15 @@ class Catalog(DessiaObject):
                                         name=variable))
         return parameters
 
+    def get_variable_index(self, name):
+        return self.variables.index(name)
+
     def get_values(self, variable):
         values = [self.get_value_by_name(line, variable) for line in self.array]
         return values
 
     def get_value_by_name(self, line, name):
-        j = self.variables.index(name)
+        j = self.get_variable_index(name)
         value = line[j]
         return value
 
