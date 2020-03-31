@@ -52,7 +52,6 @@ class Objective(DessiaObject):
 class ParetoSettings(DessiaObject):
     _generic_eq = True
     _ordered_attributes = ['name', 'enabled', 'minimized_attributes']
-    _non_editable_attributes = ['available_attributes']
 
     def __init__(self, minimized_attributes: Dict[str, bool],
                  enabled: bool = True, name: str = ''):
@@ -64,8 +63,9 @@ class ParetoSettings(DessiaObject):
 
 class ObjectiveSettings(DessiaObject):
     _generic_eq = True
+    _ordered_attributes = ['name', 'enabled', 'n_near_values']
 
-    def __init__(self, n_near_values: int, enabled: bool = True, name=''):
+    def __init__(self, n_near_values: int = 4, enabled: bool = True, name:str = ''):
         self.n_near_values = n_near_values
         self.enabled = enabled
 
@@ -135,22 +135,24 @@ class Catalog(DessiaObject):
         if self.objective_settings.enabled:
             for objective in self.objectives:
                 ratings = objective.apply_to_catalog(self)
-                indexed_ratings = [(i, r) for i, r in enumerate(ratings)]
-                count = 0
-                near_indices = []
-                while count < self.objective_settings.n_near_values and indexed_ratings:
-                    min_index = indexed_ratings.index(min(indexed_ratings, key=lambda t: t[1]))
-                    min_tuple = indexed_ratings.pop(min_index)
-                    if min_tuple[0] not in already_used:
-                        near_indices.append(min_tuple[0])
-                        already_used.append(min_tuple[0])
-                        count += 1
+                near_indices = ratings[:self.objective_settings.n_near_values]
+                # indexed_ratings = [(i, r) for i, r in enumerate(ratings)]
+                # count = 0
+                # near_indices = []
+                # while count < self.objective_settings.n_near_values and indexed_ratings:
+                #     min_index = indexed_ratings.index(min(indexed_ratings, key=lambda t: t[1]))
+                #     min_tuple = indexed_ratings.pop(min_index)
+                #     if min_tuple[0] not in already_used:
+                #         near_indices.append(min_tuple[0])
+                #         already_used.append(min_tuple[0])
+                #         count += 1
                 all_near_indices.append(near_indices)
 
         # Dominated points
-        dominated_points = [i for i in range(len(values)) if not pareto_indices[i] and i not in already_used]
-        dominated_values = [(i, value) for i, value in enumerate(values)
-                            if not pareto_indices[i] and i not in already_used]
+        dominated_points = [i for i in range(len(values))
+                            if (self.pareto_settings.enabled and not pareto_indices[i]
+                                or not self.pareto_settings.enabled)
+                            and i not in already_used]
         datasets = [{'label': 'Dominated points',
                      'color': "#99b4d6",
                      'values': dominated_points}]
@@ -158,8 +160,6 @@ class Catalog(DessiaObject):
         # Pareto
         if self.pareto_settings.enabled:
             pareto_points = [i for i in range(len(values)) if pareto_indices[i]]
-            pareto_values = [(i, value) for i, value in enumerate(values)
-                             if pareto_indices[i] and i not in already_used]
             datasets.append({'label': 'Pareto frontier',
                              'color': '#ffcc00',
                              'values': pareto_points})
@@ -167,8 +167,6 @@ class Catalog(DessiaObject):
         # Objectives
         if self.objective_settings.enabled:
             near_points = [[i for i in range(len(values)) if i in near_indices]
-                           for near_indices in all_near_indices]
-            near_values = [[(i, value) for i, value in enumerate(values) if i in near_indices]
                            for near_indices in all_near_indices]
             near_datasets = [{'label': 'Near Values ' + str(i),
                               'color': None,
