@@ -50,16 +50,12 @@ class Objective(DessiaObject):
 
 class ParetoSettings(DessiaObject):
     _generic_eq = True
+    _ordered_attributes = ['enabled', 'minimized_attributes']
 
-    def __init__(self, minimized_attributes: Dict[str, float], order=None, enabled: bool = True, name=''):
+    def __init__(self, minimized_attributes: Dict[str, bool], enabled: bool = True, name=''):
         self.enabled = enabled
 
         self.minimized_attributes = minimized_attributes
-
-        if order is None:
-            self.attributes = minimized_attributes.keys()
-        else:
-            self.attributes = order
 
         DessiaObject.__init__(self, name=name)
 
@@ -262,7 +258,7 @@ class Catalog(DessiaObject):
 
         :return: A(n_points, n_costs)
         """
-        pareto_parameters = self.parameters(self.pareto_settings.attributes)
+        pareto_parameters = self.parameters(self.pareto_settings.minimized_attributes.keys())
         costs = np.zeros((len(self.array), len(pareto_parameters)))
         for i, line in enumerate(self.array):
             for j, parameter in enumerate(pareto_parameters):
