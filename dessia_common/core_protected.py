@@ -31,7 +31,6 @@ class DessiaObject:
     @classmethod
     def jsonschema(cls):
         if hasattr(cls, '_jsonschema'):
-#            _jsonschema = dict_merge(DessiaObject.base_jsonschema(), cls._jsonschema)
             _jsonschema = cls._jsonschema
             return _jsonschema
 
@@ -42,21 +41,12 @@ class DessiaObject:
         else:
             annotations = cls._init_variables
 
-        # Get editable and ordered variables
-        # if cls._non_editable_attributes:
-        #     non_editable_attributes = cls._non_editable_attributes
-        # else:
-        #     non_editable_attributes = list(annotations.keys())
-
+        # Get ordered variables
         if cls._ordered_attributes:
             ordered_attributes = cls._ordered_attributes
         else:
             ordered_attributes = list(annotations.keys())
 
-        # if cls.titled_attributes:
-        # titled_attributes = cls._titled_attributes
-        # else:
-        #     titled_attributes = None
         unordered_count = 0
 
         # Initialize jsonschema
@@ -73,7 +63,6 @@ class DessiaObject:
             else:
                 order = len(ordered_attributes) + unordered_count
                 unordered_count += 1
-            # if titled_attributes is not None and name in titled_attributes:
             if name in cls._titled_attributes:
                 title = cls._titled_attributes[name]
             else:
@@ -196,7 +185,6 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
         jsonschema_element[key]['items'] = items
     elif hasattr(value, '_name') and value._name == 'Dict':
         # Dynamially created dict structure
-        print(value.__dict__)
         key_type, value_type = value.__args__
         if key_type != str:
             raise NotImplementedError('Non strings keys not supported')  # !!! Should we support other types ? Numeric ?
@@ -215,11 +203,6 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
                                        'order': order,
                                        'editable': editable,
                                        'classes': [classname]}
-        # elif hasattr(value, '_standalone_in_db') and not value._standalone_in_db:
-        #     jsonschema_element[key] = value.jsonschema().copy()
-        #     jsonschema_element[key].update({'editable' : editable,
-        #                                     'order' : order,
-        #                                     'title' : title})
         else:
             # Dataclasses
             jsonschema_element[key] = jsonschema_from_dataclass(value)
