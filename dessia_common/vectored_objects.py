@@ -12,44 +12,6 @@ import pandas as pd
 from dessia_common import DessiaObject, Parameter
 
 
-class Objective(DessiaObject):
-    """
-    Defines an objective function
-
-    :param coeff_names: List of strings representing ordered variables names.
-    :type coeff_names: [str]
-    :param coeff_values: List of floats representing coefficients.
-    :type coeff_values: [float]
-
-    Order is kept. It means that coefficients are applied to the variables
-    in the same order as they are defined.
-    """
-    _generic_eq = True
-    _standalone_in_db = False
-    _ordered_attributes = ['name', 'scaled', 'coefficients']
-    _non_serializable_attributes = ['coeff_names']
-
-    def __init__(self, coefficients: Dict[str, float],
-                 scaled: bool = False, name: str = ''):
-        self.coefficients = coefficients
-        self.coeff_names = list(coefficients.keys())
-        self.scaled = scaled
-
-        DessiaObject.__init__(self, name=name)
-
-    def apply_to_catalog(self, catalog):
-        ordered_names = sorted(self.coeff_names, key=lambda s: catalog.get_variable_index(s))
-        parameters = catalog.parameters(ordered_names)
-        ratings = []
-        means = catalog.means([p.name for p in parameters])
-        for line in catalog.array:
-            objective = sum([catalog.get_value_by_name(line, p.name) * self.coefficients[p.name] / m if self.scaled
-                             else catalog.get_value_by_name(line, p.name) * self.coefficients[p.name]
-                             for p, m in zip(parameters, means)])
-            ratings.append(objective)
-        return ratings
-
-
 class ParetoSettings(DessiaObject):
     _generic_eq = True
     _ordered_attributes = ['name', 'enabled', 'minimized_attributes']
@@ -66,11 +28,50 @@ class ObjectiveSettings(DessiaObject):
     _generic_eq = True
     _ordered_attributes = ['name', 'enabled', 'n_near_values']
 
-    def __init__(self, n_near_values: int = 4, enabled: bool = True, name:str = ''):
+    def __init__(self, n_near_values: int = 4, enabled: bool = True, name: str = ''):
         self.n_near_values = n_near_values
         self.enabled = enabled
 
         DessiaObject.__init__(self, name=name)
+
+
+class Objective(DessiaObject):
+    """
+    Defines an objective function
+
+    :param coeff_names: List of strings representing ordered variables names.
+    :type coeff_names: [str]
+    :param coeff_values: List of floats representing coefficients.
+    :type coeff_values: [float]
+
+    Order is kept. It means that coefficients are applied to the variables
+    in the same order as they are defined.
+    """
+    _generic_eq = True
+    _standalone_in_db = False
+    _ordered_attributes = ['name', 'scaled', 'settings', 'coefficients']
+    _non_serializable_attributes = ['coeff_names']
+
+    def __init__(self, coefficients: Dict[str, float], settings: ObjectiveSettings,
+                 scaled: bool = False, name: str = ''):
+        self.coefficients = coefficients
+        self.coeff_names = list(coefficients.keys())
+        self.settings = settings
+        self.scaled = scaled
+
+        DessiaObject.__init__(self, name=name)
+
+    def apply_to_catalog(self, catalog):
+        ordered_names = sorted(self.coeff_names, key=lambda s: catalog.get_variable_index(s))
+        parameters = catalog.parameters(ordered_names)
+        ratings = []
+        means = catalog.means([p.name for p in parameters])
+        for line in catalog.array:
+            objective = sum([catalog.get_value_by_name(line, p.name) * self.coefficients[p.name] / m if self.scaled
+                             else catalog.get_value_by_name(line, p.name) * self.coefficients[p.name]
+                             for p, m in zip(parameters, means)])
+            ratings.append(objective)
+        return ratings
 
 
 class Catalog(DessiaObject):
@@ -101,7 +102,7 @@ class Catalog(DessiaObject):
     _export_formats = ['csv']
 
     def __init__(self, array: List[List[float]], variables: List[str],
-                 pareto_settings: ParetoSettings, objective_settings: ObjectiveSettings,
+                 pareto_settings: ParetoSettings,
                  objectives: List[Objective],
                  choice_variables: List[str] = None,
                  name: str = ''):
@@ -114,7 +115,6 @@ class Catalog(DessiaObject):
         self.pareto_settings = pareto_settings
 
         self.objectives = objectives
-        self.objective_settings = objective_settings
 
     def _display_angular(self):
         """
@@ -131,32 +131,15 @@ class Catalog(DessiaObject):
         # Pareto
         pareto_indices = pareto_frontier(catalog=self)
 
-        all_near_indices = []
-        already_used = []
-        if self.objective_settings.enabled:
-            for objective in self.objectives:
-                ratings = objective.apply_to_catalog(self)
-                near_indices = ratings[:self.objective_settings.n_near_values]
-                # indexed_ratings = [(i, r) for i, r in enumerate(ratings)]
-                # count = 0
-                # near_indices = []
-                # while count < self.objective_settings.n_near_values and indexed_ratings:
-                #     min_index = indexed_ratings.index(min(indexed_ratings, key=lambda t: t[1]))
-                #     min_tuple = indexed_ratings.pop(min_index)
-                #     if min_tuple[0] not in already_used:
-                #         near_indices.append(min_tuple[0])
-                #         already_used.append(min_tuple[0])
-                #         count += 1
-                all_near_indices.append(near_indices)
+        all_near_indices = {}
+        for iobjective, objective in enumerate(self.objectives):
+            if objective.settings.enabled:
+                ratings = np.array(objective.apply_to_catalog(self))
+                threshold = objective.settings.n_near_values
+                near_indices = list(np.argpartition(ratings, threshold)[:threshold])
+                all_near_indices[iobjective] = near_indices
 
-        # Dominated points
-        dominated_points = [i for i in range(len(values))
-                            if (self.pareto_settings.enabled and not pareto_indices[i]
-                                or not self.pareto_settings.enabled)
-                            and i not in already_used]
-        datasets = [{'label': 'Dominated points',
-                     'color': "#99b4d6",
-                     'values': dominated_points}]
+        datasets = []
 
         # Pareto
         if self.pareto_settings.enabled:
@@ -166,13 +149,25 @@ class Catalog(DessiaObject):
                              'values': pareto_points})
 
         # Objectives
-        if self.objective_settings.enabled:
-            near_points = [[i for i in range(len(values)) if i in near_indices]
-                           for near_indices in all_near_indices]
-            near_datasets = [{'label': 'Near Values ' + str(i),
-                              'color': None,
-                              'values': nv} for i, nv in enumerate(near_points)]
-            datasets.extend(near_datasets)
+        for iobjective, near_indices in all_near_indices.items():
+            objective = self.objectives[iobjective]
+            if objective.name:
+                label = objective.name
+            else:
+                label = 'Near Values ' + str(iobjective)
+            near_points = [i for i in range(len(values)) if i in near_indices]
+            near_dataset = {'label': label,
+                            'color': None,
+                            'values': near_points}
+            datasets.append(near_dataset)
+
+        # Dominated points
+        dominated_points = [i for i in range(len(values))
+                            if (self.pareto_settings.enabled and not pareto_indices[i]
+                                or not self.pareto_settings.enabled)]
+        datasets.append({'label': 'Dominated points',
+                         'color': "#99b4d6",
+                         'values': dominated_points})
 
         # Displays
         displays = [{'angular_component': 'results',
