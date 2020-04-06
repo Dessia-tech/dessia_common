@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Classes in every type object jsonschema
+
 ## [0.3.4]
 ### Changed
 - Changes in WorklowRun _display_angular to handle new datasets structure
