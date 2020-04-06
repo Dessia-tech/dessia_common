@@ -82,6 +82,7 @@ class DessiaObject:
                                                 name,
                                                 default_arguments[name])
                     _jsonschema['properties'].update(default)
+                _jsonschema['classes'] = [cls.__module__ + '.' + cls.__name__]
         return _jsonschema
 
     @property
@@ -147,7 +148,6 @@ class DessiaObject:
 
 def jsonschema_from_annotation(annotation, jsonschema_element,
                                order, editable=None, title=None):
-
     key, value = annotation
     if isinstance(value, str):
         raise ValueError

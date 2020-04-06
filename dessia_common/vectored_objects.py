@@ -27,6 +27,7 @@ class Objective(DessiaObject):
     _generic_eq = True
     _standalone_in_db = False
     _ordered_attributes = ['name', 'scaled', 'coefficients']
+    _non_serializable_attributes = ['coeff_names']
 
     def __init__(self, coefficients: Dict[str, float],
                  scaled: bool = False, name: str = ''):
