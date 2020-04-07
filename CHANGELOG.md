@@ -7,8 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Objective settings is now inside Objective and not global inside Catalog
+- Datasets are reordered to properly display in front
+- Ordered attributes for catalog
+
 ### Fixed
 - Classes in every type object jsonschema
+- n_near_values now gives indices in display and is workings
 
 ## [0.3.4]
 ### Changed
