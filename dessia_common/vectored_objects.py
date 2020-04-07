@@ -98,6 +98,7 @@ class Catalog(DessiaObject):
     """
     _generic_eq = True
     _standalone_in_db = True
+    _ordered_attributes = ['name', 'pareto_settings', 'objectives']
     _non_editable_attributes = ['array', 'variables', 'choice_variables']
     _export_formats = ['csv']
 
