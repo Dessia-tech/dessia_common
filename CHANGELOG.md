@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Objective settings is now inside Objective and not global inside Catalog
 - Datasets are reordered to properly display in front
+- Ordered attributes for catalog
 
 ### Fixed
 - Classes in every type object jsonschema
