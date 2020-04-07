@@ -79,6 +79,8 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
     _non_editable_attributes = []
     _non_eq_attributes = ['name']
     _non_hash_attributes = ['name']
+    _ordered_attributes = []
+    _titled_attributes = []
     _generic_eq = False
     _init_variables = None
     _export_formats = None
@@ -560,7 +562,6 @@ def serialize_dict(dict_):
         elif isinstance(value, (list, tuple)):
             serialized_value = serialize_sequence(value)
         else:
-            # print(type(value))
             if not is_jsonable(value):
                 raise SerializationError('Value {} {} is not json serializable'.format(key, value))
             serialized_value = value
