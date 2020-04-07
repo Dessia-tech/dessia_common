@@ -6,10 +6,33 @@ Created on Wed Feb 19 15:56:12 2020
 @author: jezequel
 """
 
-from typing import List
+from typing import List, Dict
 import numpy as np
 import pandas as pd
 from dessia_common import DessiaObject, Parameter
+
+
+class ParetoSettings(DessiaObject):
+    _generic_eq = True
+    _ordered_attributes = ['name', 'enabled', 'minimized_attributes']
+
+    def __init__(self, minimized_attributes: Dict[str, bool],
+                 enabled: bool = True, name: str = ''):
+        self.enabled = enabled
+        self.minimized_attributes = minimized_attributes
+
+        DessiaObject.__init__(self, name=name)
+
+
+class ObjectiveSettings(DessiaObject):
+    _generic_eq = True
+    _ordered_attributes = ['name', 'enabled', 'n_near_values']
+
+    def __init__(self, n_near_values: int = 4, enabled: bool = True, name: str = ''):
+        self.n_near_values = n_near_values
+        self.enabled = enabled
+
+        DessiaObject.__init__(self, name=name)
 
 
 class Objective(DessiaObject):
@@ -26,24 +49,27 @@ class Objective(DessiaObject):
     """
     _generic_eq = True
     _standalone_in_db = False
+    _ordered_attributes = ['name', 'scaled', 'settings', 'coefficients']
+    _non_serializable_attributes = ['coeff_names']
 
-    def __init__(self, coeff_names: List[str], coeff_values: List[float],
+    def __init__(self, coefficients: Dict[str, float], settings: ObjectiveSettings,
                  scaled: bool = False, name: str = ''):
-        self.coeff_names = coeff_names
-        self.coeff_values = coeff_values
-        # self.coeff_min = coeff_min
-
+        self.coefficients = coefficients
+        self.coeff_names = list(coefficients.keys())
+        self.settings = settings
         self.scaled = scaled
 
         DessiaObject.__init__(self, name=name)
 
     def apply_to_catalog(self, catalog):
-        parameters = catalog.parameters(self.coeff_names)
+        ordered_names = sorted(self.coeff_names, key=lambda s: catalog.get_variable_index(s))
+        parameters = catalog.parameters(ordered_names)
         ratings = []
         means = catalog.means([p.name for p in parameters])
         for line in catalog.array:
-            values = [catalog.get_value_by_name(line, p.name) for p in parameters]
-            objective = sum([v * c / m if self.scaled else v * c for v, c, m in zip(values, self.coeff_values, means)])
+            objective = sum([catalog.get_value_by_name(line, p.name) * self.coefficients[p.name] / m if self.scaled
+                             else catalog.get_value_by_name(line, p.name) * self.coefficients[p.name]
+                             for p, m in zip(parameters, means)])
             ratings.append(objective)
         return ratings
 
@@ -55,9 +81,9 @@ class Catalog(DessiaObject):
     :param pareto_attributes: List of strings representing names of variables
                               used for pareto computations.
     :type pareto_attributes: [str]
-    :param minimise: List of booleans representing if pareto for this variable
+    :param minimize: List of booleans representing if pareto for this variable
                      should be searched in maximum or minimum direction.
-    :type minimise: [bool]
+    :type minimize: [bool]
     :param objectives: List of objectives to apply to catalog vectored objects
     :type objectives: [Objective]
     :param n_near_values: Integer that gives the number of best solutions given by objectives
@@ -72,14 +98,14 @@ class Catalog(DessiaObject):
     """
     _generic_eq = True
     _standalone_in_db = True
+    _ordered_attributes = ['name', 'pareto_settings', 'objectives']
     _non_editable_attributes = ['array', 'variables', 'choice_variables']
     _export_formats = ['csv']
 
     def __init__(self, array: List[List[float]], variables: List[str],
-                 pareto_attributes: List[str], minimise: List[bool],
-                 objectives: List[Objective], n_near_values: int,
+                 pareto_settings: ParetoSettings,
+                 objectives: List[Objective],
                  choice_variables: List[str] = None,
-                 enable_pareto: bool = True, enable_objectives: bool = True,
                  name: str = ''):
         DessiaObject.__init__(self, name=name)
 
@@ -87,14 +113,9 @@ class Catalog(DessiaObject):
         self.variables = variables
         self.choice_variables = choice_variables
 
-        self.pareto_attributes = pareto_attributes
-        self.minimise = minimise
+        self.pareto_settings = pareto_settings
 
         self.objectives = objectives
-        self.n_near_values = n_near_values
-
-        self.enable_pareto = enable_pareto
-        self.enable_objectives = enable_objectives
 
     def _display_angular(self):
         """
@@ -111,50 +132,43 @@ class Catalog(DessiaObject):
         # Pareto
         pareto_indices = pareto_frontier(catalog=self)
 
-        all_near_indices = []
-        already_used = []
-        if self.enable_objectives:
-            for objective in self.objectives:
-                ratings = objective.apply_to_catalog(self)
-                indexed_ratings = [(i, r) for i, r in enumerate(ratings)]
-                count = 0
-                near_indices = []
-                while count < self.n_near_values and indexed_ratings:
-                    min_index = indexed_ratings.index(min(indexed_ratings, key=lambda t: t[1]))
-                    min_tuple = indexed_ratings.pop(min_index)
-                    if min_tuple[0] not in already_used:
-                        near_indices.append(min_tuple[0])
-                        already_used.append(min_tuple[0])
-                        count += 1
-                all_near_indices.append(near_indices)
+        all_near_indices = {}
+        for iobjective, objective in enumerate(self.objectives):
+            if objective.settings.enabled:
+                ratings = np.array(objective.apply_to_catalog(self))
+                threshold = objective.settings.n_near_values
+                near_indices = list(np.argpartition(ratings, threshold)[:threshold])
+                all_near_indices[iobjective] = near_indices
 
-        # Dominated points
-        dominated_points = [i for i in range(len(values)) if not pareto_indices[i] and i not in already_used]
-        dominated_values = [(i, value) for i, value in enumerate(values)
-                            if not pareto_indices[i] and i not in already_used]
-        datasets = [{'label': 'Dominated points',
-                     'color': "#99b4d6",
-                     'values': dominated_points}]
+        datasets = []
 
         # Pareto
-        if self.enable_pareto:
+        if self.pareto_settings.enabled:
             pareto_points = [i for i in range(len(values)) if pareto_indices[i]]
-            pareto_values = [(i, value) for i, value in enumerate(values)
-                             if pareto_indices[i] and i not in already_used]
             datasets.append({'label': 'Pareto frontier',
                              'color': '#ffcc00',
                              'values': pareto_points})
 
         # Objectives
-        if self.enable_objectives:
-            near_points = [[i for i in range(len(values)) if i in near_indices]
-                           for near_indices in all_near_indices]
-            near_values = [[(i, value) for i, value in enumerate(values) if i in near_indices]
-                           for near_indices in all_near_indices]
-            near_datasets = [{'label': 'Near Values ' + str(i),
-                              'color': None,
-                              'values': nv} for i, nv in enumerate(near_points)]
-            datasets.extend(near_datasets)
+        for iobjective, near_indices in all_near_indices.items():
+            objective = self.objectives[iobjective]
+            if objective.name:
+                label = objective.name
+            else:
+                label = 'Near Values ' + str(iobjective)
+            near_points = [i for i in range(len(values)) if i in near_indices]
+            near_dataset = {'label': label,
+                            'color': None,
+                            'values': near_points}
+            datasets.append(near_dataset)
+
+        # Dominated points
+        dominated_points = [i for i in range(len(values))
+                            if (self.pareto_settings.enabled and not pareto_indices[i]
+                                or not self.pareto_settings.enabled)]
+        datasets.append({'label': 'Dominated points',
+                         'color': "#99b4d6",
+                         'values': dominated_points})
 
         # Displays
         displays = [{'angular_component': 'results',
@@ -204,12 +218,15 @@ class Catalog(DessiaObject):
                                         name=variable))
         return parameters
 
+    def get_variable_index(self, name):
+        return self.variables.index(name)
+
     def get_values(self, variable):
         values = [self.get_value_by_name(line, variable) for line in self.array]
         return values
 
     def get_value_by_name(self, line, name):
-        j = self.variables.index(name)
+        j = self.get_variable_index(name)
         value = line[j]
         return value
 
@@ -228,7 +245,7 @@ class Catalog(DessiaObject):
         """
         Build list of costs that are used to compute Pareto frontier.
 
-        The cost of an attribute that is to be minimised is, for each object of catalog,
+        The cost of an attribute that is to be minimized is, for each object of catalog,
         its value minus the lower bound of of its values in the whole dataset.
         On the contrary, the cost of an attribute that is to be maximised is,
         the upper_bound of the dataset for this parameter minus the value
@@ -241,11 +258,11 @@ class Catalog(DessiaObject):
 
         :return: A(n_points, n_costs)
         """
-        pareto_parameters = self.parameters(self.pareto_attributes)
+        pareto_parameters = self.parameters(self.pareto_settings.minimized_attributes.keys())
         costs = np.zeros((len(self.array), len(pareto_parameters)))
         for i, line in enumerate(self.array):
             for j, parameter in enumerate(pareto_parameters):
-                if self.minimise[j]:
+                if self.pareto_settings.minimized_attributes[parameter.name]:
                     value = self.get_value_by_name(line, parameter.name) - parameter.lower_bound
                 else:
                     value = parameter.upper_bound - self.get_value_by_name(line, parameter.name)
