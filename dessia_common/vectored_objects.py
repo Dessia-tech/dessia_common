@@ -126,7 +126,7 @@ class Catalog(DessiaObject):
         filters = [{'attribute': variable, 'operator': 'gt', 'bound': 0} for j, variable in enumerate(self.variables)
                    if not isinstance(self.array[0][j], str) and variable in self.choice_variables]
 
-        values = [{f['attribute']: self.get_value_by_name(line, f['attribute']) for f in filters}
+        values = [{variable: self.get_value_by_name(line, variable) for variable in self.variables}
                   for line in self.array]
 
         # Pareto
@@ -175,7 +175,7 @@ class Catalog(DessiaObject):
                      'filters': filters,
                      'datasets': datasets,
                      'values': values,
-                     'references_attribute': 'objects'}]
+                     'references_attribute': 'array'}]
         return displays
 
     def export_csv(self, attribute_name: str, indices: List[int], file: str):
