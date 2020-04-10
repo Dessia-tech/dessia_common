@@ -126,7 +126,7 @@ class Catalog(DessiaObject):
         filters = [{'attribute': variable, 'operator': 'gt', 'bound': 0} for j, variable in enumerate(self.variables)
                    if not isinstance(self.array[0][j], str) and variable in self.choice_variables]
 
-        values = [{f['attribute']: self.get_value_by_name(line, f['attribute']) for f in filters}
+        values = [{variable: self.get_value_by_name(line, variable) for variable in self.variables}
                   for line in self.array]
 
         # Pareto
@@ -175,7 +175,7 @@ class Catalog(DessiaObject):
                      'filters': filters,
                      'datasets': datasets,
                      'values': values,
-                     'references_attribute': 'objects'}]
+                     'references_attribute': 'array'}]
         return displays
 
     def export_csv(self, attribute_name: str, indices: List[int], file: str):
@@ -189,16 +189,11 @@ class Catalog(DessiaObject):
         :type indices: [int]
         :param file: Target file
         """
-        if self._init_variables is not None:
-            attributes = list(self._init_variables.keys())  # !!! Unordered
-            attribute = getattr(self, attribute_name)
-            lines = [attribute[i].to_array() for i in indices]
-            array = np.array(lines)
-            data_frame = pd.DataFrame(array, columns=attributes)
-            data_frame.to_csv(file, index=False)
-        msg = 'Class {} should implement _init_variables'.format(self.__class__)
-        msg += ' in order to be exportable'
-        raise ValueError(msg)
+        attribute = getattr(self, attribute_name)
+        lines = [attribute[i] for i in indices]
+        array = np.array(lines)
+        data_frame = pd.DataFrame(array, columns=self.variables)
+        data_frame.to_csv(file, index=False)
 
     def parameters(self, variables: List[str]):
         """
