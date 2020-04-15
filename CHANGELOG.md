@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Export csv to fit vectored_objects removal
 - All set variables in _display_angular config instead of just choice_variables
+- Strategy for scale and custom value scaling
 
 ## [0.3.5]
 ### Changed
