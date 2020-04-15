@@ -49,15 +49,17 @@ class Objective(DessiaObject):
     """
     _generic_eq = True
     _standalone_in_db = False
-    _ordered_attributes = ['name', 'scaled', 'settings', 'coefficients']
+    _ordered_attributes = ['name', 'scaled', 'scale_strategy', 'scale_value', 'settings', 'coefficients']
     _non_serializable_attributes = ['coeff_names']
 
     def __init__(self, coefficients: Dict[str, float], settings: ObjectiveSettings,
-                 scaled: bool = False, name: str = ''):
+                 scaled: bool = False, scale_strategy: str = 'mean', scale_values: List[float] = None, name: str = ''):
         self.coefficients = coefficients
         self.coeff_names = list(coefficients.keys())
         self.settings = settings
         self.scaled = scaled
+        self.scale_strategy = scale_strategy
+        self.scale_values = scale_values
 
         DessiaObject.__init__(self, name=name)
 
@@ -65,13 +67,46 @@ class Objective(DessiaObject):
         ordered_names = sorted(self.coeff_names, key=lambda s: catalog.get_variable_index(s))
         parameters = catalog.parameters(ordered_names)
         ratings = []
-        means = catalog.means([p.name for p in parameters])
+        # if self.scaled:
+        scale_values = self.get_scale_values(catalog, parameters)
         for line in catalog.array:
-            objective = sum([catalog.get_value_by_name(line, p.name) * self.coefficients[p.name] / m if self.scaled
-                             else catalog.get_value_by_name(line, p.name) * self.coefficients[p.name]
-                             for p, m in zip(parameters, means)])
+            objective = sum([catalog.get_value_by_name(line, p.name) * self.coefficients[p.name] / scale_values[p.name]
+                             if self.scaled else catalog.get_value_by_name(line, p.name) * self.coefficients[p.name]
+                             for p in parameters])
             ratings.append(objective)
+    # else:
+        #     for line in catalog.array:
+        #         ratings.append(objective)
+        #         objective = sum([catalog.get_value_by_name(line, p.name) * self.coefficients[p.name] for p in parameters])
+        #         ratings.append(objective)
+        #
+        # if self.scaled and self.scale_strategy == 'mean':
+        #     means = catalog.means([p.name for p in parameters])
+        #     for line in catalog.array:
+        #         objective = sum([catalog.get_value_by_name(line, p.name) * self.coefficients[p.name] / m
+        #                          for p, m in zip(parameters, means)])
+        #         ratings.append(objective)
+        # elif self.scaled and self.scale_strategy == 'custom':
+        #     for line in catalog.array:
+        #         objective = sum([catalog.get_value_by_name(line, p.name) * self.coefficients[p.name] / scale_values[p.name]
+        #                          for p in parameters])
+        #         ratings.append(objective)
+        # elif not self.scaled:
+        #     for line in catalog.array:
+        #         ratings.append(objective)
+        #         objective = sum([catalog.get_value_by_name(line, p.name) * self.coefficients[p.name] for p in parameters])
+        #         ratings.append(objective)
         return ratings
+
+    def get_scale_values(self, catalog=None, parameters=None):
+        if self.scale_strategy == 'mean':
+            return catalog.means([p.name for p in parameters])
+        elif self.scale_strategy == 'custom':
+            return self.scale_values
+        elif self.scale_strategy is None:
+            return None
+        else:
+            raise NotImplementedError("Scale strategy '{}' does not exist".format(self.scale_strategy))
 
 
 class Catalog(DessiaObject):
@@ -126,7 +161,7 @@ class Catalog(DessiaObject):
         filters = [{'attribute': variable, 'operator': 'gt', 'bound': 0} for j, variable in enumerate(self.variables)
                    if not isinstance(self.array[0][j], str) and variable in self.choice_variables]
 
-        values = [{f['attribute']: self.get_value_by_name(line, f['attribute']) for f in filters}
+        values = [{variable: self.get_value_by_name(line, variable) for variable in self.variables}
                   for line in self.array]
 
         # Pareto
@@ -175,7 +210,7 @@ class Catalog(DessiaObject):
                      'filters': filters,
                      'datasets': datasets,
                      'values': values,
-                     'references_attribute': 'objects'}]
+                     'references_attribute': 'array'}]
         return displays
 
     def export_csv(self, attribute_name: str, indices: List[int], file: str):
@@ -189,16 +224,11 @@ class Catalog(DessiaObject):
         :type indices: [int]
         :param file: Target file
         """
-        if self._init_variables is not None:
-            attributes = list(self._init_variables.keys())  # !!! Unordered
-            attribute = getattr(self, attribute_name)
-            lines = [attribute[i].to_array() for i in indices]
-            array = np.array(lines)
-            data_frame = pd.DataFrame(array, columns=attributes)
-            data_frame.to_csv(file, index=False)
-        msg = 'Class {} should implement _init_variables'.format(self.__class__)
-        msg += ' in order to be exportable'
-        raise ValueError(msg)
+        attribute = getattr(self, attribute_name)
+        lines = [attribute[i] for i in indices]
+        array = np.array(lines)
+        data_frame = pd.DataFrame(array, columns=self.variables)
+        data_frame.to_csv(file, index=False)
 
     def parameters(self, variables: List[str]):
         """
@@ -230,15 +260,16 @@ class Catalog(DessiaObject):
         value = line[j]
         return value
 
-    def mean(self, variable):
+    def mean(self, variable: str):
         values = self.get_values(variable)
         mean = sum(values)/len(values)
         return mean
 
-    def means(self, variables: List[str]):
-        means = []
-        for variable in variables:
-            means.append(self.mean(variable))
+    def means(self, variables: List[str]) -> Dict[str, float]:
+        means = {variable: self.mean(variable) for variable in variables}
+        # means = []
+        # for variable in variables:
+        #     means.append(self.mean(variable))
         return means
 
     def build_costs(self):
