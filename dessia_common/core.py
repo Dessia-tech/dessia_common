@@ -705,7 +705,10 @@ def deepcopy_value(value, memo):
             copied_list = []
             for v in value:
                 cv = deepcopy_value(v, memo=memo)
-                memo[v] = cv
+                try:
+                    memo[v] = cv
+                except TypeError:
+                    pass
                 copied_list.append(cv)
             return copied_list
         elif isinstance(value, dict):
@@ -713,6 +716,14 @@ def deepcopy_value(value, memo):
             for k, v in value.items():
                 copied_k = deepcopy_value(k, memo=memo)
                 copied_v = deepcopy_value(v, memo=memo)
+                try:
+                    memo[k] = copied_k
+                except TypeError:
+                    pass
+                try:
+                    memo[v] = copied_v
+                except TypeError:
+                    pass
                 copied_dict[copied_k] = copied_v
             return copied_dict
         else:
