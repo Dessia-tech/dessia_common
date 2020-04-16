@@ -708,6 +708,15 @@ def deepcopy_value(value, memo):
                 memo[v] = cv
                 copied_list.append(cv)
             return copied_list
+        elif isinstance(value, dict):
+            copied_dict = {}
+            for k, v in value.items():
+                copied_k = deepcopy_value(k, memo=memo)
+                memo[k] = copied_k
+                copied_v = deepcopy_value(v, memo=memo)
+                memo[v] = copied_v
+                copied_dict[copied_k] = copied_v
+            return copied_dict
         else:
             new_value = copy.deepcopy(value, memo=memo)
             memo[value] = new_value
