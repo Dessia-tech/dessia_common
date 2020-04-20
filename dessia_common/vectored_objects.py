@@ -327,14 +327,8 @@ class Catalog(DessiaObject):
         for line in self.array:
             rating = rhs
             for variable, coefficient in objective.coefficients.items():
-                if coefficient:
+                if coefficient != 0:
                     rating += self.get_value_by_name(line, variable)/coefficient
-                # else:
-                #     rating += self.get_value_by_name(line, variable)*coefficient
-                if coefficient < 0:
-                    index = self.get_variable_index(variable)
-                    rhs = - parameters[index].upper_bound/coefficient
-                    rating += rhs
             ratings.append(rating)
         return ratings
 
