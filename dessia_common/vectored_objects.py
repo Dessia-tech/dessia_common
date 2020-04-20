@@ -135,22 +135,36 @@ class Catalog(DessiaObject):
         filters = [{'attribute': variable, 'operator': 'gt', 'bound': 0} for j, variable in enumerate(self.variables)
                    if not isinstance(self.array[0][j], str) and variable in self.choice_variables]
 
-        values = [{variable: self.get_value_by_name(line, variable) for variable in self.variables}
-                  for line in self.array]
-
         # Pareto
         pareto_indices = pareto_frontier(catalog=self)
 
         all_near_indices = {}
+        objective_ratings = {}
         for iobjective, objective in enumerate(self.objectives):
             if objective.settings.enabled:
                 ratings = self.handle_objective(objective)
-                # ratings = np.array(objective.apply_to_catalog(self))
+                if objective.name and objective.name not in objective_ratings:
+                    name = objective.name
+                else:
+                    name = 'objective_'+str(iobjective)
+                objective_ratings[name] = ratings
+                filters.append({'attribute': name, 'operator': 'gte', 'bound': 0})
                 threshold = objective.settings.n_near_values
                 near_indices = list(np.argpartition(ratings, threshold)[:threshold])
                 all_near_indices[iobjective] = near_indices
 
         datasets = []
+
+        values = []
+        for i, line in enumerate(self.array):
+            value = {}
+            for variable in self.variables:
+                value[variable] = self.get_value_by_name(line, variable)
+            for objective_name, ratings in objective_ratings.items():
+                value[objective_name] = ratings[i]
+            values.append(value)
+        # values = [{variable: self.get_value_by_name(line, variable) for variable in self.variables}
+        #           for line in self.array]
 
         # Pareto
         if self.pareto_settings.enabled:
@@ -315,9 +329,11 @@ class Catalog(DessiaObject):
             for variable, coefficient in objective.coefficients.items():
                 if coefficient:
                     rating += self.get_value_by_name(line, variable)/coefficient
+                # else:
+                #     rating += self.get_value_by_name(line, variable)*coefficient
                 if coefficient < 0:
                     index = self.get_variable_index(variable)
-                    rhs = parameters[index].upper_bound/coefficient
+                    rhs = - parameters[index].upper_bound/coefficient
                     rating += rhs
             ratings.append(rating)
         return ratings
