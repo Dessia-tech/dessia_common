@@ -317,7 +317,7 @@ class Catalog(DessiaObject):
                     rating += self.get_value_by_name(line, variable)/coefficient
                 if coefficient < 0:
                     index = self.get_variable_index(variable)
-                    rhs = - parameters[index].upper_bound/coefficient
+                    rhs = parameters[index].upper_bound/coefficient
                     rating += rhs
             ratings.append(rating)
         return ratings
