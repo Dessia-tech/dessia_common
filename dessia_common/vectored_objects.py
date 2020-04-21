@@ -6,6 +6,7 @@ Created on Wed Feb 19 15:56:12 2020
 @author: jezequel
 """
 
+import math
 from typing import List, Dict
 import numpy as np
 import pandas as pd
@@ -82,6 +83,25 @@ class Objective(DessiaObject):
         else:
             raise NotImplementedError("Scale strategy '{}' does not exist".format(self.scale_strategy))
 
+    @classmethod
+    def coefficients_from_angles(cls, angles: List[float])->List[float]:
+        """
+        compute coefficients from n-1 angles
+        """
+        n = len(angles) + 1
+        M = np.identity(n)
+        for i in range(n-1):
+            Mi = np.identity(n)
+            Mi[i, i] = math.cos(angles[i])
+            Mi[i+1, i] = -math.sin(angles[i])
+            Mi[i, i+1] = math.sin(angles[i])
+            Mi[i+1, i+1] = math.cos(angles[i])
+            M = np.dot(M, Mi)
+        x = np.zeros(n)
+        x[0] = 1
+        
+        return np.dot(M.T, x)
+        
 
 class Catalog(DessiaObject):
     """
