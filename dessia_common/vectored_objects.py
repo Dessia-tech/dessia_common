@@ -61,18 +61,6 @@ class Objective(DessiaObject):
 
         DessiaObject.__init__(self, name=name)
 
-    # def apply_to_catalog(self, catalog):
-    #     ordered_names = sorted(self.coeff_names, key=lambda s: catalog.get_variable_index(s))
-    #     parameters = catalog.parameters(ordered_names)
-    #     ratings = []
-    #     scale_values = self.get_scale_values(catalog, parameters)
-    #     for line in catalog.array:
-    #         objective = sum([catalog.get_value_by_name(line, p.name) * self.coefficients[p.name] / scale_values[p.name]
-    #                          if self.scaled else catalog.get_value_by_name(line, p.name) * self.coefficients[p.name]
-    #                          for p in parameters])
-    #         ratings.append(objective)
-    #     return ratings
-
     def get_scale_values(self, catalog=None, parameters=None):
         if self.scale_strategy == 'mean':
             return catalog.means([p.name for p in parameters])
@@ -84,23 +72,22 @@ class Objective(DessiaObject):
             raise NotImplementedError("Scale strategy '{}' does not exist".format(self.scale_strategy))
 
     @classmethod
-    def coefficients_from_angles(cls, angles: List[float])->List[float]:
+    def coefficients_from_angles(cls, angles: List[float]) -> List[float]:
         """
         compute coefficients from n-1 angles
         """
         n = len(angles) + 1
-        M = np.identity(n)
-        for i in range(n-1):
-            Mi = np.identity(n)
-            Mi[i, i] = math.cos(angles[i])
-            Mi[i+1, i] = -math.sin(angles[i])
-            Mi[i, i+1] = math.sin(angles[i])
-            Mi[i+1, i+1] = math.cos(angles[i])
-            M = np.dot(M, Mi)
+        matrix = np.identity(n)
+        for i, angle in enumerate(angles):
+            matrix_i = np.identity(n)
+            matrix_i[i, i] = math.cos(angle)
+            matrix_i[i+1, i] = -math.sin(angle)
+            matrix_i[i, i+1] = math.sin(angle)
+            matrix_i[i+1, i+1] = math.cos(angle)
+            matrix = np.dot(matrix, matrix_i)
         x = np.zeros(n)
         x[0] = 1
-        
-        return np.dot(M.T, x)
+        return list(np.dot(matrix.T, x))
         
 
 class Catalog(DessiaObject):
@@ -140,7 +127,10 @@ class Catalog(DessiaObject):
 
         self.array = array
         self.variables = variables
-        self.choice_variables = choice_variables
+        if choice_variables is None:
+            self.choice_variables = variables
+        else:
+            self.choice_variables = choice_variables
 
         self.pareto_settings = pareto_settings
 
