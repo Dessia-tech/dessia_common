@@ -329,15 +329,16 @@ class Catalog(DessiaObject):
         for parameter in parameters:
             if parameter.name in objective.coefficients:
                 raw_coeff = objective.coefficients[parameter.name]
+                minimize = objective.directions[parameter.name]
                 if objective.settings.scaled:
                     coefficient = (1-raw_coeff)*parameter.lower_bound + raw_coeff*parameter.upper_bound
                 else:
                     coefficient = raw_coeff
             else:
                 coefficient = 0
-            if coefficient > 0:
+            if minimize:
                 rhs -= parameter.lower_bound/coefficient
-            elif coefficient < 0:
+            else:
                 rhs -= parameter.upper_bound/coefficient
         ratings = []
         for line in self.array:
