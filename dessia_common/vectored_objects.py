@@ -54,8 +54,14 @@ class Objective(DessiaObject):
     _ordered_attributes = ['name', 'settings', 'coefficients']
     _non_serializable_attributes = ['coeff_names']
 
-    def __init__(self, coefficients: Dict[str, float], settings: ObjectiveSettings, name: str = ''):
+    def __init__(self, coefficients: Dict[str, float], directions: Dict[str, bool], settings: ObjectiveSettings, name: str = ''):
+        for variable in coefficients:
+            if variable not in directions:
+                msg = "Coefficient for variable {} was found but no direction is specified.".format(variable)
+                msg += " Add {} to directions dict.".format(variable)
+                raise KeyError(msg)
         self.coefficients = coefficients
+        self.directions = directions
         self.coeff_names = list(coefficients.keys())
         self.settings = settings
 
