@@ -336,10 +336,11 @@ class Catalog(DessiaObject):
                     coefficient = raw_coeff
             else:
                 coefficient = 0
-            if minimize:
-                rhs -= parameter.lower_bound/coefficient
-            else:
-                rhs -= parameter.upper_bound/coefficient
+            if coefficient:
+                if minimize:
+                    rhs -= parameter.lower_bound/coefficient
+                else:
+                    rhs -= parameter.upper_bound/coefficient
         ratings = []
         for line in self.array:
             rating = rhs
