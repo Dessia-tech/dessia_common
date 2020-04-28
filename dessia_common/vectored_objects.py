@@ -11,6 +11,7 @@ from typing import List, Dict
 import numpy as np
 import pandas as pd
 from dessia_common import DessiaObject, Parameter
+from itertools import product
 
 
 class ParetoSettings(DessiaObject):
@@ -67,6 +68,33 @@ class Objective(DessiaObject):
 
         DessiaObject.__init__(self, name=name)
 
+    def build_rhs(self, parameters):
+        rhs = 0
+        for parameter in parameters:
+            if parameter.name in self.coefficients:
+                raw_coeff = self.coefficients[parameter.name]
+                minimize = self.directions[parameter.name]
+                if self.settings.scaled:
+                    coefficient = (1 - raw_coeff) * parameter.lower_bound + raw_coeff * parameter.upper_bound
+                else:
+                    coefficient = raw_coeff
+            else:
+                coefficient = 0
+            if coefficient:
+                if minimize:
+                    rhs -= parameter.lower_bound / coefficient
+                else:
+                    rhs -= parameter.upper_bound / coefficient
+        return rhs
+
+    def apply_individual(self, values, rhs=0):
+        rating = rhs
+        for variable, value in values.items():
+            coefficient = self.coefficients[variable]
+            if coefficient != 0:
+                rating += value/coefficient
+        return rating
+
     def get_scale_values(self, catalog=None, parameters=None):
         if self.scale_strategy == 'mean':
             return catalog.means([p.name for p in parameters])
@@ -93,7 +121,26 @@ class Objective(DessiaObject):
             matrix = np.dot(matrix, matrix_i)
         x = np.zeros(n)
         x[0] = 1
-        return list(np.dot(matrix.T, x))
+        signed = np.dot(matrix.T, x).tolist()
+        unsigned = [abs(v) for v in signed]
+        return unsigned
+
+    @classmethod
+    def from_angles(cls, angles, variables, directions=None, settings=None):
+        generated_coefficients = cls.coefficients_from_angles(angles=angles)
+        coefficients = {}
+        generated_directions = {}
+        for variable, coeff in zip(variables, generated_coefficients):
+            coefficients[variable] = coeff
+            generated_directions[variable] = True
+
+        if directions is None:
+            directions = generated_directions
+
+        if settings is None:
+            settings = ObjectiveSettings()
+
+        return Objective(coefficients=coefficients, directions=directions, settings=settings)
         
 
 class Catalog(DessiaObject):
@@ -325,30 +372,27 @@ class Catalog(DessiaObject):
 
     def handle_objective(self, objective):
         parameters = self.parameters(self.choice_variables)
-        rhs = 0
-        for parameter in parameters:
-            if parameter.name in objective.coefficients:
-                raw_coeff = objective.coefficients[parameter.name]
-                minimize = objective.directions[parameter.name]
-                if objective.settings.scaled:
-                    coefficient = (1-raw_coeff)*parameter.lower_bound + raw_coeff*parameter.upper_bound
-                else:
-                    coefficient = raw_coeff
-            else:
-                coefficient = 0
-            if coefficient:
-                if minimize:
-                    rhs -= parameter.lower_bound/coefficient
-                else:
-                    rhs -= parameter.upper_bound/coefficient
+        rhs = objective.build_rhs(parameters)
         ratings = []
         for line in self.array:
-            rating = rhs
-            for variable, coefficient in objective.coefficients.items():
-                if coefficient != 0:
-                    rating += self.get_value_by_name(line, variable)/coefficient
+            values = {variable: self.get_value_by_name(line, variable) for variable in objective.coefficients}
+            rating = objective.apply_individual(values, rhs)
             ratings.append(rating)
         return ratings
+
+    def find_best_objective(self, values: Dict[str, float], n_tries: int):
+        parameters = self.parameters(list(values.keys()))  # !!!
+        lower_bound = 0
+        upper_bound = math.pi
+        discrete_angles = [lower_bound + i*(upper_bound - lower_bound)/n_tries for i in range(n_tries)]
+        produced_angles = product(discrete_angles, repeat=len(values)-1)
+        ratings = []
+        objectives = [Objective.from_angles(angles, [p.name for p in parameters]) for angles in produced_angles]
+        for objective in objectives:
+            rhs = objective.build_rhs(parameters)
+            ratings.append(objective.apply_individual(values, rhs))
+        best_objective = objectives[ratings.index(min(ratings))]
+        return best_objective
 
 
 def pareto_frontier(catalog: Catalog):
