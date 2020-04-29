@@ -189,6 +189,7 @@ class Catalog(DessiaObject):
         self.pareto_settings = pareto_settings
 
         self.objectives = objectives
+        self.generated_best_objectives = 0
 
     def _display_angular(self):
         """
@@ -200,7 +201,8 @@ class Catalog(DessiaObject):
                    if not isinstance(self.array[0][j], str) and variable in self.choice_variables]
 
         # Pareto
-        pareto_indices = pareto_frontier(catalog=self)
+        costs = self.build_costs(self.pareto_settings)
+        pareto_indices = pareto_frontier(catalog=self, costs=costs)
 
         all_near_indices = {}
         objective_ratings = {}
@@ -322,7 +324,7 @@ class Catalog(DessiaObject):
         means = {variable: self.mean(variable) for variable in variables}
         return means
 
-    def build_costs(self):
+    def build_costs(self, pareto_settings: ParetoSettings):
         """
         Build list of costs that are used to compute Pareto frontier.
 
@@ -339,11 +341,11 @@ class Catalog(DessiaObject):
 
         :return: A(n_points, n_costs)
         """
-        pareto_parameters = self.parameters(self.pareto_settings.minimized_attributes.keys())
+        pareto_parameters = self.parameters(list(pareto_settings.minimized_attributes.keys()))
         costs = np.zeros((len(self.array), len(pareto_parameters)))
         for i, line in enumerate(self.array):
             for j, parameter in enumerate(pareto_parameters):
-                if self.pareto_settings.minimized_attributes[parameter.name]:
+                if pareto_settings.minimized_attributes[parameter.name]:
                     value = self.get_value_by_name(line, parameter.name) - parameter.lower_bound
                 else:
                     value = parameter.upper_bound - self.get_value_by_name(line, parameter.name)
@@ -381,33 +383,52 @@ class Catalog(DessiaObject):
             ratings.append(rating)
         return ratings
 
-    def find_best_objective(self, values: Dict[str, float], n_angles: int,
-                            lower_bound: float = 0, upper_bound: float = math.pi/2):
-        parameters = self.parameters(list(values.keys()))  # !!!
+    def find_best_objective(self, values: Dict[str, float], minimized: Dict[str, float]=None, n_angles: int=8,
+                            lower_bound: float = 0, upper_bound: float = math.pi/2, settings: ObjectiveSettings = None):
+        # Unordered list of variables
+        variables = list(values.keys())  # !!!
+        parameters = self.parameters(variables)
+
+        if minimized is None:
+            minimized = {var: True for var in variables}
+
+        # Get pareto points for given minimized attributes
+        pareto_settings = ParetoSettings(minimized_attributes=minimized)
+        costs = self.build_costs(pareto_settings)
+        pareto_indices = pareto_frontier(catalog=self, costs=costs)
+        pareto_values = [{var: self.get_value_by_name(self.array[i], var) for var in variables}
+                         for i, is_efficient in enumerate(pareto_indices) if is_efficient]
+
+        # Produce all angles combinations
         discrete_angles = np.linspace(start=lower_bound, stop=upper_bound, num=n_angles+1, endpoint=True)
         produced_angles = product(discrete_angles, repeat=len(values)-1)
-        ratings = []
-        objectives = [Objective.from_angles(angles=angles,
-                                            variables=[p.name for p in parameters],
-                                            name="Best Coefficients"+str(len(self.objectives)))
+
+        # Build objectives from angles products
+        objectives = [Objective.from_angles(angles=angles, variables=[p.name for p in parameters], settings=settings)
                       for angles in produced_angles]
+
+        ratings = []
+        deltas = []
         for objective in objectives:
+            best_on_pareto = min([objective.apply_individual(pareto_value) for pareto_value in pareto_values])
             rhs = objective.build_rhs(parameters)
+            print("rhs", rhs)
             rating = objective.apply_individual(values, rhs)
-            print(rating)
+            deltas.append(rating-best_on_pareto)
             ratings.append(rating)
-        best_objective = objectives[ratings.index(min(ratings))]
+        best_objective = objectives[deltas.index(min(deltas))]
+        best_objective.name = "Best Coefficients" + str(self.generated_best_objectives)
+        self.generated_best_objectives += 1
         self.objectives.append(best_objective)
 
 
-def pareto_frontier(catalog: Catalog):
+def pareto_frontier(catalog: Catalog, costs):
     """
     Find the pareto-efficient points
 
     :param catalog: Catalog object on which to apply pareto_frontier computation
     :return: A (n_points, ) boolean array, indicating whether each point is Pareto efficient
     """
-    costs = catalog.build_costs()
     is_efficient = np.ones(costs.shape[0], dtype=bool)
     for index, cost in enumerate(costs):
         if is_efficient[index]:
