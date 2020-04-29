@@ -202,7 +202,7 @@ class Catalog(DessiaObject):
 
         # Pareto
         costs = self.build_costs(self.pareto_settings)
-        pareto_indices = pareto_frontier(catalog=self, costs=costs)
+        pareto_indices = pareto_frontier(costs=costs)
 
         all_near_indices = {}
         objective_ratings = {}
@@ -395,7 +395,7 @@ class Catalog(DessiaObject):
         # Get pareto points for given minimized attributes
         pareto_settings = ParetoSettings(minimized_attributes=minimized)
         costs = self.build_costs(pareto_settings)
-        pareto_indices = pareto_frontier(catalog=self, costs=costs)
+        pareto_indices = pareto_frontier(costs=costs)
         pareto_values = [{var: self.get_value_by_name(self.array[i], var) for var in variables}
                          for i, is_efficient in enumerate(pareto_indices) if is_efficient]
 
@@ -422,7 +422,7 @@ class Catalog(DessiaObject):
         self.objectives.append(best_objective)
 
 
-def pareto_frontier(catalog: Catalog, costs):
+def pareto_frontier(costs):
     """
     Find the pareto-efficient points
 
