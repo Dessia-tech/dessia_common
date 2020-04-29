@@ -407,15 +407,12 @@ class Catalog(DessiaObject):
         objectives = [Objective.from_angles(angles=angles, variables=[p.name for p in parameters], settings=settings)
                       for angles in produced_angles]
 
-        ratings = []
         deltas = []
         for objective in objectives:
             best_on_pareto = min([objective.apply_individual(pareto_value) for pareto_value in pareto_values])
             rhs = objective.build_rhs(parameters)
-            print("rhs", rhs)
             rating = objective.apply_individual(values, rhs)
             deltas.append(rating-best_on_pareto)
-            ratings.append(rating)
         best_objective = objectives[deltas.index(min(deltas))]
         best_objective.name = "Best Coefficients" + str(self.generated_best_objectives)
         self.generated_best_objectives += 1
