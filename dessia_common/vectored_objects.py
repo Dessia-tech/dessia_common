@@ -80,7 +80,7 @@ class Objective(DessiaObject):
                     coefficient = raw_coeff
             else:
                 coefficient = 0
-            if coefficient:
+            if not math.isclose(coefficient, 0, rel_tol=0, abs_tol=1e-9):
                 if minimize:
                     rhs -= parameter.lower_bound / coefficient
                 else:
@@ -91,7 +91,7 @@ class Objective(DessiaObject):
         rating = rhs
         for variable, value in values.items():
             coefficient = self.coefficients[variable]
-            if coefficient != 0:
+            if not math.isclose(coefficient, 0, rel_tol=0, abs_tol=1e-9):
                 rating += value/coefficient
         return rating
 
@@ -381,10 +381,10 @@ class Catalog(DessiaObject):
             ratings.append(rating)
         return ratings
 
-    def find_best_objective(self, values: Dict[str, float], n_tries: int,
-                            lower_bound: float = 0, upper_bound: float = math.pi):
+    def find_best_objective(self, values: Dict[str, float], n_angles: int,
+                            lower_bound: float = 0, upper_bound: float = math.pi/2):
         parameters = self.parameters(list(values.keys()))  # !!!
-        discrete_angles = [lower_bound + i*(upper_bound - lower_bound)/n_tries for i in range(n_tries)]
+        discrete_angles = np.linspace(start=lower_bound, stop=upper_bound, num=n_angles+1, endpoint=True)
         produced_angles = product(discrete_angles, repeat=len(values)-1)
         ratings = []
         objectives = [Objective.from_angles(angles=angles,
@@ -393,7 +393,9 @@ class Catalog(DessiaObject):
                       for angles in produced_angles]
         for objective in objectives:
             rhs = objective.build_rhs(parameters)
-            ratings.append(objective.apply_individual(values, rhs))
+            rating = objective.apply_individual(values, rhs)
+            print(rating)
+            ratings.append(rating)
         best_objective = objectives[ratings.index(min(ratings))]
         self.objectives.append(best_objective)
 
