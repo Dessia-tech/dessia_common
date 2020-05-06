@@ -83,6 +83,7 @@ class DessiaObject:
                                                 default_arguments[name])
                     _jsonschema['properties'].update(default)
                 _jsonschema['classes'] = [cls.__module__ + '.' + cls.__name__]
+                _jsonschema['whitelist_attributes'] = cls._whitelist_attributes
         return _jsonschema
 
     @property
