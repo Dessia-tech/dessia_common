@@ -108,7 +108,7 @@ class Objective(DessiaObject):
 
     @classmethod
     def from_angles(cls, angles, variables, directions=None, settings=None, name="Generated from angles"):
-        if not isinstance(angles, list):
+        if not isinstance(angles, list) and not isinstance(angles, np.ndarray):
             angles = [angles]
         generated_coefficients = cls.coefficients_from_angles(angles=angles)
         coefficients = {}
@@ -398,6 +398,8 @@ class Catalog(DessiaObject):
                 best_objective.name = "Best Coefficients" + str(self.generated_best_objectives)
                 self.generated_best_objectives += 1
                 self.objectives.append(best_objective)
+        if not res.success:
+            raise ValueError("No solutions found")
 
 def pareto_frontier(costs):
     """
