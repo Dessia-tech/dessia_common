@@ -30,10 +30,9 @@ class ObjectiveSettings(DessiaObject):
     _generic_eq = True
     _ordered_attributes = ['name', 'enabled', 'n_near_values']
 
-    def __init__(self, n_near_values: int = 4, enabled: bool = True, scaled: bool = False, name: str = ''):
+    def __init__(self, n_near_values: int = 4, enabled: bool = True, name: str = ''):
         self.n_near_values = n_near_values
         self.enabled = enabled
-        self.scaled = scaled
 
         DessiaObject.__init__(self, name=name)
 
@@ -400,6 +399,7 @@ class Catalog(DessiaObject):
                 self.objectives.append(best_objective)
         if not res.success:
             raise ValueError("No solutions found")
+
 
 def pareto_frontier(costs):
     """
