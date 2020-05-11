@@ -54,15 +54,8 @@ class Objective(DessiaObject):
     _ordered_attributes = ['name', 'settings', 'coefficients']
     _non_serializable_attributes = ['coeff_names']
 
-    def __init__(self, coefficients: Dict[str, float], directions: Dict[str, bool],
-                 settings: ObjectiveSettings, name: str = ''):
-        for variable in coefficients:
-            if variable not in directions:
-                msg = "Coefficient for variable {} was found but no direction is specified.".format(variable)
-                msg += " Add {} to directions dict.".format(variable)
-                raise KeyError(msg)
+    def __init__(self, coefficients: Dict[str, float], settings: ObjectiveSettings, name: str = ''):
         self.coefficients = coefficients
-        self.directions = directions
         self.coeff_names = list(coefficients.keys())
         self.settings = settings
 
@@ -74,16 +67,6 @@ class Objective(DessiaObject):
             coefficient = self.coefficients[variable]
             rating += coefficient*value
         return rating
-
-    def get_scale_values(self, catalog=None, parameters=None):
-        if self.scale_strategy == 'mean':
-            return catalog.means([p.name for p in parameters])
-        elif self.scale_strategy == 'custom':
-            return self.scale_values
-        elif self.scale_strategy is None:
-            return None
-        else:
-            raise NotImplementedError("Scale strategy '{}' does not exist".format(self.scale_strategy))
 
     @classmethod
     def coefficients_from_angles(cls, angles: List[float]) -> List[float]:
@@ -106,23 +89,16 @@ class Objective(DessiaObject):
         return unsigned
 
     @classmethod
-    def from_angles(cls, angles, variables, directions=None, settings=None, name="Generated from angles"):
+    def from_angles(cls, angles, variables, settings=None, name="Generated from angles"):
         if not isinstance(angles, list) and not isinstance(angles, np.ndarray):
             angles = [angles]
         generated_coefficients = cls.coefficients_from_angles(angles=angles)
-        coefficients = {}
-        generated_directions = {}
-        for variable, coeff in zip(variables, generated_coefficients):
-            coefficients[variable] = coeff
-            generated_directions[variable] = True
-
-        if directions is None:
-            directions = generated_directions
+        coefficients = {var: generated_coefficients[var] for var in variables}
 
         if settings is None:
             settings = ObjectiveSettings()
 
-        return Objective(coefficients=coefficients, directions=directions, settings=settings, name=name)
+        return Objective(coefficients=coefficients, settings=settings, name=name)
 
 
 class Catalog(DessiaObject):
@@ -296,15 +272,6 @@ class Catalog(DessiaObject):
         value = line[j]
         return value
 
-    def mean(self, variable: str):
-        values = self.get_values(variable)
-        mean = sum(values)/len(values)
-        return mean
-
-    def means(self, variables: List[str]) -> Dict[str, float]:
-        means = {variable: self.mean(variable) for variable in variables}
-        return means
-
     def build_costs(self, pareto_settings: ParetoSettings):
         """
         Build list of costs that are used to compute Pareto frontier.
@@ -349,10 +316,6 @@ class Catalog(DessiaObject):
         return cls(array=array, variables=variables,
                    pareto_settings=pareto_settings, objectives=objectives,
                    choice_variables=variables, name=name)
-
-    def handle_objectives(self):
-        ratings = [self.handle_objective(o) for o in self.objectives]
-        return ratings
 
     def handle_objective(self, objective):
         ratings = []
