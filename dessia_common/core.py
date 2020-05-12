@@ -85,6 +85,7 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
     _init_variables = None
     _export_formats = None
     _allowed_methods = []
+    _whitelist_attributes = []
 
     def __init__(self, name: str = '', **kwargs):
         implements_eq = (hasattr(self, '__eq__') and hasattr(self, '__hash__')

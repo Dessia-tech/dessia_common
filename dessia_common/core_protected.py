@@ -83,6 +83,7 @@ class DessiaObject:
                                                 default_arguments[name])
                     _jsonschema['properties'].update(default)
                 _jsonschema['classes'] = [cls.__module__ + '.' + cls.__name__]
+                _jsonschema['whitelist_attributes'] = cls._whitelist_attributes
         return _jsonschema
 
     @property
@@ -313,10 +314,11 @@ def deserialize_argument(type_, argument):
             except KeyError:
                 # This is not the right class, we should go see the parent
                 classes.remove(children_class)
-    elif hasattr(type_, '_name')\
-    and type_._name in ['List', 'Sequence', 'Iterable']:
+    elif hasattr(type_, '_name') and type_._name in ['List', 'Sequence', 'Iterable']:
         sequence_subtype = type_.__args__[0]
         deserialized_argument = [deserialize_argument(sequence_subtype, arg) for arg in argument]
+    elif hasattr(type_, '_name') and type_._name == 'Dict':
+        deserialized_argument = argument
     else:
         if type_ in TYPING_EQUIVALENCES.keys():
             if isinstance(argument, type_):
