@@ -85,6 +85,7 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
     _init_variables = None
     _export_formats = None
     _allowed_methods = []
+    _whitelist_attributes = []
 
     def __init__(self, name: str = '', **kwargs):
         implements_eq = (hasattr(self, '__eq__') and hasattr(self, '__hash__')
@@ -705,16 +706,25 @@ def deepcopy_value(value, memo):
             copied_list = []
             for v in value:
                 cv = deepcopy_value(v, memo=memo)
-                memo[v] = cv
+                try:
+                    memo[v] = cv
+                except TypeError:
+                    pass
                 copied_list.append(cv)
             return copied_list
         elif isinstance(value, dict):
             copied_dict = {}
             for k, v in value.items():
                 copied_k = deepcopy_value(k, memo=memo)
-                memo[k] = copied_k
                 copied_v = deepcopy_value(v, memo=memo)
-                memo[v] = copied_v
+                try:
+                    memo[k] = copied_k
+                except TypeError:
+                    pass
+                try:
+                    memo[v] = copied_v
+                except TypeError:
+                    pass
                 copied_dict[copied_k] = copied_v
             return copied_dict
         else:

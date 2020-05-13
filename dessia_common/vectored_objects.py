@@ -6,18 +6,20 @@ Created on Wed Feb 19 15:56:12 2020
 @author: jezequel
 """
 
+import math
 from typing import List, Dict
 import numpy as np
 import pandas as pd
 from dessia_common import DessiaObject, Parameter
+from scipy.optimize import minimize
+from pyDOE import lhs
 
 
 class ParetoSettings(DessiaObject):
     _generic_eq = True
     _ordered_attributes = ['name', 'enabled', 'minimized_attributes']
 
-    def __init__(self, minimized_attributes: Dict[str, bool],
-                 enabled: bool = True, name: str = ''):
+    def __init__(self, minimized_attributes: Dict[str, bool], enabled: bool = True, name: str = ''):
         self.enabled = enabled
         self.minimized_attributes = minimized_attributes
 
@@ -49,64 +51,54 @@ class Objective(DessiaObject):
     """
     _generic_eq = True
     _standalone_in_db = False
-    _ordered_attributes = ['name', 'scaled', 'scale_strategy', 'scale_value', 'settings', 'coefficients']
+    _ordered_attributes = ['name', 'settings', 'coefficients']
     _non_serializable_attributes = ['coeff_names']
 
-    def __init__(self, coefficients: Dict[str, float], settings: ObjectiveSettings,
-                 scaled: bool = False, scale_strategy: str = 'mean', scale_values: List[float] = None, name: str = ''):
+    def __init__(self, coefficients: Dict[str, float], settings: ObjectiveSettings, name: str = ''):
         self.coefficients = coefficients
         self.coeff_names = list(coefficients.keys())
         self.settings = settings
-        self.scaled = scaled
-        self.scale_strategy = scale_strategy
-        self.scale_values = scale_values
 
         DessiaObject.__init__(self, name=name)
 
-    def apply_to_catalog(self, catalog):
-        ordered_names = sorted(self.coeff_names, key=lambda s: catalog.get_variable_index(s))
-        parameters = catalog.parameters(ordered_names)
-        ratings = []
-        # if self.scaled:
-        scale_values = self.get_scale_values(catalog, parameters)
-        for line in catalog.array:
-            objective = sum([catalog.get_value_by_name(line, p.name) * self.coefficients[p.name] / scale_values[p.name]
-                             if self.scaled else catalog.get_value_by_name(line, p.name) * self.coefficients[p.name]
-                             for p in parameters])
-            ratings.append(objective)
-    # else:
-        #     for line in catalog.array:
-        #         ratings.append(objective)
-        #         objective = sum([catalog.get_value_by_name(line, p.name) * self.coefficients[p.name] for p in parameters])
-        #         ratings.append(objective)
-        #
-        # if self.scaled and self.scale_strategy == 'mean':
-        #     means = catalog.means([p.name for p in parameters])
-        #     for line in catalog.array:
-        #         objective = sum([catalog.get_value_by_name(line, p.name) * self.coefficients[p.name] / m
-        #                          for p, m in zip(parameters, means)])
-        #         ratings.append(objective)
-        # elif self.scaled and self.scale_strategy == 'custom':
-        #     for line in catalog.array:
-        #         objective = sum([catalog.get_value_by_name(line, p.name) * self.coefficients[p.name] / scale_values[p.name]
-        #                          for p in parameters])
-        #         ratings.append(objective)
-        # elif not self.scaled:
-        #     for line in catalog.array:
-        #         ratings.append(objective)
-        #         objective = sum([catalog.get_value_by_name(line, p.name) * self.coefficients[p.name] for p in parameters])
-        #         ratings.append(objective)
-        return ratings
+    def apply_individual(self, values):
+        rating = 0
+        for variable, value in values.items():
+            coefficient = self.coefficients[variable]
+            rating += coefficient*value
+        return rating
 
-    def get_scale_values(self, catalog=None, parameters=None):
-        if self.scale_strategy == 'mean':
-            return catalog.means([p.name for p in parameters])
-        elif self.scale_strategy == 'custom':
-            return self.scale_values
-        elif self.scale_strategy is None:
-            return None
-        else:
-            raise NotImplementedError("Scale strategy '{}' does not exist".format(self.scale_strategy))
+    @classmethod
+    def coefficients_from_angles(cls, angles: List[float]) -> List[float]:
+        """
+        compute coefficients from n-1 angles
+        """
+        n = len(angles) + 1
+        matrix = np.identity(n)
+        for i, angle in enumerate(angles):
+            matrix_i = np.identity(n)
+            matrix_i[i, i] = math.cos(angle)
+            matrix_i[i+1, i] = -math.sin(angle)
+            matrix_i[i, i+1] = math.sin(angle)
+            matrix_i[i+1, i+1] = math.cos(angle)
+            matrix = np.dot(matrix, matrix_i)
+        x = np.zeros(n)
+        x[0] = 1
+        signed = np.dot(matrix.T, x).tolist()
+        unsigned = [abs(v) for v in signed]
+        return unsigned
+
+    @classmethod
+    def from_angles(cls, angles, variables, settings=None, name="Generated from angles"):
+        if not isinstance(angles, list) and not isinstance(angles, np.ndarray):
+            angles = [angles]
+        generated_coefficients = cls.coefficients_from_angles(angles=angles)
+        coefficients = {var: generated_coefficients[i] for i, var in enumerate(variables)}
+
+        if settings is None:
+            settings = ObjectiveSettings()
+
+        return Objective(coefficients=coefficients, settings=settings, name=name)
 
 
 class Catalog(DessiaObject):
@@ -136,6 +128,8 @@ class Catalog(DessiaObject):
     _ordered_attributes = ['name', 'pareto_settings', 'objectives']
     _non_editable_attributes = ['array', 'variables', 'choice_variables']
     _export_formats = ['csv']
+    _allowed_methods = ['find_best_objective']
+    _whitelist_attributes = ['variables']
 
     def __init__(self, array: List[List[float]], variables: List[str],
                  pareto_settings: ParetoSettings,
@@ -146,11 +140,15 @@ class Catalog(DessiaObject):
 
         self.array = array
         self.variables = variables
-        self.choice_variables = choice_variables
+        if choice_variables is None:
+            self.choice_variables = variables
+        else:
+            self.choice_variables = choice_variables
 
         self.pareto_settings = pareto_settings
 
         self.objectives = objectives
+        self.generated_best_objectives = 0
 
     def _display_angular(self):
         """
@@ -161,21 +159,35 @@ class Catalog(DessiaObject):
         filters = [{'attribute': variable, 'operator': 'gt', 'bound': 0} for j, variable in enumerate(self.variables)
                    if not isinstance(self.array[0][j], str) and variable in self.choice_variables]
 
-        values = [{variable: self.get_value_by_name(line, variable) for variable in self.variables}
-                  for line in self.array]
-
         # Pareto
-        pareto_indices = pareto_frontier(catalog=self)
+        costs = self.build_costs(self.pareto_settings)
+        pareto_indices = pareto_frontier(costs=costs)
 
         all_near_indices = {}
+        objective_ratings = {}
         for iobjective, objective in enumerate(self.objectives):
             if objective.settings.enabled:
-                ratings = np.array(objective.apply_to_catalog(self))
+                ratings = self.handle_objective(objective)
+                if objective.name and objective.name not in objective_ratings:
+                    name = objective.name
+                else:
+                    name = 'objective_'+str(iobjective)
+                objective_ratings[name] = ratings
+                filters.append({'attribute': name, 'operator': 'gte', 'bound': 0})
                 threshold = objective.settings.n_near_values
                 near_indices = list(np.argpartition(ratings, threshold)[:threshold])
                 all_near_indices[iobjective] = near_indices
 
         datasets = []
+
+        values = []
+        for i, line in enumerate(self.array):
+            value = {}
+            for variable in self.variables:
+                value[variable] = self.get_value_by_name(line, variable)
+            for objective_name, ratings in objective_ratings.items():
+                value[objective_name] = ratings[i]
+            values.append(value)
 
         # Pareto
         if self.pareto_settings.enabled:
@@ -260,19 +272,7 @@ class Catalog(DessiaObject):
         value = line[j]
         return value
 
-    def mean(self, variable: str):
-        values = self.get_values(variable)
-        mean = sum(values)/len(values)
-        return mean
-
-    def means(self, variables: List[str]) -> Dict[str, float]:
-        means = {variable: self.mean(variable) for variable in variables}
-        # means = []
-        # for variable in variables:
-        #     means.append(self.mean(variable))
-        return means
-
-    def build_costs(self):
+    def build_costs(self, pareto_settings: ParetoSettings):
         """
         Build list of costs that are used to compute Pareto frontier.
 
@@ -289,26 +289,88 @@ class Catalog(DessiaObject):
 
         :return: A(n_points, n_costs)
         """
-        pareto_parameters = self.parameters(self.pareto_settings.minimized_attributes.keys())
+        pareto_parameters = self.parameters(list(pareto_settings.minimized_attributes.keys()))
         costs = np.zeros((len(self.array), len(pareto_parameters)))
         for i, line in enumerate(self.array):
             for j, parameter in enumerate(pareto_parameters):
-                if self.pareto_settings.minimized_attributes[parameter.name]:
+                if pareto_settings.minimized_attributes[parameter.name]:
                     value = self.get_value_by_name(line, parameter.name) - parameter.lower_bound
                 else:
                     value = parameter.upper_bound - self.get_value_by_name(line, parameter.name)
                 costs[(i, j)] = value
         return costs
 
+    @classmethod
+    def random_2d(cls, bounds: Dict[str, List[float]], threshold: float, end: float = 500, name='Random Set'):
+        """
+        This method is for dev purpose. It can be removed if needed
+        """
+        array = []
+        variables = list(bounds.keys())
+        pareto_settings = ParetoSettings({v: True for v in variables}, enabled=True)
+        objectives = []
+        while len(array) <= end:
+            line = [(bounds[v][1]-bounds[v][0])*np.random.rand() + bounds[v][0] for v in variables]
+            if line[0]*line[1] >= threshold:
+                array.append(line)
+        return cls(array=array, variables=variables,
+                   pareto_settings=pareto_settings, objectives=objectives,
+                   choice_variables=variables, name=name)
 
-def pareto_frontier(catalog: Catalog):
+    def handle_objective(self, objective):
+        ratings = []
+        for line in self.array:
+            values = {variable: self.get_value_by_name(line, variable) for variable in objective.coefficients}
+            rating = objective.apply_individual(values)
+            ratings.append(rating)
+        return ratings
+
+    def find_best_objective(self, values: Dict[str, float], settings: ObjectiveSettings = None):
+        # Unordered list of variables
+        variables = list(values.keys())  # !!!
+        parameters = self.parameters(variables)
+
+        # Get pareto points
+        minimized = {var: True for var in variables}
+        pareto_settings = ParetoSettings(minimized_attributes=minimized)
+        costs = self.build_costs(pareto_settings=pareto_settings)
+        pareto_indices = pareto_frontier(costs=costs)
+        pareto_values = [{var: self.get_value_by_name(self.array[i], var) for var in variables}
+                         for i, is_efficient in enumerate(pareto_indices) if is_efficient]
+
+        def apply(x):
+            objective = Objective.from_angles(angles=x, variables=[p.name for p in parameters])
+            best_on_pareto = min([objective.apply_individual(pareto_value) for pareto_value in pareto_values])
+            rating = objective.apply_individual(values)
+            delta = rating - best_on_pareto
+            return delta
+
+        i = 0
+        success = False
+        randomized_angles = lhs(len(values) - 1, 100)
+        available_angles = [[angle * 2 * math.pi for angle in angles] for angles in randomized_angles]
+        while i < len(available_angles) and not success:
+            res = minimize(fun=apply, x0=randomized_angles[i], method="Powell")
+            i += 1
+            if res.success:
+                success = True
+                best_objective = Objective.from_angles(angles=res.x.tolist(),
+                                                       variables=[p.name for p in parameters],
+                                                       settings=settings)
+                best_objective.name = "Best Coefficients" + str(self.generated_best_objectives)
+                self.generated_best_objectives += 1
+                self.objectives.append(best_objective)
+        if not res.success:
+            raise ValueError("No solutions found")
+
+
+def pareto_frontier(costs):
     """
     Find the pareto-efficient points
 
     :param catalog: Catalog object on which to apply pareto_frontier computation
     :return: A (n_points, ) boolean array, indicating whether each point is Pareto efficient
     """
-    costs = catalog.build_costs()
     is_efficient = np.ones(costs.shape[0], dtype=bool)
     for index, cost in enumerate(costs):
         if is_efficient[index]:
