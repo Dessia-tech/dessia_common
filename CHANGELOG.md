@@ -7,14 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## Added
+## [0.3.7]
+### Fixed
+- coefficients_from_angles list was used as dictionnary in from_angles method
+
+## [0.3.6]
+### Added
 - Support of dict (keys and values) copy in generic deepcopy
 - Find best objective
 
 ### Changed
 - Export csv to fit vectored_objects removal
 - All set variables in _display_angular config instead of just choice_variables
-- Strategy for scale and custom value scaling
+- Strategy for scale and custom value scaling 
 
 ## [0.3.5]
 ### Changed
