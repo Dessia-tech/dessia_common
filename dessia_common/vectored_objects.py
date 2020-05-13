@@ -93,7 +93,7 @@ class Objective(DessiaObject):
         if not isinstance(angles, list) and not isinstance(angles, np.ndarray):
             angles = [angles]
         generated_coefficients = cls.coefficients_from_angles(angles=angles)
-        coefficients = {var: generated_coefficients[var] for var in variables}
+        coefficients = {var: generated_coefficients[i] for i, var in enumerate(variables)}
 
         if settings is None:
             settings = ObjectiveSettings()
