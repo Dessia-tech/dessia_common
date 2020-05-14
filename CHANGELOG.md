@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## Added
+- Cars dataset as imported models
+
 ## [0.3.7]
 ### Fixed
 - coefficients_from_angles list was used as dictionnary in from_angles method
