@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Test directions and signs of coeff for maximization in find_best_objectives
+- BestCoefficients names changed to remove space in it
+- Directions argument is now mandatory
 
 ## [0.3.7]
 ### Fixed
