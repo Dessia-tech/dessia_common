@@ -7,8 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## Added
+### Added
 - Cars dataset as imported models
+
+### Changed
+- Test directions and signs of coeff for maximization in find_best_objectives
 
 ## [0.3.7]
 ### Fixed
