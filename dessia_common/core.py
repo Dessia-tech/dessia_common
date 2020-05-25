@@ -77,11 +77,12 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
     _standalone_in_db = False
     _non_serializable_attributes = []
     _non_editable_attributes = []
-    _non_eq_attributes = ['name']
-    _non_hash_attributes = ['name']
+    _non_data_eq_attributes = ['name']
+    _non_data_hash_attributes = ['name']
     _ordered_attributes = []
     _titled_attributes = []
-    _generic_eq = False
+    _eq_is_data_eq = False
+    
     _init_variables = None
     _export_formats = None
     _allowed_methods = []
@@ -98,17 +99,29 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
         for property_name, property_value in kwargs.items():
             setattr(self, property_name, property_value)
 
+    def __hash__(self):
+        if self._eq_is_data_eq:
+            return self.data__hash__()
+        else:
+            return object.__hash__(self)
+
     def __eq__(self, other_object):
-        if not self._generic_eq:
+        if self._eq_is_data_eq:
+            return self.data__eq__()
+        else:
             return object.__eq__(self, other_object)
+
+    def data__eq__(self, other_object):
+        # if not self._generic_eq:
+        #     return object.__eq__(self, other_object)
         if full_classname(self) != full_classname(other_object) \
                 or self.__dict__.keys() != other_object.__dict__.keys():  # TODO : Check this line. Keys not ordered and/or just need to test used keys
             return False
 
         dict_ = {k: v for k, v in self.__dict__.items()
-                 if k not in self._non_eq_attributes}
+                 if k not in self._non_data_eq_attributes}
         other_dict = {k: v for k, v in other_object.__dict__.items()
-                      if k not in self._non_eq_attributes}
+                      if k not in self._non_data_eq_attributes}
 
         for key, value in dict_.items():
             other_value = other_dict[key]
@@ -117,12 +130,10 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
         return True
     
 
-    def __hash__(self):
-        if not self._generic_eq:
-            return object.__hash__(self)
+    def data__hash__(self):
         hash_ = 0
         for key, value in self.__dict__.items():
-            if key not in set(self._non_eq_attributes + self._non_hash_attributes):
+            if key not in set(self._non_data_eq_attributes + self._non_data_hash_attributes):
                 if isinstance(value, list):
                     hash_ += list_hash(value)
                 elif isinstance(value, dict):
@@ -359,8 +370,8 @@ class Evolution(DessiaObject):
     :param evolution: float list
     :type evolution: list
     """
-    _non_eq_attributes = ['name']
-    _non_hash_attributes = ['name']
+    _non_data_eq_attributes = ['name']
+    _non_data_hash_attributes = ['name']
     _generic_eq = True
 
     def __init__(self, evolution: List[float] = None, name: str = ''):
@@ -385,8 +396,8 @@ class Evolution(DessiaObject):
 
 
 class CombinationEvolution(DessiaObject):
-    _non_eq_attributes = ['name']
-    _non_hash_attributes = ['name']
+    _non_data_eq_attributes = ['name']
+    _non_data_hash_attributes = ['name']
     _generic_eq = True
 
     def __init__(self, evolution1: List[Evolution], evolution2: List[Evolution],
