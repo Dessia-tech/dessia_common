@@ -8,6 +8,7 @@ import inspect
 from copy import deepcopy
 
 from typing import TypeVar
+from mypy_extensions import _TypedDictMeta
 import dessia_common.core
 
 class DessiaObject:
@@ -164,20 +165,31 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
                                    'title': title,
                                    'editable': editable,
                                    'order': order}
-    elif isinstance(value, TypeVar):
-        # Several  classes are possible
-        classnames = [c.__module__+'.'+c.__name__ for c in value.__constraints__]
+    # elif isinstance(value, TypeVar):
+    #     # !!! Obsolete, this will probably need to be removed. New way : Union
+    #     # Several  classes are possible
+    #     classnames = [c.__module__+'.'+c.__name__ for c in value.__constraints__]
+    #     jsonschema_element[key] = {'type': 'object',
+    #                                'classes': classnames,
+    #                                'title': title,
+    #                                'editable': editable,
+    #                                'order': order}
+    elif hasattr(value, '_name') and value._name == 'Union':
+        # Types union
+        classnames = [c.__module__ + '.' + c.__name__ for c in value.__constraints__]
         jsonschema_element[key] = {'type': 'object',
                                    'classes': classnames,
                                    'title': title,
                                    'editable': editable,
                                    'order': order}
     elif hasattr(value, '_name') and value._name in ['List', 'Sequence', 'Iterable']:
+        # Homogenous lists
         jsonschema_element[key] = jsonschema_sequence_recursion(value=value,
                                                                 order=order,
                                                                 title=title,
                                                                 editable=editable)
     elif hasattr(value, '_name') and value._name == 'Tuple':
+        # Heterogenous lists
         items = []
         for type_ in value.__args__:
             items.append({'type': TYPING_EQUIVALENCES[type_]})
@@ -194,9 +206,14 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
                                    'editable': editable,
                                    'title': title,
                                    'patternProperties': {'.*': {'type': TYPING_EQUIVALENCES[value_type]}}}
-
+    elif isinstance(value, _TypedDictMeta):
+        # Static dict structure
+        print(value.__dict__)
+        # !!! This will actually some investigations on wether we use dataclasses or not, as TypedDict can't be check with insinstance
+        raise NotImplementedError
     else:
-        if hasattr(value, '_standalone_in_db'): # and value._standalone_in_db:
+        # Custom classes
+        if hasattr(value, '_standalone_in_db'):  # and value._standalone_in_db:
             # Dessia custom classes
             classname = value.__module__ + '.' + value.__name__
             jsonschema_element[key] = {'type': 'object',

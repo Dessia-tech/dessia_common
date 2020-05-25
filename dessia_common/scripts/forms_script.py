@@ -7,7 +7,7 @@ static_dict = {'name': 'Static Dict', 'value': 93.89, 'is_valid': True, 'subobje
 tuple_arg = ('tuple', 120)
 sublist_ss = StandaloneSubobject(floatarg=-568.1)
 sublist_es = EmbeddedSubobject()
-enhanced_ss = EnhancedStandaloneSubobject(floatarg=568.1, boolarg=False)
+enhanced_ss = EnhancedStandaloneSubobject(floatarg=-568.1, boolarg=False)
 
 standalone_object = StandaloneObject(standalone_subobject=standalone_subobject, embedded_subobject=embedded_subobject,
                                      dynamic_dict=dynamic_dict, static_dict=static_dict, tuple_arg=tuple_arg,
