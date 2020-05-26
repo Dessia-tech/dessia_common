@@ -1,9 +1,10 @@
-from dessia_common.forms import StandaloneSubobject, StandaloneObject, EmbeddedSubobject, EnhancedStandaloneSubobject
+from dessia_common.forms import StandaloneSubobject, StandaloneObject, EmbeddedSubobject, EnhancedStandaloneSubobject, StaticDict
 
 standalone_subobject = StandaloneSubobject(floatarg=2.3)
 embedded_subobject = EmbeddedSubobject(name="ES0")
 dynamic_dict = {'a': True, 'b': False, 'c': False}
 static_dict = {'name': 'Static Dict', 'value': 93.89, 'is_valid': True, 'subobject': EmbeddedSubobject()}
+# static_dict = StaticDict(name='Static Dict', value=93.89, is_valid=True, subobject=EmbeddedSubobject())
 tuple_arg = ('tuple', 120)
 sublist_ss = StandaloneSubobject(floatarg=-568.1)
 sublist_es = EmbeddedSubobject()

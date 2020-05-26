@@ -7,8 +7,9 @@
 import inspect
 from copy import deepcopy
 
-from typing import TypeVar
+from typing import TypeVar, Union
 from mypy_extensions import _TypedDictMeta
+from dataclasses import is_dataclass
 import dessia_common.core
 
 class DessiaObject:
@@ -151,6 +152,7 @@ class DessiaObject:
 def jsonschema_from_annotation(annotation, jsonschema_element,
                                order, editable=None, title=None):
     key, value = annotation
+    print(annotation)
     if isinstance(value, str):
         raise ValueError
         
@@ -174,9 +176,9 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
     #                                'title': title,
     #                                'editable': editable,
     #                                'order': order}
-    elif hasattr(value, '_name') and value._name == 'Union':
+    elif hasattr(value, '__origin__') and value.__origin__ == Union:
         # Types union
-        classnames = [c.__module__ + '.' + c.__name__ for c in value.__constraints__]
+        classnames = [a.__module__ + '.' + a.__name__ for a in value.__args__]
         jsonschema_element[key] = {'type': 'object',
                                    'classes': classnames,
                                    'title': title,
@@ -184,10 +186,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
                                    'order': order}
     elif hasattr(value, '_name') and value._name in ['List', 'Sequence', 'Iterable']:
         # Homogenous lists
-        jsonschema_element[key] = jsonschema_sequence_recursion(value=value,
-                                                                order=order,
-                                                                title=title,
-                                                                editable=editable)
+        jsonschema_element[key] = jsonschema_sequence_recursion(value=value, order=order, title=title, editable=editable)
     elif hasattr(value, '_name') and value._name == 'Tuple':
         # Heterogenous lists
         items = []
@@ -206,14 +205,14 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
                                    'editable': editable,
                                    'title': title,
                                    'patternProperties': {'.*': {'type': TYPING_EQUIVALENCES[value_type]}}}
-    elif isinstance(value, _TypedDictMeta):
+    elif is_dataclass(value):
         # Static dict structure
-        print(value.__dict__)
-        # !!! This will actually some investigations on wether we use dataclasses or not, as TypedDict can't be check with insinstance
-        raise NotImplementedError
+        print('Dataclass', value.__dict__)
     else:
         # Custom classes
-        if hasattr(value, '_standalone_in_db'):  # and value._standalone_in_db:
+        print(value, issubclass(value, DessiaObject), value.mro())
+        if issubclass(value, DessiaObject):
+        # if hasattr(value, '_standalone_in_db'):  # and value._standalone_in_db:
             # Dessia custom classes
             classname = value.__module__ + '.' + value.__name__
             jsonschema_element[key] = {'type': 'object',
@@ -222,8 +221,8 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
                                        'editable': editable,
                                        'classes': [classname]}
         else:
-            # Dataclasses
-            jsonschema_element[key] = jsonschema_from_dataclass(value)
+            # Statically created dict structure
+            jsonschema_element[key] = static_dict_jsonschema(value)
             jsonschema_element[key].update({'title': title,
                                             'order': order,
                                             'editable': editable})
@@ -236,15 +235,10 @@ def jsonschema_sequence_recursion(value, title=None, order=None, editable=False)
 
     items_type = value.__args__[0]
     if hasattr(items_type, '_name') and items_type._name in ['List', 'Sequence', 'Iterable']:
-        jsonschema_element['items'] = jsonschema_sequence_recursion(value=items_type,
-                                                                    title=title,
-                                                                    editable=editable)
+        jsonschema_element['items'] = jsonschema_sequence_recursion(value=items_type, title=title, editable=editable)
     else:
         annotation = ('items', items_type)
-        jsonschema_element.update(jsonschema_from_annotation(annotation,
-                                                             jsonschema_element,
-                                                             order=0,
-                                                             title=title))
+        jsonschema_element.update(jsonschema_from_annotation(annotation, jsonschema_element, order=0, title=title))
     return jsonschema_element
 
 def prettyname(namestr):
@@ -259,6 +253,17 @@ def prettyname(namestr):
             if i < len(strings)-1:
                 pretty_name += ' '
     return pretty_name
+
+def static_dict_jsonschema(typed_dict, title=None):
+    # if title is None:
+    #     title = prettyname(typed_dict.__name__)
+    jsonschema_element = {'type': 'object',
+                          'properties': {}}
+    for i, ann in enumerate(typed_dict.__annotations__.items()):  # !!! Not actually ordered !
+        jss = jsonschema_from_annotation(annotation=ann, jsonschema_element=jsonschema_element['properties'],
+                                         order=i, title=title)
+        jsonschema_element['properties'].update(jss)
+    return jsonschema_element
 
 def jsonschema_from_dataclass(class_, title=None):
     if title is None:
