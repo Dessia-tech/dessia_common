@@ -51,7 +51,9 @@ optimization_workflow = workflow.Workflow([instanciate_optimizer, optimization,
                                           [pipe1_opt, pipe2_opt],
                                           model_fetcher.outputs[0])
 
-parallel_optimization = workflow.ForEach(optimization_workflow, instanciate_optimizer.inputs[0])
+optimization_workflow_block = workflow.WorkflowBlock(optimization_workflow)
+
+parallel_optimization = workflow.ForEach(optimization_workflow_block, optimization_workflow_block.inputs[0])
 
 filters = [{'attribute' : 'value', 'operator' : 'gt', 'bound' : 0},
            {'attribute' : 'submodel.subvalue', 'operator' : 'lt', 'bound' : 200}]
@@ -74,7 +76,7 @@ demo_workflow = workflow.Workflow([instanciate_generator,
 
 demo_workflow.plot_graph()
 
-input_values = {instanciate_generator.inputs[0]: 5}
+input_values = {0: 5}
 
 demo_workflow_run = demo_workflow.run(input_values, verbose=True)
 

@@ -446,11 +446,12 @@ class Sequence(Block):
 
 class ForEach(Block):
 
-    def __init__(self, workflow, workflow_iterable_input, name=''):
-        self.workflow = workflow
+    def __init__(self, workflow_block, workflow_iterable_input, name=''):
+        self.workflow_block = workflow_block
         self.workflow_iterable_input = workflow_iterable_input
         inputs = []
-        for workflow_input in self.workflow.inputs:
+        
+        for workflow_input in self.workflow_block.inputs:
             if workflow_input == workflow_iterable_input:
                 inputs.append(Variable('Iterable input: '+workflow_input.name))
             else:
@@ -462,14 +463,14 @@ class ForEach(Block):
         Block.__init__(self, inputs, [output_variable], name=name)
 
     def equivalent_hash(self):
-        return int(hash(self.workflow) % 10e5)
+        return int(hash(self.workflow_block) % 10e5)
 
     def equivalent(self, other_block):
         if not Block.equivalent(self, other_block):
             return False
-        return self.workflow == other_block.workflow\
-               and self.workflow.variable_indices(self.workflow_iterable_input)\
-                   == other_block.workflow.variable_indices(other_block.workflow_iterable_input)
+        return self.workflow_block == other_block.workflow_block\
+               and self.workflow_block.variable_indices(self.workflow_iterable_input)\
+                   == other_block.workflow_block.variable_indices(other_block.workflow_iterable_input)
 
 
     def to_dict(self):
@@ -490,16 +491,18 @@ class ForEach(Block):
         return cls(workflow, workflow_iterable_input, name=dict_['name'])
 
     def evaluate(self, values):
+        
         values_workflow = {var2: values[var1] for var1, var2 in zip(self.inputs,
-                                                                    self.workflow.inputs)}
+                                                                    self.workflow_block.inputs)}
+        print('values', values_workflow)
+        # index_iterable_input = self.workflow_block.inputs.index(self.workflow_iterable_input)
         output_values = []
         for value in values_workflow[self.workflow_iterable_input]:
-            values_workflow2 = {var.name: val\
-                                for var, val in values.items()\
-                                if var != self.workflow_iterable_input}
-            values_workflow2[self.workflow_iterable_input] = value
-            workflow_run = self.workflow.run(values_workflow2)
-            output_values.append(workflow_run.output_value)
+            # values_workflow2 = {var.name: val\
+            #                     for var, val in values_workflow.items()\
+            #                     if var != self.workflow_iterable_input}
+            values_workflow[self.workflow_iterable_input] = value
+            output_values.append(self.workflow_block.evaluate(values_workflow)[0])
         return [output_values]
 
 
