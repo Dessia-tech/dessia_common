@@ -43,18 +43,24 @@ attribute_selection = workflow.ModelAttribute('models')
 instanciate_optimizer = workflow.InstanciateModel(Optimizer)
 optimization = workflow.ModelMethod(Optimizer, 'optimize')
 model_fetcher = workflow.ModelAttribute('model_to_optimize')
+deepattr_block = workflow.ModelAttribute('model_to_optimize.submodel.subvalue')
+bus = workflow.Sequence(number_arguments=2)
 
 pipe1_opt = workflow.Pipe(instanciate_optimizer.outputs[0], optimization.inputs[0])
 pipe2_opt = workflow.Pipe(optimization.outputs[1], model_fetcher.inputs[0])
+pipe0_bus = workflow.Pipe(model_fetcher.outputs[0], bus.inputs[0])
+pipe_deepattr = workflow.Pipe(optimization.outputs[1], deepattr_block.inputs[0])
+pipe1_bus = workflow.Pipe(deepattr_block.outputs[0], bus.inputs[1])
 optimization_workflow = workflow.Workflow([instanciate_optimizer, optimization,
-                                           model_fetcher],
-                                          [pipe1_opt, pipe2_opt],
-                                          model_fetcher.outputs[0])
+                                           model_fetcher, deepattr_block, bus],
+                                          [pipe1_opt, pipe2_opt, pipe_deepattr, pipe0_bus, pipe1_bus],
+                                          bus.outputs[0])
 
 optimization_workflow_block = workflow.WorkflowBlock(optimization_workflow)
 
 parallel_optimization = workflow.ForEach(optimization_workflow_block, optimization_workflow_block.inputs[0])
 
+demux = workflow.Demux(number_arguments=2)
 filters = [{'attribute' : 'value', 'operator' : 'gt', 'bound' : 0},
            {'attribute' : 'submodel.subvalue', 'operator' : 'lt', 'bound' : 200}]
 
@@ -63,15 +69,17 @@ filter_sort = workflow.Filter(filters)
 pipe_1 = workflow.Pipe(instanciate_generator.outputs[0], generator_generate.inputs[0])
 pipe_2 = workflow.Pipe(generator_generate.outputs[1], attribute_selection.inputs[0])
 pipe_3 = workflow.Pipe(attribute_selection.outputs[0], parallel_optimization.inputs[0])
-pipe_4 = workflow.Pipe(parallel_optimization.outputs[0], filter_sort.inputs[0])
+pipe_4 = workflow.Pipe(parallel_optimization.outputs[0], demux.inputs[0])
+pipe_51 = workflow.Pipe(demux.outputs[0], filter_sort.inputs[0])
 
 
 demo_workflow = workflow.Workflow([instanciate_generator,
                                    generator_generate,
                                    attribute_selection,
                                    parallel_optimization,
+                                   demux,
                                    filter_sort],
-                                  [pipe_1, pipe_2, pipe_3, pipe_4],
+                                  [pipe_1, pipe_2, pipe_3, pipe_4, pipe_51],
                                   filter_sort.outputs[0])
 
 demo_workflow.plot_graph()

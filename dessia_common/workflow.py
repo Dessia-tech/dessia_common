@@ -505,6 +505,35 @@ class ForEach(Block):
             output_values.append(self.workflow_block.evaluate(values_workflow)[0])
         return [output_values]
 
+class Demux(Block):
+    def __init__(self, number_arguments: int, name: str = ''):
+        self.number_arguments = number_arguments
+        inputs = [Variable('input_sequence')]
+        outputs = [Variable('output_{}'.format(i)) for i in range(number_arguments)]
+
+        Block.__init__(self, inputs=inputs, outputs=outputs, name=name)
+
+    def equivalent(self, other_block):
+        if not Block.equivalent(self, other_block):
+            return False
+        return self.number_arguments == other_block.number_arguments
+
+    def equivalent_hash(self):
+        return self.number_arguments
+
+    def to_dict(self):
+        dict_ = dc.DessiaObject.base_dict(self)
+        dict_['number_arguments'] = self.number_arguments
+        return dict_
+
+    @classmethod
+    def dict_to_object(cls, dict_):
+        return cls(dict_['number_arguments'], dict_['name'])
+
+    def evaluate(self, values):
+        print('Demux', values)
+        return values[self.inputs[0]]
+
 
 class Filter(Block):
     def __init__(self, filters, name=''):
@@ -536,11 +565,11 @@ class Filter(Block):
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_):
         return cls(dict_['filters'], dict_['name'])
-    
 
     def evaluate(self, values):
         ouput_values = []
         objects = values[self.inputs[0]]
+        print(self.inputs[0], objects)
         for object_ in objects:
             valid = True
             for filter_ in self.filters:
@@ -592,7 +621,7 @@ class ModelAttribute(Block):
         return cls(dict_['attribute_name'], dict_['name'])
 
     def evaluate(self, values):
-        return [getattr(values[self.inputs[0]], self.attribute_name)]
+        return [dc.getdeepattr(values[self.inputs[0]], self.attribute_name)]
 
 
 class Sum(Block):
