@@ -152,7 +152,6 @@ class DessiaObject:
 def jsonschema_from_annotation(annotation, jsonschema_element,
                                order, editable=None, title=None):
     key, value = annotation
-    print(annotation)
     if isinstance(value, str):
         raise ValueError
         
@@ -210,7 +209,6 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
         print('Dataclass', value.__dict__)
     else:
         # Custom classes
-        print(value, issubclass(value, DessiaObject), value.mro())
         if issubclass(value, DessiaObject):
         # if hasattr(value, '_standalone_in_db'):  # and value._standalone_in_db:
             # Dessia custom classes
