@@ -494,7 +494,6 @@ class ForEach(Block):
         
         values_workflow = {var2: values[var1] for var1, var2 in zip(self.inputs,
                                                                     self.workflow_block.inputs)}
-        print('values', values_workflow)
         # index_iterable_input = self.workflow_block.inputs.index(self.workflow_iterable_input)
         output_values = []
         for value in values_workflow[self.workflow_iterable_input]:
