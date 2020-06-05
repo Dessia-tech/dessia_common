@@ -11,7 +11,7 @@ from importlib import import_module
 import webbrowser
 import networkx as nx
 # import pkg_resources
-# import typing
+from typing import List
 from copy import deepcopy
 # import typeguard
 
@@ -494,7 +494,6 @@ class ForEach(Block):
         
         values_workflow = {var2: values[var1] for var1, var2 in zip(self.inputs,
                                                                     self.workflow_block.inputs)}
-        print('values', values_workflow)
         # index_iterable_input = self.workflow_block.inputs.index(self.workflow_iterable_input)
         output_values = []
         for value in values_workflow[self.workflow_iterable_input]:
@@ -504,6 +503,35 @@ class ForEach(Block):
             values_workflow[self.workflow_iterable_input] = value
             output_values.append(self.workflow_block.evaluate(values_workflow)[0])
         return [output_values]
+
+
+class Unpacker(Block):
+    def __init__(self, indices: List[int], name: str = ''):
+        self.indices = indices
+        inputs = [Variable('input_sequence')]
+        outputs = [Variable('output_{}'.format(i)) for i in indices]
+
+        Block.__init__(self, inputs=inputs, outputs=outputs, name=name)
+
+    def equivalent(self, other_block):
+        if not Block.equivalent(self, other_block):
+            return False
+        return self.number_arguments == other_block.number_arguments
+
+    def equivalent_hash(self):
+        return self.number_arguments
+
+    def to_dict(self):
+        dict_ = dc.DessiaObject.base_dict(self)
+        dict_['number_arguments'] = self.number_arguments
+        return dict_
+
+    @classmethod
+    def dict_to_object(cls, dict_):
+        return cls(dict_['number_arguments'], dict_['name'])
+
+    def evaluate(self, values):
+        return [values[self.inputs[0]][i] for i in self.indices]
 
 
 class Filter(Block):
@@ -526,7 +554,6 @@ class Filter(Block):
                      'filters': self.filters}]
         return displays
 
-    
     def to_dict(self):
         dict_ = dc.DessiaObject.base_dict(self)
         dict_.update({'filters': self.filters})
@@ -536,7 +563,6 @@ class Filter(Block):
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_):
         return cls(dict_['filters'], dict_['name'])
-    
 
     def evaluate(self, values):
         ouput_values = []
@@ -592,7 +618,7 @@ class ModelAttribute(Block):
         return cls(dict_['attribute_name'], dict_['name'])
 
     def evaluate(self, values):
-        return [getattr(values[self.inputs[0]], self.attribute_name)]
+        return [dc.getdeepattr(values[self.inputs[0]], self.attribute_name)]
 
 
 class Sum(Block):

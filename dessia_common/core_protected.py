@@ -215,7 +215,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
 def jsonschema_sequence_recursion(value, title=None, order=None, editable=False):
     if title is None:
         title = 'Items'
-    jsonschema_element = {'type': 'array', 'editable' : editable, 'title' : title}
+    jsonschema_element = {'type': 'array', 'editable': editable, 'title': title}
 
     items_type = value.__args__[0]
     if hasattr(items_type, '_name') and items_type._name in ['List', 'Sequence', 'Iterable']:
