@@ -54,12 +54,20 @@ class Objective(DessiaObject):
     _ordered_attributes = ['name', 'settings', 'coefficients']
     _non_serializable_attributes = ['coeff_names']
 
-    def __init__(self, coefficients: Dict[str, float], settings: ObjectiveSettings, name: str = ''):
+    def __init__(self, coefficients: Dict[str, float], directions: Dict[str, bool],
+                 settings: ObjectiveSettings, name: str = ''):
+        for variable in coefficients:
+            if variable not in directions:
+                msg = "Coefficient for variable {} was found but no direction is specified.".format(variable)
+                msg += " Add {} to directions dict.".format(variable)
+                raise KeyError(msg)
         self.coefficients = coefficients
+        self.directions = directions
         self.coeff_names = list(coefficients.keys())
         self.settings = settings
 
         DessiaObject.__init__(self, name=name)
+
 
     def apply_individual(self, values):
         rating = 0
@@ -85,20 +93,27 @@ class Objective(DessiaObject):
         x = np.zeros(n)
         x[0] = 1
         signed = np.dot(matrix.T, x).tolist()
-        unsigned = [abs(v) for v in signed]
+        unsigned = [v for v in signed]
         return unsigned
 
     @classmethod
-    def from_angles(cls, angles, variables, settings=None, name="Generated from angles"):
+    def from_angles(cls, angles, variables, directions, settings=None, name="Generated from angles"):
         if not isinstance(angles, list) and not isinstance(angles, np.ndarray):
             angles = [angles]
         generated_coefficients = cls.coefficients_from_angles(angles=angles)
-        coefficients = {var: generated_coefficients[i] for i, var in enumerate(variables)}
+        coefficients = {}
+        for i, var in enumerate(variables):
+            coeff = generated_coefficients[i]
+            if (directions[var] and coeff < 0) or (not directions[var] and coeff >= 0):
+                coefficients[var] = -coeff
+            else:
+                coefficients[var] = coeff
+        # coefficients = {var: generated_coefficients[i] for i, var in enumerate(variables)}
 
         if settings is None:
             settings = ObjectiveSettings()
 
-        return Objective(coefficients=coefficients, settings=settings, name=name)
+        return Objective(coefficients=coefficients, directions=directions, settings=settings, name=name)
 
 
 class Catalog(DessiaObject):
@@ -126,7 +141,7 @@ class Catalog(DessiaObject):
     _generic_eq = True
     _standalone_in_db = True
     _ordered_attributes = ['name', 'pareto_settings', 'objectives']
-    _non_editable_attributes = ['array', 'variables', 'choice_variables']
+    _non_editable_attributes = ['array', 'variables', 'choice_variables', 'generated_best_objectives']
     _export_formats = ['csv']
     _allowed_methods = ['find_best_objective']
     _whitelist_attributes = ['variables']
@@ -255,9 +270,7 @@ class Catalog(DessiaObject):
         parameters = []
         for variable in variables:
             values = self.get_values(variable)
-            parameters.append(Parameter(lower_bound=min(values),
-                                        upper_bound=max(values),
-                                        name=variable))
+            parameters.append(Parameter(lower_bound=min(values), upper_bound=max(values), name=variable))
         return parameters
 
     def get_variable_index(self, name):
@@ -325,13 +338,13 @@ class Catalog(DessiaObject):
             ratings.append(rating)
         return ratings
 
-    def find_best_objective(self, values: Dict[str, float], settings: ObjectiveSettings = None):
+    def find_best_objective(self, values: Dict[str, float], minimized: Dict[str, bool],
+                            settings: ObjectiveSettings = None):
         # Unordered list of variables
         variables = list(values.keys())  # !!!
         parameters = self.parameters(variables)
 
         # Get pareto points
-        minimized = {var: True for var in variables}
         pareto_settings = ParetoSettings(minimized_attributes=minimized)
         costs = self.build_costs(pareto_settings=pareto_settings)
         pareto_indices = pareto_frontier(costs=costs)
@@ -339,7 +352,7 @@ class Catalog(DessiaObject):
                          for i, is_efficient in enumerate(pareto_indices) if is_efficient]
 
         def apply(x):
-            objective = Objective.from_angles(angles=x, variables=[p.name for p in parameters])
+            objective = Objective.from_angles(angles=x, variables=[p.name for p in parameters], directions=minimized)
             best_on_pareto = min([objective.apply_individual(pareto_value) for pareto_value in pareto_values])
             rating = objective.apply_individual(values)
             delta = rating - best_on_pareto
@@ -356,11 +369,12 @@ class Catalog(DessiaObject):
                 success = True
                 best_objective = Objective.from_angles(angles=res.x.tolist(),
                                                        variables=[p.name for p in parameters],
+                                                       directions=minimized,
                                                        settings=settings)
                 best_objective.name = "Best Coefficients" + str(self.generated_best_objectives)
                 self.generated_best_objectives += 1
                 self.objectives.append(best_objective)
-        if not res.success:
+        if not success:
             raise ValueError("No solutions found")
 
 
