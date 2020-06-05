@@ -8,9 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Unpacker for sequence workflow block
 - Cars dataset as imported models
 
 ### Changed
+- ModelAttribute use dessia_common's getdeepattr to get attributes in subobjects
 - Test directions and signs of coeff for maximization in find_best_objectives
 - BestCoefficients names changed to remove space in it
 - Directions argument is now mandatory
