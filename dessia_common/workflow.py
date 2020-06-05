@@ -11,7 +11,7 @@ from importlib import import_module
 import webbrowser
 import networkx as nx
 # import pkg_resources
-# import typing
+from typing import List
 from copy import deepcopy
 # import typeguard
 
@@ -505,11 +505,12 @@ class ForEach(Block):
             output_values.append(self.workflow_block.evaluate(values_workflow)[0])
         return [output_values]
 
-class Demux(Block):
-    def __init__(self, number_arguments: int, name: str = ''):
-        self.number_arguments = number_arguments
+
+class Unpacker(Block):
+    def __init__(self, indices: List[int], name: str = ''):
+        self.indices = indices
         inputs = [Variable('input_sequence')]
-        outputs = [Variable('output_{}'.format(i)) for i in range(number_arguments)]
+        outputs = [Variable('output_{}'.format(i)) for i in indices]
 
         Block.__init__(self, inputs=inputs, outputs=outputs, name=name)
 
@@ -531,8 +532,7 @@ class Demux(Block):
         return cls(dict_['number_arguments'], dict_['name'])
 
     def evaluate(self, values):
-        print('Demux', values)
-        return values[self.inputs[0]]
+        return [values[self.inputs[0]][i] for i in self.indices]
 
 
 class Filter(Block):
@@ -555,7 +555,6 @@ class Filter(Block):
                      'filters': self.filters}]
         return displays
 
-    
     def to_dict(self):
         dict_ = dc.DessiaObject.base_dict(self)
         dict_.update({'filters': self.filters})
@@ -569,7 +568,6 @@ class Filter(Block):
     def evaluate(self, values):
         ouput_values = []
         objects = values[self.inputs[0]]
-        print(self.inputs[0], objects)
         for object_ in objects:
             valid = True
             for filter_ in self.filters:
