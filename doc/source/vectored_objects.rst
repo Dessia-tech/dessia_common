@@ -6,7 +6,7 @@ Introduction
 
 DessIA's Vectored Object is a module that gives you tools and models to handle your structured datasets.
 Its aim is to provide a first, generic approach to MBSE's by translating your data to generic models.
-These generic models implements computation and posttreatment tools such as Pareto frontiers or ratings systems.
+These generic models implements computation and post treatment tools such as Pareto frontiers or ratings systems.
 
 
 Use Vectored Objects
@@ -65,7 +65,7 @@ Objective objects are given to catalog. These are ratings that are applied to ev
 
 .. automethod:: dessia_common.vectored_objects.Objective.apply
 
-Objective is applied to each vectored object like so : 
+Objective is applied to each vectored object like so :
 
 .. math:: rating = coeff_1*value_1 + coeff_2*value_2 + ... + coeff_n*value_n
 
@@ -112,11 +112,11 @@ Other datasets can be objective-efficient points. The *n_near_value* points for 
 .. warning:: Temporary : As any point can only be included in one and only dataset, objective-efficient points are prioritized against pareto-efficient points. Between objectives, the first Objective is prioratized against the second, that is prioratized against the third, and so on...
 
 Any point that is not included in a dataset is thus declared as a **dominated point** and put in the referenced dataset.
- 
+
 Apply modification
 ------------------
 
-Attributes that are used for computations of pareto and objectives can be directly modified from the platform. In the **edit section** of the Catalog object, all these attributes can be modified to alter the display : 
+Attributes that are used for computations of pareto and objectives can be directly modified from the platform. In the **edit section** of the Catalog object, all these attributes can be modified to alter the display :
 
  * n_near_values : The n better solutions for each objective.
  * objectives : List of objectives that are to be applied to objects.
@@ -131,4 +131,3 @@ Axes can be changed, and points can be sorted and filtered with the *selector* s
 Afterward, these selections can be exported as .csv files using the corresponding tool in the object control part of the platform.
 
 .. automethod:: dessia_common.vectored_objects.Catalog.export_csv
-

@@ -14,6 +14,7 @@ Welcome to DessiaCommon's documentation!
    core
    workflow
    vectored_objects
+   tutorial
 
 
 

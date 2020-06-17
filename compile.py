@@ -25,7 +25,7 @@ import hashlib
 import netifaces
 
 
-protected_files = ['dessia_common.core_protected.py]
+protected_files = ['dessia_common.layout_3d_protected.py]
 
 
 class ClientDist(Command):
