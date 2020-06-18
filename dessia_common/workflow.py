@@ -11,7 +11,7 @@ from importlib import import_module
 import webbrowser
 import networkx as nx
 # import pkg_resources
-# import typing
+from typing import List
 from copy import deepcopy
 # import typeguard
 
@@ -446,11 +446,12 @@ class Sequence(Block):
 
 class ForEach(Block):
 
-    def __init__(self, workflow, workflow_iterable_input, name=''):
-        self.workflow = workflow
+    def __init__(self, workflow_block, workflow_iterable_input, name=''):
+        self.workflow_block = workflow_block
         self.workflow_iterable_input = workflow_iterable_input
         inputs = []
-        for workflow_input in self.workflow.inputs:
+
+        for workflow_input in self.workflow_block.inputs:
             if workflow_input == workflow_iterable_input:
                 inputs.append(Variable('Iterable input: '+workflow_input.name))
             else:
@@ -462,45 +463,75 @@ class ForEach(Block):
         Block.__init__(self, inputs, [output_variable], name=name)
 
     def equivalent_hash(self):
-        return int(hash(self.workflow) % 10e5)
+        return int(hash(self.workflow_block) % 10e5)
 
     def equivalent(self, other_block):
         if not Block.equivalent(self, other_block):
             return False
-        return self.workflow == other_block.workflow\
-               and self.workflow.variable_indices(self.workflow_iterable_input)\
-                   == other_block.workflow.variable_indices(other_block.workflow_iterable_input)
+        return self.workflow_block == other_block.workflow_block\
+               and self.workflow_block.variable_indices(self.workflow_iterable_input)\
+                   == other_block.workflow_block.variable_indices(other_block.workflow_iterable_input)
 
 
     def to_dict(self):
         dict_ = dc.DessiaObject.base_dict(self)
         dict_.update({
-            'workflow': self.workflow.to_dict(),
-            'workflow_iterable_input': self.workflow.variable_indices(self.workflow_iterable_input)
+            'workflow_block': self.workflow_block.to_dict(),
+            'workflow_iterable_input': self.workflow_block.inputs.index(self.workflow_iterable_input)
             })
         return dict_
 
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_):
-        workflow = Workflow.dict_to_object(dict_['workflow'])
-        ib, _, ip = dict_['workflow_iterable_input']
+        workflow_block = WorkflowBlock.dict_to_object(dict_['workflow_block'])
+        index = dict_['workflow_iterable_input']
 
-        workflow_iterable_input = workflow.blocks[ib].inputs[ip]
-        return cls(workflow, workflow_iterable_input, name=dict_['name'])
+        workflow_iterable_input = workflow_block.inputs[index]
+        return cls(workflow_block, workflow_iterable_input, name=dict_['name'])
 
     def evaluate(self, values):
+
         values_workflow = {var2: values[var1] for var1, var2 in zip(self.inputs,
-                                                                    self.workflow.inputs)}
+                                                                    self.workflow_block.inputs)}
+        # index_iterable_input = self.workflow_block.inputs.index(self.workflow_iterable_input)
         output_values = []
         for value in values_workflow[self.workflow_iterable_input]:
-            values_workflow2 = {var.name: val\
-                                for var, val in values.items()\
-                                if var != self.workflow_iterable_input}
-            values_workflow2[self.workflow_iterable_input] = value
-            workflow_run = self.workflow.run(values_workflow2)
-            output_values.append(workflow_run.output_value)
+            # values_workflow2 = {var.name: val\
+            #                     for var, val in values_workflow.items()\
+            #                     if var != self.workflow_iterable_input}
+            values_workflow[self.workflow_iterable_input] = value
+            output_values.append(self.workflow_block.evaluate(values_workflow)[0])
         return [output_values]
+
+
+class Unpacker(Block):
+    def __init__(self, indices: List[int], name: str = ''):
+        self.indices = indices
+        inputs = [Variable('input_sequence')]
+        outputs = [Variable('output_{}'.format(i)) for i in indices]
+
+        Block.__init__(self, inputs=inputs, outputs=outputs, name=name)
+
+    def equivalent(self, other_block):
+        if not Block.equivalent(self, other_block):
+            return False
+        return self.number_arguments == other_block.number_arguments
+
+    def equivalent_hash(self):
+        return self.number_arguments
+
+    def to_dict(self):
+        dict_ = dc.DessiaObject.base_dict(self)
+        dict_['number_arguments'] = self.number_arguments
+        return dict_
+
+    @classmethod
+    def dict_to_object(cls, dict_):
+        return cls(dict_['number_arguments'], dict_['name'])
+
+    def evaluate(self, values):
+        return [values[self.inputs[0]][i] for i in self.indices]
 
 
 class Filter(Block):
@@ -523,7 +554,6 @@ class Filter(Block):
                      'filters': self.filters}]
         return displays
 
-    
     def to_dict(self):
         dict_ = dc.DessiaObject.base_dict(self)
         dict_.update({'filters': self.filters})
@@ -533,7 +563,6 @@ class Filter(Block):
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_):
         return cls(dict_['filters'], dict_['name'])
-    
 
     def evaluate(self, values):
         ouput_values = []
@@ -589,7 +618,7 @@ class ModelAttribute(Block):
         return cls(dict_['attribute_name'], dict_['name'])
 
     def evaluate(self, values):
-        return [getattr(values[self.inputs[0]], self.attribute_name)]
+        return [dc.getdeepattr(values[self.inputs[0]], self.attribute_name)]
 
 
 class Sum(Block):

@@ -6,11 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Fixed
+- Changed workflow to workflow in to_dict/dict_to_object
 
+## [0.3.8]
 ### Added
+- Unpacker for sequence workflow block
 - Cars dataset as imported models
+- Models & Templates added to MANIFEST.in
 
 ### Changed
+- ModelAttribute use dessia_common's getdeepattr to get attributes in subobjects
 - Test directions and signs of coeff for maximization in find_best_objectives
 - BestCoefficients names changed to remove space in it
 - Directions argument is now mandatory
