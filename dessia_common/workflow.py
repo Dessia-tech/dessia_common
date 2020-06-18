@@ -450,7 +450,7 @@ class ForEach(Block):
         self.workflow_block = workflow_block
         self.workflow_iterable_input = workflow_iterable_input
         inputs = []
-        
+
         for workflow_input in self.workflow_block.inputs:
             if workflow_input == workflow_iterable_input:
                 inputs.append(Variable('Iterable input: '+workflow_input.name))
@@ -476,22 +476,22 @@ class ForEach(Block):
     def to_dict(self):
         dict_ = dc.DessiaObject.base_dict(self)
         dict_.update({
-            'workflow': self.workflow.to_dict(),
-            'workflow_iterable_input': self.workflow.variable_indices(self.workflow_iterable_input)
+            'workflow_block': self.workflow_block.to_dict(),
+            'workflow_iterable_input': self.workflow_block.inputs.index(self.workflow_iterable_input)
             })
         return dict_
 
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_):
-        workflow = Workflow.dict_to_object(dict_['workflow'])
-        ib, _, ip = dict_['workflow_iterable_input']
+        workflow_block = WorkflowBlock.dict_to_object(dict_['workflow_block'])
+        index = dict_['workflow_iterable_input']
 
-        workflow_iterable_input = workflow.blocks[ib].inputs[ip]
-        return cls(workflow, workflow_iterable_input, name=dict_['name'])
+        workflow_iterable_input = workflow_block.inputs[index]
+        return cls(workflow_block, workflow_iterable_input, name=dict_['name'])
 
     def evaluate(self, values):
-        
+
         values_workflow = {var2: values[var1] for var1, var2 in zip(self.inputs,
                                                                     self.workflow_block.inputs)}
         # index_iterable_input = self.workflow_block.inputs.index(self.workflow_iterable_input)
