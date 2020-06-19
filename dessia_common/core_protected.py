@@ -163,6 +163,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
     if value in TYPING_EQUIVALENCES.keys():
         # Python Built-in type
         jsonschema_element[key] = {'type': TYPING_EQUIVALENCES[value],
+                                   'datatype': 'builtin',
                                    'title': title,
                                    'editable': editable,
                                    'order': order}
@@ -179,6 +180,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
         # Types union
         classnames = [a.__module__ + '.' + a.__name__ for a in value.__args__]
         jsonschema_element[key] = {'type': 'object',
+                                   'datatype': 'union',
                                    'classes': classnames,
                                    'title': title,
                                    'editable': editable,
@@ -192,7 +194,8 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
         for type_ in value.__args__:
             items.append({'type': TYPING_EQUIVALENCES[type_]})
         jsonschema_element[key] = {'additionalItems': False,
-                                   'type': 'array'}
+                                   'type': 'array',
+                                   'datatype': 'heterogenous_list'}
         jsonschema_element[key]['items'] = items
     elif hasattr(value, '_name') and value._name == 'Dict':
         # Dynamially created dict structure
@@ -200,6 +203,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
         if key_type != str:
             raise NotImplementedError('Non strings keys not supported')  # !!! Should we support other types ? Numeric ?
         jsonschema_element[key] = {'type': 'object',
+                                   'datatype': 'dynamic_dict',
                                    'order': order,
                                    'editable': editable,
                                    'title': title,
@@ -214,6 +218,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
             # Dessia custom classes
             classname = value.__module__ + '.' + value.__name__
             jsonschema_element[key] = {'type': 'object',
+                                       'datatype': 'custom_class',
                                        'title': title,
                                        'order': order,
                                        'editable': editable,
@@ -222,6 +227,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
             # Statically created dict structure
             jsonschema_element[key] = static_dict_jsonschema(value)
             jsonschema_element[key].update({'title': title,
+                                            'datatype': 'static_dict',
                                             'order': order,
                                             'editable': editable})
     return jsonschema_element
@@ -229,7 +235,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
 def jsonschema_sequence_recursion(value, title=None, order=None, editable=False):
     if title is None:
         title = 'Items'
-    jsonschema_element = {'type': 'array', 'editable': editable, 'title': title}
+    jsonschema_element = {'type': 'array', 'datatype': 'homogenous_list', 'editable': editable, 'title': title}
 
     items_type = value.__args__[0]
     if hasattr(items_type, '_name') and items_type._name in ['List', 'Sequence', 'Iterable']:
