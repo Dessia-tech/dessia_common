@@ -1535,7 +1535,8 @@ class WorkflowRun(dc.DessiaObject):
 
     def __hash__(self):
         if hasattr(self.output_value, '__iter__'):
-            hash_output = int(sum([hash(v) for v in self.output_value]) % 10e5)
+            # hash_output = int(sum([hash(v) for v in self.output_value]) % 10e5)
+            hash_output = dc.list_hash(self.output_value)
         else:
             hash_output = hash(self.output_value)
         return hash(self.workflow) + int(hash_output % 10e5)
