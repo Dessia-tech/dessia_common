@@ -207,6 +207,10 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
     elif is_dataclass(value):
         # Static dict structure
         print('Dataclass', value.__dict__)
+        jsonschema_element[key] = static_dict_jsonschema(value)
+        jsonschema_element[key].update({'title': title,
+                                        'order': order,
+                                        'editable': editable})
     else:
         # Custom classes
         if issubclass(value, DessiaObject):
