@@ -534,6 +534,27 @@ class Unpacker(Block):
         return [values[self.inputs[0]][i] for i in self.indices]
 
 
+class Flatten(Block):
+
+    def __init__(self, name=''):
+        inputs = [Variable('input_sequence')]
+        outputs = [Variable('flatten_sequence')]
+        Block.__init__(self, inputs, outputs, name=name)
+        
+    def equivalent_hash(self):
+        return 1
+    
+    @classmethod
+    def dict_to_object(cls, dict_):
+        return cls(dict_['name'])
+    
+    def evaluate(self, values):
+        output = []
+        for value in values[self.inputs[0]]:
+            output.extend(value)
+        return [output]
+
+
 class Filter(Block):
     def __init__(self, filters, name=''):
         self.filters = filters
@@ -683,6 +704,7 @@ class Substraction(Block):
     def evaluate(self, values):
         return [values[self.inputs[0]] - values[self.inputs[1]]]
 
+    
 class Pipe(dc.DessiaObject):
     _jsonschema = {
         "definitions": {},
