@@ -651,7 +651,7 @@ class Sum(Block):
 
 
     def evaluate(self, values):
-        return sum(values)
+        return [sum(values)]
     
     
 class Substraction(Block):
