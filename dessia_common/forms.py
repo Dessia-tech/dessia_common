@@ -22,7 +22,6 @@ this module can also be seen as a template for Dessia's coding/naming style & co
 
 from dessia_common import DessiaObject
 from typing import Dict, List, Tuple, Union
-from dataclasses import dataclass
 try:
     from typing import TypedDict  # >=3.8
 except ImportError:
@@ -58,13 +57,6 @@ class StaticDict(TypedDict):
     is_valid: bool
     subobject: EmbeddedSubobject
 
-# @dataclass
-# class StaticDict(DessiaObject):
-#     name: str
-#     value: float
-#     is_valid: bool
-#     subobject: 'EmbeddedSubobject'
-
 
 class StandaloneObject(DessiaObject):
     _standalone_in_db = True
@@ -97,7 +89,7 @@ class StandaloneObject(DessiaObject):
         """
         self.object_list.append(object_)
 
-    def add_embedded_object(self, object_ : EmbeddedSubobject):
+    def add_embedded_object(self, object_: EmbeddedSubobject):
         """
         This methods adds an embedded object to subobject_list.
         It doesn't return anything, hence, API will update object when computing from frontend

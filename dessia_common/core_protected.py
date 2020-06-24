@@ -8,9 +8,8 @@ import inspect
 from copy import deepcopy
 
 from typing import TypeVar, Union
-from mypy_extensions import _TypedDictMeta
-from dataclasses import is_dataclass
 import dessia_common.core
+
 
 class DessiaObject:
     """
@@ -115,7 +114,7 @@ class DessiaObject:
                 if method.__annotations__:
                     jsonschemas[method_name] = deepcopy(JSONSCHEMA_HEADER)
                     jsonschemas[method_name]['required'] = []
-                    for i, annotation in enumerate(method.__annotations__.items()): # !!! Not actually ordered
+                    for i, annotation in enumerate(method.__annotations__.items()):  # !!! Not actually ordered
                         argname = annotation[0]
                         if argname not in _FORBIDDEN_ARGNAMES:
                             if argname in required_arguments:
@@ -134,8 +133,6 @@ class DessiaObject:
         method_object = getattr(self, method)
         args_specs = inspect.getfullargspec(method_object)
         allowed_args = args_specs.args[1:]
-        # self_index = allowed_args.index('self')
-        # allowed_args.pop(self_index)
 
         arguments = {}
         for i, arg in enumerate(allowed_args):
@@ -149,8 +146,7 @@ class DessiaObject:
         return arguments
 
 
-def jsonschema_from_annotation(annotation, jsonschema_element,
-                               order, editable=None, title=None):
+def jsonschema_from_annotation(annotation, jsonschema_element, order, editable=None, title=None):
     key, value = annotation
     if isinstance(value, str):
         raise ValueError
@@ -171,8 +167,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
                                    'title': title, 'editable': editable, 'order': order}
     elif hasattr(value, '_name') and value._name in ['List', 'Sequence', 'Iterable']:
         # Homogenous sequences
-        jsonschema_element[key] = jsonschema_sequence_recursion(value=value, order=order,
-                                                                title=title, editable=editable)
+        jsonschema_element[key] = jsonschema_sequence_recursion(value=value, title=title, editable=editable)
     elif hasattr(value, '_name') and value._name == 'Tuple':
         # Heterogenous sequences (tuples)
         items = []
@@ -189,7 +184,6 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
                                    'order': order, 'editable': editable, 'title': title,
                                    'patternProperties': {'.*': {'type': TYPING_EQUIVALENCES[value_type]}}}
     else:
-        # Custom classes
         if issubclass(value, DessiaObject):
             # Dessia custom classes
             classname = value.__module__ + '.' + value.__name__
@@ -202,7 +196,8 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
                                             'order': order, 'editable': editable})
     return jsonschema_element
 
-def jsonschema_sequence_recursion(value, title=None, order=None, editable=False):
+
+def jsonschema_sequence_recursion(value, title=None, editable=False):
     if title is None:
         title = 'Items'
     jsonschema_element = {'type': 'array', 'datatype': 'homogenous_list', 'editable': editable, 'title': title}
@@ -214,6 +209,7 @@ def jsonschema_sequence_recursion(value, title=None, order=None, editable=False)
         annotation = ('items', items_type)
         jsonschema_element.update(jsonschema_from_annotation(annotation, jsonschema_element, order=0, title=title))
     return jsonschema_element
+
 
 def prettyname(namestr):
     pretty_name = ''
@@ -228,6 +224,7 @@ def prettyname(namestr):
                 pretty_name += ' '
     return pretty_name
 
+
 def static_dict_jsonschema(typed_dict, title=None):
     # if title is None:
     #     title = prettyname(typed_dict.__name__)
@@ -239,18 +236,6 @@ def static_dict_jsonschema(typed_dict, title=None):
         jsonschema_element['properties'].update(jss)
     return jsonschema_element
 
-def jsonschema_from_dataclass(class_, title=None):
-    if title is None:
-        title = prettyname(class_.__name__)
-    jsonschema_element = {'type': 'object',
-                          'properties' : {}}
-    for i, field in enumerate(class_.__dataclass_fields__.values()): # !!! Not actually ordered !
-        annotation = (field.name, field.type)
-        jsonschema_element['properties'].update(jsonschema_from_annotation(annotation,
-                                                                           jsonschema_element['properties'],
-                                                                           order=i,
-                                                                           title=title))
-    return jsonschema_element
 
 def set_default_value(jsonschema_element, key, default_value):
     if isinstance(default_value, tuple(TYPING_EQUIVALENCES.keys()))\
@@ -262,7 +247,6 @@ def set_default_value(jsonschema_element, key, default_value):
         object_dict = default_value.to_dict()
         jsonschema_element[key]['default_value'] = object_dict
     return jsonschema_element
-
 
 
 def inspect_arguments(method, merge=False):
@@ -289,10 +273,10 @@ def inspect_arguments(method, merge=False):
                 arguments.append(argument)
     return arguments, default_arguments
 
+
 def deserialize_argument(type_, argument):
-    if isinstance(type_, TypeVar):
-        # Get all classes
-        classes = list(type_.__constraints__)
+    if hasattr(type_, '__origin__') and type_.__origin__ == Union:
+        classes = list(type_.__args__)
         instantiated = False
         while instantiated is False:
             # Find the last class in the hierarchy
@@ -321,7 +305,7 @@ def deserialize_argument(type_, argument):
                 deserialized_argument = argument
             else:
                 if isinstance(argument, int) and type_ == float:
-                    # explicit conversion in this case
+                    # Explicit conversion in this case
                     deserialized_argument = float(argument)
                 else:
                     raise TypeError('Given built-in type and argument are incompatible : {} and {} in {}'.format(type(argument), type_, argument))
@@ -348,6 +332,7 @@ def recursive_type(obj):
         raise NotImplementedError(obj)
     return type_
 
+
 def recursive_instantiation(types, values):
     instantiated_values = []
     for type_, value in zip(types, values):
@@ -369,7 +354,6 @@ def recursive_instantiation(types, values):
         else:
             raise NotImplementedError(type_)
     return instantiated_values
-
 
 
 JSONSCHEMA_HEADER = {"definitions": {},
