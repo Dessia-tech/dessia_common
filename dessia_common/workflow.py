@@ -534,6 +534,27 @@ class Unpacker(Block):
         return [values[self.inputs[0]][i] for i in self.indices]
 
 
+class Flatten(Block):
+
+    def __init__(self, name=''):
+        inputs = [Variable('input_sequence')]
+        outputs = [Variable('flatten_sequence')]
+        Block.__init__(self, inputs, outputs, name=name)
+        
+    def equivalent_hash(self):
+        return 1
+    
+    @classmethod
+    def dict_to_object(cls, dict_):
+        return cls(dict_['name'])
+    
+    def evaluate(self, values):
+        output = []
+        for value in values[self.inputs[0]]:
+            output.extend(value)
+        return [output]
+
+
 class Filter(Block):
     def __init__(self, filters, name=''):
         self.filters = filters
@@ -651,7 +672,7 @@ class Sum(Block):
 
 
     def evaluate(self, values):
-        return sum(values)
+        return [sum(values)]
     
     
 class Substraction(Block):
@@ -683,6 +704,7 @@ class Substraction(Block):
     def evaluate(self, values):
         return [values[self.inputs[0]] - values[self.inputs[1]]]
 
+    
 class Pipe(dc.DessiaObject):
     _jsonschema = {
         "definitions": {},
@@ -1535,7 +1557,8 @@ class WorkflowRun(dc.DessiaObject):
 
     def __hash__(self):
         if hasattr(self.output_value, '__iter__'):
-            hash_output = int(sum([hash(v) for v in self.output_value]) % 10e5)
+            # hash_output = int(sum([hash(v) for v in self.output_value]) % 10e5)
+            hash_output = dc.list_hash(self.output_value)
         else:
             hash_output = hash(self.output_value)
         return hash(self.workflow) + int(hash_output % 10e5)
