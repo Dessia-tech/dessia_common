@@ -162,78 +162,50 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
 
     if value in TYPING_EQUIVALENCES.keys():
         # Python Built-in type
-        jsonschema_element[key] = {'type': TYPING_EQUIVALENCES[value],
-                                   'title': title,
-                                   'editable': editable,
-                                   'order': order}
-    # elif isinstance(value, TypeVar):
-    #     # !!! Obsolete, this will probably need to be removed. New way : Union
-    #     # Several  classes are possible
-    #     classnames = [c.__module__+'.'+c.__name__ for c in value.__constraints__]
-    #     jsonschema_element[key] = {'type': 'object',
-    #                                'classes': classnames,
-    #                                'title': title,
-    #                                'editable': editable,
-    #                                'order': order}
+        jsonschema_element[key] = {'type': TYPING_EQUIVALENCES[value], 'datatype': 'builtin',
+                                   'title': title, 'editable': editable, 'order': order}
     elif hasattr(value, '__origin__') and value.__origin__ == Union:
         # Types union
         classnames = [a.__module__ + '.' + a.__name__ for a in value.__args__]
-        jsonschema_element[key] = {'type': 'object',
-                                   'classes': classnames,
-                                   'title': title,
-                                   'editable': editable,
-                                   'order': order}
+        jsonschema_element[key] = {'type': 'object', 'datatype': 'union', 'classes': classnames,
+                                   'title': title, 'editable': editable, 'order': order}
     elif hasattr(value, '_name') and value._name in ['List', 'Sequence', 'Iterable']:
-        # Homogenous lists
-        jsonschema_element[key] = jsonschema_sequence_recursion(value=value, order=order, title=title, editable=editable)
+        # Homogenous sequences
+        jsonschema_element[key] = jsonschema_sequence_recursion(value=value, order=order,
+                                                                title=title, editable=editable)
     elif hasattr(value, '_name') and value._name == 'Tuple':
-        # Heterogenous lists
+        # Heterogenous sequences (tuples)
         items = []
         for type_ in value.__args__:
             items.append({'type': TYPING_EQUIVALENCES[type_]})
-        jsonschema_element[key] = {'additionalItems': False,
-                                   'type': 'array'}
+        jsonschema_element[key] = {'additionalItems': False, 'type': 'array', 'datatype': 'heterogenous_list'}
         jsonschema_element[key]['items'] = items
     elif hasattr(value, '_name') and value._name == 'Dict':
         # Dynamially created dict structure
         key_type, value_type = value.__args__
         if key_type != str:
             raise NotImplementedError('Non strings keys not supported')  # !!! Should we support other types ? Numeric ?
-        jsonschema_element[key] = {'type': 'object',
-                                   'order': order,
-                                   'editable': editable,
-                                   'title': title,
+        jsonschema_element[key] = {'type': 'object', 'datatype': 'dynamic_dict',
+                                   'order': order, 'editable': editable, 'title': title,
                                    'patternProperties': {'.*': {'type': TYPING_EQUIVALENCES[value_type]}}}
-    elif is_dataclass(value):
-        # Static dict structure
-        print('Dataclass', value.__dict__)
-        jsonschema_element[key] = static_dict_jsonschema(value)
-        jsonschema_element[key].update({'title': title,
-                                        'order': order,
-                                        'editable': editable})
     else:
         # Custom classes
         if issubclass(value, DessiaObject):
-        # if hasattr(value, '_standalone_in_db'):  # and value._standalone_in_db:
             # Dessia custom classes
             classname = value.__module__ + '.' + value.__name__
-            jsonschema_element[key] = {'type': 'object',
-                                       'title': title,
-                                       'order': order,
-                                       'editable': editable,
-                                       'classes': [classname]}
+            jsonschema_element[key] = {'type': 'object', 'datatype': 'custom_class', 'title': title,
+                                       'order': order, 'editable': editable, 'classes': [classname]}
         else:
             # Statically created dict structure
             jsonschema_element[key] = static_dict_jsonschema(value)
-            jsonschema_element[key].update({'title': title,
-                                            'order': order,
-                                            'editable': editable})
+            jsonschema_element[key].update({'title': title, 'datatype': 'static_dict',
+                                            'order': order, 'editable': editable})
     return jsonschema_element
 
 def jsonschema_sequence_recursion(value, title=None, order=None, editable=False):
     if title is None:
         title = 'Items'
-    jsonschema_element = {'type': 'array', 'editable': editable, 'title': title}
+    jsonschema_element = {'type': 'array', 'datatype': 'homogenous_list', 'editable': editable, 'title': title}
 
     items_type = value.__args__[0]
     if hasattr(items_type, '_name') and items_type._name in ['List', 'Sequence', 'Iterable']:
