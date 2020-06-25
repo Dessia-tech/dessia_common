@@ -7,7 +7,11 @@
 import inspect
 from copy import deepcopy
 
-from typing import TypeVar, Union
+from typing import Union
+try:
+    from typing import TypedDict, _TypedDictMeta  # >=3.8
+except ImportError:
+    from mypy_extensions import TypedDict  # <=3.7
 import dessia_common.core
 
 
@@ -276,6 +280,7 @@ def inspect_arguments(method, merge=False):
 
 def deserialize_argument(type_, argument):
     if hasattr(type_, '__origin__') and type_.__origin__ == Union:
+        # Type union
         classes = list(type_.__args__)
         instantiated = False
         while instantiated is False:
@@ -295,9 +300,14 @@ def deserialize_argument(type_, argument):
                 # This is not the right class, we should go see the parent
                 classes.remove(children_class)
     elif hasattr(type_, '_name') and type_._name in ['List', 'Sequence', 'Iterable']:
+        # Homogenous sequences (lists)
         sequence_subtype = type_.__args__[0]
         deserialized_argument = [deserialize_argument(sequence_subtype, arg) for arg in argument]
+    elif hasattr(type_, '_name') and type_._name == 'Tuple':
+        # Heterogenous sequences (tuples)
+        deserialized_argument = tuple([deserialize_argument(t, arg) for t, arg in zip(type_.__args__, argument)])
     elif hasattr(type_, '_name') and type_._name == 'Dict':
+        # Dynamic dict
         deserialized_argument = argument
     else:
         if type_ in TYPING_EQUIVALENCES.keys():
@@ -309,11 +319,12 @@ def deserialize_argument(type_, argument):
                     deserialized_argument = float(argument)
                 else:
                     raise TypeError('Given built-in type and argument are incompatible : {} and {} in {}'.format(type(argument), type_, argument))
-        elif hasattr(type_, '__dataclass_fields__'):
-            _ = type_(**argument)
-            deserialized_argument = argument
-        else:
+        elif issubclass(type_, DessiaObject):
+            # Custom classes
             deserialized_argument = type_.dict_to_object(argument)
+        else:
+            # Static Dict
+            deserialized_argument = argument
     return deserialized_argument
 
 

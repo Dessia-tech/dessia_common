@@ -405,8 +405,7 @@ class Sequence(Block):
         if type_ is None:
             inputs = [Variable('Sequence element {}'.format(i)) for i in range(self.number_arguments)]
         else:
-            inputs = [TypedVariable(type_,
-                                    'Sequence element {}'.format(i)) for i in range(self.number_arguments)]
+            inputs = [TypedVariable(type_, 'Sequence element {}'.format(i)) for i in range(self.number_arguments)]
 
         self.type_ = type_
         outputs = [TypedVariable(list, 'sequence')]
