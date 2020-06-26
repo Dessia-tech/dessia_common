@@ -242,8 +242,7 @@ def static_dict_jsonschema(typed_dict, title=None):
 
 
 def set_default_value(jsonschema_element, key, default_value):
-    if isinstance(default_value, tuple(TYPING_EQUIVALENCES.keys()))\
-    or default_value is None:
+    if isinstance(default_value, tuple(TYPING_EQUIVALENCES.keys())) or default_value is None:
         jsonschema_element[key]['default_value'] = default_value
     elif isinstance(default_value, (list, tuple)):
         raise NotImplementedError('List as default values not implemented')
