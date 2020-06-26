@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Fixed
 - Changed workflow to workflow in to_dict/dict_to_object
+- Support for new data types
 
 ## [0.3.8]
 ### Added
