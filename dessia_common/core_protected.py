@@ -9,7 +9,7 @@ from copy import deepcopy
 
 from typing import Union
 try:
-    from typing import TypedDict, _TypedDictMeta  # >=3.8
+    from typing import TypedDict  # >=3.8
 except ImportError:
     from mypy_extensions import TypedDict  # <=3.7
 import dessia_common.core
