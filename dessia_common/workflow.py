@@ -638,12 +638,14 @@ class ParallelPlot(Block):
                 line.append(dc.getdeepattr(object_, attribute))
             array.append(line)
 
+        flat_attributes = [attr.replace('.', ' - ')
+                           for attr in self.attributes]
         if pareto_settings is None:
-            minimized = {attr: True for attr in self.attributes}
+            minimized = {attr: True for attr in flat_attributes}
             pareto_settings = ParetoSettings(minimized_attributes=minimized,
                                              enabled=False)
 
-        catalog = Catalog(array=array, variables=self.attributes,
+        catalog = Catalog(array=array, variables=flat_attributes,
                           pareto_settings=pareto_settings, objectives=[])
         display = catalog._display_angular()
         return display
