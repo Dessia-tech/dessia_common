@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support for new data types
 - Added mypy_extensions to setup.py
 
+### Added
+- Generic serialize function
+
 ## [0.3.8]
 ### Added
 - Unpacker for sequence workflow block

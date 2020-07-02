@@ -764,6 +764,16 @@ def deserialize_typing(serialized_typing):
 
     raise NotImplementedError('{}'.format(serialized_typing))
 
+def serialize(deserialized_element):
+    if isinstance(deserialized_element, DessiaObject):
+        serialized = deserialized_element.to_dict()
+    elif isinstance(deserialized_element, dict):
+        serialized = serialize_dict(deserialized_element)
+    elif isinstance(deserialized_element, (list, tuple)):
+        serialized = serialize_sequence(deserialized_element)
+    else:
+        serialized = deserialized_element
+    return serialized
 
 def deserialize(serialized_element):
     if isinstance(serialized_element, dict):
