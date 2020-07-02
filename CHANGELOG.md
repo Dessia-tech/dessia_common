@@ -13,6 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Generic serialize function
+- ParallelPlot block
+- Memorize attribute in Variables and intermediate variables values in workflow_run
+
+### Changed
+- Filter block doesn't write _display_angular anymore. See ParallelPlot
 
 ## [0.3.8]
 ### Added
