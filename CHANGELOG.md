@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Filter block doesn't write _display_angular anymore. See ParallelPlot
+- Catalog _dispplay_angular to conform to ParallelPlot Block
 
 ## [0.3.8]
 ### Added

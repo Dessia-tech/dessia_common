@@ -171,8 +171,9 @@ class Catalog(DessiaObject):
 
         :return: List of displays dictionnaries
         """
-        filters = [{'attribute': variable, 'operator': 'gt', 'bound': 0} for j, variable in enumerate(self.variables)
-                   if not isinstance(self.array[0][j], str) and variable in self.choice_variables]
+        filters = [variable for j, variable in enumerate(self.variables)
+                   if not isinstance(self.array[0][j], str)
+                   and variable in self.choice_variables]
 
         # Pareto
         costs = self.build_costs(self.pareto_settings)
@@ -188,7 +189,7 @@ class Catalog(DessiaObject):
                 else:
                     name = 'objective_'+str(iobjective)
                 objective_ratings[name] = ratings
-                filters.append({'attribute': name, 'operator': 'gte', 'bound': 0})
+                filters.append(name)
                 threshold = objective.settings.n_near_values
                 near_indices = list(np.argpartition(ratings, threshold)[:threshold])
                 all_near_indices[iobjective] = near_indices
