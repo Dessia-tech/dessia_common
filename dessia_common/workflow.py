@@ -183,6 +183,9 @@ class Block(dc.DessiaObject):
                                                          input_.default_value))
             properties_dict[str(i)] = current_dict[str(i)]
         jsonschemas['run']['required'] = required_inputs
+        jsonschemas['run']['properties']['name'] = {'type': 'string',
+                                                    'default_value': self.name+' run',
+                                                    'editable': True}
         return jsonschemas
     
     def jointjs_data(self):
@@ -1151,7 +1154,7 @@ class Workflow(Block):
 
 
     def run(self, input_variables_values, verbose=False,
-            progress_callback=None):
+            progress_callback=None, name=None):
         log = ''
         activated_items = {p: False for p in self.pipes}
         activated_items.update({v: False for v in self.variables})
@@ -1242,7 +1245,9 @@ class Workflow(Block):
 #        workflow_run_values = [values[variable] for variable in self.variables]
 #        self.variables.index(self.outputs[0])
         output_value = values[self.outputs[0]]
-        return WorkflowRun(self, output_value, start_time, end_time, log)
+        if name is None:
+            name = self.name+' run'
+        return WorkflowRun(self, output_value, start_time, end_time, log, name=name)
 
     def interactive_input_variables_values(self):
         input_variables_values = {}
