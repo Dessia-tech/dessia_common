@@ -649,6 +649,7 @@ class ParallelPlot(Block):
         catalog = Catalog(array=array, variables=self.attributes,
                           pareto_settings=pareto_settings, objectives=[])
         display = catalog._display_angular()
+        display[0]['references_attribute'] = 'output_value'
         return display
 
     def to_dict(self):
@@ -1623,7 +1624,6 @@ class WorkflowRun(dc.DessiaObject):
         for block in self.workflow.blocks:
             if isinstance(block, ParallelPlot):
                 parallel_plot_display = block._display(self.variables_values)
-                # filter_display[0]['references_attribute'] = 'output_value'
                 displays.extend(parallel_plot_display)
         return displays
 
