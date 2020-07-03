@@ -186,6 +186,9 @@ class Block(dc.DessiaObject):
                                                          input_.default_value))
             properties_dict[str(i)] = current_dict[str(i)]
         jsonschemas['run']['required'] = required_inputs
+        jsonschemas['run']['properties']['name'] = {'type': 'string',
+                                                    'default_value': self.name+' run',
+                                                    'editable': True}
         return jsonschemas
     
     def jointjs_data(self):
@@ -1197,14 +1200,14 @@ class Workflow(Block):
         nx.draw_networkx_labels(self.graph, pos, labels)
 
     def run(self, input_variables_values, verbose=False,
-            progress_callback=None):
+            progress_callback=None, name=None):
         log = ''
         activated_items = {p: False for p in self.pipes}
         activated_items.update({v: False for v in self.variables})
         activated_items.update({b: False for b in self.blocks})
 
         values = {}
-        variable_values = {}
+        variables_values = {}
         # Imposed variables values activation
         for variable, value in self.imposed_variable_values.items():
             # Type checking
@@ -1268,7 +1271,7 @@ class Workflow(Block):
                                                         for i in block.inputs})
                         for input_ in block.inputs:
                             if input_.memorize:
-                                variable_values[input_] = values[input_]
+                                variables_values[input_] = values[input_]
                         # Updating progress
                         if progress_callback is not None:
                             progress += 1/len(self.blocks)
@@ -1277,7 +1280,7 @@ class Workflow(Block):
                         # Unpacking result of evaluation
                         for output, output_value in zip(block.outputs, output_values):
                             if output.memorize:
-                                variable_values[output] = output_value
+                                variables_values[output] = output_value
                             values[output] = output_value
                             activated_items[output] = True
 
@@ -1291,10 +1294,13 @@ class Workflow(Block):
         if verbose:
             print(log_line)
 
-#        workflow_run_values = [values[variable] for variable in self.variables]
-#        self.variables.index(self.outputs[0])
         output_value = values[self.outputs[0]]
-        return WorkflowRun(self, output_value, variable_values, start_time, end_time, log)
+        if name is None:
+            name = self.name+' run'
+        return WorkflowRun(workflow=self, output_value=output_value,
+                           variables_values=variables_values,
+                           start_time=start_time, end_time=end_time,
+                           log=log, name=name)
 
     def interactive_input_variables_values(self):
         input_variables_values = {}

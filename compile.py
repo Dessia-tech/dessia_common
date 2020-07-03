@@ -25,7 +25,7 @@ import hashlib
 import netifaces
 
 
-protected_files = ['dessia_common.core_protected.py]
+protected_files = ['dessia_common.core_protected.py']
 
 
 class ClientDist(Command):
@@ -324,8 +324,8 @@ class ClientDist(Command):
         shutil.rmtree(folder_path)
         shutil.rmtree(compiled_files_dir)
 
-        
         print('Client build finished, output is {} + {}'.format(folder_path, self.formats))
+    
         
 ext_modules = []
 for file in protected_files:
