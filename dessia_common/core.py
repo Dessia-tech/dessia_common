@@ -584,11 +584,11 @@ def serialize_sequence(seq):
     return serialized_sequence
 
 
-def get_python_class_from_class_name(class_name):
-    # TODO: add protection because this is arbitratry code evaluation!
-    module = class_name.rsplit('.', 1)[0]
-    exec('import ' + module)
-    return eval(class_name)
+def get_python_class_from_class_name(full_class_name):
+    module_name, class_name = full_class_name.rsplit('.', 1)
+    module = import_module(module_name)
+    class_ = getattr(module, class_name)
+    return class_
 
 
 def dict_to_object(dict_, class_=None):
@@ -764,6 +764,7 @@ def deserialize_typing(serialized_typing):
 
     raise NotImplementedError('{}'.format(serialized_typing))
 
+
 def serialize(deserialized_element):
     if isinstance(deserialized_element, DessiaObject):
         serialized = deserialized_element.to_dict()
@@ -774,6 +775,7 @@ def serialize(deserialized_element):
     else:
         serialized = deserialized_element
     return serialized
+
 
 def deserialize(serialized_element):
     if isinstance(serialized_element, dict):

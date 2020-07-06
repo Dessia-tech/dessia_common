@@ -12,7 +12,7 @@ try:
     from typing import TypedDict  # >=3.8
 except ImportError:
     from mypy_extensions import TypedDict  # <=3.7
-import dessia_common.core
+import dessia_common as dc
 
 
 class DessiaObject:
@@ -75,7 +75,7 @@ class DessiaObject:
 
             if name != 'return':
                 
-                annotation = (annotation[0], dessia_common.core.type_from_annotation(annotation[1], cls))
+                annotation = (annotation[0], dc.type_from_annotation(annotation[1], cls))
                 jsonschema_element = jsonschema_from_annotation(annotation=annotation,
                                                                 jsonschema_element={},
                                                                 order=order,
@@ -366,63 +366,67 @@ def recursive_instantiation(types, values):
     return instantiated_values
 
 
-def jsonschema_default_dict(jsonschema):
+def chose_default(jsonschema):
+    if jsonschema['type'] == 'object':
+        default_value = default_dict(jsonschema)
+    elif jsonschema['type'] == 'array':
+        default_value = default_sequence(jsonschema)
+    elif jsonschema['type'] == 'string':
+        default_value = ''
+    else:
+        default_value = None
+    return default_value
+
+
+def default_dict(jsonschema):
     dict_ = {}
     if 'properties' in jsonschema:
         for property_, value in jsonschema['properties'].items():
             if property_ in jsonschema['required']:
-                if value['type'] == 'object':
-                    dict_[property_] = jsonschema_default_dict(value)
-                elif value['type'] == 'array':
-                    if 'minItems' in value and 'maxItems' in value and value['minItems'] == value['maxItems']:
-                        number = value['minItems']
-                    elif 'minItems' in value:
-                        number = value['minItems']
-                    elif 'maxItems' in value:
-                        number = value['maxItems']
-                    else:
-                        number = 1
-
-                    if type(value['items']) == list:
-                        # Tuple jsonschema
-                        dict_[property_] = [jsonschema_default_dict(v) for v in value['items']]
-
-                    elif value['items']['type'] == 'object':
-                        if 'classes' in value['items']:
-                            subclass = data_model.models_by_name[value['items']['classes'][0]].python_class
-                            if issubclass(subclass, dessia_common.DessiaObject):
-                                if subclass._standalone_in_db:
-                                    print("Standalone array", property_)
-                                    # Standalone object
-                                    dict_[property_] = []
-                                else:
-                                    print("Embedded array", property_)
-                                    # Embedded object
-                                    dict_[property_] = [get_jsonschema_default_dict(subclass.jsonschema())] * number
-                            else:
-                                print("Static dict array", property_)
-                                # Static Dict
-                                dataclass_jsonschema = dessia_common.static_dict_jsonschema(subclass)
-                                dict_[property_] = [get_jsonschema_default_dict(dataclass_jsonschema)] * number
-
-                        else:
-                            print("Here array", property_)
-                            # TODO : Check if this is still necessary with Dataclass != Nested properties != Static Dict
-                            dict_[property_] = [get_jsonschema_default_dict(value['items'])] * number
-                    else:
-                        if 'default_value' in value:
-                            print("Do we ever reach this (array) ?")
-                            dict_[property_] = [ex for ex in value['default_value']]
-                        else:
-                            print("Do we end up here everytime (array) ?")
-                            dict_[property_] = [None] * number
-                elif value['type'] == 'string':
-                    dict_[property_] = ''
-                else:
-                    dict_[property_] = None
+                dict_[property_] = chose_default(value)
             else:
                 dict_[property_] = value['default_value']
     return dict_
+
+
+def default_sequence(array_jsonschema):
+    if 'minItems' in array_jsonschema and 'maxItems' in array_jsonschema \
+            and array_jsonschema['minItems'] == array_jsonschema['maxItems']:
+        number = array_jsonschema['minItems']
+    elif 'minItems' in array_jsonschema:
+        number = array_jsonschema['minItems']
+    elif 'maxItems' in array_jsonschema:
+        number = array_jsonschema['maxItems']
+    else:
+        number = 1
+
+    if type(array_jsonschema['items']) == list:
+        # Tuple jsonschema
+        default_value = [default_dict(v) for v in array_jsonschema['items']]
+
+    elif array_jsonschema['items']['type'] == 'object':
+        if 'classes' in array_jsonschema['items']:
+            subclass = dc.get_python_class_from_class_name()
+            if issubclass(subclass, dc.DessiaObject):
+                if subclass._standalone_in_db:
+                    # Standalone object
+                    default_value = []
+                else:
+                    # Embedded object
+                    default_subdict = default_dict(subclass.jsonschema())
+                    default_value = [default_subdict] * number
+            else:
+                # Static Dict
+                dict_jsonschema = static_dict_jsonschema(subclass)
+                default_subdict = default_dict(dict_jsonschema)
+                default_value = [default_subdict] * number
+        else:
+            print('Do we ever end up here ?')
+            # TODO : Check if this is still necessary with Dataclass != Nested properties != Static Dict
+            default_value = [default_dict(array_jsonschema['items'])] * number
+    else:
+        default_value = [chose_default(array_jsonschema['items'])] * number
+    return default_value
 
 
 JSONSCHEMA_HEADER = {"definitions": {},
