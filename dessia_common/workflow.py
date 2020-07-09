@@ -3,6 +3,7 @@
 """
 
 """
+import os
 import inspect
 import time
 import tempfile
@@ -18,7 +19,7 @@ from ast import literal_eval
 
 from jinja2 import Environment, PackageLoader, select_autoescape
 import dessia_common as dc
-from dessia_common.vectored_objects import ParetoSettings, Catalog
+from dessia_common.vectored_objects import ParetoSettings, Catalog, from_csv
 
 
 class Variable(dc.DessiaObject):
@@ -201,15 +202,55 @@ class Block(dc.DessiaObject):
         return data
 
 
+class Import(Block):
+    def __init__(self, type_: str, name: str = ''):
+        self.type_ = type_
+        inputs = [Variable(name='Input filename'),
+                  VariableWithDefaultValue(default_value=True,
+                                           name='Remove duplicates')]
+        outputs = [Variable(name='Array'), Variable(name='Variables')]
+
+        Block.__init__(self, inputs=inputs, outputs=outputs, name=name)
+
+    def equivalent_hash(self):
+        return len(self.type_)
+
+    def equivalent(self, other_block):
+        if not Block.equivalent(self, other_block):
+            return False
+        return self.type_ == other_block.type_
+
+    def to_dict(self):
+        dict_ = dc.DessiaObject.base_dict(self)
+        dict_['type_'] = self.type_
+        return dict_
+
+    @classmethod
+    @set_block_variable_names_from_dict
+    def dict_to_object(cls, dict_):
+        return cls(type_=dict_['type_'], name=dict_['name'])
+
+    def evaluate(self, values):
+        dirname = os.path.dirname(__file__)
+        relative_filepath = 'models/data/'+values[self.inputs[0]]
+        filename = os.path.join(dirname, relative_filepath)
+        if self.type_ == 'csv':
+            array, variables = from_csv(filename=filename, end=None,
+                                        remove_duplicates=True)
+            return [array, variables]
+        msg = 'File type {} not supported'.format(self.type_)
+        raise NotImplementedError(msg)
+
+
 class InstanciateModel(Block):
     _jsonschema = dc.dict_merge(Block._jsonschema, {
-        "title" : "Instantiate model Base Schema",
+        "title": "Instantiate model Base Schema",
         "required": ['object_class'],
         "properties": {
             "object_class": {
-                "type" : "string",
-                "editable" : True,
-                "examples" : ['Nom']
+                "type": "string",
+                "editable": True,
+                "examples": ['Nom']
                 }
             }
         })
@@ -1135,6 +1176,7 @@ class Workflow(Block):
         return disconnected_elements
 
     def index(self, variable):
+        print(variable.name)
         index = self.inputs.index(variable)
         return index
 
