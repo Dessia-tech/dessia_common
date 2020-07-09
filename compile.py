@@ -7,6 +7,7 @@
 # from os import walk, remove
 # from os.path import isdir, join, exists
 import os
+import sys
 import tempfile
 
 from setuptools import setup
@@ -324,8 +325,9 @@ class ClientDist(Command):
         # Packaging
         print('Packaging')
         archive_names = []
+        suffix = '-py{}{}'.format(sys.version_info.major, sys.version_info.minor)
+        archive_name = os.path.join('client_dist', dist_name+suffix)            
         for packaging_format in self.formats:
-            archive_name = os.path.join('client_dist', dist_name)            
             archive_name_with_extension = shutil.make_archive(archive_name,
                                                               root_dir=tmp_dir,
                                                               format=packaging_format,
