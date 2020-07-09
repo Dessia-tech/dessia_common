@@ -386,7 +386,7 @@ def recursive_instantiation(types, values):
             instantiated_values.append(eval(type_)(value))
         elif isinstance(type_, str):
             # TODO Check if this is OK. Are we importing classes ?
-            # In this case, use get_python_class_from_class_name
+            # TODO In this case, use get_python_class_from_class_name
             exec('import ' + type_.split('.')[0])
             class_ = eval(type_)
             if inspect.isclass(class_):
