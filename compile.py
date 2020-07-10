@@ -75,7 +75,7 @@ class ClientDist(Command):
         self.exp_year = 2000
         self.exp_month = 1
         self.exp_day = 1
-        self.formats = 'tar'  
+        self.formats = 'gztar'  
         self.getnodes = None
         self.macs = None
         self.detect_macs = None
