@@ -258,9 +258,12 @@ def prettyname(namestr):
 
 
 def static_dict_jsonschema(typed_dict, title=None):
-    jss_properties = {}
-    jsonschema_element = {'type': 'object',
-                          'properties': jss_properties}
+    jsonschema_element = deepcopy(JSONSCHEMA_HEADER)
+    jss_properties = jsonschema_element['properties']
+
+    # Every value is required in a StaticDict
+    jsonschema_element['required'] = list(typed_dict.__annotations__.keys())
+
     # !!! Not actually ordered !
     for i, ann in enumerate(typed_dict.__annotations__.items()):
         jss = jsonschema_from_annotation(annotation=ann,

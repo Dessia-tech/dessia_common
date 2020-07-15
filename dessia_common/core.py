@@ -798,8 +798,10 @@ def get_dict_attr(dict_, attr):
     value = None
     return value
 
+
 def get_list_attr(list_, index):
     return list_[index]
+
 
 TYPES_FROM_STRING = {'unicode': str, 'str': str,
                      'float': float, 'int': int, 'bool': bool}
