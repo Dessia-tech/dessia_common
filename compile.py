@@ -4,9 +4,11 @@
 
 
 """
-
-from os import walk, remove
-from os.path import isdir, join, exists
+# from os import walk, remove
+# from os.path import isdir, join, exists
+import os
+import sys
+import tempfile
 
 from setuptools import setup
 
@@ -25,7 +27,7 @@ import hashlib
 import netifaces
 
 
-protected_files = ['dessia_common.core_protected.py']
+protected_files = ['dessia_common/core_protected.py']
 
 
 class ClientDist(Command):
@@ -73,7 +75,7 @@ class ClientDist(Command):
         self.exp_year = 2000
         self.exp_month = 1
         self.exp_day = 1
-        self.formats = 'zip'  
+        self.formats = 'gztar'  
         self.getnodes = None
         self.macs = None
         self.detect_macs = None
@@ -98,9 +100,9 @@ class ClientDist(Command):
                 self.getnodes = getnodes        
                 print('\nCompiling for getnodes: {}'.format([str(g for g in self.getnodes)]))
 
-        else:
+        else:   
             self.macs = self.get_machine_macs()
-            print('Detecting mac, using: {}'.format(self.macs))
+            print('Using detected mac of this machine: {}'.format(self.macs))
 
         if not self.detect_macs and self.getnodes is None and self.macs is None:
             raise ValueError('Define either a mac or a getnode to protect the code or use detect-macs option')
@@ -269,62 +271,80 @@ class ClientDist(Command):
     def delete_compilation_files(self):
         # Remove _protected files and .c
         for file in self.files_to_compile:
-            if exists(file):
-                remove(file)
+            if os.path.exists(file):
+                os.remove(file)
 
             file = file[:-3] + 'c'
-            if exists(file):
-                remove(file)
+            if os.path.exists(file):
+                os.remove(file)
 
     
 
     def run(self):
         print('\n\nBeginning build')
-        
         package_name = self.distribution.get_name()
-        
+        tmp_dir = tempfile.mkdtemp()
         # Creating sdist
-        setup_result = run_setup('setup.py', script_args=['sdist', '--formats=tar', '--dist-dir=client_dist'])
+        setup_result = run_setup('setup.py', script_args=['sdist',
+                                                          '--formats=tar',
+                                                          '--dist-dir={}'.format(tmp_dir)])
         sdist_filename = setup_result.dist_files[0][2]
+        
         folder_path = sdist_filename[:-4]
-        if isdir(folder_path):
+        dist_name = os.path.basename(folder_path)
+        if os.path.isdir(folder_path):
             shutil.rmtree(folder_path)
         tar = tarfile.open(sdist_filename)
-        tar.extractall(path='client_dist')
+        tar.extractall(path=tmp_dir)
+        # compile_path = os.path.join(tmp_dir, os.path.commonprefix(tar.getnames()))
         tar.close()
         
-        # Clening sdist tar
-        remove(sdist_filename)
         
         # Compiling
         self.write_pyx_files()
-        print('Compiling files')
-        setup_result = run_setup('compile.py', script_args=['build_ext', '--build-lib=client_dist'])
-
+        print('Compiling files in {}'.format(tmp_dir))
+        setup_result = run_setup('compile.py', script_args=['build_ext',
+                                                            '--build-lib={}'.format(tmp_dir)])
         # Copying compiled files to sdist folder
-        compiled_files_dir = join('client_dist', package_name)
+        compiled_files_dir = os.path.join(tmp_dir, package_name)
 #        destination_base = join(folder_path, package_name)
-        destination_base = folder_path
-        for root_dir, _, files in walk(compiled_files_dir):
+        # destination_base = folder_path
+        
+        
+        for root_dir, _, files in os.walk(compiled_files_dir):
             for file in files:
-                source = join(root_dir, file)
-                destination = source.replace('client_dist', destination_base)
+                source = os.path.join(root_dir, file)
+                # destination = source.replace('client_dist', destination_base)
+                # print('root_dir')
+                new_file_location = source.replace(tmp_dir, '').lstrip('/ ')
+                destination = os.path.join(folder_path, new_file_location)
                 print('copying file {} to {}'.format(source, destination))
                 shutil.copy(source, destination)
 
 
         # Packaging
         print('Packaging')
+        archive_names = []
+        suffix = '-py{}{}'.format(sys.version_info.major, sys.version_info.minor)
+        archive_name = os.path.join('client_dist', dist_name+suffix)            
         for packaging_format in self.formats:
-            shutil.make_archive(folder_path, packaging_format, folder_path)
+            archive_name_with_extension = shutil.make_archive(archive_name,
+                                                              root_dir=tmp_dir,
+                                                              format=packaging_format,
+                                                              base_dir=dist_name)
+            archive_names.append(archive_name_with_extension)
+
             
         # Cleaning
         print('Cleaning')
         self.delete_compilation_files()
         shutil.rmtree(folder_path)
         shutil.rmtree(compiled_files_dir)
+        
+        # Cleaning sdist dir
+        shutil.rmtree(tmp_dir)
 
-        print('Client build finished, output is {} + {}'.format(folder_path, self.formats))
+        print('Client build finished, output is {}'.format(archive_names))
     
         
 ext_modules = []
@@ -335,7 +355,7 @@ for file in protected_files:
     ext_modules.append(Extension(module,  [file_to_compile]))
     
 setup(
-    name = 'agb',
+    name = 'dessia_common',
     cmdclass = {'build_ext': build_ext, 'cdist': ClientDist},
     install_requires = ['netifaces'],
     ext_modules = ext_modules
