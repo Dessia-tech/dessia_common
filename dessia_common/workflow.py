@@ -178,7 +178,8 @@ class Block(dc.DessiaObject):
                                                                   order=i,
                                                                   title=dc.prettyname(input_.name))
             current_dict.update(annotation_jsonschema[str(i)])
-            if not isinstance(input_, (VariableWithDefaultValue, TypedVariableWithDefaultValue)):
+            if not isinstance(input_, (VariableWithDefaultValue,
+                                       TypedVariableWithDefaultValue)):
                 required_inputs.append(str(i))
             else:
                 current_dict.update(dc.set_default_value(current_dict,
@@ -186,9 +187,6 @@ class Block(dc.DessiaObject):
                                                          input_.default_value))
             properties_dict[str(i)] = current_dict[str(i)]
         jsonschemas['run']['required'] = required_inputs
-        jsonschemas['run']['properties']['name'] = {'type': 'string',
-                                                    'default_value': self.name+' run',
-                                                    'editable': True}
         return jsonschemas
     
     def jointjs_data(self):
@@ -808,23 +806,32 @@ class Workflow(Block):
             "blocks": {
                 "type": "array",
                 "order": 0,
-                "editable" : True,
-                "items" : {
-                    "type" : "object",
-                    "classes" : ["dessia_common.workflow.InstanciateModel",
-                                 "dessia_common.workflow.ModelMethod",
-                                 "dessia_common.workflow.ForEach",
-                                 "dessia_common.workflow.ModelAttribute"],
-                    "editable" : True,
+                "editable": True,
+                "items": {
+                    "type": "object",
+                    "classes": ["dessia_common.workflow.InstanciateModel",
+                                "dessia_common.workflow.ModelMethod",
+                                "dessia_common.workflow.ForEach",
+                                "dessia_common.workflow.ModelAttribute",
+                                "dessia_common.workflow.Function",
+                                "dessia_common.workflow.Sequence",
+                                "dessia_common.workflow.ForEach",
+                                "dessia_common.workflow.Unpacker",
+                                "dessia_common.workflow.Flatten",
+                                "dessia_common.workflow.Filter",
+                                "dessia_common.workflow.ParallelPlot",
+                                "dessia_common.workflow.Sum",
+                                "dessia_common.workflow.Substraction"],
+                    "editable": True,
                     },
                 },
             "pipes": {
                 "type": "array",
                 "order": 1,
-                "editable" : True,
+                "editable": True,
                 "items": {
                     'type': 'objects',
-                    'classes' : ["dessia_common.workflow.Pipe"],
+                    'classes': ["dessia_common.workflow.Pipe"],
                     "editable": True
                     }
                 },
@@ -1296,7 +1303,7 @@ class Workflow(Block):
             print(log_line)
 
         output_value = values[self.outputs[0]]
-        if name is None:
+        if not name:
             name = self.name+' run'
         return WorkflowRun(workflow=self, output_value=output_value,
                            variables_values=variables_values,
