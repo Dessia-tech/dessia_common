@@ -171,6 +171,7 @@ class Block(dc.DessiaObject):
         properties_dict = jsonschemas['run']['properties']
         required_inputs = []
         for i, input_ in enumerate(self.inputs):
+            print(input_.name)
             current_dict = {}
             annotation = (str(i), input_.type_)
             annotation_jsonschema = dc.jsonschema_from_annotation(annotation=annotation,
@@ -186,9 +187,9 @@ class Block(dc.DessiaObject):
                                                          input_.default_value))
             properties_dict[str(i)] = current_dict[str(i)]
         jsonschemas['run']['required'] = required_inputs
-        jsonschemas['run']['properties']['name'] = {'type': 'string',
-                                                    'default_value': self.name+' run',
-                                                    'editable': True}
+        # jsonschemas['run']['properties']['name'] = {'type': 'string',
+        #                                             'default_value': self.name+' run',
+        #                                             'editable': True}   
         return jsonschemas
     
     def jointjs_data(self):
@@ -1296,7 +1297,7 @@ class Workflow(Block):
             print(log_line)
 
         output_value = values[self.outputs[0]]
-        if name is None:
+        if not name:
             name = self.name+' run'
         return WorkflowRun(workflow=self, output_value=output_value,
                            variables_values=variables_values,
