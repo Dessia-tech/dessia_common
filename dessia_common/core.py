@@ -784,15 +784,27 @@ def deserialize(serialized_element):
         element = sequence_to_objects(serialized_element)
     else:
         element = serialized_element
-
     return element
 
 
-TYPES_FROM_STRING = {'unicode': str,
-                     'str': str,
-                     'float': float,
-                     'int': int,
-                     'bool': bool}
+# def get_deep_attr(object_, attr_sequence):
+#     attr = attr_sequence[0]
+#     if len(attr_sequence) > 1:
+#         subattr = attr_sequence[1:]
+#
+#     return value
+
+def get_dict_attr(dict_, attr):
+    value = None
+    return value
+
+
+def get_list_attr(list_, index):
+    return list_[index]
+
+
+TYPES_FROM_STRING = {'unicode': str, 'str': str,
+                     'float': float, 'int': int, 'bool': bool}
 
 
 def type_from_annotation(type_, module):

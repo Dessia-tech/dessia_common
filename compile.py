@@ -85,7 +85,7 @@ class ClientDist(Command):
         self.exp_year = 2000
         self.exp_month = 1
         self.exp_day = 1
-        self.formats = 'tar'  
+        self.formats = 'gztar'  
         self.getnodes = None
         self.macs = None
         self.detect_macs = None
@@ -300,27 +300,27 @@ class ClientDist(Command):
                                                           '--dist-dir={}'.format(tmp_dir)])
         sdist_filename = setup_result.dist_files[0][2]
         
-        
         folder_path = sdist_filename[:-4]
         dist_name = os.path.basename(folder_path)
         if os.path.isdir(folder_path):
             shutil.rmtree(folder_path)
         tar = tarfile.open(sdist_filename)
         tar.extractall(path=tmp_dir)
+        # compile_path = os.path.join(tmp_dir, os.path.commonprefix(tar.getnames()))
         tar.close()
         
-
         
         # Compiling
         self.write_pyx_files()
-        print('Compiling files')
+        print('Compiling files in {}'.format(tmp_dir))
         setup_result = run_setup('compile.py', script_args=['build_ext',
                                                             '--build-lib={}'.format(tmp_dir)])
-
         # Copying compiled files to sdist folder
         compiled_files_dir = os.path.join(tmp_dir, package_name)
 #        destination_base = join(folder_path, package_name)
         # destination_base = folder_path
+        
+        
         for root_dir, _, files in os.walk(compiled_files_dir):
             for file in files:
                 source = os.path.join(root_dir, file)
