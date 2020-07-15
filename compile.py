@@ -8,7 +8,9 @@
 # from os.path import isdir, join, exists
 import os
 import sys
+import re
 import tempfile
+from subprocess import CalledProcessError, check_output
 
 from setuptools import setup
 
@@ -29,7 +31,15 @@ import netifaces
 
 protected_files = ['dessia_common/core_protected.py']
 
-
+ext_modules = []
+for file in protected_files:
+    module = file.replace('/', '.')
+    module = module[:-3]
+    file_to_compile = file[:-3] + '_protected.pyx'
+    ext_modules.append(Extension(module,  [file_to_compile]))
+    
+    
+    
 class ClientDist(Command):
     description = 'Creating client distribution with compiled packages and license'
     user_options = [
@@ -346,19 +356,155 @@ class ClientDist(Command):
 
         print('Client build finished, output is {}'.format(archive_names))
     
-        
-ext_modules = []
-for file in protected_files:
-    module = file.replace('/', '.')
-    module = module[:-3]
-    file_to_compile = file[:-3] + '_protected.pyx'
-    ext_modules.append(Extension(module,  [file_to_compile]))
+class ClientWheelDist(ClientDist):
     
+    def run(self):
+        print('\n\nBeginning build')
+        package_name = self.distribution.get_name()
+        # tmp_dir = tempfile.mkdtemp()
+        # # Creating sdist
+        # setup_result = run_setup('setup.py', script_args=['sdist',
+        #                                                   '--formats=tar',
+        #                                                   '--dist-dir={}'.format(tmp_dir)])
+        # sdist_filename = setup_result.dist_files[0][2]
+        
+        
+        # folder_path = sdist_filename[:-4]
+        # dist_name = os.path.basename(folder_path)
+        # if os.path.isdir(folder_path):
+        #     shutil.rmtree(folder_path)
+        # tar = tarfile.open(sdist_filename)
+        # tar.extractall(path=tmp_dir)
+        # tar.close()
+        
+
+        
+        # Compiling
+        self.write_pyx_files()
+        print('Compiling files')
+        setup_result = run_setup('compile.py', script_args=['bdist_wheel'],
+                                 )
+
+            
+        # Cleaning
+        print('Cleaning')
+        self.delete_compilation_files()
+        # shutil.rmtree(folder_path)
+        # shutil.rmtree(compiled_files_dir)
+        
+        # # Cleaning sdist dir
+        # shutil.rmtree(tmp_dir)
+
+        print('Client build finished, output is {}'.format(setup_result))
+    
+tag_re = re.compile(r'\btag: %s([0-9][^,]*)\b')
+version_re = re.compile('^Version: (.+)$', re.M)
+    
+def version_from_git_describe(version):
+    if version[0]=='v':
+            version = version[1:]
+
+    # PEP 440 compatibility
+    number_commits_ahead = 0
+    if '-' in version:
+        version, number_commits_ahead, commit_hash = version.split('-')
+        number_commits_ahead = int(number_commits_ahead)
+
+    print('number_commits_ahead', number_commits_ahead)
+
+    split_versions = version.split('.')
+    if 'post' in split_versions[-1]:
+        suffix = split_versions[-1]
+        split_versions = split_versions[:-1]
+    else:
+        suffix = None
+
+    for pre_release_segment in ['a', 'b', 'rc']:
+        if pre_release_segment in split_versions[-1]:
+            if number_commits_ahead > 0:
+                split_versions[-1] = str(split_versions[-1].split(pre_release_segment)[0])
+                if len(split_versions) == 2:
+                    split_versions.append('0')
+                if len(split_versions) == 1:
+                    split_versions.extend(['0', '0'])
+
+                split_versions[-1] = str(int(split_versions[-1])+1)
+                future_version = '.'.join(split_versions)
+                return '{}.dev{}'.format(future_version, number_commits_ahead)
+            else:
+                return '.'.join(split_versions)
+
+    if number_commits_ahead > 0:
+        if len(split_versions) == 2:
+            split_versions.append('0')
+        if len(split_versions) == 1:
+            split_versions.extend(['0', '0'])
+        split_versions[-1] = str(int(split_versions[-1])+1)
+        split_versions = '.'.join(split_versions)
+        return '{}.dev{}'.format(split_versions, number_commits_ahead)
+    else:
+        if suffix is not None:
+            split_versions.append(suffix)
+
+        return '.'.join(split_versions)
+
+def get_version():
+    # Return the version if it has been injected into the file by git-archive
+    version = tag_re.search('$Format:%D$')
+    if version:
+        return version.group(1)
+
+    d = os.path.dirname(__file__)
+
+    if os.path.isdir(os.path.join(d, '.git')):
+        cmd = 'git describe --tags'
+        try:
+            version = check_output(cmd.split()).decode().strip()[:]
+
+        except CalledProcessError:
+            raise RuntimeError('Unable to get version number from git tags')
+
+        return version_from_git_describe(version)
+    else:
+        # Extract the version from the PKG-INFO file.
+        with open(os.path.join(d, 'PKG-INFO')) as f:
+            version = version_re.search(f.read()).group(1)
+
+    # print('version', version)
+    return version
+
+
 setup(
     name = 'dessia_common',
-    cmdclass = {'build_ext': build_ext, 'cdist': ClientDist},
-    install_requires = ['netifaces'],
-    ext_modules = ext_modules
-)
-            
+    version=get_version(),
+    description="Common tools for DessIA software",
+    long_description='',
+    keywords='',
+    url='',
+    author='Steven Masfaraud',
+    author_email='masfaraud@dessia.tech',
+    packages=['dessia_common'],
+    install_requires=['typeguard', 'networkx', 'numpy', 'pandas', 'jinja2',
+                      'mypy_extensions', 'scipy', 'pyDOE',
+                      'netifaces'],
+    python_requires='>=3.7',
+    cmdclass = {'build_ext': build_ext, 'cdist': ClientDist,
+                'cdist_wheel': ClientWheelDist},
+    
+    ext_modules = ext_modules,
 
+)
+
+# try:
+#     from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
+#     class bdist_wheel(_bdist_wheel):
+#         def finalize_options(self):
+#             _bdist_wheel.finalize_options(self)
+#             self.root_is_pure = False
+# except ImportError:
+#     bdist_wheel = None
+
+# setup(
+#     # ...
+#     cmdclass={'bdist_wheel': bdist_wheel},
+# )
