@@ -960,7 +960,10 @@ class Workflow(Block):
             current_dict = {}
             annotation = (str(i), input_.type_)
             input_block = self.block_from_variable(input_)
-            title = dc.prettyname(input_block.name + ' - ' + input_.name)
+            if input_block.name:
+                title = dc.prettyname(input_block.name + ' - ' + input_.name)
+            else:
+                title = dc.prettyname(input_.name)
             annotation_jsonschema = dc.jsonschema_from_annotation(annotation=annotation,
                                                                   jsonschema_element=current_dict,
                                                                   order=i,
