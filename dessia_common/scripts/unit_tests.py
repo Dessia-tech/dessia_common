@@ -1,5 +1,5 @@
 from dessia_common.forms import *
-from dessia_common import get_deep_attr
+from dessia_common import enhanced_deep_attr
 
 standalone_subobject = StandaloneSubobject(floatarg=3.78)
 embedded_subobject = EmbeddedSubobject()
@@ -186,22 +186,29 @@ jsonschema = {
     'whitelist_attributes': []
 }
 
+# Test deep_attr
 assert standalone_object.jsonschema() == jsonschema
 
-deepfloat = get_deep_attr(obj=standalone_object,
-                          sequence=['standalone_subobject', 'floatarg'])
+deepfloat = enhanced_deep_attr(obj=standalone_object,
+                               sequence=['standalone_subobject', 'floatarg'])
 assert deepfloat == 3.78
 
-deeplist = get_deep_attr(obj=standalone_object,
-                         sequence=['embedded_subobject', 'embedded_list', 2])
+deeplist = enhanced_deep_attr(obj=standalone_object,
+                              sequence=['embedded_subobject',
+                                        'embedded_list', 2])
 assert deeplist == 3
 
-deepdict = get_deep_attr(obj=standalone_object,
-                         sequence=['static_dict', 'is_valid'])
+deepdict = enhanced_deep_attr(obj=standalone_object,
+                              sequence=['static_dict', 'is_valid'])
 assert deepdict is True
 
-deeperlist = get_deep_attr(obj=standalone_object,
-                           sequence=['static_dict', 'subobject',
-                                     'embedded_list', 1])
+deeperlist = enhanced_deep_attr(obj=standalone_object,
+                                sequence=['static_dict', 'subobject',
+                                          'embedded_list', 1])
 assert deeperlist == 2
+
+directattr = enhanced_deep_attr(obj=standalone_object,
+                                sequence=['strarg'])
+
+assert directattr == 'TestStr'
 
