@@ -787,20 +787,19 @@ def deserialize(serialized_element):
     return element
 
 
-# def get_deep_attr(object_, attr_sequence):
-#     attr = attr_sequence[0]
-#     if len(attr_sequence) > 1:
-#         subattr = attr_sequence[1:]
-#
-#     return value
-
-def get_dict_attr(dict_, attr):
-    value = None
-    return value
+def get_deep_attr(obj, sequence):
+    subobj = get_attr(obj, sequence[0])
+    if len(sequence) > 1:
+        subobj = get_deep_attr(subobj, sequence[1:])
+    return subobj
 
 
-def get_list_attr(list_, index):
-    return list_[index]
+def get_attr(obj, attribute):
+    try:
+        return getattr(obj, attribute)
+    except (TypeError, AttributeError):
+        return obj[attribute]
+    # TODO We might try/except last statement
 
 
 TYPES_FROM_STRING = {'unicode': str, 'str': str,
