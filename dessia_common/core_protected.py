@@ -427,6 +427,8 @@ def default_dict(jsonschema):
             else:
                 if value['type'] == 'array':
                     dict_[property_] = []
+                elif value['type'] == 'object' and value['default_value'] is None:
+                    dict_[property_] = {}
                 else:
                     dict_[property_] = value['default_value']
     return dict_

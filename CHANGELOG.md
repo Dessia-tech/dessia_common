@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Generic serialize function
 - ParallelPlot block
 - Memorize attribute in Variables and intermediate variables values in workflow_run
+- Non Standalone object default value in default dict support
 
 ### Changed
 - Filter block doesn't write _display_angular anymore. See ParallelPlot

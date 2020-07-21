@@ -164,30 +164,6 @@ class Block(dc.DessiaObject):
         dict_['input_names'] = [i.name for i in self.inputs]
         dict_['output_names'] = [o.name for o in self.outputs]
         return dict_
-
-    @property
-    def _method_jsonschemas(self):
-        jsonschemas = {'run': deepcopy(dc.JSONSCHEMA_HEADER)}
-        properties_dict = jsonschemas['run']['properties']
-        required_inputs = []
-        for i, input_ in enumerate(self.inputs):
-            current_dict = {}
-            annotation = (str(i), input_.type_)
-            annotation_jsonschema = dc.jsonschema_from_annotation(annotation=annotation,
-                                                                  jsonschema_element=current_dict,
-                                                                  order=i,
-                                                                  title=dc.prettyname(input_.name))
-            current_dict.update(annotation_jsonschema[str(i)])
-            if not isinstance(input_, (VariableWithDefaultValue,
-                                       TypedVariableWithDefaultValue)):
-                required_inputs.append(str(i))
-            else:
-                current_dict.update(dc.set_default_value(current_dict,
-                                                         str(i),
-                                                         input_.default_value))
-            properties_dict[str(i)] = current_dict[str(i)]
-        jsonschemas['run']['required'] = required_inputs
-        return jsonschemas
     
     def jointjs_data(self):
         data = {'block_class': self.__class__.__name__}
@@ -242,7 +218,6 @@ class InstanciateModel(Block):
         class_ = getattr(import_module(dict_['model_class_module']),
                          dict_['model_class'])
         return cls(class_, name=dict_['name'])
-
 
     def evaluate(self, values):
         args = {var.name: values[var] for var in self.inputs}
@@ -976,6 +951,35 @@ class Workflow(Block):
                           'edges': data['edges']}])
         return displays
 
+    @property
+    def _method_jsonschemas(self):
+        jsonschemas = {'run': deepcopy(dc.JSONSCHEMA_HEADER)}
+        properties_dict = jsonschemas['run']['properties']
+        required_inputs = []
+        for i, input_ in enumerate(self.inputs):
+            current_dict = {}
+            annotation = (str(i), input_.type_)
+            input_block = self.block_from_variable(input_)
+            if input_block.name:
+                title = dc.prettyname(input_block.name + ' - ' + input_.name)
+            else:
+                title = dc.prettyname(input_.name)
+            annotation_jsonschema = dc.jsonschema_from_annotation(annotation=annotation,
+                                                                  jsonschema_element=current_dict,
+                                                                  order=i,
+                                                                  title=title)
+            current_dict.update(annotation_jsonschema[str(i)])
+            if not isinstance(input_, (VariableWithDefaultValue,
+                                       TypedVariableWithDefaultValue)):
+                required_inputs.append(str(i))
+            else:
+                current_dict.update(dc.set_default_value(current_dict,
+                                                         str(i),
+                                                         input_.default_value))
+            properties_dict[str(i)] = current_dict[str(i)]
+        jsonschemas['run']['required'] = required_inputs
+        return jsonschemas
+
     def to_dict(self):
         dict_ = dc.DessiaObject.base_dict(self)
         blocks = [b.to_dict() for b in self.blocks]
@@ -1128,6 +1132,10 @@ class Workflow(Block):
 
         msg = 'Some thing is wrong with variable {}'.format(variable.name)
         raise WorkflowError(msg)
+
+    def block_from_variable(self, variable):
+        iblock, _, _ = self.variable_indices(variable)
+        return self.blocks[iblock]
 
     def output_disconnected_elements(self):
         disconnected_elements = []
