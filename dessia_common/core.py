@@ -799,11 +799,17 @@ def enhanced_deep_attr(obj, sequence):
     :return: Value of deep attribute
     """
     if isinstance(sequence, str):
+        # Sequence is a string and not a sequence of deep attributes
         if '.' in sequence:
+            # Is deep attribute reference
             sequence = deepattr_to_sequence(sequence)
+            return enhanced_deep_attr(obj, sequence)
+        # Is direct attribute
         return enhanced_get_attr(obj, sequence)
+    # Get direct attrivute
     subobj = enhanced_get_attr(obj, sequence[0])
     if len(sequence) > 1:
+        # Recursively get deep attributes
         subobj = enhanced_deep_attr(subobj, sequence[1:])
     return subobj
 
@@ -822,7 +828,7 @@ def enhanced_get_attr(obj, attribute):
         return getattr(obj, attribute)
     except (TypeError, AttributeError):
         return obj[attribute]
-    # TODO We might try/except last statement
+        # TODO We might try/except last statement
 
 
 def deepattr_to_sequence(deepattr: str):

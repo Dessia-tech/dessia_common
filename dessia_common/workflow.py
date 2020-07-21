@@ -602,7 +602,7 @@ class ParallelPlot(Block):
         return self.attributes == other_block.attributes
 
     def equivalent_hash(self):
-        return int(sum([hash(a) for a in self.attributes]) % 10e5)
+        return int(sum([len(a) for a in self.attributes]) % 10e5)
 
     def _display(self, variables_values):
         objects = variables_values[self.inputs[0]]
