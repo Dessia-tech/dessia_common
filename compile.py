@@ -361,41 +361,18 @@ class ClientWheelDist(ClientDist):
     def run(self):
         print('\n\nBeginning build')
         package_name = self.distribution.get_name()
-        # tmp_dir = tempfile.mkdtemp()
-        # # Creating sdist
-        # setup_result = run_setup('setup.py', script_args=['sdist',
-        #                                                   '--formats=tar',
-        #                                                   '--dist-dir={}'.format(tmp_dir)])
-        # sdist_filename = setup_result.dist_files[0][2]
-        
-        
-        # folder_path = sdist_filename[:-4]
-        # dist_name = os.path.basename(folder_path)
-        # if os.path.isdir(folder_path):
-        #     shutil.rmtree(folder_path)
-        # tar = tarfile.open(sdist_filename)
-        # tar.extractall(path=tmp_dir)
-        # tar.close()
-        
-
         
         # Compiling
         self.write_pyx_files()
         print('Compiling files')
         setup_result = run_setup('compile.py', script_args=['bdist_wheel'],
                                  )
-
             
         # Cleaning
         print('Cleaning')
         self.delete_compilation_files()
-        # shutil.rmtree(folder_path)
-        # shutil.rmtree(compiled_files_dir)
-        
-        # # Cleaning sdist dir
-        # shutil.rmtree(tmp_dir)
 
-        print('Client build finished, output is {}'.format(setup_result))
+        print('Client build finished, output is {}'.format(setup_result.dist_files))
     
 tag_re = re.compile(r'\btag: %s([0-9][^,]*)\b')
 version_re = re.compile('^Version: (.+)$', re.M)
