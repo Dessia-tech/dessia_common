@@ -97,7 +97,8 @@ class Objective(DessiaObject):
         return unsigned
 
     @classmethod
-    def from_angles(cls, angles, variables, directions, settings=None, name="Generated from angles"):
+    def from_angles(cls, angles, variables, directions,
+                    settings=None, name="Generated from angles"):
         if not isinstance(angles, list) and not isinstance(angles, np.ndarray):
             angles = [angles]
         generated_coefficients = cls.coefficients_from_angles(angles=angles)
@@ -108,31 +109,26 @@ class Objective(DessiaObject):
                 coefficients[var] = -coeff
             else:
                 coefficients[var] = coeff
-        # coefficients = {var: generated_coefficients[i] for i, var in enumerate(variables)}
 
         if settings is None:
             settings = ObjectiveSettings()
 
-        return Objective(coefficients=coefficients, directions=directions, settings=settings, name=name)
+        return Objective(coefficients=coefficients, directions=directions,
+                         settings=settings, name=name)
 
 
 class Catalog(DessiaObject):
     """
     Defines a Catalog object that gathers a collection of VectoredObjects
 
-    :param pareto_attributes: List of strings representing names of variables
-                              used for pareto computations.
-    :type pareto_attributes: [str]
-    :param minimize: List of booleans representing if pareto for this variable
-                     should be searched in maximum or minimum direction.
-    :type minimize: [bool]
-    :param objectives: List of objectives to apply to catalog vectored objects
+    TODO Update Docstring
+    :param objectives: List of objectives to apply to
+                       catalog vectored objects
     :type objectives: [Objective]
-    :param n_near_values: Integer that gives the number of best solutions given by objectives
-    :type n_near_values: int
     # :param objects: List of vectored objects.
     # :type objects: [VectoredObject]
-    :param choice_variables: List of string. List of variable names that represent choice arguments
+    :param choice_variables: List of string. List of variable names
+                             that represent choice arguments
     :type choice_variables: [str]
     :param name: Name of the catalog
     :type name: str
@@ -141,7 +137,9 @@ class Catalog(DessiaObject):
     _generic_eq = True
     _standalone_in_db = True
     _ordered_attributes = ['name', 'pareto_settings', 'objectives']
-    _non_editable_attributes = ['array', 'variables', 'choice_variables', 'generated_best_objectives']
+    _non_editable_attributes = ['array', 'variables',
+                                'choice_variables',
+                                'generated_best_objectives']
     _export_formats = ['csv']
     _allowed_methods = ['find_best_objective']
     _whitelist_attributes = ['variables']

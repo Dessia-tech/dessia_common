@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+#cython: language_level=3
 """
 
 """
@@ -257,9 +258,12 @@ def prettyname(namestr):
 
 
 def static_dict_jsonschema(typed_dict, title=None):
-    jss_properties = {}
-    jsonschema_element = {'type': 'object',
-                          'properties': jss_properties}
+    jsonschema_element = deepcopy(JSONSCHEMA_HEADER)
+    jss_properties = jsonschema_element['properties']
+
+    # Every value is required in a StaticDict
+    jsonschema_element['required'] = list(typed_dict.__annotations__.keys())
+
     # !!! Not actually ordered !
     for i, ann in enumerate(typed_dict.__annotations__.items()):
         jss = jsonschema_from_annotation(annotation=ann,
@@ -386,7 +390,7 @@ def recursive_instantiation(types, values):
             instantiated_values.append(eval(type_)(value))
         elif isinstance(type_, str):
             # TODO Check if this is OK. Are we importing classes ?
-            # In this case, use get_python_class_from_class_name
+            # TODO In this case, use get_python_class_from_class_name
             exec('import ' + type_.split('.')[0])
             class_ = eval(type_)
             if inspect.isclass(class_):
@@ -423,6 +427,8 @@ def default_dict(jsonschema):
             else:
                 if value['type'] == 'array':
                     dict_[property_] = []
+                elif value['type'] == 'object' and value['default_value'] is None:
+                    dict_[property_] = {}
                 else:
                     dict_[property_] = value['default_value']
     return dict_
