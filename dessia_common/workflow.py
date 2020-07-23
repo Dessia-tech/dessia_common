@@ -515,6 +515,7 @@ class ForEach(Block):
         # index_iterable_input = self.workflow_block.inputs.index(self.workflow_iterable_input)
         output_values = []
         for value in values_workflow[self.workflow_iterable_input]:
+            print(value)
             # values_workflow2 = {var.name: val\
             #                     for var, val in values_workflow.items()\
             #                     if var != self.workflow_iterable_input}
@@ -1191,7 +1192,6 @@ class Workflow(Block):
         return disconnected_elements
 
     def index(self, variable):
-        print(variable.name)
         index = self.inputs.index(variable)
         return index
 
@@ -1206,7 +1206,7 @@ class Workflow(Block):
             distances = []
             paths = nx.all_simple_paths(self.graph, element, self.outputs[0])
             for path in paths:
-                distance = 0
+                distance = 1
                 for path_element in path[1:-1]:
                     if path_element in self.blocks:
                         distance += 1

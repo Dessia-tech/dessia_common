@@ -10,7 +10,7 @@ import math
 from typing import List, Dict
 import numpy as np
 import pandas as pd
-from dessia_common import DessiaObject, Parameter
+from dessia_common import DessiaObject, Parameter, enha
 from scipy.optimize import minimize
 from pyDOE import lhs
 
@@ -165,6 +165,14 @@ class Catalog(DessiaObject):
 
         self.objectives = objectives
         self.generated_best_objectives = 0
+
+    def __getitem__(self, item):
+        return self.array[item]
+
+    def __getattr__(self, item):
+        if isinstance(item, (list, tuple))\
+                or isinstance(item, str) and '.' in item:
+
 
     def _display_angular(self):
         """
