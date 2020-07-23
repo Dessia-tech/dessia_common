@@ -787,20 +787,56 @@ def deserialize(serialized_element):
     return element
 
 
-# def get_deep_attr(object_, attr_sequence):
-#     attr = attr_sequence[0]
-#     if len(attr_sequence) > 1:
-#         subattr = attr_sequence[1:]
-#
-#     return value
+def enhanced_deep_attr(obj, sequence):
+    """
+    Get deep attribute where Objects, Dicts and Lists
+    can be found in recursion.
 
-def get_dict_attr(dict_, attr):
-    value = None
-    return value
+    :param obj: Parent object in which recursively find attribute
+                represented by sequence
+    :param sequence: List of strings and integers that represents
+                     path to deep attribute.
+    :return: Value of deep attribute
+    """
+    if isinstance(sequence, str):
+        # Sequence is a string and not a sequence of deep attributes
+        if '.' in sequence:
+            # Is deep attribute reference
+            sequence = deepattr_to_sequence(sequence)
+            return enhanced_deep_attr(obj, sequence)
+        # Is direct attribute
+        return enhanced_get_attr(obj, sequence)
+    # Get direct attrivute
+    subobj = enhanced_get_attr(obj, sequence[0])
+    if len(sequence) > 1:
+        # Recursively get deep attributes
+        subobj = enhanced_deep_attr(subobj, sequence[1:])
+    return subobj
 
 
-def get_list_attr(list_, index):
-    return list_[index]
+def enhanced_get_attr(obj, attribute):
+    """
+    Safely get attribute in obj.
+    Obj can be of Object, Dict, or List type
+
+    :param obj: Parent object in which find given attribute
+    :param attribute: String or integer that represents
+                      name or index of attribute
+    :return: Value of attribute
+    """
+    try:
+        return getattr(obj, attribute)
+    except (TypeError, AttributeError):
+        return obj[attribute]
+        # TODO We might try/except last statement
+
+
+def deepattr_to_sequence(deepattr: str):
+    return deepattr.split('.')
+
+
+def sequence_to_deepattr(sequence):
+    return ''.join(sequence)
 
 
 TYPES_FROM_STRING = {'unicode': str, 'str': str,

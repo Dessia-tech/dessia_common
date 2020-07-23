@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ParallelPlot block
 - Memorize attribute in Variables and intermediate variables values in workflow_run
 - Non Standalone object default value in default dict support
+- Demo classes for forms data format
+- Add unit_tests.py script + exec in drone
+- Recursive/complex deepattr function
 
 ### Changed
 - Filter block doesn't write _display_angular anymore. See ParallelPlot

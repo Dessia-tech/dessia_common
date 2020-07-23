@@ -605,10 +605,10 @@ class Filter(Block):
         for object_ in objects:
             valid = True
             for filter_ in self.filters:
-                attribute_path = filter_['attribute']
+                attribute_sequence = filter_['attribute']
                 operator = filter_['operator']
                 bound = filter_['bound']
-                attribute = dc.getdeepattr(object_, attribute_path)
+                attribute = dc.get_deep_attr(object_, attribute_sequence)
                 if operator == 'lte' and attribute > bound:
                     valid = False
                 if operator == 'gte' and attribute < bound:
@@ -628,7 +628,7 @@ class Filter(Block):
 
 
 class ParallelPlot(Block):
-    def __init__(self, attributes: List[str], name: str = ''):
+    def __init__(self, attributes, name: str = ''):
         self.attributes = attributes
         pareto_input = TypedVariableWithDefaultValue(type_=ParetoSettings,
                                                      default_value=None,
@@ -644,7 +644,7 @@ class ParallelPlot(Block):
         return self.attributes == other_block.attributes
 
     def equivalent_hash(self):
-        return int(sum([hash(a) for a in self.attributes]) % 10e5)
+        return int(sum([len(a) for a in self.attributes]) % 10e5)
 
     def _display(self, variables_values):
         objects = variables_values[self.inputs[0]]
@@ -653,7 +653,7 @@ class ParallelPlot(Block):
         for object_ in objects:
             line = []
             for attribute in self.attributes:
-                line.append(dc.getdeepattr(object_, attribute))
+                line.append(dc.enhanced_deep_attr(object_, attribute))
             array.append(line)
 
         if pareto_settings is None:
@@ -708,7 +708,8 @@ class ModelAttribute(Block):
         return cls(dict_['attribute_name'], dict_['name'])
 
     def evaluate(self, values):
-        return [dc.getdeepattr(values[self.inputs[0]], self.attribute_name)]
+        return [dc.enhanced_deep_attr(values[self.inputs[0]],
+                                      self.attribute_name)]
 
 
 class Sum(Block):
