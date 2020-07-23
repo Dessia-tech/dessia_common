@@ -832,11 +832,20 @@ def enhanced_get_attr(obj, attribute):
 
 
 def deepattr_to_sequence(deepattr: str):
-    return deepattr.split('.')
+    sequence = deepattr.split('.')
+    healed_sequence = []
+    for i, attribute in enumerate(sequence):
+        try:
+            healed_sequence.append(int(attribute))
+        except ValueError:
+            healed_sequence.append(attribute)
+    return healed_sequence
 
 
 def sequence_to_deepattr(sequence):
-    return ''.join(sequence)
+    healed_sequence = [str(attr) if isinstance(attr, int) else attr
+                       for attr in sequence]
+    return '.'.join(healed_sequence)
 
 
 TYPES_FROM_STRING = {'unicode': str, 'str': str,
