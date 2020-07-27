@@ -10,7 +10,7 @@ import math
 from typing import List, Dict
 import numpy as np
 import pandas as pd
-from dessia_common import DessiaObject, Parameter, enha
+from dessia_common import DessiaObject, Parameter, enhanced_deep_attr
 from scipy.optimize import minimize
 from pyDOE import lhs
 
@@ -166,13 +166,27 @@ class Catalog(DessiaObject):
         self.objectives = objectives
         self.generated_best_objectives = 0
 
-    def __getitem__(self, item):
-        return self.array[item]
-
-    def __getattr__(self, item):
-        if isinstance(item, (list, tuple))\
-                or isinstance(item, str) and '.' in item:
-
+    # def __getitem__(self, item):
+    #     print('Getitem', item)
+    #     return self.array[item]
+    #
+    # def __getattr__(self, item):
+    #     if isinstance(item, (list, tuple)):
+    #         return enhanced_deep_attr(self, item)
+    #     elif isinstance(item, str) and '.' in item:
+    #         sequence = item.split('.')
+    #         healed_sequence = []
+    #         for i, attr in enumerate(sequence):
+    #             try:
+    #                 healed_sequence.append(int(attr))
+    #             except ValueError:
+    #                 if attr in self.variables:
+    #                     healed_sequence.append(self.get_variable_index(attr))
+    #                 else:
+    #                     healed_sequence.append(attr)
+    #         print(healed_sequence)
+    #         return enhanced_deep_attr(self, healed_sequence)
+    #     return self.__getattribute__(item)
 
     def _display_angular(self):
         """

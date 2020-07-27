@@ -40,6 +40,8 @@ for_each_variable = wf.ForEach(workflow_block=workflow_block,
                                workflow_iterable_input=iterable_input,
                                name='ForEach variable')
 
+parallel_plot = wf.ParallelPlot([])
+
 blocks = [import_csv, instantiate_pareto, instantiate_catalog,
           objectives_method, args_attributes, objectives_attributes,
           array_attributes, for_each_variable]

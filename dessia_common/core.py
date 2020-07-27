@@ -115,14 +115,14 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
             if value != other_value:
                 return False
         return True
-    
 
     def __hash__(self):
         if not self._generic_eq:
             return object.__hash__(self)
         hash_ = 0
         for key, value in self.__dict__.items():
-            if key not in set(self._non_eq_attributes + self._non_hash_attributes):
+            if key not in set(self._non_eq_attributes
+                              + self._non_hash_attributes):
                 if isinstance(value, list):
                     hash_ += list_hash(value)
                 elif isinstance(value, dict):
@@ -132,6 +132,12 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
                 else:
                     hash_ += hash(value)
         return int(hash_ % 1e5)
+
+    # def __getattr__(self, item):
+    #     try:
+    #         return enhanced_deep_attr(self, item)
+    #     except (AttributeError, TypeError, ValueError):
+    #         return self.__getattribute__(item)
 
     # def __getattribute__(self, name):
     #     if name in DEPRECATED_ATTRIBUTES:
