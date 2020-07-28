@@ -23,8 +23,8 @@ filter_method = wf.ModelMethod(model_class=Catalog,
                                name='Filters')
 filtered_catalog = wf.InstanciateModel(model_class=Catalog,
                                        name='Filtered Catalog')
-display = wf.Display("Display")
-filtered = wf.Display("Filtered")
+display = wf.Display(order=0, name="Display")
+filtered = wf.Display(order=1, name="Filtered")
 # objectives_method = wf.ModelMethod(model_class=Catalog,
 #                                    method_name='find_best_objective',
 #                                    name="Find best objectives")

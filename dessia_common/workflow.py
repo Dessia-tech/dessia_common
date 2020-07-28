@@ -628,8 +628,9 @@ class Filter(Block):
 
 
 class ParallelPlot(Block):
-    def __init__(self, attributes, name: str = ''):
+    def __init__(self, attributes, order: int = 0, name: str = ''):
         self.attributes = attributes
+        self.order = order
         pareto_input = TypedVariableWithDefaultValue(type_=ParetoSettings,
                                                      default_value=None,
                                                      memorize=True,
@@ -641,10 +642,13 @@ class ParallelPlot(Block):
     def equivalent(self, other_block):
         if not Block.equivalent(self, other_block):
             return False
-        return self.attributes == other_block.attributes
+        equal = self.attributes == other_block.attributes\
+            and self.order == other_block.order
+        return  equal
 
     def equivalent_hash(self):
-        return int(sum([len(a) for a in self.attributes]) % 10e5)
+        return int((sum([len(a) for a in self.attributes])
+                    + self.order) % 10e5)
 
     def _display(self, variables_values):
         objects = variables_values[self.inputs[0]]
@@ -683,11 +687,20 @@ class ParallelPlot(Block):
 
 
 class Display(Block):
-    def __init__(self, name=''):
+    def __init__(self, order: int = 0, name: str = ''):
+        self.order = order
         inputs = [Variable(name='Model to Display', memorize=True)]
         outputs = []
 
         Block.__init__(self, inputs=inputs, outputs=outputs, name=name)
+
+    def equivalent(self, other_block):
+        if not Block.equivalent(self, other_block):
+            return False
+        return self.order == other_block.order
+
+    def equivalent_hash(self):
+        return self.order
 
     def _display(self, variables_values):
         object_ = variables_values[self.inputs[0]]
@@ -1637,41 +1650,41 @@ class WorkflowRun(dc.DessiaObject):
                 "order": 0,
                 "editable": False,
                 "description": "Workflow"
-                },
+            },
             'output_value': {
                 "type": "array",
                 "items": {
                     "type": "object",
                     "classes": "*"
-                    },
+                },
                 "title": "Values",
                 "description": "Input and output values",
                 "editable": False,
                 "order": 1
-                },
+            },
             'start_time': {
                 "type": "number",
                 "title": "Start Time",
                 "editable": False,
                 "description": "Start time of simulation",
                 "order": 2
-                },
+            },
             'end_time': {
                 "type": "number",
                 "title": "End Time",
                 "editable": False,
                 "description": "End time of simulation",
                 "order": 3
-                 },
+            },
             'log': {
                 "type": "string",
                 "title": "Log",
                 "editable": False,
                 "description": "Log",
                 "order": 4
-                 }
-             }
-         }
+            }
+        }
+    }
 
     def __init__(self, workflow, output_value, variables_values,
                  start_time, end_time, log, name=''):
@@ -1705,11 +1718,12 @@ class WorkflowRun(dc.DessiaObject):
         return hash(self.workflow) + int(hash_output % 10e5)
 
     def _display_angular(self):
+        d_blocks = [b for b in self.workflow.blocks if hasattr(b, '_display')]
+        sorted_d_blocks = sorted(d_blocks, key=lambda b: b.order)
         displays = self.workflow._display_angular()
-        for block in self.workflow.blocks:
-            if hasattr(block, '_display'):
-                display = block._display(self.variables_values)
-                displays.extend(display)
+        for block in sorted_d_blocks:
+            display = block._display(self.variables_values)
+            displays.extend(display)
         return displays
 
     def to_dict(self):
