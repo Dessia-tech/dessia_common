@@ -10,7 +10,7 @@ import math
 from typing import List, Dict
 import numpy as np
 import pandas as pd
-from dessia_common import DessiaObject, Parameter, enhanced_deep_attr
+from dessia_common import DessiaObject, Parameter, is_bounded, Filter
 from scipy.optimize import minimize
 from pyDOE import lhs
 
@@ -172,7 +172,7 @@ class Catalog(DessiaObject):
     #
     # def __getattr__(self, item):
     #     if isinstance(item, (list, tuple)):
-    #         return enhanced_deep_attr(self, item)
+    #         return enhanced_deep_attr(self, item)w
     #     elif isinstance(item, str) and '.' in item:
     #         sequence = item.split('.')
     #         healed_sequence = []
@@ -265,6 +265,21 @@ class Catalog(DessiaObject):
                      'values': values,
                      'references_attribute': 'array'}]
         return displays
+
+    def filter_(self, filters: List[Filter]):
+        def apply_filters(line):
+            bounded = True
+            i = 0
+            while bounded and i < len(filters):
+                filter_ = filters[i]
+                variable = filter_['attribute']
+                value = line[self.get_variable_index(variable)]
+                bounded = is_bounded(filter_, value)
+                i += 1
+            return bounded
+
+        filtered_array = list(filter(apply_filters, self.array))
+        return filtered_array
 
     def export_csv(self, attribute_name: str, indices: List[int], file: str):
         """
