@@ -172,7 +172,6 @@ class Block(dc.DessiaObject):
             data['name'] = self.name
         else:
             data['name'] = self.__class__.__name__
-                
         return data
 
 
@@ -605,22 +604,23 @@ class Filter(Block):
         for object_ in objects:
             valid = True
             for filter_ in self.filters:
-                attribute_sequence = filter_['attribute']
-                operator = filter_['operator']
-                bound = filter_['bound']
-                attribute = dc.get_deep_attr(object_, attribute_sequence)
-                if operator == 'lte' and attribute > bound:
-                    valid = False
-                if operator == 'gte' and attribute < bound:
-                    valid = False
-
-                if operator == 'lt' and attribute >= bound:
-                    valid = False
-                if operator == 'gt' and attribute <= bound:
-                    valid = False
-
-                if operator == 'eq' and attribute != bound:
-                    valid = False
+                attribute = dc.get_deep_attr(object_, filter_['attribute'])
+                valid = dc.is_bounded(filter_, attribute)
+                # attribute_sequence = filter_['attribute']
+                # operator = filter_['operator']
+                # bound = filter_['bound']
+                # if operator == 'lte' and attribute > bound:
+                #     valid = False
+                # if operator == 'gte' and attribute < bound:
+                #     valid = False
+                #
+                # if operator == 'lt' and attribute >= bound:
+                #     valid = False
+                # if operator == 'gt' and attribute <= bound:
+                #     valid = False
+                #
+                # if operator == 'eq' and attribute != bound:
+                #     valid = False
 
             if valid:
                 ouput_values.append(object_)
@@ -635,7 +635,7 @@ class ParallelPlot(Block):
                                                      memorize=True,
                                                      name='Pareto settings')
         inputs = [Variable(memorize=True, name='input_list'), pareto_input]
-        outputs = [Variable(name='ParallelPlot output')]
+        outputs = []
         Block.__init__(self, inputs, outputs, name=name)
 
     def equivalent(self, other_block):
@@ -677,8 +677,35 @@ class ParallelPlot(Block):
     def dict_to_object(cls, dict_):
         return cls(dict_['attributes'], dict_['name'])
 
-    def evaluate(self, values):
-        return [[value for value in values[self.inputs[0]]]]
+    @staticmethod
+    def evaluate(self):
+        return []
+
+
+class Display(Block):
+    def __init__(self, name=''):
+        inputs = [Variable(name='Model to Display', memorize=True)]
+        outputs = []
+
+        Block.__init__(self, inputs=inputs, outputs=outputs, name=name)
+
+    def _display(self, variables_values):
+        object_ = variables_values[self.inputs[0]]
+        displays = object_._display_angular()
+        return displays
+
+    def to_dict(self):
+        dict_ = dc.DessiaObject.base_dict(self)
+        return dict_
+
+    @classmethod
+    @set_block_variable_names_from_dict
+    def dict_to_object(cls, dict_):
+        return cls(dict_['name'])
+
+    @staticmethod
+    def evaluate(self):
+        return []
 
 
 class ModelAttribute(Block):
@@ -713,7 +740,6 @@ class ModelAttribute(Block):
 
 
 class Sum(Block):
-
     def __init__(self, number_elements=2, name=''):
         self.number_elements = number_elements
         inputs = [Variable(name='Sum element {}'.format(i+1))
@@ -780,21 +806,26 @@ class Pipe(dc.DessiaObject):
             "input_variable": {
                 "type": "object",
                 "editable": True,
-                "classes" : ["dessia_common.workflow.Variable",
-                             "dessia_common.workflow.TypedVariable"
-                             "dessia_common.workflow.VariableWithDefaultValue",
-                             "dessia_common.workflow.TypedVariableWithDefaultValue"],
-                },
+                "classes": [
+                    "dessia_common.workflow.Variable",
+                    "dessia_common.workflow.TypedVariable",
+                    "dessia_common.workflow.VariableWithDefaultValue",
+                    "dessia_common.workflow.TypedVariableWithDefaultValue"
+                ]
+            },
             "output_variable": {
                 "type": "object",
                 "editable": True,
-                "classes" : ["dessia_common.workflow.Variable",
-                             "dessia_common.workflow.TypedVariable"
-                             "dessia_common.workflow.VariableWithDefaultValue",
-                             "dessia_common.workflow.TypedVariableWithDefaultValue"],
-                }
+                "classes": [
+                    "dessia_common.workflow.Variable",
+                    "dessia_common.workflow.TypedVariable",
+                    "dessia_common.workflow.VariableWithDefaultValue",
+                    "dessia_common.workflow.TypedVariableWithDefaultValue"
+                ],
             }
         }
+    }
+
     def __init__(self, input_variable, output_variable):
         self.input_variable = input_variable
         self.output_variable = output_variable
@@ -1452,8 +1483,8 @@ class Workflow(Block):
 
         data = Block.jointjs_data(self)
         data.update({'blocks': blocks,
-                    'nonblock_variables': nonblock_variables,
-                    'edges': edges})
+                     'nonblock_variables': nonblock_variables,
+                     'edges': edges})
         return data
 
 
@@ -1481,7 +1512,6 @@ class Workflow(Block):
 
     #     webbrowser.open('file://' + temp_file)
 
-
     def plot_jointjs(self):
         env = Environment(loader=PackageLoader('dessia_common', 'templates'),
                           autoescape=select_autoescape(['html', 'xml']))
@@ -1502,8 +1532,6 @@ class Workflow(Block):
             file.write(rendered_template.encode('utf-8'))
 
         webbrowser.open('file://' + temp_file)
-
-
     
     def is_valid(self):
         # Checking types of each end of pipes
@@ -1602,45 +1630,45 @@ class WorkflowRun(dc.DessiaObject):
         "title": "WorkflowRun Base Schema",
         "required": [],
         "properties": {
-            "workflow" : {
-                "type" : "object",
-                "title" : "Workflow",
-                "classes" : ["dessia_common.workflow.Workflow"],
-                "order" : 0,
-                "editable" : False,
-                "description" : "Workflow"
+            "workflow": {
+                "type": "object",
+                "title": "Workflow",
+                "classes": ["dessia_common.workflow.Workflow"],
+                "order": 0,
+                "editable": False,
+                "description": "Workflow"
                 },
             'output_value': {
-                "type" : "array",
+                "type": "array",
                 "items": {
-                    "type" : "object",
-                    "classes" : "*"
+                    "type": "object",
+                    "classes": "*"
                     },
-                "title" : "Values",
-                "description" : "Input and output values",
-                "editable" : False,
-                "order" : 1
+                "title": "Values",
+                "description": "Input and output values",
+                "editable": False,
+                "order": 1
                 },
             'start_time': {
                 "type": "number",
-                "title" : "Start Time",
+                "title": "Start Time",
                 "editable": False,
                 "description": "Start time of simulation",
-                "order" : 2
+                "order": 2
                 },
             'end_time': {
                 "type": "number",
-                "title" : "End Time",
+                "title": "End Time",
                 "editable": False,
                 "description": "End time of simulation",
-                "order" : 3
+                "order": 3
                  },
             'log': {
                 "type": "string",
-                "title" : "Log",
+                "title": "Log",
                 "editable": False,
                 "description": "Log",
-                "order" : 4
+                "order": 4
                  }
              }
          }
@@ -1678,11 +1706,10 @@ class WorkflowRun(dc.DessiaObject):
 
     def _display_angular(self):
         displays = self.workflow._display_angular()
-
         for block in self.workflow.blocks:
-            if isinstance(block, ParallelPlot):
-                parallel_plot_display = block._display(self.variables_values)
-                displays.extend(parallel_plot_display)
+            if hasattr(block, '_display'):
+                display = block._display(self.variables_values)
+                displays.extend(display)
         return displays
 
     def to_dict(self):
