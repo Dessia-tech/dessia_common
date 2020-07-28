@@ -13,6 +13,7 @@ from copy import deepcopy
 import inspect
 import json
 from typing import List
+from mypy_extensions import TypedDict
 import traceback as tb
 
 from importlib import import_module
@@ -298,17 +299,17 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
     def _display_angular(self):
         display = []
         if hasattr(self, 'babylon_data'):
-            display.append({'angular_component' : 'cad_viewer',
-                            'data' : self.babylon_data()})
+            display.append({'angular_component': 'cad_viewer',
+                            'data': self.babylon_data()})
         elif hasattr(self, 'volmdlr_primitives')\
         or (self.__class__.volmdlr_volume_model is not DessiaObject.volmdlr_volume_model):
             model = self.volmdlr_volume_model()
-            display.append({'angular_component' : 'cad_viewer',
-                            'data' : model.babylon_data()})
+            display.append({'angular_component': 'cad_viewer',
+                            'data': model.babylon_data()})
 
         if hasattr(self, 'plot_data'):
-            display.append({'angular_component' : 'plot_data',
-                            'data' : self.plot_data()})
+            display.append({'angular_component': 'plot_data',
+                            'data': self.plot_data()})
         return display
 
 
@@ -356,6 +357,12 @@ class ParameterSet(DessiaObject):
     def means(self):
         means = {k: sum(v)/len(v) for k, v in self.values.items()}
         return means
+
+
+class Filter(TypedDict):
+    attribute: str
+    operator: str
+    bound: float
 
 
 class Evolution(DessiaObject):
@@ -852,6 +859,26 @@ def sequence_to_deepattr(sequence):
     healed_sequence = [str(attr) if isinstance(attr, int) else attr
                        for attr in sequence]
     return '.'.join(healed_sequence)
+
+
+def is_bounded(filter_: Filter, value:float):
+    bounded = True
+    operator = filter_['operator']
+    bound = filter_['bound']
+
+    if operator == 'lte' and value > bound:
+        bounded = False
+    if operator == 'gte' and value < bound:
+        bounded = False
+
+    if operator == 'lt' and value >= bound:
+        bounded = False
+    if operator == 'gt' and value <= bound:
+        bounded = False
+
+    if operator == 'eq' and value != bound:
+        bounded = False
+    return bounded
 
 
 TYPES_FROM_STRING = {'unicode': str, 'str': str,
