@@ -602,27 +602,15 @@ class Filter(Block):
         ouput_values = []
         objects = values[self.inputs[0]]
         for object_ in objects:
-            valid = True
-            for filter_ in self.filters:
-                attribute = dc.get_deep_attr(object_, filter_['attribute'])
-                valid = dc.is_bounded(filter_, attribute)
-                # attribute_sequence = filter_['attribute']
-                # operator = filter_['operator']
-                # bound = filter_['bound']
-                # if operator == 'lte' and attribute > bound:
-                #     valid = False
-                # if operator == 'gte' and attribute < bound:
-                #     valid = False
-                #
-                # if operator == 'lt' and attribute >= bound:
-                #     valid = False
-                # if operator == 'gt' and attribute <= bound:
-                #     valid = False
-                #
-                # if operator == 'eq' and attribute != bound:
-                #     valid = False
+            bounded = True
+            i = 0
+            while bounded and i < len(self.filters):
+                filter_ = self.filters[i]
+                value = dc.get_deep_attr(object_, filter_['attribute'])
+                bounded = dc.is_bounded(filter_, value)
+                i += 1
 
-            if valid:
+            if bounded:
                 ouput_values.append(object_)
         return [ouput_values]
 
