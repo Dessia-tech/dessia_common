@@ -150,8 +150,10 @@ class Catalog(DessiaObject):
     _whitelist_attributes = ['variables']
 
     def __init__(self, array: List[List[float]], variables: List[str],
-                 pareto_settings: ParetoSettings, objectives: List[Objective],
-                 choice_variables: List[str] = None, name: str = ''):
+                 pareto_settings: ParetoSettings,
+                 objectives: List[Objective] = None,
+                 choice_variables: List[str] = None,
+                 name: str = ''):
         DessiaObject.__init__(self, name=name)
 
         self.array = array
@@ -165,6 +167,33 @@ class Catalog(DessiaObject):
 
         self.objectives = objectives
         self.generated_best_objectives = 0
+
+    @classmethod
+    def concatenate(cls, catalogs: List['Catalog'],
+                    pareto_settings: ParetoSettings = None,
+                    objectives: List[Objective] = None,
+                    choice_variables: List[str] = None,
+                    name: str = ''):
+        varsets = [set(c.variables) for c in catalogs]
+        var_intersection = list(set.intersection(*varsets))
+
+        array_intersection = []
+        for cat in catalogs:
+            indices = [cat.get_variable_index(v) for v in var_intersection]
+            for line in cat.array:
+                line_intersection = [v for j, v in enumerate(line)
+                                     if j in indices]
+                array_intersection.append(line_intersection)
+
+        if pareto_settings is None:
+            min_attrs = {var: True for var in var_intersection}
+            pareto_settings = ParetoSettings(minimized_attributes=min_attrs,
+                                             enabled=False)
+
+        catalog = cls(array=array_intersection, variables=var_intersection,
+                      pareto_settings=pareto_settings, objectives=objectives,
+                      choice_variables=choice_variables, name=name)
+        return catalog
 
     # def __getitem__(self, item):
     #     print('Getitem', item)

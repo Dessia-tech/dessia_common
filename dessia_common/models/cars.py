@@ -32,6 +32,19 @@ filename = os.path.join(dirname, relative_filepath)
 
 array, variables = from_csv(filename=filename, end=None,
                             remove_duplicates=True)
-catalog = Catalog(array=array, variables=variables,
+
+catalog_array = array[:10]
+catalog = Catalog(array=catalog_array, variables=variables,
                   choice_variables=choice_args, objectives=[],
                   pareto_settings=pareto_settings, name='Cars')
+
+reduced_variables = variables[:3]
+reduced_array = [line[:3] for line in array[:10]]
+reduced_pareto = ParetoSettings(minimized_attributes={}, enabled=False)
+
+reduced_catalog = Catalog(array=reduced_array, variables=reduced_variables,
+                          choice_variables=['MPG', 'Cylinders'],
+                          objectives=[], pareto_settings=reduced_pareto,
+                          name='Reduced cars')
+
+joined_catalog = Catalog.concatenate([catalog, reduced_catalog])
