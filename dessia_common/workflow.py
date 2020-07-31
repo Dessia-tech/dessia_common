@@ -632,11 +632,10 @@ class ParallelPlot(Block):
             return False
         equal = self.attributes == other_block.attributes\
             and self.order == other_block.order
-        return  equal
+        return equal
 
     def equivalent_hash(self):
-        return int((sum([len(a) for a in self.attributes])
-                    + self.order) % 10e5)
+        return sum([len(a) for a in self.attributes]) + self.order
 
     def _display(self, variables_values):
         objects = variables_values[self.inputs[0]]
@@ -661,13 +660,15 @@ class ParallelPlot(Block):
 
     def to_dict(self):
         dict_ = dc.DessiaObject.base_dict(self)
-        dict_.update({'attributes': self.attributes})
+        dict_.update({'attributes': self.attributes, 'order': self.order})
         return dict_
 
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_):
-        return cls(dict_['attributes'], dict_['name'])
+        return cls(attributes=dict_['attributes'],
+                   order=dict_['order'],
+                   name=dict_['name'])
 
     @staticmethod
     def evaluate(self):
@@ -697,12 +698,13 @@ class Display(Block):
 
     def to_dict(self):
         dict_ = dc.DessiaObject.base_dict(self)
+        dict_['order'] = self.order
         return dict_
 
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_):
-        return cls(dict_['name'])
+        return cls(order=dict_['order'], name=dict_['name'])
 
     @staticmethod
     def evaluate(self):
