@@ -606,7 +606,7 @@ class Filter(Block):
             i = 0
             while bounded and i < len(self.filters):
                 filter_ = self.filters[i]
-                value = dc.get_deep_attr(object_, filter_['attribute'])
+                value = dc.enhanced_deep_attr(object_, filter_['attribute'])
                 bounded = dc.is_bounded(filter_, value)
                 i += 1
 
