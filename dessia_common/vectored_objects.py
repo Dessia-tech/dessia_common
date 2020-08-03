@@ -165,7 +165,11 @@ class Catalog(DessiaObject):
 
         self.pareto_settings = pareto_settings
 
-        self.objectives = objectives
+        if objectives is None:
+            self.objectives = []
+        else:
+            self.objectives = objectives
+
         self.generated_best_objectives = 0
 
     @classmethod
@@ -173,9 +177,15 @@ class Catalog(DessiaObject):
                     pareto_settings: ParetoSettings = None,
                     objectives: List[Objective] = None,
                     choice_variables: List[str] = None,
-                    name: str = ''):
+                    name: str = '') -> 'Catalog':
         varsets = [set(c.variables) for c in catalogs]
         var_intersection = list(set.intersection(*varsets))
+
+        if choice_variables is not None:
+            choice_variables = [var for var in choice_variables
+                                if var in var_intersection]
+        else:
+            choice_variables = var_intersection
 
         array_intersection = []
         for cat in catalogs:
@@ -186,7 +196,7 @@ class Catalog(DessiaObject):
                 array_intersection.append(line_intersection)
 
         if pareto_settings is None:
-            min_attrs = {var: True for var in var_intersection}
+            min_attrs = {var: True for var in choice_variables}
             pareto_settings = ParetoSettings(minimized_attributes=min_attrs,
                                              enabled=False)
 
@@ -228,8 +238,11 @@ class Catalog(DessiaObject):
                    and variable in self.choice_variables]
 
         # Pareto
-        costs = self.build_costs(self.pareto_settings)
-        pareto_indices = pareto_frontier(costs=costs)
+        if self.pareto_settings.enabled:
+            costs = self.build_costs(self.pareto_settings)
+            pareto_indices = pareto_frontier(costs=costs)
+        else:
+            pareto_indices = []
 
         all_near_indices = {}
         objective_ratings = {}

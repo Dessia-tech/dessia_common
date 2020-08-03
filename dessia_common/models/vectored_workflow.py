@@ -13,7 +13,7 @@ filters = [{'attribute': 'MPG', 'operator': 'gte', 'bound': 10},
            {'attribute': 'MPG', 'operator': 'lte', 'bound': 35}]
 
 # Blocks
-import_csv = wf.Import(type_='csv')
+import_csv = wf.Import(type_='csv') 
 instantiate_pareto = wf.InstanciateModel(model_class=ParetoSettings,
                                          name='Pareto Settings')
 instantiate_catalog = wf.InstanciateModel(model_class=Catalog,

@@ -1573,16 +1573,19 @@ class Workflow(Block):
 
         # Adimension
         fraction_sum = sum(package_mix.values())
-        return {pn:f/fraction_sum for pn, f in package_mix.items()}
+        return {pn: f/fraction_sum for pn, f in package_mix.items()}
+
 
 class WorkflowBlock(Block):
     """
     Wrapper around workflow to put it in a block of another workflow
-    Even if a workflow is a block, it can't be used directly as it has a different behavior 
-    than a Block in eq and hash which is problematic to handle in dicts for example
+    Even if a workflow is a block, it can't be used directly as it has
+    a different behavior
+    than a Block in eq and hash which is problematic to handle in dicts
+    for example
     """
 
-    def __init__(self, workflow:Workflow, name:str=''):
+    def __init__(self, workflow: Workflow, name: str = ''):
         self.workflow = workflow
 
         inputs = []
@@ -1610,8 +1613,8 @@ class WorkflowBlock(Block):
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_):
-        b = cls(Workflow.dict_to_object(dict_['workflow']),
-                   name=dict_['name'])
+        b = cls(workflow=Workflow.dict_to_object(dict_['workflow']),
+                name=dict_['name'])
 
         return b
 
