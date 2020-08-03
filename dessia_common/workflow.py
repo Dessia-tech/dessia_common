@@ -1750,6 +1750,7 @@ class WorkflowRun(dc.DessiaObject):
         nbv = workflow.nonblock_variables
         variables_values = {}
         for i, value in dict_['variables_values'].items():
+            print(i, type(i))
             key = workflow.variable_from_index(literal_eval(i), blocks, nbv)
             variables_values[key] = dc.deserialize(value)
         return cls(workflow=workflow, output_value=output_value,
