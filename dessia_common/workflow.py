@@ -1728,9 +1728,9 @@ class WorkflowRun(dc.DessiaObject):
                       'execution_time': self.execution_time,
                       'log': self.log})
 
-        # variables_values = {self.workflow.variable_indices(i): dc.serialize(v)
-        #                     for i, v in self.variables_values.items()}
-        # dict_['variables_values'] = variables_values
+        variables_values = {self.workflow.variable_indices(i): dc.serialize(v)
+                            for i, v in self.variables_values.items()}
+        dict_['variables_values'] = variables_values
 
         if self.output_value is not None:
             dict_.update({'output_value': dc.serialize_sequence(self.output_value),
