@@ -1728,9 +1728,9 @@ class WorkflowRun(dc.DessiaObject):
                       'execution_time': self.execution_time,
                       'log': self.log})
 
-        variables_values = {self.workflow.variable_indices(i): dc.serialize(v)
-                            for i, v in self.variables_values.items()}
-        dict_['variables_values'] = variables_values
+        # variables_values = {self.workflow.variable_indices(i): dc.serialize(v)
+        #                     for i, v in self.variables_values.items()}
+        # dict_['variables_values'] = variables_values
 
         if self.output_value is not None:
             dict_.update({'output_value': dc.serialize_sequence(self.output_value),
@@ -1750,8 +1750,18 @@ class WorkflowRun(dc.DessiaObject):
         nbv = workflow.nonblock_variables
         variables_values = {}
         for i, value in dict_['variables_values'].items():
-            print(i, type(i))
-            key = workflow.variable_from_index(literal_eval(i), blocks, nbv)
+            # TODO : Is this a quickfix ? Locally, indices are tuple,
+            # TODO : from front they are strings
+            if isinstance(i, tuple):
+                index = i
+            elif isinstance(i, str):
+                index = literal_eval(i)
+            else:
+                msg = 'Type {} for index {}'.format(type(i), i)
+                msg += ' is not expected type (Tuple or String).'
+                raise NotImplementedError(msg)
+            key = workflow.variable_from_index(index=index, blocks=blocks,
+                                               nonblock_variables=nbv)
             variables_values[key] = dc.deserialize(value)
         return cls(workflow=workflow, output_value=output_value,
                    variables_values=variables_values,
