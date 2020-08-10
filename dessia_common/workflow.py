@@ -1629,7 +1629,7 @@ class WorkflowBlock(Block):
 
 class WorkflowRun(dc.DessiaObject):
     _standalone_in_db = True
-    _non_serializable_attributes = ['variables_values']
+    _allowed_methods = ['rerun']
     _jsonschema = {
         "definitions": {},
         "$schema": "http://json-schema.org/draft-07/schema#",
@@ -1767,6 +1767,16 @@ class WorkflowRun(dc.DessiaObject):
                    variables_values=variables_values,
                    start_time=dict_['start_time'], end_time=dict_['end_time'],
                    log=dict_['log'], name=dict_['name'])
+
+    def rerun(self):
+        pass
+
+    @property
+    def _method_jsonschemas(self):
+        rerun_jsonschema = {dc.JSONSCHEMA_HEADER.copy()}
+
+        jsonschemas = {'rerun': rerun_jsonschema}
+        return jsonschemas
 
 
 def set_inputs_from_function(method, inputs=[], block_name=''):
