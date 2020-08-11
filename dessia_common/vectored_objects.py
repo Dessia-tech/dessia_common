@@ -16,6 +16,15 @@ from pyDOE import lhs
 
 
 class ParetoSettings(DessiaObject):
+    """ 
+    :param coeff_names: A dictionary containing the name of a variable as key and \
+    a boolean for minimization as value.
+    :type coeff_names: Dict[str, bool]
+    :param enabled: List of strings representing ordered variables names.
+    :type enabled: bool
+    :param name: The name of the block.
+    :type name: str
+    """
     _generic_eq = True
     _ordered_attributes = ['name', 'enabled', 'minimized_attributes']
 
