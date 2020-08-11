@@ -3,6 +3,7 @@
 """
 
 """
+import os
 import inspect
 import time
 import tempfile
@@ -18,7 +19,7 @@ from ast import literal_eval
 
 from jinja2 import Environment, PackageLoader, select_autoescape
 import dessia_common as dc
-from dessia_common.vectored_objects import ParetoSettings, Catalog
+from dessia_common.vectored_objects import ParetoSettings, Catalog, from_csv
 
 
 class Variable(dc.DessiaObject):
@@ -171,8 +172,47 @@ class Block(dc.DessiaObject):
             data['name'] = self.name
         else:
             data['name'] = self.__class__.__name__
-                
         return data
+
+
+class Import(Block):
+    def __init__(self, type_: str, name: str = ''):
+        self.type_ = type_
+        inputs = [Variable(name='Input filename'),
+                  VariableWithDefaultValue(default_value=True,
+                                           name='Remove duplicates')]
+        outputs = [Variable(name='Array'), Variable(name='Variables')]
+
+        Block.__init__(self, inputs=inputs, outputs=outputs, name=name)
+
+    def equivalent_hash(self):
+        return len(self.type_)
+
+    def equivalent(self, other_block):
+        if not Block.equivalent(self, other_block):
+            return False
+        return self.type_ == other_block.type_
+
+    def to_dict(self):
+        dict_ = dc.DessiaObject.base_dict(self)
+        dict_['type_'] = self.type_
+        return dict_
+
+    @classmethod
+    @set_block_variable_names_from_dict
+    def dict_to_object(cls, dict_):
+        return cls(type_=dict_['type_'], name=dict_['name'])
+
+    def evaluate(self, values):
+        dirname = os.path.dirname(__file__)
+        relative_filepath = 'models/data/'+values[self.inputs[0]]
+        filename = os.path.join(dirname, relative_filepath)
+        if self.type_ == 'csv':
+            array, variables = from_csv(filename=filename, end=None,
+                                        remove_duplicates=True)
+            return [array, variables]
+        msg = 'File type {} not supported'.format(self.type_)
+        raise NotImplementedError(msg)
 
 
 class InstanciateModel(Block):
@@ -183,13 +223,13 @@ class InstanciateModel(Block):
     :type name: str
     """
     _jsonschema = dc.dict_merge(Block._jsonschema, {
-        "title" : "Instantiate model Base Schema",
+        "title": "Instantiate model Base Schema",
         "required": ['object_class'],
         "properties": {
             "object_class": {
-                "type" : "string",
-                "editable" : True,
-                "examples" : ['Nom']
+                "type": "string",
+                "editable": True,
+                "examples": ['Nom']
                 }
             }
         })
@@ -496,6 +536,7 @@ class ForEach(Block):
         # index_iterable_input = self.workflow_block.inputs.index(self.workflow_iterable_input)
         output_values = []
         for value in values_workflow[self.workflow_iterable_input]:
+            print(value)
             # values_workflow2 = {var.name: val\
             #                     for var, val in values_workflow.items()\
             #                     if var != self.workflow_iterable_input}
@@ -593,26 +634,15 @@ class Filter(Block):
         ouput_values = []
         objects = values[self.inputs[0]]
         for object_ in objects:
-            valid = True
-            for filter_ in self.filters:
-                attribute_path = filter_['attribute']
-                operator = filter_['operator']
-                bound = filter_['bound']
-                attribute = dc.getdeepattr(object_, attribute_path)
-                if operator == 'lte' and attribute > bound:
-                    valid = False
-                if operator == 'gte' and attribute < bound:
-                    valid = False
+            bounded = True
+            i = 0
+            while bounded and i < len(self.filters):
+                filter_ = self.filters[i]
+                value = dc.enhanced_deep_attr(object_, filter_['attribute'])
+                bounded = dc.is_bounded(filter_, value)
+                i += 1
 
-                if operator == 'lt' and attribute >= bound:
-                    valid = False
-                if operator == 'gt' and attribute <= bound:
-                    valid = False
-
-                if operator == 'eq' and attribute != bound:
-                    valid = False
-
-            if valid:
+            if bounded:
                 ouput_values.append(object_)
         return [ouput_values]
 
@@ -625,23 +655,26 @@ class ParallelPlot(Block):
     :param name: The name of the block.
     :type name: str
     """
-    def __init__(self, attributes: List[str], name: str = ''):
+    def __init__(self, attributes: List[str], order: int = 0, name: str = ''):
         self.attributes = attributes
+        self.order = order
         pareto_input = TypedVariableWithDefaultValue(type_=ParetoSettings,
                                                      default_value=None,
                                                      memorize=True,
                                                      name='Pareto settings')
         inputs = [Variable(memorize=True, name='input_list'), pareto_input]
-        outputs = [Variable(name='ParallelPlot output')]
+        outputs = []
         Block.__init__(self, inputs, outputs, name=name)
 
     def equivalent(self, other_block):
         if not Block.equivalent(self, other_block):
             return False
-        return self.attributes == other_block.attributes
+        equal = self.attributes == other_block.attributes\
+            and self.order == other_block.order
+        return equal
 
     def equivalent_hash(self):
-        return int(sum([hash(a) for a in self.attributes]) % 10e5)
+        return sum([len(a) for a in self.attributes]) + self.order
 
     def _display(self, variables_values):
         objects = variables_values[self.inputs[0]]
@@ -650,7 +683,7 @@ class ParallelPlot(Block):
         for object_ in objects:
             line = []
             for attribute in self.attributes:
-                line.append(dc.getdeepattr(object_, attribute))
+                line.append(dc.enhanced_deep_attr(object_, attribute))
             array.append(line)
 
         if pareto_settings is None:
@@ -666,16 +699,55 @@ class ParallelPlot(Block):
 
     def to_dict(self):
         dict_ = dc.DessiaObject.base_dict(self)
-        dict_.update({'attributes': self.attributes})
+        dict_.update({'attributes': self.attributes, 'order': self.order})
         return dict_
 
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_):
-        return cls(dict_['attributes'], dict_['name'])
+        return cls(attributes=dict_['attributes'],
+                   order=dict_['order'],
+                   name=dict_['name'])
 
-    def evaluate(self, values):
-        return [[value for value in values[self.inputs[0]]]]
+    @staticmethod
+    def evaluate(self):
+        return []
+
+
+class Display(Block):
+    def __init__(self, order: int = 0, name: str = ''):
+        self.order = order
+        inputs = [Variable(name='Model to Display', memorize=True)]
+        outputs = []
+
+        Block.__init__(self, inputs=inputs, outputs=outputs, name=name)
+
+    def equivalent(self, other_block):
+        if not Block.equivalent(self, other_block):
+            return False
+        return self.order == other_block.order
+
+    def equivalent_hash(self):
+        return self.order
+
+    def _display(self, variables_values):
+        object_ = variables_values[self.inputs[0]]
+        displays = object_._display_angular()
+        return displays
+
+    def to_dict(self):
+        dict_ = dc.DessiaObject.base_dict(self)
+        dict_['order'] = self.order
+        return dict_
+
+    @classmethod
+    @set_block_variable_names_from_dict
+    def dict_to_object(cls, dict_):
+        return cls(order=dict_['order'], name=dict_['name'])
+
+    @staticmethod
+    def evaluate(self):
+        return []
 
 
 class ModelAttribute(Block):
@@ -711,11 +783,11 @@ class ModelAttribute(Block):
         return cls(dict_['attribute_name'], dict_['name'])
 
     def evaluate(self, values):
-        return [dc.getdeepattr(values[self.inputs[0]], self.attribute_name)]
+        return [dc.enhanced_deep_attr(values[self.inputs[0]],
+                                      self.attribute_name)]
 
 
 class Sum(Block):
-
     def __init__(self, number_elements=2, name=''):
         self.number_elements = number_elements
         inputs = [Variable(name='Sum element {}'.format(i+1))
@@ -790,21 +862,26 @@ class Pipe(dc.DessiaObject):
             "input_variable": {
                 "type": "object",
                 "editable": True,
-                "classes" : ["dessia_common.workflow.Variable",
-                             "dessia_common.workflow.TypedVariable"
-                             "dessia_common.workflow.VariableWithDefaultValue",
-                             "dessia_common.workflow.TypedVariableWithDefaultValue"],
-                },
+                "classes": [
+                    "dessia_common.workflow.Variable",
+                    "dessia_common.workflow.TypedVariable",
+                    "dessia_common.workflow.VariableWithDefaultValue",
+                    "dessia_common.workflow.TypedVariableWithDefaultValue"
+                ]
+            },
             "output_variable": {
                 "type": "object",
                 "editable": True,
-                "classes" : ["dessia_common.workflow.Variable",
-                             "dessia_common.workflow.TypedVariable"
-                             "dessia_common.workflow.VariableWithDefaultValue",
-                             "dessia_common.workflow.TypedVariableWithDefaultValue"],
-                }
+                "classes": [
+                    "dessia_common.workflow.Variable",
+                    "dessia_common.workflow.TypedVariable",
+                    "dessia_common.workflow.VariableWithDefaultValue",
+                    "dessia_common.workflow.TypedVariableWithDefaultValue"
+                ],
             }
         }
+    }
+
     def __init__(self, input_variable, output_variable):
         self.input_variable = input_variable
         self.output_variable = output_variable
@@ -1227,7 +1304,7 @@ class Workflow(Block):
             distances = []
             paths = nx.all_simple_paths(self.graph, element, self.outputs[0])
             for path in paths:
-                distance = 0
+                distance = 1
                 for path_element in path[1:-1]:
                     if path_element in self.blocks:
                         distance += 1
@@ -1472,8 +1549,8 @@ class Workflow(Block):
 
         data = Block.jointjs_data(self)
         data.update({'blocks': blocks,
-                    'nonblock_variables': nonblock_variables,
-                    'edges': edges})
+                     'nonblock_variables': nonblock_variables,
+                     'edges': edges})
         return data
 
 
@@ -1501,7 +1578,6 @@ class Workflow(Block):
 
     #     webbrowser.open('file://' + temp_file)
 
-
     def plot_jointjs(self):
         env = Environment(loader=PackageLoader('dessia_common', 'templates'),
                           autoescape=select_autoescape(['html', 'xml']))
@@ -1522,8 +1598,6 @@ class Workflow(Block):
             file.write(rendered_template.encode('utf-8'))
 
         webbrowser.open('file://' + temp_file)
-
-
     
     def is_valid(self):
         # Checking types of each end of pipes
@@ -1562,16 +1636,19 @@ class Workflow(Block):
 
         # Adimension
         fraction_sum = sum(package_mix.values())
-        return {pn:f/fraction_sum for pn, f in package_mix.items()}
+        return {pn: f/fraction_sum for pn, f in package_mix.items()}
+
 
 class WorkflowBlock(Block):
     """
     Wrapper around workflow to put it in a block of another workflow
-    Even if a workflow is a block, it can't be used directly as it has a different behavior 
-    than a Block in eq and hash which is problematic to handle in dicts for example
+    Even if a workflow is a block, it can't be used directly as it has
+    a different behavior
+    than a Block in eq and hash which is problematic to handle in dicts
+    for example
     """
 
-    def __init__(self, workflow:Workflow, name:str=''):
+    def __init__(self, workflow: Workflow, name: str = ''):
         self.workflow = workflow
 
         inputs = []
@@ -1599,8 +1676,8 @@ class WorkflowBlock(Block):
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_):
-        b = cls(Workflow.dict_to_object(dict_['workflow']),
-                   name=dict_['name'])
+        b = cls(workflow=Workflow.dict_to_object(dict_['workflow']),
+                name=dict_['name'])
 
         return b
 
@@ -1615,6 +1692,7 @@ class WorkflowBlock(Block):
 
 class WorkflowRun(dc.DessiaObject):
     _standalone_in_db = True
+    _non_serializable_attributes = ['variables_values']
     _jsonschema = {
         "definitions": {},
         "$schema": "http://json-schema.org/draft-07/schema#",
@@ -1622,48 +1700,48 @@ class WorkflowRun(dc.DessiaObject):
         "title": "WorkflowRun Base Schema",
         "required": [],
         "properties": {
-            "workflow" : {
-                "type" : "object",
-                "title" : "Workflow",
-                "classes" : ["dessia_common.workflow.Workflow"],
-                "order" : 0,
-                "editable" : False,
-                "description" : "Workflow"
-                },
+            "workflow": {
+                "type": "object",
+                "title": "Workflow",
+                "classes": ["dessia_common.workflow.Workflow"],
+                "order": 0,
+                "editable": False,
+                "description": "Workflow"
+            },
             'output_value': {
-                "type" : "array",
+                "type": "array",
                 "items": {
-                    "type" : "object",
-                    "classes" : "*"
-                    },
-                "title" : "Values",
-                "description" : "Input and output values",
-                "editable" : False,
-                "order" : 1
+                    "type": "object",
+                    "classes": "*"
                 },
+                "title": "Values",
+                "description": "Input and output values",
+                "editable": False,
+                "order": 1
+            },
             'start_time': {
                 "type": "number",
-                "title" : "Start Time",
+                "title": "Start Time",
                 "editable": False,
                 "description": "Start time of simulation",
-                "order" : 2
-                },
+                "order": 2
+            },
             'end_time': {
                 "type": "number",
-                "title" : "End Time",
+                "title": "End Time",
                 "editable": False,
                 "description": "End time of simulation",
-                "order" : 3
-                 },
+                "order": 3
+            },
             'log': {
                 "type": "string",
-                "title" : "Log",
+                "title": "Log",
                 "editable": False,
                 "description": "Log",
-                "order" : 4
-                 }
-             }
-         }
+                "order": 4
+            }
+        }
+    }
 
     def __init__(self, workflow, output_value, variables_values,
                  start_time, end_time, log, name=''):
@@ -1697,12 +1775,12 @@ class WorkflowRun(dc.DessiaObject):
         return hash(self.workflow) + int(hash_output % 10e5)
 
     def _display_angular(self):
+        d_blocks = [b for b in self.workflow.blocks if hasattr(b, '_display')]
+        sorted_d_blocks = sorted(d_blocks, key=lambda b: b.order)
         displays = self.workflow._display_angular()
-
-        for block in self.workflow.blocks:
-            if isinstance(block, ParallelPlot):
-                parallel_plot_display = block._display(self.variables_values)
-                displays.extend(parallel_plot_display)
+        for block in sorted_d_blocks:
+            display = block._display(self.variables_values)
+            displays.extend(display)
         return displays
 
     def to_dict(self):
@@ -1735,7 +1813,18 @@ class WorkflowRun(dc.DessiaObject):
         nbv = workflow.nonblock_variables
         variables_values = {}
         for i, value in dict_['variables_values'].items():
-            key = workflow.variable_from_index(literal_eval(i), blocks, nbv)
+            # TODO : Is this a quickfix ? Locally, indices are tuple,
+            # TODO : from front they are strings
+            if isinstance(i, tuple):
+                index = i
+            elif isinstance(i, str):
+                index = literal_eval(i)
+            else:
+                msg = 'Type {} for index {}'.format(type(i), i)
+                msg += ' is not expected type (Tuple or String).'
+                raise NotImplementedError(msg)
+            key = workflow.variable_from_index(index=index, blocks=blocks,
+                                               nonblock_variables=nbv)
             variables_values[key] = dc.deserialize(value)
         return cls(workflow=workflow, output_value=output_value,
                    variables_values=variables_values,
