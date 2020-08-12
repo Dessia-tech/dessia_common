@@ -1041,10 +1041,12 @@ class Workflow(Block):
                 title = dc.prettyname(input_block.name + ' - ' + input_.name)
             else:
                 title = dc.prettyname(input_.name)
-            annotation_jsonschema = dc.jsonschema_from_annotation(annotation=annotation,
-                                                                  jsonschema_element=current_dict,
-                                                                  order=i,
-                                                                  title=title)
+            annotation_jsonschema = dc.jsonschema_from_annotation(
+                annotation=annotation,
+                jsonschema_element=current_dict,
+                order=i,
+                title=title
+            )
             current_dict.update(annotation_jsonschema[str(i)])
             if not isinstance(input_, (VariableWithDefaultValue,
                                        TypedVariableWithDefaultValue)):
@@ -1786,13 +1788,23 @@ class WorkflowRun(dc.DessiaObject):
 
     @property
     def _method_jsonschemas(self):
-        rerun_jsonschema = dc.JSONSCHEMA_HEADER.copy()
+        rerun_jsonschema = deepcopy(dc.JSONSCHEMA_HEADER)
         for i, value in self.input_values.items():
-            pass
-            # rerun_jsonschema['properties'][i] = {}
-            # jss_elt = rerun_jsonschema['properties'][i]
-            # jss_elt = dc.jsonschema_from_annotation(jsonschema_element=jss_elt,
-            #                                         )
+            input_ = self.workflow.inputs[i]
+            annotation = (str(i), input_.type_)
+            input_block = self.block_from_variable(input_)
+            if input_block.name:
+                title = dc.prettyname(input_block.name + ' - ' + input_.name)
+            else:
+                title = dc.prettyname(input_.name)
+            rerun_jsonschema['properties'][i] = {}
+            jss_elt = rerun_jsonschema['properties'][i]
+            jss_elt = dc.jsonschema_from_annotation(
+                annotation=annotation,
+                jsonschema_element=jss_elt,
+                order=i,
+                editable=title,
+            )
 
         jsonschemas = {'rerun': rerun_jsonschema}
         return jsonschemas
