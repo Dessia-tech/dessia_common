@@ -179,8 +179,8 @@ class Import(Block):
     def __init__(self, type_: str, name: str = ''):
         self.type_ = type_
         inputs = [TypedVariable(type_=str, name='Input filename'),
-                  VariableWithDefaultValue(default_value=True,
-                                           name='Remove duplicates')]
+                  TypedVariableWithDefaultValue(type_=bool, default_value=True,
+                                                name='Remove duplicates')]
         outputs = [Variable(name='Array'), Variable(name='Variables')]
 
         Block.__init__(self, inputs=inputs, outputs=outputs, name=name)
@@ -1780,6 +1780,12 @@ class WorkflowRun(dc.DessiaObject):
                           'output_value_type': dc.recursive_type(self.output_value)})
 
         return dict_
+
+    def method_dict(self, method_name, method_jsonschema):
+        if method_name == 'rerun':
+            return self.input_values
+        return dc.DessiaObject.method_dict(method_name=method_name,
+                                           jsonschema=method_jsonschema)
 
     def rerun(self):
         workflow_run = self.workflow.run(input_variables_values=self.input_values,

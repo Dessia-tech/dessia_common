@@ -136,6 +136,25 @@ class DessiaObject:
                                 jsonschemas[method_name]['properties'].update(default)
         return jsonschemas
 
+    def method_dict(self, method_name=None, method_jsonschema=None):
+        if method_name is None and method_jsonschema is None:
+            msg = 'No method name not jsonschema provided'
+            raise NotImplementedError(msg)
+
+        if method_name is not None and method_jsonschema is None:
+            method_jsonschema = self._method_jsonschemas[method_name]
+
+        dict_ = default_dict(jsonschema=method_jsonschema)
+        return dict_
+
+    # def method_dicts(self, method_jsonschemas=None):
+    #     dicts = {}
+    #     if method_jsonschemas is None:
+    #         method_jsonschemas = self._method_jsonschemas
+    #     for method_name, method_jsonschema in method_jsonschemas.items():
+    #         dicts[method_name] = default_dict(jsonschema=method_jsonschema)
+    #     return None
+
     def dict_to_arguments(self, dict_, method):
         method_object = getattr(self, method)
         args_specs = inspect.getfullargspec(method_object)
