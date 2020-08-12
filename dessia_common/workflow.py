@@ -178,7 +178,7 @@ class Block(dc.DessiaObject):
 class Import(Block):
     def __init__(self, type_: str, name: str = ''):
         self.type_ = type_
-        inputs = [Variable(name='Input filename'),
+        inputs = [TypedVariable(type_=str, name='Input filename'),
                   VariableWithDefaultValue(default_value=True,
                                            name='Remove duplicates')]
         outputs = [Variable(name='Array'), Variable(name='Variables')]
@@ -1392,7 +1392,8 @@ class Workflow(Block):
         output_value = values[self.outputs[0]]
         if not name:
             name = self.name+' run'
-        return WorkflowRun(workflow=self, output_value=output_value,
+        return WorkflowRun(workflow=self, input_values=input_variables_values,
+                           output_value=output_value,
                            variables_values=variables_values,
                            start_time=start_time, end_time=end_time,
                            log=log, name=name)
@@ -1737,7 +1738,7 @@ class WorkflowRun(dc.DessiaObject):
         nbv = workflow.nonblock_variables
         variables_values = {}
 
-        input_values = {i: dc.deserialize(v)
+        input_values = {int(i): dc.deserialize(v)
                         for i, v in dict_['input_values'].items()}
 
         for i, value in dict_['variables_values'].items():
@@ -1761,7 +1762,8 @@ class WorkflowRun(dc.DessiaObject):
                    log=dict_['log'], name=dict_['name'])
 
     def to_dict(self):
-        input_values = {i: dc.serialize(v) for i, v in self.input_values}
+        input_values = {i: dc.serialize(v)
+                        for i, v in self.input_values.items()}
         variables_values = {self.workflow.variable_indices(i): dc.serialize(v)
                             for i, v in self.variables_values.items()}
         dict_ = dc.DessiaObject.base_dict(self)
@@ -1788,25 +1790,35 @@ class WorkflowRun(dc.DessiaObject):
 
     @property
     def _method_jsonschemas(self):
-        rerun_jsonschema = deepcopy(dc.JSONSCHEMA_HEADER)
+        # TODO : Share code with Workflow run method
+        jsonschemas = {'rerun': deepcopy(dc.JSONSCHEMA_HEADER)}
+        properties_dict = jsonschemas['rerun']['properties']
+        required_inputs = []
         for i, value in self.input_values.items():
+            current_dict = {}
             input_ = self.workflow.inputs[i]
             annotation = (str(i), input_.type_)
-            input_block = self.block_from_variable(input_)
+            input_block = self.workflow.block_from_variable(input_)
             if input_block.name:
                 title = dc.prettyname(input_block.name + ' - ' + input_.name)
             else:
                 title = dc.prettyname(input_.name)
-            rerun_jsonschema['properties'][i] = {}
-            jss_elt = rerun_jsonschema['properties'][i]
-            jss_elt = dc.jsonschema_from_annotation(
+            annotation_jsonschema = dc.jsonschema_from_annotation(
                 annotation=annotation,
-                jsonschema_element=jss_elt,
+                jsonschema_element=current_dict,
                 order=i,
                 editable=title,
             )
-
-        jsonschemas = {'rerun': rerun_jsonschema}
+            current_dict.update(annotation_jsonschema[str(i)])
+            if not isinstance(input_, (VariableWithDefaultValue,
+                                       TypedVariableWithDefaultValue)):
+                required_inputs.append(str(i))
+            else:
+                current_dict.update(dc.set_default_value(current_dict,
+                                                         str(i),
+                                                         input_.default_value))
+            properties_dict[str(i)] = current_dict[str(i)]
+        jsonschemas['rerun']['required'] = required_inputs
         return jsonschemas
 
 
