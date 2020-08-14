@@ -178,9 +178,9 @@ class Block(dc.DessiaObject):
 class Import(Block):
     def __init__(self, type_: str, name: str = ''):
         self.type_ = type_
-        inputs = [Variable(name='Input filename'),
-                  VariableWithDefaultValue(default_value=True,
-                                           name='Remove duplicates')]
+        inputs = [TypedVariable(type_=str, name='Input filename'),
+                  TypedVariableWithDefaultValue(type_=bool, default_value=True,
+                                                name='Remove duplicates')]
         outputs = [Variable(name='Array'), Variable(name='Variables')]
 
         Block.__init__(self, inputs=inputs, outputs=outputs, name=name)
@@ -1104,10 +1104,12 @@ class Workflow(Block):
                 title = dc.prettyname(input_block.name + ' - ' + input_.name)
             else:
                 title = dc.prettyname(input_.name)
-            annotation_jsonschema = dc.jsonschema_from_annotation(annotation=annotation,
-                                                                  jsonschema_element=current_dict,
-                                                                  order=i,
-                                                                  title=title)
+            annotation_jsonschema = dc.jsonschema_from_annotation(
+                annotation=annotation,
+                jsonschema_element=current_dict,
+                order=i,
+                title=title
+            )
             current_dict.update(annotation_jsonschema[str(i)])
             if not isinstance(input_, (VariableWithDefaultValue,
                                        TypedVariableWithDefaultValue)):
@@ -1453,7 +1455,8 @@ class Workflow(Block):
         output_value = values[self.outputs[0]]
         if not name:
             name = self.name+' run'
-        return WorkflowRun(workflow=self, output_value=output_value,
+        return WorkflowRun(workflow=self, input_values=input_variables_values,
+                           output_value=output_value,
                            variables_values=variables_values,
                            start_time=start_time, end_time=end_time,
                            log=log, name=name)
@@ -1692,7 +1695,7 @@ class WorkflowBlock(Block):
 
 class WorkflowRun(dc.DessiaObject):
     _standalone_in_db = True
-    _non_serializable_attributes = ['variables_values']
+    _allowed_methods = ['rerun']
     _jsonschema = {
         "definitions": {},
         "$schema": "http://json-schema.org/draft-07/schema#",
@@ -1743,9 +1746,10 @@ class WorkflowRun(dc.DessiaObject):
         }
     }
 
-    def __init__(self, workflow, output_value, variables_values,
+    def __init__(self, workflow, input_values, output_value, variables_values,
                  start_time, end_time, log, name=''):
         self.workflow = workflow
+        self.input_values = input_values
         self.variables_values = variables_values
         self.output_value = output_value
         self.start_time = start_time
@@ -1756,6 +1760,7 @@ class WorkflowRun(dc.DessiaObject):
         dc.DessiaObject.__init__(self, name=name)
 
     def __eq__(self, other_workflow_run):
+        # TODO : Should we add input_values and variables values in test ?
         if hasattr(self.output_value, '__iter__'):
             equal_output = (hasattr(self.output_value, '__iter__')
                             and all([v == other_v
@@ -1767,6 +1772,7 @@ class WorkflowRun(dc.DessiaObject):
         return self.workflow == other_workflow_run.workflow and equal_output
 
     def __hash__(self):
+        # TODO : Should we add input_values and variables values in test ?
         if hasattr(self.output_value, '__iter__'):
             # hash_output = int(sum([hash(v) for v in self.output_value]) % 10e5)
             hash_output = dc.list_hash(self.output_value)
@@ -1783,24 +1789,6 @@ class WorkflowRun(dc.DessiaObject):
             displays.extend(display)
         return displays
 
-    def to_dict(self):
-        dict_ = dc.DessiaObject.base_dict(self)
-        dict_.update({'workflow': self.workflow.to_dict(),
-                      'start_time': self.start_time,
-                      'end_time': self.end_time,
-                      'execution_time': self.execution_time,
-                      'log': self.log})
-
-        variables_values = {self.workflow.variable_indices(i): dc.serialize(v)
-                            for i, v in self.variables_values.items()}
-        dict_['variables_values'] = variables_values
-
-        if self.output_value is not None:
-            dict_.update({'output_value': dc.serialize_sequence(self.output_value),
-                          'output_value_type': dc.recursive_type(self.output_value)})
-
-        return dict_
-
     @classmethod
     def dict_to_object(cls, dict_):
         workflow = Workflow.dict_to_object(dict_['workflow'])
@@ -1812,6 +1800,10 @@ class WorkflowRun(dc.DessiaObject):
         blocks = workflow.blocks
         nbv = workflow.nonblock_variables
         variables_values = {}
+
+        input_values = {int(i): dc.deserialize(v)
+                        for i, v in dict_['input_values'].items()}
+
         for i, value in dict_['variables_values'].items():
             # TODO : Is this a quickfix ? Locally, indices are tuple,
             # TODO : from front they are strings
@@ -1827,9 +1819,83 @@ class WorkflowRun(dc.DessiaObject):
                                                nonblock_variables=nbv)
             variables_values[key] = dc.deserialize(value)
         return cls(workflow=workflow, output_value=output_value,
+                   input_values=input_values,
                    variables_values=variables_values,
                    start_time=dict_['start_time'], end_time=dict_['end_time'],
                    log=dict_['log'], name=dict_['name'])
+
+    def to_dict(self):
+        input_values = {i: dc.serialize(v)
+                        for i, v in self.input_values.items()}
+        variables_values = {self.workflow.variable_indices(i): dc.serialize(v)
+                            for i, v in self.variables_values.items()}
+        dict_ = dc.DessiaObject.base_dict(self)
+        dict_.update({'workflow': self.workflow.to_dict(),
+                      'input_values': input_values,
+                      'variables_values': variables_values,
+                      'start_time': self.start_time,
+                      'end_time': self.end_time,
+                      'execution_time': self.execution_time,
+                      'log': self.log})
+
+        if self.output_value is not None:
+            dict_.update({'output_value': dc.serialize_sequence(self.output_value),
+                          'output_value_type': dc.recursive_type(self.output_value)})
+
+        return dict_
+
+    def method_dict(self, method_name, method_jsonschema):
+        if method_name == 'rerun':
+            dict_ = dc.serialize_dict(self.input_values)
+            for property_, value in method_jsonschema['properties'].items():
+                if property_ in dict_\
+                        and 'object_id' in value\
+                        and 'object_class' in value:
+                    # TODO : Check. this is probably useless as we are not dealing with default values here
+                    dict_[property_] = value
+            return dict_
+        return dc.DessiaObject.method_dict(method_name=method_name,
+                                           jsonschema=method_jsonschema)
+
+    def rerun(self):
+        workflow_run = self.workflow.run(input_variables_values=self.input_values,
+                                         verbose=False,
+                                         progress_callback=None,
+                                         name=None)
+        return workflow_run
+
+    @property
+    def _method_jsonschemas(self):
+        # TODO : Share code with Workflow run method
+        jsonschemas = {'rerun': deepcopy(dc.JSONSCHEMA_HEADER)}
+        properties_dict = jsonschemas['rerun']['properties']
+        required_inputs = []
+        for i, value in self.input_values.items():
+            current_dict = {}
+            input_ = self.workflow.inputs[i]
+            annotation = (str(i), input_.type_)
+            input_block = self.workflow.block_from_variable(input_)
+            if input_block.name:
+                title = dc.prettyname(input_block.name + ' - ' + input_.name)
+            else:
+                title = dc.prettyname(input_.name)
+            annotation_jsonschema = dc.jsonschema_from_annotation(
+                annotation=annotation,
+                jsonschema_element=current_dict,
+                order=i,
+                title=title,
+            )
+            current_dict.update(annotation_jsonschema[str(i)])
+            if not isinstance(input_, (VariableWithDefaultValue,
+                                       TypedVariableWithDefaultValue)):
+                required_inputs.append(str(i))
+            else:
+                current_dict.update(dc.set_default_value(current_dict,
+                                                         str(i),
+                                                         input_.default_value))
+            properties_dict[str(i)] = current_dict[str(i)]
+        jsonschemas['rerun']['required'] = required_inputs
+        return jsonschemas
 
 
 def set_inputs_from_function(method, inputs=[], block_name=''):

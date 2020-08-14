@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Documentation on blocks
+_ Rerun method for WorkflowRuns & prerequisite (input_values in __init__ et method_jsonschema)
+- Method dict attribute
 - Generic serialize function
 - ParallelPlot block
 - Memorize attribute in Variables and intermediate variables values in workflow_run
