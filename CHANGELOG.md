@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added mypy_extensions to setup.py
 
 ### Added
+- Documentation on blocks
 - Generic serialize function
 - ParallelPlot block
 - Memorize attribute in Variables and intermediate variables values in workflow_run
