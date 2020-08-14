@@ -1783,7 +1783,14 @@ class WorkflowRun(dc.DessiaObject):
 
     def method_dict(self, method_name, method_jsonschema):
         if method_name == 'rerun':
-            return self.input_values
+            dict_ = dc.serialize_dict(self.input_values)
+            for property_, value in method_jsonschema['properties'].items():
+                if property_ in dict_\
+                        and 'object_id' in value\
+                        and 'object_class' in value:
+                    # TODO : Check. this is probably useless as we are not dealing with default values here
+                    dict_[property_] = value
+            return dict_
         return dc.DessiaObject.method_dict(method_name=method_name,
                                            jsonschema=method_jsonschema)
 
@@ -1813,7 +1820,7 @@ class WorkflowRun(dc.DessiaObject):
                 annotation=annotation,
                 jsonschema_element=current_dict,
                 order=i,
-                editable=title,
+                title=title,
             )
             current_dict.update(annotation_jsonschema[str(i)])
             if not isinstance(input_, (VariableWithDefaultValue,
