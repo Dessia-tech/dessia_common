@@ -216,6 +216,12 @@ class Import(Block):
 
 
 class InstanciateModel(Block):
+    """
+    :param model_class: The class to instanciate.
+    :type model_class: DessiaObject
+    :param name: The name of the block.
+    :type name: str
+    """
     _jsonschema = dc.dict_merge(Block._jsonschema, {
         "title": "Instantiate model Base Schema",
         "required": ['object_class'],
@@ -317,6 +323,14 @@ class ClassMethod(Block):
 
 
 class ModelMethod(Block):
+    """
+    :param model_class: The class owning the method.
+    :type model_class: DessiaObject
+    :param method_name: The name of the method.
+    :type method_name: str
+    :param name: The name of the block.
+    :type name: str
+    """
     _jsonschema = dc.dict_merge(Block._jsonschema, {
         "title" : "Model method Base Schema",
         "required": ['model_class', 'method_name'],
@@ -463,6 +477,14 @@ class Sequence(Block):
 
 
 class ForEach(Block):
+    """
+    :param workflow_block: The WorkflowBlock on which iterate.
+    :type workflow_block: WorkflowBlock
+    :param workflow_iterable_input: The iterable input of the workflow.
+    :type workflow_iterable_input: TypedVarible
+    :param name: The name of the block.
+    :type name: str
+    """
     def __init__(self, workflow_block, workflow_iterable_input, name=''):
         self.workflow_block = workflow_block
         self.workflow_iterable_input = workflow_iterable_input
@@ -574,6 +596,16 @@ class Flatten(Block):
 
 
 class Filter(Block):
+    """ 
+    :param filters: A list of dictionaries, each corresponding to a value to filter. \
+    The dictionary should be as follows : *{'attribute' : the name of the attribute to \
+    filter (str), 'operator' : choose between gt, lt, get, let (standing for greater \
+    than, lower than, geater or equal than, lower or equal than) (str), 'bound' : \
+    the value (float)}*
+    :type filters: list[dict]
+    :param name: The name of the block.
+    :type name: str
+    """
     def __init__(self, filters, name=''):
         self.filters = filters
         inputs = [Variable(name='input_list')]
@@ -616,7 +648,14 @@ class Filter(Block):
 
 
 class ParallelPlot(Block):
-    def __init__(self, attributes, order: int = 0, name: str = ''):
+    """
+    :param attributes: A List of all attributes that will be shown inside the \
+    ParallelPlot window on the DessIA Platform.
+    :type attributes: List[str]
+    :param name: The name of the block.
+    :type name: str
+    """
+    def __init__(self, attributes: List[str], order: int = 0, name: str = ''):
         self.attributes = attributes
         self.order = order
         pareto_input = TypedVariableWithDefaultValue(type_=ParetoSettings,
@@ -712,6 +751,12 @@ class Display(Block):
 
 
 class ModelAttribute(Block):
+    """
+    :param attribute_name: The name of the attribute to select.
+    :type attribute_name: str
+    :param name: The name of the block.
+    :type name: str
+    """
     def __init__(self, attribute_name, name=''):
         self.attribute_name = attribute_name
 
@@ -799,6 +844,14 @@ class Substraction(Block):
 
     
 class Pipe(dc.DessiaObject):
+    """
+    :param input_variable: The input varaible of the pipe correspond to the \
+    start of the arrow, its tail.
+    :type input_variable: TypedVariable
+    :param output_variable: The output variable of the pipe correpond to the \
+    end of the arrow, its hat.
+    :type output_variable: TypedVariable
+    """
     _jsonschema = {
         "definitions": {},
         "$schema": "http://json-schema.org/draft-07/schema#",
@@ -843,6 +896,16 @@ class WorkflowError(Exception):
 
 
 class Workflow(Block):
+    """
+    :param blocks: A List with all the Blocks used by the Worklow.
+    :type blocks: List of Block objects
+    :param pipes: A List of Pipe objects.
+    :type pipes: List of Pipe objects
+    :param imposed_variable_values: A dictionary of imposed variable values.
+    :type imposed_variable_values: dict
+    :param name: The name of the block.
+    :type name: str
+    """ 
     _standalone_in_db = True
     _allowed_methods = ['run']
 
