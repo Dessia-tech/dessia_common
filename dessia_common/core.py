@@ -881,6 +881,16 @@ def is_bounded(filter_: Filter, value:float):
     return bounded
 
 
+def is_sequence(obj):
+    """
+    :param obj: Object to check
+    :return: bool. True if object is a sequence but not a string.
+                   False otherwise
+    """
+    return isinstance(obj, collections.abc.Sequence)\
+        and not isinstance(obj, str)
+
+
 TYPES_FROM_STRING = {'unicode': str, 'str': str,
                      'float': float, 'int': int, 'bool': bool}
 
