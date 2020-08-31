@@ -881,6 +881,11 @@ def is_bounded(filter_: Filter, value:float):
     return bounded
 
 
+def is_sequence(obj):
+    return isinstance(obj, collections.abc.Sequence)\
+           and not isinstance(obj, str)
+
+
 TYPES_FROM_STRING = {'unicode': str, 'str': str,
                      'float': float, 'int': int, 'bool': bool}
 
