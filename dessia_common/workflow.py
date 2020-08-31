@@ -1649,11 +1649,8 @@ class WorkflowRun(dc.DessiaObject):
                 "description": "Workflow"
             },
             'output_value': {
-                "type": "array",
-                "items": {
-                    "type": "object",
-                    "classes": "*"
-                },
+                "type": "object",
+                "classes": "*",
                 "title": "Values",
                 "description": "Input and output values",
                 "editable": False,
@@ -1776,7 +1773,7 @@ class WorkflowRun(dc.DessiaObject):
                       'log': self.log})
 
         if self.output_value is not None:
-            dict_.update({'output_value': dc.serialize_sequence(self.output_value),
+            dict_.update({'output_value': dc.serialize(self.output_value),
                           'output_value_type': dc.recursive_type(self.output_value)})
 
         return dict_
