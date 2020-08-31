@@ -386,6 +386,7 @@ def deserialize_argument(type_, argument):
     return deserialized_argument
 
 
+# TODO recursive_type and recursive_type functions look weird
 def recursive_type(obj):
     if isinstance(obj, tuple(list(TYPING_EQUIVALENCES.keys()) + [dict])):
         type_ = TYPES_STRINGS[type(obj)]
@@ -402,27 +403,43 @@ def recursive_type(obj):
     return type_
 
 
-def recursive_instantiation(types, values):
-    instantiated_values = []
-    for type_, value in zip(types, values):
-        if type_ in TYPES_STRINGS.values():
-            instantiated_values.append(eval(type_)(value))
-        elif isinstance(type_, str):
-            # TODO Check if this is OK. Are we importing classes ?
-            # TODO In this case, use get_python_class_from_class_name
-            exec('import ' + type_.split('.')[0])
-            class_ = eval(type_)
-            if inspect.isclass(class_):
-                instantiated_values.append(class_.dict_to_object(value))
-            else:
-                raise NotImplementedError
-        elif isinstance(type_, (list, tuple)):
-            instantiated_values.append(recursive_instantiation(type_, value))
-        elif type_ is None:
-            instantiated_values.append(value)
+def recursive_instantiation(type_, value):
+    if type_ in TYPES_STRINGS.values():
+        return eval(type_)(value)
+    elif isinstance(type_, str):
+        class_ = dc.get_python_class_from_class_name(value)
+        if inspect.isclass(class_):
+            return class_.dict_to_object(value)
         else:
-            raise NotImplementedError(type_)
-    return instantiated_values
+            raise NotImplementedError
+    elif isinstance(type_, (list, tuple)):
+        return [recursive_instantiation(t, v) for t, v in zip(type_, value)]
+    elif type_ is None:
+        return value
+    else:
+        raise NotImplementedError(type_)
+
+# def recursive_instantiation(types, values):
+#     instantiated_values = []
+#     for type_, value in zip(types, values):
+#         if type_ in TYPES_STRINGS.values():
+#             instantiated_values.append(eval(type_)(value))
+#         elif isinstance(type_, str):
+#             # TODO Check if this is OK. Are we importing classes ?
+#             # TODO In this case, use get_python_class_from_class_name
+#             exec('import ' + type_.split('.')[0])
+#             class_ = eval(type_)
+#             if inspect.isclass(class_):
+#                 instantiated_values.append(class_.dict_to_object(value))
+#             else:
+#                 raise NotImplementedError
+#         elif isinstance(type_, (list, tuple)):
+#             instantiated_values.append(recursive_instantiation(type_, value))
+#         elif type_ is None:
+#             instantiated_values.append(value)
+#         else:
+#             raise NotImplementedError(type_)
+#     return instantiated_values
 
 
 def chose_default(jsonschema):

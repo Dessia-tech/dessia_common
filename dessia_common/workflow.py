@@ -1758,19 +1758,26 @@ class WorkflowRun(dc.DessiaObject):
 
     def __eq__(self, other_workflow_run):
         # TODO : Should we add input_values and variables values in test ?
-        if hasattr(self.output_value, '__iter__'):
-            equal_output = (hasattr(self.output_value, '__iter__')
-                            and all([v == other_v
-                                     for v, other_v
-                                     in zip(self.output_value,
-                                            other_workflow_run.output_value)]))
+        if dc.is_sequence(self.output_value):
+            if not dc.is_sequence(other_workflow_run):
+                return False
+            equal_output = all([v == other_v for v, other_v
+                                in zip(self.output_value,
+                                       other_workflow_run.output_value)])
+        # if hasattr(self.output_value, '__iter__'):
+        #     equal_output = (hasattr(self.output_value, '__iter__')
+        #                     and all([v == other_v
+        #                              for v, other_v
+        #                              in zip(self.output_value,
+        #                                     other_workflow_run.output_value)]))
         else:
             equal_output = self.output_value == other_workflow_run.output_value
         return self.workflow == other_workflow_run.workflow and equal_output
 
     def __hash__(self):
         # TODO : Should we add input_values and variables values in test ?
-        if hasattr(self.output_value, '__iter__'):
+        if dc.is_sequence(self.output_value):
+        # if hasattr(self.output_value, '__iter__'):
             # hash_output = int(sum([hash(v) for v in self.output_value]) % 10e5)
             hash_output = dc.list_hash(self.output_value)
         else:
