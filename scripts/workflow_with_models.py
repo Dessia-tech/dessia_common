@@ -10,6 +10,7 @@ from dessia_common import DessiaObject
 
 class Submodel(DessiaObject):
     _generic_eq = True
+
     def __init__(self, subvalue: int, name: str = ''):
         self.subvalue = subvalue
         self.name = name
@@ -19,6 +20,7 @@ class Submodel(DessiaObject):
 
 class Model(DessiaObject):
     _generic_eq = True
+
     def __init__(self, value: int, submodel: Submodel, name: str = ''):
         self.value = value
         self.submodel = submodel
@@ -30,7 +32,7 @@ class Generator(DessiaObject):
     def __init__(self, parameter: int, nb_solutions: int = 25, name: str = ''):
         self.parameter = parameter
         self.nb_solutions = nb_solutions
-        self.models=None
+        self.models = None
 
         DessiaObject.__init__(self, name=name)
 
@@ -128,14 +130,12 @@ demo_workflow_run = demo_workflow.run(input_variables_values=input_values,
 dict_ = demo_workflow_run.to_dict()
 object_ = wf.WorkflowRun.dict_to_object(dict_=dict_)
 
-
 assert hash(demo_workflow_run) == hash(object_)
 
 # Assert deserialization
 # demo_workflow_dict = demo_workflow.to_dict()
 # import json
 # demo_workflow_json = json.dumps(demo_workflow_dict)
-# demo_workflow_dict_from_json = json.loads(demo_workflow_json)
-# deserialized_demo_workflow = wf.Workflow.dict_to_object(demo_workflow_dict_from_json)
+# dict_from_json = json.loads(demo_workflow_json)
+# deserialized_demo_workflow = wf.Workflow.dict_to_object(dict_from_json)
 # assert demo_workflow == deserialized_demo_workflow
-

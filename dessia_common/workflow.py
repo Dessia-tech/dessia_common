@@ -1010,10 +1010,11 @@ class Workflow(Block):
         self.output = self.outputs[0]
 
     def __hash__(self):
-        base_hash = len(self.blocks)+11*len(self.pipes)+sum(self.variable_indices(self.outputs[0]))
-        block_hash = int(sum([b.equivalent_hash() for b in self.blocks]) % 10e5)
-        for block in self.blocks:
-            print(block.name, block.equivalent_hash())
+        base_hash = len(self.blocks)\
+                    + 11 * len(self.pipes)\
+                    + sum(self.variable_indices(self.outputs[0]))
+        block_hash = int(sum([b.equivalent_hash() for b in self.blocks])
+                         % 10e5)
         return base_hash + block_hash
 
     def __eq__(self, other_workflow):
