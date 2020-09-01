@@ -556,10 +556,10 @@ class Unpacker(Block):
     def equivalent(self, other_block):
         if not Block.equivalent(self, other_block):
             return False
-        return self.number_arguments == other_block.number_arguments
+        return self.indices == other_block.indices
 
     def equivalent_hash(self):
-        return self.number_arguments
+        return len(self.indices)
 
     def to_dict(self):
         dict_ = dc.DessiaObject.base_dict(self)
@@ -1013,6 +1013,8 @@ class Workflow(Block):
     def __hash__(self):
         base_hash = len(self.blocks)+11*len(self.pipes)+sum(self.variable_indices(self.outputs[0]))
         block_hash = int(sum([b.equivalent_hash() for b in self.blocks]) % 10e5)
+        for block in self.blocks:
+            print(block.name, block.equivalent_hash())
         return base_hash + block_hash
 
     def __eq__(self, other_workflow):
@@ -1499,7 +1501,6 @@ class Workflow(Block):
                           self.variable_indices(pipe.output_variable)))
 
         return nodes, edges
-
 
     def jointjs_data(self):
         coordinates = self.layout()
