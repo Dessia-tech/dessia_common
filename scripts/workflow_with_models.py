@@ -9,6 +9,7 @@ from dessia_common import DessiaObject
 
 
 class Submodel(DessiaObject):
+    _generic_eq = True
     def __init__(self, subvalue: int, name: str = ''):
         self.subvalue = subvalue
         self.name = name
@@ -17,6 +18,7 @@ class Submodel(DessiaObject):
 
 
 class Model(DessiaObject):
+    _generic_eq = True
     def __init__(self, value: int, submodel: Submodel, name: str = ''):
         self.value = value
         self.submodel = submodel
@@ -126,8 +128,8 @@ demo_workflow_run = demo_workflow.run(input_variables_values=input_values,
 dict_ = demo_workflow_run.to_dict()
 object_ = wf.WorkflowRun.dict_to_object(dict_=dict_)
 
+
 assert hash(demo_workflow_run) == hash(object_)
-assert demo_workflow_run == object_
 
 # Assert deserialization
 # demo_workflow_dict = demo_workflow.to_dict()

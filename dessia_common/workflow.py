@@ -502,7 +502,7 @@ class ForEach(Block):
         Block.__init__(self, inputs, [output_variable], name=name)
 
     def equivalent_hash(self):
-        return int(hash(self.workflow_block) % 10e5)
+        return int(self.workflow_block.equivalent_hash() % 10e5)
 
     def equivalent(self, other_block):
         if not Block.equivalent(self, other_block):
@@ -575,7 +575,6 @@ class Unpacker(Block):
 
 
 class Flatten(Block):
-
     def __init__(self, name=''):
         inputs = [Variable(name='input_sequence')]
         outputs = [Variable(name='flatten_sequence')]
