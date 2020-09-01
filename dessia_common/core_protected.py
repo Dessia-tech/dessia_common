@@ -407,7 +407,7 @@ def recursive_instantiation(type_, value):
     if type_ in TYPES_STRINGS.values():
         return eval(type_)(value)
     elif isinstance(type_, str):
-        class_ = dc.get_python_class_from_class_name(value)
+        class_ = dc.get_python_class_from_class_name(type_)
         if inspect.isclass(class_):
             return class_.dict_to_object(value)
         else:
