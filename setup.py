@@ -111,7 +111,8 @@ setup(name='dessia_common',
       author='Steven Masfaraud',
       author_email='masfaraud@dessia.tech',
       packages=['dessia_common'],
-      install_requires=['typeguard', 'networkx', 'numpy', 'pandas', 'jinja2',
+      install_requires=['typeguard', 'networkx', 'numpy', 'pandas',
+                        'jinja2=2.11.1',
                         'mypy_extensions', 'scipy', 'pyDOE'],
       python_requires='>=3.7')
 
