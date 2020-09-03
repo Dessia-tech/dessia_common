@@ -10,6 +10,7 @@ import os
 import sys
 import re
 import tempfile
+from glob import glob
 from subprocess import CalledProcessError, check_output
 
 from setuptools import setup
@@ -19,6 +20,10 @@ from Cython.Distutils import build_ext
 from distutils.core import run_setup
 from distutils.cmd import Command
 from distutils.extension import Extension
+from distutils.filelist import FileList
+from distutils import log
+from distutils.text_file import TextFile
+from distutils.errors import DistutilsTemplateError, DistutilsOptionError
 import time
 from datetime import timedelta
 import calendar
@@ -159,11 +164,14 @@ class ClientWheelDist(wheel.bdist_wheel.bdist_wheel):
                                                                 self.exp_day,
                                                                 0, 0, 0 ,0, 0, 0))))
         self.not_before = int(time.time())
+        number_days = timedelta(seconds=self.expiration-self.not_before).days
+        if number_days < 0:
+            raise ValueError('Negative number of days')
 
         print('\nExpiration date: {}/{}/{}: duration of {} days'.format(self.exp_day,
-                                                  self.exp_month,
-                                                  self.exp_year,
-                                                  timedelta(seconds=self.expiration-self.not_before).days))
+                                                                        self.exp_month,
+                                                                        self.exp_year,
+                                                                        number_days))
         
             
         formats = [] 
@@ -405,11 +413,251 @@ class ClientWheelDist(wheel.bdist_wheel.bdist_wheel):
     #     print('Client build finished, output is {}'.format(setup_result.dist_files))
         
 
+    def prune_file_list(self):
+        """Prune off branches that might slip into the file list as created
+        by 'read_template()', but really don't belong there:
+          * the build tree (typically "build")
+          * the release tree itself (only an issue if we ran "sdist"
+            previously with --keep-temp, or it aborted)
+          * any RCS, CVS, .svn, .hg, .git, .bzr, _darcs directories
+        """
+        build = self.get_finalized_command('build')
+        base_dir = self.distribution.get_fullname()
+
+        self.filelist.exclude_pattern(None, prefix=build.build_base)
+        self.filelist.exclude_pattern(None, prefix=base_dir)
+
+        if sys.platform == 'win32':
+            seps = r'/|\\'
+        else:
+            seps = '/'
+
+        vcs_dirs = ['RCS', 'CVS', r'\.svn', r'\.hg', r'\.git', r'\.bzr',
+                    '_darcs']
+        vcs_ptrn = r'(^|%s)(%s)(%s).*' % (seps, '|'.join(vcs_dirs), seps)
+        print(len(self.filelist.allfiles))
+        self.filelist.exclude_pattern(vcs_ptrn, is_regex=1)
+        print(len(self.filelist.allfiles))
+
+
+    def get_file_list(self):
+        """Figure out the list of files to include in the source
+        distribution, and put it in 'self.filelist'.  This might involve
+        reading the manifest template (and writing the manifest), or just
+        reading the manifest, or just using the default file set -- it all
+        depends on the user's options.
+        """
+        # new behavior when using a template:
+        # the file list is recalculated every time because
+        # even if MANIFEST.in or setup.py are not changed
+        # the user might have added some files in the tree that
+        # need to be included.
+        #
+        #  This makes --force the default and only behavior with templates.
+        # template_exists = os.path.isfile(self.template)
+        # if not template_exists and self._manifest_is_not_generated():
+        self.read_manifest()
+        self.filelist.findall()
+        self.prune_file_list()
+        self.filelist.remove_duplicates()
+        self.filelist.sort()
+            # return
+
+        # if not template_exists:
+        #     self.warn(("manifest template '%s' does not exist " +
+        #                 "(using default file list)") %
+        #                 self.template)
+        
+
+        # if self.use_defaults:
+        #     self.add_defaults()
+
+        # if template_exists:
+        #     self.read_template()
+
+        # if self.prune:
+
+
+        # self.filelist.sort()
+        # self.filelist.remove_duplicates()
+        # self.write_manifest()
+        
+    # def write_manifest(self):
+    #     """Write the file list in 'self.filelist' (presumably as filled in
+    #     by 'add_defaults()' and 'read_template()') to the manifest file
+    #     named by 'self.manifest'.
+    #     """
+    #     if self._manifest_is_not_generated():
+    #         log.info("not writing to manually maintained "
+    #                  "manifest file '%s'" % self.manifest)
+    #         return
+
+    #     content = self.filelist.files[:]
+    #     content.insert(0, '# file GENERATED by distutils, do NOT edit')
+    #     self.execute(file_util.write_file, (self.manifest, content),
+    #                  "writing manifest file '%s'" % self.manifest)
+
+    def read_manifest(self):
+        """Read the manifest file (named by 'self.manifest') and use it to
+        fill in 'self.filelist', the list of files to include in the source
+        distribution.
+        """
+        log.info("reading manifest file '%s'", self.manifest)
+        with open(self.manifest) as manifest:
+            for line in manifest:
+                # ignore comments and blank lines
+                line = line.strip()
+                if line.startswith('#') or not line:
+                    continue
+                self.filelist.append(line)
+
+
+    def read_template(self):
+        """Read and parse manifest template file named by self.template.
+        (usually "MANIFEST.in") The parsing and processing is done by
+        'self.filelist', which updates itself accordingly.
+        """
+        log.info("reading manifest template '%s'", self.template)
+        template = TextFile(self.template, strip_comments=1, skip_blanks=1,
+                            join_lines=1, lstrip_ws=1, rstrip_ws=1,
+                            collapse_join=1)
+
+        try:
+            while True:
+                line = template.readline()
+                if line is None:            # end of file
+                    break
+
+                try:
+                    self.filelist.process_template_line(line)
+                # the call above can raise a DistutilsTemplateError for
+                # malformed lines, or a ValueError from the lower-level
+                # convert_path function
+                except (DistutilsTemplateError, ValueError) as msg:
+                    self.warn("%s, line %d: %s" % (template.filename,
+                                                   template.current_line,
+                                                   msg))
+        finally:
+            template.close()
+
+
+    def add_defaults(self):
+        """Add all the default files to self.filelist:
+          - README or README.txt
+          - setup.py
+          - test/test*.py
+          - all pure Python modules mentioned in setup script
+          - all files pointed by package_data (build_py)
+          - all files defined in data_files.
+          - all files defined as scripts.
+          - all C sources listed as part of extensions or C libraries
+            in the setup script (doesn't catch C headers!)
+        Warns if (README or README.txt) or setup.py are missing; everything
+        else is optional.
+        """
+        # self._add_defaults_standards()
+        self._add_defaults_optional()
+        self._add_defaults_python()
+        self._add_defaults_data_files()
+        self._add_defaults_ext()
+        self._add_defaults_c_libs()
+        self._add_defaults_scripts()
+
+
+    def _add_defaults_standards(self):
+        standards = [self.READMES, self.distribution.script_name]
+        for fn in standards:
+            if isinstance(fn, tuple):
+                alts = fn
+                got_it = False
+                for fn in alts:
+                    if self._cs_path_exists(fn):
+                        got_it = True
+                        self.filelist.append(fn)
+                        break
+
+                if not got_it:
+                    self.warn("standard file not found: should have one of " +
+                              ', '.join(alts))
+            else:
+                if self._cs_path_exists(fn):
+                    self.filelist.append(fn)
+                else:
+                    self.warn("standard file '%s' not found" % fn)
+
+    def _add_defaults_optional(self):
+        optional = ['test/test*.py', 'setup.cfg']
+        for pattern in optional:
+            files = filter(os.path.isfile, glob(pattern))
+            self.filelist.extend(files)
+
+    def _add_defaults_python(self):
+        # build_py is used to get:
+        #  - python modules
+        #  - files defined in package_data
+        build_py = self.get_finalized_command('build_py')
+
+        # getting python files
+        if self.distribution.has_pure_modules():
+            self.filelist.extend(build_py.get_source_files())
+
+        # getting package_data files
+        # (computed in build_py.data_files by build_py.finalize_options)
+        for pkg, src_dir, build_dir, filenames in build_py.data_files:
+            for filename in filenames:
+                self.filelist.append(os.path.join(src_dir, filename))
+
+    def _add_defaults_data_files(self):
+        # getting distribution.data_files
+        if self.distribution.has_data_files():
+            for item in self.distribution.data_files:
+                if isinstance(item, str):
+                    # plain file
+                    item = convert_path(item)
+                    if os.path.isfile(item):
+                        self.filelist.append(item)
+                else:
+                    # a (dirname, filenames) tuple
+                    dirname, filenames = item
+                    for f in filenames:
+                        f = convert_path(f)
+                        if os.path.isfile(f):
+                            self.filelist.append(f)
+
+    def _add_defaults_ext(self):
+        if self.distribution.has_ext_modules():
+            build_ext = self.get_finalized_command('build_ext')
+            self.filelist.extend(build_ext.get_source_files())
+
+    def _add_defaults_c_libs(self):
+        if self.distribution.has_c_libraries():
+            build_clib = self.get_finalized_command('build_clib')
+            self.filelist.extend(build_clib.get_source_files())
+
+    def _add_defaults_scripts(self):
+        if self.distribution.has_scripts():
+            build_scripts = self.get_finalized_command('build_scripts')
+            self.filelist.extend(build_scripts.get_source_files())
+
 
     def run(self):
-        print('\n\nwrinting pyx files')
-        self.write_pyx_files()
+        self.filelist = FileList()
+        self.template = 'MANIFEST.in'
+        self.manifest = 'MANIFEST'
+        self.filelist.findall()
+        self.add_defaults()
+        self.read_template()
+        self.prune_file_list()
+        self.filelist.sort()
+        self.filelist.remove_duplicates()
 
+
+        print(self.filelist.files)
+        print(len(self.filelist.files))
+
+
+        print('\n\nwriting pyx files')
+        self.write_pyx_files()
         
         build_scripts = self.reinitialize_command('build_scripts')
         build_scripts.executable = 'python'
@@ -427,7 +675,7 @@ class ClientWheelDist(wheel.bdist_wheel.bdist_wheel):
         install.compile = False
         install.skip_build = self.skip_build
         install.warn_dir = False
-
+        print('\n\n', install, type(install))
         # A wheel without setuptools scripts is more cross-platform.
         # Use the (undocumented) `no_ep` option to setuptools'
         # install_scripts command to avoid creating entry point scripts.
@@ -457,44 +705,49 @@ class ClientWheelDist(wheel.bdist_wheel.bdist_wheel):
 
 
 
+
         self.run_command('install')
+        # print('distinfo_dir', distinfo_dir)
+        print('egginfo_dir', self.egginfo_dir)
 
-        impl_tag, abi_tag, plat_tag = self.get_tag()
-        archive_basename = "{}-{}-{}-{}".format(self.wheel_dist_name, impl_tag, abi_tag, plat_tag)
-        if not self.relative:
-            archive_root = self.bdist_dir
-        else:
-            archive_root = os.path.join(
-                self.bdist_dir,
-                self._ensure_relative(install.install_base))
+        # impl_tag, abi_tag, plat_tag = self.get_tag()
+        # archive_basename = "{}-{}-{}-{}".format(self.wheel_dist_name, impl_tag, abi_tag, plat_tag)
+        # if not self.relative:
+        #     archive_root = self.bdist_dir
+        # else:
+        #     archive_root = os.path.join(
+        #         self.bdist_dir,
+        #         self._ensure_relative(install.install_base))
 
-        self.set_undefined_options('install_egg_info', ('target', 'egginfo_dir'))
-        distinfo_dirname = '{}-{}.dist-info'.format(
-            wheel.bdist_wheel.safer_name(self.distribution.get_name()),
-            wheel.bdist_wheel.safer_version(self.distribution.get_version()))
-        distinfo_dir = os.path.join(self.bdist_dir, distinfo_dirname)
-        self.egg2dist(self.egginfo_dir, distinfo_dir)
+        # self.set_undefined_options('install_egg_info', ('target', 'egginfo_dir'))
+        # distinfo_dirname = '{}-{}.dist-info'.format(
+        #     wheel.bdist_wheel.safer_name(self.distribution.get_name()),
+        #     wheel.bdist_wheel.safer_version(self.distribution.get_version()))
+        # distinfo_dir = os.path.join(self.bdist_dir, distinfo_dirname)
+        # print('distinfo_dir', distinfo_dir)
+        # print('egginfo_dir', self.egginfo_dir)
+        # self.egg2dist(self.egginfo_dir, distinfo_dir)
 
-        self.write_wheelfile(distinfo_dir)
+        # self.write_wheelfile(distinfo_dir)
 
-        # Make the archive
-        if not os.path.exists(self.dist_dir):
-            os.makedirs(self.dist_dir)
+        # # Make the archive
+        # if not os.path.exists(self.dist_dir):
+        #     os.makedirs(self.dist_dir)
 
-        wheel_path = os.path.join(self.dist_dir, archive_basename + '.whl')
-        with WheelFile(wheel_path, 'w', self.compression) as wf:
-            wf.write_files(archive_root)
+        # wheel_path = os.path.join(self.dist_dir, archive_basename + '.whl')
+        # with WheelFile(wheel_path, 'w', self.compression) as wf:
+        #     wf.write_files(archive_root)
 
-        # Add to 'Distribution.dist_files' so that the "upload" command works
-        getattr(self.distribution, 'dist_files', []).append(
-            ('bdist_wheel',
-             '{}.{}'.format(*sys.version_info[:2]),  # like 3.7
-             wheel_path))
+        # # Add to 'Distribution.dist_files' so that the "upload" command works
+        # getattr(self.distribution, 'dist_files', []).append(
+        #     ('bdist_wheel',
+        #      '{}.{}'.format(*sys.version_info[:2]),  # like 3.7
+        #      wheel_path))
 
-        if not self.keep_temp:
-            logger.info('removing %s', self.bdist_dir)
-            if not self.dry_run:
-                rmtree(self.bdist_dir, onerror=wheel.bdist_wheel.remove_readonly)
+        # if not self.keep_temp:
+        #     logger.info('removing %s', self.bdist_dir)
+        #     if not self.dry_run:
+        #         rmtree(self.bdist_dir, onerror=wheel.bdist_wheel.remove_readonly)
     
 tag_re = re.compile(r'\btag: %s([0-9][^,]*)\b')
 version_re = re.compile('^Version: (.+)$', re.M)
