@@ -10,6 +10,7 @@ import os
 import sys
 import re
 import tempfile
+from glob import glob
 from subprocess import CalledProcessError, check_output
 
 from setuptools import setup
@@ -19,14 +20,25 @@ from Cython.Distutils import build_ext
 from distutils.core import run_setup
 from distutils.cmd import Command
 from distutils.extension import Extension
+from distutils.filelist import FileList
+from distutils import log
+from distutils.text_file import TextFile
+from distutils.errors import DistutilsTemplateError, DistutilsOptionError
 import time
 from datetime import timedelta
 import calendar
 import shutil
+from shutil import rmtree
 import tarfile
+
+from distutils import log as logger
 
 import hashlib
 import netifaces
+import pkg_resources
+
+import wheel.bdist_wheel
+from wheel.wheelfile import WheelFile
 
 
 protected_files = ['dessia_common/core_protected.py']
@@ -38,9 +50,15 @@ for file in protected_files:
     file_to_compile = file[:-3] + '_protected.pyx'
     ext_modules.append(Extension(module,  [file_to_compile]))
     
-    
-    
-class ClientDist(Command):
+print('ext_modules', ext_modules)
+
+
+safe_name = pkg_resources.safe_name
+safe_version = pkg_resources.safe_version
+
+
+
+class ClientWheelDist(wheel.bdist_wheel.bdist_wheel):
     description = 'Creating client distribution with compiled packages and license'
     user_options = [
         # The format is (long option, short option, description).
@@ -81,6 +99,9 @@ class ClientDist(Command):
 
     def initialize_options(self):
         """Set default values for options."""
+
+        wheel.bdist_wheel.bdist_wheel.initialize_options(self)
+
         # Each user option must be listed here with their default value.
         self.exp_year = 2000
         self.exp_month = 1
@@ -89,9 +110,12 @@ class ClientDist(Command):
         self.getnodes = None
         self.macs = None
         self.detect_macs = None
+        self.dist_dir = 'cdist_wheel'
 
     def finalize_options(self):
         """Post-process options."""
+        
+        wheel.bdist_wheel.bdist_wheel.finalize_options(self)
 
         self.detect_macs = self.detect_macs is not None
         if not self.detect_macs:
@@ -129,11 +153,14 @@ class ClientDist(Command):
                                                                 self.exp_day,
                                                                 0, 0, 0 ,0, 0, 0))))
         self.not_before = int(time.time())
+        number_days = timedelta(seconds=self.expiration-self.not_before).days
+        if number_days < 0:
+            raise ValueError('Negative number of days')
 
         print('\nExpiration date: {}/{}/{}: duration of {} days'.format(self.exp_day,
-                                                  self.exp_month,
-                                                  self.exp_year,
-                                                  timedelta(seconds=self.expiration-self.not_before).days))
+                                                                        self.exp_month,
+                                                                        self.exp_year,
+                                                                        number_days))
         
             
         formats = [] 
@@ -291,88 +318,102 @@ class ClientDist(Command):
     
 
     def run(self):
-        print('\n\nBeginning build')
-        package_name = self.distribution.get_name()
-        tmp_dir = tempfile.mkdtemp()
-        # Creating sdist
-        setup_result = run_setup('setup.py', script_args=['sdist',
-                                                          '--formats=tar',
-                                                          '--dist-dir={}'.format(tmp_dir)])
-        sdist_filename = setup_result.dist_files[0][2]
-        
-        folder_path = sdist_filename[:-4]
-        dist_name = os.path.basename(folder_path)
-        if os.path.isdir(folder_path):
-            shutil.rmtree(folder_path)
-        tar = tarfile.open(sdist_filename)
-        tar.extractall(path=tmp_dir)
-        # compile_path = os.path.join(tmp_dir, os.path.commonprefix(tar.getnames()))
-        tar.close()
-        
-        
-        # Compiling
         self.write_pyx_files()
-        print('Compiling files in {}'.format(tmp_dir))
-        setup_result = run_setup('compile.py', script_args=['build_ext',
-                                                            '--build-lib={}'.format(tmp_dir)])
-        # Copying compiled files to sdist folder
-        compiled_files_dir = os.path.join(tmp_dir, package_name)
-#        destination_base = join(folder_path, package_name)
-        # destination_base = folder_path
+        
+        build_scripts = self.reinitialize_command('build_scripts')
+        build_scripts.executable = 'python'
+        build_scripts.force = True
+
+        build_ext = self.reinitialize_command('build_ext')
+        build_ext.inplace = False
+
+        if not self.skip_build:
+            self.run_command('build')
+
+        install = self.reinitialize_command('install',
+                                            reinit_subcommands=True)
+        install.root = self.bdist_dir
+        install.compile = False
+        install.skip_build = self.skip_build
+        install.warn_dir = False
+
+        # A wheel without setuptools scripts is more cross-platform.
+        # Use the (undocumented) `no_ep` option to setuptools'
+        # install_scripts command to avoid creating entry point scripts.
+        install_scripts = self.reinitialize_command('install_scripts')
+        install_scripts.no_ep = True
+
+        # Use a custom scheme for the archive, because we have to decide
+        # at installation time which scheme to use.
+        for key in ('headers', 'scripts', 'data', 'purelib', 'platlib'):
+            setattr(install,
+                    'install_' + key,
+                    os.path.join(self.data_dir, key))
+
+        basedir_observed = ''
+
+        if os.name == 'nt':
+            # win32 barfs if any of these are ''; could be '.'?
+            # (distutils.command.install:change_roots bug)
+            basedir_observed = os.path.normpath(os.path.join(self.data_dir, '..'))
+            self.install_libbase = self.install_lib = basedir_observed
+
+        setattr(install,
+                'install_purelib' if self.root_is_pure else 'install_platlib',
+                basedir_observed)
+
+        logger.info("installing to %s", self.bdist_dir)
+
+        self.run_command('install')
+
+        impl_tag, abi_tag, plat_tag = self.get_tag()
+        archive_basename = "{}-{}-{}-{}".format(self.wheel_dist_name, impl_tag, abi_tag, plat_tag)
+        if not self.relative:
+            archive_root = self.bdist_dir
+        else:
+            archive_root = os.path.join(
+                self.bdist_dir,
+                self._ensure_relative(install.install_base))
+
+        self.set_undefined_options('install_egg_info', ('target', 'egginfo_dir'))
+        distinfo_dirname = '{}-{}.dist-info'.format(
+            wheel.bdist_wheel.safer_name(self.distribution.get_name()),
+            wheel.bdist_wheel.safer_version(self.distribution.get_version()))
+        distinfo_dir = os.path.join(self.bdist_dir, distinfo_dirname)
         
         
-        for root_dir, _, files in os.walk(compiled_files_dir):
+        distdir = os.path.join(self.bdist_dir, 'dessia_common')
+        
+        for root, dirs, files in os.walk(distdir):
             for file in files:
-                source = os.path.join(root_dir, file)
-                # destination = source.replace('client_dist', destination_base)
-                # print('root_dir')
-                new_file_location = source.replace(tmp_dir, '').lstrip('/ ')
-                destination = os.path.join(folder_path, new_file_location)
-                print('copying file {} to {}'.format(source, destination))
-                shutil.copy(source, destination)
-
-
-        # Packaging
-        print('Packaging')
-        archive_names = []
-        suffix = '-py{}{}'.format(sys.version_info.major, sys.version_info.minor)
-        archive_name = os.path.join('client_dist', dist_name+suffix)            
-        for packaging_format in self.formats:
-            archive_name_with_extension = shutil.make_archive(archive_name,
-                                                              root_dir=tmp_dir,
-                                                              format=packaging_format,
-                                                              base_dir=dist_name)
-            archive_names.append(archive_name_with_extension)
-
-            
-        # Cleaning
-        print('Cleaning')
-        self.delete_compilation_files()
-        shutil.rmtree(folder_path)
-        shutil.rmtree(compiled_files_dir)
+                print(file)
+                if file.endswith('_protected.py'):
+                    os.remove(os.path.join(root, file))
         
-        # Cleaning sdist dir
-        shutil.rmtree(tmp_dir)
+        self.egg2dist(self.egginfo_dir, distinfo_dir)
 
-        print('Client build finished, output is {}'.format(archive_names))
-    
-class ClientWheelDist(ClientDist):
-    
-    def run(self):
-        print('\n\nBeginning build')
-        package_name = self.distribution.get_name()
-        
-        # Compiling
-        self.write_pyx_files()
-        print('Compiling files')
-        setup_result = run_setup('compile.py', script_args=['bdist_wheel'],
-                                 )
-            
-        # Cleaning
-        print('Cleaning')
+        self.write_wheelfile(distinfo_dir)
+
+        # Make the archive
+        if not os.path.exists(self.dist_dir):
+            os.makedirs(self.dist_dir)
+
+        wheel_path = os.path.join(self.dist_dir, archive_basename + '.whl')
+        with WheelFile(wheel_path, 'w', self.compression) as wf:
+            wf.write_files(archive_root)
+
+        # Add to 'Distribution.dist_files' so that the "upload" command works
+        getattr(self.distribution, 'dist_files', []).append(
+            ('bdist_wheel',
+              '{}.{}'.format(*sys.version_info[:2]),  # like 3.7
+              wheel_path))
+
         self.delete_compilation_files()
-
-        print('Client build finished, output is {}'.format(setup_result.dist_files))
+        if not self.keep_temp:
+            logger.info('removing %s', self.bdist_dir)
+            if not self.dry_run:
+                shutil.rmtree(self.bdist_dir, onerror=wheel.bdist_wheel.remove_readonly)
+    
     
 tag_re = re.compile(r'\btag: %s([0-9][^,]*)\b')
 version_re = re.compile('^Version: (.+)$', re.M)
@@ -465,23 +506,10 @@ setup(
                       'mypy_extensions', 'scipy', 'pyDOE',
                       'netifaces'],
     python_requires='>=3.7',
-    cmdclass = {'build_ext': build_ext, 'cdist': ClientDist,
+    cmdclass = {'build_ext': build_ext,
                 'cdist_wheel': ClientWheelDist},
     
     ext_modules = ext_modules,
 
 )
 
-# try:
-#     from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
-#     class bdist_wheel(_bdist_wheel):
-#         def finalize_options(self):
-#             _bdist_wheel.finalize_options(self)
-#             self.root_is_pure = False
-# except ImportError:
-#     bdist_wheel = None
-
-# setup(
-#     # ...
-#     cmdclass={'bdist_wheel': bdist_wheel},
-# )
