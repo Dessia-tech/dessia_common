@@ -20,7 +20,6 @@ from distutils import log as logger
 
 import hashlib
 import netifaces
-import pkg_resources
 
 import wheel.bdist_wheel
 from wheel.wheelfile import WheelFile
@@ -36,11 +35,6 @@ for file in protected_files:
     ext_modules.append(Extension(module,  [file_to_compile]))
     
 print('ext_modules', ext_modules)
-
-
-safe_name = pkg_resources.safe_name
-safe_version = pkg_resources.safe_version
-
 
 
 class ClientWheelDist(wheel.bdist_wheel.bdist_wheel):
@@ -365,14 +359,17 @@ class ClientWheelDist(wheel.bdist_wheel.bdist_wheel):
             wheel.bdist_wheel.safer_name(self.distribution.get_name()),
             wheel.bdist_wheel.safer_version(self.distribution.get_version()))
         distinfo_dir = os.path.join(self.bdist_dir, distinfo_dirname)
-        
-        
-        distdir = os.path.join(self.bdist_dir, 'dessia_common')
-        
+                
+        package_name = self.distribution.get_name()
+        distdir = os.path.join(self.bdist_dir, package_name)
+
         for root, dirs, files in os.walk(distdir):
             for file in files:
-                if file.endswith('_protected.py'):
-                    os.remove(os.path.join(root, file))
+                file_path = os.path.join(root, file)
+                rel_fp = os.path.join(package_name, os.path.relpath(file_path, distdir))
+                if rel_fp in protected_files:
+                    os.remove(file_path)
+                    
         
         self.egg2dist(self.egginfo_dir, distinfo_dir)
 
@@ -449,6 +446,12 @@ def version_from_git_describe(version):
             split_versions.append(suffix)
 
         return '.'.join(split_versions)
+
+
+def readme():
+    with open('README.md') as f:
+        return f.read()
+    
 
 def get_version():
     # Return the version if it has been injected into the file by git-archive
