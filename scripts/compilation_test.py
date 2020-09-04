@@ -4,7 +4,7 @@
 Compilation test
 """
 
-import sys
+import sysjso
 
 
 # =============================================================================
@@ -23,7 +23,8 @@ else:
 
 test_passed = license_should_be_valid
 try:
-    from dessia_common.core import jsonschema_from_annotation
+    from dessia_common.core import prettyname
+    prettyname('aa')
     print('No license error triggered')
 except RuntimeError:
     print('License error triggered')
