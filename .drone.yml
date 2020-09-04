@@ -23,14 +23,18 @@ steps:
   - git fetch --tags
   - python setup.py sdist
 
-- name: compile linux
+- name: compile linux test licence valid
   image: python:3.8
   commands:
   - pip install Cython netifaces
   - python compile.py cdist_wheel --exp-month=7 --exp-year=2029 --detect-macs
   - pip install client_dist/*.whl
   - python scripts/compilation_test.py test_valid_license
-  - rm -r client_dist/
+
+- name: compile linux test licence unvalid
+  image: python:3.8
+  commands:
+  - pip install Cython netifaces
   - python compile.py cdist_wheel --exp-month=7 --exp-year=2029 --macs=222222222122
   - pip install client_dist/*.whl
   - python scripts/compilation_test.py test_unvalid_license
