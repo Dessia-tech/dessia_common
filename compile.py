@@ -95,7 +95,7 @@ class ClientWheelDist(wheel.bdist_wheel.bdist_wheel):
         self.getnodes = None
         self.macs = None
         self.detect_macs = None
-        self.dist_dir = 'cdist_wheel'
+        self.dist_dir = 'client_dist'
 
     def finalize_options(self):
         """Post-process options."""
