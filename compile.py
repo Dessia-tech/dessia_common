@@ -1,35 +1,20 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-
-
+Compilation for client distributions
 """
-# from os import walk, remove
-# from os.path import isdir, join, exists
+
 import os
 import sys
 import re
-import tempfile
-from glob import glob
 from subprocess import CalledProcessError, check_output
-
 from setuptools import setup
-
 from Cython.Distutils import build_ext
-
-from distutils.core import run_setup
-from distutils.cmd import Command
 from distutils.extension import Extension
-from distutils.filelist import FileList
-from distutils import log
-from distutils.text_file import TextFile
-from distutils.errors import DistutilsTemplateError, DistutilsOptionError
 import time
 from datetime import timedelta
 import calendar
 import shutil
-from shutil import rmtree
-import tarfile
 
 from distutils import log as logger
 
@@ -386,7 +371,6 @@ class ClientWheelDist(wheel.bdist_wheel.bdist_wheel):
         
         for root, dirs, files in os.walk(distdir):
             for file in files:
-                print(file)
                 if file.endswith('_protected.py'):
                     os.remove(os.path.join(root, file))
         
@@ -508,7 +492,7 @@ setup(
     python_requires='>=3.7',
     cmdclass = {'build_ext': build_ext,
                 'cdist_wheel': ClientWheelDist},
-    
+
     ext_modules = ext_modules,
 
 )
