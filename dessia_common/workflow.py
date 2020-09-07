@@ -1387,7 +1387,7 @@ class Workflow(Block):
                 values[variable] = variable.default_value
                 activated_items[variable] = True
             else:
-                raise ValueError('Value {} has no value'.format(variable.name))
+                raise ValueError('Value {} of index {} in inputs has no value'.format(variable.name, index))
 
         something_activated = True
 
