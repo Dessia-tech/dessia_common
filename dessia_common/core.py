@@ -13,6 +13,7 @@ from copy import deepcopy
 import inspect
 import json
 from typing import List
+from mypy_extensions import TypedDict
 import traceback as tb
 
 from importlib import import_module
@@ -115,14 +116,14 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
             if value != other_value:
                 return False
         return True
-    
 
     def __hash__(self):
         if not self._generic_eq:
             return object.__hash__(self)
         hash_ = 0
         for key, value in self.__dict__.items():
-            if key not in set(self._non_eq_attributes + self._non_hash_attributes):
+            if key not in set(self._non_eq_attributes
+                              + self._non_hash_attributes):
                 if isinstance(value, list):
                     hash_ += list_hash(value)
                 elif isinstance(value, dict):
@@ -132,6 +133,12 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
                 else:
                     hash_ += hash(value)
         return int(hash_ % 1e5)
+
+    # def __getattr__(self, item):
+    #     try:
+    #         return enhanced_deep_attr(self, item)
+    #     except (AttributeError, TypeError, ValueError):
+    #         return self.__getattribute__(item)
 
     # def __getattribute__(self, name):
     #     if name in DEPRECATED_ATTRIBUTES:
@@ -292,17 +299,17 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
     def _display_angular(self):
         display = []
         if hasattr(self, 'babylon_data'):
-            display.append({'angular_component' : 'cad_viewer',
-                            'data' : self.babylon_data()})
+            display.append({'angular_component': 'cad_viewer',
+                            'data': self.babylon_data()})
         elif hasattr(self, 'volmdlr_primitives')\
         or (self.__class__.volmdlr_volume_model is not DessiaObject.volmdlr_volume_model):
             model = self.volmdlr_volume_model()
-            display.append({'angular_component' : 'cad_viewer',
-                            'data' : model.babylon_data()})
+            display.append({'angular_component': 'cad_viewer',
+                            'data': model.babylon_data()})
 
         if hasattr(self, 'plot_data'):
-            display.append({'angular_component' : 'plot_data',
-                            'data' : self.plot_data()})
+            display.append({'angular_component': 'plot_data',
+                            'data': self.plot_data()})
         return display
 
 
@@ -350,6 +357,12 @@ class ParameterSet(DessiaObject):
     def means(self):
         means = {k: sum(v)/len(v) for k, v in self.values.items()}
         return means
+
+
+class Filter(TypedDict):
+    attribute: str
+    operator: str
+    bound: float
 
 
 class Evolution(DessiaObject):
@@ -584,11 +597,11 @@ def serialize_sequence(seq):
     return serialized_sequence
 
 
-def get_python_class_from_class_name(class_name):
-    # TODO: add protection because this is arbitratry code evaluation!
-    module = class_name.rsplit('.', 1)[0]
-    exec('import ' + module)
-    return eval(class_name)
+def get_python_class_from_class_name(full_class_name):
+    module_name, class_name = full_class_name.rsplit('.', 1)
+    module = import_module(module_name)
+    class_ = getattr(module, class_name)
+    return class_
 
 
 def dict_to_object(dict_, class_=None):
@@ -765,6 +778,18 @@ def deserialize_typing(serialized_typing):
     raise NotImplementedError('{}'.format(serialized_typing))
 
 
+def serialize(deserialized_element):
+    if isinstance(deserialized_element, DessiaObject):
+        serialized = deserialized_element.to_dict()
+    elif isinstance(deserialized_element, dict):
+        serialized = serialize_dict(deserialized_element)
+    elif isinstance(deserialized_element, (list, tuple)):
+        serialized = serialize_sequence(deserialized_element)
+    else:
+        serialized = deserialized_element
+    return serialized
+
+
 def deserialize(serialized_element):
     if isinstance(serialized_element, dict):
         element = dict_to_object(serialized_element)
@@ -772,15 +797,92 @@ def deserialize(serialized_element):
         element = sequence_to_objects(serialized_element)
     else:
         element = serialized_element
-
     return element
 
 
-TYPES_FROM_STRING = {'unicode': str,
-                     'str': str,
-                     'float': float,
-                     'int': int,
-                     'bool': bool}
+def enhanced_deep_attr(obj, sequence):
+    """
+    Get deep attribute where Objects, Dicts and Lists
+    can be found in recursion.
+
+    :param obj: Parent object in which recursively find attribute
+                represented by sequence
+    :param sequence: List of strings and integers that represents
+                     path to deep attribute.
+    :return: Value of deep attribute
+    """
+    if isinstance(sequence, str):
+        # Sequence is a string and not a sequence of deep attributes
+        if '.' in sequence:
+            # Is deep attribute reference
+            sequence = deepattr_to_sequence(sequence)
+            return enhanced_deep_attr(obj, sequence)
+        # Is direct attribute
+        return enhanced_get_attr(obj, sequence)
+    # Get direct attrivute
+    subobj = enhanced_get_attr(obj, sequence[0])
+    if len(sequence) > 1:
+        # Recursively get deep attributes
+        subobj = enhanced_deep_attr(subobj, sequence[1:])
+    return subobj
+
+
+def enhanced_get_attr(obj, attribute):
+    """
+    Safely get attribute in obj.
+    Obj can be of Object, Dict, or List type
+
+    :param obj: Parent object in which find given attribute
+    :param attribute: String or integer that represents
+                      name or index of attribute
+    :return: Value of attribute
+    """
+    try:
+        return getattr(obj, attribute)
+    except (TypeError, AttributeError):
+        return obj[attribute]
+        # TODO We might try/except last statement
+
+
+def deepattr_to_sequence(deepattr: str):
+    sequence = deepattr.split('.')
+    healed_sequence = []
+    for i, attribute in enumerate(sequence):
+        try:
+            healed_sequence.append(int(attribute))
+        except ValueError:
+            healed_sequence.append(attribute)
+    return healed_sequence
+
+
+def sequence_to_deepattr(sequence):
+    healed_sequence = [str(attr) if isinstance(attr, int) else attr
+                       for attr in sequence]
+    return '.'.join(healed_sequence)
+
+
+def is_bounded(filter_: Filter, value:float):
+    bounded = True
+    operator = filter_['operator']
+    bound = filter_['bound']
+
+    if operator == 'lte' and value > bound:
+        bounded = False
+    if operator == 'gte' and value < bound:
+        bounded = False
+
+    if operator == 'lt' and value >= bound:
+        bounded = False
+    if operator == 'gt' and value <= bound:
+        bounded = False
+
+    if operator == 'eq' and value != bound:
+        bounded = False
+    return bounded
+
+
+TYPES_FROM_STRING = {'unicode': str, 'str': str,
+                     'float': float, 'int': int, 'bool': bool}
 
 
 def type_from_annotation(type_, module):

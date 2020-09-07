@@ -6,6 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Fixed
+- Changed workflow to workflow in to_dict/dict_to_object
+- Support for new data types
+- Added mypy_extensions to setup.py
+
+### Added
+- Documentation on blocks
+_ Rerun method for WorkflowRuns & prerequisite (input_values in __init__ et method_jsonschema)
+- Method dict attribute
+- Generic serialize function
+- ParallelPlot block
+- Memorize attribute in Variables and intermediate variables values in workflow_run
+- Non Standalone object default value in default dict support
+- Demo classes for forms data format
+- Add unit_tests.py script + exec in drone
+- Recursive/complex deepattr function
+
+### Changed
+- Filter block doesn't write _display_angular anymore. See ParallelPlot
+- Catalog _dispplay_angular to conform to ParallelPlot Block
 
 ## [0.3.8]
 ### Added

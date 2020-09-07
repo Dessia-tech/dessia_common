@@ -84,7 +84,7 @@ demo_workflow.plot_graph()
 
 input_values = {0: 5}
 
-demo_workflow_run = demo_workflow.run(input_values, verbose=True)
+# demo_workflow_run = demo_workflow.run(input_values, verbose=True)
 
 # demo_workflow_dict = demo_workflow.to_dict()
 # import json
