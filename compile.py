@@ -101,7 +101,13 @@ class ClientWheelDist(wheel.bdist_wheel.bdist_wheel):
             
             macs = []
             if self.macs is not None:
+                self.macs = self.macs.replace('[', '')
+                self.macs = self.macs.replace(']', '')
+                self.macs = self.macs.replace(':', '')
+
                 for mac in self.macs.split(','):
+                    if len(mac) != 12:
+                        raise ValueError('A mac address must be 12 digits long, got: {} instead'.format(mac))
                     macs.append(mac)
                 self.macs = macs        
                 print('\nCompiling for macs: {}'.format(self.macs))
@@ -478,25 +484,23 @@ def get_version():
     # print('version', version)
     return version
 
-
-setup(
-    name = 'dessia_common',
-    version=get_version(),
-    description="Common tools for DessIA software",
-    long_description='',
-    keywords='',
-    url='',
-    author='Steven Masfaraud',
-    author_email='masfaraud@dessia.tech',
-    packages=['dessia_common'],
-    install_requires=['typeguard', 'networkx', 'numpy', 'pandas', 'jinja2',
-                      'mypy_extensions', 'scipy', 'pyDOE',
-                      'netifaces'],
-    python_requires='>=3.7',
-    cmdclass = {'build_ext': build_ext,
-                'cdist_wheel': ClientWheelDist},
-
-    ext_modules = ext_modules,
+## WARNING: THIS must follow setup.py !!!
+setup(name='dessia_common',
+      version=get_version(),
+      description="Common tools for DessIA software",
+      long_description=readme(),
+      keywords=['Dessia', 'SDK', 'engineering'],
+      url='https://github.com/Dessia-tech/dessia-common',
+      author='Steven Masfaraud',
+      author_email='masfaraud@dessia.tech',
+      packages=['dessia_common'],
+      install_requires=['typeguard', 'networkx', 'numpy', 'pandas',
+                        'jinja2==2.11.1',
+                        'mypy_extensions', 'scipy', 'pyDOE'],
+      python_requires='>=3.7',
+      cmdclass = {'build_ext': build_ext,
+                  'cdist_wheel': ClientWheelDist},
+      ext_modules = ext_modules,
 
 )
 

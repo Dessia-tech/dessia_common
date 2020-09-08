@@ -96,11 +96,10 @@ def get_version():
         with open(join(d, 'PKG-INFO')) as f:
             version = version_re.search(f.read()).group(1)
 
-    # print('version', version)
     return version
 
 
-#import powertransmission
+
 setup(name='dessia_common',
       version=get_version(),
       description="Common tools for DessIA software",
