@@ -1720,26 +1720,38 @@ class WorkflowRun(dc.DessiaObject):
                 "editable": False,
                 "order": 1
             },
+            'input_values': {
+                'type': 'object',
+                'order': 2,
+                'editable': False,
+                'title': 'Input Values',
+                'patternProperties': {
+                    '.*': {
+                        'type': "object",
+                        'classes': '*'
+                    }
+                }
+            },
             'start_time': {
                 "type": "number",
                 "title": "Start Time",
                 "editable": False,
                 "description": "Start time of simulation",
-                "order": 2
+                "order": 3
             },
             'end_time': {
                 "type": "number",
                 "title": "End Time",
                 "editable": False,
                 "description": "End time of simulation",
-                "order": 3
+                "order": 4
             },
             'log': {
                 "type": "string",
                 "title": "Log",
                 "editable": False,
                 "description": "Log",
-                "order": 4
+                "order": 5
             }
         }
     }
@@ -1748,8 +1760,8 @@ class WorkflowRun(dc.DessiaObject):
                  start_time, end_time, log, name=''):
         self.workflow = workflow
         self.input_values = input_values
-        self.variables_values = variables_values
         self.output_value = output_value
+        self.variables_values = variables_values
         self.start_time = start_time
         self.end_time = end_time
         self.execution_time = end_time - start_time
@@ -1765,12 +1777,6 @@ class WorkflowRun(dc.DessiaObject):
             equal_output = all([v == other_v for v, other_v
                                 in zip(self.output_value,
                                        other_workflow_run.output_value)])
-        # if hasattr(self.output_value, '__iter__'):
-        #     equal_output = (hasattr(self.output_value, '__iter__')
-        #                     and all([v == other_v
-        #                              for v, other_v
-        #                              in zip(self.output_value,
-        #                                     other_workflow_run.output_value)]))
         else:
             equal_output = self.output_value == other_workflow_run.output_value
         return self.workflow == other_workflow_run.workflow and equal_output
@@ -1778,8 +1784,6 @@ class WorkflowRun(dc.DessiaObject):
     def __hash__(self):
         # TODO : Should we add input_values and variables values in test ?
         if dc.is_sequence(self.output_value):
-        # if hasattr(self.output_value, '__iter__'):
-            # hash_output = int(sum([hash(v) for v in self.output_value]) % 10e5)
             hash_output = dc.list_hash(self.output_value)
         else:
             hash_output = hash(self.output_value)
