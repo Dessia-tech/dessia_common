@@ -44,11 +44,10 @@ class ClientWheelDist(wheel.bdist_wheel.bdist_wheel):
         ('exp-year=', None, 'Year of license expiration'),
         ('exp-month=', None, 'Month of year of license expiration'),
         ('exp-day=', None, 'Day of month of license expiration'),
-        ('formats=', None,
-         "formats for source distribution (comma-separated list)"),
         ('getnodes=', None, 'UUID given by getnode (comma-separated list)'),
         ('macs=', None, 'MACS of machine (comma-separated list)'),
-        ('detect-macs', None, 'using this machine macs')
+        ('detect-macs', None, 'using this machine macs'),
+        ('delete-pyx=', None, 'delete compilation files')
         ]
     
     addresses_determination_lines = ['import netifaces\n',
@@ -90,6 +89,7 @@ class ClientWheelDist(wheel.bdist_wheel.bdist_wheel):
         self.macs = None
         self.detect_macs = None
         self.dist_dir = 'client_dist'
+        self.delete_pyx = True
 
     def finalize_options(self):
         """Post-process options."""
@@ -154,6 +154,8 @@ class ClientWheelDist(wheel.bdist_wheel.bdist_wheel):
                 raise NotImplementedError('Unsupported file type: {}'.format(s))
             formats.append(s)
         self.formats = formats
+        
+        self.delete_pyx = self.delete_pyx == 'True'
 
         
     def protection_lines(self):
@@ -395,7 +397,9 @@ class ClientWheelDist(wheel.bdist_wheel.bdist_wheel):
               '{}.{}'.format(*sys.version_info[:2]),  # like 3.7
               wheel_path))
 
-        self.delete_compilation_files()
+        if self.delete_pyx:
+            self.delete_compilation_files()
+            
         if not self.keep_temp:
             logger.info('removing %s', self.bdist_dir)
             if not self.dry_run:
