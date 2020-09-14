@@ -486,9 +486,7 @@ class DessiaObject:
         if method_name is not None and method_jsonschema is None:
             method_jsonschema = self._method_jsonschemas[method_name]
 
-        print('default dict infos: {} {}'.format(default_dict.__module__,
-                                                 default_dict.__name__))
-        dict_ = default_dict(jsonschema=method_jsonschema)
+        dict_ = default_dict(method_jsonschema)
         return dict_
     
 
