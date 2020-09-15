@@ -1459,7 +1459,7 @@ class Workflow(Block):
             name = self.name+' run'
         return WorkflowRun(workflow=self, input_values=input_variables_values,
                            output_value=output_value,
-                           variables_values=variables_values,
+                           # variables_values=variables_values,
                            start_time=start_time, end_time=end_time,
                            log=log, name=name)
 
@@ -1714,7 +1714,7 @@ class WorkflowRun(dc.DessiaObject):
             },
             'output_value': {
                 "type": "object",
-                "classes": "*",
+                "classes": "Any",
                 "title": "Values",
                 "description": "Input and output values",
                 "editable": False,
@@ -1732,36 +1732,48 @@ class WorkflowRun(dc.DessiaObject):
                     }
                 }
             },
+            # 'variables_values': {
+            #     'type': 'object',
+            #     'order': 3,
+            #     'editable': False,
+            #     'title': 'Variables Values',
+            #     'patternProperties': {
+            #         '.*': {
+            #             'type': "object",
+            #             'classes': '*'
+            #         }
+            #     }
+            # },
             'start_time': {
                 "type": "number",
                 "title": "Start Time",
                 "editable": False,
                 "description": "Start time of simulation",
-                "order": 3
+                "order": 4
             },
             'end_time': {
                 "type": "number",
                 "title": "End Time",
                 "editable": False,
                 "description": "End time of simulation",
-                "order": 4
+                "order": 5
             },
             'log': {
                 "type": "string",
                 "title": "Log",
                 "editable": False,
                 "description": "Log",
-                "order": 5
+                "order": 6
             }
         }
     }
 
-    def __init__(self, workflow, input_values, output_value, variables_values,
+    def __init__(self, workflow, input_values, output_value, # variables_values,
                  start_time, end_time, log, name=''):
         self.workflow = workflow
         self.input_values = input_values
         self.output_value = output_value
-        self.variables_values = variables_values
+        # self.variables_values = variables_values
         self.start_time = start_time
         self.end_time = end_time
         self.execution_time = end_time - start_time
@@ -1813,35 +1825,35 @@ class WorkflowRun(dc.DessiaObject):
         input_values = {int(i): dc.deserialize(v)
                         for i, v in dict_['input_values'].items()}
 
-        for i, value in dict_['variables_values'].items():
-            # TODO : Is this a quickfix ? Locally, indices are tuple,
-            # TODO : from front they are strings
-            if isinstance(i, tuple):
-                index = i
-            elif isinstance(i, str):
-                index = literal_eval(i)
-            else:
-                msg = 'Type {} for index {}'.format(type(i), i)
-                msg += ' is not expected type (Tuple or String).'
-                raise NotImplementedError(msg)
-            key = workflow.variable_from_index(index=index, blocks=blocks,
-                                               nonblock_variables=nbv)
-            variables_values[key] = dc.deserialize(value)
+        # for i, value in dict_['variables_values'].items():
+        #     # TODO : Is this a quickfix ? Locally, indices are tuple,
+        #     # TODO : from front they are strings
+        #     if isinstance(i, tuple):
+        #         index = i
+        #     elif isinstance(i, str):
+        #         index = literal_eval(i)
+        #     else:
+        #         msg = 'Type {} for index {}'.format(type(i), i)
+        #         msg += ' is not expected type (Tuple or String).'
+        #         raise NotImplementedError(msg)
+        #     key = workflow.variable_from_index(index=index, blocks=blocks,
+        #                                        nonblock_variables=nbv)
+        #     variables_values[key] = dc.deserialize(value)
         return cls(workflow=workflow, output_value=output_value,
                    input_values=input_values,
-                   variables_values=variables_values,
+                   # variables_values=variables_values,
                    start_time=dict_['start_time'], end_time=dict_['end_time'],
                    log=dict_['log'], name=dict_['name'])
 
     def to_dict(self):
         input_values = {i: dc.serialize(v)
                         for i, v in self.input_values.items()}
-        variables_values = {self.workflow.variable_indices(i): dc.serialize(v)
-                            for i, v in self.variables_values.items()}
+        # variables_values = {self.workflow.variable_indices(i): dc.serialize(v)
+        #                     for i, v in self.variables_values.items()}
         dict_ = dc.DessiaObject.base_dict(self)
         dict_.update({'workflow': self.workflow.to_dict(),
                       'input_values': input_values,
-                      'variables_values': variables_values,
+                      # 'variables_values': variables_values,
                       'start_time': self.start_time,
                       'end_time': self.end_time,
                       'execution_time': self.execution_time,
