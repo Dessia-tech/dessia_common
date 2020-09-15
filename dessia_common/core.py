@@ -813,17 +813,19 @@ def enhanced_deep_attr(obj, sequence):
     """
     if isinstance(sequence, str):
         # Sequence is a string and not a sequence of deep attributes
-        if '.' in sequence:
+        if '/' in sequence:
+            print(sequence)
             # Is deep attribute reference
             sequence = deepattr_to_sequence(sequence)
-            return enhanced_deep_attr(obj, sequence)
+            return enhanced_deep_attr(obj=obj, sequence=sequence)
         # Is direct attribute
-        return enhanced_get_attr(obj, sequence)
+        return enhanced_get_attr(obj=obj, attribute=sequence)
+
     # Get direct attrivute
-    subobj = enhanced_get_attr(obj, sequence[0])
+    subobj = enhanced_get_attr(obj=obj, attribute=sequence[0])
     if len(sequence) > 1:
         # Recursively get deep attributes
-        subobj = enhanced_deep_attr(subobj, sequence[1:])
+        subobj = enhanced_deep_attr(obj=subobj, sequence=sequence[1:])
     return subobj
 
 
@@ -844,8 +846,31 @@ def enhanced_get_attr(obj, attribute):
         # TODO We might try/except last statement
 
 
+def concatenate_attributes(prefix, suffix, type_: str = 'str'):
+    wrong_prefix_format = 'Attribute prefix is wrongly formatted.'
+    wrong_prefix_format += 'Is of type {}. Should be str or list'
+    if type_ == 'str':
+        if isinstance(prefix, str):
+            return prefix + '/' + str(suffix)
+        elif is_sequence(prefix):
+            return sequence_to_deepattr(prefix) + '/' + str(suffix)
+        else:
+            raise TypeError(wrong_prefix_format.format(type(prefix)))
+    elif type_ == 'sequence':
+        if isinstance(prefix, str):
+            return [prefix, suffix]
+        elif is_sequence(prefix):
+            return prefix + [suffix]
+        else:
+            raise TypeError(wrong_prefix_format.format(type(prefix)))
+    else:
+        wrong_concat_type = 'Type {} for concatenation is not supported.'
+        wrong_concat_type += 'Should be "str" or "sequence"'
+        raise ValueError(wrong_concat_type.format(type_))
+
+
 def deepattr_to_sequence(deepattr: str):
-    sequence = deepattr.split('.')
+    sequence = deepattr.split('/')
     healed_sequence = []
     for i, attribute in enumerate(sequence):
         try:
@@ -858,10 +883,10 @@ def deepattr_to_sequence(deepattr: str):
 def sequence_to_deepattr(sequence):
     healed_sequence = [str(attr) if isinstance(attr, int) else attr
                        for attr in sequence]
-    return '.'.join(healed_sequence)
+    return '/'.join(healed_sequence)
 
 
-def is_bounded(filter_: Filter, value:float):
+def is_bounded(filter_: Filter, value: float):
     bounded = True
     operator = filter_['operator']
     bound = filter_['bound']
