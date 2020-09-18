@@ -19,6 +19,11 @@ subobject_list = [EmbeddedSubobject(), EmbeddedSubobject(),
 builtin_list = [1, 2, 3, 4, 5]
 union_object = EnhancedStandaloneSubobject(floatarg=333.333, boolarg=True)
 
+inheriting_list = [EnhancedStandaloneSubobject(floatarg=-7516.15,
+                                               boolarg=True),
+                   InheritingStandaloneSubobject(floatarg=1561.57,
+                                                 strarg='Subclass')]
+
 standalone_object = StandaloneObject(standalone_subobject=standalone_subobject,
                                      embedded_subobject=embedded_subobject,
                                      dynamic_dict=dynamic_dict,
@@ -27,7 +32,8 @@ standalone_object = StandaloneObject(standalone_subobject=standalone_subobject,
                                      strarg=strarg, object_list=object_list,
                                      subobject_list=subobject_list,
                                      builtin_list=builtin_list,
-                                     union_arg=union_object)
+                                     union_arg=union_object,
+                                     inheritance_list=inheriting_list)
 
 # Test jsonschema
 jsonschema = {
@@ -44,7 +50,8 @@ jsonschema = {
                  'object_list',
                  'subobject_list',
                  'builtin_list',
-                 'union_arg'],
+                 'union_arg',
+                 'inheritance_list'],
     'properties': {
         'standalone_subobject': {
             'type': 'object',
@@ -75,21 +82,18 @@ jsonschema = {
             'properties': {
                 'name': {
                     'type': 'string',
-                    'datatype': 'builtin',
                     'title': 'Name',
                     'editable': True,
                     'order': 0
                 },
                 'value': {
                     'type': 'number',
-                    'datatype': 'builtin',
                     'title': 'Value',
                     'editable': True,
                     'order': 1
                 },
                 'is_valid': {
                     'type': 'boolean',
-                    'datatype': 'builtin',
                     'title': 'Is Valid',
                     'editable': True,
                     'order': 2
@@ -110,20 +114,17 @@ jsonschema = {
         'tuple_arg': {
             'additionalItems': False,
             'type': 'array',
-            'datatype': 'heterogenous_list',
             'items': [{'type': 'string'},
                       {'type': 'number'}]
         },
         'intarg': {
             'type': 'number',
-            'datatype': 'builtin',
             'title': 'Intarg',
             'editable': True,
             'order': 5
         },
         'strarg': {
             'type': 'string',
-            'datatype': 'builtin',
             'title': 'Strarg',
             'editable': True,
             'order': 6
@@ -158,7 +159,6 @@ jsonschema = {
             'title': 'Builtin List',
             'items': {
                 'type': 'number',
-                'datatype': 'builtin',
                 'title': 'Builtin List',
                 'editable': True,
                 'order': 0
@@ -166,19 +166,27 @@ jsonschema = {
         },
         'union_arg': {
             'type': 'object',
-            'datatype': 'union',
             'classes': ['dessia_common.forms.StandaloneSubobject',
                         'dessia_common.forms.EnhancedStandaloneSubobject'],
             'title': 'Union Arg',
             'editable': True,
             'order': 10
         },
+        'inheritance_list': {
+            'type': 'array',
+            'editable': True,
+            'title': 'Inheritance List',
+            'items': {'type': 'object',
+                      'subclass_of': 'dessia_common.forms.StandaloneSubobject',
+                      'title': 'Inheritance List',
+                      'editable': True,
+                      'order': 0}
+        },
         'name': {
             'type': 'string',
-            'datatype': 'builtin',
             'title': 'Name',
             'editable': True,
-            'order': 11,
+            'order': 12,
             'default_value': 'Standalone Object Demo'
         }
     },
@@ -187,7 +195,16 @@ jsonschema = {
 }
 
 # Test deep_attr
-assert standalone_object.jsonschema() == jsonschema
+computed_jsonschema = standalone_object.jsonschema()
+try:
+    assert computed_jsonschema == jsonschema
+except AssertionError as err:
+    for key, value in computed_jsonschema['properties'].items():
+        if value != jsonschema['properties'][key]:
+            print('==', key, 'property failing ==')
+            print(value)
+            print(jsonschema['properties'][key])
+            raise err
 
 deepfloat = enhanced_deep_attr(obj=standalone_object,
                                sequence=['standalone_subobject', 'floatarg'])
