@@ -200,9 +200,9 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
                                    'order': order}
     elif hasattr(value, '__origin__') and value.__origin__ == list:
         # Homogenous sequences
-        jsonschema_element[key] = jsonschema_sequence_recursion(value=value,
-                                                                title=title,
-                                                                editable=editable)
+        jsonschema_element[key] = jsonschema_sequence_recursion(
+            value=value, order=order, title=title, editable=editable
+        )
     elif hasattr(value, '__origin__') and value.__origin__ == tuple:
         # Heterogenous sequences (tuples)
         items = []
@@ -248,17 +248,17 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
     return jsonschema_element
 
 
-def jsonschema_sequence_recursion(value, title=None, editable=False):
+def jsonschema_sequence_recursion(value, order: int, title: str = None,
+                                  editable: bool = False):
     if title is None:
         title = 'Items'
-    jsonschema_element = {'type': 'array',
-                          'editable': editable,
-                          'title': title}
+    jsonschema_element = {'type': 'array', 'order': order,
+                          'editable': editable, 'title': title}
 
     items_type = value.__args__[0]
     if hasattr(items_type, '__origin__') and items_type.__origin__ == list:
-        jss = jsonschema_sequence_recursion(value=items_type, title=title,
-                                            editable=editable)
+        jss = jsonschema_sequence_recursion(value=items_type, order=0,
+                                            title=title, editable=editable)
         jsonschema_element['items'] = jss
     else:
         annotation = ('items', items_type)
@@ -290,7 +290,7 @@ def static_dict_jsonschema(typed_dict, title=None):
     # Every value is required in a StaticDict
     jsonschema_element['required'] = list(typed_dict.__annotations__.keys())
 
-    # !!! Not actually ordered !
+    # !!! TODO Not actually ordered !
     for i, ann in enumerate(typed_dict.__annotations__.items()):
         jss = jsonschema_from_annotation(annotation=ann,
                                          jsonschema_element=jss_properties,

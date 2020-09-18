@@ -133,6 +133,7 @@ jsonschema = {
             'type': 'array',
             'editable': True,
             'title': 'Object List',
+            'order': 7,
             'items': {
                 'type': 'object',
                 'title': 'Object List',
@@ -145,6 +146,7 @@ jsonschema = {
             'type': 'array',
             'editable': True,
             'title': 'Subobject List',
+            'order': 8,
             'items': {
                 'type': 'object',
                 'title': 'Subobject List',
@@ -157,6 +159,7 @@ jsonschema = {
             'type': 'array',
             'editable': True,
             'title': 'Builtin List',
+            'order': 9,
             'items': {
                 'type': 'number',
                 'title': 'Builtin List',
@@ -176,6 +179,7 @@ jsonschema = {
             'type': 'array',
             'editable': True,
             'title': 'Inheritance List',
+            'order': 11,
             'items': {'type': 'object',
                       'subclass_of': 'dessia_common.forms.StandaloneSubobject',
                       'title': 'Inheritance List',
