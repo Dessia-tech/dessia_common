@@ -814,7 +814,6 @@ def enhanced_deep_attr(obj, sequence):
     if isinstance(sequence, str):
         # Sequence is a string and not a sequence of deep attributes
         if '/' in sequence:
-            print(sequence)
             # Is deep attribute reference
             sequence = deepattr_to_sequence(sequence)
             return enhanced_deep_attr(obj=obj, sequence=sequence)

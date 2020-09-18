@@ -1728,7 +1728,7 @@ class WorkflowRun(dc.DessiaObject):
                 'patternProperties': {
                     '.*': {
                         'type': "object",
-                        'classes': '*'
+                        'classes': 'Any'
                     }
                 }
             },

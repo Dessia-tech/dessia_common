@@ -1,5 +1,6 @@
 from dessia_common.forms import StandaloneSubobject, StandaloneObject,\
-    EmbeddedSubobject, EnhancedStandaloneSubobject
+    EmbeddedSubobject, EnhancedStandaloneSubobject,\
+    InheritingStandaloneSubobject
 
 standalone_subobject = StandaloneSubobject(floatarg=2.3)
 embedded_subobject = EmbeddedSubobject(name="ES0")
@@ -13,6 +14,10 @@ tuple_arg = ('tuple', 120)
 sublist_ss = StandaloneSubobject(floatarg=-568.1)
 sublist_es = EmbeddedSubobject()
 enhanced_ss = EnhancedStandaloneSubobject(floatarg=-568.1, boolarg=False)
+inheriting_list = [EnhancedStandaloneSubobject(floatarg=-7516.15,
+                                               boolarg=True),
+                   InheritingStandaloneSubobject(floatarg=1561.57,
+                                                 strarg='Subclass')]
 
 standalone_object = StandaloneObject(standalone_subobject=standalone_subobject,
                                      embedded_subobject=embedded_subobject,
@@ -23,4 +28,5 @@ standalone_object = StandaloneObject(standalone_subobject=standalone_subobject,
                                      object_list=[sublist_ss],
                                      subobject_list=[sublist_es],
                                      builtin_list=[0, 1, 2, 3],
-                                     union_arg=enhanced_ss)
+                                     union_arg=enhanced_ss,
+                                     inheritance_list=inheriting_list)
