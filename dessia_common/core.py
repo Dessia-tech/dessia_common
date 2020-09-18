@@ -310,6 +310,11 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
         if hasattr(self, 'plot_data'):
             display.append({'angular_component': 'plot_data',
                             'data': self.plot_data()})
+        if hasattr(self, 'to_markdown'):
+            display.append({'angular_component': 'markdown',
+                            'data': self.to_markdown()})
+
+            
         return display
 
 
