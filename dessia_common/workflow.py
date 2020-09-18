@@ -1367,7 +1367,7 @@ class Workflow(Block):
         activated_items.update({b: False for b in self.blocks})
 
         values = {}
-        variables_values = {}
+        # variables_values = {}
         # Imposed variables values activation
         for variable, value in self.imposed_variable_values.items():
             # Type checking
@@ -1429,9 +1429,9 @@ class Workflow(Block):
                                 print(log_line)
                         output_values = block.evaluate({i: values[i]
                                                         for i in block.inputs})
-                        for input_ in block.inputs:
-                            if input_.memorize:
-                                variables_values[input_] = values[input_]
+                        # for input_ in block.inputs:
+                            # if input_.memorize:
+                            #     variables_values[input_] = values[input_]
                         # Updating progress
                         if progress_callback is not None:
                             progress += 1/len(self.blocks)
@@ -1439,8 +1439,8 @@ class Workflow(Block):
                             
                         # Unpacking result of evaluation
                         for output, output_value in zip(block.outputs, output_values):
-                            if output.memorize:
-                                variables_values[output] = output_value
+                            # if output.memorize:
+                            #     variables_values[output] = output_value
                             values[output] = output_value
                             activated_items[output] = True
 
@@ -1803,11 +1803,11 @@ class WorkflowRun(dc.DessiaObject):
 
     def _display_angular(self):
         d_blocks = [b for b in self.workflow.blocks if hasattr(b, '_display')]
-        sorted_d_blocks = sorted(d_blocks, key=lambda b: b.order)
+        # sorted_d_blocks = sorted(d_blocks, key=lambda b: b.order)
         displays = self.workflow._display_angular()
-        for block in sorted_d_blocks:
-            display = block._display(self.variables_values)
-            displays.extend(display)
+        # for block in sorted_d_blocks:
+        #     display = block._display(self.variables_values)
+        #     displays.extend(display)
         return displays
 
     @classmethod
@@ -1820,7 +1820,7 @@ class WorkflowRun(dc.DessiaObject):
 
         blocks = workflow.blocks
         nbv = workflow.nonblock_variables
-        variables_values = {}
+        # variables_values = {}
 
         input_values = {int(i): dc.deserialize(v)
                         for i, v in dict_['input_values'].items()}
