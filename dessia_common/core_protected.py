@@ -14,6 +14,7 @@ try:
 except ImportError:
     from mypy_extensions import TypedDict  # <=3.7
 import dessia_common as dc
+import dessia_common.typings as dt
 
 
 class DessiaObject:
@@ -189,28 +190,27 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
     if value in TYPING_EQUIVALENCES.keys():
         # Python Built-in type
         jsonschema_element[key] = {'type': TYPING_EQUIVALENCES[value],
-                                   'datatype': 'builtin', 'title': title,
-                                   'editable': editable, 'order': order}
+                                   'title': title, 'editable': editable,
+                                   'order': order}
     elif hasattr(value, '__origin__') and value.__origin__ == Union:
         # Types union
         classnames = [a.__module__ + '.' + a.__name__ for a in value.__args__]
-        jsonschema_element[key] = {'type': 'object', 'datatype': 'union',
-                                   'classes': classnames, 'title': title,
-                                   'editable': editable, 'order': order}
-    elif hasattr(value, '_name') and value._name in SEQUENCE_TYPINGS:
+        jsonschema_element[key] = {'type': 'object', 'classes': classnames,
+                                   'title': title, 'editable': editable,
+                                   'order': order}
+    elif hasattr(value, '__origin') and value.__origin__ == list:
         # Homogenous sequences
         jsonschema_element[key] = jsonschema_sequence_recursion(value=value,
                                                                 title=title,
                                                                 editable=editable)
-    elif hasattr(value, '_name') and value._name == 'Tuple':
+    elif hasattr(value, '__origin__') and value.__origin__ == tuple:
         # Heterogenous sequences (tuples)
         items = []
         for type_ in value.__args__:
             items.append({'type': TYPING_EQUIVALENCES[type_]})
-        jsonschema_element[key] = {'additionalItems': False, 'type': 'array',
-                                   'datatype': 'heterogenous_list',
-                                   'items': items}
-    elif hasattr(value, '_name') and value._name == 'Dict':
+        jsonschema_element[key] = {'additionalItems': False,
+                                   'type': 'array', 'items': items}
+    elif hasattr(value, '__origin__') and value.__origin__ == dict:
         # Dynamially created dict structure
         key_type, value_type = value.__args__
         if key_type != str:
@@ -227,6 +227,11 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
                 }
             }
         }
+    elif hasattr(value, '__origin__') and value.__origin__ == dt.Subclass:
+        classnames = [a.__module__ + '.' + a.__name__ for a in value.__args__]
+        jsonschema_element[key] = {'type': 'object', 'subclass_of': classnames,
+                                   'title': title, 'editable': editable,
+                                   'order': order}
     else:
         classname = value.__module__ + '.' + value.__name__
         if issubclass(value, DessiaObject):
