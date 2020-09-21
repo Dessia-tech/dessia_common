@@ -134,22 +134,6 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
                     hash_ += hash(value)
         return int(hash_ % 1e5)
 
-    # def __getattr__(self, item):
-    #     try:
-    #         return enhanced_deep_attr(self, item)
-    #     except (AttributeError, TypeError, ValueError):
-    #         return self.__getattribute__(item)
-
-    # def __getattribute__(self, name):
-    #     if name in DEPRECATED_ATTRIBUTES:
-    #         deprecation_warning(name, 'Attribute', DEPRECATED_ATTRIBUTES[name])
-    #     return object.__getattribute__(self, name)
-
-    # def __setattribute__(self, name, value):
-    #     if name in DEPRECATED_ATTRIBUTES:
-    #         deprecation_warning(name, 'Attribute', DEPRECATED_ATTRIBUTES[name])
-    #     return object.__setattribute__(self, name, value)
-
     @property
     def full_classname(self):
         return full_classname(self)
