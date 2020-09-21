@@ -675,9 +675,9 @@ class ParallelPlot(Block):
     def equivalent_hash(self):
         return sum([len(a) for a in self.attributes]) + self.order
 
-    def _display(self, variables_values):
-        objects = variables_values[self.inputs[0]]
-        pareto_settings = variables_values[self.inputs[1]]
+    def _display(self, local_values):
+        objects = local_values[self.inputs[0]]
+        pareto_settings = local_values[self.inputs[1]]
         array = []
         for object_ in objects:
             line = []
@@ -729,8 +729,8 @@ class Display(Block):
     def equivalent_hash(self):
         return self.order
 
-    def _display(self, variables_values):
-        object_ = variables_values[self.inputs[0]]
+    def _display(self, local_values):
+        object_ = local_values[self.inputs[0]]
         displays = object_._display_angular()
         return displays
 
@@ -1367,7 +1367,7 @@ class Workflow(Block):
         activated_items.update({b: False for b in self.blocks})
 
         values = {}
-        # variables_values = {}
+        variables_values = {}
         # Imposed variables values activation
         for variable, value in self.imposed_variable_values.items():
             # Type checking
@@ -1429,9 +1429,10 @@ class Workflow(Block):
                                 print(log_line)
                         output_values = block.evaluate({i: values[i]
                                                         for i in block.inputs})
-                        # for input_ in block.inputs:
-                            # if input_.memorize:
-                            #     variables_values[input_] = values[input_]
+                        for input_ in block.inputs:
+                            if input_.memorize:
+                                indices = str(self.variable_indices(input_))
+                                variables_values[indices] = values[input_]
                         # Updating progress
                         if progress_callback is not None:
                             progress += 1/len(self.blocks)
@@ -1439,8 +1440,9 @@ class Workflow(Block):
                             
                         # Unpacking result of evaluation
                         for output, output_value in zip(block.outputs, output_values):
-                            # if output.memorize:
-                            #     variables_values[output] = output_value
+                            if output.memorize:
+                                indices = str(self.variable_indices(output))
+                                variables_values[indices] = output_value
                             values[output] = output_value
                             activated_items[output] = True
 
@@ -1459,7 +1461,7 @@ class Workflow(Block):
             name = self.name+' run'
         return WorkflowRun(workflow=self, input_values=input_variables_values,
                            output_value=output_value,
-                           # variables_values=variables_values,
+                           variables_values=variables_values,
                            start_time=start_time, end_time=end_time,
                            log=log, name=name)
 
@@ -1556,31 +1558,6 @@ class Workflow(Block):
                      'nonblock_variables': nonblock_variables,
                      'edges': edges})
         return data
-
-
-    # def plot_mxgraph(self):
-    #     env = Environment(loader=PackageLoader('dessia_common', 'templates'),
-    #                       autoescape=select_autoescape(['html', 'xml']))
-
-
-    #     template = env.get_template('workflow.html')
-
-    #     mx_path = pkg_resources.resource_filename(pkg_resources.Requirement('dessia_common'),
-    #                                               'dessia_common/templates/mxgraph')
-
-    #     nodes, edges = self.mxgraph_data()
-    #     options = {}
-    #     rendered_template = template.render(mx_path=mx_path,
-    #                                         nodes=nodes,
-    #                                         edges=edges,
-    #                                         options=options)
-
-    #     temp_file = tempfile.mkstemp(suffix='.html')[1]
-
-    #     with open(temp_file, 'wb') as file:
-    #         file.write(rendered_template.encode('utf-8'))
-
-    #     webbrowser.open('file://' + temp_file)
 
     def plot_jointjs(self):
         env = Environment(loader=PackageLoader('dessia_common', 'templates'),
@@ -1728,22 +1705,22 @@ class WorkflowRun(dc.DessiaObject):
                 'patternProperties': {
                     '.*': {
                         'type': "object",
+                        'classes': 'Any'
+                    }
+                }
+            },
+            'variables_values': {
+                'type': 'object',
+                'order': 3,
+                'editable': False,
+                'title': 'Variables Values',
+                'patternProperties': {
+                    '.*': {
+                        'type': "object",
                         'classes': '*'
                     }
                 }
             },
-            # 'variables_values': {
-            #     'type': 'object',
-            #     'order': 3,
-            #     'editable': False,
-            #     'title': 'Variables Values',
-            #     'patternProperties': {
-            #         '.*': {
-            #             'type': "object",
-            #             'classes': '*'
-            #         }
-            #     }
-            # },
             'start_time': {
                 "type": "number",
                 "title": "Start Time",
@@ -1768,12 +1745,12 @@ class WorkflowRun(dc.DessiaObject):
         }
     }
 
-    def __init__(self, workflow, input_values, output_value, # variables_values,
+    def __init__(self, workflow, input_values, output_value, variables_values,
                  start_time, end_time, log, name=''):
         self.workflow = workflow
         self.input_values = input_values
         self.output_value = output_value
-        # self.variables_values = variables_values
+        self.variables_values = variables_values
         self.start_time = start_time
         self.end_time = end_time
         self.execution_time = end_time - start_time
@@ -1803,57 +1780,46 @@ class WorkflowRun(dc.DessiaObject):
 
     def _display_angular(self):
         d_blocks = [b for b in self.workflow.blocks if hasattr(b, '_display')]
-        # sorted_d_blocks = sorted(d_blocks, key=lambda b: b.order)
+        sorted_d_blocks = sorted(d_blocks, key=lambda b: b.order)
         displays = self.workflow._display_angular()
-        # for block in sorted_d_blocks:
-        #     display = block._display(self.variables_values)
-        #     displays.extend(display)
+        for block in sorted_d_blocks:
+            local_values = {}
+            for input_ in block.inputs:
+                indices = self.workflow.variable_indices(input_)
+                local_values[input_] = self.variables_values[str(indices)]
+            display = block._display(local_values)
+            displays.extend(display)
         return displays
 
     @classmethod
     def dict_to_object(cls, dict_):
         workflow = Workflow.dict_to_object(dict_['workflow'])
         if 'output_value' in dict_ and 'output_value_type' in dict_:
-            output_value = dc.recursive_instantiation(dict_['output_value_type'], dict_['output_value'])
+            type_ = dict_['output_value_type']
+            value = dict_['output_value']
+            output_value = dc.recursive_instantiation(type_=type_, value=value)
         else:
             output_value = None
 
-        blocks = workflow.blocks
-        nbv = workflow.nonblock_variables
-        # variables_values = {}
-
         input_values = {int(i): dc.deserialize(v)
                         for i, v in dict_['input_values'].items()}
-
-        # for i, value in dict_['variables_values'].items():
-        #     # TODO : Is this a quickfix ? Locally, indices are tuple,
-        #     # TODO : from front they are strings
-        #     if isinstance(i, tuple):
-        #         index = i
-        #     elif isinstance(i, str):
-        #         index = literal_eval(i)
-        #     else:
-        #         msg = 'Type {} for index {}'.format(type(i), i)
-        #         msg += ' is not expected type (Tuple or String).'
-        #         raise NotImplementedError(msg)
-        #     key = workflow.variable_from_index(index=index, blocks=blocks,
-        #                                        nonblock_variables=nbv)
-        #     variables_values[key] = dc.deserialize(value)
+        variables_values = {k: dc.deserialize(v)
+                            for k, v in dict_['variables_values'].items()}
         return cls(workflow=workflow, output_value=output_value,
                    input_values=input_values,
-                   # variables_values=variables_values,
+                   variables_values=variables_values,
                    start_time=dict_['start_time'], end_time=dict_['end_time'],
                    log=dict_['log'], name=dict_['name'])
 
     def to_dict(self):
         input_values = {i: dc.serialize(v)
                         for i, v in self.input_values.items()}
-        # variables_values = {self.workflow.variable_indices(i): dc.serialize(v)
-        #                     for i, v in self.variables_values.items()}
+        variables_values = {k: dc.serialize(v)
+                            for k, v in self.variables_values.items()}
         dict_ = dc.DessiaObject.base_dict(self)
         dict_.update({'workflow': self.workflow.to_dict(),
                       'input_values': input_values,
-                      # 'variables_values': variables_values,
+                      'variables_values': variables_values,
                       'start_time': self.start_time,
                       'end_time': self.end_time,
                       'execution_time': self.execution_time,

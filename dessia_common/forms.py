@@ -30,6 +30,7 @@ coding/naming style & convention.
 """
 
 from dessia_common import DessiaObject
+from dessia_common.typings import Subclass
 from typing import Dict, List, Tuple, Union
 try:
     from typing import TypedDict  # >=3.8
@@ -51,6 +52,14 @@ class EnhancedStandaloneSubobject(StandaloneSubobject):
     def __init__(self, floatarg: float, boolarg: bool,
                  name: str = 'Standalone Subobject'):
         self.boolarg = boolarg
+
+        StandaloneSubobject.__init__(self, floatarg=floatarg, name=name)
+
+
+class InheritingStandaloneSubobject(StandaloneSubobject):
+    def __init__(self, floatarg: float, strarg: str,
+                 name: str = 'Inheriting Standalone Subobject'):
+        self.strarg = strarg
 
         StandaloneSubobject.__init__(self, floatarg=floatarg, name=name)
 
@@ -86,6 +95,7 @@ class StandaloneObject(DessiaObject):
                  builtin_list: List[int],
                  union_arg: Union[StandaloneSubobject,
                                   EnhancedStandaloneSubobject],
+                 inheritance_list: List[Subclass[StandaloneSubobject]],
                  name: str = 'Standalone Object Demo'):
         self.union_arg = union_arg
         self.builtin_list = builtin_list
@@ -98,6 +108,7 @@ class StandaloneObject(DessiaObject):
         self.dynamic_dict = dynamic_dict
         self.standalone_subobject = standalone_subobject
         self.embedded_subobject = embedded_subobject
+        self.inheritance_list = inheritance_list
 
         DessiaObject.__init__(self, name=name)
 

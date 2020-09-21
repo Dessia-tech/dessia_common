@@ -134,22 +134,6 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
                     hash_ += hash(value)
         return int(hash_ % 1e5)
 
-    # def __getattr__(self, item):
-    #     try:
-    #         return enhanced_deep_attr(self, item)
-    #     except (AttributeError, TypeError, ValueError):
-    #         return self.__getattribute__(item)
-
-    # def __getattribute__(self, name):
-    #     if name in DEPRECATED_ATTRIBUTES:
-    #         deprecation_warning(name, 'Attribute', DEPRECATED_ATTRIBUTES[name])
-    #     return object.__getattribute__(self, name)
-
-    # def __setattribute__(self, name, value):
-    #     if name in DEPRECATED_ATTRIBUTES:
-    #         deprecation_warning(name, 'Attribute', DEPRECATED_ATTRIBUTES[name])
-    #     return object.__setattribute__(self, name, value)
-
     @property
     def full_classname(self):
         return full_classname(self)
@@ -814,7 +798,6 @@ def enhanced_deep_attr(obj, sequence):
     if isinstance(sequence, str):
         # Sequence is a string and not a sequence of deep attributes
         if '/' in sequence:
-            print(sequence)
             # Is deep attribute reference
             sequence = deepattr_to_sequence(sequence)
             return enhanced_deep_attr(obj=obj, sequence=sequence)
