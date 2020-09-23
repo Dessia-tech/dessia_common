@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added mypy_extensions to setup.py
 
 ### Added
+- Relevant Error raised in getting deep_attribute when object has no attribute
 - is_sequence function
 - Documentation on blocks
 _ Rerun method for WorkflowRuns & prerequisite (input_values in __init__ et method_jsonschema)

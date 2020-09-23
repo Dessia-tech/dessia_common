@@ -591,10 +591,6 @@ def get_python_class_from_class_name(full_class_name):
 def dict_to_object(dict_, class_=None):
     working_dict = dict_.copy()
     if class_ is None and 'object_class' in working_dict:
-        # object_class = working_dict['object_class']
-        # module = object_class.rsplit('.', 1)[0]
-        # exec('import ' + module)
-        # class_ = eval(object_class)
         class_ = get_python_class_from_class_name(working_dict['object_class'])
 
     if class_ is not None:
@@ -825,8 +821,11 @@ def enhanced_get_attr(obj, attribute):
     try:
         return getattr(obj, attribute)
     except (TypeError, AttributeError):
-        return obj[attribute]
-        # TODO We might try/except last statement
+        try:
+            return obj[attribute]
+        except TypeError:
+            msg = '{} has no attribute {}'
+            raise AttributeError(msg.format(obj, attribute))
 
 
 def concatenate_attributes(prefix, suffix, type_: str = 'str'):
