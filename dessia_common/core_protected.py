@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #cython: language_level=3
+
 """
 
 """
@@ -17,163 +18,6 @@ import dessia_common as dc
 import dessia_common.typings as dt
 
 
-class DessiaObject:
-    """
-
-    """
-
-    @classmethod
-    def base_jsonschema(cls):
-        jsonschema = deepcopy(JSONSCHEMA_HEADER)
-        jsonschema['properties']['name'] = {
-            'type': 'string',
-            "title": "Object Name",
-            "description": "Object name",
-            "editable": True,
-            "default_value": "Object Name"
-            }
-        return jsonschema
-
-    @classmethod
-    def jsonschema(cls):
-        if hasattr(cls, '_jsonschema'):
-            _jsonschema = cls._jsonschema
-            return _jsonschema
-
-        # Get __init__ method and its annotations
-        init = cls.__init__
-        if cls._init_variables is None:
-            annotations = init.__annotations__
-        else:
-            annotations = cls._init_variables
-
-        # Get ordered variables
-        if cls._ordered_attributes:
-            ordered_attributes = cls._ordered_attributes
-        else:
-            ordered_attributes = list(annotations.keys())
-
-        unordered_count = 0
-
-        # Initialize jsonschema
-        _jsonschema = deepcopy(JSONSCHEMA_HEADER)
-
-        required_arguments, default_arguments = inspect_arguments(method=init,
-                                                                  merge=False)
-        _jsonschema['required'] = required_arguments
-
-        # Set jsonschema
-        for annotation in annotations.items():
-            name = annotation[0]
-            if name in ordered_attributes:
-                order = ordered_attributes.index(name)
-            else:
-                order = len(ordered_attributes) + unordered_count
-                unordered_count += 1
-            if name in cls._titled_attributes:
-                title = cls._titled_attributes[name]
-            else:
-                title = None
-
-            if name != 'return':
-                editable = name not in cls._non_editable_attributes
-                annotation_type = dc.type_from_annotation(annotation[1], cls)
-                annotation = (annotation[0], annotation_type)
-                jss_elt = jsonschema_from_annotation(annotation=annotation,
-                                                     jsonschema_element={},
-                                                     order=order,
-                                                     editable=editable,
-                                                     title=title)
-                _jsonschema['properties'].update(jss_elt)
-                if name in default_arguments.keys():
-                    default = set_default_value(_jsonschema['properties'],
-                                                name,
-                                                default_arguments[name])
-                    _jsonschema['properties'].update(default)
-                _jsonschema['classes'] = [cls.__module__ + '.' + cls.__name__]
-                _jsonschema['whitelist_attributes'] = cls._whitelist_attributes
-        return _jsonschema
-
-    @property
-    def _method_jsonschemas(self):
-        """
-        Generates dynamic jsonschemas for methods of class
-        """
-        jsonschemas = {}
-        class_ = self.__class__
-
-        # !!! Backward compatibility. Will need to be changed
-        if hasattr(class_, '_dessia_methods'):
-            allowed_methods = class_._dessia_methods
-        else:
-            allowed_methods = class_._allowed_methods
-
-        valid_method_names = [m for m in dir(class_)\
-                              if not m.startswith('_')
-                              and m in allowed_methods]
-
-        for method_name in valid_method_names:
-            method = getattr(class_, method_name)
-
-            if not isinstance(method, property):
-                required_args, default_args = inspect_arguments(method=method,
-                                                                merge=False)
-
-                if method.__annotations__:
-                    jsonschemas[method_name] = deepcopy(JSONSCHEMA_HEADER)
-                    jsonschemas[method_name]['required'] = []
-                    for i, annotation in enumerate(method.__annotations__.items()):  # !!! Not actually ordered
-                        argname = annotation[0]
-                        if argname not in _FORBIDDEN_ARGNAMES:
-                            if argname in required_args:
-                                jsonschemas[method_name]['required'].append(str(i))
-                            jsonschema_element = jsonschema_from_annotation(annotation, {}, i)[argname]
-
-                            jsonschemas[method_name]['properties'][str(i)] = jsonschema_element
-                            if argname in default_args.keys():
-                                default = set_default_value(jsonschemas[method_name]['properties'],
-                                                            str(i),
-                                                            default_args[argname])
-                                jsonschemas[method_name]['properties'].update(default)
-        return jsonschemas
-
-    def method_dict(self, method_name=None, method_jsonschema=None):
-        if method_name is None and method_jsonschema is None:
-            msg = 'No method name not jsonschema provided'
-            raise NotImplementedError(msg)
-
-        if method_name is not None and method_jsonschema is None:
-            method_jsonschema = self._method_jsonschemas[method_name]
-
-        dict_ = default_dict(jsonschema=method_jsonschema)
-        return dict_
-
-    # def method_dicts(self, method_jsonschemas=None):
-    #     dicts = {}
-    #     if method_jsonschemas is None:
-    #         method_jsonschemas = self._method_jsonschemas
-    #     for method_name, method_jsonschema in method_jsonschemas.items():
-    #         dicts[method_name] = default_dict(jsonschema=method_jsonschema)
-    #     return None
-
-    def dict_to_arguments(self, dict_, method):
-        method_object = getattr(self, method)
-        args_specs = inspect.getfullargspec(method_object)
-        allowed_args = args_specs.args[1:]
-
-        arguments = {}
-        for i, arg in enumerate(allowed_args):
-            if str(i) in dict_:
-                arg_specs = args_specs.annotations[arg]
-                value = dict_[str(i)]
-                try:
-                    deserialized_value = deserialize_argument(arg_specs, value)
-                except TypeError:
-                    msg = 'Error in deserialisation of value: '
-                    msg += '{} of expected type {}'.format(value, arg_specs)
-                    raise TypeError(msg)
-                arguments[arg] = deserialized_value
-        return arguments
 
 
 def jsonschema_from_annotation(annotation, jsonschema_element,
@@ -529,3 +373,155 @@ TYPES_STRINGS = {int: 'int', float: 'float', bool: 'boolean', str: 'str',
 SEQUENCE_TYPINGS = ['List', 'Sequence', 'Iterable']
 
 _FORBIDDEN_ARGNAMES = ['self', 'cls', 'progress_callback', 'return']
+
+class DessiaObject:
+    """
+
+    """
+
+    @classmethod
+    def base_jsonschema(cls):
+        jsonschema = deepcopy(JSONSCHEMA_HEADER)
+        jsonschema['properties']['name'] = {
+            'type': 'string',
+            "title": "Object Name",
+            "description": "Object name",
+            "editable": True,
+            "default_value": "Object Name"
+            }
+        return jsonschema
+
+    @classmethod
+    def jsonschema(cls):
+        if hasattr(cls, '_jsonschema'):
+            _jsonschema = cls._jsonschema
+            return _jsonschema
+
+        # Get __init__ method and its annotations
+        init = cls.__init__
+        if cls._init_variables is None:
+            annotations = init.__annotations__
+        else:
+            annotations = cls._init_variables
+
+        # Get ordered variables
+        if cls._ordered_attributes:
+            ordered_attributes = cls._ordered_attributes
+        else:
+            ordered_attributes = list(annotations.keys())
+
+        unordered_count = 0
+
+        # Initialize jsonschema
+        _jsonschema = deepcopy(JSONSCHEMA_HEADER)
+
+        required_arguments, default_arguments = inspect_arguments(method=init,
+                                                                  merge=False)
+        _jsonschema['required'] = required_arguments
+
+        # Set jsonschema
+        for annotation in annotations.items():
+            name = annotation[0]
+            if name in ordered_attributes:
+                order = ordered_attributes.index(name)
+            else:
+                order = len(ordered_attributes) + unordered_count
+                unordered_count += 1
+            if name in cls._titled_attributes:
+                title = cls._titled_attributes[name]
+            else:
+                title = None
+
+            if name != 'return':
+                editable = name not in cls._non_editable_attributes
+                annotation_type = dc.type_from_annotation(annotation[1], cls)
+                annotation = (annotation[0], annotation_type)
+                jss_elt = jsonschema_from_annotation(annotation=annotation,
+                                                     jsonschema_element={},
+                                                     order=order,
+                                                     editable=editable,
+                                                     title=title)
+                _jsonschema['properties'].update(jss_elt)
+                if name in default_arguments.keys():
+                    default = set_default_value(_jsonschema['properties'],
+                                                name,
+                                                default_arguments[name])
+                    _jsonschema['properties'].update(default)
+                _jsonschema['classes'] = [cls.__module__ + '.' + cls.__name__]
+                _jsonschema['whitelist_attributes'] = cls._whitelist_attributes
+        return _jsonschema
+
+    @property
+    def _method_jsonschemas(self):
+        """
+        Generates dynamic jsonschemas for methods of class
+        """
+        jsonschemas = {}
+        class_ = self.__class__
+
+        # !!! Backward compatibility. Will need to be changed
+        if hasattr(class_, '_dessia_methods'):
+            allowed_methods = class_._dessia_methods
+        else:
+            allowed_methods = class_._allowed_methods
+
+        valid_method_names = [m for m in dir(class_)\
+                              if not m.startswith('_')
+                              and m in allowed_methods]
+
+        for method_name in valid_method_names:
+            method = getattr(class_, method_name)
+
+            if not isinstance(method, property):
+                required_args, default_args = inspect_arguments(method=method,
+                                                                merge=False)
+
+                if method.__annotations__:
+                    jsonschemas[method_name] = deepcopy(JSONSCHEMA_HEADER)
+                    jsonschemas[method_name]['required'] = []
+                    for i, annotation in enumerate(method.__annotations__.items()):  # !!! Not actually ordered
+                        argname = annotation[0]
+                        if argname not in _FORBIDDEN_ARGNAMES:
+                            if argname in required_args:
+                                jsonschemas[method_name]['required'].append(str(i))
+                            jsonschema_element = jsonschema_from_annotation(annotation, {}, i)[argname]
+
+                            jsonschemas[method_name]['properties'][str(i)] = jsonschema_element
+                            if argname in default_args.keys():
+                                default = set_default_value(jsonschemas[method_name]['properties'],
+                                                            str(i),
+                                                            default_args[argname])
+                                jsonschemas[method_name]['properties'].update(default)
+        return jsonschemas
+
+    def method_dict(self, method_name=None, method_jsonschema=None):
+        if method_name is None and method_jsonschema is None:
+            msg = 'No method name not jsonschema provided'
+            raise NotImplementedError(msg)
+
+        if method_name is not None and method_jsonschema is None:
+            method_jsonschema = self._method_jsonschemas[method_name]
+
+        dict_ = default_dict(method_jsonschema)
+        return dict_
+    
+
+    def dict_to_arguments(self, dict_, method):
+        method_object = getattr(self, method)
+        args_specs = inspect.getfullargspec(method_object)
+        allowed_args = args_specs.args[1:]
+
+        arguments = {}
+        for i, arg in enumerate(allowed_args):
+            if str(i) in dict_:
+                arg_specs = args_specs.annotations[arg]
+                value = dict_[str(i)]
+                try:
+                    deserialized_value = deserialize_argument(arg_specs, value)
+                except TypeError:
+                    msg = 'Error in deserialisation of value: '
+                    msg += '{} of expected type {}'.format(value, arg_specs)
+                    raise TypeError(msg)
+                arguments[arg] = deserialized_value
+        return arguments
+

@@ -5,7 +5,7 @@ name: default
 
 steps:
 - name: install and run scripts
-  image: python:3.7
+  image: python:3.8
   commands:
   - git fetch --tags
   - python setup.py install
@@ -13,26 +13,30 @@ steps:
   - python dessia_common/scripts/unit_tests.py
 
 - name: develop
-  image: python:3.7
+  image: python:3.8
   commands:
   - python setup.py develop
 
 - name: generate sdist
-  image: python:3.7
+  image: python:3.8
   commands:
   - git fetch --tags
   - python setup.py sdist
 
-- name: compile linux
-  image: python:3
+- name: compile linux test licence valid
+  image: python:3.8
   commands:
   - pip install Cython netifaces
   - python compile.py cdist_wheel --exp-month=7 --exp-year=2029 --detect-macs
-  - pip install dist/*.whl
+  - pip install client_dist/*.whl
   - python scripts/compilation_test.py test_valid_license
-  - rm -r dist/
+
+- name: compile linux test licence unvalid
+  image: python:3.8
+  commands:
+  - pip install Cython netifaces
   - python compile.py cdist_wheel --exp-month=7 --exp-year=2029 --macs=222222222122
-  - pip install dist/*.whl
+  - pip install client_dist/*.whl
   - python scripts/compilation_test.py test_unvalid_license
 
 
