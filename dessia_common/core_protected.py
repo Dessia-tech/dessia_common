@@ -15,6 +15,7 @@ try:
 except ImportError:
     from mypy_extensions import TypedDict  # <=3.7
 import dessia_common as dc
+import dessia_common.typings as dt
 
 
 
@@ -33,28 +34,27 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
     if value in TYPING_EQUIVALENCES.keys():
         # Python Built-in type
         jsonschema_element[key] = {'type': TYPING_EQUIVALENCES[value],
-                                   'datatype': 'builtin', 'title': title,
-                                   'editable': editable, 'order': order}
+                                   'title': title, 'editable': editable,
+                                   'order': order}
     elif hasattr(value, '__origin__') and value.__origin__ == Union:
         # Types union
         classnames = [a.__module__ + '.' + a.__name__ for a in value.__args__]
-        jsonschema_element[key] = {'type': 'object', 'datatype': 'union',
-                                   'classes': classnames, 'title': title,
-                                   'editable': editable, 'order': order}
-    elif hasattr(value, '_name') and value._name in SEQUENCE_TYPINGS:
+        jsonschema_element[key] = {'type': 'object', 'classes': classnames,
+                                   'title': title, 'editable': editable,
+                                   'order': order}
+    elif hasattr(value, '__origin__') and value.__origin__ == list:
         # Homogenous sequences
-        jsonschema_element[key] = jsonschema_sequence_recursion(value=value,
-                                                                title=title,
-                                                                editable=editable)
-    elif hasattr(value, '_name') and value._name == 'Tuple':
+        jsonschema_element[key] = jsonschema_sequence_recursion(
+            value=value, order=order, title=title, editable=editable
+        )
+    elif hasattr(value, '__origin__') and value.__origin__ == tuple:
         # Heterogenous sequences (tuples)
         items = []
         for type_ in value.__args__:
             items.append({'type': TYPING_EQUIVALENCES[type_]})
-        jsonschema_element[key] = {'additionalItems': False, 'type': 'array',
-                                   'datatype': 'heterogenous_list',
-                                   'items': items}
-    elif hasattr(value, '_name') and value._name == 'Dict':
+        jsonschema_element[key] = {'additionalItems': False,
+                                   'type': 'array', 'items': items}
+    elif hasattr(value, '__origin__') and value.__origin__ == dict:
         # Dynamially created dict structure
         key_type, value_type = value.__args__
         if key_type != str:
@@ -71,6 +71,13 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
                 }
             }
         }
+    elif hasattr(value, '__origin__') and value.__origin__ == dt.Subclass:
+        # Several possible classes that are subclass of another one
+        class_ = value.__args__[0]
+        classname = class_.__module__ + '.' + class_.__name__
+        jsonschema_element[key] = {'type': 'object', 'subclass_of': classname,
+                                   'title': title, 'editable': editable,
+                                   'order': order}
     else:
         classname = value.__module__ + '.' + value.__name__
         if issubclass(value, DessiaObject):
@@ -85,17 +92,17 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
     return jsonschema_element
 
 
-def jsonschema_sequence_recursion(value, title=None, editable=False):
+def jsonschema_sequence_recursion(value, order: int, title: str = None,
+                                  editable: bool = False):
     if title is None:
         title = 'Items'
-    jsonschema_element = {'type': 'array',
-                          'editable': editable,
-                          'title': title}
+    jsonschema_element = {'type': 'array', 'order': order,
+                          'editable': editable, 'title': title}
 
     items_type = value.__args__[0]
-    if hasattr(items_type, '_name') and items_type._name in SEQUENCE_TYPINGS:
-        jss = jsonschema_sequence_recursion(value=items_type, title=title,
-                                            editable=editable)
+    if hasattr(items_type, '__origin__') and items_type.__origin__ == list:
+        jss = jsonschema_sequence_recursion(value=items_type, order=0,
+                                            title=title, editable=editable)
         jsonschema_element['items'] = jss
     else:
         annotation = ('items', items_type)
@@ -127,7 +134,7 @@ def static_dict_jsonschema(typed_dict, title=None):
     # Every value is required in a StaticDict
     jsonschema_element['required'] = list(typed_dict.__annotations__.keys())
 
-    # !!! Not actually ordered !
+    # !!! TODO Not actually ordered !
     for i, ann in enumerate(typed_dict.__annotations__.items()):
         jss = jsonschema_from_annotation(annotation=ann,
                                          jsonschema_element=jss_properties,
@@ -195,17 +202,17 @@ def deserialize_argument(type_, argument):
             except KeyError:
                 # This is not the right class, we should go see the parent
                 classes.remove(children_class)
-    elif hasattr(type_, '_name') and type_._name in SEQUENCE_TYPINGS:
+    elif hasattr(type_, '__origin__') and type_.__origin__ == list:
         # Homogenous sequences (lists)
         sequence_subtype = type_.__args__[0]
         deserialized_argument = [deserialize_argument(sequence_subtype, arg)
                                  for arg in argument]
-    elif hasattr(type_, '_name') and type_._name == 'Tuple':
+    elif hasattr(type_, '__origin__') and type_.__origin__ == 'Tuple':
         # Heterogenous sequences (tuples)
         deserialized_argument = tuple([deserialize_argument(t, arg)
                                        for t, arg in zip(type_.__args__,
                                                          argument)])
-    elif hasattr(type_, '_name') and type_._name == 'Dict':
+    elif hasattr(type_, '__origin__') and type_.__origin__ == 'Dict':
         # Dynamic dict
         deserialized_argument = argument
     else:
@@ -230,6 +237,7 @@ def deserialize_argument(type_, argument):
     return deserialized_argument
 
 
+# TODO recursive_type and recursive_type functions look weird
 def recursive_type(obj):
     if isinstance(obj, tuple(list(TYPING_EQUIVALENCES.keys()) + [dict])):
         type_ = TYPES_STRINGS[type(obj)]
@@ -246,30 +254,46 @@ def recursive_type(obj):
     return type_
 
 
-def recursive_instantiation(types, values):
-    instantiated_values = []
-    for type_, value in zip(types, values):
-        if type_ in TYPES_STRINGS.values():
-            instantiated_values.append(eval(type_)(value))
-        elif isinstance(type_, str):
-            # TODO Check if this is OK. Are we importing classes ?
-            # TODO In this case, use get_python_class_from_class_name
-            exec('import ' + type_.split('.')[0])
-            class_ = eval(type_)
-            if inspect.isclass(class_):
-                instantiated_values.append(class_.dict_to_object(value))
-            else:
-                raise NotImplementedError
-        elif isinstance(type_, (list, tuple)):
-            instantiated_values.append(recursive_instantiation(type_, value))
-        elif type_ is None:
-            instantiated_values.append(value)
+def recursive_instantiation(type_, value):
+    if type_ in TYPES_STRINGS.values():
+        return eval(type_)(value)
+    elif isinstance(type_, str):
+        class_ = dc.get_python_class_from_class_name(type_)
+        if inspect.isclass(class_):
+            return class_.dict_to_object(value)
         else:
-            raise NotImplementedError(type_)
-    return instantiated_values
+            raise NotImplementedError
+    elif isinstance(type_, (list, tuple)):
+        return [recursive_instantiation(t, v) for t, v in zip(type_, value)]
+    elif type_ is None:
+        return value
+    else:
+        raise NotImplementedError(type_)
+
+# def recursive_instantiation(types, values):
+#     instantiated_values = []
+#     for type_, value in zip(types, values):
+#         if type_ in TYPES_STRINGS.values():
+#             instantiated_values.append(eval(type_)(value))
+#         elif isinstance(type_, str):
+#             # TODO Check if this is OK. Are we importing classes ?
+#             # TODO In this case, use get_python_class_from_class_name
+#             exec('import ' + type_.split('.')[0])
+#             class_ = eval(type_)
+#             if inspect.isclass(class_):
+#                 instantiated_values.append(class_.dict_to_object(value))
+#             else:
+#                 raise NotImplementedError
+#         elif isinstance(type_, (list, tuple)):
+#             instantiated_values.append(recursive_instantiation(type_, value))
+#         elif type_ is None:
+#             instantiated_values.append(value)
+#         else:
+#             raise NotImplementedError(type_)
+#     return instantiated_values
 
 
-def chose_default(jsonschema):
+def choose_default(jsonschema):
     if jsonschema['type'] == 'object':
         default_value = default_dict(jsonschema)
     elif jsonschema['type'] == 'array':
@@ -286,7 +310,7 @@ def default_dict(jsonschema):
     if 'properties' in jsonschema:
         for property_, value in jsonschema['properties'].items():
             if property_ in jsonschema['required']:
-                dict_[property_] = chose_default(value)
+                dict_[property_] = choose_default(value)
             else:
                 default_value = value['default_value']
                 if value['type'] == 'array':
@@ -312,34 +336,26 @@ def default_sequence(array_jsonschema):
 
     if type(array_jsonschema['items']) == list:
         # Tuple jsonschema
-        default_value = [default_dict(v) for v in array_jsonschema['items']]
+        return [default_dict(v) for v in array_jsonschema['items']]
 
     elif array_jsonschema['items']['type'] == 'object':
         if 'classes' in array_jsonschema['items']:
             # !!! classes[0]
-            subclassname = array_jsonschema['items']['classes'][0]
-            subclass = dc.get_python_class_from_class_name(subclassname)
-            if issubclass(subclass, dc.DessiaObject):
-                if subclass._standalone_in_db:
-                    # Standalone object
-                    default_value = []
-                else:
-                    # Embedded object
-                    default_subdict = default_dict(subclass.jsonschema())
-                    default_value = [default_subdict] * number
-            else:
-                # Static Dict
-                dict_jsonschema = static_dict_jsonschema(subclass)
-                default_subdict = default_dict(dict_jsonschema)
-                default_value = [default_subdict] * number
-        # else:
-            # print('Do we ever end up here ?')
-            # # TODO : Check if this is still necessary with Dataclass != Nested properties != Static Dict
-            # => Normally, this never happen
-            # default_value = [default_dict(array_jsonschema['items'])] * number
-    else:
-        default_value = [chose_default(array_jsonschema['items'])] * number
-    return default_value
+            classname = array_jsonschema['items']['classes'][0]
+            class_ = dc.get_python_class_from_class_name(classname)
+            if issubclass(class_, dc.DessiaObject):
+                if class_._standalone_in_db: # Standalone object
+                    return []
+                # Embedded object
+                default_subdict = default_dict(class_.jsonschema())
+                return [default_subdict] * number
+            # Static Dict
+            dict_jsonschema = static_dict_jsonschema(class_)
+            default_subdict = default_dict(dict_jsonschema)
+            return [default_subdict] * number
+        # Subclasses
+        return [choose_default(array_jsonschema['items'])] * number
+    return [choose_default(array_jsonschema['items'])] * number
 
 
 JSONSCHEMA_HEADER = {"definitions": {},
