@@ -26,6 +26,7 @@ _ Rerun method for WorkflowRuns & prerequisite (input_values in __init__ et meth
 - Recursive/complex deepattr function
 
 ### Changed
+- Add a more explicit message to list as default value error
 - Filter block doesn't write _display_angular anymore. See ParallelPlot
 - Catalog _dispplay_angular to conform to ParallelPlot Block
 
