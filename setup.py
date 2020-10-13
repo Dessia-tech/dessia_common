@@ -11,7 +11,7 @@ from subprocess import CalledProcessError, check_output
 
 
 def readme():
-    with open('README.rst') as f:
+    with open('README.md') as f:
         return f.read()
 
 
@@ -29,7 +29,7 @@ def version_from_git_describe(version):
         version, number_commits_ahead, commit_hash = version.split('-')
         number_commits_ahead = int(number_commits_ahead)
 
-    print('number_commits_ahead', number_commits_ahead)
+    # print('number_commits_ahead', number_commits_ahead)
 
     split_versions = version.split('.')
     if 'post' in split_versions[-1]:
@@ -96,21 +96,21 @@ def get_version():
         with open(join(d, 'PKG-INFO')) as f:
             version = version_re.search(f.read()).group(1)
 
-    # print('version', version)
     return version
 
 
-#import powertransmission
+
 setup(name='dessia_common',
       version=get_version(),
       description="Common tools for DessIA software",
-      long_description='',
-      keywords='',
-      url='',
-#      cmdclass['register']=None,
+      long_description=readme(),
+      keywords=['Dessia', 'SDK', 'engineering'],
+      url='https://github.com/Dessia-tech/dessia-common',
       author='Steven Masfaraud',
       author_email='masfaraud@dessia.tech',
       packages=['dessia_common'],
-      install_requires=['typeguard', 'networkx', 'numpy', 'pandas', 'jinja2'],
+      install_requires=['typeguard', 'networkx', 'numpy', 'pandas',
+                        'jinja2==2.11.1',
+                        'mypy_extensions', 'scipy', 'pyDOE'],
       python_requires='>=3.7')
 

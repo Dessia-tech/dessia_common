@@ -1,45 +1,53 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-
-
+Compilation for client distributions
 """
 
-from os import walk, remove
-from os.path import isdir, join, exists
-
+import os
+import sys
+import re
+from subprocess import CalledProcessError, check_output
 from setuptools import setup
-
 from Cython.Distutils import build_ext
-
-from distutils.core import run_setup
-from distutils.cmd import Command
 from distutils.extension import Extension
 import time
 from datetime import timedelta
 import calendar
 import shutil
-import tarfile
+
+from distutils import log as logger
 
 import hashlib
 import netifaces
 
+import wheel.bdist_wheel
+from wheel.wheelfile import WheelFile
 
-protected_files = ['dessia_common.core_protected.py]
+
+protected_files = ['dessia_common/core_protected.py']
+
+ext_modules = []
+for file in protected_files:
+    module = file.replace('/', '.')
+    module = module[:-3]
+    file_to_compile = file[:-3] + '_protected.pyx'
+    ext_modules.append(Extension(module,  [file_to_compile]))
+    
+print('ext_modules', ext_modules)
 
 
-class ClientDist(Command):
+class ClientWheelDist(wheel.bdist_wheel.bdist_wheel):
     description = 'Creating client distribution with compiled packages and license'
     user_options = [
         # The format is (long option, short option, description).
         ('exp-year=', None, 'Year of license expiration'),
         ('exp-month=', None, 'Month of year of license expiration'),
         ('exp-day=', None, 'Day of month of license expiration'),
-        ('formats=', None,
-         "formats for source distribution (comma-separated list)"),
         ('getnodes=', None, 'UUID given by getnode (comma-separated list)'),
         ('macs=', None, 'MACS of machine (comma-separated list)'),
-        ('detect-macs', None, 'using this machine macs')
+        ('detect-macs', None, 'using this machine macs'),
+        ('delete-pyx=', None, 'delete compilation files')
         ]
     
     addresses_determination_lines = ['import netifaces\n',
@@ -69,24 +77,37 @@ class ClientDist(Command):
 
     def initialize_options(self):
         """Set default values for options."""
+
+        wheel.bdist_wheel.bdist_wheel.initialize_options(self)
+
         # Each user option must be listed here with their default value.
         self.exp_year = 2000
         self.exp_month = 1
         self.exp_day = 1
-        self.formats = 'zip'  
+        self.formats = 'gztar'  
         self.getnodes = None
         self.macs = None
         self.detect_macs = None
+        self.dist_dir = 'client_dist'
+        self.delete_pyx = True
 
     def finalize_options(self):
         """Post-process options."""
+        
+        wheel.bdist_wheel.bdist_wheel.finalize_options(self)
 
         self.detect_macs = self.detect_macs is not None
         if not self.detect_macs:
             
             macs = []
             if self.macs is not None:
+                self.macs = self.macs.replace('[', '')
+                self.macs = self.macs.replace(']', '')
+                self.macs = self.macs.replace(':', '')
+
                 for mac in self.macs.split(','):
+                    if len(mac) != 12:
+                        raise ValueError('A mac address must be 12 digits long, got: {} instead'.format(mac))
                     macs.append(mac)
                 self.macs = macs        
                 print('\nCompiling for macs: {}'.format(self.macs))
@@ -98,9 +119,9 @@ class ClientDist(Command):
                 self.getnodes = getnodes        
                 print('\nCompiling for getnodes: {}'.format([str(g for g in self.getnodes)]))
 
-        else:
+        else:   
             self.macs = self.get_machine_macs()
-            print('Detecting mac, using: {}'.format(self.macs))
+            print('Using detected mac of this machine: {}'.format(self.macs))
 
         if not self.detect_macs and self.getnodes is None and self.macs is None:
             raise ValueError('Define either a mac or a getnode to protect the code or use detect-macs option')
@@ -117,11 +138,14 @@ class ClientDist(Command):
                                                                 self.exp_day,
                                                                 0, 0, 0 ,0, 0, 0))))
         self.not_before = int(time.time())
+        number_days = timedelta(seconds=self.expiration-self.not_before).days
+        if number_days < 0:
+            raise ValueError('Negative number of days')
 
         print('\nExpiration date: {}/{}/{}: duration of {} days'.format(self.exp_day,
-                                                  self.exp_month,
-                                                  self.exp_year,
-                                                  timedelta(seconds=self.expiration-self.not_before).days))
+                                                                        self.exp_month,
+                                                                        self.exp_year,
+                                                                        number_days))
         
             
         formats = [] 
@@ -130,6 +154,8 @@ class ClientDist(Command):
                 raise NotImplementedError('Unsupported file type: {}'.format(s))
             formats.append(s)
         self.formats = formats
+        
+        self.delete_pyx = self.delete_pyx == 'True'
 
         
     def protection_lines(self):
@@ -269,76 +295,216 @@ class ClientDist(Command):
     def delete_compilation_files(self):
         # Remove _protected files and .c
         for file in self.files_to_compile:
-            if exists(file):
-                remove(file)
+            if os.path.exists(file):
+                os.remove(file)
 
             file = file[:-3] + 'c'
-            if exists(file):
-                remove(file)
+            if os.path.exists(file):
+                os.remove(file)
 
     
 
     def run(self):
-        print('\n\nBeginning build')
-        
-        package_name = self.distribution.get_name()
-        
-        # Creating sdist
-        setup_result = run_setup('setup.py', script_args=['sdist', '--formats=tar', '--dist-dir=client_dist'])
-        sdist_filename = setup_result.dist_files[0][2]
-        folder_path = sdist_filename[:-4]
-        if isdir(folder_path):
-            shutil.rmtree(folder_path)
-        tar = tarfile.open(sdist_filename)
-        tar.extractall(path='client_dist')
-        tar.close()
-        
-        # Clening sdist tar
-        remove(sdist_filename)
-        
-        # Compiling
         self.write_pyx_files()
-        print('Compiling files')
-        setup_result = run_setup('compile.py', script_args=['build_ext', '--build-lib=client_dist'])
+        
+        build_scripts = self.reinitialize_command('build_scripts')
+        build_scripts.executable = 'python'
+        build_scripts.force = True
 
-        # Copying compiled files to sdist folder
-        compiled_files_dir = join('client_dist', package_name)
-#        destination_base = join(folder_path, package_name)
-        destination_base = folder_path
-        for root_dir, _, files in walk(compiled_files_dir):
+        build_ext = self.reinitialize_command('build_ext')
+        build_ext.inplace = False
+
+        if not self.skip_build:
+            self.run_command('build')
+
+        install = self.reinitialize_command('install',
+                                            reinit_subcommands=True)
+        install.root = self.bdist_dir
+        install.compile = False
+        install.skip_build = self.skip_build
+        install.warn_dir = False
+
+        # A wheel without setuptools scripts is more cross-platform.
+        # Use the (undocumented) `no_ep` option to setuptools'
+        # install_scripts command to avoid creating entry point scripts.
+        install_scripts = self.reinitialize_command('install_scripts')
+        install_scripts.no_ep = True
+
+        # Use a custom scheme for the archive, because we have to decide
+        # at installation time which scheme to use.
+        for key in ('headers', 'scripts', 'data', 'purelib', 'platlib'):
+            setattr(install,
+                    'install_' + key,
+                    os.path.join(self.data_dir, key))
+
+        basedir_observed = ''
+
+        if os.name == 'nt':
+            # win32 barfs if any of these are ''; could be '.'?
+            # (distutils.command.install:change_roots bug)
+            basedir_observed = os.path.normpath(os.path.join(self.data_dir, '..'))
+            self.install_libbase = self.install_lib = basedir_observed
+
+        setattr(install,
+                'install_purelib' if self.root_is_pure else 'install_platlib',
+                basedir_observed)
+
+        logger.info("installing to %s", self.bdist_dir)
+
+        self.run_command('install')
+
+        impl_tag, abi_tag, plat_tag = self.get_tag()
+        archive_basename = "{}-{}-{}-{}".format(self.wheel_dist_name, impl_tag, abi_tag, plat_tag)
+        if not self.relative:
+            archive_root = self.bdist_dir
+        else:
+            archive_root = os.path.join(
+                self.bdist_dir,
+                self._ensure_relative(install.install_base))
+
+        self.set_undefined_options('install_egg_info', ('target', 'egginfo_dir'))
+        distinfo_dirname = '{}-{}.dist-info'.format(
+            wheel.bdist_wheel.safer_name(self.distribution.get_name()),
+            wheel.bdist_wheel.safer_version(self.distribution.get_version()))
+        distinfo_dir = os.path.join(self.bdist_dir, distinfo_dirname)
+                
+        package_name = self.distribution.get_name()
+        distdir = os.path.join(self.bdist_dir, package_name)
+
+        for root, dirs, files in os.walk(distdir):
             for file in files:
-                source = join(root_dir, file)
-                destination = source.replace('client_dist', destination_base)
-                print('copying file {} to {}'.format(source, destination))
-                shutil.copy(source, destination)
+                file_path = os.path.join(root, file)
+                rel_fp = os.path.join(package_name, os.path.relpath(file_path, distdir))
+                if rel_fp in protected_files:
+                    os.remove(file_path)
+                    
+        
+        self.egg2dist(self.egginfo_dir, distinfo_dir)
 
+        self.write_wheelfile(distinfo_dir)
 
-        # Packaging
-        print('Packaging')
-        for packaging_format in self.formats:
-            shutil.make_archive(folder_path, packaging_format, folder_path)
+        # Make the archive
+        if not os.path.exists(self.dist_dir):
+            os.makedirs(self.dist_dir)
+
+        wheel_path = os.path.join(self.dist_dir, archive_basename + '.whl')
+        with WheelFile(wheel_path, 'w', self.compression) as wf:
+            wf.write_files(archive_root)
+
+        # Add to 'Distribution.dist_files' so that the "upload" command works
+        getattr(self.distribution, 'dist_files', []).append(
+            ('bdist_wheel',
+              '{}.{}'.format(*sys.version_info[:2]),  # like 3.7
+              wheel_path))
+
+        if self.delete_pyx:
+            self.delete_compilation_files()
             
-        # Cleaning
-        print('Cleaning')
-        self.delete_compilation_files()
-        shutil.rmtree(folder_path)
-        shutil.rmtree(compiled_files_dir)
-
-        
-        print('Client build finished, output is {} + {}'.format(folder_path, self.formats))
-        
-ext_modules = []
-for file in protected_files:
-    module = file.replace('/', '.')
-    module = module[:-3]
-    file_to_compile = file[:-3] + '_protected.pyx'
-    ext_modules.append(Extension(module,  [file_to_compile]))
+        if not self.keep_temp:
+            logger.info('removing %s', self.bdist_dir)
+            if not self.dry_run:
+                shutil.rmtree(self.bdist_dir, onerror=wheel.bdist_wheel.remove_readonly)
     
-setup(
-    name = 'agb',
-    cmdclass = {'build_ext': build_ext, 'cdist': ClientDist},
-    install_requires = ['netifaces'],
-    ext_modules = ext_modules
+    
+tag_re = re.compile(r'\btag: %s([0-9][^,]*)\b')
+version_re = re.compile('^Version: (.+)$', re.M)
+    
+def version_from_git_describe(version):
+    if version[0]=='v':
+            version = version[1:]
+
+    # PEP 440 compatibility
+    number_commits_ahead = 0
+    if '-' in version:
+        version, number_commits_ahead, commit_hash = version.split('-')
+        number_commits_ahead = int(number_commits_ahead)
+
+    print('number_commits_ahead', number_commits_ahead)
+
+    split_versions = version.split('.')
+    if 'post' in split_versions[-1]:
+        suffix = split_versions[-1]
+        split_versions = split_versions[:-1]
+    else:
+        suffix = None
+
+    for pre_release_segment in ['a', 'b', 'rc']:
+        if pre_release_segment in split_versions[-1]:
+            if number_commits_ahead > 0:
+                split_versions[-1] = str(split_versions[-1].split(pre_release_segment)[0])
+                if len(split_versions) == 2:
+                    split_versions.append('0')
+                if len(split_versions) == 1:
+                    split_versions.extend(['0', '0'])
+
+                split_versions[-1] = str(int(split_versions[-1])+1)
+                future_version = '.'.join(split_versions)
+                return '{}.dev{}'.format(future_version, number_commits_ahead)
+            else:
+                return '.'.join(split_versions)
+
+    if number_commits_ahead > 0:
+        if len(split_versions) == 2:
+            split_versions.append('0')
+        if len(split_versions) == 1:
+            split_versions.extend(['0', '0'])
+        split_versions[-1] = str(int(split_versions[-1])+1)
+        split_versions = '.'.join(split_versions)
+        return '{}.dev{}'.format(split_versions, number_commits_ahead)
+    else:
+        if suffix is not None:
+            split_versions.append(suffix)
+
+        return '.'.join(split_versions)
+
+
+def readme():
+    with open('README.md') as f:
+        return f.read()
+    
+
+def get_version():
+    # Return the version if it has been injected into the file by git-archive
+    version = tag_re.search('$Format:%D$')
+    if version:
+        return version.group(1)
+
+    d = os.path.dirname(__file__)
+
+    if os.path.isdir(os.path.join(d, '.git')):
+        cmd = 'git describe --tags'
+        try:
+            version = check_output(cmd.split()).decode().strip()[:]
+
+        except CalledProcessError:
+            raise RuntimeError('Unable to get version number from git tags')
+
+        return version_from_git_describe(version)
+    else:
+        # Extract the version from the PKG-INFO file.
+        with open(os.path.join(d, 'PKG-INFO')) as f:
+            version = version_re.search(f.read()).group(1)
+
+    # print('version', version)
+    return version
+
+## WARNING: THIS must follow setup.py !!!
+setup(name='dessia_common',
+      version=get_version(),
+      description="Common tools for DessIA software",
+      long_description=readme(),
+      keywords=['Dessia', 'SDK', 'engineering'],
+      url='https://github.com/Dessia-tech/dessia-common',
+      author='Steven Masfaraud',
+      author_email='masfaraud@dessia.tech',
+      packages=['dessia_common'],
+      install_requires=['typeguard', 'networkx', 'numpy', 'pandas',
+                        'jinja2==2.11.1',
+                        'mypy_extensions', 'scipy', 'pyDOE'],
+      python_requires='>=3.7',
+      cmdclass = {'build_ext': build_ext,
+                  'cdist_wheel': ClientWheelDist},
+      ext_modules = ext_modules,
+
 )
-            
 
