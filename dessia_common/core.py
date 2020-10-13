@@ -270,9 +270,9 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
                 if frame is None:
                     frame = vm.OXYZ
             try:
-                return vm.VolumeModel(self.volmdlr_primitives(frame=frame))
+                return vm.core.VolumeModel(self.volmdlr_primitives(frame=frame))
             except TypeError:
-                return vm.VolumeModel(self.volmdlr_primitives())
+                return vm.core.VolumeModel(self.volmdlr_primitives())
         msg = 'Object of type {} does not implement volmdlr_primitives'.format(self.__class__.__name__)
         raise NotImplementedError(msg)
 
