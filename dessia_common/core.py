@@ -107,7 +107,7 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
 
     def __eq__(self, other_object):
         if self._eq_is_data_eq:
-            return self.data__eq__()
+            return self.data__eq__(other_object)
         else:
             return object.__eq__(self, other_object)
 
