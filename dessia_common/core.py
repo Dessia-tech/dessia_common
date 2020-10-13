@@ -112,8 +112,6 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
             return object.__eq__(self, other_object)
 
     def data__eq__(self, other_object):
-        # if not self._generic_eq:
-        #     return object.__eq__(self, other_object)
         if full_classname(self) != full_classname(other_object) \
                 or self.__dict__.keys() != other_object.__dict__.keys():  # TODO : Check this line. Keys not ordered and/or just need to test used keys
             return False
@@ -204,9 +202,11 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
         elif 'object_class' in dict_:
             obj = dict_to_object(dict_)
             return obj
-        # Using default
-        # TODO: use jsonschema
-        return obj
+        else:
+            # Using default
+            # TODO: use jsonschema
+            raise NotImplementedError('No object_class in dict')
+
 
     def save_to_file(self, filepath, indent=0):
         with open(filepath + '.json', 'w') as file:
