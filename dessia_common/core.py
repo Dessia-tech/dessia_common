@@ -81,7 +81,7 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
     _non_data_hash_attributes = ['name']
     _ordered_attributes = []
     _titled_attributes = []
-    _eq_is_data_eq = False
+    _eq_is_data_eq = True
     
     _init_variables = None
     _export_formats = None
