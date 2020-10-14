@@ -279,7 +279,7 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
     def cad_export(self,
                    fcstd_filepath=None,
                    istep=0,
-                   python_path='python',
+                   python_path='python3',
                    freecad_lib_path='/usr/lib/freecad/lib',
                    export_types=['fcstd']):
         """
@@ -292,7 +292,7 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
             model = self.volmdlr_volume_model()
             if model.__class__.__name__ == 'MovingVolumeModel':
                 model = model.step_volume_model(istep)
-            model.FreeCADExport(fcstd_filepath, python_path=python_path,
+            model.freecad_export(fcstd_filepath, python_path=python_path,
                                 freecad_lib_path=freecad_lib_path, export_types=export_types)
         else:
             raise NotImplementedError
