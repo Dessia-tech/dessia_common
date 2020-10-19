@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Fixed
+- Run again takes input_values arguments as it should
 - Changed workflow to workflow in to_dict/dict_to_object
 - Support for new data types
 - Added mypy_extensions to setup.py
