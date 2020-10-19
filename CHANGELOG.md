@@ -32,6 +32,7 @@ _ Rerun method for WorkflowRuns & prerequisite (input_values in __init__ et meth
 
 ## [0.3.8]
 ### Added
+- Change rerun method name to run_again
 - Unpacker for sequence workflow block
 - Cars dataset as imported models
 - Models & Templates added to MANIFEST.in
