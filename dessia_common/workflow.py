@@ -1668,7 +1668,7 @@ class WorkflowBlock(Block):
 
 class WorkflowRun(dc.DessiaObject):
     _standalone_in_db = True
-    _allowed_methods = ['rerun']
+    _allowed_methods = ['run_again']
     _jsonschema = {
         "definitions": {},
         "$schema": "http://json-schema.org/draft-07/schema#",
@@ -1830,7 +1830,7 @@ class WorkflowRun(dc.DessiaObject):
         return self.workflow.dict_to_arguments(dict_=dict_)
 
     def method_dict(self, method_name, method_jsonschema):
-        if method_name == 'rerun':
+        if method_name == 'run_again':
             dict_ = dc.serialize_dict(self.input_values)
             for property_, value in method_jsonschema['properties'].items():
                 if property_ in dict_\
@@ -1842,7 +1842,7 @@ class WorkflowRun(dc.DessiaObject):
         return dc.DessiaObject.method_dict(method_name=method_name,
                                            jsonschema=method_jsonschema)
 
-    def rerun(self, input_values):
+    def run_again(self, input_values):
         workflow_run = self.workflow.run(input_values=input_values,
                                          verbose=False,
                                          progress_callback=None,
@@ -1852,8 +1852,8 @@ class WorkflowRun(dc.DessiaObject):
     @property
     def _method_jsonschemas(self):
         # TODO : Share code with Workflow run method
-        jsonschemas = {'rerun': deepcopy(dc.JSONSCHEMA_HEADER)}
-        properties_dict = jsonschemas['rerun']['properties']
+        jsonschemas = {'run_again': deepcopy(dc.JSONSCHEMA_HEADER)}
+        properties_dict = jsonschemas['run_again']['properties']
         required_inputs = []
         for i, value in self.input_values.items():
             current_dict = {}
@@ -1879,7 +1879,7 @@ class WorkflowRun(dc.DessiaObject):
                                                          str(i),
                                                          input_.default_value))
             properties_dict[str(i)] = current_dict[str(i)]
-        jsonschemas['rerun']['required'] = required_inputs
+        jsonschemas['run_again']['required'] = required_inputs
         return jsonschemas
 
 
