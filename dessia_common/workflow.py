@@ -531,15 +531,11 @@ class ForEach(Block):
 
     def evaluate(self, values):
 
-        values_workflow = {var2: values[var1] for var1, var2 in zip(self.inputs,
-                                                                    self.workflow_block.inputs)}
-        # index_iterable_input = self.workflow_block.inputs.index(self.workflow_iterable_input)
+        values_workflow = {var2: values[var1]
+                           for var1, var2 in zip(self.inputs,
+                                                 self.workflow_block.inputs)}
         output_values = []
         for value in values_workflow[self.workflow_iterable_input]:
-            print(value)
-            # values_workflow2 = {var.name: val\
-            #                     for var, val in values_workflow.items()\
-            #                     if var != self.workflow_iterable_input}
             values_workflow[self.workflow_iterable_input] = value
             output_values.append(self.workflow_block.evaluate(values_workflow)[0])
         return [output_values]
@@ -1210,7 +1206,7 @@ class Workflow(Block):
                    imposed_variable_values=imposed_variable_values,
                    name=dict_['name'])
 
-    def dict_to_arguments(self, dict_, method):
+    def dict_to_arguments(self, dict_):
         arguments_values = {}
         for i, input_ in enumerate(self.inputs):
             if not isinstance(input_, (VariableWithDefaultValue, TypedVariableWithDefaultValue))\
@@ -1220,7 +1216,7 @@ class Workflow(Block):
                 deserialized_value = dc.deserialize_argument(input_.type_, value)
                 arguments_values[i] = deserialized_value
 
-        arguments = {'input_variables_values': arguments_values}
+        arguments = {'input_values': arguments_values}
         return arguments
 
     @classmethod
@@ -1359,7 +1355,7 @@ class Workflow(Block):
                 labels[variable] = variable.name
         nx.draw_networkx_labels(self.graph, pos, labels)
 
-    def run(self, input_variables_values, verbose=False,
+    def run(self, input_values, verbose=False,
             progress_callback=None, name=None):
         log = ''
         activated_items = {p: False for p in self.pipes}
@@ -1378,8 +1374,8 @@ class Workflow(Block):
             
         # Input activation
         for index, variable in enumerate(self.inputs):
-            if index in input_variables_values:
-                value = input_variables_values[index]
+            if index in input_values:
+                value = input_values[index]
                 # typeguard.check_type(variable.name, value, variable.type_)
                     # raise ValueError('Bad type', value, variable.type_)
 
@@ -1459,31 +1455,31 @@ class Workflow(Block):
         output_value = values[self.outputs[0]]
         if not name:
             name = self.name+' run'
-        return WorkflowRun(workflow=self, input_values=input_variables_values,
+        return WorkflowRun(workflow=self, input_values=input_values,
                            output_value=output_value,
                            variables_values=variables_values,
                            start_time=start_time, end_time=end_time,
                            log=log, name=name)
 
-    def interactive_input_variables_values(self):
-        input_variables_values = {}
-        for i, input_ in enumerate(self.inputs):
-            print('Input n°{}: {} type: {}: '.format(i+1, input_.name, input_.type_))
-            if hasattr(input_, 'default_value'):                
-                value = input('Value? default={} '.format(input_.default_value))
-                if value=='':
-                    value = input_.default_value
-            else:
-                value = input_.type_(input('Value? '))
-                
-            input_variables_values[i] = value
-            
-        for i in sorted(input_variables_values.keys()):
-            input_ = self.inputs[i]
-            value = input_variables_values[i]
-            print('{}/ {}: {}'.format(i, value))
-            
-        return input_variables_values
+    # def interactive_input_variables_values(self):
+    #     input_variables_values = {}
+    #     for i, input_ in enumerate(self.inputs):
+    #         print('Input n°{}: {} type: {}: '.format(i+1, input_.name, input_.type_))
+    #         if hasattr(input_, 'default_value'):
+    #             value = input('Value? default={} '.format(input_.default_value))
+    #             if value == '':
+    #                 value = input_.default_value
+    #         else:
+    #             value = input_.type_(input('Value? '))
+    #
+    #         input_variables_values[i] = value
+    #
+    #     for i in sorted(input_variables_values.keys()):
+    #         input_ = self.inputs[i]
+    #         value = input_variables_values[i]
+    #         print('{}/ {}: {}'.format(i, value))
+    #
+    #     return input_variables_values
 
     def mxgraph_data(self):
         nodes = []
@@ -1514,11 +1510,10 @@ class Workflow(Block):
                                            'is_workflow_input': i in self.inputs,
                                            'has_default_value': hasattr(i, 'default_value')}\
                                           for i in block.inputs],
-
-                           'outputs': [{'name': o.name,
-                                        'is_workflow_output': o in self.outputs}\
-                                       for o in block.outputs],
-                           'position': coordinates[block]})
+                               'outputs': [{'name': o.name,
+                                            'is_workflow_output': o in self.outputs}
+                                           for o in block.outputs],
+                               'position': coordinates[block]})
             blocks.append(block_data)
 
         nonblock_variables = []
@@ -1673,7 +1668,7 @@ class WorkflowBlock(Block):
 
 class WorkflowRun(dc.DessiaObject):
     _standalone_in_db = True
-    _allowed_methods = ['rerun']
+    _allowed_methods = ['run_again']
     _jsonschema = {
         "definitions": {},
         "$schema": "http://json-schema.org/draft-07/schema#",
@@ -1831,8 +1826,11 @@ class WorkflowRun(dc.DessiaObject):
 
         return dict_
 
+    def dict_to_arguments(self, dict_):
+        return self.workflow.dict_to_arguments(dict_=dict_)
+
     def method_dict(self, method_name, method_jsonschema):
-        if method_name == 'rerun':
+        if method_name == 'run_again':
             dict_ = dc.serialize_dict(self.input_values)
             for property_, value in method_jsonschema['properties'].items():
                 if property_ in dict_\
@@ -1844,8 +1842,8 @@ class WorkflowRun(dc.DessiaObject):
         return dc.DessiaObject.method_dict(method_name=method_name,
                                            jsonschema=method_jsonschema)
 
-    def rerun(self):
-        workflow_run = self.workflow.run(input_variables_values=self.input_values,
+    def run_again(self, input_values):
+        workflow_run = self.workflow.run(input_values=input_values,
                                          verbose=False,
                                          progress_callback=None,
                                          name=None)
@@ -1854,8 +1852,8 @@ class WorkflowRun(dc.DessiaObject):
     @property
     def _method_jsonschemas(self):
         # TODO : Share code with Workflow run method
-        jsonschemas = {'rerun': deepcopy(dc.JSONSCHEMA_HEADER)}
-        properties_dict = jsonschemas['rerun']['properties']
+        jsonschemas = {'run_again': deepcopy(dc.JSONSCHEMA_HEADER)}
+        properties_dict = jsonschemas['run_again']['properties']
         required_inputs = []
         for i, value in self.input_values.items():
             current_dict = {}
@@ -1881,7 +1879,7 @@ class WorkflowRun(dc.DessiaObject):
                                                          str(i),
                                                          input_.default_value))
             properties_dict[str(i)] = current_dict[str(i)]
-        jsonschemas['rerun']['required'] = required_inputs
+        jsonschemas['run_again']['required'] = required_inputs
         return jsonschemas
 
 
