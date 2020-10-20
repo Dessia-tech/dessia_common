@@ -147,8 +147,11 @@ def set_default_value(jsonschema_element, key, default_value):
     if isinstance(default_value, tuple(TYPING_EQUIVALENCES.keys())) \
             or default_value is None:
         jsonschema_element[key]['default_value'] = default_value
-    elif isinstance(default_value, (list, tuple)):
-        raise NotImplementedError('List as default values not implemented')
+    elif dc.is_sequence(default_value):
+        # TODO : Tuple should be considered OK for default_value
+        msg = 'Object {} of type {} is not supported as default value'
+        type_ = type(default_value)
+        raise NotImplementedError(msg.format(default_value, type_))
     else:
         object_dict = default_value.to_dict()
         jsonschema_element[key]['default_value'] = object_dict

@@ -21,13 +21,26 @@ from importlib import import_module
 try:
     _open_source = False
     import dessia_common.core_protected as protected_module
-    from dessia_common.core_protected import inspect_arguments, recursive_instantiation, \
-        recursive_type, JSONSCHEMA_HEADER, \
+    from dessia_common.core_protected import inspect_arguments,\
+        recursive_instantiation, recursive_type, JSONSCHEMA_HEADER, \
         jsonschema_from_annotation, prettyname, \
         set_default_value, TYPING_EQUIVALENCES, \
         deserialize_argument
 except (ModuleNotFoundError, ImportError) as _:
     _open_source = True
+
+
+class ExceptionWithTraceback(Exception):
+    def __init__(self, message, traceback_=''):
+        self.message = message
+        self.traceback = traceback_
+
+    def __str__(self):
+        return '{}\nTraceback:\n{}'.format(self.message, self.traceback)
+
+
+class DeepAttributeError(ExceptionWithTraceback, AttributeError):
+    pass
 
 
 class ModelError(Exception):
@@ -515,7 +528,8 @@ def dict_merge(old_dct, merge_dct, add_keys=True, extend_lists=True):
         old_dct (dict) onto which the merge is executed
         merge_dct (dict): dct merged into dct
         add_keys (bool): whether to add new keys
-        extend_lists (bool) : wether to extend lists if keys are updated and value is a list
+        extend_lists (bool) : wether to extend lists if keys are updated
+                              and value is a list
 
     Returns:
         dict: updated dict
@@ -526,7 +540,8 @@ def dict_merge(old_dct, merge_dct, add_keys=True, extend_lists=True):
                      for k in set(dct).intersection(set(merge_dct))}
 
     for key, value in merge_dct.items():
-        if (isinstance(dct.get(key), dict) and isinstance(value, collections.Mapping)):
+        if isinstance(dct.get(key), dict)\
+                and isinstance(value, collections.Mapping):
             dct[key] = dict_merge(dct[key],
                                   merge_dct[key],
                                   add_keys=add_keys,
@@ -573,7 +588,8 @@ def serialize_dict(dict_):
             serialized_value = serialize_sequence(value)
         else:
             if not is_jsonable(value):
-                raise SerializationError('Value {} {} is not json serializable'.format(key, value))
+                msg = 'Value {} {} is not json serializable'
+                raise SerializationError(msg.format(key, value))
             serialized_value = value
         serialized_dict[key] = serialized_value
     return serialized_dict
@@ -810,34 +826,36 @@ def enhanced_deep_attr(obj, sequence):
             sequence = deepattr_to_sequence(sequence)
             return enhanced_deep_attr(obj=obj, sequence=sequence)
         # Is direct attribute
-        return enhanced_get_attr(obj=obj, attribute=sequence)
+        return enhanced_get_attr(obj=obj, attr=sequence)
 
     # Get direct attrivute
-    subobj = enhanced_get_attr(obj=obj, attribute=sequence[0])
+    subobj = enhanced_get_attr(obj=obj, attr=sequence[0])
     if len(sequence) > 1:
         # Recursively get deep attributes
         subobj = enhanced_deep_attr(obj=subobj, sequence=sequence[1:])
     return subobj
 
 
-def enhanced_get_attr(obj, attribute):
+def enhanced_get_attr(obj, attr):
     """
     Safely get attribute in obj.
     Obj can be of Object, Dict, or List type
 
     :param obj: Parent object in which find given attribute
-    :param attribute: String or integer that represents
+    :param attr: String or integer that represents
                       name or index of attribute
     :return: Value of attribute
     """
     try:
-        return getattr(obj, attribute)
+        return getattr(obj, attr)
     except (TypeError, AttributeError):
         try:
-            return obj[attribute]
+            return obj[attr]
         except TypeError:
-            msg = '{} has no attribute {}'
-            raise AttributeError(msg.format(obj, attribute))
+            classname = obj.__class__.__name__
+            msg = "'{}' object has no attribute '{}'.".format(classname, attr)
+            track = tb.format_exc()
+            raise DeepAttributeError(message=msg, traceback_=track)
 
 
 def concatenate_attributes(prefix, suffix, type_: str = 'str'):
