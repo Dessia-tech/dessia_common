@@ -61,7 +61,7 @@ def deprecated(use_instead=None):
 
 
 def deprecation_warning(name, object_type, use_instead=None):
-    warnings.simplefilter('always', DeprecationWarning)
+    warnings.simplefilter('once', DeprecationWarning)
     msg = "\n\n{} {} is deprecated.\n".format(object_type, name)
     msg += "It will be removed in a future version.\n"
     if use_instead is not None:
@@ -100,19 +100,21 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
             setattr(self, property_name, property_value)
 
     def __eq__(self, other_object):
+        dict_ = self.to_dict()
+        other_dict = other_object.to_dict()
         if not self._generic_eq:
             return object.__eq__(self, other_object)
         if full_classname(self) != full_classname(other_object) \
-                or self.__dict__.keys() != other_object.__dict__.keys():  # TODO : Check this line. Keys not ordered and/or just need to test used keys
+                or dict_.keys() != other_dict.keys():
             return False
 
-        dict_ = {k: v for k, v in self.__dict__.items()
-                 if k not in self._non_eq_attributes}
-        other_dict = {k: v for k, v in other_object.__dict__.items()
-                      if k not in self._non_eq_attributes}
+        eq_dict = {k: v for k, v in dict_.items()
+                   if k not in self._non_eq_attributes}
+        other_eq_dict = {k: v for k, v in other_dict.items()
+                         if k not in self._non_eq_attributes}
 
-        for key, value in dict_.items():
-            other_value = other_dict[key]
+        for key, value in eq_dict.items():
+            other_value = other_eq_dict[key]
             if value != other_value:
                 return False
         return True
@@ -121,7 +123,8 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
         if not self._generic_eq:
             return object.__hash__(self)
         hash_ = 0
-        for key, value in self.__dict__.items():
+        dict_ = self.to_dict()
+        for key, value in dict_.items():
             if key not in set(self._non_eq_attributes
                               + self._non_hash_attributes):
                 if isinstance(value, list):
@@ -162,12 +165,14 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
             # !!! This prevent us to call DessiaObject.to_dict() from an inheriting object
             # which implement a Dict method, because of the infinite recursion it creates.
             # TODO Change Dict methods to to_dict everywhere
-            return self.Dict()
-
-        # Default to dict
-        serialized_dict = self.base_dict()
-        serialized_dict.update(serialize_dict(dict_))
-
+            deprecation_warning(name='Dict', object_type='Function',
+                                use_instead='to_dict')
+            serialized_dict = self.Dict()
+        else:
+            # Default to dict
+            serialized_dict = self.base_dict()
+            serialized_dict.update(serialize_dict(dict_))
+        # serialized_dict['hash'] = self.__hash__()
         return serialized_dict
 
     @classmethod
@@ -176,6 +181,8 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
         Generic dict_to_object method
         """
         if hasattr(cls, 'DictToObject'):
+            deprecation_warning(name='DictToObject', object_type='Function',
+                                use_instead='dict_to_object')
             return cls.DictToObject(dict_)
 
         if cls is not DessiaObject:
@@ -240,7 +247,6 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
         return self.__class__(**dict_)
 
     def volmdlr_volume_model(self, frame=None):
-
         if hasattr(self, 'volmdlr_primitives'):
             import volmdlr as vm  # !!! Avoid circular imports, is this OK ?
             if hasattr(self, 'volmdlr_primitives_step_frames'):
@@ -253,8 +259,8 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
                 return vm.VolumeModel(self.volmdlr_primitives(frame=frame))
             except TypeError:
                 return vm.VolumeModel(self.volmdlr_primitives())
-        msg = 'Object of type {} does not implement volmdlr_primitives'.format(self.__class__.__name__)
-        raise NotImplementedError(msg)
+        msg = 'Object of type {} does not implement volmdlr_primitives'
+        raise NotImplementedError(msg.format(self.__class__.__name__))
 
     def cad_export(self,
                    fcstd_filepath=None,
@@ -297,8 +303,6 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
         if hasattr(self, 'to_markdown'):
             display.append({'angular_component': 'markdown',
                             'data': self.to_markdown()})
-
-            
         return display
 
 
@@ -334,12 +338,15 @@ class Parameter(DessiaObject):
 
 
 class ParameterSet(DessiaObject):
-    def __init__(self, values):
+    def __init__(self, values, name=''):
         self.values = values
+
+        DessiaObject.__init__(self, name=name)
 
     @property
     def parameters(self):
-        parameters = [Parameter(min(v), max(v), name=k) for k, v in self.values.items()]
+        parameters = [Parameter(min(v), max(v), name=k)
+                      for k, v in self.values.items()]
         return parameters
 
     @property
