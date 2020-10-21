@@ -90,6 +90,11 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
     """
     Base abstract class for Dessia's object.
     Gathers generic methods and attributes
+
+    :param name: Name of object.
+    :type name: str
+    :param **kwargs: Additionnal user metadata
+    :type **kargs: Any
     """
     _standalone_in_db = False
     _non_serializable_attributes = []
