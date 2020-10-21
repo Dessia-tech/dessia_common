@@ -133,6 +133,8 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
         return object.__eq__(self, other_object)
 
     def data__eq__(self, other_object):
+        if self.__class__ != other_object.__class__:
+            return False
         dict_ = self.__dict__
         other_dict = other_object.__dict__
         if full_classname(self) != full_classname(other_object) \
