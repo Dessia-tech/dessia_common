@@ -72,3 +72,7 @@ input_values = {
     # workflow.index(objectives_method.inputs[2]): minimized_attributes
 }
 workflow_run = workflow.run(input_variables_values=input_values)
+
+from dessia_api_client import Client
+c = Client(api_url = 'https://api.platform-dev.dessia.tech')
+r = c.create_object_from_python_object(workflow_run)

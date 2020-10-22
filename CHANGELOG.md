@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Fixed
+- Run again takes input_values arguments as it should
 - Changed workflow to workflow in to_dict/dict_to_object
 - Support for new data types
 - Added mypy_extensions to setup.py
@@ -26,11 +27,13 @@ _ Rerun method for WorkflowRuns & prerequisite (input_values in __init__ et meth
 - Recursive/complex deepattr function
 
 ### Changed
+- Add a more explicit message to list as default value error
 - Filter block doesn't write _display_angular anymore. See ParallelPlot
 - Catalog _dispplay_angular to conform to ParallelPlot Block
 
 ## [0.3.8]
 ### Added
+- Change rerun method name to run_again
 - Unpacker for sequence workflow block
 - Cars dataset as imported models
 - Models & Templates added to MANIFEST.in
