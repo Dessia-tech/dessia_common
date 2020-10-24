@@ -114,6 +114,8 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
 
     def __eq__(self, other_object):
         dict_ = self.to_dict()
+        if self.__class__ != other_object.__class__:
+            return False
         other_dict = other_object.to_dict()
         if not self._generic_eq:
             return object.__eq__(self, other_object)
