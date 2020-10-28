@@ -29,9 +29,14 @@ this module can also be seen as a template for Dessia's
 coding/naming style & convention.
 """
 
+from typing import Dict, List, Tuple, Union
+
+import volmdlr as vm
+import volmdlr.primitives2D as p2d
+import volmdlr.primitives3D as p3d
 from dessia_common import DessiaObject
 from dessia_common.typings import Subclass
-from typing import Dict, List, Tuple, Union
+
 try:
     from typing import TypedDict  # >=3.8
 except ImportError:
@@ -46,6 +51,19 @@ class StandaloneSubobject(DessiaObject):
         self.floatarg = floatarg
 
         DessiaObject.__init__(self, name=name)
+
+    def contour(self):
+        points = [vm.Point2D((0, 0)), vm.Point2D((0, 1)),
+                  vm.Point2D((1, 1)), vm.Point2D((1, 0))]
+
+        crls = p2d.ClosedRoundedLineSegments2D(points=points, radius={})
+        return vm.Contour2D(crls.primitives)
+
+    def voldmlr_primitives(self):
+        contour = self.contour()
+        volumes = [p3d.ExtrudedProfile(vm.O3D, vm.X3D, vm.Z3D,
+                                       contour, [], vm.Y3D)]
+        return volumes
 
 
 class EnhancedStandaloneSubobject(StandaloneSubobject):
@@ -136,3 +154,7 @@ class StandaloneObject(DessiaObject):
         """
         self.standalone_subobject.floatarg += value
         return self.standalone_subobject
+
+    def volmdlr_primitives(self):
+        return self.standalone_subobject.voldmlr_primitives()
+
