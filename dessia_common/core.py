@@ -12,14 +12,35 @@ import collections
 from copy import deepcopy
 import inspect
 import json
-from typing import List
+from typing import List, Union
 try:
     from typing import TypedDict  # >=3.8
 except ImportError:
     from mypy_extensions import TypedDict  # <=3.7
 import traceback as tb
+import dessia_common.typings as dt
 
 from importlib import import_module
+
+
+JSONSCHEMA_HEADER = {"definitions": {},
+                     "$schema": "http://json-schema.org/draft-07/schema#",
+                     "type": "object",
+                     "required": [],
+                     "properties": {}}
+
+TYPING_EQUIVALENCES = {int: 'number', float: 'number',
+                       bool: 'boolean', str: 'string'}
+
+TYPES_STRINGS = {int: 'int', float: 'float', bool: 'boolean', str: 'str',
+                 list: 'list', tuple: 'tuple', dict: 'dict'}
+
+SEQUENCE_TYPINGS = ['List', 'Sequence', 'Iterable']
+
+_FORBIDDEN_ARGNAMES = ['self', 'cls', 'progress_callback', 'return']
+
+TYPES_FROM_STRING = {'unicode': str, 'str': str, 'float': float,
+                     'int': int, 'bool': bool}
 
 
 class ExceptionWithTraceback(Exception):
@@ -153,16 +174,6 @@ class DessiaObject:
                     hash_ += hash(value)
         return int(hash_ % 1e5)
 
-    # def __getattribute__(self, name):
-    #     if name in DEPRECATED_ATTRIBUTES:
-    #         deprecation_warning(name, 'Attribute', DEPRECATED_ATTRIBUTES[name])
-    #     return object.__getattribute__(self, name)
-
-    # def __setattribute__(self, name, value):
-    #     if name in DEPRECATED_ATTRIBUTES:
-    #         deprecation_warning(name, 'Attribute', DEPRECATED_ATTRIBUTES[name])
-    #     return object.__setattribute__(self, name, value)
-
     @property
     def full_classname(self):
         return full_classname(self)
@@ -188,8 +199,9 @@ class DessiaObject:
         """
         dict_ = self.__getstate__()
         if hasattr(self, 'Dict'):
-            # !!! This prevent us to call DessiaObject.to_dict() from an inheriting object
-            # which implement a Dict method, because of the infinite recursion it creates.
+            # !!! This prevent us to call DessiaObject.to_dict()
+            # from an inheriting object which implement a Dict method,
+            # because of the infinite recursion it creates.
             # TODO Change Dict methods to to_dict everywhere
             deprecation_warning(name='Dict', object_type='Function',
                                 use_instead='to_dict')
@@ -277,7 +289,7 @@ class DessiaObject:
 
             if name != 'return':
                 editable = name not in cls._non_editable_attributes
-                annotation_type = dc.type_from_annotation(annotation[1], cls)
+                annotation_type = type_from_annotation(annotation[1], cls)
                 annotation = (annotation[0], annotation_type)
                 jss_elt = jsonschema_from_annotation(annotation=annotation,
                                                      jsonschema_element={},
@@ -626,8 +638,9 @@ def number2factor(number):
     factor_range = range(1, int(number ** 0.5) + 1)
 
     if number:
-        factors = list(set(reduce(list.__add__,
-                                  ([i, number // i] for i in factor_range if number % i == 0))))
+        factors = list(set(reduce(list.__add__, ([i, number // i]
+                                                 for i in factor_range
+                                                 if number % i == 0))))
 
         grids = [(factor_x, int(number / factor_x))
                  for factor_x in factors
@@ -645,8 +658,9 @@ def number3factor(number, complete=True):
     factor_range = range(1, int(number ** 0.5) + 1)
 
     if number:
-        factors = list(set(reduce(list.__add__,
-                                  ([i, number // i] for i in factor_range if number % i == 0))))
+        factors = list(set(reduce(list.__add__, ([i, number // i]
+                                                 for i in factor_range
+                                                 if number % i == 0))))
         if not complete:
             grids = get_incomplete_factors(number, factors)
 
@@ -794,10 +808,12 @@ def dict_to_object(dict_, class_=None):
             return obj
         if class_._init_variables is None:
             class_argspec = inspect.getfullargspec(class_)
-            init_dict = {k: v for k, v in working_dict.items() if k in class_argspec.args}
+            init_dict = {k: v for k, v in working_dict.items()
+                         if k in class_argspec.args}
         else:
-            init_dict = {k: v for k, v in working_dict.items() if k in class_._init_variables}
-        # !!! Class method to generate init_dict ??
+            init_dict = {k: v for k, v in working_dict.items()
+                         if k in class_._init_variables}
+        # TOCHECK Class method to generate init_dict ??
     else:
         init_dict = working_dict
 
@@ -843,7 +859,8 @@ def dict_hash(dict_):
     return hash_
 
 
-def sequence_to_objects(sequence):  # TODO: rename to deserialize sequence?
+def sequence_to_objects(sequence):
+    # TODO: rename to deserialize sequence? Or is this a duplicate ?
     deserialized_sequence = []
     for element in sequence:
         if isinstance(element, dict):
@@ -864,11 +881,13 @@ def full_classname(object_):
 
 
 def serialization_test(obj):
-    # TODO: debug infinite recursion?
+    # TODO: debug infinite recursion? Should we remove thhis ?
     d = obj.to_dict()
     obj2 = obj.dict_to_object(d)
     if obj != obj2:
-        raise ModelError('object in no more equal to himself after serialization/deserialization!')
+        msg = 'Object in no more equal to himself '
+        msg += 'after serialization/deserialization!'
+        raise ModelError(msg)
 
 
 def deepcopy_value(value, memo):
@@ -879,7 +898,7 @@ def deepcopy_value(value, memo):
     except TypeError:
         pass
 
-    if isinstance(value, type):# For class
+    if isinstance(value, type):  # For class
         return value
     elif hasattr(value, '__deepcopy__'):
         try:
@@ -1094,10 +1113,6 @@ def is_sequence(obj):
         and not isinstance(obj, str)
 
 
-TYPES_FROM_STRING = {'unicode': str, 'str': str, 'float': float,
-                     'int': int, 'bool': bool}
-
-
 def type_from_annotation(type_, module):
     """
     Clean up a proposed type if there are stringified
@@ -1239,7 +1254,7 @@ def set_default_value(jsonschema_element, key, default_value):
     if isinstance(default_value, tuple(TYPING_EQUIVALENCES.keys())) \
             or default_value is None:
         jsonschema_element[key]['default_value'] = default_value
-    elif dc.is_sequence(default_value):
+    elif is_sequence(default_value):
         # TODO : Tuple should be considered OK for default_value
         msg = 'Object {} of type {} is not supported as default value'
         type_ = type(default_value)
@@ -1289,11 +1304,13 @@ def deserialize_argument(type_, argument):
             children_class = classes[children_class_index]
             try:
                 # Try to deserialize
-                # Throws KeyError if we try to put wrong dict into dict_to_object
-                # This means we try to instantiate a children class with a parent dict_to_object
+                # Throws KeyError if we try to put wrong dict into
+                # dict_to_object. This means we try to instantiate
+                # a children class with a parent dict_to_object
                 deserialized_argument = children_class.dict_to_object(argument)
 
-                # If it succeeds we have the right class and instantiated object
+                # If it succeeds we have the right
+                # class and instantiated object
                 instantiated = True
             except KeyError:
                 # This is not the right class, we should go see the parent
@@ -1354,7 +1371,7 @@ def recursive_instantiation(type_, value):
     if type_ in TYPES_STRINGS.values():
         return eval(type_)(value)
     elif isinstance(type_, str):
-        class_ = dc.get_python_class_from_class_name(type_)
+        class_ = get_python_class_from_class_name(type_)
         if inspect.isclass(class_):
             return class_.dict_to_object(value)
         else:
@@ -1397,7 +1414,6 @@ def default_dict(jsonschema):
 
 
 def default_sequence(array_jsonschema):
-    default_value = []
     if 'minItems' in array_jsonschema and 'maxItems' in array_jsonschema \
             and array_jsonschema['minItems'] == array_jsonschema['maxItems']:
         number = array_jsonschema['minItems']
@@ -1416,8 +1432,8 @@ def default_sequence(array_jsonschema):
         if 'classes' in array_jsonschema['items']:
             # TOCHECK classes[0]
             classname = array_jsonschema['items']['classes'][0]
-            class_ = dc.get_python_class_from_class_name(classname)
-            if issubclass(class_, dc.DessiaObject):
+            class_ = get_python_class_from_class_name(classname)
+            if issubclass(class_, DessiaObject):
                 if class_._standalone_in_db:  # Standalone object
                     return []
                 # Embedded object
@@ -1430,20 +1446,3 @@ def default_sequence(array_jsonschema):
         # Subclasses
         return [choose_default(array_jsonschema['items'])] * number
     return [choose_default(array_jsonschema['items'])] * number
-
-
-JSONSCHEMA_HEADER = {"definitions": {},
-                     "$schema": "http://json-schema.org/draft-07/schema#",
-                     "type": "object",
-                     "required": [],
-                     "properties": {}}
-
-TYPING_EQUIVALENCES = {int: 'number', float: 'number',
-                       bool: 'boolean', str: 'string'}
-
-TYPES_STRINGS = {int: 'int', float: 'float', bool: 'boolean', str: 'str',
-                 list: 'list', tuple: 'tuple', dict: 'dict'}
-
-SEQUENCE_TYPINGS = ['List', 'Sequence', 'Iterable']
-
-_FORBIDDEN_ARGNAMES = ['self', 'cls', 'progress_callback', 'return']
