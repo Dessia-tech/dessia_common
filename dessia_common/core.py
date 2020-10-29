@@ -13,7 +13,10 @@ from copy import deepcopy
 import inspect
 import json
 from typing import List
-from mypy_extensions import TypedDict
+try:
+    from typing import TypedDict  # >=3.8
+except ImportError:
+    from mypy_extensions import TypedDict  # <=3.7
 import traceback as tb
 
 from importlib import import_module
@@ -76,15 +79,21 @@ class DessiaObject:
     """
     Base abstract class for Dessia's object.
     Gathers generic methods and attributes
+
+    :param name: Name of object.
+    :type name: str
+    :param **kwargs: Additionnal user metadata
+    :type **kargs: Any
     """
     _standalone_in_db = False
     _non_serializable_attributes = []
     _non_editable_attributes = []
-    _non_eq_attributes = ['name']
-    _non_hash_attributes = ['name']
+    _non_data_eq_attributes = ['name']
+    _non_data_hash_attributes = ['name']
     _ordered_attributes = []
     _titled_attributes = []
-    _generic_eq = False
+    _eq_is_data_eq = True
+    
     _init_variables = None
     _export_formats = None
     _allowed_methods = []
@@ -101,19 +110,28 @@ class DessiaObject:
         for property_name, property_value in kwargs.items():
             setattr(self, property_name, property_value)
 
+    def __hash__(self):
+        if self._eq_is_data_eq:
+            return self.data__hash__()
+        else:
+            return object.__hash__(self)
+
     def __eq__(self, other_object):
-        dict_ = self.to_dict()
-        other_dict = other_object.to_dict()
-        if not self._generic_eq:
-            return object.__eq__(self, other_object)
+        if self._eq_is_data_eq:
+            return self.data__eq__(other_object)
+        return object.__eq__(self, other_object)
+
+    def data__eq__(self, other_object):
+        dict_ = self.__dict__
+        other_dict = other_object.__dict__
         if full_classname(self) != full_classname(other_object) \
                 or dict_.keys() != other_dict.keys():
             return False
 
         eq_dict = {k: v for k, v in dict_.items()
-                   if k not in self._non_eq_attributes}
+                   if k not in self._non_data_eq_attributes}
         other_eq_dict = {k: v for k, v in other_dict.items()
-                         if k not in self._non_eq_attributes}
+                         if k not in self._non_data_eq_attributes}
 
         for key, value in eq_dict.items():
             other_value = other_eq_dict[key]
@@ -121,14 +139,11 @@ class DessiaObject:
                 return False
         return True
 
-    def __hash__(self):
-        if not self._generic_eq:
-            return object.__hash__(self)
+    def data__hash__(self):
         hash_ = 0
-        dict_ = self.to_dict()
-        for key, value in dict_.items():
-            if key not in set(self._non_eq_attributes
-                              + self._non_hash_attributes):
+        for key, value in self.__dict__.items():
+            if key not in set(self._non_data_eq_attributes
+                              + self._non_data_hash_attributes):
                 if isinstance(value, list):
                     hash_ += list_hash(value)
                 elif isinstance(value, dict):
@@ -138,6 +153,16 @@ class DessiaObject:
                 else:
                     hash_ += hash(value)
         return int(hash_ % 1e5)
+
+    # def __getattribute__(self, name):
+    #     if name in DEPRECATED_ATTRIBUTES:
+    #         deprecation_warning(name, 'Attribute', DEPRECATED_ATTRIBUTES[name])
+    #     return object.__getattribute__(self, name)
+
+    # def __setattribute__(self, name, value):
+    #     if name in DEPRECATED_ATTRIBUTES:
+    #         deprecation_warning(name, 'Attribute', DEPRECATED_ATTRIBUTES[name])
+    #     return object.__setattribute__(self, name, value)
 
     @property
     def full_classname(self):
@@ -193,9 +218,10 @@ class DessiaObject:
         elif 'object_class' in dict_:
             obj = dict_to_object(dict_)
             return obj
-        # Using default
-        # TODO: use jsonschema
-        return obj
+        else:
+            # Using default
+            # TODO: use jsonschema
+            raise NotImplementedError('No object_class in dict')
 
     @classmethod
     def base_jsonschema(cls):
@@ -445,11 +471,11 @@ class DessiaObject:
             display.append({'angular_component': 'cad_viewer',
                             'data': self.babylon_data()})
         elif hasattr(self, 'volmdlr_primitives')\
-        or (self.__class__.volmdlr_volume_model is not DessiaObject.volmdlr_volume_model):
+                or (self.__class__.volmdlr_volume_model
+                    is not DessiaObject.volmdlr_volume_model):
             model = self.volmdlr_volume_model()
             display.append({'angular_component': 'cad_viewer',
                             'data': model.babylon_data()})
-
         if hasattr(self, 'plot_data'):
             display.append({'angular_component': 'plot_data',
                             'data': self.plot_data()})
@@ -521,8 +547,8 @@ class Evolution(DessiaObject):
     :param evolution: float list
     :type evolution: list
     """
-    _non_eq_attributes = ['name']
-    _non_hash_attributes = ['name']
+    _non_data_eq_attributes = ['name']
+    _non_data_hash_attributes = ['name']
     _generic_eq = True
 
     def __init__(self, evolution: List[float] = None, name: str = ''):
@@ -547,8 +573,8 @@ class Evolution(DessiaObject):
 
 
 class CombinationEvolution(DessiaObject):
-    _non_eq_attributes = ['name']
-    _non_hash_attributes = ['name']
+    _non_data_eq_attributes = ['name']
+    _non_data_hash_attributes = ['name']
     _generic_eq = True
 
     def __init__(self, evolution1: List[Evolution], evolution2: List[Evolution],
@@ -763,7 +789,8 @@ def dict_to_object(dict_, class_=None):
 
     if class_ is not None:
         if hasattr(class_, 'dict_to_object') \
-                and class_.dict_to_object.__func__ is not DessiaObject.dict_to_object.__func__:
+                and (class_.dict_to_object.__func__
+                     is not DessiaObject.dict_to_object.__func__):
             obj = class_.dict_to_object(dict_)
             return obj
         if class_._init_variables is None:
@@ -909,7 +936,8 @@ def serialize_typing(typing_):
 
 def deserialize_typing(serialized_typing):
     if isinstance(serialized_typing, str):
-        if serialized_typing == 'float' or serialized_typing == 'builtins.float':
+        if serialized_typing == 'float'\
+                or serialized_typing == 'builtins.float':
             return float
 
         splitted_type = serialized_typing.split('[')
@@ -922,7 +950,6 @@ def deserialize_typing(serialized_typing):
             else:
                 type_ = eval(splitted_argname[1])
             return List[type_]
-
     raise NotImplementedError('{}'.format(serialized_typing))
 
 
@@ -931,7 +958,7 @@ def serialize(deserialized_element):
         serialized = deserialized_element.to_dict()
     elif isinstance(deserialized_element, dict):
         serialized = serialize_dict(deserialized_element)
-    elif isinstance(deserialized_element, (list, tuple)):
+    elif is_sequence(deserialized_element):
         serialized = serialize_sequence(deserialized_element)
     else:
         serialized = deserialized_element
@@ -941,7 +968,7 @@ def serialize(deserialized_element):
 def deserialize(serialized_element):
     if isinstance(serialized_element, dict):
         element = dict_to_object(serialized_element)
-    elif isinstance(serialized_element, (list, tuple)):
+    elif is_sequence(serialized_element):
         element = sequence_to_objects(serialized_element)
     else:
         element = serialized_element
@@ -1068,8 +1095,8 @@ def is_sequence(obj):
         and not isinstance(obj, str)
 
 
-TYPES_FROM_STRING = {'unicode': str, 'str': str,
-                     'float': float, 'int': int, 'bool': bool}
+TYPES_FROM_STRING = {'unicode': str, 'str': str, 'float': float,
+                     'int': int, 'bool': bool}
 
 
 def type_from_annotation(type_, module):

@@ -1912,10 +1912,10 @@ def set_inputs_from_function(method, inputs=[], block_name=''):
 
 
 def value_type_check(value, type_):
-    try:
-        typeguard.check_type('', value, type_)
-    except TypeError:
-        return False
+    # try:
+    #     typeguard.check_type('', value, type_)
+    # except TypeError:
+    #     return False
     try:# TODO: Subscripted generics cannot be used...
         if not isinstance(value, type_):
             return False
