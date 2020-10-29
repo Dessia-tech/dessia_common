@@ -100,11 +100,10 @@ class DessiaObject:
     _whitelist_attributes = []
 
     def __init__(self, name: str = '', **kwargs):
-        implements_eq = (hasattr(self, '__eq__') and hasattr(self, '__hash__')
-                         and self.__class__.__eq__ is not object.__eq__
-                         and self.__class__.__hash__ is not object.__hash__)
-        if self._standalone_in_db and not self._generic_eq and not implements_eq:
-            raise ValueError('Standalone in database classes must define their custom __hash__ and __eq__')
+        if self._standalone_in_db and not self._eq_is_data_eq:
+            msg = 'Classes that are standalone in database '
+            msg += 'must define their custom __hash__ and __eq__.'
+            raise ValueError(msg)
 
         self.name = name
         for property_name, property_value in kwargs.items():
