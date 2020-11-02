@@ -21,13 +21,26 @@ from importlib import import_module
 try:
     _open_source = False
     import dessia_common.core_protected as protected_module
-    from dessia_common.core_protected import inspect_arguments, recursive_instantiation, \
-        recursive_type, JSONSCHEMA_HEADER, \
+    from dessia_common.core_protected import inspect_arguments,\
+        recursive_instantiation, recursive_type, JSONSCHEMA_HEADER, \
         jsonschema_from_annotation, prettyname, \
         set_default_value, TYPING_EQUIVALENCES, \
         deserialize_argument
 except (ModuleNotFoundError, ImportError) as _:
     _open_source = True
+
+
+class ExceptionWithTraceback(Exception):
+    def __init__(self, message, traceback_=''):
+        self.message = message
+        self.traceback = traceback_
+
+    def __str__(self):
+        return '{}\nTraceback:\n{}'.format(self.message, self.traceback)
+
+
+class DeepAttributeError(ExceptionWithTraceback, AttributeError):
+    pass
 
 
 class ModelError(Exception):
@@ -61,7 +74,7 @@ def deprecated(use_instead=None):
 
 
 def deprecation_warning(name, object_type, use_instead=None):
-    warnings.simplefilter('always', DeprecationWarning)
+    warnings.simplefilter('once', DeprecationWarning)
     msg = "\n\n{} {} is deprecated.\n".format(object_type, name)
     msg += "It will be removed in a future version.\n"
     if use_instead is not None:
@@ -100,19 +113,23 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
             setattr(self, property_name, property_value)
 
     def __eq__(self, other_object):
+        dict_ = self.to_dict()
+        if self.__class__ != other_object.__class__:
+            return False
+        other_dict = other_object.to_dict()
         if not self._generic_eq:
             return object.__eq__(self, other_object)
         if full_classname(self) != full_classname(other_object) \
-                or self.__dict__.keys() != other_object.__dict__.keys():  # TODO : Check this line. Keys not ordered and/or just need to test used keys
+                or dict_.keys() != other_dict.keys():
             return False
 
-        dict_ = {k: v for k, v in self.__dict__.items()
-                 if k not in self._non_eq_attributes}
-        other_dict = {k: v for k, v in other_object.__dict__.items()
-                      if k not in self._non_eq_attributes}
+        eq_dict = {k: v for k, v in dict_.items()
+                   if k not in self._non_eq_attributes}
+        other_eq_dict = {k: v for k, v in other_dict.items()
+                         if k not in self._non_eq_attributes}
 
-        for key, value in dict_.items():
-            other_value = other_dict[key]
+        for key, value in eq_dict.items():
+            other_value = other_eq_dict[key]
             if value != other_value:
                 return False
         return True
@@ -121,7 +138,8 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
         if not self._generic_eq:
             return object.__hash__(self)
         hash_ = 0
-        for key, value in self.__dict__.items():
+        dict_ = self.to_dict()
+        for key, value in dict_.items():
             if key not in set(self._non_eq_attributes
                               + self._non_hash_attributes):
                 if isinstance(value, list):
@@ -133,22 +151,6 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
                 else:
                     hash_ += hash(value)
         return int(hash_ % 1e5)
-
-    # def __getattr__(self, item):
-    #     try:
-    #         return enhanced_deep_attr(self, item)
-    #     except (AttributeError, TypeError, ValueError):
-    #         return self.__getattribute__(item)
-
-    # def __getattribute__(self, name):
-    #     if name in DEPRECATED_ATTRIBUTES:
-    #         deprecation_warning(name, 'Attribute', DEPRECATED_ATTRIBUTES[name])
-    #     return object.__getattribute__(self, name)
-
-    # def __setattribute__(self, name, value):
-    #     if name in DEPRECATED_ATTRIBUTES:
-    #         deprecation_warning(name, 'Attribute', DEPRECATED_ATTRIBUTES[name])
-    #     return object.__setattribute__(self, name, value)
 
     @property
     def full_classname(self):
@@ -178,12 +180,14 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
             # !!! This prevent us to call DessiaObject.to_dict() from an inheriting object
             # which implement a Dict method, because of the infinite recursion it creates.
             # TODO Change Dict methods to to_dict everywhere
-            return self.Dict()
-
-        # Default to dict
-        serialized_dict = self.base_dict()
-        serialized_dict.update(serialize_dict(dict_))
-
+            deprecation_warning(name='Dict', object_type='Function',
+                                use_instead='to_dict')
+            serialized_dict = self.Dict()
+        else:
+            # Default to dict
+            serialized_dict = self.base_dict()
+            serialized_dict.update(serialize_dict(dict_))
+        # serialized_dict['hash'] = self.__hash__()
         return serialized_dict
 
     @classmethod
@@ -192,6 +196,8 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
         Generic dict_to_object method
         """
         if hasattr(cls, 'DictToObject'):
+            deprecation_warning(name='DictToObject', object_type='Function',
+                                use_instead='dict_to_object')
             return cls.DictToObject(dict_)
 
         if cls is not DessiaObject:
@@ -256,7 +262,6 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
         return self.__class__(**dict_)
 
     def volmdlr_volume_model(self, frame=None):
-
         if hasattr(self, 'volmdlr_primitives'):
             import volmdlr as vm  # !!! Avoid circular imports, is this OK ?
             if hasattr(self, 'volmdlr_primitives_step_frames'):
@@ -269,8 +274,8 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
                 return vm.VolumeModel(self.volmdlr_primitives(frame=frame))
             except TypeError:
                 return vm.VolumeModel(self.volmdlr_primitives())
-        msg = 'Object of type {} does not implement volmdlr_primitives'.format(self.__class__.__name__)
-        raise NotImplementedError(msg)
+        msg = 'Object of type {} does not implement volmdlr_primitives'
+        raise NotImplementedError(msg.format(self.__class__.__name__))
 
     def cad_export(self,
                    fcstd_filepath=None,
@@ -310,6 +315,9 @@ class DessiaObject(protected_module.DessiaObject if not _open_source else object
         if hasattr(self, 'plot_data'):
             display.append({'angular_component': 'plot_data',
                             'data': self.plot_data()})
+        if hasattr(self, 'to_markdown'):
+            display.append({'angular_component': 'markdown',
+                            'data': self.to_markdown()})
         return display
 
 
@@ -345,12 +353,15 @@ class Parameter(DessiaObject):
 
 
 class ParameterSet(DessiaObject):
-    def __init__(self, values):
+    def __init__(self, values, name=''):
         self.values = values
+
+        DessiaObject.__init__(self, name=name)
 
     @property
     def parameters(self):
-        parameters = [Parameter(min(v), max(v), name=k) for k, v in self.values.items()]
+        parameters = [Parameter(min(v), max(v), name=k)
+                      for k, v in self.values.items()]
         return parameters
 
     @property
@@ -519,7 +530,8 @@ def dict_merge(old_dct, merge_dct, add_keys=True, extend_lists=True):
         old_dct (dict) onto which the merge is executed
         merge_dct (dict): dct merged into dct
         add_keys (bool): whether to add new keys
-        extend_lists (bool) : wether to extend lists if keys are updated and value is a list
+        extend_lists (bool) : wether to extend lists if keys are updated
+                              and value is a list
 
     Returns:
         dict: updated dict
@@ -530,7 +542,8 @@ def dict_merge(old_dct, merge_dct, add_keys=True, extend_lists=True):
                      for k in set(dct).intersection(set(merge_dct))}
 
     for key, value in merge_dct.items():
-        if (isinstance(dct.get(key), dict) and isinstance(value, collections.Mapping)):
+        if isinstance(dct.get(key), dict)\
+                and isinstance(value, collections.Mapping):
             dct[key] = dict_merge(dct[key],
                                   merge_dct[key],
                                   add_keys=add_keys,
@@ -577,7 +590,8 @@ def serialize_dict(dict_):
             serialized_value = serialize_sequence(value)
         else:
             if not is_jsonable(value):
-                raise SerializationError('Value {} {} is not json serializable'.format(key, value))
+                msg = 'Value {} {} is not json serializable'
+                raise SerializationError(msg.format(key, value))
             serialized_value = value
         serialized_dict[key] = serialized_value
     return serialized_dict
@@ -607,10 +621,6 @@ def get_python_class_from_class_name(full_class_name):
 def dict_to_object(dict_, class_=None):
     working_dict = dict_.copy()
     if class_ is None and 'object_class' in working_dict:
-        # object_class = working_dict['object_class']
-        # module = object_class.rsplit('.', 1)[0]
-        # exec('import ' + module)
-        # class_ = eval(object_class)
         class_ = get_python_class_from_class_name(working_dict['object_class'])
 
     if class_ is not None:
@@ -813,39 +823,68 @@ def enhanced_deep_attr(obj, sequence):
     """
     if isinstance(sequence, str):
         # Sequence is a string and not a sequence of deep attributes
-        if '.' in sequence:
+        if '/' in sequence:
             # Is deep attribute reference
             sequence = deepattr_to_sequence(sequence)
-            return enhanced_deep_attr(obj, sequence)
+            return enhanced_deep_attr(obj=obj, sequence=sequence)
         # Is direct attribute
-        return enhanced_get_attr(obj, sequence)
+        return enhanced_get_attr(obj=obj, attr=sequence)
+
     # Get direct attrivute
-    subobj = enhanced_get_attr(obj, sequence[0])
+    subobj = enhanced_get_attr(obj=obj, attr=sequence[0])
     if len(sequence) > 1:
         # Recursively get deep attributes
-        subobj = enhanced_deep_attr(subobj, sequence[1:])
+        subobj = enhanced_deep_attr(obj=subobj, sequence=sequence[1:])
     return subobj
 
 
-def enhanced_get_attr(obj, attribute):
+def enhanced_get_attr(obj, attr):
     """
     Safely get attribute in obj.
     Obj can be of Object, Dict, or List type
 
     :param obj: Parent object in which find given attribute
-    :param attribute: String or integer that represents
+    :param attr: String or integer that represents
                       name or index of attribute
     :return: Value of attribute
     """
     try:
-        return getattr(obj, attribute)
+        return getattr(obj, attr)
     except (TypeError, AttributeError):
-        return obj[attribute]
-        # TODO We might try/except last statement
+        try:
+            return obj[attr]
+        except TypeError:
+            classname = obj.__class__.__name__
+            msg = "'{}' object has no attribute '{}'.".format(classname, attr)
+            track = tb.format_exc()
+            raise DeepAttributeError(message=msg, traceback_=track)
+
+
+def concatenate_attributes(prefix, suffix, type_: str = 'str'):
+    wrong_prefix_format = 'Attribute prefix is wrongly formatted.'
+    wrong_prefix_format += 'Is of type {}. Should be str or list'
+    if type_ == 'str':
+        if isinstance(prefix, str):
+            return prefix + '/' + str(suffix)
+        elif is_sequence(prefix):
+            return sequence_to_deepattr(prefix) + '/' + str(suffix)
+        else:
+            raise TypeError(wrong_prefix_format.format(type(prefix)))
+    elif type_ == 'sequence':
+        if isinstance(prefix, str):
+            return [prefix, suffix]
+        elif is_sequence(prefix):
+            return prefix + [suffix]
+        else:
+            raise TypeError(wrong_prefix_format.format(type(prefix)))
+    else:
+        wrong_concat_type = 'Type {} for concatenation is not supported.'
+        wrong_concat_type += 'Should be "str" or "sequence"'
+        raise ValueError(wrong_concat_type.format(type_))
 
 
 def deepattr_to_sequence(deepattr: str):
-    sequence = deepattr.split('.')
+    sequence = deepattr.split('/')
     healed_sequence = []
     for i, attribute in enumerate(sequence):
         try:
@@ -858,10 +897,10 @@ def deepattr_to_sequence(deepattr: str):
 def sequence_to_deepattr(sequence):
     healed_sequence = [str(attr) if isinstance(attr, int) else attr
                        for attr in sequence]
-    return '.'.join(healed_sequence)
+    return '/'.join(healed_sequence)
 
 
-def is_bounded(filter_: Filter, value:float):
+def is_bounded(filter_: Filter, value: float):
     bounded = True
     operator = filter_['operator']
     bound = filter_['bound']
@@ -879,6 +918,16 @@ def is_bounded(filter_: Filter, value:float):
     if operator == 'eq' and value != bound:
         bounded = False
     return bounded
+
+
+def is_sequence(obj):
+    """
+    :param obj: Object to check
+    :return: bool. True if object is a sequence but not a string.
+                   False otherwise
+    """
+    return isinstance(obj, collections.abc.Sequence)\
+        and not isinstance(obj, str)
 
 
 TYPES_FROM_STRING = {'unicode': str, 'str': str,

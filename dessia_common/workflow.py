@@ -502,7 +502,7 @@ class ForEach(Block):
         Block.__init__(self, inputs, [output_variable], name=name)
 
     def equivalent_hash(self):
-        return int(hash(self.workflow_block) % 10e5)
+        return int(self.workflow_block.equivalent_hash() % 10e5)
 
     def equivalent(self, other_block):
         if not Block.equivalent(self, other_block):
@@ -531,15 +531,11 @@ class ForEach(Block):
 
     def evaluate(self, values):
 
-        values_workflow = {var2: values[var1] for var1, var2 in zip(self.inputs,
-                                                                    self.workflow_block.inputs)}
-        # index_iterable_input = self.workflow_block.inputs.index(self.workflow_iterable_input)
+        values_workflow = {var2: values[var1]
+                           for var1, var2 in zip(self.inputs,
+                                                 self.workflow_block.inputs)}
         output_values = []
         for value in values_workflow[self.workflow_iterable_input]:
-            print(value)
-            # values_workflow2 = {var.name: val\
-            #                     for var, val in values_workflow.items()\
-            #                     if var != self.workflow_iterable_input}
             values_workflow[self.workflow_iterable_input] = value
             output_values.append(self.workflow_block.evaluate(values_workflow)[0])
         return [output_values]
@@ -556,10 +552,10 @@ class Unpacker(Block):
     def equivalent(self, other_block):
         if not Block.equivalent(self, other_block):
             return False
-        return self.number_arguments == other_block.number_arguments
+        return self.indices == other_block.indices
 
     def equivalent_hash(self):
-        return self.number_arguments
+        return len(self.indices)
 
     def to_dict(self):
         dict_ = dc.DessiaObject.base_dict(self)
@@ -575,7 +571,6 @@ class Unpacker(Block):
 
 
 class Flatten(Block):
-
     def __init__(self, name=''):
         inputs = [Variable(name='input_sequence')]
         outputs = [Variable(name='flatten_sequence')]
@@ -676,9 +671,9 @@ class ParallelPlot(Block):
     def equivalent_hash(self):
         return sum([len(a) for a in self.attributes]) + self.order
 
-    def _display(self, variables_values):
-        objects = variables_values[self.inputs[0]]
-        pareto_settings = variables_values[self.inputs[1]]
+    def _display(self, local_values):
+        objects = local_values[self.inputs[0]]
+        pareto_settings = local_values[self.inputs[1]]
         array = []
         for object_ in objects:
             line = []
@@ -730,8 +725,8 @@ class Display(Block):
     def equivalent_hash(self):
         return self.order
 
-    def _display(self, variables_values):
-        object_ = variables_values[self.inputs[0]]
+    def _display(self, local_values):
+        object_ = local_values[self.inputs[0]]
         displays = object_._display_angular()
         return displays
 
@@ -1011,8 +1006,11 @@ class Workflow(Block):
         self.output = self.outputs[0]
 
     def __hash__(self):
-        base_hash = len(self.blocks)+11*len(self.pipes)+sum(self.variable_indices(self.outputs[0]))
-        block_hash = int(sum([b.equivalent_hash() for b in self.blocks]) % 10e5)
+        base_hash = len(self.blocks)\
+                    + 11 * len(self.pipes)\
+                    + sum(self.variable_indices(self.outputs[0]))
+        block_hash = int(sum([b.equivalent_hash() for b in self.blocks])
+                         % 10e5)
         return base_hash + block_hash
 
     def __eq__(self, other_workflow):
@@ -1208,7 +1206,7 @@ class Workflow(Block):
                    imposed_variable_values=imposed_variable_values,
                    name=dict_['name'])
 
-    def dict_to_arguments(self, dict_, method):
+    def dict_to_arguments(self, dict_):
         arguments_values = {}
         for i, input_ in enumerate(self.inputs):
             if not isinstance(input_, (VariableWithDefaultValue, TypedVariableWithDefaultValue))\
@@ -1218,7 +1216,7 @@ class Workflow(Block):
                 deserialized_value = dc.deserialize_argument(input_.type_, value)
                 arguments_values[i] = deserialized_value
 
-        arguments = {'input_variables_values': arguments_values}
+        arguments = {'input_values': arguments_values}
         return arguments
 
     @classmethod
@@ -1357,7 +1355,7 @@ class Workflow(Block):
                 labels[variable] = variable.name
         nx.draw_networkx_labels(self.graph, pos, labels)
 
-    def run(self, input_variables_values, verbose=False,
+    def run(self, input_values, verbose=False,
             progress_callback=None, name=None):
         log = ''
         activated_items = {p: False for p in self.pipes}
@@ -1376,8 +1374,8 @@ class Workflow(Block):
             
         # Input activation
         for index, variable in enumerate(self.inputs):
-            if index in input_variables_values:
-                value = input_variables_values[index]
+            if index in input_values:
+                value = input_values[index]
                 # typeguard.check_type(variable.name, value, variable.type_)
                     # raise ValueError('Bad type', value, variable.type_)
 
@@ -1429,7 +1427,8 @@ class Workflow(Block):
                                                         for i in block.inputs})
                         for input_ in block.inputs:
                             if input_.memorize:
-                                variables_values[input_] = values[input_]
+                                indices = str(self.variable_indices(input_))
+                                variables_values[indices] = values[input_]
                         # Updating progress
                         if progress_callback is not None:
                             progress += 1/len(self.blocks)
@@ -1438,7 +1437,8 @@ class Workflow(Block):
                         # Unpacking result of evaluation
                         for output, output_value in zip(block.outputs, output_values):
                             if output.memorize:
-                                variables_values[output] = output_value
+                                indices = str(self.variable_indices(output))
+                                variables_values[indices] = output_value
                             values[output] = output_value
                             activated_items[output] = True
 
@@ -1455,31 +1455,31 @@ class Workflow(Block):
         output_value = values[self.outputs[0]]
         if not name:
             name = self.name+' run'
-        return WorkflowRun(workflow=self, input_values=input_variables_values,
+        return WorkflowRun(workflow=self, input_values=input_values,
                            output_value=output_value,
                            variables_values=variables_values,
                            start_time=start_time, end_time=end_time,
                            log=log, name=name)
 
-    def interactive_input_variables_values(self):
-        input_variables_values = {}
-        for i, input_ in enumerate(self.inputs):
-            print('Input n°{}: {} type: {}: '.format(i+1, input_.name, input_.type_))
-            if hasattr(input_, 'default_value'):                
-                value = input('Value? default={} '.format(input_.default_value))
-                if value=='':
-                    value = input_.default_value
-            else:
-                value = input_.type_(input('Value? '))
-                
-            input_variables_values[i] = value
-            
-        for i in sorted(input_variables_values.keys()):
-            input_ = self.inputs[i]
-            value = input_variables_values[i]
-            print('{}/ {}: {}'.format(i, value))
-            
-        return input_variables_values
+    # def interactive_input_variables_values(self):
+    #     input_variables_values = {}
+    #     for i, input_ in enumerate(self.inputs):
+    #         print('Input n°{}: {} type: {}: '.format(i+1, input_.name, input_.type_))
+    #         if hasattr(input_, 'default_value'):
+    #             value = input('Value? default={} '.format(input_.default_value))
+    #             if value == '':
+    #                 value = input_.default_value
+    #         else:
+    #             value = input_.type_(input('Value? '))
+    #
+    #         input_variables_values[i] = value
+    #
+    #     for i in sorted(input_variables_values.keys()):
+    #         input_ = self.inputs[i]
+    #         value = input_variables_values[i]
+    #         print('{}/ {}: {}'.format(i, value))
+    #
+    #     return input_variables_values
 
     def mxgraph_data(self):
         nodes = []
@@ -1500,7 +1500,6 @@ class Workflow(Block):
 
         return nodes, edges
 
-
     def jointjs_data(self):
         coordinates = self.layout()
         blocks = []
@@ -1511,11 +1510,10 @@ class Workflow(Block):
                                            'is_workflow_input': i in self.inputs,
                                            'has_default_value': hasattr(i, 'default_value')}\
                                           for i in block.inputs],
-
-                           'outputs': [{'name': o.name,
-                                        'is_workflow_output': o in self.outputs}\
-                                       for o in block.outputs],
-                           'position': coordinates[block]})
+                               'outputs': [{'name': o.name,
+                                            'is_workflow_output': o in self.outputs}
+                                           for o in block.outputs],
+                               'position': coordinates[block]})
             blocks.append(block_data)
 
         nonblock_variables = []
@@ -1555,31 +1553,6 @@ class Workflow(Block):
                      'nonblock_variables': nonblock_variables,
                      'edges': edges})
         return data
-
-
-    # def plot_mxgraph(self):
-    #     env = Environment(loader=PackageLoader('dessia_common', 'templates'),
-    #                       autoescape=select_autoescape(['html', 'xml']))
-
-
-    #     template = env.get_template('workflow.html')
-
-    #     mx_path = pkg_resources.resource_filename(pkg_resources.Requirement('dessia_common'),
-    #                                               'dessia_common/templates/mxgraph')
-
-    #     nodes, edges = self.mxgraph_data()
-    #     options = {}
-    #     rendered_template = template.render(mx_path=mx_path,
-    #                                         nodes=nodes,
-    #                                         edges=edges,
-    #                                         options=options)
-
-    #     temp_file = tempfile.mkstemp(suffix='.html')[1]
-
-    #     with open(temp_file, 'wb') as file:
-    #         file.write(rendered_template.encode('utf-8'))
-
-    #     webbrowser.open('file://' + temp_file)
 
     def plot_jointjs(self):
         env = Environment(loader=PackageLoader('dessia_common', 'templates'),
@@ -1695,7 +1668,7 @@ class WorkflowBlock(Block):
 
 class WorkflowRun(dc.DessiaObject):
     _standalone_in_db = True
-    _allowed_methods = ['rerun']
+    _allowed_methods = ['run_again']
     _jsonschema = {
         "definitions": {},
         "$schema": "http://json-schema.org/draft-07/schema#",
@@ -1712,36 +1685,57 @@ class WorkflowRun(dc.DessiaObject):
                 "description": "Workflow"
             },
             'output_value': {
-                "type": "array",
-                "items": {
-                    "type": "object",
-                    "classes": "*"
-                },
+                "type": "object",
+                "classes": "Any",
                 "title": "Values",
                 "description": "Input and output values",
                 "editable": False,
                 "order": 1
+            },
+            'input_values': {
+                'type': 'object',
+                'order': 2,
+                'editable': False,
+                'title': 'Input Values',
+                'patternProperties': {
+                    '.*': {
+                        'type': "object",
+                        'classes': 'Any'
+                    }
+                }
+            },
+            'variables_values': {
+                'type': 'object',
+                'order': 3,
+                'editable': False,
+                'title': 'Variables Values',
+                'patternProperties': {
+                    '.*': {
+                        'type': "object",
+                        'classes': 'Any'
+                    }
+                }
             },
             'start_time': {
                 "type": "number",
                 "title": "Start Time",
                 "editable": False,
                 "description": "Start time of simulation",
-                "order": 2
+                "order": 4
             },
             'end_time': {
                 "type": "number",
                 "title": "End Time",
                 "editable": False,
                 "description": "End time of simulation",
-                "order": 3
+                "order": 5
             },
             'log': {
                 "type": "string",
                 "title": "Log",
                 "editable": False,
                 "description": "Log",
-                "order": 4
+                "order": 6
             }
         }
     }
@@ -1750,8 +1744,8 @@ class WorkflowRun(dc.DessiaObject):
                  start_time, end_time, log, name=''):
         self.workflow = workflow
         self.input_values = input_values
-        self.variables_values = variables_values
         self.output_value = output_value
+        self.variables_values = variables_values
         self.start_time = start_time
         self.end_time = end_time
         self.execution_time = end_time - start_time
@@ -1761,20 +1755,19 @@ class WorkflowRun(dc.DessiaObject):
 
     def __eq__(self, other_workflow_run):
         # TODO : Should we add input_values and variables values in test ?
-        if hasattr(self.output_value, '__iter__'):
-            equal_output = (hasattr(self.output_value, '__iter__')
-                            and all([v == other_v
-                                     for v, other_v
-                                     in zip(self.output_value,
-                                            other_workflow_run.output_value)]))
+        if dc.is_sequence(self.output_value):
+            if not dc.is_sequence(other_workflow_run):
+                return False
+            equal_output = all([v == other_v for v, other_v
+                                in zip(self.output_value,
+                                       other_workflow_run.output_value)])
         else:
             equal_output = self.output_value == other_workflow_run.output_value
         return self.workflow == other_workflow_run.workflow and equal_output
 
     def __hash__(self):
         # TODO : Should we add input_values and variables values in test ?
-        if hasattr(self.output_value, '__iter__'):
-            # hash_output = int(sum([hash(v) for v in self.output_value]) % 10e5)
+        if dc.is_sequence(self.output_value):
             hash_output = dc.list_hash(self.output_value)
         else:
             hash_output = hash(self.output_value)
@@ -1785,7 +1778,11 @@ class WorkflowRun(dc.DessiaObject):
         sorted_d_blocks = sorted(d_blocks, key=lambda b: b.order)
         displays = self.workflow._display_angular()
         for block in sorted_d_blocks:
-            display = block._display(self.variables_values)
+            local_values = {}
+            for input_ in block.inputs:
+                indices = self.workflow.variable_indices(input_)
+                local_values[input_] = self.variables_values[str(indices)]
+            display = block._display(local_values)
             displays.extend(display)
         return displays
 
@@ -1793,31 +1790,16 @@ class WorkflowRun(dc.DessiaObject):
     def dict_to_object(cls, dict_):
         workflow = Workflow.dict_to_object(dict_['workflow'])
         if 'output_value' in dict_ and 'output_value_type' in dict_:
-            output_value = dc.recursive_instantiation(dict_['output_value_type'], dict_['output_value'])
+            type_ = dict_['output_value_type']
+            value = dict_['output_value']
+            output_value = dc.recursive_instantiation(type_=type_, value=value)
         else:
             output_value = None
 
-        blocks = workflow.blocks
-        nbv = workflow.nonblock_variables
-        variables_values = {}
-
         input_values = {int(i): dc.deserialize(v)
                         for i, v in dict_['input_values'].items()}
-
-        for i, value in dict_['variables_values'].items():
-            # TODO : Is this a quickfix ? Locally, indices are tuple,
-            # TODO : from front they are strings
-            if isinstance(i, tuple):
-                index = i
-            elif isinstance(i, str):
-                index = literal_eval(i)
-            else:
-                msg = 'Type {} for index {}'.format(type(i), i)
-                msg += ' is not expected type (Tuple or String).'
-                raise NotImplementedError(msg)
-            key = workflow.variable_from_index(index=index, blocks=blocks,
-                                               nonblock_variables=nbv)
-            variables_values[key] = dc.deserialize(value)
+        variables_values = {k: dc.deserialize(v)
+                            for k, v in dict_['variables_values'].items()}
         return cls(workflow=workflow, output_value=output_value,
                    input_values=input_values,
                    variables_values=variables_values,
@@ -1827,8 +1809,8 @@ class WorkflowRun(dc.DessiaObject):
     def to_dict(self):
         input_values = {i: dc.serialize(v)
                         for i, v in self.input_values.items()}
-        variables_values = {self.workflow.variable_indices(i): dc.serialize(v)
-                            for i, v in self.variables_values.items()}
+        variables_values = {k: dc.serialize(v)
+                            for k, v in self.variables_values.items()}
         dict_ = dc.DessiaObject.base_dict(self)
         dict_.update({'workflow': self.workflow.to_dict(),
                       'input_values': input_values,
@@ -1839,13 +1821,16 @@ class WorkflowRun(dc.DessiaObject):
                       'log': self.log})
 
         if self.output_value is not None:
-            dict_.update({'output_value': dc.serialize_sequence(self.output_value),
+            dict_.update({'output_value': dc.serialize(self.output_value),
                           'output_value_type': dc.recursive_type(self.output_value)})
 
         return dict_
 
+    def dict_to_arguments(self, dict_):
+        return self.workflow.dict_to_arguments(dict_=dict_)
+
     def method_dict(self, method_name, method_jsonschema):
-        if method_name == 'rerun':
+        if method_name == 'run_again':
             dict_ = dc.serialize_dict(self.input_values)
             for property_, value in method_jsonschema['properties'].items():
                 if property_ in dict_\
@@ -1857,8 +1842,8 @@ class WorkflowRun(dc.DessiaObject):
         return dc.DessiaObject.method_dict(method_name=method_name,
                                            jsonschema=method_jsonschema)
 
-    def rerun(self):
-        workflow_run = self.workflow.run(input_variables_values=self.input_values,
+    def run_again(self, input_values):
+        workflow_run = self.workflow.run(input_values=input_values,
                                          verbose=False,
                                          progress_callback=None,
                                          name=None)
@@ -1867,8 +1852,8 @@ class WorkflowRun(dc.DessiaObject):
     @property
     def _method_jsonschemas(self):
         # TODO : Share code with Workflow run method
-        jsonschemas = {'rerun': deepcopy(dc.JSONSCHEMA_HEADER)}
-        properties_dict = jsonschemas['rerun']['properties']
+        jsonschemas = {'run_again': deepcopy(dc.JSONSCHEMA_HEADER)}
+        properties_dict = jsonschemas['run_again']['properties']
         required_inputs = []
         for i, value in self.input_values.items():
             current_dict = {}
@@ -1894,7 +1879,7 @@ class WorkflowRun(dc.DessiaObject):
                                                          str(i),
                                                          input_.default_value))
             properties_dict[str(i)] = current_dict[str(i)]
-        jsonschemas['rerun']['required'] = required_inputs
+        jsonschemas['run_again']['required'] = required_inputs
         return jsonschemas
 
 
