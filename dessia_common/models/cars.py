@@ -48,3 +48,7 @@ reduced_catalog = Catalog(array=reduced_array, variables=reduced_variables,
                           name='Reduced cars')
 
 joined_catalog = Catalog.concatenate([catalog, reduced_catalog])
+
+from dessia_api_client import Client
+c = Client(api_url = 'https://api.platform-dev.dessia.tech')
+r = c.create_object_from_python_object(reduced_catalog)

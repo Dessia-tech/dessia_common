@@ -121,11 +121,6 @@ class DessiaObject:
     _whitelist_attributes = []
 
     def __init__(self, name: str = '', **kwargs):
-        if self._standalone_in_db and not self._eq_is_data_eq:
-            msg = 'Classes that are standalone in database '
-            msg += 'must define their custom __hash__ and __eq__.'
-            raise ValueError(msg)
-
         self.name = name
         for property_name, property_value in kwargs.items():
             setattr(self, property_name, property_value)
@@ -443,16 +438,17 @@ class DessiaObject:
                 if frame is None:
                     frame = vm.OXYZ
             try:
-                return vm.VolumeModel(self.volmdlr_primitives(frame=frame))
+                return vm.core.VolumeModel(self.volmdlr_primitives(frame=frame))
             except TypeError:
-                return vm.VolumeModel(self.volmdlr_primitives())
-        msg = 'Object of type {} does not implement volmdlr_primitives'
-        raise NotImplementedError(msg.format(self.__class__.__name__))
+                return vm.core.VolumeModel(self.volmdlr_primitives())
+        msg = 'Object of type {} does not implement volmdlr_primitives'.format(self.__class__.__name__)
+        raise NotImplementedError(msg)
+
 
     def cad_export(self,
                    fcstd_filepath=None,
                    istep=0,
-                   python_path='python',
+                   python_path='python3',
                    freecad_lib_path='/usr/lib/freecad/lib',
                    export_types=['fcstd']):
         """
@@ -465,7 +461,7 @@ class DessiaObject:
             model = self.volmdlr_volume_model()
             if model.__class__.__name__ == 'MovingVolumeModel':
                 model = model.step_volume_model(istep)
-            model.FreeCADExport(fcstd_filepath, python_path=python_path,
+            model.freecad_export(fcstd_filepath, python_path=python_path,
                                 freecad_lib_path=freecad_lib_path, export_types=export_types)
         else:
             raise NotImplementedError
