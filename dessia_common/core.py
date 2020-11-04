@@ -142,15 +142,12 @@ class DessiaObject:
         return object.__eq__(self, other_object)
 
     def data__eq__(self, other_object):
-        dict_ = self.__dict__
-        other_dict = other_object.__dict__
-        if full_classname(self) != full_classname(other_object) \
-                or dict_.keys() != other_dict.keys():
+        if full_classname(self) != full_classname(other_object):
             return False
 
-        eq_dict = {k: v for k, v in dict_.items()
+        eq_dict = {k: v for k, v in self.to_dict().items()
                    if k not in self._non_data_eq_attributes}
-        other_eq_dict = {k: v for k, v in other_dict.items()
+        other_eq_dict = {k: v for k, v in other_object.to_dict().items()
                          if k not in self._non_data_eq_attributes}
 
         for key, value in eq_dict.items():
@@ -161,7 +158,7 @@ class DessiaObject:
 
     def data__hash__(self):
         hash_ = 0
-        for key, value in self.__dict__.items():
+        for key, value in self.to_dict().items():
             if key not in set(self._non_data_eq_attributes
                               + self._non_data_hash_attributes):
                 if isinstance(value, list):
