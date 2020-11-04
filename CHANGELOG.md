@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Removed
+- Compiled parts of package, switching to full open-source
+
+## [0.3.10]
 ### Fixed
 - Run again takes input_values arguments as it should
 - Changed workflow to workflow in to_dict/dict_to_object
@@ -29,7 +33,7 @@ _ Rerun method for WorkflowRuns & prerequisite (input_values in __init__ et meth
 ### Changed
 - Add a more explicit message to list as default value error
 - Filter block doesn't write _display_angular anymore. See ParallelPlot
-- Catalog _dispplay_angular to conform to ParallelPlot Block
+- Catalog _display_angular to conform to ParallelPlot Block
 
 ## [0.3.8]
 ### Added
