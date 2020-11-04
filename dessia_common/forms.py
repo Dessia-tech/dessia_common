@@ -31,9 +31,13 @@ coding/naming style & convention.
 
 from typing import Dict, List, Tuple, Union
 
-import volmdlr as vm
-import volmdlr.primitives2D as p2d
-import volmdlr.primitives3D as p3d
+try:
+    import volmdlr as vm
+    import volmdlr.primitives2D as p2d
+    import volmdlr.primitives3D as p3d
+except:
+    pass
+
 from dessia_common import DessiaObject
 from dessia_common.typings import Subclass
 
