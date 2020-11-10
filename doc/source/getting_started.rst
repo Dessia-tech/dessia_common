@@ -10,11 +10,46 @@ It is composed of three modules : core, workflow and vectored_objects.
 
 Installation
 ############
+
+Python
+******
+
 Dessia Common package requires Python3.7.
 
 For Windows user, we recommand using Anaconda Distribution.
 
 https://www.anaconda.com/distribution/
+
+Git
+***
+
+You may need to use git in order to manage your project versions and to share your work with your colleagues. In that extent please follow `git guidelines <https://docs.github.com/en/free-pro-team@latest/github/importing-your-projects-to-github/adding-an-existing-project-to-github-using-the-command-line>`_ to setup you own repository. This is optionnal.
+
+Let's say you want your project located under documents, initialize your git repository there. If you don't want to use git, just create your folder.
+
+Documents/my_first_bot
+
+Dessia Bot Template
+*******************
+
+In order to create your first bot, Dessia provide a quick way to setup you project, via its small and simple `dessia_bot_template package <https://github.com/Dessia-tech/dessia_bot_template>`_.
+You can downlad and unzip these files anywhere on your computer.
+
+Afterward, run our wizard by running following shell commands (in AnacondaPrompt if you use Anaconda distribution) :
+
+``cd dessia_bot_template``
+``python3 quickstart.py``
+
+Your python package architecture is then created with provided information
+
+
+For Linux user
+==============
+
+You can use open source package by running following shell command :
+``pip3 install dessia_common``
+
+
 
 Build your first bot
 ####################
