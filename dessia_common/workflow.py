@@ -132,6 +132,7 @@ class Block(dc.DessiaObject):
             }
         }
     _standalone_in_db = False
+    _eq_is_data_eq = False
     _non_serializable_attributes = ['inputs', 'outputs']
 
     def __init__(self, inputs, outputs, name=''):
@@ -864,6 +865,7 @@ class Pipe(dc.DessiaObject):
             }
         }
     }
+    _eq_is_data_eq = False
 
     def __init__(self, input_variable, output_variable):
         self.input_variable = input_variable
@@ -1449,26 +1451,6 @@ class Workflow(Block):
                            start_time=start_time, end_time=end_time,
                            log=log, name=name)
 
-    # def interactive_input_variables_values(self):
-    #     input_variables_values = {}
-    #     for i, input_ in enumerate(self.inputs):
-    #         print('Input n°{}: {} type: {}: '.format(i+1, input_.name, input_.type_))
-    #         if hasattr(input_, 'default_value'):
-    #             value = input('Value? default={} '.format(input_.default_value))
-    #             if value == '':
-    #                 value = input_.default_value
-    #         else:
-    #             value = input_.type_(input('Value? '))
-    #
-    #         input_variables_values[i] = value
-    #
-    #     for i in sorted(input_variables_values.keys()):
-    #         input_ = self.inputs[i]
-    #         value = input_variables_values[i]
-    #         print('{}/ {}: {}'.format(i, value))
-    #
-    #     return input_variables_values
-
     def mxgraph_data(self):
         nodes = []
         for block in self.blocks:
@@ -1492,7 +1474,7 @@ class Workflow(Block):
         coordinates = self.layout()
         blocks = []
         for block in self.blocks:
-            # !!! Is it necessary to add is_workflow_input/output for outputs/inputs ??
+            # TOCHECK Is it necessary to add is_workflow_input/output for outputs/inputs ??
             block_data = block.jointjs_data()
             block_data.update({'inputs': [{'name': i.name,
                                            'is_workflow_input': i in self.inputs,
@@ -1545,8 +1527,6 @@ class Workflow(Block):
     def plot_jointjs(self):
         env = Environment(loader=PackageLoader('dessia_common', 'templates'),
                           autoescape=select_autoescape(['html', 'xml']))
-
-
         template = env.get_template('workflow_jointjs.html')
 
         data = self.jointjs_data()
@@ -1570,7 +1550,6 @@ class Workflow(Block):
                 type1 = pipe.input_variable.type_
                 type2 = pipe.output_variable.type_
                 if type1 != type2:
-                    # print(type1, type2)
                     try:
                         consistent = issubclass(pipe.input_variable.type_, pipe.output_variable.type_)
                         
