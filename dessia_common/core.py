@@ -933,7 +933,7 @@ def deepcopy_value(value, memo):
 
 
 def serialize_typing(typing_):
-    if hasattr(typing_, '_name') and typing_._name == 'List':
+    if hasattr(typing_, '__origin__') and typing_.__origin__ == list:
         arg = typing_.__args__[0]
         if arg.__module__ == 'builtins':
             full_argname = '__builtins__.' + arg.__name__

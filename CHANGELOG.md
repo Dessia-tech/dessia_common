@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fix
 - _eq_is_eq_data as False in workflow class definitions
 
+### Changed
+- __origin__ used in serialize_typing instead of _name. For typing type checking
+
 ### Removed
 - Compiled parts of package, switching to full open-source
 
