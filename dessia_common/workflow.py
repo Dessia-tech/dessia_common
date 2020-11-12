@@ -23,20 +23,8 @@ from dessia_common.vectored_objects import ParetoSettings, Catalog, from_csv
 
 
 class Variable(dc.DessiaObject):
-    _jsonschema = {
-        "definitions": {},
-        "$schema": "http://json-schema.org/draft-07/schema#",
-        "type": "object",
-        "title": "Variable",
-        "required": ["_name"],
-        "properties": {
-            "_name": {
-                "type": "string",
-                "editable": True,
-            }
-        }
-    }
     _standalone_in_db = False
+    _eq_is_data_eq = False
 
     def __init__(self, memorize: bool = False, name: str = ''):
         self.memorize = memorize
