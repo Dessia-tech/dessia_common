@@ -69,6 +69,32 @@ On a more "engineering level", check for 2D/3D displays are mutualized, as are g
 
 The behavior of your DessiaObject inheriting class can be customized by changing the value of several class attributes such as ``_standalone_in_db``.
 
+But, first, let's take our first step into coding.
+
+Writing in Python requires to follow several strong naming convention and coding style that are defined in `PEP8 <https://www.python.org/dev/peps/pep-0008/>`_.
+This is not mandatory, but highly recommended. We will mention every small tidbits each time a new type of python object is encountered
+
+As Python is an Object Oriented language, it enables us to defines classes that are concepts that regroupe variables and method.
+This following line define a class that is named MyFirstClass :
+
+``class MyFirstClass(DessiaObject):``
+
+Here, PEP8 states that a class should be named with the CamelCase convention. In that extend, we will know for a fact that MyFirstClass and DessiaObject are class objects (and not functions, methods, instances, attributes,...)
+
+What is the meaning of the whole line above ?
+
+* ``class`` is a keyword that indicates we want to define a new class named after the following word : 
+* ``MyFirstClass`` is the name of our new class.
+* ``(DessiaObject)`` means that this class will inherit from DessiaObject's and use its attributes, and methods.
+* ``:`` shows end of class definition.
+
+As it stands, our class is not very useful. It needs a method that will enable us to create an instance of it.
+
+``    def __init__(self, my_attribute: float, name: str = ''):``
+
+
+ An object is an instance of 
+
 __eq__ and __hash__
 *******************
 
