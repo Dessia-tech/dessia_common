@@ -38,17 +38,12 @@ You can downlad and unzip these files anywhere on your computer.
 Afterward, run our wizard by running following shell commands (in AnacondaPrompt if you use Anaconda distribution) :
 
 ``cd dessia_bot_template``
+
 ``python3 quickstart.py``
 
-Your python package architecture is then created with provided information
+Your python package architecture is then created with provided information. This also installs lastest versions of dessia_common as well as volmldr, by default.
 
-
-For Linux user
-==============
-
-You can use open source package by running following shell command :
-``pip3 install dessia_common``
-
+You are now ready to right you first class and methods !
 
 
 Build your first bot
