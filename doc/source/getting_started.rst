@@ -85,7 +85,35 @@ What is the meaning of the whole line above ?
 
 As it stands, our class is not very useful. It needs a method that will enable us to create an instance of it.
 
-``    def __init__(self, my_attribute: float, name: str = ''):``
+``def __init__(self, my_attribute: float, name: str = ''):``
+
+* ``def`` is a keyword that indicates we want to define a new function or method named after the following word :
+* ``__init__`` is the method's name. In that case, it needs to be written as such, as it is imposed by Python. ``__init__`` is the method invoked when we try to instanciate an object.
+* ``(self, ``. self is the first argument givent to the method. It is mandatory when writing any method and represent the instance that is being modified (or in our case, created). self knows every attribute of the instance.
+* ``my_attribute`` is the name of the first attribute we want to set inside our class. We wille see in the next paragraph how to do so.
+* ``: float`` is the type of my_attribute attribute. Normally, these are not mandatory in Python but we use them in order to build schemas of our objects. It enables us to create edition or creation forms, for example. In that extent, be sure to always type you functions and methods definition, as it is required by DessiaObject.
+* ``name: str = ''):`` is our second attribute and end of the definition of our method. It is built exactly like the previous one (attribute name, attribute type) except we add a default value to name, in that example, an empty string.
+
+From now, there  are only to steps that separate us from creating our first instance of MyFirstClass :
+* Set my_attribute in ``MyFirstClass`` structure.
+* Initialize DessiaObject in ``__init__`` of MyFirstClass as it inherits from it.
+
+On the next line, by writing ``self.my_attribute = my_attribute``, we actually set it in the structure.
+To complete ``__init__`` method, we intialize DessiaObject as such : 
+
+``DessiaObject.__init__(self, name=name)``
+
+Here is the full code for ``MyFirstClass`` at this state : 
+
+.. code-block:: python
+
+    class MyFirstClass(DessiaObject):
+        def __init__(self, my_attribute: float, name: str = ''):
+            self.my_attribute = my_attribute
+            
+            DessiaObject.__init__(self, name=name)
+
+
 
 
  An object is an instance of 
