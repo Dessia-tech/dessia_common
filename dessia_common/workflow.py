@@ -1041,7 +1041,7 @@ class Workflow(Block):
             memo = {}
 
         blocks = [b.__deepcopy__(memo=memo) for b in self.blocks]
-        nonblock_variables = [v.__deepcopy(memo=memo)
+        nonblock_variables = [v.__deepcopy__(memo=memo)
                               for v in self.nonblock_variables]
         pipes = []
         for pipe in self.pipes:
