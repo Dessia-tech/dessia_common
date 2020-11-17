@@ -127,16 +127,18 @@ class DessiaObject:
 
     def __hash__(self):
         if self._eq_is_data_eq:
-            return self.data__hash__()
+            return self._data_hash()
         else:
             return object.__hash__(self)
 
     def __eq__(self, other_object):
         if self._eq_is_data_eq:
-            return self.data__eq__(other_object)
+            if self._data_hash() != other_object._data_hash():
+                return False
+            return self._data_eq(other_object)
         return object.__eq__(self, other_object)
 
-    def data__eq__(self, other_object):
+    def _data_eq(self, other_object):
         if full_classname(self) != full_classname(other_object):
             return False
 
@@ -151,7 +153,7 @@ class DessiaObject:
                 return False
         return True
 
-    def data__hash__(self):
+    def _data_hash(self):
         hash_ = 0
         for key, value in self.to_dict().items():
             if key not in set(self._non_data_eq_attributes
