@@ -1005,7 +1005,7 @@ class Workflow(Block):
         Block.__init__(self, input_variables, [output], name=name)
         self.output = self.outputs[0]
 
-    def __hash__(self):
+    def _data_hash(self):
         base_hash = len(self.blocks)\
                     + 11 * len(self.pipes)\
                     + sum(self.variable_indices(self.outputs[0]))
@@ -1013,7 +1013,7 @@ class Workflow(Block):
                          % 10e5)
         return base_hash + block_hash
 
-    def __eq__(self, other_workflow):
+    def _data_eq(self, other_workflow):
         # TODO: implement imposed_variable_values in equality
         if hash(self) != hash(other_workflow):
             return False
@@ -1753,7 +1753,7 @@ class WorkflowRun(dc.DessiaObject):
 
         dc.DessiaObject.__init__(self, name=name)
 
-    def __eq__(self, other_workflow_run):
+    def _data_eq(self, other_workflow_run):
         # TODO : Should we add input_values and variables values in test ?
         if dc.is_sequence(self.output_value):
             if not dc.is_sequence(other_workflow_run):
@@ -1765,7 +1765,7 @@ class WorkflowRun(dc.DessiaObject):
             equal_output = self.output_value == other_workflow_run.output_value
         return self.workflow == other_workflow_run.workflow and equal_output
 
-    def __hash__(self):
+    def _data_hash(self):
         # TODO : Should we add input_values and variables values in test ?
         if dc.is_sequence(self.output_value):
             hash_output = dc.list_hash(self.output_value)
