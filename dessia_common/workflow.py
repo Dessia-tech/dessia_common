@@ -1784,6 +1784,8 @@ class WorkflowRun(dc.DessiaObject):
                 local_values[input_] = self.variables_values[str(indices)]
             display = block._display(local_values)
             displays.extend(display)
+        if isinstance(self.output_value, dc.DessiaObject):
+            displays.extend(self.output_value._display_angular())
         return displays
 
     @classmethod
