@@ -16,8 +16,8 @@ from typing import List
 from copy import deepcopy
 # import typeguard
 from ast import literal_eval
+from dessia_common.templates import workflow_template
 
-from jinja2 import Environment, PackageLoader, select_autoescape
 import dessia_common as dc
 from dessia_common.vectored_objects import ParetoSettings, Catalog, from_csv
 
@@ -1528,17 +1528,14 @@ class Workflow(Block):
                      'edges': edges})
         return data
 
+    def plot(self):
+        self.plot_jointjs()
+
+
     def plot_jointjs(self):
-        env = Environment(loader=PackageLoader('dessia_common', 'templates'),
-                          autoescape=select_autoescape(['html', 'xml']))
-        template = env.get_template('workflow_jointjs.html')
 
         data = self.jointjs_data()
-        options = {}
-        rendered_template = template.render(blocks=json.dumps(data['blocks']),
-                                            nonblock_variables=json.dumps(data['nonblock_variables']),
-                                            edges=data['edges'],
-                                            options=options)
+        rendered_template = workflow_template.substitute(workflow_data=json.dumps(data))
 
         temp_file = tempfile.mkstemp(suffix='.html')[1]
 
