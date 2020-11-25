@@ -168,6 +168,8 @@ class DessiaObject:
 
     def __eq__(self, other_object):
         if self._eq_is_data_eq:
+            if self.__class__.__name__ != other_object.__class__.__name__:
+                return False
             if self._data_hash() != other_object._data_hash():
                 return False
             return self._data_eq(other_object)
