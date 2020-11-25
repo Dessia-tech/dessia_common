@@ -90,4 +90,4 @@ input_values = {
     workflow.index(filtered_catalog2.inputs[4]): choice_args,
     workflow.index(filtered_catalog2.inputs[5]): 'Filtered Cars 2',
 }
-workflow_run = workflow.run(input_variables_values=input_values)
+workflow_run = workflow.run(input_values=input_values)

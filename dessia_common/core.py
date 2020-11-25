@@ -98,13 +98,48 @@ def deprecation_warning(name, object_type, use_instead=None):
 
 class DessiaObject:
     """
-    Base abstract class for Dessia's object.
+    Base class for Dessia's platform compatible objects.
     Gathers generic methods and attributes
 
-    :param name: Name of object.
-    :type name: str
-    :param **kwargs: Additionnal user metadata
-    :type **kargs: Any
+    :cvar bool _standalone_in_db:
+        Indicates wether class objects should be independant
+        in database or not.
+        If False, object will only exist inside its parent.
+    :cvar bool _eq_is_data_eq:
+        Indicates which type of equality check is used:
+        strict equality or equality based on data. If False, Python's
+        object __eq__ method is used (ie. strict),
+        else, user custom data_eq is used (ie. data)
+    :cvar List[str] _non_serializable_attributes:
+        [Advanced] List of instance attributes that should not
+        be part of serialization with to_dict method. These will not
+        be displayed in platform object tree, for instance.
+    :cvar List[str] _non_data_eq_attributes:
+        [Advanced] List of instance attributes that should not
+        be part of equality check with data__eq__ method
+        (if _eq_is_data_eq is True).
+    :cvar List[str] _non_data_hash_attributes:
+        [Advanced] List of instance attributes that should not
+        be part of hash computation with data__hash__ method
+        (if _eq_is_data_eq is True).
+    :cvar List[str] _ordered_attributes:
+        Documentation not available yet.
+    :cvar List[str] _titled_attributes:
+        Documentation not available yet.
+    :cvar List[str] _init_variables:
+        Documentation not available yet.
+    :cvar List[str] _export_formats:
+        List of all available export formats. Class must define a
+        export_[format] for each format in _export_formats
+    :cvar List[str] _allowed_methods:
+        List of all methods that are runnable from platform.
+    :cvar List[str] _whitelist_attributes:
+        Documentation not available yet.
+    :cvar List[str] _whitelist_attributes: List[str]
+
+
+    :ivar str name: Name of object.
+    :ivar Any **kwargs: Additionnal user metadata
     """
     _standalone_in_db = False
     _non_serializable_attributes = []
@@ -127,16 +162,20 @@ class DessiaObject:
 
     def __hash__(self):
         if self._eq_is_data_eq:
-            return self.data__hash__()
+            return self._data_hash()
         else:
             return object.__hash__(self)
 
     def __eq__(self, other_object):
         if self._eq_is_data_eq:
-            return self.data__eq__(other_object)
+            if self.__class__.__name__ != other_object.__class__.__name__:
+                return False
+            if self._data_hash() != other_object._data_hash():
+                return False
+            return self._data_eq(other_object)
         return object.__eq__(self, other_object)
 
-    def data__eq__(self, other_object):
+    def _data_eq(self, other_object):
         if full_classname(self) != full_classname(other_object):
             return False
 
@@ -151,7 +190,7 @@ class DessiaObject:
                 return False
         return True
 
-    def data__hash__(self):
+    def _data_hash(self):
         hash_ = 0
         for key, value in self.to_dict().items():
             if key not in set(self._non_data_eq_attributes
@@ -760,7 +799,7 @@ def serialize_dict(dict_):
             serialized_value = serialize_sequence(value)
         else:
             if not is_jsonable(value):
-                msg = 'Value {} {} is not json serializable'
+                msg = 'Attribute {} of value {} is not json serializable'
                 raise SerializationError(msg.format(key, value))
             serialized_value = value
         serialized_dict[key] = serialized_value
@@ -933,7 +972,7 @@ def deepcopy_value(value, memo):
 
 
 def serialize_typing(typing_):
-    if hasattr(typing_, '_name') and typing_._name == 'List':
+    if hasattr(typing_, '__origin__') and typing_.__origin__ == list:
         arg = typing_.__args__[0]
         if arg.__module__ == 'builtins':
             full_argname = '__builtins__.' + arg.__name__

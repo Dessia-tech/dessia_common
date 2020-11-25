@@ -16,27 +16,15 @@ from typing import List
 from copy import deepcopy
 # import typeguard
 from ast import literal_eval
+from dessia_common.templates import workflow_template
 
-from jinja2 import Environment, PackageLoader, select_autoescape
 import dessia_common as dc
 from dessia_common.vectored_objects import ParetoSettings, Catalog, from_csv
 
 
 class Variable(dc.DessiaObject):
-    _jsonschema = {
-        "definitions": {},
-        "$schema": "http://json-schema.org/draft-07/schema#",
-        "type": "object",
-        "title": "Variable",
-        "required": ["_name"],
-        "properties": {
-            "_name": {
-                "type": "string",
-                "editable": True,
-            }
-        }
-    }
     _standalone_in_db = False
+    _eq_is_data_eq = False
 
     def __init__(self, memorize: bool = False, name: str = ''):
         self.memorize = memorize
@@ -144,6 +132,7 @@ class Block(dc.DessiaObject):
             }
         }
     _standalone_in_db = False
+    _eq_is_data_eq = False
     _non_serializable_attributes = ['inputs', 'outputs']
 
     def __init__(self, inputs, outputs, name=''):
@@ -876,6 +865,7 @@ class Pipe(dc.DessiaObject):
             }
         }
     }
+    _eq_is_data_eq = False
 
     def __init__(self, input_variable, output_variable):
         self.input_variable = input_variable
@@ -1005,7 +995,7 @@ class Workflow(Block):
         Block.__init__(self, input_variables, [output], name=name)
         self.output = self.outputs[0]
 
-    def __hash__(self):
+    def _data_hash(self):
         base_hash = len(self.blocks)\
                     + 11 * len(self.pipes)\
                     + sum(self.variable_indices(self.outputs[0]))
@@ -1013,7 +1003,7 @@ class Workflow(Block):
                          % 10e5)
         return base_hash + block_hash
 
-    def __eq__(self, other_workflow):
+    def _data_eq(self, other_workflow):
         # TODO: implement imposed_variable_values in equality
         if hash(self) != hash(other_workflow):
             return False
@@ -1051,7 +1041,7 @@ class Workflow(Block):
             memo = {}
 
         blocks = [b.__deepcopy__(memo=memo) for b in self.blocks]
-        nonblock_variables = [v.__deepcopy(memo=memo)
+        nonblock_variables = [v.__deepcopy__(memo=memo)
                               for v in self.nonblock_variables]
         pipes = []
         for pipe in self.pipes:
@@ -1097,11 +1087,15 @@ class Workflow(Block):
         for i, input_ in enumerate(self.inputs):
             current_dict = {}
             annotation = (str(i), input_.type_)
-            input_block = self.block_from_variable(input_)
-            if input_block.name:
-                title = dc.prettyname(input_block.name + ' - ' + input_.name)
+            if input_ in self.nonblock_variables:
+                title = input_.name
             else:
-                title = dc.prettyname(input_.name)
+                input_block = self.block_from_variable(input_)
+                if input_block.name:
+                    title = dc.prettyname(input_block.name + ' - ' + input_.name)
+                else:
+                    title = dc.prettyname(input_.name)
+
             annotation_jsonschema = dc.jsonschema_from_annotation(
                 annotation=annotation,
                 jsonschema_element=current_dict,
@@ -1461,26 +1455,6 @@ class Workflow(Block):
                            start_time=start_time, end_time=end_time,
                            log=log, name=name)
 
-    # def interactive_input_variables_values(self):
-    #     input_variables_values = {}
-    #     for i, input_ in enumerate(self.inputs):
-    #         print('Input n°{}: {} type: {}: '.format(i+1, input_.name, input_.type_))
-    #         if hasattr(input_, 'default_value'):
-    #             value = input('Value? default={} '.format(input_.default_value))
-    #             if value == '':
-    #                 value = input_.default_value
-    #         else:
-    #             value = input_.type_(input('Value? '))
-    #
-    #         input_variables_values[i] = value
-    #
-    #     for i in sorted(input_variables_values.keys()):
-    #         input_ = self.inputs[i]
-    #         value = input_variables_values[i]
-    #         print('{}/ {}: {}'.format(i, value))
-    #
-    #     return input_variables_values
-
     def mxgraph_data(self):
         nodes = []
         for block in self.blocks:
@@ -1504,7 +1478,7 @@ class Workflow(Block):
         coordinates = self.layout()
         blocks = []
         for block in self.blocks:
-            # !!! Is it necessary to add is_workflow_input/output for outputs/inputs ??
+            # TOCHECK Is it necessary to add is_workflow_input/output for outputs/inputs ??
             block_data = block.jointjs_data()
             block_data.update({'inputs': [{'name': i.name,
                                            'is_workflow_input': i in self.inputs,
@@ -1554,19 +1528,14 @@ class Workflow(Block):
                      'edges': edges})
         return data
 
+    def plot(self):
+        self.plot_jointjs()
+
+
     def plot_jointjs(self):
-        env = Environment(loader=PackageLoader('dessia_common', 'templates'),
-                          autoescape=select_autoescape(['html', 'xml']))
-
-
-        template = env.get_template('workflow_jointjs.html')
 
         data = self.jointjs_data()
-        options = {}
-        rendered_template = template.render(blocks=json.dumps(data['blocks']),
-                                            nonblock_variables=json.dumps(data['nonblock_variables']),
-                                            edges=data['edges'],
-                                            options=options)
+        rendered_template = workflow_template.substitute(workflow_data=json.dumps(data))
 
         temp_file = tempfile.mkstemp(suffix='.html')[1]
 
@@ -1582,7 +1551,6 @@ class Workflow(Block):
                 type1 = pipe.input_variable.type_
                 type2 = pipe.output_variable.type_
                 if type1 != type2:
-                    # print(type1, type2)
                     try:
                         consistent = issubclass(pipe.input_variable.type_, pipe.output_variable.type_)
                         
@@ -1753,7 +1721,7 @@ class WorkflowRun(dc.DessiaObject):
 
         dc.DessiaObject.__init__(self, name=name)
 
-    def __eq__(self, other_workflow_run):
+    def _data_eq(self, other_workflow_run):
         # TODO : Should we add input_values and variables values in test ?
         if dc.is_sequence(self.output_value):
             if not dc.is_sequence(other_workflow_run):
@@ -1765,7 +1733,7 @@ class WorkflowRun(dc.DessiaObject):
             equal_output = self.output_value == other_workflow_run.output_value
         return self.workflow == other_workflow_run.workflow and equal_output
 
-    def __hash__(self):
+    def _data_hash(self):
         # TODO : Should we add input_values and variables values in test ?
         if dc.is_sequence(self.output_value):
             hash_output = dc.list_hash(self.output_value)
@@ -1784,6 +1752,8 @@ class WorkflowRun(dc.DessiaObject):
                 local_values[input_] = self.variables_values[str(indices)]
             display = block._display(local_values)
             displays.extend(display)
+        if isinstance(self.output_value, dc.DessiaObject):
+            displays.extend(self.output_value._display_angular())
         return displays
 
     @classmethod
