@@ -797,7 +797,7 @@ def serialize_dict(dict_):
             serialized_value = serialize_sequence(value)
         else:
             if not is_jsonable(value):
-                msg = 'Value {} {} is not json serializable'
+                msg = 'Attribute {} of value {} is not json serializable'
                 raise SerializationError(msg.format(key, value))
             serialized_value = value
         serialized_dict[key] = serialized_value
