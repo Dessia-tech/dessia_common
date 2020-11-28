@@ -123,7 +123,7 @@ demo_workflow = wf.Workflow(blocks=blocks, pipes=pipes,
 
 input_values = {0: 5}
 
-demo_workflow_run = demo_workflow.run(input_variables_values=input_values,
+demo_workflow_run = demo_workflow.run(input_values=input_values,
                                       verbose=True)
 
 # Assert to_dict, dict_to_object, hashes, eqs

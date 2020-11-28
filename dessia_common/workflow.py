@@ -16,8 +16,8 @@ from typing import List
 from copy import deepcopy
 # import typeguard
 from ast import literal_eval
+from dessia_common.templates import workflow_template
 
-from jinja2 import Environment, PackageLoader, select_autoescape
 import dessia_common as dc
 from dessia_common.vectored_objects import ParetoSettings, Catalog, from_csv
 
@@ -995,7 +995,7 @@ class Workflow(Block):
         Block.__init__(self, input_variables, [output], name=name)
         self.output = self.outputs[0]
 
-    def __hash__(self):
+    def _data_hash(self):
         base_hash = len(self.blocks)\
                     + 11 * len(self.pipes)\
                     + sum(self.variable_indices(self.outputs[0]))
@@ -1003,7 +1003,7 @@ class Workflow(Block):
                          % 10e5)
         return base_hash + block_hash
 
-    def __eq__(self, other_workflow):
+    def _data_eq(self, other_workflow):
         # TODO: implement imposed_variable_values in equality
         if hash(self) != hash(other_workflow):
             return False
@@ -1528,17 +1528,14 @@ class Workflow(Block):
                      'edges': edges})
         return data
 
+    def plot(self):
+        self.plot_jointjs()
+
+
     def plot_jointjs(self):
-        env = Environment(loader=PackageLoader('dessia_common', 'templates'),
-                          autoescape=select_autoescape(['html', 'xml']))
-        template = env.get_template('workflow_jointjs.html')
 
         data = self.jointjs_data()
-        options = {}
-        rendered_template = template.render(blocks=json.dumps(data['blocks']),
-                                            nonblock_variables=json.dumps(data['nonblock_variables']),
-                                            edges=data['edges'],
-                                            options=options)
+        rendered_template = workflow_template.substitute(workflow_data=json.dumps(data))
 
         temp_file = tempfile.mkstemp(suffix='.html')[1]
 
@@ -1724,7 +1721,7 @@ class WorkflowRun(dc.DessiaObject):
 
         dc.DessiaObject.__init__(self, name=name)
 
-    def __eq__(self, other_workflow_run):
+    def _data_eq(self, other_workflow_run):
         # TODO : Should we add input_values and variables values in test ?
         if dc.is_sequence(self.output_value):
             if not dc.is_sequence(other_workflow_run):
@@ -1736,7 +1733,7 @@ class WorkflowRun(dc.DessiaObject):
             equal_output = self.output_value == other_workflow_run.output_value
         return self.workflow == other_workflow_run.workflow and equal_output
 
-    def __hash__(self):
+    def _data_hash(self):
         # TODO : Should we add input_values and variables values in test ?
         if dc.is_sequence(self.output_value):
             hash_output = dc.list_hash(self.output_value)
@@ -1755,6 +1752,8 @@ class WorkflowRun(dc.DessiaObject):
                 local_values[input_] = self.variables_values[str(indices)]
             display = block._display(local_values)
             displays.extend(display)
+        if isinstance(self.output_value, dc.DessiaObject):
+            displays.extend(self.output_value._display_angular())
         return displays
 
     @classmethod

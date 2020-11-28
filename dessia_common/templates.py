@@ -1,3 +1,6 @@
+from string import Template
+
+workflow_template = Template('''
 <!DOCTYPE html>
 <html>
 <head>
@@ -16,14 +19,14 @@
 
     <!-- code -->
     <script type="text/javascript">
-
-			var blocks_data = {{blocks | safe}}
-			var edges_data = {{edges | safe}}
-			var nonblock_variables_data = {{nonblock_variables | safe}}
+            var workflow_data = $workflow_data;
+			var blocks_data = workflow_data['blocks'];
+			var edges_data = workflow_data['edges'];
+			var nonblock_variables_data = workflow_data['nonblock_variables'];
 
 
 			var graph = new joint.dia.Graph;
-			// new joint.dia.Paper({ el: $('#paper-create'), width: 650, height: 200, gridSize: 1, model: graph });
+			// new joint.dia.Paper({ el: $$('#paper-create'), width: 650, height: 200, gridSize: 1, model: graph });
 			var paper = new joint.dia.Paper({
           el: document.getElementById('myholder'),
           model: graph,
@@ -248,3 +251,4 @@
     </script>
 </body>
 </html>
+''')
