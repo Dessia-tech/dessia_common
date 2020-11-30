@@ -180,9 +180,10 @@ class DessiaObject:
             return False
 
         eq_dict = {k: v for k, v in self.to_dict().items()
-                   if k not in self._non_data_eq_attributes}
-        other_eq_dict = {k: v for k, v in other_object.to_dict().items()
-                         if k not in self._non_data_eq_attributes}
+                   if (k not in ['package_version', 'name'])\
+                       and (k not in self._non_data_eq_attributes)}
+        other_eq_dict = other_object.to_dict()
+        
 
         for key, value in eq_dict.items():
             other_value = other_eq_dict[key]
@@ -192,9 +193,11 @@ class DessiaObject:
 
     def _data_hash(self):
         hash_ = 0
+        forbidden_keys = (self._non_data_eq_attributes
+                          + self._non_data_hash_attributes
+                          + ['package_version', 'name'])
         for key, value in self.to_dict().items():
-            if key not in set(self._non_data_eq_attributes
-                              + self._non_data_hash_attributes):
+            if key not in forbidden_keys:
                 if isinstance(value, list):
                     hash_ += list_hash(value)
                 elif isinstance(value, dict):
@@ -214,9 +217,9 @@ class DessiaObject:
         diff_values = {}
         
         eq_dict = {k: v for k, v in self.to_dict().items()
-                   if k not in self._non_data_eq_attributes}
-        other_eq_dict = {k: v for k, v in other_object.to_dict().items()
-                         if k not in self._non_data_eq_attributes}
+                   if (k not in ['package_version', 'name'])\
+                       and (k not in self._non_data_eq_attributes)}
+        other_eq_dict = other_object.to_dict()
 
         for key, value in eq_dict.items():
             if not key in other_eq_dict:
@@ -245,7 +248,8 @@ class DessiaObject:
 
     def __getstate__(self):
         dict_ = {k: v for k, v in self.__dict__.items()
-                 if k not in self._non_serializable_attributes}
+                 if (k not in self._non_serializable_attributes)\
+                     and (not k.startswith('_'))}
         return dict_
 
     def to_dict(self):
