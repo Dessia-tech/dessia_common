@@ -33,8 +33,8 @@ from typing import Dict, List, Tuple, Union
 
 try:
     import volmdlr as vm
-    import volmdlr.primitives2D as p2d
-    import volmdlr.primitives3D as p3d
+    import volmdlr.primitives2d as p2d
+    import volmdlr.primitives3d as p3d
 except:
     pass
 
@@ -57,11 +57,11 @@ class StandaloneSubobject(DessiaObject):
         DessiaObject.__init__(self, name=name)
 
     def contour(self):
-        points = [vm.Point2D((0, 0)), vm.Point2D((0, 1)),
-                  vm.Point2D((1, 1)), vm.Point2D((1, 0))]
+        points = [vm.Point2D(0, 0), vm.Point2D(0, 1),
+                  vm.Point2D(1, 1), vm.Point2D(1, 0)]
 
         crls = p2d.ClosedRoundedLineSegments2D(points=points, radius={})
-        return vm.Contour2D(crls.primitives)
+        return vm.wires.Contour2D(crls.primitives)
 
     def voldmlr_primitives(self):
         contour = self.contour()
