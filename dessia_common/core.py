@@ -3,6 +3,7 @@
 """
 
 """
+import sys
 import warnings
 import math
 import random
@@ -237,13 +238,20 @@ class DessiaObject:
         return full_classname(self)
 
     def base_dict(self):
-        if hasattr(self.__class__.__module__, '__version__'):
-            pkg_version = self.__class__.__module__.__version__
+        package_name = self.__module__.split('.')[0]
+        if package_name in sys.modules:
+            package = sys.modules[package_name]
+            if hasattr(package, '__version__'):
+                package_version = package.__version__
+            else:
+                package_version = None
         else:
-            pkg_version = None
+            package_version = None
+
         dict_ = {'name': self.name,
-                 'package_version': pkg_version,
                  'object_class': self.__module__ + '.' + self.__class__.__name__}
+        if package_version:
+            dict_['package_version'] = package_version
         return dict_
 
     def __getstate__(self):
