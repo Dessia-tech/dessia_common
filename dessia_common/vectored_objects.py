@@ -159,7 +159,7 @@ class Catalog(DessiaObject):
     _whitelist_attributes = ['variables']
 
     def __init__(self, array: List[List[float]], variables: List[str],
-                 pareto_settings: ParetoSettings,
+                 pareto_settings: ParetoSettings = None,
                  objectives: List[Objective] = None,
                  choice_variables: List[str] = None,
                  name: str = ''):
@@ -247,7 +247,7 @@ class Catalog(DessiaObject):
                    and variable in self.choice_variables]
 
         # Pareto
-        if self.pareto_settings.enabled:
+        if self.pareto_is_enabled:
             costs = self.build_costs(self.pareto_settings)
             pareto_indices = pareto_frontier(costs=costs)
         else:
@@ -280,7 +280,7 @@ class Catalog(DessiaObject):
             values.append(value)
 
         # Pareto
-        if self.pareto_settings.enabled:
+        if self.pareto_is_enabled:
             pareto_points = [i for i in range(len(values))
                              if pareto_indices[i]]
             datasets.append({'label': 'Pareto frontier',
@@ -302,9 +302,9 @@ class Catalog(DessiaObject):
 
         # Dominated points
         dominated_points = [i for i in range(len(values))
-                            if (self.pareto_settings.enabled
+                            if (self.pareto_is_enabled
                                 and not pareto_indices[i]
-                                or not self.pareto_settings.enabled)]
+                                or not self.pareto_is_enabled)]
         datasets.append({'label': 'Dominated points',
                          'color': "#99b4d6",
                          'values': dominated_points})
@@ -380,6 +380,11 @@ class Catalog(DessiaObject):
         j = self.get_variable_index(name)
         value = line[j]
         return value
+
+    @property
+    def pareto_is_enabled(self) -> bool:
+        pareto = self.pareto_settings
+        return pareto is not None and pareto.enabled
 
     def build_costs(self, pareto_settings: ParetoSettings):
         """
