@@ -524,10 +524,11 @@ class DessiaObject:
             if is_sequence(plot_data):
                 for plot in plot_data:
                     display.append({'angular_component': 'plot_data',
-                                    'data': plot})
+                                    'data': plot.to_dict()})
             else:
+                plot = self.plot_data()
                 display.append({'angular_component': 'plot_data',
-                                'data': self.plot_data()})
+                                'data': plot.to_dict()})
         if hasattr(self, 'to_markdown'):
             display.append({'angular_component': 'markdown',
                             'data': self.to_markdown()})

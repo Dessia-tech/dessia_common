@@ -226,9 +226,8 @@ class StandaloneObject(DessiaObject):
         multi_plot = plot_data.MultiplePlots(points=points, objects=objects,
                                              sizes=sizes, coords=coords,
                                              name='Multiple Plot')
-        # return [scatter_plot.to_dict()]
-        # return [parallel_plot.to_dict()]
-        # return [multi_plot.to_dict()]
-        # return [scatter_plot.to_dict(), parallel_plot.to_dict()]
-        return [scatter_plot.to_dict(),
-                parallel_plot.to_dict(), multi_plot.to_dict()]
+        # return [scatter_plot]
+        # return [parallel_plot]
+        # return [multi_plot]
+        # return [scatter_plot, parallel_plot]
+        return [scatter_plot, parallel_plot, multi_plot]
