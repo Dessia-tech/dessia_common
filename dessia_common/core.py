@@ -556,8 +556,15 @@ class DessiaObject:
             display.append({'angular_component': 'cad_viewer',
                             'data': model.babylon_data()})
         if hasattr(self, 'plot_data'):
-            display.append({'angular_component': 'plot_data',
-                            'data': self.plot_data()})
+            plot_data = self.plot_data()
+            if is_sequence(plot_data):
+                for plot in plot_data:
+                    display.append({'angular_component': 'plot_data',
+                                    'data': plot.to_dict()})
+            else:
+                plot = self.plot_data()
+                display.append({'angular_component': 'plot_data',
+                                'data': plot.to_dict()})
         if hasattr(self, 'to_markdown'):
             display.append({'angular_component': 'markdown',
                             'data': self.to_markdown()})
