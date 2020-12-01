@@ -163,8 +163,8 @@ class StandaloneObject(DessiaObject):
         self.standalone_subobject.floatarg += value
         return self.standalone_subobject
 
-    def volmdlr_primitives(self):
-        return self.standalone_subobject.voldmlr_primitives()
+    # def volmdlr_primitives(self):
+    #     return self.standalone_subobject.voldmlr_primitives()
 
     def plot_data(self):
         graduation_color = GREY
@@ -230,5 +230,5 @@ class StandaloneObject(DessiaObject):
         # return [parallel_plot.to_dict()]
         # return [multi_plot.to_dict()]
         # return [scatter_plot.to_dict(), parallel_plot.to_dict()]
-        return [contour.to_dict(), scatter_plot.to_dict(),
+        return [scatter_plot.to_dict(),
                 parallel_plot.to_dict(), multi_plot.to_dict()]
