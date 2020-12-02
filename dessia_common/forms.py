@@ -65,7 +65,7 @@ class StandaloneSubobject(DessiaObject):
                   vm.Point2D(1, 1), vm.Point2D(1, 0)]
 
         crls = p2d.ClosedRoundedLineSegments2D(points=points, radius={})
-        return Contour2D(crls.primitives)
+        return vm.wires.Contour2D(crls.primitives)
 
     def voldmlr_primitives(self):
         contour = self.contour()

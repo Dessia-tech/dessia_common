@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - introducing _eq_is_data_eq instead of _generic eq
 - __origin__ used in serialize_typing instead of _name. For typing type checking
 
+### Added
+- _data_diff method to DessiaObject
+
 ### Removed
 - Compiled parts of package, switching to full open-source
 

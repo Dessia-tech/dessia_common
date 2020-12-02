@@ -205,6 +205,30 @@ class DessiaObject:
                     hash_ += hash(value)
         return int(hash_ % 1e5)
 
+    def _data_diff(self, other_object):
+        """
+        Make a diff between two objects
+        returns: different values, missing keys in other object
+        """
+        missing_keys_in_other_object = []
+        diff_values = {}
+        
+        eq_dict = {k: v for k, v in self.to_dict().items()
+                   if k not in self._non_data_eq_attributes}
+        other_eq_dict = {k: v for k, v in other_object.to_dict().items()
+                         if k not in self._non_data_eq_attributes}
+
+        for key, value in eq_dict.items():
+            if not key in other_eq_dict:
+                missing_keys_in_other_object.append(key)
+            else:                
+                other_value = other_eq_dict[key]
+                if value != other_value:
+                    diff_values[key] = (value, other_value)
+                
+        return diff_values, missing_keys_in_other_object
+
+
     @property
     def full_classname(self):
         return full_classname(self)
