@@ -23,6 +23,16 @@ steps:
   - git fetch --tags
   - python setup.py sdist
 
+- name: upload to pypi
+  image: plugins/pypi
+  when:
+      event: tag
+  settings:
+    skip_build: True
+    username: dessia_tech
+    password:
+        from_secret: pypi_password
+
 - name: notify
   when:
     status:
