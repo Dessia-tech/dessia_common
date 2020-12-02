@@ -14,6 +14,9 @@ from dessia_common import DessiaObject, Parameter, is_bounded, Filter
 from scipy.optimize import minimize
 from pyDOE import lhs
 
+import plot_data
+from plot_data.colors import *
+
 
 class ParetoSettings(DessiaObject):
     """ 
@@ -269,7 +272,6 @@ class Catalog(DessiaObject):
                 all_near_indices[iobjective] = near_indices
 
         datasets = []
-
         values = []
         for i, line in enumerate(self.array):
             value = {}
@@ -309,13 +311,33 @@ class Catalog(DessiaObject):
                          'color': "#99b4d6",
                          'values': dominated_points})
 
+        for i, value in enumerate(values):
+            if self.pareto_is_enabled and pareto_indices[i]:
+                point = value
+
+        axis = plot_data.Axis(nb_points_x=10, nb_points_y=10,
+                              font_size=12, graduation_color=BLACK,
+                              axis_color=BLACK, arrow_on=True,
+                              axis_width=1, grid_on=False)
+
+        scatterplot = plot_data.Scatter(axis=axis, )
+        objects = [scatterplot, parallelplot]
+        sizes = [plot_data.Window(width=560, height=300),
+                 plot_data.Window(width=560, height=300)]
+        coords = [(0, 0), (0, 300)]
+        multiplot = plot_data.MultiplePlots(points=values, objects=objects,
+                                            sizes=sizes, coords=coords,
+                                            name='Results plot')
+
         # Displays
-        displays = [{'angular_component': 'results',
-                     'filters': filters,
-                     'datasets': datasets,
-                     'values': values,
-                     'references_attribute': 'array'}]
-        return displays
+        displays = [{"angular_component": "plot_data",
+                     "data": multiplot.to_dict()}]
+        # displays = [{'angular_component': 'results',
+        #              'filters': filters,
+        #              'datasets': datasets,
+        #              'values': values,
+        #              'references_attribute': 'array'}]
+        return [displays]
 
     def filter_(self, filters: List[Filter]):
         def apply_filters(line):
