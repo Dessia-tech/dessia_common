@@ -4,13 +4,15 @@ type: docker
 name: default
 
 steps:
-- name: install and run scripts
+- name: install, run scripts and build doc
   image: python:3.8
   commands:
   - git fetch --tags
   - python setup.py install
   - python scripts/dessia_object.py
   - python dessia_common/scripts/unit_tests.py
+  - cd doc
+  - make html
 
 - name: develop
   image: python:3.8
@@ -32,6 +34,20 @@ steps:
     username: dessia_tech
     password:
         from_secret: pypi_password
+
+- name: upload_doc_master
+  image: appleboy/drone-scp
+  when: 
+    branch: 
+      - master
+  settings:
+    host: austerlitz.dessia.tech
+    target: /var/www/documentation/dessia_common/
+    source: doc/build/html/*
+    strip_components: 3
+    username: drone
+    password:
+      from_secret: ssh_drone_password
 
 - name: notify
   when:
