@@ -7,15 +7,12 @@ Created on Wed Feb 19 15:56:12 2020
 """
 
 import math
-from typing import List, Dict
+from typing import List, Dict, Any
 import numpy as np
 import pandas as pd
 from dessia_common import DessiaObject, Parameter, is_bounded, Filter
 from scipy.optimize import minimize
 from pyDOE import lhs
-
-import plot_data
-from plot_data.colors import *
 
 
 class ParetoSettings(DessiaObject):
@@ -239,88 +236,49 @@ class Catalog(DessiaObject):
     #         return enhanced_deep_attr(self, healed_sequence)
     #     return self.__getattribute__(item)
 
-    def _display_angular(self):
-        """
-        Configures catalog display on frontend
+    def generate_multiplot(self, values: Dict[str, Any]=None):
+        # TOCHECK Avoid circular imports
+        import plot_data
+        from plot_data.colors import BLACK, LIGHTBLUE, LIGHTGREY, BLUE
 
-        :return: List of displays dictionnaries
-        """
-        filters = [variable for j, variable in enumerate(self.variables)
-                   if not isinstance(self.array[0][j], str)
-                   and variable in self.choice_variables]
+        if values is None:
+            values = []
+            for i, line in enumerate(self.array):
+                value = {}
+                for variable in self.variables:
+                    value[variable] = self.get_value_by_name(line, variable)
+                # for objective_name, ratings in objective_ratings.items():
+                #     value[objective_name] = ratings[i]
+                values.append(value)
 
-        # Pareto
-        if self.pareto_is_enabled:
-            costs = self.build_costs(self.pareto_settings)
-            pareto_indices = pareto_frontier(costs=costs)
-        else:
-            pareto_indices = []
-
-        all_near_indices = {}
-        objective_ratings = {}
-        for iobjective, objective in enumerate(self.objectives):
-            if objective.settings.enabled:
-                ratings = self.handle_objective(objective)
-                if objective.name and objective.name not in objective_ratings:
-                    name = objective.name
-                else:
-                    name = 'objective_'+str(iobjective)
-                objective_ratings[name] = ratings
-                filters.append(name)
-                nval = objective.settings.n_near_values
-                near_indices = list(np.argpartition(ratings, nval)[:nval])
-                all_near_indices[iobjective] = near_indices
-
-        datasets = []
-        values = []
-        for i, line in enumerate(self.array):
-            value = {}
-            for variable in self.variables:
-                value[variable] = self.get_value_by_name(line, variable)
-            for objective_name, ratings in objective_ratings.items():
-                value[objective_name] = ratings[i]
-            values.append(value)
-
-        # Pareto
-        if self.pareto_is_enabled:
-            pareto_points = [i for i in range(len(values))
-                             if pareto_indices[i]]
-            datasets.append({'label': 'Pareto frontier',
-                             'color': '#ffcc00',
-                             'values': pareto_points})
-
-        # Objectives
-        for iobjective, near_indices in all_near_indices.items():
-            objective = self.objectives[iobjective]
-            if objective.name:
-                label = objective.name
-            else:
-                label = 'Near Values ' + str(iobjective)
-            near_points = [i for i in range(len(values)) if i in near_indices]
-            near_dataset = {'label': label,
-                            'color': None,
-                            'values': near_points}
-            datasets.append(near_dataset)
-
-        # Dominated points
-        dominated_points = [i for i in range(len(values))
-                            if (self.pareto_is_enabled
-                                and not pareto_indices[i]
-                                or not self.pareto_is_enabled)]
-        datasets.append({'label': 'Dominated points',
-                         'color': "#99b4d6",
-                         'values': dominated_points})
-
-        for i, value in enumerate(values):
-            if self.pareto_is_enabled and pareto_indices[i]:
-                point = value
-
+        fontsize = 12
+        first_vars = self.variables[:2]
+        values2d = [{key: val[key]} for key in first_vars for val in values]
+        rgbs = [[192, 11, 11], [14, 192, 11], [11, 11, 192]]
         axis = plot_data.Axis(nb_points_x=10, nb_points_y=10,
-                              font_size=12, graduation_color=BLACK,
+                              font_size=fontsize, graduation_color=BLACK,
                               axis_color=BLACK, arrow_on=True,
                               axis_width=1, grid_on=False)
 
-        scatterplot = plot_data.Scatter(axis=axis, )
+        tooltip = plot_data.Tooltip(colorfill=LIGHTGREY, text_color=BLACK,
+                                    fontsize=fontsize, fontstyle='Arial',
+                                    tp_radius=1,
+                                    to_plot_list=first_vars,
+                                    opacity=1, name='Tooltip')
+
+        scatterplot = plot_data.Scatter(axis=axis, tooltip=tooltip,
+                                        to_display_att_names=first_vars,
+                                        point_shape='circle', point_size=2,
+                                        color_fill=LIGHTGREY,
+                                        color_stroke=BLUE,
+                                        stroke_width=1, elements=values2d,
+                                        name='Scatter Plot')
+
+        parallelplot = plot_data.ParallelPlot(line_color=LIGHTBLUE,
+                                              line_width=1,
+                                              disposition='horizontal',
+                                              to_disp_attributes=self.variables,
+                                              rgbs=rgbs, elements=values)
         objects = [scatterplot, parallelplot]
         sizes = [plot_data.Window(width=560, height=300),
                  plot_data.Window(width=560, height=300)]
@@ -328,10 +286,87 @@ class Catalog(DessiaObject):
         multiplot = plot_data.MultiplePlots(points=values, objects=objects,
                                             sizes=sizes, coords=coords,
                                             name='Results plot')
+        return multiplot
+
+    def _display_angular(self):
+        """
+        Configures catalog display on frontend
+
+        :return: List of displays dictionnaries
+        """
+
+
+        # filters = [variable for j, variable in enumerate(self.variables)
+        #            if not isinstance(self.array[0][j], str)
+        #            and variable in self.choice_variables]
+
+        # # Pareto
+        # if self.pareto_is_enabled:
+        #     costs = self.build_costs(self.pareto_settings)
+        #     pareto_indices = pareto_frontier(costs=costs)
+        # else:
+        #     pareto_indices = []
+        #
+        # all_near_indices = {}
+        # objective_ratings = {}
+        # for iobjective, objective in enumerate(self.objectives):
+        #     if objective.settings.enabled:
+        #         ratings = self.handle_objective(objective)
+        #         if objective.name and objective.name not in objective_ratings:
+        #             name = objective.name
+        #         else:
+        #             name = 'objective_'+str(iobjective)
+        #         objective_ratings[name] = ratings
+        #         filters.append(name)
+        #         nval = objective.settings.n_near_values
+        #         near_indices = list(np.argpartition(ratings, nval)[:nval])
+        #         all_near_indices[iobjective] = near_indices
+
+        # datasets = []
+        # values = []
+        # for i, line in enumerate(self.array):
+        #     value = {}
+        #     for variable in self.variables:
+        #         value[variable] = self.get_value_by_name(line, variable)
+        #     # for objective_name, ratings in objective_ratings.items():
+        #     #     value[objective_name] = ratings[i]
+        #     values.append(value)
+
+        # # Pareto
+        # if self.pareto_is_enabled:
+        #     pareto_points = [i for i in range(len(values))
+        #                      if pareto_indices[i]]
+        #     datasets.append({'label': 'Pareto frontier',
+        #                      'color': '#ffcc00',
+        #                      'values': pareto_points})
+
+        # # Objectives
+        # for iobjective, near_indices in all_near_indices.items():
+        #     objective = self.objectives[iobjective]
+        #     if objective.name:
+        #         label = objective.name
+        #     else:
+        #         label = 'Near Values ' + str(iobjective)
+        #     near_points = [i for i in range(len(values)) if i in near_indices]
+        #     near_dataset = {'label': label,
+        #                     'color': None,
+        #                     'values': near_points}
+        #     datasets.append(near_dataset)
+
+        # # Dominated points
+        # dominated_points = [i for i in range(len(values))
+        #                     if (self.pareto_is_enabled
+        #                         and not pareto_indices[i]
+        #                         or not self.pareto_is_enabled)]
+        # datasets.append({'label': 'Dominated points',
+        #                  'color': "#99b4d6",
+        #                  'values': dominated_points})
+
+        multiplot = self.generate_multiplot()
 
         # Displays
-        displays = [{"angular_component": "plot_data",
-                     "data": multiplot.to_dict()}]
+        displays = {"angular_component": "plot_data",
+                    "data": multiplot.to_dict()}
         # displays = [{'angular_component': 'results',
         #              'filters': filters,
         #              'datasets': datasets,
