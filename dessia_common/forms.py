@@ -230,4 +230,4 @@ class StandaloneObject(DessiaObject):
         # return [parallel_plot]
         # return [multi_plot]
         # return [scatter_plot, parallel_plot]
-        return [scatter_plot, parallel_plot, multi_plot]
+        return [contour, scatter_plot, parallel_plot, multi_plot]
