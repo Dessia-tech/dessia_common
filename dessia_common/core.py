@@ -3,6 +3,7 @@
 """
 
 """
+import sys
 import warnings
 import math
 import random
@@ -180,9 +181,10 @@ class DessiaObject:
             return False
 
         eq_dict = {k: v for k, v in self.to_dict().items()
-                   if k not in self._non_data_eq_attributes}
-        other_eq_dict = {k: v for k, v in other_object.to_dict().items()
-                         if k not in self._non_data_eq_attributes}
+                   if (k not in ['package_version', 'name'])\
+                       and (k not in self._non_data_eq_attributes)}
+        other_eq_dict = other_object.to_dict()
+        
 
         for key, value in eq_dict.items():
             other_value = other_eq_dict[key]
@@ -192,9 +194,11 @@ class DessiaObject:
 
     def _data_hash(self):
         hash_ = 0
+        forbidden_keys = (self._non_data_eq_attributes
+                          + self._non_data_hash_attributes
+                          + ['package_version', 'name'])
         for key, value in self.to_dict().items():
-            if key not in set(self._non_data_eq_attributes
-                              + self._non_data_hash_attributes):
+            if key not in forbidden_keys:
                 if isinstance(value, list):
                     hash_ += list_hash(value)
                 elif isinstance(value, dict):
@@ -205,23 +209,55 @@ class DessiaObject:
                     hash_ += hash(value)
         return int(hash_ % 1e5)
 
+    def _data_diff(self, other_object):
+        """
+        Make a diff between two objects
+        returns: different values, missing keys in other object
+        """
+        missing_keys_in_other_object = []
+        diff_values = {}
+        
+        eq_dict = {k: v for k, v in self.to_dict().items()
+                   if (k not in ['package_version', 'name'])\
+                       and (k not in self._non_data_eq_attributes)}
+        other_eq_dict = other_object.to_dict()
+
+        for key, value in eq_dict.items():
+            if not key in other_eq_dict:
+                missing_keys_in_other_object.append(key)
+            else:                
+                other_value = other_eq_dict[key]
+                if value != other_value:
+                    diff_values[key] = (value, other_value)
+                
+        return diff_values, missing_keys_in_other_object
+
+
     @property
     def full_classname(self):
         return full_classname(self)
 
     def base_dict(self):
-        if hasattr(self.__class__.__module__, '__version__'):
-            pkg_version = self.__class__.__module__.__version__
+        package_name = self.__module__.split('.')[0]
+        if package_name in sys.modules:
+            package = sys.modules[package_name]
+            if hasattr(package, '__version__'):
+                package_version = package.__version__
+            else:
+                package_version = None
         else:
-            pkg_version = None
+            package_version = None
+
         dict_ = {'name': self.name,
-                 'package_version': pkg_version,
                  'object_class': self.__module__ + '.' + self.__class__.__name__}
+        if package_version:
+            dict_['package_version'] = package_version
         return dict_
 
     def __getstate__(self):
         dict_ = {k: v for k, v in self.__dict__.items()
-                 if k not in self._non_serializable_attributes}
+                 if (k not in self._non_serializable_attributes)\
+                     and (not k.startswith('_'))}
         return dict_
 
     def to_dict(self):
@@ -509,29 +545,30 @@ class DessiaObject:
         self.volmdlr_volume_model().babylonjs(use_cdn=use_cdn, debug=debug)
 
     def _display_angular(self):
-        display = []
+        displays = []
         if hasattr(self, 'babylon_data'):
-            display.append({'angular_component': 'cad_viewer',
+            displays.append({'angular_component': 'cad_viewer',
                             'data': self.babylon_data()})
         elif hasattr(self, 'volmdlr_primitives')\
                 or (self.__class__.volmdlr_volume_model
                     is not DessiaObject.volmdlr_volume_model):
             model = self.volmdlr_volume_model()
-            display.append({'angular_component': 'cad_viewer',
+            displays.append({'angular_component': 'cad_viewer',
                             'data': model.babylon_data()})
         if hasattr(self, 'plot_data'):
             plot_data = self.plot_data()
             if is_sequence(plot_data):
                 for plot in plot_data:
-                    display.append({'angular_component': 'plot_data',
-                                    'data': plot})
+                    displays.append({'angular_component': 'plot_data',
+                                    'data': plot.to_dict()})
             else:
-                display.append({'angular_component': 'plot_data',
-                                'data': self.plot_data()})
+                plot = self.plot_data()
+                displays.append({'angular_component': 'plot_data',
+                                'data': plot.to_dict()})
         if hasattr(self, 'to_markdown'):
-            display.append({'angular_component': 'markdown',
+            displays.append({'angular_component': 'markdown',
                             'data': self.to_markdown()})
-        return display
+        return displays
 
 
 class Parameter(DessiaObject):
