@@ -99,7 +99,6 @@ def get_version():
     return version
 
 
-
 setup(name='dessia_common',
       version=get_version(),
       description="Common tools for DessIA software",
@@ -110,6 +109,7 @@ setup(name='dessia_common',
       author_email='masfaraud@dessia.tech',
       packages=['dessia_common'],
       install_requires=['typeguard', 'networkx', 'numpy', 'pandas',
-                        'mypy_extensions', 'scipy', 'pyDOE'],
+                        'mypy_extensions', 'scipy', 'pyDOE',
+                        'plot_data>=0.3.2'],
       python_requires='>=3.7')
 
