@@ -236,7 +236,7 @@ class Catalog(DessiaObject):
     #         return enhanced_deep_attr(self, healed_sequence)
     #     return self.__getattribute__(item)
 
-    def generate_multiplot(self, values: Dict[str, Any]=None):
+    def generate_multiplot(self, values: Dict[str, Any] = None):
         # TOCHECK Avoid circular imports
         import plot_data
         from plot_data.colors import BLACK, LIGHTBLUE, LIGHTGREY, BLUE
