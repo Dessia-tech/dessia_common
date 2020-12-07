@@ -224,7 +224,7 @@ class StandaloneObject(DessiaObject):
         objects = [scatter_plot, parallel_plot]
         sizes = [plot_data.Window(width=560, height=300),
                  plot_data.Window(width=560, height=300)]
-        coords = [(0, 600), (300, 0)]
+        coords = [(0, 0), (300, 0)]
         multi_plot = plot_data.MultiplePlots(points=points, objects=objects,
                                              sizes=sizes, coords=coords,
                                              name='Multiple Plot')
