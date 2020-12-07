@@ -176,8 +176,8 @@ class StandaloneObject(DessiaObject):
 
         # Contour
         contour = self.standalone_subobject.contour().plot_data()
-        primitives_group = plot_data.ContourGroup(contours=[contour],
-                                                  name='Contour')
+        primitives_group = plot_data.PrimitiveGroup(contours=[contour],
+                                                    name='Contour')
 
         # Scatter Plot
         bounds = {'x': [0, 6], 'y': [100, 2000]}
