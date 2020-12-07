@@ -545,30 +545,30 @@ class DessiaObject:
         self.volmdlr_volume_model().babylonjs(use_cdn=use_cdn, debug=debug)
 
     def _display_angular(self):
-        display = []
+        displays = []
         if hasattr(self, 'babylon_data'):
-            display.append({'angular_component': 'cad_viewer',
+            displays.append({'angular_component': 'cad_viewer',
                             'data': self.babylon_data()})
         elif hasattr(self, 'volmdlr_primitives')\
                 or (self.__class__.volmdlr_volume_model
                     is not DessiaObject.volmdlr_volume_model):
             model = self.volmdlr_volume_model()
-            display.append({'angular_component': 'cad_viewer',
+            displays.append({'angular_component': 'cad_viewer',
                             'data': model.babylon_data()})
         if hasattr(self, 'plot_data'):
             plot_data = self.plot_data()
             if is_sequence(plot_data):
                 for plot in plot_data:
-                    display.append({'angular_component': 'plot_data',
+                    displays.append({'angular_component': 'plot_data',
                                     'data': plot.to_dict()})
             else:
                 plot = self.plot_data()
-                display.append({'angular_component': 'plot_data',
+                displays.append({'angular_component': 'plot_data',
                                 'data': plot.to_dict()})
         if hasattr(self, 'to_markdown'):
-            display.append({'angular_component': 'markdown',
+            displays.append({'angular_component': 'markdown',
                             'data': self.to_markdown()})
-        return display
+        return displays
 
 
 class Parameter(DessiaObject):

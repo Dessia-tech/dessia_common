@@ -1,5 +1,6 @@
 from dessia_common.vectored_objects import Catalog, ParetoSettings
 import dessia_common.workflow as wf
+from dessia_api_client import Client
 
 choice_args = ['MPG', 'Cylinders', 'Displacement', 'Horsepower',
                'Weight', 'Acceleration', 'Model']  # Ordered
@@ -71,8 +72,7 @@ input_values = {
     # workflow.index(objectives_method.inputs[1]): aimpoint,
     # workflow.index(objectives_method.inputs[2]): minimized_attributes
 }
-workflow_run = workflow.run(input_variables_values=input_values)
+workflow_run = workflow.run(input_values=input_values)
 
-from dessia_api_client import Client
-c = Client(api_url = 'https://api.platform-dev.dessia.tech')
+c = Client(api_url='https://api.platform-dev.dessia.tech')
 r = c.create_object_from_python_object(workflow_run)

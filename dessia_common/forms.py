@@ -65,7 +65,7 @@ class StandaloneSubobject(DessiaObject):
                   vm.Point2D(1, 1), vm.Point2D(1, 0)]
 
         crls = p2d.ClosedRoundedLineSegments2D(points=points, radius={})
-        return Contour2D(crls.primitives)
+        return vm.wires.Contour2D(crls.primitives)
 
     def voldmlr_primitives(self):
         contour = self.contour()
@@ -163,8 +163,8 @@ class StandaloneObject(DessiaObject):
         self.standalone_subobject.floatarg += value
         return self.standalone_subobject
 
-    # def volmdlr_primitives(self):
-    #     return self.standalone_subobject.voldmlr_primitives()
+    def volmdlr_primitives(self):
+        return self.standalone_subobject.voldmlr_primitives()
 
     def plot_data(self):
         graduation_color = GREY
@@ -176,6 +176,8 @@ class StandaloneObject(DessiaObject):
 
         # Contour
         contour = self.standalone_subobject.contour().plot_data()
+        primitives_group = plot_data.ContourGroup(contours=[contour],
+                                                  name='Contour')
 
         # Scatter Plot
         bounds = {'x': [0, 6], 'y': [100, 2000]}
@@ -230,4 +232,5 @@ class StandaloneObject(DessiaObject):
         # return [parallel_plot]
         # return [multi_plot]
         # return [scatter_plot, parallel_plot]
-        return [scatter_plot, parallel_plot, multi_plot]
+        return [primitives_group, scatter_plot, parallel_plot, multi_plot]
+
