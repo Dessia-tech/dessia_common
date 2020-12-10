@@ -474,18 +474,18 @@ class ForEach(Block):
     """
     :param workflow_block: The WorkflowBlock on which iterate.
     :type workflow_block: WorkflowBlock
-    :param workflow_iterable_input: The iterable input of the workflow.
-    :type workflow_iterable_input: TypedVarible
+    :param iter_input_index: Index of iterable input in worklow_block.inputs
+    :type iter_input_index: int
     :param name: The name of the block.
     :type name: str
     """
-    def __init__(self, workflow_block, workflow_iterable_input, name=''):
+    def __init__(self, workflow_block: 'WorkflowBlock',
+                 iter_input_index: int, name=''):
         self.workflow_block = workflow_block
-        self.workflow_iterable_input = workflow_iterable_input
+        self.iter_input_index = iter_input_index
         inputs = []
-
-        for workflow_input in self.workflow_block.inputs:
-            if workflow_input == workflow_iterable_input:
+        for i, workflow_input in enumerate(self.workflow_block.inputs):
+            if i == iter_input_index:
                 name = 'Iterable input: ' + workflow_input.name
                 inputs.append(Variable(name=name))
             else:
