@@ -11,15 +11,12 @@ import json
 from importlib import import_module
 import webbrowser
 import networkx as nx
-# import pkg_resources
 from typing import List
 from copy import deepcopy
-# import typeguard
-from ast import literal_eval
 from dessia_common.templates import workflow_template
 
 import dessia_common as dc
-from dessia_common.vectored_objects import ParetoSettings, Catalog, from_csv
+from dessia_common.vectored_objects import ParetoSettings, from_csv
 import plot_data
 from plot_data.colors import BLUE, LIGHTBLUE, LIGHTGREY
 
@@ -84,16 +81,16 @@ class TypedVariableWithDefaultValue(TypedVariable):
 
 
 def set_block_variable_names_from_dict(func):
-   def func_wrapper(cls, dict_):
-       obj = func(cls, dict_)
-       if 'input_names' in dict_:
-           for input_name, input_ in zip(dict_['input_names'], obj.inputs):
-               input_.name = input_name
-       if 'output_names' in dict_:
-           for output_name, output_ in zip(dict_['output_names'], obj.outputs):
-               output_.name = output_name
-       return obj
-   return func_wrapper
+    def func_wrapper(cls, dict_):
+        obj = func(cls, dict_)
+        if 'input_names' in dict_:
+            for input_name, input_ in zip(dict_['input_names'], obj.inputs):
+                input_.name = input_name
+        if 'output_names' in dict_:
+            for output_name, output_ in zip(dict_['output_names'], obj.outputs):
+                output_.name = output_name
+        return obj
+    return func_wrapper
 
 
 class Block(dc.DessiaObject):
@@ -231,7 +228,8 @@ class InstanciateModel(Block):
 
         inputs = set_inputs_from_function(self.model_class.__init__, inputs, name)
 
-        outputs = [TypedVariable(type_=self.model_class, name='Instanciated object')]
+        outputs = [TypedVariable(type_=self.model_class,
+                                 name='Instanciated object')]
         Block.__init__(self, inputs, outputs, name=name)
 
     def equivalent_hash(self):
@@ -240,7 +238,9 @@ class InstanciateModel(Block):
     def equivalent(self, other_block):
         if not Block.equivalent(self, other_block):
             return False
-        return self.model_class.__class__.__name__ == other_block.model_class.__class__.__name__
+        classname = self.model_class.__class__.__name__
+        other_classname = other_block.model_class.__class__.__name__
+        return classname == other_classname
 
     def to_dict(self):
         dict_ = dc.DessiaObject.base_dict(self)
@@ -251,7 +251,6 @@ class InstanciateModel(Block):
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_):
-        # TODO: Eval is dangerous: check that it is a class before
         class_ = getattr(import_module(dict_['model_class_module']),
                          dict_['model_class'])
         return cls(class_, name=dict_['name'])
@@ -259,13 +258,12 @@ class InstanciateModel(Block):
     def evaluate(self, values):
         args = {var.name: values[var] for var in self.inputs}
         return [self.model_class(**args)]
-    
-    
+
     def package_mix(self):
         return {self.model_class.__module__.split('.')[0]: 1}
 
-class ClassMethod(Block):
 
+class ClassMethod(Block):
     def __init__(self, class_, method_name, name=''):
         self.class_ = class_
         self.method_name = method_name
@@ -300,7 +298,6 @@ class ClassMethod(Block):
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_):
-        # TODO: Eval is dangerous: check that it is a class before
         class_ = getattr(import_module(dict_['class_module']),
                          dict_['class_'])
         return cls(class_=class_,
@@ -308,8 +305,9 @@ class ClassMethod(Block):
                    name=dict_['name'])
 
     def evaluate(self, values):
-        args = {arg_name: values[var] for arg_name, var in zip(self.argument_names,
-                                                               self.inputs) if var in values}
+        args = {arg_name: values[var]
+                for arg_name, var in zip(self.argument_names, self.inputs)
+                if var in values}
         return [getattr(self.class_, self.method_name)(**args)]
 
 
@@ -323,22 +321,23 @@ class ModelMethod(Block):
     :type name: str
     """
     _jsonschema = dc.dict_merge(Block._jsonschema, {
-        "title" : "Model method Base Schema",
+        "title": "Model method Base Schema",
         "required": ['model_class', 'method_name'],
         "properties": {
             "model_class": {
-                "type" : "string",
-                "editable" : True,
-                "examples" : ['Nom']
+                "type": "string",
+                "editable": True,
+                "examples": ['Nom']
                 },
 
             "method_name": {
-                "type" : "string",
-                "editable" : True,
-                "examples" : ['Nom']
+                "type": "string",
+                "editable": True,
+                "examples": ['Nom']
                 }
             }
         })
+
     def __init__(self, model_class, method_name, name=''):
         self.model_class = model_class
         self.method_name = method_name
@@ -346,6 +345,7 @@ class ModelMethod(Block):
         method = getattr(self.model_class, self.method_name)
 
         inputs = set_inputs_from_function(method, inputs, name)
+
         # Storing argument names
         self.argument_names = [i.name for i in inputs[1:]]
 
@@ -384,7 +384,6 @@ class ModelMethod(Block):
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_):
-        # TODO: Eval is dangerous: check that it is a class before
         class_ = getattr(import_module(dict_['model_class_module']),
                          dict_['model_class'])
         return cls(model_class=class_,
@@ -392,8 +391,9 @@ class ModelMethod(Block):
                    name=dict_['name'])
 
     def evaluate(self, values):
-        args = {arg_name: values[var] for arg_name, var in zip(self.argument_names, 
-                                                               self.inputs[1:]) if var in values}
+        args = {arg_name: values[var]
+                for arg_name, var in zip(self.argument_names, self.inputs[1:])
+                if var in values}
         return [getattr(values[self.inputs[0]], self.method_name)(**args),
                 values[self.inputs[0]]]
 
@@ -406,6 +406,7 @@ class Function(Block):
         self.function = function
         inputs = []
         for arg_name in inspect.signature(function).parameters.keys():
+            # TODO: Check why we need TypedVariables
             type_ = dc.type_from_annotation(function.__annotations__[arg_name])
             inputs.append(TypedVariable(type_=type_, name=arg_name))
         out_type = dc.type_from_annotation(function.__annotations__['return'])
@@ -417,6 +418,7 @@ class Function(Block):
         return int(hash(self.function.__name__) % 10e5)
 
     def equivalent(self, other_block):
+        # TODO : chenge method to function
         return self.method == other_block.method
 
     def evaluate(self, values):
@@ -426,11 +428,12 @@ class Function(Block):
 class Sequence(Block):
     def __init__(self, number_arguments, type_=None, name=''):
         self.number_arguments = number_arguments
+        prefix = 'Sequence element {}'
         if type_ is None:
-            inputs = [Variable(name='Sequence element {}'.format(i))
+            inputs = [Variable(name=prefix.format(i))
                       for i in range(self.number_arguments)]
         else:
-            inputs = [TypedVariable(type_=type_, name='Sequence element {}'.format(i))
+            inputs = [TypedVariable(type_=type_, name=prefix.format(i))
                       for i in range(self.number_arguments)]
 
         self.type_ = type_
@@ -483,7 +486,8 @@ class ForEach(Block):
 
         for workflow_input in self.workflow_block.inputs:
             if workflow_input == workflow_iterable_input:
-                inputs.append(Variable(name='Iterable input: '+workflow_input.name))
+                name = 'Iterable input: ' + workflow_input.name
+                inputs.append(Variable(name=name))
             else:
                 input_ = workflow_input.copy()
                 input_.name = 'binding '+input_.name
@@ -498,10 +502,11 @@ class ForEach(Block):
     def equivalent(self, other_block):
         if not Block.equivalent(self, other_block):
             return False
-        return self.workflow_block == other_block.workflow_block\
-               and self.workflow_block.variable_indices(self.workflow_iterable_input)\
-                   == other_block.workflow_block.variable_indices(other_block.workflow_iterable_input)
 
+        # TODO Check for non-resolved variable_indices in workflow_bloc
+        return self.workflow_block == other_block.workflow_block\
+        and self.workflow_block.variable_indices(self.workflow_iterable_input)\
+        == other_block.workflow_block.variable_indices(other_block.workflow_iterable_input)
 
     def to_dict(self):
         dict_ = dc.DessiaObject.base_dict(self)
