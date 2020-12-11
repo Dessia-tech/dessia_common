@@ -255,18 +255,12 @@ class Catalog(DessiaObject):
         first_vars = self.variables[:2]
         values2d = [{key: val[key]} for key in first_vars for val in values]
         rgbs = [[192, 11, 11], [14, 192, 11], [11, 11, 192]]
-        axis = plot_data.Axis(nb_points_x=10, nb_points_y=10,
-                              font_size=fontsize, graduation_color=BLACK,
-                              axis_color=BLACK, arrow_on=True,
-                              axis_width=1, grid_on=False)
 
-        tooltip = plot_data.Tooltip(colorfill=LIGHTGREY, text_color=BLACK,
-                                    fontsize=fontsize, fontstyle='Arial',
-                                    tp_radius=1,
-                                    to_plot_list=first_vars,
-                                    opacity=1, name='Tooltip')
+        tooltip = plot_data.Tooltip(to_plot_list=self.variables,
+                                    name='Tooltip')
 
-        scatterplot = plot_data.Scatter(axis=axis, tooltip=tooltip,
+        scatterplot = plot_data.Scatter(axis=plot_data.DEFAULT_AXIS,
+                                        tooltip=tooltip,
                                         to_display_att_names=first_vars,
                                         point_shape='circle', point_size=2,
                                         color_fill=LIGHTGREY,
@@ -363,10 +357,12 @@ class Catalog(DessiaObject):
         #                  'values': dominated_points})
 
         multiplot = self.generate_multiplot()
+        dict_ = multiplot.to_dict()
+        dict_['references_attribute'] = 'array'
 
         # Displays
         displays = {"angular_component": "plot_data",
-                    "data": multiplot.to_dict()}
+                    "data": dict_}
         # displays = [{'angular_component': 'results',
         #              'filters': filters,
         #              'datasets': datasets,

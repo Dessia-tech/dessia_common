@@ -20,6 +20,8 @@ from dessia_common.templates import workflow_template
 
 import dessia_common as dc
 from dessia_common.vectored_objects import ParetoSettings, Catalog, from_csv
+import plot_data
+from plot_data.colors import BLUE, LIGHTBLUE, LIGHTGREY
 
 
 class Variable(dc.DessiaObject):
@@ -662,24 +664,49 @@ class ParallelPlot(Block):
 
     def _display(self, local_values):
         objects = local_values[self.inputs[0]]
-        pareto_settings = local_values[self.inputs[1]]
-        array = []
-        for object_ in objects:
-            line = []
-            for attribute in self.attributes:
-                line.append(dc.enhanced_deep_attr(object_, attribute))
-            array.append(line)
+        # pareto_settings = local_values[self.inputs[1]]
 
-        if pareto_settings is None:
-            minimized = {attr: True for attr in self.attributes}
-            pareto_settings = ParetoSettings(minimized_attributes=minimized,
-                                             enabled=False)
+        values = [{a: dc.enhanced_deep_attr(o, a) for a in self.attributes}
+                  for o in objects]
+        # for object_ in objects:
+        #     value = {}
+        #     for attribute in self.attributes:
+        #         value[attribute] = dc.enhanced_deep_attr(object_, attribute)
+        #     values.append(value)
 
-        catalog = Catalog(array=array, variables=self.attributes,
-                          pareto_settings=pareto_settings, objectives=[])
-        display = catalog._display_angular()
-        display[0]['references_attribute'] = 'output_value'
-        return display
+        first_vars = self.attributes[:2]
+        values2d = [{key: val[key]} for key in first_vars for val in
+                    values]
+        rgbs = [[192, 11, 11], [14, 192, 11], [11, 11, 192]]
+
+        tooltip = plot_data.Tooltip(name='Tooltip',
+                                    to_plot_list=self.attributes)
+
+        scatterplot = plot_data.Scatter(axis=plot_data.DEFAULT_AXIS,
+                                        tooltip=tooltip,
+                                        to_display_att_names=first_vars,
+                                        point_shape='circle', point_size=2,
+                                        color_fill=LIGHTGREY,
+                                        color_stroke=BLUE,
+                                        stroke_width=1, elements=values2d,
+                                        name='Scatter Plot')
+
+        parallelplot = plot_data.ParallelPlot(line_color=LIGHTBLUE,
+                                              line_width=1,
+                                              disposition='horizontal',
+                                              to_disp_attributes=self.attributes,
+                                              rgbs=rgbs, elements=values)
+        objects = [scatterplot, parallelplot]
+        sizes = [plot_data.Window(width=560, height=300),
+                 plot_data.Window(width=560, height=300)]
+        coords = [(0, 0), (0, 300)]
+        multiplot = plot_data.MultiplePlots(points=values, objects=objects,
+                                            sizes=sizes, coords=coords,
+                                            name='Results plot')
+        dict_ = multiplot.to_dict()
+        dict_['references_attribute'] = 'output_value'
+        displays = [{'angular_component': 'plot_data', 'data': dict_}]
+        return displays
 
     def to_dict(self):
         dict_ = dc.DessiaObject.base_dict(self)

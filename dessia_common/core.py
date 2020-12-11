@@ -541,6 +541,27 @@ class DessiaObject:
         else:
             raise NotImplementedError
 
+    def plot(self):
+        """
+
+        """
+        if hasattr(self, 'plot_data'):
+            import plot_data
+            for data in self.plot_data():
+                plot_data.plot_canvas(plot_data_object=data,
+                                      canvas_id='canvas',
+                                      debug_mode=False)
+
+    def mpl_plot(self):
+        axs = []
+        if hasattr(self, 'plot_data'):
+            for data in self.plot_data():
+                if hasattr(data, 'mpl_plot'):
+                    ax = data.mpl_plot()
+                    axs.append(ax)
+        return axs
+
+
     def babylonjs(self, use_cdn=True, debug=False):
         self.volmdlr_volume_model().babylonjs(use_cdn=use_cdn, debug=debug)
 
