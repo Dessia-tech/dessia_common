@@ -176,8 +176,8 @@ class StandaloneObject(DessiaObject):
 
         # Contour
         contour = self.standalone_subobject.contour().plot_data()
-        primitives_group = plot_data.ContourGroup(contours=[contour],
-                                                  name='Contour')
+        primitives_group = plot_data.PrimitiveGroup(contours=[contour],
+                                                    name='Contour')
 
         # Scatter Plot
         bounds = {'x': [0, 6], 'y': [100, 2000]}
@@ -224,7 +224,7 @@ class StandaloneObject(DessiaObject):
         objects = [scatter_plot, parallel_plot]
         sizes = [plot_data.Window(width=560, height=300),
                  plot_data.Window(width=560, height=300)]
-        coords = [(0, 600), (300, 0)]
+        coords = [(0, 0), (300, 0)]
         multi_plot = plot_data.MultiplePlots(points=points, objects=objects,
                                              sizes=sizes, coords=coords,
                                              name='Multiple Plot')
