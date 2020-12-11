@@ -38,9 +38,9 @@ steps:
 
 - name: upload_doc_master
   image: appleboy/drone-scp
-  when: 
-    branch: 
-      - master
+  when:
+    event: push 
+    branch: master
   settings:
     host: austerlitz.dessia.tech
     target: /var/www/documentation/dessia_common/
