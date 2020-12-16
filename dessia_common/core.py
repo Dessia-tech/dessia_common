@@ -184,7 +184,6 @@ class DessiaObject:
                    if (k not in ['package_version', 'name'])\
                        and (k not in self._non_data_eq_attributes)}
         other_eq_dict = other_object.to_dict()
-        
 
         for key, value in eq_dict.items():
             other_value = other_eq_dict[key]
@@ -232,7 +231,6 @@ class DessiaObject:
                 
         return diff_values, missing_keys_in_other_object
 
-
     @property
     def full_classname(self):
         return full_classname(self)
@@ -260,7 +258,7 @@ class DessiaObject:
                      and (not k.startswith('_'))}
         return dict_
 
-    def to_dict(self):
+    def to_dict(self) -> dt.JsonSerializable:
         """
         Generic to_dict method
         """
@@ -281,7 +279,7 @@ class DessiaObject:
         return serialized_dict
 
     @classmethod
-    def dict_to_object(cls, dict_):
+    def dict_to_object(cls, dict_: dt.JsonSerializable) -> 'DessiaObject':
         """
         Generic dict_to_object method
         """
