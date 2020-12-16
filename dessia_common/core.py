@@ -559,35 +559,49 @@ class DessiaObject:
                     axs.append(ax)
         return axs
 
-
     def babylonjs(self, use_cdn=True, debug=False):
         self.volmdlr_volume_model().babylonjs(use_cdn=use_cdn, debug=debug)
 
-    def _display_angular(self):
+    def _display_angular(self, **kwargs):
+        if 'reference_path' in kwargs:
+            reference_path = kwargs['reference_path']
+        else:
+            reference_path = ''
         displays = []
         if hasattr(self, 'babylon_data'):
-            displays.append({'angular_component': 'cad_viewer',
-                            'data': self.babylon_data()})
+            display_ = DisplayObject(type_='cad', data=self.babylon_data(),
+                                     reference_path=reference_path)
+            displays.append(display_.to_dict())
         elif hasattr(self, 'volmdlr_primitives')\
                 or (self.__class__.volmdlr_volume_model
                     is not DessiaObject.volmdlr_volume_model):
             model = self.volmdlr_volume_model()
-            displays.append({'angular_component': 'cad_viewer',
-                            'data': model.babylon_data()})
+            display_ = DisplayObject(type_='cad', data=model.babylon_data(),
+                                     reference_path=reference_path)
+            displays.append(display_.to_dict())
         if hasattr(self, 'plot_data'):
             plot_data = self.plot_data()
             if is_sequence(plot_data):
                 for plot in plot_data:
-                    displays.append({'angular_component': 'plot_data',
-                                    'data': plot.to_dict()})
-            else:
-                plot = self.plot_data()
-                displays.append({'angular_component': 'plot_data',
-                                'data': plot.to_dict()})
+                    display_ = DisplayObject(type_='plot_data',
+                                             data=plot.to_dict(),
+                                             reference_path=reference_path)
+                    displays.append(display_.to_dict())
         if hasattr(self, 'to_markdown'):
-            displays.append({'angular_component': 'markdown',
-                            'data': self.to_markdown()})
+            display_ = DisplayObject(type_='markdown', data=self.to_markdown(),
+                                     reference_path=reference_path)
+            displays.append(display_.to_dict())
         return displays
+
+
+class DisplayObject(DessiaObject):
+    def __init__(self, type_: str, data: dt.JsonSerializable,
+                 reference_path: str = '', name: str = ''):
+        self.type_ = type_
+        self.data = data
+
+        self.reference_path = reference_path
+        DessiaObject.__init__(self, name=name)
 
 
 class Parameter(DessiaObject):
