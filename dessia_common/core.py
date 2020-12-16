@@ -1414,12 +1414,12 @@ def deserialize_argument(type_, argument):
         sequence_subtype = type_.__args__[0]
         deserialized_argument = [deserialize_argument(sequence_subtype, arg)
                                  for arg in argument]
-    elif hasattr(type_, '__origin__') and type_.__origin__ == 'Tuple':
+    elif hasattr(type_, '__origin__') and type_.__origin__ == tuple:
         # Heterogenous sequences (tuples)
         deserialized_argument = tuple([deserialize_argument(t, arg)
                                        for t, arg in zip(type_.__args__,
                                                          argument)])
-    elif hasattr(type_, '__origin__') and type_.__origin__ == 'Dict':
+    elif hasattr(type_, '__origin__') and type_.__origin__ == dict:
         # Dynamic dict
         deserialized_argument = argument
     else:
