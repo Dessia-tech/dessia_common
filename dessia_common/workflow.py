@@ -11,14 +11,22 @@ import json
 from importlib import import_module
 import webbrowser
 import networkx as nx
-from typing import List
+from typing import List, Union, Type, Any
 from copy import deepcopy
 from dessia_common.templates import workflow_template
 
 import dessia_common as dc
 from dessia_common.vectored_objects import ParetoSettings, from_csv
+from dessia_common.typings import JsonSerializable
 import plot_data
 from plot_data.colors import BLUE, LIGHTBLUE, LIGHTGREY
+
+
+# Type Aliases
+VariableTypes = Union['Variable', 'TypedVariable',
+                      'VariableWithDefaultValue',
+                      'TypedVariableWithDefaultValue']
+# VariableTypes = Subclass['Variable']
 
 
 class Variable(dc.DessiaObject):
@@ -31,7 +39,7 @@ class Variable(dc.DessiaObject):
 
 
 class TypedVariable(Variable):
-    def __init__(self, type_, memorize: bool = False, name: str = ''):
+    def __init__(self, type_: Type, memorize: bool = False, name: str = ''):
         Variable.__init__(self, memorize=memorize, name=name)
         self.type_ = type_
 
@@ -49,13 +57,15 @@ class TypedVariable(Variable):
 
 
 class VariableWithDefaultValue(Variable):
-    def __init__(self, default_value, memorize: bool = False, name: str = ''):
+    def __init__(self, default_value: Any, memorize: bool = False,
+                 name: str = ''):
         Variable.__init__(self, memorize=memorize, name=name)
         self.default_value = default_value
 
 
 class TypedVariableWithDefaultValue(TypedVariable):
-    def __init__(self, type_, default_value, memorize: bool = False, name=''):
+    def __init__(self, type_: Type, default_value: Any,
+                 memorize: bool = False, name: str = ''):
         TypedVariable.__init__(self, type_=type_, memorize=memorize, name=name)
         self.default_value = default_value
 
