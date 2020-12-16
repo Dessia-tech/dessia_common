@@ -147,10 +147,8 @@ class Block(dc.DessiaObject):
     def equivalent_hash(self):
         return len(self.__class__.__name__)
 
-    def equivalent(self, other_block):
-        if not self.__class__.__name__ == other_block.__class__.__name__:
-            return False
-        return True
+    def equivalent(self, other):
+        return self.__class__.__name__ == other.__class__.__name__
 
     def to_dict(self):
         dict_ = dc.DessiaObject.base_dict(self)
@@ -180,10 +178,10 @@ class Import(Block):
     def equivalent_hash(self):
         return len(self.type_)
 
-    def equivalent(self, other_block):
-        if not Block.equivalent(self, other_block):
+    def equivalent(self, other):
+        if not Block.equivalent(self, other):
             return False
-        return self.type_ == other_block.type_
+        return self.type_ == other.type_
 
     def to_dict(self):
         dict_ = dc.DessiaObject.base_dict(self)
@@ -239,11 +237,11 @@ class InstanciateModel(Block):
     def equivalent_hash(self):
         return len(self.model_class.__name__)
 
-    def equivalent(self, other_block):
-        if not Block.equivalent(self, other_block):
+    def equivalent(self, other):
+        if not Block.equivalent(self, other):
             return False
         classname = self.model_class.__class__.__name__
-        other_classname = other_block.model_class.__class__.__name__
+        other_classname = other.model_class.__class__.__name__
         return classname == other_classname
 
     def to_dict(self):
@@ -286,11 +284,11 @@ class ClassMethod(Block):
     def equivalent_hash(self):
         return len(self.class_.__name__) + 7*len(self.method_name)
 
-    def equivalent(self, other_block):
-        if not Block.equivalent(self, other_block):
+    def equivalent(self, other):
+        if not Block.equivalent(self, other):
             return False
-        same_class = self.class_.__name__ == other_block.class_.__name__
-        same_method = self.method_name == other_block.method_name
+        same_class = self.class_.__name__ == other.class_.__name__
+        same_method = self.method_name == other.method_name
         return same_class and same_method
 
     def to_dict(self):
@@ -422,9 +420,9 @@ class Function(Block):
     def equivalent_hash(self):
         return int(hash(self.function.__name__) % 10e5)
 
-    def equivalent(self, other_block):
+    def equivalent(self, other):
         # TODO : chenge method to function
-        return self.method == other_block.method
+        return self.method == other.method
 
     def evaluate(self, values):
         return self.function(*values)
@@ -448,10 +446,10 @@ class Sequence(Block):
     def equivalent_hash(self):
         return self.number_arguments
 
-    def equivalent(self, other_block):
-        if not Block.equivalent(self, other_block):
+    def equivalent(self, other):
+        if not Block.equivalent(self, other):
             return False
-        return self.number_arguments == other_block.number_arguments
+        return self.number_arguments == other.number_arguments
 
     def to_dict(self):
         dict_ = dc.DessiaObject.base_dict(self)
@@ -509,16 +507,15 @@ class ForEach(Block):
         # TODO Check this method. Is indices_eq mandatory ?
         if not Block.equivalent(self, other):
             return False
-
-        block_eq = self.workflow_block == other.workflow_block
-
         workflow = self.workflow_block.workflow
         other_workflow = other.workflow_block.workflow
 
         indices = workflow.variable_indices(self.iter_input)
         other_indices = other_workflow.variable_indices(other.iter_input)
-        indices_eq = indices == other_indices
-        return block_eq and indices_eq
+
+        same_workflow_block = self.workflow_block == other.workflow_block
+        same_indices = indices == other_indices
+        return same_workflow_block and same_indices
 
     def to_dict(self):
         dict_ = dc.DessiaObject.base_dict(self)
@@ -554,10 +551,10 @@ class Unpacker(Block):
 
         Block.__init__(self, inputs=inputs, outputs=outputs, name=name)
 
-    def equivalent(self, other_block):
-        if not Block.equivalent(self, other_block):
+    def equivalent(self, other):
+        if not Block.equivalent(self, other):
             return False
-        return self.indices == other_block.indices
+        return self.indices == other.indices
 
     def equivalent_hash(self):
         return len(self.indices)
@@ -616,10 +613,10 @@ class Filter(Block):
         outputs = [Variable(name='output_list')]
         Block.__init__(self, inputs, outputs, name=name)
 
-    def equivalent(self, other_block):
-        if not Block.equivalent(self, other_block):
+    def equivalent(self, other):
+        if not Block.equivalent(self, other):
             return False
-        return self.filters == other_block.filters
+        return self.filters == other.filters
 
     def equivalent_hash(self):
         hashes = [hash(v) for f in self.filters for v in f.values()]
@@ -671,12 +668,13 @@ class ParallelPlot(Block):
         outputs = []
         Block.__init__(self, inputs, outputs, name=name)
 
-    def equivalent(self, other_block):
-        if not Block.equivalent(self, other_block):
+    def equivalent(self, other):
+        if not Block.equivalent(self, other):
             return False
-        equal = self.attributes == other_block.attributes\
-            and self.order == other_block.order
-        return equal
+
+        same_attributes = self.attributes == other.attributes
+        same_order = self.order == other.order
+        return same_attributes and same_order
 
     def equivalent_hash(self):
         return sum([len(a) for a in self.attributes]) + self.order
@@ -752,10 +750,10 @@ class Display(Block):
 
         Block.__init__(self, inputs=inputs, outputs=outputs, name=name)
 
-    def equivalent(self, other_block):
-        if not Block.equivalent(self, other_block):
+    def equivalent(self, other):
+        if not Block.equivalent(self, other):
             return False
-        return self.order == other_block.order
+        return self.order == other.order
 
     def equivalent_hash(self):
         return self.order
@@ -797,10 +795,10 @@ class ModelAttribute(Block):
     def equivalent_hash(self):
         return len(self.attribute_name)
 
-    def equivalent(self, other_block):
-        if not Block.equivalent(self, other_block):
+    def equivalent(self, other):
+        if not Block.equivalent(self, other):
             return False
-        return self.attribute_name == other_block.attribute_name
+        return self.attribute_name == other.attribute_name
 
     def to_dict(self):
         dict_ = Block.to_dict(self)
@@ -828,10 +826,10 @@ class Sum(Block):
     def equivalent_hash(self):
         return self.number_elements
 
-    def equivalent(self, other_block):
-        if not Block.equivalent(self, other_block):
+    def equivalent(self, other):
+        if not Block.equivalent(self, other):
             return False
-        return self.number_elements == other_block.number_elements
+        return self.number_elements == other.number_elements
 
     def to_dict(self):
         dict_ = Block.to_dict(self)
@@ -857,8 +855,8 @@ class Substraction(Block):
     def equivalent_hash(self):
         return 0
 
-    def equivalent(self, other_block):
-        if not Block.equivalent(self, other_block):
+    def equivalent(self, other):
+        if not Block.equivalent(self, other):
             return False
         return True
 
@@ -1637,10 +1635,10 @@ class WorkflowBlock(Block):
     def equivalent_hash(self):
         return hash(self.workflow)
 
-    def equivalent(self, other_block):
-        if not Block.equivalent(self, other_block):
+    def equivalent(self, other):
+        if not Block.equivalent(self, other):
             return False
-        return self.workflow == other_block.workflow
+        return self.workflow == other.workflow
 
     def to_dict(self):
         dict_ = Block.to_dict(self)
