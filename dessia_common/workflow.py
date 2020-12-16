@@ -1235,9 +1235,10 @@ class Workflow(Block):
     def dict_to_arguments(self, dict_):
         arguments_values = {}
         for i, input_ in enumerate(self.inputs):
-            if not isinstance(input_, (VariableWithDefaultValue, TypedVariableWithDefaultValue))\
-            or (isinstance(input_, (VariableWithDefaultValue, TypedVariableWithDefaultValue))
-                and str(i) in dict_):
+            default_value_classes = (VariableWithDefaultValue,
+                                     TypedVariableWithDefaultValue)
+            is_default = isinstance(input_, default_value_classes)
+            if not is_default or (is_default and str(i) in dict_):
                 value = dict_[str(i)]
                 deserialized_value = dc.deserialize_argument(input_.type_, value)
                 arguments_values[i] = deserialized_value
