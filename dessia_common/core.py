@@ -180,10 +180,11 @@ class DessiaObject:
         if full_classname(self) != full_classname(other_object):
             return False
 
-        eq_dict = {k: v for k, v in self.to_dict().items()
-                   if (k not in ['package_version', 'name'])\
-                       and (k not in self._non_data_eq_attributes)}
-        other_eq_dict = other_object.to_dict()
+        eq_dict = self.__getstate__()
+        if 'name' in eq_dict:
+            del eq_dict['name']
+            
+        other_eq_dict = other_object.__getstate__()
 
         for key, value in eq_dict.items():
             other_value = other_eq_dict[key]
@@ -196,7 +197,7 @@ class DessiaObject:
         forbidden_keys = (self._non_data_eq_attributes
                           + self._non_data_hash_attributes
                           + ['package_version', 'name'])
-        for key, value in self.to_dict().items():
+        for key, value in self.__getstate__().items():
             if key not in forbidden_keys:
                 if isinstance(value, list):
                     hash_ += list_hash(value)
@@ -216,10 +217,12 @@ class DessiaObject:
         missing_keys_in_other_object = []
         diff_values = {}
         
-        eq_dict = {k: v for k, v in self.to_dict().items()
-                   if (k not in ['package_version', 'name'])\
-                       and (k not in self._non_data_eq_attributes)}
-        other_eq_dict = other_object.to_dict()
+        # eq_dict = {k: v for k, v in self.to_dict().items()
+        #            if (k not in ['package_version', 'name'])\
+        #                and (k not in self._non_data_eq_attributes)}
+        eq_dict = self.__getstate__()
+        # other_eq_dict = other_object.to_dict()
+        other_eq_dict = other_object.__getstate__()
 
         for key, value in eq_dict.items():
             if not key in other_eq_dict:
@@ -254,8 +257,8 @@ class DessiaObject:
 
     def __getstate__(self):
         dict_ = {k: v for k, v in self.__dict__.items()
-                 if (k not in self._non_serializable_attributes)\
-                     and (not k.startswith('_'))}
+                 if k not in self._non_serializable_attributes
+                 and not k.startswith('_')}
         return dict_
 
     def to_dict(self) -> dt.JsonSerializable:
@@ -517,7 +520,6 @@ class DessiaObject:
         msg = 'Object of type {} does not implement volmdlr_primitives'.format(self.__class__.__name__)
         raise NotImplementedError(msg)
 
-
     def cad_export(self,
                    fcstd_filepath=None,
                    istep=0,
@@ -558,7 +560,6 @@ class DessiaObject:
                     ax = data.mpl_plot()
                     axs.append(ax)
         return axs
-
 
     def babylonjs(self, use_cdn=True, debug=False):
         self.volmdlr_volume_model().babylonjs(use_cdn=use_cdn, debug=debug)
