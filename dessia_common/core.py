@@ -514,21 +514,19 @@ class DessiaObject:
                 return vm.core.VolumeModel(self.volmdlr_primitives(frame=frame))
             except TypeError:
                 return vm.core.VolumeModel(self.volmdlr_primitives())
-        msg = 'Object of type {} does not implement volmdlr_primitives'.format(self.__class__.__name__)
-        raise NotImplementedError(msg)
+        msg = 'Object of type {} does not implement volmdlr_primitives'
+        raise NotImplementedError(msg.format(self.__class__.__name__))
 
-
-    def cad_export(self,
-                   fcstd_filepath=None,
-                   istep=0,
-                   python_path='python3',
-                   freecad_lib_path='/usr/lib/freecad/lib',
-                   export_types=['fcstd']):
+    def cad_export(self, fcstd_filepath=None, istep=0, python_path='python3',
+                   freecad_lib_path='/usr/lib/freecad/lib', export_types=None):
         """
         Generic CAD export method
         """
         if fcstd_filepath is None:
             fcstd_filepath = 'An unnamed {}'.format(self.__class__.__name__)
+
+        if export_types is None:
+            export_types = ['fcstd']
 
         if hasattr(self, 'volmdlr_primitives'):
             model = self.volmdlr_volume_model()
@@ -562,7 +560,7 @@ class DessiaObject:
     def babylonjs(self, use_cdn=True, debug=False):
         self.volmdlr_volume_model().babylonjs(use_cdn=use_cdn, debug=debug)
 
-    def _display_angular(self, **kwargs):
+    def _display_angular(self, **kwargs) -> List[dt.JsonSerializable]:
         if 'reference_path' in kwargs:
             reference_path = kwargs['reference_path']
         else:
@@ -583,8 +581,7 @@ class DessiaObject:
             plot_data = self.plot_data()
             if is_sequence(plot_data):
                 for plot in plot_data:
-                    display_ = DisplayObject(type_='plot_data',
-                                             data=plot.to_dict(),
+                    display_ = DisplayObject(type_='plot_data', data=plot,
                                              reference_path=reference_path)
                     displays.append(display_.to_dict())
         if hasattr(self, 'to_markdown'):

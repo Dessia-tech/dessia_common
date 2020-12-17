@@ -1111,12 +1111,8 @@ class Workflow(Block):
         return copied_workflow
 
     def _display_angular(self):
-        displays = []
         data = self.jointjs_data()
-        displays.extend([{'angular_component': 'workflow',
-                          'blocks': data['blocks'],
-                          'nonblock_variables': data['nonblock_variables'],
-                          'edges': data['edges']}])
+        displays = [dc.DisplayObject(type_='workflow', data=data).to_dict()]
         return displays
 
     @property
@@ -1791,7 +1787,9 @@ class WorkflowRun(dc.DessiaObject):
             display = block._display(local_values)
             displays.extend(display)
         if isinstance(self.output_value, dc.DessiaObject):
-            displays.extend(self.output_value._display_angular())
+            displays.extend(self.output_value._display_angular(
+                reference_path='output_value'
+            ))
         return displays
 
     @classmethod
