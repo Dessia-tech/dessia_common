@@ -560,7 +560,13 @@ class DessiaObject:
     def babylonjs(self, use_cdn=True, debug=False):
         self.volmdlr_volume_model().babylonjs(use_cdn=use_cdn, debug=debug)
 
-    def _display_angular(self, **kwargs) -> List[dt.JsonSerializable]:
+    def display_angular(self, **kwargs) -> List[dt.JsonSerializable]:
+        if hasattr(self, '_display_angular'):
+            # Retro-compatibility
+            deprecation_warning(name='_display_angular', object_type='method',
+                                use_instead='display_angular')
+            return self._display_angular(**kwargs)
+
         if 'reference_path' in kwargs:
             reference_path = kwargs['reference_path']
         else:
