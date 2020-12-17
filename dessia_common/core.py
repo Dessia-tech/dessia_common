@@ -180,15 +180,11 @@ class DessiaObject:
         if full_classname(self) != full_classname(other_object):
             return False
 
-        # eq_dict = {k: v for k, v in self.to_dict().items()
-        #            if (k not in ['package_version', 'name'])\
-        #                and (k not in self._non_data_eq_attributes)}
         eq_dict = self.__getstate__()
         if 'name' in eq_dict:
             del eq_dict['name']
             
         other_eq_dict = other_object.__getstate__()
-        
 
         for key, value in eq_dict.items():
             other_value = other_eq_dict[key]
@@ -238,7 +234,6 @@ class DessiaObject:
                 
         return diff_values, missing_keys_in_other_object
 
-
     @property
     def full_classname(self):
         return full_classname(self)
@@ -262,11 +257,11 @@ class DessiaObject:
 
     def __getstate__(self):
         dict_ = {k: v for k, v in self.__dict__.items()
-                 if (k not in self._non_serializable_attributes)\
-                     and (not k.startswith('_'))}
+                 if k not in self._non_serializable_attributes
+                 and not k.startswith('_')}
         return dict_
 
-    def to_dict(self):
+    def to_dict(self) -> dt.JsonSerializable:
         """
         Generic to_dict method
         """
@@ -287,7 +282,7 @@ class DessiaObject:
         return serialized_dict
 
     @classmethod
-    def dict_to_object(cls, dict_):
+    def dict_to_object(cls, dict_: dt.JsonSerializable) -> 'DessiaObject':
         """
         Generic dict_to_object method
         """
@@ -525,7 +520,6 @@ class DessiaObject:
         msg = 'Object of type {} does not implement volmdlr_primitives'.format(self.__class__.__name__)
         raise NotImplementedError(msg)
 
-
     def cad_export(self,
                    fcstd_filepath=None,
                    istep=0,
@@ -566,7 +560,6 @@ class DessiaObject:
                     ax = data.mpl_plot()
                     axs.append(ax)
         return axs
-
 
     def babylonjs(self, use_cdn=True, debug=False):
         self.volmdlr_volume_model().babylonjs(use_cdn=use_cdn, debug=debug)
@@ -1422,12 +1415,12 @@ def deserialize_argument(type_, argument):
         sequence_subtype = type_.__args__[0]
         deserialized_argument = [deserialize_argument(sequence_subtype, arg)
                                  for arg in argument]
-    elif hasattr(type_, '__origin__') and type_.__origin__ == 'Tuple':
+    elif hasattr(type_, '__origin__') and type_.__origin__ == tuple:
         # Heterogenous sequences (tuples)
         deserialized_argument = tuple([deserialize_argument(t, arg)
                                        for t, arg in zip(type_.__args__,
                                                          argument)])
-    elif hasattr(type_, '__origin__') and type_.__origin__ == 'Dict':
+    elif hasattr(type_, '__origin__') and type_.__origin__ == dict:
         # Dynamic dict
         deserialized_argument = argument
     else:
