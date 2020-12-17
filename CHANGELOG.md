@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fix
 - Fix wrong type check with __origin__ in deserialize argument
 
+### Changed
+- ForEach block implementation : workflow_block_input -> iter_input_index
+
 ## [v0.4.1]
 
 ## [v0.4]
