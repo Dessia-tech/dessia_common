@@ -704,7 +704,6 @@ class ParallelPlot(Block):
         first_vars = self.attributes[:2]
         values2d = [{key: val[key]} for key in first_vars for val in
                     values]
-        rgbs = [[192, 11, 11], [14, 192, 11], [11, 11, 192]]
 
         tooltip = plot_data.Tooltip(name='Tooltip',
                                     to_disp_attribute_names=self.attributes)
@@ -717,14 +716,6 @@ class ParallelPlot(Block):
                                         elements=values2d, axis=plot_data.Axis(),
                                         name='Scatter Plot')
 
-        # scatterplot = plot_data.Scatter(axis=plot_data.DEFAULT_AXIS,
-        #                                 tooltip=tooltip,
-        #                                 to_display_att_names=first_vars,
-        #                                 point_shape='circle', point_size=2,
-        #                                 color_fill=LIGHTGREY,
-        #                                 color_stroke=BLUE,
-        #                                 stroke_width=1, elements=values2d,
-        #                                 name='Scatter Plot')
         edge_style = plot_data.EdgeStyle()
         rgbs = [[192, 11, 11], [14, 192, 11], [11, 11, 192]]
         parallelplot = plot_data.ParallelPlot(elements=values,
@@ -733,11 +724,6 @@ class ParallelPlot(Block):
                                               to_disp_attribute_names=self.attributes,
                                               rgbs=rgbs)
 
-        # parallelplot = plot_data.ParallelPlot(line_color=LIGHTBLUE,
-        #                                       line_width=1,
-        #                                       disposition='horizontal',
-        #                                       to_disp_attributes=self.attributes,
-        #                                       rgbs=rgbs, elements=values)
         objects = [scatterplot, parallelplot]
         sizes = [plot_data.Window(width=560, height=300),
                  plot_data.Window(width=560, height=300)]
