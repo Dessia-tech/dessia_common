@@ -19,7 +19,7 @@ import dessia_common as dc
 from dessia_common.vectored_objects import ParetoSettings, from_csv
 from dessia_common.typings import JsonSerializable
 import plot_data
-from plot_data.colors import BLUE, LIGHTBLUE, LIGHTGREY
+from plot_data.colors import BLUE, LIGHTBLUE, LIGHTGREY, GREY
 
 
 # Type Aliases
@@ -707,27 +707,42 @@ class ParallelPlot(Block):
         rgbs = [[192, 11, 11], [14, 192, 11], [11, 11, 192]]
 
         tooltip = plot_data.Tooltip(name='Tooltip',
-                                    to_plot_list=self.attributes)
+                                    to_disp_attribute_names=self.attributes)
+        color_fill = LIGHTBLUE
+        color_stroke = GREY
+        point_style = plot_data.PointStyle(color_fill=color_fill, color_stroke=color_stroke, shape='circle')
 
-        scatterplot = plot_data.Scatter(axis=plot_data.DEFAULT_AXIS,
-                                        tooltip=tooltip,
-                                        to_display_att_names=first_vars,
-                                        point_shape='circle', point_size=2,
-                                        color_fill=LIGHTGREY,
-                                        color_stroke=BLUE,
-                                        stroke_width=1, elements=values2d,
+        scatterplot = plot_data.Scatter(tooltip=tooltip, to_disp_attribute_names=first_vars,
+                                        point_style=point_style,
+                                        elements=values2d, axis=plot_data.Axis(),
                                         name='Scatter Plot')
 
-        parallelplot = plot_data.ParallelPlot(line_color=LIGHTBLUE,
-                                              line_width=1,
-                                              disposition='horizontal',
-                                              to_disp_attributes=self.attributes,
-                                              rgbs=rgbs, elements=values)
+        # scatterplot = plot_data.Scatter(axis=plot_data.DEFAULT_AXIS,
+        #                                 tooltip=tooltip,
+        #                                 to_display_att_names=first_vars,
+        #                                 point_shape='circle', point_size=2,
+        #                                 color_fill=LIGHTGREY,
+        #                                 color_stroke=BLUE,
+        #                                 stroke_width=1, elements=values2d,
+        #                                 name='Scatter Plot')
+        edge_style = plot_data.EdgeStyle()
+        rgbs = [[192, 11, 11], [14, 192, 11], [11, 11, 192]]
+        parallelplot = plot_data.ParallelPlot(elements=values,
+                                              edge_style=edge_style,
+                                              disposition='vertical',
+                                              to_disp_attribute_names=self.attributes,
+                                              rgbs=rgbs)
+
+        # parallelplot = plot_data.ParallelPlot(line_color=LIGHTBLUE,
+        #                                       line_width=1,
+        #                                       disposition='horizontal',
+        #                                       to_disp_attributes=self.attributes,
+        #                                       rgbs=rgbs, elements=values)
         objects = [scatterplot, parallelplot]
         sizes = [plot_data.Window(width=560, height=300),
                  plot_data.Window(width=560, height=300)]
         coords = [(0, 0), (0, 300)]
-        multiplot = plot_data.MultiplePlots(points=values, objects=objects,
+        multiplot = plot_data.MultiplePlots(elements=values, objects=objects,
                                             sizes=sizes, coords=coords,
                                             name='Results plot')
         dict_ = multiplot.to_dict()
