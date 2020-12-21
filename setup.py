@@ -110,6 +110,6 @@ setup(name='dessia_common',
       packages=['dessia_common'],
       install_requires=['typeguard', 'networkx', 'numpy', 'pandas',
                         'mypy_extensions', 'scipy', 'pyDOE',
-                        'plot_data>=0.4.1'],
+                        'plot_data>=0.4.2'],
       python_requires='>=3.7')
 
