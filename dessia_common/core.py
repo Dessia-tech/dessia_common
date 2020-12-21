@@ -267,7 +267,6 @@ class DessiaObject:
             # !!! This prevent us to call DessiaObject.to_dict()
             # from an inheriting object which implement a Dict method,
             # because of the infinite recursion it creates.
-            # TODO Change Dict methods to to_dict everywhere
             deprecation_warning(name='Dict', object_type='Function',
                                 use_instead='to_dict')
             serialized_dict = self.Dict()
@@ -533,7 +532,8 @@ class DessiaObject:
             if model.__class__.__name__ == 'MovingVolumeModel':
                 model = model.step_volume_model(istep)
             model.freecad_export(fcstd_filepath, python_path=python_path,
-                                freecad_lib_path=freecad_lib_path, export_types=export_types)
+                                freecad_lib_path=freecad_lib_path,
+                                 export_types=export_types)
         else:
             raise NotImplementedError
 
@@ -560,7 +560,7 @@ class DessiaObject:
     def babylonjs(self, use_cdn=True, debug=False):
         self.volmdlr_volume_model().babylonjs(use_cdn=use_cdn, debug=debug)
 
-    def display_angular(self, **kwargs) -> List[dt.JsonSerializable]:
+    def displays(self, **kwargs) -> List[dt.JsonSerializable]:
         if hasattr(self, '_display_angular'):
             # Retro-compatibility
             deprecation_warning(name='_display_angular', object_type='method',
@@ -598,7 +598,8 @@ class DessiaObject:
 
 
 class DisplayObject(DessiaObject):
-    def __init__(self, type_: str, data: dt.JsonSerializable,
+    def __init__(self, type_: str,
+                 data: Union[dt.JsonSerializable, DessiaObject],
                  reference_path: str = '', name: str = ''):
         self.type_ = type_
         self.data = data
