@@ -560,7 +560,7 @@ class DessiaObject:
     def babylonjs(self, use_cdn=True, debug=False):
         self.volmdlr_volume_model().babylonjs(use_cdn=use_cdn, debug=debug)
 
-    def displays(self, **kwargs) -> List[dt.JsonSerializable]:
+    def _displays(self, **kwargs) -> List[dt.JsonSerializable]:
         if hasattr(self, '_display_angular'):
             # Retro-compatibility
             deprecation_warning(name='_display_angular', object_type='method',
@@ -681,7 +681,7 @@ class Evolution(DessiaObject):
 
         DessiaObject.__init__(self, name=name)
 
-    def _display_angular(self):
+    def _displays(self):
         displays = [{'angular_component': 'app-evolution1d',
                      'table_show': False,
                      'evolution': [self.evolution],
@@ -713,7 +713,7 @@ class CombinationEvolution(DessiaObject):
 
         DessiaObject.__init__(self, name=name)
 
-    def _display_angular(self):
+    def _displays(self):
         displays = [{'angular_component': 'app-evolution2d-combination-evolution',
                      'table_show': False,
                      'evolution_x': [self.x_], 'label_x': ['title1'],

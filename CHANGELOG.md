@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+### Changed
+- BREAKING CHANGE : _display_angular is renamed _displays
+- BREAKING CHANGE : Block ParallelPlot is renamed MultiPlot
+- Kwargs are added to _displays in order to pass args such as reference_attribute
+- Display block is now a base class for all display blocks
+
+### Added
+- Serialization typings
+- DisplayObject
+- _displayable_input as Display block class attribute
+
 ## [v0.4]
 ### Fix
 - _eq_is_eq_data as False in workflow class definitions

@@ -196,10 +196,9 @@ class Display(Block):
     def equivalent_hash(self):
         return self.order
 
-    def display_(self, local_values: Dict[VariableTypes, Any],
-                 reference_path: str = ''):
+    def display_(self, local_values: Dict[VariableTypes, Any], **kwargs):
         object_ = local_values[self.inputs[self._displayable_input]]
-        displays = object_.displays()
+        displays = object_._displays()
         return displays
 
     def to_dict(self):
@@ -729,9 +728,11 @@ class MultiPlot(Display):
     def equivalent_hash(self):
         return sum([len(a) for a in self.attributes]) + self.order
 
-    def display_(self, local_values, reference_path: str = ''):
-        if not reference_path:
+    def display_(self, local_values, **kwargs):
+        if 'reference_path' not in kwargs:
             reference_path = 'output_value'  # TODO bof bof bof
+        else:
+            reference_path = kwargs['reference_path']
         display_input = self.inputs[self._displayable_input]
         objects = local_values[display_input]
         # pareto_settings = local_values[self.inputs[1]]
@@ -806,7 +807,7 @@ class MultiPlot(Display):
 #
 #     def display_(self, local_values):
 #         object_ = local_values[self.inputs[0]]
-#         displays = object_.displays()
+#         displays = object_._displays()
 #         return displays
 #
 #     def to_dict(self):
@@ -1146,7 +1147,7 @@ class Workflow(Block):
                                    name=self.name)
         return copied_workflow
 
-    def displays(self) -> List[JsonSerializable]:
+    def _displays(self) -> List[JsonSerializable]:
         data = self.jointjs_data()
         displays = [dc.DisplayObject(type_='workflow', data=data).to_dict()]
         return displays
@@ -1811,19 +1812,23 @@ class WorkflowRun(dc.DessiaObject):
             hash_output = hash(self.output_value)
         return hash(self.workflow) + int(hash_output % 10e5)
 
-    def displays(self) -> List[JsonSerializable]:
+    def _displays(self) -> List[JsonSerializable]:
         d_blocks = [b for b in self.workflow.blocks if hasattr(b, 'display_')]
         sorted_d_blocks = sorted(d_blocks, key=lambda b: b.order)
-        displays = self.workflow.displays()
+        displays = self.workflow._displays()
         for block in sorted_d_blocks:
+            reference_path = ''
             local_values = {}
-            for input_ in block.inputs:
-                indices = self.workflow.variable_indices(input_)
-                local_values[input_] = self.variables_values[str(indices)]
-            display = block.display_(local_values)
+            for i, input_ in enumerate(block.inputs):
+                strindices = str(self.workflow.variable_indices(input_))
+                local_values[input_] = self.variables_values[strindices]
+                if i == block._displayable_input:
+                    reference_path = 'variable_values/'+strindices
+            display = block.display_(local_values=local_values,
+                                     reference_path=reference_path)
             displays.extend(display)
         if isinstance(self.output_value, dc.DessiaObject):
-            displays.extend(self.output_value.displays(
+            displays.extend(self.output_value._displays(
                 reference_path='output_value'
             ))
         return displays
