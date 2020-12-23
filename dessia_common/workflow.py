@@ -1823,7 +1823,7 @@ class WorkflowRun(dc.DessiaObject):
                 strindices = str(self.workflow.variable_indices(input_))
                 local_values[input_] = self.variables_values[strindices]
                 if i == block._displayable_input:
-                    reference_path = 'variable_values/'+strindices
+                    reference_path = 'variables_values/'+strindices
             display = block.display_(local_values=local_values,
                                      reference_path=reference_path)
             displays.extend(display)
