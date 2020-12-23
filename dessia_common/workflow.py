@@ -20,7 +20,7 @@ from dessia_common.vectored_objects import ParetoSettings, from_csv
 from dessia_common.typings import JsonSerializable
 import plot_data
 from plot_data.colors import BLUE, LIGHTBLUE, LIGHTGREY
-
+import itertools
 
 # Type Aliases
 VariableTypes = Union['Variable', 'TypedVariable',
@@ -601,6 +601,134 @@ class Flatten(Block):
             output.extend(value)
         return [output]
 
+class ProductForEach(Block):
+    def __init__(self, workflow_block: 'WorkflowBlock',list_iter_input_index: List[int],
+                 name=''):
+        inputs = []
+        self.workflow_block=workflow_block
+        self.list_iter_input_index=list_iter_input_index
+        self.list_iter_input=[]
+        
+        for i, workflow_input in enumerate(self.workflow_block.inputs):
+            if i in list_iter_input_index:
+                name = 'Iterable input ' +str(i) + ':' + workflow_input.name
+                inputs.append(Variable(name=name))
+                self.list_iter_input.append(workflow_input)
+            else:
+                input_ = workflow_input.copy()
+                input_.name = 'binding '+input_.name
+                inputs.append(input_)
+                
+        output_variable = Variable(name='ProductForEach output')
+        Block.__init__(self, inputs, [output_variable], name=name)
+        
+        
+    def equivalent_hash(self):
+        return int(self.workflow_block.equivalent_hash() % 10e5)
+
+    def equivalent(self, other):
+        # TODO Check this method. Is indices_eq mandatory ?
+        if not Block.equivalent(self, other):
+            return False
+        workflow = self.workflow_block.workflow
+        other_workflow = other.workflow_block.workflow
+        for iter_input in self.list_iter_input:
+            equivalent_indice=False
+            indices = workflow.variable_indices(iter_input)
+            for iter_input_2 in other.iter_input:
+                other_indices = other_workflow.variable_indices(iter_input_2)
+                if indices==other_indices:
+                    equivalent_indice=True
+            if not equivalent_indice:
+                break
+        
+
+        same_workflow_block = self.workflow_block == other.workflow_block
+        same_indices = equivalent_indice
+        return same_workflow_block and same_indices
+
+    def to_dict(self):
+        dict_ = dc.DessiaObject.base_dict(self)
+        dict_.update({'workflow_block': self.workflow_block.to_dict(),
+                      'list_iter_input_index': self.list_iter_input_index})
+        return dict_
+
+    @classmethod
+    @set_block_variable_names_from_dict
+    def dict_to_object(cls, dict_):
+        workflow_block = WorkflowBlock.dict_to_object(dict_['workflow_block'])
+        list_iter_input_index = dict_['list_iter_input_index']
+        return cls(workflow_block=workflow_block,
+                   list_iter_input_index=list_iter_input_index, name=dict_['name'])
+
+    def evaluate(self, values):
+        values_workflow = {var2: values[var1]
+                           for var1, var2 in zip(self.inputs,
+                                                 self.workflow_block.inputs)}
+        output_values = []
+        list_product=[]
+        for iterable_input in self.list_iter_input:
+           list_product.append(values_workflow[iterable_input]) 
+           
+        product=itertools.product(*list_product)
+        for value in product:
+            for i,iterable_input in enumerate(self.list_iter_input):
+                values_workflow[iterable_input] = value[i]
+            output = self.workflow_block.evaluate(values_workflow)[0]
+            output_values.append(output)
+        return [output_values]
+    
+    
+class Product(Block):
+    def __init__(self, number_list:int,name=''):
+        self.number_list=number_list
+        inputs = []
+        for i in range(self.number_list):
+            inputs.append(Variable(name='list_product_'+str(i)))
+        
+        
+
+                
+        output_variable = Variable(name='Product output')
+        Block.__init__(self, inputs, [output_variable], name=name)
+        
+        
+    def equivalent_hash(self):
+        return self.number_list
+
+    def equivalent(self, other):
+       
+        if not Block.equivalent(self, other):
+            return False
+       
+        return self.number_list==other.number_list
+
+    def to_dict(self):
+        dict_ = dc.DessiaObject.base_dict(self)
+        dict_.update({'number_list': self.number_list})
+        return dict_
+
+    @classmethod
+    @set_block_variable_names_from_dict
+    def dict_to_object(cls, dict_):
+        
+        number_list = dict_['number_list']
+        return cls(number_list=number_list, name=dict_['name'])
+
+    def evaluate(self, values):
+        list_product = [values[var]
+                           for var in self.inputs]
+       
+                                                 
+       
+        output_value=list(itertools.product(*list_product))
+
+        return [output_value]
+        
+        
+    
+    
+        
 
 class Filter(Block):
     """ 
