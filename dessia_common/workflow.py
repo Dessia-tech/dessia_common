@@ -32,13 +32,20 @@ VariableTypes = Union['Variable', 'TypedVariable',
 class Variable(dc.DessiaObject):
     _standalone_in_db = False
     _eq_is_data_eq = False
+    has_default_value:bool = False
 
     def __init__(self, memorize: bool = False, name: str = ''):
         self.memorize = memorize
         dc.DessiaObject.__init__(self, name=name)
 
+    def to_dict(self):
+        dict_ = dc.DessiaObject.base_dict(self)
+        dict_.update({'has_default_value':self.has_default_value})
+        return dict_
+
 
 class TypedVariable(Variable):
+    has_default_value:bool = False
     def __init__(self, type_: Type, memorize: bool = False, name: str = ''):
         Variable.__init__(self, memorize=memorize, name=name)
         self.type_ = type_
@@ -46,7 +53,8 @@ class TypedVariable(Variable):
     def to_dict(self):
         dict_ = dc.DessiaObject.base_dict(self)
         dict_.update({'type': dc.serialize_typing(self.type_),
-                      'memorize': self.memorize})
+                      'memorize': self.memorize,
+                      'has_default_value': self.has_default_value})
         return dict_
 
     @classmethod
@@ -57,6 +65,7 @@ class TypedVariable(Variable):
 
 
 class VariableWithDefaultValue(Variable):
+    has_default_value:bool = True
     def __init__(self, default_value: Any, memorize: bool = False,
                  name: str = ''):
         Variable.__init__(self, memorize=memorize, name=name)
@@ -64,6 +73,7 @@ class VariableWithDefaultValue(Variable):
 
 
 class TypedVariableWithDefaultValue(TypedVariable):
+    has_default_value:bool = True
     def __init__(self, type_: Type, default_value: Any,
                  memorize: bool = False, name: str = ''):
         TypedVariable.__init__(self, type_=type_, memorize=memorize, name=name)
@@ -73,7 +83,8 @@ class TypedVariableWithDefaultValue(TypedVariable):
         dict_ = dc.DessiaObject.base_dict(self)
         dict_.update({'type': dc.serialize_typing(self.type_),
                       'default_value': dc.serialize(self.default_value),
-                      'memorize': self.memorize})
+                      'memorize': self.memorize,
+                      'has_default_value': self.has_default_value})
         return dict_
 
     @classmethod
@@ -162,8 +173,8 @@ class Block(dc.DessiaObject):
 
     def to_dict(self):
         dict_ = dc.DessiaObject.base_dict(self)
-        dict_['input_names'] = [i.name for i in self.inputs]
-        dict_['output_names'] = [o.name for o in self.outputs]
+        dict_['inputs'] = [i.to_dict() for i in self.inputs]
+        dict_['outputs'] = [o.to_dict() for o in self.outputs]
         return dict_
     
     def jointjs_data(self):
@@ -194,7 +205,7 @@ class Import(Block):
         return self.type_ == other.type_
 
     def to_dict(self):
-        dict_ = dc.DessiaObject.base_dict(self)
+        dict_ = Block.to_dict(self)
         dict_['type_'] = self.type_
         return dict_
 
@@ -255,7 +266,7 @@ class InstanciateModel(Block):
         return classname == other_classname
 
     def to_dict(self):
-        dict_ = dc.DessiaObject.base_dict(self)
+        dict_ = Block.to_dict(self)
         dict_.update({'model_class': self.model_class.__name__,
                       'model_class_module': self.model_class.__module__})
         return dict_
@@ -302,7 +313,7 @@ class ClassMethod(Block):
         return same_class and same_method
 
     def to_dict(self):
-        dict_ = dc.DessiaObject.base_dict(self)
+        dict_ = Block.to_dict(self)
         dict_.update({'method_name': self.method_name,
                       'class_': self.class_.__name__,
                       'class_module': self.class_.__module__})
@@ -388,7 +399,7 @@ class ModelMethod(Block):
         return same_model and same_method
 
     def to_dict(self):
-        dict_ = dc.DessiaObject.base_dict(self)
+        dict_ = Block.to_dict(self)
         dict_.update({'method_name': self.method_name,
                       'model_class': self.model_class.__name__,
                       'model_class_module': self.model_class.__module__})
@@ -462,7 +473,7 @@ class Sequence(Block):
         return self.number_arguments == other.number_arguments
 
     def to_dict(self):
-        dict_ = dc.DessiaObject.base_dict(self)
+        dict_ = Block.to_dict(self)
         dict_['number_arguments'] = self.number_arguments
         if self.type_ is not None:
             dict_['type_'] = dc.serialize_typing(self.type_)
@@ -528,7 +539,7 @@ class ForEach(Block):
         return same_workflow_block and same_indices
 
     def to_dict(self):
-        dict_ = dc.DessiaObject.base_dict(self)
+        dict_ = Block.to_dict(self)
         dict_.update({'workflow_block': self.workflow_block.to_dict(),
                       'iter_input_index': self.iter_input_index})
         return dict_
@@ -570,7 +581,7 @@ class Unpacker(Block):
         return len(self.indices)
 
     def to_dict(self):
-        dict_ = dc.DessiaObject.base_dict(self)
+        dict_ = Block.to_dict(self)
         dict_['indices'] = self.indices
         return dict_
 
@@ -633,7 +644,7 @@ class Filter(Block):
         return int(sum(hashes) % 10e5)
 
     def to_dict(self):
-        dict_ = dc.DessiaObject.base_dict(self)
+        dict_ = Block.to_dict(self)
         dict_.update({'filters': self.filters})
         return dict_    
 
@@ -736,7 +747,7 @@ class ParallelPlot(Block):
         return displays
 
     def to_dict(self):
-        dict_ = dc.DessiaObject.base_dict(self)
+        dict_ = Block.to_dict(self)
         dict_.update({'attributes': self.attributes, 'order': self.order})
         return dict_
 
@@ -774,7 +785,7 @@ class Display(Block):
         return displays
 
     def to_dict(self):
-        dict_ = dc.DessiaObject.base_dict(self)
+        dict_ = Block.to_dict(self)
         dict_['order'] = self.order
         return dict_
 
@@ -1113,10 +1124,10 @@ class Workflow(Block):
     def _display_angular(self):
         displays = []
         data = self.jointjs_data()
-        displays.extend([{'angular_component': 'workflow',
-                          'blocks': data['blocks'],
-                          'nonblock_variables': data['nonblock_variables'],
-                          'edges': data['edges']}])
+        displays.extend([{'angular_component': 'workflow', 'workflow':self.to_dict()}])
+                          # 'blocks': data['blocks'],
+                          # 'nonblock_variables': data['nonblock_variables'],
+                          # 'edges': data['edges']}])
         return displays
 
     @property
@@ -1156,7 +1167,7 @@ class Workflow(Block):
         return jsonschemas
 
     def to_dict(self):
-        dict_ = dc.DessiaObject.base_dict(self)
+        dict_ = Block.to_dict(self)
         blocks = [b.to_dict() for b in self.blocks]
         pipes = []
         for pipe in self.pipes:
