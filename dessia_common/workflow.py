@@ -1126,6 +1126,7 @@ class Workflow(Block):
     def _display_angular(self):
         displays = []
         data = self.jointjs_data()
+        self.refresh_blocks_positions()
         displays.extend([{'angular_component': 'workflow', 'workflow':self.to_dict()}])
                           # 'blocks': data['blocks'],
                           # 'nonblock_variables': data['nonblock_variables'],
