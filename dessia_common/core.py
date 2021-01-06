@@ -72,6 +72,9 @@ class SerializationError(Exception):
 class DeserializationError(Exception):
     pass
 
+class UntypedArgumentError(Exception):
+    pass
+
 
 # DEPRECATED_ATTRIBUTES = {'_editable_variss' : '_allowed_methods'}
 def deprecated(use_instead=None):
