@@ -11,7 +11,7 @@ import json
 from importlib import import_module
 import webbrowser
 import networkx as nx
-from typing import List, Union, Type, Any
+from typing import List, Union, Type, Any, Tuple
 from copy import deepcopy
 from dessia_common.templates import workflow_template
 
@@ -157,9 +157,10 @@ class Block(dc.DessiaObject):
         }
     _standalone_in_db = False
     _eq_is_data_eq = False
-    _non_serializable_attributes = ['inputs', 'outputs']
+    _non_serializable_attributes = []
+    position:Tuple[float, float] = []
 
-    def __init__(self, inputs, outputs, name=''):
+    def __init__(self, inputs:List[Variable], outputs:List[Variable], name:str=''):
         self.inputs = inputs
         self.outputs = outputs
 
@@ -175,6 +176,7 @@ class Block(dc.DessiaObject):
         dict_ = dc.DessiaObject.base_dict(self)
         dict_['inputs'] = [i.to_dict() for i in self.inputs]
         dict_['outputs'] = [o.to_dict() for o in self.outputs]
+        dict_['position'] = list(self.position)
         return dict_
     
     def jointjs_data(self):
@@ -1376,6 +1378,15 @@ class Workflow(Block):
                 coordinates[element] = (i * horizontal_spacing,
                                         (j + 0.5) * vertical_spacing)
         return coordinates
+
+    def refresh_blocks_positions(self):
+        coordinates = self.layout()
+        for i in range(len(self.blocks)):
+            for K,V in coordinates.items():
+                if self.blocks[i] == K:
+                    self.blocks[i].position = V
+                    break
+
 
     def plot_graph(self):
 
