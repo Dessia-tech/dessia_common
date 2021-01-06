@@ -1908,8 +1908,13 @@ def set_inputs_from_function(method, inputs=None):
 
     for iargument, argument in enumerate(args_specs.args[1:]):
         if argument not in ['self', 'progress_callback']:
-            type_ = dc.type_from_annotation(method.__annotations__[argument],
-                                            module=method.__module__)
+            try:
+                type_ = dc.type_from_annotation(method.__annotations__[argument],
+                                                module=method.__module__)
+            except KeyError:
+                raise dc.UntypedArgumentError(
+                    'Argument {} of method/function {} has no typing'.format(argument,
+                                                                             method.__name__))
             if iargument >= nargs - ndefault_args:
                 default = args_specs.defaults[ndefault_args-nargs+iargument]
                 input_ = TypedVariableWithDefaultValue(type_=type_,
