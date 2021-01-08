@@ -14,7 +14,7 @@ import networkx as nx
 from typing import List, Union, Type, Any
 from copy import deepcopy
 from dessia_common.templates import workflow_template
-
+import itertools
 import dessia_common as dc
 from dessia_common.vectored_objects import ParetoSettings, from_csv
 from dessia_common.typings import JsonSerializable
