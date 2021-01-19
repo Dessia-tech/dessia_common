@@ -19,7 +19,7 @@ import dessia_common as dc
 from dessia_common.vectored_objects import ParetoSettings, from_csv
 from dessia_common.typings import JsonSerializable
 import plot_data
-from plot_data.colors import BLUE, LIGHTBLUE, LIGHTGREY
+from plot_data.colors import BLUE, LIGHTBLUE, LIGHTGREY, GREY
 
 
 # Type Aliases
@@ -748,7 +748,6 @@ class MultiPlot(Display):
         first_vars = self.attributes[:2]
         values2d = [{key: val[key]} for key in first_vars for val in
                     values]
-        rgbs = [[192, 11, 11], [14, 192, 11], [11, 11, 192]]
 
         tooltip = plot_data.Tooltip(name='Tooltip',
                                     to_disp_attribute_names=self.attributes)
@@ -1946,8 +1945,13 @@ def set_inputs_from_function(method, inputs=None):
 
     for iargument, argument in enumerate(args_specs.args[1:]):
         if argument not in ['self', 'progress_callback']:
-            type_ = dc.type_from_annotation(method.__annotations__[argument],
-                                            module=method.__module__)
+            try:
+                type_ = dc.type_from_annotation(method.__annotations__[argument],
+                                                module=method.__module__)
+            except KeyError:
+                raise dc.UntypedArgumentError(
+                    'Argument {} of method/function {} has no typing'.format(argument,
+                                                                             method.__name__))
             if iargument >= nargs - ndefault_args:
                 default = args_specs.defaults[ndefault_args-nargs+iargument]
                 input_ = TypedVariableWithDefaultValue(type_=type_,
