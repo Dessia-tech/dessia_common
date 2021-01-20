@@ -757,6 +757,7 @@ class MultiPlot(Display):
                                         elements=values2d,
                                         name='Scatter Plot')
 
+        rgbs = [[192, 11, 11], [14, 192, 11], [11, 11, 192]]
         parallelplot = plot_data.ParallelPlot(disposition='horizontal',
                                               to_disp_attribute_names=self.attributes,
                                               rgbs=rgbs, elements=values)
