@@ -256,28 +256,23 @@ class Catalog(DessiaObject):
         values2d = [{key: val[key]} for key in first_vars for val in values]
         rgbs = [[192, 11, 11], [14, 192, 11], [11, 11, 192]]
 
-        tooltip = plot_data.Tooltip(to_plot_list=self.variables,
+        tooltip = plot_data.Tooltip(to_disp_attribute_names=self.variables,
                                     name='Tooltip')
 
-        scatterplot = plot_data.Scatter(axis=plot_data.DEFAULT_AXIS,
+        scatterplot = plot_data.Scatter(axis=plot_data.Axis(),
                                         tooltip=tooltip,
-                                        to_display_att_names=first_vars,
-                                        point_shape='circle', point_size=2,
-                                        color_fill=LIGHTGREY,
-                                        color_stroke=BLUE,
-                                        stroke_width=1, elements=values2d,
+                                        to_disp_attribute_names=first_vars,
+                                        elements=values2d,
                                         name='Scatter Plot')
 
-        parallelplot = plot_data.ParallelPlot(line_color=LIGHTBLUE,
-                                              line_width=1,
-                                              disposition='horizontal',
-                                              to_disp_attributes=self.variables,
+        parallelplot = plot_data.ParallelPlot(disposition='horizontal',
+                                              to_disp_attribute_names=self.variables,
                                               rgbs=rgbs, elements=values)
         objects = [scatterplot, parallelplot]
         sizes = [plot_data.Window(width=560, height=300),
                  plot_data.Window(width=560, height=300)]
         coords = [(0, 0), (0, 300)]
-        multiplot = plot_data.MultiplePlots(points=values, objects=objects,
+        multiplot = plot_data.MultiplePlots(elements=values, objects=objects,
                                             sizes=sizes, coords=coords,
                                             name='Results plot')
         return multiplot
