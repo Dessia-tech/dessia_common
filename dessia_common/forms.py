@@ -167,57 +167,30 @@ class StandaloneObject(DessiaObject):
         return self.standalone_subobject.voldmlr_primitives()
 
     def plot_data(self):
-        graduation_color = GREY
-        size = 2
-        shape = 'circle'
-        strokewidth = 0.5
-        fontsize = 12
         attributes = ['cx', 'cy']
 
         # Contour
         contour = self.standalone_subobject.contour().plot_data()
-        primitives_group = plot_data.PrimitiveGroup(contours=[contour],
+        primitives_group = plot_data.PrimitiveGroup(primitives=[contour],
                                                     name='Contour')
 
         # Scatter Plot
         bounds = {'x': [0, 6], 'y': [100, 2000]}
         catalog = Catalog.random_2d(bounds=bounds, threshold=8000)
-        points = [plot_data.Point2D(cx=line[0], cy=line[1], size=size,
-                                    shape=shape, color_fill=LIGHTGREY,
-                                    color_stroke=BLUE, name='Point'+str(i),
-                                    stroke_width=strokewidth)
-                  for i, line in enumerate(catalog.array)]
-        axis = plot_data.Axis(nb_points_x=10, nb_points_y=10,
-                              font_size=fontsize, axis_color=BLACK,
-                              graduation_color=graduation_color,
-                              arrow_on=True, axis_width=strokewidth*2,
-                              grid_on=True, name='Axis')
-        tooltip = plot_data.Tooltip(colorfill=LIGHTGREY, text_color=BLACK,
-                                    fontsize=fontsize, fontstyle='sans-serif',
-                                    tp_radius=2, to_plot_list=attributes,
-                                    opacity=0.75, name='Tooltips')
+        points = [plot_data.Point2D(cx=v[0], cy=v[1], name='Point'+str(i))
+                  for i, v in enumerate(catalog.array)]
+        axis = plot_data.Axis()
+        tooltip = plot_data.Tooltip(to_disp_attribute_names=attributes,
+                                    name='Tooltips')
         scatter_plot = plot_data.Scatter(axis=axis, tooltip=tooltip,
-                                         to_display_att_names=attributes,
-                                         point_shape=shape, point_size=2,
-                                         color_fill=LIGHTGREY,
-                                         color_stroke=BLUE,
-                                         stroke_width=strokewidth,
-                                         elements=points,
+                                         to_disp_attribute_names=attributes,
                                          name='Scatter Plot')
 
         # Parallel Plot
         attributes = ['cx', 'cy', 'color_fill', 'color_stroke']
-        line_color = BLACK
-        line_width = 0.5
-        disposition = 'vertical'
 
-        rgbs = [[192, 11, 11], [14, 192, 11], [11, 11, 192]]
         parallel_plot = plot_data.ParallelPlot(elements=points,
-                                               line_color=line_color,
-                                               line_width=line_width,
-                                               disposition=disposition,
-                                               to_disp_attributes=attributes,
-                                               rgbs=rgbs,
+                                               to_disp_attribute_names=attributes,
                                                name='Parallel Plot')
 
         # Multi Plot
@@ -225,7 +198,7 @@ class StandaloneObject(DessiaObject):
         sizes = [plot_data.Window(width=560, height=300),
                  plot_data.Window(width=560, height=300)]
         coords = [(0, 0), (300, 0)]
-        multi_plot = plot_data.MultiplePlots(points=points, objects=objects,
+        multi_plot = plot_data.MultiplePlots(elements=points, objects=objects,
                                              sizes=sizes, coords=coords,
                                              name='Multiple Plot')
         # return [scatter_plot]

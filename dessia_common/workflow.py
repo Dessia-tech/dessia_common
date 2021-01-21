@@ -11,7 +11,7 @@ import json
 from importlib import import_module
 import webbrowser
 import networkx as nx
-from typing import List, Union, Type, Any
+from typing import List, Union, Type, Any, Dict
 from copy import deepcopy
 from dessia_common.templates import workflow_template
 import itertools
@@ -176,6 +176,47 @@ class Block(dc.DessiaObject):
         else:
             data['name'] = self.__class__.__name__
         return data
+
+
+class Display(Block):
+    _jsonschema = {}
+    _displayable_input = 0
+
+    def __init__(self, inputs: List[VariableTypes] = None,
+                 order: int = 0, name: str = ''):
+        self.order = order
+        if inputs is None:
+            inputs = [TypedVariable(type_=dc.DessiaObject,
+                                    name='Model to Display', memorize=True)]
+
+        Block.__init__(self, inputs=inputs, outputs=[], name=name)
+
+    def equivalent(self, other):
+        if not Block.equivalent(self, other):
+            return False
+        return self.order == other.order
+
+    def equivalent_hash(self):
+        return self.order
+
+    def display_(self, local_values: Dict[VariableTypes, Any], **kwargs):
+        object_ = local_values[self.inputs[self._displayable_input]]
+        displays = object_._displays()
+        return displays
+
+    def to_dict(self):
+        dict_ = dc.DessiaObject.base_dict(self)
+        dict_['order'] = self.order
+        return dict_
+
+    @classmethod
+    @set_block_variable_names_from_dict
+    def dict_to_object(cls, dict_):
+        return cls(order=dict_['order'], name=dict_['name'])
+
+    @staticmethod
+    def evaluate(self):
+        return []
 
 
 class Import(Block):
@@ -705,7 +746,7 @@ class Filter(Block):
         return [ouput_values]
 
 
-class ParallelPlot(Block):
+class MultiPlot(Display):
     """
     :param attributes: A List of all attributes that will be shown inside the \
     ParallelPlot window on the DessIA Platform.
@@ -716,14 +757,12 @@ class ParallelPlot(Block):
 
     def __init__(self, attributes: List[str], order: int = 0, name: str = ''):
         self.attributes = attributes
-        self.order = order
         pareto_input = TypedVariableWithDefaultValue(type_=ParetoSettings,
                                                      default_value=None,
                                                      memorize=True,
                                                      name='Pareto settings')
         inputs = [Variable(memorize=True, name='input_list'), pareto_input]
-        outputs = []
-        Block.__init__(self, inputs, outputs, name=name)
+        Display.__init__(self, inputs=inputs, order=order, name=name)
 
     def equivalent(self, other):
         if not Block.equivalent(self, other):
@@ -736,8 +775,13 @@ class ParallelPlot(Block):
     def equivalent_hash(self):
         return sum([len(a) for a in self.attributes]) + self.order
 
-    def _display(self, local_values):
-        objects = local_values[self.inputs[0]]
+    def display_(self, local_values, **kwargs):
+        if 'reference_path' not in kwargs:
+            reference_path = 'output_value'  # TODO bof bof bof
+        else:
+            reference_path = kwargs['reference_path']
+        display_input = self.inputs[self._displayable_input]
+        objects = local_values[display_input]
         # pareto_settings = local_values[self.inputs[1]]
 
         values = [{a: dc.enhanced_deep_attr(o, a) for a in self.attributes}
@@ -754,23 +798,16 @@ class ParallelPlot(Block):
 
         tooltip = plot_data.Tooltip(name='Tooltip',
                                     to_disp_attribute_names=self.attributes)
-        color_fill = LIGHTBLUE
-        color_stroke = GREY
-        point_style = plot_data.PointStyle(color_fill=color_fill, color_stroke=color_stroke, shape='circle')
 
-        scatterplot = plot_data.Scatter(tooltip=tooltip, to_disp_attribute_names=first_vars,
-                                        point_style=point_style,
-                                        elements=values2d, axis=plot_data.Axis(),
+        scatterplot = plot_data.Scatter(tooltip=tooltip,
+                                        to_disp_attribute_names=first_vars,
+                                        elements=values2d,
                                         name='Scatter Plot')
 
-        edge_style = plot_data.EdgeStyle()
         rgbs = [[192, 11, 11], [14, 192, 11], [11, 11, 192]]
-        parallelplot = plot_data.ParallelPlot(elements=values,
-                                              edge_style=edge_style,
-                                              disposition='vertical',
+        parallelplot = plot_data.ParallelPlot(disposition='horizontal',
                                               to_disp_attribute_names=self.attributes,
-                                              rgbs=rgbs)
-
+                                              rgbs=rgbs, elements=values)
         objects = [scatterplot, parallelplot]
         sizes = [plot_data.Window(width=560, height=300),
                  plot_data.Window(width=560, height=300)]
@@ -778,10 +815,9 @@ class ParallelPlot(Block):
         multiplot = plot_data.MultiplePlots(elements=values, objects=objects,
                                             sizes=sizes, coords=coords,
                                             name='Results plot')
-        dict_ = multiplot.to_dict()
-        dict_['references_attribute'] = 'output_value'
-        displays = [{'angular_component': 'plot_data', 'data': dict_}]
-        return displays
+        display_ = dc.DisplayObject(type_='plot_data', data=multiplot,
+                                    reference_path=reference_path)
+        return [display_.to_dict()]
 
     def to_dict(self):
         dict_ = dc.DessiaObject.base_dict(self)
@@ -800,40 +836,40 @@ class ParallelPlot(Block):
         return []
 
 
-class Display(Block):
-    def __init__(self, order: int = 0, name: str = ''):
-        self.order = order
-        inputs = [Variable(name='Model to Display', memorize=True)]
-        outputs = []
-
-        Block.__init__(self, inputs=inputs, outputs=outputs, name=name)
-
-    def equivalent(self, other):
-        if not Block.equivalent(self, other):
-            return False
-        return self.order == other.order
-
-    def equivalent_hash(self):
-        return self.order
-
-    def _display(self, local_values):
-        object_ = local_values[self.inputs[0]]
-        displays = object_._display_angular()
-        return displays
-
-    def to_dict(self):
-        dict_ = dc.DessiaObject.base_dict(self)
-        dict_['order'] = self.order
-        return dict_
-
-    @classmethod
-    @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_):
-        return cls(order=dict_['order'], name=dict_['name'])
-
-    @staticmethod
-    def evaluate(self):
-        return []
+# class Display(Block):
+#     def __init__(self, order: int = 0, name: str = ''):
+#         self.order = order
+#         inputs = [Variable(name='Model to Display', memorize=True)]
+#         outputs = []
+#
+#         Block.__init__(self, inputs=inputs, outputs=outputs, name=name)
+#
+#     def equivalent(self, other):
+#         if not Block.equivalent(self, other):
+#             return False
+#         return self.order == other.order
+#
+#     def equivalent_hash(self):
+#         return self.order
+#
+#     def display_(self, local_values):
+#         object_ = local_values[self.inputs[0]]
+#         displays = object_._displays()
+#         return displays
+#
+#     def to_dict(self):
+#         dict_ = dc.DessiaObject.base_dict(self)
+#         dict_['order'] = self.order
+#         return dict_
+#
+#     @classmethod
+#     @set_block_variable_names_from_dict
+#     def dict_to_object(cls, dict_):
+#         return cls(order=dict_['order'], name=dict_['name'])
+#
+#     @staticmethod
+#     def evaluate(self):
+#         return []
 
 
 class ModelAttribute(Block):
@@ -1159,13 +1195,9 @@ class Workflow(Block):
                                    name=self.name)
         return copied_workflow
 
-    def _display_angular(self):
-        displays = []
+    def _displays(self) -> List[JsonSerializable]:
         data = self.jointjs_data()
-        displays.extend([{'angular_component': 'workflow',
-                          'blocks': data['blocks'],
-                          'nonblock_variables': data['nonblock_variables'],
-                          'edges': data['edges']}])
+        displays = [dc.DisplayObject(type_='workflow', data=data).to_dict()]
         return displays
 
     @property
@@ -1828,19 +1860,25 @@ class WorkflowRun(dc.DessiaObject):
             hash_output = hash(self.output_value)
         return hash(self.workflow) + int(hash_output % 10e5)
 
-    def _display_angular(self):
-        d_blocks = [b for b in self.workflow.blocks if hasattr(b, '_display')]
+    def _displays(self) -> List[JsonSerializable]:
+        d_blocks = [b for b in self.workflow.blocks if hasattr(b, 'display_')]
         sorted_d_blocks = sorted(d_blocks, key=lambda b: b.order)
-        displays = self.workflow._display_angular()
+        displays = self.workflow._displays()
         for block in sorted_d_blocks:
+            reference_path = ''
             local_values = {}
-            for input_ in block.inputs:
-                indices = self.workflow.variable_indices(input_)
-                local_values[input_] = self.variables_values[str(indices)]
-            display = block._display(local_values)
+            for i, input_ in enumerate(block.inputs):
+                strindices = str(self.workflow.variable_indices(input_))
+                local_values[input_] = self.variables_values[strindices]
+                if i == block._displayable_input:
+                    reference_path = 'variables_values/'+strindices
+            display = block.display_(local_values=local_values,
+                                     reference_path=reference_path)
             displays.extend(display)
         if isinstance(self.output_value, dc.DessiaObject):
-            displays.extend(self.output_value._display_angular())
+            displays.extend(self.output_value._displays(
+                reference_path='output_value'
+            ))
         return displays
 
     @classmethod
@@ -1956,8 +1994,13 @@ def set_inputs_from_function(method, inputs=None):
 
     for iargument, argument in enumerate(args_specs.args[1:]):
         if argument not in ['self', 'progress_callback']:
-            type_ = dc.type_from_annotation(method.__annotations__[argument],
-                                            module=method.__module__)
+            try:
+                type_ = dc.type_from_annotation(method.__annotations__[argument],
+                                                module=method.__module__)
+            except KeyError:
+                raise dc.UntypedArgumentError(
+                    'Argument {} of method/function {} has no typing'.format(argument,
+                                                                             method.__name__))
             if iargument >= nargs - ndefault_args:
                 default = args_specs.defaults[ndefault_args - nargs + iargument]
                 input_ = TypedVariableWithDefaultValue(type_=type_,
@@ -1978,3 +2021,6 @@ def value_type_check(value, type_):
         pass
 
     return True
+
+# DISPLAY_DEFAULT = TypedVariable(type_=dc.DessiaObject, name='Model to Display',
+#                                 memorize=True)
