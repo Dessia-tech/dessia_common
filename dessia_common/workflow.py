@@ -620,7 +620,6 @@ class Product(Block):
         return self.number_list
 
     def equivalent(self, other):
-
         if not Block.equivalent(self, other):
             return False
 
@@ -634,16 +633,12 @@ class Product(Block):
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_):
-
         number_list = dict_['number_list']
         return cls(number_list=number_list, name=dict_['name'])
 
     def evaluate(self, values):
-        list_product = [values[var]
-                        for var in self.inputs]
-
+        list_product = [values[var] for var in self.inputs]
         output_value = list(itertools.product(*list_product))
-
         return [output_value]
 
 
@@ -1005,9 +1000,7 @@ class Workflow(Block):
         "$schema": "http://json-schema.org/draft-07/schema#",
         "type": "object",
         "title": "Workflow",
-        "required": ["blocks",
-                     "pipes",
-                     "outputs"],
+        "required": ["blocks", "pipes", "outputs"],
         "properties": {
             "blocks": {
                 "type": "array",
