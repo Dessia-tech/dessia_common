@@ -789,6 +789,22 @@ class MultiPlot(Display):
         return []
 
 
+class ParallelPlot(MultiPlot):
+    """
+
+    DEPRECATED. USE MULTIPLOT INSTEAD
+
+    :param attributes: A List of all attributes that will be shown inside the \
+    ParallelPlot window on the DessIA Platform.
+    :type attributes: List[str]
+    :param name: The name of the block.
+    :type name: str
+    """
+    def __init__(self, attributes: List[str], order: int = 0, name: str = ''):
+        dc.deprecation_warning(self.__class__.__name__, 'Class', 'MultiPlot')
+        MultiPlot.__init__(self, attributes=attributes, order=order, name=name)
+
+
 # class Display(Block):
 #     def __init__(self, order: int = 0, name: str = ''):
 #         self.order = order

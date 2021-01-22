@@ -72,6 +72,7 @@ class SerializationError(Exception):
 class DeserializationError(Exception):
     pass
 
+
 class UntypedArgumentError(Exception):
     pass
 
@@ -82,7 +83,7 @@ def deprecated(use_instead=None):
         def wrapper(*args, **kwargs):
             deprecation_warning(function.__name__, 'Function', use_instead)
             print('Traceback : ')
-            tb.print_stack(limit=2)
+            tb.print_stack(limit=1)
             return function(*args, **kwargs)
 
         return wrapper
