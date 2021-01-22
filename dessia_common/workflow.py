@@ -804,6 +804,18 @@ class ParallelPlot(MultiPlot):
         dc.deprecation_warning(self.__class__.__name__, 'Class', 'MultiPlot')
         MultiPlot.__init__(self, attributes=attributes, order=order, name=name)
 
+    def to_dict(self):
+        dict_ = dc.DessiaObject.base_dict(self)
+        dict_.update({'attributes': self.attributes, 'order': self.order,
+                      'object_class': 'dessia_common.workflow.MultiPlot'})
+        return dict_
+
+    @classmethod
+    @set_block_variable_names_from_dict
+    def dict_to_object(cls, dict_):
+        return MultiPlot(attributes=dict_['attributes'], order=dict_['order'],
+                         name=dict_['name'])
+
 
 # class Display(Block):
 #     def __init__(self, order: int = 0, name: str = ''):
