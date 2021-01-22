@@ -554,6 +554,9 @@ class DessiaObject:
                 plot_data.plot_canvas(plot_data_object=data,
                                       canvas_id='canvas',
                                       debug_mode=False)
+        else:
+            raise NotImplementedError(
+                'Class {} does not implement a plot_data method to define what to plot'.format(self.__class__.__name__))
 
     def mpl_plot(self):
         axs = []
@@ -562,6 +565,10 @@ class DessiaObject:
                 if hasattr(data, 'mpl_plot'):
                     ax = data.mpl_plot()
                     axs.append(ax)
+        else:
+            raise NotImplementedError(
+                'Class {} does not implement a plot_data method to define what to plot'.format(self.__class__.__name__))
+
         return axs
 
     def babylonjs(self, use_cdn=True, debug=False):
