@@ -46,6 +46,7 @@ class Variable(dc.DessiaObject):
 
 class TypedVariable(Variable):
     has_default_value:bool = False
+
     def __init__(self, type_: Type, memorize: bool = False, name: str = ''):
         Variable.__init__(self, memorize=memorize, name=name)
         self.type_ = type_
@@ -1127,7 +1128,15 @@ class Workflow(Block):
         displays = []
         data = self.jointjs_data()
         self.refresh_blocks_positions()
-        displays.extend([{'angular_component': 'workflow', 'workflow':self.to_dict()}])
+
+        workflow_dict = self.to_dict()
+        coordinates = self.layout()
+        for i in range(len(self.nonblock_variables)):
+            for K,V in coordinates.items():
+                if self.nonblock_variables[i] == K:
+                    workflow_dict['nonblock_variables'][i]['position'] = V
+
+        displays.extend([{'angular_component': 'workflow', 'workflow':workflow_dict}])
                           # 'blocks': data['blocks'],
                           # 'nonblock_variables': data['nonblock_variables'],
                           # 'edges': data['edges']}])
@@ -1384,7 +1393,7 @@ class Workflow(Block):
         coordinates = self.layout()
         for i in range(len(self.blocks)):
             for K,V in coordinates.items():
-                if self.blocks[i] == K:
+                if K == self.blocks[i]:
                     self.blocks[i].position = V
                     break
 
