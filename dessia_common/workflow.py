@@ -1454,12 +1454,8 @@ class Workflow(Block):
 
     def refresh_blocks_positions(self):
         coordinates = self.layout()
-        for i in range(len(self.blocks)):
-            for K,V in coordinates.items():
-                if K == self.blocks[i]:
-                    self.blocks[i].position = V
-                    break
-
+        for i, block in enumerate(self.blocks):
+            block.position = coordinates[block]
 
     def plot_graph(self):
 
