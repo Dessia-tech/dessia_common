@@ -32,7 +32,7 @@ VariableTypes = Union['Variable', 'TypedVariable',
 class Variable(dc.DessiaObject):
     _standalone_in_db = False
     _eq_is_data_eq = False
-    has_default_value:bool = False
+    has_default_value: bool = False
 
     def __init__(self, memorize: bool = False, name: str = ''):
         self.memorize = memorize
@@ -40,12 +40,12 @@ class Variable(dc.DessiaObject):
 
     def to_dict(self):
         dict_ = dc.DessiaObject.base_dict(self)
-        dict_.update({'has_default_value':self.has_default_value})
+        dict_.update({'has_default_value': self.has_default_value})
         return dict_
 
 
 class TypedVariable(Variable):
-    has_default_value:bool = False
+    has_default_value: bool = False
 
     def __init__(self, type_: Type, memorize: bool = False, name: str = ''):
         Variable.__init__(self, memorize=memorize, name=name)
@@ -66,7 +66,8 @@ class TypedVariable(Variable):
 
 
 class VariableWithDefaultValue(Variable):
-    has_default_value:bool = True
+    has_default_value: bool = True
+
     def __init__(self, default_value: Any, memorize: bool = False,
                  name: str = ''):
         Variable.__init__(self, memorize=memorize, name=name)
@@ -74,7 +75,8 @@ class VariableWithDefaultValue(Variable):
 
 
 class TypedVariableWithDefaultValue(TypedVariable):
-    has_default_value:bool = True
+    has_default_value: bool = True
+
     def __init__(self, type_: Type, default_value: Any,
                  memorize: bool = False, name: str = ''):
         TypedVariable.__init__(self, type_=type_, memorize=memorize, name=name)
@@ -160,11 +162,12 @@ class Block(dc.DessiaObject):
     _standalone_in_db = False
     _eq_is_data_eq = False
     _non_serializable_attributes = []
-    position:Tuple[float, float] = []
 
-    def __init__(self, inputs:List[Variable], outputs:List[Variable], name:str=''):
+    def __init__(self, inputs: List[Variable], outputs: List[Variable],
+                 position: Tuple[float, float] = None, name: str = ''):
         self.inputs = inputs
         self.outputs = outputs
+        self.position = position
 
         dc.DessiaObject.__init__(self, name=name)
 
@@ -1113,10 +1116,10 @@ class Workflow(Block):
                 raise ValueError(msg)
 
         for pipe in self.pipes:
-            if not pipe.input_variable in self.variables:
+            if pipe.input_variable not in self.variables:
                 self.variables.append(pipe.input_variable)
                 self.nonblock_variables.append(pipe.input_variable)
-            if not pipe.output_variable in self.variables:
+            if pipe.output_variable not in self.variables:
                 self.variables.append(pipe.output_variable)
                 self.nonblock_variables.append(pipe.output_variable)
 
@@ -1129,7 +1132,8 @@ class Workflow(Block):
                     (len(nx.ancestors(self.graph, variable)) == 0):
                 # !!! Why not just : if nx.ancestors(self.graph, variable) ?
                 # if not hasattr(variable, 'type_'):
-                #     raise WorkflowError('Workflow as an untyped input variable: {}'.format(variable.name))
+                #     msg = 'Workflow as an untyped input variable: {}'
+                #     raise WorkflowError(msg.format(variable.name))
                 input_variables.append(variable)
 
         Block.__init__(self, input_variables, [output], name=name)
@@ -1187,9 +1191,10 @@ class Workflow(Block):
         for variable, value in self.imposed_variable_values.items():
             imposed_variable_values[memo[variable]] = value
 
-        copied_workflow = Workflow(blocks=blocks, pipes=pipes, output=output,
-                                   imposed_variable_values=imposed_variable_values,
-                                   name=self.name)
+        copied_workflow = Workflow(
+            blocks=blocks, pipes=pipes, output=output,
+            imposed_variable_values=imposed_variable_values, name=self.name
+        )
         return copied_workflow
 
     def _displays(self) -> List[JsonSerializable]:
@@ -2006,12 +2011,14 @@ def set_inputs_from_function(method, inputs=None):
     for iargument, argument in enumerate(args_specs.args[1:]):
         if argument not in ['self', 'progress_callback']:
             try:
-                type_ = dc.type_from_annotation(method.__annotations__[argument],
-                                                module=method.__module__)
+                type_ = dc.type_from_annotation(
+                    method.__annotations__[argument],
+                    module=method.__module__
+                )
             except KeyError:
+                msg = 'Argument {} of method/function {} has no typing'
                 raise dc.UntypedArgumentError(
-                    'Argument {} of method/function {} has no typing'.format(argument,
-                                                                             method.__name__))
+                    msg.format(argument, method.__name__))
             if iargument >= nargs - ndefault_args:
                 default = args_specs.defaults[ndefault_args - nargs + iargument]
                 input_ = TypedVariableWithDefaultValue(type_=type_,
@@ -2033,5 +2040,6 @@ def value_type_check(value, type_):
 
     return True
 
-# DISPLAY_DEFAULT = TypedVariable(type_=dc.DessiaObject, name='Model to Display',
+# DISPLAY_DEFAULT = TypedVariable(type_=dc.DessiaObject,
+#                                 name='Model to Display',
 #                                 memorize=True)
