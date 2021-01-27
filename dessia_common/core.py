@@ -73,13 +73,17 @@ class DeserializationError(Exception):
     pass
 
 
+class UntypedArgumentError(Exception):
+    pass
+
+
 # DEPRECATED_ATTRIBUTES = {'_editable_variss' : '_allowed_methods'}
 def deprecated(use_instead=None):
     def decorated(function):
         def wrapper(*args, **kwargs):
             deprecation_warning(function.__name__, 'Function', use_instead)
             print('Traceback : ')
-            tb.print_stack(limit=2)
+            tb.print_stack(limit=1)
             return function(*args, **kwargs)
 
         return wrapper
@@ -180,11 +184,11 @@ class DessiaObject:
         if full_classname(self) != full_classname(other_object):
             return False
 
-        eq_dict = {k: v for k, v in self.to_dict().items()
-                   if (k not in ['package_version', 'name'])\
-                       and (k not in self._non_data_eq_attributes)}
-        other_eq_dict = other_object.to_dict()
-        
+        eq_dict = self.__getstate__()
+        if 'name' in eq_dict:
+            del eq_dict['name']
+            
+        other_eq_dict = other_object.__getstate__()
 
         for key, value in eq_dict.items():
             other_value = other_eq_dict[key]
@@ -197,7 +201,7 @@ class DessiaObject:
         forbidden_keys = (self._non_data_eq_attributes
                           + self._non_data_hash_attributes
                           + ['package_version', 'name'])
-        for key, value in self.to_dict().items():
+        for key, value in self.__getstate__().items():
             if key not in forbidden_keys:
                 if isinstance(value, list):
                     hash_ += list_hash(value)
@@ -217,10 +221,12 @@ class DessiaObject:
         missing_keys_in_other_object = []
         diff_values = {}
         
-        eq_dict = {k: v for k, v in self.to_dict().items()
-                   if (k not in ['package_version', 'name'])\
-                       and (k not in self._non_data_eq_attributes)}
-        other_eq_dict = other_object.to_dict()
+        # eq_dict = {k: v for k, v in self.to_dict().items()
+        #            if (k not in ['package_version', 'name'])\
+        #                and (k not in self._non_data_eq_attributes)}
+        eq_dict = self.__getstate__()
+        # other_eq_dict = other_object.to_dict()
+        other_eq_dict = other_object.__getstate__()
 
         for key, value in eq_dict.items():
             if not key in other_eq_dict:
@@ -231,7 +237,6 @@ class DessiaObject:
                     diff_values[key] = (value, other_value)
                 
         return diff_values, missing_keys_in_other_object
-
 
     @property
     def full_classname(self):
@@ -256,11 +261,11 @@ class DessiaObject:
 
     def __getstate__(self):
         dict_ = {k: v for k, v in self.__dict__.items()
-                 if (k not in self._non_serializable_attributes)\
-                     and (not k.startswith('_'))}
+                 if k not in self._non_serializable_attributes
+                 and not k.startswith('_')}
         return dict_
 
-    def to_dict(self):
+    def to_dict(self) -> dt.JsonSerializable:
         """
         Generic to_dict method
         """
@@ -269,7 +274,6 @@ class DessiaObject:
             # !!! This prevent us to call DessiaObject.to_dict()
             # from an inheriting object which implement a Dict method,
             # because of the infinite recursion it creates.
-            # TODO Change Dict methods to to_dict everywhere
             deprecation_warning(name='Dict', object_type='Function',
                                 use_instead='to_dict')
             serialized_dict = self.Dict()
@@ -281,7 +285,7 @@ class DessiaObject:
         return serialized_dict
 
     @classmethod
-    def dict_to_object(cls, dict_):
+    def dict_to_object(cls, dict_: dt.JsonSerializable) -> 'DessiaObject':
         """
         Generic dict_to_object method
         """
@@ -516,28 +520,27 @@ class DessiaObject:
                 return vm.core.VolumeModel(self.volmdlr_primitives(frame=frame))
             except TypeError:
                 return vm.core.VolumeModel(self.volmdlr_primitives())
-        msg = 'Object of type {} does not implement volmdlr_primitives'.format(self.__class__.__name__)
-        raise NotImplementedError(msg)
+        msg = 'Object of type {} does not implement volmdlr_primitives'
+        raise NotImplementedError(msg.format(self.__class__.__name__))
 
-
-    def cad_export(self,
-                   fcstd_filepath=None,
-                   istep=0,
-                   python_path='python3',
-                   freecad_lib_path='/usr/lib/freecad/lib',
-                   export_types=['fcstd']):
+    def cad_export(self, fcstd_filepath=None, istep=0, python_path='python3',
+                   freecad_lib_path='/usr/lib/freecad/lib', export_types=None):
         """
         Generic CAD export method
         """
         if fcstd_filepath is None:
             fcstd_filepath = 'An unnamed {}'.format(self.__class__.__name__)
 
+        if export_types is None:
+            export_types = ['fcstd']
+
         if hasattr(self, 'volmdlr_primitives'):
             model = self.volmdlr_volume_model()
             if model.__class__.__name__ == 'MovingVolumeModel':
                 model = model.step_volume_model(istep)
             model.freecad_export(fcstd_filepath, python_path=python_path,
-                                freecad_lib_path=freecad_lib_path, export_types=export_types)
+                                freecad_lib_path=freecad_lib_path,
+                                 export_types=export_types)
         else:
             raise NotImplementedError
 
@@ -551,6 +554,9 @@ class DessiaObject:
                 plot_data.plot_canvas(plot_data_object=data,
                                       canvas_id='canvas',
                                       debug_mode=False)
+        else:
+            raise NotImplementedError(
+                'Class {} does not implement a plot_data method to define what to plot'.format(self.__class__.__name__))
 
     def mpl_plot(self):
         axs = []
@@ -559,37 +565,61 @@ class DessiaObject:
                 if hasattr(data, 'mpl_plot'):
                     ax = data.mpl_plot()
                     axs.append(ax)
-        return axs
+        else:
+            raise NotImplementedError(
+                'Class {} does not implement a plot_data method to define what to plot'.format(self.__class__.__name__))
 
+        return axs
 
     def babylonjs(self, use_cdn=True, debug=False):
         self.volmdlr_volume_model().babylonjs(use_cdn=use_cdn, debug=debug)
 
-    def _display_angular(self):
+    def _displays(self, **kwargs) -> List[dt.JsonSerializable]:
+        if hasattr(self, '_display_angular'):
+            # Retro-compatibility
+            deprecation_warning(name='_display_angular', object_type='method',
+                                use_instead='display_angular')
+            return self._display_angular(**kwargs)
+
+        if 'reference_path' in kwargs:
+            reference_path = kwargs['reference_path']
+        else:
+            reference_path = ''
         displays = []
         if hasattr(self, 'babylon_data'):
-            displays.append({'angular_component': 'cad_viewer',
-                            'data': self.babylon_data()})
+            display_ = DisplayObject(type_='cad', data=self.babylon_data(),
+                                     reference_path=reference_path)
+            displays.append(display_.to_dict())
         elif hasattr(self, 'volmdlr_primitives')\
                 or (self.__class__.volmdlr_volume_model
                     is not DessiaObject.volmdlr_volume_model):
             model = self.volmdlr_volume_model()
-            displays.append({'angular_component': 'cad_viewer',
-                            'data': model.babylon_data()})
+            display_ = DisplayObject(type_='cad', data=model.babylon_data(),
+                                     reference_path=reference_path)
+            displays.append(display_.to_dict())
         if hasattr(self, 'plot_data'):
             plot_data = self.plot_data()
             if is_sequence(plot_data):
                 for plot in plot_data:
-                    displays.append({'angular_component': 'plot_data',
-                                    'data': plot.to_dict()})
-            else:
-                plot = self.plot_data()
-                displays.append({'angular_component': 'plot_data',
-                                'data': plot.to_dict()})
+                    display_ = DisplayObject(type_='plot_data', data=plot,
+                                             reference_path=reference_path)
+                    displays.append(display_.to_dict())
         if hasattr(self, 'to_markdown'):
-            displays.append({'angular_component': 'markdown',
-                            'data': self.to_markdown()})
+            display_ = DisplayObject(type_='markdown', data=self.to_markdown(),
+                                     reference_path=reference_path)
+            displays.append(display_.to_dict())
         return displays
+
+
+class DisplayObject(DessiaObject):
+    def __init__(self, type_: str,
+                 data: Union[dt.JsonSerializable, DessiaObject],
+                 reference_path: str = '', name: str = ''):
+        self.type_ = type_
+        self.data = data
+
+        self.reference_path = reference_path
+        DessiaObject.__init__(self, name=name)
 
 
 class Parameter(DessiaObject):
@@ -665,7 +695,7 @@ class Evolution(DessiaObject):
 
         DessiaObject.__init__(self, name=name)
 
-    def _display_angular(self):
+    def _displays(self):
         displays = [{'angular_component': 'app-evolution1d',
                      'table_show': False,
                      'evolution': [self.evolution],
@@ -697,7 +727,7 @@ class CombinationEvolution(DessiaObject):
 
         DessiaObject.__init__(self, name=name)
 
-    def _display_angular(self):
+    def _displays(self):
         displays = [{'angular_component': 'app-evolution2d-combination-evolution',
                      'table_show': False,
                      'evolution_x': [self.x_], 'label_x': ['title1'],
@@ -1416,12 +1446,12 @@ def deserialize_argument(type_, argument):
         sequence_subtype = type_.__args__[0]
         deserialized_argument = [deserialize_argument(sequence_subtype, arg)
                                  for arg in argument]
-    elif hasattr(type_, '__origin__') and type_.__origin__ == 'Tuple':
+    elif hasattr(type_, '__origin__') and type_.__origin__ == tuple:
         # Heterogenous sequences (tuples)
         deserialized_argument = tuple([deserialize_argument(t, arg)
                                        for t, arg in zip(type_.__args__,
                                                          argument)])
-    elif hasattr(type_, '__origin__') and type_.__origin__ == 'Dict':
+    elif hasattr(type_, '__origin__') and type_.__origin__ == dict:
         # Dynamic dict
         deserialized_argument = argument
     else:
