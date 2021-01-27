@@ -11,21 +11,21 @@ import json
 from importlib import import_module
 import webbrowser
 import networkx as nx
-from typing import List, Union, Type, Any, Tuple
+from typing import List, Union, Type, Any, Dict, Tuple
 from copy import deepcopy
 from dessia_common.templates import workflow_template
-
+import itertools
 import dessia_common as dc
 from dessia_common.vectored_objects import ParetoSettings, from_csv
 from dessia_common.typings import JsonSerializable
-import plot_data
-from plot_data.colors import BLUE, LIGHTBLUE, LIGHTGREY
-
+# import plot_data
 
 # Type Aliases
 VariableTypes = Union['Variable', 'TypedVariable',
                       'VariableWithDefaultValue',
                       'TypedVariableWithDefaultValue']
+
+
 # VariableTypes = Subclass['Variable']
 
 
@@ -112,6 +112,7 @@ def set_block_variable_names_from_dict(func):
             for output_name, output_ in zip(dict_['output_names'], obj.outputs):
                 output_.name = output_name
         return obj
+
     return func_wrapper
 
 
@@ -135,8 +136,8 @@ class Block(dc.DessiaObject):
                         "dessia_common.workflow.TypedVariableWithDefaultValue"
                     ],
                     "editable": False,
-                    },
                 },
+            },
             "outputs": {
                 "type": "array",
                 "editable": False,
@@ -151,11 +152,11 @@ class Block(dc.DessiaObject):
                             "dessia_common.workflow.TypedVariableWithDefaultValue"
                         ],
                         "editable": False
-                        },
-                    }
+                    },
                 }
             }
         }
+    }
     _standalone_in_db = False
     _eq_is_data_eq = False
     _non_serializable_attributes = []
@@ -179,7 +180,7 @@ class Block(dc.DessiaObject):
         dict_['outputs'] = [o.to_dict() for o in self.outputs]
         dict_['position'] = list(self.position)
         return dict_
-    
+
     def jointjs_data(self):
         data = {'block_class': self.__class__.__name__}
         if self.name != '':
@@ -187,6 +188,47 @@ class Block(dc.DessiaObject):
         else:
             data['name'] = self.__class__.__name__
         return data
+
+
+class Display(Block):
+    _jsonschema = {}
+    _displayable_input = 0
+
+    def __init__(self, inputs: List[VariableTypes] = None,
+                 order: int = 0, name: str = ''):
+        self.order = order
+        if inputs is None:
+            inputs = [TypedVariable(type_=dc.DessiaObject,
+                                    name='Model to Display', memorize=True)]
+
+        Block.__init__(self, inputs=inputs, outputs=[], name=name)
+
+    def equivalent(self, other):
+        if not Block.equivalent(self, other):
+            return False
+        return self.order == other.order
+
+    def equivalent_hash(self):
+        return self.order
+
+    def display_(self, local_values: Dict[VariableTypes, Any], **kwargs):
+        object_ = local_values[self.inputs[self._displayable_input]]
+        displays = object_._displays()
+        return displays
+
+    def to_dict(self):
+        dict_ = dc.DessiaObject.base_dict(self)
+        dict_['order'] = self.order
+        return dict_
+
+    @classmethod
+    @set_block_variable_names_from_dict
+    def dict_to_object(cls, dict_):
+        return cls(order=dict_['order'], name=dict_['name'])
+
+    @staticmethod
+    def evaluate(self):
+        return []
 
 
 class Import(Block):
@@ -219,7 +261,7 @@ class Import(Block):
 
     def evaluate(self, values):
         dirname = os.path.dirname(__file__)
-        relative_filepath = 'models/data/'+values[self.inputs[0]]
+        relative_filepath = 'models/data/' + values[self.inputs[0]]
         filename = os.path.join(dirname, relative_filepath)
         if self.type_ == 'csv':
             array, variables = from_csv(filename=filename, end=None,
@@ -244,9 +286,9 @@ class InstanciateModel(Block):
                 "type": "string",
                 "editable": True,
                 "examples": ['Nom']
-                }
             }
-        })
+        }
+    })
 
     def __init__(self, model_class, name=''):
         self.model_class = model_class
@@ -296,7 +338,7 @@ class ClassMethod(Block):
         inputs = []
         method = getattr(self.class_, self.method_name)
         inputs = set_inputs_from_function(method, inputs)
-        
+
         self.argument_names = [i.name for i in inputs]
 
         type_ = dc.type_from_annotation(method.__annotations__['return'],
@@ -306,7 +348,7 @@ class ClassMethod(Block):
         Block.__init__(self, inputs, outputs, name=name)
 
     def equivalent_hash(self):
-        return len(self.class_.__name__) + 7*len(self.method_name)
+        return len(self.class_.__name__) + 7 * len(self.method_name)
 
     def equivalent(self, other):
         if not Block.equivalent(self, other):
@@ -355,15 +397,15 @@ class ModelMethod(Block):
                 "type": "string",
                 "editable": True,
                 "examples": ['Nom']
-                },
+            },
 
             "method_name": {
                 "type": "string",
                 "editable": True,
                 "examples": ['Nom']
-                }
             }
-        })
+        }
+    })
 
     def __init__(self, model_class, method_name, name=''):
         self.model_class = model_class
@@ -392,7 +434,7 @@ class ModelMethod(Block):
         Block.__init__(self, inputs, outputs, name=name)
 
     def equivalent_hash(self):
-        return len(self.model_class.__name__) + 7*len(self.method_name)
+        return len(self.model_class.__name__) + 7 * len(self.method_name)
 
     def equivalent(self, other):
         if not Block.equivalent(self, other):
@@ -506,6 +548,7 @@ class ForEach(Block):
     :param name: The name of the block.
     :type name: str
     """
+
     def __init__(self, workflow_block: 'WorkflowBlock',
                  iter_input_index: int, name=''):
         self.workflow_block = workflow_block
@@ -518,7 +561,7 @@ class ForEach(Block):
                 inputs.append(Variable(name=name))
             else:
                 input_ = workflow_input.copy()
-                input_.name = 'binding '+input_.name
+                input_.name = 'binding ' + input_.name
                 inputs.append(input_)
         output_variable = Variable(name='Foreach output')
 
@@ -601,19 +644,55 @@ class Flatten(Block):
         inputs = [Variable(name='input_sequence')]
         outputs = [Variable(name='flatten_sequence')]
         Block.__init__(self, inputs, outputs, name=name)
-        
+
     def equivalent_hash(self):
         return 1
-    
+
     @classmethod
     def dict_to_object(cls, dict_):
         return cls(dict_['name'])
-    
+
     def evaluate(self, values):
         output = []
         for value in values[self.inputs[0]]:
             output.extend(value)
         return [output]
+
+
+class Product(Block):
+    def __init__(self, number_list: int, name=''):
+        self.number_list = number_list
+        inputs = []
+        for i in range(self.number_list):
+            inputs.append(Variable(name='list_product_' + str(i)))
+
+        output_variable = Variable(name='Product output')
+        Block.__init__(self, inputs, [output_variable], name=name)
+
+    def equivalent_hash(self):
+        return self.number_list
+
+    def equivalent(self, other):
+        if not Block.equivalent(self, other):
+            return False
+
+        return self.number_list == other.number_list
+
+    def to_dict(self):
+        dict_ = dc.DessiaObject.base_dict(self)
+        dict_.update({'number_list': self.number_list})
+        return dict_
+
+    @classmethod
+    @set_block_variable_names_from_dict
+    def dict_to_object(cls, dict_):
+        number_list = dict_['number_list']
+        return cls(number_list=number_list, name=dict_['name'])
+
+    def evaluate(self, values):
+        list_product = [values[var] for var in self.inputs]
+        output_value = list(itertools.product(*list_product))
+        return [output_value]
 
 
 class Filter(Block):
@@ -631,6 +710,7 @@ class Filter(Block):
     :param name: The name of the block.
     :type name: str
     """
+
     def __init__(self, filters, name=''):
         self.filters = filters
         inputs = [Variable(name='input_list')]
@@ -649,7 +729,7 @@ class Filter(Block):
     def to_dict(self):
         dict_ = Block.to_dict(self)
         dict_.update({'filters': self.filters})
-        return dict_    
+        return dict_
 
     @classmethod
     @set_block_variable_names_from_dict
@@ -673,7 +753,7 @@ class Filter(Block):
         return [ouput_values]
 
 
-class ParallelPlot(Block):
+class MultiPlot(Display):
     """
     :param attributes: A List of all attributes that will be shown inside the \
     ParallelPlot window on the DessIA Platform.
@@ -681,16 +761,15 @@ class ParallelPlot(Block):
     :param name: The name of the block.
     :type name: str
     """
+
     def __init__(self, attributes: List[str], order: int = 0, name: str = ''):
         self.attributes = attributes
-        self.order = order
         pareto_input = TypedVariableWithDefaultValue(type_=ParetoSettings,
                                                      default_value=None,
                                                      memorize=True,
                                                      name='Pareto settings')
         inputs = [Variable(memorize=True, name='input_list'), pareto_input]
-        outputs = []
-        Block.__init__(self, inputs, outputs, name=name)
+        Display.__init__(self, inputs=inputs, order=order, name=name)
 
     def equivalent(self, other):
         if not Block.equivalent(self, other):
@@ -703,8 +782,14 @@ class ParallelPlot(Block):
     def equivalent_hash(self):
         return sum([len(a) for a in self.attributes]) + self.order
 
-    def _display(self, local_values):
-        objects = local_values[self.inputs[0]]
+    def display_(self, local_values, **kwargs):
+        import plot_data
+        if 'reference_path' not in kwargs:
+            reference_path = 'output_value'  # TODO bof bof bof
+        else:
+            reference_path = kwargs['reference_path']
+        display_input = self.inputs[self._displayable_input]
+        objects = local_values[display_input]
         # pareto_settings = local_values[self.inputs[1]]
 
         values = [{a: dc.enhanced_deep_attr(o, a) for a in self.attributes}
@@ -718,36 +803,29 @@ class ParallelPlot(Block):
         first_vars = self.attributes[:2]
         values2d = [{key: val[key]} for key in first_vars for val in
                     values]
-        rgbs = [[192, 11, 11], [14, 192, 11], [11, 11, 192]]
 
         tooltip = plot_data.Tooltip(name='Tooltip',
-                                    to_plot_list=self.attributes)
+                                    to_disp_attribute_names=self.attributes)
 
-        scatterplot = plot_data.Scatter(axis=plot_data.DEFAULT_AXIS,
-                                        tooltip=tooltip,
-                                        to_display_att_names=first_vars,
-                                        point_shape='circle', point_size=2,
-                                        color_fill=LIGHTGREY,
-                                        color_stroke=BLUE,
-                                        stroke_width=1, elements=values2d,
+        scatterplot = plot_data.Scatter(tooltip=tooltip,
+                                        to_disp_attribute_names=first_vars,
+                                        elements=values2d,
                                         name='Scatter Plot')
 
-        parallelplot = plot_data.ParallelPlot(line_color=LIGHTBLUE,
-                                              line_width=1,
-                                              disposition='horizontal',
-                                              to_disp_attributes=self.attributes,
+        rgbs = [[192, 11, 11], [14, 192, 11], [11, 11, 192]]
+        parallelplot = plot_data.ParallelPlot(disposition='horizontal',
+                                              to_disp_attribute_names=self.attributes,
                                               rgbs=rgbs, elements=values)
         objects = [scatterplot, parallelplot]
         sizes = [plot_data.Window(width=560, height=300),
                  plot_data.Window(width=560, height=300)]
         coords = [(0, 0), (0, 300)]
-        multiplot = plot_data.MultiplePlots(points=values, objects=objects,
+        multiplot = plot_data.MultiplePlots(elements=values, objects=objects,
                                             sizes=sizes, coords=coords,
                                             name='Results plot')
-        dict_ = multiplot.to_dict()
-        dict_['references_attribute'] = 'output_value'
-        displays = [{'angular_component': 'plot_data', 'data': dict_}]
-        return displays
+        display_ = dc.DisplayObject(type_='plot_data', data=multiplot,
+                                    reference_path=reference_path)
+        return [display_.to_dict()]
 
     def to_dict(self):
         dict_ = Block.to_dict(self)
@@ -766,40 +844,31 @@ class ParallelPlot(Block):
         return []
 
 
-class Display(Block):
-    def __init__(self, order: int = 0, name: str = ''):
-        self.order = order
-        inputs = [Variable(name='Model to Display', memorize=True)]
-        outputs = []
+class ParallelPlot(MultiPlot):
+    """
 
-        Block.__init__(self, inputs=inputs, outputs=outputs, name=name)
+    DEPRECATED. USE MULTIPLOT INSTEAD
 
-    def equivalent(self, other):
-        if not Block.equivalent(self, other):
-            return False
-        return self.order == other.order
-
-    def equivalent_hash(self):
-        return self.order
-
-    def _display(self, local_values):
-        object_ = local_values[self.inputs[0]]
-        displays = object_._display_angular()
-        return displays
+    :param attributes: A List of all attributes that will be shown inside the \
+    ParallelPlot window on the DessIA Platform.
+    :type attributes: List[str]
+    :param name: The name of the block.
+    :type name: str
+    """
+    def __init__(self, attributes: List[str], order: int = 0, name: str = ''):
+        dc.deprecation_warning(self.__class__.__name__, 'Class', 'MultiPlot')
+        MultiPlot.__init__(self, attributes=attributes, order=order, name=name)
 
     def to_dict(self):
-        dict_ = Block.to_dict(self)
-        dict_['order'] = self.order
+        dict_ = MultiPlot.to_dict(self)
+        dict_.update({'object_class': 'dessia_common.workflow.MultiPlot'})
         return dict_
 
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_):
-        return cls(order=dict_['order'], name=dict_['name'])
-
-    @staticmethod
-    def evaluate(self):
-        return []
+        return MultiPlot(attributes=dict_['attributes'], order=dict_['order'],
+                         name=dict_['name'])
 
 
 class ModelAttribute(Block):
@@ -809,6 +878,7 @@ class ModelAttribute(Block):
     :param name: The name of the block.
     :type name: str
     """
+
     def __init__(self, attribute_name, name=''):
         self.attribute_name = attribute_name
 
@@ -842,7 +912,7 @@ class ModelAttribute(Block):
 class Sum(Block):
     def __init__(self, number_elements=2, name=''):
         self.number_elements = number_elements
-        inputs = [Variable(name='Sum element {}'.format(i+1))
+        inputs = [Variable(name='Sum element {}'.format(i + 1))
                   for i in range(number_elements)]
         outputs = [Variable(name='Sum')]
         Block.__init__(self, inputs, outputs, name=name)
@@ -868,8 +938,8 @@ class Sum(Block):
     @staticmethod
     def evaluate(values):
         return [sum(values)]
-    
-    
+
+
 class Substraction(Block):
     def __init__(self, name=''):
         inputs = [Variable(name='+'), Variable(name='-')]
@@ -895,7 +965,7 @@ class Substraction(Block):
     def evaluate(self, values):
         return [values[self.inputs[0]] - values[self.inputs[1]]]
 
-    
+
 class Pipe(dc.DessiaObject):
     """
     :param input_variable: The input varaible of the pipe correspond to the \
@@ -961,7 +1031,7 @@ class Workflow(Block):
     :type imposed_variable_values: dict
     :param name: The name of the block.
     :type name: str
-    """ 
+    """
     _standalone_in_db = True
     _allowed_methods = ['run']
 
@@ -970,9 +1040,7 @@ class Workflow(Block):
         "$schema": "http://json-schema.org/draft-07/schema#",
         "type": "object",
         "title": "Workflow",
-        "required": ["blocks",
-                     "pipes",
-                     "outputs"],
+        "required": ["blocks", "pipes", "outputs"],
         "properties": {
             "blocks": {
                 "type": "array",
@@ -994,8 +1062,8 @@ class Workflow(Block):
                                 "dessia_common.workflow.Sum",
                                 "dessia_common.workflow.Substraction"],
                     "editable": True,
-                    },
                 },
+            },
             "pipes": {
                 "type": "array",
                 "order": 1,
@@ -1004,18 +1072,18 @@ class Workflow(Block):
                     'type': 'objects',
                     'classes': ["dessia_common.workflow.Pipe"],
                     "editable": True
-                    }
-                },
+                }
+            },
             "outputs": {
                 "type": "array",
                 "order": 2,
                 'items': {
                     'type': 'array',
                     'items': {'type': 'number'}
-                    }
                 }
             }
         }
+    }
 
     def __init__(self, blocks, pipes, output, *,
                  imposed_variable_values=None, name=''):
@@ -1068,8 +1136,8 @@ class Workflow(Block):
         self.output = self.outputs[0]
 
     def _data_hash(self):
-        base_hash = len(self.blocks)\
-                    + 11 * len(self.pipes)\
+        base_hash = len(self.blocks) \
+                    + 11 * len(self.pipes) \
                     + sum(self.variable_indices(self.outputs[0]))
         block_hash = int(sum([b.equivalent_hash() for b in self.blocks])
                          % 10e5)
@@ -1124,22 +1192,16 @@ class Workflow(Block):
                                    name=self.name)
         return copied_workflow
 
-    def _display_angular(self):
-        displays = []
-        data = self.jointjs_data()
+    def _displays(self) -> List[JsonSerializable]:
         self.refresh_blocks_positions()
-
         workflow_dict = self.to_dict()
         coordinates = self.layout()
-        for i in range(len(self.nonblock_variables)):
-            for K,V in coordinates.items():
-                if self.nonblock_variables[i] == K:
-                    workflow_dict['nonblock_variables'][i]['position'] = V
+        for i, nonblock_variable in enumerate(self.nonblock_variables):
+            value = coordinates[nonblock_variable]
+            workflow_dict['nonblock_variables'][i]['position'] = value
 
-        displays.extend([{'angular_component': 'workflow', 'workflow':workflow_dict}])
-                          # 'blocks': data['blocks'],
-                          # 'nonblock_variables': data['nonblock_variables'],
-                          # 'edges': data['edges']}])
+        display_object = dc.DisplayObject(type_='workflow', data=workflow_dict)
+        displays = [display_object.to_dict()]
         return displays
 
     @property
@@ -1203,7 +1265,7 @@ class Workflow(Block):
                 imposed_variable_values.append(value)
 
         dict_['imposed_variables'] = imposed_variables
-        dict_['imposed_variable_values'] = imposed_variable_values 
+        dict_['imposed_variable_values'] = imposed_variable_values
 
         return dict_
 
@@ -1263,7 +1325,8 @@ class Workflow(Block):
                                              TypedVariableWithDefaultValue))
             if not is_default or (is_default and str(i) in dict_):
                 value = dict_[str(i)]
-                deserialized_value = dc.deserialize_argument(input_.type_, value)
+                deserialized_value = dc.deserialize_argument(input_.type_,
+                                                             value)
                 arguments_values[i] = deserialized_value
 
         arguments = {'input_values': arguments_values}
@@ -1352,7 +1415,7 @@ class Workflow(Block):
                max_height=800, max_length=1500):
         coordinates = {}
         elements_by_distance = {}
-        for element in self.blocks+self.nonblock_variables:
+        for element in self.blocks + self.nonblock_variables:
             distances = []
             paths = nx.all_simple_paths(self.graph, element, self.outputs[0])
             for path in paths:
@@ -1378,11 +1441,11 @@ class Workflow(Block):
             max_distance = 3  # TODO: this is an awfull quick fix
 
         horizontal_spacing = max(min_horizontal_spacing,
-                                 max_length/max_distance)
+                                 max_length / max_distance)
 
         for i, distance in enumerate(sorted(elements_by_distance.keys())[::-1]):
             n = len(elements_by_distance[distance])
-            vertical_spacing = min(min_vertical_spacing, max_height/n)
+            vertical_spacing = min(min_vertical_spacing, max_height / n)
             horizontal_anchor_size = max_distance
             for j, element in enumerate(elements_by_distance[distance]):
                 coordinates[element] = (i * horizontal_spacing,
@@ -1430,7 +1493,7 @@ class Workflow(Block):
             value_type_check(value, variable.type_)
             values[variable] = value
             activated_items[variable] = True
-            
+
         # Input activation
         for index, variable in enumerate(self.inputs):
             if index in input_values:
@@ -1489,9 +1552,9 @@ class Workflow(Block):
                                 variables_values[indices] = values[input_]
                         # Updating progress
                         if progress_callback is not None:
-                            progress += 1/len(self.blocks)
+                            progress += 1 / len(self.blocks)
                             progress_callback(progress)
-                            
+
                         # Unpacking result of evaluation
                         for output, output_value in zip(block.outputs, output_values):
                             if output.memorize:
@@ -1512,7 +1575,7 @@ class Workflow(Block):
 
         output_value = values[self.outputs[0]]
         if not name:
-            name = self.name+' run'
+            name = self.name + ' run'
         return WorkflowRun(workflow=self, input_values=input_values,
                            output_value=output_value,
                            variables_values=variables_values,
@@ -1608,17 +1671,18 @@ class Workflow(Block):
             file.write(rendered_template.encode('utf-8'))
 
         webbrowser.open('file://' + temp_file)
-    
+
     def is_valid(self):
         # Checking types of each end of pipes
         for pipe in self.pipes:
-            if hasattr(pipe.input_variable, 'type_')\
+            if hasattr(pipe.input_variable, 'type_') \
                     and hasattr(pipe.output_variable, 'type_'):
                 type1 = pipe.input_variable.type_
                 type2 = pipe.output_variable.type_
                 if type1 != type2:
                     try:
-                        consistent = issubclass(pipe.input_variable.type_, pipe.output_variable.type_)
+                        consistent = issubclass(pipe.input_variable.type_,
+                                                pipe.output_variable.type_)
                     except TypeError:
                         # TODO: need of a real typing check
                         consistent = True
@@ -1632,7 +1696,7 @@ class Workflow(Block):
                                 pipe.output_variable.name,
                                 pipe.input_variable.type_,
                                 pipe.output_variable.type_)
-                                )
+                            )
         return True
 
     def package_mix(self):
@@ -1650,7 +1714,7 @@ class Workflow(Block):
 
         # Adimension
         fraction_sum = sum(package_mix.values())
-        return {pn: f/fraction_sum for pn, f in package_mix.items()}
+        return {pn: f / fraction_sum for pn, f in package_mix.items()}
 
 
 class WorkflowBlock(Block):
@@ -1699,7 +1763,7 @@ class WorkflowBlock(Block):
         args = {self.inputs.index(input_): v for input_, v in values.items()}
         workflow_run = self.workflow.run(args)
         return [workflow_run.output_value]
-    
+
     def package_mix(self):
         return self.workflow.package_mix()
 
@@ -1811,19 +1875,25 @@ class WorkflowRun(dc.DessiaObject):
             hash_output = hash(self.output_value)
         return hash(self.workflow) + int(hash_output % 10e5)
 
-    def _display_angular(self):
-        d_blocks = [b for b in self.workflow.blocks if hasattr(b, '_display')]
+    def _displays(self) -> List[JsonSerializable]:
+        d_blocks = [b for b in self.workflow.blocks if hasattr(b, 'display_')]
         sorted_d_blocks = sorted(d_blocks, key=lambda b: b.order)
-        displays = self.workflow._display_angular()
+        displays = self.workflow._displays()
         for block in sorted_d_blocks:
+            reference_path = ''
             local_values = {}
-            for input_ in block.inputs:
-                indices = self.workflow.variable_indices(input_)
-                local_values[input_] = self.variables_values[str(indices)]
-            display = block._display(local_values)
+            for i, input_ in enumerate(block.inputs):
+                strindices = str(self.workflow.variable_indices(input_))
+                local_values[input_] = self.variables_values[strindices]
+                if i == block._displayable_input:
+                    reference_path = 'variables_values/'+strindices
+            display = block.display_(local_values=local_values,
+                                     reference_path=reference_path)
             displays.extend(display)
         if isinstance(self.output_value, dc.DessiaObject):
-            displays.extend(self.output_value._display_angular())
+            displays.extend(self.output_value._displays(
+                reference_path='output_value'
+            ))
         return displays
 
     @classmethod
@@ -1873,8 +1943,8 @@ class WorkflowRun(dc.DessiaObject):
         if method_name == 'run_again':
             dict_ = dc.serialize_dict(self.input_values)
             for property_, value in method_jsonschema['properties'].items():
-                if property_ in dict_\
-                        and 'object_id' in value\
+                if property_ in dict_ \
+                        and 'object_id' in value \
                         and 'object_class' in value:
                     # TODO : Check. this is probably useless as we are not dealing with default values here
                     dict_[property_] = value
@@ -1939,15 +2009,20 @@ def set_inputs_from_function(method, inputs=None):
 
     for iargument, argument in enumerate(args_specs.args[1:]):
         if argument not in ['self', 'progress_callback']:
-            type_ = dc.type_from_annotation(method.__annotations__[argument],
-                                            module=method.__module__)
+            try:
+                type_ = dc.type_from_annotation(method.__annotations__[argument],
+                                                module=method.__module__)
+            except KeyError:
+                raise dc.UntypedArgumentError(
+                    'Argument {} of method/function {} has no typing'.format(argument,
+                                                                             method.__name__))
             if iargument >= nargs - ndefault_args:
-                default = args_specs.defaults[ndefault_args-nargs+iargument]
+                default = args_specs.defaults[ndefault_args - nargs + iargument]
                 input_ = TypedVariableWithDefaultValue(type_=type_,
                                                        default_value=default,
                                                        name=argument)
                 inputs.append(input_)
-                
+
             else:
                 inputs.append(TypedVariable(type_=type_, name=argument))
     return inputs
@@ -1959,5 +2034,8 @@ def value_type_check(value, type_):
             return False
     except TypeError:
         pass
-            
+
     return True
+
+# DISPLAY_DEFAULT = TypedVariable(type_=dc.DessiaObject, name='Model to Display',
+#                                 memorize=True)
