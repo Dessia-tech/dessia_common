@@ -164,7 +164,7 @@ class Block(dc.DessiaObject):
     _non_serializable_attributes = []
 
     def __init__(self, inputs: List[Variable], outputs: List[Variable],
-                 position: Tuple[float, float] = None, name: str = ''):
+                 position: List[float] = None, name: str = ''):
         self.inputs = inputs
         self.outputs = outputs
         self.position = position
