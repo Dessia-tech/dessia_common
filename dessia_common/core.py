@@ -1071,14 +1071,15 @@ def serialize_typing(typing_):
         if arg.__module__ == 'builtins':
             full_argname = '__builtins__.' + arg.__name__
         else:
-            full_argname = arg.__module__ + '.' + arg.__name__
+             # full_argname = arg.__module__ + '.' + arg.__name__
+            full_argname = serialize_typing(arg)
         return 'List[' + full_argname + ']'
     if isinstance(typing_, type):
         return typing_.__module__ + '.' + typing_.__name__
     raise NotImplementedError('{} of type {}'.format(typing_, type(typing_)))
 
 
-def deserialize_typing(serialized_typing):
+def deserialize_typing(serialized_typing): # TODO : handling recursive deserialization
     if isinstance(serialized_typing, str):
         if serialized_typing == 'float'\
                 or serialized_typing == 'builtins.float':
