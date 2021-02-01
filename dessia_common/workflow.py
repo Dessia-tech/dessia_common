@@ -167,7 +167,10 @@ class Block(dc.DessiaObject):
                  position: Tuple[float, float] = None, name: str = ''):
         self.inputs = inputs
         self.outputs = outputs
-        self.position = position
+        if position is None:
+            self.position = ()
+        else:
+            self.position = position
 
         dc.DessiaObject.__init__(self, name=name)
 
@@ -181,7 +184,10 @@ class Block(dc.DessiaObject):
         dict_ = dc.DessiaObject.base_dict(self)
         dict_['inputs'] = [i.to_dict() for i in self.inputs]
         dict_['outputs'] = [o.to_dict() for o in self.outputs]
-        dict_['position'] = list(self.position)
+        if self.position is not None:
+            dict_['position'] = list(self.position)
+        else:
+            dict_['position'] = self.position
         return dict_
 
     def jointjs_data(self):

@@ -13,7 +13,7 @@ import collections
 from copy import deepcopy
 import inspect
 import json
-from typing import List, Union
+from typing import List, Tuple, Union, Any
 try:
     from typing import TypedDict  # >=3.8
 except ImportError:
@@ -1065,36 +1065,62 @@ def deepcopy_value(value, memo):
             return new_value
 
 
+def type_fullname(arg):
+    if arg.__module__ == 'builtins':
+        full_argname = '__builtins__.' + arg.__name__
+    else:
+        full_argname = serialize_typing(arg)
+    return full_argname
+
+
 def serialize_typing(typing_):
     if hasattr(typing_, '__origin__') and typing_.__origin__ == list:
-        arg = typing_.__args__[0]
-        if arg.__module__ == 'builtins':
-            full_argname = '__builtins__.' + arg.__name__
-        else:
-             # full_argname = arg.__module__ + '.' + arg.__name__
-            full_argname = serialize_typing(arg)
-        return 'List[' + full_argname + ']'
+        return 'List[' + type_fullname(typing_.__args__[0]) + ']'
+    elif hasattr(typing_, '__origin__') and typing_.__origin__ == tuple:
+        argnames = ', '.join([type_fullname(a) for a in typing_.__args__])
+        return 'Tuple[{}]'.format(argnames)
     if isinstance(typing_, type):
         return typing_.__module__ + '.' + typing_.__name__
     raise NotImplementedError('{} of type {}'.format(typing_, type(typing_)))
 
 
-def deserialize_typing(serialized_typing): # TODO : handling recursive deserialization
+def type_from_argname(argname):
+    splitted_argname = argname.rsplit('.', 1)
+    if argname:
+        if splitted_argname[0] != '__builtins__':
+            return get_python_class_from_class_name(argname)
+        # TODO Check for dangerous eval
+        return eval(splitted_argname[1])
+    return Any
+
+
+def deserialize_typing(serialized_typing):
+    # TODO : handling recursive deserialization
     if isinstance(serialized_typing, str):
-        if serialized_typing == 'float'\
-                or serialized_typing == 'builtins.float':
+        # TODO other builtins should be implemented
+        if serialized_typing in ['float', 'builtins.float']:
             return float
 
         splitted_type = serialized_typing.split('[')
+        full_argname = splitted_type[1].split(']')[0]
         if splitted_type[0] == 'List':
-            full_argname = splitted_type[1].split(']')[0]
-            splitted_argname = full_argname.rsplit('.', 1)
-            if splitted_argname[0] != '__builtins__':
-                exec('import ' + splitted_argname[0])
-                type_ = eval(full_argname)
-            else:
-                type_ = eval(splitted_argname[1])
-            return List[type_]
+            return List[type_from_argname(full_argname)]
+        elif splitted_type[0] == 'Tuple':
+            if ', ' in full_argname:
+                args = full_argname.split(', ')
+                if len(args) == 0:
+                    return Tuple
+                elif len(args) == 1:
+                    type_ = type_from_argname(args[0])
+                    return Tuple[type_]
+                elif len(set(args)) == 1:
+                    type_ = type_from_argname(args[0])
+                    return Tuple[type_, ...]
+                else:
+                    msg = ("Heterogenous tuples are forbidden as types for"
+                           "workflow non-block variables.")
+                    raise TypeError(msg)
+            return Tuple[type_from_argname(full_argname)]
     raise NotImplementedError('{}'.format(serialized_typing))
 
 
