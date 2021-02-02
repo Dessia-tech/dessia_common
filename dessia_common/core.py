@@ -1312,8 +1312,9 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
         items = []
         for type_ in value.__args__:
             items.append({'type': TYPING_EQUIVALENCES[type_]})
-        jsonschema_element[key] = {'additionalItems': False,
-                                   'type': 'array', 'items': items}
+        jsonschema_element[key] = {'additionalItems': False, 'type': 'array',
+                                   'items': items, 'title': title,
+                                   'editable': editable, 'order': order}
     elif hasattr(value, '__origin__') and value.__origin__ == dict:
         # Dynamially created dict structure
         key_type, value_type = value.__args__

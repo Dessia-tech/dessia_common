@@ -1240,13 +1240,14 @@ class Workflow(Block):
                 title=title
             )
             current_dict.update(annotation_jsonschema[str(i)])
-            if not isinstance(input_, (VariableWithDefaultValue,
-                                       TypedVariableWithDefaultValue)):
+            if not input_.has_default_value:
                 required_inputs.append(str(i))
             else:
-                current_dict.update(dc.set_default_value(current_dict,
-                                                         str(i),
-                                                         input_.default_value))
+                dict_ = dc.set_default_value(
+                    jsonschema_element=current_dict, key=str(i),
+                    default_value=input_.default_value
+                )
+                current_dict.update(dict_)
             properties_dict[str(i)] = current_dict[str(i)]
         jsonschemas['run']['required'] = required_inputs
         return jsonschemas
@@ -1329,19 +1330,22 @@ class Workflow(Block):
                    imposed_variable_values=imposed_variable_values,
                    name=dict_['name'])
 
-    def dict_to_arguments(self, dict_):
-        arguments_values = {}
-        for i, input_ in enumerate(self.inputs):
-            is_default = isinstance(input_, (VariableWithDefaultValue,
-                                             TypedVariableWithDefaultValue))
-            if not is_default or (is_default and str(i) in dict_):
-                value = dict_[str(i)]
-                deserialized_value = dc.deserialize_argument(input_.type_,
-                                                             value)
-                arguments_values[i] = deserialized_value
+    def dict_to_arguments(self, dict_, method):
+        if method in self._allowed_methods:
+            arguments_values = {}
+            for i, input_ in enumerate(self.inputs):
+                has_default = input_.has_default_value
+                if not has_default or (has_default and str(i) in dict_):
+                    value = dict_[str(i)]
+                    deserialized_value = dc.deserialize_argument(
+                        type_=input_.type_, argument=value
+                    )
+                    arguments_values[i] = deserialized_value
 
-        arguments = {'input_values': arguments_values}
-        return arguments
+            arguments = {'input_values': arguments_values}
+            return arguments
+        msg = 'Method {} not in Workflow allowed methods'
+        raise NotImplementedError(msg.format(method))
 
     @classmethod
     def variable_from_index(cls, index, blocks, nonblock_variables):
@@ -1943,10 +1947,13 @@ class WorkflowRun(dc.DessiaObject):
 
         return dict_
 
-    def dict_to_arguments(self, dict_):
-        return self.workflow.dict_to_arguments(dict_=dict_)
+    def dict_to_arguments(self, dict_, method):
+        if method in self._allowed_methods:
+            return self.workflow.dict_to_arguments(dict_=dict_, method='run')
+        msg = 'Method {} not in WorkflowRun allowed methods'
+        raise NotImplementedError(msg.format(method))
 
-    def method_dict(self, method_name, method_jsonschema):
+    def method_dict(self, method_name=None, method_jsonschema=None):
         if method_name == 'run_again':
             dict_ = dc.serialize_dict(self.input_values)
             for property_, value in method_jsonschema['properties'].items():
@@ -1957,7 +1964,7 @@ class WorkflowRun(dc.DessiaObject):
                     dict_[property_] = value
             return dict_
         return dc.DessiaObject.method_dict(method_name=method_name,
-                                           jsonschema=method_jsonschema)
+                                           method_jsonschema=method_jsonschema)
 
     def run_again(self, input_values):
         workflow_run = self.workflow.run(input_values=input_values,
@@ -1968,36 +1975,43 @@ class WorkflowRun(dc.DessiaObject):
 
     @property
     def _method_jsonschemas(self):
-        # TODO : Share code with Workflow run method
-        jsonschemas = {'run_again': deepcopy(dc.JSONSCHEMA_HEADER)}
-        properties_dict = jsonschemas['run_again']['properties']
-        required_inputs = []
-        for i, value in self.input_values.items():
-            current_dict = {}
-            input_ = self.workflow.inputs[i]
-            annotation = (str(i), input_.type_)
-            input_block = self.workflow.block_from_variable(input_)
-            if input_block.name:
-                title = dc.prettyname(input_block.name + ' - ' + input_.name)
-            else:
-                title = dc.prettyname(input_.name)
-            annotation_jsonschema = dc.jsonschema_from_annotation(
-                annotation=annotation,
-                jsonschema_element=current_dict,
-                order=i,
-                title=title,
-            )
-            current_dict.update(annotation_jsonschema[str(i)])
-            if not isinstance(input_, (VariableWithDefaultValue,
-                                       TypedVariableWithDefaultValue)):
-                required_inputs.append(str(i))
-            else:
-                current_dict.update(dc.set_default_value(current_dict,
-                                                         str(i),
-                                                         input_.default_value))
-            properties_dict[str(i)] = current_dict[str(i)]
-        jsonschemas['run_again']['required'] = required_inputs
+        jsonschemas = self.workflow._method_jsonschemas
+        jsonschemas['run_again'] = jsonschemas.pop('run')
         return jsonschemas
+
+    # @property
+    # def _method_jsonschemas(self):
+    #     # TODO : Share code with Workflow run method
+    #     jsonschemas = {'run_again': deepcopy(dc.JSONSCHEMA_HEADER)}
+    #     properties_dict = jsonschemas['run_again']['properties']
+    #     required_inputs = []
+    #     for i, value in self.input_values.items():
+    #         current_dict = {}
+    #         input_ = self.workflow.inputs[i]
+    #         annotation = (str(i), input_.type_)
+    #         input_block = self.workflow.block_from_variable(input_)
+    #         if input_block.name:
+    #             title = dc.prettyname(input_block.name + ' - ' + input_.name)
+    #         else:
+    #             title = dc.prettyname(input_.name)
+    #         annotation_jsonschema = dc.jsonschema_from_annotation(
+    #             annotation=annotation,
+    #             jsonschema_element=current_dict,
+    #             order=i,
+    #             title=title,
+    #         )
+    #         current_dict.update(annotation_jsonschema[str(i)])
+    #         if not input_.has_default_value:
+    #             required_inputs.append(str(i))
+    #         else:
+    #             dict_ = dc.set_default_value(
+    #                 jsonschema_element=current_dict, key=str(i),
+    #                 default_value=input_.default_value
+    #             )
+    #             current_dict.update(dict_)
+    #         properties_dict[str(i)] = current_dict[str(i)]
+    #     jsonschemas['run_again']['required'] = required_inputs
+    #     return jsonschemas
 
 
 def set_inputs_from_function(method, inputs=None):
