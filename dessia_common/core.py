@@ -1321,10 +1321,8 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
             # !!! Should we support other types ? Numeric ?
             raise NotImplementedError('Non strings keys not supported')
         jsonschema_element[key] = {
-            'type': 'object',
-            'order': order,
-            'editable': editable,
-            'title': title,
+            'type': 'object', 'order': order,
+            'editable': editable, 'title': title,
             'patternProperties': {
                 '.*': {
                     'type': TYPING_EQUIVALENCES[value_type]
