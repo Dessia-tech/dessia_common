@@ -326,7 +326,7 @@ class DessiaObject:
         # Get __init__ method and its annotations
         init = cls.__init__
         if cls._init_variables is None:
-            annotations = init.__annotations__
+            annotations = get_type_hints(init)
         else:
             annotations = cls._init_variables
 
@@ -401,11 +401,12 @@ class DessiaObject:
             if not isinstance(method, property):
                 required_args, default_args = inspect_arguments(method=method,
                                                                 merge=False)
-
-                if method.__annotations__:
+                annotations = get_type_hints(method)
+                if annotations:
                     jsonschemas[method_name] = deepcopy(JSONSCHEMA_HEADER)
                     jsonschemas[method_name]['required'] = []
-                    for i, annotation in enumerate(method.__annotations__.items()):  # TOCHECK Not actually ordered
+                    for i, annotation in enumerate(annotations.items()):
+                        # TOCHECK Not actually ordered
                         argname = annotation[0]
                         if argname not in _FORBIDDEN_ARGNAMES:
                             if argname in required_args:
@@ -1391,11 +1392,12 @@ def static_dict_jsonschema(typed_dict, title=None):
     jss_properties = jsonschema_element['properties']
 
     # Every value is required in a StaticDict
-    jsonschema_element['required'] = list(typed_dict.__annotations__.keys())
+    annotations = get_type_hints(typed_dict)
+    jsonschema_element['required'] = list(annotations.keys())
 
     # TOCHECK : Not actually ordered !
-    for i, ann in enumerate(typed_dict.__annotations__.items()):
-        jss = jsonschema_from_annotation(annotation=ann,
+    for i, annotation in enumerate(annotations.items()):
+        jss = jsonschema_from_annotation(annotation=annotation,
                                          jsonschema_element=jss_properties,
                                          order=i, title=title)
         jss_properties.update(jss)
