@@ -15,8 +15,8 @@ JsonSerializable = Dict[str, Any]
 
 
 # Measures
-# class Measure(Protocol, SupportsFloat):
-#     pass
+class Measure(float):
+    units = ''
 #     def genere_doc(self) -> str:
 #         return self.__repr__()
 # def __new__(cls):
@@ -39,8 +39,8 @@ JsonSerializable = Dict[str, Any]
 #         float.__init__(self)
 
 
-class Distance(Protocol):
-    pass
+class Distance(Measure):
+    units = 'm'
     # def __float__(self):
     #     return float.__float__(self)
 
