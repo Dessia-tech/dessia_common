@@ -13,7 +13,7 @@ import collections
 from copy import deepcopy
 import inspect
 import json
-from typing import List, Tuple, Union, Any
+from typing import List, Tuple, Union, Any, get_type_hints
 try:
     from typing import TypedDict  # >=3.8
 except ImportError:
