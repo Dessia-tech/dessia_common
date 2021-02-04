@@ -114,6 +114,9 @@ jsonschema = {
         'tuple_arg': {
             'additionalItems': False,
             'type': 'array',
+            'title': 'Tuple Arg',
+            'editable': True,
+            'order': 4,
             'items': [{'type': 'string'},
                       {'type': 'number'}]
         },
