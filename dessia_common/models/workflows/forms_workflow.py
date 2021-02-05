@@ -89,7 +89,7 @@ demo_workflow = Workflow(blocks=blocks, pipes=pipes,
 input_values = {0: 5}
 
 demo_workflow_run = demo_workflow.run(input_values=input_values,
-                                      verbose=True)
+                                      verbose=True, name='Dev Objects')
 
 # Assert to_dict, dict_to_object, hashes, eqs
 # dict_ = demo_workflow_run.to_dict()

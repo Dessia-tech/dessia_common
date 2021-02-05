@@ -248,12 +248,12 @@ class StandaloneObject(DessiaObject):
         tooltip = plot_data.Tooltip(to_disp_attribute_names=attributes,
                                     name='Tooltips')
         scatter_plot = plot_data.Scatter(axis=axis, tooltip=tooltip,
+                                         elements=points,
                                          to_disp_attribute_names=attributes,
                                          name='Scatter Plot')
 
         # Parallel Plot
         attributes = ['cx', 'cy', 'color_fill', 'color_stroke']
-
         parallel_plot = plot_data.ParallelPlot(elements=points,
                                                to_disp_attribute_names=attributes,
                                                name='Parallel Plot')
