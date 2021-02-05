@@ -13,13 +13,13 @@ import collections
 from copy import deepcopy
 import inspect
 import json
-from typing import List, Tuple, Union, Any
+from typing import List, Tuple, Union, Any, get_type_hints
 try:
     from typing import TypedDict  # >=3.8
 except ImportError:
     from mypy_extensions import TypedDict  # <=3.7
 import traceback as tb
-import dessia_common.typings as dt
+from dessia_common.typings import Measure, JsonSerializable, Subclass
 
 from importlib import import_module
 
@@ -265,7 +265,7 @@ class DessiaObject:
                  and not k.startswith('_')}
         return dict_
 
-    def to_dict(self) -> dt.JsonSerializable:
+    def to_dict(self) -> JsonSerializable:
         """
         Generic to_dict method
         """
@@ -285,7 +285,7 @@ class DessiaObject:
         return serialized_dict
 
     @classmethod
-    def dict_to_object(cls, dict_: dt.JsonSerializable) -> 'DessiaObject':
+    def dict_to_object(cls, dict_: JsonSerializable) -> 'DessiaObject':
         """
         Generic dict_to_object method
         """
@@ -326,7 +326,7 @@ class DessiaObject:
         # Get __init__ method and its annotations
         init = cls.__init__
         if cls._init_variables is None:
-            annotations = init.__annotations__
+            annotations = get_type_hints(init)
         else:
             annotations = cls._init_variables
 
@@ -401,11 +401,12 @@ class DessiaObject:
             if not isinstance(method, property):
                 required_args, default_args = inspect_arguments(method=method,
                                                                 merge=False)
-
-                if method.__annotations__:
+                annotations = get_type_hints(method)
+                if annotations:
                     jsonschemas[method_name] = deepcopy(JSONSCHEMA_HEADER)
                     jsonschemas[method_name]['required'] = []
-                    for i, annotation in enumerate(method.__annotations__.items()):  # TOCHECK Not actually ordered
+                    for i, annotation in enumerate(annotations.items()):
+                        # TOCHECK Not actually ordered
                         argname = annotation[0]
                         if argname not in _FORBIDDEN_ARGNAMES:
                             if argname in required_args:
@@ -574,7 +575,7 @@ class DessiaObject:
     def babylonjs(self, use_cdn=True, debug=False):
         self.volmdlr_volume_model().babylonjs(use_cdn=use_cdn, debug=debug)
 
-    def _displays(self, **kwargs) -> List[dt.JsonSerializable]:
+    def _displays(self, **kwargs) -> List[JsonSerializable]:
         if hasattr(self, '_display_angular'):
             # Retro-compatibility
             deprecation_warning(name='_display_angular', object_type='method',
@@ -613,7 +614,7 @@ class DessiaObject:
 
 class DisplayObject(DessiaObject):
     def __init__(self, type_: str,
-                 data: Union[dt.JsonSerializable, DessiaObject],
+                 data: Union[JsonSerializable, DessiaObject],
                  reference_path: str = '', name: str = ''):
         self.type_ = type_
         self.data = data
@@ -1330,13 +1331,20 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
                 }
             }
         }
-    elif hasattr(value, '__origin__') and value.__origin__ == dt.Subclass:
+    elif hasattr(value, '__origin__') and value.__origin__ == Subclass:
         # Several possible classes that are subclass of another one
         class_ = value.__args__[0]
         classname = class_.__module__ + '.' + class_.__name__
         jsonschema_element[key] = {'type': 'object', 'subclass_of': classname,
                                    'title': title, 'editable': editable,
                                    'order': order}
+    elif issubclass(value, Measure):
+        ann = (key, float)
+        jsonschema_element = jsonschema_from_annotation(
+            annotation=ann, jsonschema_element=jsonschema_element,
+            order=order, editable=editable, title=title
+        )
+        jsonschema_element[key]['units'] = value.units
     else:
         classname = value.__module__ + '.' + value.__name__
         if issubclass(value, DessiaObject):
@@ -1391,11 +1399,12 @@ def static_dict_jsonschema(typed_dict, title=None):
     jss_properties = jsonschema_element['properties']
 
     # Every value is required in a StaticDict
-    jsonschema_element['required'] = list(typed_dict.__annotations__.keys())
+    annotations = get_type_hints(typed_dict)
+    jsonschema_element['required'] = list(annotations.keys())
 
     # TOCHECK : Not actually ordered !
-    for i, ann in enumerate(typed_dict.__annotations__.items()):
-        jss = jsonschema_from_annotation(annotation=ann,
+    for i, annotation in enumerate(annotations.items()):
+        jss = jsonschema_from_annotation(annotation=annotation,
                                          jsonschema_element=jss_properties,
                                          order=i, title=title)
         jss_properties.update(jss)

@@ -11,7 +11,8 @@ import json
 from importlib import import_module
 import webbrowser
 import networkx as nx
-from typing import List, Union, Type, Any, Dict, Tuple, Callable
+from typing import List, Union, Type, Any, Dict,\
+    Tuple, Callable, get_type_hints
 from copy import deepcopy
 from dessia_common.templates import workflow_template
 import itertools
@@ -301,7 +302,8 @@ class ClassMethod(Block):
 
         self.argument_names = [i.name for i in inputs]
 
-        type_ = dc.type_from_annotation(method.__annotations__['return'],
+        annotations = get_type_hints(method)
+        type_ = dc.type_from_annotation(annotations['return'],
                                         method.__module__)
         output_name = 'method result of {}'.format(self.method_name)
         outputs = [TypedVariable(type_=type_, name=output_name)]
@@ -362,8 +364,9 @@ class ModelMethod(Block):
         self.argument_names = [i.name for i in inputs[1:]]
 
         result_output_name = 'method result of {}'.format(self.method_name)
-        if 'return' in method.__annotations__:
-            type_ = dc.type_from_annotation(method.__annotations__['return'],
+        annotations = get_type_hints(method)
+        if 'return' in annotations:
+            type_ = dc.type_from_annotation(annotations['return'],
                                             method.__module__)
             return_output = TypedVariable(type_=type_, name=result_output_name)
         else:
@@ -417,11 +420,12 @@ class Function(Block):
     def __init__(self, function: Callable, name: str = ''):
         self.function = function
         inputs = []
+        annotations = get_type_hints(function)
         for arg_name in inspect.signature(function).parameters.keys():
             # TODO: Check why we need TypedVariables
-            type_ = dc.type_from_annotation(function.__annotations__[arg_name])
+            type_ = dc.type_from_annotation(annotations[arg_name])
             inputs.append(TypedVariable(type_=type_, name=arg_name))
-        out_type = dc.type_from_annotation(function.__annotations__['return'])
+        out_type = dc.type_from_annotation(annotations['return'])
         outputs = [TypedVariable(type_=out_type, name='Output function')]
 
         Block.__init__(self, inputs, outputs, name=name)
@@ -1968,10 +1972,9 @@ def set_inputs_from_function(method, inputs=None):
     for iarg, argument in enumerate(args_specs.args[1:]):
         if argument not in ['self', 'progress_callback']:
             try:
-                type_ = dc.type_from_annotation(
-                    method.__annotations__[argument],
-                    module=method.__module__
-                )
+                annotations = get_type_hints(method)
+                type_ = dc.type_from_annotation(annotations[argument],
+                                                module=method.__module__)
             except KeyError:
                 msg = 'Argument {} of method/function {} has no typing'
                 raise dc.UntypedArgumentError(
