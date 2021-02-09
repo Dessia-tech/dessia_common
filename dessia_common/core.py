@@ -326,7 +326,7 @@ class DessiaObject:
         # Get __init__ method and its annotations
         init = cls.__init__
         if cls._init_variables is None:
-            annotations = get_type_hints(init)
+            annotations = get_type_hints(init, include_extras=False)
         else:
             annotations = cls._init_variables
 
@@ -401,7 +401,7 @@ class DessiaObject:
             if not isinstance(method, property):
                 required_args, default_args = inspect_arguments(method=method,
                                                                 merge=False)
-                annotations = get_type_hints(method)
+                annotations = get_type_hints(method, include_extras=False)
                 if annotations:
                     jsonschemas[method_name] = deepcopy(JSONSCHEMA_HEADER)
                     jsonschemas[method_name]['required'] = []
@@ -1399,7 +1399,7 @@ def static_dict_jsonschema(typed_dict, title=None):
     jss_properties = jsonschema_element['properties']
 
     # Every value is required in a StaticDict
-    annotations = get_type_hints(typed_dict)
+    annotations = get_type_hints(typed_dict, include_extras=False)
     jsonschema_element['required'] = list(annotations.keys())
 
     # TOCHECK : Not actually ordered !

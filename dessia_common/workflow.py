@@ -302,7 +302,7 @@ class ClassMethod(Block):
 
         self.argument_names = [i.name for i in inputs]
 
-        annotations = get_type_hints(method)
+        annotations = get_type_hints(method, include_extras=False)
         type_ = dc.type_from_annotation(annotations['return'],
                                         method.__module__)
         output_name = 'method result of {}'.format(self.method_name)
@@ -364,7 +364,7 @@ class ModelMethod(Block):
         self.argument_names = [i.name for i in inputs[1:]]
 
         result_output_name = 'method result of {}'.format(self.method_name)
-        annotations = get_type_hints(method)
+        annotations = get_type_hints(method, include_extras=False)
         if 'return' in annotations:
             type_ = dc.type_from_annotation(annotations['return'],
                                             method.__module__)
@@ -420,7 +420,7 @@ class Function(Block):
     def __init__(self, function: Callable, name: str = ''):
         self.function = function
         inputs = []
-        annotations = get_type_hints(function)
+        annotations = get_type_hints(function, include_extras=False)
         for arg_name in inspect.signature(function).parameters.keys():
             # TODO: Check why we need TypedVariables
             type_ = dc.type_from_annotation(annotations[arg_name])
@@ -1972,7 +1972,7 @@ def set_inputs_from_function(method, inputs=None):
     for iarg, argument in enumerate(args_specs.args[1:]):
         if argument not in ['self', 'progress_callback']:
             try:
-                annotations = get_type_hints(method)
+                annotations = get_type_hints(method, include_extras=False)
                 type_ = dc.type_from_annotation(annotations[argument],
                                                 module=method.__module__)
             except KeyError:
