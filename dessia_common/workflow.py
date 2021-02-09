@@ -37,6 +37,7 @@ class Variable(dc.DessiaObject):
     def __init__(self, memorize: bool = False, name: str = ''):
         self.memorize = memorize
         dc.DessiaObject.__init__(self, name=name)
+        self.position = None
 
     def to_dict(self):
         dict_ = dc.DessiaObject.base_dict(self)
@@ -1133,21 +1134,9 @@ class Workflow(Block):
         )
         return copied_workflow
 
+
     def _displays(self) -> List[JsonSerializable]:
-        self.refresh_blocks_positions()
-        workflow_dict = self.to_dict()
-        coordinates = self.layout()
-        for i, nonblock_variable in enumerate(self.nonblock_variables):
-            value = coordinates[nonblock_variable]
-            workflow_dict['nonblock_variables'][i]['position'] = value
-
-        for block in self.blocks:
-            print(str(block.__class__) == "<class 'dessia_common.workflow.WorkflowBlock'>")
-            if str(block.__class__) == "<class 'dessia_common.workflow.WorkflowBlock'>":
-                print('blyat')
-                block.workflow._displays()
-
-        display_object = dc.DisplayObject(type_='workflow', data=workflow_dict)
+        display_object = dc.DisplayObject(type_='workflow', data=self.to_dict())
         displays = [display_object.to_dict()]
         return displays
 
@@ -1195,6 +1184,8 @@ class Workflow(Block):
         for pipe in self.pipes:
             pipes.append((self.variable_indices(pipe.input_variable),
                           self.variable_indices(pipe.output_variable)))
+
+        self.refresh_blocks_positions()
 
         dict_.update({'blocks': blocks, 'pipes': pipes,
                       'output': self.variable_indices(self.outputs[0]),
@@ -1406,6 +1397,8 @@ class Workflow(Block):
         coordinates = self.layout()
         for i, block in enumerate(self.blocks):
             block.position = coordinates[block]
+        for i, nonblock in enumerate(self.nonblock_variables):
+            nonblock.position = coordinates[nonblock]
 
     def plot_graph(self):
 
