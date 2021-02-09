@@ -130,7 +130,7 @@ class Block(dc.DessiaObject):
         self.inputs = inputs
         self.outputs = outputs
         if position is None:
-            self.position = ()
+            self.position = (0,0)
         else:
             self.position = position
 
@@ -737,11 +737,6 @@ class MultiPlot(Display):
 
         values = [{a: dc.enhanced_deep_attr(o, a) for a in self.attributes}
                   for o in objects]
-        # for object_ in objects:
-        #     value = {}
-        #     for attribute in self.attributes:
-        #         value[attribute] = dc.enhanced_deep_attr(object_, attribute)
-        #     values.append(value)
 
         first_vars = self.attributes[:2]
         values2d = [{key: val[key]} for key in first_vars for val in
@@ -1145,6 +1140,10 @@ class Workflow(Block):
         for i, nonblock_variable in enumerate(self.nonblock_variables):
             value = coordinates[nonblock_variable]
             workflow_dict['nonblock_variables'][i]['position'] = value
+
+        for block in self.blocks:
+            if block.__class__ == 'WorkflowBlock':
+                block.workflow._display()
 
         display_object = dc.DisplayObject(type_='workflow', data=workflow_dict)
         displays = [display_object.to_dict()]
