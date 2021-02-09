@@ -1142,8 +1142,10 @@ class Workflow(Block):
             workflow_dict['nonblock_variables'][i]['position'] = value
 
         for block in self.blocks:
-            if block.__class__ == 'WorkflowBlock':
-                block.workflow._display()
+            print(str(block.__class__) == "<class 'dessia_common.workflow.WorkflowBlock'>")
+            if str(block.__class__) == "<class 'dessia_common.workflow.WorkflowBlock'>":
+                print('blyat')
+                block.workflow._displays()
 
         display_object = dc.DisplayObject(type_='workflow', data=workflow_dict)
         displays = [display_object.to_dict()]
