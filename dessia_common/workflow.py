@@ -131,7 +131,7 @@ class Block(dc.DessiaObject):
         self.inputs = inputs
         self.outputs = outputs
         if position is None:
-            self.position = (0,0)
+            self.position = (0, 0)
         else:
             self.position = position
 
@@ -1134,9 +1134,9 @@ class Workflow(Block):
         )
         return copied_workflow
 
-
     def _displays(self) -> List[JsonSerializable]:
-        display_object = dc.DisplayObject(type_='workflow', data=self.to_dict())
+        display_object = dc.DisplayObject(type_='workflow',
+                                          data=self.to_dict())
         displays = [display_object.to_dict()]
         return displays
 
@@ -1178,14 +1178,13 @@ class Workflow(Block):
         return jsonschemas
 
     def to_dict(self):
+        self.refresh_blocks_positions()
         dict_ = Block.to_dict(self)
         blocks = [b.to_dict() for b in self.blocks]
         pipes = []
         for pipe in self.pipes:
             pipes.append((self.variable_indices(pipe.input_variable),
                           self.variable_indices(pipe.output_variable)))
-
-        self.refresh_blocks_positions()
 
         dict_.update({'blocks': blocks, 'pipes': pipes,
                       'output': self.variable_indices(self.outputs[0]),
