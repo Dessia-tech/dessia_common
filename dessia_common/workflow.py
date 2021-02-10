@@ -18,6 +18,7 @@ import itertools
 import dessia_common as dc
 from dessia_common.vectored_objects import ParetoSettings, from_csv
 from dessia_common.typings import JsonSerializable
+import warnings
 # import plot_data
 
 # Type Aliases
@@ -242,8 +243,7 @@ class Import(Block):
         msg = 'File type {} not supported'.format(self.type_)
         raise NotImplementedError(msg)
 
-
-class InstanciateModel(Block):
+class InstantiateModel(Block):
     """
     :param model_class: The class to instanciate.
     :type model_class: DessiaObject
@@ -290,6 +290,15 @@ class InstanciateModel(Block):
 
     def package_mix(self):
         return {self.model_class.__module__.split('.')[0]: 1}
+
+
+class InstanciateModel(InstantiateModel):
+    def __init__(self, model_class: Type, name: str = ''):
+        InstanciateModel.__init__(self, model_class=model_class, name=name)
+        warnings.warn(
+            "InstanciateModel is deprecated, use InstantiateModel instead",
+            DeprecationWarning
+        )
 
 
 class ClassMethod(Block):
