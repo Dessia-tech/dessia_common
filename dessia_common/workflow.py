@@ -294,7 +294,7 @@ class InstantiateModel(Block):
 
 class InstanciateModel(InstantiateModel):
     def __init__(self, model_class: Type, name: str = ''):
-        InstanciateModel.__init__(self, model_class=model_class, name=name)
+        InstantiateModel.__init__(self, model_class=model_class, name=name)
         warnings.warn(
             "InstanciateModel is deprecated, use InstantiateModel instead",
             DeprecationWarning
