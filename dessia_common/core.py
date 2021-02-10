@@ -230,7 +230,7 @@ class DessiaObject:
         other_eq_dict = other_object.__getstate__()
 
         for key, value in eq_dict.items():
-            if not key in other_eq_dict:
+            if key not in other_eq_dict:
                 missing_keys_in_other_object.append(key)
             else:                
                 other_value = other_eq_dict[key]
@@ -254,8 +254,8 @@ class DessiaObject:
         else:
             package_version = None
 
-        dict_ = {'name': self.name,
-                 'object_class': self.__module__ + '.' + self.__class__.__name__}
+        object_class = self.__module__ + '.' + self.__class__.__name__
+        dict_ = {'name': self.name, 'object_class': object_class}
         if package_version:
             dict_['package_version'] = package_version
         return dict_
@@ -327,7 +327,7 @@ class DessiaObject:
         # Get __init__ method and its annotations
         init = cls.__init__
         if cls._init_variables is None:
-            annotations = get_type_hints(init, include_extras=False)
+            annotations = get_type_hints(init)
         else:
             annotations = cls._init_variables
 
@@ -402,7 +402,7 @@ class DessiaObject:
             if not isinstance(method, property):
                 required_args, default_args = inspect_arguments(method=method,
                                                                 merge=False)
-                annotations = get_type_hints(method, include_extras=False)
+                annotations = get_type_hints(method)
                 if annotations:
                     jsonschemas[method_name] = deepcopy(JSONSCHEMA_HEADER)
                     jsonschemas[method_name]['required'] = []
@@ -541,7 +541,7 @@ class DessiaObject:
             if model.__class__.__name__ == 'MovingVolumeModel':
                 model = model.step_volume_model(istep)
             model.freecad_export(fcstd_filepath, python_path=python_path,
-                                freecad_lib_path=freecad_lib_path,
+                                 freecad_lib_path=freecad_lib_path,
                                  export_types=export_types)
         else:
             raise NotImplementedError
@@ -557,8 +557,9 @@ class DessiaObject:
                                       canvas_id='canvas',
                                       debug_mode=False)
         else:
-            raise NotImplementedError(
-                'Class {} does not implement a plot_data method to define what to plot'.format(self.__class__.__name__))
+            msg = 'Class {} does not implement a plot_data method' \
+                  'to define what to plot'
+            raise NotImplementedError(msg.format(self.__class__.__name__))
 
     def mpl_plot(self):
         axs = []
@@ -568,8 +569,9 @@ class DessiaObject:
                     ax = data.mpl_plot()
                     axs.append(ax)
         else:
-            raise NotImplementedError(
-                'Class {} does not implement a plot_data method to define what to plot'.format(self.__class__.__name__))
+            msg = 'Class {} does not implement a plot_data method' \
+                  'to define what to plot'
+            raise NotImplementedError(msg.format(self.__class__.__name__))
 
         return axs
 
@@ -716,8 +718,9 @@ class CombinationEvolution(DessiaObject):
     _non_data_hash_attributes = ['name']
     _generic_eq = True
 
-    def __init__(self, evolution1: List[Evolution], evolution2: List[Evolution],
-                 title1: str = 'x', title2: str = 'y', name: str = ''):
+    def __init__(self, evolution1: List[Evolution],
+                 evolution2: List[Evolution], title1: str = 'x',
+                 title2: str = 'y', name: str = ''):
 
         self.evolution1 = evolution1
         self.evolution2 = evolution2
@@ -730,10 +733,12 @@ class CombinationEvolution(DessiaObject):
         DessiaObject.__init__(self, name=name)
 
     def _displays(self):
-        displays = [{'angular_component': 'app-evolution2d-combination-evolution',
-                     'table_show': False,
-                     'evolution_x': [self.x_], 'label_x': ['title1'],
-                     'evolution_y': [self.y_], 'label_y': ['title2']}]
+        displays = [{
+            'angular_component': 'app-evolution2d-combination-evolution',
+            'table_show': False,
+            'evolution_x': [self.x_], 'label_x': ['title1'],
+            'evolution_y': [self.y_], 'label_y': ['title2']
+        }]
         return displays
 
     def update(self, evol1, evol2):
@@ -849,10 +854,8 @@ def dict_merge(old_dct, merge_dct, add_keys=True, extend_lists=True):
     for key, value in merge_dct.items():
         if isinstance(dct.get(key), dict)\
                 and isinstance(value, collections.Mapping):
-            dct[key] = dict_merge(dct[key],
-                                  merge_dct[key],
-                                  add_keys=add_keys,
-                                  extend_lists=extend_lists)
+            dct[key] = dict_merge(dct[key], merge_dct[key],
+                                  add_keys=add_keys, extend_lists=extend_lists)
         elif isinstance(dct.get(key), list) and extend_lists:
             dct[key].extend(value)
         else:
@@ -1437,7 +1440,7 @@ def static_dict_jsonschema(typed_dict, title=None):
     jss_properties = jsonschema_element['properties']
 
     # Every value is required in a StaticDict
-    annotations = get_type_hints(typed_dict, include_extras=False)
+    annotations = get_type_hints(typed_dict)
     jsonschema_element['required'] = list(annotations.keys())
 
     # TOCHECK : Not actually ordered !
