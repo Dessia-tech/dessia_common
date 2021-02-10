@@ -1082,13 +1082,19 @@ def type_fullname(arg):
 
 
 def serialize_typing(typing_):
-    if hasattr(typing_, '__origin__') and typing_.__origin__ == list:
-        return 'List[' + type_fullname(typing_.__args__[0]) + ']'
-    elif hasattr(typing_, '__origin__') and typing_.__origin__ == tuple:
-        argnames = ', '.join([type_fullname(a) for a in typing_.__args__])
-        return 'Tuple[{}]'.format(argnames)
+    if is_typing(typing_):
+        origin = get_origin(typing_)
+        args = get_args(typing_)
+        if origin is list:
+            return 'List[' + type_fullname(args[0]) + ']'
+        elif origin is tuple:
+            argnames = ', '.join([type_fullname(a) for a in args])
+            return 'Tuple[{}]'.format(argnames)
+        else:
+            msg = 'Serialization of typing {} is not implemented'
+            raise NotImplementedError(msg.format(typing_))
     if isinstance(typing_, type):
-        return typing_.__module__ + '.' + typing_.__name__
+        return full_classname(typing_, compute_for='class')
     raise NotImplementedError('{} of type {}'.format(typing_, type(typing_)))
 
 
@@ -1289,10 +1295,11 @@ def type_from_annotation(type_, module):
 
 
 def is_typing(object_: Any):
-    typing_modules = ['typing', 'dessia_common.typings']
+    in_typings = object_.__module__ in ['typing', 'dessia_common.typings']
     has_module = hasattr(object_, '__module__')
     has_origin = hasattr(object_, '__origin__')
-    return has_module and has_origin and object_.__module__ in typing_modules
+    has_args = hasattr(object_, '__args__')
+    return has_module and has_origin and has_args and in_typings
 
 
 def jsonschema_from_annotation(annotation, jsonschema_element,
@@ -1387,8 +1394,8 @@ def jsonschema_sequence_recursion(value, order: int, title: str = None,
     jsonschema_element = {'type': 'array', 'order': order,
                           'editable': editable, 'title': title}
 
-    items_type = value.__args__[0]
-    if hasattr(items_type, '__origin__') and items_type.__origin__ == list:
+    items_type = get_args(value)[0]
+    if is_typing(items_type) and get_origin(items_type) is list:
         jss = jsonschema_sequence_recursion(value=items_type, order=0,
                                             title=title, editable=editable)
         jsonschema_element['items'] = jss
@@ -1474,50 +1481,55 @@ def inspect_arguments(method, merge=False):
 
 
 def deserialize_argument(type_, argument):
-    if hasattr(type_, '__origin__') and type_.__origin__ == Union:
-        # Type union
-        classes = list(type_.__args__)
-        instantiated = False
-        while instantiated is False:
-            # Find the last class in the hierarchy
-            hierarchy_lengths = [len(cls.mro()) for cls in classes]
-            children_class_index = hierarchy_lengths.index(
-                max(hierarchy_lengths))
-            children_class = classes[children_class_index]
-            try:
-                # Try to deserialize
-                # Throws KeyError if we try to put wrong dict into
-                # dict_to_object. This means we try to instantiate
-                # a children class with a parent dict_to_object
-                deserialized_argument = children_class.dict_to_object(argument)
+    if is_typing(type_):
+        origin = get_origin(type_)
+        args = get_args(type_)
+        if origin is Union:
+            # Type union
+            classes = list(args)
+            instantiated = False
+            while instantiated is False:
+                # Find the last class in the hierarchy
+                hierarchy_lengths = [len(cls.mro()) for cls in classes]
+                max_length = max(hierarchy_lengths)
+                children_class_index = hierarchy_lengths.index(max_length)
+                children_class = classes[children_class_index]
+                try:
+                    # Try to deserialize
+                    # Throws KeyError if we try to put wrong dict into
+                    # dict_to_object. This means we try to instantiate
+                    # a children class with a parent dict_to_object
+                    deserialized_arg = children_class.dict_to_object(argument)
 
-                # If it succeeds we have the right
-                # class and instantiated object
-                instantiated = True
-            except KeyError:
-                # This is not the right class, we should go see the parent
-                classes.remove(children_class)
-    elif hasattr(type_, '__origin__') and type_.__origin__ == list:
-        # Homogenous sequences (lists)
-        sequence_subtype = type_.__args__[0]
-        deserialized_argument = [deserialize_argument(sequence_subtype, arg)
-                                 for arg in argument]
-    elif hasattr(type_, '__origin__') and type_.__origin__ == tuple:
-        # Heterogenous sequences (tuples)
-        deserialized_argument = tuple([deserialize_argument(t, arg)
-                                       for t, arg in zip(type_.__args__,
-                                                         argument)])
-    elif hasattr(type_, '__origin__') and type_.__origin__ == dict:
-        # Dynamic dict
-        deserialized_argument = argument
+                    # If it succeeds we have the right
+                    # class and instantiated object
+                    instantiated = True
+                except KeyError:
+                    # This is not the right class, we should go see the parent
+                    classes.remove(children_class)
+        elif origin is list:
+            # Homogenous sequences (lists)
+            sequence_subtype = args[0]
+            deserialized_arg = [deserialize_argument(sequence_subtype, arg)
+                                for arg in argument]
+        elif origin is tuple:
+            # Heterogenous sequences (tuples)
+            deserialized_arg = tuple([deserialize_argument(t, arg)
+                                      for t, arg in zip(args, argument)])
+        elif origin is dict:
+            # Dynamic dict
+            deserialized_arg = argument
+        else:
+            msg = "Deserialization of typing {} is not implemented"
+            raise NotImplementedError(msg.format(type_))
     else:
         if type_ in TYPING_EQUIVALENCES.keys():
             if isinstance(argument, type_):
-                deserialized_argument = argument
+                deserialized_arg = argument
             else:
                 if isinstance(argument, int) and type_ == float:
                     # Explicit conversion in this case
-                    deserialized_argument = float(argument)
+                    deserialized_arg = float(argument)
                 else:
                     msg = 'Given built-in type and argument are incompatible: '
                     msg += '{} and {} in {}'.format(type(argument),
@@ -1525,11 +1537,11 @@ def deserialize_argument(type_, argument):
                     raise TypeError(msg)
         elif issubclass(type_, DessiaObject):
             # Custom classes
-            deserialized_argument = type_.dict_to_object(argument)
+            deserialized_arg = type_.dict_to_object(argument)
         else:
             # Static Dict
-            deserialized_argument = argument
-    return deserialized_argument
+            deserialized_arg = argument
+    return deserialized_arg
 
 
 # TODO recursive_type and recursive_type functions look weird
