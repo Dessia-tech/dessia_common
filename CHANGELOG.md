@@ -6,10 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased[=>0.4.3]
+### Added
+- compute_for argument to full_classname to allow classname computing for class object
+	
 ### Fixed
 - dict_to_arguments of workflows have now right signature
 
 ### Changed
+- Use of instrospection helpers for jsonschema computation from typings (get_type_hints, get_args, get_origin)
 - WorkflowRun method_jsonschemas implements Workflow method
 
 ## 0.4.2
