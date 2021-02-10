@@ -19,6 +19,7 @@ import itertools
 import dessia_common as dc
 from dessia_common.vectored_objects import ParetoSettings, from_csv
 from dessia_common.typings import JsonSerializable
+import warnings
 # import plot_data
 
 # Type Aliases
@@ -38,6 +39,7 @@ class Variable(dc.DessiaObject):
     def __init__(self, memorize: bool = False, name: str = ''):
         self.memorize = memorize
         dc.DessiaObject.__init__(self, name=name)
+        self.position = None
 
     def to_dict(self):
         dict_ = dc.DessiaObject.base_dict(self)
@@ -131,7 +133,7 @@ class Block(dc.DessiaObject):
         self.inputs = inputs
         self.outputs = outputs
         if position is None:
-            self.position = ()
+            self.position = (0, 0)
         else:
             self.position = position
 
@@ -242,8 +244,7 @@ class Import(Block):
         msg = 'File type {} not supported'.format(self.type_)
         raise NotImplementedError(msg)
 
-
-class InstanciateModel(Block):
+class InstantiateModel(Block):
     """
     :param model_class: The class to instanciate.
     :type model_class: DessiaObject
@@ -290,6 +291,15 @@ class InstanciateModel(Block):
 
     def package_mix(self):
         return {self.model_class.__module__.split('.')[0]: 1}
+
+
+class InstanciateModel(InstantiateModel):
+    def __init__(self, model_class: Type, name: str = ''):
+        InstantiateModel.__init__(self, model_class=model_class, name=name)
+        warnings.warn(
+            "InstanciateModel is deprecated, use InstantiateModel instead",
+            DeprecationWarning
+        )
 
 
 class ClassMethod(Block):
@@ -741,11 +751,6 @@ class MultiPlot(Display):
 
         values = [{a: dc.enhanced_deep_attr(o, a) for a in self.attributes}
                   for o in objects]
-        # for object_ in objects:
-        #     value = {}
-        #     for attribute in self.attributes:
-        #         value[attribute] = dc.enhanced_deep_attr(object_, attribute)
-        #     values.append(value)
 
         first_vars = self.attributes[:2]
         values2d = [{key: val[key]} for key in first_vars for val in
@@ -1143,14 +1148,8 @@ class Workflow(Block):
         return copied_workflow
 
     def _displays(self) -> List[JsonSerializable]:
-        self.refresh_blocks_positions()
-        workflow_dict = self.to_dict()
-        coordinates = self.layout()
-        for i, nonblock_variable in enumerate(self.nonblock_variables):
-            value = coordinates[nonblock_variable]
-            workflow_dict['nonblock_variables'][i]['position'] = value
-
-        display_object = dc.DisplayObject(type_='workflow', data=workflow_dict)
+        display_object = dc.DisplayObject(type_='workflow',
+                                          data=self.to_dict())
         displays = [display_object.to_dict()]
         return displays
 
@@ -1192,6 +1191,7 @@ class Workflow(Block):
         return jsonschemas
 
     def to_dict(self):
+        self.refresh_blocks_positions()
         dict_ = Block.to_dict(self)
         blocks = [b.to_dict() for b in self.blocks]
         pipes = []
@@ -1409,6 +1409,8 @@ class Workflow(Block):
         coordinates = self.layout()
         for i, block in enumerate(self.blocks):
             block.position = coordinates[block]
+        for i, nonblock in enumerate(self.nonblock_variables):
+            nonblock.position = coordinates[nonblock]
 
     def plot_graph(self):
 
