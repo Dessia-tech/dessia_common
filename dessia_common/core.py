@@ -13,7 +13,8 @@ import collections
 from copy import deepcopy
 import inspect
 import json
-from typing import List, Tuple, Union, Any, get_type_hints
+from typing import List, Tuple, Union, Any,\
+    get_type_hints, get_origin, get_args
 try:
     from typing import TypedDict  # >=3.8
 except ImportError:
@@ -1003,8 +1004,14 @@ def getdeepattr(obj, attr):
     return reduce(getattr, [obj] + attr.split('.'))
 
 
-def full_classname(object_):
-    return object_.__class__.__module__ + '.' + object_.__class__.__name__
+def full_classname(object_, compute_for: str = 'instance'):
+    if compute_for == 'instance':
+        return object_.__class__.__module__ + '.' + object_.__class__.__name__
+    elif compute_for == 'class':
+        return object_.__module__ + '.' + object_.__name__
+    else:
+        msg = 'Cannot compute {} full classname for object {}'
+        raise NotImplementedError(msg.format(compute_for, object_))
 
 
 def serialization_test(obj):
@@ -1290,8 +1297,8 @@ def is_typing(object_: Any):
 
 def jsonschema_from_annotation(annotation, jsonschema_element,
                                order, editable=None, title=None):
-    key, value = annotation
-    if isinstance(value, str):
+    key, typing_ = annotation
+    if isinstance(typing_, str):
         raise ValueError
 
     if title is None:
@@ -1299,67 +1306,74 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
     if editable is None:
         editable = key not in ['return']
 
-    if value in TYPING_EQUIVALENCES.keys():
+    if typing_ in TYPING_EQUIVALENCES.keys():
         # Python Built-in type
-        jsonschema_element[key] = {'type': TYPING_EQUIVALENCES[value],
+        jsonschema_element[key] = {'type': TYPING_EQUIVALENCES[typing_],
                                    'title': title, 'editable': editable,
                                    'order': order}
-    elif is_typing(value) and value.__origin__ == Union:
-        # Types union
-        classnames = [a.__module__ + '.' + a.__name__ for a in value.__args__]
-        jsonschema_element[key] = {'type': 'object', 'classes': classnames,
-                                   'title': title, 'editable': editable,
-                                   'order': order}
-    elif is_typing(value) and value.__origin__ == list:
-        # Homogenous sequences
-        jsonschema_element[key] = jsonschema_sequence_recursion(
-            value=value, order=order, title=title, editable=editable
-        )
-    elif is_typing(value) and value.__origin__ == tuple:
-        # Heterogenous sequences (tuples)
-        items = []
-        for type_ in value.__args__:
-            items.append({'type': TYPING_EQUIVALENCES[type_]})
-        jsonschema_element[key] = {'additionalItems': False, 'type': 'array',
-                                   'items': items, 'title': title,
-                                   'editable': editable, 'order': order}
-    elif is_typing(value) and value.__origin__ == dict:
-        # Dynamially created dict structure
-        key_type, value_type = value.__args__
-        if key_type != str:
-            # !!! Should we support other types ? Numeric ?
-            raise NotImplementedError('Non strings keys not supported')
-        jsonschema_element[key] = {
-            'type': 'object', 'order': order,
-            'editable': editable, 'title': title,
-            'patternProperties': {
-                '.*': {
-                    'type': TYPING_EQUIVALENCES[value_type]
+    elif is_typing(typing_):
+        origin = get_origin(typing_)
+        args = get_args(typing_)
+        if origin is Union:
+            # Types union
+            classnames = [full_classname(a, compute_for='class') for a in args]
+            jsonschema_element[key] = {'type': 'object', 'classes': classnames,
+                                       'title': title, 'editable': editable,
+                                       'order': order}
+        elif origin is list:
+            # Homogenous sequences
+            jsonschema_element[key] = jsonschema_sequence_recursion(
+                value=typing_, order=order, title=title, editable=editable
+            )
+        elif origin is tuple:
+            # Heterogenous sequences (tuples)
+            items = []
+            for type_ in args:
+                items.append({'type': TYPING_EQUIVALENCES[type_]})
+            jsonschema_element[key] = {'additionalItems': False,
+                                       'type': 'array', 'items': items,
+                                       'title': title, 'editable': editable,
+                                       'order': order}
+        elif origin is dict:
+            # Dynamially created dict structure
+            key_type, value_type = args
+            if key_type != str:
+                # !!! Should we support other types ? Numeric ?
+                raise NotImplementedError('Non strings keys not supported')
+            jsonschema_element[key] = {
+                'type': 'object', 'order': order,
+                'editable': editable, 'title': title,
+                'patternProperties': {
+                    '.*': {
+                        'type': TYPING_EQUIVALENCES[value_type]
+                    }
                 }
             }
-        }
-    elif is_typing(value) and value.__origin__ == Subclass:
-        # Several possible classes that are subclass of another one
-        class_ = value.__args__[0]
-        classname = class_.__module__ + '.' + class_.__name__
-        jsonschema_element[key] = {'type': 'object', 'subclass_of': classname,
-                                   'title': title, 'editable': editable,
-                                   'order': order}
-    elif issubclass(value, Measure):
+        elif origin is Subclass:
+            # Several possible classes that are subclass of another one
+            class_ = args[0]
+            classname = full_classname(object_=class_, compute_for='class')
+            jsonschema_element[key] = {'type': 'object', 'order': order,
+                                       'subclass_of': classname,
+                                       'title': title, 'editable': editable}
+        else:
+            msg = "Jsonschema computation of typing {} is not implemented"
+            raise NotImplementedError(msg.format(typing_))
+    elif issubclass(typing_, Measure):
         ann = (key, float)
         jsonschema_element = jsonschema_from_annotation(
             annotation=ann, jsonschema_element=jsonschema_element,
             order=order, editable=editable, title=title
         )
-        jsonschema_element[key]['units'] = value.units
+        jsonschema_element[key]['units'] = typing_.units
     else:
-        classname = value.__module__ + '.' + value.__name__
-        if issubclass(value, DessiaObject):
+        classname = full_classname(object_=typing_, compute_for='class')
+        if issubclass(typing_, DessiaObject):
             # Dessia custom classes
             jsonschema_element[key] = {'type': 'object'}
         else:
             # Statically created dict structure
-            jsonschema_element[key] = static_dict_jsonschema(value)
+            jsonschema_element[key] = static_dict_jsonschema(typing_)
         jsonschema_element[key].update({'title': title, 'order': order,
                                         'editable': editable,
                                         'classes': [classname]})
