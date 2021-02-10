@@ -1281,6 +1281,13 @@ def type_from_annotation(type_, module):
     return type_
 
 
+def is_typing(object_: Any):
+    typing_modules = ['typing', 'dessia_common.typings']
+    has_module = hasattr(object_, '__module__')
+    has_origin = hasattr(object_, '__origin__')
+    return has_module and has_origin and object_.__module__ in typing_modules
+
+
 def jsonschema_from_annotation(annotation, jsonschema_element,
                                order, editable=None, title=None):
     key, value = annotation
@@ -1297,18 +1304,18 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
         jsonschema_element[key] = {'type': TYPING_EQUIVALENCES[value],
                                    'title': title, 'editable': editable,
                                    'order': order}
-    elif hasattr(value, '__origin__') and value.__origin__ == Union:
+    elif is_typing(value) and value.__origin__ == Union:
         # Types union
         classnames = [a.__module__ + '.' + a.__name__ for a in value.__args__]
         jsonschema_element[key] = {'type': 'object', 'classes': classnames,
                                    'title': title, 'editable': editable,
                                    'order': order}
-    elif hasattr(value, '__origin__') and value.__origin__ == list:
+    elif is_typing(value) and value.__origin__ == list:
         # Homogenous sequences
         jsonschema_element[key] = jsonschema_sequence_recursion(
             value=value, order=order, title=title, editable=editable
         )
-    elif hasattr(value, '__origin__') and value.__origin__ == tuple:
+    elif is_typing(value) and value.__origin__ == tuple:
         # Heterogenous sequences (tuples)
         items = []
         for type_ in value.__args__:
@@ -1316,7 +1323,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
         jsonschema_element[key] = {'additionalItems': False, 'type': 'array',
                                    'items': items, 'title': title,
                                    'editable': editable, 'order': order}
-    elif hasattr(value, '__origin__') and value.__origin__ == dict:
+    elif is_typing(value) and value.__origin__ == dict:
         # Dynamially created dict structure
         key_type, value_type = value.__args__
         if key_type != str:
@@ -1331,7 +1338,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
                 }
             }
         }
-    elif hasattr(value, '__origin__') and value.__origin__ == Subclass:
+    elif is_typing(value) and value.__origin__ == Subclass:
         # Several possible classes that are subclass of another one
         class_ = value.__args__[0]
         classname = class_.__module__ + '.' + class_.__name__
