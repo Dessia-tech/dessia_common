@@ -160,7 +160,7 @@ class StandaloneObject(DessiaObject):
                  builtin_list: List[int],
                  union_arg: Union[StandaloneSubobject,
                                   EnhancedStandaloneSubobject],
-                 inheritance_list: List[Subclass[StandaloneSubobject]],
+                 inheritance_list: List[Subclass[StandaloneSubobject]] = None,
                  name: str = 'Standalone Object Demo'):
         self.union_arg = union_arg
         self.builtin_list = builtin_list
