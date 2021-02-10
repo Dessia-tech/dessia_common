@@ -13,7 +13,7 @@ import collections
 from copy import deepcopy
 import inspect
 import json
-from typing import List, Tuple, Union, Any,\
+from typing import List, Tuple, Union, Any, \
     get_type_hints, get_origin, get_args
 try:
     from typing import TypedDict  # >=3.8
@@ -1322,11 +1322,21 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
         origin = get_origin(typing_)
         args = get_args(typing_)
         if origin is Union:
-            # Types union
-            classnames = [full_classname(a, compute_for='class') for a in args]
-            jsonschema_element[key] = {'type': 'object', 'classes': classnames,
-                                       'title': title, 'editable': editable,
-                                       'order': order}
+            if len(args) == 2 and type(None) in args:
+                # This is a false Union => Is a default value set to None
+                ann = (key, args[0])
+                jsonschema_element = jsonschema_from_annotation(
+                    annotation=ann, jsonschema_element=jsonschema_element,
+                    order=order, editable=editable, title=title
+                )
+            else:
+                # Types union
+                classnames = [full_classname(object_=a, compute_for='class')
+                              for a in args]
+                jsonschema_element[key] = {
+                    'type': 'object', 'title': title, 'classes': classnames,
+                    'editable': editable, 'order': order
+                }
         elif origin is list:
             # Homogenous sequences
             jsonschema_element[key] = jsonschema_sequence_recursion(
