@@ -11,13 +11,15 @@ import json
 from importlib import import_module
 import webbrowser
 import networkx as nx
-from typing import List, Union, Type, Any, Dict, Tuple, Callable
+from typing import List, Union, Type, Any, Dict,\
+    Tuple, Callable, get_type_hints
 from copy import deepcopy
 from dessia_common.templates import workflow_template
 import itertools
 import dessia_common as dc
 from dessia_common.vectored_objects import ParetoSettings, from_csv
 from dessia_common.typings import JsonSerializable
+import warnings
 # import plot_data
 
 # Type Aliases
@@ -37,6 +39,7 @@ class Variable(dc.DessiaObject):
     def __init__(self, memorize: bool = False, name: str = ''):
         self.memorize = memorize
         dc.DessiaObject.__init__(self, name=name)
+        self.position = None
 
     def to_dict(self):
         dict_ = dc.DessiaObject.base_dict(self)
@@ -130,7 +133,7 @@ class Block(dc.DessiaObject):
         self.inputs = inputs
         self.outputs = outputs
         if position is None:
-            self.position = ()
+            self.position = (0, 0)
         else:
             self.position = position
 
@@ -241,8 +244,7 @@ class Import(Block):
         msg = 'File type {} not supported'.format(self.type_)
         raise NotImplementedError(msg)
 
-
-class InstanciateModel(Block):
+class InstantiateModel(Block):
     """
     :param model_class: The class to instanciate.
     :type model_class: DessiaObject
@@ -291,6 +293,15 @@ class InstanciateModel(Block):
         return {self.model_class.__module__.split('.')[0]: 1}
 
 
+class InstanciateModel(InstantiateModel):
+    def __init__(self, model_class: Type, name: str = ''):
+        InstantiateModel.__init__(self, model_class=model_class, name=name)
+        warnings.warn(
+            "InstanciateModel is deprecated, use InstantiateModel instead",
+            DeprecationWarning
+        )
+
+
 class ClassMethod(Block):
     def __init__(self, class_: Type, method_name: str, name: str = ''):
         self.class_ = class_
@@ -301,7 +312,8 @@ class ClassMethod(Block):
 
         self.argument_names = [i.name for i in inputs]
 
-        type_ = dc.type_from_annotation(method.__annotations__['return'],
+        annotations = get_type_hints(method)
+        type_ = dc.type_from_annotation(annotations['return'],
                                         method.__module__)
         output_name = 'method result of {}'.format(self.method_name)
         outputs = [TypedVariable(type_=type_, name=output_name)]
@@ -362,8 +374,9 @@ class ModelMethod(Block):
         self.argument_names = [i.name for i in inputs[1:]]
 
         result_output_name = 'method result of {}'.format(self.method_name)
-        if 'return' in method.__annotations__:
-            type_ = dc.type_from_annotation(method.__annotations__['return'],
+        annotations = get_type_hints(method)
+        if 'return' in annotations:
+            type_ = dc.type_from_annotation(annotations['return'],
                                             method.__module__)
             return_output = TypedVariable(type_=type_, name=result_output_name)
         else:
@@ -417,11 +430,12 @@ class Function(Block):
     def __init__(self, function: Callable, name: str = ''):
         self.function = function
         inputs = []
+        annotations = get_type_hints(function)
         for arg_name in inspect.signature(function).parameters.keys():
             # TODO: Check why we need TypedVariables
-            type_ = dc.type_from_annotation(function.__annotations__[arg_name])
+            type_ = dc.type_from_annotation(annotations[arg_name])
             inputs.append(TypedVariable(type_=type_, name=arg_name))
-        out_type = dc.type_from_annotation(function.__annotations__['return'])
+        out_type = dc.type_from_annotation(annotations['return'])
         outputs = [TypedVariable(type_=out_type, name='Output function')]
 
         Block.__init__(self, inputs, outputs, name=name)
@@ -737,11 +751,6 @@ class MultiPlot(Display):
 
         values = [{a: dc.enhanced_deep_attr(o, a) for a in self.attributes}
                   for o in objects]
-        # for object_ in objects:
-        #     value = {}
-        #     for attribute in self.attributes:
-        #         value[attribute] = dc.enhanced_deep_attr(object_, attribute)
-        #     values.append(value)
 
         first_vars = self.attributes[:2]
         values2d = [{key: val[key]} for key in first_vars for val in
@@ -756,9 +765,10 @@ class MultiPlot(Display):
                                         name='Scatter Plot')
 
         rgbs = [[192, 11, 11], [14, 192, 11], [11, 11, 192]]
-        parallelplot = plot_data.ParallelPlot(disposition='horizontal',
-                                              to_disp_attribute_names=self.attributes,
-                                              rgbs=rgbs, elements=values)
+        parallelplot = plot_data.ParallelPlot(
+            disposition='horizontal', to_disp_attribute_names=self.attributes,
+            rgbs=rgbs, elements=values
+        )
         objects = [scatterplot, parallelplot]
         sizes = [plot_data.Window(width=560, height=300),
                  plot_data.Window(width=560, height=300)]
@@ -1139,14 +1149,8 @@ class Workflow(Block):
         return copied_workflow
 
     def _displays(self) -> List[JsonSerializable]:
-        self.refresh_blocks_positions()
-        workflow_dict = self.to_dict()
-        coordinates = self.layout()
-        for i, nonblock_variable in enumerate(self.nonblock_variables):
-            value = coordinates[nonblock_variable]
-            workflow_dict['nonblock_variables'][i]['position'] = value
-
-        display_object = dc.DisplayObject(type_='workflow', data=workflow_dict)
+        display_object = dc.DisplayObject(type_='workflow',
+                                          data=self.to_dict())
         displays = [display_object.to_dict()]
         return displays
 
@@ -1188,6 +1192,7 @@ class Workflow(Block):
         return jsonschemas
 
     def to_dict(self):
+        self.refresh_blocks_positions()
         dict_ = Block.to_dict(self)
         blocks = [b.to_dict() for b in self.blocks]
         pipes = []
@@ -1405,6 +1410,8 @@ class Workflow(Block):
         coordinates = self.layout()
         for i, block in enumerate(self.blocks):
             block.position = coordinates[block]
+        for i, nonblock in enumerate(self.nonblock_variables):
+            nonblock.position = coordinates[nonblock]
 
     def plot_graph(self):
 
@@ -1968,10 +1975,9 @@ def set_inputs_from_function(method, inputs=None):
     for iarg, argument in enumerate(args_specs.args[1:]):
         if argument not in ['self', 'progress_callback']:
             try:
-                type_ = dc.type_from_annotation(
-                    method.__annotations__[argument],
-                    module=method.__module__
-                )
+                annotations = get_type_hints(method)
+                type_ = dc.type_from_annotation(annotations[argument],
+                                                module=method.__module__)
             except KeyError:
                 msg = 'Argument {} of method/function {} has no typing'
                 raise dc.UntypedArgumentError(
