@@ -774,7 +774,7 @@ class MultiPlot(Display):
         sizes = [plot_data.Window(width=560, height=300),
                  plot_data.Window(width=560, height=300)]
         coords = [(0, 0), (0, 300)]
-        multiplot = plot_data.MultiplePlots(elements=values, objects=objects,
+        multiplot = plot_data.MultiplePlots(elements=values, plots=objects,
                                             sizes=sizes, coords=coords,
                                             name='Results plot')
         display_ = dc.DisplayObject(type_='plot_data', data=multiplot,

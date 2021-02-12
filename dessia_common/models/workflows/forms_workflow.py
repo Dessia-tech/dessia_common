@@ -1,4 +1,4 @@
-from dessia_common.workflow import InstanciateModel, ModelMethod,\
+from dessia_common.workflow import InstantiateModel, ModelMethod,\
     ModelAttribute, Pipe, Workflow, WorkflowBlock, ForEach, MultiPlot
 from dessia_common.forms import Generator, Optimizer
 from dessia_common import DessiaObject
@@ -35,7 +35,7 @@ from dessia_common import DessiaObject
 #         self.model_to_optimize.value += optimization_value
 
 
-instanciate_generator = InstanciateModel(model_class=Generator,
+instanciate_generator = InstantiateModel(model_class=Generator,
                                          name='Instantiate Generator')
 generator_generate = ModelMethod(model_class=Generator,
                                  method_name='generate',
@@ -44,7 +44,7 @@ attribute_selection = ModelAttribute(attribute_name='models',
                                      name='Attribute Selection')
 
 # Subworkflow of model optimization
-instanciate_optimizer = InstanciateModel(model_class=Optimizer,
+instanciate_optimizer = InstantiateModel(model_class=Optimizer,
                                          name='Instantiate Optimizer')
 optimization = ModelMethod(model_class=Optimizer, method_name='optimize',
                            name='Optimization')
