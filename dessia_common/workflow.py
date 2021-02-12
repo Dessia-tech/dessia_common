@@ -426,28 +426,28 @@ class ModelMethod(Block):
         return {self.model_class.__module__.split('.')[0]: 1}
 
 
-class Function(Block):
-    def __init__(self, function: Callable, name: str = ''):
-        self.function = function
-        inputs = []
-        annotations = get_type_hints(function)
-        for arg_name in inspect.signature(function).parameters.keys():
-            # TODO: Check why we need TypedVariables
-            type_ = dc.type_from_annotation(annotations[arg_name])
-            inputs.append(TypedVariable(type_=type_, name=arg_name))
-        out_type = dc.type_from_annotation(annotations['return'])
-        outputs = [TypedVariable(type_=out_type, name='Output function')]
-
-        Block.__init__(self, inputs, outputs, name=name)
-
-    def equivalent_hash(self):
-        return int(hash(self.function.__name__) % 10e5)
-
-    def equivalent(self, other):
-        return self.function == other.function
-
-    def evaluate(self, values):
-        return self.function(*values)
+# class Function(Block):
+#     def __init__(self, function: Callable, name: str = ''):
+#         self.function = function
+#         inputs = []
+#         annotations = get_type_hints(function)
+#         for arg_name in inspect.signature(function).parameters.keys():
+#             # TODO: Check why we need TypedVariables
+#             type_ = dc.type_from_annotation(annotations[arg_name])
+#             inputs.append(TypedVariable(type_=type_, name=arg_name))
+#         out_type = dc.type_from_annotation(annotations['return'])
+#         outputs = [TypedVariable(type_=out_type, name='Output function')]
+#
+#         Block.__init__(self, inputs, outputs, name=name)
+#
+#     def equivalent_hash(self):
+#         return int(hash(self.function.__name__) % 10e5)
+#
+#     def equivalent(self, other):
+#         return self.function == other.function
+#
+#     def evaluate(self, values):
+#         return self.function(*values)
 
 
 class Sequence(Block):
