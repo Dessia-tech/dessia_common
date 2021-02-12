@@ -11,14 +11,13 @@ import json
 from importlib import import_module
 import webbrowser
 import networkx as nx
-from typing import List, Union, Type, Any, Dict,\
-    Tuple, Callable, get_type_hints
+from typing import List, Union, Type, Any, Dict, Tuple, get_type_hints
 from copy import deepcopy
 from dessia_common.templates import workflow_template
 import itertools
 import dessia_common as dc
 from dessia_common.vectored_objects import ParetoSettings, from_csv
-from dessia_common.typings import JsonSerializable
+from dessia_common.typings import JsonSerializable, Subclass
 import warnings
 # import plot_data
 
@@ -244,6 +243,7 @@ class Import(Block):
         msg = 'File type {} not supported'.format(self.type_)
         raise NotImplementedError(msg)
 
+
 class InstantiateModel(Block):
     """
     :param model_class: The class to instanciate.
@@ -252,7 +252,7 @@ class InstantiateModel(Block):
     :type name: str
     """
 
-    def __init__(self, model_class: Type, name: str = ''):
+    def __init__(self, model_class: Subclass[dc.DessiaObject], name: str = ''):
         self.model_class = model_class
         inputs = []
 
@@ -294,7 +294,7 @@ class InstantiateModel(Block):
 
 
 class InstanciateModel(InstantiateModel):
-    def __init__(self, model_class: Type, name: str = ''):
+    def __init__(self, model_class: Subclass[dc.DessiaObject], name: str = ''):
         InstantiateModel.__init__(self, model_class=model_class, name=name)
         warnings.warn(
             "InstanciateModel is deprecated, use InstantiateModel instead",
@@ -303,7 +303,8 @@ class InstanciateModel(InstantiateModel):
 
 
 class ClassMethod(Block):
-    def __init__(self, class_: Type, method_name: str, name: str = ''):
+    def __init__(self, class_: Subclass[dc.DessiaObject],
+                 method_name: str, name: str = ''):
         self.class_ = class_
         self.method_name = method_name
         inputs = []
@@ -451,18 +452,18 @@ class ModelMethod(Block):
 
 
 class Sequence(Block):
-    def __init__(self, number_arguments: int,
-                 type_: Type = None, name: str = ''):
+    def __init__(self, number_arguments: int, name: str = ''):
+        # type_: Subclass[dc.DessiaObject] = None,
         self.number_arguments = number_arguments
         prefix = 'Sequence element {}'
-        if type_ is None:
-            inputs = [Variable(name=prefix.format(i))
-                      for i in range(self.number_arguments)]
-        else:
-            inputs = [TypedVariable(type_=type_, name=prefix.format(i))
-                      for i in range(self.number_arguments)]
+        inputs = [Variable(name=prefix.format(i))
+                  for i in range(self.number_arguments)]
+        # if type_ is None:
+        # else:
+        #     inputs = [TypedVariable(type_=type_, name=prefix.format(i))
+        #               for i in range(self.number_arguments)]
 
-        self.type_ = type_
+        # self.type_ = type_
         outputs = [TypedVariable(type_=list, name='sequence')]
         Block.__init__(self, inputs, outputs, name=name)
 
@@ -477,20 +478,20 @@ class Sequence(Block):
     def to_dict(self):
         dict_ = Block.to_dict(self)
         dict_['number_arguments'] = self.number_arguments
-        if self.type_ is not None:
-            dict_['type_'] = dc.serialize_typing(self.type_)
-        else:
-            dict_['type_'] = None
+        # if self.type_ is not None:
+        #     dict_['type_'] = dc.serialize_typing(self.type_)
+        # else:
+        #     dict_['type_'] = None
         return dict_
 
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_):
-        if dict_['type_'] is not None:
-            type_ = dc.deserialize_typing(dict_['type_'])
-        else:
-            type_ = None
-        return cls(dict_['number_arguments'], type_, dict_['name'])
+        # if dict_['type_'] is not None:
+        #     type_ = dc.deserialize_typing(dict_['type_'])
+        # else:
+        #     type_ = None
+        return cls(dict_['number_arguments'], dict_['name'])
 
     def evaluate(self, values):
         return [[values[var] for var in self.inputs]]
