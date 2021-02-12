@@ -19,6 +19,7 @@ import dessia_common as dc
 from dessia_common.vectored_objects import ParetoSettings, from_csv
 from dessia_common.typings import JsonSerializable
 import warnings
+
 # import plot_data
 
 # Type Aliases
@@ -242,6 +243,7 @@ class Import(Block):
             return [array, variables]
         msg = 'File type {} not supported'.format(self.type_)
         raise NotImplementedError(msg)
+
 
 class InstantiateModel(Block):
     """
@@ -803,6 +805,7 @@ class ParallelPlot(MultiPlot):
     :param name: The name of the block.
     :type name: str
     """
+
     def __init__(self, attributes: List[str], order: int = 0, name: str = ''):
         dc.deprecation_warning(self.__class__.__name__, 'Class', 'MultiPlot')
         MultiPlot.__init__(self, attributes=attributes, order=order, name=name)
@@ -1674,9 +1677,13 @@ class WorkflowBlock(Block):
     for example
     """
 
-    def __init__(self, workflow: Workflow, name: str = ''):
+    def __init__(self, workflow: Workflow, input_connections: Tuple[Tuple[float, float, float],
+                                                                    Tuple[float, float, float]] = None,
+                 output_connections: Tuple[Tuple[float, float, float],
+                                           Tuple[float, float, float]] = None, name: str = ''):
         self.workflow = workflow
-
+        self.input_connections = input_connections
+        self.output_connections = output_connections
         inputs = []
         for variable in self.workflow.inputs:
             input_ = variable.copy()
@@ -1834,7 +1841,7 @@ class WorkflowRun(dc.DessiaObject):
                 strindices = str(self.workflow.variable_indices(input_))
                 local_values[input_] = self.variables_values[strindices]
                 if i == block._displayable_input:
-                    reference_path = 'variables_values/'+strindices
+                    reference_path = 'variables_values/' + strindices
             display = block.display_(local_values=local_values,
                                      reference_path=reference_path)
             displays.extend(display)
@@ -1892,7 +1899,7 @@ class WorkflowRun(dc.DessiaObject):
 
     def method_dict(self, method_name: str = None,
                     method_jsonschema: Any = None):
-        if method_name is not None and method_name == 'run_again'\
+        if method_name is not None and method_name == 'run_again' \
                 and method_jsonschema is not None:
             dict_ = dc.serialize_dict(self.input_values)
             for property_, value in method_jsonschema['properties'].items():
