@@ -6,9 +6,9 @@ embedded_subobject = EmbeddedSubobject()
 dynamic_dict = {'key0': True,
                 'key1': False}
 static_dict = {'name': 'StaticDict',
-               'value': -458.256,
-               'is_valid': True,
-               'subobject': EmbeddedSubobject()}
+               'float_value': -458.256,
+               'int_value': 10,
+               'is_valid': True}
 tuple_arg = ('Tuple', 1)
 intarg = 5
 strarg = 'TestStr'
@@ -40,18 +40,10 @@ jsonschema = {
     'definitions': {},
     '$schema': 'http://json-schema.org/draft-07/schema#',
     'type': 'object',
-    'required': ['standalone_subobject',
-                 'embedded_subobject',
-                 'dynamic_dict',
-                 'static_dict',
-                 'tuple_arg',
-                 'intarg',
-                 'strarg',
-                 'object_list',
-                 'subobject_list',
-                 'builtin_list',
-                 'union_arg',
-                 'inheritance_list'],
+    'required': ['standalone_subobject', 'embedded_subobject',
+                 'dynamic_dict', 'static_dict', 'tuple_arg', 'intarg',
+                 'strarg', 'object_list', 'subobject_list', 'builtin_list',
+                 'union_arg', 'inheritance_list'],
     'properties': {
         'standalone_subobject': {
             'type': 'object',
@@ -78,7 +70,7 @@ jsonschema = {
             'definitions': {},
             '$schema': 'http://json-schema.org/draft-07/schema#',
             'type': 'object',
-            'required': ['name', 'value', 'is_valid', 'subobject'],
+            'required': ['name', 'float_value', 'int_value', 'is_valid'],
             'properties': {
                 'name': {
                     'type': 'string',
@@ -86,24 +78,23 @@ jsonschema = {
                     'editable': True,
                     'order': 0
                 },
-                'value': {
+                'float_value': {
                     'type': 'number',
-                    'title': 'Value',
+                    'title': 'Float Value',
                     'editable': True,
                     'order': 1
+                },
+                'int_value': {
+                    'type': 'number',
+                    'title': 'Int Value',
+                    'editable': True,
+                    'order': 2
                 },
                 'is_valid': {
                     'type': 'boolean',
                     'title': 'Is Valid',
                     'editable': True,
-                    'order': 2
-                },
-                'subobject': {
-                    'type': 'object',
-                    'title': 'Subobject',
-                    'order': 3,
-                    'editable': True,
-                    'classes': ['dessia_common.forms.EmbeddedSubobject']
+                    'order': 3
                 }
             },
             'title': 'Static Dict',
@@ -117,8 +108,7 @@ jsonschema = {
             'title': 'Tuple Arg',
             'editable': True,
             'order': 4,
-            'items': [{'type': 'string'},
-                      {'type': 'number'}]
+            'items': [{'type': 'string'}, {'type': 'number'}]
         },
         'intarg': {
             'type': 'number',
@@ -228,9 +218,9 @@ deepdict = enhanced_deep_attr(obj=standalone_object,
 assert deepdict is True
 
 deeperlist = enhanced_deep_attr(obj=standalone_object,
-                                sequence=['static_dict', 'subobject',
-                                          'embedded_list', 1])
-assert deeperlist == 2
+                                sequence=['inheritance_list', 0,
+                                          'boolarg'])
+assert deeperlist
 
 directattr = enhanced_deep_attr(obj=standalone_object,
                                 sequence=['strarg'])
