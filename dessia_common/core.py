@@ -608,6 +608,9 @@ class DessiaObject:
                     display_ = DisplayObject(type_='plot_data', data=plot,
                                              reference_path=reference_path)
                     displays.append(display_.to_dict())
+            else:
+                msg = 'plot_data must return a sequence. Found {}'
+                raise ValueError(msg.format(type(plot_data)))
         if hasattr(self, 'to_markdown'):
             display_ = DisplayObject(type_='markdown', data=self.to_markdown(),
                                      reference_path=reference_path)

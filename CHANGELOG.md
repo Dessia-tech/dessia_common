@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased[=>0.4.3]
 ### Added
+- raise ValueError if plot_data is not a sequence
 - compute_for argument to full_classname to allow classname computing for class object
 	
 ### Fixed
