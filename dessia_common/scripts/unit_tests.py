@@ -114,6 +114,9 @@ jsonschema = {
         'tuple_arg': {
             'additionalItems': False,
             'type': 'array',
+            'title': 'Tuple Arg',
+            'editable': True,
+            'order': 4,
             'items': [{'type': 'string'},
                       {'type': 'number'}]
         },
@@ -180,6 +183,7 @@ jsonschema = {
             'editable': True,
             'title': 'Inheritance List',
             'order': 11,
+            'default_value': None,
             'items': {'type': 'object',
                       'subclass_of': 'dessia_common.forms.StandaloneSubobject',
                       'title': 'Inheritance List',

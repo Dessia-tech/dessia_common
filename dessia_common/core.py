@@ -13,13 +13,14 @@ import collections
 from copy import deepcopy
 import inspect
 import json
-from typing import List, Tuple, Union, Any
+from typing import List, Tuple, Union, Any, \
+    get_type_hints, get_origin, get_args
 try:
     from typing import TypedDict  # >=3.8
 except ImportError:
     from mypy_extensions import TypedDict  # <=3.7
 import traceback as tb
-import dessia_common.typings as dt
+from dessia_common.typings import Measure, JsonSerializable, Subclass
 
 from importlib import import_module
 
@@ -229,7 +230,7 @@ class DessiaObject:
         other_eq_dict = other_object.__getstate__()
 
         for key, value in eq_dict.items():
-            if not key in other_eq_dict:
+            if key not in other_eq_dict:
                 missing_keys_in_other_object.append(key)
             else:                
                 other_value = other_eq_dict[key]
@@ -253,8 +254,8 @@ class DessiaObject:
         else:
             package_version = None
 
-        dict_ = {'name': self.name,
-                 'object_class': self.__module__ + '.' + self.__class__.__name__}
+        object_class = self.__module__ + '.' + self.__class__.__name__
+        dict_ = {'name': self.name, 'object_class': object_class}
         if package_version:
             dict_['package_version'] = package_version
         return dict_
@@ -265,7 +266,7 @@ class DessiaObject:
                  and not k.startswith('_')}
         return dict_
 
-    def to_dict(self) -> dt.JsonSerializable:
+    def to_dict(self) -> JsonSerializable:
         """
         Generic to_dict method
         """
@@ -285,7 +286,7 @@ class DessiaObject:
         return serialized_dict
 
     @classmethod
-    def dict_to_object(cls, dict_: dt.JsonSerializable) -> 'DessiaObject':
+    def dict_to_object(cls, dict_: JsonSerializable) -> 'DessiaObject':
         """
         Generic dict_to_object method
         """
@@ -326,7 +327,7 @@ class DessiaObject:
         # Get __init__ method and its annotations
         init = cls.__init__
         if cls._init_variables is None:
-            annotations = init.__annotations__
+            annotations = get_type_hints(init)
         else:
             annotations = cls._init_variables
 
@@ -401,11 +402,12 @@ class DessiaObject:
             if not isinstance(method, property):
                 required_args, default_args = inspect_arguments(method=method,
                                                                 merge=False)
-
-                if method.__annotations__:
+                annotations = get_type_hints(method)
+                if annotations:
                     jsonschemas[method_name] = deepcopy(JSONSCHEMA_HEADER)
                     jsonschemas[method_name]['required'] = []
-                    for i, annotation in enumerate(method.__annotations__.items()):  # TOCHECK Not actually ordered
+                    for i, annotation in enumerate(annotations.items()):
+                        # TOCHECK Not actually ordered
                         argname = annotation[0]
                         if argname not in _FORBIDDEN_ARGNAMES:
                             if argname in required_args:
@@ -539,7 +541,7 @@ class DessiaObject:
             if model.__class__.__name__ == 'MovingVolumeModel':
                 model = model.step_volume_model(istep)
             model.freecad_export(fcstd_filepath, python_path=python_path,
-                                freecad_lib_path=freecad_lib_path,
+                                 freecad_lib_path=freecad_lib_path,
                                  export_types=export_types)
         else:
             raise NotImplementedError
@@ -555,8 +557,9 @@ class DessiaObject:
                                       canvas_id='canvas',
                                       debug_mode=False)
         else:
-            raise NotImplementedError(
-                'Class {} does not implement a plot_data method to define what to plot'.format(self.__class__.__name__))
+            msg = 'Class {} does not implement a plot_data method' \
+                  'to define what to plot'
+            raise NotImplementedError(msg.format(self.__class__.__name__))
 
     def mpl_plot(self):
         axs = []
@@ -566,15 +569,16 @@ class DessiaObject:
                     ax = data.mpl_plot()
                     axs.append(ax)
         else:
-            raise NotImplementedError(
-                'Class {} does not implement a plot_data method to define what to plot'.format(self.__class__.__name__))
+            msg = 'Class {} does not implement a plot_data method' \
+                  'to define what to plot'
+            raise NotImplementedError(msg.format(self.__class__.__name__))
 
         return axs
 
     def babylonjs(self, use_cdn=True, debug=False):
         self.volmdlr_volume_model().babylonjs(use_cdn=use_cdn, debug=debug)
 
-    def _displays(self, **kwargs) -> List[dt.JsonSerializable]:
+    def _displays(self, **kwargs) -> List[JsonSerializable]:
         if hasattr(self, '_display_angular'):
             # Retro-compatibility
             deprecation_warning(name='_display_angular', object_type='method',
@@ -613,7 +617,7 @@ class DessiaObject:
 
 class DisplayObject(DessiaObject):
     def __init__(self, type_: str,
-                 data: Union[dt.JsonSerializable, DessiaObject],
+                 data: Union[JsonSerializable, DessiaObject],
                  reference_path: str = '', name: str = ''):
         self.type_ = type_
         self.data = data
@@ -714,8 +718,9 @@ class CombinationEvolution(DessiaObject):
     _non_data_hash_attributes = ['name']
     _generic_eq = True
 
-    def __init__(self, evolution1: List[Evolution], evolution2: List[Evolution],
-                 title1: str = 'x', title2: str = 'y', name: str = ''):
+    def __init__(self, evolution1: List[Evolution],
+                 evolution2: List[Evolution], title1: str = 'x',
+                 title2: str = 'y', name: str = ''):
 
         self.evolution1 = evolution1
         self.evolution2 = evolution2
@@ -728,10 +733,12 @@ class CombinationEvolution(DessiaObject):
         DessiaObject.__init__(self, name=name)
 
     def _displays(self):
-        displays = [{'angular_component': 'app-evolution2d-combination-evolution',
-                     'table_show': False,
-                     'evolution_x': [self.x_], 'label_x': ['title1'],
-                     'evolution_y': [self.y_], 'label_y': ['title2']}]
+        displays = [{
+            'angular_component': 'app-evolution2d-combination-evolution',
+            'table_show': False,
+            'evolution_x': [self.x_], 'label_x': ['title1'],
+            'evolution_y': [self.y_], 'label_y': ['title2']
+        }]
         return displays
 
     def update(self, evol1, evol2):
@@ -847,10 +854,8 @@ def dict_merge(old_dct, merge_dct, add_keys=True, extend_lists=True):
     for key, value in merge_dct.items():
         if isinstance(dct.get(key), dict)\
                 and isinstance(value, collections.Mapping):
-            dct[key] = dict_merge(dct[key],
-                                  merge_dct[key],
-                                  add_keys=add_keys,
-                                  extend_lists=extend_lists)
+            dct[key] = dict_merge(dct[key], merge_dct[key],
+                                  add_keys=add_keys, extend_lists=extend_lists)
         elif isinstance(dct.get(key), list) and extend_lists:
             dct[key].extend(value)
         else:
@@ -1002,8 +1007,14 @@ def getdeepattr(obj, attr):
     return reduce(getattr, [obj] + attr.split('.'))
 
 
-def full_classname(object_):
-    return object_.__class__.__module__ + '.' + object_.__class__.__name__
+def full_classname(object_, compute_for: str = 'instance'):
+    if compute_for == 'instance':
+        return object_.__class__.__module__ + '.' + object_.__class__.__name__
+    elif compute_for == 'class':
+        return object_.__module__ + '.' + object_.__name__
+    else:
+        msg = 'Cannot compute {} full classname for object {}'
+        raise NotImplementedError(msg.format(compute_for, object_))
 
 
 def serialization_test(obj):
@@ -1074,13 +1085,19 @@ def type_fullname(arg):
 
 
 def serialize_typing(typing_):
-    if hasattr(typing_, '__origin__') and typing_.__origin__ == list:
-        return 'List[' + type_fullname(typing_.__args__[0]) + ']'
-    elif hasattr(typing_, '__origin__') and typing_.__origin__ == tuple:
-        argnames = ', '.join([type_fullname(a) for a in typing_.__args__])
-        return 'Tuple[{}]'.format(argnames)
+    if is_typing(typing_):
+        origin = get_origin(typing_)
+        args = get_args(typing_)
+        if origin is list:
+            return 'List[' + type_fullname(args[0]) + ']'
+        elif origin is tuple:
+            argnames = ', '.join([type_fullname(a) for a in args])
+            return 'Tuple[{}]'.format(argnames)
+        else:
+            msg = 'Serialization of typing {} is not implemented'
+            raise NotImplementedError(msg.format(typing_))
     if isinstance(typing_, type):
-        return typing_.__module__ + '.' + typing_.__name__
+        return full_classname(typing_, compute_for='class')
     raise NotImplementedError('{} of type {}'.format(typing_, type(typing_)))
 
 
@@ -1280,10 +1297,18 @@ def type_from_annotation(type_, module):
     return type_
 
 
+def is_typing(object_: Any):
+    in_typings = object_.__module__ in ['typing', 'dessia_common.typings']
+    has_module = hasattr(object_, '__module__')
+    has_origin = hasattr(object_, '__origin__')
+    has_args = hasattr(object_, '__args__')
+    return has_module and has_origin and has_args and in_typings
+
+
 def jsonschema_from_annotation(annotation, jsonschema_element,
                                order, editable=None, title=None):
-    key, value = annotation
-    if isinstance(value, str):
+    key, typing_ = annotation
+    if isinstance(typing_, str):
         raise ValueError
 
     if title is None:
@@ -1291,61 +1316,84 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
     if editable is None:
         editable = key not in ['return']
 
-    if value in TYPING_EQUIVALENCES.keys():
+    if typing_ in TYPING_EQUIVALENCES.keys():
         # Python Built-in type
-        jsonschema_element[key] = {'type': TYPING_EQUIVALENCES[value],
+        jsonschema_element[key] = {'type': TYPING_EQUIVALENCES[typing_],
                                    'title': title, 'editable': editable,
                                    'order': order}
-    elif hasattr(value, '__origin__') and value.__origin__ == Union:
-        # Types union
-        classnames = [a.__module__ + '.' + a.__name__ for a in value.__args__]
-        jsonschema_element[key] = {'type': 'object', 'classes': classnames,
-                                   'title': title, 'editable': editable,
-                                   'order': order}
-    elif hasattr(value, '__origin__') and value.__origin__ == list:
-        # Homogenous sequences
-        jsonschema_element[key] = jsonschema_sequence_recursion(
-            value=value, order=order, title=title, editable=editable
-        )
-    elif hasattr(value, '__origin__') and value.__origin__ == tuple:
-        # Heterogenous sequences (tuples)
-        items = []
-        for type_ in value.__args__:
-            items.append({'type': TYPING_EQUIVALENCES[type_]})
-        jsonschema_element[key] = {'additionalItems': False,
-                                   'type': 'array', 'items': items}
-    elif hasattr(value, '__origin__') and value.__origin__ == dict:
-        # Dynamially created dict structure
-        key_type, value_type = value.__args__
-        if key_type != str:
-            # !!! Should we support other types ? Numeric ?
-            raise NotImplementedError('Non strings keys not supported')
-        jsonschema_element[key] = {
-            'type': 'object',
-            'order': order,
-            'editable': editable,
-            'title': title,
-            'patternProperties': {
-                '.*': {
-                    'type': TYPING_EQUIVALENCES[value_type]
+    elif is_typing(typing_):
+        origin = get_origin(typing_)
+        args = get_args(typing_)
+        if origin is Union:
+            if len(args) == 2 and type(None) in args:
+                # This is a false Union => Is a default value set to None
+                ann = (key, args[0])
+                jsonschema_element = jsonschema_from_annotation(
+                    annotation=ann, jsonschema_element=jsonschema_element,
+                    order=order, editable=editable, title=title
+                )
+            else:
+                # Types union
+                classnames = [full_classname(object_=a, compute_for='class')
+                              for a in args]
+                jsonschema_element[key] = {
+                    'type': 'object', 'title': title, 'classes': classnames,
+                    'editable': editable, 'order': order
+                }
+        elif origin is list:
+            # Homogenous sequences
+            jsonschema_element[key] = jsonschema_sequence_recursion(
+                value=typing_, order=order, title=title, editable=editable
+            )
+        elif origin is tuple:
+            # Heterogenous sequences (tuples)
+            items = []
+            for type_ in args:
+                items.append({'type': TYPING_EQUIVALENCES[type_]})
+            jsonschema_element[key] = {'additionalItems': False,
+                                       'type': 'array', 'items': items,
+                                       'title': title, 'editable': editable,
+                                       'order': order}
+        elif origin is dict:
+            # Dynamially created dict structure
+            key_type, value_type = args
+            if key_type != str:
+                # !!! Should we support other types ? Numeric ?
+                raise NotImplementedError('Non strings keys not supported')
+            jsonschema_element[key] = {
+                'type': 'object', 'order': order,
+                'editable': editable, 'title': title,
+                'patternProperties': {
+                    '.*': {
+                        'type': TYPING_EQUIVALENCES[value_type]
+                    }
                 }
             }
-        }
-    elif hasattr(value, '__origin__') and value.__origin__ == dt.Subclass:
-        # Several possible classes that are subclass of another one
-        class_ = value.__args__[0]
-        classname = class_.__module__ + '.' + class_.__name__
-        jsonschema_element[key] = {'type': 'object', 'subclass_of': classname,
-                                   'title': title, 'editable': editable,
-                                   'order': order}
+        elif origin is Subclass:
+            # Several possible classes that are subclass of another one
+            class_ = args[0]
+            classname = full_classname(object_=class_, compute_for='class')
+            jsonschema_element[key] = {'type': 'object', 'order': order,
+                                       'subclass_of': classname,
+                                       'title': title, 'editable': editable}
+        else:
+            msg = "Jsonschema computation of typing {} is not implemented"
+            raise NotImplementedError(msg.format(typing_))
+    elif issubclass(typing_, Measure):
+        ann = (key, float)
+        jsonschema_element = jsonschema_from_annotation(
+            annotation=ann, jsonschema_element=jsonschema_element,
+            order=order, editable=editable, title=title
+        )
+        jsonschema_element[key]['units'] = typing_.units
     else:
-        classname = value.__module__ + '.' + value.__name__
-        if issubclass(value, DessiaObject):
+        classname = full_classname(object_=typing_, compute_for='class')
+        if issubclass(typing_, DessiaObject):
             # Dessia custom classes
             jsonschema_element[key] = {'type': 'object'}
         else:
             # Statically created dict structure
-            jsonschema_element[key] = static_dict_jsonschema(value)
+            jsonschema_element[key] = static_dict_jsonschema(typing_)
         jsonschema_element[key].update({'title': title, 'order': order,
                                         'editable': editable,
                                         'classes': [classname]})
@@ -1359,8 +1407,8 @@ def jsonschema_sequence_recursion(value, order: int, title: str = None,
     jsonschema_element = {'type': 'array', 'order': order,
                           'editable': editable, 'title': title}
 
-    items_type = value.__args__[0]
-    if hasattr(items_type, '__origin__') and items_type.__origin__ == list:
+    items_type = get_args(value)[0]
+    if is_typing(items_type) and get_origin(items_type) is list:
         jss = jsonschema_sequence_recursion(value=items_type, order=0,
                                             title=title, editable=editable)
         jsonschema_element['items'] = jss
@@ -1392,11 +1440,12 @@ def static_dict_jsonschema(typed_dict, title=None):
     jss_properties = jsonschema_element['properties']
 
     # Every value is required in a StaticDict
-    jsonschema_element['required'] = list(typed_dict.__annotations__.keys())
+    annotations = get_type_hints(typed_dict)
+    jsonschema_element['required'] = list(annotations.keys())
 
     # TOCHECK : Not actually ordered !
-    for i, ann in enumerate(typed_dict.__annotations__.items()):
-        jss = jsonschema_from_annotation(annotation=ann,
+    for i, annotation in enumerate(annotations.items()):
+        jss = jsonschema_from_annotation(annotation=annotation,
                                          jsonschema_element=jss_properties,
                                          order=i, title=title)
         jss_properties.update(jss)
@@ -1445,50 +1494,55 @@ def inspect_arguments(method, merge=False):
 
 
 def deserialize_argument(type_, argument):
-    if hasattr(type_, '__origin__') and type_.__origin__ == Union:
-        # Type union
-        classes = list(type_.__args__)
-        instantiated = False
-        while instantiated is False:
-            # Find the last class in the hierarchy
-            hierarchy_lengths = [len(cls.mro()) for cls in classes]
-            children_class_index = hierarchy_lengths.index(
-                max(hierarchy_lengths))
-            children_class = classes[children_class_index]
-            try:
-                # Try to deserialize
-                # Throws KeyError if we try to put wrong dict into
-                # dict_to_object. This means we try to instantiate
-                # a children class with a parent dict_to_object
-                deserialized_argument = children_class.dict_to_object(argument)
+    if is_typing(type_):
+        origin = get_origin(type_)
+        args = get_args(type_)
+        if origin is Union:
+            # Type union
+            classes = list(args)
+            instantiated = False
+            while instantiated is False:
+                # Find the last class in the hierarchy
+                hierarchy_lengths = [len(cls.mro()) for cls in classes]
+                max_length = max(hierarchy_lengths)
+                children_class_index = hierarchy_lengths.index(max_length)
+                children_class = classes[children_class_index]
+                try:
+                    # Try to deserialize
+                    # Throws KeyError if we try to put wrong dict into
+                    # dict_to_object. This means we try to instantiate
+                    # a children class with a parent dict_to_object
+                    deserialized_arg = children_class.dict_to_object(argument)
 
-                # If it succeeds we have the right
-                # class and instantiated object
-                instantiated = True
-            except KeyError:
-                # This is not the right class, we should go see the parent
-                classes.remove(children_class)
-    elif hasattr(type_, '__origin__') and type_.__origin__ == list:
-        # Homogenous sequences (lists)
-        sequence_subtype = type_.__args__[0]
-        deserialized_argument = [deserialize_argument(sequence_subtype, arg)
-                                 for arg in argument]
-    elif hasattr(type_, '__origin__') and type_.__origin__ == tuple:
-        # Heterogenous sequences (tuples)
-        deserialized_argument = tuple([deserialize_argument(t, arg)
-                                       for t, arg in zip(type_.__args__,
-                                                         argument)])
-    elif hasattr(type_, '__origin__') and type_.__origin__ == dict:
-        # Dynamic dict
-        deserialized_argument = argument
+                    # If it succeeds we have the right
+                    # class and instantiated object
+                    instantiated = True
+                except KeyError:
+                    # This is not the right class, we should go see the parent
+                    classes.remove(children_class)
+        elif origin is list:
+            # Homogenous sequences (lists)
+            sequence_subtype = args[0]
+            deserialized_arg = [deserialize_argument(sequence_subtype, arg)
+                                for arg in argument]
+        elif origin is tuple:
+            # Heterogenous sequences (tuples)
+            deserialized_arg = tuple([deserialize_argument(t, arg)
+                                      for t, arg in zip(args, argument)])
+        elif origin is dict:
+            # Dynamic dict
+            deserialized_arg = argument
+        else:
+            msg = "Deserialization of typing {} is not implemented"
+            raise NotImplementedError(msg.format(type_))
     else:
         if type_ in TYPING_EQUIVALENCES.keys():
             if isinstance(argument, type_):
-                deserialized_argument = argument
+                deserialized_arg = argument
             else:
                 if isinstance(argument, int) and type_ == float:
                     # Explicit conversion in this case
-                    deserialized_argument = float(argument)
+                    deserialized_arg = float(argument)
                 else:
                     msg = 'Given built-in type and argument are incompatible: '
                     msg += '{} and {} in {}'.format(type(argument),
@@ -1496,11 +1550,11 @@ def deserialize_argument(type_, argument):
                     raise TypeError(msg)
         elif issubclass(type_, DessiaObject):
             # Custom classes
-            deserialized_argument = type_.dict_to_object(argument)
+            deserialized_arg = type_.dict_to_object(argument)
         else:
             # Static Dict
-            deserialized_argument = argument
-    return deserialized_argument
+            deserialized_arg = argument
+    return deserialized_arg
 
 
 # TODO recursive_type and recursive_type functions look weird
