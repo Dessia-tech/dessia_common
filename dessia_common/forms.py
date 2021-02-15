@@ -263,7 +263,7 @@ class StandaloneObject(DessiaObject):
         sizes = [plot_data.Window(width=560, height=300),
                  plot_data.Window(width=560, height=300)]
         coords = [(0, 0), (300, 0)]
-        multi_plot = plot_data.MultiplePlots(elements=points, objects=objects,
+        multi_plot = plot_data.MultiplePlots(elements=points, plots=objects,
                                              sizes=sizes, coords=coords,
                                              name='Multiple Plot')
         # return [scatter_plot]

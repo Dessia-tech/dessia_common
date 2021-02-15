@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - dict_to_arguments of workflows have now right signature
 
 ### Changed
+- Remove type from Sequence block
+- Use Subclass instead of Type for typings
 - Use of instrospection helpers for jsonschema computation from typings (get_type_hints, get_args, get_origin)
 - WorkflowRun method_jsonschemas implements Workflow method
 
