@@ -1286,6 +1286,10 @@ def is_sequence(obj):
         and not isinstance(obj, str)
 
 
+def is_builtin(type_):
+    return type_ in TYPING_EQUIVALENCES
+
+
 def type_from_annotation(type_, module):
     """
     Clean up a proposed type if there are stringified
@@ -1448,6 +1452,12 @@ def static_dict_jsonschema(typed_dict, title=None):
 
     # TOCHECK : Not actually ordered !
     for i, annotation in enumerate(annotations.items()):
+        attribute, typing_ = annotation
+        if not is_builtin(typing_):
+            msg = "Complex structure as Static dict values is not supported." \
+                  "\n Attribute {} got type {} instead of builtin." \
+                  "\n Consider creating a custom class for complex structures."
+            raise TypeError(msg.format(attribute, typing_))
         jss = jsonschema_from_annotation(annotation=annotation,
                                          jsonschema_element=jss_properties,
                                          order=i, title=title)
