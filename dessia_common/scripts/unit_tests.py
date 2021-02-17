@@ -19,10 +19,8 @@ subobject_list = [EmbeddedSubobject(), EmbeddedSubobject(),
 builtin_list = [1, 2, 3, 4, 5]
 union_object = EnhancedStandaloneSubobject(floatarg=333.333, boolarg=True)
 
-inheriting_list = [EnhancedStandaloneSubobject(floatarg=-7516.15,
-                                               boolarg=True),
-                   InheritingStandaloneSubobject(floatarg=1561.57,
-                                                 strarg='Subclass')]
+subclass_arg = InheritingStandaloneSubobject(floatarg=1561.57,
+                                             strarg='Subclass')
 
 standalone_object = StandaloneObject(standalone_subobject=standalone_subobject,
                                      embedded_subobject=embedded_subobject,
@@ -33,7 +31,7 @@ standalone_object = StandaloneObject(standalone_subobject=standalone_subobject,
                                      subobject_list=subobject_list,
                                      builtin_list=builtin_list,
                                      union_arg=union_object,
-                                     inheritance_list=inheriting_list)
+                                     subclass_arg=subclass_arg)
 
 # Test jsonschema
 jsonschema = {
@@ -168,17 +166,12 @@ jsonschema = {
             'editable': True,
             'order': 10
         },
-        'inheritance_list': {
-            'type': 'array',
+        'subclass_arg': {
+            'type': 'object',
+            'subclass_of': 'dessia_common.forms.StandaloneSubobject',
+            'title': 'Subclass Arg',
             'editable': True,
-            'title': 'Inheritance List',
-            'order': 11,
-            'default_value': None,
-            'items': {'type': 'object',
-                      'subclass_of': 'dessia_common.forms.StandaloneSubobject',
-                      'title': 'Inheritance List',
-                      'editable': True,
-                      'order': 0}
+            'order': 11
         },
         'name': {
             'type': 'string',
@@ -217,10 +210,10 @@ deepdict = enhanced_deep_attr(obj=standalone_object,
                               sequence=['static_dict', 'is_valid'])
 assert deepdict is True
 
-deeperlist = enhanced_deep_attr(obj=standalone_object,
-                                sequence=['inheritance_list', 0,
-                                          'boolarg'])
-assert deeperlist
+# deeperlist = enhanced_deep_attr(obj=standalone_object,
+#                                 sequence=['subcla', 0,
+#                                           'boolarg'])
+# assert deeperlist
 
 directattr = enhanced_deep_attr(obj=standalone_object,
                                 sequence=['strarg'])

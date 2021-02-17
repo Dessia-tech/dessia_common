@@ -160,7 +160,7 @@ class StandaloneObject(DessiaObject):
                  builtin_list: List[int],
                  union_arg: Union[StandaloneSubobject,
                                   EnhancedStandaloneSubobject],
-                 inheritance_list: List[Subclass[StandaloneSubobject]] = None,
+                 subclass_arg: Subclass[StandaloneSubobject],
                  name: str = 'Standalone Object Demo'):
         self.union_arg = union_arg
         self.builtin_list = builtin_list
@@ -173,7 +173,7 @@ class StandaloneObject(DessiaObject):
         self.dynamic_dict = dynamic_dict
         self.standalone_subobject = standalone_subobject
         self.embedded_subobject = embedded_subobject
-        self.inheritance_list = inheritance_list
+        self.subclass_arg = subclass_arg
 
         DessiaObject.__init__(self, name=name)
 
@@ -192,15 +192,17 @@ class StandaloneObject(DessiaObject):
         subobject_list = EmbeddedSubobject.generate_many(seed)
         builtin_list = [seed]*seed
         union_arg = EnhancedStandaloneSubobject.generate(seed)
-        inheritance_list = [StandaloneSubobject.generate(-seed),
-                            InheritingStandaloneSubobject.generate(seed)]
+        if is_even:
+            subclass_arg = StandaloneSubobject.generate(-seed)
+        else:
+            subclass_arg = InheritingStandaloneSubobject.generate(seed)
         return cls(standalone_subobject=standalone_subobject,
                    embedded_subobject=embedded_subobject,
                    dynamic_dict=dynamic_dict, static_dict=static_dict,
                    tuple_arg=tuple_arg, intarg=intarg, strarg=strarg,
                    object_list=object_list, subobject_list=subobject_list,
                    builtin_list=builtin_list, union_arg=union_arg,
-                   inheritance_list=inheritance_list)
+                   subclass_arg=subclass_arg)
 
     def add_standalone_object(self, object_: StandaloneSubobject):
         """
