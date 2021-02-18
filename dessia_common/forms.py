@@ -161,6 +161,7 @@ class StandaloneObject(DessiaObject):
                  union_arg: Union[StandaloneSubobject,
                                   EnhancedStandaloneSubobject],
                  subclass_arg: Subclass[StandaloneSubobject],
+                 default_value_list: List[float] = None,
                  name: str = 'Standalone Object Demo'):
         self.union_arg = union_arg
         self.builtin_list = builtin_list
@@ -174,6 +175,7 @@ class StandaloneObject(DessiaObject):
         self.standalone_subobject = standalone_subobject
         self.embedded_subobject = embedded_subobject
         self.subclass_arg = subclass_arg
+        self.default_value_list = default_value_list
 
         DessiaObject.__init__(self, name=name)
 
