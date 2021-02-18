@@ -1091,7 +1091,15 @@ def serialize_typing(typing_):
     if is_typing(typing_):
         origin = get_origin(typing_)
         args = get_args(typing_)
-        if origin is list:
+        if origin is Union:
+            if len(args) == 2 and type(None) in args:
+                # This is a false Union => Is a default value set to None
+                return serialize_typing(args[0])
+            else:
+                # Types union
+                msg = 'Union typing serialization not implemented yet'
+                raise NotImplemented(msg)
+        elif origin is list:
             return 'List[' + type_fullname(args[0]) + ']'
         elif origin is tuple:
             argnames = ', '.join([type_fullname(a) for a in args])
