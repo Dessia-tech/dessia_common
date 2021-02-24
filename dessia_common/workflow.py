@@ -500,12 +500,18 @@ class ForEach(Block):
     :type workflow_block: WorkflowBlock
     :param iter_input_index: Index of iterable input in worklow_block.inputs
     :type iter_input_index: int
+    :param input_connections: Links ForEach's inputs to its workflow_block's inputs. input_connections[i] = [ForEach_input_j, WorkflowBlock_input_k]
+    :type input_connections: List[Tuple[Tuple[int, int, int], Tuple[int, int, int]]]
+    :param output_connections: Same but for outputs. output_connections[i] = [WorkflowBlock_output_j, ForEach_output_k]
+    :type output_connections: List[Tuple[Tuple[int, int, int], Tuple[int, int, int]]]
     :param name: The name of the block.
     :type name: str
     """
 
     def __init__(self, workflow_block: 'WorkflowBlock',
-                 iter_input_index: int, name: str = ''):
+                 iter_input_index: int, input_connections=None,
+                 output_connections=None, name: str = ''):
+
         self.workflow_block = workflow_block
         self.iter_input_index = iter_input_index
         self.iter_input = self.workflow_block.inputs[iter_input_index]
@@ -519,6 +525,8 @@ class ForEach(Block):
                 input_.name = 'binding ' + input_.name
                 inputs.append(input_)
         output_variable = Variable(name='Foreach output')
+        self.output_connections = input_connections
+        self.input_connections = output_connections
 
         Block.__init__(self, inputs, [output_variable], name=name)
 
@@ -770,7 +778,7 @@ class MultiPlot(Display):
         sizes = [plot_data.Window(width=560, height=300),
                  plot_data.Window(width=560, height=300)]
         coords = [(0, 0), (0, 300)]
-        multiplot = plot_data.MultiplePlots(elements=values, objects=objects,
+        multiplot = plot_data.MultiplePlots(elements=values, plots=objects,
                                             sizes=sizes, coords=coords,
                                             name='Results plot')
         display_ = dc.DisplayObject(type_='plot_data', data=multiplot,
@@ -1395,7 +1403,8 @@ class Workflow(Block):
         horizontal_spacing = max(min_horizontal_spacing,
                                  max_length / max_distance)
 
-        for i, distance in enumerate(sorted(elements_by_distance.keys())[::-1]):
+        for i, distance in enumerate(
+                sorted(elements_by_distance.keys())[::-1]):
             n = len(elements_by_distance[distance])
             vertical_spacing = min(min_vertical_spacing, max_height / n)
             horizontal_anchor_size = max_distance
@@ -1476,7 +1485,8 @@ class Workflow(Block):
                 if not activated_items[pipe]:
                     if activated_items[pipe.input_variable]:
                         activated_items[pipe] = True
-                        values[pipe.output_variable] = values[pipe.input_variable]
+                        values[pipe.output_variable] = values[
+                            pipe.input_variable]
                         activated_items[pipe.output_variable] = True
                         something_activated = True
 
@@ -1675,12 +1685,23 @@ class WorkflowBlock(Block):
     a different behavior
     than a Block in eq and hash which is problematic to handle in dicts
     for example
+
+    :param workflow: The WorkflowBlock's workflow
+    :type workflow: Workflow
+    :param input_connections: Links ForEach's inputs to its workflow_block's inputs. input_connections[i] = [ForEach_input_j, WorkflowBlock_input_k]
+    :type input_connections: List[Tuple[Tuple[int, int, int], Tuple[int, int, int]]]
+    :param output_connections: Same but for outputs. output_connections[i] = [WorkflowBlock_output_j, ForEach_output_k]
+    :type output_connections: List[Tuple[Tuple[int, int, int], Tuple[int, int, int]]]
     """
 
-    def __init__(self, workflow: Workflow, input_connections: Tuple[Tuple[float, float, float],
-                                                                    Tuple[float, float, float]] = None,
-                 output_connections: Tuple[Tuple[float, float, float],
-                                           Tuple[float, float, float]] = None, name: str = ''):
+    def __init__(self, workflow: Workflow,
+                 input_connections: List[Tuple[Tuple[float, float, float],
+                                               Tuple[
+                                                   float, float, float]]] = None,
+                 output_connections: List[Tuple[Tuple[float, float, float],
+                                                Tuple[
+                                                    float, float, float]]] = None,
+                 name: str = ''):
         self.workflow = workflow
         self.input_connections = input_connections
         self.output_connections = output_connections
