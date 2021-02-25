@@ -561,9 +561,13 @@ class DessiaObject:
     def mpl_plot(self, **kwargs):
         axs = []
         if hasattr(self, 'plot_data'):
-            for data in self.plot_data():
+            try:
+                plot_datas = self.plot_data(**kwargs)
+            except TypeError as error:
+                raise TypeError('{}.{}'.format(self.__class__.__name__, error))
+            for data in plot_datas:
                 if hasattr(data, 'mpl_plot'):
-                    ax = data.mpl_plot(**kwargs)
+                    ax = data.mpl_plot()
                     axs.append(ax)
         else:
             raise NotImplementedError(
