@@ -558,12 +558,12 @@ class DessiaObject:
             raise NotImplementedError(
                 'Class {} does not implement a plot_data method to define what to plot'.format(self.__class__.__name__))
 
-    def mpl_plot(self):
+    def mpl_plot(self, **kwargs):
         axs = []
         if hasattr(self, 'plot_data'):
             for data in self.plot_data():
                 if hasattr(data, 'mpl_plot'):
-                    ax = data.mpl_plot()
+                    ax = data.mpl_plot(**kwargs)
                     axs.append(ax)
         else:
             raise NotImplementedError(
