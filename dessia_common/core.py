@@ -507,19 +507,19 @@ class DessiaObject:
                 dict_[arg] = deepcopy_value(getattr(self, arg), memo=memo)
         return self.__class__(**dict_)
 
-    def volmdlr_volume_model(self, frame=None):
+    def volmdlr_volume_model(self, **kwargs):
         if hasattr(self, 'volmdlr_primitives'):
             import volmdlr as vm  # !!! Avoid circular imports, is this OK ?
             if hasattr(self, 'volmdlr_primitives_step_frames'):
-                return vm.MovingVolumeModel(self.volmdlr_primitives(),
-                                            self.volmdlr_primitives_step_frames())
-            else:
-                if frame is None:
-                    frame = vm.OXYZ
-            try:
-                return vm.core.VolumeModel(self.volmdlr_primitives(frame=frame))
-            except TypeError:
-                return vm.core.VolumeModel(self.volmdlr_primitives())
+                return vm.MovingVolumeModel(self.volmdlr_primitives(**kwargs),
+                                            self.volmdlr_primitives_step_frames(**kwargs))
+            # else:
+            #     if frame is None:
+            #         frame = vm.OXYZ
+            # try:
+            return vm.core.VolumeModel(self.volmdlr_primitives(**kwargs))
+            # except TypeError:
+            #     return vm.core.VolumeModel(self.volmdlr_primitives())
         msg = 'Object of type {} does not implement volmdlr_primitives'
         raise NotImplementedError(msg.format(self.__class__.__name__))
 
@@ -544,13 +544,13 @@ class DessiaObject:
         else:
             raise NotImplementedError
 
-    def plot(self):
+    def plot(self, **kwargs):
         """
 
         """
         if hasattr(self, 'plot_data'):
             import plot_data
-            for data in self.plot_data():
+            for data in self.plot_data(**kwargs):
                 plot_data.plot_canvas(plot_data_object=data,
                                       canvas_id='canvas',
                                       debug_mode=False)
@@ -575,8 +575,8 @@ class DessiaObject:
 
         return axs
 
-    def babylonjs(self, use_cdn=True, debug=False):
-        self.volmdlr_volume_model().babylonjs(use_cdn=use_cdn, debug=debug)
+    def babylonjs(self, use_cdn=True, debug=False, **kwargs):
+        self.volmdlr_volume_model(**kwargs).babylonjs(use_cdn=use_cdn, debug=debug)
 
     def _displays(self, **kwargs) -> List[dt.JsonSerializable]:
         if hasattr(self, '_display_angular'):
