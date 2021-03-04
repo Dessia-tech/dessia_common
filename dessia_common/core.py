@@ -345,6 +345,7 @@ class DessiaObject:
         required_arguments, default_arguments = inspect_arguments(method=init,
                                                                   merge=False)
         _jsonschema['required'] = required_arguments
+        _jsonschema['standalone_in_db'] = cls._standalone_in_db
 
         # Set jsonschema
         for annotation in annotations.items():
@@ -374,6 +375,8 @@ class DessiaObject:
                                                 name,
                                                 default_arguments[name])
                     _jsonschema['properties'].update(default)
+
+                # TOCHECK Why are these two attributes set in loop ?
                 _jsonschema['classes'] = [cls.__module__ + '.' + cls.__name__]
                 _jsonschema['whitelist_attributes'] = cls._whitelist_attributes
         return _jsonschema
