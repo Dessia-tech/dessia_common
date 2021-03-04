@@ -511,7 +511,7 @@ class DessiaObject:
         if hasattr(self, 'volmdlr_primitives'):
             import volmdlr as vm  # !!! Avoid circular imports, is this OK ?
             if hasattr(self, 'volmdlr_primitives_step_frames'):
-                return vm.MovingVolumeModel(self.volmdlr_primitives(),
+                return vm.core.MovingVolumeModel(self.volmdlr_primitives(),
                                             self.volmdlr_primitives_step_frames())
             else:
                 if frame is None:
