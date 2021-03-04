@@ -376,9 +376,8 @@ class DessiaObject:
                                                 default_arguments[name])
                     _jsonschema['properties'].update(default)
 
-                # TOCHECK Why are these two attributes set in loop ?
-                _jsonschema['classes'] = [cls.__module__ + '.' + cls.__name__]
-                _jsonschema['whitelist_attributes'] = cls._whitelist_attributes
+        _jsonschema['classes'] = [cls.__module__ + '.' + cls.__name__]
+        _jsonschema['whitelist_attributes'] = cls._whitelist_attributes
         return _jsonschema
 
     @property
