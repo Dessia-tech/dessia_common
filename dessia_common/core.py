@@ -1383,9 +1383,11 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
             # Several possible classes that are subclass of another one
             class_ = args[0]
             classname = full_classname(object_=class_, compute_for='class')
-            jsonschema_element[key] = {'type': 'object', 'order': order,
-                                       'subclass_of': classname,
-                                       'title': title, 'editable': editable}
+            jsonschema_element[key] = {
+                'type': 'object', 'order': order, 'subclass_of': classname,
+                'title': title, 'editable': editable,
+                'standalone_in_db': class_._standalone_in_db
+            }
         else:
             msg = "Jsonschema computation of typing {} is not implemented"
             raise NotImplementedError(msg.format(typing_))
@@ -1400,7 +1402,10 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
         classname = full_classname(object_=typing_, compute_for='class')
         if issubclass(typing_, DessiaObject):
             # Dessia custom classes
-            jsonschema_element[key] = {'type': 'object'}
+            jsonschema_element[key] = {
+                'type': 'object',
+                'standalone_in_db': typing_._standalone_in_db
+            }
         else:
             # Statically created dict structure
             jsonschema_element[key] = static_dict_jsonschema(typing_)
