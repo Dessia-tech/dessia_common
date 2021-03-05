@@ -719,7 +719,7 @@ class Filter(Block):
 class MultiPlot(Display):
     """
     :param attributes: A List of all attributes that will be shown inside the \
-    ParallelPlot window on the DessIA Platform.
+    ParallelPlot window on DessIA's Platform.
     :type attributes: List[str]
     :param name: The name of the block.
     :type name: str
