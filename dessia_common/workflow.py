@@ -1925,40 +1925,6 @@ class WorkflowRun(dc.DessiaObject):
         jsonschemas['run_again'] = jsonschemas.pop('run')
         return jsonschemas
 
-    # @property
-    # def _method_jsonschemas(self):
-    #     # TODO : Share code with Workflow run method
-    #     jsonschemas = {'run_again': deepcopy(dc.JSONSCHEMA_HEADER)}
-    #     properties_dict = jsonschemas['run_again']['properties']
-    #     required_inputs = []
-    #     for i, value in self.input_values.items():
-    #         current_dict = {}
-    #         input_ = self.workflow.inputs[i]
-    #         annotation = (str(i), input_.type_)
-    #         input_block = self.workflow.block_from_variable(input_)
-    #         if input_block.name:
-    #             title = dc.prettyname(input_block.name + ' - ' + input_.name)
-    #         else:
-    #             title = dc.prettyname(input_.name)
-    #         annotation_jsonschema = dc.jsonschema_from_annotation(
-    #             annotation=annotation,
-    #             jsonschema_element=current_dict,
-    #             order=i,
-    #             title=title,
-    #         )
-    #         current_dict.update(annotation_jsonschema[str(i)])
-    #         if not input_.has_default_value:
-    #             required_inputs.append(str(i))
-    #         else:
-    #             dict_ = dc.set_default_value(
-    #                 jsonschema_element=current_dict, key=str(i),
-    #                 default_value=input_.default_value
-    #             )
-    #             current_dict.update(dict_)
-    #         properties_dict[str(i)] = current_dict[str(i)]
-    #     jsonschemas['run_again']['required'] = required_inputs
-    #     return jsonschemas
-
 
 def set_inputs_from_function(method, inputs=None):
     """
@@ -2004,7 +1970,3 @@ def value_type_check(value, type_):
         pass
 
     return True
-
-# DISPLAY_DEFAULT = TypedVariable(type_=dc.DessiaObject,
-#                                 name='Model to Display',
-#                                 memorize=True)
