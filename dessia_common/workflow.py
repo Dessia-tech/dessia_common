@@ -504,9 +504,12 @@ class ForEach(Block):
     :type workflow_block: WorkflowBlock
     :param iter_input_index: Index of iterable input in worklow_block.inputs
     :type iter_input_index: int
-    :param input_connections: Links ForEach's inputs to its workflow_block's inputs. input_connections[i] = [ForEach_input_j, WorkflowBlock_input_k]
+    :param input_connections: Links ForEach's inputs to its
+        workflow_block's inputs.
+        input_connections[i] = [ForEach_input_j, WorkflowBlock_input_k]
     :type input_connections: List[Tuple[Tuple[int, int, int], Tuple[int, int, int]]]
-    :param output_connections: Same but for outputs. output_connections[i] = [WorkflowBlock_output_j, ForEach_output_k]
+    :param output_connections: Same but for outputs.
+        output_connections[i] = [WorkflowBlock_output_j, ForEach_output_k]
     :type output_connections: List[Tuple[Tuple[int, int, int], Tuple[int, int, int]]]
     :param name: The name of the block.
     :type name: str
@@ -515,7 +518,7 @@ class ForEach(Block):
     def __init__(self, workflow_block: 'WorkflowBlock',
                  iter_input_index: int, input_connections=None,
                  output_connections=None, name: str = ''):
-
+        # TODO Not typed inputs won't work with generic jsonschema generating
         self.workflow_block = workflow_block
         self.iter_input_index = iter_input_index
         self.iter_input = self.workflow_block.inputs[iter_input_index]
