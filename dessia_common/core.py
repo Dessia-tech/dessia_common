@@ -1612,75 +1612,11 @@ def recursive_instantiation(type_, value):
         raise NotImplementedError(type_)
 
 
-# def choose_default(jsonschema):
-#     if jsonschema['type'] == 'object':
-#         default_value = default_dict(jsonschema)
-#         # if 'classes' in jsonschema:
-#         #     default_value.update({'object_class': jsonschema['classes'][0]})
-#     elif jsonschema['type'] == 'array':
-#         default_value = default_sequence(jsonschema)
-#     elif jsonschema['type'] == 'string':
-#         default_value = ''
-#     else:
-#         default_value = None
-#     return default_value
-#
-#
-# def default_dict(jsonschema):
-#     dict_ = {}
-#     if 'properties' in jsonschema:
-#         for property_, value in jsonschema['properties'].items():
-#             print(property_, value)
-#             if property_ in jsonschema['required']:
-#                 dict_[property_] = choose_default(value)
-#             else:
-#                 default_value = value['default_value']
-#                 if value['type'] == 'array':
-#                     dict_[property_] = []
-#                 elif value['type'] == 'object' and default_value is None:
-#                     dict_[property_] = {}
-#                 else:
-#                     dict_[property_] = default_value
-#     else:
-#         dict_ = None
-#     return dict_
-#
-#
 def default_sequence(array_jsonschema):
-    # if 'minItems' in array_jsonschema and 'maxItems' in array_jsonschema \
-    #         and array_jsonschema['minItems'] == array_jsonschema['maxItems']:
-    #     number = array_jsonschema['minItems']
-    # elif 'minItems' in array_jsonschema:
-    #     number = array_jsonschema['minItems']
-    # elif 'maxItems' in array_jsonschema:
-    #     number = array_jsonschema['maxItems']
-    # else:
-    #     number = 1
-
-    # TODO use is_sequence or insintance at least
-    if type(array_jsonschema['items']) == list:
+    if is_sequence(array_jsonschema['items']):
         # Tuple jsonschema
         return [default_dict(v) for v in array_jsonschema['items']]
     return []
-    # elif array_jsonschema['items']['type'] == 'object':
-    #     return []
-    #     if 'classes' in array_jsonschema['items']:
-    #         # TOCHECK classes[0]
-    #         classname = array_jsonschema['items']['classes'][0]
-    #         class_ = get_python_class_from_class_name(classname)
-    #         if issubclass(class_, DessiaObject):
-    #             if class_._standalone_in_db:  # Standalone object
-    #                 return []
-    #             # Embedded object
-    #             default_subdict = default_dict(class_.jsonschema())
-    #             return [default_subdict] * number
-    #         # Static Dict
-    #         dict_jsonschema = static_dict_jsonschema(class_)
-    #         default_subdict = default_dict(dict_jsonschema)
-    #         return [default_subdict] * number
-    #     # Subclasses
-    #     return [choose_default(array_jsonschema['items'])] * number
-    # return [choose_default(array_jsonschema['items'])] * number
 
 
 def datatype_from_jsonschema(jsonschema):
@@ -1701,7 +1637,8 @@ def datatype_from_jsonschema(jsonschema):
             return 'embedded_object'
 
     elif jsonschema['type'] == 'array':
-        if 'additionalItems' in jsonschema and not jsonschema['additionalItems']:
+        if 'additionalItems' in jsonschema\
+                and not jsonschema['additionalItems']:
             return 'heterogeneous_sequence'
         return 'homogeneous_sequence'
 
