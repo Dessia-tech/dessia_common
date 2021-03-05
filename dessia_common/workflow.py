@@ -516,9 +516,7 @@ class ForEach(Block):
     """
 
     def __init__(self, workflow_block: 'WorkflowBlock',
-                 iter_input_index: int, input_connections=None,
-                 output_connections=None, name: str = ''):
-        # TODO Not typed inputs won't work with generic jsonschema generating
+                 iter_input_index: int, name: str = ''):
         self.workflow_block = workflow_block
         self.iter_input_index = iter_input_index
         self.iter_input = self.workflow_block.inputs[iter_input_index]
@@ -532,8 +530,8 @@ class ForEach(Block):
                 input_.name = 'binding ' + input_.name
                 inputs.append(input_)
         output_variable = Variable(name='Foreach output')
-        self.output_connections = input_connections
-        self.input_connections = output_connections
+        self.output_connections = None  # TODO: configuring port internal connections
+        self.input_connections = None
 
         Block.__init__(self, inputs, [output_variable], name=name)
 
@@ -1703,18 +1701,12 @@ class WorkflowBlock(Block):
     """
 
     def __init__(self, workflow: Workflow,
-                 input_connections: List[Tuple[Tuple[float, float, float],
-                                               Tuple[
-                                                   float, float, float]]] = None,
-                 output_connections: List[Tuple[Tuple[float, float, float],
-                                                Tuple[
-                                                    float, float, float]]] = None,
                  name: str = ''):
         self.workflow = workflow
-        self.input_connections = input_connections
-        self.output_connections = output_connections
+        self.input_connections = None  # TODO: configuring port internal connections
+        self.output_connections = None
         inputs = []
-        for variable in self.workflow.inputs:
+        for i, variable in enumerate(self.workflow.inputs):
             input_ = variable.copy()
             input_.name = '{} - {}'.format(name, variable.name)
             inputs.append(input_)
