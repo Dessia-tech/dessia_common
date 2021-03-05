@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased[=>0.4.3]
 ### Added
+- Datatype from jsonschema method
+- Method flag in jsonschema
 - Add is_builtin function
 - Raise ValueError if plot_data is not a sequence
 - compute_for argument to full_classname to allow classname computing for class object
@@ -15,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - dict_to_arguments of workflows have now right signature
 
 ### Changed
+- Default values are based on datatypes
 - Complex structure as static dict value is not supported anymore
 - Remove type from Sequence block
 - Use Subclass instead of Type for typings
