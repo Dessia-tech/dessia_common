@@ -1190,6 +1190,7 @@ class Workflow(Block):
                 current_dict.update(dict_)
             properties_dict[str(i)] = current_dict[str(i)]
         jsonschemas['run']['required'] = required_inputs
+        jsonschemas['run']['method'] = True
         return jsonschemas
 
     def to_dict(self):

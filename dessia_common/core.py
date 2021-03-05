@@ -408,6 +408,7 @@ class DessiaObject:
                 if annotations:
                     jsonschemas[method_name] = deepcopy(JSONSCHEMA_HEADER)
                     jsonschemas[method_name]['required'] = []
+                    jsonschemas[method_name]['method'] = True
                     for i, annotation in enumerate(annotations.items()):
                         # TOCHECK Not actually ordered
                         argname = annotation[0]
@@ -1696,6 +1697,8 @@ def datatype_from_jsonschema(jsonschema):
             return 'subclass'
         if 'patternProperties' in jsonschema:
             return 'dynamic_dict'
+        if 'method' in jsonschema and jsonschema['method']:
+            return 'embedded_object'
 
     elif jsonschema['type'] == 'array':
         if 'additionalItems' in jsonschema and not jsonschema['additionalItems']:
@@ -1704,7 +1707,6 @@ def datatype_from_jsonschema(jsonschema):
 
     elif jsonschema['type'] in ['number', 'string', 'boolean']:
         return 'builtin'
-
     return None
 
 
