@@ -197,8 +197,6 @@ assert deepdict is True
 #                                           'boolarg'])
 # assert deeperlist
 
-directattr = enhanced_deep_attr(obj=standalone_object,
-                                sequence=['strarg'])
+directattr = enhanced_deep_attr(obj=standalone_object, sequence=['strarg'])
 
 assert directattr == 'TestStr'
-
