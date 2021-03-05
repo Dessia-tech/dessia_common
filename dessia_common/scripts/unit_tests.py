@@ -183,6 +183,7 @@ jsonschema = {
             'editable': True,
             'title': 'Inheritance List',
             'order': 11,
+            'default_value': None,
             'items': {'type': 'object',
                       'subclass_of': 'dessia_common.forms.StandaloneSubobject',
                       'title': 'Inheritance List',

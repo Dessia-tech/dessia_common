@@ -11,13 +11,13 @@ import json
 from importlib import import_module
 import webbrowser
 import networkx as nx
-from typing import List, Union, Type, Any, Dict, Tuple, Callable
+from typing import List, Union, Type, Any, Dict, Tuple, get_type_hints
 from copy import deepcopy
 from dessia_common.templates import workflow_template
 import itertools
 import dessia_common as dc
 from dessia_common.vectored_objects import ParetoSettings, from_csv
-from dessia_common.typings import JsonSerializable
+from dessia_common.typings import JsonSerializable, Subclass
 import warnings
 
 # import plot_data
@@ -253,7 +253,7 @@ class InstantiateModel(Block):
     :type name: str
     """
 
-    def __init__(self, model_class: Type, name: str = ''):
+    def __init__(self, model_class: Subclass[dc.DessiaObject], name: str = ''):
         self.model_class = model_class
         inputs = []
 
@@ -295,7 +295,7 @@ class InstantiateModel(Block):
 
 
 class InstanciateModel(InstantiateModel):
-    def __init__(self, model_class: Type, name: str = ''):
+    def __init__(self, model_class: Subclass[dc.DessiaObject], name: str = ''):
         InstantiateModel.__init__(self, model_class=model_class, name=name)
         warnings.warn(
             "InstanciateModel is deprecated, use InstantiateModel instead",
@@ -304,7 +304,8 @@ class InstanciateModel(InstantiateModel):
 
 
 class ClassMethod(Block):
-    def __init__(self, class_: Type, method_name: str, name: str = ''):
+    def __init__(self, class_: Subclass[dc.DessiaObject],
+                 method_name: str, name: str = ''):
         self.class_ = class_
         self.method_name = method_name
         inputs = []
@@ -313,7 +314,8 @@ class ClassMethod(Block):
 
         self.argument_names = [i.name for i in inputs]
 
-        type_ = dc.type_from_annotation(method.__annotations__['return'],
+        annotations = get_type_hints(method)
+        type_ = dc.type_from_annotation(annotations['return'],
                                         method.__module__)
         output_name = 'method result of {}'.format(self.method_name)
         outputs = [TypedVariable(type_=type_, name=output_name)]
@@ -374,8 +376,9 @@ class ModelMethod(Block):
         self.argument_names = [i.name for i in inputs[1:]]
 
         result_output_name = 'method result of {}'.format(self.method_name)
-        if 'return' in method.__annotations__:
-            type_ = dc.type_from_annotation(method.__annotations__['return'],
+        annotations = get_type_hints(method)
+        if 'return' in annotations:
+            type_ = dc.type_from_annotation(annotations['return'],
                                             method.__module__)
             return_output = TypedVariable(type_=type_, name=result_output_name)
         else:
@@ -425,42 +428,43 @@ class ModelMethod(Block):
         return {self.model_class.__module__.split('.')[0]: 1}
 
 
-class Function(Block):
-    def __init__(self, function: Callable, name: str = ''):
-        self.function = function
-        inputs = []
-        for arg_name in inspect.signature(function).parameters.keys():
-            # TODO: Check why we need TypedVariables
-            type_ = dc.type_from_annotation(function.__annotations__[arg_name])
-            inputs.append(TypedVariable(type_=type_, name=arg_name))
-        out_type = dc.type_from_annotation(function.__annotations__['return'])
-        outputs = [TypedVariable(type_=out_type, name='Output function')]
-
-        Block.__init__(self, inputs, outputs, name=name)
-
-    def equivalent_hash(self):
-        return int(hash(self.function.__name__) % 10e5)
-
-    def equivalent(self, other):
-        return self.function == other.function
-
-    def evaluate(self, values):
-        return self.function(*values)
+# class Function(Block):
+#     def __init__(self, function: Callable, name: str = ''):
+#         self.function = function
+#         inputs = []
+#         annotations = get_type_hints(function)
+#         for arg_name in inspect.signature(function).parameters.keys():
+#             # TODO: Check why we need TypedVariables
+#             type_ = dc.type_from_annotation(annotations[arg_name])
+#             inputs.append(TypedVariable(type_=type_, name=arg_name))
+#         out_type = dc.type_from_annotation(annotations['return'])
+#         outputs = [TypedVariable(type_=out_type, name='Output function')]
+#
+#         Block.__init__(self, inputs, outputs, name=name)
+#
+#     def equivalent_hash(self):
+#         return int(hash(self.function.__name__) % 10e5)
+#
+#     def equivalent(self, other):
+#         return self.function == other.function
+#
+#     def evaluate(self, values):
+#         return self.function(*values)
 
 
 class Sequence(Block):
-    def __init__(self, number_arguments: int,
-                 type_: Type = None, name: str = ''):
+    def __init__(self, number_arguments: int, name: str = ''):
+        # type_: Subclass[dc.DessiaObject] = None,
         self.number_arguments = number_arguments
         prefix = 'Sequence element {}'
-        if type_ is None:
-            inputs = [Variable(name=prefix.format(i))
-                      for i in range(self.number_arguments)]
-        else:
-            inputs = [TypedVariable(type_=type_, name=prefix.format(i))
-                      for i in range(self.number_arguments)]
+        inputs = [Variable(name=prefix.format(i))
+                  for i in range(self.number_arguments)]
+        # if type_ is None:
+        # else:
+        #     inputs = [TypedVariable(type_=type_, name=prefix.format(i))
+        #               for i in range(self.number_arguments)]
 
-        self.type_ = type_
+        # self.type_ = type_
         outputs = [TypedVariable(type_=list, name='sequence')]
         Block.__init__(self, inputs, outputs, name=name)
 
@@ -475,20 +479,20 @@ class Sequence(Block):
     def to_dict(self):
         dict_ = Block.to_dict(self)
         dict_['number_arguments'] = self.number_arguments
-        if self.type_ is not None:
-            dict_['type_'] = dc.serialize_typing(self.type_)
-        else:
-            dict_['type_'] = None
+        # if self.type_ is not None:
+        #     dict_['type_'] = dc.serialize_typing(self.type_)
+        # else:
+        #     dict_['type_'] = None
         return dict_
 
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_):
-        if dict_['type_'] is not None:
-            type_ = dc.deserialize_typing(dict_['type_'])
-        else:
-            type_ = None
-        return cls(dict_['number_arguments'], type_, dict_['name'])
+        # if dict_['type_'] is not None:
+        #     type_ = dc.deserialize_typing(dict_['type_'])
+        # else:
+        #     type_ = None
+        return cls(dict_['number_arguments'], dict_['name'])
 
     def evaluate(self, values):
         return [[values[var] for var in self.inputs]]
@@ -771,9 +775,10 @@ class MultiPlot(Display):
                                         name='Scatter Plot')
 
         rgbs = [[192, 11, 11], [14, 192, 11], [11, 11, 192]]
-        parallelplot = plot_data.ParallelPlot(disposition='horizontal',
-                                              to_disp_attribute_names=self.attributes,
-                                              rgbs=rgbs, elements=values)
+        parallelplot = plot_data.ParallelPlot(
+            disposition='horizontal', to_disp_attribute_names=self.attributes,
+            rgbs=rgbs, elements=values
+        )
         objects = [scatterplot, parallelplot]
         sizes = [plot_data.Window(width=560, height=300),
                  plot_data.Window(width=560, height=300)]
@@ -1998,10 +2003,9 @@ def set_inputs_from_function(method, inputs=None):
     for iarg, argument in enumerate(args_specs.args[1:]):
         if argument not in ['self', 'progress_callback']:
             try:
-                type_ = dc.type_from_annotation(
-                    method.__annotations__[argument],
-                    module=method.__module__
-                )
+                annotations = get_type_hints(method)
+                type_ = dc.type_from_annotation(annotations[argument],
+                                                module=method.__module__)
             except KeyError:
                 msg = 'Argument {} of method/function {} has no typing'
                 raise dc.UntypedArgumentError(
