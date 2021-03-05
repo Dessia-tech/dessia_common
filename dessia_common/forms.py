@@ -150,6 +150,8 @@ class StaticDict(TypedDict):
 class StandaloneObject(DessiaObject):
     _standalone_in_db = True
     _generic_eq = True
+    _allowed_methods = ['add_standalone_object',
+                        'add_embedded_object', 'add_float']
 
     def __init__(self, standalone_subobject: StandaloneSubobject,
                  embedded_subobject: EmbeddedSubobject,
@@ -161,6 +163,7 @@ class StandaloneObject(DessiaObject):
                  union_arg: Union[StandaloneSubobject,
                                   EnhancedStandaloneSubobject],
                  subclass_arg: Subclass[StandaloneSubobject],
+                 default_value_list: List[float] = None,
                  name: str = 'Standalone Object Demo'):
         self.union_arg = union_arg
         self.builtin_list = builtin_list
@@ -174,6 +177,7 @@ class StandaloneObject(DessiaObject):
         self.standalone_subobject = standalone_subobject
         self.embedded_subobject = embedded_subobject
         self.subclass_arg = subclass_arg
+        self.default_value_list = default_value_list
 
         DessiaObject.__init__(self, name=name)
 
@@ -220,7 +224,7 @@ class StandaloneObject(DessiaObject):
         """
         self.subobject_list.append(object_)
 
-    def add_float(self, value) -> StandaloneSubobject:
+    def add_float(self, value: float) -> StandaloneSubobject:
         """
         This methods adds value to its standalone subobject
         floatarg property and returns it.

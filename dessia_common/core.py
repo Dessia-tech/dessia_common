@@ -345,6 +345,7 @@ class DessiaObject:
         required_arguments, default_arguments = inspect_arguments(method=init,
                                                                   merge=False)
         _jsonschema['required'] = required_arguments
+        _jsonschema['standalone_in_db'] = cls._standalone_in_db
 
         # Set jsonschema
         for annotation in annotations.items():
@@ -374,8 +375,9 @@ class DessiaObject:
                                                 name,
                                                 default_arguments[name])
                     _jsonschema['properties'].update(default)
-                _jsonschema['classes'] = [cls.__module__ + '.' + cls.__name__]
-                _jsonschema['whitelist_attributes'] = cls._whitelist_attributes
+
+        _jsonschema['classes'] = [cls.__module__ + '.' + cls.__name__]
+        _jsonschema['whitelist_attributes'] = cls._whitelist_attributes
         return _jsonschema
 
     @property
@@ -406,6 +408,7 @@ class DessiaObject:
                 if annotations:
                     jsonschemas[method_name] = deepcopy(JSONSCHEMA_HEADER)
                     jsonschemas[method_name]['required'] = []
+                    jsonschemas[method_name]['method'] = True
                     for i, annotation in enumerate(annotations.items()):
                         # TOCHECK Not actually ordered
                         argname = annotation[0]
@@ -1388,9 +1391,11 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
             # Several possible classes that are subclass of another one
             class_ = args[0]
             classname = full_classname(object_=class_, compute_for='class')
-            jsonschema_element[key] = {'type': 'object', 'order': order,
-                                       'subclass_of': classname,
-                                       'title': title, 'editable': editable}
+            jsonschema_element[key] = {
+                'type': 'object', 'order': order, 'subclass_of': classname,
+                'title': title, 'editable': editable,
+                'standalone_in_db': class_._standalone_in_db
+            }
         else:
             msg = "Jsonschema computation of typing {} is not implemented"
             raise NotImplementedError(msg.format(typing_))
@@ -1405,7 +1410,10 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
         classname = full_classname(object_=typing_, compute_for='class')
         if issubclass(typing_, DessiaObject):
             # Dessia custom classes
-            jsonschema_element[key] = {'type': 'object'}
+            jsonschema_element[key] = {
+                'type': 'object',
+                'standalone_in_db': typing_._standalone_in_db
+            }
         else:
             # Statically created dict structure
             jsonschema_element[key] = static_dict_jsonschema(typing_)
@@ -1612,65 +1620,59 @@ def recursive_instantiation(type_, value):
         raise NotImplementedError(type_)
 
 
-def choose_default(jsonschema):
+def default_sequence(array_jsonschema):
+    if is_sequence(array_jsonschema['items']):
+        # Tuple jsonschema
+        return [default_dict(v) for v in array_jsonschema['items']]
+    return []
+
+
+def datatype_from_jsonschema(jsonschema):
     if jsonschema['type'] == 'object':
-        default_value = default_dict(jsonschema)
+        if 'classes' in jsonschema:
+            if len(jsonschema['classes']) > 1:
+                return 'union'
+            if 'standalone_in_db' in jsonschema:
+                if jsonschema['standalone_in_db']:
+                    return 'standalone_object'
+                return 'embedded_object'
+            return 'static_dict'
+        if 'subclass_of' in jsonschema:
+            return 'subclass'
+        if 'patternProperties' in jsonschema:
+            return 'dynamic_dict'
+        if 'method' in jsonschema and jsonschema['method']:
+            return 'embedded_object'
+
     elif jsonschema['type'] == 'array':
-        default_value = default_sequence(jsonschema)
-    elif jsonschema['type'] == 'string':
-        default_value = ''
+        if 'additionalItems' in jsonschema\
+                and not jsonschema['additionalItems']:
+            return 'heterogeneous_sequence'
+        return 'homogeneous_sequence'
+
+    elif jsonschema['type'] in ['number', 'string', 'boolean']:
+        return 'builtin'
+    return None
+
+
+def default_value(jsonschema):
+    datatype = datatype_from_jsonschema(jsonschema)
+    if datatype in ['heterogeneous_sequence', 'homogeneous_sequence']:
+        return default_sequence(jsonschema)
+    elif datatype == 'static_dict':
+        return default_dict(jsonschema)
+    elif datatype == 'dynamic_dict':
+        return {}
     else:
-        default_value = None
-    return default_value
+        return None
 
 
 def default_dict(jsonschema):
     dict_ = {}
-    if 'properties' in jsonschema:
-        for property_, value in jsonschema['properties'].items():
-            if property_ in jsonschema['required']:
-                dict_[property_] = choose_default(value)
-            else:
-                default_value = value['default_value']
-                if value['type'] == 'array':
-                    dict_[property_] = []
-                elif value['type'] == 'object' and default_value is None:
-                    dict_[property_] = {}
-                else:
-                    dict_[property_] = default_value
-    return dict_
-
-
-def default_sequence(array_jsonschema):
-    if 'minItems' in array_jsonschema and 'maxItems' in array_jsonschema \
-            and array_jsonschema['minItems'] == array_jsonschema['maxItems']:
-        number = array_jsonschema['minItems']
-    elif 'minItems' in array_jsonschema:
-        number = array_jsonschema['minItems']
-    elif 'maxItems' in array_jsonschema:
-        number = array_jsonschema['maxItems']
+    datatype = datatype_from_jsonschema(jsonschema)
+    if datatype in ['standalone_object', 'embedded_object', 'static_dict']:
+        for property_, jss in jsonschema['properties'].items():
+            dict_[property_] = default_value(jss)
     else:
-        number = 1
-
-    if type(array_jsonschema['items']) == list:
-        # Tuple jsonschema
-        return [default_dict(v) for v in array_jsonschema['items']]
-
-    elif array_jsonschema['items']['type'] == 'object':
-        if 'classes' in array_jsonschema['items']:
-            # TOCHECK classes[0]
-            classname = array_jsonschema['items']['classes'][0]
-            class_ = get_python_class_from_class_name(classname)
-            if issubclass(class_, DessiaObject):
-                if class_._standalone_in_db:  # Standalone object
-                    return []
-                # Embedded object
-                default_subdict = default_dict(class_.jsonschema())
-                return [default_subdict] * number
-            # Static Dict
-            dict_jsonschema = static_dict_jsonschema(class_)
-            default_subdict = default_dict(dict_jsonschema)
-            return [default_subdict] * number
-        # Subclasses
-        return [choose_default(array_jsonschema['items'])] * number
-    return [choose_default(array_jsonschema['items'])] * number
+        return None
+    return dict_
