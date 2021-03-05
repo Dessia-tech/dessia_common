@@ -1660,9 +1660,9 @@ def default_sequence(array_jsonschema):
     if type(array_jsonschema['items']) == list:
         # Tuple jsonschema
         return [default_dict(v) for v in array_jsonschema['items']]
-
-    elif array_jsonschema['items']['type'] == 'object':
-        return []
+    return []
+    # elif array_jsonschema['items']['type'] == 'object':
+    #     return []
     #     if 'classes' in array_jsonschema['items']:
     #         # TOCHECK classes[0]
     #         classname = array_jsonschema['items']['classes'][0]
@@ -1712,9 +1712,10 @@ def default_value(jsonschema):
     datatype = datatype_from_jsonschema(jsonschema)
     if datatype in ['heterogeneous_sequence', 'homogeneous_sequence']:
         return default_sequence(jsonschema)
-    elif datatype == ['embedded_object', 'static_dict']:
-        print(jsonschema)
+    elif datatype == 'static_dict':
         return default_dict(jsonschema)
+    elif datatype == 'dynamic_dict':
+        return {}
     else:
         return None
 
