@@ -512,19 +512,19 @@ class DessiaObject:
                 dict_[arg] = deepcopy_value(getattr(self, arg), memo=memo)
         return self.__class__(**dict_)
 
-    def volmdlr_volume_model(self, frame=None):
+    def volmdlr_volume_model(self, **kwargs):
         if hasattr(self, 'volmdlr_primitives'):
             import volmdlr as vm  # !!! Avoid circular imports, is this OK ?
             if hasattr(self, 'volmdlr_primitives_step_frames'):
-                return vm.MovingVolumeModel(self.volmdlr_primitives(),
-                                            self.volmdlr_primitives_step_frames())
-            else:
-                if frame is None:
-                    frame = vm.OXYZ
-            try:
-                return vm.core.VolumeModel(self.volmdlr_primitives(frame=frame))
-            except TypeError:
-                return vm.core.VolumeModel(self.volmdlr_primitives())
+                return vm.core.MovingVolumeModel(self.volmdlr_primitives(**kwargs),
+                                            self.volmdlr_primitives_step_frames(**kwargs))
+            # else:
+            #     if frame is None:
+            #         frame = vm.OXYZ
+            # try:
+            return vm.core.VolumeModel(self.volmdlr_primitives(**kwargs))
+            # except TypeError:
+            #     return vm.core.VolumeModel(self.volmdlr_primitives())
         msg = 'Object of type {} does not implement volmdlr_primitives'
         raise NotImplementedError(msg.format(self.__class__.__name__))
 
@@ -549,13 +549,13 @@ class DessiaObject:
         else:
             raise NotImplementedError
 
-    def plot(self):
+    def plot(self, **kwargs):
         """
 
         """
         if hasattr(self, 'plot_data'):
             import plot_data
-            for data in self.plot_data():
+            for data in self.plot_data(**kwargs):
                 plot_data.plot_canvas(plot_data_object=data,
                                       canvas_id='canvas',
                                       debug_mode=False)
@@ -564,10 +564,14 @@ class DessiaObject:
                   'to define what to plot'
             raise NotImplementedError(msg.format(self.__class__.__name__))
 
-    def mpl_plot(self):
+    def mpl_plot(self, **kwargs):
         axs = []
         if hasattr(self, 'plot_data'):
-            for data in self.plot_data():
+            try:
+                plot_datas = self.plot_data(**kwargs)
+            except TypeError as error:
+                raise TypeError('{}.{}'.format(self.__class__.__name__, error))
+            for data in plot_datas:
                 if hasattr(data, 'mpl_plot'):
                     ax = data.mpl_plot()
                     axs.append(ax)
@@ -578,8 +582,8 @@ class DessiaObject:
 
         return axs
 
-    def babylonjs(self, use_cdn=True, debug=False):
-        self.volmdlr_volume_model().babylonjs(use_cdn=use_cdn, debug=debug)
+    def babylonjs(self, use_cdn=True, debug=False, **kwargs):
+        self.volmdlr_volume_model(**kwargs).babylonjs(use_cdn=use_cdn, debug=debug)
 
     def _displays(self, **kwargs) -> List[JsonSerializable]:
         if hasattr(self, '_display_angular'):
@@ -619,6 +623,12 @@ class DessiaObject:
                                      reference_path=reference_path)
             displays.append(display_.to_dict())
         return displays
+
+class Catalog(DessiaObject):
+    def __init__(self, objects:List[DessiaObject], name:str=''):
+        self.objects = objects
+        self.name = name
+
 
 
 class DisplayObject(DessiaObject):
