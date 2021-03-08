@@ -86,9 +86,6 @@ class StandaloneSubobject(DessiaObject):
         return volumes
 
 
-DEF_SS = StandaloneSubobject.generate(1)
-
-
 class EnhancedStandaloneSubobject(StandaloneSubobject):
     def __init__(self, floatarg: float, boolarg: bool,
                  name: str = 'Standalone Subobject'):
@@ -104,9 +101,6 @@ class EnhancedStandaloneSubobject(StandaloneSubobject):
         return cls(floatarg=floatarg, boolarg=boolarg, name=name)
 
 
-DEF_ESS = EnhancedStandaloneSubobject.generate(1)
-
-
 class InheritingStandaloneSubobject(StandaloneSubobject):
     def __init__(self, floatarg: float, strarg: str,
                  name: str = 'Inheriting Standalone Subobject'):
@@ -120,9 +114,6 @@ class InheritingStandaloneSubobject(StandaloneSubobject):
         strarg = str(-seed)
         name = 'Inheriting Standalone Subobject' + str(seed)
         return cls(floatarg=floatarg, strarg=strarg, name=name)
-
-
-DEF_ISS = InheritingStandaloneSubobject.generate(1)
 
 
 class EmbeddedSubobject(DessiaObject):
@@ -149,9 +140,6 @@ class EmbeddedSubobject(DessiaObject):
         return [cls.generate(i) for i in range(ceil(seed/3))]
 
 
-DEF_ES = EmbeddedSubobject.generate(1)
-
-
 class StaticDict(TypedDict):
     name: str
     float_value: float
@@ -159,14 +147,39 @@ class StaticDict(TypedDict):
     is_valid: bool
 
 
-DEF_SD = {'name': 'Name', 'float_value': 1.2, 'int_value': 1, 'is_valid': True}
-
-
 class StandaloneObject(DessiaObject):
     _standalone_in_db = True
     _generic_eq = True
     _allowed_methods = ['add_standalone_object',
                         'add_embedded_object', 'add_float']
+
+    def __init__(self, standalone_subobject: StandaloneSubobject,
+                 embedded_subobject: EmbeddedSubobject,
+                 dynamic_dict: Dict[str, bool], static_dict: StaticDict,
+                 tuple_arg: Tuple[str, int], intarg: int, strarg: str,
+                 object_list: List[StandaloneSubobject],
+                 subobject_list: List[EmbeddedSubobject],
+                 builtin_list: List[int],
+                 union_arg: Union[StandaloneSubobject,
+                                  EnhancedStandaloneSubobject],
+                 subclass_arg: Subclass[StandaloneSubobject],
+                 default_value_list: List[float] = None,
+                 name: str = 'Standalone Object Demo'):
+        self.union_arg = union_arg
+        self.builtin_list = builtin_list
+        self.subobject_list = subobject_list
+        self.object_list = object_list
+        self.tuple_arg = tuple_arg
+        self.strarg = strarg
+        self.intarg = intarg
+        self.static_dict = static_dict
+        self.dynamic_dict = dynamic_dict
+        self.standalone_subobject = standalone_subobject
+        self.embedded_subobject = embedded_subobject
+        self.subclass_arg = subclass_arg
+        self.default_value_list = default_value_list
+
+        DessiaObject.__init__(self, name=name)
 
     @classmethod
     def generate(cls, seed: int):
@@ -195,36 +208,6 @@ class StandaloneObject(DessiaObject):
                    builtin_list=builtin_list, union_arg=union_arg,
                    subclass_arg=subclass_arg)
 
-    def __init__(self, standalone_subobject: StandaloneSubobject = DEF_SS,
-                 embedded_subobject: EmbeddedSubobject = DEF_ES,
-                 dynamic_dict: Dict[str, bool] = None,
-                 static_dict: StaticDict = None,
-                 object_list: List[StandaloneSubobject] = None,
-                 subobject_list: List[EmbeddedSubobject] = None,
-                 builtin_list: List[int] = None,
-                 union_arg: Union[StandaloneSubobject,
-                                  EnhancedStandaloneSubobject] = DEF_ESS,
-                 tuple_arg: Tuple[str, int] = ('test', 1),
-                 intarg: int = 10, strarg: str = None,
-                 subclass_arg: Subclass[StandaloneSubobject] = None,
-                 default_value_list: List[float] = None,
-                 name: str = 'Standalone Object Demo'):
-        self.union_arg = union_arg
-        self.builtin_list = builtin_list
-        self.subobject_list = subobject_list
-        self.object_list = object_list
-        self.tuple_arg = tuple_arg
-        self.strarg = strarg
-        self.intarg = intarg
-        self.static_dict = static_dict
-        self.dynamic_dict = dynamic_dict
-        self.standalone_subobject = standalone_subobject
-        self.embedded_subobject = embedded_subobject
-        self.subclass_arg = subclass_arg
-        self.default_value_list = default_value_list
-
-        DessiaObject.__init__(self, name=name)
-
     def add_standalone_object(self, object_: StandaloneSubobject):
         """
         This methods adds a standalone object to object_list.
@@ -241,7 +224,7 @@ class StandaloneObject(DessiaObject):
         """
         self.subobject_list.append(object_)
 
-    def add_float(self, value: float = 2) -> StandaloneSubobject:
+    def add_float(self, value: float) -> StandaloneSubobject:
         """
         This methods adds value to its standalone subobject
         floatarg property and returns it.
