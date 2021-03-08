@@ -6,9 +6,9 @@ embedded_subobject = EmbeddedSubobject()
 dynamic_dict = {'key0': True,
                 'key1': False}
 static_dict = {'name': 'StaticDict',
-               'value': -458.256,
-               'is_valid': True,
-               'subobject': EmbeddedSubobject()}
+               'float_value': -458.256,
+               'int_value': 10,
+               'is_valid': True}
 tuple_arg = ('Tuple', 1)
 intarg = 5
 strarg = 'TestStr'
@@ -19,10 +19,8 @@ subobject_list = [EmbeddedSubobject(), EmbeddedSubobject(),
 builtin_list = [1, 2, 3, 4, 5]
 union_object = EnhancedStandaloneSubobject(floatarg=333.333, boolarg=True)
 
-inheriting_list = [EnhancedStandaloneSubobject(floatarg=-7516.15,
-                                               boolarg=True),
-                   InheritingStandaloneSubobject(floatarg=1561.57,
-                                                 strarg='Subclass')]
+subclass_arg = InheritingStandaloneSubobject(floatarg=1561.57,
+                                             strarg='Subclass')
 
 standalone_object = StandaloneObject(standalone_subobject=standalone_subobject,
                                      embedded_subobject=embedded_subobject,
@@ -33,77 +31,54 @@ standalone_object = StandaloneObject(standalone_subobject=standalone_subobject,
                                      subobject_list=subobject_list,
                                      builtin_list=builtin_list,
                                      union_arg=union_object,
-                                     inheritance_list=inheriting_list)
+                                     subclass_arg=subclass_arg)
 
 # Test jsonschema
 jsonschema = {
     'definitions': {},
     '$schema': 'http://json-schema.org/draft-07/schema#',
     'type': 'object',
-    'required': ['standalone_subobject',
-                 'embedded_subobject',
-                 'dynamic_dict',
-                 'static_dict',
-                 'tuple_arg',
-                 'intarg',
-                 'strarg',
-                 'object_list',
-                 'subobject_list',
-                 'builtin_list',
-                 'union_arg',
-                 'inheritance_list'],
+    'required': ['standalone_subobject', 'embedded_subobject',
+                 'dynamic_dict', 'static_dict', 'tuple_arg', 'intarg',
+                 'strarg', 'object_list', 'subobject_list', 'builtin_list',
+                 'union_arg', 'inheritance_list'],
     'properties': {
         'standalone_subobject': {
-            'type': 'object',
-            'title': 'Standalone Subobject',
-            'order': 0,
-            'editable': True,
+            'type': 'object', 'title': 'Standalone Subobject',
+            'order': 0, 'editable': True, 'standalone_in_db': True,
             'classes': ['dessia_common.forms.StandaloneSubobject']
         },
         'embedded_subobject': {
-            'type': 'object',
-            'title': 'Embedded Subobject',
-            'order': 1,
-            'editable': True,
+            'type': 'object', 'title': 'Embedded Subobject',
+            'order': 1, 'editable': True, 'standalone_in_db': False,
             'classes': ['dessia_common.forms.EmbeddedSubobject']
         },
         'dynamic_dict': {
-            'type': 'object',
-            'order': 2,
-            'editable': True,
-            'title': 'Dynamic Dict',
+            'type': 'object', 'order': 2,
+            'editable': True, 'title': 'Dynamic Dict',
             'patternProperties': {'.*': {'type': 'boolean'}}
         },
         'static_dict': {
             'definitions': {},
             '$schema': 'http://json-schema.org/draft-07/schema#',
             'type': 'object',
-            'required': ['name', 'value', 'is_valid', 'subobject'],
+            'required': ['name', 'float_value', 'int_value', 'is_valid'],
             'properties': {
                 'name': {
-                    'type': 'string',
-                    'title': 'Name',
-                    'editable': True,
-                    'order': 0
+                    'type': 'string', 'title': 'Name',
+                    'editable': True, 'order': 0
                 },
-                'value': {
-                    'type': 'number',
-                    'title': 'Value',
-                    'editable': True,
-                    'order': 1
+                'float_value': {
+                    'type': 'number', 'title': 'Float Value',
+                    'editable': True, 'order': 1
+                },
+                'int_value': {
+                    'type': 'number', 'title': 'Int Value',
+                    'editable': True, 'order': 2
                 },
                 'is_valid': {
-                    'type': 'boolean',
-                    'title': 'Is Valid',
-                    'editable': True,
-                    'order': 2
-                },
-                'subobject': {
-                    'type': 'object',
-                    'title': 'Subobject',
-                    'order': 3,
-                    'editable': True,
-                    'classes': ['dessia_common.forms.EmbeddedSubobject']
+                    'type': 'boolean', 'title': 'Is Valid',
+                    'editable': True, 'order': 3
                 }
             },
             'title': 'Static Dict',
@@ -112,25 +87,17 @@ jsonschema = {
             'classes': ['dessia_common.forms.StaticDict']
         },
         'tuple_arg': {
-            'additionalItems': False,
-            'type': 'array',
-            'title': 'Tuple Arg',
-            'editable': True,
-            'order': 4,
-            'items': [{'type': 'string'},
-                      {'type': 'number'}]
+            'additionalItems': False, 'type': 'array',
+            'title': 'Tuple Arg', 'editable': True,
+            'order': 4, 'items': [{'type': 'string'}, {'type': 'number'}]
         },
         'intarg': {
-            'type': 'number',
-            'title': 'Intarg',
-            'editable': True,
-            'order': 5
+            'type': 'number', 'title': 'Intarg',
+            'editable': True, 'order': 5
         },
         'strarg': {
-            'type': 'string',
-            'title': 'Strarg',
-            'editable': True,
-            'order': 6
+            'type': 'string', 'title': 'Strarg',
+            'editable': True, 'order': 6
         },
         'object_list': {
             'type': 'array',
@@ -138,10 +105,9 @@ jsonschema = {
             'title': 'Object List',
             'order': 7,
             'items': {
-                'type': 'object',
-                'title': 'Object List',
-                'order': 0,
-                'editable': True,
+                'type': 'object', 'title': 'Object List',
+                'order': 0, 'editable': True,
+                'standalone_in_db': True,
                 'classes': ['dessia_common.forms.StandaloneSubobject']
             }
         },
@@ -151,10 +117,9 @@ jsonschema = {
             'title': 'Subobject List',
             'order': 8,
             'items': {
-                'type': 'object',
-                'title': 'Subobject List',
-                'order': 0,
-                'editable': True,
+                'type': 'object', 'title': 'Subobject List',
+                'order': 0, 'editable': True,
+                'standalone_in_db': False,
                 'classes': ['dessia_common.forms.EmbeddedSubobject']
             }
         },
@@ -164,10 +129,8 @@ jsonschema = {
             'title': 'Builtin List',
             'order': 9,
             'items': {
-                'type': 'number',
-                'title': 'Builtin List',
-                'editable': True,
-                'order': 0
+                'type': 'number', 'title': 'Builtin List',
+                'editable': True, 'order': 0
             }
         },
         'union_arg': {
@@ -178,24 +141,26 @@ jsonschema = {
             'editable': True,
             'order': 10
         },
-        'inheritance_list': {
+        'subclass_arg': {
+            'type': 'object',
+            'subclass_of': 'dessia_common.forms.StandaloneSubobject',
+            'title': 'Subclass Arg', 'editable': True, 'order': 11,
+            'standalone_in_db': True
+        },
+        'default_value_list': {
             'type': 'array',
+            'order': 12,
             'editable': True,
-            'title': 'Inheritance List',
-            'order': 11,
-            'default_value': None,
-            'items': {'type': 'object',
-                      'subclass_of': 'dessia_common.forms.StandaloneSubobject',
-                      'title': 'Inheritance List',
-                      'editable': True,
-                      'order': 0}
+            'title': 'Default Value List',
+            'items': {
+                'type': 'number', 'title': 'Default Value List',
+                'editable': True, 'order': 0
+            },
+            'default_value': None
         },
         'name': {
-            'type': 'string',
-            'title': 'Name',
-            'editable': True,
-            'order': 12,
-            'default_value': 'Standalone Object Demo'
+            'type': 'string', 'title': 'Name', 'editable': True,
+            'order': 13, 'default_value': 'Standalone Object Demo'
         }
     },
     'classes': ['dessia_common.forms.StandaloneObject'],
@@ -227,13 +192,11 @@ deepdict = enhanced_deep_attr(obj=standalone_object,
                               sequence=['static_dict', 'is_valid'])
 assert deepdict is True
 
-deeperlist = enhanced_deep_attr(obj=standalone_object,
-                                sequence=['static_dict', 'subobject',
-                                          'embedded_list', 1])
-assert deeperlist == 2
+# deeperlist = enhanced_deep_attr(obj=standalone_object,
+#                                 sequence=['subcla', 0,
+#                                           'boolarg'])
+# assert deeperlist
 
-directattr = enhanced_deep_attr(obj=standalone_object,
-                                sequence=['strarg'])
+directattr = enhanced_deep_attr(obj=standalone_object, sequence=['strarg'])
 
 assert directattr == 'TestStr'
-
