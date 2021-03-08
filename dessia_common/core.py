@@ -1658,7 +1658,7 @@ def default_sequence(array_jsonschema):
         if 'default_value' in array_jsonschema:
             return array_jsonschema['default_value']
         return [default_dict(v) for v in array_jsonschema['items']]
-    return []
+    return None
 
 
 def datatype_from_jsonschema(jsonschema):
@@ -1695,8 +1695,8 @@ def chose_default(jsonschema):
         return default_sequence(jsonschema)
     elif datatype == 'static_dict':
         return default_dict(jsonschema)
-    elif datatype == 'dynamic_dict':
-        return {}
+    # elif datatype == 'dynamic_dict':
+    #     return {}
     elif datatype in ['standalone_object', 'embedded_object',
                       'subclass', 'union']:
         if 'default_value' in jsonschema:
