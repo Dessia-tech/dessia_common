@@ -19,6 +19,7 @@ import dessia_common as dc
 from dessia_common.vectored_objects import ParetoSettings, from_csv
 from dessia_common.typings import JsonSerializable, Subclass
 import warnings
+
 # import plot_data
 
 # Type Aliases
@@ -503,6 +504,13 @@ class ForEach(Block):
     :type workflow_block: WorkflowBlock
     :param iter_input_index: Index of iterable input in worklow_block.inputs
     :type iter_input_index: int
+    :param input_connections: Links ForEach's inputs to its
+        workflow_block's inputs.
+        input_connections[i] = [ForEach_input_j, WorkflowBlock_input_k]
+    :type input_connections: List[Tuple[Tuple[int, int, int], Tuple[int, int, int]]]
+    :param output_connections: Same but for outputs.
+        output_connections[i] = [WorkflowBlock_output_j, ForEach_output_k]
+    :type output_connections: List[Tuple[Tuple[int, int, int], Tuple[int, int, int]]]
     :param name: The name of the block.
     :type name: str
     """
@@ -522,6 +530,8 @@ class ForEach(Block):
                 input_.name = 'binding ' + input_.name
                 inputs.append(input_)
         output_variable = Variable(name='Foreach output')
+        self.output_connections = None  # TODO: configuring port internal connections
+        self.input_connections = None
 
         Block.__init__(self, inputs, [output_variable], name=name)
 
@@ -714,7 +724,7 @@ class Filter(Block):
 class MultiPlot(Display):
     """
     :param attributes: A List of all attributes that will be shown inside the \
-    ParallelPlot window on the DessIA Platform.
+    ParallelPlot window on DessIA's Platform.
     :type attributes: List[str]
     :param name: The name of the block.
     :type name: str
@@ -809,6 +819,7 @@ class ParallelPlot(MultiPlot):
     :param name: The name of the block.
     :type name: str
     """
+
     def __init__(self, attributes: List[str], order: int = 0, name: str = ''):
         dc.deprecation_warning(self.__class__.__name__, 'Class', 'MultiPlot')
         MultiPlot.__init__(self, attributes=attributes, order=order, name=name)
@@ -1190,6 +1201,7 @@ class Workflow(Block):
                 current_dict.update(dict_)
             properties_dict[str(i)] = current_dict[str(i)]
         jsonschemas['run']['required'] = required_inputs
+        jsonschemas['run']['method'] = True
         return jsonschemas
 
     def to_dict(self):
@@ -1398,7 +1410,8 @@ class Workflow(Block):
         horizontal_spacing = max(min_horizontal_spacing,
                                  max_length / max_distance)
 
-        for i, distance in enumerate(sorted(elements_by_distance.keys())[::-1]):
+        for i, distance in enumerate(
+                sorted(elements_by_distance.keys())[::-1]):
             n = len(elements_by_distance[distance])
             vertical_spacing = min(min_vertical_spacing, max_height / n)
             horizontal_anchor_size = max_distance
@@ -1479,7 +1492,8 @@ class Workflow(Block):
                 if not activated_items[pipe]:
                     if activated_items[pipe.input_variable]:
                         activated_items[pipe] = True
-                        values[pipe.output_variable] = values[pipe.input_variable]
+                        values[pipe.output_variable] = values[
+                            pipe.input_variable]
                         activated_items[pipe.output_variable] = True
                         something_activated = True
 
@@ -1678,13 +1692,22 @@ class WorkflowBlock(Block):
     a different behavior
     than a Block in eq and hash which is problematic to handle in dicts
     for example
+
+    :param workflow: The WorkflowBlock's workflow
+    :type workflow: Workflow
+    :param input_connections: Links ForEach's inputs to its workflow_block's inputs. input_connections[i] = [ForEach_input_j, WorkflowBlock_input_k]
+    :type input_connections: List[Tuple[Tuple[int, int, int], Tuple[int, int, int]]]
+    :param output_connections: Same but for outputs. output_connections[i] = [WorkflowBlock_output_j, ForEach_output_k]
+    :type output_connections: List[Tuple[Tuple[int, int, int], Tuple[int, int, int]]]
     """
 
-    def __init__(self, workflow: Workflow, name: str = ''):
+    def __init__(self, workflow: Workflow,
+                 name: str = ''):
         self.workflow = workflow
-
+        self.input_connections = None  # TODO: configuring port internal connections
+        self.output_connections = None
         inputs = []
-        for variable in self.workflow.inputs:
+        for i, variable in enumerate(self.workflow.inputs):
             input_ = variable.copy()
             input_.name = '{} - {}'.format(name, variable.name)
             inputs.append(input_)
@@ -1840,7 +1863,7 @@ class WorkflowRun(dc.DessiaObject):
                 strindices = str(self.workflow.variable_indices(input_))
                 local_values[input_] = self.variables_values[strindices]
                 if i == block._displayable_input:
-                    reference_path = 'variables_values/'+strindices
+                    reference_path = 'variables_values/' + strindices
             display = block.display_(local_values=local_values,
                                      reference_path=reference_path)
             displays.extend(display)
@@ -1898,7 +1921,7 @@ class WorkflowRun(dc.DessiaObject):
 
     def method_dict(self, method_name: str = None,
                     method_jsonschema: Any = None):
-        if method_name is not None and method_name == 'run_again'\
+        if method_name is not None and method_name == 'run_again' \
                 and method_jsonschema is not None:
             dict_ = dc.serialize_dict(self.input_values)
             for property_, value in method_jsonschema['properties'].items():
@@ -1923,40 +1946,6 @@ class WorkflowRun(dc.DessiaObject):
         jsonschemas = self.workflow._method_jsonschemas
         jsonschemas['run_again'] = jsonschemas.pop('run')
         return jsonschemas
-
-    # @property
-    # def _method_jsonschemas(self):
-    #     # TODO : Share code with Workflow run method
-    #     jsonschemas = {'run_again': deepcopy(dc.JSONSCHEMA_HEADER)}
-    #     properties_dict = jsonschemas['run_again']['properties']
-    #     required_inputs = []
-    #     for i, value in self.input_values.items():
-    #         current_dict = {}
-    #         input_ = self.workflow.inputs[i]
-    #         annotation = (str(i), input_.type_)
-    #         input_block = self.workflow.block_from_variable(input_)
-    #         if input_block.name:
-    #             title = dc.prettyname(input_block.name + ' - ' + input_.name)
-    #         else:
-    #             title = dc.prettyname(input_.name)
-    #         annotation_jsonschema = dc.jsonschema_from_annotation(
-    #             annotation=annotation,
-    #             jsonschema_element=current_dict,
-    #             order=i,
-    #             title=title,
-    #         )
-    #         current_dict.update(annotation_jsonschema[str(i)])
-    #         if not input_.has_default_value:
-    #             required_inputs.append(str(i))
-    #         else:
-    #             dict_ = dc.set_default_value(
-    #                 jsonschema_element=current_dict, key=str(i),
-    #                 default_value=input_.default_value
-    #             )
-    #             current_dict.update(dict_)
-    #         properties_dict[str(i)] = current_dict[str(i)]
-    #     jsonschemas['run_again']['required'] = required_inputs
-    #     return jsonschemas
 
 
 def set_inputs_from_function(method, inputs=None):
@@ -2003,7 +1992,3 @@ def value_type_check(value, type_):
         pass
 
     return True
-
-# DISPLAY_DEFAULT = TypedVariable(type_=dc.DessiaObject,
-#                                 name='Model to Display',
-#                                 memorize=True)
