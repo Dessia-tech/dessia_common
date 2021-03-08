@@ -1492,18 +1492,40 @@ def static_dict_jsonschema(typed_dict, title=None):
 
 
 def set_default_value(jsonschema_element, key, default_value):
-    if isinstance(default_value, tuple(TYPING_EQUIVALENCES.keys())) \
-            or default_value is None:
+    datatype = datatype_from_jsonschema(jsonschema_element[key])
+    if default_value is None\
+            or datatype in ['builtin', 'heterogeneous_sequence',
+                            'static_dict', 'dynamic_dict']:
         jsonschema_element[key]['default_value'] = default_value
-    elif is_sequence(default_value):
-        # TODO : Tuple should be considered OK for default_value
+    # elif datatype == 'builtin':
+    #     jsonschema_element[key]['default_value'] = default_value
+    # elif datatype == 'heterogeneous_sequence':
+    #     jsonschema_element[key]['default_value'] = default_value
+    elif datatype == 'homogeneous_sequence':
         msg = 'Object {} of type {} is not supported as default value'
         type_ = type(default_value)
         raise NotImplementedError(msg.format(default_value, type_))
-    else:
+    elif datatype in ['standalone_object', 'embedded_object',
+                      'subclass', 'union']:
         object_dict = default_value.to_dict()
         jsonschema_element[key]['default_value'] = object_dict
     return jsonschema_element
+    # if isinstance(default_value, tuple(TYPING_EQUIVALENCES.keys())) \
+    #         or default_value is None:
+    #     jsonschema_element[key]['default_value'] = default_value
+    # elif is_sequence(default_value):
+    #     if datatype == 'heterogeneous_sequence':
+    #         jsonschema_element[key]['default_value'] = default_value
+    #     else:
+    #         msg = 'Object {} of type {} is not supported as default value'
+    #         type_ = type(default_value)
+    #         raise NotImplementedError(msg.format(default_value, type_))
+    # else:
+        # if datatype in ['standalone_object', 'embedded_object',
+        #                 'subclass', 'union']:
+        # object_dict = default_value.to_dict()
+        # jsonschema_element[key]['default_value'] = object_dict
+        # else:
 
 
 def inspect_arguments(method, merge=False):
@@ -1633,6 +1655,8 @@ def recursive_instantiation(type_, value):
 def default_sequence(array_jsonschema):
     if is_sequence(array_jsonschema['items']):
         # Tuple jsonschema
+        if 'default_value' in array_jsonschema:
+            return array_jsonschema['default_value']
         return [default_dict(v) for v in array_jsonschema['items']]
     return []
 
@@ -1665,7 +1689,7 @@ def datatype_from_jsonschema(jsonschema):
     return None
 
 
-def default_value(jsonschema):
+def chose_default(jsonschema):
     datatype = datatype_from_jsonschema(jsonschema)
     if datatype in ['heterogeneous_sequence', 'homogeneous_sequence']:
         return default_sequence(jsonschema)
@@ -1673,6 +1697,11 @@ def default_value(jsonschema):
         return default_dict(jsonschema)
     elif datatype == 'dynamic_dict':
         return {}
+    elif datatype in ['standalone_object', 'embedded_object',
+                      'subclass', 'union']:
+        if 'default_value' in jsonschema:
+            return jsonschema['default_value']
+        return None
     else:
         return None
 
@@ -1682,7 +1711,7 @@ def default_dict(jsonschema):
     datatype = datatype_from_jsonschema(jsonschema)
     if datatype in ['standalone_object', 'embedded_object', 'static_dict']:
         for property_, jss in jsonschema['properties'].items():
-            dict_[property_] = default_value(jss)
+            dict_[property_] = chose_default(jss)
     else:
         return None
     return dict_
