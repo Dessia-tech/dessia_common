@@ -3,6 +3,10 @@
 import dessia_common.core as dc
 
 
+class Specifications(dc.DessiaObject):
+    def __init__(self, name:str=''):
+        self.name = name
+
 class Optimizer(dc.DessiaObject):
     """
     Common parts of optimizers
