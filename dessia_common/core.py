@@ -624,6 +624,16 @@ class DessiaObject:
             displays.append(display_.to_dict())
         return displays
 
+    def _check_platform(self):
+        """
+        Reproduce lifecycle on platform (serialization, display)
+        """
+        self.dict_to_object(json.loads(json.dumps(self.to_dict())))
+        self._displays()
+
+
+
+
 class Catalog(DessiaObject):
     def __init__(self, objects:List[DessiaObject], name:str=''):
         self.objects = objects
