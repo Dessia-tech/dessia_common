@@ -29,6 +29,7 @@ this module can also be seen as a template for Dessia's
 coding/naming style & convention.
 """
 
+from math import floor, ceil
 from typing import Dict, List, Tuple, Union
 
 try:
@@ -60,6 +61,17 @@ class StandaloneSubobject(DessiaObject):
 
         DessiaObject.__init__(self, name=name)
 
+    @classmethod
+    def generate(cls, seed: int) -> 'StandaloneSubobject':
+        floatarg = 1.7 * seed
+        name = 'StandaloneSubobject' + str(seed)
+        return cls(floatarg=floatarg, name=name)
+
+    @classmethod
+    def generate_many(cls, seed: int) -> List['StandaloneSubobject']:
+        subobjects = [cls.generate((i+1)*1000) for i in range(seed)]
+        return subobjects
+
     def contour(self):
         points = [vm.Point2D(0, 0), vm.Point2D(0, 1),
                   vm.Point2D(1, 1), vm.Point2D(1, 0)]
@@ -81,6 +93,13 @@ class EnhancedStandaloneSubobject(StandaloneSubobject):
 
         StandaloneSubobject.__init__(self, floatarg=floatarg, name=name)
 
+    @classmethod
+    def generate(cls, seed: int) -> 'EnhancedStandaloneSubobject':
+        floatarg = 1.2 * seed
+        boolarg = floatarg.is_integer()
+        name = 'EnhancedStandaloneSubobject' + str(seed)
+        return cls(floatarg=floatarg, boolarg=boolarg, name=name)
+
 
 class InheritingStandaloneSubobject(StandaloneSubobject):
     def __init__(self, floatarg: float, strarg: str,
@@ -88,6 +107,13 @@ class InheritingStandaloneSubobject(StandaloneSubobject):
         self.strarg = strarg
 
         StandaloneSubobject.__init__(self, floatarg=floatarg, name=name)
+
+    @classmethod
+    def generate(cls, seed: int) -> 'InheritingStandaloneSubobject':
+        floatarg = 0.7 * seed
+        strarg = str(-seed)
+        name = 'Inheriting Standalone Subobject' + str(seed)
+        return cls(floatarg=floatarg, strarg=strarg, name=name)
 
 
 class EmbeddedSubobject(DessiaObject):
@@ -100,17 +126,32 @@ class EmbeddedSubobject(DessiaObject):
 
         DessiaObject.__init__(self, name=name)
 
+    @classmethod
+    def generate(cls, seed: int) -> 'EmbeddedSubobject':
+        if not bool(seed % 2):
+            embedded_list = list(range(int(seed/2)))
+        else:
+            embedded_list = None
+        name = 'Embedded Subobject' + str(seed)
+        return cls(embedded_list=embedded_list, name=name)
+
+    @classmethod
+    def generate_many(cls, seed: int) -> List['EmbeddedSubobject']:
+        return [cls.generate(i) for i in range(ceil(seed/3))]
+
 
 class StaticDict(TypedDict):
     name: str
-    value: float
+    float_value: float
+    int_value: int
     is_valid: bool
-    subobject: EmbeddedSubobject
 
 
 class StandaloneObject(DessiaObject):
     _standalone_in_db = True
     _generic_eq = True
+    _allowed_methods = ['add_standalone_object',
+                        'add_embedded_object', 'add_float']
 
     def __init__(self, standalone_subobject: StandaloneSubobject,
                  embedded_subobject: EmbeddedSubobject,
@@ -121,7 +162,8 @@ class StandaloneObject(DessiaObject):
                  builtin_list: List[int],
                  union_arg: Union[StandaloneSubobject,
                                   EnhancedStandaloneSubobject],
-                 inheritance_list: List[Subclass[StandaloneSubobject]],
+                 subclass_arg: Subclass[StandaloneSubobject],
+                 default_value_list: List[float] = None,
                  name: str = 'Standalone Object Demo'):
         self.union_arg = union_arg
         self.builtin_list = builtin_list
@@ -134,9 +176,37 @@ class StandaloneObject(DessiaObject):
         self.dynamic_dict = dynamic_dict
         self.standalone_subobject = standalone_subobject
         self.embedded_subobject = embedded_subobject
-        self.inheritance_list = inheritance_list
+        self.subclass_arg = subclass_arg
+        self.default_value_list = default_value_list
 
         DessiaObject.__init__(self, name=name)
+
+    @classmethod
+    def generate(cls, seed: int):
+        is_even = not bool(seed % 2)
+        standalone_subobject = StandaloneSubobject.generate(seed)
+        embedded_subobject = EmbeddedSubobject.generate(seed)
+        dynamic_dict = {'n'+str(i): bool(seed % 2) for i in range(seed)}
+        static_dict = {'name': 'Object'+str(seed), 'float_value': seed * 1.3,
+                       'int_value': seed, 'is_valid': is_even}
+        tuple_arg = ('value', seed * 3)
+        intarg = seed
+        strarg = str(seed) * floor(seed/3)
+        object_list = StandaloneSubobject.generate_many(seed)
+        subobject_list = EmbeddedSubobject.generate_many(seed)
+        builtin_list = [seed]*seed
+        union_arg = EnhancedStandaloneSubobject.generate(seed)
+        if is_even:
+            subclass_arg = StandaloneSubobject.generate(-seed)
+        else:
+            subclass_arg = InheritingStandaloneSubobject.generate(seed)
+        return cls(standalone_subobject=standalone_subobject,
+                   embedded_subobject=embedded_subobject,
+                   dynamic_dict=dynamic_dict, static_dict=static_dict,
+                   tuple_arg=tuple_arg, intarg=intarg, strarg=strarg,
+                   object_list=object_list, subobject_list=subobject_list,
+                   builtin_list=builtin_list, union_arg=union_arg,
+                   subclass_arg=subclass_arg)
 
     def add_standalone_object(self, object_: StandaloneSubobject):
         """
@@ -154,7 +224,7 @@ class StandaloneObject(DessiaObject):
         """
         self.subobject_list.append(object_)
 
-    def add_float(self, value) -> StandaloneSubobject:
+    def add_float(self, value: float) -> StandaloneSubobject:
         """
         This methods adds value to its standalone subobject
         floatarg property and returns it.
@@ -183,12 +253,12 @@ class StandaloneObject(DessiaObject):
         tooltip = plot_data.Tooltip(to_disp_attribute_names=attributes,
                                     name='Tooltips')
         scatter_plot = plot_data.Scatter(axis=axis, tooltip=tooltip,
+                                         elements=points,
                                          to_disp_attribute_names=attributes,
                                          name='Scatter Plot')
 
         # Parallel Plot
         attributes = ['cx', 'cy', 'color_fill', 'color_stroke']
-
         parallel_plot = plot_data.ParallelPlot(elements=points,
                                                to_disp_attribute_names=attributes,
                                                name='Parallel Plot')
@@ -198,7 +268,7 @@ class StandaloneObject(DessiaObject):
         sizes = [plot_data.Window(width=560, height=300),
                  plot_data.Window(width=560, height=300)]
         coords = [(0, 0), (300, 0)]
-        multi_plot = plot_data.MultiplePlots(elements=points, objects=objects,
+        multi_plot = plot_data.MultiplePlots(elements=points, plots=objects,
                                              sizes=sizes, coords=coords,
                                              name='Multiple Plot')
         # return [scatter_plot]
@@ -207,3 +277,29 @@ class StandaloneObject(DessiaObject):
         # return [scatter_plot, parallel_plot]
         return [primitives_group, scatter_plot, parallel_plot, multi_plot]
 
+
+class Generator(DessiaObject):
+    def __init__(self, parameter: int, nb_solutions: int = 25, name: str = ''):
+        self.parameter = parameter
+        self.nb_solutions = nb_solutions
+        self.models = None
+
+        DessiaObject.__init__(self, name=name)
+
+    def generate(self) -> List[StandaloneObject]:
+        # submodels = [Submodel(self.parameter * i)
+        #              for i in range(self.nb_solutions)]
+        self.models = [StandaloneObject.generate(self.parameter + i)
+                       for i in range(self.nb_solutions)]
+        return self.models
+
+
+class Optimizer(DessiaObject):
+    def __init__(self, model_to_optimize: StandaloneObject, name: str = ''):
+        self.model_to_optimize = model_to_optimize
+
+        DessiaObject.__init__(self, name=name)
+
+    def optimize(self, optimization_value: int = 3) -> int:
+        self.model_to_optimize.intarg += optimization_value
+        return self.model_to_optimize.intarg

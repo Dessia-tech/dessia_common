@@ -5,8 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased[=>0.4.3]
+### Added
+- Datatype from jsonschema method
+- Method flag in jsonschema
+- Add is_builtin function
+- Raise ValueError if plot_data is not a sequence
+- compute_for argument to full_classname to allow classname computing for class object
+	
+### Fixed
+- dict_to_arguments of workflows have now right signature
 
-## Unreleased
+### Changed
+- Default values are based on datatypes
+- Complex structure as static dict value is not supported anymore
+- Remove type from Sequence block
+- Use Subclass instead of Type for typings
+- Use of instrospection helpers for jsonschema computation from typings (get_type_hints, get_args, get_origin)
+- WorkflowRun method_jsonschemas implements Workflow method
+
+## 0.4.2
 ### Changed
 - BREAKING CHANGE : _display_angular is renamed _displays
 - BREAKING CHANGE : Block ParallelPlot is renamed MultiPlot
@@ -15,7 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ForEach block implementation : workflow_block_input -> iter_input_index
 
 ### Added
-- Serialization typings
+- Serialization tuples
 - DisplayObject
 - _displayable_input as Display block class attribute
 
