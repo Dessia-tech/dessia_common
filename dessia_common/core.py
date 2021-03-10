@@ -629,7 +629,7 @@ class DessiaObject:
         Reproduce lifecycle on platform (serialization, display)
         """
         self.dict_to_object(json.loads(json.dumps(self.to_dict())))
-        self._displays()
+        json.dumps(self._displays())
 
 
 
