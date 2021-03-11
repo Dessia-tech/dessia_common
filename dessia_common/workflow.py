@@ -253,7 +253,7 @@ class InstantiateModel(Block):
     :type name: str
     """
 
-    def __init__(self, model_class: Subclass[dc.DessiaObject], name: str = ''):
+    def __init__(self, model_class: Type, name: str = ''):
         self.model_class = model_class
         inputs = []
 
@@ -295,7 +295,7 @@ class InstantiateModel(Block):
 
 
 class InstanciateModel(InstantiateModel):
-    def __init__(self, model_class: Subclass[dc.DessiaObject], name: str = ''):
+    def __init__(self, model_class: Type, name: str = ''):
         InstantiateModel.__init__(self, model_class=model_class, name=name)
         warnings.warn(
             "InstanciateModel is deprecated, use InstantiateModel instead",
@@ -304,7 +304,7 @@ class InstanciateModel(InstantiateModel):
 
 
 class ClassMethod(Block):
-    def __init__(self, class_: Subclass[dc.DessiaObject],
+    def __init__(self, class_: Type,
                  method_name: str, name: str = ''):
         self.class_ = class_
         self.method_name = method_name
