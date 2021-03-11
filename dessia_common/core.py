@@ -1326,8 +1326,11 @@ def type_from_annotation(type_, module):
 
 
 def is_typing(object_: Any):
-    in_typings = object_.__module__ in ['typing', 'dessia_common.typings']
     has_module = hasattr(object_, '__module__')
+    if has_module:
+        in_typings = object_.__module__ in ['typing', 'dessia_common.typings']
+    else:
+        return False
     has_origin = hasattr(object_, '__origin__')
     has_args = hasattr(object_, '__args__')
     return has_module and has_origin and has_args and in_typings
@@ -1349,6 +1352,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
         jsonschema_element[key] = {'type': TYPING_EQUIVALENCES[typing_],
                                    'title': title, 'editable': editable,
                                    'order': order}
+
     elif is_typing(typing_):
         origin = get_origin(typing_)
         args = get_args(typing_)
@@ -1409,6 +1413,11 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
         else:
             msg = "Jsonschema computation of typing {} is not implemented"
             raise NotImplementedError(msg.format(typing_))
+    elif hasattr(typing_, '__origin__') and typing_.__origin__ is type:
+        jsonschema_element[key] = {'type': 'object', 'order': order,
+                                   'is_type': True, 'title': title,
+                                   'editable': editable,
+                                   'properties': {'name': {'type': 'string'}}}
     elif issubclass(typing_, Measure):
         ann = (key, float)
         jsonschema_element = jsonschema_from_annotation(
@@ -1677,6 +1686,8 @@ def datatype_from_jsonschema(jsonschema):
             return 'dynamic_dict'
         if 'method' in jsonschema and jsonschema['method']:
             return 'embedded_object'
+        if 'is_type' in jsonschema and jsonschema['is_type']:
+            return 'type'
 
     elif jsonschema['type'] == 'array':
         if 'additionalItems' in jsonschema\

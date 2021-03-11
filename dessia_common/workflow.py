@@ -364,7 +364,7 @@ class ModelMethod(Block):
     :type name: str
     """
 
-    def __init__(self, model_class: type, method_name: str, name: str = ''):
+    def __init__(self, model_class: Type, method_name: str, name: str = ''):
         self.model_class = model_class
         self.method_name = method_name
         inputs = [TypedVariable(type_=model_class, name='model at input')]
