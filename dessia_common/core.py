@@ -13,7 +13,7 @@ import collections
 from copy import deepcopy
 import inspect
 import json
-from typing import List, Type, Tuple, Union, Any, \
+from typing import List, Dict, Type, Tuple, Union, Any, \
     get_type_hints, get_origin, get_args
 try:
     from typing import TypedDict  # >=3.8
@@ -341,6 +341,7 @@ class DessiaObject:
 
         # Parse docstring
         parsed_docstring = parse_docstring(cls)
+        parsed_attributes = parsed_docstring['attributes']
 
         # Initialize jsonschema
         _jsonschema = deepcopy(JSONSCHEMA_HEADER)
@@ -349,7 +350,7 @@ class DessiaObject:
                                                                   merge=False)
         _jsonschema['required'] = required_arguments
         _jsonschema['standalone_in_db'] = cls._standalone_in_db
-        _jsonschema['description'] = parsed_docstring['description']['desc']
+        _jsonschema['description'] = parsed_docstring['description']
 
         # Set jsonschema
         for annotation in annotations.items():
@@ -372,11 +373,11 @@ class DessiaObject:
                     annotation=annotation, jsonschema_element={},
                     order=order, editable=editable, title=title
                 )
-                if name in parsed_docstring:
-                    description = parsed_docstring[name]['desc']
-                    typing_ = parsed_docstring[name]['annotation']
-                    jss_elt.update({'description': description,
-                                    'python_typing': typing_})
+                if name in parsed_attributes:
+                    description = parsed_attributes[name]['desc']
+                    typing_ = parsed_attributes[name]['annotation']
+                    jss_elt[name].update({'description': description,
+                                            'python_typing': typing_})
                 _jsonschema['properties'].update(jss_elt)
                 if name in default_arguments.keys():
                     default = set_default_value(_jsonschema['properties'],
@@ -1725,28 +1726,39 @@ def default_dict(jsonschema):
     return dict_
 
 
-def parse_docstring(cls: Type):
+class ParsedAttribute(TypedDict):
+    desc: str
+    type_: str
+    annotation: str
+
+
+class ParsedDocstring(TypedDict):
+    description: str
+    attributes: Dict[str, ParsedAttribute]
+
+
+def parse_docstring(cls: Type) -> ParsedDocstring:
     """
     Parse docstring of given class. Refer to docs to see how docstrings
     should be built.
     """
     annotations = get_type_hints(cls.__init__)
     docstring = cls.__doc__
-    splitted_docstring = docstring.split(':param ')
-    description = {'type_': cls.__name__,
-                   'desc': splitted_docstring[0].strip()}
-    parsed_docstring = {"description": description}
-    params = splitted_docstring[1:]
-    args = {}
-    for param in params:
-        splitted_param = param.split(':type ')
-        arg = splitted_param[0]
-        typestr = splitted_param[1]
-        argname, argdesc = arg.split(":")
-        argtype = typestr.split(argname+":")[-1]
-        annotation = annotations[argname]
-        args[argname] = {'desc': argdesc.strip(), 'type_': argtype.strip(),
-                         'annotation': str(annotation)}
-        # TODO Should be serialize typing ?
-    parsed_docstring.update(args)
-    return parsed_docstring
+    if docstring:
+        splitted_docstring = docstring.split(':param ')
+        parsed_docstring = {"description": splitted_docstring[0].strip()}
+        params = splitted_docstring[1:]
+        args = {}
+        for param in params:
+            splitted_param = param.split(':type ')
+            arg = splitted_param[0]
+            typestr = splitted_param[1]
+            argname, argdesc = arg.split(":")
+            argtype = typestr.split(argname+":")[-1]
+            annotation = annotations[argname]
+            args[argname] = {'desc': argdesc.strip(), 'type_': argtype.strip(),
+                             'annotation': str(annotation)}
+            # TODO Should be serialize typing ?
+        parsed_docstring.update({'attributes': args})
+        return parsed_docstring
+    return {'description': "", 'attributes': {}}
