@@ -13,7 +13,7 @@ import collections
 from copy import deepcopy
 import inspect
 import json
-from typing import List, Tuple, Union, Any, \
+from typing import List, Type, Tuple, Union, Any, \
     get_type_hints, get_origin, get_args
 try:
     from typing import TypedDict  # >=3.8
@@ -339,6 +339,9 @@ class DessiaObject:
 
         unordered_count = 0
 
+        # Parse docstring
+        parsed_docstring = parse_docstring(cls)
+
         # Initialize jsonschema
         _jsonschema = deepcopy(JSONSCHEMA_HEADER)
 
@@ -346,6 +349,7 @@ class DessiaObject:
                                                                   merge=False)
         _jsonschema['required'] = required_arguments
         _jsonschema['standalone_in_db'] = cls._standalone_in_db
+        _jsonschema['description'] = parsed_docstring['description']['desc']
 
         # Set jsonschema
         for annotation in annotations.items():
@@ -364,11 +368,15 @@ class DessiaObject:
                 editable = name not in cls._non_editable_attributes
                 annotation_type = type_from_annotation(annotation[1], cls)
                 annotation = (annotation[0], annotation_type)
-                jss_elt = jsonschema_from_annotation(annotation=annotation,
-                                                     jsonschema_element={},
-                                                     order=order,
-                                                     editable=editable,
-                                                     title=title)
+                jss_elt = jsonschema_from_annotation(
+                    annotation=annotation, jsonschema_element={},
+                    order=order, editable=editable, title=title
+                )
+                if name in parsed_docstring:
+                    description = parsed_docstring[name]['desc']
+                    typing_ = parsed_docstring[name]['annotation']
+                    jss_elt.update({'description': description,
+                                    'python_typing': typing_})
                 _jsonschema['properties'].update(jss_elt)
                 if name in default_arguments.keys():
                     default = set_default_value(_jsonschema['properties'],
@@ -1715,3 +1723,30 @@ def default_dict(jsonschema):
     else:
         return None
     return dict_
+
+
+def parse_docstring(cls: Type):
+    """
+    Parse docstring of given class. Refer to docs to see how docstrings
+    should be built.
+    """
+    annotations = get_type_hints(cls.__init__)
+    docstring = cls.__doc__
+    splitted_docstring = docstring.split(':param ')
+    description = {'type_': cls.__name__,
+                   'desc': splitted_docstring[0].strip()}
+    parsed_docstring = {"description": description}
+    params = splitted_docstring[1:]
+    args = {}
+    for param in params:
+        splitted_param = param.split(':type ')
+        arg = splitted_param[0]
+        typestr = splitted_param[1]
+        argname, argdesc = arg.split(":")
+        argtype = typestr.split(argname+":")[-1]
+        annotation = annotations[argname]
+        args[argname] = {'desc': argdesc.strip(), 'type_': argtype.strip(),
+                         'annotation': str(annotation)}
+        # TODO Should be serialize typing ?
+    parsed_docstring.update(args)
+    return parsed_docstring
