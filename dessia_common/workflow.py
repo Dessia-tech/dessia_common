@@ -1934,10 +1934,10 @@ class WorkflowRun(dc.DessiaObject):
         return dc.DessiaObject.method_dict(self, method_name=method_name,
                                            method_jsonschema=method_jsonschema)
 
-    def run_again(self, input_values):
+    def run_again(self, input_values, progress_callback=None):
         workflow_run = self.workflow.run(input_values=input_values,
                                          verbose=False,
-                                         progress_callback=None,
+                                         progress_callback=progress_callback,
                                          name=None)
         return workflow_run
 
