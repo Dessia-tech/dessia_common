@@ -281,13 +281,20 @@ class InstantiateModel(Block):
 
     def to_dict(self):
         dict_ = Block.to_dict(self)
-        dict_['model_class'] = full_classname(self.model_class)
+        dict_['model_class'] = full_classname(object_=self.model_class,
+                                              compute_for='class')
         return dict_
 
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_):
-        class_ = get_python_class_from_class_name(dict_['model_class'])
+        if 'model_class_module' in dict_:
+            # TODO Retro-compatibility. Remove this in future versions
+            module_name = dict_['model_class_module']
+            classname = module_name + '.' + dict_['model_class']
+        else:
+            classname = dict_['model_class']
+        class_ = get_python_class_from_class_name(classname)
         return cls(class_, name=dict_['name'])
 
     def evaluate(self, values):
@@ -338,18 +345,23 @@ class ClassMethod(Block):
     def to_dict(self):
         dict_ = Block.to_dict(self)
         dict_.update({'method_name': self.method_name,
-                      'class_': self.class_.__name__,
-                      'class_module': self.class_.__module__})
+                      'class_': full_classname(object_=self.class_,
+                                               compute_for='class')})
         return dict_
 
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_):
-        class_ = getattr(import_module(dict_['class_module']),
-                         dict_['class_'])
-        return cls(class_=class_,
-                   method_name=dict_['method_name'],
-                   name=dict_['name'])
+        if 'class_module' in dict_:
+            # TODO Retro-compatibility. Remove this in future versions
+            module_name = dict_['class_module']
+            classname = module_name + '.' + dict_['class_']
+        else:
+            classname = dict_['class_']
+        class_ = get_python_class_from_class_name(classname)
+        method_name = dict_['method_name']
+        name = dict_['name']
+        return cls(class_=class_, method_name=method_name, name=name)
 
     def evaluate(self, values):
         args = {arg_name: values[var]
@@ -383,7 +395,7 @@ class ModelMethod(Block):
         annotations = get_type_hints(method)
         if 'return' in annotations:
             type_ = type_from_annotation(annotations['return'],
-                                            method.__module__)
+                                         method.__module__)
             return_output = TypedVariable(type_=type_, name=result_output_name)
         else:
             return_output = Variable(name=result_output_name)
@@ -408,16 +420,23 @@ class ModelMethod(Block):
     def to_dict(self):
         dict_ = Block.to_dict(self)
         dict_.update({'method_name': self.method_name,
-                      'model_class': full_classname(self.model_class)})
+                      'model_class': full_classname(object_=self.model_class,
+                                                    compute_for='class')})
         return dict_
 
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_):
-        class_ = get_python_class_from_class_name(dict_['model_class'])
-        return cls(model_class=class_,
-                   method_name=dict_['method_name'],
-                   name=dict_['name'])
+        if 'model_class_module' in dict_:
+            # TODO Retro-compatibility. Remove this in future versions
+            module_name = dict_['model_class_module']
+            classname = module_name + '.' + dict_['model_class']
+        else:
+            classname = dict_['model_class']
+        class_ = get_python_class_from_class_name(classname)
+        method_name = dict_['method_name']
+        name = dict_['name']
+        return cls(model_class=class_, method_name=method_name, name=name)
 
     def evaluate(self, values):
         args = {arg_name: values[var]
