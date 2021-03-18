@@ -38,25 +38,32 @@ jsonschema = {
     'definitions': {},
     '$schema': 'http://json-schema.org/draft-07/schema#',
     'type': 'object',
-    'required': ['standalone_subobject', 'embedded_subobject',
-                 'dynamic_dict', 'static_dict', 'tuple_arg', 'intarg',
-                 'strarg', 'object_list', 'subobject_list', 'builtin_list',
-                 'union_arg', 'inheritance_list'],
+    'required': [
+        'standalone_subobject', 'embedded_subobject', 'dynamic_dict',
+        'static_dict', 'tuple_arg', 'intarg', 'strarg', 'object_list',
+        'subobject_list', 'builtin_list', 'union_arg', 'subclass_arg'
+    ],
     'properties': {
         'standalone_subobject': {
-            'type': 'object', 'title': 'Standalone Subobject',
-            'order': 0, 'editable': True, 'standalone_in_db': True,
-            'classes': ['dessia_common.forms.StandaloneSubobject']
+            'type': 'object', 'standalone_in_db': True,
+            'title': 'Standalone Subobject', 'order': 0, 'editable': True,
+            'classes': ['dessia_common.forms.StandaloneSubobject'],
+            'description': 'A dev subobject that is standalone_in_db',
+            'python_typing': "<class 'dessia_common.forms.StandaloneSubobject'>"
         },
         'embedded_subobject': {
-            'type': 'object', 'title': 'Embedded Subobject',
-            'order': 1, 'editable': True, 'standalone_in_db': False,
-            'classes': ['dessia_common.forms.EmbeddedSubobject']
+            'type': 'object', 'standalone_in_db': False,
+            'title': 'Embedded Subobject', 'order': 1, 'editable': True,
+            'classes': ['dessia_common.forms.EmbeddedSubobject'],
+            'description': "A dev subobject that isn't standalone_in_db",
+            'python_typing': "<class 'dessia_common.forms.EmbeddedSubobject'>"
         },
         'dynamic_dict': {
-            'type': 'object', 'order': 2,
-            'editable': True, 'title': 'Dynamic Dict',
-            'patternProperties': {'.*': {'type': 'boolean'}}
+            'type': 'object', 'order': 2, 'editable': True,
+            'title': 'Dynamic Dict',
+            'patternProperties': {'.*': {'type': 'boolean'}},
+            'description': 'A variable length dict',
+            'python_typing': 'typing.Dict[str, bool]'
         },
         'static_dict': {
             'definitions': {},
@@ -84,13 +91,16 @@ jsonschema = {
             'title': 'Static Dict',
             'order': 3,
             'editable': True,
-            'classes': ['dessia_common.forms.StaticDict']
+            'classes': ['dessia_common.forms.StaticDict'],
+            'description': 'A 1-level structurewith only builtin values & str keys',
+            'python_typing': "<class 'dessia_common.forms.StaticDict'>"
         },
         'tuple_arg': {
             'additionalItems': False, 'type': 'array',
-            'title': 'Tuple Arg', 'editable': True,
-            'order': 4, 'items': [{'type': 'string'}, {'type': 'number'}]
-        },
+            'items': [{'type': 'string'}, {'type': 'number'}],
+            'title': 'Tuple Arg', 'editable': True, 'order': 4,
+            'description': 'A heterogeneous sequence',
+            'python_typing': 'typing.Tuple[str, int]'},
         'intarg': {
             'type': 'number', 'title': 'Intarg',
             'editable': True, 'order': 5
@@ -100,57 +110,45 @@ jsonschema = {
             'editable': True, 'order': 6
         },
         'object_list': {
-            'type': 'array',
-            'editable': True,
+            'type': 'array', 'order': 7, 'editable': True,
             'title': 'Object List',
-            'order': 7,
             'items': {
-                'type': 'object', 'title': 'Object List',
-                'order': 0, 'editable': True,
-                'standalone_in_db': True,
+                'type': 'object', 'standalone_in_db': True,
+                'title': 'Object List', 'order': 0, 'editable': True,
                 'classes': ['dessia_common.forms.StandaloneSubobject']
             }
         },
         'subobject_list': {
-            'type': 'array',
-            'editable': True,
+            'type': 'array', 'order': 8, 'editable': True,
             'title': 'Subobject List',
-            'order': 8,
             'items': {
-                'type': 'object', 'title': 'Subobject List',
-                'order': 0, 'editable': True,
-                'standalone_in_db': False,
+                'type': 'object', 'standalone_in_db': False,
+                'title': 'Subobject List', 'order': 0, 'editable': True,
                 'classes': ['dessia_common.forms.EmbeddedSubobject']
             }
         },
         'builtin_list': {
-            'type': 'array',
-            'editable': True,
+            'type': 'array', 'order': 9, 'editable': True,
             'title': 'Builtin List',
-            'order': 9,
             'items': {
                 'type': 'number', 'title': 'Builtin List',
                 'editable': True, 'order': 0
             }
         },
         'union_arg': {
-            'type': 'object',
-            'classes': ['dessia_common.forms.StandaloneSubobject',
-                        'dessia_common.forms.EnhancedStandaloneSubobject'],
-            'title': 'Union Arg',
-            'editable': True,
-            'order': 10
+            'type': 'object', 'title': 'Union Arg',
+            'classes': [
+                'dessia_common.forms.StandaloneSubobject',
+                'dessia_common.forms.EnhancedStandaloneSubobject'],
+            'editable': True, 'order': 10
         },
         'subclass_arg': {
-            'type': 'object',
+            'type': 'object', 'order': 11,
             'subclass_of': 'dessia_common.forms.StandaloneSubobject',
-            'title': 'Subclass Arg', 'editable': True, 'order': 11,
-            'standalone_in_db': True
+            'title': 'Subclass Arg', 'editable': True, 'standalone_in_db': True
         },
         'default_value_list': {
-            'type': 'array',
-            'order': 12,
-            'editable': True,
+            'type': 'array', 'order': 12, 'editable': True,
             'title': 'Default Value List',
             'items': {
                 'type': 'number', 'title': 'Default Value List',
@@ -163,6 +161,8 @@ jsonschema = {
             'order': 13, 'default_value': 'Standalone Object Demo'
         }
     },
+    'standalone_in_db': True,
+    'description': 'Dev Object for testing purpose',
     'classes': ['dessia_common.forms.StandaloneObject'],
     'whitelist_attributes': []
 }
