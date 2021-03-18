@@ -1415,7 +1415,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
             raise NotImplementedError(msg.format(typing_))
     elif hasattr(typing_, '__origin__') and typing_.__origin__ is type:
         jsonschema_element[key] = {'type': 'object', 'order': order,
-                                   'is_type': True, 'title': title,
+                                   'is_class': True, 'title': title,
                                    'editable': editable,
                                    'properties': {'name': {'type': 'string'}}}
     elif issubclass(typing_, Measure):
@@ -1686,8 +1686,8 @@ def datatype_from_jsonschema(jsonschema):
             return 'dynamic_dict'
         if 'method' in jsonschema and jsonschema['method']:
             return 'embedded_object'
-        if 'is_type' in jsonschema and jsonschema['is_type']:
-            return 'type'
+        if 'is_class' in jsonschema and jsonschema['is_class']:
+            return 'class'
 
     elif jsonschema['type'] == 'array':
         if 'additionalItems' in jsonschema\
