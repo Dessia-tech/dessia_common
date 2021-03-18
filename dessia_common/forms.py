@@ -51,6 +51,9 @@ try:
 except ImportError:
     from mypy_extensions import TypedDict  # <=3.7
 
+from numpy import linspace
+from math import cos
+
 
 class StandaloneSubobject(DessiaObject):
     _standalone_in_db = True
@@ -285,11 +288,38 @@ class StandaloneObject(DessiaObject):
         multi_plot = plot_data.MultiplePlots(elements=points, plots=objects,
                                              sizes=sizes, coords=coords,
                                              name='Multiple Plot')
-        # return [scatter_plot]
-        # return [parallel_plot]
-        # return [multi_plot]
-        # return [scatter_plot, parallel_plot]
-        return [primitives_group, scatter_plot, parallel_plot, multi_plot]
+
+        attribute_names = ['time', 'electric current']
+        tooltip = plot_data.Tooltip(to_disp_attribute_names=attribute_names)
+        time1 = linspace(0, 20, 20)
+        current1 = [t ** 2 for t in time1]
+        elements1 = []
+        for time, current in zip(time1, current1):
+            elements1.append({'time': time, 'electric current': current})
+
+        # The previous line instantiates a dataset with limited arguments but
+        # several customizations are available
+        point_style = plot_data.PointStyle(color_fill=RED, color_stroke=BLACK)
+        edge_style = plot_data.EdgeStyle(color_stroke=BLUE, dashline=[10, 5])
+
+        custom_dataset = plot_data.Dataset(elements=elements1, name='I = f(t)',
+                                           tooltip=tooltip,
+                                           point_style=point_style,
+                                           edge_style=edge_style)
+
+        # Now let's create another dataset for the purpose of this exercice
+        time2 = linspace(0, 20, 100)
+        current2 = [100 * (1 + cos(t)) for t in time2]
+        elements2 = []
+        for time, current in zip(time2, current2):
+            elements2.append({'time': time, 'electric current': current})
+
+        dataset2 = plot_data.Dataset(elements=elements2, name='I2 = f(t)')
+
+        graph2d = plot_data.Graph2D(graphs=[custom_dataset, dataset2],
+                                    to_disp_attribute_names=attribute_names)
+        return [primitives_group, scatter_plot,
+                parallel_plot, multi_plot, graph2d]
 
 
 class Generator(DessiaObject):
