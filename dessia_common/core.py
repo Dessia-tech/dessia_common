@@ -262,7 +262,7 @@ class DessiaObject:
 
     def _serializable_dict(self):
 
-        dict_ = {k: v for k, v in self.__getstate__.items()
+        dict_ = {k: v for k, v in self.__dict__.items()
                  if k not in self._non_serializable_attributes
                  and not k.startswith('_')}
         return dict_
