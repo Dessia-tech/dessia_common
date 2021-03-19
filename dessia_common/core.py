@@ -342,7 +342,13 @@ class DessiaObject:
         unordered_count = 0
 
         # Parse docstring
-        parsed_docstring = parse_docstring(cls)
+        try:
+            parsed_docstring = parse_docstring(cls)
+        except Exception:
+            parsed_docstring = {
+                'description': 'Docstring parsing failed',
+                'attributes': {}
+            }
         parsed_attributes = parsed_docstring['attributes']
 
         # Initialize jsonschema
@@ -379,7 +385,7 @@ class DessiaObject:
                     description = parsed_attributes[name]['desc']
                     typing_ = parsed_attributes[name]['annotation']
                     jss_elt[name].update({'description': description,
-                                            'python_typing': typing_})
+                                          'python_typing': typing_})
                 _jsonschema['properties'].update(jss_elt)
                 if name in default_arguments.keys():
                     default = set_default_value(_jsonschema['properties'],
