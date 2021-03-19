@@ -185,11 +185,11 @@ class DessiaObject:
         if full_classname(self) != full_classname(other_object):
             return False
 
-        eq_dict = self.__getstate__()
+        eq_dict = self._serializable_dict()
         if 'name' in eq_dict:
             del eq_dict['name']
             
-        other_eq_dict = other_object.__getstate__()
+        other_eq_dict = other_object._serializable_dict()
 
         for key, value in eq_dict.items():
             other_value = other_eq_dict[key]
@@ -202,7 +202,7 @@ class DessiaObject:
         forbidden_keys = (self._non_data_eq_attributes
                           + self._non_data_hash_attributes
                           + ['package_version', 'name'])
-        for key, value in self.__getstate__().items():
+        for key, value in self._serializable_dict().items():
             if key not in forbidden_keys:
                 if isinstance(value, list):
                     hash_ += list_hash(value)
@@ -225,9 +225,9 @@ class DessiaObject:
         # eq_dict = {k: v for k, v in self.to_dict().items()
         #            if (k not in ['package_version', 'name'])\
         #                and (k not in self._non_data_eq_attributes)}
-        eq_dict = self.__getstate__()
+        eq_dict = self._serializable_dict()
         # other_eq_dict = other_object.to_dict()
-        other_eq_dict = other_object.__getstate__()
+        other_eq_dict = other_object._serializable_dict()
 
         for key, value in eq_dict.items():
             if key not in other_eq_dict:
@@ -260,17 +260,19 @@ class DessiaObject:
             dict_['package_version'] = package_version
         return dict_
 
-    def __getstate__(self):
+    def _serializable_dict(self):
+
         dict_ = {k: v for k, v in self.__dict__.items()
                  if k not in self._non_serializable_attributes
                  and not k.startswith('_')}
         return dict_
 
+
     def to_dict(self) -> JsonSerializable:
         """
         Generic to_dict method
         """
-        dict_ = self.__getstate__()
+        dict_ = self._serializable_dict()
         if hasattr(self, 'Dict'):
             # !!! This prevent us to call DessiaObject.to_dict()
             # from an inheriting object which implement a Dict method,
