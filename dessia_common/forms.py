@@ -148,6 +148,20 @@ class StaticDict(TypedDict):
 
 
 class StandaloneObject(DessiaObject):
+    """
+    Dev Object for testing purpose
+
+    :param standalone_subobject: A dev subobject that is standalone_in_db
+    :type standalone_subobject: StandaloneSubobject
+    :param embedded_subobject: A dev subobject that isn't standalone_in_db
+    :type embedded_subobject: EmbeddedSubobject
+    :param dynamic_dict: A variable length dict
+    :type dynamic_dict: Dict[str, bool]
+    :param static_dict: A 1-level structurewith only builtin values & str keys
+    :type static_dict: StaticDict
+    :param tuple_arg: A heterogeneous sequence
+    :type tuple_arg: tuple
+    """
     _standalone_in_db = True
     _generic_eq = True
     _allowed_methods = ['add_standalone_object',
