@@ -342,7 +342,13 @@ class DessiaObject:
         unordered_count = 0
 
         # Parse docstring
-        parsed_docstring = parse_docstring(cls)
+        try:
+            parsed_docstring = parse_docstring(cls)
+        except Exception:
+            parsed_docstring = {
+                'description': 'Docstring parsing failed',
+                'attributes': {}
+            }
         parsed_attributes = parsed_docstring['attributes']
 
         # Initialize jsonschema
@@ -379,7 +385,7 @@ class DessiaObject:
                     description = parsed_attributes[name]['desc']
                     typing_ = parsed_attributes[name]['annotation']
                     jss_elt[name].update({'description': description,
-                                            'python_typing': typing_})
+                                          'python_typing': typing_})
                 _jsonschema['properties'].update(jss_elt)
                 if name in default_arguments.keys():
                     default = set_default_value(_jsonschema['properties'],
@@ -1337,8 +1343,11 @@ def type_from_annotation(type_, module):
 
 
 def is_typing(object_: Any):
-    in_typings = object_.__module__ in ['typing', 'dessia_common.typings']
     has_module = hasattr(object_, '__module__')
+    if has_module:
+        in_typings = object_.__module__ in ['typing', 'dessia_common.typings']
+    else:
+        return False
     has_origin = hasattr(object_, '__origin__')
     has_args = hasattr(object_, '__args__')
     return has_module and has_origin and has_args and in_typings
@@ -1360,6 +1369,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
         jsonschema_element[key] = {'type': TYPING_EQUIVALENCES[typing_],
                                    'title': title, 'editable': editable,
                                    'order': order}
+
     elif is_typing(typing_):
         origin = get_origin(typing_)
         args = get_args(typing_)
@@ -1420,6 +1430,11 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
         else:
             msg = "Jsonschema computation of typing {} is not implemented"
             raise NotImplementedError(msg.format(typing_))
+    elif hasattr(typing_, '__origin__') and typing_.__origin__ is type:
+        jsonschema_element[key] = {'type': 'object', 'order': order,
+                                   'is_class': True, 'title': title,
+                                   'editable': editable,
+                                   'properties': {'name': {'type': 'string'}}}
     elif issubclass(typing_, Measure):
         ann = (key, float)
         jsonschema_element = jsonschema_from_annotation(
@@ -1688,6 +1703,8 @@ def datatype_from_jsonschema(jsonschema):
             return 'dynamic_dict'
         if 'method' in jsonschema and jsonschema['method']:
             return 'embedded_object'
+        if 'is_class' in jsonschema and jsonschema['is_class']:
+            return 'class'
 
     elif jsonschema['type'] == 'array':
         if 'additionalItems' in jsonschema\
@@ -1755,7 +1772,7 @@ def parse_docstring(cls: Type) -> ParsedDocstring:
             splitted_param = param.split(':type ')
             arg = splitted_param[0]
             typestr = splitted_param[1]
-            argname, argdesc = arg.split(":")
+            argname, argdesc = arg.split(":", maxsplit=1)
             argtype = typestr.split(argname+":")[-1]
             annotation = annotations[argname]
             args[argname] = {'desc': argdesc.strip(), 'type_': argtype.strip(),
