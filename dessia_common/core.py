@@ -1755,7 +1755,7 @@ def parse_docstring(cls: Type) -> ParsedDocstring:
             splitted_param = param.split(':type ')
             arg = splitted_param[0]
             typestr = splitted_param[1]
-            argname, argdesc = arg.split(":")
+            argname, argdesc = arg.split(":", maxsplit=1)
             argtype = typestr.split(argname+":")[-1]
             annotation = annotations[argname]
             args[argname] = {'desc': argdesc.strip(), 'type_': argtype.strip(),
