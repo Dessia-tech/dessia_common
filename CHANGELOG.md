@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased => [0.4.4]
 ### Added
-- Docstring parsing
+- Docstring parsing & failure prevention
 - Description of class and attributes in jsonschema
 
 ## [0.4.3]
