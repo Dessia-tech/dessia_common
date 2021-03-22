@@ -43,7 +43,7 @@ except:
     pass
 
 from dessia_common import DessiaObject
-from dessia_common.typings import Subclass
+from dessia_common.typings import InstanceOf
 from dessia_common.vectored_objects import Catalog
 
 try:
@@ -179,7 +179,7 @@ class StandaloneObject(DessiaObject):
                  builtin_list: List[int],
                  union_arg: Union[StandaloneSubobject,
                                   EnhancedStandaloneSubobject],
-                 subclass_arg: Subclass[StandaloneSubobject],
+                 subclass_arg: InstanceOf[StandaloneSubobject],
                  default_value_list: List[float] = None,
                  name: str = 'Standalone Object Demo'):
         self.union_arg = union_arg
