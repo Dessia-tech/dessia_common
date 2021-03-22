@@ -29,5 +29,5 @@ standalone_object = StandaloneObject(standalone_subobject=standalone_subobject,
                                      subobject_list=[sublist_es],
                                      builtin_list=[0, 1, 2, 3],
                                      union_arg=enhanced_ss,
-                                     inheritance_list=inheriting_list)
+                                     subclass_arg=inheriting_list[0])
 

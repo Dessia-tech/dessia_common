@@ -20,7 +20,8 @@ try:
 except ImportError:
     from mypy_extensions import TypedDict  # <=3.7
 import traceback as tb
-from dessia_common.typings import Measure, JsonSerializable, Subclass
+from dessia_common.typings import Measure, JsonSerializable,\
+    Subclass, InstanceOf
 
 from importlib import import_module
 
@@ -84,7 +85,7 @@ def deprecated(use_instead=None):
         def wrapper(*args, **kwargs):
             deprecation_warning(function.__name__, 'Function', use_instead)
             print('Traceback : ')
-            tb.print_stack(limit=1)
+            tb.print_stack(limit=2)
             return function(*args, **kwargs)
 
         return wrapper
@@ -1419,11 +1420,26 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
                 }
             }
         elif origin is Subclass:
+            warnings.simplefilter('once', DeprecationWarning)
+            msg = "\n\nTyping of attribute '{0}' from class {1} "\
+                  "uses Subclass which is deprecated."\
+                  "\n\nUse 'InstanceOf[{2}]' instead of 'Subclass[{2}]'.\n"
+            arg = args[0].__name__
+            warnings.warn(msg.format(key, args[0], arg), DeprecationWarning)
             # Several possible classes that are subclass of another one
             class_ = args[0]
             classname = full_classname(object_=class_, compute_for='class')
             jsonschema_element[key] = {
                 'type': 'object', 'order': order, 'subclass_of': classname,
+                'title': title, 'editable': editable,
+                'standalone_in_db': class_._standalone_in_db
+            }
+        elif origin is InstanceOf:
+            # Several possible classes that are subclass of another one
+            class_ = args[0]
+            classname = full_classname(object_=class_, compute_for='class')
+            jsonschema_element[key] = {
+                'type': 'object', 'order': order, 'instance_of': classname,
                 'title': title, 'editable': editable,
                 'standalone_in_db': class_._standalone_in_db
             }

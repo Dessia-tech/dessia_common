@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased => [0.4.4]
 ### Added
+- InstanceOf typing. Subclass is Deprecated
 - Docstring parsing & failure prevention
 - Description of class and attributes in jsonschema
 
