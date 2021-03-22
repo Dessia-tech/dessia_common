@@ -1,4 +1,6 @@
-from dessia_common.forms import *
+from dev_objects import StandaloneObject, StandaloneSubobject,\
+    EmbeddedSubobject, EnhancedStandaloneSubobject,\
+    InheritingStandaloneSubobject
 from dessia_common import enhanced_deep_attr
 
 standalone_subobject = StandaloneSubobject(floatarg=3.78)
