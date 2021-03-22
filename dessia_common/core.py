@@ -1723,8 +1723,6 @@ def chose_default(jsonschema):
         return default_sequence(jsonschema)
     elif datatype == 'static_dict':
         return default_dict(jsonschema)
-    # elif datatype == 'dynamic_dict':
-    #     return {}
     elif datatype in ['standalone_object', 'embedded_object',
                       'subclass', 'union']:
         if 'default_value' in jsonschema:
@@ -1739,7 +1737,10 @@ def default_dict(jsonschema):
     datatype = datatype_from_jsonschema(jsonschema)
     if datatype in ['standalone_object', 'embedded_object', 'static_dict']:
         for property_, jss in jsonschema['properties'].items():
-            dict_[property_] = chose_default(jss)
+            if 'default_value' in jss:
+                dict_[property_] = jss['default_value']
+            else:
+                dict_[property_] = chose_default(jss)
     else:
         return None
     return dict_
