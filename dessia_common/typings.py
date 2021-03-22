@@ -1,13 +1,14 @@
 from typing import TypeVar, Generic, Dict, Any, Tuple
-import warnings
 
 
 T = TypeVar('T')
 
 
 class Subclass(Generic[T]):
-    warnings.warn("Subclass is deprecated, use InstanceOf instead",
-                  DeprecationWarning)
+    pass
+
+
+class InstanceOf(Generic[T]):
     pass
 
 
