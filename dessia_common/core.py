@@ -1385,9 +1385,18 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
                 # Types union
                 classnames = [full_classname(object_=a, compute_for='class')
                               for a in args]
+
+                standalone_attrs = [a._standalone_in_db for a in args]
+                if all(standalone_attrs):
+                    standalone = True
+                elif not any(standalone_attrs):
+                    standalone = False
+                else:
+                    standalone = standalone_attrs[0]
                 jsonschema_element[key] = {
                     'type': 'object', 'title': title, 'classes': classnames,
-                    'editable': editable, 'order': order
+                    'editable': editable, 'order': order,
+                    'standalone_in_db': standalone
                 }
         elif origin is list:
             # Homogenous sequences
