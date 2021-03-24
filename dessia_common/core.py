@@ -1507,7 +1507,7 @@ def prettyname(namestr):
 
 def static_dict_jsonschema(typed_dict, title=None):
     warnings.simplefilter('once', DeprecationWarning)
-    msg = "\n\nStatic Dict typing is not fully supported anymore.\n" \
+    msg = "\n\nStatic Dict typing is not fully supported.\n" \
           "This will most likely lead to non predictable behavior" \
           " or malfunctionning features. \n" \
           "Define a custom non-standalone class for type '{}'\n\n"

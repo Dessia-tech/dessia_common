@@ -155,15 +155,17 @@ class EmbeddedSubobject(DessiaObject):
 DEF_ES = EmbeddedSubobject.generate(10)
 
 
-class StaticDict(TypedDict):
-    name: str
-    float_value: float
-    int_value: int
-    is_valid: bool
+class StaticDict(DessiaObject):
+    def __init__(self, float_value: float, int_value: int,
+                 is_valid: bool, name: str = ''):
+        self.float_value = float_value
+        self.int_value = int_value
+        self.is_valid = is_valid
+        DessiaObject.__init__(self, name=name)
 
 
-DEF_SD = {'name': "Default SD Name", 'float_value': 1.3,
-          'int_value': 0, 'is_valid': True}
+DEF_SD = StaticDict(name="Default SD Name", float_value=1.3,
+                    int_value=0, is_valid=True)
 
 
 UnionArg = Union[StandaloneSubobject, EnhancedStandaloneSubobject]
@@ -345,7 +347,7 @@ class StandaloneObjectWithDefaultValues(StandaloneObject):
     def __init__(self, standalone_subobject: StandaloneSubobject = DEF_SS,
                  embedded_subobject: EmbeddedSubobject = DEF_ES,
                  dynamic_dict: Dict[str, bool] = None,
-                 static_dict: StaticDict = None,
+                 static_dict: StaticDict = DEF_SD,
                  tuple_arg: Tuple[str, int] = ("Default Tuple", 0),
                  intarg: int = 1, strarg: str = "Default Strarg",
                  object_list: List[StandaloneSubobject] = None,
@@ -356,8 +358,6 @@ class StandaloneObjectWithDefaultValues(StandaloneObject):
                  name: str = 'Standalone Object Demo'):
         if dynamic_dict is None:
             dynamic_dict = {}
-        if static_dict is None:
-            dynamic_dict = DEF_SD
         if object_list is None:
             object_list = [DEF_SS]
         if subobject_list is None:
