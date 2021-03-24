@@ -120,17 +120,8 @@ jsonschema = {
         },
         'subclass_arg': {
             'type': 'object', 'order': 11,
-            'subclass_of': 'dessia_common.forms.StandaloneSubobject',
+            'instance_of': 'dessia_common.forms.StandaloneSubobject',
             'title': 'Subclass Arg', 'editable': True, 'standalone_in_db': True
-        },
-        'default_value_list': {
-            'type': 'array', 'order': 12, 'editable': True,
-            'title': 'Default Value List',
-            'items': {
-                'type': 'number', 'title': 'Default Value List',
-                'editable': True, 'order': 0
-            },
-            'default_value': None
         },
         'name': {
             'type': 'string', 'title': 'Name', 'editable': True,
