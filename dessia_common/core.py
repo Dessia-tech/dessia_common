@@ -1386,13 +1386,15 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
                 classnames = [full_classname(object_=a, compute_for='class')
                               for a in args]
 
-                standalone_attrs = [a._standalone_in_db for a in args]
-                if all(standalone_attrs):
+                standalone_args = [a._standalone_in_db for a in args]
+                if all(standalone_args):
                     standalone = True
-                elif not any(standalone_attrs):
+                elif not any(standalone_args):
                     standalone = False
                 else:
-                    standalone = standalone_attrs[0]
+                    msg = "standalone_in_db values for type '{}'" \
+                          " are not consistent"
+                    raise ValueError(msg.format(typing_))
                 jsonschema_element[key] = {
                     'type': 'object', 'title': title, 'classes': classnames,
                     'editable': editable, 'order': order,
