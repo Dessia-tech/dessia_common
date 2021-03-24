@@ -1385,9 +1385,20 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
                 # Types union
                 classnames = [full_classname(object_=a, compute_for='class')
                               for a in args]
+
+                standalone_args = [a._standalone_in_db for a in args]
+                if all(standalone_args):
+                    standalone = True
+                elif not any(standalone_args):
+                    standalone = False
+                else:
+                    msg = "standalone_in_db values for type '{}'" \
+                          " are not consistent"
+                    raise ValueError(msg.format(typing_))
                 jsonschema_element[key] = {
                     'type': 'object', 'title': title, 'classes': classnames,
-                    'editable': editable, 'order': order
+                    'editable': editable, 'order': order,
+                    'standalone_in_db': standalone
                 }
         elif origin is list:
             # Homogenous sequences
@@ -1495,6 +1506,13 @@ def prettyname(namestr):
 
 
 def static_dict_jsonschema(typed_dict, title=None):
+    warnings.simplefilter('once', DeprecationWarning)
+    msg = "\n\nStatic Dict typing is not fully supported.\n" \
+          "This will most likely lead to non predictable behavior" \
+          " or malfunctionning features. \n" \
+          "Define a custom non-standalone class for type '{}'\n\n"
+    classname = full_classname(typed_dict, compute_for='class')
+    warnings.warn(msg.format(classname), DeprecationWarning)
     jsonschema_element = deepcopy(JSONSCHEMA_HEADER)
     jss_properties = jsonschema_element['properties']
 
@@ -1723,8 +1741,6 @@ def chose_default(jsonschema):
         return default_sequence(jsonschema)
     elif datatype == 'static_dict':
         return default_dict(jsonschema)
-    # elif datatype == 'dynamic_dict':
-    #     return {}
     elif datatype in ['standalone_object', 'embedded_object',
                       'subclass', 'union']:
         if 'default_value' in jsonschema:
@@ -1739,7 +1755,10 @@ def default_dict(jsonschema):
     datatype = datatype_from_jsonschema(jsonschema)
     if datatype in ['standalone_object', 'embedded_object', 'static_dict']:
         for property_, jss in jsonschema['properties'].items():
-            dict_[property_] = chose_default(jss)
+            if 'default_value' in jss:
+                dict_[property_] = jss['default_value']
+            else:
+                dict_[property_] = chose_default(jss)
     else:
         return None
     return dict_
