@@ -7,6 +7,20 @@ class Specifications(dc.DessiaObject):
     def __init__(self, name:str=''):
         self.name = name
 
+class BoundedAttributeValue(dc.DessiaObject):
+    def __init__(self, attribute_name:str, value_min:float, value_max:float, name:str=''):
+        self.name = name
+        self.attribute_name = attribute_name
+        self.value_min = value_min
+        self.value_max = value_max
+        self.interval_length = value_max - value_min
+
+    def dimensionless_to_value(self, dimless_value:float):
+        return self.value_min + dimless_value*self.interval_length
+
+    def dimensionless_value(self, value:float):
+        return (value-self.value_min)/self.interval_length
+
 class Optimizer(dc.DessiaObject):
     """
     Common parts of optimizers
