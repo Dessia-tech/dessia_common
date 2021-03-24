@@ -43,7 +43,7 @@ except:
     pass
 
 from dessia_common import DessiaObject
-from dessia_common.typings import Subclass
+from dessia_common.typings import InstanceOf
 from dessia_common.vectored_objects import Catalog
 
 try:
@@ -199,7 +199,7 @@ class StandaloneObject(DessiaObject):
                  subobject_list: List[EmbeddedSubobject],
                  builtin_list: List[int],
                  union_arg: UnionArg,
-                 subclass_arg: Subclass[StandaloneSubobject],
+                 subclass_arg: InstanceOf[StandaloneSubobject],
                  name: str = 'Standalone Object Demo'):
         self.union_arg = union_arg
         self.builtin_list = builtin_list
@@ -354,7 +354,7 @@ class StandaloneObjectWithDefaultValues(StandaloneObject):
                  subobject_list: List[EmbeddedSubobject] = None,
                  builtin_list: List[int] = None,
                  union_arg: UnionArg = DEF_ESS,
-                 subclass_arg: Subclass[StandaloneSubobject] = DEF_ISS,
+                 subclass_arg: InstanceOf[StandaloneSubobject] = DEF_ISS,
                  name: str = 'Standalone Object Demo'):
         if dynamic_dict is None:
             dynamic_dict = {}
