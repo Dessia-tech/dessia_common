@@ -1357,6 +1357,7 @@ def is_typing(object_: Any):
 def jsonschema_from_annotation(annotation, jsonschema_element,
                                order, editable=None, title=None):
     key, typing_ = annotation
+    print('jsonschema_from_annotation', key, typing_)
     if isinstance(typing_, str):
         raise ValueError
 
