@@ -43,13 +43,16 @@ except:
     pass
 
 from dessia_common import DessiaObject
-from dessia_common.typings import Subclass
+from dessia_common.typings import InstanceOf
 from dessia_common.vectored_objects import Catalog
 
 try:
     from typing import TypedDict  # >=3.8
 except ImportError:
     from mypy_extensions import TypedDict  # <=3.7
+
+from numpy import linspace
+from math import cos
 
 
 class StandaloneSubobject(DessiaObject):
@@ -86,6 +89,9 @@ class StandaloneSubobject(DessiaObject):
         return volumes
 
 
+DEF_SS = StandaloneSubobject.generate(1)
+
+
 class EnhancedStandaloneSubobject(StandaloneSubobject):
     def __init__(self, floatarg: float, boolarg: bool,
                  name: str = 'Standalone Subobject'):
@@ -101,6 +107,9 @@ class EnhancedStandaloneSubobject(StandaloneSubobject):
         return cls(floatarg=floatarg, boolarg=boolarg, name=name)
 
 
+DEF_ESS = EnhancedStandaloneSubobject.generate(1)
+
+
 class InheritingStandaloneSubobject(StandaloneSubobject):
     def __init__(self, floatarg: float, strarg: str,
                  name: str = 'Inheriting Standalone Subobject'):
@@ -114,6 +123,9 @@ class InheritingStandaloneSubobject(StandaloneSubobject):
         strarg = str(-seed)
         name = 'Inheriting Standalone Subobject' + str(seed)
         return cls(floatarg=floatarg, strarg=strarg, name=name)
+
+
+DEF_ISS = InheritingStandaloneSubobject.generate(1)
 
 
 class EmbeddedSubobject(DessiaObject):
@@ -140,14 +152,40 @@ class EmbeddedSubobject(DessiaObject):
         return [cls.generate(i) for i in range(ceil(seed/3))]
 
 
-class StaticDict(TypedDict):
-    name: str
-    float_value: float
-    int_value: int
-    is_valid: bool
+DEF_ES = EmbeddedSubobject.generate(10)
+
+
+class StaticDict(DessiaObject):
+    def __init__(self, float_value: float, int_value: int,
+                 is_valid: bool, name: str = ''):
+        self.float_value = float_value
+        self.int_value = int_value
+        self.is_valid = is_valid
+        DessiaObject.__init__(self, name=name)
+
+
+DEF_SD = StaticDict(name="Default SD Name", float_value=1.3,
+                    int_value=0, is_valid=True)
+
+
+UnionArg = Union[StandaloneSubobject, EnhancedStandaloneSubobject]
 
 
 class StandaloneObject(DessiaObject):
+    """
+    Dev Object for testing purpose
+
+    :param standalone_subobject: A dev subobject that is standalone_in_db
+    :type standalone_subobject: StandaloneSubobject
+    :param embedded_subobject: A dev subobject that isn't standalone_in_db
+    :type embedded_subobject: EmbeddedSubobject
+    :param dynamic_dict: A variable length dict
+    :type dynamic_dict: Dict[str, bool]
+    :param static_dict: A 1-level structurewith only builtin values & str keys
+    :type static_dict: StaticDict
+    :param tuple_arg: A heterogeneous sequence
+    :type tuple_arg: tuple
+    """
     _standalone_in_db = True
     _generic_eq = True
     _allowed_methods = ['add_standalone_object',
@@ -160,10 +198,8 @@ class StandaloneObject(DessiaObject):
                  object_list: List[StandaloneSubobject],
                  subobject_list: List[EmbeddedSubobject],
                  builtin_list: List[int],
-                 union_arg: Union[StandaloneSubobject,
-                                  EnhancedStandaloneSubobject],
-                 subclass_arg: Subclass[StandaloneSubobject],
-                 default_value_list: List[float] = None,
+                 union_arg: UnionArg,
+                 subclass_arg: InstanceOf[StandaloneSubobject],
                  name: str = 'Standalone Object Demo'):
         self.union_arg = union_arg
         self.builtin_list = builtin_list
@@ -177,7 +213,6 @@ class StandaloneObject(DessiaObject):
         self.standalone_subobject = standalone_subobject
         self.embedded_subobject = embedded_subobject
         self.subclass_arg = subclass_arg
-        self.default_value_list = default_value_list
 
         DessiaObject.__init__(self, name=name)
 
@@ -271,11 +306,75 @@ class StandaloneObject(DessiaObject):
         multi_plot = plot_data.MultiplePlots(elements=points, plots=objects,
                                              sizes=sizes, coords=coords,
                                              name='Multiple Plot')
-        # return [scatter_plot]
-        # return [parallel_plot]
-        # return [multi_plot]
-        # return [scatter_plot, parallel_plot]
-        return [primitives_group, scatter_plot, parallel_plot, multi_plot]
+
+        attribute_names = ['time', 'electric current']
+        tooltip = plot_data.Tooltip(to_disp_attribute_names=attribute_names)
+        time1 = linspace(0, 20, 20)
+        current1 = [t ** 2 for t in time1]
+        elements1 = []
+        for time, current in zip(time1, current1):
+            elements1.append({'time': time, 'electric current': current})
+
+        # The previous line instantiates a dataset with limited arguments but
+        # several customizations are available
+        point_style = plot_data.PointStyle(color_fill=RED, color_stroke=BLACK)
+        edge_style = plot_data.EdgeStyle(color_stroke=BLUE, dashline=[10, 5])
+
+        custom_dataset = plot_data.Dataset(elements=elements1, name='I = f(t)',
+                                           tooltip=tooltip,
+                                           point_style=point_style,
+                                           edge_style=edge_style)
+
+        # Now let's create another dataset for the purpose of this exercice
+        time2 = linspace(0, 20, 100)
+        current2 = [100 * (1 + cos(t)) for t in time2]
+        elements2 = []
+        for time, current in zip(time2, current2):
+            elements2.append({'time': time, 'electric current': current})
+
+        dataset2 = plot_data.Dataset(elements=elements2, name='I2 = f(t)')
+
+        graph2d = plot_data.Graph2D(graphs=[custom_dataset, dataset2],
+                                    to_disp_attribute_names=attribute_names)
+        return [primitives_group, scatter_plot,
+                parallel_plot, multi_plot, graph2d]
+
+
+DEF_SO = StandaloneObject.generate(1)
+
+
+class StandaloneObjectWithDefaultValues(StandaloneObject):
+    def __init__(self, standalone_subobject: StandaloneSubobject = DEF_SS,
+                 embedded_subobject: EmbeddedSubobject = DEF_ES,
+                 dynamic_dict: Dict[str, bool] = None,
+                 static_dict: StaticDict = DEF_SD,
+                 tuple_arg: Tuple[str, int] = ("Default Tuple", 0),
+                 intarg: int = 1, strarg: str = "Default Strarg",
+                 object_list: List[StandaloneSubobject] = None,
+                 subobject_list: List[EmbeddedSubobject] = None,
+                 builtin_list: List[int] = None,
+                 union_arg: UnionArg = DEF_ESS,
+                 subclass_arg: InstanceOf[StandaloneSubobject] = DEF_ISS,
+                 name: str = 'Standalone Object Demo'):
+        if dynamic_dict is None:
+            dynamic_dict = {}
+        if object_list is None:
+            object_list = [DEF_SS]
+        if subobject_list is None:
+            subobject_list = [DEF_ES]
+        if builtin_list is None:
+            builtin_list = [1, 2, 3, 4, 5]
+        StandaloneObject.__init__(
+            self, standalone_subobject=standalone_subobject,
+            embedded_subobject=embedded_subobject, dynamic_dict=dynamic_dict,
+            static_dict=static_dict, tuple_arg=tuple_arg, intarg=intarg,
+            strarg=strarg, object_list=object_list,
+            subobject_list=subobject_list, builtin_list=builtin_list,
+            union_arg=union_arg, subclass_arg=subclass_arg, name=name
+        )
+
+
+DEF_SOWDV = StandaloneObjectWithDefaultValues()
 
 
 class Generator(DessiaObject):

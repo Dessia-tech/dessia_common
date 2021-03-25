@@ -15,9 +15,15 @@ from typing import List, Union, Type, Any, Dict, Tuple, get_type_hints
 from copy import deepcopy
 from dessia_common.templates import workflow_template
 import itertools
-import dessia_common as dc
+from dessia_common import DessiaObject, DisplayObject, Filter, is_sequence,\
+    list_hash, serialize_typing, serialize, get_python_class_from_class_name,\
+    deserialize, type_from_annotation, enhanced_deep_attr, is_bounded,\
+    deprecation_warning, JSONSCHEMA_HEADER, jsonschema_from_annotation,\
+    deserialize_argument, set_default_value, prettyname, dict_to_object,\
+    serialize_dict, UntypedArgumentError, recursive_type,\
+    recursive_instantiation, full_classname
 from dessia_common.vectored_objects import ParetoSettings, from_csv
-from dessia_common.typings import JsonSerializable, Subclass
+from dessia_common.typings import JsonSerializable
 import warnings
 
 # import plot_data
@@ -31,18 +37,18 @@ VariableTypes = Union['Variable', 'TypedVariable',
 # VariableTypes = Subclass['Variable']
 
 
-class Variable(dc.DessiaObject):
+class Variable(DessiaObject):
     _standalone_in_db = False
     _eq_is_data_eq = False
     has_default_value: bool = False
 
     def __init__(self, memorize: bool = False, name: str = ''):
         self.memorize = memorize
-        dc.DessiaObject.__init__(self, name=name)
+        DessiaObject.__init__(self, name=name)
         self.position = None
 
     def to_dict(self):
-        dict_ = dc.DessiaObject.base_dict(self)
+        dict_ = DessiaObject.base_dict(self)
         dict_.update({'has_default_value': self.has_default_value})
         return dict_
 
@@ -55,15 +61,15 @@ class TypedVariable(Variable):
         self.type_ = type_
 
     def to_dict(self):
-        dict_ = dc.DessiaObject.base_dict(self)
-        dict_.update({'type': dc.serialize_typing(self.type_),
+        dict_ = DessiaObject.base_dict(self)
+        dict_.update({'type': serialize_typing(self.type_),
                       'memorize': self.memorize,
                       'has_default_value': self.has_default_value})
         return dict_
 
     @classmethod
     def dict_to_object(cls, dict_):
-        type_ = dc.get_python_class_from_class_name(dict_['type'])
+        type_ = get_python_class_from_class_name(dict_['type'])
         memorize = dict_['memorize']
         return cls(type_=type_, memorize=memorize, name=dict_['name'])
 
@@ -86,17 +92,17 @@ class TypedVariableWithDefaultValue(TypedVariable):
         self.default_value = default_value
 
     def to_dict(self):
-        dict_ = dc.DessiaObject.base_dict(self)
-        dict_.update({'type': dc.serialize_typing(self.type_),
-                      'default_value': dc.serialize(self.default_value),
+        dict_ = DessiaObject.base_dict(self)
+        dict_.update({'type': serialize_typing(self.type_),
+                      'default_value': serialize(self.default_value),
                       'memorize': self.memorize,
                       'has_default_value': self.has_default_value})
         return dict_
 
     @classmethod
     def dict_to_object(cls, dict_):
-        type_ = dc.get_python_class_from_class_name(dict_['type_'])
-        default_value = dc.deserialize(dict_['default_value'])
+        type_ = get_python_class_from_class_name(dict_['type_'])
+        default_value = deserialize(dict_['default_value'])
         return cls(type_=type_, default_value=default_value,
                    memorize=dict_['memorize'], name=dict_['name'])
 
@@ -122,7 +128,7 @@ def set_block_variable_names_from_dict(func):
     return func_wrapper
 
 
-class Block(dc.DessiaObject):
+class Block(DessiaObject):
     _standalone_in_db = False
     _eq_is_data_eq = False
     _non_serializable_attributes = []
@@ -137,7 +143,7 @@ class Block(dc.DessiaObject):
         else:
             self.position = position
 
-        dc.DessiaObject.__init__(self, name=name)
+        DessiaObject.__init__(self, name=name)
 
     def equivalent_hash(self):
         return len(self.__class__.__name__)
@@ -146,7 +152,7 @@ class Block(dc.DessiaObject):
         return self.__class__.__name__ == other.__class__.__name__
 
     def to_dict(self):
-        dict_ = dc.DessiaObject.base_dict(self)
+        dict_ = DessiaObject.base_dict(self)
         dict_['inputs'] = [i.to_dict() for i in self.inputs]
         dict_['outputs'] = [o.to_dict() for o in self.outputs]
         if self.position is not None:
@@ -165,14 +171,14 @@ class Block(dc.DessiaObject):
 
 
 class Display(Block):
-    _jsonschema = {}
+    # _jsonschema = {}
     _displayable_input = 0
 
     def __init__(self, inputs: List[VariableTypes] = None,
                  order: int = 0, name: str = ''):
         self.order = order
         if inputs is None:
-            inputs = [TypedVariable(type_=dc.DessiaObject,
+            inputs = [TypedVariable(type_=DessiaObject,
                                     name='Model to Display', memorize=True)]
 
         Block.__init__(self, inputs=inputs, outputs=[], name=name)
@@ -191,7 +197,7 @@ class Display(Block):
         return displays
 
     def to_dict(self):
-        dict_ = dc.DessiaObject.base_dict(self)
+        dict_ = DessiaObject.base_dict(self)
         dict_['order'] = self.order
         return dict_
 
@@ -253,7 +259,7 @@ class InstantiateModel(Block):
     :type name: str
     """
 
-    def __init__(self, model_class: Subclass[dc.DessiaObject], name: str = ''):
+    def __init__(self, model_class: Type, name: str = ''):
         self.model_class = model_class
         inputs = []
 
@@ -275,15 +281,20 @@ class InstantiateModel(Block):
 
     def to_dict(self):
         dict_ = Block.to_dict(self)
-        dict_.update({'model_class': self.model_class.__name__,
-                      'model_class_module': self.model_class.__module__})
+        dict_['model_class'] = full_classname(object_=self.model_class,
+                                              compute_for='class')
         return dict_
 
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_):
-        class_ = getattr(import_module(dict_['model_class_module']),
-                         dict_['model_class'])
+        if 'model_class_module' in dict_:
+            # TODO Retro-compatibility. Remove this in future versions
+            module_name = dict_['model_class_module']
+            classname = module_name + '.' + dict_['model_class']
+        else:
+            classname = dict_['model_class']
+        class_ = get_python_class_from_class_name(classname)
         return cls(class_, name=dict_['name'])
 
     def evaluate(self, values):
@@ -295,7 +306,7 @@ class InstantiateModel(Block):
 
 
 class InstanciateModel(InstantiateModel):
-    def __init__(self, model_class: Subclass[dc.DessiaObject], name: str = ''):
+    def __init__(self, model_class: Type, name: str = ''):
         InstantiateModel.__init__(self, model_class=model_class, name=name)
         warnings.warn(
             "InstanciateModel is deprecated, use InstantiateModel instead",
@@ -304,7 +315,7 @@ class InstanciateModel(InstantiateModel):
 
 
 class ClassMethod(Block):
-    def __init__(self, class_: Subclass[dc.DessiaObject],
+    def __init__(self, class_: Type,
                  method_name: str, name: str = ''):
         self.class_ = class_
         self.method_name = method_name
@@ -315,7 +326,7 @@ class ClassMethod(Block):
         self.argument_names = [i.name for i in inputs]
 
         annotations = get_type_hints(method)
-        type_ = dc.type_from_annotation(annotations['return'],
+        type_ = type_from_annotation(annotations['return'],
                                         method.__module__)
         output_name = 'method result of {}'.format(self.method_name)
         outputs = [TypedVariable(type_=type_, name=output_name)]
@@ -334,18 +345,23 @@ class ClassMethod(Block):
     def to_dict(self):
         dict_ = Block.to_dict(self)
         dict_.update({'method_name': self.method_name,
-                      'class_': self.class_.__name__,
-                      'class_module': self.class_.__module__})
+                      'class_': full_classname(object_=self.class_,
+                                               compute_for='class')})
         return dict_
 
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_):
-        class_ = getattr(import_module(dict_['class_module']),
-                         dict_['class_'])
-        return cls(class_=class_,
-                   method_name=dict_['method_name'],
-                   name=dict_['name'])
+        if 'class_module' in dict_:
+            # TODO Retro-compatibility. Remove this in future versions
+            module_name = dict_['class_module']
+            classname = module_name + '.' + dict_['class_']
+        else:
+            classname = dict_['class_']
+        class_ = get_python_class_from_class_name(classname)
+        method_name = dict_['method_name']
+        name = dict_['name']
+        return cls(class_=class_, method_name=method_name, name=name)
 
     def evaluate(self, values):
         args = {arg_name: values[var]
@@ -364,7 +380,7 @@ class ModelMethod(Block):
     :type name: str
     """
 
-    def __init__(self, model_class: type, method_name: str, name: str = ''):
+    def __init__(self, model_class: Type, method_name: str, name: str = ''):
         self.model_class = model_class
         self.method_name = method_name
         inputs = [TypedVariable(type_=model_class, name='model at input')]
@@ -378,8 +394,8 @@ class ModelMethod(Block):
         result_output_name = 'method result of {}'.format(self.method_name)
         annotations = get_type_hints(method)
         if 'return' in annotations:
-            type_ = dc.type_from_annotation(annotations['return'],
-                                            method.__module__)
+            type_ = type_from_annotation(annotations['return'],
+                                         method.__module__)
             return_output = TypedVariable(type_=type_, name=result_output_name)
         else:
             return_output = Variable(name=result_output_name)
@@ -404,18 +420,23 @@ class ModelMethod(Block):
     def to_dict(self):
         dict_ = Block.to_dict(self)
         dict_.update({'method_name': self.method_name,
-                      'model_class': self.model_class.__name__,
-                      'model_class_module': self.model_class.__module__})
+                      'model_class': full_classname(object_=self.model_class,
+                                                    compute_for='class')})
         return dict_
 
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_):
-        class_ = getattr(import_module(dict_['model_class_module']),
-                         dict_['model_class'])
-        return cls(model_class=class_,
-                   method_name=dict_['method_name'],
-                   name=dict_['name'])
+        if 'model_class_module' in dict_:
+            # TODO Retro-compatibility. Remove this in future versions
+            module_name = dict_['model_class_module']
+            classname = module_name + '.' + dict_['model_class']
+        else:
+            classname = dict_['model_class']
+        class_ = get_python_class_from_class_name(classname)
+        method_name = dict_['method_name']
+        name = dict_['name']
+        return cls(model_class=class_, method_name=method_name, name=name)
 
     def evaluate(self, values):
         args = {arg_name: values[var]
@@ -435,9 +456,9 @@ class ModelMethod(Block):
 #         annotations = get_type_hints(function)
 #         for arg_name in inspect.signature(function).parameters.keys():
 #             # TODO: Check why we need TypedVariables
-#             type_ = dc.type_from_annotation(annotations[arg_name])
+#             type_ = type_from_annotation(annotations[arg_name])
 #             inputs.append(TypedVariable(type_=type_, name=arg_name))
-#         out_type = dc.type_from_annotation(annotations['return'])
+#         out_type = type_from_annotation(annotations['return'])
 #         outputs = [TypedVariable(type_=out_type, name='Output function')]
 #
 #         Block.__init__(self, inputs, outputs, name=name)
@@ -454,7 +475,7 @@ class ModelMethod(Block):
 
 class Sequence(Block):
     def __init__(self, number_arguments: int, name: str = ''):
-        # type_: Subclass[dc.DessiaObject] = None,
+        # type_: Subclass[DessiaObject] = None,
         self.number_arguments = number_arguments
         prefix = 'Sequence element {}'
         inputs = [Variable(name=prefix.format(i))
@@ -480,7 +501,7 @@ class Sequence(Block):
         dict_ = Block.to_dict(self)
         dict_['number_arguments'] = self.number_arguments
         # if self.type_ is not None:
-        #     dict_['type_'] = dc.serialize_typing(self.type_)
+        #     dict_['type_'] = serialize_typing(self.type_)
         # else:
         #     dict_['type_'] = None
         return dict_
@@ -489,7 +510,7 @@ class Sequence(Block):
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_):
         # if dict_['type_'] is not None:
-        #     type_ = dc.deserialize_typing(dict_['type_'])
+        #     type_ = deserialize_typing(dict_['type_'])
         # else:
         #     type_ = None
         return cls(dict_['number_arguments'], dict_['name'])
@@ -647,7 +668,7 @@ class Product(Block):
         return self.number_list == other.number_list
 
     def to_dict(self):
-        dict_ = dc.DessiaObject.base_dict(self)
+        dict_ = DessiaObject.base_dict(self)
         dict_.update({'number_list': self.number_list})
         return dict_
 
@@ -679,7 +700,7 @@ class Filter(Block):
     :type name: str
     """
 
-    def __init__(self, filters: List[dc.Filter], name: str = ''):
+    def __init__(self, filters: List[Filter], name: str = ''):
         self.filters = filters
         inputs = [Variable(name='input_list')]
         outputs = [Variable(name='output_list')]
@@ -712,8 +733,8 @@ class Filter(Block):
             i = 0
             while bounded and i < len(self.filters):
                 filter_ = self.filters[i]
-                value = dc.enhanced_deep_attr(object_, filter_['attribute'])
-                bounded = dc.is_bounded(filter_, value)
+                value = enhanced_deep_attr(object_, filter_['attribute'])
+                bounded = is_bounded(filter_, value)
                 i += 1
 
             if bounded:
@@ -760,7 +781,7 @@ class MultiPlot(Display):
         objects = local_values[display_input]
         # pareto_settings = local_values[self.inputs[1]]
 
-        values = [{a: dc.enhanced_deep_attr(o, a) for a in self.attributes}
+        values = [{a: enhanced_deep_attr(o, a) for a in self.attributes}
                   for o in objects]
 
         first_vars = self.attributes[:2]
@@ -787,8 +808,8 @@ class MultiPlot(Display):
         multiplot = plot_data.MultiplePlots(elements=values, plots=objects,
                                             sizes=sizes, coords=coords,
                                             name='Results plot')
-        display_ = dc.DisplayObject(type_='plot_data', data=multiplot,
-                                    reference_path=reference_path)
+        display_ = DisplayObject(type_='plot_data', data=multiplot,
+                                 reference_path=reference_path)
         return [display_.to_dict()]
 
     def to_dict(self):
@@ -821,7 +842,7 @@ class ParallelPlot(MultiPlot):
     """
 
     def __init__(self, attributes: List[str], order: int = 0, name: str = ''):
-        dc.deprecation_warning(self.__class__.__name__, 'Class', 'MultiPlot')
+        deprecation_warning(self.__class__.__name__, 'Class', 'MultiPlot')
         MultiPlot.__init__(self, attributes=attributes, order=order, name=name)
 
     def to_dict(self):
@@ -870,7 +891,7 @@ class ModelAttribute(Block):
         return cls(dict_['attribute_name'], dict_['name'])
 
     def evaluate(self, values):
-        return [dc.enhanced_deep_attr(values[self.inputs[0]],
+        return [enhanced_deep_attr(values[self.inputs[0]],
                                       self.attribute_name)]
 
 
@@ -931,7 +952,7 @@ class Substraction(Block):
         return [values[self.inputs[0]] - values[self.inputs[1]]]
 
 
-class Pipe(dc.DessiaObject):
+class Pipe(DessiaObject):
     """
     :param input_variable: The input varaible of the pipe correspond to the \
     start of the arrow, its tail.
@@ -976,7 +997,7 @@ class Pipe(dc.DessiaObject):
         self.input_variable = input_variable
         self.output_variable = output_variable
 
-        dc.DessiaObject.__init__(self, name=name)
+        DessiaObject.__init__(self, name=name)
 
     def to_dict(self):
         return {'input_variable': self.input_variable,
@@ -1161,14 +1182,14 @@ class Workflow(Block):
         return copied_workflow
 
     def _displays(self) -> List[JsonSerializable]:
-        display_object = dc.DisplayObject(type_='workflow',
+        display_object = DisplayObject(type_='workflow',
                                           data=self.to_dict())
         displays = [display_object.to_dict()]
         return displays
 
     @property
     def _method_jsonschemas(self):
-        jsonschemas = {'run': deepcopy(dc.JSONSCHEMA_HEADER)}
+        jsonschemas = {'run': deepcopy(JSONSCHEMA_HEADER)}
         properties_dict = jsonschemas['run']['properties']
         required_inputs = []
         for i, input_ in enumerate(self.inputs):
@@ -1180,11 +1201,11 @@ class Workflow(Block):
                 input_block = self.block_from_variable(input_)
                 if input_block.name:
                     name = input_block.name + ' - ' + input_.name
-                    title = dc.prettyname(name)
+                    title = prettyname(name)
                 else:
-                    title = dc.prettyname(input_.name)
+                    title = prettyname(input_.name)
 
-            annotation_jsonschema = dc.jsonschema_from_annotation(
+            annotation_jsonschema = jsonschema_from_annotation(
                 annotation=annotation,
                 jsonschema_element=current_dict,
                 order=i,
@@ -1194,7 +1215,7 @@ class Workflow(Block):
             if not input_.has_default_value:
                 required_inputs.append(str(i))
             else:
-                dict_ = dc.set_default_value(
+                dict_ = set_default_value(
                     jsonschema_element=current_dict, key=str(i),
                     default_value=input_.default_value
                 )
@@ -1235,9 +1256,9 @@ class Workflow(Block):
 
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable) -> 'Workflow':
-        blocks = [dc.DessiaObject.dict_to_object(d) for d in dict_['blocks']]
+        blocks = [DessiaObject.dict_to_object(d) for d in dict_['blocks']]
         if 'nonblock_variables' in dict_:
-            nonblock_variables = [dc.dict_to_object(d)
+            nonblock_variables = [dict_to_object(d)
                                   for d in dict_['nonblock_variables']]
         else:
             nonblock_variables = []
@@ -1265,7 +1286,7 @@ class Workflow(Block):
             iterator = zip(dict_['imposed_variables'],
                            dict_['imposed_variable_values'])
             for variable_index, serialized_value in iterator:
-                value = dc.deserialize(serialized_value)
+                value = deserialize(serialized_value)
                 if type(variable_index) == int:
                     variable = nonblock_variables[variable_index]
                 else:
@@ -1289,7 +1310,7 @@ class Workflow(Block):
                 has_default = input_.has_default_value
                 if not has_default or (has_default and str(i) in dict_):
                     value = dict_[str(i)]
-                    deserialized_value = dc.deserialize_argument(
+                    deserialized_value = deserialize_argument(
                         type_=input_.type_, argument=value
                     )
                     arguments_values[i] = deserialized_value
@@ -1745,7 +1766,7 @@ class WorkflowBlock(Block):
         return self.workflow.package_mix()
 
 
-class WorkflowRun(dc.DessiaObject):
+class WorkflowRun(DessiaObject):
     _standalone_in_db = True
     _allowed_methods = ['run_again']
     _jsonschema = {
@@ -1830,12 +1851,12 @@ class WorkflowRun(dc.DessiaObject):
         self.execution_time = end_time - start_time
         self.log = log
 
-        dc.DessiaObject.__init__(self, name=name)
+        DessiaObject.__init__(self, name=name)
 
     def _data_eq(self, other_workflow_run):
         # TODO : Should we add input_values and variables values in test ?
-        if dc.is_sequence(self.output_value):
-            if not dc.is_sequence(other_workflow_run):
+        if is_sequence(self.output_value):
+            if not is_sequence(other_workflow_run):
                 return False
             equal_output = all([v == other_v for v, other_v
                                 in zip(self.output_value,
@@ -1846,8 +1867,8 @@ class WorkflowRun(dc.DessiaObject):
 
     def _data_hash(self):
         # TODO : Should we add input_values and variables values in test ?
-        if dc.is_sequence(self.output_value):
-            hash_output = dc.list_hash(self.output_value)
+        if is_sequence(self.output_value):
+            hash_output = list_hash(self.output_value)
         else:
             hash_output = hash(self.output_value)
         return hash(self.workflow) + int(hash_output % 10e5)
@@ -1867,7 +1888,7 @@ class WorkflowRun(dc.DessiaObject):
             display = block.display_(local_values=local_values,
                                      reference_path=reference_path)
             displays.extend(display)
-        if isinstance(self.output_value, dc.DessiaObject):
+        if isinstance(self.output_value, DessiaObject):
             displays.extend(self.output_value._displays(
                 reference_path='output_value'
             ))
@@ -1879,13 +1900,13 @@ class WorkflowRun(dc.DessiaObject):
         if 'output_value' in dict_ and 'output_value_type' in dict_:
             type_ = dict_['output_value_type']
             value = dict_['output_value']
-            output_value = dc.recursive_instantiation(type_=type_, value=value)
+            output_value = recursive_instantiation(type_=type_, value=value)
         else:
             output_value = None
 
-        input_values = {int(i): dc.deserialize(v)
+        input_values = {int(i): deserialize(v)
                         for i, v in dict_['input_values'].items()}
-        variables_values = {k: dc.deserialize(v)
+        variables_values = {k: deserialize(v)
                             for k, v in dict_['variables_values'].items()}
         return cls(workflow=workflow, output_value=output_value,
                    input_values=input_values,
@@ -1894,11 +1915,11 @@ class WorkflowRun(dc.DessiaObject):
                    log=dict_['log'], name=dict_['name'])
 
     def to_dict(self):
-        input_values = {i: dc.serialize(v)
+        input_values = {i: serialize(v)
                         for i, v in self.input_values.items()}
-        variables_values = {k: dc.serialize(v)
+        variables_values = {k: serialize(v)
                             for k, v in self.variables_values.items()}
-        dict_ = dc.DessiaObject.base_dict(self)
+        dict_ = DessiaObject.base_dict(self)
         dict_.update({'workflow': self.workflow.to_dict(),
                       'input_values': input_values,
                       'variables_values': variables_values,
@@ -1907,8 +1928,8 @@ class WorkflowRun(dc.DessiaObject):
 
         if self.output_value is not None:
             dict_.update({
-                'output_value': dc.serialize(self.output_value),
-                'output_value_type': dc.recursive_type(self.output_value)
+                'output_value': serialize(self.output_value),
+                'output_value_type': recursive_type(self.output_value)
             })
 
         return dict_
@@ -1923,7 +1944,7 @@ class WorkflowRun(dc.DessiaObject):
                     method_jsonschema: Any = None):
         if method_name is not None and method_name == 'run_again' \
                 and method_jsonschema is not None:
-            dict_ = dc.serialize_dict(self.input_values)
+            dict_ = serialize_dict(self.input_values)
             for property_, value in method_jsonschema['properties'].items():
                 if property_ in dict_ \
                         and 'object_id' in value and 'object_class' in value:
@@ -1931,13 +1952,13 @@ class WorkflowRun(dc.DessiaObject):
                     dict_[property_] = value
             return dict_
         # TODO Check this result. Might raise an error
-        return dc.DessiaObject.method_dict(self, method_name=method_name,
+        return DessiaObject.method_dict(self, method_name=method_name,
                                            method_jsonschema=method_jsonschema)
 
-    def run_again(self, input_values):
+    def run_again(self, input_values, progress_callback=None):
         workflow_run = self.workflow.run(input_values=input_values,
                                          verbose=False,
-                                         progress_callback=None,
+                                         progress_callback=progress_callback,
                                          name=None)
         return workflow_run
 
@@ -1966,11 +1987,11 @@ def set_inputs_from_function(method, inputs=None):
         if argument not in ['self', 'progress_callback']:
             try:
                 annotations = get_type_hints(method)
-                type_ = dc.type_from_annotation(annotations[argument],
+                type_ = type_from_annotation(annotations[argument],
                                                 module=method.__module__)
             except KeyError:
                 msg = 'Argument {} of method/function {} has no typing'
-                raise dc.UntypedArgumentError(
+                raise UntypedArgumentError(
                     msg.format(argument, method.__name__))
             if iarg >= nargs - ndefault_args:
                 default = args_specs.defaults[ndefault_args - nargs + iarg]
