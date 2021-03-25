@@ -8,18 +8,19 @@ class Specifications(dc.DessiaObject):
         self.name = name
 
 class BoundedAttributeValue(dc.DessiaObject):
-    def __init__(self, attribute_name:str, value_min:float, value_max:float, name:str=''):
+    def __init__(self, attribute_name:str, min_value:float, max_value:float,
+                 name:str=''):
         self.name = name
         self.attribute_name = attribute_name
-        self.value_min = value_min
-        self.value_max = value_max
-        self.interval_length = value_max - value_min
+        self.min_value = min_value
+        self.max_value = max_value
+        self.interval_length = max_value - min_value
 
     def dimensionless_to_value(self, dimless_value:float):
-        return self.value_min + dimless_value*self.interval_length
+        return self.min_value + dimless_value*self.interval_length
 
     def dimensionless_value(self, value:float):
-        return (value-self.value_min)/self.interval_length
+        return (value-self.min_value)/self.interval_length
 
 class Optimizer(dc.DessiaObject):
     """
