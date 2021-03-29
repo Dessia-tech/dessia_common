@@ -272,7 +272,7 @@ class Catalog(DessiaObject):
         sizes = [plot_data.Window(width=560, height=300),
                  plot_data.Window(width=560, height=300)]
         coords = [(0, 0), (0, 300)]
-        multiplot = plot_data.MultiplePlots(elements=values, objects=objects,
+        multiplot = plot_data.MultiplePlots(plots=objects, elements=values,
                                             sizes=sizes, coords=coords,
                                             name='Results plot')
         return multiplot
