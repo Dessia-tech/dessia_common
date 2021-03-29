@@ -23,7 +23,7 @@ from dessia_common import DessiaObject, DisplayObject, Filter, is_sequence,\
     serialize_dict, UntypedArgumentError, recursive_type,\
     recursive_instantiation, full_classname
 from dessia_common.vectored_objects import ParetoSettings, from_csv
-from dessia_common.typings import JsonSerializable, Subclass
+from dessia_common.typings import JsonSerializable
 import warnings
 
 # import plot_data

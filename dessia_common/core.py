@@ -20,7 +20,8 @@ try:
 except ImportError:
     from mypy_extensions import TypedDict  # <=3.7
 import traceback as tb
-from dessia_common.typings import Measure, JsonSerializable, Subclass
+from dessia_common.typings import Measure, JsonSerializable,\
+    Subclass, InstanceOf
 
 from importlib import import_module
 
@@ -84,7 +85,7 @@ def deprecated(use_instead=None):
         def wrapper(*args, **kwargs):
             deprecation_warning(function.__name__, 'Function', use_instead)
             print('Traceback : ')
-            tb.print_stack(limit=1)
+            tb.print_stack(limit=2)
             return function(*args, **kwargs)
 
         return wrapper
@@ -1385,9 +1386,20 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
                 # Types union
                 classnames = [full_classname(object_=a, compute_for='class')
                               for a in args]
+
+                standalone_args = [a._standalone_in_db for a in args]
+                if all(standalone_args):
+                    standalone = True
+                elif not any(standalone_args):
+                    standalone = False
+                else:
+                    msg = "standalone_in_db values for type '{}'" \
+                          " are not consistent"
+                    raise ValueError(msg.format(typing_))
                 jsonschema_element[key] = {
                     'type': 'object', 'title': title, 'classes': classnames,
-                    'editable': editable, 'order': order
+                    'editable': editable, 'order': order,
+                    'standalone_in_db': standalone
                 }
         elif origin is list:
             # Homogenous sequences
@@ -1419,11 +1431,26 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
                 }
             }
         elif origin is Subclass:
+            warnings.simplefilter('once', DeprecationWarning)
+            msg = "\n\nTyping of attribute '{0}' from class {1} "\
+                  "uses Subclass which is deprecated."\
+                  "\n\nUse 'InstanceOf[{2}]' instead of 'Subclass[{2}]'.\n"
+            arg = args[0].__name__
+            warnings.warn(msg.format(key, args[0], arg), DeprecationWarning)
             # Several possible classes that are subclass of another one
             class_ = args[0]
             classname = full_classname(object_=class_, compute_for='class')
             jsonschema_element[key] = {
-                'type': 'object', 'order': order, 'subclass_of': classname,
+                'type': 'object', 'order': order, 'instance_of': classname,
+                'title': title, 'editable': editable,
+                'standalone_in_db': class_._standalone_in_db
+            }
+        elif origin is InstanceOf:
+            # Several possible classes that are subclass of another one
+            class_ = args[0]
+            classname = full_classname(object_=class_, compute_for='class')
+            jsonschema_element[key] = {
+                'type': 'object', 'order': order, 'instance_of': classname,
                 'title': title, 'editable': editable,
                 'standalone_in_db': class_._standalone_in_db
             }
@@ -1495,6 +1522,13 @@ def prettyname(namestr):
 
 
 def static_dict_jsonschema(typed_dict, title=None):
+    warnings.simplefilter('once', DeprecationWarning)
+    msg = "\n\nStatic Dict typing is not fully supported.\n" \
+          "This will most likely lead to non predictable behavior" \
+          " or malfunctionning features. \n" \
+          "Define a custom non-standalone class for type '{}'\n\n"
+    classname = full_classname(typed_dict, compute_for='class')
+    warnings.warn(msg.format(classname), DeprecationWarning)
     jsonschema_element = deepcopy(JSONSCHEMA_HEADER)
     jss_properties = jsonschema_element['properties']
 
@@ -1532,7 +1566,7 @@ def set_default_value(jsonschema_element, key, default_value):
         type_ = type(default_value)
         raise NotImplementedError(msg.format(default_value, type_))
     elif datatype in ['standalone_object', 'embedded_object',
-                      'subclass', 'union']:
+                      'instance_of', 'union']:
         object_dict = default_value.to_dict()
         jsonschema_element[key]['default_value'] = object_dict
     return jsonschema_element
@@ -1697,8 +1731,8 @@ def datatype_from_jsonschema(jsonschema):
                     return 'standalone_object'
                 return 'embedded_object'
             return 'static_dict'
-        if 'subclass_of' in jsonschema:
-            return 'subclass'
+        if 'instance_of' in jsonschema:
+            return 'instance_of'
         if 'patternProperties' in jsonschema:
             return 'dynamic_dict'
         if 'method' in jsonschema and jsonschema['method']:
@@ -1723,10 +1757,8 @@ def chose_default(jsonschema):
         return default_sequence(jsonschema)
     elif datatype == 'static_dict':
         return default_dict(jsonschema)
-    # elif datatype == 'dynamic_dict':
-    #     return {}
     elif datatype in ['standalone_object', 'embedded_object',
-                      'subclass', 'union']:
+                      'instance_of', 'union']:
         if 'default_value' in jsonschema:
             return jsonschema['default_value']
         return None
@@ -1739,7 +1771,10 @@ def default_dict(jsonschema):
     datatype = datatype_from_jsonschema(jsonschema)
     if datatype in ['standalone_object', 'embedded_object', 'static_dict']:
         for property_, jss in jsonschema['properties'].items():
-            dict_[property_] = chose_default(jss)
+            if 'default_value' in jss:
+                dict_[property_] = jss['default_value']
+            else:
+                dict_[property_] = chose_default(jss)
     else:
         return None
     return dict_

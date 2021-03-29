@@ -5,10 +5,8 @@ standalone_subobject = StandaloneSubobject(floatarg=3.78)
 embedded_subobject = EmbeddedSubobject()
 dynamic_dict = {'key0': True,
                 'key1': False}
-static_dict = {'name': 'StaticDict',
-               'float_value': -458.256,
-               'int_value': 10,
-               'is_valid': True}
+static_dict = StaticDict(name="StaticDict", float_value=-548.256,
+                         int_value=10, is_valid=True)
 tuple_arg = ('Tuple', 1)
 intarg = 5
 strarg = 'TestStr'
@@ -66,31 +64,8 @@ jsonschema = {
             'python_typing': 'typing.Dict[str, bool]'
         },
         'static_dict': {
-            'definitions': {},
-            '$schema': 'http://json-schema.org/draft-07/schema#',
-            'type': 'object',
-            'required': ['name', 'float_value', 'int_value', 'is_valid'],
-            'properties': {
-                'name': {
-                    'type': 'string', 'title': 'Name',
-                    'editable': True, 'order': 0
-                },
-                'float_value': {
-                    'type': 'number', 'title': 'Float Value',
-                    'editable': True, 'order': 1
-                },
-                'int_value': {
-                    'type': 'number', 'title': 'Int Value',
-                    'editable': True, 'order': 2
-                },
-                'is_valid': {
-                    'type': 'boolean', 'title': 'Is Valid',
-                    'editable': True, 'order': 3
-                }
-            },
-            'title': 'Static Dict',
-            'order': 3,
-            'editable': True,
+            'type': 'object', 'standalone_in_db': False,
+            'title': 'Static Dict', 'order': 3, 'editable': True,
             'classes': ['dessia_common.forms.StaticDict'],
             'description': 'A 1-level structurewith only builtin values & str keys',
             'python_typing': "<class 'dessia_common.forms.StaticDict'>"
@@ -139,26 +114,18 @@ jsonschema = {
             'type': 'object', 'title': 'Union Arg',
             'classes': [
                 'dessia_common.forms.StandaloneSubobject',
-                'dessia_common.forms.EnhancedStandaloneSubobject'],
-            'editable': True, 'order': 10
+                'dessia_common.forms.EnhancedStandaloneSubobject'
+            ],
+            'editable': True, 'order': 10, 'standalone_in_db': True
         },
         'subclass_arg': {
             'type': 'object', 'order': 11,
-            'subclass_of': 'dessia_common.forms.StandaloneSubobject',
+            'instance_of': 'dessia_common.forms.StandaloneSubobject',
             'title': 'Subclass Arg', 'editable': True, 'standalone_in_db': True
-        },
-        'default_value_list': {
-            'type': 'array', 'order': 12, 'editable': True,
-            'title': 'Default Value List',
-            'items': {
-                'type': 'number', 'title': 'Default Value List',
-                'editable': True, 'order': 0
-            },
-            'default_value': None
         },
         'name': {
             'type': 'string', 'title': 'Name', 'editable': True,
-            'order': 13, 'default_value': 'Standalone Object Demo'
+            'order': 12, 'default_value': 'Standalone Object Demo'
         }
     },
     'standalone_in_db': True,

@@ -7,8 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased => [0.4.4]
 ### Added
+- InstanceOf typing. Subclass is Deprecated
 - Docstring parsing & failure prevention
 - Description of class and attributes in jsonschema
+
+### Changed
+- Union cannot implement two classes with non coherent standalone_in_db attributes anymore
+
+### Removed
+- TypedDict not supported anymore
 
 ## [0.4.3]
 ### Added
