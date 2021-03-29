@@ -13,6 +13,7 @@ import collections
 from copy import deepcopy
 import inspect
 import json
+import bson
 from typing import List, Dict, Type, Tuple, Union, Any, \
     get_type_hints, get_origin, get_args
 try:
@@ -647,6 +648,7 @@ class DessiaObject:
         Reproduce lifecycle on platform (serialization, display)
         """
         self.dict_to_object(json.loads(json.dumps(self.to_dict())))
+        bson.BSON.encode(self.to_dict())
         json.dumps(self._displays())
 
 
