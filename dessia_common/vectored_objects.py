@@ -277,7 +277,7 @@ class Catalog(DessiaObject):
                                             name='Results plot')
         return multiplot
 
-    def _display_angular(self):
+    def _displays(self):
         """
         Configures catalog display on frontend
 
@@ -419,12 +419,12 @@ class Catalog(DessiaObject):
     def get_variable_index(self, name: str) -> int:
         return self.variables.index(name)
 
-    def get_values(self, variable: str) -> List[float]:
+    def get_values(self, variable: str) -> List:
         values = [self.get_value_by_name(line, variable)
                   for line in self.array]
         return values
 
-    def get_value_by_name(self, line: List[float], name: str) -> float:
+    def get_value_by_name(self, line: List, name: str) -> float:
         j = self.get_variable_index(name)
         value = line[j]
         return value
@@ -543,7 +543,82 @@ class Catalog(DessiaObject):
                 self.objectives.append(best_objective)
         if not success:
             raise ValueError("No solutions found")
-
+            
+    def plot_data(self):
+        
+        from plot_data.core import Tooltip, TextStyle, SurfaceStyle, PointStyle,\
+            EdgeStyle, Axis, Scatter, ParallelPlot, PointFamily, MultiplePlots
+        from plot_data.colors import GREY, LIGHTGREY, LIGHTGREEN, LIGHTBLUE
+            
+        name_column_0 = self.variables[0]
+        list_name = self.get_values(name_column_0)
+            
+        list_settings = [name for name in self.pareto_settings.minimized_attributes]
+        list_value = []
+        for setting in list_settings :
+            list_value.append(self.get_values(setting))
+        
+        if self.pareto_is_enabled :
+            cost = self.build_costs(self.pareto_settings)
+            p_frontier = pareto_frontier(cost)
+            elements = [[],[]] #point_non_pareto, point_pareto
+            for i in range(len(list_name)) :
+                dict_element = {name_column_0: list_name[i],}
+                for k, setting in enumerate(list_settings) :
+                    dict_element[setting] = list_value[k][i]
+                    
+                if p_frontier[i] :
+                    elements[1].append(dict_element)
+                else :
+                    elements[0].append(dict_element)
+             
+        else :    
+            elements = [[],[]]
+            for i in range(len(list_name)) :
+                dict_element = {name_column_0: list_name[i],}
+                for k, setting in enumerate(list_settings) :
+                    dict_element[setting] = list_value[k][i]
+                    
+                elements[0].append(dict_element)
+        
+        #ScatterPlot
+        to_disp_attribute_names = [name_column_0] + list_settings
+        text_style = TextStyle(text_color=GREY,
+                               font_size=10,
+                               font_style='sans-serif')
+        surface_style = SurfaceStyle(color_fill=LIGHTGREY, opacity=0.3)
+        custom_tooltip = Tooltip(to_disp_attribute_names=to_disp_attribute_names,
+                                 surface_style=surface_style,
+                                 text_style=text_style,
+                                 tooltip_radius=10)
+        
+        all_points = elements[0] + elements[1]
+        
+        plots = []
+        
+        #ScatterPlot
+        
+        for j in range(1,len(list_settings)) :
+            if len(plots) < 4 :
+                plots.append(Scatter(tooltip=custom_tooltip,
+                                     to_disp_attribute_names=[list_settings[0], list_settings[j]],
+                                     elements=all_points))
+        
+        list_index_0 = [k for k in range(len(elements[0]))]
+        point_family_0 = PointFamily(LIGHTBLUE, list_index_0)
+        
+        n_pareto = len(elements[1])
+        list_index_1 = [len(all_points)-i-1 for i in range(n_pareto)]
+        point_family_1 = PointFamily(LIGHTGREEN, list_index_1)
+        
+        # ParallelPlot
+        
+        plots.append(ParallelPlot(elements=all_points,
+                                  to_disp_attribute_names=list_settings))
+        
+        return MultiplePlots(plots=plots, elements=all_points, 
+                             point_families=[point_family_0,point_family_1],
+                             initial_view_on=True)
 
 def pareto_frontier(costs):
     """

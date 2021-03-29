@@ -7,7 +7,7 @@ Created on Mon Feb 17 17:00:35 2020
 """
 
 from dessia_common.vectored_objects import Catalog, Objective, ParetoSettings,\
-    ObjectiveSettings, from_csv
+    ObjectiveSettings, from_csv, pareto_frontier
 import os
 
 choice_args = ['MPG', 'Cylinders', 'Displacement', 'Horsepower',
@@ -23,8 +23,8 @@ pareto_settings = ParetoSettings(minimized_attributes=minimized_attributes,
 
 # objective_settings0 = ObjectiveSettings(n_near_values=4, enabled=True)
 # objective0 = Objective(coefficients=coefficients,
-#                        settings=objective_settings0,
-#                        name='ObjectiveName')
+#                         settings=objective_settings0,
+#                         name='ObjectiveName')
 
 dirname = os.path.dirname(__file__)
 relative_filepath = './data/cars.csv'
@@ -33,22 +33,19 @@ filename = os.path.join(dirname, relative_filepath)
 array, variables = from_csv(filename=filename, end=None,
                             remove_duplicates=True)
 
-catalog_array = array[:10]
-catalog = Catalog(array=catalog_array, variables=variables,
+catalog = Catalog(array=array, variables=variables,
                   choice_variables=choice_args, objectives=[],
                   pareto_settings=pareto_settings, name='Cars')
 
-reduced_variables = variables[:3]
-reduced_array = [line[:3] for line in array[:10]]
-reduced_pareto = ParetoSettings(minimized_attributes={}, enabled=False)
+#### plot_data with 2 axis (x, y)
 
-reduced_catalog = Catalog(array=reduced_array, variables=reduced_variables,
-                          choice_variables=['MPG', 'Cylinders'],
-                          objectives=[], pareto_settings=reduced_pareto,
-                          name='Reduced cars')
 
-joined_catalog = Catalog.concatenate([catalog, reduced_catalog])
+from plot_data import plot_canvas
+plot_canvas(plot_data_object=catalog.plot_data(), canvas_id='canvas')
 
-# from dessia_api_client import Client
-# c = Client(api_url = 'https://api.platform-dev.dessia.tech')
-# r = c.create_object_from_python_object(reduced_catalog)
+# cost = catalog.build_costs(pareto_settings)
+# print('cost', cost)
+
+# p_f = pareto_frontier(cost)
+# print('p_f', p_f)
+
