@@ -15,6 +15,9 @@ def istep_from_value_on_list(list_, value):
 
 
 def interpolate_from_istep(objects, istep):
+    n_objects = len(objects)
+    if (istep < 0) or (istep > n_objects - 1):
+        raise(ValueError('Extrapolating is not supported'))
     istep1 = int(istep)
     if istep1 == istep:
         # No interpolation needed
