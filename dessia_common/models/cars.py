@@ -43,7 +43,8 @@ catalog = Catalog(array=array, variables=variables,
 
 
 from plot_data import plot_canvas
-plot_canvas(plot_data_object=catalog.plot_data(), canvas_id='canvas')
+
+plot_canvas(plot_data_object=catalog.plot_data()[0], canvas_id='canvas')
 
 # cost = catalog.build_costs(pareto_settings)
 # print('cost', cost)
