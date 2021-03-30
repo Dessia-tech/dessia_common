@@ -222,8 +222,9 @@ class StandaloneObject(DessiaObject):
         standalone_subobject = StandaloneSubobject.generate(seed)
         embedded_subobject = EmbeddedSubobject.generate(seed)
         dynamic_dict = {'n'+str(i): bool(seed % 2) for i in range(seed)}
-        static_dict = {'name': 'Object'+str(seed), 'float_value': seed * 1.3,
-                       'int_value': seed, 'is_valid': is_even}
+        static_dict = StaticDict(name='Object'+str(seed),
+                                 float_value=seed * 1.3,
+                                 int_value=seed, is_valid=is_even)
         tuple_arg = ('value', seed * 3)
         intarg = seed
         strarg = str(seed) * floor(seed/3)
