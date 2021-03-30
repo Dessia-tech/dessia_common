@@ -642,11 +642,11 @@ class DessiaObject:
             displays.append(display_.to_dict())
         return displays
 
-class Catalog(DessiaObject):
-    def __init__(self, objects:List[DessiaObject], name:str=''):
-        self.objects = objects
-        self.name = name
 
+class Catalog(DessiaObject):
+    def __init__(self, objects: List[DessiaObject], name: str = ''):
+        self.objects = objects
+        DessiaObject.__init__(self, name=name)
 
 
 class DisplayObject(DessiaObject):
