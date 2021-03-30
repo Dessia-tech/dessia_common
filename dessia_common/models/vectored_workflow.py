@@ -24,8 +24,10 @@ filter_method = wf.ModelMethod(model_class=Catalog,
                                name='Filters')
 filtered_catalog = wf.InstanciateModel(model_class=Catalog,
                                        name='Filtered Catalog')
-display = wf.Display(order=0, name="Display")
-filtered = wf.Display(order=1, name="Filtered")
+# display = wf.Display(order=0, name="Display")
+display = wf.MultiPlot(choice_args, 0, name='Display')
+# filtered = wf.Display(order=1, name="Filtered")
+filtered = wf.MultiPlot(choice_args, 1, name='Filtered')
 # objectives_method = wf.ModelMethod(model_class=Catalog,
 #                                    method_name='find_best_objective',
 #                                    name="Find best objectives")
@@ -55,7 +57,7 @@ pipes = [
 workflow = wf.Workflow(blocks=blocks, pipes=pipes,
                        output=filter_method.outputs[0],
                        name='Cars workflow')
-# workflow.plot_jointjs()
+workflow.plot_jointjs()
 
 # # Input values
 input_values = {

@@ -517,11 +517,11 @@ class Catalog(DessiaObject):
                                      elements=all_points))
         
         list_index_0 = [k for k in range(len(elements[0]))]
-        point_family_0 = PointFamily(LIGHTBLUE, list_index_0)
+        point_family_0 = PointFamily(LIGHTBLUE, list_index_0, name = 'Non pareto')
         
         n_pareto = len(elements[1])
         list_index_1 = [len(all_points)-i-1 for i in range(n_pareto)]
-        point_family_1 = PointFamily(LIGHTGREEN, list_index_1)
+        point_family_1 = PointFamily(LIGHTGREEN, list_index_1, name = 'Pareto')
         
         # ParallelPlot
         
