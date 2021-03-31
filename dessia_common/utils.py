@@ -2,9 +2,10 @@
 def istep_from_value_on_list(list_, value):
     for ipoint, (point1, point2) in enumerate(zip(list_[:-1],
                                                   list_[1:])):
-        interval = sorted((point1, point2))
-        if (interval[0] <= value) and (value <= interval[1]):
-            alpha = (value-point1)/(point2-point1)
+
+        point1_s, point2_s = sorted((point1, point2))
+        if (point1_s <= value) and (value <= point2_s):
+            alpha = (value-point1_s)/(point2_s-point1_s)
             if alpha < 0 or alpha > 1:
                 raise ValueError
             return ipoint + alpha
