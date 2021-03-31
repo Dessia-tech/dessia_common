@@ -510,11 +510,12 @@ class Catalog(DessiaObject):
         
         #ScatterPlot
         
-        for j in range(1,len(list_settings)) :
-            if len(plots) < 4 :
-                plots.append(Scatter(tooltip=custom_tooltip,
-                                     to_disp_attribute_names=[list_settings[0], list_settings[j]],
-                                     elements=all_points))
+        for j in range(len(list_settings)) :
+            for i in range(j+1,len(list_settings)) :
+                if len(plots) < 3 :
+                    plots.append(Scatter(tooltip=custom_tooltip,
+                                         to_disp_attribute_names=[list_settings[j], list_settings[i]],
+                                         elements=all_points))
         
         list_index_0 = [k for k in range(len(elements[0]))]
         point_family_0 = PointFamily(LIGHTBLUE, list_index_0, name = 'Non pareto')
