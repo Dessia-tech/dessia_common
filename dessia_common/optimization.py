@@ -7,7 +7,19 @@ class Specifications(dc.DessiaObject):
     def __init__(self, name:str=''):
         self.name = name
 
+class FixedAttributeValue(dc.DessiaObject):
+    _standalone_in_db = True
+
+    def __init__(self, attribute_name:str, value:float,
+                 name:str=''):
+        self.name = name
+        self.attribute_name = attribute_name
+        self.value = value
+
+
 class BoundedAttributeValue(dc.DessiaObject):
+    _standalone_in_db = True
+
     def __init__(self, attribute_name:str, min_value:float, max_value:float,
                  name:str=''):
         self.name = name
