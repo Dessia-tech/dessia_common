@@ -652,13 +652,10 @@ class DessiaObject:
         json.dumps(self._displays())
 
 
-
-
 class Catalog(DessiaObject):
-    def __init__(self, objects:List[DessiaObject], name:str=''):
+    def __init__(self, objects: List[DessiaObject], name: str = ''):
         self.objects = objects
-        self.name = name
-
+        DessiaObject.__init__(self, name=name)
 
 
 class DisplayObject(DessiaObject):
@@ -1147,6 +1144,10 @@ def serialize_typing(typing_):
         elif origin is tuple:
             argnames = ', '.join([type_fullname(a) for a in args])
             return 'Tuple[{}]'.format(argnames)
+        elif origin is dict:
+            key_type = type_fullname(args[0])
+            value_type = type_fullname(args[1])
+            return 'Dict[{}, {}]'.format(key_type, value_type)
         else:
             msg = 'Serialization of typing {} is not implemented'
             raise NotImplementedError(msg.format(typing_))
@@ -1192,6 +1193,11 @@ def deserialize_typing(serialized_typing):
                            "workflow non-block variables.")
                     raise TypeError(msg)
             return Tuple[type_from_argname(full_argname)]
+        elif splitted_type[0] == 'Dict':
+            args = full_argname.split(', ')
+            key_type = type_from_argname(args[0])
+            value_type = type_from_argname(args[1])
+            return Dict[key_type, value_type]
     raise NotImplementedError('{}'.format(serialized_typing))
 
 
