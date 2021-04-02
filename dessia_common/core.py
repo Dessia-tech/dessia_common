@@ -360,6 +360,7 @@ class DessiaObject:
         _jsonschema['required'] = required_arguments
         _jsonschema['standalone_in_db'] = cls._standalone_in_db
         _jsonschema['description'] = parsed_docstring['description']
+        _jsonschema['python_typing'] = str(cls)
 
         # Set jsonschema
         for annotation in annotations.items():
@@ -384,9 +385,7 @@ class DessiaObject:
                 )
                 if name in parsed_attributes:
                     description = parsed_attributes[name]['desc']
-                    typing_ = parsed_attributes[name]['annotation']
-                    jss_elt[name].update({'description': description,
-                                          'python_typing': typing_})
+                    jss_elt[name]['description'] = description
                 _jsonschema['properties'].update(jss_elt)
                 if name in default_arguments.keys():
                     default = set_default_value(_jsonschema['properties'],
@@ -1128,8 +1127,8 @@ def serialize_typing(typing_):
                 return serialize_typing(args[0])
             else:
                 # Types union
-                msg = 'Union typing serialization not implemented yet'
-                raise NotImplemented(msg)
+                argnames = ', '.join([type_fullname(a) for a in args])
+                return 'Union[{}]'.format(argnames)
         elif origin is list:
             return 'List[' + type_fullname(args[0]) + ']'
         elif origin is tuple:
@@ -1139,12 +1138,15 @@ def serialize_typing(typing_):
             key_type = type_fullname(args[0])
             value_type = type_fullname(args[1])
             return 'Dict[{}, {}]'.format(key_type, value_type)
+        elif origin is InstanceOf:
+            return 'InstanceOf[{}]'.format(type_fullname(args[0]))
         else:
             msg = 'Serialization of typing {} is not implemented'
             raise NotImplementedError(msg.format(typing_))
     if isinstance(typing_, type):
         return full_classname(typing_, compute_for='class')
-    raise NotImplementedError('{} of type {}'.format(typing_, type(typing_)))
+    return str(typing_)
+    # raise NotImplementedError('{} of type {}'.format(typing_, type(typing_)))
 
 
 def type_from_argname(argname):
@@ -1189,6 +1191,8 @@ def deserialize_typing(serialized_typing):
             key_type = type_from_argname(args[0])
             value_type = type_from_argname(args[1])
             return Dict[key_type, value_type]
+        # elif splitted_type[0] == 'Union':
+        #     args = full_argname.split(', ')
     raise NotImplementedError('{}'.format(serialized_typing))
 
 
@@ -1374,11 +1378,14 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
     if editable is None:
         editable = key not in ['return']
 
+    # Compute base entries
+    jsonschema_element[key] = {'title': title, 'editable': editable,
+                               'order': order,
+                               'python_typing': serialize_typing(typing_)}
+
     if typing_ in TYPING_EQUIVALENCES.keys():
         # Python Built-in type
-        jsonschema_element[key] = {'type': TYPING_EQUIVALENCES[typing_],
-                                   'title': title, 'editable': editable,
-                                   'order': order}
+        jsonschema_element[key]['type'] = TYPING_EQUIVALENCES[typing_]
 
     elif is_typing(typing_):
         origin = get_origin(typing_)
@@ -1405,40 +1412,36 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
                     msg = "standalone_in_db values for type '{}'" \
                           " are not consistent"
                     raise ValueError(msg.format(typing_))
-                jsonschema_element[key] = {
-                    'type': 'object', 'title': title, 'classes': classnames,
-                    'editable': editable, 'order': order,
+                jsonschema_element[key].update({
+                    'type': 'object', 'classes': classnames,
                     'standalone_in_db': standalone
-                }
+                })
         elif origin is list:
             # Homogenous sequences
-            jsonschema_element[key] = jsonschema_sequence_recursion(
+            jsonschema_element[key].update(jsonschema_sequence_recursion(
                 value=typing_, order=order, title=title, editable=editable
-            )
+            ))
         elif origin is tuple:
             # Heterogenous sequences (tuples)
             items = []
             for type_ in args:
                 items.append({'type': TYPING_EQUIVALENCES[type_]})
-            jsonschema_element[key] = {'additionalItems': False,
-                                       'type': 'array', 'items': items,
-                                       'title': title, 'editable': editable,
-                                       'order': order}
+            jsonschema_element[key].update({'additionalItems': False,
+                                            'type': 'array', 'items': items})
         elif origin is dict:
             # Dynamially created dict structure
             key_type, value_type = args
             if key_type != str:
                 # !!! Should we support other types ? Numeric ?
                 raise NotImplementedError('Non strings keys not supported')
-            jsonschema_element[key] = {
-                'type': 'object', 'order': order,
-                'editable': editable, 'title': title,
+            jsonschema_element[key].update({
+                'type': 'object',
                 'patternProperties': {
                     '.*': {
                         'type': TYPING_EQUIVALENCES[value_type]
                     }
                 }
-            }
+            })
         elif origin is Subclass:
             warnings.simplefilter('once', DeprecationWarning)
             msg = "\n\nTyping of attribute '{0}' from class {1} "\
@@ -1449,28 +1452,26 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
             # Several possible classes that are subclass of another one
             class_ = args[0]
             classname = full_classname(object_=class_, compute_for='class')
-            jsonschema_element[key] = {
-                'type': 'object', 'order': order, 'instance_of': classname,
-                'title': title, 'editable': editable,
+            jsonschema_element[key].update({
+                'type': 'object', 'instance_of': classname,
                 'standalone_in_db': class_._standalone_in_db
-            }
+            })
         elif origin is InstanceOf:
             # Several possible classes that are subclass of another one
             class_ = args[0]
             classname = full_classname(object_=class_, compute_for='class')
-            jsonschema_element[key] = {
-                'type': 'object', 'order': order, 'instance_of': classname,
-                'title': title, 'editable': editable,
+            jsonschema_element[key].update({
+                'type': 'object', 'instance_of': classname,
                 'standalone_in_db': class_._standalone_in_db
-            }
+            })
         else:
             msg = "Jsonschema computation of typing {} is not implemented"
             raise NotImplementedError(msg.format(typing_))
     elif hasattr(typing_, '__origin__') and typing_.__origin__ is type:
-        jsonschema_element[key] = {'type': 'object', 'order': order,
-                                   'is_class': True, 'title': title,
-                                   'editable': editable,
-                                   'properties': {'name': {'type': 'string'}}}
+        jsonschema_element[key].update({
+            'type': 'object', 'is_class': True,
+            'properties': {'name': {'type': 'string'}}
+        })
     elif issubclass(typing_, Measure):
         ann = (key, float)
         jsonschema_element = jsonschema_from_annotation(
@@ -1482,16 +1483,14 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
         classname = full_classname(object_=typing_, compute_for='class')
         if issubclass(typing_, DessiaObject):
             # Dessia custom classes
-            jsonschema_element[key] = {
+            jsonschema_element[key].update({
                 'type': 'object',
                 'standalone_in_db': typing_._standalone_in_db
-            }
+            })
         else:
             # Statically created dict structure
-            jsonschema_element[key] = static_dict_jsonschema(typing_)
-        jsonschema_element[key].update({'title': title, 'order': order,
-                                        'editable': editable,
-                                        'classes': [classname]})
+            jsonschema_element[key].update(static_dict_jsonschema(typing_))
+        jsonschema_element[key]['classes'] = [classname]
     return jsonschema_element
 
 
@@ -1500,7 +1499,7 @@ def jsonschema_sequence_recursion(value, order: int, title: str = None,
     if title is None:
         title = 'Items'
     jsonschema_element = {'type': 'array', 'order': order,
-                          'editable': editable, 'title': title}
+                          'python_typing': serialize_typing(value)}
 
     items_type = get_args(value)[0]
     if is_typing(items_type) and get_origin(items_type) is list:

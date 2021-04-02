@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased => [0.4.5]
 ## Added
 - Dict typing serilization/deserialization
+- All typings serialization
+- python_typing is set in all jsonschema
 
 ## [0.4.4]
 ### Added
