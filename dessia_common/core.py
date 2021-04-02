@@ -1418,9 +1418,9 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
                 })
         elif origin is list:
             # Homogenous sequences
-            jsonschema_element[key] = jsonschema_sequence_recursion(
+            jsonschema_element[key].update(jsonschema_sequence_recursion(
                 value=typing_, order=order, title=title, editable=editable
-            )
+            ))
         elif origin is tuple:
             # Heterogenous sequences (tuples)
             items = []
