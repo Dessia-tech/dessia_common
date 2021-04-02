@@ -1145,7 +1145,8 @@ def serialize_typing(typing_):
             raise NotImplementedError(msg.format(typing_))
     if isinstance(typing_, type):
         return full_classname(typing_, compute_for='class')
-    raise NotImplementedError('{} of type {}'.format(typing_, type(typing_)))
+    return str(typing_)
+    # raise NotImplementedError('{} of type {}'.format(typing_, type(typing_)))
 
 
 def type_from_argname(argname):
