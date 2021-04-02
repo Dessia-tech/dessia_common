@@ -272,98 +272,10 @@ class Catalog(DessiaObject):
         sizes = [plot_data.Window(width=560, height=300),
                  plot_data.Window(width=560, height=300)]
         coords = [(0, 0), (0, 300)]
-        multiplot = plot_data.MultiplePlots(elements=values, objects=objects,
+        multiplot = plot_data.MultiplePlots(plots=objects, elements=values,
                                             sizes=sizes, coords=coords,
                                             name='Results plot')
         return multiplot
-
-    def _display_angular(self):
-        """
-        Configures catalog display on frontend
-
-        :return: List of displays dictionnaries
-        """
-
-
-        # filters = [variable for j, variable in enumerate(self.variables)
-        #            if not isinstance(self.array[0][j], str)
-        #            and variable in self.choice_variables]
-
-        # # Pareto
-        # if self.pareto_is_enabled:
-        #     costs = self.build_costs(self.pareto_settings)
-        #     pareto_indices = pareto_frontier(costs=costs)
-        # else:
-        #     pareto_indices = []
-        #
-        # all_near_indices = {}
-        # objective_ratings = {}
-        # for iobjective, objective in enumerate(self.objectives):
-        #     if objective.settings.enabled:
-        #         ratings = self.handle_objective(objective)
-        #         if objective.name and objective.name not in objective_ratings:
-        #             name = objective.name
-        #         else:
-        #             name = 'objective_'+str(iobjective)
-        #         objective_ratings[name] = ratings
-        #         filters.append(name)
-        #         nval = objective.settings.n_near_values
-        #         near_indices = list(np.argpartition(ratings, nval)[:nval])
-        #         all_near_indices[iobjective] = near_indices
-
-        # datasets = []
-        # values = []
-        # for i, line in enumerate(self.array):
-        #     value = {}
-        #     for variable in self.variables:
-        #         value[variable] = self.get_value_by_name(line, variable)
-        #     # for objective_name, ratings in objective_ratings.items():
-        #     #     value[objective_name] = ratings[i]
-        #     values.append(value)
-
-        # # Pareto
-        # if self.pareto_is_enabled:
-        #     pareto_points = [i for i in range(len(values))
-        #                      if pareto_indices[i]]
-        #     datasets.append({'label': 'Pareto frontier',
-        #                      'color': '#ffcc00',
-        #                      'values': pareto_points})
-
-        # # Objectives
-        # for iobjective, near_indices in all_near_indices.items():
-        #     objective = self.objectives[iobjective]
-        #     if objective.name:
-        #         label = objective.name
-        #     else:
-        #         label = 'Near Values ' + str(iobjective)
-        #     near_points = [i for i in range(len(values)) if i in near_indices]
-        #     near_dataset = {'label': label,
-        #                     'color': None,
-        #                     'values': near_points}
-        #     datasets.append(near_dataset)
-
-        # # Dominated points
-        # dominated_points = [i for i in range(len(values))
-        #                     if (self.pareto_is_enabled
-        #                         and not pareto_indices[i]
-        #                         or not self.pareto_is_enabled)]
-        # datasets.append({'label': 'Dominated points',
-        #                  'color': "#99b4d6",
-        #                  'values': dominated_points})
-
-        multiplot = self.generate_multiplot()
-        dict_ = multiplot.to_dict()
-        dict_['references_attribute'] = 'array'
-
-        # Displays
-        displays = {"angular_component": "plot_data",
-                    "data": dict_}
-        # displays = [{'angular_component': 'results',
-        #              'filters': filters,
-        #              'datasets': datasets,
-        #              'values': values,
-        #              'references_attribute': 'array'}]
-        return [displays]
 
     def filter_(self, filters: List[Filter]):
         def apply_filters(line):
@@ -419,12 +331,12 @@ class Catalog(DessiaObject):
     def get_variable_index(self, name: str) -> int:
         return self.variables.index(name)
 
-    def get_values(self, variable: str) -> List[float]:
+    def get_values(self, variable: str) -> List:
         values = [self.get_value_by_name(line, variable)
                   for line in self.array]
         return values
 
-    def get_value_by_name(self, line: List[float], name: str) -> float:
+    def get_value_by_name(self, line: List, name: str) -> float:
         j = self.get_variable_index(name)
         value = line[j]
         return value
@@ -543,7 +455,83 @@ class Catalog(DessiaObject):
                 self.objectives.append(best_objective)
         if not success:
             raise ValueError("No solutions found")
-
+            
+    def plot_data(self):
+        
+        from plot_data.core import Tooltip, TextStyle, SurfaceStyle, PointStyle,\
+            EdgeStyle, Axis, Scatter, ParallelPlot, PointFamily, MultiplePlots
+        from plot_data.colors import GREY, LIGHTGREY, LIGHTGREEN, LIGHTBLUE
+            
+        name_column_0 = self.variables[0]
+        list_name = self.get_values(name_column_0)
+            
+        list_settings = [name for name in self.pareto_settings.minimized_attributes]
+        list_value = []
+        for setting in list_settings :
+            list_value.append(self.get_values(setting))
+        
+        if self.pareto_is_enabled :
+            cost = self.build_costs(self.pareto_settings)
+            p_frontier = pareto_frontier(cost)
+            elements = [[],[]] #point_non_pareto, point_pareto
+            for i in range(len(list_name)) :
+                dict_element = {name_column_0: list_name[i],}
+                for k, setting in enumerate(list_settings) :
+                    dict_element[setting] = list_value[k][i]
+                    
+                if p_frontier[i] :
+                    elements[1].append(dict_element)
+                else :
+                    elements[0].append(dict_element)
+             
+        else :    
+            elements = [[],[]]
+            for i in range(len(list_name)) :
+                dict_element = {name_column_0: list_name[i],}
+                for k, setting in enumerate(list_settings) :
+                    dict_element[setting] = list_value[k][i]
+                    
+                elements[0].append(dict_element)
+        
+        #ScatterPlot
+        to_disp_attribute_names = [name_column_0] + list_settings
+        text_style = TextStyle(text_color=GREY,
+                               font_size=10,
+                               font_style='sans-serif')
+        surface_style = SurfaceStyle(color_fill=LIGHTGREY, opacity=0.3)
+        custom_tooltip = Tooltip(to_disp_attribute_names=to_disp_attribute_names,
+                                 surface_style=surface_style,
+                                 text_style=text_style,
+                                 tooltip_radius=10)
+        
+        all_points = elements[0] + elements[1]
+        
+        plots = []
+        
+        #ScatterPlot
+        
+        for j in range(len(list_settings)) :
+            for i in range(j+1,len(list_settings)) :
+                if len(plots) < 3 :
+                    plots.append(Scatter(tooltip=custom_tooltip,
+                                         to_disp_attribute_names=[list_settings[j], list_settings[i]],
+                                         elements=all_points))
+        
+        list_index_0 = [k for k in range(len(elements[0]))]
+        point_family_0 = PointFamily(LIGHTBLUE, list_index_0, name = 'Non pareto')
+        
+        n_pareto = len(elements[1])
+        list_index_1 = [len(all_points)-i-1 for i in range(n_pareto)]
+        point_family_1 = PointFamily(LIGHTGREEN, list_index_1, name = 'Pareto')
+        
+        # ParallelPlot
+        
+        plots.append(ParallelPlot(elements=all_points,
+                                  to_disp_attribute_names=list_settings))
+        
+        return [MultiplePlots(plots=plots, elements=all_points, 
+                             point_families=[point_family_0,point_family_1],
+                             initial_view_on=True)]
 
 def pareto_frontier(costs):
     """
