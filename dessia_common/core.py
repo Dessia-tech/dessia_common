@@ -905,6 +905,25 @@ def is_jsonable(x):
         return False
 
 
+def is_overriden(class_: Type[DessiaObject], attribute: str):
+    if issubclass(class_, DessiaObject):
+        class_attribute = getattr(class_, attribute)
+        mro = class_.mro()
+        if len(mro) > 1:
+            super_class = mro[1]
+            if hasattr(super_class, attribute):
+                super_attribute = getattr(super_class, attribute)
+            else:
+                return True
+            if hasattr(class_attribute, '__func__'):
+                return not class_attribute.__func__ == super_attribute.__func__
+            return not class_attribute == super_attribute
+        else:
+            msg = "No base class found for class {}"
+            raise ValueError(msg.format(class_))
+    raise ValueError("Class must be a subclass of DessiaObject")
+
+
 def stringify_dict_keys(obj):
     if isinstance(obj, (list, tuple)):
         new_obj = []
