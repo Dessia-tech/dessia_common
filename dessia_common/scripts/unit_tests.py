@@ -47,67 +47,72 @@ jsonschema = {
             'title': 'Standalone Subobject', 'order': 0, 'editable': True,
             'classes': ['dessia_common.forms.StandaloneSubobject'],
             'description': 'A dev subobject that is standalone_in_db',
-            'python_typing': "<class 'dessia_common.forms.StandaloneSubobject'>"
+            'python_typing': 'dessia_common.forms.StandaloneSubobject'
         },
         'embedded_subobject': {
             'type': 'object', 'standalone_in_db': False,
             'title': 'Embedded Subobject', 'order': 1, 'editable': True,
             'classes': ['dessia_common.forms.EmbeddedSubobject'],
             'description': "A dev subobject that isn't standalone_in_db",
-            'python_typing': "<class 'dessia_common.forms.EmbeddedSubobject'>"
+            'python_typing': 'dessia_common.forms.EmbeddedSubobject'
         },
         'dynamic_dict': {
             'type': 'object', 'order': 2, 'editable': True,
             'title': 'Dynamic Dict',
             'patternProperties': {'.*': {'type': 'boolean'}},
             'description': 'A variable length dict',
-            'python_typing': 'typing.Dict[str, bool]'
+            'python_typing': 'Dict[__builtins__.str, __builtins__.bool]'
         },
         'static_dict': {
             'type': 'object', 'standalone_in_db': False,
             'title': 'Static Dict', 'order': 3, 'editable': True,
             'classes': ['dessia_common.forms.StaticDict'],
             'description': 'A 1-level structurewith only builtin values & str keys',
-            'python_typing': "<class 'dessia_common.forms.StaticDict'>"
+            'python_typing': 'dessia_common.forms.StaticDict'
         },
         'tuple_arg': {
             'additionalItems': False, 'type': 'array',
             'items': [{'type': 'string'}, {'type': 'number'}],
             'title': 'Tuple Arg', 'editable': True, 'order': 4,
             'description': 'A heterogeneous sequence',
-            'python_typing': 'typing.Tuple[str, int]'},
+            'python_typing': 'Tuple[__builtins__.str, __builtins__.int]'},
         'intarg': {
             'type': 'number', 'title': 'Intarg',
-            'editable': True, 'order': 5
+            'editable': True, 'order': 5, 'python_typing': 'builtins.int'
         },
         'strarg': {
             'type': 'string', 'title': 'Strarg',
-            'editable': True, 'order': 6
+            'editable': True, 'order': 6, 'python_typing': 'builtins.str'
         },
         'object_list': {
             'type': 'array', 'order': 7, 'editable': True,
             'title': 'Object List',
+            'python_typing': 'List[dessia_common.forms.StandaloneSubobject]',
             'items': {
                 'type': 'object', 'standalone_in_db': True,
                 'title': 'Object List', 'order': 0, 'editable': True,
-                'classes': ['dessia_common.forms.StandaloneSubobject']
+                'classes': ['dessia_common.forms.StandaloneSubobject'],
+                'python_typing': 'dessia_common.forms.StandaloneSubobject'
             }
         },
         'subobject_list': {
             'type': 'array', 'order': 8, 'editable': True,
             'title': 'Subobject List',
+            'python_typing': 'List[dessia_common.forms.EmbeddedSubobject]',
             'items': {
                 'type': 'object', 'standalone_in_db': False,
                 'title': 'Subobject List', 'order': 0, 'editable': True,
-                'classes': ['dessia_common.forms.EmbeddedSubobject']
+                'classes': ['dessia_common.forms.EmbeddedSubobject'],
+                'python_typing': 'dessia_common.forms.EmbeddedSubobject'
             }
         },
         'builtin_list': {
             'type': 'array', 'order': 9, 'editable': True,
             'title': 'Builtin List',
+            'python_typing': 'List[__builtins__.int]',
             'items': {
                 'type': 'number', 'title': 'Builtin List',
-                'editable': True, 'order': 0
+                'editable': True, 'order': 0, 'python_typing': 'builtins.int'
             }
         },
         'union_arg': {
@@ -116,16 +121,19 @@ jsonschema = {
                 'dessia_common.forms.StandaloneSubobject',
                 'dessia_common.forms.EnhancedStandaloneSubobject'
             ],
+            'python_typing': 'Union[dessia_common.forms.StandaloneSubobject, dessia_common.forms.EnhancedStandaloneSubobject]',
             'editable': True, 'order': 10, 'standalone_in_db': True
         },
         'subclass_arg': {
             'type': 'object', 'order': 11,
             'instance_of': 'dessia_common.forms.StandaloneSubobject',
+            'python_typing': 'InstanceOf[dessia_common.forms.StandaloneSubobject]',
             'title': 'Subclass Arg', 'editable': True, 'standalone_in_db': True
         },
         'name': {
             'type': 'string', 'title': 'Name', 'editable': True,
-            'order': 12, 'default_value': 'Standalone Object Demo'
+            'order': 12, 'default_value': 'Standalone Object Demo',
+            'python_typing': 'builtins.str'
         }
     },
     'standalone_in_db': True,
@@ -141,9 +149,16 @@ try:
 except AssertionError as err:
     for key, value in computed_jsonschema['properties'].items():
         if value != jsonschema['properties'][key]:
-            print('==', key, 'property failing ==')
-            print(value)
-            print(jsonschema['properties'][key])
+            print('\n==', key, 'property failing ==\n')
+            for subkey, subvalue in value.items():
+                if subkey in jsonschema['properties'][key]:
+                    check_value = jsonschema['properties'][key][subkey]
+                    if subvalue != check_value:
+                        print('Problematic key :',  {subkey})
+                        print('Computed value : ', subvalue,
+                              '\nCheck value : ', check_value)
+            print('\n', value)
+            print('\n', jsonschema['properties'][key])
             raise err
 
 deepfloat = enhanced_deep_attr(obj=standalone_object,

@@ -43,7 +43,7 @@ except:
     pass
 
 from dessia_common import DessiaObject
-from dessia_common.typings import InstanceOf
+from dessia_common.typings import InstanceOf, Distance
 from dessia_common.vectored_objects import Catalog
 
 try:
@@ -59,14 +59,14 @@ class StandaloneSubobject(DessiaObject):
     _standalone_in_db = True
     _generic_eq = True
 
-    def __init__(self, floatarg: float, name: str = 'Standalone Subobject'):
+    def __init__(self, floatarg: Distance, name: str = 'Standalone Subobject'):
         self.floatarg = floatarg
 
         DessiaObject.__init__(self, name=name)
 
     @classmethod
     def generate(cls, seed: int) -> 'StandaloneSubobject':
-        floatarg = 1.7 * seed
+        floatarg = Distance(1.7 * seed)
         name = 'StandaloneSubobject' + str(seed)
         return cls(floatarg=floatarg, name=name)
 
@@ -93,7 +93,7 @@ DEF_SS = StandaloneSubobject.generate(1)
 
 
 class EnhancedStandaloneSubobject(StandaloneSubobject):
-    def __init__(self, floatarg: float, boolarg: bool,
+    def __init__(self, floatarg: Distance, boolarg: bool,
                  name: str = 'Standalone Subobject'):
         self.boolarg = boolarg
 
@@ -101,7 +101,7 @@ class EnhancedStandaloneSubobject(StandaloneSubobject):
 
     @classmethod
     def generate(cls, seed: int) -> 'EnhancedStandaloneSubobject':
-        floatarg = 1.2 * seed
+        floatarg = Distance(1.2 * seed)
         boolarg = floatarg.is_integer()
         name = 'EnhancedStandaloneSubobject' + str(seed)
         return cls(floatarg=floatarg, boolarg=boolarg, name=name)
@@ -111,7 +111,7 @@ DEF_ESS = EnhancedStandaloneSubobject.generate(1)
 
 
 class InheritingStandaloneSubobject(StandaloneSubobject):
-    def __init__(self, floatarg: float, strarg: str,
+    def __init__(self, floatarg: Distance, strarg: str,
                  name: str = 'Inheriting Standalone Subobject'):
         self.strarg = strarg
 
@@ -119,7 +119,7 @@ class InheritingStandaloneSubobject(StandaloneSubobject):
 
     @classmethod
     def generate(cls, seed: int) -> 'InheritingStandaloneSubobject':
-        floatarg = 0.7 * seed
+        floatarg = Distance(0.7 * seed)
         strarg = str(-seed)
         name = 'Inheriting Standalone Subobject' + str(seed)
         return cls(floatarg=floatarg, strarg=strarg, name=name)
