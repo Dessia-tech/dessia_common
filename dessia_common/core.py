@@ -478,9 +478,17 @@ class DessiaObject:
         return arguments
 
     def save_to_file(self, filepath, indent=0):
-        with open(filepath + '.json', 'w') as file:
-            json.dump(self.to_dict(), file, indent=indent)
-
+        if isinstance(filepath, str):
+            if not filepath.endswith('.json'):
+                filepath += '.json'
+            file = open(filepath, 'w')
+        else:
+            file = filepath
+        json.dump(self.to_dict(), file, indent=indent)
+        
+        if isinstance(filepath, str):
+            file.close()    
+        
     @classmethod
     def load_from_file(cls, filepath):
         if isinstance(filepath, str):
@@ -622,8 +630,11 @@ class DessiaObject:
             displays.append(display_.to_dict())
         return displays
 
-    def to_step(self, filename:str):
-        return self.volmdlr_volume_model().to_step(filename=filename)
+    def to_step(self, filepath):
+        """
+        filepath can be a str or an io.StringIO
+        """
+        return self.volmdlr_volume_model().to_step(filepath=filepath)
 
     def _export_formats(self):
         formats = [('json', 'save_to_file')]
