@@ -159,7 +159,6 @@ class DessiaObject:
     _eq_is_data_eq = True
     
     _init_variables = None
-    _export_formats = None
     _allowed_methods = []
     _whitelist_attributes = []
 
@@ -480,9 +479,17 @@ class DessiaObject:
         return arguments
 
     def save_to_file(self, filepath, indent=0):
-        with open(filepath + '.json', 'w') as file:
-            json.dump(self.to_dict(), file, indent=indent)
-
+        if isinstance(filepath, str):
+            if not filepath.endswith('.json'):
+                filepath += '.json'
+            file = open(filepath, 'w')
+        else:
+            file = filepath
+        json.dump(self.to_dict(), file, indent=indent)
+        
+        if isinstance(filepath, str):
+            file.close()    
+        
     @classmethod
     def load_from_file(cls, filepath):
         if isinstance(filepath, str):
@@ -491,6 +498,8 @@ class DessiaObject:
         else:
             dict_ = json.loads(filepath.read().decode('utf-8'))
         return cls.dict_to_object(dict_)
+
+
 
     def is_valid(self):
         return True
@@ -546,26 +555,6 @@ class DessiaObject:
         msg = 'Object of type {} does not implement volmdlr_primitives'
         raise NotImplementedError(msg.format(self.__class__.__name__))
 
-    def cad_export(self, fcstd_filepath=None, istep=0, python_path='python3',
-                   freecad_lib_path='/usr/lib/freecad/lib', export_types=None):
-        """
-        Generic CAD export method
-        """
-        if fcstd_filepath is None:
-            fcstd_filepath = 'An unnamed {}'.format(self.__class__.__name__)
-
-        if export_types is None:
-            export_types = ['fcstd']
-
-        if hasattr(self, 'volmdlr_primitives'):
-            model = self.volmdlr_volume_model()
-            if model.__class__.__name__ == 'MovingVolumeModel':
-                model = model.step_volume_model(istep)
-            model.freecad_export(fcstd_filepath, python_path=python_path,
-                                 freecad_lib_path=freecad_lib_path,
-                                 export_types=export_types)
-        else:
-            raise NotImplementedError
 
     def plot(self, **kwargs):
         """
@@ -650,6 +639,18 @@ class DessiaObject:
         self.dict_to_object(json.loads(json.dumps(self.to_dict())))
         bson.BSON.encode(self.to_dict())
         json.dumps(self._displays())
+
+    def to_step(self, filepath):
+        """
+        filepath can be a str or an io.StringIO
+        """
+        return self.volmdlr_volume_model().to_step(filepath=filepath)
+
+    def _export_formats(self):
+        formats = [('json', 'save_to_file')]
+        if hasattr(self, 'volmdlr_primitives'):
+            formats.append(('step', 'to_step'))
+        return formats
 
 
 class Catalog(DessiaObject):
