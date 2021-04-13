@@ -576,6 +576,7 @@ class DessiaObject:
             for data in self.plot_data(**kwargs):
                 plot_data.plot_canvas(plot_data_object=data,
                                       canvas_id='canvas',
+                                      width=1400, height=1000,
                                       debug_mode=False)
         else:
             msg = 'Class {} does not implement a plot_data method' \
