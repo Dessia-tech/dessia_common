@@ -7,12 +7,18 @@ class Generator(dc.DessiaObject):
     """
     Common parts of generator
     """
+    def model_valid(self, model):
+        raise NotImplementedError('the method must be overloaded by subclassing class')
+
+    def model_from_vector(self, vector):
+        raise NotImplementedError('the method must be overloaded by subclassing class')
 
 
 
 class RegularDecisionTreeGenerator(Generator):
     """
     Abstract class, to be subclassed by real class
+    This is still experimental and might be buggy
     """
 
     def __init__(self, number_possibilities):
@@ -30,24 +36,14 @@ class RegularDecisionTreeGenerator(Generator):
             if valid and self.tree.current_depth == self.leaves_depth:
                 yield model
 
-    def model_valid(self, model):
-        raise NotImplementedError('the method must be overloaded by subclassing class')
-
-    def model_from_vector(self, vector):
-        raise NotImplementedError('the method must be overloaded by subclassing class')
 
 
 class DecisionTreeGenerator(Generator):
     """
     Abstract class, to be subclassed by real class
+    This is still experimental and might be buggy
     """
 
     def __init__(self):
         # self.model = model
         pass
-
-    def model_valid(self, model):
-        raise NotImplementedError('the method must be overloaded by subclassing class')
-
-    def model_from_vector(self, vector):
-        raise NotImplementedError('the method must be overloaded by subclassing class')
