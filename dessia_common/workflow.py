@@ -62,7 +62,7 @@ class TypedVariable(Variable):
 
     def to_dict(self):
         dict_ = DessiaObject.base_dict(self)
-        dict_.update({'type': serialize_typing(self.type_),
+        dict_.update({'type_': serialize_typing(self.type_),
                       'memorize': self.memorize,
                       'has_default_value': self.has_default_value})
         return dict_
@@ -93,7 +93,7 @@ class TypedVariableWithDefaultValue(TypedVariable):
 
     def to_dict(self):
         dict_ = DessiaObject.base_dict(self)
-        dict_.update({'type': serialize_typing(self.type_),
+        dict_.update({'type_': serialize_typing(self.type_),
                       'default_value': serialize(self.default_value),
                       'memorize': self.memorize,
                       'has_default_value': self.has_default_value})
@@ -327,7 +327,7 @@ class ClassMethod(Block):
 
         annotations = get_type_hints(method)
         type_ = type_from_annotation(annotations['return'],
-                                        method.__module__)
+                                     method.__module__)
         output_name = 'method result of {}'.format(self.method_name)
         outputs = [TypedVariable(type_=type_, name=output_name)]
         Block.__init__(self, inputs, outputs, name=name)

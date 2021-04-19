@@ -24,3 +24,8 @@ class Measure(float):
 
 class Distance(Measure):
     units = 'm'
+
+
+class Mass(Measure):
+    units = 'kg'
+

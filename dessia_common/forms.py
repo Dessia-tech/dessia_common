@@ -340,6 +340,19 @@ class StandaloneObject(DessiaObject):
         return [primitives_group, scatter_plot,
                 parallel_plot, multi_plot, graph2d]
 
+    def maldefined_method(self, arg0, arg1=1, arg2: int = 10, arg3 = 3):
+        """
+        Defining a docstring for testing parsing purpose
+        """
+        nok_string = "This is a bad coding behavior"
+        ok_string = "This could be OK as temporary attr"
+        self.maldefined_attr = nok_string
+        self._ok_attribute = ok_string
+
+        computation = nok_string + 'or' + ok_string
+
+        return computation
+
 
 DEF_SO = StandaloneObject.generate(1)
 
