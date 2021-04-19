@@ -154,7 +154,7 @@ class Catalog(DessiaObject):
     _ordered_attributes = ['name', 'pareto_settings', 'objectives']
     _non_editable_attributes = ['array', 'variables', 'choice_variables',
                                 'generated_best_objectives']
-    _export_formats = ['csv']
+    # _export_formats = ['csv']
     _allowed_methods = ['find_best_objective']
     _whitelist_attributes = ['variables']
 
