@@ -21,6 +21,14 @@ RGBColor = Tuple[float, float, float]
 class Measure(float):
     units = ''
 
-
 class Distance(Measure):
     units = 'm'
+
+class Force(Measure):
+    units = 'N'
+
+class Torque(Measure):
+    units = 'Nm'
+
+class Stress(Measure):
+    units = 'Pa'
