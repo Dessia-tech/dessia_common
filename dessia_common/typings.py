@@ -24,3 +24,26 @@ class Measure(float):
 
 class Distance(Measure):
     units = 'm'
+    
+class Time(Measure):
+    units = 's'
+
+class Speed(Measure):
+    units = 'm/s'
+
+class Acceleration(Measure):
+    units = 'm/s²'
+
+class Mass(Measure):
+    units ='Kg'
+
+class Force(Measure):
+    units = 'N'
+
+class Work(Measure):
+    units = 'N*m'
+    
+class Ampere(Measure):
+    units = 'A'
+    
+
