@@ -43,7 +43,9 @@ class Force(Measure):
 class Work(Measure):
     units = 'N*m'
     
-class Ampere(Measure):
-    units = 'A'
+class Power(Measure):
+    units = 'N*m/s'
+    
+
     
 
