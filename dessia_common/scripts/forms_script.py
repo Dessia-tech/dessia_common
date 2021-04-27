@@ -6,9 +6,9 @@ standalone_subobject = StandaloneSubobject(floatarg=2.3)
 embedded_subobject = EmbeddedSubobject(name="ES0")
 dynamic_dict = {'a': True, 'b': False, 'c': False}
 static_dict = {'name': 'Static Dict',
-               'value': 93.89,
-               'is_valid': True,
-               'subobject': EmbeddedSubobject()}
+               'float_value': 93.89,
+               'int_value': 10,
+               'is_valid': True}
 
 tuple_arg = ('tuple', 120)
 sublist_ss = StandaloneSubobject(floatarg=-568.1)
@@ -29,4 +29,5 @@ standalone_object = StandaloneObject(standalone_subobject=standalone_subobject,
                                      subobject_list=[sublist_es],
                                      builtin_list=[0, 1, 2, 3],
                                      union_arg=enhanced_ss,
-                                     inheritance_list=inheriting_list)
+                                     subclass_arg=inheriting_list[0])
+

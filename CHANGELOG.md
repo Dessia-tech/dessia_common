@@ -5,14 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased[=>0.4.3]
+## Unreleased => [0.4.5]
+## Added
+- Dev Objects : add maldefined method
+- Typings : add Mass typing
+- Add force_generic argument to dict_to_object to avoid recursion when generic computation is needed
+- Dict typing serilization/deserialization
+- All typings serialization
+- python_typing is set in all jsonschema
+
+## [0.4.4]
 ### Added
+- InstanceOf typing. Subclass is Deprecated
+- Docstring parsing & failure prevention
+- Description of class and attributes in jsonschema
+
+### Changed
+- Union cannot implement two classes with non coherent standalone_in_db attributes anymore
+
+### Removed
+- TypedDict not supported anymore
+
+## [0.4.3]
+### Added
+- Datatype from jsonschema method
+- Method flag in jsonschema
+- Add is_builtin function
+- Raise ValueError if plot_data is not a sequence
 - compute_for argument to full_classname to allow classname computing for class object
 	
 ### Fixed
 - dict_to_arguments of workflows have now right signature
 
 ### Changed
+- Default values are based on datatypes
+- Complex structure as static dict value is not supported anymore
 - Remove type from Sequence block
 - Use Subclass instead of Type for typings
 - Use of instrospection helpers for jsonschema computation from typings (get_type_hints, get_args, get_origin)
