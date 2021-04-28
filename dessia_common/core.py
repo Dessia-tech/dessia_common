@@ -3,6 +3,7 @@
 """
 
 """
+import builtins
 import sys
 import warnings
 import math
@@ -13,6 +14,13 @@ import collections
 from copy import deepcopy
 import inspect
 import json
+import bson
+from openpyxl.writer.excel import save_virtual_workbook
+from openpyxl.styles.borders import Border, Side
+from openpyxl.styles import Alignment, PatternFill
+from openpyxl import Workbook
+import openpyxl.utils
+
 from typing import List, Dict, Type, Tuple, Union, Any, \
     get_type_hints, get_origin, get_args
 try:
@@ -158,7 +166,6 @@ class DessiaObject:
     _eq_is_data_eq = True
     
     _init_variables = None
-    _export_formats = None
     _allowed_methods = []
     _whitelist_attributes = []
 
@@ -289,7 +296,8 @@ class DessiaObject:
         return serialized_dict
 
     @classmethod
-    def dict_to_object(cls, dict_: JsonSerializable) -> 'DessiaObject':
+    def dict_to_object(cls, dict_: JsonSerializable,
+                       force_generic: bool = False) -> 'DessiaObject':
         """
         Generic dict_to_object method
         """
@@ -299,10 +307,11 @@ class DessiaObject:
             return cls.DictToObject(dict_)
 
         if cls is not DessiaObject:
-            obj = dict_to_object(dict_, cls)
+            obj = dict_to_object(dict_=dict_, class_=cls,
+                                 force_generic=force_generic)
             return obj
         elif 'object_class' in dict_:
-            obj = dict_to_object(dict_)
+            obj = dict_to_object(dict_=dict_, force_generic=force_generic)
             return obj
         else:
             # Using default
@@ -360,6 +369,7 @@ class DessiaObject:
         _jsonschema['required'] = required_arguments
         _jsonschema['standalone_in_db'] = cls._standalone_in_db
         _jsonschema['description'] = parsed_docstring['description']
+        _jsonschema['python_typing'] = str(cls)
 
         # Set jsonschema
         for annotation in annotations.items():
@@ -384,9 +394,7 @@ class DessiaObject:
                 )
                 if name in parsed_attributes:
                     description = parsed_attributes[name]['desc']
-                    typing_ = parsed_attributes[name]['annotation']
-                    jss_elt[name].update({'description': description,
-                                          'python_typing': typing_})
+                    jss_elt[name]['description'] = description
                 _jsonschema['properties'].update(jss_elt)
                 if name in default_arguments.keys():
                     default = set_default_value(_jsonschema['properties'],
@@ -480,9 +488,17 @@ class DessiaObject:
         return arguments
 
     def save_to_file(self, filepath, indent=0):
-        with open(filepath + '.json', 'w') as file:
-            json.dump(self.to_dict(), file, indent=indent)
-
+        if isinstance(filepath, str):
+            if not filepath.endswith('.json'):
+                filepath += '.json'
+            file = open(filepath, 'w')
+        else:
+            file = filepath
+        json.dump(self.to_dict(), file, indent=indent)
+        
+        if isinstance(filepath, str):
+            file.close()    
+        
     @classmethod
     def load_from_file(cls, filepath):
         if isinstance(filepath, str):
@@ -546,26 +562,6 @@ class DessiaObject:
         msg = 'Object of type {} does not implement volmdlr_primitives'
         raise NotImplementedError(msg.format(self.__class__.__name__))
 
-    def cad_export(self, fcstd_filepath=None, istep=0, python_path='python3',
-                   freecad_lib_path='/usr/lib/freecad/lib', export_types=None):
-        """
-        Generic CAD export method
-        """
-        if fcstd_filepath is None:
-            fcstd_filepath = 'An unnamed {}'.format(self.__class__.__name__)
-
-        if export_types is None:
-            export_types = ['fcstd']
-
-        if hasattr(self, 'volmdlr_primitives'):
-            model = self.volmdlr_volume_model()
-            if model.__class__.__name__ == 'MovingVolumeModel':
-                model = model.step_volume_model(istep)
-            model.freecad_export(fcstd_filepath, python_path=python_path,
-                                 freecad_lib_path=freecad_lib_path,
-                                 export_types=export_types)
-        else:
-            raise NotImplementedError
 
     def plot(self, **kwargs):
         """
@@ -576,6 +572,7 @@ class DessiaObject:
             for data in self.plot_data(**kwargs):
                 plot_data.plot_canvas(plot_data_object=data,
                                       canvas_id='canvas',
+                                      width=1400, height=900,
                                       debug_mode=False)
         else:
             msg = 'Class {} does not implement a plot_data method' \
@@ -641,6 +638,104 @@ class DessiaObject:
                                      reference_path=reference_path)
             displays.append(display_.to_dict())
         return displays
+
+    def _check_platform(self):
+        """
+        Reproduce lifecycle on platform (serialization, display)
+        """
+        self.dict_to_object(json.loads(json.dumps(self.to_dict())))
+        bson.BSON.encode(self.to_dict())
+        json.dumps(self._displays())
+
+    def to_xlsx(self, filepath):
+        max_column_width = 40
+        color_dessIA1 = "95B3D8"
+        color_dessIA2 = "78909C"
+        grey1 = "CCCCCC"
+        thin_border = Border(left=Side(style='thin'),
+                             right=Side(style='thin'),
+                             top=Side(style='thin'),
+                             bottom=Side(style='thin'))
+
+        pattern_color1 = PatternFill(
+            fill_type="solid",
+            start_color=color_dessIA1,
+            end_color=color_dessIA1)
+
+        pattern_color2 = PatternFill(
+            fill_type="solid",
+            start_color=color_dessIA2,
+            end_color=color_dessIA2)
+
+
+
+        wb = Workbook()
+        # grab the active worksheet
+        ws1 = wb.active
+        ws1.title = 'Object {}'.format(self.__class__.__name__)
+
+        ws1['A1'] = 'Module'
+        ws1['B1'] = 'Class'
+        ws1['C1'] = 'name'
+
+        ws1['A1'].border = thin_border
+        ws1['B1'].border = thin_border
+        ws1['C1'].border = thin_border
+        ws1['A1'].fill = pattern_color1
+        ws1['B1'].fill = pattern_color1
+        ws1['C1'].fill = pattern_color1
+
+
+        ws1['A2'] = self.__module__
+        ws1['B2'] = self.__class__.__name__
+        ws1['C2'] = self.name
+
+        ws1['A2'].border = thin_border
+        ws1['B2'].border = thin_border
+        ws1['C2'].border = thin_border
+        ws1['A2'].fill = pattern_color1
+        ws1['B2'].fill = pattern_color1
+        ws1['C2'].fill = pattern_color1
+
+
+
+        ws1['A4'] = 'Attribute'
+        ws1['A5'] = 'Value'
+        ws1['A4'].border = thin_border
+        ws1['A5'].border = thin_border
+
+
+        # name_column_width = 0
+        i = 1
+        for (k, v) in sorted(self.__dict__.items()):
+            if (not k.startswith('_')) and k != 'name':
+                cell1 = ws1.cell(row=4, column=i, value=k)
+                cell2 = ws1.cell(row=5, column=i, value=str(v))
+
+                cell1.border = thin_border
+                cell1.fill = pattern_color2
+                cell2.border = thin_border
+
+                i += 1
+
+                column_width = min((len(k) + 1.5), max_column_width)
+                column_name = openpyxl.utils.cell.get_column_letter(i)
+                ws1.column_dimensions[column_name].width = column_width
+
+        wb.save("{}.xlsx".format(filepath))
+
+    def to_step(self, filepath):
+        """
+        filepath can be a str or an io.StringIO
+        """
+        return self.volmdlr_volume_model().to_step(filepath=filepath)
+
+    def _export_formats(self):
+        formats = [('json', 'save_to_file'),
+                   ('xlsx', 'to_xlsx')]
+        if hasattr(self, 'volmdlr_primitives'):
+            formats.append(('step', 'to_step'))
+        return formats
 
 
 class Catalog(DessiaObject):
@@ -960,17 +1055,18 @@ def get_python_class_from_class_name(full_class_name):
     return class_
 
 
-def dict_to_object(dict_, class_=None):
+def dict_to_object(dict_, class_=None, force_generic: bool = False):
     working_dict = dict_.copy()
     if class_ is None and 'object_class' in working_dict:
         class_ = get_python_class_from_class_name(working_dict['object_class'])
 
-    if class_ is not None:
-        if hasattr(class_, 'dict_to_object') \
-                and (class_.dict_to_object.__func__
-                     is not DessiaObject.dict_to_object.__func__):
+    if class_ is not None and issubclass(class_, DessiaObject):
+        different_methods = (class_.dict_to_object.__func__
+                             is not DessiaObject.dict_to_object.__func__)
+        if different_methods and not force_generic:
             obj = class_.dict_to_object(dict_)
             return obj
+
         if class_._init_variables is None:
             class_argspec = inspect.getfullargspec(class_)
             init_dict = {k: v for k, v in working_dict.items()
@@ -1128,8 +1224,8 @@ def serialize_typing(typing_):
                 return serialize_typing(args[0])
             else:
                 # Types union
-                msg = 'Union typing serialization not implemented yet'
-                raise NotImplemented(msg)
+                argnames = ', '.join([type_fullname(a) for a in args])
+                return 'Union[{}]'.format(argnames)
         elif origin is list:
             return 'List[' + type_fullname(args[0]) + ']'
         elif origin is tuple:
@@ -1139,12 +1235,15 @@ def serialize_typing(typing_):
             key_type = type_fullname(args[0])
             value_type = type_fullname(args[1])
             return 'Dict[{}, {}]'.format(key_type, value_type)
+        elif origin is InstanceOf:
+            return 'InstanceOf[{}]'.format(type_fullname(args[0]))
         else:
             msg = 'Serialization of typing {} is not implemented'
             raise NotImplementedError(msg.format(typing_))
     if isinstance(typing_, type):
         return full_classname(typing_, compute_for='class')
-    raise NotImplementedError('{} of type {}'.format(typing_, type(typing_)))
+    return str(typing_)
+    # raise NotImplementedError('{} of type {}'.format(typing_, type(typing_)))
 
 
 def type_from_argname(argname):
@@ -1189,6 +1288,8 @@ def deserialize_typing(serialized_typing):
             key_type = type_from_argname(args[0])
             value_type = type_from_argname(args[1])
             return Dict[key_type, value_type]
+        # elif splitted_type[0] == 'Union':
+        #     args = full_argname.split(', ')
     raise NotImplementedError('{}'.format(serialized_typing))
 
 
@@ -1374,11 +1475,14 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
     if editable is None:
         editable = key not in ['return']
 
+    # Compute base entries
+    jsonschema_element[key] = {'title': title, 'editable': editable,
+                               'order': order,
+                               'python_typing': serialize_typing(typing_)}
+
     if typing_ in TYPING_EQUIVALENCES.keys():
         # Python Built-in type
-        jsonschema_element[key] = {'type': TYPING_EQUIVALENCES[typing_],
-                                   'title': title, 'editable': editable,
-                                   'order': order}
+        jsonschema_element[key]['type'] = TYPING_EQUIVALENCES[typing_]
 
     elif is_typing(typing_):
         origin = get_origin(typing_)
@@ -1405,40 +1509,36 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
                     msg = "standalone_in_db values for type '{}'" \
                           " are not consistent"
                     raise ValueError(msg.format(typing_))
-                jsonschema_element[key] = {
-                    'type': 'object', 'title': title, 'classes': classnames,
-                    'editable': editable, 'order': order,
+                jsonschema_element[key].update({
+                    'type': 'object', 'classes': classnames,
                     'standalone_in_db': standalone
-                }
+                })
         elif origin is list:
             # Homogenous sequences
-            jsonschema_element[key] = jsonschema_sequence_recursion(
+            jsonschema_element[key].update(jsonschema_sequence_recursion(
                 value=typing_, order=order, title=title, editable=editable
-            )
+            ))
         elif origin is tuple:
             # Heterogenous sequences (tuples)
             items = []
             for type_ in args:
                 items.append({'type': TYPING_EQUIVALENCES[type_]})
-            jsonschema_element[key] = {'additionalItems': False,
-                                       'type': 'array', 'items': items,
-                                       'title': title, 'editable': editable,
-                                       'order': order}
+            jsonschema_element[key].update({'additionalItems': False,
+                                            'type': 'array', 'items': items})
         elif origin is dict:
             # Dynamially created dict structure
             key_type, value_type = args
             if key_type != str:
                 # !!! Should we support other types ? Numeric ?
                 raise NotImplementedError('Non strings keys not supported')
-            jsonschema_element[key] = {
-                'type': 'object', 'order': order,
-                'editable': editable, 'title': title,
+            jsonschema_element[key].update({
+                'type': 'object',
                 'patternProperties': {
                     '.*': {
                         'type': TYPING_EQUIVALENCES[value_type]
                     }
                 }
-            }
+            })
         elif origin is Subclass:
             warnings.simplefilter('once', DeprecationWarning)
             msg = "\n\nTyping of attribute '{0}' from class {1} "\
@@ -1449,28 +1549,26 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
             # Several possible classes that are subclass of another one
             class_ = args[0]
             classname = full_classname(object_=class_, compute_for='class')
-            jsonschema_element[key] = {
-                'type': 'object', 'order': order, 'instance_of': classname,
-                'title': title, 'editable': editable,
+            jsonschema_element[key].update({
+                'type': 'object', 'instance_of': classname,
                 'standalone_in_db': class_._standalone_in_db
-            }
+            })
         elif origin is InstanceOf:
             # Several possible classes that are subclass of another one
             class_ = args[0]
             classname = full_classname(object_=class_, compute_for='class')
-            jsonschema_element[key] = {
-                'type': 'object', 'order': order, 'instance_of': classname,
-                'title': title, 'editable': editable,
+            jsonschema_element[key].update({
+                'type': 'object', 'instance_of': classname,
                 'standalone_in_db': class_._standalone_in_db
-            }
+            })
         else:
             msg = "Jsonschema computation of typing {} is not implemented"
             raise NotImplementedError(msg.format(typing_))
     elif hasattr(typing_, '__origin__') and typing_.__origin__ is type:
-        jsonschema_element[key] = {'type': 'object', 'order': order,
-                                   'is_class': True, 'title': title,
-                                   'editable': editable,
-                                   'properties': {'name': {'type': 'string'}}}
+        jsonschema_element[key].update({
+            'type': 'object', 'is_class': True,
+            'properties': {'name': {'type': 'string'}}
+        })
     elif issubclass(typing_, Measure):
         ann = (key, float)
         jsonschema_element = jsonschema_from_annotation(
@@ -1482,16 +1580,14 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
         classname = full_classname(object_=typing_, compute_for='class')
         if issubclass(typing_, DessiaObject):
             # Dessia custom classes
-            jsonschema_element[key] = {
+            jsonschema_element[key].update({
                 'type': 'object',
                 'standalone_in_db': typing_._standalone_in_db
-            }
+            })
         else:
             # Statically created dict structure
-            jsonschema_element[key] = static_dict_jsonschema(typing_)
-        jsonschema_element[key].update({'title': title, 'order': order,
-                                        'editable': editable,
-                                        'classes': [classname]})
+            jsonschema_element[key].update(static_dict_jsonschema(typing_))
+        jsonschema_element[key]['classes'] = [classname]
     return jsonschema_element
 
 
@@ -1500,7 +1596,7 @@ def jsonschema_sequence_recursion(value, order: int, title: str = None,
     if title is None:
         title = 'Items'
     jsonschema_element = {'type': 'array', 'order': order,
-                          'editable': editable, 'title': title}
+                          'python_typing': serialize_typing(value)}
 
     items_type = get_args(value)[0]
     if is_typing(items_type) and get_origin(items_type) is list:

@@ -13,7 +13,7 @@ Welcome to DessiaCommon's documentation!
    getting_started
    core
    workflow
-   vectored_objects
+   advanced
 
 
 

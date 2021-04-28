@@ -7,7 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased => [0.4.5]
 ## Added
+- Dev Objects : add maldefined method
+- Typings : add Mass typing
+- Add force_generic argument to dict_to_object to avoid recursion when generic computation is needed
 - Dict typing serilization/deserialization
+- All typings serialization
+- python_typing is set in all jsonschema
 
 ## [0.4.4]
 ### Added
