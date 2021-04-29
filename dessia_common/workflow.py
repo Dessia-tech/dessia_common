@@ -557,21 +557,15 @@ class ForEach(Block):
         Block.__init__(self, inputs, [output_variable], name=name)
 
     def equivalent_hash(self):
-        return int(self.workflow_block.equivalent_hash() % 10e5)
+        wb_hash = int(self.workflow_block.equivalent_hash() % 10e5)
+        return wb_hash + self.iter_input_index
 
     def equivalent(self, other):
-        # TODO Check this method. Is indices_eq mandatory ?
         if not Block.equivalent(self, other):
             return False
-        workflow = self.workflow_block.workflow
-        other_workflow = other.workflow_block.workflow
-
-        indices = workflow.variable_indices(self.iter_input)
-        other_indices = other_workflow.variable_indices(other.iter_input)
-
-        same_workflow_block = self.workflow_block == other.workflow_block
-        same_indices = indices == other_indices
-        return same_workflow_block and same_indices
+        input_eq = self.iter_input_index == other.iter_input_index
+        wb_eq = self.workflow_block.equivalent(other.workflow_block)
+        return wb_eq and input_eq
 
     def to_dict(self):
         dict_ = Block.to_dict(self)
@@ -664,7 +658,6 @@ class Product(Block):
     def equivalent(self, other):
         if not Block.equivalent(self, other):
             return False
-
         return self.number_list == other.number_list
 
     def to_dict(self):
@@ -1021,6 +1014,7 @@ class Workflow(Block):
     """
     _standalone_in_db = True
     _allowed_methods = ['run']
+    _eq_is_data_eq = True
 
     _jsonschema = {
         "definitions": {},
@@ -1142,6 +1136,7 @@ class Workflow(Block):
         # TODO: temp , reuse graph!!!!
         for block1, block2 in zip(self.blocks, other_workflow.blocks):
             if not block1.equivalent(block2):
+                print(block1)
                 return False
 
         return True
