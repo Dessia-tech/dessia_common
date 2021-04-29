@@ -1764,6 +1764,7 @@ class WorkflowBlock(Block):
 class WorkflowRun(DessiaObject):
     _standalone_in_db = True
     _allowed_methods = ['run_again']
+    _eq_is_data_eq = True
     _jsonschema = {
         "definitions": {},
         "$schema": "http://json-schema.org/draft-07/schema#",
@@ -1851,7 +1852,7 @@ class WorkflowRun(DessiaObject):
     def _data_eq(self, other_workflow_run):
         # TODO : Should we add input_values and variables values in test ?
         if is_sequence(self.output_value):
-            if not is_sequence(other_workflow_run):
+            if not is_sequence(other_workflow_run.output_value):
                 return False
             equal_output = all([v == other_v for v, other_v
                                 in zip(self.output_value,
