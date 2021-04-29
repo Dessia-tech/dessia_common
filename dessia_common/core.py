@@ -6,6 +6,7 @@
 import builtins
 import sys
 import warnings
+import tempfile
 import math
 import random
 import copy
@@ -722,7 +723,22 @@ class DessiaObject:
                 column_name = openpyxl.utils.cell.get_column_letter(i)
                 ws1.column_dimensions[column_name].width = column_width
 
-        wb.save("{}.xlsx".format(filepath))
+        if isinstance(filepath, str):
+            real_filepath = filepath
+            if not filepath.endswith('.xlsx'):
+                real_filepath += '.xlsx'
+        else:
+            real_filepath = tempfile.NamedTemporaryFile().name
+
+        wb.save(real_filepath)
+        
+        if not isinstance(filepath, str):
+            with open(real_filepath, 'rb') as file:
+                filepath.seek(0)
+                filepath.write(file.read())
+                
+                
+
 
     def to_step(self, filepath):
         """
@@ -731,10 +747,10 @@ class DessiaObject:
         return self.volmdlr_volume_model().to_step(filepath=filepath)
 
     def _export_formats(self):
-        formats = [('json', 'save_to_file'),
-                   ('xlsx', 'to_xlsx')]
+        formats = [('json', 'save_to_file', True),
+                   ('xlsx', 'to_xlsx', False)]
         if hasattr(self, 'volmdlr_primitives'):
-            formats.append(('step', 'to_step'))
+            formats.append(('step', 'to_step', True))
         return formats
 
 
