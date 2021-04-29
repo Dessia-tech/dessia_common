@@ -753,11 +753,11 @@ class MultiPlot(Display):
 
     def __init__(self, attributes: List[str], order: int = 0, name: str = ''):
         self.attributes = attributes
-        pareto_input = TypedVariableWithDefaultValue(type_=ParetoSettings,
-                                                     default_value=None,
-                                                     memorize=True,
-                                                     name='Pareto settings')
-        inputs = [Variable(memorize=True, name='input_list'), pareto_input]
+        # pareto_input = TypedVariableWithDefaultValue(type_=ParetoSettings,
+        #                                              default_value=None,
+        #                                              memorize=True,
+        #                                              name='Pareto settings')
+        inputs = [Variable(memorize=True, name='input_list')]
         Display.__init__(self, inputs=inputs, order=order, name=name)
 
     def equivalent(self, other):
@@ -1279,6 +1279,7 @@ class Workflow(Block):
 
             pipes.append(Pipe(variable1, variable2))
 
+        print(blocks)
         output = blocks[dict_['output'][0]].outputs[dict_['output'][2]]
 
         if 'imposed_variable_values' in dict_ and 'imposed_variables' in dict_:
