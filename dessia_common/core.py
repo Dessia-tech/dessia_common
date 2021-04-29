@@ -3,8 +3,10 @@
 """
 
 """
+import builtins
 import sys
 import warnings
+import tempfile
 import math
 import random
 import copy
@@ -14,6 +16,12 @@ from copy import deepcopy
 import inspect
 import json
 import bson
+from openpyxl.writer.excel import save_virtual_workbook
+from openpyxl.styles.borders import Border, Side
+from openpyxl.styles import Alignment, PatternFill
+from openpyxl import Workbook
+import openpyxl.utils
+
 from typing import List, Dict, Type, Tuple, Union, Any, \
     get_type_hints, get_origin, get_args
 try:
@@ -289,7 +297,8 @@ class DessiaObject:
         return serialized_dict
 
     @classmethod
-    def dict_to_object(cls, dict_: JsonSerializable) -> 'DessiaObject':
+    def dict_to_object(cls, dict_: JsonSerializable,
+                       force_generic: bool = False) -> 'DessiaObject':
         """
         Generic dict_to_object method
         """
@@ -299,10 +308,11 @@ class DessiaObject:
             return cls.DictToObject(dict_)
 
         if cls is not DessiaObject:
-            obj = dict_to_object(dict_, cls)
+            obj = dict_to_object(dict_=dict_, class_=cls,
+                                 force_generic=force_generic)
             return obj
         elif 'object_class' in dict_:
-            obj = dict_to_object(dict_)
+            obj = dict_to_object(dict_=dict_, force_generic=force_generic)
             return obj
         else:
             # Using default
@@ -499,8 +509,6 @@ class DessiaObject:
             dict_ = json.loads(filepath.read().decode('utf-8'))
         return cls.dict_to_object(dict_)
 
-
-
     def is_valid(self):
         return True
 
@@ -565,7 +573,7 @@ class DessiaObject:
             for data in self.plot_data(**kwargs):
                 plot_data.plot_canvas(plot_data_object=data,
                                       canvas_id='canvas',
-                                      width=1400, height=1000,
+                                      width=1400, height=900,
                                       debug_mode=False)
         else:
             msg = 'Class {} does not implement a plot_data method' \
@@ -640,6 +648,96 @@ class DessiaObject:
         bson.BSON.encode(self.to_dict())
         json.dumps(self._displays())
 
+    def to_xlsx(self, filepath):
+        max_column_width = 40
+        color_dessIA1 = "95B3D8"
+        color_dessIA2 = "78909C"
+        grey1 = "CCCCCC"
+        thin_border = Border(left=Side(style='thin'),
+                             right=Side(style='thin'),
+                             top=Side(style='thin'),
+                             bottom=Side(style='thin'))
+
+        pattern_color1 = PatternFill(
+            fill_type="solid",
+            start_color=color_dessIA1,
+            end_color=color_dessIA1)
+
+        pattern_color2 = PatternFill(
+            fill_type="solid",
+            start_color=color_dessIA2,
+            end_color=color_dessIA2)
+
+
+
+        wb = Workbook()
+        # grab the active worksheet
+        ws1 = wb.active
+        ws1.title = 'Object {}'.format(self.__class__.__name__)
+
+        ws1['A1'] = 'Module'
+        ws1['B1'] = 'Class'
+        ws1['C1'] = 'name'
+
+        ws1['A1'].border = thin_border
+        ws1['B1'].border = thin_border
+        ws1['C1'].border = thin_border
+        ws1['A1'].fill = pattern_color1
+        ws1['B1'].fill = pattern_color1
+        ws1['C1'].fill = pattern_color1
+
+
+        ws1['A2'] = self.__module__
+        ws1['B2'] = self.__class__.__name__
+        ws1['C2'] = self.name
+
+        ws1['A2'].border = thin_border
+        ws1['B2'].border = thin_border
+        ws1['C2'].border = thin_border
+        ws1['A2'].fill = pattern_color1
+        ws1['B2'].fill = pattern_color1
+        ws1['C2'].fill = pattern_color1
+
+
+
+        ws1['A4'] = 'Attribute'
+        ws1['A5'] = 'Value'
+        ws1['A4'].border = thin_border
+        ws1['A5'].border = thin_border
+
+
+        # name_column_width = 0
+        i = 1
+        for (k, v) in sorted(self.__dict__.items()):
+            if (not k.startswith('_')) and k != 'name':
+                cell1 = ws1.cell(row=4, column=i, value=k)
+                cell2 = ws1.cell(row=5, column=i, value=str(v))
+
+                cell1.border = thin_border
+                cell1.fill = pattern_color2
+                cell2.border = thin_border
+
+                i += 1
+
+                column_width = min((len(k) + 1.5), max_column_width)
+                column_name = openpyxl.utils.cell.get_column_letter(i)
+                ws1.column_dimensions[column_name].width = column_width
+
+        if isinstance(filepath, str):
+            real_filepath = filepath
+            if not filepath.endswith('.xlsx'):
+                real_filepath += '.xlsx'
+        else:
+            real_filepath = tempfile.NamedTemporaryFile().name
+
+        wb.save(real_filepath)
+        
+        if not isinstance(filepath, str):
+            with open(real_filepath, 'rb') as file:
+                filepath.seek(0)
+                filepath.write(file.read())
+                
+
     def to_step(self, filepath):
         """
         filepath can be a str or an io.StringIO
@@ -647,9 +745,10 @@ class DessiaObject:
         return self.volmdlr_volume_model().to_step(filepath=filepath)
 
     def _export_formats(self):
-        formats = [('json', 'save_to_file')]
+        formats = [('json', 'save_to_file', True),
+                   ('xlsx', 'to_xlsx', False)]
         if hasattr(self, 'volmdlr_primitives'):
-            formats.append(('step', 'to_step'))
+            formats.append(('step', 'to_step', True))
         return formats
 
 
@@ -970,17 +1069,18 @@ def get_python_class_from_class_name(full_class_name):
     return class_
 
 
-def dict_to_object(dict_, class_=None):
+def dict_to_object(dict_, class_=None, force_generic: bool = False):
     working_dict = dict_.copy()
     if class_ is None and 'object_class' in working_dict:
         class_ = get_python_class_from_class_name(working_dict['object_class'])
 
-    if class_ is not None:
-        if hasattr(class_, 'dict_to_object') \
-                and (class_.dict_to_object.__func__
-                     is not DessiaObject.dict_to_object.__func__):
+    if class_ is not None and issubclass(class_, DessiaObject):
+        different_methods = (class_.dict_to_object.__func__
+                             is not DessiaObject.dict_to_object.__func__)
+        if different_methods and not force_generic:
             obj = class_.dict_to_object(dict_)
             return obj
+
         if class_._init_variables is None:
             class_argspec = inspect.getfullargspec(class_)
             init_dict = {k: v for k, v in working_dict.items()
