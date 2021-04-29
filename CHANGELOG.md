@@ -7,7 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased => [0.4.6]
 ## Fixed
-- Workflow uses implemented data_eq
+- Workflow & WorkflowRun uses implemented data_eq
+- WorkflowRun data_eq when output_value is a sequence
 - ForEach checks for workflow_block equivalence instead of equality
 
 ### [0.4.5]
