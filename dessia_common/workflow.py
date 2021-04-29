@@ -1274,7 +1274,6 @@ class Workflow(Block):
 
             pipes.append(Pipe(variable1, variable2))
 
-        print(blocks)
         output = blocks[dict_['output'][0]].outputs[dict_['output'][2]]
 
         if 'imposed_variable_values' in dict_ and 'imposed_variables' in dict_:
