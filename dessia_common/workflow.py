@@ -1136,9 +1136,7 @@ class Workflow(Block):
         # TODO: temp , reuse graph!!!!
         for block1, block2 in zip(self.blocks, other_workflow.blocks):
             if not block1.equivalent(block2):
-                print(block1)
                 return False
-
         return True
 
     def __deepcopy__(self, memo=None):
