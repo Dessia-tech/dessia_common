@@ -5,23 +5,108 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## Unreleased => [0.4.5]
+## Added
+- Dev Objects : add maldefined method
+- Typings : add Mass typing
+- Add force_generic argument to dict_to_object to avoid recursion when generic computation is needed
+- Dict typing serilization/deserialization
+- All typings serialization
+- python_typing is set in all jsonschema
+
+## [0.4.4]
+### Added
+- InstanceOf typing. Subclass is Deprecated
+- Docstring parsing & failure prevention
+- Description of class and attributes in jsonschema
+
+### Changed
+- Union cannot implement two classes with non coherent standalone_in_db attributes anymore
+
+### Removed
+- TypedDict not supported anymore
+
+## [0.4.3]
+### Added
+- Datatype from jsonschema method
+- Method flag in jsonschema
+- Add is_builtin function
+- Raise ValueError if plot_data is not a sequence
+- compute_for argument to full_classname to allow classname computing for class object
+	
 ### Fixed
+- dict_to_arguments of workflows have now right signature
+
+### Changed
+- Default values are based on datatypes
+- Complex structure as static dict value is not supported anymore
+- Remove type from Sequence block
+- Use Subclass instead of Type for typings
+- Use of instrospection helpers for jsonschema computation from typings (get_type_hints, get_args, get_origin)
+- WorkflowRun method_jsonschemas implements Workflow method
+
+## 0.4.2
+### Changed
+- BREAKING CHANGE : _display_angular is renamed _displays
+- BREAKING CHANGE : Block ParallelPlot is renamed MultiPlot
+- Kwargs are added to _displays in order to pass args such as reference_attribute
+- Display block is now a base class for all display blocks
+- ForEach block implementation : workflow_block_input -> iter_input_index
+
+### Added
+- Serialization tuples
+- DisplayObject
+- _displayable_input as Display block class attribute
+
+### Fix
+- Fix wrong type check with __origin__ in deserialize argument
+
+## [v0.4.1]
+
+
+## [v0.4]
+### Fix
+- _eq_is_eq_data as False in workflow class definitions
+
+### Changed
+- introducing _eq_is_data_eq instead of _generic eq
+- __origin__ used in serialize_typing instead of _name. For typing type checking
+
+### Added
+- _data_diff method to DessiaObject
+
+### Removed
+- Compiled parts of package, switching to full open-source
+
+## [0.3.10]
+### Fixed
+- Run again takes input_values arguments as it should
 - Changed workflow to workflow in to_dict/dict_to_object
 - Support for new data types
 - Added mypy_extensions to setup.py
 
 ### Added
+- Relevant Error raised in getting deep_attribute when object has no attribute
+- is_sequence function
+- Documentation on blocks
+_ Rerun method for WorkflowRuns & prerequisite (input_values in __init__ et method_jsonschema)
+- Method dict attribute
 - Generic serialize function
 - ParallelPlot block
 - Memorize attribute in Variables and intermediate variables values in workflow_run
+- Non Standalone object default value in default dict support
+- Demo classes for forms data format
+- Add unit_tests.py script + exec in drone
+- Recursive/complex deepattr function
 
 ### Changed
+- Add a more explicit message to list as default value error
 - Filter block doesn't write _display_angular anymore. See ParallelPlot
-- Catalog _dispplay_angular to conform to ParallelPlot Block
+- Catalog _display_angular to conform to ParallelPlot Block
 
 ## [0.3.8]
 ### Added
+- Change rerun method name to run_again
 - Unpacker for sequence workflow block
 - Cars dataset as imported models
 - Models & Templates added to MANIFEST.in

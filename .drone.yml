@@ -4,99 +4,51 @@ type: docker
 name: default
 
 steps:
-- name: install and run scripts
-  image: python:3.7
+- name: install, run scripts and build doc
+  image: python:3.8
   commands:
   - git fetch --tags
   - python setup.py install
   - python scripts/dessia_object.py
+  - python dessia_common/scripts/unit_tests.py
+  - pip install sphinx sphinx-rtd-theme
+  - cd doc
+  - make html
 
 - name: develop
-  image: python:3.7
+  image: python:3.8
   commands:
   - python setup.py develop
 
 - name: generate sdist
-  image: python:3.7
+  image: python:3.8
   commands:
   - git fetch --tags
   - python setup.py sdist
 
-- name: compile linux
-  image: python:3
-  commands:
-  - pip install Cython netifaces
-  - python compile.py cdist --exp-month=7 --exp-year=2029 --detect-macs --formats=zip
-  - cd client_dist
-  - unzip *.zip -d valid_license_install
-  - cd valid_license_install
-  - python3 setup.py develop
-  - cd scripts
-  - python3 compilation_test.py test_valid_license
-  - cd ../../..
-  - python compile.py cdist --exp-month=7 --exp-year=2029 --macs=222222222122 --formats=zip
-  - cd client_dist
-  - unzip *.zip -d unvalid_license_install
-  - cd unvalid_license_install
-  - python3 setup.py develop
-  - cd scripts
-  - python3 compilation_test.py test_unvalid_license
-
-
-
-
-- name: push opensource from sdist
-  image: alpine/git
+- name: upload to pypi
+  image: plugins/pypi
   when:
-    branch: 
-    - master
-    event: 
-    - push
-  commands:
-  - git clone https://gitea.dessia.tech/OpenSource/dessia-common.git git-opensource
-  - cd git-opensource
-  - git branch from_proprietary
-  - git checkout from_proprietary
-  - git pull origin from_proprietary
-  - git config --global user.email "root@dessia.tech"
-  - git config --global user.name "Root commit bot"
-  - tar -vxf ../dist/*.tar.gz --strip-components=1 -C .
-  - git add -A
-  - if ! [[ -z $(git status -s -uno) ]]; then git commit -m "Automated commit from dessia common proprietary repo"; fi
-  - git push origin from_proprietary
-
-- name: copy tag to opensource
-  image: alpine/git
-  when:
-    event:
-    - tag
-  commands:
-  - git clone https://gitea.dessia.tech/OpenSource/dessia-common.git git-opensource
-  - cd git-opensource
-  - git branch from_proprietary
-  - git checkout from_proprietary
-  - git pull origin from_proprietary
-  - git config --global user.email "root@dessia.tech"
-  - git config --global user.name "Root commit bot"
-  - git tag -a ${DRONE_TAG} -m ${DRONE_TAG}
-  - git push origin --tags
-
-
-- name: upload sdist to seafile
-  image: dessia/drone-seafile
-  when:
-    branch:
-    - master
-    event: 
-    - push
+      event: tag
   settings:
-    server_url: https://partage.dessia.tech
-    repo_id:
-      from_secret: seafile_repo_id
-    seafile_token:
-      from_secret: seafile_token
-    files: dist/*
-    root_directory: /dessia-common/
+    skip_build: True
+    username: dessia_tech
+    password:
+        from_secret: pypi_password
+
+- name: upload_doc_master
+  image: appleboy/drone-scp
+  when:
+    event: push 
+    branch: master
+  settings:
+    host: austerlitz.dessia.tech
+    target: /var/www/documentation/dessia_common/
+    source: doc/build/html/*
+    strip_components: 3
+    username: drone
+    password:
+      from_secret: ssh_drone_password
 
 - name: notify
   when:
