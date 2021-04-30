@@ -3,8 +3,10 @@
 """
 
 """
+import builtins
 import sys
 import warnings
+import tempfile
 import math
 import random
 import copy
@@ -295,7 +297,8 @@ class DessiaObject:
         return serialized_dict
 
     @classmethod
-    def dict_to_object(cls, dict_: JsonSerializable) -> 'DessiaObject':
+    def dict_to_object(cls, dict_: JsonSerializable,
+                       force_generic: bool = False) -> 'DessiaObject':
         """
         Generic dict_to_object method
         """
@@ -305,10 +308,11 @@ class DessiaObject:
             return cls.DictToObject(dict_)
 
         if cls is not DessiaObject:
-            obj = dict_to_object(dict_, cls)
+            obj = dict_to_object(dict_=dict_, class_=cls,
+                                 force_generic=force_generic)
             return obj
         elif 'object_class' in dict_:
-            obj = dict_to_object(dict_)
+            obj = dict_to_object(dict_=dict_, force_generic=force_generic)
             return obj
         else:
             # Using default
@@ -504,8 +508,6 @@ class DessiaObject:
         else:
             dict_ = json.loads(filepath.read().decode('utf-8'))
         return cls.dict_to_object(dict_)
-
-
 
     def is_valid(self):
         return True
@@ -721,7 +723,24 @@ class DessiaObject:
                 column_name = openpyxl.utils.cell.get_column_letter(i)
                 ws1.column_dimensions[column_name].width = column_width
 
+<<<<<<< HEAD
         wb.save("{}.xlsx".format(filepath))
+=======
+        if isinstance(filepath, str):
+            real_filepath = filepath
+            if not filepath.endswith('.xlsx'):
+                real_filepath += '.xlsx'
+        else:
+            real_filepath = tempfile.NamedTemporaryFile().name
+
+        wb.save(real_filepath)
+        
+        if not isinstance(filepath, str):
+            with open(real_filepath, 'rb') as file:
+                filepath.seek(0)
+                filepath.write(file.read())
+                
+>>>>>>> d62debd6edfa79eceb6657f53fedcd269c617584
 
     def to_step(self, filepath):
         """
@@ -730,10 +749,15 @@ class DessiaObject:
         return self.volmdlr_volume_model().to_step(filepath=filepath)
 
     def _export_formats(self):
+<<<<<<< HEAD
         formats = [('json', 'save_to_file'),
                    ('xlsx', 'to_xlsx')]
+=======
+        formats = [('json', 'save_to_file', True),
+                   ('xlsx', 'to_xlsx', False)]
+>>>>>>> d62debd6edfa79eceb6657f53fedcd269c617584
         if hasattr(self, 'volmdlr_primitives'):
-            formats.append(('step', 'to_step'))
+            formats.append(('step', 'to_step', True))
         return formats
 
 
@@ -1054,17 +1078,18 @@ def get_python_class_from_class_name(full_class_name):
     return class_
 
 
-def dict_to_object(dict_, class_=None):
+def dict_to_object(dict_, class_=None, force_generic: bool = False):
     working_dict = dict_.copy()
     if class_ is None and 'object_class' in working_dict:
         class_ = get_python_class_from_class_name(working_dict['object_class'])
 
-    if class_ is not None:
-        if hasattr(class_, 'dict_to_object') \
-                and (class_.dict_to_object.__func__
-                     is not DessiaObject.dict_to_object.__func__):
+    if class_ is not None and issubclass(class_, DessiaObject):
+        different_methods = (class_.dict_to_object.__func__
+                             is not DessiaObject.dict_to_object.__func__)
+        if different_methods and not force_generic:
             obj = class_.dict_to_object(dict_)
             return obj
+
         if class_._init_variables is None:
             class_argspec = inspect.getfullargspec(class_)
             init_dict = {k: v for k, v in working_dict.items()

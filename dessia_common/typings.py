@@ -30,5 +30,10 @@ class Force(Measure):
 class Torque(Measure):
     units = 'Nm'
 
+
+class Mass(Measure):
+    units = 'kg'
+
+
 class Stress(Measure):
     units = 'Pa'
