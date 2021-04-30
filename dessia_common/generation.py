@@ -11,10 +11,10 @@ class Generator(dc.DessiaObject):
         dc.DessiaObject.__init__(self, name=name)
         
     def model_valid(self, model):
-        raise NotImplementedError('the method must be overloaded by subclassing class')
+        raise NotImplementedError('the method model_valid must be overloaded by subclassing class')
 
     def model_from_vector(self, vector):
-        raise NotImplementedError('the method must be overloaded by subclassing class')
+        raise NotImplementedError('the method model_from_vector must be overloaded by subclassing class')
 
 
 
@@ -31,7 +31,7 @@ class RegularDecisionTreeGenerator(Generator):
         Generator.__init__(self, name=name)  
 
     def generate(self, **kwargs):
-        while not self.tree.finished():
+        while not self.tree.finished:
             model = self.model_from_vector(self.tree.current_node)
             valid = self.model_valid(model)
             self.tree.NextNode(valid)
@@ -50,3 +50,26 @@ class DecisionTreeGenerator(Generator):
     def __init__(self, name:str=''):
         self.tree = dt.DecisionTree()
         Generator.__init__(self, name=name)
+
+    def number_possibilities_from_model(self, model):
+        raise NotImplementedError('the method number_possibilities_from_model must be overloaded by subclassing class')
+
+    def current_node_possibilities(self, vector):
+        model = self.mdoel_from_vector
+        
+    def generate(self, verbose=False):
+        model = self.model_from_vector(self.tree.current_node)
+        self.tree.SetCurrentNodeNumberPossibilities(self.number_possibilities_from_model(model))
+        while not self.tree.finished:
+            if verbose:
+                print('current node: ', self.tree.current_node)
+            model = self.model_from_vector(self.tree.current_node)
+            valid = self.model_valid(model)
+            if  valid:
+                number_possibilities = self.number_possibilities_from_model(model)
+                self.tree.SetCurrentNodeNumberPossibilities(number_possibilities)
+                
+            self.tree.NextNode(valid)
+            # TODO create a function in dectreee to know if a leaf
+            if valid and (number_possibilities == 0):
+                yield model
