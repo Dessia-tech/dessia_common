@@ -160,10 +160,6 @@ deeplist = enhanced_deep_attr(obj=standalone_object,
                                         'embedded_list', 2])
 assert deeplist == 3
 
-deepdict = enhanced_deep_attr(obj=standalone_object,
-                              sequence=['static_dict', 'is_valid'])
-assert deepdict is True
-
 # deeperlist = enhanced_deep_attr(obj=standalone_object,
 #                                 sequence=['subcla', 0,
 #                                           'boolarg'])

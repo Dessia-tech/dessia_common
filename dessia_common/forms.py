@@ -168,8 +168,6 @@ class StandaloneObject(DessiaObject):
     :type embedded_subobject: EmbeddedSubobject
     :param dynamic_dict: A variable length dict
     :type dynamic_dict: Dict[str, bool]
-    :param static_dict: A 1-level structurewith only builtin values & str keys
-    :type static_dict: StaticDict
     :param tuple_arg: A heterogeneous sequence
     :type tuple_arg: tuple
     """
