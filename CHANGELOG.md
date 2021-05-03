@@ -6,7 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased => [0.4.6]
-## Fixed
+### Added
+- Support for None argument deserialization
+- Support for InstanceOf argument deserialization
+
+### Fixed
+- Display block faulty definition (removed inputs as init argument & fixed to_dict)
 - Workflow & WorkflowRun uses implemented data_eq
 - WorkflowRun data_eq when output_value is a sequence
 - ForEach checks for workflow_block equivalence instead of equality
