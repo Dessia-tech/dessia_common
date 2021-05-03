@@ -171,15 +171,11 @@ class Block(DessiaObject):
 
 
 class Display(Block):
-    # _jsonschema = {}
     _displayable_input = 0
 
-    def __init__(self, inputs: List[VariableTypes] = None,
-                 order: int = 0, name: str = ''):
+    def __init__(self, order: int = 0, name: str = ''):
         self.order = order
-        if inputs is None:
-            inputs = [TypedVariable(type_=DessiaObject,
-                                    name='Model to Display', memorize=True)]
+        inputs = [Variable(name='Model to Display', memorize=True)]
 
         Block.__init__(self, inputs=inputs, outputs=[], name=name)
 
@@ -197,7 +193,7 @@ class Display(Block):
         return displays
 
     def to_dict(self):
-        dict_ = DessiaObject.base_dict(self)
+        dict_ = Block.to_dict(self)
         dict_['order'] = self.order
         return dict_
 
