@@ -1299,6 +1299,7 @@ class Workflow(Block):
                 has_default = input_.has_default_value
                 if not has_default or (has_default and str(i) in dict_):
                     value = dict_[str(i)]
+                    print(i, input_.type_)
                     deserialized_value = deserialize_argument(
                         type_=input_.type_, argument=value
                     )

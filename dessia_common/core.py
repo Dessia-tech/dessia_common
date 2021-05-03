@@ -1736,10 +1736,19 @@ def inspect_arguments(method, merge=False):
 
 
 def deserialize_argument(type_, argument):
+    if argument is None:
+        return None
+
     if is_typing(type_):
         origin = get_origin(type_)
         args = get_args(type_)
         if origin is Union:
+            # Check for Union false Positive (Default value = None)
+            if len(args) == 2 and type(None) in args:
+                deserialized = deserialize_argument(type_=args[0], argument=argument)
+                print(deserialized)
+                return deserialized
+
             # Type union
             classes = list(args)
             instantiated = False
