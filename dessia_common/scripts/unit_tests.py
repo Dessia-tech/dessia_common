@@ -5,8 +5,6 @@ standalone_subobject = StandaloneSubobject(floatarg=3.78)
 embedded_subobject = EmbeddedSubobject()
 dynamic_dict = {'key0': True,
                 'key1': False}
-static_dict = StaticDict(name="StaticDict", float_value=-548.256,
-                         int_value=10, is_valid=True)
 tuple_arg = ('Tuple', 1)
 intarg = 5
 strarg = 'TestStr'
@@ -23,7 +21,6 @@ subclass_arg = InheritingStandaloneSubobject(floatarg=1561.57,
 standalone_object = StandaloneObject(standalone_subobject=standalone_subobject,
                                      embedded_subobject=embedded_subobject,
                                      dynamic_dict=dynamic_dict,
-                                     static_dict=static_dict,
                                      tuple_arg=tuple_arg, intarg=intarg,
                                      strarg=strarg, object_list=object_list,
                                      subobject_list=subobject_list,
@@ -63,29 +60,22 @@ jsonschema = {
             'description': 'A variable length dict',
             'python_typing': 'Dict[__builtins__.str, __builtins__.bool]'
         },
-        'static_dict': {
-            'type': 'object', 'standalone_in_db': False,
-            'title': 'Static Dict', 'order': 3, 'editable': True,
-            'classes': ['dessia_common.forms.StaticDict'],
-            'description': 'A 1-level structurewith only builtin values & str keys',
-            'python_typing': 'dessia_common.forms.StaticDict'
-        },
         'tuple_arg': {
             'additionalItems': False, 'type': 'array',
             'items': [{'type': 'string'}, {'type': 'number'}],
-            'title': 'Tuple Arg', 'editable': True, 'order': 4,
+            'title': 'Tuple Arg', 'editable': True, 'order': 3,
             'description': 'A heterogeneous sequence',
             'python_typing': 'Tuple[__builtins__.str, __builtins__.int]'},
         'intarg': {
             'type': 'number', 'title': 'Intarg',
-            'editable': True, 'order': 5, 'python_typing': 'builtins.int'
+            'editable': True, 'order': 4, 'python_typing': 'builtins.int'
         },
         'strarg': {
             'type': 'string', 'title': 'Strarg',
-            'editable': True, 'order': 6, 'python_typing': 'builtins.str'
+            'editable': True, 'order': 5, 'python_typing': 'builtins.str'
         },
         'object_list': {
-            'type': 'array', 'order': 7, 'editable': True,
+            'type': 'array', 'order': 6, 'editable': True,
             'title': 'Object List',
             'python_typing': 'List[dessia_common.forms.StandaloneSubobject]',
             'items': {
@@ -96,7 +86,7 @@ jsonschema = {
             }
         },
         'subobject_list': {
-            'type': 'array', 'order': 8, 'editable': True,
+            'type': 'array', 'order': 7, 'editable': True,
             'title': 'Subobject List',
             'python_typing': 'List[dessia_common.forms.EmbeddedSubobject]',
             'items': {
@@ -107,7 +97,7 @@ jsonschema = {
             }
         },
         'builtin_list': {
-            'type': 'array', 'order': 9, 'editable': True,
+            'type': 'array', 'order': 8, 'editable': True,
             'title': 'Builtin List',
             'python_typing': 'List[__builtins__.int]',
             'items': {
@@ -122,17 +112,17 @@ jsonschema = {
                 'dessia_common.forms.EnhancedStandaloneSubobject'
             ],
             'python_typing': 'Union[dessia_common.forms.StandaloneSubobject, dessia_common.forms.EnhancedStandaloneSubobject]',
-            'editable': True, 'order': 10, 'standalone_in_db': True
+            'editable': True, 'order': 9, 'standalone_in_db': True
         },
         'subclass_arg': {
-            'type': 'object', 'order': 11,
+            'type': 'object', 'order': 10,
             'instance_of': 'dessia_common.forms.StandaloneSubobject',
             'python_typing': 'InstanceOf[dessia_common.forms.StandaloneSubobject]',
             'title': 'Subclass Arg', 'editable': True, 'standalone_in_db': True
         },
         'name': {
             'type': 'string', 'title': 'Name', 'editable': True,
-            'order': 12, 'default_value': 'Standalone Object Demo',
+            'order': 11, 'default_value': 'Standalone Object Demo',
             'python_typing': 'builtins.str'
         }
     },
