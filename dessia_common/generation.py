@@ -47,6 +47,10 @@ class DecisionTreeGenerator(Generator):
     This is still experimental and might be buggy
     """
 
+    _allowed_methods = ['generate']
+    _non_serializable_attributes = ['tree']
+    _non_data_eq_attributes = ['tree']
+
     def __init__(self, name:str=''):
         self.tree = dt.DecisionTree()
         Generator.__init__(self, name=name)
@@ -65,8 +69,12 @@ class DecisionTreeGenerator(Generator):
                 print('current node: ', self.tree.current_node)
             model = self.model_from_vector(self.tree.current_node)
             valid = self.model_valid(model)
+            if verbose:
+                print('valid', valid)
             if  valid:
                 number_possibilities = self.number_possibilities_from_model(model)
+                if verbose:
+                    print('number possibilities', number_possibilities)
                 self.tree.SetCurrentNodeNumberPossibilities(number_possibilities)
                 
             self.tree.NextNode(valid)
