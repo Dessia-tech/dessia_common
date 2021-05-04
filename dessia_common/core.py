@@ -1735,10 +1735,17 @@ def inspect_arguments(method, merge=False):
 
 
 def deserialize_argument(type_, argument):
+    if argument is None:
+        return None
+
     if is_typing(type_):
         origin = get_origin(type_)
         args = get_args(type_)
         if origin is Union:
+            # Check for Union false Positive (Default value = None)
+            if len(args) == 2 and type(None) in args:
+                return deserialize_argument(type_=args[0], argument=argument)
+
             # Type union
             classes = list(args)
             instantiated = False
@@ -1773,6 +1780,12 @@ def deserialize_argument(type_, argument):
         elif origin is dict:
             # Dynamic dict
             deserialized_arg = argument
+        elif origin is InstanceOf:
+            classname = args[0]
+            object_class = full_classname(object_=classname,
+                                          compute_for='class')
+            class_ = get_python_class_from_class_name(object_class)
+            deserialized_arg = class_.dict_to_object(argument)
         else:
             msg = "Deserialization of typing {} is not implemented"
             raise NotImplementedError(msg.format(type_))
@@ -1794,6 +1807,7 @@ def deserialize_argument(type_, argument):
             deserialized_arg = type_.dict_to_object(argument)
         else:
             # Static Dict
+            # TODO We shouldn't normally end up here anymore. Check this
             deserialized_arg = argument
     return deserialized_arg
 

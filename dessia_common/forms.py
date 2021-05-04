@@ -155,19 +155,6 @@ class EmbeddedSubobject(DessiaObject):
 DEF_ES = EmbeddedSubobject.generate(10)
 
 
-class StaticDict(DessiaObject):
-    def __init__(self, float_value: float, int_value: int,
-                 is_valid: bool, name: str = ''):
-        self.float_value = float_value
-        self.int_value = int_value
-        self.is_valid = is_valid
-        DessiaObject.__init__(self, name=name)
-
-
-DEF_SD = StaticDict(name="Default SD Name", float_value=1.3,
-                    int_value=0, is_valid=True)
-
-
 UnionArg = Union[StandaloneSubobject, EnhancedStandaloneSubobject]
 
 
@@ -181,8 +168,6 @@ class StandaloneObject(DessiaObject):
     :type embedded_subobject: EmbeddedSubobject
     :param dynamic_dict: A variable length dict
     :type dynamic_dict: Dict[str, bool]
-    :param static_dict: A 1-level structurewith only builtin values & str keys
-    :type static_dict: StaticDict
     :param tuple_arg: A heterogeneous sequence
     :type tuple_arg: tuple
     """
@@ -193,8 +178,8 @@ class StandaloneObject(DessiaObject):
 
     def __init__(self, standalone_subobject: StandaloneSubobject,
                  embedded_subobject: EmbeddedSubobject,
-                 dynamic_dict: Dict[str, bool], static_dict: StaticDict,
-                 tuple_arg: Tuple[str, int], intarg: int, strarg: str,
+                 dynamic_dict: Dict[str, bool], tuple_arg: Tuple[str, int],
+                 intarg: int, strarg: str,
                  object_list: List[StandaloneSubobject],
                  subobject_list: List[EmbeddedSubobject],
                  builtin_list: List[int],
@@ -208,7 +193,6 @@ class StandaloneObject(DessiaObject):
         self.tuple_arg = tuple_arg
         self.strarg = strarg
         self.intarg = intarg
-        self.static_dict = static_dict
         self.dynamic_dict = dynamic_dict
         self.standalone_subobject = standalone_subobject
         self.embedded_subobject = embedded_subobject
@@ -222,9 +206,6 @@ class StandaloneObject(DessiaObject):
         standalone_subobject = StandaloneSubobject.generate(seed)
         embedded_subobject = EmbeddedSubobject.generate(seed)
         dynamic_dict = {'n'+str(i): bool(seed % 2) for i in range(seed)}
-        static_dict = StaticDict(name='Object'+str(seed),
-                                 float_value=seed * 1.3,
-                                 int_value=seed, is_valid=is_even)
         tuple_arg = ('value', seed * 3)
         intarg = seed
         strarg = str(seed) * floor(seed/3)
@@ -238,11 +219,10 @@ class StandaloneObject(DessiaObject):
             subclass_arg = InheritingStandaloneSubobject.generate(seed)
         return cls(standalone_subobject=standalone_subobject,
                    embedded_subobject=embedded_subobject,
-                   dynamic_dict=dynamic_dict, static_dict=static_dict,
-                   tuple_arg=tuple_arg, intarg=intarg, strarg=strarg,
-                   object_list=object_list, subobject_list=subobject_list,
-                   builtin_list=builtin_list, union_arg=union_arg,
-                   subclass_arg=subclass_arg)
+                   dynamic_dict=dynamic_dict, tuple_arg=tuple_arg,
+                   intarg=intarg, strarg=strarg, object_list=object_list,
+                   subobject_list=subobject_list, builtin_list=builtin_list,
+                   union_arg=union_arg, subclass_arg=subclass_arg)
 
     def add_standalone_object(self, object_: StandaloneSubobject):
         """
@@ -361,7 +341,6 @@ class StandaloneObjectWithDefaultValues(StandaloneObject):
     def __init__(self, standalone_subobject: StandaloneSubobject = DEF_SS,
                  embedded_subobject: EmbeddedSubobject = DEF_ES,
                  dynamic_dict: Dict[str, bool] = None,
-                 static_dict: StaticDict = DEF_SD,
                  tuple_arg: Tuple[str, int] = ("Default Tuple", 0),
                  intarg: int = 1, strarg: str = "Default Strarg",
                  object_list: List[StandaloneSubobject] = None,
@@ -381,10 +360,10 @@ class StandaloneObjectWithDefaultValues(StandaloneObject):
         StandaloneObject.__init__(
             self, standalone_subobject=standalone_subobject,
             embedded_subobject=embedded_subobject, dynamic_dict=dynamic_dict,
-            static_dict=static_dict, tuple_arg=tuple_arg, intarg=intarg,
-            strarg=strarg, object_list=object_list,
-            subobject_list=subobject_list, builtin_list=builtin_list,
-            union_arg=union_arg, subclass_arg=subclass_arg, name=name
+            tuple_arg=tuple_arg, intarg=intarg, strarg=strarg,
+            object_list=object_list, subobject_list=subobject_list,
+            builtin_list=builtin_list, union_arg=union_arg,
+            subclass_arg=subclass_arg, name=name
         )
 
 
