@@ -69,7 +69,7 @@ class TypedVariable(Variable):
 
     @classmethod
     def dict_to_object(cls, dict_):
-        type_ = get_python_class_from_class_name(dict_['type'])
+        type_ = get_python_class_from_class_name(dict_['type_'])
         memorize = dict_['memorize']
         return cls(type_=type_, memorize=memorize, name=dict_['name'])
 
