@@ -69,7 +69,7 @@ class TypedVariable(Variable):
 
     @classmethod
     def dict_to_object(cls, dict_):
-        type_ = get_python_class_from_class_name(dict_['type'])
+        type_ = get_python_class_from_class_name(dict_['type_'])
         memorize = dict_['memorize']
         return cls(type_=type_, memorize=memorize, name=dict_['name'])
 
@@ -173,9 +173,10 @@ class Block(DessiaObject):
 class Display(Block):
     _displayable_input = 0
 
-    def __init__(self, order: int = 0, name: str = ''):
+    def __init__(self, inputs: List[VariableTypes] = None, order: int = 0, name: str = ''):
         self.order = order
-        inputs = [Variable(name='Model to Display', memorize=True)]
+        if inputs is None:
+            inputs = [Variable(name='Model to Display', memorize=True)]
 
         Block.__init__(self, inputs=inputs, outputs=[], name=name)
 
@@ -742,12 +743,8 @@ class MultiPlot(Display):
 
     def __init__(self, attributes: List[str], order: int = 0, name: str = ''):
         self.attributes = attributes
-        # pareto_input = TypedVariableWithDefaultValue(type_=ParetoSettings,
-        #                                              default_value=None,
-        #                                              memorize=True,
-        #                                              name='Pareto settings')
-        inputs = [Variable(memorize=True, name='input_list')]
-        Display.__init__(self, inputs=inputs, order=order, name=name)
+        Display.__init__(self, order=order, name=name)
+        self.inputs[0].name = 'Input List'
 
     def equivalent(self, other):
         if not Block.equivalent(self, other):
