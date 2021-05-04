@@ -57,7 +57,7 @@ class DecisionTreeGenerator(Generator):
     def current_node_possibilities(self, vector):
         model = self.mdoel_from_vector
         
-    def generate(self, verbose=False):
+    def generate(self, verbose:bool=False):
         model = self.model_from_vector(self.tree.current_node)
         self.tree.SetCurrentNodeNumberPossibilities(self.number_possibilities_from_model(model))
         while not self.tree.finished:
