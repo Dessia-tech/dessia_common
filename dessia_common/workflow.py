@@ -172,6 +172,7 @@ class Block(DessiaObject):
 
 class Display(Block):
     _displayable_input = 0
+    _non_editable_attributes = ['inputs']
 
     def __init__(self, inputs: List[VariableTypes] = None, order: int = 0, name: str = ''):
         self.order = order
@@ -1183,8 +1184,7 @@ class Workflow(Block):
         return copied_workflow
 
     def _displays(self) -> List[JsonSerializable]:
-        display_object = DisplayObject(type_='workflow',
-                                          data=self.to_dict())
+        display_object = DisplayObject(type_='workflow', data=self.to_dict())
         displays = [display_object.to_dict()]
         return displays
 
