@@ -312,8 +312,7 @@ class InstanciateModel(InstantiateModel):
 
 
 class ClassMethod(Block):
-    def __init__(self, class_: Type,
-                 method_name: str, name: str = ''):
+    def __init__(self, class_: Type, method_name: str, name: str = ''):
         self.class_ = class_
         self.method_name = method_name
         inputs = []
@@ -1209,8 +1208,9 @@ class Workflow(Block):
 
             annotation_jsonschema = jsonschema_from_annotation(
                 annotation=annotation, title=title,
-                order=i, jsonschema_element=current_dict,
+                order=i+1, jsonschema_element=current_dict,
             )
+            # Order is i+1 because of name that is at 0
             current_dict.update(annotation_jsonschema[str(i)])
             if not input_.has_default_value:
                 required_inputs.append(str(i))
@@ -1221,6 +1221,10 @@ class Workflow(Block):
                 )
                 current_dict.update(dict_)
             properties_dict[str(i)] = current_dict[str(i)]
+        properties_dict[str(len(self.inputs) + 1)] = {
+            'type': 'string', 'title': 'WorkflowRun Name', 'editable': True,
+            'order': 0, 'default_value': '', 'python_typing': 'builtins.str'
+        }
         jsonschemas['run']['required'] = required_inputs
         jsonschemas['run']['method'] = True
         return jsonschemas
@@ -1315,7 +1319,12 @@ class Workflow(Block):
                     )
                     arguments_values[i] = deserialized_value
 
-            arguments = {'input_values': arguments_values}
+            name_index = len(self.inputs) + 1
+            if str(name_index) in dict_:
+                name = dict_[str(name_index)]
+            else:
+                name = None
+            arguments = {'input_values': arguments_values, 'name': name}
             return arguments
         msg = 'Method {} not in Workflow allowed methods'
         raise NotImplementedError(msg.format(method))
