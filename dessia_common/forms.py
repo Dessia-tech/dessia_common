@@ -201,7 +201,7 @@ class StandaloneObject(DessiaObject):
         DessiaObject.__init__(self, name=name)
 
     @classmethod
-    def generate(cls, seed: int):
+    def generate(cls, seed: int) -> 'StandaloneObject':
         is_even = not bool(seed % 2)
         standalone_subobject = StandaloneSubobject.generate(seed)
         embedded_subobject = EmbeddedSubobject.generate(seed)
@@ -371,6 +371,8 @@ DEF_SOWDV = StandaloneObjectWithDefaultValues()
 
 
 class Generator(DessiaObject):
+    _standalone_in_db = True
+
     def __init__(self, parameter: int, nb_solutions: int = 25, name: str = ''):
         self.parameter = parameter
         self.nb_solutions = nb_solutions
@@ -387,6 +389,8 @@ class Generator(DessiaObject):
 
 
 class Optimizer(DessiaObject):
+    _standalone_in_db = True
+
     def __init__(self, model_to_optimize: StandaloneObject, name: str = ''):
         self.model_to_optimize = model_to_optimize
 
