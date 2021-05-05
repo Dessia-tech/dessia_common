@@ -952,6 +952,8 @@ class Pipe(DessiaObject):
         "$schema": "http://json-schema.org/draft-07/schema#",
         "type": "object",
         "title": "Block",
+        "python_typing": 'dessia_common.workflow.Pipe',
+        "standalone_in_db": False,
         "required": ["input_variable", "output_variable"],
         "properties": {
             "input_variable": {
@@ -1015,6 +1017,8 @@ class Workflow(Block):
         "type": "object",
         "title": "Workflow",
         "required": ["blocks", "pipes", "outputs"],
+        "python_typing": 'dessia_common.workflow.Pipe',
+        "standalone_in_db": True,
         "properties": {
             "blocks": {
                 "type": "array",
@@ -1762,6 +1766,8 @@ class WorkflowRun(DessiaObject):
         "type": "object",
         "title": "WorkflowRun Base Schema",
         "required": [],
+        "python_typing": 'dessia_common.workflow.Pipe',
+        "standalone_in_db": True,
         "properties": {
             "workflow": {
                 "type": "object",
