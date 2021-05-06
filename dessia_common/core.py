@@ -723,6 +723,7 @@ class DessiaObject:
                 column_name = openpyxl.utils.cell.get_column_letter(i)
                 ws1.column_dimensions[column_name].width = column_width
 
+
         if isinstance(filepath, str):
             real_filepath = filepath
             if not filepath.endswith('.xlsx'):
@@ -737,8 +738,6 @@ class DessiaObject:
                 filepath.seek(0)
                 filepath.write(file.read())
                 
-                
-
 
     def to_step(self, filepath):
         """
