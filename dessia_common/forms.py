@@ -333,6 +333,63 @@ class StandaloneObject(DessiaObject):
 
         return computation
 
+    def to_markdown(self):
+        contents = """"
+        # Quem Stygios dumque
+
+        ## Recursus erat aere decus Lemnicolae
+
+        Lorem markdownum laetum senior quod Libys utroque *mirantibus teneat aevo*,
+        aquis. Procumbit eandem ensis, erigor intercepta, quae habitabat nostro *et hoc
+        que* enim: inpulit. Mecum ferat **fecissem** vale per myricae suis quas turba
+        potentior mentita. Annis nunc, picae erat quis minatur dare Diana redimitus
+        [Clymene venisses sinat](http://est.net/umbram.html) protinus pulchra, sucos!
+        Tanta haec varios tuaque, nisi Erigonen si aquae Hippomene inguine murmur.
+        
+        1. Poma enim dextra icta capillis extinctum foedera
+        2. Mediis requirit exercita ascendere fecisse sola
+        3. Sua externis tigride saevarum
+        4. Aves est pendebant sume latentis
+        
+        ## Suum videre quondam generis dolentem simul femineos
+        
+        Ille lacus progenitore Cycnum pressa, excidit silva
+        [crudus](http://www.domino.com/nequevox), boum ducem vocari, ne monte tanto
+        harenae. Opus Aesone excipit adempto. Inpius illa latratu atque sed praedam,
+        ille construit intravit concipit, concha dedit, qua audit calathosque. Dedit
+        putrefacta cortex. Tenet aut carmina quod proditione media; pro ense medicina
+        vita repetit adrectisque inops e sentiat.
+        
+        > Imagine caesaries superbos muneraque *ne terras* cunctis. Diversae Hesioneque
+        > numinis regia at anima nascuntur Iovis. Sua fama quoque capillos lugubris
+        > **egimus**, a ingenti [Ericthonio](http://raptos.org/lucem) iubebat!
+        
+        ## Ponderis venit veteris mihi tofis
+        
+        Propensum discedunt, iacere dedisti; lene potest caelo, felix flamma caecus
+        decet excipit. *Aurum occiderat*, retro cum, quorum *Diana timuere At*. Ait
+        Labros hasta mundi, **ut est** ruit nosse o gravet!
+        
+        ## Qui aether undis nulla
+        
+        Homines oppidaque nominibus devexo genitoris quoque, praesensque rota Saturnia.
+        Auras cecinit fera quae mirantum imbris, Gratia verba incesto, sed visa contigit
+        saepe adicit trepidant. [Siqua radiis
+        quod](http://www.naris-pectebant.org/comeset) ad duabus alienisque, sponte; dum.
+        
+        Occidit Babylonia dubitare. Vultus cui: erat dea! Iam ense forma est se, tibi
+        pedem adfectat nec nostra. Armenta socium nutrix
+        [precatur](http://in-fraxinus.io/) aderam, quam mentem Elin labor auctor
+        potentia prodidit inmitibus duo di? Verum a, tuo quoque nec Mysum per posses;
+        vigor danda meruit: tecum audire responsa
+        [conplexae](http://quis.io/disrestat.html) et alios.
+        
+        Agros grata illo animo mei nova, in magis furens et
+        [modo](http://pondere.com/aquis) dimittere ubi neque es! Sua qua ac ire una
+        facit Alcmene coepere arduus quae vestigia aliquis; meritorum Dorylas, scindunt.
+        """
+        return contents
+
 
 DEF_SO = StandaloneObject.generate(1)
 
