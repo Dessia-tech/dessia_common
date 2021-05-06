@@ -172,6 +172,7 @@ class Block(DessiaObject):
 
 class Display(Block):
     _displayable_input = 0
+    _non_editable_attributes = ['inputs']
 
     def __init__(self, inputs: List[VariableTypes] = None, order: int = 0, name: str = ''):
         self.order = order
@@ -312,8 +313,7 @@ class InstanciateModel(InstantiateModel):
 
 
 class ClassMethod(Block):
-    def __init__(self, class_: Type,
-                 method_name: str, name: str = ''):
+    def __init__(self, class_: Type, method_name: str, name: str = ''):
         self.class_ = class_
         self.method_name = method_name
         inputs = []
@@ -952,11 +952,13 @@ class Pipe(DessiaObject):
         "$schema": "http://json-schema.org/draft-07/schema#",
         "type": "object",
         "title": "Block",
+        "python_typing": 'dessia_common.workflow.Pipe',
+        "standalone_in_db": False,
         "required": ["input_variable", "output_variable"],
         "properties": {
             "input_variable": {
-                "type": "object",
-                "editable": True,
+                "type": "object", "editable": True, "order": 0,
+                "python_typing": "List[dessia_common.workflow.VariableTypes]",
                 "classes": [
                     "dessia_common.workflow.Variable",
                     "dessia_common.workflow.TypedVariable",
@@ -965,14 +967,19 @@ class Pipe(DessiaObject):
                 ]
             },
             "output_variable": {
-                "type": "object",
-                "editable": True,
+                "type": "object", "editable": True, "order": 1,
+                "python_typing": "List[dessia_common.workflow.VariableTypes]",
                 "classes": [
                     "dessia_common.workflow.Variable",
                     "dessia_common.workflow.TypedVariable",
                     "dessia_common.workflow.VariableWithDefaultValue",
                     "dessia_common.workflow.TypedVariableWithDefaultValue"
                 ],
+            },
+            "name": {
+                'type': 'string', 'title': 'Name', 'editable': True,
+                'order': 2, 'default_value': '',
+                'python_typing': 'builtins.str'
             }
         }
     }
@@ -1015,11 +1022,12 @@ class Workflow(Block):
         "type": "object",
         "title": "Workflow",
         "required": ["blocks", "pipes", "outputs"],
+        "python_typing": 'dessia_common.workflow.Pipe',
+        "standalone_in_db": True,
         "properties": {
             "blocks": {
-                "type": "array",
-                "order": 0,
-                "editable": True,
+                "type": "array", "order": 0, "editable": True,
+                "python_typing": "SubclassOf[dessia_common.workflow.Block]",
                 "items": {
                     "type": "object",
                     "classes": ["dessia_common.workflow.InstanciateModel",
@@ -1042,19 +1050,27 @@ class Workflow(Block):
                 "type": "array",
                 "order": 1,
                 "editable": True,
+                "python_typing": "List[dessia_common.workflow.Pipe]",
                 "items": {
                     'type': 'objects',
                     'classes': ["dessia_common.workflow.Pipe"],
+                    "python_type": "dessia_common.workflow.Pipe",
                     "editable": True
                 }
             },
             "outputs": {
-                "type": "array",
-                "order": 2,
+                "type": "array", "order": 2,
+                "python_typing": "List[dessia_common.workflow.VariableTypes]",
                 'items': {
                     'type': 'array',
-                    'items': {'type': 'number'}
+                    'items': {'type': 'number'},
+                    'python_typing': "dessia_common.workflow.VariableTypes"
                 }
+            },
+            "name": {
+                'type': 'string', 'title': 'Name', 'editable': True,
+                'order': 3, 'default_value': '',
+                'python_typing': 'builtins.str'
             }
         }
     }
@@ -1168,8 +1184,7 @@ class Workflow(Block):
         return copied_workflow
 
     def _displays(self) -> List[JsonSerializable]:
-        display_object = DisplayObject(type_='workflow',
-                                          data=self.to_dict())
+        display_object = DisplayObject(type_='workflow', data=self.to_dict())
         displays = [display_object.to_dict()]
         return displays
 
@@ -1192,11 +1207,10 @@ class Workflow(Block):
                     title = prettyname(input_.name)
 
             annotation_jsonschema = jsonschema_from_annotation(
-                annotation=annotation,
-                jsonschema_element=current_dict,
-                order=i,
-                title=title
+                annotation=annotation, title=title,
+                order=i+1, jsonschema_element=current_dict,
             )
+            # Order is i+1 because of name that is at 0
             current_dict.update(annotation_jsonschema[str(i)])
             if not input_.has_default_value:
                 required_inputs.append(str(i))
@@ -1207,6 +1221,10 @@ class Workflow(Block):
                 )
                 current_dict.update(dict_)
             properties_dict[str(i)] = current_dict[str(i)]
+        properties_dict[str(len(self.inputs) + 1)] = {
+            'type': 'string', 'title': 'WorkflowRun Name', 'editable': True,
+            'order': 0, 'default_value': '', 'python_typing': 'builtins.str'
+        }
         jsonschemas['run']['required'] = required_inputs
         jsonschemas['run']['method'] = True
         return jsonschemas
@@ -1301,7 +1319,12 @@ class Workflow(Block):
                     )
                     arguments_values[i] = deserialized_value
 
-            arguments = {'input_values': arguments_values}
+            name_index = len(self.inputs) + 1
+            if str(name_index) in dict_:
+                name = dict_[str(name_index)]
+            else:
+                name = None
+            arguments = {'input_values': arguments_values, 'name': name}
             return arguments
         msg = 'Method {} not in Workflow allowed methods'
         raise NotImplementedError(msg.format(method))
@@ -1762,28 +1785,23 @@ class WorkflowRun(DessiaObject):
         "type": "object",
         "title": "WorkflowRun Base Schema",
         "required": [],
+        "python_typing": 'dessia_common.workflow.Pipe',
+        "standalone_in_db": True,
         "properties": {
             "workflow": {
-                "type": "object",
-                "title": "Workflow",
+                "type": "object", "title": "Workflow",
+                "python_typing": "dessia_common.workflow.Workflow",
                 "classes": ["dessia_common.workflow.Workflow"],
-                "order": 0,
-                "editable": False,
-                "description": "Workflow"
+                "order": 0, "editable": False, "description": "Workflow"
             },
             'output_value': {
-                "type": "object",
-                "classes": "Any",
-                "title": "Values",
+                "type": "object", "classes": "Any", "title": "Values",
                 "description": "Input and output values",
-                "editable": False,
-                "order": 1
+                "editable": False, "order": 1, "python_typing": "Any"
             },
             'input_values': {
-                'type': 'object',
-                'order': 2,
-                'editable': False,
-                'title': 'Input Values',
+                'type': 'object', 'order': 2, 'editable': False,
+                'title': 'Input Values', "python_typing": "Dict[str, Any]",
                 'patternProperties': {
                     '.*': {
                         'type': "object",
@@ -1792,10 +1810,8 @@ class WorkflowRun(DessiaObject):
                 }
             },
             'variables_values': {
-                'type': 'object',
-                'order': 3,
-                'editable': False,
-                'title': 'Variables Values',
+                'type': 'object', 'order': 3, 'editable': False,
+                'title': 'Variables Values', "python_typing": "Dict[str, Any]",
                 'patternProperties': {
                     '.*': {
                         'type': "object",
@@ -1804,25 +1820,24 @@ class WorkflowRun(DessiaObject):
                 }
             },
             'start_time': {
-                "type": "number",
-                "title": "Start Time",
-                "editable": False,
-                "description": "Start time of simulation",
-                "order": 4
+                "type": "number", "title": "Start Time",
+                "editable": False,  "python_typing": "builtins.int",
+                "description": "Start time of simulation", "order": 4
             },
             'end_time': {
-                "type": "number",
-                "title": "End Time",
-                "editable": False,
-                "description": "End time of simulation",
-                "order": 5
+                "type": "number", "title": "End Time",
+                "editable": False,  "python_typing": "builtins.int",
+                "description": "End time of simulation", "order": 5
             },
             'log': {
-                "type": "string",
-                "title": "Log",
-                "editable": False,
-                "description": "Log",
-                "order": 6
+                "type": "string", "title": "Log",
+                "editable": False, 'python_typing': 'builtins.str',
+                "description": "Log", "order": 6,
+            },
+            "name": {
+                'type': 'string', 'title': 'Name', 'editable': True,
+                'order': 7, 'default_value': '',
+                'python_typing': 'builtins.str'
             }
         }
     }
