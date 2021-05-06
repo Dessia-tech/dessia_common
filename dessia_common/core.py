@@ -270,12 +270,10 @@ class DessiaObject:
         return dict_
 
     def _serializable_dict(self):
-
         dict_ = {k: v for k, v in self.__dict__.items()
                  if k not in self._non_serializable_attributes
                  and not k.startswith('_')}
         return dict_
-
 
     def to_dict(self) -> JsonSerializable:
         """
@@ -612,6 +610,7 @@ class DessiaObject:
             reference_path = kwargs['reference_path']
         else:
             reference_path = ''
+
         displays = []
         if hasattr(self, 'babylon_data'):
             display_ = DisplayObject(type_='cad', data=self.babylon_data(),
