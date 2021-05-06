@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Fields in workflows jsonschema that were missing
 - Names can now be set at Workflows run and run_again
+- Dev Objects implement markdown display
 - Support for None argument deserialization
 - Support for InstanceOf argument deserialization
 
