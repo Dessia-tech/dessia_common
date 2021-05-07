@@ -634,7 +634,9 @@ class DessiaObject:
                 msg = 'plot_data must return a sequence. Found {}'
                 raise ValueError(msg.format(type(plot_data)))
         if hasattr(self, 'to_markdown'):
-            display_ = DisplayObject(type_='markdown', data=self.to_markdown(),
+            markdown = self.to_markdown()
+            clean_markdown = inspect.cleandoc(markdown)
+            display_ = DisplayObject(type_='markdown', data=clean_markdown,
                                      reference_path=reference_path)
             displays.append(display_.to_dict())
         return displays
