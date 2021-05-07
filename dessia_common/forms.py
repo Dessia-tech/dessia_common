@@ -334,7 +334,7 @@ class StandaloneObject(DessiaObject):
         return computation
 
     def to_markdown(self):
-        contents = """"
+        contents = """
         # Quem Stygios dumque
 
         ## Recursus erat aere decus Lemnicolae
