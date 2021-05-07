@@ -110,6 +110,8 @@ setup(name='dessia_common',
       packages=['dessia_common'],
       install_requires=['typeguard', 'networkx', 'numpy', 'pandas',
                         'mypy_extensions', 'scipy', 'pyDOE',
-                        'dectree', 'bson', 'openpyxl'],
+                        'dectree',
+                        'bson',
+                        'openpyxl'],
       python_requires='>=3.7')
 
