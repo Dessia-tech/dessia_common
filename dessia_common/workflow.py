@@ -1957,11 +1957,11 @@ class WorkflowRun(DessiaObject):
         return DessiaObject.method_dict(self, method_name=method_name,
                                            method_jsonschema=method_jsonschema)
 
-    def run_again(self, input_values, progress_callback=None):
+    def run_again(self, input_values, progress_callback=None, name=None):
         workflow_run = self.workflow.run(input_values=input_values,
                                          verbose=False,
                                          progress_callback=progress_callback,
-                                         name=None)
+                                         name=name)
         return workflow_run
 
     @property
