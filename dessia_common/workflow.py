@@ -14,7 +14,7 @@ from typing import List, Union, Type, Any, Dict, Tuple, get_type_hints
 from copy import deepcopy
 from dessia_common.templates import workflow_template
 import itertools
-from dessia_common import DessiaObject, DisplayObject, Filter, Method,\
+from dessia_common import DessiaObject, DisplayObject, Filter, \
     is_sequence, list_hash, serialize_typing, serialize, is_bounded, \
     get_python_class_from_class_name, deserialize, type_from_annotation,\
     enhanced_deep_attr, deprecation_warning, JSONSCHEMA_HEADER,\
@@ -22,7 +22,7 @@ from dessia_common import DessiaObject, DisplayObject, Filter, Method,\
     prettyname, dict_to_object, serialize_dict, UntypedArgumentError,\
     recursive_type, recursive_instantiation, full_classname
 from dessia_common.vectored_objects import from_csv
-from dessia_common.typings import JsonSerializable
+from dessia_common.typings import JsonSerializable, Subclass, MethodType
 import warnings
 
 # import plot_data
@@ -369,16 +369,17 @@ class ClassMethod(Block):
 class ModelMethod(Block):
     """
     :param model_class: The class owning the method.
-    :type model_class: Type
+    :type model_class: Subclass[DessiaObject]
     :param method_name: The name of the method.
     :type method_name: str
     :param name: The name of the block.
     :type name: str
     """
 
-    def __init__(self, method_: Method, name: str = ''):
-        self.model_class = method_.model_class
-        self.method_name = method_.method_name
+    def __init__(self, method_: MethodType[Type], name: str = ''):
+    # def __init__(self, method_: Method[Subclass[DessiaObject]], name: str = ''):
+        self.model_class = method_.class_
+        self.method_name = method_.name
         inputs = [TypedVariable(type_=self.model_class, name='model at input')]
         method = getattr(self.model_class, self.method_name)
 
@@ -433,7 +434,7 @@ class ModelMethod(Block):
         class_ = get_python_class_from_class_name(classname)
         method_name = dict_['method_name']
         name = dict_['name']
-        method_ = Method(model_class=class_, method_name=method_name)
+        method_ = MethodType(class_=class_, name=method_name)
         return cls(method_=method_, name=name)
 
     def evaluate(self, values):

@@ -1,12 +1,12 @@
 from dessia_common.workflow import InstantiateModel, ModelMethod,\
     ModelAttribute, Pipe, Workflow, WorkflowBlock, ForEach, MultiPlot
 from dessia_common.forms import Generator, Optimizer
-from dessia_common import Method
+from dessia_common import MethodType
 
 instanciate_generator = InstantiateModel(model_class=Generator,
                                          name='Instantiate Generator')
 
-generate_method = Method(model_class=Generator, method_name='generate')
+generate_method = MethodType(class_=Generator, name='generate')
 generator_generate = ModelMethod(method_=generate_method,
                                  name='Generator Generate')
 attribute_selection = ModelAttribute(attribute_name='models',
@@ -15,7 +15,7 @@ attribute_selection = ModelAttribute(attribute_name='models',
 # Subworkflow of model optimization
 instanciate_optimizer = InstantiateModel(model_class=Optimizer,
                                          name='Instantiate Optimizer')
-generate_method = Method(model_class=Optimizer, method_name='optimize')
+generate_method = MethodType(class_=Optimizer, name='optimize')
 optimization = ModelMethod(method_=generate_method, name='Optimization')
 model_fetcher = ModelAttribute(attribute_name='model_to_optimize',
                                name='Model Fetcher')
