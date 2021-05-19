@@ -27,7 +27,7 @@ except ImportError:
     from mypy_extensions import TypedDict  # <=3.7
 import traceback as tb
 from dessia_common.typings import Measure, JsonSerializable,\
-    Subclass, InstanceOf
+    Subclass, InstanceOf, MethodType
 
 from importlib import import_module
 
@@ -743,14 +743,6 @@ class Filter(DessiaObject):
         DessiaObject.__init__(self, name=name)
 
 
-class Method(DessiaObject):
-    def __init__(self, model_class: Type, method_name: str, name: str = ''):
-        self.model_class = model_class
-        self.method_name = method_name
-
-        DessiaObject.__init__(self, name=name)
-
-
 class Evolution(DessiaObject):
     """
     Defines a generic evolution
@@ -1178,6 +1170,8 @@ def serialize_typing(typing_):
             return 'Dict[{}, {}]'.format(key_type, value_type)
         elif origin is InstanceOf:
             return 'InstanceOf[{}]'.format(type_fullname(args[0]))
+        elif origin is Subclass:
+            return 'Subclass[{}]'.format(type_fullname(args[0]))
         else:
             msg = 'Serialization of typing {} is not implemented'
             raise NotImplementedError(msg.format(typing_))
@@ -1510,6 +1504,19 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
             'type': 'object', 'is_class': True,
             'properties': {'name': {'type': 'string'}}
         })
+    elif hasattr(typing_, '__origin__') and typing_.__origin__ is MethodType:
+        class_type = get_args(typing_)[0]
+        class_jss = jsonschema_from_annotation(
+            annotation=('class_', class_type), jsonschema_element={},
+            order=order, editable=editable, title='Class'
+        )
+        jsonschema_element[key].update({
+            'type': 'object', 'is_method': True,
+            'properties': {
+                'class_': class_jss['class_'],
+                'name': {'type': 'string'}}
+        })
+        print(jsonschema_element)
     elif issubclass(typing_, Measure):
         ann = (key, float)
         jsonschema_element = jsonschema_from_annotation(

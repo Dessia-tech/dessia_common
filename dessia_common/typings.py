@@ -12,6 +12,12 @@ class InstanceOf(Generic[T]):
     pass
 
 
+class MethodType(Generic[T]):
+    def __init__(self, class_: T, name: str):
+        self.class_ = class_
+        self.name = name
+
+
 # Types Aliases
 JsonSerializable = Dict[str, Any]
 RGBColor = Tuple[float, float, float]
