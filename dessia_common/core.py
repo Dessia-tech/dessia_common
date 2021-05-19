@@ -733,10 +733,14 @@ class ParameterSet(DessiaObject):
         return means
 
 
-class Filter(TypedDict):
-    attribute: str
-    operator: str
-    bound: float
+class Filter(DessiaObject):
+    def __init__(self, attribute: str, operator: str,
+                 bound: float, name: str = ''):
+        self.attribute = attribute
+        self.operator = operator
+        self.bound = bound
+
+        DessiaObject.__init__(self, name=name)
 
 
 class Evolution(DessiaObject):
