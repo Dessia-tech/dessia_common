@@ -8,21 +8,20 @@ import inspect
 import time
 import tempfile
 import json
-from importlib import import_module
 import webbrowser
 import networkx as nx
 from typing import List, Union, Type, Any, Dict, Tuple, get_type_hints
 from copy import deepcopy
 from dessia_common.templates import workflow_template
 import itertools
-from dessia_common import DessiaObject, DisplayObject, Filter, is_sequence,\
-    list_hash, serialize_typing, serialize, get_python_class_from_class_name,\
-    deserialize, type_from_annotation, enhanced_deep_attr, is_bounded,\
-    deprecation_warning, JSONSCHEMA_HEADER, jsonschema_from_annotation,\
-    deserialize_argument, set_default_value, prettyname, dict_to_object,\
-    serialize_dict, UntypedArgumentError, recursive_type,\
-    recursive_instantiation, full_classname
-from dessia_common.vectored_objects import ParetoSettings, from_csv
+from dessia_common import DessiaObject, DisplayObject, Filter, Method,\
+    is_sequence, list_hash, serialize_typing, serialize, is_bounded, \
+    get_python_class_from_class_name, deserialize, type_from_annotation,\
+    enhanced_deep_attr, deprecation_warning, JSONSCHEMA_HEADER,\
+    jsonschema_from_annotation, deserialize_argument, set_default_value,\
+    prettyname, dict_to_object, serialize_dict, UntypedArgumentError,\
+    recursive_type, recursive_instantiation, full_classname
+from dessia_common.vectored_objects import from_csv
 from dessia_common.typings import JsonSerializable
 import warnings
 
@@ -370,17 +369,17 @@ class ClassMethod(Block):
 class ModelMethod(Block):
     """
     :param model_class: The class owning the method.
-    :type model_class: DessiaObject
+    :type model_class: Type
     :param method_name: The name of the method.
     :type method_name: str
     :param name: The name of the block.
     :type name: str
     """
 
-    def __init__(self, model_class: Type, method_name: str, name: str = ''):
-        self.model_class = model_class
-        self.method_name = method_name
-        inputs = [TypedVariable(type_=model_class, name='model at input')]
+    def __init__(self, method_: Method, name: str = ''):
+        self.model_class = method_.model_class
+        self.method_name = method_.method_name
+        inputs = [TypedVariable(type_=self.model_class, name='model at input')]
         method = getattr(self.model_class, self.method_name)
 
         inputs = set_inputs_from_function(method, inputs)
@@ -398,7 +397,8 @@ class ModelMethod(Block):
             return_output = Variable(name=result_output_name)
 
         model_output_name = 'model at output {}'.format(self.method_name)
-        model_output = TypedVariable(type_=model_class, name=model_output_name)
+        model_output = TypedVariable(type_=self.model_class,
+                                     name=model_output_name)
         outputs = [return_output, model_output]
         if name == '':
             name = 'Model method: {}'.format(self.method_name)
@@ -433,7 +433,8 @@ class ModelMethod(Block):
         class_ = get_python_class_from_class_name(classname)
         method_name = dict_['method_name']
         name = dict_['name']
-        return cls(model_class=class_, method_name=method_name, name=name)
+        method_ = Method(model_class=class_, method_name=method_name)
+        return cls(method_=method_, name=name)
 
     def evaluate(self, values):
         args = {arg_name: values[var]

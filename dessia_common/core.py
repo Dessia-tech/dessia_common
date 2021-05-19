@@ -743,6 +743,14 @@ class Filter(DessiaObject):
         DessiaObject.__init__(self, name=name)
 
 
+class Method(DessiaObject):
+    def __init__(self, model_class: Type, method_name: str, name: str = ''):
+        self.model_class = model_class
+        self.method_name = method_name
+
+        DessiaObject.__init__(self, name=name)
+
+
 class Evolution(DessiaObject):
     """
     Defines a generic evolution
