@@ -27,7 +27,7 @@ except ImportError:
     from mypy_extensions import TypedDict  # <=3.7
 import traceback as tb
 from dessia_common.typings import Measure, JsonSerializable,\
-    Subclass, InstanceOf
+    Subclass, InstanceOf, MethodType
 
 from importlib import import_module
 
@@ -734,10 +734,14 @@ class ParameterSet(DessiaObject):
         return means
 
 
-class Filter(TypedDict):
-    attribute: str
-    operator: str
-    bound: float
+class Filter(DessiaObject):
+    def __init__(self, attribute: str, operator: str,
+                 bound: float, name: str = ''):
+        self.attribute = attribute
+        self.operator = operator
+        self.bound = bound
+
+        DessiaObject.__init__(self, name=name)
 
 
 class Evolution(DessiaObject):
@@ -1167,6 +1171,8 @@ def serialize_typing(typing_):
             return 'Dict[{}, {}]'.format(key_type, value_type)
         elif origin is InstanceOf:
             return 'InstanceOf[{}]'.format(type_fullname(args[0]))
+        elif origin is Subclass:
+            return 'Subclass[{}]'.format(type_fullname(args[0]))
         else:
             msg = 'Serialization of typing {} is not implemented'
             raise NotImplementedError(msg.format(typing_))
@@ -1490,6 +1496,18 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
             jsonschema_element[key].update({
                 'type': 'object', 'instance_of': classname,
                 'standalone_in_db': class_._standalone_in_db
+            })
+        elif origin is MethodType:
+            class_type = get_args(typing_)[0]
+            class_jss = jsonschema_from_annotation(
+                annotation=('class_', class_type), jsonschema_element={},
+                order=order, editable=editable, title='Class'
+            )
+            jsonschema_element[key].update({
+                'type': 'object', 'is_method': True,
+                'properties': {
+                    'class_': class_jss['class_'],
+                    'name': {'type': 'string'}}
             })
         else:
             msg = "Jsonschema computation of typing {} is not implemented"
