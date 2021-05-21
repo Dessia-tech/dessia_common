@@ -18,6 +18,22 @@ class MethodType(Generic[T]):
         self.name = name
 
 
+class ClassMethodType(MethodType[T]):
+    def __init__(self, class_: T, name: str):
+        MethodType.__init__(self, class_=class_, name=name)
+
+
+class AttributeType(Generic[T]):
+    def __init__(self, class_: T, name: str):
+        self.class_ = class_
+        self.name = name
+
+
+class ClassAsttributeType(AttributeType[T]):
+    def __init__(self, class_: T, name: str):
+        AttributeType.__init__(self, class_=class_, name=name)
+
+
 # Types Aliases
 JsonSerializable = Dict[str, Any]
 RGBColor = Tuple[float, float, float]
