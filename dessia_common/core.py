@@ -1496,6 +1496,18 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
                 'type': 'object', 'instance_of': classname,
                 'standalone_in_db': class_._standalone_in_db
             })
+        elif origin is MethodType:
+            class_type = get_args(typing_)[0]
+            class_jss = jsonschema_from_annotation(
+                annotation=('class_', class_type), jsonschema_element={},
+                order=order, editable=editable, title='Class'
+            )
+            jsonschema_element[key].update({
+                'type': 'object', 'is_method': True,
+                'properties': {
+                    'class_': class_jss['class_'],
+                    'name': {'type': 'string'}}
+            })
         else:
             msg = "Jsonschema computation of typing {} is not implemented"
             raise NotImplementedError(msg.format(typing_))
@@ -1504,19 +1516,6 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
             'type': 'object', 'is_class': True,
             'properties': {'name': {'type': 'string'}}
         })
-    elif hasattr(typing_, '__origin__') and typing_.__origin__ is MethodType:
-        class_type = get_args(typing_)[0]
-        class_jss = jsonschema_from_annotation(
-            annotation=('class_', class_type), jsonschema_element={},
-            order=order, editable=editable, title='Class'
-        )
-        jsonschema_element[key].update({
-            'type': 'object', 'is_method': True,
-            'properties': {
-                'class_': class_jss['class_'],
-                'name': {'type': 'string'}}
-        })
-        print(jsonschema_element)
     elif issubclass(typing_, Measure):
         ann = (key, float)
         jsonschema_element = jsonschema_from_annotation(
