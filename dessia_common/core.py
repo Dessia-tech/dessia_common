@@ -633,8 +633,7 @@ class DessiaObject:
                 raise ValueError(msg.format(type(plot_data)))
         if hasattr(self, 'to_markdown'):
             markdown = self.to_markdown()
-            clean_markdown = inspect.cleandoc(markdown)
-            display_ = DisplayObject(type_='markdown', data=clean_markdown,
+            display_ = DisplayObject(type_='markdown', data=markdown,
                                      reference_path=reference_path)
             displays.append(display_.to_dict())
         return displays
@@ -677,6 +676,8 @@ class DisplayObject(DessiaObject):
     def __init__(self, type_: str,
                  data: Union[JsonSerializable, DessiaObject],
                  reference_path: str = '', name: str = ''):
+        if type_ == 'markdown':
+            data = inspect.cleandoc(data)
         self.type_ = type_
         self.data = data
 
