@@ -1173,6 +1173,8 @@ def serialize_typing(typing_):
             return 'InstanceOf[{}]'.format(type_fullname(args[0]))
         elif origin is Subclass:
             return 'Subclass[{}]'.format(type_fullname(args[0]))
+        elif origin is MethodType:
+            return 'MethodType[{}]'.format(type_fullname(args[0]))
         else:
             msg = 'Serialization of typing {} is not implemented'
             raise NotImplementedError(msg.format(typing_))
