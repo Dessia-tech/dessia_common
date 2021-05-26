@@ -76,7 +76,10 @@ def object_breakdown(obj, path=''):
         if isinstance(obj, dessia_common.core.DessiaObject):
             obj_dict = obj._serializable_dict()
         else:
-            obj_dict = obj.__dict__
+            if hasattr(obj_dict, '__dict__'):
+                obj_dict = obj.__dict__
+            else:
+                obj_dict = {}
         
         for k, v in obj_dict.items():
             # dict after lists
