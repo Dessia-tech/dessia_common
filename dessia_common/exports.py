@@ -7,6 +7,9 @@
 import collections
 import tempfile
 import numpy as npy
+
+import dessia_common.core
+
 from openpyxl.writer.excel import save_virtual_workbook
 from openpyxl.styles.borders import Border, Side
 from openpyxl.styles import Alignment, PatternFill, Font
@@ -69,8 +72,13 @@ def object_breakdown(obj, path=''):
             
         if path:
             path += '.'
-            
-        for k, v in obj.__dict__.items():
+        
+        if isinstance(obj, dessia_common.core.DessiaObject):
+            obj_dict = obj._serializable_dict()
+        else:
+            obj_dict = obj.__dict__
+        
+        for k, v in obj_dict.items():
             # dict after lists
             if not (isinstance(v, dict)\
                     or isinstance(v, list)
@@ -79,13 +87,13 @@ def object_breakdown(obj, path=''):
                 dict2 = object_breakdown(v, path=path+k)
                 bd_dict = merge_breakdown_dicts(bd_dict, dict2)
             
-        for k, v in obj.__dict__.items():
+        for k, v in obj_dict.items():
             # First lists and tuples
             if isinstance(v, list) or isinstance(v, tuple):                
                 dict2 = object_breakdown(v, path=path+k)
                 bd_dict = merge_breakdown_dicts(bd_dict, dict2)
 
-        for k, v in obj.__dict__.items():
+        for k, v in obj_dict.items():
             # dict after lists
             if isinstance(v, dict):                
                 dict2 = object_breakdown(v, path=path+k)
