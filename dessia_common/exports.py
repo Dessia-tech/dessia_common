@@ -6,6 +6,7 @@
 
 import collections
 import tempfile
+import numpy as npy
 from openpyxl.writer.excel import save_virtual_workbook
 from openpyxl.styles.borders import Border, Side
 from openpyxl.styles import Alignment, PatternFill, Font
@@ -34,6 +35,9 @@ def object_breakdown(obj, path=''):
         return bd_dict
 
     if (isinstance(obj, str) or isinstance(obj, float) or isinstance(obj, int)):
+        return bd_dict
+    
+    if isinstance(obj, npy.ndarray):
         return bd_dict
 
     if isinstance(obj, list) or isinstance(obj, tuple):
