@@ -190,7 +190,7 @@ class Display(Block):
 
     def display_(self, local_values: Dict[VariableTypes, Any], **kwargs):
         object_ = local_values[self.inputs[self._displayable_input]]
-        displays = object_._displays(kwargs=kwargs)
+        displays = object_._displays(**kwargs)
         return displays
 
     def to_dict(self):
