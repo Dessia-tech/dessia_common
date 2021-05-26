@@ -30,6 +30,9 @@ def merge_breakdown_dicts(dict1, dict2):
 
 def object_breakdown(obj, path=''):
     bd_dict = {}
+    if obj is None:
+        return bd_dict
+
     if (isinstance(obj, str) or isinstance(obj, float) or isinstance(obj, int)):
         return bd_dict
 
