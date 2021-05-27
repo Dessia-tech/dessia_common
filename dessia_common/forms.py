@@ -175,6 +175,7 @@ class StandaloneObject(DessiaObject):
     _generic_eq = True
     _allowed_methods = ['add_standalone_object',
                         'add_embedded_object', 'add_float']
+    _non_editable_attributes = ['intarg', 'strarg', 'union_arg']
 
     def __init__(self, standalone_subobject: StandaloneSubobject,
                  embedded_subobject: EmbeddedSubobject,

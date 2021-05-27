@@ -68,11 +68,11 @@ jsonschema = {
             'python_typing': 'Tuple[__builtins__.str, __builtins__.int]'},
         'intarg': {
             'type': 'number', 'title': 'Intarg',
-            'editable': True, 'order': 4, 'python_typing': 'builtins.int'
+            'editable': False, 'order': 4, 'python_typing': 'builtins.int'
         },
         'strarg': {
             'type': 'string', 'title': 'Strarg',
-            'editable': True, 'order': 5, 'python_typing': 'builtins.str'
+            'editable': False, 'order': 5, 'python_typing': 'builtins.str'
         },
         'object_list': {
             'type': 'array', 'order': 6, 'editable': True,
@@ -112,7 +112,7 @@ jsonschema = {
                 'dessia_common.forms.EnhancedStandaloneSubobject'
             ],
             'python_typing': 'Union[dessia_common.forms.StandaloneSubobject, dessia_common.forms.EnhancedStandaloneSubobject]',
-            'editable': True, 'order': 9, 'standalone_in_db': True
+            'editable': False, 'order': 9, 'standalone_in_db': True
         },
         'subclass_arg': {
             'type': 'object', 'order': 10,
