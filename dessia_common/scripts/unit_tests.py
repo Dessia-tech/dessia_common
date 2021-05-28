@@ -1,5 +1,5 @@
 from dessia_common.forms import *
-from dessia_common import enhanced_deep_attr
+from dessia_common import enhanced_deep_attr, full_classname
 
 standalone_subobject = StandaloneSubobject(floatarg=3.78)
 embedded_subobject = EmbeddedSubobject()
@@ -26,7 +26,18 @@ standalone_object = StandaloneObject(standalone_subobject=standalone_subobject,
                                      subobject_list=subobject_list,
                                      builtin_list=builtin_list,
                                      union_arg=union_object,
-                                     subclass_arg=subclass_arg)
+                                     subclass_arg=subclass_arg,
+                                     array_arg=[[1, 2, 3], [4, None, 6]])
+
+subobject_classname = full_classname(object_=EmbeddedSubobject,
+                                     compute_for='class')
+enhanced_classname = full_classname(object_=EnhancedEmbeddedSubobject,
+                                    compute_for='class')
+
+assert subobject_classname == 'dessia_common.forms.EmbeddedSubobject'
+assert enhanced_classname == 'dessia_common.forms.EnhancedEmbeddedSubobject'
+serialized_union = 'Union[{}, {}]'.format(subobject_classname,
+                                          enhanced_classname)
 
 # Test jsonschema
 jsonschema = {
@@ -106,13 +117,19 @@ jsonschema = {
             }
         },
         'union_arg': {
-            'type': 'object', 'title': 'Union Arg',
-            'classes': [
-                'dessia_common.forms.StandaloneSubobject',
-                'dessia_common.forms.EnhancedStandaloneSubobject'
-            ],
-            'python_typing': 'Union[dessia_common.forms.StandaloneSubobject, dessia_common.forms.EnhancedStandaloneSubobject]',
-            'editable': False, 'order': 9, 'standalone_in_db': True
+            'title': 'Union Arg', 'editable': True, 'order': 9,
+            'python_typing': 'List[{}]'.format(serialized_union),
+            'type': 'array',
+            'items': {
+                'title': 'Union Arg', 'editable': True, 'order': 0,
+                'python_typing': serialized_union,
+                'type': 'object',
+                'classes': [
+                    'dessia_common.forms.EmbeddedSubobject',
+                    'dessia_common.forms.EnhancedEmbeddedSubobject'
+                ],
+                'standalone_in_db': False
+            }
         },
         'subclass_arg': {
             'type': 'object', 'order': 10,
@@ -120,9 +137,22 @@ jsonschema = {
             'python_typing': 'InstanceOf[dessia_common.forms.StandaloneSubobject]',
             'title': 'Subclass Arg', 'editable': True, 'standalone_in_db': True
         },
+        'array_arg': {
+            'title': 'Array Arg', 'editable': True, 'order': 11,
+            'python_typing': 'List[List[__builtins__.float]]',
+            'type': 'array',
+            'items': {
+                'type': 'array', 'order': 0,
+                'python_typing': 'List[__builtins__.float]',
+                'items': {
+                    'title': 'Array Arg', 'editable': True, 'order': 0,
+                    'python_typing': 'builtins.float', 'type': 'number'
+                }
+            }
+        },
         'name': {
             'type': 'string', 'title': 'Name', 'editable': True,
-            'order': 11, 'default_value': 'Standalone Object Demo',
+            'order': 12, 'default_value': 'Standalone Object Demo',
             'python_typing': 'builtins.str'
         }
     },
