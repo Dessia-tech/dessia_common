@@ -106,6 +106,16 @@ def object_breakdown(obj, path=''):
 
 
 
+def is_hashable(v):
+    """Determine whether `v` can be hashed."""
+    try:
+        hash(v)
+    except TypeError:
+        return False
+    return True
+
+
+
 class XLSXWriter:
  
     max_column_width = 40
@@ -138,7 +148,7 @@ class XLSXWriter:
         self.main_sheet = self.workbook.active
         self.object = object_
         
-        self.paths = self.object_breakdown = object_breakdown(object_)
+        self.paths = object_breakdown(object_)
         
         self.classes_to_sheets = {}
         self.object_to_sheet_row = {}
@@ -182,7 +192,7 @@ class XLSXWriter:
                     str_v = 'List of {} items'.format(len(v))
                 elif isinstance(v, float):
                     str_v = str(round(v, 6))
-                elif v in self.object_to_sheet_row:
+                elif is_hashable(v) and v in self.object_to_sheet_row:
                     ref_sheet, ref_row_number, ref_path = self.object_to_sheet_row[v]
                     str_v = ref_path
                     cell_link = '#{}!A{}'.format(ref_sheet.title, ref_row_number)
