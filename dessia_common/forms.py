@@ -152,10 +152,29 @@ class EmbeddedSubobject(DessiaObject):
         return [cls.generate(i) for i in range(ceil(seed/3))]
 
 
+class EnhancedEmbeddedSubobject(EmbeddedSubobject):
+    def __init__(self, embedded_list: List[int] = None,
+                 embedded_array: List[List[float]] = None,
+                 name: str = 'Enhanced Embedded Subobject'):
+        self.embedded_array = embedded_array
+
+        EmbeddedSubobject.__init__(self, embedded_list=embedded_list,
+                                   name=name)
+
+    @classmethod
+    def generate(cls, seed: int) -> 'EnhancedEmbeddedSubobject':
+        embedded_list = [seed]
+        embedded_array = [[seed, seed*10, seed*10]]*seed
+        name = 'Embedded Subobject' + str(seed)
+        return cls(embedded_list=embedded_list, embedded_array=embedded_array,
+                   name=name)
+
+
 DEF_ES = EmbeddedSubobject.generate(10)
+DEF_EES = EnhancedEmbeddedSubobject.generate(3)
 
 
-UnionArg = Union[StandaloneSubobject, EnhancedStandaloneSubobject]
+UnionArg = Union[EmbeddedSubobject, EnhancedEmbeddedSubobject]
 
 
 class StandaloneObject(DessiaObject):
@@ -175,7 +194,7 @@ class StandaloneObject(DessiaObject):
     _generic_eq = True
     _allowed_methods = ['add_standalone_object',
                         'add_embedded_object', 'add_float']
-    _non_editable_attributes = ['intarg', 'strarg', 'union_arg']
+    _non_editable_attributes = ['intarg', 'strarg']
 
     def __init__(self, standalone_subobject: StandaloneSubobject,
                  embedded_subobject: EmbeddedSubobject,
@@ -184,8 +203,9 @@ class StandaloneObject(DessiaObject):
                  object_list: List[StandaloneSubobject],
                  subobject_list: List[EmbeddedSubobject],
                  builtin_list: List[int],
-                 union_arg: UnionArg,
+                 union_arg: List[UnionArg],
                  subclass_arg: InstanceOf[StandaloneSubobject],
+                 array_arg: List[List[float]],
                  name: str = 'Standalone Object Demo'):
         self.union_arg = union_arg
         self.builtin_list = builtin_list
@@ -198,6 +218,7 @@ class StandaloneObject(DessiaObject):
         self.standalone_subobject = standalone_subobject
         self.embedded_subobject = embedded_subobject
         self.subclass_arg = subclass_arg
+        self.array_arg = array_arg
 
         DessiaObject.__init__(self, name=name)
 
@@ -213,7 +234,9 @@ class StandaloneObject(DessiaObject):
         object_list = StandaloneSubobject.generate_many(seed)
         subobject_list = EmbeddedSubobject.generate_many(seed)
         builtin_list = [seed]*seed
-        union_arg = EnhancedStandaloneSubobject.generate(seed)
+        array_arg = [builtin_list]*3
+        union_arg = [EnhancedEmbeddedSubobject.generate(seed),
+                     EmbeddedSubobject.generate(seed)]
         if is_even:
             subclass_arg = StandaloneSubobject.generate(-seed)
         else:
@@ -223,7 +246,8 @@ class StandaloneObject(DessiaObject):
                    dynamic_dict=dynamic_dict, tuple_arg=tuple_arg,
                    intarg=intarg, strarg=strarg, object_list=object_list,
                    subobject_list=subobject_list, builtin_list=builtin_list,
-                   union_arg=union_arg, subclass_arg=subclass_arg)
+                   union_arg=union_arg, subclass_arg=subclass_arg,
+                   array_arg=array_arg)
 
     def add_standalone_object(self, object_: StandaloneSubobject):
         """
@@ -422,8 +446,9 @@ class StandaloneObjectWithDefaultValues(StandaloneObject):
                  object_list: List[StandaloneSubobject] = None,
                  subobject_list: List[EmbeddedSubobject] = None,
                  builtin_list: List[int] = None,
-                 union_arg: UnionArg = DEF_ESS,
+                 union_arg: List[UnionArg] = None,
                  subclass_arg: InstanceOf[StandaloneSubobject] = DEF_ISS,
+                 array_arg: List[List[float]] = None,
                  name: str = 'Standalone Object Demo'):
         if dynamic_dict is None:
             dynamic_dict = {}
@@ -433,13 +458,18 @@ class StandaloneObjectWithDefaultValues(StandaloneObject):
             subobject_list = [DEF_ES]
         if builtin_list is None:
             builtin_list = [1, 2, 3, 4, 5]
+        if union_arg is None:
+            union_arg = [DEF_EES, DEF_ES]
+        if array_arg is None:
+            array_arg = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+
         StandaloneObject.__init__(
             self, standalone_subobject=standalone_subobject,
             embedded_subobject=embedded_subobject, dynamic_dict=dynamic_dict,
             tuple_arg=tuple_arg, intarg=intarg, strarg=strarg,
             object_list=object_list, subobject_list=subobject_list,
             builtin_list=builtin_list, union_arg=union_arg,
-            subclass_arg=subclass_arg, name=name
+            subclass_arg=subclass_arg, array_arg=array_arg, name=name
         )
 
 
