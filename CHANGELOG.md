@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased => [0.4.6]
 ### Added
+- Block Display: propagation of kwargs to model _displays
+- MethodTye
 - Fields in workflows jsonschema that were missing
 - Names can now be set at Workflows run and run_again
 - Dev Objects implement markdown display
