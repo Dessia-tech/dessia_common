@@ -167,7 +167,12 @@ class XLSXWriter:
         cell.fill = self.pattern_color2
         cell.border = self.thin_border  
         cell.font = self.white_font
-        i = 2
+        
+        cell = sheet.cell(row=row_number, column=2, value='name')
+        cell.fill = self.pattern_color2
+        cell.border = self.thin_border
+        cell.font = self.white_font
+        i = 3
         
         for (k, _) in sorted(obj_of_class.__dict__.items()):
             if (not k.startswith('_')) and k != 'name':
@@ -182,7 +187,9 @@ class XLSXWriter:
     def write_object_to_row(self, obj, sheet, row_number, path=''):
         cell = sheet.cell(row=row_number, column=1, value=path)
         cell.border = self.thin_border
-        i = 2
+        cell = sheet.cell(row=row_number, column=2, value=obj.name)
+        cell.border = self.thin_border
+        i = 3
         
         for (k, v) in sorted(obj.__dict__.items()):
             if (not k.startswith('_')) and k != 'name':
