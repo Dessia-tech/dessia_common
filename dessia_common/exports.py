@@ -177,7 +177,8 @@ class XLSXWriter:
                 cell.fill = self.pattern_color2
                 cell.font = self.white_font
                 i += 1
-
+                
+                
     def write_object_to_row(self, obj, sheet, row_number, path=''):
         cell = sheet.cell(row=row_number, column=1, value=path)
         cell.border = self.thin_border
@@ -191,7 +192,7 @@ class XLSXWriter:
                 elif isinstance(v, list):
                     str_v = 'List of {} items'.format(len(v))
                 elif isinstance(v, float):
-                    str_v = str(round(v, 6))
+                    str_v = round(v, 6)
                 elif is_hashable(v) and v in self.object_to_sheet_row:
                     ref_sheet, ref_row_number, ref_path = self.object_to_sheet_row[v]
                     str_v = ref_path
@@ -245,10 +246,10 @@ class XLSXWriter:
         sheet['C2'].font = self.white_font
 
 
-        sheet['A4'] = 'Attribute'
-        sheet['A5'] = 'Value'
+        sheet['A3'] = 'Attribute'
+        sheet['A4'] = 'Value'
+        sheet['A3'].border = self.thin_border
         sheet['A4'].border = self.thin_border
-        sheet['A5'].border = self.thin_border
 
     def write(self):     
         # name_column_width = 0
@@ -259,11 +260,14 @@ class XLSXWriter:
 
         for class_name, obj_paths in self.paths.items():
             sheet = self.classes_to_sheets[class_name]
+            
             for obj, path in obj_paths.items():
                 _, row_number, path = self.object_to_sheet_row[obj]
                 self.write_object_to_row(obj, sheet, row_number, path)
             self.write_class_header_to_row(obj, sheet, 1)
             
+            sheet.auto_filter.ref = "A1:{}{}".format(openpyxl.utils.cell.get_column_letter(sheet.max_column),
+                                                     len(obj_paths)+1)
             self.autosize_sheet_columns(sheet, 5, 30)
                 
                 
