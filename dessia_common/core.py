@@ -485,10 +485,11 @@ class DessiaObject:
                 arguments[arg] = deserialized_value
         return arguments
 
-    def save_to_file(self, filepath, indent=0):
+    def save_to_file(self, filepath, indent=2):
         if isinstance(filepath, str):
             if not filepath.endswith('.json'):
                 filepath += '.json'
+                print('Changing name to {}'.format(filepath))
             file = open(filepath, 'w')
         else:
             file = filepath
