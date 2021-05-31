@@ -43,7 +43,7 @@ def object_breakdown(obj, path=''):
     if isinstance(obj, npy.ndarray):
         return bd_dict
 
-    if isinstance(obj, list) or isinstance(obj, tuple):
+    if isinstance(obj, list) or isinstance(obj, tuple) or isinstance(obj, set):
         if path:
             path += '.'
         
@@ -198,6 +198,8 @@ class XLSXWriter:
                     str_v = 'Dict of {} items'.format(len(v))
                 elif isinstance(v, list):
                     str_v = 'List of {} items'.format(len(v))
+                elif isinstance(v, set):
+                    str_v = 'Set of {} items'.format(len(v))
                 elif isinstance(v, float):
                     str_v = round(v, 6)
                 elif is_hashable(v) and v in self.object_to_sheet_row:
