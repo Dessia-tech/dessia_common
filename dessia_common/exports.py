@@ -60,15 +60,16 @@ def object_breakdown(obj, path=''):
     else:
         # Put object and break it down
         if path: # avoid to get root object
-            if obj.__class__.__name__ in bd_dict:  
-                if obj in bd_dict[obj.__class__.__name__]:
-                    if len(path.split('.')) < len(bd_dict[obj.__class__.__name__][obj].split('.')):
+            if hasattr(obj, '__dict__'):
+                if obj.__class__.__name__ in bd_dict:  
+                    if obj in bd_dict[obj.__class__.__name__]:
+                        if len(path.split('.')) < len(bd_dict[obj.__class__.__name__][obj].split('.')):
+                            bd_dict[obj.__class__.__name__][obj] = path
+                    else:
                         bd_dict[obj.__class__.__name__][obj] = path
                 else:
+                    bd_dict[obj.__class__.__name__] = collections.OrderedDict()
                     bd_dict[obj.__class__.__name__][obj] = path
-            else:
-                bd_dict[obj.__class__.__name__] = collections.OrderedDict()
-                bd_dict[obj.__class__.__name__][obj] = path
             
         if path:
             path += '.'
@@ -114,7 +115,15 @@ def is_hashable(v):
         return False
     return True
 
+def is_number(v):
+    return isinstance(v, int) or isinstance(v, float)
 
+
+def is_builtins_list(l):
+    for e in l:
+        if not (is_number(e) or isinstance(e, str)):
+            return False
+    return True
 
 class XLSXWriter:
  
@@ -187,17 +196,23 @@ class XLSXWriter:
     def write_object_to_row(self, obj, sheet, row_number, path=''):
         cell = sheet.cell(row=row_number, column=1, value=path)
         cell.border = self.thin_border
-        cell = sheet.cell(row=row_number, column=2, value=obj.name)
+        if hasattr(obj, 'name'):
+            cell = sheet.cell(row=row_number, column=2, value=obj.name)
+        else:
+            cell = sheet.cell(row=row_number, column=2, value='No name in model')
         cell.border = self.thin_border
         i = 3
-        
         for (k, v) in sorted(obj.__dict__.items()):
             if (not k.startswith('_')) and k != 'name':
                 cell_link = None
                 if isinstance(v, dict):
                     str_v = 'Dict of {} items'.format(len(v))
                 elif isinstance(v, list):
-                    str_v = 'List of {} items'.format(len(v))
+                    if is_builtins_list(v):
+                        str_v = str(v)
+                    else:                           
+                        str_v = 'List of {} items'.format(len(v))
+                            
                 elif isinstance(v, set):
                     str_v = 'Set of {} items'.format(len(v))
                 elif isinstance(v, float):
