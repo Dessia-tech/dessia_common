@@ -658,12 +658,19 @@ class DessiaObject:
         filepath can be a str or an io.StringIO
         """
         return self.volmdlr_volume_model().to_step(filepath=filepath)
+    
+    def to_stl(self, filepath):
+        """
+        filepath can be a str or an io.StringIO
+        """
+        return self.volmdlr_volume_model().to_stl(filepath=filepath)
 
     def _export_formats(self):
         formats = [('json', 'save_to_file', True),
                    ('xlsx', 'to_xlsx', False)]
         if hasattr(self, 'volmdlr_primitives'):
             formats.append(('step', 'to_step', True))
+            formats.append(('stl', 'to_stl', False))
         return formats
 
 
@@ -995,7 +1002,7 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False):
     if class_ is None and 'object_class' in working_dict:
         class_ = get_python_class_from_class_name(working_dict['object_class'])
 
-    if class_ is not None and issubclass(class_, DessiaObject):
+    if class_ is not None and hasattr(class_, 'dict_to_object'):
         different_methods = (class_.dict_to_object.__func__
                              is not DessiaObject.dict_to_object.__func__)
         if different_methods and not force_generic:
