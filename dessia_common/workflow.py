@@ -321,11 +321,14 @@ class ClassMethod(Block):
 
         self.argument_names = [i.name for i in inputs]
 
-        annotations = get_type_hints(method)
-        type_ = type_from_annotation(annotations['return'],
-                                     method.__module__)
         output_name = 'method result of {}'.format(self.method_name)
-        outputs = [TypedVariable(type_=type_, name=output_name)]
+        annotations = get_type_hints(method)
+        if 'return' in annotations:
+            type_ = type_from_annotation(annotations['return'],
+                                         method.__module__)
+            outputs = [TypedVariable(type_=type_, name=output_name)]
+        else:
+            outputs = [Variable(name=output_name)]
         Block.__init__(self, inputs, outputs, name=name)
 
     def equivalent_hash(self):
