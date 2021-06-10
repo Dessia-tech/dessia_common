@@ -438,8 +438,8 @@ class ModelMethod(Block):
         class_ = get_python_class_from_class_name(classname)
         method_name = dict_['method_name']
         name = dict_['name']
-        method_ = MethodType(class_=class_, name=method_name)
-        return cls(method_=method_, name=name)
+        method_type = MethodType(class_=class_, name=method_name)
+        return cls(method_type=method_type, name=name)
 
     def evaluate(self, values):
         args = {arg_name: values[var]
