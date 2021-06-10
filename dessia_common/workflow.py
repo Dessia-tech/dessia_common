@@ -379,10 +379,11 @@ class ModelMethod(Block):
     :type name: str
     """
 
-    def __init__(self, method_: MethodType[Type], name: str = ''):
+    def __init__(self, method_type: MethodType[Type], name: str = ''):
     # def __init__(self, method_: Method[Subclass[DessiaObject]], name: str = ''):
-        self.model_class = method_.class_
-        self.method_name = method_.name
+        self.model_class = method_type.class_
+        self.method_name = method_type.name
+        self.method_type = method_type
         inputs = [TypedVariable(type_=self.model_class, name='model at input')]
         method = getattr(self.model_class, self.method_name)
 
