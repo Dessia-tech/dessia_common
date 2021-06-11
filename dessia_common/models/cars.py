@@ -37,11 +37,6 @@ catalog = Catalog(array=array, variables=variables,
                   choice_variables=choice_args, objectives=[],
                   pareto_settings=pareto_settings, name='Cars')
 
-# from dessia_api_client import Client
-# c = Client(api_url='https://api.platform-dev.dessia.tech')
-# r = c.create_object_from_python_object(catalog)
-
-
 from plot_data import plot_canvas
 
 plot_canvas(plot_data_object=catalog.plot_data()[0], canvas_id='canvas')
