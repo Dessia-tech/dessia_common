@@ -152,23 +152,29 @@ class EmbeddedSubobject(DessiaObject):
         return [cls.generate(i) for i in range(ceil(seed/3))]
 
 
+class EnhancedEmbeddedSubobject(EmbeddedSubobject):
+    def __init__(self, embedded_list: List[int] = None,
+                 embedded_array: List[List[float]] = None,
+                 name: str = 'Enhanced Embedded Subobject'):
+        self.embedded_array = embedded_array
+
+        EmbeddedSubobject.__init__(self, embedded_list=embedded_list,
+                                   name=name)
+
+    @classmethod
+    def generate(cls, seed: int) -> 'EnhancedEmbeddedSubobject':
+        embedded_list = [seed]
+        embedded_array = [[seed, seed*10, seed*10]]*seed
+        name = 'Embedded Subobject' + str(seed)
+        return cls(embedded_list=embedded_list, embedded_array=embedded_array,
+                   name=name)
+
+
 DEF_ES = EmbeddedSubobject.generate(10)
+DEF_EES = EnhancedEmbeddedSubobject.generate(3)
 
 
-class StaticDict(DessiaObject):
-    def __init__(self, float_value: float, int_value: int,
-                 is_valid: bool, name: str = ''):
-        self.float_value = float_value
-        self.int_value = int_value
-        self.is_valid = is_valid
-        DessiaObject.__init__(self, name=name)
-
-
-DEF_SD = StaticDict(name="Default SD Name", float_value=1.3,
-                    int_value=0, is_valid=True)
-
-
-UnionArg = Union[StandaloneSubobject, EnhancedStandaloneSubobject]
+UnionArg = Union[EmbeddedSubobject, EnhancedEmbeddedSubobject]
 
 
 class StandaloneObject(DessiaObject):
@@ -181,8 +187,6 @@ class StandaloneObject(DessiaObject):
     :type embedded_subobject: EmbeddedSubobject
     :param dynamic_dict: A variable length dict
     :type dynamic_dict: Dict[str, bool]
-    :param static_dict: A 1-level structurewith only builtin values & str keys
-    :type static_dict: StaticDict
     :param tuple_arg: A heterogeneous sequence
     :type tuple_arg: tuple
     """
@@ -190,16 +194,18 @@ class StandaloneObject(DessiaObject):
     _generic_eq = True
     _allowed_methods = ['add_standalone_object',
                         'add_embedded_object', 'add_float']
+    _non_editable_attributes = ['intarg', 'strarg']
 
     def __init__(self, standalone_subobject: StandaloneSubobject,
                  embedded_subobject: EmbeddedSubobject,
-                 dynamic_dict: Dict[str, bool], static_dict: StaticDict,
-                 tuple_arg: Tuple[str, int], intarg: int, strarg: str,
+                 dynamic_dict: Dict[str, bool], tuple_arg: Tuple[str, int],
+                 intarg: int, strarg: str,
                  object_list: List[StandaloneSubobject],
                  subobject_list: List[EmbeddedSubobject],
                  builtin_list: List[int],
-                 union_arg: UnionArg,
+                 union_arg: List[UnionArg],
                  subclass_arg: InstanceOf[StandaloneSubobject],
+                 array_arg: List[List[float]],
                  name: str = 'Standalone Object Demo'):
         self.union_arg = union_arg
         self.builtin_list = builtin_list
@@ -208,41 +214,40 @@ class StandaloneObject(DessiaObject):
         self.tuple_arg = tuple_arg
         self.strarg = strarg
         self.intarg = intarg
-        self.static_dict = static_dict
         self.dynamic_dict = dynamic_dict
         self.standalone_subobject = standalone_subobject
         self.embedded_subobject = embedded_subobject
         self.subclass_arg = subclass_arg
+        self.array_arg = array_arg
 
         DessiaObject.__init__(self, name=name)
 
     @classmethod
-    def generate(cls, seed: int):
+    def generate(cls, seed: int) -> 'StandaloneObject':
         is_even = not bool(seed % 2)
         standalone_subobject = StandaloneSubobject.generate(seed)
         embedded_subobject = EmbeddedSubobject.generate(seed)
         dynamic_dict = {'n'+str(i): bool(seed % 2) for i in range(seed)}
-        static_dict = StaticDict(name='Object'+str(seed),
-                                 float_value=seed * 1.3,
-                                 int_value=seed, is_valid=is_even)
         tuple_arg = ('value', seed * 3)
         intarg = seed
         strarg = str(seed) * floor(seed/3)
         object_list = StandaloneSubobject.generate_many(seed)
         subobject_list = EmbeddedSubobject.generate_many(seed)
         builtin_list = [seed]*seed
-        union_arg = EnhancedStandaloneSubobject.generate(seed)
+        array_arg = [builtin_list]*3
+        union_arg = [EnhancedEmbeddedSubobject.generate(seed),
+                     EmbeddedSubobject.generate(seed)]
         if is_even:
             subclass_arg = StandaloneSubobject.generate(-seed)
         else:
             subclass_arg = InheritingStandaloneSubobject.generate(seed)
         return cls(standalone_subobject=standalone_subobject,
                    embedded_subobject=embedded_subobject,
-                   dynamic_dict=dynamic_dict, static_dict=static_dict,
-                   tuple_arg=tuple_arg, intarg=intarg, strarg=strarg,
-                   object_list=object_list, subobject_list=subobject_list,
-                   builtin_list=builtin_list, union_arg=union_arg,
-                   subclass_arg=subclass_arg)
+                   dynamic_dict=dynamic_dict, tuple_arg=tuple_arg,
+                   intarg=intarg, strarg=strarg, object_list=object_list,
+                   subobject_list=subobject_list, builtin_list=builtin_list,
+                   union_arg=union_arg, subclass_arg=subclass_arg,
+                   array_arg=array_arg)
 
     def add_standalone_object(self, object_: StandaloneSubobject):
         """
@@ -353,6 +358,81 @@ class StandaloneObject(DessiaObject):
 
         return computation
 
+    def to_markdown(self):
+        contents = """
+        # Quem Stygios dumque
+
+        ## Recursus erat aere decus Lemnicolae
+
+        Lorem markdownum laetum senior quod Libys utroque
+        *mirantibus teneat aevo*, aquis.
+        Procumbit eandem ensis, erigor intercepta, quae habitabat nostro
+        *et hoc que* enim: inpulit.
+        Mecum ferat **fecissem** vale per myricae suis
+        quas turba potentior mentita.
+        Annis nunc, picae erat quis minatur dare Diana redimitus
+        [Clymene venisses sinat](http://est.net/umbram.html)
+        protinus pulchra, sucos! Tanta haec varios tuaque,
+        nisi Erigonen si aquae Hippomene inguine murmur.
+        
+        1. Poma enim dextra icta capillis extinctum foedera
+        2. Mediis requirit exercita ascendere fecisse sola
+        3. Sua externis tigride saevarum
+        4. Aves est pendebant sume latentis
+        
+        ## Suum videre quondam generis dolentem simul femineos
+        
+        Ille lacus progenitore Cycnum pressa, excidit silva
+        [crudus](http://www.domino.com/nequevox), boum ducem vocari,
+        ne monte tanto harenae.
+        Opus Aesone excipit adempto.
+        Inpius illa latratu atque sed praedam,
+        ille construit intravit concipit,
+        concha dedit, qua audit calathosque.
+        Dedit putrefacta cortex.
+        Tenet aut carmina quod proditione media; pro ense medicina
+        vita repetit adrectisque inops e sentiat.
+        
+        > Imagine caesaries superbos muneraque *ne terras* cunctis.
+        Diversae Hesioneque
+        > numinis regia at anima nascuntur Iovis.
+        Sua fama quoque capillos lugubris
+        > **egimus**, a ingenti [Ericthonio](http://raptos.org/lucem)
+        iubebat!
+        
+        ## Ponderis venit veteris mihi tofis
+        
+        Propensum discedunt, iacere dedisti; lene potest caelo,
+        felix flamma caecus decet excipit.
+        *Aurum occiderat*, retro cum, quorum *Diana timuere At*.
+        Ait Labros hasta mundi, **ut est** ruit nosse o gravet!
+        
+        ## Qui aether undis nulla
+        
+        Homines oppidaque nominibus devexo genitoris quoque,
+        praesensque rota Saturnia.
+        Auras cecinit fera quae mirantum imbris,
+        Gratia verba incesto, sed visa contigit
+        saepe adicit trepidant.
+        [Siqua radiis quod](http://www.naris-pectebant.org/comeset)
+        ad duabus alienisque, sponte; dum.
+        
+        Occidit Babylonia dubitare. Vultus cui: erat dea!
+        Iam ense forma est se, tibi pedem adfectat nec nostra.
+        Armenta socium nutrix [precatur](http://in-fraxinus.io/)
+        aderam, quam mentem Elin labor auctor
+        potentia prodidit inmitibus duo di?
+        Verum a, tuo quoque nec Mysum per posses;
+        vigor danda meruit: tecum audire responsa
+        [conplexae](http://quis.io/disrestat.html) et alios.
+        
+        Agros grata illo animo mei nova, in magis furens et
+        [modo](http://pondere.com/aquis) dimittere ubi neque es!
+        Sua qua ac ire una facit Alcmene coepere
+        arduus quae vestigia aliquis; meritorum Dorylas, scindunt.
+        """
+        return contents
+
 
 DEF_SO = StandaloneObject.generate(1)
 
@@ -361,14 +441,14 @@ class StandaloneObjectWithDefaultValues(StandaloneObject):
     def __init__(self, standalone_subobject: StandaloneSubobject = DEF_SS,
                  embedded_subobject: EmbeddedSubobject = DEF_ES,
                  dynamic_dict: Dict[str, bool] = None,
-                 static_dict: StaticDict = DEF_SD,
                  tuple_arg: Tuple[str, int] = ("Default Tuple", 0),
                  intarg: int = 1, strarg: str = "Default Strarg",
                  object_list: List[StandaloneSubobject] = None,
                  subobject_list: List[EmbeddedSubobject] = None,
                  builtin_list: List[int] = None,
-                 union_arg: UnionArg = DEF_ESS,
+                 union_arg: List[UnionArg] = None,
                  subclass_arg: InstanceOf[StandaloneSubobject] = DEF_ISS,
+                 array_arg: List[List[float]] = None,
                  name: str = 'Standalone Object Demo'):
         if dynamic_dict is None:
             dynamic_dict = {}
@@ -378,13 +458,18 @@ class StandaloneObjectWithDefaultValues(StandaloneObject):
             subobject_list = [DEF_ES]
         if builtin_list is None:
             builtin_list = [1, 2, 3, 4, 5]
+        if union_arg is None:
+            union_arg = [DEF_EES, DEF_ES]
+        if array_arg is None:
+            array_arg = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+
         StandaloneObject.__init__(
             self, standalone_subobject=standalone_subobject,
             embedded_subobject=embedded_subobject, dynamic_dict=dynamic_dict,
-            static_dict=static_dict, tuple_arg=tuple_arg, intarg=intarg,
-            strarg=strarg, object_list=object_list,
-            subobject_list=subobject_list, builtin_list=builtin_list,
-            union_arg=union_arg, subclass_arg=subclass_arg, name=name
+            tuple_arg=tuple_arg, intarg=intarg, strarg=strarg,
+            object_list=object_list, subobject_list=subobject_list,
+            builtin_list=builtin_list, union_arg=union_arg,
+            subclass_arg=subclass_arg, array_arg=array_arg, name=name
         )
 
 
@@ -392,6 +477,8 @@ DEF_SOWDV = StandaloneObjectWithDefaultValues()
 
 
 class Generator(DessiaObject):
+    _standalone_in_db = True
+
     def __init__(self, parameter: int, nb_solutions: int = 25, name: str = ''):
         self.parameter = parameter
         self.nb_solutions = nb_solutions
@@ -408,6 +495,8 @@ class Generator(DessiaObject):
 
 
 class Optimizer(DessiaObject):
+    _standalone_in_db = True
+
     def __init__(self, model_to_optimize: StandaloneObject, name: str = ''):
         self.model_to_optimize = model_to_optimize
 

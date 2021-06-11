@@ -6,6 +6,7 @@
 import builtins
 import sys
 import warnings
+import tempfile
 import math
 import random
 import copy
@@ -15,11 +16,8 @@ from copy import deepcopy
 import inspect
 import json
 import bson
-from openpyxl.writer.excel import save_virtual_workbook
-from openpyxl.styles.borders import Border, Side
-from openpyxl.styles import Alignment, PatternFill
-from openpyxl import Workbook
-import openpyxl.utils
+from dessia_common.exports import XLSXWriter
+
 
 from typing import List, Dict, Type, Tuple, Union, Any, \
     get_type_hints, get_origin, get_args
@@ -29,7 +27,7 @@ except ImportError:
     from mypy_extensions import TypedDict  # <=3.7
 import traceback as tb
 from dessia_common.typings import Measure, JsonSerializable,\
-    Subclass, InstanceOf
+    Subclass, InstanceOf, MethodType
 
 from importlib import import_module
 
@@ -487,10 +485,11 @@ class DessiaObject:
                 arguments[arg] = deserialized_value
         return arguments
 
-    def save_to_file(self, filepath, indent=0):
+    def save_to_file(self, filepath, indent=2):
         if isinstance(filepath, str):
             if not filepath.endswith('.json'):
                 filepath += '.json'
+                print('Changing name to {}'.format(filepath))
             file = open(filepath, 'w')
         else:
             file = filepath
@@ -634,7 +633,8 @@ class DessiaObject:
                 msg = 'plot_data must return a sequence. Found {}'
                 raise ValueError(msg.format(type(plot_data)))
         if hasattr(self, 'to_markdown'):
-            display_ = DisplayObject(type_='markdown', data=self.to_markdown(),
+            markdown = self.to_markdown()
+            display_ = DisplayObject(type_='markdown', data=markdown,
                                      reference_path=reference_path)
             displays.append(display_.to_dict())
         return displays
@@ -647,94 +647,30 @@ class DessiaObject:
         bson.BSON.encode(self.to_dict())
         json.dumps(self._displays())
 
+    
     def to_xlsx(self, filepath):
-        max_column_width = 40
-        color_dessIA1 = "95B3D8"
-        color_dessIA2 = "78909C"
-        grey1 = "CCCCCC"
-        thin_border = Border(left=Side(style='thin'),
-                             right=Side(style='thin'),
-                             top=Side(style='thin'),
-                             bottom=Side(style='thin'))
+        writer = XLSXWriter(self)
+        writer.save_to_file(filepath)
 
-        pattern_color1 = PatternFill(
-            fill_type="solid",
-            start_color=color_dessIA1,
-            end_color=color_dessIA1)
-
-        pattern_color2 = PatternFill(
-            fill_type="solid",
-            start_color=color_dessIA2,
-            end_color=color_dessIA2)
-
-
-
-        wb = Workbook()
-        # grab the active worksheet
-        ws1 = wb.active
-        ws1.title = 'Object {}'.format(self.__class__.__name__)
-
-        ws1['A1'] = 'Module'
-        ws1['B1'] = 'Class'
-        ws1['C1'] = 'name'
-
-        ws1['A1'].border = thin_border
-        ws1['B1'].border = thin_border
-        ws1['C1'].border = thin_border
-        ws1['A1'].fill = pattern_color1
-        ws1['B1'].fill = pattern_color1
-        ws1['C1'].fill = pattern_color1
-
-
-        ws1['A2'] = self.__module__
-        ws1['B2'] = self.__class__.__name__
-        ws1['C2'] = self.name
-
-        ws1['A2'].border = thin_border
-        ws1['B2'].border = thin_border
-        ws1['C2'].border = thin_border
-        ws1['A2'].fill = pattern_color1
-        ws1['B2'].fill = pattern_color1
-        ws1['C2'].fill = pattern_color1
-
-
-
-        ws1['A4'] = 'Attribute'
-        ws1['A5'] = 'Value'
-        ws1['A4'].border = thin_border
-        ws1['A5'].border = thin_border
-
-
-        # name_column_width = 0
-        i = 1
-        for (k, v) in sorted(self.__dict__.items()):
-            if (not k.startswith('_')) and k != 'name':
-                cell1 = ws1.cell(row=4, column=i, value=k)
-                cell2 = ws1.cell(row=5, column=i, value=str(v))
-
-                cell1.border = thin_border
-                cell1.fill = pattern_color2
-                cell2.border = thin_border
-
-                i += 1
-
-                column_width = min((len(k) + 1.5), max_column_width)
-                column_name = openpyxl.utils.cell.get_column_letter(i)
-                ws1.column_dimensions[column_name].width = column_width
-
-        wb.save("{}.xlsx".format(filepath))
 
     def to_step(self, filepath):
         """
         filepath can be a str or an io.StringIO
         """
         return self.volmdlr_volume_model().to_step(filepath=filepath)
+    
+    def to_stl(self, filepath):
+        """
+        filepath can be a str or an io.StringIO
+        """
+        return self.volmdlr_volume_model().to_stl(filepath=filepath)
 
     def _export_formats(self):
-        formats = [('json', 'save_to_file'),
-                   ('xlsx', 'to_xlsx')]
+        formats = [('json', 'save_to_file', True),
+                   ('xlsx', 'to_xlsx', False)]
         if hasattr(self, 'volmdlr_primitives'):
-            formats.append(('step', 'to_step'))
+            formats.append(('step', 'to_step', True))
+            formats.append(('stl', 'to_stl', False))
         return formats
 
 
@@ -748,6 +684,8 @@ class DisplayObject(DessiaObject):
     def __init__(self, type_: str,
                  data: Union[JsonSerializable, DessiaObject],
                  reference_path: str = '', name: str = ''):
+        if type_ == 'markdown':
+            data = inspect.cleandoc(data)
         self.type_ = type_
         self.data = data
 
@@ -804,10 +742,14 @@ class ParameterSet(DessiaObject):
         return means
 
 
-class Filter(TypedDict):
-    attribute: str
-    operator: str
-    bound: float
+class Filter(DessiaObject):
+    def __init__(self, attribute: str, operator: str,
+                 bound: float, name: str = ''):
+        self.attribute = attribute
+        self.operator = operator
+        self.bound = bound
+
+        DessiaObject.__init__(self, name=name)
 
 
 class Evolution(DessiaObject):
@@ -1060,7 +1002,7 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False):
     if class_ is None and 'object_class' in working_dict:
         class_ = get_python_class_from_class_name(working_dict['object_class'])
 
-    if class_ is not None and issubclass(class_, DessiaObject):
+    if class_ is not None and hasattr(class_, 'dict_to_object'):
         different_methods = (class_.dict_to_object.__func__
                              is not DessiaObject.dict_to_object.__func__)
         if different_methods and not force_generic:
@@ -1237,6 +1179,10 @@ def serialize_typing(typing_):
             return 'Dict[{}, {}]'.format(key_type, value_type)
         elif origin is InstanceOf:
             return 'InstanceOf[{}]'.format(type_fullname(args[0]))
+        elif origin is Subclass:
+            return 'Subclass[{}]'.format(type_fullname(args[0]))
+        elif origin is MethodType:
+            return 'MethodType[{}]'.format(type_fullname(args[0]))
         else:
             msg = 'Serialization of typing {} is not implemented'
             raise NotImplementedError(msg.format(typing_))
@@ -1561,6 +1507,18 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
                 'type': 'object', 'instance_of': classname,
                 'standalone_in_db': class_._standalone_in_db
             })
+        elif origin is MethodType:
+            class_type = get_args(typing_)[0]
+            class_jss = jsonschema_from_annotation(
+                annotation=('class_', class_type), jsonschema_element={},
+                order=order, editable=editable, title='Class'
+            )
+            jsonschema_element[key].update({
+                'type': 'object', 'is_method': True,
+                'properties': {
+                    'class_': class_jss['class_'],
+                    'name': {'type': 'string'}}
+            })
         else:
             msg = "Jsonschema computation of typing {} is not implemented"
             raise NotImplementedError(msg.format(typing_))
@@ -1720,10 +1678,17 @@ def inspect_arguments(method, merge=False):
 
 
 def deserialize_argument(type_, argument):
+    if argument is None:
+        return None
+
     if is_typing(type_):
         origin = get_origin(type_)
         args = get_args(type_)
         if origin is Union:
+            # Check for Union false Positive (Default value = None)
+            if len(args) == 2 and type(None) in args:
+                return deserialize_argument(type_=args[0], argument=argument)
+
             # Type union
             classes = list(args)
             instantiated = False
@@ -1758,6 +1723,12 @@ def deserialize_argument(type_, argument):
         elif origin is dict:
             # Dynamic dict
             deserialized_arg = argument
+        elif origin is InstanceOf:
+            classname = args[0]
+            object_class = full_classname(object_=classname,
+                                          compute_for='class')
+            class_ = get_python_class_from_class_name(object_class)
+            deserialized_arg = class_.dict_to_object(argument)
         else:
             msg = "Deserialization of typing {} is not implemented"
             raise NotImplementedError(msg.format(type_))
@@ -1779,6 +1750,7 @@ def deserialize_argument(type_, argument):
             deserialized_arg = type_.dict_to_object(argument)
         else:
             # Static Dict
+            # TODO We shouldn't normally end up here anymore. Check this
             deserialized_arg = argument
     return deserialized_arg
 

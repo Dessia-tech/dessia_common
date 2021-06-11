@@ -8,22 +8,21 @@ import inspect
 import time
 import tempfile
 import json
-from importlib import import_module
 import webbrowser
 import networkx as nx
 from typing import List, Union, Type, Any, Dict, Tuple, get_type_hints
 from copy import deepcopy
 from dessia_common.templates import workflow_template
 import itertools
-from dessia_common import DessiaObject, DisplayObject, Filter, is_sequence,\
-    list_hash, serialize_typing, serialize, get_python_class_from_class_name,\
-    deserialize, type_from_annotation, enhanced_deep_attr, is_bounded,\
-    deprecation_warning, JSONSCHEMA_HEADER, jsonschema_from_annotation,\
-    deserialize_argument, set_default_value, prettyname, dict_to_object,\
-    serialize_dict, UntypedArgumentError, recursive_type,\
-    recursive_instantiation, full_classname
-from dessia_common.vectored_objects import ParetoSettings, from_csv
-from dessia_common.typings import JsonSerializable
+from dessia_common import DessiaObject, DisplayObject, Filter, \
+    is_sequence, list_hash, serialize_typing, serialize, is_bounded, \
+    get_python_class_from_class_name, deserialize, type_from_annotation,\
+    enhanced_deep_attr, deprecation_warning, JSONSCHEMA_HEADER,\
+    jsonschema_from_annotation, deserialize_argument, set_default_value,\
+    prettyname, dict_to_object, serialize_dict, UntypedArgumentError,\
+    recursive_type, recursive_instantiation, full_classname
+from dessia_common.vectored_objects import from_csv
+from dessia_common.typings import JsonSerializable, Subclass, MethodType
 import warnings
 
 # import plot_data
@@ -69,7 +68,7 @@ class TypedVariable(Variable):
 
     @classmethod
     def dict_to_object(cls, dict_):
-        type_ = get_python_class_from_class_name(dict_['type'])
+        type_ = get_python_class_from_class_name(dict_['type_'])
         memorize = dict_['memorize']
         return cls(type_=type_, memorize=memorize, name=dict_['name'])
 
@@ -171,15 +170,13 @@ class Block(DessiaObject):
 
 
 class Display(Block):
-    # _jsonschema = {}
     _displayable_input = 0
+    _non_editable_attributes = ['inputs']
 
-    def __init__(self, inputs: List[VariableTypes] = None,
-                 order: int = 0, name: str = ''):
+    def __init__(self, inputs: List[VariableTypes] = None, order: int = 0, name: str = ''):
         self.order = order
         if inputs is None:
-            inputs = [TypedVariable(type_=DessiaObject,
-                                    name='Model to Display', memorize=True)]
+            inputs = [Variable(name='Model to Display', memorize=True)]
 
         Block.__init__(self, inputs=inputs, outputs=[], name=name)
 
@@ -193,11 +190,11 @@ class Display(Block):
 
     def display_(self, local_values: Dict[VariableTypes, Any], **kwargs):
         object_ = local_values[self.inputs[self._displayable_input]]
-        displays = object_._displays()
+        displays = object_._displays(**kwargs)
         return displays
 
     def to_dict(self):
-        dict_ = DessiaObject.base_dict(self)
+        dict_ = Block.to_dict(self)
         dict_['order'] = self.order
         return dict_
 
@@ -315,8 +312,7 @@ class InstanciateModel(InstantiateModel):
 
 
 class ClassMethod(Block):
-    def __init__(self, class_: Type,
-                 method_name: str, name: str = ''):
+    def __init__(self, class_: Type, method_name: str, name: str = ''):
         self.class_ = class_
         self.method_name = method_name
         inputs = []
@@ -325,11 +321,14 @@ class ClassMethod(Block):
 
         self.argument_names = [i.name for i in inputs]
 
-        annotations = get_type_hints(method)
-        type_ = type_from_annotation(annotations['return'],
-                                     method.__module__)
         output_name = 'method result of {}'.format(self.method_name)
-        outputs = [TypedVariable(type_=type_, name=output_name)]
+        annotations = get_type_hints(method)
+        if 'return' in annotations:
+            type_ = type_from_annotation(annotations['return'],
+                                         method.__module__)
+            outputs = [TypedVariable(type_=type_, name=output_name)]
+        else:
+            outputs = [Variable(name=output_name)]
         Block.__init__(self, inputs, outputs, name=name)
 
     def equivalent_hash(self):
@@ -373,17 +372,19 @@ class ClassMethod(Block):
 class ModelMethod(Block):
     """
     :param model_class: The class owning the method.
-    :type model_class: DessiaObject
+    :type model_class: Subclass[DessiaObject]
     :param method_name: The name of the method.
     :type method_name: str
     :param name: The name of the block.
     :type name: str
     """
 
-    def __init__(self, model_class: Type, method_name: str, name: str = ''):
-        self.model_class = model_class
-        self.method_name = method_name
-        inputs = [TypedVariable(type_=model_class, name='model at input')]
+    def __init__(self, method_type: MethodType[Type], name: str = ''):
+    # def __init__(self, method_: Method[Subclass[DessiaObject]], name: str = ''):
+        self.model_class = method_type.class_
+        self.method_name = method_type.name
+        self.method_type = method_type
+        inputs = [TypedVariable(type_=self.model_class, name='model at input')]
         method = getattr(self.model_class, self.method_name)
 
         inputs = set_inputs_from_function(method, inputs)
@@ -401,7 +402,8 @@ class ModelMethod(Block):
             return_output = Variable(name=result_output_name)
 
         model_output_name = 'model at output {}'.format(self.method_name)
-        model_output = TypedVariable(type_=model_class, name=model_output_name)
+        model_output = TypedVariable(type_=self.model_class,
+                                     name=model_output_name)
         outputs = [return_output, model_output]
         if name == '':
             name = 'Model method: {}'.format(self.method_name)
@@ -436,7 +438,8 @@ class ModelMethod(Block):
         class_ = get_python_class_from_class_name(classname)
         method_name = dict_['method_name']
         name = dict_['name']
-        return cls(model_class=class_, method_name=method_name, name=name)
+        method_type = MethodType(class_=class_, name=method_name)
+        return cls(method_type=method_type, name=name)
 
     def evaluate(self, values):
         args = {arg_name: values[var]
@@ -557,21 +560,15 @@ class ForEach(Block):
         Block.__init__(self, inputs, [output_variable], name=name)
 
     def equivalent_hash(self):
-        return int(self.workflow_block.equivalent_hash() % 10e5)
+        wb_hash = int(self.workflow_block.equivalent_hash() % 10e5)
+        return wb_hash + self.iter_input_index
 
     def equivalent(self, other):
-        # TODO Check this method. Is indices_eq mandatory ?
         if not Block.equivalent(self, other):
             return False
-        workflow = self.workflow_block.workflow
-        other_workflow = other.workflow_block.workflow
-
-        indices = workflow.variable_indices(self.iter_input)
-        other_indices = other_workflow.variable_indices(other.iter_input)
-
-        same_workflow_block = self.workflow_block == other.workflow_block
-        same_indices = indices == other_indices
-        return same_workflow_block and same_indices
+        input_eq = self.iter_input_index == other.iter_input_index
+        wb_eq = self.workflow_block.equivalent(other.workflow_block)
+        return wb_eq and input_eq
 
     def to_dict(self):
         dict_ = Block.to_dict(self)
@@ -664,7 +661,6 @@ class Product(Block):
     def equivalent(self, other):
         if not Block.equivalent(self, other):
             return False
-
         return self.number_list == other.number_list
 
     def to_dict(self):
@@ -753,12 +749,8 @@ class MultiPlot(Display):
 
     def __init__(self, attributes: List[str], order: int = 0, name: str = ''):
         self.attributes = attributes
-        pareto_input = TypedVariableWithDefaultValue(type_=ParetoSettings,
-                                                     default_value=None,
-                                                     memorize=True,
-                                                     name='Pareto settings')
-        inputs = [Variable(memorize=True, name='input_list'), pareto_input]
-        Display.__init__(self, inputs=inputs, order=order, name=name)
+        Display.__init__(self, order=order, name=name)
+        self.inputs[0].name = 'Input List'
 
     def equivalent(self, other):
         if not Block.equivalent(self, other):
@@ -966,11 +958,13 @@ class Pipe(DessiaObject):
         "$schema": "http://json-schema.org/draft-07/schema#",
         "type": "object",
         "title": "Block",
+        "python_typing": 'dessia_common.workflow.Pipe',
+        "standalone_in_db": False,
         "required": ["input_variable", "output_variable"],
         "properties": {
             "input_variable": {
-                "type": "object",
-                "editable": True,
+                "type": "object", "editable": True, "order": 0,
+                "python_typing": "List[dessia_common.workflow.VariableTypes]",
                 "classes": [
                     "dessia_common.workflow.Variable",
                     "dessia_common.workflow.TypedVariable",
@@ -979,14 +973,19 @@ class Pipe(DessiaObject):
                 ]
             },
             "output_variable": {
-                "type": "object",
-                "editable": True,
+                "type": "object", "editable": True, "order": 1,
+                "python_typing": "List[dessia_common.workflow.VariableTypes]",
                 "classes": [
                     "dessia_common.workflow.Variable",
                     "dessia_common.workflow.TypedVariable",
                     "dessia_common.workflow.VariableWithDefaultValue",
                     "dessia_common.workflow.TypedVariableWithDefaultValue"
                 ],
+            },
+            "name": {
+                'type': 'string', 'title': 'Name', 'editable': True,
+                'order': 2, 'default_value': '',
+                'python_typing': 'builtins.str'
             }
         }
     }
@@ -1021,6 +1020,7 @@ class Workflow(Block):
     """
     _standalone_in_db = True
     _allowed_methods = ['run']
+    _eq_is_data_eq = True
 
     _jsonschema = {
         "definitions": {},
@@ -1028,11 +1028,12 @@ class Workflow(Block):
         "type": "object",
         "title": "Workflow",
         "required": ["blocks", "pipes", "outputs"],
+        "python_typing": 'dessia_common.workflow.Pipe',
+        "standalone_in_db": True,
         "properties": {
             "blocks": {
-                "type": "array",
-                "order": 0,
-                "editable": True,
+                "type": "array", "order": 0, "editable": True,
+                "python_typing": "SubclassOf[dessia_common.workflow.Block]",
                 "items": {
                     "type": "object",
                     "classes": ["dessia_common.workflow.InstanciateModel",
@@ -1055,19 +1056,27 @@ class Workflow(Block):
                 "type": "array",
                 "order": 1,
                 "editable": True,
+                "python_typing": "List[dessia_common.workflow.Pipe]",
                 "items": {
                     'type': 'objects',
                     'classes': ["dessia_common.workflow.Pipe"],
+                    "python_type": "dessia_common.workflow.Pipe",
                     "editable": True
                 }
             },
             "outputs": {
-                "type": "array",
-                "order": 2,
+                "type": "array", "order": 2,
+                "python_typing": "List[dessia_common.workflow.VariableTypes]",
                 'items': {
                     'type': 'array',
-                    'items': {'type': 'number'}
+                    'items': {'type': 'number'},
+                    'python_typing': "dessia_common.workflow.VariableTypes"
                 }
+            },
+            "name": {
+                'type': 'string', 'title': 'Name', 'editable': True,
+                'order': 3, 'default_value': '',
+                'python_typing': 'builtins.str'
             }
         }
     }
@@ -1143,7 +1152,6 @@ class Workflow(Block):
         for block1, block2 in zip(self.blocks, other_workflow.blocks):
             if not block1.equivalent(block2):
                 return False
-
         return True
 
     def __deepcopy__(self, memo=None):
@@ -1182,8 +1190,7 @@ class Workflow(Block):
         return copied_workflow
 
     def _displays(self) -> List[JsonSerializable]:
-        display_object = DisplayObject(type_='workflow',
-                                          data=self.to_dict())
+        display_object = DisplayObject(type_='workflow', data=self.to_dict())
         displays = [display_object.to_dict()]
         return displays
 
@@ -1206,11 +1213,10 @@ class Workflow(Block):
                     title = prettyname(input_.name)
 
             annotation_jsonschema = jsonschema_from_annotation(
-                annotation=annotation,
-                jsonschema_element=current_dict,
-                order=i,
-                title=title
+                annotation=annotation, title=title,
+                order=i+1, jsonschema_element=current_dict,
             )
+            # Order is i+1 because of name that is at 0
             current_dict.update(annotation_jsonschema[str(i)])
             if not input_.has_default_value:
                 required_inputs.append(str(i))
@@ -1221,6 +1227,10 @@ class Workflow(Block):
                 )
                 current_dict.update(dict_)
             properties_dict[str(i)] = current_dict[str(i)]
+        properties_dict[str(len(self.inputs) + 1)] = {
+            'type': 'string', 'title': 'WorkflowRun Name', 'editable': True,
+            'order': 0, 'default_value': '', 'python_typing': 'builtins.str'
+        }
         jsonschemas['run']['required'] = required_inputs
         jsonschemas['run']['method'] = True
         return jsonschemas
@@ -1315,7 +1325,12 @@ class Workflow(Block):
                     )
                     arguments_values[i] = deserialized_value
 
-            arguments = {'input_values': arguments_values}
+            name_index = len(self.inputs) + 1
+            if str(name_index) in dict_:
+                name = dict_[str(name_index)]
+            else:
+                name = None
+            arguments = {'input_values': arguments_values, 'name': name}
             return arguments
         msg = 'Method {} not in Workflow allowed methods'
         raise NotImplementedError(msg.format(method))
@@ -1769,34 +1784,30 @@ class WorkflowBlock(Block):
 class WorkflowRun(DessiaObject):
     _standalone_in_db = True
     _allowed_methods = ['run_again']
+    _eq_is_data_eq = True
     _jsonschema = {
         "definitions": {},
         "$schema": "http://json-schema.org/draft-07/schema#",
         "type": "object",
         "title": "WorkflowRun Base Schema",
         "required": [],
+        "python_typing": 'dessia_common.workflow.Pipe',
+        "standalone_in_db": True,
         "properties": {
             "workflow": {
-                "type": "object",
-                "title": "Workflow",
+                "type": "object", "title": "Workflow",
+                "python_typing": "dessia_common.workflow.Workflow",
                 "classes": ["dessia_common.workflow.Workflow"],
-                "order": 0,
-                "editable": False,
-                "description": "Workflow"
+                "order": 0, "editable": False, "description": "Workflow"
             },
             'output_value': {
-                "type": "object",
-                "classes": "Any",
-                "title": "Values",
+                "type": "object", "classes": "Any", "title": "Values",
                 "description": "Input and output values",
-                "editable": False,
-                "order": 1
+                "editable": False, "order": 1, "python_typing": "Any"
             },
             'input_values': {
-                'type': 'object',
-                'order': 2,
-                'editable': False,
-                'title': 'Input Values',
+                'type': 'object', 'order': 2, 'editable': False,
+                'title': 'Input Values', "python_typing": "Dict[str, Any]",
                 'patternProperties': {
                     '.*': {
                         'type': "object",
@@ -1805,10 +1816,8 @@ class WorkflowRun(DessiaObject):
                 }
             },
             'variables_values': {
-                'type': 'object',
-                'order': 3,
-                'editable': False,
-                'title': 'Variables Values',
+                'type': 'object', 'order': 3, 'editable': False,
+                'title': 'Variables Values', "python_typing": "Dict[str, Any]",
                 'patternProperties': {
                     '.*': {
                         'type': "object",
@@ -1817,25 +1826,24 @@ class WorkflowRun(DessiaObject):
                 }
             },
             'start_time': {
-                "type": "number",
-                "title": "Start Time",
-                "editable": False,
-                "description": "Start time of simulation",
-                "order": 4
+                "type": "number", "title": "Start Time",
+                "editable": False,  "python_typing": "builtins.int",
+                "description": "Start time of simulation", "order": 4
             },
             'end_time': {
-                "type": "number",
-                "title": "End Time",
-                "editable": False,
-                "description": "End time of simulation",
-                "order": 5
+                "type": "number", "title": "End Time",
+                "editable": False,  "python_typing": "builtins.int",
+                "description": "End time of simulation", "order": 5
             },
             'log': {
-                "type": "string",
-                "title": "Log",
-                "editable": False,
-                "description": "Log",
-                "order": 6
+                "type": "string", "title": "Log",
+                "editable": False, 'python_typing': 'builtins.str',
+                "description": "Log", "order": 6,
+            },
+            "name": {
+                'type': 'string', 'title': 'Name', 'editable': True,
+                'order': 7, 'default_value': '',
+                'python_typing': 'builtins.str'
             }
         }
     }
@@ -1856,7 +1864,7 @@ class WorkflowRun(DessiaObject):
     def _data_eq(self, other_workflow_run):
         # TODO : Should we add input_values and variables values in test ?
         if is_sequence(self.output_value):
-            if not is_sequence(other_workflow_run):
+            if not is_sequence(other_workflow_run.output_value):
                 return False
             equal_output = all([v == other_v for v, other_v
                                 in zip(self.output_value,
@@ -1955,11 +1963,11 @@ class WorkflowRun(DessiaObject):
         return DessiaObject.method_dict(self, method_name=method_name,
                                            method_jsonschema=method_jsonschema)
 
-    def run_again(self, input_values, progress_callback=None):
+    def run_again(self, input_values, progress_callback=None, name=None):
         workflow_run = self.workflow.run(input_values=input_values,
                                          verbose=False,
                                          progress_callback=progress_callback,
-                                         name=None)
+                                         name=name)
         return workflow_run
 
     @property
