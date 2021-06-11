@@ -491,7 +491,6 @@ class Catalog(DessiaObject):
                 elements[0].append(dict_element)
         
         #ScatterPlot
-        # to_disp_attribute_names = [name_column_0] + list_settings
         to_disp_attribute_names = self.choice_variables
         text_style = TextStyle(text_color=GREY,
                                font_size=10,
@@ -526,7 +525,6 @@ class Catalog(DessiaObject):
         
         plots.append(ParallelPlot(elements=all_points,
                                   to_disp_attribute_names=to_disp_attribute_names))
-                                  # to_disp_attribute_names=list_settings))
         
         return [MultiplePlots(plots=plots, elements=all_points, 
                              point_families=[point_family_0,point_family_1],

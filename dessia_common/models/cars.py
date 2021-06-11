@@ -40,7 +40,7 @@ catalog = Catalog(array=array, variables=variables,
 
 
 from dessia_api_client import Client
-c = Client(api_url='https://api.platform.dessia.tech')
+c = Client(api_url='https://api.platform-dev.dessia.tech')
 r = c.create_object_from_python_object(catalog)
 
 
