@@ -466,17 +466,14 @@ class Catalog(DessiaObject):
         list_name = self.get_values(name_column_0)
             
         list_settings = [name for name in self.pareto_settings.minimized_attributes]
-        list_value = []
-        for setting in self.choice_variables :
-            list_value.append(self.get_values(setting))
-        
+        list_value = [self.get_values(cv) for cv in self.choice_variables]
         if self.pareto_is_enabled :
             cost = self.build_costs(self.pareto_settings)
             p_frontier = pareto_frontier(cost)
             elements = [[],[]] #point_non_pareto, point_pareto
             for i in range(len(list_name)) :
                 dict_element = {name_column_0: list_name[i],}
-                for k, setting in enumerate(list_settings) :
+                for k, setting in enumerate(self.choice_variables) :
                     dict_element[setting] = list_value[k][i]
                     
                 if p_frontier[i] :
