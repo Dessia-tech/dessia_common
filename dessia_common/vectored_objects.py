@@ -467,7 +467,7 @@ class Catalog(DessiaObject):
             
         list_settings = [name for name in self.pareto_settings.minimized_attributes]
         list_value = []
-        for setting in list_settings :
+        for setting in self.choice_variables :
             list_value.append(self.get_values(setting))
         
         if self.pareto_is_enabled :
@@ -488,13 +488,14 @@ class Catalog(DessiaObject):
             elements = [[],[]]
             for i in range(len(list_name)) :
                 dict_element = {name_column_0: list_name[i],}
-                for k, setting in enumerate(list_settings) :
+                for k, setting in enumerate(self.choice_variables) :
                     dict_element[setting] = list_value[k][i]
                     
                 elements[0].append(dict_element)
         
         #ScatterPlot
-        to_disp_attribute_names = [name_column_0] + list_settings
+        # to_disp_attribute_names = [name_column_0] + list_settings
+        to_disp_attribute_names = self.choice_variables
         text_style = TextStyle(text_color=GREY,
                                font_size=10,
                                font_style='sans-serif')
@@ -527,7 +528,8 @@ class Catalog(DessiaObject):
         # ParallelPlot
         
         plots.append(ParallelPlot(elements=all_points,
-                                  to_disp_attribute_names=list_settings))
+                                  to_disp_attribute_names=to_disp_attribute_names))
+                                  # to_disp_attribute_names=list_settings))
         
         return [MultiplePlots(plots=plots, elements=all_points, 
                              point_families=[point_family_0,point_family_1],
