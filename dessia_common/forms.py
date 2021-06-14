@@ -46,11 +46,6 @@ from dessia_common import DessiaObject
 from dessia_common.typings import InstanceOf, Distance
 from dessia_common.vectored_objects import Catalog
 
-try:
-    from typing import TypedDict  # >=3.8
-except ImportError:
-    from mypy_extensions import TypedDict  # <=3.7
-
 from numpy import linspace
 from math import cos
 
