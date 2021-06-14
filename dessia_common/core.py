@@ -19,7 +19,7 @@ import bson
 from dessia_common.exports import XLSXWriter
 
 
-from typing import List, Dict, Type, Tuple, Union, Any, Iterator, \
+from typing import List, Dict, Type, Tuple, Union, Any, \
     get_type_hints, get_origin, get_args
 try:
     from typing import TypedDict  # >=3.8
