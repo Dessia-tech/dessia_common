@@ -1303,12 +1303,13 @@ def enhanced_get_attr(obj, attr):
     try:
         return getattr(obj, attr)
     except (TypeError, AttributeError):
+        track = tb.format_exc()
         try:
             return obj[attr]
         except TypeError:
             classname = obj.__class__.__name__
             msg = "'{}' object has no attribute '{}'.".format(classname, attr)
-            track = tb.format_exc()
+            track += tb.format_exc()
             raise DeepAttributeError(message=msg, traceback_=track)
 
 
