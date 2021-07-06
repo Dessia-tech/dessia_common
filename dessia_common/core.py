@@ -1852,6 +1852,7 @@ def default_dict(jsonschema):
     dict_ = {}
     datatype = datatype_from_jsonschema(jsonschema)
     if datatype in ['standalone_object', 'embedded_object', 'static_dict']:
+        dict_['object_class'] = jsonschema['classes'][0]
         for property_, jss in jsonschema['properties'].items():
             if 'default_value' in jss:
                 dict_[property_] = jss['default_value']

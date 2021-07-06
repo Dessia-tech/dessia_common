@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unrealeased [=> 0.4.7]
 ## Added
 - Support for Iterator typing
+- Object's default_dicts now implement objct_class
 
 ## 0.4.6
 
