@@ -3,10 +3,8 @@
 """
 
 """
-import builtins
 import sys
 import warnings
-import tempfile
 import math
 import random
 import copy
@@ -298,7 +296,6 @@ class DessiaObject:
                  and not k.startswith('_')}
         return dict_
 
-
     def to_dict(self) -> JsonSerializable:
         """
         Generic to_dict method
@@ -586,7 +583,6 @@ class DessiaObject:
         msg = 'Object of type {} does not implement volmdlr_primitives'
         raise NotImplementedError(msg.format(self.__class__.__name__))
 
-
     def plot(self, **kwargs):
         """
 
@@ -622,7 +618,8 @@ class DessiaObject:
         return axs
 
     def babylonjs(self, use_cdn=True, debug=False, **kwargs):
-        self.volmdlr_volume_model(**kwargs).babylonjs(use_cdn=use_cdn, debug=debug)
+        self.volmdlr_volume_model(**kwargs).babylonjs(use_cdn=use_cdn,
+                                                      debug=debug)
 
     def _displays(self, **kwargs) -> List[JsonSerializable]:
         if hasattr(self, '_display_angular'):
@@ -674,11 +671,9 @@ class DessiaObject:
             raise ValueError(hint)
         json.dumps(self._displays())
 
-    
     def to_xlsx(self, filepath):
         writer = XLSXWriter(self)
         writer.save_to_file(filepath)
-
 
     def to_step(self, filepath):
         """
@@ -1879,7 +1874,14 @@ def default_dict(jsonschema):
     dict_ = {}
     datatype = datatype_from_jsonschema(jsonschema)
     if datatype in ['standalone_object', 'embedded_object', 'static_dict']:
-        dict_['object_class'] = jsonschema['classes'][0]
+        if 'classes' in jsonschema:
+            dict_['object_class'] = jsonschema['classes'][0]
+        elif 'method' in jsonschema and jsonschema['method']:
+            # Method can have no classes in jsonschema
+            pass
+        else:
+            msg = "DessiaObject of type {} must have 'classes' in jsonschema"
+            raise ValueError(msg.format(jsonschema['python_typing']))
         for property_, jss in jsonschema['properties'].items():
             if 'default_value' in jss:
                 dict_[property_] = jss['default_value']
