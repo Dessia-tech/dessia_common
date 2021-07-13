@@ -198,3 +198,11 @@ assert deeplist == 3
 directattr = enhanced_deep_attr(obj=standalone_object, sequence=['strarg'])
 
 assert directattr == 'TestStr'
+
+# Test to_dict/dict_to_object
+d = standalone_object.to_dict()
+obj = StandaloneObject.dict_to_object(d)
+
+assert standalone_object == obj
+
+
