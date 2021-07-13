@@ -7,7 +7,7 @@ instanciate_generator = InstantiateModel(model_class=Generator,
                                          name='Instantiate Generator')
 
 generate_method = MethodType(class_=Generator, name='generate')
-generator_generate = ModelMethod(method_=generate_method,
+generator_generate = ModelMethod(method_type=generate_method,
                                  name='Generator Generate')
 attribute_selection = ModelAttribute(attribute_name='models',
                                      name='Attribute Selection')
@@ -18,7 +18,7 @@ instanciate_optimizer = InstantiateModel(model_class=Optimizer,
 
 
 generate_method = MethodType(class_=Optimizer, name='optimize')
-optimization = ModelMethod(method_=generate_method, name='Optimization')
+optimization = ModelMethod(method_type=generate_method, name='Optimization')
 
 model_fetcher = ModelAttribute(attribute_name='model_to_optimize',
                                name='Model Fetcher')
