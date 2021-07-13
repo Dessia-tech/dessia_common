@@ -15,7 +15,6 @@ import collections
 from copy import deepcopy
 import inspect
 import json
-import bson
 from dessia_common.exports import XLSXWriter
 
 
@@ -108,6 +107,32 @@ def deprecation_warning(name, object_type, use_instead=None):
     warnings.warn(msg, DeprecationWarning)
     return msg
 
+def is_bson_valid(dict_):
+    """
+    returns validity (bool) and a hint (str)
+    """
+    for k, v in dict_.items():
+        if isinstance(k, float):
+            return False, 'key {} of dict is a float, which is forbidden'.format(k)
+        elif isinstance(k, str):
+            if '.' in k:
+                return False , 'key {} of dict is a string containing a ., which is forbidden'.format(k)
+        elif not(isinstance(k, int)):
+            return False , 'key {} of dict is an unsuported type {}'.format(k, type(k))
+            
+        if isinstance(v, dict):
+            valid, hint = is_bson_valid(v)
+            if not valid:
+                return valid, hint
+        elif is_sequence(v):
+            for vi in v:
+                valid, hint = is_bson_valid(vi)
+                if not valid:
+                    return valid, hint
+        elif not(isinstance(v, int), isinstance(v, float) or isinstance(v, str)):
+            return False , 'value of key {} has an unsuported type {}'.format(k, type(v))
+
+    return True, ''
 
 class DessiaObject:
     """
@@ -644,7 +669,9 @@ class DessiaObject:
         Reproduce lifecycle on platform (serialization, display)
         """
         self.dict_to_object(json.loads(json.dumps(self.to_dict())))
-        bson.BSON.encode(self.to_dict())
+        valid, hint = is_bson_valid(self.to_dict())
+        if not valid:
+            raise ValueError(hint)
         json.dumps(self._displays())
 
     
@@ -1899,3 +1926,4 @@ def parse_docstring(cls: Type) -> ParsedDocstring:
         parsed_docstring.update({'attributes': args})
         return parsed_docstring
     return {'description': "", 'attributes': {}}
+
