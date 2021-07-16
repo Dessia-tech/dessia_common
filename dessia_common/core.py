@@ -210,7 +210,9 @@ class DessiaObject:
                           + ['package_version', 'name'])
         for key, value in self._serializable_dict().items():
             if key not in forbidden_keys:
-                if isinstance(value, list):
+                if is_sequence(value):
+                    if key == 'tuple_arg':
+                        print(key, list_hash(value))
                     hash_ += list_hash(value)
                 elif isinstance(value, dict):
                     hash_ += dict_hash(value)
@@ -272,7 +274,6 @@ class DessiaObject:
                  if k not in self._non_serializable_attributes
                  and not k.startswith('_')}
         return dict_
-
 
     def to_dict(self) -> JsonSerializable:
         """
@@ -561,7 +562,6 @@ class DessiaObject:
         msg = 'Object of type {} does not implement volmdlr_primitives'
         raise NotImplementedError(msg.format(self.__class__.__name__))
 
-
     def plot(self, **kwargs):
         """
 
@@ -647,11 +647,9 @@ class DessiaObject:
         bson.BSON.encode(self.to_dict())
         json.dumps(self._displays())
 
-    
     def to_xlsx(self, filepath):
         writer = XLSXWriter(self)
         writer.save_to_file(filepath)
-
 
     def to_step(self, filepath):
         """
@@ -1045,7 +1043,7 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False):
 def list_hash(list_):
     hash_ = 0
     for element in list_:
-        if isinstance(element, list):
+        if is_sequence(element):
             hash_ += list_hash(element)
         elif isinstance(element, dict):
             hash_ += dict_hash(element)
@@ -1059,7 +1057,7 @@ def list_hash(list_):
 def dict_hash(dict_):
     hash_ = 0
     for key, value in dict_.items():
-        if isinstance(value, list):
+        if is_sequence(value):
             hash_ += list_hash(value)
         elif isinstance(value, dict):
             hash_ += dict_hash(value)
