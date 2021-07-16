@@ -3,10 +3,8 @@
 """
 
 """
-import builtins
 import sys
 import warnings
-import tempfile
 import math
 import random
 import copy
@@ -15,7 +13,6 @@ import collections
 from copy import deepcopy
 import inspect
 import json
-import bson
 from dessia_common.exports import XLSXWriter
 
 
@@ -108,6 +105,32 @@ def deprecation_warning(name, object_type, use_instead=None):
     warnings.warn(msg, DeprecationWarning)
     return msg
 
+def is_bson_valid(dict_):
+    """
+    returns validity (bool) and a hint (str)
+    """
+    for k, v in dict_.items():
+        if isinstance(k, float):
+            return False, 'key {} of dict is a float, which is forbidden'.format(k)
+        elif isinstance(k, str):
+            if '.' in k:
+                return False , 'key {} of dict is a string containing a ., which is forbidden'.format(k)
+        elif not(isinstance(k, int)):
+            return False , 'key {} of dict is an unsuported type {}'.format(k, type(k))
+            
+        if isinstance(v, dict):
+            valid, hint = is_bson_valid(v)
+            if not valid:
+                return valid, hint
+        elif is_sequence(v):
+            for vi in v:
+                valid, hint = is_bson_valid(vi)
+                if not valid:
+                    return valid, hint
+        elif not(isinstance(v, int), isinstance(v, float) or isinstance(v, str)):
+            return False , 'value of key {} has an unsuported type {}'.format(k, type(v))
+
+    return True, ''
 
 class DessiaObject:
     """
@@ -597,7 +620,8 @@ class DessiaObject:
         return axs
 
     def babylonjs(self, use_cdn=True, debug=False, **kwargs):
-        self.volmdlr_volume_model(**kwargs).babylonjs(use_cdn=use_cdn, debug=debug)
+        self.volmdlr_volume_model(**kwargs).babylonjs(use_cdn=use_cdn,
+                                                      debug=debug)
 
     def _displays(self, **kwargs) -> List[JsonSerializable]:
         if hasattr(self, '_display_angular'):
@@ -644,7 +668,9 @@ class DessiaObject:
         Reproduce lifecycle on platform (serialization, display)
         """
         self.dict_to_object(json.loads(json.dumps(self.to_dict())))
-        bson.BSON.encode(self.to_dict())
+        valid, hint = is_bson_valid(self.to_dict())
+        if not valid:
+            raise ValueError(hint)
         json.dumps(self._displays())
 
     def to_xlsx(self, filepath):
@@ -1863,7 +1889,14 @@ def default_dict(jsonschema):
     dict_ = {}
     datatype = datatype_from_jsonschema(jsonschema)
     if datatype in ['standalone_object', 'embedded_object', 'static_dict']:
-        dict_['object_class'] = jsonschema['classes'][0]
+        if 'classes' in jsonschema:
+            dict_['object_class'] = jsonschema['classes'][0]
+        elif 'method' in jsonschema and jsonschema['method']:
+            # Method can have no classes in jsonschema
+            pass
+        else:
+            msg = "DessiaObject of type {} must have 'classes' in jsonschema"
+            raise ValueError(msg.format(jsonschema['python_typing']))
         for property_, jss in jsonschema['properties'].items():
             if 'default_value' in jss:
                 dict_[property_] = jss['default_value']
@@ -1910,3 +1943,4 @@ def parse_docstring(cls: Type) -> ParsedDocstring:
         parsed_docstring.update({'attributes': args})
         return parsed_docstring
     return {'description': "", 'attributes': {}}
+

@@ -1233,6 +1233,7 @@ class Workflow(Block):
         }
         jsonschemas['run']['required'] = required_inputs
         jsonschemas['run']['method'] = True
+        jsonschemas['run']['python_typing'] = serialize_typing(MethodType)
         return jsonschemas
 
     def to_dict(self):
