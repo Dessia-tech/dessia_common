@@ -199,7 +199,14 @@ class DessiaObject:
 
         for key, value in eq_dict.items():
             other_value = other_eq_dict[key]
-            if value != other_value:
+            if is_sequence(value):
+                if not is_sequence(other_value):
+                    return False
+                elements_not_equal = [elt != other_elt for elt, other_elt
+                                      in zip(value, other_value)]
+                if any(elements_not_equal):
+                    return False
+            elif value != other_value:
                 return False
         return True
 
@@ -211,8 +218,6 @@ class DessiaObject:
         for key, value in self._serializable_dict().items():
             if key not in forbidden_keys:
                 if is_sequence(value):
-                    if key == 'tuple_arg':
-                        print(key, list_hash(value))
                     hash_ += list_hash(value)
                 elif isinstance(value, dict):
                     hash_ += dict_hash(value)
