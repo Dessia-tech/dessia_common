@@ -105,23 +105,29 @@ def deprecation_warning(name, object_type, use_instead=None):
     warnings.warn(msg, DeprecationWarning)
     return msg
 
-def is_bson_valid(value):
+def is_bson_valid(value, allow_nonstring_keys=False)->Tuple[bool, str]:
     """
     returns validity (bool) and a hint (str)
     """
     if isinstance(value, int) or isinstance(value, float) or isinstance(value, str):
         return True, ''
     
+    if value is None:
+        return True
+    
     if isinstance(value, dict):
         for k, v in value.items():
             # Key check
-            if isinstance(k, float):
-                return False, 'key {} of dict is a float, which is forbidden'.format(k)
-            elif isinstance(k, str):
+            if isinstance(k, str):
                 if '.' in k:
                     return False , 'key {} of dict is a string containing a ., which is forbidden'.format(k)
-            elif not isinstance(k, int):
-                return False , 'key {} of dict is an unsuported type {}'.format(k, type(k))
+            else:
+                if isinstance(k, float):
+                    return False, 'key {} of dict is a float, which is forbidden'.format(k)
+                elif isinstance(k, int) and allow_nonstring_keys:
+                    pass
+                else:
+                    return False , 'key {} of dict is an unsuported type {}'.format(k, type(k))
         
             # Value Check
             v_valid, hint = is_bson_valid(v)
@@ -673,7 +679,7 @@ class DessiaObject:
         Reproduce lifecycle on platform (serialization, display)
         """
         self.dict_to_object(json.loads(json.dumps(self.to_dict())))
-        valid, hint = is_bson_valid(self.to_dict())
+        valid, hint = is_bson_valid(stringify_dict_keys(self.to_dict()))
         if not valid:
             raise ValueError(hint)
         json.dumps(self._displays())
