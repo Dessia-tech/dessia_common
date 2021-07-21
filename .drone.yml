@@ -11,6 +11,7 @@ steps:
   - python setup.py install
   - python scripts/dessia_object.py
   - python dessia_common/scripts/unit_tests.py
+  - python test/bson_valid.py
   - pip install sphinx sphinx-rtd-theme
   - cd doc
   - make html
