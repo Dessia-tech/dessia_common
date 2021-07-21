@@ -109,7 +109,7 @@ def is_bson_valid(value):
     """
     returns validity (bool) and a hint (str)
     """
-    if isinstance(value, int) or isinstance(value, int) or isinstance(value, float) or isinstance(value, str):
+    if isinstance(value, int) or isinstance(value, float) or isinstance(value, str):
         return True, ''
     
     if isinstance(value, dict):
@@ -119,7 +119,7 @@ def is_bson_valid(value):
             elif isinstance(k, str):
                 if '.' in k:
                     return False , 'key {} of dict is a string containing a ., which is forbidden'.format(k)
-            elif not(isinstance(k, int)):
+            elif not isinstance(k, int):
                 return False , 'key {} of dict is an unsuported type {}'.format(k, type(k))
             
         v_valid, hint = is_bson_valid(v)

@@ -10,25 +10,19 @@ from dessia_common import is_bson_valid
 
 
 import unittest
+from parameterized import parameterized_class
 
+
+@parameterized_class(('value', 'expected_result'), [
+   ({'a': 4.3,'b': [{3:'a'}]}, True),
+   ({'a.2': 4.3,'b': [{3:'a'}]}, False),
+   ({'a': 4.3,'b': [{3.3:'a'}]}, False),
+])
 class TestBsonValid(unittest.TestCase):
-
+    
     def test_bson_valid(self):
-        valid_bson_dict = {'a': 4.3,
-                           'b': [{3:'a'}]}
-        valid, hint = is_bson_valid(valid_bson_dict)
-        self.assertTrue(valid)
-
-        invalid_bson_dict1 = {'a.2': 4.3,
-                              'b': [{3:'a'}]}
-        valid, hint = is_bson_valid(invalid_bson_dict1)
-        self.assertFalse(valid)
-
-
-        invalid_bson_dict2 = {'a': 4.3,
-                              'b': [{3.3:'a'}]}
-        valid, hint = is_bson_valid(invalid_bson_dict2)
-        self.assertFalse(valid)
+        valid, hint = is_bson_valid(self.value)
+        self.assertEqual(valid, self.expected_result)
 
 
 if __name__ == '__main__':
