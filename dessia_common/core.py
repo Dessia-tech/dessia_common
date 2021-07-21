@@ -114,6 +114,7 @@ def is_bson_valid(value):
     
     if isinstance(value, dict):
         for k, v in value.items():
+            # Key check
             if isinstance(k, float):
                 return False, 'key {} of dict is a float, which is forbidden'.format(k)
             elif isinstance(k, str):
@@ -121,18 +122,22 @@ def is_bson_valid(value):
                     return False , 'key {} of dict is a string containing a ., which is forbidden'.format(k)
             elif not isinstance(k, int):
                 return False , 'key {} of dict is an unsuported type {}'.format(k, type(k))
-            
-        v_valid, hint = is_bson_valid(v)
-        if not v_valid:
-            return False, hint
+        
+            # Value Check
+            v_valid, hint = is_bson_valid(v)
+            if not v_valid:
+                return False, hint
         
     elif is_sequence(value):
         for v in value:
             valid, hint = is_bson_valid(v)
             if not valid:
                 return valid, hint
-        
+    else:
+        return False, 'Unrecognized type: {}'.format(type(value))
+
     return True, ''
+
 
 class DessiaObject:
     """

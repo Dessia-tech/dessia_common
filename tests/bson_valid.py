@@ -17,6 +17,7 @@ from parameterized import parameterized_class
    ({'a': 4.3,'b': [{3:'a'}]}, True),
    ({'a.2': 4.3,'b': [{3:'a'}]}, False),
    ({'a': 4.3,'b': [{3.3:'a'}]}, False),
+   ({'a': float,'b': [{2:'a'}]}, False),
 ])
 class TestBsonValid(unittest.TestCase):
     
