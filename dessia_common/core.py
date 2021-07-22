@@ -113,7 +113,7 @@ def is_bson_valid(value, allow_nonstring_keys=False)->Tuple[bool, str]:
         return True, ''
     
     if value is None:
-        return True
+        return True, ''
     
     if isinstance(value, dict):
         for k, v in value.items():
