@@ -244,8 +244,6 @@ class DessiaObject:
         for key, value in self._serializable_dict().items():
             if key not in forbidden_keys:
                 if is_sequence(value):
-                    if key == 'tuple_arg':
-                        print(key, list_hash(value))
                     hash_ += list_hash(value)
                 elif isinstance(value, dict):
                     hash_ += dict_hash(value)
@@ -1058,12 +1056,6 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False):
         else:
             annotation = None
         subobjects[key] = deserialize(value, annotation)
-        # if isinstance(value, dict):
-        #     subobjects[key] = dict_to_object(value)
-        # elif isinstance(value, (list, tuple)):
-        #     subobjects[key] = sequence_to_objects(value)
-        # else:
-        #     subobjects[key] = value
 
     if class_ is not None:
         obj = class_(**subobjects)
