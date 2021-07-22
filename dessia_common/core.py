@@ -105,18 +105,23 @@ def deprecation_warning(name, object_type, use_instead=None):
     warnings.warn(msg, DeprecationWarning)
     return msg
 
+
 def is_bson_valid(dict_):
     """
     returns validity (bool) and a hint (str)
     """
     for k, v in dict_.items():
         if isinstance(k, float):
-            return False, 'key {} of dict is a float, which is forbidden'.format(k)
+            msg = 'key {} of dict is a float, which is forbidden'
+            return False, msg.format(k)
         elif isinstance(k, str):
             if '.' in k:
-                return False , 'key {} of dict is a string containing a ., which is forbidden'.format(k)
+                msg = 'key {} of dict is a string containing a ., ' \
+                      'which is forbidden'
+                return False, msg.format(k)
         elif not(isinstance(k, int)):
-            return False , 'key {} of dict is an unsuported type {}'.format(k, type(k))
+            msg = 'key {} of dict is an unsuported type {}'
+            return False, msg.format(k, type(k))
             
         if isinstance(v, dict):
             valid, hint = is_bson_valid(v)
@@ -127,10 +132,15 @@ def is_bson_valid(dict_):
                 valid, hint = is_bson_valid(vi)
                 if not valid:
                     return valid, hint
-        elif not(isinstance(v, int), isinstance(v, float) or isinstance(v, str)):
-            return False , 'value of key {} has an unsuported type {}'.format(k, type(v))
-
+        elif not (isinstance(v, int), isinstance(v, float) or isinstance(v, str)):
+            # TODO :  What is this doing ? Checking for isinstance of
+            #   one of these three ?
+            #   Might not work as intended
+            #   Consider usin isinstance(c, (int, float, str)) in that case
+            msg = 'value of key {} has an unsuported type {}'
+            return False, msg.format(k, type(v))
     return True, ''
+
 
 class DessiaObject:
     """
@@ -573,15 +583,11 @@ class DessiaObject:
         if hasattr(self, 'volmdlr_primitives'):
             import volmdlr as vm  # !!! Avoid circular imports, is this OK ?
             if hasattr(self, 'volmdlr_primitives_step_frames'):
-                return vm.core.MovingVolumeModel(self.volmdlr_primitives(**kwargs),
-                                            self.volmdlr_primitives_step_frames(**kwargs))
-            # else:
-            #     if frame is None:
-            #         frame = vm.OXYZ
-            # try:
+                return vm.core.MovingVolumeModel(
+                    self.volmdlr_primitives(**kwargs),
+                    self.volmdlr_primitives_step_frames(**kwargs)
+                )
             return vm.core.VolumeModel(self.volmdlr_primitives(**kwargs))
-            # except TypeError:
-            #     return vm.core.VolumeModel(self.volmdlr_primitives())
         msg = 'Object of type {} does not implement volmdlr_primitives'
         raise NotImplementedError(msg.format(self.__class__.__name__))
 
@@ -1392,8 +1398,8 @@ def sequence_to_deepattr(sequence):
 
 def is_bounded(filter_: Filter, value: float):
     bounded = True
-    operator = filter_['operator']
-    bound = filter_['bound']
+    operator = filter_.operator
+    bound = filter_.bound
 
     if operator == 'lte' and value > bound:
         bounded = False
@@ -1683,11 +1689,11 @@ def set_default_value(jsonschema_element, key, default_value):
     #         type_ = type(default_value)
     #         raise NotImplementedError(msg.format(default_value, type_))
     # else:
-        # if datatype in ['standalone_object', 'embedded_object',
-        #                 'subclass', 'union']:
-        # object_dict = default_value.to_dict()
-        # jsonschema_element[key]['default_value'] = object_dict
-        # else:
+    #     if datatype in ['standalone_object', 'embedded_object',
+    #                     'subclass', 'union']:
+    #     object_dict = default_value.to_dict()
+    #     jsonschema_element[key]['default_value'] = object_dict
+    #     else:
 
 
 def inspect_arguments(method, merge=False):
@@ -1943,4 +1949,3 @@ def parse_docstring(cls: Type) -> ParsedDocstring:
         parsed_docstring.update({'attributes': args})
         return parsed_docstring
     return {'description': "", 'attributes': {}}
-
