@@ -79,11 +79,11 @@ jsonschema = {
             'python_typing': 'Tuple[__builtins__.str, __builtins__.int]'},
         'intarg': {
             'type': 'number', 'title': 'Intarg',
-            'editable': False, 'order': 4, 'python_typing': 'builtins.int'
+            'editable': True, 'order': 4, 'python_typing': 'builtins.int'
         },
         'strarg': {
             'type': 'string', 'title': 'Strarg',
-            'editable': False, 'order': 5, 'python_typing': 'builtins.str'
+            'editable': True, 'order': 5, 'python_typing': 'builtins.str'
         },
         'object_list': {
             'type': 'array', 'order': 6, 'editable': True,
