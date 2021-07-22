@@ -110,7 +110,7 @@ def is_bson_valid(value, allow_nonstring_keys=False) -> Tuple[bool, str]:
     """
     returns validity (bool) and a hint (str)
     """
-    if isinstance(value, int) or isinstance(value, float) or isinstance(value, str):
+    if isinstance(value, (int, float, str)):
         return True, ''
     
     if value is None:
@@ -121,14 +121,18 @@ def is_bson_valid(value, allow_nonstring_keys=False) -> Tuple[bool, str]:
             # Key check
             if isinstance(k, str):
                 if '.' in k:
-                    return False , 'key {} of dict is a string containing a ., which is forbidden'.format(k)
+                    msg = 'key {} of dict is a string containing a .,' \
+                          ' which is forbidden'
+                    return False, msg.format(k)
             else:
                 if isinstance(k, float):
-                    return False, 'key {} of dict is a float, which is forbidden'.format(k)
+                    msg = 'key {} of dict is a float, which is forbidden'
+                    return False, msg.format(k)
                 elif isinstance(k, int) and allow_nonstring_keys:
                     pass
                 else:
-                    return False , 'key {} of dict is an unsuported type {}'.format(k, type(k))
+                    msg = 'key {} of dict is an unsuported type {}'
+                    return False, msg.format(k, type(k))
         
             # Value Check
             v_valid, hint = is_bson_valid(v)
