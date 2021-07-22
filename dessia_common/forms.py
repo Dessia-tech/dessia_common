@@ -189,7 +189,6 @@ class StandaloneObject(DessiaObject):
     _generic_eq = True
     _allowed_methods = ['add_standalone_object',
                         'add_embedded_object', 'add_float']
-    _non_editable_attributes = ['intarg', 'strarg']
 
     def __init__(self, standalone_subobject: StandaloneSubobject,
                  embedded_subobject: EmbeddedSubobject,
@@ -433,6 +432,8 @@ DEF_SO = StandaloneObject.generate(1)
 
 
 class StandaloneObjectWithDefaultValues(StandaloneObject):
+    _non_editable_attributes = ['intarg', 'strarg']
+
     def __init__(self, standalone_subobject: StandaloneSubobject = DEF_SS,
                  embedded_subobject: EmbeddedSubobject = DEF_ES,
                  dynamic_dict: Dict[str, bool] = None,
