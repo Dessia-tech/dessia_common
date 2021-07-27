@@ -25,8 +25,6 @@ from dessia_common.vectored_objects import from_csv
 from dessia_common.typings import JsonSerializable, Subclass, MethodType
 import warnings
 
-# import plot_data
-
 # Type Aliases
 VariableTypes = Union['Variable', 'TypedVariable',
                       'VariableWithDefaultValue',
@@ -781,16 +779,17 @@ class MultiPlot(Display):
                     values]
 
         tooltip = plot_data.Tooltip(name='Tooltip',
-                                    to_disp_attribute_names=self.attributes)
+                                    attributes=self.attributes)
 
         scatterplot = plot_data.Scatter(tooltip=tooltip,
-                                        to_disp_attribute_names=first_vars,
+                                        x_variable=first_vars[0],
+                                        y_variable=first_vars[1],
                                         elements=values2d,
                                         name='Scatter Plot')
 
         rgbs = [[192, 11, 11], [14, 192, 11], [11, 11, 192]]
         parallelplot = plot_data.ParallelPlot(
-            disposition='horizontal', to_disp_attribute_names=self.attributes,
+            disposition='horizontal', axes=self.attributes,
             rgbs=rgbs, elements=values
         )
         objects = [scatterplot, parallelplot]
