@@ -121,27 +121,33 @@ def is_bson_valid(value, allow_nonstring_keys=False) -> Tuple[bool, str]:
             # Key check
             if isinstance(k, str):
                 if '.' in k:
-                    msg = 'key {} of dict is a string containing a .,' \
+                    log = 'key {} of dict is a string containing a .,' \
                           ' which is forbidden'
-                    return False, msg.format(k)
+                    return False, log.format(k)
+            elif isinstance(k, float):
+                log = 'key {} of dict is a float, which is forbidden'
+                return False, log.format(k)
+            elif isinstance(k, int):
+                if not allow_nonstring_keys:
+                    log = 'key {} of dict is an unsuported type {},' \
+                          ' use allow_nonstring_keys=True to allow'
+                    return False, log.format(k, type(k))
             else:
-                if isinstance(k, float):
-                    msg = 'key {} of dict is a float, which is forbidden'
-                    return False, msg.format(k)
-                elif isinstance(k, int) and allow_nonstring_keys:
-                    pass
-                else:
-                    msg = 'key {} of dict is an unsuported type {}'
-                    return False, msg.format(k, type(k))
+                log = 'key {} of dict is an unsuported type {}'
+                return False, log.format(k, type(k))
         
             # Value Check
-            v_valid, hint = is_bson_valid(v)
+            v_valid, hint = is_bson_valid(
+                value=v, allow_nonstring_keys=allow_nonstring_keys
+            )
             if not v_valid:
                 return False, hint
         
     elif is_sequence(value):
         for v in value:
-            valid, hint = is_bson_valid(v)
+            valid, hint = is_bson_valid(
+                value=v, allow_nonstring_keys=allow_nonstring_keys
+            )
             if not valid:
                 return valid, hint
     else:
