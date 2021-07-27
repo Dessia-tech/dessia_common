@@ -1664,9 +1664,12 @@ class Workflow(Block):
         return data
 
     def plot(self):
-        self.plot_jointjs()
+        self.plot_jointjs(warn=False)
 
-    def plot_jointjs(self):
+    def plot_jointjs(self, warn: bool = True):
+        if warn:
+            warnings.warn("Directly calling plot_jointjs is deprecated.\n"
+                          "Please use plot instead.")
         data = json.dumps(self.jointjs_data())
         rendered_template = workflow_template.substitute(workflow_data=data)
 
