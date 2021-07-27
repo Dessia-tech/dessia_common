@@ -286,17 +286,18 @@ class StandaloneObject(DessiaObject):
         points = [plot_data.Point2D(cx=v[0], cy=v[1], name='Point'+str(i))
                   for i, v in enumerate(catalog.array)]
         axis = plot_data.Axis()
-        tooltip = plot_data.Tooltip(to_disp_attribute_names=attributes,
+        tooltip = plot_data.Tooltip(attributes=attributes,
                                     name='Tooltips')
         scatter_plot = plot_data.Scatter(axis=axis, tooltip=tooltip,
                                          elements=points,
-                                         to_disp_attribute_names=attributes,
+                                         x_variable=attributes[0],
+                                         y_variable=attributes[1],
                                          name='Scatter Plot')
 
         # Parallel Plot
         attributes = ['cx', 'cy', 'color_fill', 'color_stroke']
         parallel_plot = plot_data.ParallelPlot(elements=points,
-                                               to_disp_attribute_names=attributes,
+                                               axes=attributes,
                                                name='Parallel Plot')
 
         # Multi Plot
@@ -309,7 +310,7 @@ class StandaloneObject(DessiaObject):
                                              name='Multiple Plot')
 
         attribute_names = ['time', 'electric current']
-        tooltip = plot_data.Tooltip(to_disp_attribute_names=attribute_names)
+        tooltip = plot_data.Tooltip(attributes=attribute_names)
         time1 = linspace(0, 20, 20)
         current1 = [t ** 2 for t in time1]
         elements1 = []
@@ -336,7 +337,8 @@ class StandaloneObject(DessiaObject):
         dataset2 = plot_data.Dataset(elements=elements2, name='I2 = f(t)')
 
         graph2d = plot_data.Graph2D(graphs=[custom_dataset, dataset2],
-                                    to_disp_attribute_names=attribute_names)
+                                    x_variable=attribute_names[0],
+                                    y_variable=attribute_names[1])
         return [primitives_group, scatter_plot,
                 parallel_plot, multi_plot, graph2d]
 
