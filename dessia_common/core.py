@@ -105,7 +105,8 @@ def deprecation_warning(name, object_type, use_instead=None):
     warnings.warn(msg, DeprecationWarning)
     return msg
 
-def is_bson_valid(value, allow_nonstring_keys=False)->Tuple[bool, str]:
+
+def is_bson_valid(value, allow_nonstring_keys=False) -> Tuple[bool, str]:
     """
     returns validity (bool) and a hint (str)
     """
@@ -120,28 +121,37 @@ def is_bson_valid(value, allow_nonstring_keys=False)->Tuple[bool, str]:
             # Key check
             if isinstance(k, str):
                 if '.' in k:
-                    return False , 'key {} of dict is a string containing a ., which is forbidden'.format(k)
+                    log = 'key {} of dict is a string containing a .,' \
+                          ' which is forbidden'
+                    return False, log.format(k)
             elif isinstance(k, float):
-                    return False, 'key {} of dict is a float, which is forbidden'.format(k)
+                log = 'key {} of dict is a float, which is forbidden'
+                return False, log.format(k)
             elif isinstance(k, int):
                 if not allow_nonstring_keys:
-                    return False , 'key {} of dict is an unsuported type {}, use allow_nonstring_keys=True to allow'.format(k, type(k))
+                    log = 'key {} of dict is an unsuported type {},' \
+                          ' use allow_nonstring_keys=True to allow'
+                    return False, log.format(k, type(k))
             else:
-                return False , 'key {} of dict is an unsuported type {}'.format(k, type(k))
+                log = 'key {} of dict is an unsuported type {}'
+                return False, log.format(k, type(k))
         
             # Value Check
-            v_valid, hint = is_bson_valid(v, allow_nonstring_keys=allow_nonstring_keys)
+            v_valid, hint = is_bson_valid(
+                value=v, allow_nonstring_keys=allow_nonstring_keys
+            )
             if not v_valid:
                 return False, hint
         
     elif is_sequence(value):
         for v in value:
-            valid, hint = is_bson_valid(v, allow_nonstring_keys=allow_nonstring_keys)
+            valid, hint = is_bson_valid(
+                value=v, allow_nonstring_keys=allow_nonstring_keys
+            )
             if not valid:
                 return valid, hint
     else:
         return False, 'Unrecognized type: {}'.format(type(value))
-
     return True, ''
 
 
@@ -246,7 +256,7 @@ class DessiaObject:
                           + ['package_version', 'name'])
         for key, value in self._serializable_dict().items():
             if key not in forbidden_keys:
-                if isinstance(value, list):
+                if is_sequence(value):
                     hash_ += list_hash(value)
                 elif isinstance(value, dict):
                     hash_ += dict_hash(value)
@@ -584,15 +594,11 @@ class DessiaObject:
         if hasattr(self, 'volmdlr_primitives'):
             import volmdlr as vm  # !!! Avoid circular imports, is this OK ?
             if hasattr(self, 'volmdlr_primitives_step_frames'):
-                return vm.core.MovingVolumeModel(self.volmdlr_primitives(**kwargs),
-                                            self.volmdlr_primitives_step_frames(**kwargs))
-            # else:
-            #     if frame is None:
-            #         frame = vm.OXYZ
-            # try:
+                return vm.core.MovingVolumeModel(
+                    self.volmdlr_primitives(**kwargs),
+                    self.volmdlr_primitives_step_frames(**kwargs)
+                )
             return vm.core.VolumeModel(self.volmdlr_primitives(**kwargs))
-            # except TypeError:
-            #     return vm.core.VolumeModel(self.volmdlr_primitives())
         msg = 'Object of type {} does not implement volmdlr_primitives'
         raise NotImplementedError(msg.format(self.__class__.__name__))
 
@@ -1033,6 +1039,7 @@ def get_python_class_from_class_name(full_class_name):
 
 
 def dict_to_object(dict_, class_=None, force_generic: bool = False):
+    class_argspec = None
     working_dict = dict_.copy()
     if class_ is None and 'object_class' in working_dict:
         class_ = get_python_class_from_class_name(working_dict['object_class'])
@@ -1057,12 +1064,11 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False):
 
     subobjects = {}
     for key, value in init_dict.items():
-        if isinstance(value, dict):
-            subobjects[key] = dict_to_object(value)
-        elif isinstance(value, (list, tuple)):
-            subobjects[key] = sequence_to_objects(value)
+        if class_argspec is not None:
+            annotation = class_argspec.annotations[key]
         else:
-            subobjects[key] = value
+            annotation = None
+        subobjects[key] = deserialize(value, annotation)
 
     if class_ is not None:
         obj = class_(**subobjects)
@@ -1074,7 +1080,7 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False):
 def list_hash(list_):
     hash_ = 0
     for element in list_:
-        if isinstance(element, list):
+        if is_sequence(element):
             hash_ += list_hash(element)
         elif isinstance(element, dict):
             hash_ += dict_hash(element)
@@ -1088,7 +1094,7 @@ def list_hash(list_):
 def dict_hash(dict_):
     hash_ = 0
     for key, value in dict_.items():
-        if isinstance(value, list):
+        if is_sequence(value):
             hash_ += list_hash(value)
         elif isinstance(value, dict):
             hash_ += dict_hash(value)
@@ -1097,16 +1103,12 @@ def dict_hash(dict_):
     return hash_
 
 
-def sequence_to_objects(sequence):
+def sequence_to_objects(sequence, annotation=None):
     # TODO: rename to deserialize sequence? Or is this a duplicate ?
-    deserialized_sequence = []
-    for element in sequence:
-        if isinstance(element, dict):
-            deserialized_sequence.append(dict_to_object(element))
-        elif isinstance(element, (list, tuple)):
-            deserialized_sequence.append(sequence_to_objects(element))
-        else:
-            deserialized_sequence.append(element)
+    origin, args = unfold_deep_annotation(typing_=annotation)
+    deserialized_sequence = [deserialize(elt, args) for elt in sequence]
+    if origin is tuple:
+        return tuple(deserialized_sequence)
     return deserialized_sequence
 
 
@@ -1245,11 +1247,15 @@ def deserialize_typing(serialized_typing):
         if serialized_typing in ['float', 'builtins.float']:
             return float
 
-        splitted_type = serialized_typing.split('[')
-        full_argname = splitted_type[1].split(']')[0]
-        if splitted_type[0] == 'List':
+        if '[' in serialized_typing:
+            toptype, remains = serialized_typing.split('[', 1)
+            full_argname = remains.rsplit(']', 1)[0]
+        else:
+            toptype = serialized_typing
+            full_argname = ''
+        if toptype == 'List':
             return List[type_from_argname(full_argname)]
-        elif splitted_type[0] == 'Tuple':
+        elif toptype == 'Tuple':
             if ', ' in full_argname:
                 args = full_argname.split(', ')
                 if len(args) == 0:
@@ -1265,7 +1271,7 @@ def deserialize_typing(serialized_typing):
                            "workflow non-block variables.")
                     raise TypeError(msg)
             return Tuple[type_from_argname(full_argname)]
-        elif splitted_type[0] == 'Dict':
+        elif toptype == 'Dict':
             args = full_argname.split(', ')
             key_type = type_from_argname(args[0])
             value_type = type_from_argname(args[1])
@@ -1287,14 +1293,21 @@ def serialize(deserialized_element):
     return serialized
 
 
-def deserialize(serialized_element):
+def deserialize(serialized_element, sequence_annotation: str = 'List'):
     if isinstance(serialized_element, dict):
-        element = dict_to_object(serialized_element)
+        return dict_to_object(serialized_element)
     elif is_sequence(serialized_element):
-        element = sequence_to_objects(serialized_element)
-    else:
-        element = serialized_element
-    return element
+        return sequence_to_objects(sequence=serialized_element,
+                                   annotation=sequence_annotation)
+    return serialized_element
+
+
+def unfold_deep_annotation(typing_=None):
+    if is_typing(typing_):
+        origin = get_origin(typing_)
+        args = get_args(typing_)
+        return origin, args
+    return None, None
 
 
 def enhanced_deep_attr(obj, sequence):
@@ -1390,8 +1403,8 @@ def sequence_to_deepattr(sequence):
 
 def is_bounded(filter_: Filter, value: float):
     bounded = True
-    operator = filter_['operator']
-    bound = filter_['bound']
+    operator = filter_.operator
+    bound = filter_.bound
 
     if operator == 'lte' and value > bound:
         bounded = False
@@ -1681,11 +1694,11 @@ def set_default_value(jsonschema_element, key, default_value):
     #         type_ = type(default_value)
     #         raise NotImplementedError(msg.format(default_value, type_))
     # else:
-        # if datatype in ['standalone_object', 'embedded_object',
-        #                 'subclass', 'union']:
-        # object_dict = default_value.to_dict()
-        # jsonschema_element[key]['default_value'] = object_dict
-        # else:
+    #     if datatype in ['standalone_object', 'embedded_object',
+    #                     'subclass', 'union']:
+    #     object_dict = default_value.to_dict()
+    #     jsonschema_element[key]['default_value'] = object_dict
+    #     else:
 
 
 def inspect_arguments(method, merge=False):
@@ -1941,4 +1954,3 @@ def parse_docstring(cls: Type) -> ParsedDocstring:
         parsed_docstring.update({'attributes': args})
         return parsed_docstring
     return {'description': "", 'attributes': {}}
-
