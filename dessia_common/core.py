@@ -13,14 +13,15 @@ import collections
 from copy import deepcopy
 import inspect
 import json
-from typing import List, Tuple, Union, Any, \
+from typing import List, Dict, Type, Tuple, Union, Any, \
     get_type_hints, get_origin, get_args
 try:
     from typing import TypedDict  # >=3.8
 except ImportError:
     from mypy_extensions import TypedDict  # <=3.7
 import traceback as tb
-from dessia_common.typings import Measure, JsonSerializable, Subclass
+from dessia_common.typings import Measure, JsonSerializable,\
+    Subclass, InstanceOf
 
 from importlib import import_module
 
@@ -84,7 +85,7 @@ def deprecated(use_instead=None):
         def wrapper(*args, **kwargs):
             deprecation_warning(function.__name__, 'Function', use_instead)
             print('Traceback : ')
-            tb.print_stack(limit=1)
+            tb.print_stack(limit=2)
             return function(*args, **kwargs)
 
         return wrapper
@@ -185,11 +186,11 @@ class DessiaObject:
         if full_classname(self) != full_classname(other_object):
             return False
 
-        eq_dict = self.__getstate__()
+        eq_dict = self._serializable_dict()
         if 'name' in eq_dict:
             del eq_dict['name']
             
-        other_eq_dict = other_object.__getstate__()
+        other_eq_dict = other_object._serializable_dict()
 
         for key, value in eq_dict.items():
             other_value = other_eq_dict[key]
@@ -202,7 +203,7 @@ class DessiaObject:
         forbidden_keys = (self._non_data_eq_attributes
                           + self._non_data_hash_attributes
                           + ['package_version', 'name'])
-        for key, value in self.__getstate__().items():
+        for key, value in self._serializable_dict().items():
             if key not in forbidden_keys:
                 if isinstance(value, list):
                     hash_ += list_hash(value)
@@ -225,9 +226,9 @@ class DessiaObject:
         # eq_dict = {k: v for k, v in self.to_dict().items()
         #            if (k not in ['package_version', 'name'])\
         #                and (k not in self._non_data_eq_attributes)}
-        eq_dict = self.__getstate__()
+        eq_dict = self._serializable_dict()
         # other_eq_dict = other_object.to_dict()
-        other_eq_dict = other_object.__getstate__()
+        other_eq_dict = other_object._serializable_dict()
 
         for key, value in eq_dict.items():
             if key not in other_eq_dict:
@@ -260,17 +261,19 @@ class DessiaObject:
             dict_['package_version'] = package_version
         return dict_
 
-    def __getstate__(self):
+    def _serializable_dict(self):
+
         dict_ = {k: v for k, v in self.__dict__.items()
                  if k not in self._non_serializable_attributes
                  and not k.startswith('_')}
         return dict_
 
+
     def to_dict(self) -> JsonSerializable:
         """
         Generic to_dict method
         """
-        dict_ = self.__getstate__()
+        dict_ = self._serializable_dict()
         if hasattr(self, 'Dict'):
             # !!! This prevent us to call DessiaObject.to_dict()
             # from an inheriting object which implement a Dict method,
@@ -339,12 +342,24 @@ class DessiaObject:
 
         unordered_count = 0
 
+        # Parse docstring
+        try:
+            parsed_docstring = parse_docstring(cls)
+        except Exception:
+            parsed_docstring = {
+                'description': 'Docstring parsing failed',
+                'attributes': {}
+            }
+        parsed_attributes = parsed_docstring['attributes']
+
         # Initialize jsonschema
         _jsonschema = deepcopy(JSONSCHEMA_HEADER)
 
         required_arguments, default_arguments = inspect_arguments(method=init,
                                                                   merge=False)
         _jsonschema['required'] = required_arguments
+        _jsonschema['standalone_in_db'] = cls._standalone_in_db
+        _jsonschema['description'] = parsed_docstring['description']
 
         # Set jsonschema
         for annotation in annotations.items():
@@ -363,19 +378,24 @@ class DessiaObject:
                 editable = name not in cls._non_editable_attributes
                 annotation_type = type_from_annotation(annotation[1], cls)
                 annotation = (annotation[0], annotation_type)
-                jss_elt = jsonschema_from_annotation(annotation=annotation,
-                                                     jsonschema_element={},
-                                                     order=order,
-                                                     editable=editable,
-                                                     title=title)
+                jss_elt = jsonschema_from_annotation(
+                    annotation=annotation, jsonschema_element={},
+                    order=order, editable=editable, title=title
+                )
+                if name in parsed_attributes:
+                    description = parsed_attributes[name]['desc']
+                    typing_ = parsed_attributes[name]['annotation']
+                    jss_elt[name].update({'description': description,
+                                          'python_typing': typing_})
                 _jsonschema['properties'].update(jss_elt)
                 if name in default_arguments.keys():
                     default = set_default_value(_jsonschema['properties'],
                                                 name,
                                                 default_arguments[name])
                     _jsonschema['properties'].update(default)
-                _jsonschema['classes'] = [cls.__module__ + '.' + cls.__name__]
-                _jsonschema['whitelist_attributes'] = cls._whitelist_attributes
+
+        _jsonschema['classes'] = [cls.__module__ + '.' + cls.__name__]
+        _jsonschema['whitelist_attributes'] = cls._whitelist_attributes
         return _jsonschema
 
     @property
@@ -406,6 +426,7 @@ class DessiaObject:
                 if annotations:
                     jsonschemas[method_name] = deepcopy(JSONSCHEMA_HEADER)
                     jsonschemas[method_name]['required'] = []
+                    jsonschemas[method_name]['method'] = True
                     for i, annotation in enumerate(annotations.items()):
                         # TOCHECK Not actually ordered
                         argname = annotation[0]
@@ -612,6 +633,9 @@ class DessiaObject:
                     display_ = DisplayObject(type_='plot_data', data=plot,
                                              reference_path=reference_path)
                     displays.append(display_.to_dict())
+            else:
+                msg = 'plot_data must return a sequence. Found {}'
+                raise ValueError(msg.format(type(plot_data)))
         if hasattr(self, 'to_markdown'):
             display_ = DisplayObject(type_='markdown', data=self.to_markdown(),
                                      reference_path=reference_path)
@@ -1098,7 +1122,15 @@ def serialize_typing(typing_):
     if is_typing(typing_):
         origin = get_origin(typing_)
         args = get_args(typing_)
-        if origin is list:
+        if origin is Union:
+            if len(args) == 2 and type(None) in args:
+                # This is a false Union => Is a default value set to None
+                return serialize_typing(args[0])
+            else:
+                # Types union
+                msg = 'Union typing serialization not implemented yet'
+                raise NotImplemented(msg)
+        elif origin is list:
             return 'List[' + type_fullname(args[0]) + ']'
         elif origin is tuple:
             argnames = ', '.join([type_fullname(a) for a in args])
@@ -1293,6 +1325,10 @@ def is_sequence(obj):
         and not isinstance(obj, str)
 
 
+def is_builtin(type_):
+    return type_ in TYPING_EQUIVALENCES
+
+
 def type_from_annotation(type_, module):
     """
     Clean up a proposed type if there are stringified
@@ -1308,8 +1344,11 @@ def type_from_annotation(type_, module):
 
 
 def is_typing(object_: Any):
-    in_typings = object_.__module__ in ['typing', 'dessia_common.typings']
     has_module = hasattr(object_, '__module__')
+    if has_module:
+        in_typings = object_.__module__ in ['typing', 'dessia_common.typings']
+    else:
+        return False
     has_origin = hasattr(object_, '__origin__')
     has_args = hasattr(object_, '__args__')
     return has_module and has_origin and has_args and in_typings
@@ -1331,6 +1370,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
         jsonschema_element[key] = {'type': TYPING_EQUIVALENCES[typing_],
                                    'title': title, 'editable': editable,
                                    'order': order}
+
     elif is_typing(typing_):
         origin = get_origin(typing_)
         args = get_args(typing_)
@@ -1346,9 +1386,20 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
                 # Types union
                 classnames = [full_classname(object_=a, compute_for='class')
                               for a in args]
+
+                standalone_args = [a._standalone_in_db for a in args]
+                if all(standalone_args):
+                    standalone = True
+                elif not any(standalone_args):
+                    standalone = False
+                else:
+                    msg = "standalone_in_db values for type '{}'" \
+                          " are not consistent"
+                    raise ValueError(msg.format(typing_))
                 jsonschema_element[key] = {
                     'type': 'object', 'title': title, 'classes': classnames,
-                    'editable': editable, 'order': order
+                    'editable': editable, 'order': order,
+                    'standalone_in_db': standalone
                 }
         elif origin is list:
             # Homogenous sequences
@@ -1380,15 +1431,37 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
                 }
             }
         elif origin is Subclass:
+            warnings.simplefilter('once', DeprecationWarning)
+            msg = "\n\nTyping of attribute '{0}' from class {1} "\
+                  "uses Subclass which is deprecated."\
+                  "\n\nUse 'InstanceOf[{2}]' instead of 'Subclass[{2}]'.\n"
+            arg = args[0].__name__
+            warnings.warn(msg.format(key, args[0], arg), DeprecationWarning)
             # Several possible classes that are subclass of another one
             class_ = args[0]
             classname = full_classname(object_=class_, compute_for='class')
-            jsonschema_element[key] = {'type': 'object', 'order': order,
-                                       'subclass_of': classname,
-                                       'title': title, 'editable': editable}
+            jsonschema_element[key] = {
+                'type': 'object', 'order': order, 'instance_of': classname,
+                'title': title, 'editable': editable,
+                'standalone_in_db': class_._standalone_in_db
+            }
+        elif origin is InstanceOf:
+            # Several possible classes that are subclass of another one
+            class_ = args[0]
+            classname = full_classname(object_=class_, compute_for='class')
+            jsonschema_element[key] = {
+                'type': 'object', 'order': order, 'instance_of': classname,
+                'title': title, 'editable': editable,
+                'standalone_in_db': class_._standalone_in_db
+            }
         else:
             msg = "Jsonschema computation of typing {} is not implemented"
             raise NotImplementedError(msg.format(typing_))
+    elif hasattr(typing_, '__origin__') and typing_.__origin__ is type:
+        jsonschema_element[key] = {'type': 'object', 'order': order,
+                                   'is_class': True, 'title': title,
+                                   'editable': editable,
+                                   'properties': {'name': {'type': 'string'}}}
     elif issubclass(typing_, Measure):
         ann = (key, float)
         jsonschema_element = jsonschema_from_annotation(
@@ -1400,7 +1473,10 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
         classname = full_classname(object_=typing_, compute_for='class')
         if issubclass(typing_, DessiaObject):
             # Dessia custom classes
-            jsonschema_element[key] = {'type': 'object'}
+            jsonschema_element[key] = {
+                'type': 'object',
+                'standalone_in_db': typing_._standalone_in_db
+            }
         else:
             # Statically created dict structure
             jsonschema_element[key] = static_dict_jsonschema(typing_)
@@ -1446,6 +1522,13 @@ def prettyname(namestr):
 
 
 def static_dict_jsonschema(typed_dict, title=None):
+    warnings.simplefilter('once', DeprecationWarning)
+    msg = "\n\nStatic Dict typing is not fully supported.\n" \
+          "This will most likely lead to non predictable behavior" \
+          " or malfunctionning features. \n" \
+          "Define a custom non-standalone class for type '{}'\n\n"
+    classname = full_classname(typed_dict, compute_for='class')
+    warnings.warn(msg.format(classname), DeprecationWarning)
     jsonschema_element = deepcopy(JSONSCHEMA_HEADER)
     jss_properties = jsonschema_element['properties']
 
@@ -1455,6 +1538,12 @@ def static_dict_jsonschema(typed_dict, title=None):
 
     # TOCHECK : Not actually ordered !
     for i, annotation in enumerate(annotations.items()):
+        attribute, typing_ = annotation
+        if not is_builtin(typing_):
+            msg = "Complex structure as Static dict values is not supported." \
+                  "\n Attribute {} got type {} instead of builtin." \
+                  "\n Consider creating a custom class for complex structures."
+            raise TypeError(msg.format(attribute, typing_))
         jss = jsonschema_from_annotation(annotation=annotation,
                                          jsonschema_element=jss_properties,
                                          order=i, title=title)
@@ -1463,18 +1552,40 @@ def static_dict_jsonschema(typed_dict, title=None):
 
 
 def set_default_value(jsonschema_element, key, default_value):
-    if isinstance(default_value, tuple(TYPING_EQUIVALENCES.keys())) \
-            or default_value is None:
+    datatype = datatype_from_jsonschema(jsonschema_element[key])
+    if default_value is None\
+            or datatype in ['builtin', 'heterogeneous_sequence',
+                            'static_dict', 'dynamic_dict']:
         jsonschema_element[key]['default_value'] = default_value
-    elif is_sequence(default_value):
-        # TODO : Tuple should be considered OK for default_value
+    # elif datatype == 'builtin':
+    #     jsonschema_element[key]['default_value'] = default_value
+    # elif datatype == 'heterogeneous_sequence':
+    #     jsonschema_element[key]['default_value'] = default_value
+    elif datatype == 'homogeneous_sequence':
         msg = 'Object {} of type {} is not supported as default value'
         type_ = type(default_value)
         raise NotImplementedError(msg.format(default_value, type_))
-    else:
+    elif datatype in ['standalone_object', 'embedded_object',
+                      'instance_of', 'union']:
         object_dict = default_value.to_dict()
         jsonschema_element[key]['default_value'] = object_dict
     return jsonschema_element
+    # if isinstance(default_value, tuple(TYPING_EQUIVALENCES.keys())) \
+    #         or default_value is None:
+    #     jsonschema_element[key]['default_value'] = default_value
+    # elif is_sequence(default_value):
+    #     if datatype == 'heterogeneous_sequence':
+    #         jsonschema_element[key]['default_value'] = default_value
+    #     else:
+    #         msg = 'Object {} of type {} is not supported as default value'
+    #         type_ = type(default_value)
+    #         raise NotImplementedError(msg.format(default_value, type_))
+    # else:
+        # if datatype in ['standalone_object', 'embedded_object',
+        #                 'subclass', 'union']:
+        # object_dict = default_value.to_dict()
+        # jsonschema_element[key]['default_value'] = object_dict
+        # else:
 
 
 def inspect_arguments(method, merge=False):
@@ -1601,65 +1712,107 @@ def recursive_instantiation(type_, value):
         raise NotImplementedError(type_)
 
 
-def choose_default(jsonschema):
+def default_sequence(array_jsonschema):
+    if is_sequence(array_jsonschema['items']):
+        # Tuple jsonschema
+        if 'default_value' in array_jsonschema:
+            return array_jsonschema['default_value']
+        return [default_dict(v) for v in array_jsonschema['items']]
+    return None
+
+
+def datatype_from_jsonschema(jsonschema):
     if jsonschema['type'] == 'object':
-        default_value = default_dict(jsonschema)
+        if 'classes' in jsonschema:
+            if len(jsonschema['classes']) > 1:
+                return 'union'
+            if 'standalone_in_db' in jsonschema:
+                if jsonschema['standalone_in_db']:
+                    return 'standalone_object'
+                return 'embedded_object'
+            return 'static_dict'
+        if 'instance_of' in jsonschema:
+            return 'instance_of'
+        if 'patternProperties' in jsonschema:
+            return 'dynamic_dict'
+        if 'method' in jsonschema and jsonschema['method']:
+            return 'embedded_object'
+        if 'is_class' in jsonschema and jsonschema['is_class']:
+            return 'class'
+
     elif jsonschema['type'] == 'array':
-        default_value = default_sequence(jsonschema)
-    elif jsonschema['type'] == 'string':
-        default_value = ''
+        if 'additionalItems' in jsonschema\
+                and not jsonschema['additionalItems']:
+            return 'heterogeneous_sequence'
+        return 'homogeneous_sequence'
+
+    elif jsonschema['type'] in ['number', 'string', 'boolean']:
+        return 'builtin'
+    return None
+
+
+def chose_default(jsonschema):
+    datatype = datatype_from_jsonschema(jsonschema)
+    if datatype in ['heterogeneous_sequence', 'homogeneous_sequence']:
+        return default_sequence(jsonschema)
+    elif datatype == 'static_dict':
+        return default_dict(jsonschema)
+    elif datatype in ['standalone_object', 'embedded_object',
+                      'instance_of', 'union']:
+        if 'default_value' in jsonschema:
+            return jsonschema['default_value']
+        return None
     else:
-        default_value = None
-    return default_value
+        return None
 
 
 def default_dict(jsonschema):
     dict_ = {}
-    if 'properties' in jsonschema:
-        for property_, value in jsonschema['properties'].items():
-            if property_ in jsonschema['required']:
-                dict_[property_] = choose_default(value)
+    datatype = datatype_from_jsonschema(jsonschema)
+    if datatype in ['standalone_object', 'embedded_object', 'static_dict']:
+        for property_, jss in jsonschema['properties'].items():
+            if 'default_value' in jss:
+                dict_[property_] = jss['default_value']
             else:
-                default_value = value['default_value']
-                if value['type'] == 'array':
-                    dict_[property_] = []
-                elif value['type'] == 'object' and default_value is None:
-                    dict_[property_] = {}
-                else:
-                    dict_[property_] = default_value
+                dict_[property_] = chose_default(jss)
+    else:
+        return None
     return dict_
 
 
-def default_sequence(array_jsonschema):
-    if 'minItems' in array_jsonschema and 'maxItems' in array_jsonschema \
-            and array_jsonschema['minItems'] == array_jsonschema['maxItems']:
-        number = array_jsonschema['minItems']
-    elif 'minItems' in array_jsonschema:
-        number = array_jsonschema['minItems']
-    elif 'maxItems' in array_jsonschema:
-        number = array_jsonschema['maxItems']
-    else:
-        number = 1
+class ParsedAttribute(TypedDict):
+    desc: str
+    type_: str
+    annotation: str
 
-    if type(array_jsonschema['items']) == list:
-        # Tuple jsonschema
-        return [default_dict(v) for v in array_jsonschema['items']]
 
-    elif array_jsonschema['items']['type'] == 'object':
-        if 'classes' in array_jsonschema['items']:
-            # TOCHECK classes[0]
-            classname = array_jsonschema['items']['classes'][0]
-            class_ = get_python_class_from_class_name(classname)
-            if issubclass(class_, DessiaObject):
-                if class_._standalone_in_db:  # Standalone object
-                    return []
-                # Embedded object
-                default_subdict = default_dict(class_.jsonschema())
-                return [default_subdict] * number
-            # Static Dict
-            dict_jsonschema = static_dict_jsonschema(class_)
-            default_subdict = default_dict(dict_jsonschema)
-            return [default_subdict] * number
-        # Subclasses
-        return [choose_default(array_jsonschema['items'])] * number
-    return [choose_default(array_jsonschema['items'])] * number
+class ParsedDocstring(TypedDict):
+    description: str
+    attributes: Dict[str, ParsedAttribute]
+
+
+def parse_docstring(cls: Type) -> ParsedDocstring:
+    """
+    Parse docstring of given class. Refer to docs to see how docstrings
+    should be built.
+    """
+    annotations = get_type_hints(cls.__init__)
+    docstring = cls.__doc__
+    if docstring:
+        splitted_docstring = docstring.split(':param ')
+        parsed_docstring = {"description": splitted_docstring[0].strip()}
+        params = splitted_docstring[1:]
+        args = {}
+        for param in params:
+            splitted_param = param.split(':type ')
+            arg = splitted_param[0]
+            typestr = splitted_param[1]
+            argname, argdesc = arg.split(":", maxsplit=1)
+            argtype = typestr.split(argname+":")[-1]
+            annotation = annotations[argname]
+            args[argname] = {'desc': argdesc.strip(), 'type_': argtype.strip(),
+                             'annotation': str(annotation)}
+            # TODO Should be serialize typing ?
+        parsed_docstring.update({'attributes': args})
+        return parsed_docstring
+    return {'description': "", 'attributes': {}}
