@@ -504,13 +504,6 @@ class ForEach(Block):
     :type workflow_block: WorkflowBlock
     :param iter_input_index: Index of iterable input in worklow_block.inputs
     :type iter_input_index: int
-    :param input_connections: Links ForEach's inputs to its
-        workflow_block's inputs.
-        input_connections[i] = [ForEach_input_j, WorkflowBlock_input_k]
-    :type input_connections: List[Tuple[Tuple[int, int, int], Tuple[int, int, int]]]
-    :param output_connections: Same but for outputs.
-        output_connections[i] = [WorkflowBlock_output_j, ForEach_output_k]
-    :type output_connections: List[Tuple[Tuple[int, int, int], Tuple[int, int, int]]]
     :param name: The name of the block.
     :type name: str
     """
@@ -519,19 +512,25 @@ class ForEach(Block):
                  iter_input_index: int, name: str = ''):
         self.workflow_block = workflow_block
         self.iter_input_index = iter_input_index
-        self.iter_input = self.workflow_block.inputs[iter_input_index]
+        self.iter_input = self.workflow_block.workflow.inputs[iter_input_index]
+        m = -1
         inputs = []
         for i, workflow_input in enumerate(self.workflow_block.inputs):
             if i == iter_input_index:
                 name = 'Iterable input: ' + workflow_input.name
+                m = i
                 inputs.append(Variable(name=name))
             else:
                 input_ = workflow_input.copy()
                 input_.name = 'binding ' + input_.name
                 inputs.append(input_)
         output_variable = Variable(name='Foreach output')
-        self.output_connections = None  # TODO: configuring port internal connections
-        self.input_connections = None
+
+        block_i, n, output_i = workflow_block.workflow.variable_indices(workflow_block.workflow.output)
+        self.output_connections = [[block_i, output_i], 0]
+
+        block_i1, n, input_i = workflow_block.workflow.variable_indices(self.iter_input)
+        self.input_connections = [m, [block_i1, input_i]]
 
         Block.__init__(self, inputs, [output_variable], name=name)
 
@@ -555,7 +554,9 @@ class ForEach(Block):
     def to_dict(self):
         dict_ = Block.to_dict(self)
         dict_.update({'workflow_block': self.workflow_block.to_dict(),
-                      'iter_input_index': self.iter_input_index})
+                      'iter_input_index': self.iter_input_index,
+                      'input_connections': self.input_connections,
+                      'output_connections': self.output_connections})
         return dict_
 
     @classmethod
@@ -1682,6 +1683,27 @@ class Workflow(Block):
         # Adimension
         fraction_sum = sum(package_mix.values())
         return {pn: f / fraction_sum for pn, f in package_mix.items()}
+
+
+class InternalConnection(DessiaObject):
+    """
+    A class for setting ForEach block's internal connections between the block itself and its sub-workflow.
+    .
+    :param port_type: 'input' for input to input connection, 'output' for output to output connection
+    :type port_type: str
+    :param port: the input or output number in the block
+    :type port: int
+    :param subblock: the number of the block in the sub-workflow
+    :type subblock: int
+    :param subport: the number of the input/output in the sub-block.
+    :type subport: int
+    """
+    def __init__(self, is_input: bool, port: int, subblock: int, subport: int):
+        if is_input:
+            self.indices = [port, [subblock, subport]]
+        else:
+            self.indices = [[subblock, subport], port]
+
 
 
 class WorkflowBlock(Block):
