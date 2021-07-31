@@ -1775,7 +1775,7 @@ class WorkflowBlock(Block):
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_):
         b = cls(workflow=Workflow.dict_to_object(dict_['workflow']),
-                name=dict_['name'])
+                name=dict_['name']) 
 
         return b
 
