@@ -137,7 +137,7 @@ def deep_getsizeof(o, ids=None):
         return r + sum(d(k, ids) + d(v, ids) for k, v in o.items())
  
     if isinstance(o, collections.Container):
-        return r + sum(d(x, ids) for x in o)
+        return r + sum(d(x, ids) for x in o.__dict__.values())
  
     return r 
 
