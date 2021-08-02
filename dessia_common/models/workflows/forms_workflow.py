@@ -1,44 +1,13 @@
 from dessia_common.workflow import InstantiateModel, ModelMethod,\
     ModelAttribute, Pipe, Workflow, WorkflowBlock, ForEach, MultiPlot
 from dessia_common.forms import Generator, Optimizer
-from dessia_common import DessiaObject
-
-
-# class Submodel(DessiaObject):
-#     _generic_eq = True
-#
-#     def __init__(self, subvalue: int, name: str = ''):
-#         self.subvalue = subvalue
-#         self.name = name
-#
-#         DessiaObject.__init__(self, name=name)
-
-
-# class Model(DessiaObject):
-#     _generic_eq = True
-#
-#     def __init__(self, value: int, submodel: Submodel, name: str = ''):
-#         self.value = value
-#         self.submodel = submodel
-#
-#         DessiaObject.__init__(self, name=name)
-
-
-
-# class Optimizer(DessiaObject):
-#     def __init__(self, model_to_optimize: Model, name: str = ''):
-#         self.model_to_optimize = model_to_optimize
-#
-#         DessiaObject.__init__(self, name=name)
-#
-#     def optimize(self, optimization_value: int = 3) -> None:
-#         self.model_to_optimize.value += optimization_value
-
+from dessia_common import MethodType
 
 instanciate_generator = InstantiateModel(model_class=Generator,
                                          name='Instantiate Generator')
-generator_generate = ModelMethod(model_class=Generator,
-                                 method_name='generate',
+
+generate_method = MethodType(class_=Generator, name='generate')
+generator_generate = ModelMethod(method_type=generate_method,
                                  name='Generator Generate')
 attribute_selection = ModelAttribute(attribute_name='models',
                                      name='Attribute Selection')
@@ -46,8 +15,11 @@ attribute_selection = ModelAttribute(attribute_name='models',
 # Subworkflow of model optimization
 instanciate_optimizer = InstantiateModel(model_class=Optimizer,
                                          name='Instantiate Optimizer')
-optimization = ModelMethod(model_class=Optimizer, method_name='optimize',
-                           name='Optimization')
+
+
+generate_method = MethodType(class_=Optimizer, name='optimize')
+optimization = ModelMethod(method_type=generate_method, name='Optimization')
+
 model_fetcher = ModelAttribute(attribute_name='model_to_optimize',
                                name='Model Fetcher')
 

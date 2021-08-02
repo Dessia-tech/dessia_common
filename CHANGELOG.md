@@ -5,7 +5,144 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased => [0.4.4]
+## Unrealeased [=> 0.4.7]
+## Added
+- Support for Iterator typing
+- Object's default_dicts now implement objct_class
+
+## 0.4.6
+
+### Added
+### Fixed
+- Display block faulty definition (removed inputs as init argument & fixed to_dict)
+- Workflow & WorkflowRun uses implemented data_eq
+- WorkflowRun data_eq when output_value is a sequence
+- ForEach checks for workflow_block equivalence instead of equality
+
+
+
+#### New Features
+* Block Display: propagation of kwargs to model _displays
+* MethodType
+* Fields in workflows jsonschema that were missing
+* Names can now be set at Workflows run and run_again
+* Dev Objects implement markdown display
+* Support for None argument deserialization
+* Support for InstanceOf argument deserialization
+* add stl export
+* (workflow): add kwargs to block Display subcall
+* (markdown): clean indents inside DisplayObject Init
+* (workflow): use method typing for ModelMethod
+* (typing): add method typing
+* (dev): add markdown to dev-objects
+* (workflow): add name input to run arguments
+* (deserialize_arg): add InstanceOf support
+* (dict_to_object): add force_generic argument
+* adding some units
+* save to file handles stringio
+* export formats
+* (optimization): fixed attributes
+* (forms): add Distance to forms objects
+* (core): python_typing mandatory in jsonschema
+* restric extrapolation in interpolation_from_istep
+* (core): serialize Dict typing
+* (core): add standalone_in_db entry to generic union jsonschema
+* add InstanceOf typing
+* add builtins default
+* (typings): add deprecation warning on Subclass
+* (core): add exception to prevent docstring parsing from failing platform
+* separating __getstate__ and serailizable dict features in DessiaObject
+* (forms): add graph2d to dev objects
+* rename type datatype as class datatype
+* callback in run_again
+* (forms): add doc to dev objects
+* add docstring parsing & description to jsonschema
+* (core): add datatype for Type typing
+* check platform
+* (workflow): a couple features for workflows
+* (forms): allow methods for dev purpose
+* add method flag ton method_jsonschema
+* (core): default_dict based on datatype
+* (core): add standalone_in_db to jsonschema_from_annotation
+* add standalone_in_db in DessiaObject's jsonschema method
+* kwargs in volmdlr primitives
+* Kwargs in plot_data
+* (workflow): add input/output connections to ForEach
+* (forms): add optionnal sequence
+* propose support for default_value type serialization
+* add subclass typed arg for dev purpose
+* (core): raise TypeError if structure is used as static dict value
+* (core): raise ValueError if plot_data is not a sequence
+* (workflow): add input/output_connections to WorkflowBlock
+* (core): add jsonschema_from_annonation Optional support
+* (core): add is_typing function
+* (workflow): positions in to_dict()
+* (workflow): workflow.displays_() calls workflow_blocks.workflow's display_()
+* (typings): add units to jsonschema if Measure
+* (workflow): add types to block init
+
+#### Fixes
+* workflow ClassMethod in no returns in annotation
+* (display_block): fix kwargs propagation
+* (filter): remove TypedDict to use conventionnel non standalone class
+* (workflow): add name argument to run_again
+* (forms): remove extra " form multiline string
+* finalize generation
+* verbose typing for workflow
+* (workflow): MultiPlot inputs
+* (workflow): TypedVariable dict_to_object typo
+* (deseriliaze_arguments): add supoport of None & Optional
+* (workflow): display block inputs and to_dict
+* working decision tree generator
+* (workflow): fix WorkflowRun data_eq when output is sequence
+* (workflow): workflow uses data_eq & ForEach use block.equivalent
+* (makefile): revert command
+* extrapolate in utils, biggest canvas for plot_data
+* (core): remove raise serialise typing error
+* sorted in istep
+* getstate to dict
+* default value for variable-length objects
+* moving volume model
+* (workflow): recursion error fix
+* (workflow): refresh position before setting it in dict
+* (workflow): workflowblock position
+* (typings): add include_extra to get_type_hints
+* (forms): add name and elements to scatterplot & forms workflow
+* (core): add missing data to tuple from annotation
+* (workflow): dict_to_arguments issues
+
+#### Refactorings
+* (workflow): remove pareto from workflow inputs
+* (core): propagate subclass name change to jsonschema
+* use InstanceOf instead of Subclass
+* (workflow): import from dessia_common instead of whole module
+* (core): format parsed docstring
+* (workflow): change type-arguments typings to Type
+* remove default_values on dev objects
+* (workflow): set input/output connections to None
+* (core): clean code
+* (core): proposition on new default_dict
+* (core): replace some jsonschema attributes out of loops
+* (workflow): comment Function block out
+* remove include_extras argument
+* (core): add some more introspection helpers
+* (workflow): class InstantiateModel instead of InstanciateModel
+* (typings): use get_type_hints instead of __annotations__
+
+#### Others
+* (plot_data): update to 0.5.1
+
+
+### [0.4.5]
+## Added
+- Dev Objects : add maldefined method
+- Typings : add Mass typing
+- Add force_generic argument to dict_to_object to avoid recursion when generic computation is needed
+- Dict typing serilization/deserialization
+- All typings serialization
+- python_typing is set in all jsonschema
+
+## [0.4.4]
 ### Added
 - InstanceOf typing. Subclass is Deprecated
 - Docstring parsing & failure prevention

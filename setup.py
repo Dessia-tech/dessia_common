@@ -109,6 +109,8 @@ setup(name='dessia_common',
       author_email='masfaraud@dessia.tech',
       packages=['dessia_common'],
       install_requires=['typeguard', 'networkx', 'numpy', 'pandas',
-                        'mypy_extensions', 'scipy', 'pyDOE'],
+                        'mypy_extensions', 'scipy', 'pyDOE',
+                        'dectree',
+                        'openpyxl', 'parameterized'],
       python_requires='>=3.7')
 

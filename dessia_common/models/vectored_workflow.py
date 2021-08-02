@@ -14,7 +14,7 @@ filters = [{'attribute': 'MPG', 'operator': 'gte', 'bound': 10},
            {'attribute': 'MPG', 'operator': 'lte', 'bound': 35}]
 
 # Blocks
-import_csv = wf.Import(type_='csv') 
+import_csv = wf.Import(type_='csv')
 instantiate_pareto = wf.InstanciateModel(model_class=ParetoSettings,
                                          name='Pareto Settings')
 instantiate_catalog = wf.InstanciateModel(model_class=Catalog,
@@ -25,7 +25,9 @@ filter_method = wf.ModelMethod(model_class=Catalog,
 filtered_catalog = wf.InstanciateModel(model_class=Catalog,
                                        name='Filtered Catalog')
 display = wf.Display(order=0, name="Display")
+# display = wf.MultiPlot(choice_args, 1, name='Display')
 filtered = wf.Display(order=1, name="Filtered")
+# filtered = wf.MultiPlot(choice_args, 1, name='Filtered')
 # objectives_method = wf.ModelMethod(model_class=Catalog,
 #                                    method_name='find_best_objective',
 #                                    name="Find best objectives")
@@ -74,5 +76,5 @@ input_values = {
 }
 workflow_run = workflow.run(input_values=input_values)
 
-# c = Client(api_url='https://api.platform-dev.dessia.tech')
-# r = c.create_object_from_python_object(workflow_run)
+c = Client(api_url='https://api.platform.dessia.tech')
+r = c.create_object_from_python_object(workflow_run)

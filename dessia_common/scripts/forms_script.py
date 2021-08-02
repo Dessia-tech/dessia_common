@@ -22,12 +22,12 @@ inheriting_list = [EnhancedStandaloneSubobject(floatarg=-7516.15,
 standalone_object = StandaloneObject(standalone_subobject=standalone_subobject,
                                      embedded_subobject=embedded_subobject,
                                      dynamic_dict=dynamic_dict,
-                                     static_dict=static_dict,
                                      tuple_arg=tuple_arg,
                                      intarg=1, strarg='test_str',
                                      object_list=[sublist_ss],
                                      subobject_list=[sublist_es],
                                      builtin_list=[0, 1, 2, 3],
                                      union_arg=enhanced_ss,
-                                     subclass_arg=inheriting_list[0])
+                                     subclass_arg=inheriting_list[0],
+                                     array_arg=[[0, 1], [1, 0]])
 
