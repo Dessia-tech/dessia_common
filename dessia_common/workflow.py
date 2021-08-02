@@ -551,10 +551,10 @@ class ForEach(Block):
         output_variable = Variable(name='Foreach output')
 
         block_i, n, output_i = workflow_block.workflow.variable_indices(workflow_block.workflow.output)
-        self.output_connections = [[block_i, output_i], 0]
+        self.output_connections = [[[block_i, output_i], 0]]
 
         block_i1, n, input_i = workflow_block.workflow.variable_indices(self.iter_input)
-        self.input_connections = [m, [block_i1, input_i]]
+        self.input_connections = [[m, [block_i1, input_i]]]
 
         Block.__init__(self, inputs, [output_variable], name=name)
 
@@ -1741,7 +1741,6 @@ class InternalConnection(DessiaObject):
             self.indices = [port, [subblock, subport]]
         else:
             self.indices = [[subblock, subport], port]
-
 
 
 class WorkflowBlock(Block):
