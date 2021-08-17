@@ -1064,7 +1064,7 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False):
 
     subobjects = {}
     for key, value in init_dict.items():
-        if class_argspec is not None:
+        if class_argspec is not None and key in class_argspec.annotations:
             annotation = class_argspec.annotations[key]
         else:
             annotation = None
