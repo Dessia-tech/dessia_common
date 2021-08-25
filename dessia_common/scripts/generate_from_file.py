@@ -13,3 +13,7 @@ strbuffer = io.StringIO(string)
 StandaloneObject.generate_from_text(strbuffer)
 StandaloneObject.generate_from_bin(binbuffer)
 
+argument_dict = {'0': string}
+
+deserialized_dict = obj.dict_to_arguments(argument_dict, 'generate_from_text')
+
