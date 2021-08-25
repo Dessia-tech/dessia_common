@@ -1227,6 +1227,10 @@ def serialize_typing(typing_):
             raise NotImplementedError(msg.format(typing_))
     if isinstance(typing_, type):
         return full_classname(typing_, compute_for='class')
+    if typing_ is TextIO:
+        return "TextFile"
+    if typing_ is BinaryIO:
+        return "BinaryFile"
     return str(typing_)
 
 
@@ -1246,6 +1250,11 @@ def deserialize_typing(serialized_typing):
         # TODO other builtins should be implemented
         if serialized_typing in ['float', 'builtins.float']:
             return float
+
+        if serialized_typing == "TextFile":
+            return TextIO
+        if serialized_typing == "BinaryFile":
+            return BinaryIO
 
         if '[' in serialized_typing:
             toptype, remains = serialized_typing.split('[', 1)
