@@ -187,8 +187,8 @@ class StandaloneObject(DessiaObject):
     """
     _standalone_in_db = True
     _generic_eq = True
-    _allowed_methods = ['add_standalone_object',
-                        'add_embedded_object', 'add_float']
+    _allowed_methods = ['add_standalone_object', 'add_embedded_object',
+                        'add_float', 'generate_from_file']
 
     def __init__(self, standalone_subobject: StandaloneSubobject,
                  embedded_subobject: EmbeddedSubobject,
