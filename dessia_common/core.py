@@ -3,6 +3,7 @@
 """
 
 """
+import io
 import sys
 import warnings
 import math
@@ -1796,6 +1797,11 @@ def deserialize_argument(type_, argument):
         else:
             msg = "Deserialization of typing {} is not implemented"
             raise NotImplementedError(msg.format(type_))
+    elif type_ is TextIO:
+        deserialized_arg = io.StringIO(argument)
+    elif type_ is BinaryIO:
+        bytes_content = argument.encode('utf-8')
+        deserialized_arg = io.BytesIO(bytes_content)
     else:
         if type_ in TYPING_EQUIVALENCES.keys():
             if isinstance(argument, type_):

@@ -246,7 +246,9 @@ class StandaloneObject(DessiaObject):
 
     @classmethod
     def generate_from_text(cls, stream: TextIO):
+        print(stream)
         string = stream.read()
+        print(string.split(","))
         name, raw_seed = string.split(",")
         seed = int(raw_seed.strip())
         return cls.generate(seed=seed, name=name)
