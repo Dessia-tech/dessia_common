@@ -16,7 +16,7 @@ import json
 from dessia_common.exports import XLSXWriter
 
 
-from typing import List, Dict, Type, Tuple, Union, Any, IO, \
+from typing import List, Dict, Type, Tuple, Union, Any, TextIO, BinaryIO, \
     get_type_hints, get_origin, get_args
 try:
     from typing import TypedDict  # >=3.8
@@ -1584,11 +1584,8 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
             order=order, editable=editable, title=title
         )
         jsonschema_element[key]['units'] = typing_.units
-    elif typing_ is IO:
-        jsonschema_element[key].update({
-            'type': 'object', 'is_file': True,
-            'properties': {'path': {'type': 'string'}}
-        })
+    elif typing_ is TextIO or typing_ is BinaryIO:
+        jsonschema_element[key].update({'type': 'text', 'is_file': True})
     else:
         classname = full_classname(object_=typing_, compute_for='class')
         if issubclass(typing_, DessiaObject):
@@ -1882,6 +1879,8 @@ def datatype_from_jsonschema(jsonschema):
         return 'homogeneous_sequence'
 
     elif jsonschema['type'] in ['number', 'string', 'boolean']:
+        if 'is_type' in jsonschema and jsonschema['is_type']:
+            return 'file'
         return 'builtin'
     return None
 

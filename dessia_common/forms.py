@@ -30,7 +30,7 @@ coding/naming style & convention.
 """
 
 from math import floor, ceil
-from typing import Dict, List, Tuple, Union, IO
+from typing import Dict, List, Tuple, Union, TextIO, BinaryIO
 
 try:
     import volmdlr as vm
@@ -245,11 +245,18 @@ class StandaloneObject(DessiaObject):
                    array_arg=array_arg, name=name)
 
     @classmethod
-    def generate_from_file(cls, stream: IO):
+    def generate_from_text(cls, stream: TextIO):
         string = stream.read()
         name, raw_seed = string.split(",")
         seed = int(raw_seed.strip())
         return cls.generate(seed=seed, name=name)
+
+    @classmethod
+    def generate_from_bin(cls, stream: BinaryIO):
+        # string = stream.read()
+        # name, raw_seed = string.split(",")
+        # seed = int(raw_seed.strip())
+        return cls.generate(seed=0, name="TODO From Bytes")
 
     def add_standalone_object(self, object_: StandaloneSubobject):
         """
