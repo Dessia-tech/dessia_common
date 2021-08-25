@@ -30,7 +30,7 @@ coding/naming style & convention.
 """
 
 from math import floor, ceil
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Tuple, Union, IO
 
 try:
     import volmdlr as vm
@@ -217,7 +217,8 @@ class StandaloneObject(DessiaObject):
         DessiaObject.__init__(self, name=name)
 
     @classmethod
-    def generate(cls, seed: int) -> 'StandaloneObject':
+    def generate(cls, seed: int,
+                 name: str = 'Standalone Object Demo') -> 'StandaloneObject':
         is_even = not bool(seed % 2)
         standalone_subobject = StandaloneSubobject.generate(seed)
         embedded_subobject = EmbeddedSubobject.generate(seed)
@@ -241,7 +242,14 @@ class StandaloneObject(DessiaObject):
                    intarg=intarg, strarg=strarg, object_list=object_list,
                    subobject_list=subobject_list, builtin_list=builtin_list,
                    union_arg=union_arg, subclass_arg=subclass_arg,
-                   array_arg=array_arg)
+                   array_arg=array_arg, name=name)
+
+    @classmethod
+    def generate_from_file(cls, stream: IO):
+        string = stream.read()
+        name, raw_seed = string.split(",")
+        seed = int(raw_seed.strip())
+        return cls.generate(seed=seed, name=name)
 
     def add_standalone_object(self, object_: StandaloneSubobject):
         """
