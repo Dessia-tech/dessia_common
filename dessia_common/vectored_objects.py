@@ -558,7 +558,11 @@ def from_csv(filename: str, end: int = None, remove_duplicates: bool = False):
                           names=True, encoding=None)
     variables = [v for v in array.dtype.fields.keys()]
     lines = []
-    for i, line in enumerate(array):
+    if array.size == 1:
+        array_looper = [array]
+    else:
+        array_looper = array
+    for i, line in enumerate(array_looper):
         if end is not None and i >= end:
             break
         if not remove_duplicates or (remove_duplicates
