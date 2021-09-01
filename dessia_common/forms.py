@@ -17,12 +17,8 @@ Some general rules :
   and one possible type for values.
     ex : Dict[str, bool] is a dict like :
         d = {'key0': True, 'key1': False, 'another_key': False,...}
-- As opposed to this, TypedDict defines a static structure,
+- As opposed to this, a non-standalone_in_db class defines a static structure,
   with a defined number of given, expected keys & types of their values.
-    ex :
-    class StaticDict(TypedDict):
-        name: str
-        value: float
 
 In addition to types & genericity (brought by DessiaObject),
 this module can also be seen as a template for Dessia's
