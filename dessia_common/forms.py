@@ -26,7 +26,7 @@ coding/naming style & convention.
 """
 
 from math import floor, ceil
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Tuple, Union, TextIO, BinaryIO
 
 try:
     import volmdlr as vm
@@ -183,8 +183,8 @@ class StandaloneObject(DessiaObject):
     """
     _standalone_in_db = True
     _generic_eq = True
-    _allowed_methods = ['add_standalone_object',
-                        'add_embedded_object', 'add_float']
+    _allowed_methods = ['add_standalone_object', 'add_embedded_object',
+                        'add_float', 'generate_from_file']
 
     def __init__(self, standalone_subobject: StandaloneSubobject,
                  embedded_subobject: EmbeddedSubobject,
@@ -213,7 +213,8 @@ class StandaloneObject(DessiaObject):
         DessiaObject.__init__(self, name=name)
 
     @classmethod
-    def generate(cls, seed: int) -> 'StandaloneObject':
+    def generate(cls, seed: int,
+                 name: str = 'Standalone Object Demo') -> 'StandaloneObject':
         is_even = not bool(seed % 2)
         standalone_subobject = StandaloneSubobject.generate(seed)
         embedded_subobject = EmbeddedSubobject.generate(seed)
@@ -237,7 +238,23 @@ class StandaloneObject(DessiaObject):
                    intarg=intarg, strarg=strarg, object_list=object_list,
                    subobject_list=subobject_list, builtin_list=builtin_list,
                    union_arg=union_arg, subclass_arg=subclass_arg,
-                   array_arg=array_arg)
+                   array_arg=array_arg, name=name)
+
+    @classmethod
+    def generate_from_text(cls, stream: TextIO):
+        print(stream)
+        string = stream.read()
+        print(string.split(","))
+        name, raw_seed = string.split(",")
+        seed = int(raw_seed.strip())
+        return cls.generate(seed=seed, name=name)
+
+    @classmethod
+    def generate_from_bin(cls, stream: BinaryIO):
+        # string = stream.read()
+        # name, raw_seed = string.split(",")
+        # seed = int(raw_seed.strip())
+        return cls.generate(seed=0, name="TODO From Bytes")
 
     def add_standalone_object(self, object_: StandaloneSubobject):
         """
