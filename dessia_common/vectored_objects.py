@@ -527,8 +527,8 @@ class Catalog(DessiaObject):
                                   to_disp_attribute_names=to_disp_attribute_names))
         
         return [MultiplePlots(plots=plots, elements=all_points, 
-                             point_families=[point_family_0,point_family_1],
-                             initial_view_on=True)]
+                              point_families=[point_family_0,point_family_1],
+                              initial_view_on=True)]
 
 def pareto_frontier(costs):
     """
