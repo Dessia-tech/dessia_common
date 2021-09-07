@@ -256,17 +256,16 @@ class Catalog(DessiaObject):
         values2d = [{key: val[key]} for key in first_vars for val in values]
         rgbs = [[192, 11, 11], [14, 192, 11], [11, 11, 192]]
 
-        tooltip = plot_data.Tooltip(to_disp_attribute_names=self.variables,
+        tooltip = plot_data.Tooltip(attributes=self.variables,
                                     name='Tooltip')
 
-        scatterplot = plot_data.Scatter(axis=plot_data.Axis(),
-                                        tooltip=tooltip,
-                                        to_disp_attribute_names=first_vars,
-                                        elements=values2d,
-                                        name='Scatter Plot')
+        scatterplot = plot_data.Scatter(axis=plot_data.Axis(), tooltip=tooltip,
+                                        x_variable=first_vars[0],
+                                        y_variable=first_vars[1],
+                                        elements=values2d, name='Scatter Plot')
 
         parallelplot = plot_data.ParallelPlot(disposition='horizontal',
-                                              to_disp_attribute_names=self.variables,
+                                              axes=self.variables,
                                               rgbs=rgbs, elements=values)
         objects = [scatterplot, parallelplot]
         sizes = [plot_data.Window(width=560, height=300),
@@ -457,46 +456,46 @@ class Catalog(DessiaObject):
             raise ValueError("No solutions found")
             
     def plot_data(self):
-        
-        from plot_data.core import Tooltip, TextStyle, SurfaceStyle, PointStyle,\
-            EdgeStyle, Axis, Scatter, ParallelPlot, PointFamily, MultiplePlots
+        from plot_data.core import Tooltip, TextStyle, SurfaceStyle,\
+            Scatter, ParallelPlot, PointFamily, MultiplePlots
         from plot_data.colors import GREY, LIGHTGREY, LIGHTGREEN, LIGHTBLUE
             
         name_column_0 = self.variables[0]
         list_name = self.get_values(name_column_0)
             
-        list_settings = [name for name in self.pareto_settings.minimized_attributes]
+        list_settings = [name
+                         for name in self.pareto_settings.minimized_attributes]
         list_value = [self.get_values(cv) for cv in self.choice_variables]
-        if self.pareto_is_enabled :
+        if self.pareto_is_enabled:
             cost = self.build_costs(self.pareto_settings)
             p_frontier = pareto_frontier(cost)
-            elements = [[],[]] #point_non_pareto, point_pareto
-            for i in range(len(list_name)) :
-                dict_element = {name_column_0: list_name[i],}
-                for k, setting in enumerate(self.choice_variables) :
+            elements = [[], []]  # point_non_pareto, point_pareto
+            for i in range(len(list_name)):
+                dict_element = {name_column_0: list_name[i]}
+                for k, setting in enumerate(self.choice_variables):
                     dict_element[setting] = list_value[k][i]
                     
-                if p_frontier[i] :
+                if p_frontier[i]:
                     elements[1].append(dict_element)
-                else :
+                else:
                     elements[0].append(dict_element)
              
-        else :    
-            elements = [[],[]]
-            for i in range(len(list_name)) :
-                dict_element = {name_column_0: list_name[i],}
-                for k, setting in enumerate(self.choice_variables) :
+        else:
+            elements = [[], []]
+            for i in range(len(list_name)):
+                dict_element = {name_column_0: list_name[i]}
+                for k, setting in enumerate(self.choice_variables):
                     dict_element[setting] = list_value[k][i]
                     
                 elements[0].append(dict_element)
         
-        #ScatterPlot
-        to_disp_attribute_names = self.choice_variables
+        # ScatterPlot
+        attributes = self.choice_variables
         text_style = TextStyle(text_color=GREY,
                                font_size=10,
                                font_style='sans-serif')
         surface_style = SurfaceStyle(color_fill=LIGHTGREY, opacity=0.3)
-        custom_tooltip = Tooltip(to_disp_attribute_names=to_disp_attribute_names,
+        custom_tooltip = Tooltip(attributes=attributes,
                                  surface_style=surface_style,
                                  text_style=text_style,
                                  tooltip_radius=10)
@@ -505,30 +504,31 @@ class Catalog(DessiaObject):
         
         plots = []
         
-        #ScatterPlot
-        
-        for j in range(len(list_settings)) :
-            for i in range(j+1,len(list_settings)) :
-                if len(plots) < 3 :
+        # ScatterPlot
+        for j in range(len(list_settings)):
+            for i in range(j+1, len(list_settings)):
+                if len(plots) < 3:
                     plots.append(Scatter(tooltip=custom_tooltip,
-                                         to_disp_attribute_names=[list_settings[j], list_settings[i]],
+                                         x_variable=list_settings[j],
+                                         y_variable=list_settings[i],
                                          elements=all_points))
         
         list_index_0 = [k for k in range(len(elements[0]))]
-        point_family_0 = PointFamily(LIGHTBLUE, list_index_0, name = 'Non pareto')
+        point_family_0 = PointFamily(LIGHTBLUE, list_index_0,
+                                     name='Non pareto')
         
         n_pareto = len(elements[1])
         list_index_1 = [len(all_points)-i-1 for i in range(n_pareto)]
-        point_family_1 = PointFamily(LIGHTGREEN, list_index_1, name = 'Pareto')
+        point_family_1 = PointFamily(LIGHTGREEN, list_index_1, name='Pareto')
         
         # ParallelPlot
-        
         plots.append(ParallelPlot(elements=all_points,
-                                  to_disp_attribute_names=to_disp_attribute_names))
+                                  axes=attributes))
         
-        return [MultiplePlots(plots=plots, elements=all_points, 
-                             point_families=[point_family_0,point_family_1],
-                             initial_view_on=True)]
+        return [MultiplePlots(plots=plots, elements=all_points,
+                              point_families=[point_family_0, point_family_1],
+                              initial_view_on=True)]
+
 
 def pareto_frontier(costs):
     """
