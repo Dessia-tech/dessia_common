@@ -778,8 +778,7 @@ class MultiPlot(Display):
         values2d = [{key: val[key]} for key in first_vars for val in
                     values]
 
-        tooltip = plot_data.Tooltip(name='Tooltip',
-                                    attributes=self.attributes)
+        tooltip = plot_data.Tooltip(name='Tooltip', attributes=self.attributes)
 
         scatterplot = plot_data.Scatter(tooltip=tooltip,
                                         x_variable=first_vars[0],
