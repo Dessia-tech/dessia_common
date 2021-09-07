@@ -343,7 +343,6 @@ class DessiaObject:
         #     return cls.DictToObject(dict_)
 
         if cls is not DessiaObject:
-            # print(cls)
             obj = dict_to_object(dict_=dict_, class_=cls,
                                  force_generic=force_generic)
             return obj
@@ -1057,7 +1056,8 @@ def get_python_class_from_class_name(full_class_name):
     return class_
 
 def dereference_jsonpointers(value, global_dict):
-    if isinstance(value, list):
+   
+    if isinstance(value, (list, tuple)):
         return dereference_jsonpointers_sequence(value, global_dict)
     elif isinstance(value, dict):
         return dereference_jsonpointers_dict(value, global_dict)
@@ -1065,10 +1065,11 @@ def dereference_jsonpointers(value, global_dict):
         return value
     
 def get_in_dict_from_path(dict_, path):
-    segments  = path.split('/')
+    segments  = path.lstrip('#/').split('/')
     element = dict_[segments[0]]
     for segment in segments[1:]:
         element = element[segment]
+        
     return element
 
     
@@ -1079,23 +1080,22 @@ def dereference_jsonpointers_dict(dict_, global_dict):
     else:
         deref_dict = {}
         for key, value in dict_.items():
-            # path_value = '{}/{}'.format(path, key)
             deref_dict[key] = dereference_jsonpointers(value, global_dict)
         return deref_dict
     
-    dereferenced_dict = {}
-    for key, value in dict_:
-        dereferenced_dict[key] = dereference_jsonpointers(value)
 
 def dereference_jsonpointers_sequence(sequence, global_dict):
     deref_sequence = []
     for element in sequence:
-        deref_sequence.append(dereference_jsonpointers, element)
+        deref_sequence.append(dereference_jsonpointers(element, global_dict))
     return deref_sequence
 
 def dict_to_object(dict_, class_=None, force_generic: bool = False):
     class_argspec = None
-    working_dict = dict_.copy()
+
+    working_dict = dereference_jsonpointers_dict(dict_, dict_)
+
+
     if class_ is None and 'object_class' in working_dict:
         class_ = get_python_class_from_class_name(working_dict['object_class'])
 
@@ -1120,7 +1120,6 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False):
         init_dict = working_dict
 
     # print('wd', working_dict)
-    working_dict = dereference_jsonpointers_dict(working_dict, working_dict)
     
     subobjects = {}
     for key, value in init_dict.items():

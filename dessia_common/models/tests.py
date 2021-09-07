@@ -36,3 +36,5 @@ standalone_object = StandaloneObject(standalone_subobject=standalone_subobject,
                                      union_arg=enhanced_ss,
                                      subclass_arg=inheriting_list[0],
                                      array_arg=[[0, 1], [1, 0]])
+
+
