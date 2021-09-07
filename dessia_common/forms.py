@@ -17,12 +17,8 @@ Some general rules :
   and one possible type for values.
     ex : Dict[str, bool] is a dict like :
         d = {'key0': True, 'key1': False, 'another_key': False,...}
-- As opposed to this, TypedDict defines a static structure,
+- As opposed to this, a non-standalone_in_db class defines a static structure,
   with a defined number of given, expected keys & types of their values.
-    ex :
-    class StaticDict(TypedDict):
-        name: str
-        value: float
 
 In addition to types & genericity (brought by DessiaObject),
 this module can also be seen as a template for Dessia's
@@ -30,7 +26,7 @@ coding/naming style & convention.
 """
 
 from math import floor, ceil
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Tuple, Union, TextIO, BinaryIO
 
 try:
     import volmdlr as vm
@@ -45,11 +41,6 @@ except:
 from dessia_common import DessiaObject
 from dessia_common.typings import InstanceOf, Distance
 from dessia_common.vectored_objects import Catalog
-
-try:
-    from typing import TypedDict  # >=3.8
-except ImportError:
-    from mypy_extensions import TypedDict  # <=3.7
 
 from numpy import linspace
 from math import cos
@@ -192,9 +183,8 @@ class StandaloneObject(DessiaObject):
     """
     _standalone_in_db = True
     _generic_eq = True
-    _allowed_methods = ['add_standalone_object',
-                        'add_embedded_object', 'add_float']
-    _non_editable_attributes = ['intarg', 'strarg']
+    _allowed_methods = ['add_standalone_object', 'add_embedded_object',
+                        'add_float', 'generate_from_file']
 
     def __init__(self, standalone_subobject: StandaloneSubobject,
                  embedded_subobject: EmbeddedSubobject,
@@ -223,7 +213,8 @@ class StandaloneObject(DessiaObject):
         DessiaObject.__init__(self, name=name)
 
     @classmethod
-    def generate(cls, seed: int) -> 'StandaloneObject':
+    def generate(cls, seed: int,
+                 name: str = 'Standalone Object Demo') -> 'StandaloneObject':
         is_even = not bool(seed % 2)
         standalone_subobject = StandaloneSubobject.generate(seed)
         embedded_subobject = EmbeddedSubobject.generate(seed)
@@ -247,7 +238,23 @@ class StandaloneObject(DessiaObject):
                    intarg=intarg, strarg=strarg, object_list=object_list,
                    subobject_list=subobject_list, builtin_list=builtin_list,
                    union_arg=union_arg, subclass_arg=subclass_arg,
-                   array_arg=array_arg)
+                   array_arg=array_arg, name=name)
+
+    @classmethod
+    def generate_from_text(cls, stream: TextIO):
+        print(stream)
+        string = stream.read()
+        print(string.split(","))
+        name, raw_seed = string.split(",")
+        seed = int(raw_seed.strip())
+        return cls.generate(seed=seed, name=name)
+
+    @classmethod
+    def generate_from_bin(cls, stream: BinaryIO):
+        # string = stream.read()
+        # name, raw_seed = string.split(",")
+        # seed = int(raw_seed.strip())
+        return cls.generate(seed=0, name="TODO From Bytes")
 
     def add_standalone_object(self, object_: StandaloneSubobject):
         """
@@ -291,17 +298,18 @@ class StandaloneObject(DessiaObject):
         points = [plot_data.Point2D(cx=v[0], cy=v[1], name='Point'+str(i))
                   for i, v in enumerate(catalog.array)]
         axis = plot_data.Axis()
-        tooltip = plot_data.Tooltip(to_disp_attribute_names=attributes,
+        tooltip = plot_data.Tooltip(attributes=attributes,
                                     name='Tooltips')
         scatter_plot = plot_data.Scatter(axis=axis, tooltip=tooltip,
                                          elements=points,
-                                         to_disp_attribute_names=attributes,
+                                         x_variable=attributes[0],
+                                         y_variable=attributes[1],
                                          name='Scatter Plot')
 
         # Parallel Plot
         attributes = ['cx', 'cy', 'color_fill', 'color_stroke']
         parallel_plot = plot_data.ParallelPlot(elements=points,
-                                               to_disp_attribute_names=attributes,
+                                               axes=attributes,
                                                name='Parallel Plot')
 
         # Multi Plot
@@ -314,7 +322,7 @@ class StandaloneObject(DessiaObject):
                                              name='Multiple Plot')
 
         attribute_names = ['time', 'electric current']
-        tooltip = plot_data.Tooltip(to_disp_attribute_names=attribute_names)
+        tooltip = plot_data.Tooltip(attributes=attribute_names)
         time1 = linspace(0, 20, 20)
         current1 = [t ** 2 for t in time1]
         elements1 = []
@@ -341,7 +349,8 @@ class StandaloneObject(DessiaObject):
         dataset2 = plot_data.Dataset(elements=elements2, name='I2 = f(t)')
 
         graph2d = plot_data.Graph2D(graphs=[custom_dataset, dataset2],
-                                    to_disp_attribute_names=attribute_names)
+                                    x_variable=attribute_names[0],
+                                    y_variable=attribute_names[1])
         return [primitives_group, scatter_plot,
                 parallel_plot, multi_plot, graph2d]
 
@@ -438,6 +447,8 @@ DEF_SO = StandaloneObject.generate(1)
 
 
 class StandaloneObjectWithDefaultValues(StandaloneObject):
+    _non_editable_attributes = ['intarg', 'strarg']
+
     def __init__(self, standalone_subobject: StandaloneSubobject = DEF_SS,
                  embedded_subobject: EmbeddedSubobject = DEF_ES,
                  dynamic_dict: Dict[str, bool] = None,
