@@ -992,6 +992,47 @@ def stringify_dict_keys(obj):
         return obj
     return new_obj
 
+def serialize_dict(dict_):
+    serialized_dict = {}
+    for key, value in dict_.items():
+        if hasattr(value, 'to_dict'):
+            serialized_value = value.to_dict()
+        elif isinstance(value, dict):
+            serialized_value = serialize_dict(value)
+        elif isinstance(value, (list, tuple)):
+            serialized_value = serialize_sequence(value)
+        else:
+            if not is_jsonable(value):
+                msg = 'Attribute {} of value {} is not json serializable'
+                raise SerializationError(msg.format(key, value))
+            serialized_value = value
+        serialized_dict[key] = serialized_value
+    return serialized_dict
+
+
+def serialize_sequence(seq):
+    serialized_sequence = []
+    for value in seq:
+        if hasattr(value, 'to_dict'):
+            serialized_sequence.append(value.to_dict())
+        elif isinstance(value, dict):
+            serialized_sequence.append(serialize_dict(value))
+        elif isinstance(value, (list, tuple)):
+            serialized_sequence.append(serialize_sequence(value))
+        else:
+            serialized_sequence.append(value)
+    return serialized_sequence
+
+def serialize(deserialized_element):
+    if isinstance(deserialized_element, DessiaObject):
+        serialized = deserialized_element.to_dict()
+    elif isinstance(deserialized_element, dict):
+        serialized = serialize_dict(deserialized_element)
+    elif is_sequence(deserialized_element):
+        serialized = serialize_sequence(deserialized_element)
+    else:
+        serialized = deserialized_element
+    return serialized
 
 def serialize_dict_with_pointers(dict_, memo, path):
     serialized_dict = {}
@@ -1349,17 +1390,6 @@ def deserialize_typing(serialized_typing):
         #     args = full_argname.split(', ')
     raise NotImplementedError('{}'.format(serialized_typing))
 
-
-# def serialize(deserialized_element):
-#     if isinstance(deserialized_element, DessiaObject):
-#         serialized = deserialized_element.to_dict()
-#     elif isinstance(deserialized_element, dict):
-#         serialized = serialize_dict(deserialized_element)
-#     elif is_sequence(deserialized_element):
-#         serialized = serialize_sequence(deserialized_element)
-#     else:
-#         serialized = deserialized_element
-#     return serialized
 
 
 def deserialize(serialized_element, sequence_annotation: str = 'List'):
