@@ -3,6 +3,7 @@
 """
 
 """
+import io
 import sys
 import warnings
 import math
@@ -16,7 +17,7 @@ import json
 from dessia_common.exports import XLSXWriter
 
 
-from typing import List, Dict, Type, Tuple, Union, Any, \
+from typing import List, Dict, Type, Tuple, Union, Any, TextIO, BinaryIO, \
     get_type_hints, get_origin, get_args
 try:
     from typing import TypedDict  # >=3.8
@@ -1064,7 +1065,7 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False):
 
     subobjects = {}
     for key, value in init_dict.items():
-        if class_argspec is not None:
+        if class_argspec is not None and key in class_argspec.annotations:
             annotation = class_argspec.annotations[key]
         else:
             annotation = None
@@ -1227,6 +1228,10 @@ def serialize_typing(typing_):
             raise NotImplementedError(msg.format(typing_))
     if isinstance(typing_, type):
         return full_classname(typing_, compute_for='class')
+    if typing_ is TextIO:
+        return "TextFile"
+    if typing_ is BinaryIO:
+        return "BinaryFile"
     return str(typing_)
 
 
@@ -1246,6 +1251,11 @@ def deserialize_typing(serialized_typing):
         # TODO other builtins should be implemented
         if serialized_typing in ['float', 'builtins.float']:
             return float
+
+        if serialized_typing == "TextFile":
+            return TextIO
+        if serialized_typing == "BinaryFile":
+            return BinaryIO
 
         if '[' in serialized_typing:
             toptype, remains = serialized_typing.split('[', 1)
@@ -1584,6 +1594,8 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
             order=order, editable=editable, title=title
         )
         jsonschema_element[key]['units'] = typing_.units
+    elif typing_ is TextIO or typing_ is BinaryIO:
+        jsonschema_element[key].update({'type': 'text', 'is_file': True})
     else:
         classname = full_classname(object_=typing_, compute_for='class')
         if issubclass(typing_, DessiaObject):
@@ -1785,6 +1797,11 @@ def deserialize_argument(type_, argument):
         else:
             msg = "Deserialization of typing {} is not implemented"
             raise NotImplementedError(msg.format(type_))
+    elif type_ is TextIO:
+        deserialized_arg = io.StringIO(argument)
+    elif type_ is BinaryIO:
+        bytes_content = argument.encode('utf-8')
+        deserialized_arg = io.BytesIO(bytes_content)
     else:
         if type_ in TYPING_EQUIVALENCES.keys():
             if isinstance(argument, type_):
@@ -1877,6 +1894,8 @@ def datatype_from_jsonschema(jsonschema):
         return 'homogeneous_sequence'
 
     elif jsonschema['type'] in ['number', 'string', 'boolean']:
+        if 'is_type' in jsonschema and jsonschema['is_type']:
+            return 'file'
         return 'builtin'
     return None
 
