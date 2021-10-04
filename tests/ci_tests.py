@@ -1,8 +1,8 @@
 
 import os
 
-scripts = ['unit_tests.py', 'bson_valid.py',
-           'workflow_with_models.py']
+scripts = ['workflow_with_models.py', 'unit_tests.py', 'bson_valid.py',
+           ]
 
 for script_name in scripts:
     print('\n## Executing script {}'.format(script_name))
