@@ -11,7 +11,7 @@ import json
 MIN_FILE_COVERAGE = 0.
 MIN_MODULE_COVERAGE = 20.
 
-untracked_modules = []
+untracked_modules = ['dessia_common/templates.py']
 
 print('untracked modules:', untracked_modules)
 

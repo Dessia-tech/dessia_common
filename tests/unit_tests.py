@@ -205,4 +205,4 @@ obj = StandaloneObject.dict_to_object(d)
 
 assert standalone_object == obj
 
-
+obj.to_xlsx('test')
