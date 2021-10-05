@@ -797,7 +797,7 @@ class DessiaFilter(DessiaObject):
         hash_ = len(self.attribute)
         hash_ += hash(self.operator)
         hash_ += hash(self.bound)
-        return hash
+        return int(hash_)
 
     def __eq__(self, other: 'DessiaFilter'):
         same_attr = self.attribute == other.attribute
