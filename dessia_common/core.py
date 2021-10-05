@@ -793,6 +793,18 @@ class Filter(DessiaObject):
 
         DessiaObject.__init__(self, name=name)
 
+    def __hash__(self):
+        hash_ = len(self.attribute)
+        hash_ += hash(self.operator)
+        hash_ += hash(self.bound)
+        return hash
+
+    def __eq__(self, other: 'Filter'):
+        same_attr = self.attribute == other.attribute
+        same_op = self.operator == other.operator
+        same_bound = self.bound == other.bound
+        return same_attr and same_op and same_bound
+
 
 class Evolution(DessiaObject):
     """
