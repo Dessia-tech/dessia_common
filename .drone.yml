@@ -17,6 +17,7 @@ steps:
   - coverage run --source dessia_common ci_tests.py
   - coverage json
   - python coverage.py 
+  - coverage report
 
 - name: develop
   image: python:3.8
