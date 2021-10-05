@@ -5,11 +5,11 @@ A simple workflow composed of functions
 """
 import dessia_common.typings as dct
 import dessia_common.workflow as wf
-from dessia_common import DessiaObject
+from dessia_common import DessiaObject, DessiaFilter
 
 import dessia_common.tests as dctests
 
-instanciate_generator = wf.InstanciateModel(model_class=dctests.Generator,
+instanciate_generator = wf.InstantiateModel(model_class=dctests.Generator,
                                             name='Instantiate Generator')
 generator_generate = wf.ModelMethod(dct.MethodType(dctests.Generator,'generate'),
                                     name='Generator Generate')
@@ -17,7 +17,7 @@ attribute_selection = wf.ModelAttribute(attribute_name='models',
                                         name='Attribute Selection')
 
 # Subworkflow of model optimization
-instanciate_optimizer = wf.InstanciateModel(model_class=dctests.Optimizer,
+instanciate_optimizer = wf.InstantiateModel(model_class=dctests.Optimizer,
                                             name='Instantiate Optimizer')
 optimization = wf.ModelMethod(dct.MethodType(dctests.Optimizer,'optimize'),
                               name='Optimization')
@@ -47,8 +47,10 @@ parallel_optimization = wf.ForEach(
 unpacker = wf.Unpacker(indices=[0, 3, -1], name='Unpacker')
 sequence = wf.Sequence(number_arguments=2, name='Sequence')
 
-filters = [{'attribute': 'value', 'operator': 'gt', 'bound': 0},
-           {'attribute': 'submodel.subvalue', 'operator': 'lt', 'bound': 200}]
+filters = [
+    DessiaFilter(attribute='value', operator='gt', bound=0),
+    DessiaFilter(attribute='submodel.subvalue', operator='lt', bound=2000)
+]
 
 filter_sort = wf.Filter(filters=filters, name='Filters')
 
