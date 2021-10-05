@@ -641,6 +641,13 @@ class DessiaObject:
         self.volmdlr_volume_model(**kwargs).babylonjs(use_cdn=use_cdn,
                                                       debug=debug)
 
+    def save_babylonjs_to_file(self, filename:str=None, use_cdn:bool=True,
+                               debug:bool=False, **kwargs):
+        self.volmdlr_volume_model(**kwargs).save_babylonjs_to_file(filename=filename,
+                                                                   use_cdn=use_cdn,
+                                                                   debug=debug)
+
+
     def _displays(self, **kwargs) -> List[JsonSerializable]:
         if hasattr(self, '_display_angular'):
             # Retro-compatibility
