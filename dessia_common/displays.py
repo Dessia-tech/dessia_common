@@ -1,6 +1,6 @@
 import webbrowser
 import os
-from dessia_common.templates import visjs_template, test_template
+from dessia_common.templates import visjs_template
 from networkx import DiGraph
 
 

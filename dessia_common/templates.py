@@ -303,15 +303,3 @@ var edges = new vis.DataSet($edges);
 </body>
 </html>
 ''')
-
-
-test_template = Template('''
-<!DOCTYPE html>
-<html>
-    <head>
-    </head>
-    <body>
-        <script type="text/javascript"> console.log($nodes) </script>
-    </body>
-</html>
-''')
