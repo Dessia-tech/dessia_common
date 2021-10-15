@@ -1112,11 +1112,10 @@ def get_in_dict_from_path(dict_, path):
     segments = path.lstrip('#/').split('/')
     element = dict_[segments[0]]
     for segment in segments[1:]:
-        if type(segment) is str:
-            try:
-                segment = int(segment)
-            except ValueError:
-                raise ValueError("invalid literal for int() with base 10: '{}'".format(segment))
+        try:
+            segment = int(segment)
+        except ValueError:
+            pass
         element = element[segment]
         
     return element
