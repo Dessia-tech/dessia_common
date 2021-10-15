@@ -1097,6 +1097,7 @@ def get_python_class_from_class_name(full_class_name):
     class_ = getattr(module, class_name)
     return class_
 
+
 def dereference_jsonpointers(value, global_dict):
    
     if isinstance(value, (list, tuple)):
@@ -1105,11 +1106,17 @@ def dereference_jsonpointers(value, global_dict):
         return dereference_jsonpointers_dict(value, global_dict)
     else:
         return value
-    
+
+
 def get_in_dict_from_path(dict_, path):
-    segments  = path.lstrip('#/').split('/')
+    segments = path.lstrip('#/').split('/')
     element = dict_[segments[0]]
     for segment in segments[1:]:
+        if type(segment) is str:
+            try:
+                segment = int(segment)
+            except ValueError:
+                raise ValueError("invalid literal for int() with base 10: '{}'".format(segment))
         element = element[segment]
         
     return element
