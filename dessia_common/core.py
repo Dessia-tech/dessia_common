@@ -324,17 +324,23 @@ class DessiaObject:
         """
         Generic to_dict method
         """
+        if memo is None:
+            memo = {}
+            
         dict_ = self._serializable_dict()
             
         # Default to dict
         serialized_dict = self.base_dict()
-        serialized_dict.update(serialize_dict_with_pointers(dict_, {}, path)[0])
+        # dict_, _ = 
+        serialized_dict.update(serialize_dict_with_pointers(dict_, memo, path)[0])
+        # memo.update(memo2)
         # serialized_dict['hash'] = self.__hash__()
         return serialized_dict
 
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable,
-                       force_generic: bool = False) -> 'DessiaObject':
+                       force_generic: bool = False,
+                       global_dict=None) -> 'DessiaObject':
         """
         Generic dict_to_object method
         """
@@ -345,10 +351,12 @@ class DessiaObject:
 
         if cls is not DessiaObject:
             obj = dict_to_object(dict_=dict_, class_=cls,
-                                 force_generic=force_generic)
+                                 force_generic=force_generic,
+                                 global_dict=global_dict)
             return obj
         elif 'object_class' in dict_:
-            obj = dict_to_object(dict_=dict_, force_generic=force_generic)
+            obj = dict_to_object(dict_=dict_, force_generic=force_generic,
+                                 global_dict=global_dict)
             return obj
         else:
             # Using default
@@ -1035,6 +1043,7 @@ def serialize(deserialized_element):
     return serialized
 
 def serialize_dict_with_pointers(dict_, memo, path):
+        
     serialized_dict = {}
     dict_attrs_keys = []
     seq_attrs_keys = []
@@ -1045,7 +1054,7 @@ def serialize_dict_with_pointers(dict_, memo, path):
             if value in memo:
                 serialized_dict[key] = {"$ref": memo[value]}
             else:
-                serialized_dict[key] = value.to_dict(path=value_path)
+                serialized_dict[key] = value.to_dict(path=value_path, memo=memo)
                 memo[value] = value_path
         elif isinstance(value, dict):
             dict_attrs_keys.append(key)
@@ -1056,7 +1065,6 @@ def serialize_dict_with_pointers(dict_, memo, path):
                 msg = 'Attribute {} of value {} is not json serializable'
                 raise SerializationError(msg.format(key, value))
             serialized_dict[key] = value
-        
         
     # Handle seq & dicts afterwards
     for key in seq_attrs_keys:
@@ -1074,18 +1082,17 @@ def serialize_sequence_with_pointers(seq, memo, path):
     for ival, value in enumerate(seq):
         value_path = '{}/{}'.format(path, ival)
         if hasattr(value, 'to_dict'):
-            
             if value in memo:
                 serialized_value = {"$ref": memo[value]}
             else:
-                serialized_value = value.to_dict(path=value_path)
+                serialized_value = value.to_dict(path=value_path, memo=memo)
                 memo[value] = value_path
             serialized_sequence.append(serialized_value)
         elif isinstance(value, dict):
             serialized_sequence.append(serialize_dict_with_pointers(value, memo=memo, path=value_path))
         elif isinstance(value, (list, tuple)):
-            servialized_value, memo = serialize_sequence_with_pointers(value, memo=memo, path=value_path)
-            serialized_sequence.append(servialized_value)
+            serialized_value, memo = serialize_sequence_with_pointers(value, memo=memo, path=value_path)
+            serialized_sequence.append(serialized_value)
         else:
             serialized_sequence.append(value)
     return serialized_sequence, memo
@@ -1138,10 +1145,13 @@ def dereference_jsonpointers_sequence(sequence, global_dict):
         deref_sequence.append(dereference_jsonpointers(element, global_dict))
     return deref_sequence
 
-def dict_to_object(dict_, class_=None, force_generic: bool = False):
+def dict_to_object(dict_, class_=None, force_generic: bool = False, global_dict=None):
     class_argspec = None
 
-    working_dict = dereference_jsonpointers_dict(dict_, dict_)
+    if global_dict is None:
+        global_dict = dict_
+        
+    working_dict = dereference_jsonpointers_dict(dict_, global_dict)
 
 
     if class_ is None and 'object_class' in working_dict:
@@ -1153,7 +1163,7 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False):
 
         if different_methods and not force_generic:
             # raise RuntimeError()
-            obj = class_.dict_to_object(dict_)
+            obj = class_.dict_to_object(dict_, global_dict=global_dict)
             return obj
 
         if class_._init_variables is None:
@@ -1173,7 +1183,7 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False):
             annotation = class_argspec.annotations[key]
         else:
             annotation = None
-        subobjects[key] = deserialize(value, annotation)
+        subobjects[key] = deserialize(value, annotation, global_dict=global_dict)
 
     if class_ is not None:
         obj = class_(**subobjects)
@@ -1208,10 +1218,10 @@ def dict_hash(dict_):
     return hash_
 
 
-def sequence_to_objects(sequence, annotation=None):
+def sequence_to_objects(sequence, annotation=None, global_dict=None):
     # TODO: rename to deserialize sequence? Or is this a duplicate ?
     origin, args = unfold_deep_annotation(typing_=annotation)
-    deserialized_sequence = [deserialize(elt, args) for elt in sequence]
+    deserialized_sequence = [deserialize(elt, args, global_dict=global_dict) for elt in sequence]
     if origin is tuple:
         return tuple(deserialized_sequence)
     return deserialized_sequence
@@ -1396,12 +1406,13 @@ def deserialize_typing(serialized_typing):
 
 
 
-def deserialize(serialized_element, sequence_annotation: str = 'List'):
+def deserialize(serialized_element, sequence_annotation: str = 'List', global_dict=None):
     if isinstance(serialized_element, dict):
-        return dict_to_object(serialized_element)
+        return dict_to_object(serialized_element, global_dict=global_dict)
     elif is_sequence(serialized_element):
         return sequence_to_objects(sequence=serialized_element,
-                                   annotation=sequence_annotation)
+                                   annotation=sequence_annotation,
+                                   global_dict=global_dict)
     return serialized_element
 
 
