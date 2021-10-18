@@ -1057,7 +1057,7 @@ def serialize_dict_with_pointers(dict_, memo, path):
                 try:
                     serialized_dict[key] = value.to_dict(path=value_path, memo=memo)
                 except TypeError:
-                    print('specific to_dict should implement memo and path arguments')
+                    warnings.warn('specific to_dict should implement memo and path arguments', Warning)
                     serialized_dict[key] = value.to_dict()
                 memo[value] = value_path
         elif isinstance(value, dict):
@@ -1092,7 +1092,7 @@ def serialize_sequence_with_pointers(seq, memo, path):
                 try:
                     serialized_value = value.to_dict(path=value_path, memo=memo)
                 except TypeError:
-                    print('specific to_dict should implement memo and path arguments')
+                    warnings.warn('specific to_dict should implement memo and path arguments', Warning)
                     serialized_value = value.to_dict()
                 memo[value] = value_path
             serialized_sequence.append(serialized_value)
@@ -1132,11 +1132,25 @@ def get_in_dict_from_path(dict_, path):
         except ValueError:
             pass
         element = element[segment]
-        
+    return element
+
+def get_in_object_from_path(object_, path):
+    segments = path.lstrip('#/').split('/')
+    element = getattr(object_, segments[0])
+    for segment in segments[1:]:
+        try:
+            segment = int(segment)
+        except ValueError:
+            pass
+        element = getattr(element, segment)
     return element
 
     
 def dereference_jsonpointers_dict(dict_, global_dict):
+    """
+    Dereference a dict_ by inserting dicts references (not objects!)
+    To be used before deserialization
+    """
     if '$ref' in dict_:
         path = dict_['$ref']
         return get_in_dict_from_path(global_dict, path)
@@ -1153,6 +1167,61 @@ def dereference_jsonpointers_sequence(sequence, global_dict):
         deref_sequence.append(dereference_jsonpointers(element, global_dict))
     return deref_sequence
 
+
+def enforce_pointers_in_object(object_, serialized_dict, global_object=None, memo=None):
+    """
+    Enforce python pointers with respect to jsonpointers in serialized_dict
+    To use after naive deserialization with broken links
+    """
+
+    if global_object is None:
+        global_object = object_
+        
+    if memo is None:
+        memo = {}
+
+    if isinstance_base_types(object_):
+        return object_
+    
+    object2 = object_.copy()
+    # print('keys', serialized_dict.keys(), object_)
+    for key, serialized_value in serialized_dict.items():
+
+        if hasattr(object_, key) or (isinstance(object_, dict) and (key in object_)):
+            # print('!!!', key)
+            if isinstance(object_, dict):
+                object_value = object_[key]
+            else:    
+                object_value = getattr(object_, key)
+            
+            if is_sequence(object_value):
+                enforced_value = []
+                for seq_value, seq_serialized_value in zip(object_value, serialized_value):
+                    enforced_value.append(enforce_pointers_in_object(seq_value, seq_serialized_value, global_object))
+                
+            elif isinstance(serialized_value, dict):
+                if '$ref' in serialized_value:
+                    path = serialized_value['$ref']
+                    enforced_value = get_in_object_from_path(global_object, path)
+                    print('override by', enforced_value)
+                else:
+                    
+                    enforced_value = enforce_pointers_in_object(object_value, serialized_value, global_object)
+            elif isinstance_base_types(object_value):
+                # print('value', object_value)
+                
+                continue            
+                raise NotImplementedError(str(object_value))
+                
+            # Overriding value
+            if isinstance(object2, dict):
+                object2[key] = enforced_value
+            else:
+                # print('override', getattr(object2, key), enforced_value
+                setattr(object2, key, enforced_value)
+    return object2
+
+
 def dict_to_object(dict_, class_=None, force_generic: bool = False, global_dict=None):
     class_argspec = None
 
@@ -1160,7 +1229,6 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False, global_dict=
         global_dict = dict_
         
     working_dict = dereference_jsonpointers_dict(dict_, global_dict)
-
 
     if class_ is None and 'object_class' in working_dict:
         class_ = get_python_class_from_class_name(working_dict['object_class'])
@@ -1173,7 +1241,7 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False, global_dict=
             try:
                 obj = class_.dict_to_object(dict_, global_dict=global_dict)
             except TypeError:
-                print('Specific dict_to_object should implement global_dict argument')
+                warnings.warn('specific to_dict should implement memo and path arguments', Warning)
                 obj = class_.dict_to_object(dict_)
             return obj
 
@@ -1187,6 +1255,8 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False, global_dict=
         # TOCHECK Class method to generate init_dict ??
     else:
         init_dict = working_dict
+        
+
     
     subobjects = {}
     for key, value in init_dict.items():
@@ -1195,6 +1265,7 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False, global_dict=
         else:
             annotation = None
         subobjects[key] = deserialize(value, annotation, global_dict=global_dict)
+    subobjects = enforce_pointers_in_object(subobjects, global_dict)
 
     if class_ is not None:
         obj = class_(**subobjects)
@@ -1229,7 +1300,7 @@ def dict_hash(dict_):
     return hash_
 
 
-def sequence_to_objects(sequence, annotation=None, global_dict=None):
+def deserialize_sequence(sequence, annotation=None, global_dict=None):
     # TODO: rename to deserialize sequence? Or is this a duplicate ?
     origin, args = unfold_deep_annotation(typing_=annotation)
     deserialized_sequence = [deserialize(elt, args, global_dict=global_dict) for elt in sequence]
@@ -1422,12 +1493,12 @@ def deserialize(serialized_element, sequence_annotation: str = 'List', global_di
         try:
             return dict_to_object(serialized_element, global_dict=global_dict)
         except TypeError:
-            print('Specific dict_to_object should implement global_dict argument')
+            warnings.warn('specific to_dict should implement memo and path arguments', Warning)
             return dict_to_object(serialized_element)
     elif is_sequence(serialized_element):
-        return sequence_to_objects(sequence=serialized_element,
-                                   annotation=sequence_annotation,
-                                   global_dict=global_dict)
+        return deserialize_sequence(sequence=serialized_element,
+                                    annotation=sequence_annotation,
+                                    global_dict=global_dict)
     return serialized_element
 
 
@@ -1563,6 +1634,8 @@ def is_sequence(obj):
 def is_builtin(type_):
     return type_ in TYPING_EQUIVALENCES
 
+def isinstance_base_types(obj):
+    return isinstance(obj, str) or isinstance(obj, float) or isinstance(obj, int) or (obj is None)
 
 def type_from_annotation(type_, module):
     """
