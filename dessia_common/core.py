@@ -1182,7 +1182,7 @@ def enforce_pointers_in_object(object_, serialized_dict, global_object=None, mem
 
     if isinstance_base_types(object_):
         return object_
-    
+    print('o', object_)
     object2 = object_.copy()
     # print('keys', serialized_dict.keys(), object_)
     for key, serialized_value in serialized_dict.items():
@@ -1265,12 +1265,14 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False, global_dict=
         else:
             annotation = None
         subobjects[key] = deserialize(value, annotation, global_dict=global_dict)
-    subobjects = enforce_pointers_in_object(subobjects, global_dict)
+
 
     if class_ is not None:
         obj = class_(**subobjects)
     else:
         obj = subobjects
+        
+    obj = enforce_pointers_in_object(obj, dict_)
     return obj
 
 
