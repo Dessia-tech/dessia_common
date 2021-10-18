@@ -320,7 +320,7 @@ class DessiaObject:
                  and not k.startswith('_')}
         return dict_
 
-    def to_dict(self, memo=None) -> JsonSerializable:
+    def to_dict(self, memo=None, path:str='#') -> JsonSerializable:
         """
         Generic to_dict method
         """
@@ -328,7 +328,7 @@ class DessiaObject:
             
         # Default to dict
         serialized_dict = self.base_dict()
-        serialized_dict.update(serialize_dict_with_pointers(dict_, {}, '#')[0])
+        serialized_dict.update(serialize_dict_with_pointers(dict_, {}, path)[0])
         # serialized_dict['hash'] = self.__hash__()
         return serialized_dict
 
@@ -1045,7 +1045,7 @@ def serialize_dict_with_pointers(dict_, memo, path):
             if value in memo:
                 serialized_dict[key] = {"$ref": memo[value]}
             else:
-                serialized_dict[key] = value.to_dict()
+                serialized_dict[key] = value.to_dict(path=value_path)
                 memo[value] = value_path
         elif isinstance(value, dict):
             dict_attrs_keys.append(key)
@@ -1078,7 +1078,7 @@ def serialize_sequence_with_pointers(seq, memo, path):
             if value in memo:
                 serialized_value = {"$ref": memo[value]}
             else:
-                serialized_value = value.to_dict()
+                serialized_value = value.to_dict(path=value_path)
                 memo[value] = value_path
             serialized_sequence.append(serialized_value)
         elif isinstance(value, dict):
@@ -1166,8 +1166,6 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False):
         # TOCHECK Class method to generate init_dict ??
     else:
         init_dict = working_dict
-
-    # print('wd', working_dict)
     
     subobjects = {}
     for key, value in init_dict.items():
