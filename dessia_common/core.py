@@ -1054,7 +1054,11 @@ def serialize_dict_with_pointers(dict_, memo, path):
             if value in memo:
                 serialized_dict[key] = {"$ref": memo[value]}
             else:
-                serialized_dict[key] = value.to_dict(path=value_path, memo=memo)
+                try:
+                    serialized_dict[key] = value.to_dict(path=value_path, memo=memo)
+                except TypeError:
+                    print('specific to_dict should implement memo and path arguments')
+                    serialized_dict[key] = value.to_dict()
                 memo[value] = value_path
         elif isinstance(value, dict):
             dict_attrs_keys.append(key)
@@ -1085,7 +1089,11 @@ def serialize_sequence_with_pointers(seq, memo, path):
             if value in memo:
                 serialized_value = {"$ref": memo[value]}
             else:
-                serialized_value = value.to_dict(path=value_path, memo=memo)
+                try:
+                    serialized_value = value.to_dict(path=value_path, memo=memo)
+                except TypeError:
+                    print('specific to_dict should implement memo and path arguments')
+                    serialized_value = value.to_dict()
                 memo[value] = value_path
             serialized_sequence.append(serialized_value)
         elif isinstance(value, dict):
@@ -1162,8 +1170,11 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False, global_dict=
                              is not DessiaObject.dict_to_object.__func__)
 
         if different_methods and not force_generic:
-            # raise RuntimeError()
-            obj = class_.dict_to_object(dict_, global_dict=global_dict)
+            try:
+                obj = class_.dict_to_object(dict_, global_dict=global_dict)
+            except TypeError:
+                print('Specific dict_to_object should implement global_dict argument')
+                obj = class_.dict_to_object(dict_)
             return obj
 
         if class_._init_variables is None:
@@ -1408,7 +1419,11 @@ def deserialize_typing(serialized_typing):
 
 def deserialize(serialized_element, sequence_annotation: str = 'List', global_dict=None):
     if isinstance(serialized_element, dict):
-        return dict_to_object(serialized_element, global_dict=global_dict)
+        try:
+            return dict_to_object(serialized_element, global_dict=global_dict)
+        except TypeError:
+            print('Specific dict_to_object should implement global_dict argument')
+            return dict_to_object(serialized_element)
     elif is_sequence(serialized_element):
         return sequence_to_objects(sequence=serialized_element,
                                    annotation=sequence_annotation,
