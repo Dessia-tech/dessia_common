@@ -8,16 +8,16 @@ Created on Wed Sep 29 14:35:47 2021
 
 import json
 
-MIN_FILE_COVERAGE = 0.
-MIN_MODULE_COVERAGE = 20.
+MIN_FILE_COVERAGE = 18.
+MIN_MODULE_COVERAGE = 50.
 
-untracked_modules = ['dessia_common/templates.py']
+untracked_modules = ['dessia_common/templates.py', 'dessia_common/utils.py',
+                     'dessia_common/generation.py', 'dessia_common/optimization.py']
 
 print('untracked modules:', untracked_modules)
 
 with open('coverage.json', 'r') as file:
     d = json.load(file)
-
 
 print('total covered', d['totals']['percent_covered'], '%')
 assert d['totals']['percent_covered'] >= MIN_MODULE_COVERAGE
