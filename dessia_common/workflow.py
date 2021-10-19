@@ -1782,6 +1782,41 @@ class WorkflowBlock(Block):
     def package_mix(self):
         return self.workflow.package_mix()
 
+class ManualWorkflowRun(DessiaObject):
+    _standalone_in_db = True
+    _allowed_methods = ['block_evaluation', 'evaluate_next_block', 'evaluate_maximum_blocks']
+    def __init__(self, workflow:Workflow, input_values, evaluated_blocks,
+                 variables_values, output_value=None, log:str='', name=''):
+        self.workflow = workflow
+        self.input_values = input_values
+        self.output_value = output_value
+        self.variables_values = variables_values
+
+        self.log = log
+        
+        self.evaluated_blocks = evaluated_blocks
+
+        DessiaObject.__init__(self, name=name)
+
+
+    def block_evaluation(self, block):
+        """
+        Select a block to evaluate
+        """
+        pass
+        
+    def evaluate_next_block(self, block):
+        """
+        Evaluate a block
+        """
+        pass
+        
+    def evaluate_maximum_blocks(self):
+        """
+        Evaluate all possible blocks
+        """
+        pass
+        
 
 class WorkflowRun(DessiaObject):
     _standalone_in_db = True
@@ -1971,6 +2006,7 @@ class WorkflowRun(DessiaObject):
                                          progress_callback=progress_callback,
                                          name=name)
         return workflow_run
+
 
     @property
     def _method_jsonschemas(self):
