@@ -37,9 +37,9 @@ catalog = Catalog(array=array, variables=variables,
                   choice_variables=choice_args, objectives=[],
                   pareto_settings=pareto_settings, name='Cars')
 
-from plot_data import plot_canvas
+# from plot_data import plot_canvas
 
-plot_canvas(plot_data_object=catalog.plot_data()[0], canvas_id='canvas')
+# plot_canvas(plot_data_object=catalog.plot_data()[0], canvas_id='canvas')
 
 # cost = catalog.build_costs(pareto_settings)
 # print('cost', cost)

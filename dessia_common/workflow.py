@@ -1479,6 +1479,28 @@ class Workflow(Block):
                 labels[variable] = variable.name
         nx.draw_networkx_labels(self.graph, pos, labels)
 
+    def _activable_pipes(self, activated_items):
+        pipes = []
+        for pipe in self.pipes:
+            if not activated_items[pipe]:
+                if activated_items[pipe.input_variable]:
+                    pipes.append(pipe)
+        return pipes
+
+    def _activable_blocks(self, activated_items):
+        blocks = []
+        for block in self.blocks:
+            if not activated_items[block]:
+                all_inputs_activated = True
+                for function_input in block.inputs:
+                    if not activated_items[function_input]:
+                        all_inputs_activated = False
+                        break
+
+                if all_inputs_activated:
+                    blocks.append(block)
+        return blocks
+
     def run(self, input_values, verbose=False,
             progress_callback=None, name=None):
         log = ''
@@ -1505,8 +1527,8 @@ class Workflow(Block):
                 values[variable] = variable.default_value
                 activated_items[variable] = True
             else:
-                msg = 'Value {} of index {} in inputs has no value'
-                raise ValueError(msg.format(variable.name, index))
+                msg = 'Value {} of index {} in inputs has no value: should be instance of {}'
+                raise ValueError(msg.format(variable.name, index, variable.type_))
 
         something_activated = True
 
@@ -1523,51 +1545,42 @@ class Workflow(Block):
         while something_activated:
             something_activated = False
 
-            for pipe in self.pipes:
-                if not activated_items[pipe]:
-                    if activated_items[pipe.input_variable]:
-                        activated_items[pipe] = True
-                        values[pipe.output_variable] = values[
-                            pipe.input_variable]
-                        activated_items[pipe.output_variable] = True
-                        something_activated = True
+            for pipe in self._activable_pipes(activated_items):
+                activated_items[pipe] = True
+                values[pipe.output_variable] = values[
+                    pipe.input_variable]
+                activated_items[pipe.output_variable] = True
+                something_activated = True
 
-            for block in self.blocks:
-                if not activated_items[block]:
-                    all_inputs_activated = True
-                    for function_input in block.inputs:
-                        if not activated_items[function_input]:
-                            all_inputs_activated = False
-                            break
+            for block in self._activable_blocks():
+                if verbose:
+                    log_line = 'Evaluating block {}'.format(block.name)
+                    log += log_line + '\n'
+                    if verbose:
+                        print(log_line)
+                        
+                output_values = block.evaluate({i: values[i]
+                                                for i in block.inputs})
+                for input_ in block.inputs:
+                    if input_.memorize:
+                        indices = str(self.variable_indices(input_))
+                        variables_values[indices] = values[input_]
+                # Updating progress
+                if progress_callback is not None:
+                    progress += 1 / len(self.blocks)
+                    progress_callback(progress)
 
-                    if all_inputs_activated:
-                        if verbose:
-                            log_line = 'Evaluating block {}'.format(block.name)
-                            log += log_line + '\n'
-                            if verbose:
-                                print(log_line)
-                        output_values = block.evaluate({i: values[i]
-                                                        for i in block.inputs})
-                        for input_ in block.inputs:
-                            if input_.memorize:
-                                indices = str(self.variable_indices(input_))
-                                variables_values[indices] = values[input_]
-                        # Updating progress
-                        if progress_callback is not None:
-                            progress += 1 / len(self.blocks)
-                            progress_callback(progress)
+                # Unpacking result of evaluation
+                output_items = zip(block.outputs, output_values)
+                for output, output_value in output_items:
+                    if output.memorize:
+                        indices = str(self.variable_indices(output))
+                        variables_values[indices] = output_value
+                    values[output] = output_value
+                    activated_items[output] = True
 
-                        # Unpacking result of evaluation
-                        output_items = zip(block.outputs, output_values)
-                        for output, output_value in output_items:
-                            if output.memorize:
-                                indices = str(self.variable_indices(output))
-                                variables_values[indices] = output_value
-                            values[output] = output_value
-                            activated_items[output] = True
-
-                        activated_items[block] = True
-                        something_activated = True
+                activated_items[block] = True
+                something_activated = True
 
         end_time = time.time()
         log_line = 'Workflow terminated in {} s'.format(end_time - start_time)
@@ -1584,6 +1597,27 @@ class Workflow(Block):
                            variables_values=variables_values,
                            start_time=start_time, end_time=end_time,
                            log=log, name=name)
+
+    def manual_run(self, input_values, name:str=''):
+        log = ''
+
+        start_time = time.time()
+
+        log_msg = 'Starting manual workflow run at {}'
+        log_line = log_msg.format(time.strftime('%d/%m/%Y %H:%M:%S UTC',
+                                                time.gmtime(start_time)))
+        log += (log_line + '\n')
+        
+        variable_values = {}
+        for index_input, value in input_values.items():
+            variable_values[self.variable_indices(self.inputs[index_input])] = value
+        
+        return ManualWorkflowRun(workflow=self, input_values=input_values,
+                                 output_value=None,
+                                 variables_values=variable_values,
+                                 evaluated_blocks = [],
+                                 log=log, name=name)
+
 
     def mxgraph_data(self):
         nodes = []
@@ -1805,7 +1839,7 @@ class ManualWorkflowRun(DessiaObject):
         """
         pass
         
-    def evaluate_next_block(self, block):
+    def evaluate_a_block(self):
         """
         Evaluate a block
         """
