@@ -1552,7 +1552,7 @@ class Workflow(Block):
                 activated_items[pipe.output_variable] = True
                 something_activated = True
 
-            for block in self._activable_blocks():
+            for block in self._activable_blocks(activated_items):
                 if verbose:
                     log_line = 'Evaluating block {}'.format(block.name)
                     log += log_line + '\n'
