@@ -10,7 +10,7 @@ import math
 from typing import List, Dict, Any
 import numpy as np
 import pandas as pd
-from dessia_common import DessiaObject, Parameter, is_bounded, Filter
+from dessia_common import DessiaObject, Parameter, is_bounded, DessiaFilter
 from scipy.optimize import minimize
 from pyDOE import lhs
 
@@ -276,7 +276,7 @@ class Catalog(DessiaObject):
                                             name='Results plot')
         return multiplot
 
-    def filter_(self, filters: List[Filter]):
+    def filter_(self, filters: List[DessiaFilter]):
         def apply_filters(line):
             bounded = True
             i = 0

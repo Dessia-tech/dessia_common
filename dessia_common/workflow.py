@@ -14,7 +14,7 @@ from typing import List, Union, Type, Any, Dict, Tuple, get_type_hints
 from copy import deepcopy
 from dessia_common.templates import workflow_template
 import itertools
-from dessia_common import DessiaObject, DisplayObject, Filter, \
+from dessia_common import DessiaObject, DisplayObject, DessiaFilter, \
     is_sequence, list_hash, serialize_typing, serialize, is_bounded, \
     get_python_class_from_class_name, deserialize, type_from_annotation,\
     enhanced_deep_attr, deprecation_warning, JSONSCHEMA_HEADER,\
@@ -689,12 +689,12 @@ class Filter(Block):
                                    geater or equal than,
                                    lower or equal than) (str),
                       'bound' :  the value (float)}*
-    :type filters: list[dict]
+    :type filters: list[DessiaFilter]
     :param name: The name of the block.
     :type name: str
     """
 
-    def __init__(self, filters: List[Filter], name: str = ''):
+    def __init__(self, filters: List[DessiaFilter], name: str = ''):
         self.filters = filters
         inputs = [Variable(name='input_list')]
         outputs = [Variable(name='output_list')]
@@ -706,7 +706,7 @@ class Filter(Block):
         return self.filters == other.filters
 
     def equivalent_hash(self):
-        hashes = [hash(v) for f in self.filters for v in f.values()]
+        hashes = [hash(f) for f in self.filters]
         return int(sum(hashes) % 10e5)
 
     def to_dict(self):
@@ -727,7 +727,7 @@ class Filter(Block):
             i = 0
             while bounded and i < len(self.filters):
                 filter_ = self.filters[i]
-                value = enhanced_deep_attr(object_, filter_['attribute'])
+                value = enhanced_deep_attr(object_, filter_.attribute)
                 bounded = is_bounded(filter_, value)
                 i += 1
 
