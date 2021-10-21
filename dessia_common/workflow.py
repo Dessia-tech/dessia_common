@@ -1484,33 +1484,10 @@ class Workflow(Block):
     def run(self, input_values, verbose=False,
             progress_callback=None, name=None):
         log = ''
-        activated_items = {p: False for p in self.pipes}
-        activated_items.update({v: False for v in self.variables})
-        activated_items.update({b: False for b in self.blocks})
-
-        values = {}
-        variables_values = {}
-        # Imposed variables values activation
-        for variable, value in self.imposed_variable_values.items():
-            # Type checking
-            value_type_check(value, variable.type_)
-            values[variable] = value
-            activated_items[variable] = True
-
-        # Input activation
-        for index, variable in enumerate(self.inputs):
-            if index in input_values:
-                value = input_values[index]
-                values[variable] = value
-                activated_items[variable] = True
-            elif hasattr(variable, 'default_value'):
-                values[variable] = variable.default_value
-                activated_items[variable] = True
-            else:
-                msg = 'Value {} of index {} in inputs has no value: should be instance of {}'
-                raise ValueError(msg.format(variable.name, index, variable.type_))
-
-        something_activated = True
+        
+        state = self.to_state(input_values)
+        state.activate_inputs(check_all_inputs=True)
+    
 
         start_time = time.time()
 
@@ -1520,17 +1497,17 @@ class Workflow(Block):
         log += (log_line + '\n')
         if verbose:
             print(log_line)
-        progress = 0
 
+        something_activated = True
         while something_activated:
             something_activated = False
 
-            for pipe in self._activable_pipes(activated_items):
-                activated_items, values = self._evaluate_pipe(pipe, activated_items, values)
+            for pipe in state._activable_pipes():
+                state._evaluate_pipe(pipe)
                 something_activated = True
 
-            for block in self._activable_blocks(activated_items):
-                self._evaluate_block(block, activated_items, values, variables_values, log, verbose)
+            for block in state._activable_blocks():
+                state._evaluate_block(block)
                 something_activated = True
 
         end_time = time.time()
@@ -1540,34 +1517,41 @@ class Workflow(Block):
         if verbose:
             print(log_line)
 
-        output_value = values[self.outputs[0]]
+        state.output_value = state.values[self.outputs[0]]
+        
         if not name:
             name = self.name + ' run'
-        return WorkflowRun(workflow=self, input_values=input_values,
-                           output_value=output_value,
-                           variables_values=variables_values,
-                           start_time=start_time, end_time=end_time,
-                           log=log, name=name)
+        return state.to_workflow_run(name=name)
 
-    def manual_run(self, input_values, name:str=''):
-        log = ''
 
-        start_time = time.time()
+    def to_state(self, input_values):
+        activated_items = {p: False for p in self.pipes}
+        activated_items.update({v: False for v in self.variables})
+        activated_items.update({b: False for b in self.blocks})
 
-        log_msg = 'Starting manual workflow run at {}'
-        log_line = log_msg.format(time.strftime('%d/%m/%Y %H:%M:%S UTC',
-                                                time.gmtime(start_time)))
-        log += (log_line + '\n')
+        values = {}
+        variables_values = {}
+        return WorkflowState(self, input_values, activated_items, values, variables_values, start_time=time.time())
+
+    # def manual_run(self, input_values, name:str=''):
+    #     log = ''
+
+    #     start_time = time.time()
+
+    #     log_msg = 'Starting manual workflow run at {}'
+    #     log_line = log_msg.format(time.strftime('%d/%m/%Y %H:%M:%S UTC',
+    #                                             time.gmtime(start_time)))
+    #     log += (log_line + '\n')
         
-        variable_values = {}
-        for index_input, value in input_values.items():
-            variable_values[self.variable_indices(self.inputs[index_input])] = value
+    #     variable_values = {}
+    #     for index_input, value in input_values.items():
+    #         variable_values[self.variable_indices(self.inputs[index_input])] = value
         
-        return ManualWorkflowRun(workflow=self, input_values=input_values,
-                                 output_value=None,
-                                 variables_values=variable_values,
-                                 evaluated_blocks = [],
-                                 log=log, name=name)
+    #     return ManualWorkflowRun(workflow=self, input_values=input_values,
+    #                              output_value=None,
+    #                              variables_values=variable_values,
+    #                              evaluated_blocks = [],
+    #                              log=log, name=name)
 
 
     def mxgraph_data(self):
@@ -1771,13 +1755,14 @@ class WorkflowState(DessiaObject):
     _standalone_in_db = True
     _allowed_methods = ['block_evaluation', 'evaluate_next_block', 'evaluate_maximum_blocks']
     def __init__(self, workflow:Workflow, input_values, activated_items, values,
-                 variables_values, output_value=None, progress=0., log:str='', name:str=''):
+                 variables_values, start_time, output_value=None, progress=0.,log:str='', name:str=''):
         self.workflow = workflow
         self.input_values = input_values
         self.output_value = output_value
         self.variables_values = variables_values
         self.values = values
-
+        self.progress = progress
+        self.start_time = start_time
         self.log = log
         
         self.activated_items = activated_items
@@ -1803,9 +1788,11 @@ class WorkflowState(DessiaObject):
         """
         pass
 
+
+
     def _activable_pipes(self):
         pipes = []
-        for pipe in self.pipes:
+        for pipe in self.workflow.pipes:
             if not self.activated_items[pipe]:
                 if self.activated_items[pipe.input_variable]:
                     pipes.append(pipe)
@@ -1813,7 +1800,7 @@ class WorkflowState(DessiaObject):
 
     def _activable_blocks(self):
         blocks = []
-        for block in self.blocks:
+        for block in self.workflow.blocks:
             if not self.activated_items[block]:
                 all_inputs_activated = True
                 for function_input in block.inputs:
@@ -1832,7 +1819,7 @@ class WorkflowState(DessiaObject):
         self.activated_items[pipe.output_variable] = True
 
     # TODO: maybe have a workflow state object?
-    def _evaluate_block(self, block, progress_callback, verbose=False):
+    def _evaluate_block(self, block, progress_callback=lambda x:x, verbose=False):
         if verbose:
             log_line = 'Evaluating block {}'.format(block.name)
             self.log += log_line + '\n'
@@ -1847,7 +1834,7 @@ class WorkflowState(DessiaObject):
                 self.variables_values[indices] = self.values[input_]
         # Updating progress
         if progress_callback is not None:
-            self.progress += 1 / len(self.blocks)
+            self.progress += 1 / len(self.workflow.blocks)
             progress_callback(self.progress)
 
         # Unpacking result of evaluation
@@ -1860,6 +1847,43 @@ class WorkflowState(DessiaObject):
             self.activated_items[output] = True
 
         self.activated_items[block] = True
+
+
+    def activate_inputs(self, check_all_inputs=False):
+        """
+        Returns if all inputs are activated
+        """
+        # Imposed variables values activation
+        for variable, value in self.workflow.imposed_variable_values.items():
+            # Type checking
+            value_type_check(value, variable.type_)
+            self.values[variable] = value
+            self.activated_items[variable] = True
+
+        # Input activation
+        for index, variable in enumerate(self.workflow.inputs):
+            if index in self.input_values:
+                value = self.input_values[index]
+                self.values[variable] = value
+                self.activated_items[variable] = True
+            elif hasattr(variable, 'default_value'):
+                self.values[variable] = variable.default_value
+                self.activated_items[variable] = True
+            elif check_all_inputs:
+                msg = 'Value {} of index {} in inputs has no value: should be instance of {}'
+                raise ValueError(msg.format(variable.name, index, variable.type_))
+
+
+    def to_workflow_run(self, name=''):
+        if self.progress == 1:
+            return WorkflowRun(workflow=self.workflow,
+                               input_values=self.input_values,
+                               output_value=self.output_value,
+                               variables_values=self.variables_values,
+                               start_time=self.start_time, end_time=time.time(),
+                               log=self.log, name=name)
+        else:
+            raise ValueError('Workflow not completed')
 
 class WorkflowRun(DessiaObject):
     _standalone_in_db = True
