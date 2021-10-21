@@ -1479,27 +1479,7 @@ class Workflow(Block):
                 labels[variable] = variable.name
         nx.draw_networkx_labels(self.graph, pos, labels)
 
-    def _activable_pipes(self, activated_items):
-        pipes = []
-        for pipe in self.pipes:
-            if not activated_items[pipe]:
-                if activated_items[pipe.input_variable]:
-                    pipes.append(pipe)
-        return pipes
 
-    def _activable_blocks(self, activated_items):
-        blocks = []
-        for block in self.blocks:
-            if not activated_items[block]:
-                all_inputs_activated = True
-                for function_input in block.inputs:
-                    if not activated_items[function_input]:
-                        all_inputs_activated = False
-                        break
-
-                if all_inputs_activated:
-                    blocks.append(block)
-        return blocks
 
     def run(self, input_values, verbose=False,
             progress_callback=None, name=None):
@@ -1546,40 +1526,11 @@ class Workflow(Block):
             something_activated = False
 
             for pipe in self._activable_pipes(activated_items):
-                activated_items[pipe] = True
-                values[pipe.output_variable] = values[
-                    pipe.input_variable]
-                activated_items[pipe.output_variable] = True
+                activated_items, values = self._evaluate_pipe(pipe, activated_items, values)
                 something_activated = True
 
             for block in self._activable_blocks(activated_items):
-                if verbose:
-                    log_line = 'Evaluating block {}'.format(block.name)
-                    log += log_line + '\n'
-                    if verbose:
-                        print(log_line)
-                        
-                output_values = block.evaluate({i: values[i]
-                                                for i in block.inputs})
-                for input_ in block.inputs:
-                    if input_.memorize:
-                        indices = str(self.variable_indices(input_))
-                        variables_values[indices] = values[input_]
-                # Updating progress
-                if progress_callback is not None:
-                    progress += 1 / len(self.blocks)
-                    progress_callback(progress)
-
-                # Unpacking result of evaluation
-                output_items = zip(block.outputs, output_values)
-                for output, output_value in output_items:
-                    if output.memorize:
-                        indices = str(self.variable_indices(output))
-                        variables_values[indices] = output_value
-                    values[output] = output_value
-                    activated_items[output] = True
-
-                activated_items[block] = True
+                self._evaluate_block(block, activated_items, values, variables_values, log, verbose)
                 something_activated = True
 
         end_time = time.time()
@@ -1816,19 +1767,20 @@ class WorkflowBlock(Block):
     def package_mix(self):
         return self.workflow.package_mix()
 
-class ManualWorkflowRun(DessiaObject):
+class WorkflowState(DessiaObject):
     _standalone_in_db = True
     _allowed_methods = ['block_evaluation', 'evaluate_next_block', 'evaluate_maximum_blocks']
-    def __init__(self, workflow:Workflow, input_values, evaluated_blocks,
-                 variables_values, output_value=None, log:str='', name=''):
+    def __init__(self, workflow:Workflow, input_values, activated_items, values,
+                 variables_values, output_value=None, progress=0., log:str='', name:str=''):
         self.workflow = workflow
         self.input_values = input_values
         self.output_value = output_value
         self.variables_values = variables_values
+        self.values = values
 
         self.log = log
         
-        self.evaluated_blocks = evaluated_blocks
+        self.activated_items = activated_items
 
         DessiaObject.__init__(self, name=name)
 
@@ -1850,7 +1802,64 @@ class ManualWorkflowRun(DessiaObject):
         Evaluate all possible blocks
         """
         pass
-        
+
+    def _activable_pipes(self):
+        pipes = []
+        for pipe in self.pipes:
+            if not self.activated_items[pipe]:
+                if self.activated_items[pipe.input_variable]:
+                    pipes.append(pipe)
+        return pipes
+
+    def _activable_blocks(self):
+        blocks = []
+        for block in self.blocks:
+            if not self.activated_items[block]:
+                all_inputs_activated = True
+                for function_input in block.inputs:
+                    if not self.activated_items[function_input]:
+                        all_inputs_activated = False
+                        break
+
+                if all_inputs_activated:
+                    blocks.append(block)
+        return blocks
+
+    def _evaluate_pipe(self, pipe):
+        self.activated_items[pipe] = True
+        self.values[pipe.output_variable] = self.values[
+            pipe.input_variable]
+        self.activated_items[pipe.output_variable] = True
+
+    # TODO: maybe have a workflow state object?
+    def _evaluate_block(self, block, progress_callback, verbose=False):
+        if verbose:
+            log_line = 'Evaluating block {}'.format(block.name)
+            self.log += log_line + '\n'
+            if verbose:
+                print(log_line)
+                
+        output_values = block.evaluate({i: self.values[i]
+                                        for i in block.inputs})
+        for input_ in block.inputs:
+            if input_.memorize:
+                indices = str(self.variable_indices(input_))
+                self.variables_values[indices] = self.values[input_]
+        # Updating progress
+        if progress_callback is not None:
+            self.progress += 1 / len(self.blocks)
+            progress_callback(self.progress)
+
+        # Unpacking result of evaluation
+        output_items = zip(block.outputs, output_values)
+        for output, output_value in output_items:
+            if output.memorize:
+                indices = str(self.variable_indices(output))
+                self.variables_values[indices] = output_value
+            self.values[output] = output_value
+            self.activated_items[output] = True
+
+        self.activated_items[block] = True
 
 class WorkflowRun(DessiaObject):
     _standalone_in_db = True
