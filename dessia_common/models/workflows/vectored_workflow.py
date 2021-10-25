@@ -2,7 +2,6 @@ from dessia_common.vectored_objects import Catalog, ParetoSettings
 from dessia_common.core import DessiaFilter
 import dessia_common.workflow as wf
 import dessia_common.typings as dct
-from dessia_api_client import Client
 
 choice_args = ['MPG', 'Cylinders', 'Displacement', 'Horsepower',
                'Weight', 'Acceleration', 'Model']  # Ordered
