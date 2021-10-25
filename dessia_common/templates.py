@@ -265,7 +265,7 @@ visjs_template = Template('''
                 border: 1px solid lightgray;
             }
         </style>
-        <title>{{name}}</title>
+        <title>$name</title>
     </head>
     <body>
     <div id="mynetwork"></div>

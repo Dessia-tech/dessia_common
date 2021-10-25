@@ -5,10 +5,11 @@ from networkx import DiGraph
 
 
 def networkx_to_visjs_data(networkx_graph):
-    visjs_data = {'nodes': [], 'edges': []}
+    visjs_data = {'name':networkx_graph.name, 'nodes': [], 'edges': []}
 
     for i, node in enumerate(networkx_graph.nodes):
         node_dict = networkx_graph.nodes[node]
+        print(node_dict)
         node_data = {'id': i}
 
         if 'name' not in node_dict and 'label' not in node_dict:

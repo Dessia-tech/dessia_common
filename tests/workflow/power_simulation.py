@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Tue Oct 19 18:07:02 2021
 
-@author: masfaraud
 """
 
-import dessia_common.models
+
 from dessia_common.models.workflows import simulation_workflow
 from dessia_common.models.power_test import components, component_connections, usage
 
@@ -28,3 +26,4 @@ manual_run.block_evaluation(simulation_workflow.blocks[1])
 manual_run.continue_run()
 print(manual_run.progress)
 
+print(manual_run._displays())

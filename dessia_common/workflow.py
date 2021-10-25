@@ -1759,6 +1759,15 @@ class WorkflowState(DessiaObject):
 
         DessiaObject.__init__(self, name=name)
 
+    def _displays(self) -> List[JsonSerializable]:
+        data = self.workflow.to_dict()
+        data['evaluated_blocks_indices'] = [i for i, b in enumerate(self.workflow.blocks) if b in self.activated_items]
+        data['evaluated_pipes_indices'] = [i for i, b in enumerate(self.workflow.blocks) if b in self.activated_items]
+        data['evaluated_variables_indices'] = [self.workflow.variable_indices(v) for v in self.workflow.variables if v in self.activated_items]
+        display_object = DisplayObject(type_='workflow_state', data=data)
+        displays = [display_object.to_dict()]
+        return displays
+
     @property
     def progress(self):
         return len([b for b in self.workflow.blocks if b in self.activated_items])/len(self.workflow.blocks)
