@@ -41,7 +41,7 @@ catalog = Catalog.from_csv(csv_cars)
 catalog.name = 'Cars dataset'
 catalog.pareto_settings = pareto_settings
 
-catalog.plot()
+# catalog.plot()
 
 # from plot_data import plot_canvas
 
