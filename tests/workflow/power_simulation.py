@@ -6,6 +6,7 @@ Created on Tue Oct 19 18:07:02 2021
 @author: masfaraud
 """
 
+import dessia_common.models
 from dessia_common.models.workflows import simulation_workflow
 from dessia_common.models.power_test import components, component_connections, usage
 
