@@ -102,6 +102,7 @@ setup(
     url="https://github.com/Dessia-tech/dessia-common",
     author="Steven Masfaraud",
     author_email="masfaraud@dessia.tech",
+    include_package_data=True,
     packages=[
         "dessia_common",
         "dessia_common.models",
