@@ -784,7 +784,7 @@ class ParameterSet(DessiaObject):
         return means
 
 
-class Filter(DessiaObject):
+class DessiaFilter(DessiaObject):
     def __init__(self, attribute: str, operator: str,
                  bound: float, name: str = ''):
         self.attribute = attribute
@@ -792,6 +792,18 @@ class Filter(DessiaObject):
         self.bound = bound
 
         DessiaObject.__init__(self, name=name)
+
+    def __hash__(self):
+        hash_ = len(self.attribute)
+        hash_ += hash(self.operator)
+        hash_ += hash(self.bound)
+        return int(hash_)
+
+    def __eq__(self, other: 'DessiaFilter'):
+        same_attr = self.attribute == other.attribute
+        same_op = self.operator == other.operator
+        same_bound = self.bound == other.bound
+        return same_attr and same_op and same_bound
 
 
 class Evolution(DessiaObject):
@@ -1411,7 +1423,7 @@ def sequence_to_deepattr(sequence):
     return '/'.join(healed_sequence)
 
 
-def is_bounded(filter_: Filter, value: float):
+def is_bounded(filter_: DessiaFilter, value: float):
     bounded = True
     operator = filter_.operator
     bound = filter_.bound

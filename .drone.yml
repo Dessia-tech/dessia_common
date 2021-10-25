@@ -10,11 +10,14 @@ steps:
   - git fetch --tags
   - python setup.py install
   - python scripts/dessia_object.py
-  - python dessia_common/scripts/unit_tests.py
-  - python tests/bson_valid.py
-  - pip install sphinx sphinx-rtd-theme
+  - pip install sphinx sphinx-rtd-theme coverage
   - cd doc
   - make html
+  - cd ../tests
+  - coverage run --source dessia_common ci_tests.py
+  - coverage json
+  - python coverage.py 
+  - coverage report
 
 - name: develop
   image: python:3.8
