@@ -1848,7 +1848,7 @@ class WorkflowState(DessiaObject):
             pipe.input_variable]
         self.activated_items[pipe.output_variable] = True
 
-    # TODO: maybe have a workflow state object?
+
     def _evaluate_block(self, block, progress_callback=lambda x:x, verbose=False):
         if verbose:
             log_line = 'Evaluating block {}'.format(block.name)
@@ -1860,7 +1860,7 @@ class WorkflowState(DessiaObject):
                                         for i in block.inputs})
         for input_ in block.inputs:
             if input_.memorize:
-                indices = str(self.variable_indices(input_))
+                indices = str(self.workflow.variable_indices(input_))# Str is strange
                 self.variables_values[indices] = self.values[input_]
         # Updating progress
         if progress_callback is not None:

@@ -1,5 +1,7 @@
 from dessia_common.vectored_objects import Catalog, ParetoSettings
+from dessia_common.core import DessiaFilter
 import dessia_common.workflow as wf
+import dessia_common.typings as dct
 from dessia_api_client import Client
 
 choice_args = ['MPG', 'Cylinders', 'Displacement', 'Horsepower',
@@ -10,8 +12,12 @@ minimized_attributes = {'MPG': False, 'Horsepower': True,
 
 aimpoint = {'MPG': 4, 'Weight': 1000}
 
-filters = [{'attribute': 'MPG', 'operator': 'gte', 'bound': 10},
-           {'attribute': 'MPG', 'operator': 'lte', 'bound': 35}]
+filters = [DessiaFilter(attribute='MPG',
+                        operator='gte',
+                        bound=10),
+           DessiaFilter(attribute='MPG',
+                        operator='lte',
+                        bound=35)]
 
 # Blocks
 import_csv = wf.Import(type_='csv')
@@ -19,8 +25,7 @@ instantiate_pareto = wf.InstanciateModel(model_class=ParetoSettings,
                                          name='Pareto Settings')
 instantiate_catalog = wf.InstanciateModel(model_class=Catalog,
                                           name='Cars Instantiation')
-filter_method = wf.ModelMethod(model_class=Catalog,
-                               method_name='filter_',
+filter_method = wf.ModelMethod(dct.MethodType(Catalog, 'filter_'),
                                name='Filters')
 filtered_catalog = wf.InstanciateModel(model_class=Catalog,
                                        name='Filtered Catalog')
@@ -57,7 +62,6 @@ pipes = [
 workflow = wf.Workflow(blocks=blocks, pipes=pipes,
                        output=filter_method.outputs[0],
                        name='Cars workflow')
-# workflow.plot_jointjs()
 
 # # Input values
 input_values = {
@@ -75,6 +79,3 @@ input_values = {
     # workflow.index(objectives_method.inputs[2]): minimized_attributes
 }
 workflow_run = workflow.run(input_values=input_values)
-
-c = Client(api_url='https://api.platform.dessia.tech')
-r = c.create_object_from_python_object(workflow_run)

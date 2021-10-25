@@ -6,6 +6,7 @@ Created on Wed Feb 19 15:56:12 2020
 @author: jezequel
 """
 
+from io import StringIO
 import math
 from typing import List, Dict, Any
 import numpy as np
@@ -282,7 +283,7 @@ class Catalog(DessiaObject):
             i = 0
             while bounded and i < len(filters):
                 filter_ = filters[i]
-                variable = filter_['attribute']
+                variable = filter_.attribute
                 value = line[self.get_variable_index(variable)]
                 bounded = is_bounded(filter_, value)
                 i += 1
@@ -292,7 +293,7 @@ class Catalog(DessiaObject):
         return filtered_array
 
     @classmethod
-    def from_csv(cls, file: str, end: int = None, remove_duplicates: bool = False):
+    def from_csv(cls, file: StringIO, end: int = None, remove_duplicates: bool = False):
         """
         Generates MBSEs from given .csv file.
         """
@@ -546,7 +547,7 @@ class Catalog(DessiaObject):
                               point_families=[point_family_0, point_family_1],
                               initial_view_on=True)]
 
-def from_csv(cls, filename: str, end: int = None, remove_duplicates: bool = False):
+def from_csv(filename: str, end: int = None, remove_duplicates: bool = False):
     """
     Generates MBSEs from given .csv file.
     """
