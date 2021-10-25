@@ -257,8 +257,8 @@ workflow_template = Template('''
 visjs_template = Template('''
 <html>
         <head>
-        <script src="dessia_common/dessia_common/templates/vis.min.js"></script>
-        <link href="dessia_common/dessia_common/templates/vis.min.css" rel="stylesheet" />
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.css" rel="stylesheet" />
         <meta charset="utf-8"/>
         <style type="text/css">
             #mynetwork {
