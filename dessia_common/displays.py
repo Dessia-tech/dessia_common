@@ -9,7 +9,6 @@ def networkx_to_visjs_data(networkx_graph):
 
     for i, node in enumerate(networkx_graph.nodes):
         node_dict = networkx_graph.nodes[node]
-        print(node_dict)
         node_data = {'id': i}
 
         if 'name' not in node_dict and 'label' not in node_dict:
