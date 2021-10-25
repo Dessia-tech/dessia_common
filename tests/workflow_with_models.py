@@ -3,69 +3,23 @@
 """
 A simple workflow composed of functions
 """
-
+import dessia_common.typings as dct
 import dessia_common.workflow as wf
-from dessia_common import DessiaObject
+from dessia_common import DessiaObject, DessiaFilter
 
+import dessia_common.tests as dctests
 
-class Submodel(DessiaObject):
-    _generic_eq = True
-
-    def __init__(self, subvalue: int, name: str = ''):
-        self.subvalue = subvalue
-        self.name = name
-
-        DessiaObject.__init__(self, name=name)
-
-
-class Model(DessiaObject):
-    _generic_eq = True
-
-    def __init__(self, value: int, submodel: Submodel, name: str = ''):
-        self.value = value
-        self.submodel = submodel
-
-        DessiaObject.__init__(self, name=name)
-
-
-class Generator(DessiaObject):
-    def __init__(self, parameter: int, nb_solutions: int = 25, name: str = ''):
-        self.parameter = parameter
-        self.nb_solutions = nb_solutions
-        self.models = None
-
-        DessiaObject.__init__(self, name=name)
-
-    def generate(self) -> None:
-        submodels = [Submodel(self.parameter * i)
-                     for i in range(self.nb_solutions)]
-        self.models = [Model(self.parameter + i, submodels[i])
-                       for i in range(self.nb_solutions)]
-
-
-class Optimizer(DessiaObject):
-    def __init__(self, model_to_optimize: Model, name: str = ''):
-        self.model_to_optimize = model_to_optimize
-
-        DessiaObject.__init__(self, name=name)
-
-    def optimize(self, optimization_value: int = 3) -> None:
-        self.model_to_optimize.value += optimization_value
-
-
-instanciate_generator = wf.InstanciateModel(model_class=Generator,
+instanciate_generator = wf.InstantiateModel(model_class=dctests.Generator,
                                             name='Instantiate Generator')
-generator_generate = wf.ModelMethod(model_class=Generator,
-                                    method_name='generate',
+generator_generate = wf.ModelMethod(dct.MethodType(dctests.Generator,'generate'),
                                     name='Generator Generate')
 attribute_selection = wf.ModelAttribute(attribute_name='models',
                                         name='Attribute Selection')
 
 # Subworkflow of model optimization
-instanciate_optimizer = wf.InstanciateModel(model_class=Optimizer,
+instanciate_optimizer = wf.InstantiateModel(model_class=dctests.Optimizer,
                                             name='Instantiate Optimizer')
-optimization = wf.ModelMethod(model_class=Optimizer,
-                              method_name='optimize',
+optimization = wf.ModelMethod(dct.MethodType(dctests.Optimizer,'optimize'),
                               name='Optimization')
 model_fetcher = wf.ModelAttribute(attribute_name='model_to_optimize',
                                   name='Model Fetcher')
@@ -86,15 +40,17 @@ optimization_workflow_block = wf.WorkflowBlock(workflow=optimization_workflow,
 
 parallel_optimization = wf.ForEach(
     workflow_block=optimization_workflow_block,
-    workflow_iterable_input=optimization_workflow_block.inputs[0],
+    iter_input_index=0,
     name='ForEach'
 )
 
 unpacker = wf.Unpacker(indices=[0, 3, -1], name='Unpacker')
 sequence = wf.Sequence(number_arguments=2, name='Sequence')
 
-filters = [{'attribute': 'value', 'operator': 'gt', 'bound': 0},
-           {'attribute': 'submodel.subvalue', 'operator': 'lt', 'bound': 200}]
+filters = [
+    DessiaFilter(attribute='value', operator='gt', bound=0),
+    DessiaFilter(attribute='submodel/subvalue', operator='lt', bound=2000)
+]
 
 filter_sort = wf.Filter(filters=filters, name='Filters')
 
