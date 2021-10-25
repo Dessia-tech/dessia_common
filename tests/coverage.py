@@ -8,8 +8,8 @@ Created on Wed Sep 29 14:35:47 2021
 
 import json
 
-MIN_FILE_COVERAGE = 18.
-MIN_MODULE_COVERAGE = 50.
+MIN_FILE_COVERAGE = 26.
+MIN_MODULE_COVERAGE = 54.
 
 untracked_modules = ['dessia_common/templates.py', 'dessia_common/utils.py',
                      'dessia_common/generation.py', 'dessia_common/optimization.py']
@@ -24,7 +24,6 @@ assert d['totals']['percent_covered'] >= MIN_MODULE_COVERAGE
 
 for file_name, data in d['files'].items():
     print(file_name, data['summary']['percent_covered'], '%')
-    # print('/'.join(file_name.split('/')[-2:])) 
     if '/'.join(file_name.split('/')[-2:]) in untracked_modules:
         print(file_name, '-> in untrack list')
     else:

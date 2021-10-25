@@ -3,7 +3,7 @@ import os
 
 scripts = ['displays.py',
            'workflow_with_models.py',
-           'workflow/power_simulation.py'
+           'workflow/power_simulation.py',
            'unit_tests.py', 'bson_valid.py',
            ]
 
