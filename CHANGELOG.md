@@ -6,10 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unrealeased [=> 0.4.7]
-## Added
+### Added
 - File typings
 - Support for Iterator typing
 - Object's default_dicts now implement objct_class
+
+### Fixed
+- Typo in allowed methods
 
 ## 0.4.6
 
