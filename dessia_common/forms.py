@@ -24,7 +24,6 @@ In addition to types & genericity (brought by DessiaObject),
 this module can also be seen as a template for Dessia's
 coding/naming style & convention.
 """
-import io
 
 from math import floor, ceil
 from typing import Dict, List, Tuple, Union, TextIO, BinaryIO
@@ -185,7 +184,7 @@ class StandaloneObject(DessiaObject):
     _standalone_in_db = True
     _generic_eq = True
     _allowed_methods = ['add_standalone_object', 'add_embedded_object',
-                        'add_float', 'generate_from_text', 'generate_from_bin', 'generate_from_bytes']
+                        'add_float', 'generate_from_text', 'generate_from_bin']
 
     def __init__(self, standalone_subobject: StandaloneSubobject,
                  embedded_subobject: EmbeddedSubobject,
@@ -254,18 +253,6 @@ class StandaloneObject(DessiaObject):
     @classmethod
     def generate_from_bin(cls, stream: BinaryIO):
         # the use need to decode the binary as he see fit
-        try:
-            my_string = stream.read().decode('utf8')
-            my_name, raw_seed = my_string.split(",")
-            seed = int(raw_seed.strip())
-        finally:
-            stream.close()
-        return cls.generate(seed=seed, name="TODO From Bytes")
-
-    @classmethod
-    def generate_from_bytes(cls, stream: io.BytesIO):
-        # the use need to decode the binary as he see fit
-        # this the bytes like object returned, using it instead of BinaryIO avoid writing to BinaryIO overhead
         try:
             my_string = stream.read().decode('utf8')
             my_name, raw_seed = my_string.split(",")

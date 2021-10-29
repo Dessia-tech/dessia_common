@@ -1822,14 +1822,8 @@ def deserialize_argument(type_, argument):
         finally:
             argument.close()
     elif type_ is BinaryIO:
-        # decoding is up to the user, the user need to close the stream after use
-        # io.BytesIO is the real byteslike object returned,
-        # using it instead of BinaryIO avoid writing to BinaryIO overhead
-        # in which case no deserialization occur
-        try:
-            deserialized_arg = io.BytesIO(argument.read())
-        finally:
-            argument.close()
+        # files are supplied as io.BytesIO  which is compatible with : BinaryIO
+        deserialized_arg = argument
     else:
         if type_ in TYPING_EQUIVALENCES.keys():
             if isinstance(argument, type_):
