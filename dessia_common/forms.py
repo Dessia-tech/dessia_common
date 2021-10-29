@@ -252,7 +252,7 @@ class StandaloneObject(DessiaObject):
 
     @classmethod
     def generate_from_bin(cls, stream: BinaryIO):
-        # the use need to decode the binary as he see fit
+        # the user need to decode the binary as he see fit
         try:
             my_string = stream.read().decode('utf8')
             my_name, raw_seed = my_string.split(",")
