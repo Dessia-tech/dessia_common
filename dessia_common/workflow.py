@@ -711,7 +711,7 @@ class Filter(Block):
 
     def to_dict(self):
         dict_ = Block.to_dict(self)
-        dict_.update({'filters': self.filters})
+        dict_.update({'filters': [f.to_dict() for f in self.filters]})
         return dict_
 
     @classmethod
