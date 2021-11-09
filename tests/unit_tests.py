@@ -210,3 +210,5 @@ d = standalone_object.to_dict()
 assert '$ref' in d['subobject_list'][0]
 o = DessiaObject.dict_to_object(d)
 assert not isinstance(o.subobject_list[0], dict)
+
+obj.to_xlsx('test')
