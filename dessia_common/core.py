@@ -617,7 +617,7 @@ class DessiaObject:
                                       debug_mode=False)
         else:
             msg = 'Class {} does not implement a plot_data method' \
-                  'to define what to plot'
+                  ' to define what to plot'
             raise NotImplementedError(msg.format(self.__class__.__name__))
 
     def mpl_plot(self, **kwargs):

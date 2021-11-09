@@ -5,7 +5,7 @@ from networkx import DiGraph
 
 
 def networkx_to_visjs_data(networkx_graph):
-    visjs_data = {'nodes': [], 'edges': []}
+    visjs_data = {'name':networkx_graph.name, 'nodes': [], 'edges': []}
 
     for i, node in enumerate(networkx_graph.nodes):
         node_dict = networkx_graph.nodes[node]

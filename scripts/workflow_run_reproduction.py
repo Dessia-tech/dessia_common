@@ -8,7 +8,6 @@ Created on Mon Oct 14 11:54:34 2019
 from powerpack import cells, power_profile, electrical
 from powerpack.optimization import electrical as eo
 from dessia_common import workflow as wf
-from software_api import models
 from dessia_api_client import Client
 import dessia_common as dc
 

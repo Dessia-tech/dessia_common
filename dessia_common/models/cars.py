@@ -6,8 +6,10 @@ Created on Mon Feb 17 17:00:35 2020
 @author: jezequel
 """
 
+import pkg_resources
+
 from dessia_common.vectored_objects import Catalog, Objective, ParetoSettings,\
-    ObjectiveSettings, from_csv, pareto_frontier
+    ObjectiveSettings, pareto_frontier
 import os
 
 choice_args = ['MPG', 'Cylinders', 'Displacement', 'Horsepower',
@@ -26,21 +28,24 @@ pareto_settings = ParetoSettings(minimized_attributes=minimized_attributes,
 #                         settings=objective_settings0,
 #                         name='ObjectiveName')
 
-dirname = os.path.dirname(__file__)
-relative_filepath = './data/cars.csv'
-filename = os.path.join(dirname, relative_filepath)
+# dirname = os.path.dirname(__file__)
+# relative_filepath = './data/cars.csv'
+# filename = os.path.join(dirname, relative_filepath)
 
-array, variables = from_csv(filename=filename, end=None,
-                            remove_duplicates=True)
+csv_cars = pkg_resources.resource_stream('dessia_common', 'models/data/cars.csv')
 
-catalog = Catalog(array=array, variables=variables,
-                  choice_variables=choice_args, objectives=[],
-                  pareto_settings=pareto_settings, name='Cars')
+# array, variables = from_csv(filename=csv_cars, end=None,
+#                             remove_duplicates=True)
 
-from plot_data import plot_canvas
+catalog = Catalog.from_csv(csv_cars)
+catalog.name = 'Cars dataset'
+catalog.pareto_settings = pareto_settings
+
+# catalog.plot()
+
+# from plot_data import plot_canvas
 
 # plot_canvas(plot_data_object=catalog.plot_data()[0], canvas_id='canvas')
-catalog.plot()
 # cost = catalog.build_costs(pareto_settings)
 # print('cost', cost)
 
