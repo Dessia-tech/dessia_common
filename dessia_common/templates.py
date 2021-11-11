@@ -257,15 +257,15 @@ workflow_template = Template('''
 visjs_template = Template('''
 <html>
         <head>
-        <script src="dessia_common/dessia_common/templates/vis.min.js"></script>
-        <link href="dessia_common/dessia_common/templates/vis.min.css" rel="stylesheet" />
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.css" rel="stylesheet" />
         <meta charset="utf-8"/>
         <style type="text/css">
             #mynetwork {
                 border: 1px solid lightgray;
             }
         </style>
-        <title>{{name}}</title>
+        <title>$name</title>
     </head>
     <body>
     <div id="mynetwork"></div>

@@ -1,7 +1,10 @@
 
 import os
 
-scripts = ['workflow_with_models.py', 'unit_tests.py', 'bson_valid.py',
+scripts = ['displays.py',
+           'workflow_with_models.py',
+           'workflow/power_simulation.py',
+           'unit_tests.py', 'bson_valid.py',
            ]
 
 for script_name in scripts:
