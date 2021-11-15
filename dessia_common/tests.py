@@ -105,3 +105,8 @@ class SystemSimulationResult(DessiaObject):
         self.output_power = output_power
         DessiaObject.__init__(self, name=name)  
         
+class SystemSimulationList(DessiaObject):
+    def __init__(self, simulations:List[SystemSimulationResult],
+                 name:str=''):
+        self.simulations = simulations
+        DessiaObject.__init__(self, name=name) 

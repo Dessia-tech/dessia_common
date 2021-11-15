@@ -20,7 +20,7 @@ from dessia_common import DessiaObject, DisplayObject, DessiaFilter, \
     enhanced_deep_attr, deprecation_warning, JSONSCHEMA_HEADER,\
     jsonschema_from_annotation, deserialize_argument, set_default_value,\
     prettyname, dict_to_object, serialize_dict, UntypedArgumentError,\
-    recursive_type, recursive_instantiation, full_classname
+    recursive_type, recursive_instantiation, full_classname, serialize_with_pointers
 from dessia_common.vectored_objects import from_csv
 from dessia_common.typings import JsonSerializable, Subclass, MethodType
 import warnings
@@ -2035,31 +2035,40 @@ class WorkflowRun(DessiaObject):
             ))
         return displays
 
-    @classmethod
-    def dict_to_object(cls, dict_):
-        workflow = Workflow.dict_to_object(dict_['workflow'])
-        if 'output_value' in dict_ and 'output_value_type' in dict_:
-            type_ = dict_['output_value_type']
-            value = dict_['output_value']
-            output_value = recursive_instantiation(type_=type_, value=value)
-        else:
-            output_value = None
+    # @classmethod
+    # def dict_to_object(cls, dict_):
+    #     workflow = Workflow.dict_to_object(dict_['workflow'])
+    #     if 'output_value' in dict_ and 'output_value_type' in dict_:
+    #         type_ = dict_['output_value_type']
+    #         value = dict_['output_value']
+    #         output_value = recursive_instantiation(type_=type_, value=value)
+    #     else:
+    #         output_value = None
 
-        input_values = {int(i): deserialize(v)
-                        for i, v in dict_['input_values'].items()}
-        variables_values = {k: deserialize(v)
-                            for k, v in dict_['variables_values'].items()}
-        return cls(workflow=workflow, output_value=output_value,
-                   input_values=input_values,
-                   variables_values=variables_values,
-                   start_time=dict_['start_time'], end_time=dict_['end_time'],
-                   log=dict_['log'], name=dict_['name'])
+    #     input_values = {int(i): deserialize(v)
+    #                     for i, v in dict_['input_values'].items()}
+    #     variables_values = {k: deserialize(v)
+    #                         for k, v in dict_['variables_values'].items()}
+    #     return cls(workflow=workflow, output_value=output_value,
+    #                input_values=input_values,
+    #                variables_values=variables_values,
+    #                start_time=dict_['start_time'], end_time=dict_['end_time'],
+    #                log=dict_['log'], name=dict_['name'])
 
     def to_dict(self):
-        input_values = {i: serialize(v)
-                        for i, v in self.input_values.items()}
-        variables_values = {k: serialize(v)
-                            for k, v in self.variables_values.items()}
+        input_values = {}
+        memo = None
+        for i, v in self.input_values.items():
+            serialized_v, memo = serialize_with_pointers(v,memo, path='#/input_values/{}'.format(i))
+            input_values[i] = serialized_v
+
+        variables_values = {}
+        for k, v in self.variables_values.items():
+            serialized_v, memo = serialize_with_pointers(v, memo, path='#/variables_values/{}'.format(k))
+            variables_values[k] = serialized_v
+            
+        # variables_values = {k: serialize(v)
+        #                     for k, v in self.variables_values.items()}
         dict_ = DessiaObject.base_dict(self)
         dict_.update({'workflow': self.workflow.to_dict(),
                       'input_values': input_values,
@@ -2068,8 +2077,9 @@ class WorkflowRun(DessiaObject):
                       'execution_time': self.execution_time, 'log': self.log})
 
         if self.output_value is not None:
+            serialized_output, _ = serialize_with_pointers(self.output_value, memo, path='#/output_value')
             dict_.update({
-                'output_value': serialize(self.output_value),
+                'output_value': serialized_output,
                 'output_value_type': recursive_type(self.output_value)
             })
 
