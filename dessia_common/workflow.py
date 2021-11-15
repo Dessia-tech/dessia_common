@@ -249,7 +249,7 @@ class Import(Block):
 class InstantiateModel(Block):
     """
     :param model_class: The class to instanciate.
-    :type model_class: DessiaObject
+    :type model_class: Instanciable
     :param name: The name of the block.
     :type name: str
     """
@@ -310,16 +310,15 @@ class InstanciateModel(InstantiateModel):
 
 
 class ClassMethod(Block):
-    def __init__(self, class_: Type, method_name: str, name: str = ''):
-        self.class_ = class_
-        self.method_name = method_name
+    def __init__(self, method_type: MethodType[Type], name: str = ''):
+        self.method_type = method_type
         inputs = []
-        method = getattr(self.class_, self.method_name)
+        method = getattr(method_type.class_, method_type.name)
         inputs = set_inputs_from_function(method, inputs)
 
         self.argument_names = [i.name for i in inputs]
 
-        output_name = 'method result of {}'.format(self.method_name)
+        output_name = 'method result of {}'.format(method_type.name)
         annotations = get_type_hints(method)
         if 'return' in annotations:
             type_ = type_from_annotation(annotations['return'],
@@ -330,41 +329,42 @@ class ClassMethod(Block):
         Block.__init__(self, inputs, outputs, name=name)
 
     def equivalent_hash(self):
-        return len(self.class_.__name__) + 7 * len(self.method_name)
+        classname = self.method_type.class_.__name__
+        return len(classname) + 7 * len(self.method_type.name)
 
-    def equivalent(self, other):
+    def equivalent(self, other: 'ClassMethod'):
         if not Block.equivalent(self, other):
             return False
-        same_class = self.class_.__name__ == other.class_.__name__
-        same_method = self.method_name == other.method_name
+        classname = self.method_type.class_.__name__
+        other_classname = other.method_type.class_.__name__
+        same_class = classname == other_classname
+        same_method = self.method_type.name == other.method_type.name
         return same_class and same_method
 
     def to_dict(self):
         dict_ = Block.to_dict(self)
-        dict_.update({'method_name': self.method_name,
-                      'class_': full_classname(object_=self.class_,
-                                               compute_for='class')})
+        classname = full_classname(object_=self.method_type.class_,
+                                   compute_for='class')
+        method_type_dict = {'class_': classname, 'name': self.method_type.name}
+        dict_.update({'method_type': method_type_dict})
         return dict_
 
     @classmethod
     @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_):
-        if 'class_module' in dict_:
-            # TODO Retro-compatibility. Remove this in future versions
-            module_name = dict_['class_module']
-            classname = module_name + '.' + dict_['class_']
-        else:
-            classname = dict_['class_']
+    def dict_to_object(cls, dict_) -> 'ClassMethod':
+        classname = dict_['method_type']['class_']
         class_ = get_python_class_from_class_name(classname)
-        method_name = dict_['method_name']
+        method_name = dict_['method_type']['name']
         name = dict_['name']
-        return cls(class_=class_, method_name=method_name, name=name)
+        method_type = MethodType(class_=class_, name=method_name)
+        return cls(method_type=method_type, name=name)
 
     def evaluate(self, values):
         args = {arg_name: values[var]
                 for arg_name, var in zip(self.argument_names, self.inputs)
                 if var in values}
-        return [getattr(self.class_, self.method_name)(**args)]
+        return [getattr(self.method_type.class_,
+                        self.method_type.name)(**args)]
 
 
 class ModelMethod(Block):
@@ -407,7 +407,7 @@ class ModelMethod(Block):
         classname = self.method_type.class_.__name__
         return len(classname) + 7 * len(self.method_type.name)
 
-    def equivalent(self, other):
+    def equivalent(self, other: 'ModelMethod'):
         if not Block.equivalent(self, other):
             return False
         classname = self.method_type.class_.__name__
@@ -426,7 +426,7 @@ class ModelMethod(Block):
 
     @classmethod
     @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_):
+    def dict_to_object(cls, dict_) -> 'ModelMethod':
         classname = dict_['method_type']['class_']
         class_ = get_python_class_from_class_name(classname)
         method_name = dict_['method_type']['name']
