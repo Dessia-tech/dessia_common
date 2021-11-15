@@ -184,7 +184,7 @@ class StandaloneObject(DessiaObject):
     _standalone_in_db = True
     _generic_eq = True
     _allowed_methods = ['add_standalone_object', 'add_embedded_object',
-                        'add_float', 'generate_from_file']
+                        'add_float', 'generate_from_text', 'generate_from_bin']
 
     def __init__(self, standalone_subobject: StandaloneSubobject,
                  embedded_subobject: EmbeddedSubobject,
@@ -242,19 +242,24 @@ class StandaloneObject(DessiaObject):
 
     @classmethod
     def generate_from_text(cls, stream: TextIO):
-        print(stream)
-        string = stream.read()
-        print(string.split(","))
-        name, raw_seed = string.split(",")
-        seed = int(raw_seed.strip())
+        try:
+            my_string = stream.read()
+            name, raw_seed = my_string.split(",")
+            seed = int(raw_seed.strip())
+        finally:
+            stream.close()
         return cls.generate(seed=seed, name=name)
 
     @classmethod
     def generate_from_bin(cls, stream: BinaryIO):
-        # string = stream.read()
-        # name, raw_seed = string.split(",")
-        # seed = int(raw_seed.strip())
-        return cls.generate(seed=0, name="TODO From Bytes")
+        # the user need to decode the binary as he see fit
+        try:
+            my_string = stream.read().decode('utf8')
+            my_name, raw_seed = my_string.split(",")
+            seed = int(raw_seed.strip())
+        finally:
+            stream.close()
+        return cls.generate(seed=seed, name="TODO From Bytes")
 
     def add_standalone_object(self, object_: StandaloneSubobject):
         """
