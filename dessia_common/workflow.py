@@ -352,9 +352,14 @@ class ClassMethod(Block):
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_) -> 'ClassMethod':
-        classname = dict_['method_type']['class_']
+        if 'method_type' in dict_:
+            classname = dict_['method_type']['class_']
+            method_name = dict_['method_type']['name']
+        else:
+            # Retro-compatibility
+            classname = dict_['model_class']
+            method_name = dict_['method_name']
         class_ = get_python_class_from_class_name(classname)
-        method_name = dict_['method_type']['name']
         name = dict_['name']
         method_type = MethodType(class_=class_, name=method_name)
         return cls(method_type=method_type, name=name)
@@ -427,9 +432,14 @@ class ModelMethod(Block):
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_) -> 'ModelMethod':
-        classname = dict_['method_type']['class_']
+        if 'method_type' in dict_:
+            classname = dict_['method_type']['class_']
+            method_name = dict_['method_type']['name']
+        else:
+            # Retro-compatibility
+            classname = dict_['model_class']
+            method_name = dict_['method_name']
         class_ = get_python_class_from_class_name(classname)
-        method_name = dict_['method_type']['name']
         name = dict_['name']
         method_type = MethodType(class_=class_, name=method_name)
         return cls(method_type=method_type, name=name)
