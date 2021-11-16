@@ -503,8 +503,6 @@ class Generator(DessiaObject):
         DessiaObject.__init__(self, name=name)
 
     def generate(self) -> List[StandaloneObject]:
-        # submodels = [Submodel(self.parameter * i)
-        #              for i in range(self.nb_solutions)]
         self.models = [StandaloneObject.generate(self.parameter + i)
                        for i in range(self.nb_solutions)]
         return self.models
@@ -521,3 +519,21 @@ class Optimizer(DessiaObject):
     def optimize(self, optimization_value: int = 3) -> int:
         self.model_to_optimize.intarg += optimization_value
         return self.model_to_optimize.intarg
+
+
+class Container(DessiaObject):
+    _allowed_methods = ["generate_from_text_files"]
+
+    def __init__(self, models: List[StandaloneObject] = None, name: str = ""):
+        if models is None:
+            self.models = []
+        else:
+            self.models = models
+
+        DessiaObject.__init__(self, name=name)
+
+    @classmethod
+    def generate_from_text_files(cls, files: List[TextIO],
+                                 name: str = "Generated from text files"):
+        models = [StandaloneObject.generate_from_text(file) for file in files]
+        return cls(models=models, name=name)
