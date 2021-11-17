@@ -1644,10 +1644,13 @@ def deserialize_argument(type_, argument):
             msg = "Deserialization of typing {} is not implemented"
             raise NotImplementedError(msg.format(type_))
     elif type_ is TextIO:
-        deserialized_arg = io.StringIO(argument)
+        try:
+            deserialized_arg = io.StringIO(argument.read().decode('utf8'))
+        finally:
+            argument.close()
     elif type_ is BinaryIO:
-        bytes_content = argument.encode('utf-8')
-        deserialized_arg = io.BytesIO(bytes_content)
+        # files are supplied as io.BytesIO  which is compatible with : BinaryIO
+        deserialized_arg = argument
     else:
         if type_ in TYPING_EQUIVALENCES.keys():
             if isinstance(argument, type_):
