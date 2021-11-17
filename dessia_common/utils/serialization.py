@@ -14,7 +14,6 @@ import dessia_common.utils.types as dcty
 from dessia_common.breakdown import get_in_object_from_path
 import networkx as nx
 
-import matplotlib.pyplot as plt
 
 def deserialize(serialized_element, sequence_annotation: str = 'List',
                 global_dict=None, pointers_memo=None):#, enforce_pointers=False):
@@ -128,6 +127,7 @@ def pointer_graph(value):
     graph.add_nodes_from(nodes)
     graph.add_edges_from(edges)
 
+    # import matplotlib.pyplot as plt
     # fig, ax = plt.subplots()
     # pos = nx.kamada_kawai_layout(graph)
     # nx.draw_networkx_nodes(graph, pos)
