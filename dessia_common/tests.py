@@ -6,7 +6,7 @@
 
 from dessia_common import DessiaObject
 import dessia_common.typings as dct
-from typing import List
+from typing import List, Dict
 
 class Submodel(DessiaObject):
     _generic_eq = True
@@ -80,9 +80,11 @@ class SystemUsage(DessiaObject):
 class System(DessiaObject):
     def __init__(self, components:List[Component],
                  component_connections:List[ComponentConnection],
+                 # positions:Dict[Component,float]=None,
                  name:str=''):
         self.components = components
         self.component_connections = component_connections
+        # self.positions = positions
         DessiaObject.__init__(self, name=name)
 
     def output_power(self, input_power:dct.Power):

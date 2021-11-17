@@ -10,9 +10,13 @@ def networkx_to_visjs_data(networkx_graph):
     for i, node in enumerate(networkx_graph.nodes):
         node_dict = networkx_graph.nodes[node]
         node_data = {'id': i}
+        print(node_dict, node)
 
         if 'name' not in node_dict and 'label' not in node_dict:
-            node_data['label'] = ''
+            if isinstance(node, str):
+                node_data['label'] = node
+            else:                  
+                node_data['label'] = ''
         elif 'name' in node_dict and 'label' not in node_dict:
             node_data['label'] = node_dict['name']
         else:
@@ -30,6 +34,7 @@ def networkx_to_visjs_data(networkx_graph):
 
     list_nodes = list(networkx_graph.nodes)
     is_digraph = isinstance(networkx_graph, DiGraph)
+    print(is_digraph)
     for edge in networkx_graph.edges:
         index1 = list_nodes.index(edge[0])
         index2 = list_nodes.index(edge[1])
@@ -38,7 +43,7 @@ def networkx_to_visjs_data(networkx_graph):
                      'font': {'align': 'middle'}}
 
         if is_digraph:
-            edge_data['arrow'] = 'to'
+            edge_data['arrows'] = 'to'
 
         visjs_data['edges'].append(edge_data)
 

@@ -49,7 +49,8 @@ def deserialize_sequence(sequence, annotation=None, global_dict=None, pointers_m
 def dict_to_object(dict_, class_=None, force_generic: bool = False,
                    global_dict=None, pointers_memo=None):
         
-    if '$ref' in dict_ and dict_['$ref'] in pointers_memo:
+    if '$ref' in dict_:
+        # and dict_['$ref'] in pointers_memo:
         return pointers_memo[dict_['$ref']]
     
     class_argspec = None
@@ -124,12 +125,15 @@ def pointer_graph(value):
     # print(len(nodes), len(edges))
     # plt.S()
     graph = nx.DiGraph()
-    graph.add_nodes_from(nodes)
+    graph.add_nodes_from(set(nodes))
     graph.add_edges_from(edges)
+
+    # import dessia_common.displays
+    # dessia_common.displays.draw_networkx_graph(graph)
 
     # import matplotlib.pyplot as plt
     # fig, ax = plt.subplots()
-    # pos = nx.kamada_kawai_layout(graph)
+    # pos = nx.spring_layout(graph)
     # nx.draw_networkx_nodes(graph, pos)
     # nx.draw_networkx_edges(graph, pos)
     # nx.draw_networkx_labels(graph, pos)
@@ -144,8 +148,22 @@ def dereference_jsonpointers(value):#, global_dict):
     
     pointers_memo = {}
     if '#' in graph.nodes:
-        for _, ref in list(nx.bfs_edges(graph, '#'))[::-1]:
-            # print(node1, node2)
+        cycles = list(nx.simple_cycles(graph))
+        if cycles:
+            for cycle in cycles:
+                print(cycle)
+            raise NotImplementedError('Cycles in ref not handled')
+            cycles
+        for anc, ref in list(nx.bfs_edges(graph, '#'))[::-1]:
+            # print('R', ref)
+            # if not anc in pointers_memo:
+            #     raise ValueError('anc!!!')
+            
+                # serialized_element = get_in_object_from_path(value, anc)
+                # pointers_memo[anc] = deserialize(serialized_element=serialized_element,
+                #                                  global_dict=value, pointers_memo=pointers_memo)
+                # print('missing anc', anc)
+            print('ref', ref)
             serialized_element = get_in_object_from_path(value, ref)
             pointers_memo[ref] = deserialize(serialized_element=serialized_element,
                                              global_dict=value, pointers_memo=pointers_memo)
@@ -196,7 +214,6 @@ def pointer_graph_elements(value, path='#'):
     elif dcty.is_sequence(value):
         return pointer_graph_elements_sequence(value, path)
     else:
-        print(value)
         raise ValueError(value)
 
 
@@ -211,12 +228,13 @@ def pointer_graph_elements_sequence(seq, path='#'):
     for ie, element in enumerate(seq):
         path_value = '{}/{}'.format(path, ie)
         value_nodes, value_edges = pointer_graph_elements(element, path=path_value)
-        if value_edges:
-            nodes.append(path_value)
-            nodes.extend(value_nodes)
-            
-            edges.append((path, path_value))
-            edges.extend(value_edges)
+        # if value_nodes or value_edges:
+        
+        nodes.append(path_value)
+        nodes.extend(value_nodes)
+        
+        edges.append((path, path_value))
+        edges.extend(value_edges)
 
 
     return nodes, edges
@@ -225,17 +243,18 @@ def pointer_graph_elements_dict(dict_, path='#'):
     
     
     if '$ref' in dict_:
-        return [path], [(path, dict_['$ref'])]
+        return [path, dict_['$ref']], [(path, dict_['$ref'])]
     
     edges = []
     nodes = []
     for key, value in dict_.items():
-        path_value = '{}/{}'.format(path, key)
-        value_nodes, value_edges = pointer_graph_elements(value, path=path_value)
-        if value_edges:
+        if not dcty.isinstance_base_types(value):
+            path_value = '{}/{}'.format(path, key)
+            value_nodes, value_edges = pointer_graph_elements(value, path=path_value)
+            # if value_nodes or value_edges:        
             nodes.append(path_value)
             nodes.extend(value_nodes)
-    
+        
             edges.append((path, path_value))
             edges.extend(value_edges)
 

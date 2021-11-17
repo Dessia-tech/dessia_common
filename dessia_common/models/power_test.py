@@ -28,8 +28,8 @@ component_connections2 = [dessia_common.tests.ComponentConnection(components2[0]
                          ]
 
 
-system1 = dessia_common.tests.System(components1, component_connections1)
-system2 = dessia_common.tests.System(components2, component_connections2)
+system1 = dessia_common.tests.System(components1, component_connections1, {components1[1]: 0.32})
+system2 = dessia_common.tests.System(components2, component_connections2, {components2[0]: 0.32})
 
 usage1 = dessia_common.tests.SystemUsage([0, 1., 2., 5., 8.], [0., 100., 150, 350, 120.])
 usage2 = dessia_common.tests.SystemUsage([0, 1., 2., 5., 10.], [0., 76., 150, 357, 110.])

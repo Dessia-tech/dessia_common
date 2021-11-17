@@ -22,7 +22,7 @@ from dessia_common import DessiaObject, DisplayObject, DessiaFilter, \
     prettyname, serialize_dict, UntypedArgumentError,\
     recursive_type, recursive_instantiation, serialize_with_pointers
 from dessia_common.utils.serialization import dict_to_object, deserialize
-from dessia_common.utils.types import get_python_class_from_class_name, serialize_typing, full_classname
+from dessia_common.utils.types import get_python_class_from_class_name, serialize_typing, full_classname, deserialize_typing
 from dessia_common.vectored_objects import from_csv
 from dessia_common.typings import JsonSerializable, Subclass, MethodType
 import warnings
@@ -68,7 +68,7 @@ class TypedVariable(Variable):
 
     @classmethod
     def dict_to_object(cls, dict_):
-        type_ = get_python_class_from_class_name(dict_['type_'])
+        type_ = deserialize_typing(dict_['type_'])
         memorize = dict_['memorize']
         return cls(type_=type_, memorize=memorize, name=dict_['name'])
 
