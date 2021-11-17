@@ -17,7 +17,7 @@ untracked_modules = [
     "dessia_common/generation.py",
     "dessia_common/optimization.py",
     'workflows/forms_workflow.py',
-    'models/tests.py'
+    'models/tests.py',
 ]
 
 print("untracked modules:", untracked_modules)

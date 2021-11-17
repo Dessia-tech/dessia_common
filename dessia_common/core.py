@@ -901,9 +901,6 @@ class CombinationEvolution(DessiaObject):
         return x, y
 
 
-
-
-
 def dict_merge(old_dct, merge_dct, add_keys=True, extend_lists=True):
     """ Recursive dict merge. Inspired by :meth:``dict.update()``, instead of
     updating only top-level keys, dict_merge recurses down into dicts nested
