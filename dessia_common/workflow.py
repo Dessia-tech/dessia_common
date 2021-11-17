@@ -724,7 +724,7 @@ class Filter(Block):
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_):
-        return cls(dict_['filters'], dict_['name'])
+        return cls([DessiaFilter.dict_to_object(d) for d in dict_['filters']], dict_['name'])
 
     def evaluate(self, values):
         ouput_values = []
