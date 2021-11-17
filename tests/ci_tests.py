@@ -6,6 +6,7 @@ scripts = ['displays.py',
            'workflow_with_models.py',
            'workflow/power_simulation.py',
            'utils/algebra.py',
+           'utils/interpolation.py',
            # Unit tests after that
            'unit_tests.py',
            'bson_valid.py',
