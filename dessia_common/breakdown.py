@@ -9,8 +9,31 @@ import collections
 import numpy as npy
 
 import dessia_common.core
+from dessia_common.utils.types import is_sequence
 
+def get_in_object_from_path(object_, path):
+    segments = path.lstrip('#/').split('/')
+    if isinstance(object_, dict):
+        try:
+            element = object_[segments[0]]
+        except KeyError:
+            print(object_, segments[0])
+            raise RuntimeError
+    else:
+        element = getattr(object_, segments[0])
 
+    for segment in segments[1:]:
+        if is_sequence(element):
+            element = element[int(segment)]
+        elif isinstance(element, dict):# A dict?
+            if segment in element:
+                element = element[segment]
+            else:
+                element = element[int(segment)]
+        else:
+            element = getattr(element, segment)
+
+    return element
 
 def merge_breakdown_dicts(dict1, dict2):
     dict3 = dict1.copy()

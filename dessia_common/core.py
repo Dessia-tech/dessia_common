@@ -16,6 +16,9 @@ import inspect
 import json
 from dessia_common.exports import XLSXWriter
 
+from dessia_common.utils.serialization import dict_to_object
+from dessia_common.utils.types import is_jsonable, is_builtin, get_python_class_from_class_name, serialize_typing, full_classname, is_sequence, isinstance_base_types, is_typing, TYPING_EQUIVALENCES
+
 
 from typing import List, Dict, Type, Tuple, Union, Any, TextIO, BinaryIO, \
     get_type_hints, get_origin, get_args
@@ -36,8 +39,7 @@ JSONSCHEMA_HEADER = {"definitions": {},
                      "required": [],
                      "properties": {}}
 
-TYPING_EQUIVALENCES = {int: 'number', float: 'number',
-                       bool: 'boolean', str: 'string'}
+
 
 TYPES_STRINGS = {int: 'int', float: 'float', bool: 'boolean', str: 'str',
                  list: 'list', tuple: 'tuple', dict: 'dict'}
@@ -695,7 +697,8 @@ class DessiaObject:
         dict_ = self.to_dict()
         json_dict = json.dumps(dict_)
         decoded_json = json.loads(json_dict)
-        self.dict_to_object(decoded_json)
+        deserialized_object = self.dict_to_object(decoded_json)
+        assert deserialized_object == self
         valid, hint = is_bson_valid(stringify_dict_keys(self.to_dict()))
         if not valid:
             raise ValueError(hint)
@@ -898,64 +901,7 @@ class CombinationEvolution(DessiaObject):
         return x, y
 
 
-def number2factor(number):
-    """
-    Temporary function : Add to some tools package
-    Finds all the ways to combine elements
-    """
-    factor_range = range(1, int(number ** 0.5) + 1)
 
-    if number:
-        factors = list(set(reduce(list.__add__, ([i, number // i]
-                                                 for i in factor_range
-                                                 if number % i == 0))))
-
-        grids = [(factor_x, int(number / factor_x))
-                 for factor_x in factors
-                 if (number / factor_x).is_integer()]
-    else:
-        grids = []
-    return grids
-
-
-def number3factor(number, complete=True):
-    """
-    Temporary function : Add to some tools package
-    Finds all the ways to combine elements
-    """
-    factor_range = range(1, int(number ** 0.5) + 1)
-
-    if number:
-        factors = list(set(reduce(list.__add__, ([i, number // i]
-                                                 for i in factor_range
-                                                 if number % i == 0))))
-        if not complete:
-            grids = get_incomplete_factors(number, factors)
-
-        else:
-            grids = [(factor_x, factor_y, int(number / (factor_x * factor_y)))
-                     for factor_x in factors
-                     for factor_y in factors
-                     if (number / (factor_x * factor_y)).is_integer()]
-        return grids
-    return []
-
-
-def get_incomplete_factors(number, factors):
-    """
-    TODO
-    """
-    grids = []
-    sets = []
-    for factor_x in factors:
-        for factor_y in factors:
-            value = number / (factor_x * factor_y)
-            if value.is_integer():
-                grid = (factor_x, factor_y, int(value))
-                if set(grid) not in sets:
-                    sets.append(set(grid))
-                    grids.append(grid)
-    return grids
 
 
 def dict_merge(old_dct, merge_dct, add_keys=True, extend_lists=True):
@@ -999,12 +945,7 @@ def dict_merge(old_dct, merge_dct, add_keys=True, extend_lists=True):
     return dct
 
 
-def is_jsonable(x):
-    try:
-        json.dumps(x)
-        return True
-    except:
-        return False
+
 
 
 def stringify_dict_keys(obj):
@@ -1147,252 +1088,6 @@ def serialize_sequence_with_pointers(seq, memo, path):
     return serialized_sequence, memo
 
 
-def get_python_class_from_class_name(full_class_name):
-    module_name, class_name = full_class_name.rsplit('.', 1)
-    module = import_module(module_name)
-    class_ = getattr(module, class_name)
-    return class_
-
-
-def dereference_jsonpointers(value, global_dict):
-   
-    if isinstance(value, (list, tuple)):
-        return dereference_jsonpointers_sequence(value, global_dict)
-    elif isinstance(value, dict):
-        return dereference_jsonpointers_dict(value, global_dict)
-    else:
-        return value
-
-
-
-def get_in_object_from_path(object_, path):
-    segments = path.lstrip('#/').split('/')
-    # print('segments', segments)
-    if isinstance(object_, dict):
-        # if 'object_class' in object_:
-            # print('\ngiofp', object_['object_class'])
-        # else:
-            # print('\ngiofp', object_.keys())
-        try:
-            element = object_[segments[0]]
-        except KeyError:
-            print(object_, segments[0])
-            raise RuntimeError
-    else:
-        # print('\ngiofp', object_)
-        element = getattr(object_, segments[0])
-
-    for segment in segments[1:]:
-        if is_sequence(element):
-            element = element[int(segment)]
-        elif isinstance(element, dict):# A dict?
-            if segment in element:
-                element = element[segment]
-            else:
-                element = element[int(segment)]
-        else:
-            element = getattr(element, segment)
-
-    return element
-
-    
-def dereference_jsonpointers_dict(dict_, global_dict):
-    """
-    Dereference a dict_ by inserting dicts references (not objects!)
-    To be used before deserialization
-    """
-    if '$ref' in dict_:
-        path = dict_['$ref']
-        return get_in_object_from_path(global_dict, path)
-    else:
-        deref_dict = {}
-        for key, value in dict_.items():
-            deref_dict[key] = dereference_jsonpointers(value, global_dict)
-        return deref_dict
-    
-
-def dereference_jsonpointers_sequence(sequence, global_dict):
-    deref_sequence = []
-    for element in sequence:
-        deref_sequence.append(dereference_jsonpointers(element, global_dict))
-    return deref_sequence
-
-
-def enforce_pointers(object_, serialized_dict, global_object=None, memo=None):
-    """
-    Enforce python pointers with respect to jsonpointers in serialized_dict
-    Enforcing pointers aims at keeping same links accross the object
-    To use after naive deserialization with broken links
-    """
-    # print(object_, is_sequence(object_))
-    
-    print('\n%%Enforce pointers', global_object)
-    if global_object is None:
-        raise ValueError('uuUUU')
-        global_object = object_
-        
-    if memo is None:
-        memo = {}
-        
-    if isinstance_base_types(object_):
-        return object_
-    elif is_sequence(object_):
-        return enforce_pointers_in_sequence(object_, serialized_dict, global_object=global_object, memo=memo)
-    elif isinstance(object_, dict):
-        return enforce_pointers_in_dict(object_, serialized_dict, global_object=global_object, memo=memo)
-    else:
-        return enforce_pointers_in_object(object_, serialized_dict, global_object=global_object, memo=memo)
-
-def enforce_pointers_in_sequence(seq, serialized_seq, global_object=None, memo=None):
-    # print('enforcing in ', object_, global_object)
-
-    # if global_object is None:
-    #     global_object = seq
-        
-    if memo is None:
-        memo = {}
-
-
-    enforced_seq = []
-    for i, (seq_value, seq_serialized_value) in enumerate(zip(seq, serialized_seq)):
-        # seq[i] = choose_enforce_pointers(seq_value, seq_serialized_value, global_object))
-        enforced_seq.append(enforce_pointers(seq_value, seq_serialized_value,
-                                             global_object=global_object,
-                                             memo=memo))
-    return enforced_seq
-
-
-
-def enforce_pointers_in_dict(dict_, serialized_dict, global_object=None,
-                             memo=None):
-    if memo is None:
-        memo = {}
-
-    if '$ref' in serialized_dict:
-        return get_in_object_from_path(global_object, serialized_dict['$ref'])
-
-    dict_2 = {}
-    for key, serialized_value in serialized_dict.items():
-        if key in dict_:
-            object_value = dict_[key]
-            enforced_value = enforce_pointers(object_value, serialized_value, global_object=global_object)            
-            # Enforce key as well?
-            dict_2[key] = enforced_value
-    return dict_2
-    
-    
-def enforce_pointers_in_object(object_, serialized_dict, global_object=None,
-                               memo=None):
-    """
-    handles objects
-    """
-    # print('\n\n## enforcing in ', object_, global_object)
-
-    if global_object is None:
-        global_object = object_
-        print('\n#enforcing top level ', object_)
-        
-    if memo is None:
-        memo = {}
-
-    # object2 = object_.copy()
-    if '$ref' in serialized_dict:
-        return get_in_object_from_path(global_object, serialized_dict['$ref'])
-        
-    for key, serialized_value in serialized_dict.items():
-        if hasattr(object_, key):
-            object_value = getattr(object_, key)
-            
-            
-            # if is_sequence(serialized_value):
-            #     enforced_value = []
-            #     for seq_value, seq_serialized_value in zip(object_value, serialized_value):
-            #         enforced_value.append(enforce_pointers(seq_value, seq_serialized_value, global_object=global_object))
-                
-            # elif isinstance(serialized_value, dict):
-            #     if '$ref' in serialized_value:
-            #         path = serialized_value['$ref']
-            #         enforced_value = get_in_object_from_path(global_object, path)
-            #     else:
-            #         enforced_value = enforce_pointers_in_object(object_value, serialized_value, global_object=global_object)
-            # elif isinstance_base_types(object_value):
-            #     enforced_value = object_value
-            # # elif isinstance(serialized_value, type):
-            # #     pass
-            # else:
-            #     pass
-            #     # raise NotImplementedError(object_value, 'of type', type(object_value))
-            enforced_value = enforce_pointers(object_value, serialized_value, global_object=global_object)
-            # # Overriding value
-            setattr(object_, key, enforced_value)
-    return object_
-
-
-def dict_to_object(dict_, class_=None, force_generic: bool = False,
-                   global_dict=None, pointers_memo=None):
-        
-    class_argspec = None
-
-    if global_dict is None:
-        global_dict = dict_
-        
-    if pointers_memo is None:
-        pointers_memo = {}
-        
-    working_dict = dereference_jsonpointers_dict(dict_, global_dict)
-
-    if class_ is None and 'object_class' in working_dict:
-        class_ = get_python_class_from_class_name(working_dict['object_class'])
-
-    # print('\n\n@@ dto', class_)
-
-    if class_ is not None and hasattr(class_, 'dict_to_object'):
-        different_methods = (class_.dict_to_object.__func__
-                             is not DessiaObject.dict_to_object.__func__)
-
-        if different_methods and not force_generic:
-            try:
-                obj = class_.dict_to_object(dict_, global_dict=global_dict)
-            except TypeError:
-                warn_msg = 'specific dict_to_object of class {} should implement global_dict arguments'.format(class_.__name__)
-                warnings.warn(warn_msg, Warning)
-                obj = class_.dict_to_object(dict_)
-            return obj
-
-        if class_._init_variables is None:
-            class_argspec = inspect.getfullargspec(class_)
-            init_dict = {k: v for k, v in working_dict.items()
-                         if k in class_argspec.args}
-        else:
-            init_dict = {k: v for k, v in working_dict.items()
-                         if k in class_._init_variables}
-        # TOCHECK Class method to generate init_dict ??
-    else:
-        init_dict = working_dict
-        
-
-    
-    subobjects = {}
-    memo = {}
-    for key, value in init_dict.items():
-        if class_argspec is not None and key in class_argspec.annotations:
-            annotation = class_argspec.annotations[key]
-        else:
-            annotation = None
-        # print('sk', key, value, global_dict['object_class'])
-        subobjects[key] = deserialize(value, annotation, global_dict=global_dict, pointers_memo=pointers_memo)#, enforce_pointers=False)
-
-    # if enforce_pointers:
-    # print('bep', subobjects, dict_)
-    subobjects = enforce_pointers(subobjects, dict_, subobjects)
-
-    if class_ is not None:
-        obj = class_(**subobjects)
-    else:
-        obj = subobjects
-    
-    return obj
-
 
 def list_hash(list_):
     hash_ = 0
@@ -1420,31 +1115,13 @@ def dict_hash(dict_):
     return hash_
 
 
-def deserialize_sequence(sequence, annotation=None, global_dict=None, pointers_memo=None):
-    # TODO: rename to deserialize sequence? Or is this a duplicate ?
-    origin, args = unfold_deep_annotation(typing_=annotation)
-    deserialized_sequence = []
-    for elt in sequence:
-        deserialized_element = deserialize(elt, args, global_dict=global_dict, pointers_memo=pointers_memo)
-        deserialized_sequence.append(deserialized_element)
-    if origin is tuple:
-        # Keeping as a tuple
-        return tuple(deserialized_sequence)
-    return deserialized_sequence
 
 
 def getdeepattr(obj, attr):
     return reduce(getattr, [obj] + attr.split('.'))
 
 
-def full_classname(object_, compute_for: str = 'instance'):
-    if compute_for == 'instance':
-        return object_.__class__.__module__ + '.' + object_.__class__.__name__
-    elif compute_for == 'class':
-        return object_.__module__ + '.' + object_.__name__
-    else:
-        msg = 'Cannot compute {} full classname for object {}'
-        raise NotImplementedError(msg.format(compute_for, object_))
+
 
 
 def serialization_test(obj):
@@ -1506,138 +1183,8 @@ def deepcopy_value(value, memo):
             return new_value
 
 
-def type_fullname(arg):
-    if arg.__module__ == 'builtins':
-        full_argname = '__builtins__.' + arg.__name__
-    else:
-        full_argname = serialize_typing(arg)
-    return full_argname
 
 
-def serialize_typing(typing_):
-    if is_typing(typing_):
-        origin = get_origin(typing_)
-        args = get_args(typing_)
-        if origin is Union:
-            if len(args) == 2 and type(None) in args:
-                # This is a false Union => Is a default value set to None
-                return serialize_typing(args[0])
-            else:
-                # Types union
-                argnames = ', '.join([type_fullname(a) for a in args])
-                return 'Union[{}]'.format(argnames)
-        elif origin is list:
-            return 'List[' + type_fullname(args[0]) + ']'
-        elif origin is tuple:
-            argnames = ', '.join([type_fullname(a) for a in args])
-            return 'Tuple[{}]'.format(argnames)
-        elif origin is collections.Iterator:
-            return 'Iterator[' + type_fullname(args[0]) + ']'
-        elif origin is dict:
-            key_type = type_fullname(args[0])
-            value_type = type_fullname(args[1])
-            return 'Dict[{}, {}]'.format(key_type, value_type)
-        elif origin is InstanceOf:
-            return 'InstanceOf[{}]'.format(type_fullname(args[0]))
-        elif origin is Subclass:
-            return 'Subclass[{}]'.format(type_fullname(args[0]))
-        elif origin is MethodType:
-            return 'MethodType[{}]'.format(type_fullname(args[0]))
-        else:
-            msg = 'Serialization of typing {} is not implemented'
-            raise NotImplementedError(msg.format(typing_))
-    if isinstance(typing_, type):
-        return full_classname(typing_, compute_for='class')
-    if typing_ is TextIO:
-        return "TextFile"
-    if typing_ is BinaryIO:
-        return "BinaryFile"
-    return str(typing_)
-
-
-def type_from_argname(argname):
-    splitted_argname = argname.rsplit('.', 1)
-    if argname:
-        if splitted_argname[0] != '__builtins__':
-            return get_python_class_from_class_name(argname)
-        # TODO Check for dangerous eval
-        return eval(splitted_argname[1])
-    return Any
-
-
-def deserialize_typing(serialized_typing):
-    # TODO : handling recursive deserialization
-    if isinstance(serialized_typing, str):
-        # TODO other builtins should be implemented
-        if serialized_typing in ['float', 'builtins.float']:
-            return float
-
-        if serialized_typing == "TextFile":
-            return TextIO
-        if serialized_typing == "BinaryFile":
-            return BinaryIO
-
-        if '[' in serialized_typing:
-            toptype, remains = serialized_typing.split('[', 1)
-            full_argname = remains.rsplit(']', 1)[0]
-        else:
-            toptype = serialized_typing
-            full_argname = ''
-        if toptype == 'List':
-            return List[type_from_argname(full_argname)]
-        elif toptype == 'Tuple':
-            if ', ' in full_argname:
-                args = full_argname.split(', ')
-                if len(args) == 0:
-                    return Tuple
-                elif len(args) == 1:
-                    type_ = type_from_argname(args[0])
-                    return Tuple[type_]
-                elif len(set(args)) == 1:
-                    type_ = type_from_argname(args[0])
-                    return Tuple[type_, ...]
-                else:
-                    msg = ("Heterogenous tuples are forbidden as types for"
-                           "workflow non-block variables.")
-                    raise TypeError(msg)
-            return Tuple[type_from_argname(full_argname)]
-        elif toptype == 'Dict':
-            args = full_argname.split(', ')
-            key_type = type_from_argname(args[0])
-            value_type = type_from_argname(args[1])
-            return Dict[key_type, value_type]
-        # elif splitted_type[0] == 'Union':
-        #     args = full_argname.split(', ')
-    raise NotImplementedError('{}'.format(serialized_typing))
-
-
-
-def deserialize(serialized_element, sequence_annotation: str = 'List',
-                global_dict=None, pointers_memo=None):#, enforce_pointers=False):
-    if pointers_memo is None:
-        pointers_memo = None
-    
-    if isinstance(serialized_element, dict):
-        try:
-            return dict_to_object(serialized_element, global_dict=global_dict,
-                                  pointers_memo=pointers_memo)
-        except TypeError:
-            warnings.warn('specific dict_to_object of class {} should implement global_dict and pointers_memo arguments'.format(serialized_element.__class__.__name__), Warning)
-            return dict_to_object(serialized_element)
-    elif is_sequence(serialized_element):
-        return deserialize_sequence(sequence=serialized_element,
-                                    annotation=sequence_annotation,
-                                    global_dict=global_dict,
-                                    pointers_memo=pointers_memo)
-    return serialized_element
-
-
-def unfold_deep_annotation(typing_=None):
-    if is_typing(typing_):
-        origin = get_origin(typing_)
-        args = get_args(typing_)
-        return origin, args
-    return None, None
 
 
 def enhanced_deep_attr(obj, sequence):
@@ -1751,21 +1298,7 @@ def is_bounded(filter_: DessiaFilter, value: float):
     return bounded
 
 
-def is_sequence(obj):
-    """
-    :param obj: Object to check
-    :return: bool. True if object is a sequence but not a string.
-                   False otherwise
-    """
-    return isinstance(obj, collections.abc.Sequence)\
-        and not isinstance(obj, str)
 
-
-def is_builtin(type_):
-    return type_ in TYPING_EQUIVALENCES
-
-def isinstance_base_types(obj):
-    return isinstance(obj, str) or isinstance(obj, float) or isinstance(obj, int) or (obj is None)
 
 def type_from_annotation(type_, module):
     """
@@ -1781,15 +1314,6 @@ def type_from_annotation(type_, module):
     return type_
 
 
-def is_typing(object_: Any):
-    has_module = hasattr(object_, '__module__')
-    if has_module:
-        in_typings = object_.__module__ in ['typing', 'dessia_common.typings']
-    else:
-        return False
-    has_origin = hasattr(object_, '__origin__')
-    has_args = hasattr(object_, '__args__')
-    return has_module and has_origin and has_args and in_typings
 
 
 def jsonschema_from_annotation(annotation, jsonschema_element,

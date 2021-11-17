@@ -15,12 +15,14 @@ from copy import deepcopy
 from dessia_common.templates import workflow_template
 import itertools
 from dessia_common import DessiaObject, DisplayObject, DessiaFilter, \
-    is_sequence, list_hash, serialize_typing, serialize, is_bounded, \
-    get_python_class_from_class_name, deserialize, type_from_annotation,\
+    is_sequence, list_hash, serialize, is_bounded, \
+    type_from_annotation,\
     enhanced_deep_attr, deprecation_warning, JSONSCHEMA_HEADER,\
     jsonschema_from_annotation, deserialize_argument, set_default_value,\
-    prettyname, dict_to_object, serialize_dict, UntypedArgumentError,\
-    recursive_type, recursive_instantiation, full_classname, serialize_with_pointers
+    prettyname, serialize_dict, UntypedArgumentError,\
+    recursive_type, recursive_instantiation, serialize_with_pointers
+from dessia_common.utils.serialization import dict_to_object, deserialize
+from dessia_common.utils.types import get_python_class_from_class_name, serialize_typing, full_classname
 from dessia_common.vectored_objects import from_csv
 from dessia_common.typings import JsonSerializable, Subclass, MethodType
 import warnings

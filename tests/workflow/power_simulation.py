@@ -13,9 +13,8 @@ from dessia_common.models.power_test import components1, component_connections1,
 workflow_run = simulation_workflow.run({0: components1, 1:component_connections1, 3:usage1})
 print(workflow_run.log)
 
-workflow_run._check_platform()
 workflow_run2 = DessiaObject.dict_to_object(workflow_run.to_dict())
-assert workflow_run == workflow_run2
+workflow_run._check_platform()
 
 manual_run = simulation_workflow.start_run({0: components1, 1:component_connections1})
 
