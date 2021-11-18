@@ -11,6 +11,7 @@ import inspect
 
 import dessia_common as dc
 import dessia_common.utils.types as dcty
+from dessia_common.graph import explore_tree_from_leaves
 from dessia_common.breakdown import get_in_object_from_path
 import networkx as nx
 
@@ -25,7 +26,10 @@ def deserialize(serialized_element, sequence_annotation: str = 'List',
             return dict_to_object(serialized_element, global_dict=global_dict,
                                   pointers_memo=pointers_memo)
         except TypeError:
-            warnings.warn('specific dict_to_object of class {} should implement global_dict and pointers_memo arguments'.format(serialized_element.__class__.__name__), Warning)
+            warnings.warn('specific dict_to_object of class {}'
+                          ' should implement global_dict and'
+                          ' pointers_memo arguments'.format(serialized_element.__class__.__name__),
+                          Warning)
             return dict_to_object(serialized_element)
     elif dcty.is_sequence(serialized_element):
         return deserialize_sequence(sequence=serialized_element,
@@ -34,12 +38,15 @@ def deserialize(serialized_element, sequence_annotation: str = 'List',
                                     pointers_memo=pointers_memo)
     return serialized_element
 
-def deserialize_sequence(sequence, annotation=None, global_dict=None, pointers_memo=None):
+def deserialize_sequence(sequence, annotation=None,
+                         global_dict=None, pointers_memo=None):
     # TODO: rename to deserialize sequence? Or is this a duplicate ?
     origin, args = dcty.unfold_deep_annotation(typing_=annotation)
     deserialized_sequence = []
     for elt in sequence:
-        deserialized_element = deserialize(elt, args, global_dict=global_dict, pointers_memo=pointers_memo)
+        deserialized_element = deserialize(elt, args,
+                                           global_dict=global_dict,
+                                           pointers_memo=pointers_memo)
         deserialized_sequence.append(deserialized_element)
     if origin is tuple:
         # Keeping as a tuple
@@ -51,6 +58,7 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
         
     if '$ref' in dict_:
         # and dict_['$ref'] in pointers_memo:
+        # print(dict_['$ref'])
         return pointers_memo[dict_['$ref']]
     
     class_argspec = None
@@ -62,7 +70,7 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
         global_dict = dict_
         # dc_ser.pointer_graph(global_dict)
         pointers_memo.update(dereference_jsonpointers(dict_))
-
+        # print('@@@', dict_['object_class'], pointers_memo.keys())
         
         
     working_dict = dict_
@@ -77,7 +85,9 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
 
         if different_methods and not force_generic:
             try:
-                obj = class_.dict_to_object(dict_, global_dict=global_dict)
+                obj = class_.dict_to_object(dict_,
+                                            global_dict=global_dict,
+                                            pointers_memo=pointers_memo)
             except TypeError:
                 warn_msg = 'specific dict_to_object of class {} should implement global_dict arguments'.format(class_.__name__)
                 warnings.warn(warn_msg, Warning)
@@ -99,6 +109,7 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
     subobjects = {}
     memo = {}
     for key, value in init_dict.items():
+        # print('key', key)
         if class_argspec is not None and key in class_argspec.annotations:
             annotation = class_argspec.annotations[key]
         else:
@@ -119,26 +130,15 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
 
 def pointer_graph(value):
     nodes, edges = pointer_graph_elements(value)
-    # print(nodes)
-    # for e in edges:
-    #     print('edge: ', e)
-    # print(len(nodes), len(edges))
-    # plt.S()
+
     graph = nx.DiGraph()
+    graph.name = value['object_class']
     graph.add_nodes_from(set(nodes))
     graph.add_edges_from(edges)
 
     # import dessia_common.displays
     # dessia_common.displays.draw_networkx_graph(graph)
 
-    # import matplotlib.pyplot as plt
-    # fig, ax = plt.subplots()
-    # pos = nx.spring_layout(graph)
-    # nx.draw_networkx_nodes(graph, pos)
-    # nx.draw_networkx_edges(graph, pos)
-    # nx.draw_networkx_labels(graph, pos)
-    # if 'object_class' in value:
-    #     ax.set_title(value['object_class'])
 
     return graph
     
@@ -153,8 +153,11 @@ def dereference_jsonpointers(value):#, global_dict):
             for cycle in cycles:
                 print(cycle)
             raise NotImplementedError('Cycles in ref not handled')
-            cycles
-        for anc, ref in list(nx.bfs_edges(graph, '#'))[::-1]:
+            
+        order = list(explore_tree_from_leaves(graph))
+        if '#' in order:
+            order.remove('#')
+        for ref in order:
             # print('R', ref)
             # if not anc in pointers_memo:
             #     raise ValueError('anc!!!')
@@ -163,8 +166,9 @@ def dereference_jsonpointers(value):#, global_dict):
                 # pointers_memo[anc] = deserialize(serialized_element=serialized_element,
                 #                                  global_dict=value, pointers_memo=pointers_memo)
                 # print('missing anc', anc)
-            print('ref', ref)
+            # print('ref', ref)
             serialized_element = get_in_object_from_path(value, ref)
+            # print(serialized_element)
             pointers_memo[ref] = deserialize(serialized_element=serialized_element,
                                              global_dict=value, pointers_memo=pointers_memo)
             # print('\nref', ref, pointers_memo[ref])

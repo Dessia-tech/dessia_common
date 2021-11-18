@@ -1,20 +1,22 @@
 import webbrowser
 import os
+import tempfile
 from dessia_common.templates import visjs_template
-from networkx import DiGraph
+from networkx import DiGraph, Graph
 
 
-def networkx_to_visjs_data(networkx_graph):
+def networkx_to_visjs_data(networkx_graph:Graph):
     visjs_data = {'name':networkx_graph.name, 'nodes': [], 'edges': []}
 
     for i, node in enumerate(networkx_graph.nodes):
         node_dict = networkx_graph.nodes[node]
         node_data = {'id': i}
-        print(node_dict, node)
 
         if 'name' not in node_dict and 'label' not in node_dict:
             if isinstance(node, str):
                 node_data['label'] = node
+            elif isinstance(node, int):
+                node_data['label'] = str(node)
             else:                  
                 node_data['label'] = ''
         elif 'name' in node_dict and 'label' not in node_dict:
@@ -50,9 +52,14 @@ def networkx_to_visjs_data(networkx_graph):
     return visjs_data
 
 
-def draw_networkx_graph(networkx_graph):
+def draw_networkx_graph(networkx_graph:Graph):
     visjs_data = networkx_to_visjs_data(networkx_graph)
     s = visjs_template.substitute(**visjs_data)
-    with open('graph_visJS.html', 'wb') as file:
-        file.write(s.encode('utf-8'))
-    webbrowser.open('file://' + os.path.realpath('graph_visJS.html'))
+    with tempfile.NamedTemporaryFile(suffix=".html",
+                                     delete=False) as file:
+        file.write(bytes(s, 'utf8'))
+        
+    # with open('graph_visJS.html', 'wb') as file:
+    #     file.write(s.encode('utf-8'))
+    webbrowser.open('file://' + os.path.realpath(file.name))
+    return file.name
