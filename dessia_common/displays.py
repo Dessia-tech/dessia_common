@@ -2,15 +2,20 @@ import webbrowser
 import os
 import tempfile
 from dessia_common.templates import visjs_template
-from networkx import DiGraph, Graph
+from networkx import DiGraph, Graph, kamada_kawai_layout
 
 
 def networkx_to_visjs_data(networkx_graph:Graph):
     visjs_data = {'name':networkx_graph.name, 'nodes': [], 'edges': []}
 
+    pos = kamada_kawai_layout(networkx_graph)
+
     for i, node in enumerate(networkx_graph.nodes):
         node_dict = networkx_graph.nodes[node]
         node_data = {'id': i}
+
+        if node in pos:
+            node_data['x'], node_data['y'] = pos[node] 
 
         if 'name' not in node_dict and 'label' not in node_dict:
             if isinstance(node, str):

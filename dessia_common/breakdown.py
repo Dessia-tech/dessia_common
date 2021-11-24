@@ -18,6 +18,7 @@ def get_in_object_from_path(object_, path):
             element = object_[segments[0]]
         except KeyError:
             print(object_, segments[0])
+            
             raise RuntimeError
     else:
         element = getattr(object_, segments[0])

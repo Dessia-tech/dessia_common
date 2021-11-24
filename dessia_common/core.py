@@ -322,7 +322,7 @@ class DessiaObject:
                  and not k.startswith('_')}
         return dict_
 
-    def to_dict(self, memo=None, path:str='#') -> JsonSerializable:
+    def to_dict(self, use_pointers=False, memo=None, path:str='#') -> JsonSerializable:
         """
         Generic to_dict method
         """
@@ -333,9 +333,11 @@ class DessiaObject:
         # Default to dict
         serialized_dict = self.base_dict()
         dict_ = self._serializable_dict()
-        serialized_dict.update(serialize_dict_with_pointers(dict_, memo, path)[0])
-        # memo.update(memo2)
-        # serialized_dict['hash'] = self.__hash__()
+        if use_pointers:
+            serialized_dict.update(serialize_dict_with_pointers(dict_, memo, path)[0])
+        else:
+            serialized_dict.update(serialize_dict(dict_))
+
         return serialized_dict
 
     @classmethod
@@ -544,7 +546,7 @@ class DessiaObject:
             file = open(filepath, 'w')
         else:
             file = filepath
-        json.dump(self.to_dict(), file, indent=indent)
+        json.dump(self.to_dict(use_pointers=True), file, indent=indent)
         
         if isinstance(filepath, str):
             file.close()    
@@ -697,12 +699,12 @@ class DessiaObject:
         """
         Reproduce lifecycle on platform (serialization, display)
         """
-        dict_ = self.to_dict()
+        dict_ = self.to_dict(use_pointers=True)
         json_dict = json.dumps(dict_)
         decoded_json = json.loads(json_dict)
         deserialized_object = self.dict_to_object(decoded_json)
-        assert deserialized_object == self
-        valid, hint = is_bson_valid(stringify_dict_keys(self.to_dict()))
+        assert deserialized_object._data_eq(self)
+        valid, hint = is_bson_valid(stringify_dict_keys(dict_))
         if not valid:
             raise ValueError(hint)
         json.dumps(self._displays())
@@ -966,7 +968,7 @@ def serialize_dict(dict_):
     serialized_dict = {}
     for key, value in dict_.items():
         if hasattr(value, 'to_dict'):
-            serialized_value = value.to_dict()
+            serialized_value = value.to_dict(use_pointers=False)
         elif isinstance(value, dict):
             serialized_value = serialize_dict(value)
         elif isinstance(value, (list, tuple)):
@@ -984,7 +986,7 @@ def serialize_sequence(seq):
     serialized_sequence = []
     for value in seq:
         if hasattr(value, 'to_dict'):
-            serialized_sequence.append(value.to_dict())
+            serialized_sequence.append(value.to_dict(use_pointers=False))
         elif isinstance(value, dict):
             serialized_sequence.append(serialize_dict(value))
         elif isinstance(value, (list, tuple)):
@@ -1009,7 +1011,7 @@ def serialize_with_pointers(deserialized_element, memo=None, path='#'):
         memo = {}
     if isinstance(deserialized_element, DessiaObject):
         try:
-            serialized = deserialized_element.to_dict(memo=memo, path=path)
+            serialized = deserialized_element.to_dict(use_pointers=True, memo=memo, path=path)
         except TypeError:
             warnings.warn('specific to_dict should implement memo and path arguments', Warning)
             serialized, memo = serialize_dict_with_pointers(deserialized_element.to_dict(), memo, path)
@@ -1036,7 +1038,7 @@ def serialize_dict_with_pointers(dict_, memo, path):
                 serialized_dict[key] = {"$ref": memo[value]}
             else:
                 try:
-                    serialized_dict[key] = value.to_dict(path=value_path, memo=memo)
+                    serialized_dict[key] = value.to_dict(use_pointers=True, path=value_path, memo=memo)
                 except TypeError:
                     warnings.warn('specific to_dict should implement memo and path arguments', Warning)
                     serialized_dict[key] = value.to_dict()
@@ -1071,7 +1073,7 @@ def serialize_sequence_with_pointers(seq, memo, path):
                 serialized_value = {"$ref": memo[value]}
             else:
                 try:
-                    serialized_value = value.to_dict(path=value_path, memo=memo)
+                    serialized_value = value.to_dict(use_pointers=True, path=value_path, memo=memo)
                 except TypeError:
                     warnings.warn('specific to_dict should implement memo and path arguments', Warning)
                     serialized_value = value.to_dict()
@@ -1121,17 +1123,6 @@ def getdeepattr(obj, attr):
     return reduce(getattr, [obj] + attr.split('.'))
 
 
-
-
-
-def serialization_test(obj):
-    # TODO: debug infinite recursion? Should we remove thhis ?
-    d = obj.to_dict()
-    obj2 = obj.dict_to_object(d)
-    if obj != obj2:
-        msg = 'Object in no more equal to himself '
-        msg += 'after serialization/deserialization!'
-        raise ModelError(msg)
 
 
 def deepcopy_value(value, memo):

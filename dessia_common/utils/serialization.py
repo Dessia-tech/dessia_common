@@ -11,20 +11,24 @@ import inspect
 
 import dessia_common as dc
 import dessia_common.utils.types as dcty
-from dessia_common.graph import explore_tree_from_leaves
+from dessia_common.graph import explore_tree_from_leaves, cut_tree_final_branches
 from dessia_common.breakdown import get_in_object_from_path
 import networkx as nx
 
 
 def deserialize(serialized_element, sequence_annotation: str = 'List',
-                global_dict=None, pointers_memo=None):#, enforce_pointers=False):
-    if pointers_memo is None:
-        pointers_memo = None
+                global_dict=None, pointers_memo=None, path='#'):#, enforce_pointers=False):
+    # if pointers_memo is None:
+    #     pointers_memo = {}
+    if pointers_memo is not None:
+        if path in pointers_memo:
+            return pointers_memo[path]
     
     if isinstance(serialized_element, dict):
         try:
             return dict_to_object(serialized_element, global_dict=global_dict,
-                                  pointers_memo=pointers_memo)
+                                  pointers_memo=pointers_memo,
+                                  path=path)
         except TypeError:
             warnings.warn('specific dict_to_object of class {}'
                           ' should implement global_dict and'
@@ -35,18 +39,22 @@ def deserialize(serialized_element, sequence_annotation: str = 'List',
         return deserialize_sequence(sequence=serialized_element,
                                     annotation=sequence_annotation,
                                     global_dict=global_dict,
-                                    pointers_memo=pointers_memo)
+                                    pointers_memo=pointers_memo,
+                                    path=path)
     return serialized_element
 
 def deserialize_sequence(sequence, annotation=None,
-                         global_dict=None, pointers_memo=None):
+                         global_dict=None, pointers_memo=None,
+                         path='#'):
     # TODO: rename to deserialize sequence? Or is this a duplicate ?
     origin, args = dcty.unfold_deep_annotation(typing_=annotation)
     deserialized_sequence = []
-    for elt in sequence:
+    for ie, elt in enumerate(sequence):
+        path_elt = '{}/{}'.format(path, ie)
         deserialized_element = deserialize(elt, args,
                                            global_dict=global_dict,
-                                           pointers_memo=pointers_memo)
+                                           pointers_memo=pointers_memo,
+                                           path=path_elt)
         deserialized_sequence.append(deserialized_element)
     if origin is tuple:
         # Keeping as a tuple
@@ -54,11 +62,13 @@ def deserialize_sequence(sequence, annotation=None,
     return deserialized_sequence
 
 def dict_to_object(dict_, class_=None, force_generic: bool = False,
-                   global_dict=None, pointers_memo=None):
+                   global_dict=None, pointers_memo=None, path='#'):
         
+    
     if '$ref' in dict_:
         # and dict_['$ref'] in pointers_memo:
         # print(dict_['$ref'])
+        print('This is a ref', path, pointers_memo[dict_['$ref']])
         return pointers_memo[dict_['$ref']]
     
     class_argspec = None
@@ -115,11 +125,20 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
         else:
             annotation = None
         
-        subobjects[key] = deserialize(value, annotation, global_dict=global_dict, pointers_memo=pointers_memo)#, enforce_pointers=False)
+        key_path = '{}/{}'.format(path, key)
+        if key_path in pointers_memo:
+            subobjects[key] = pointers_memo[key_path]
+            # print('using memo for key_path!', key_path)            
+        else:
+            # print('Not found', key_path)
+            subobjects[key] = deserialize(value, annotation,
+                                          global_dict=global_dict,
+                                          pointers_memo=pointers_memo,
+                                          path=key_path)#, enforce_pointers=False)
 
     # if enforce_pointers:
     # subobjects = enforce_pointers(subobjects, dict_, subobjects)
-
+    # print(subobjects)
     if class_ is not None:
         obj = class_(**subobjects)
     else:
@@ -136,9 +155,15 @@ def pointer_graph(value):
     graph.add_nodes_from(set(nodes))
     graph.add_edges_from(edges)
 
-    # import dessia_common.displays
-    # dessia_common.displays.draw_networkx_graph(graph)
+    import dessia_common.displays
+    print('old number nodes', graph.number_of_nodes())
+    dessia_common.displays.draw_networkx_graph(graph)
+    graph = cut_tree_final_branches(graph)
 
+    dessia_common.displays.draw_networkx_graph(graph)
+    print('new number nodes', graph.number_of_nodes())
+
+    # dessia_common.displays.draw_networkx_graph(graph)
 
     return graph
     
@@ -157,6 +182,10 @@ def dereference_jsonpointers(value):#, global_dict):
         order = list(explore_tree_from_leaves(graph))
         if '#' in order:
             order.remove('#')
+            
+        # for ref in order:
+        #     print('ref', ref)
+
         for ref in order:
             # print('R', ref)
             # if not anc in pointers_memo:
@@ -166,11 +195,13 @@ def dereference_jsonpointers(value):#, global_dict):
                 # pointers_memo[anc] = deserialize(serialized_element=serialized_element,
                 #                                  global_dict=value, pointers_memo=pointers_memo)
                 # print('missing anc', anc)
-            # print('ref', ref)
+            print('ref', ref)
             serialized_element = get_in_object_from_path(value, ref)
             # print(serialized_element)
             pointers_memo[ref] = deserialize(serialized_element=serialized_element,
-                                             global_dict=value, pointers_memo=pointers_memo)
+                                             global_dict=value,
+                                             pointers_memo=pointers_memo,
+                                             path=ref)
             # print('\nref', ref, pointers_memo[ref])
     # print(pointers_memo.keys())
     return pointers_memo
