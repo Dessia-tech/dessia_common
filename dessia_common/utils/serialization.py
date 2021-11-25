@@ -68,7 +68,7 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
     if '$ref' in dict_:
         # and dict_['$ref'] in pointers_memo:
         # print(dict_['$ref'])
-        print('This is a ref', path, pointers_memo[dict_['$ref']])
+        # print('This is a ref', path, pointers_memo[dict_['$ref']])
         return pointers_memo[dict_['$ref']]
     
     class_argspec = None
@@ -78,9 +78,7 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
 
     if global_dict is None:
         global_dict = dict_
-        # dc_ser.pointer_graph(global_dict)
         pointers_memo.update(dereference_jsonpointers(dict_))
-        # print('@@@', dict_['object_class'], pointers_memo.keys())
         
         
     working_dict = dict_
@@ -119,7 +117,6 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
     subobjects = {}
     memo = {}
     for key, value in init_dict.items():
-        # print('key', key)
         if class_argspec is not None and key in class_argspec.annotations:
             annotation = class_argspec.annotations[key]
         else:
@@ -128,17 +125,12 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
         key_path = '{}/{}'.format(path, key)
         if key_path in pointers_memo:
             subobjects[key] = pointers_memo[key_path]
-            # print('using memo for key_path!', key_path)            
         else:
-            # print('Not found', key_path)
             subobjects[key] = deserialize(value, annotation,
                                           global_dict=global_dict,
                                           pointers_memo=pointers_memo,
                                           path=key_path)#, enforce_pointers=False)
 
-    # if enforce_pointers:
-    # subobjects = enforce_pointers(subobjects, dict_, subobjects)
-    # print(subobjects)
     if class_ is not None:
         obj = class_(**subobjects)
     else:
@@ -155,13 +147,13 @@ def pointer_graph(value):
     graph.add_nodes_from(set(nodes))
     graph.add_edges_from(edges)
 
-    import dessia_common.displays
-    print('old number nodes', graph.number_of_nodes())
-    dessia_common.displays.draw_networkx_graph(graph)
+    # import dessia_common.displays
+    # print('old number nodes', graph.number_of_nodes())
+    # dessia_common.displays.draw_networkx_graph(graph)
     graph = cut_tree_final_branches(graph)
 
-    dessia_common.displays.draw_networkx_graph(graph)
-    print('new number nodes', graph.number_of_nodes())
+    # dessia_common.displays.draw_networkx_graph(graph)
+    # print('new number nodes', graph.number_of_nodes())
 
     # dessia_common.displays.draw_networkx_graph(graph)
 
@@ -195,7 +187,7 @@ def dereference_jsonpointers(value):#, global_dict):
                 # pointers_memo[anc] = deserialize(serialized_element=serialized_element,
                 #                                  global_dict=value, pointers_memo=pointers_memo)
                 # print('missing anc', anc)
-            print('ref', ref)
+            # print('ref', ref)
             serialized_element = get_in_object_from_path(value, ref)
             # print(serialized_element)
             pointers_memo[ref] = deserialize(serialized_element=serialized_element,

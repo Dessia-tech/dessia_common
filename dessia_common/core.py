@@ -16,6 +16,7 @@ import inspect
 import json
 from dessia_common.exports import XLSXWriter
 
+from dessia_common.utils.diff import dict_diff, data_eq
 from dessia_common.utils.serialization import dict_to_object
 from dessia_common.utils.types import is_jsonable, is_builtin, get_python_class_from_class_name, serialize_typing, full_classname, is_sequence, isinstance_base_types, is_typing, TYPING_EQUIVALENCES
 
@@ -237,21 +238,8 @@ class DessiaObject:
         return object.__eq__(self, other_object)
 
     def _data_eq(self, other_object):
-        if full_classname(self) != full_classname(other_object):
-            return False
-
-        eq_dict = self._serializable_dict()
-        if 'name' in eq_dict:
-            del eq_dict['name']
-            
-        other_eq_dict = other_object._serializable_dict()
-
-        for key, value in eq_dict.items():
-            other_value = other_eq_dict[key]
-            if value != other_value:
-                return False
-        return True
-
+        return data_eq(self, other_object)
+        
     def _data_hash(self):
         hash_ = 0
         forbidden_keys = (self._non_data_eq_attributes
@@ -274,25 +262,7 @@ class DessiaObject:
         Make a diff between two objects
         returns: different values, missing keys in other object
         """
-        missing_keys_in_other_object = []
-        diff_values = {}
-        
-        # eq_dict = {k: v for k, v in self.to_dict().items()
-        #            if (k not in ['package_version', 'name'])\
-        #                and (k not in self._non_data_eq_attributes)}
-        eq_dict = self._serializable_dict()
-        # other_eq_dict = other_object.to_dict()
-        other_eq_dict = other_object._serializable_dict()
-
-        for key, value in eq_dict.items():
-            if key not in other_eq_dict:
-                missing_keys_in_other_object.append(key)
-            else:                
-                other_value = other_eq_dict[key]
-                if value != other_value:
-                    diff_values[key] = (value, other_value)
-                
-        return diff_values, missing_keys_in_other_object
+        return dict_diff(self.to_dict(), other_object.to_dict())
 
     @property
     def full_classname(self):
@@ -947,9 +917,6 @@ def dict_merge(old_dct, merge_dct, add_keys=True, extend_lists=True):
     return dct
 
 
-
-
-
 def stringify_dict_keys(obj):
     if isinstance(obj, (list, tuple)):
         new_obj = []
@@ -968,7 +935,10 @@ def serialize_dict(dict_):
     serialized_dict = {}
     for key, value in dict_.items():
         if hasattr(value, 'to_dict'):
-            serialized_value = value.to_dict(use_pointers=False)
+            try:
+                serialized_value = value.to_dict()
+            except TypeError:
+                serialized_value = value.to_dict()
         elif isinstance(value, dict):
             serialized_value = serialize_dict(value)
         elif isinstance(value, (list, tuple)):
@@ -986,7 +956,7 @@ def serialize_sequence(seq):
     serialized_sequence = []
     for value in seq:
         if hasattr(value, 'to_dict'):
-            serialized_sequence.append(value.to_dict(use_pointers=False))
+            serialized_sequence.append(value.to_dict())
         elif isinstance(value, dict):
             serialized_sequence.append(serialize_dict(value))
         elif isinstance(value, (list, tuple)):
