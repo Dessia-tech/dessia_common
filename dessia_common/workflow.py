@@ -1791,7 +1791,7 @@ class WorkflowState(DessiaObject):
         """
         Select a block to evaluate
         """
-        block = self.blocks[block_index]        
+        block = self.workflow.blocks[block_index]        
         
         for pipe in self._activable_pipes():
             self._evaluate_pipe(pipe)
