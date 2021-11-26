@@ -22,7 +22,7 @@ print(manual_run)
 
 manual_run.evaluate_next_block()
 
-manual_run.block_evaluation(simulation_workflow.blocks[1])
+manual_run.block_evaluation(1)
 
 manual_run.continue_run()
 print(manual_run.progress)

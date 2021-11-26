@@ -1751,7 +1751,8 @@ class WorkflowBlock(Block):
 
 class WorkflowState(DessiaObject):
     _standalone_in_db = True
-    _allowed_methods = ['block_evaluation', 'evaluate_next_block', 'evaluate_maximum_blocks']
+    _allowed_methods = ['block_evaluation', 'evaluate_next_block',
+                        'evaluate_maximum_blocks', 'add_input_value']
     def __init__(self, workflow:Workflow, input_values, activated_items, values,
                  variables_values, start_time, output_value=None, log:str='', name:str=''):
         self.workflow = workflow
@@ -1766,11 +1767,20 @@ class WorkflowState(DessiaObject):
 
         DessiaObject.__init__(self, name=name)
 
+    def to_dict(self):
+        d = DessiaObject.to_dict(self)
+        d['evaluated_blocks_indices'] = [i for i, b in enumerate(self.workflow.blocks) if b in self.activated_items]
+        d['evaluated_pipes_indices'] = [i for i, b in enumerate(self.workflow.blocks) if b in self.activated_items]
+        d['evaluated_variables_indices'] = [self.workflow.variable_indices(v) for v in self.workflow.variables if v in self.activated_items]
+        return d
+
+    def add_input_value(self, input_index, value):
+        # TODO: Type checking?
+        self.input_values[input_index] = value
+
     def _displays(self) -> List[JsonSerializable]:
-        data = self.workflow.to_dict()
-        data['evaluated_blocks_indices'] = [i for i, b in enumerate(self.workflow.blocks) if b in self.activated_items]
-        data['evaluated_pipes_indices'] = [i for i, b in enumerate(self.workflow.blocks) if b in self.activated_items]
-        data['evaluated_variables_indices'] = [self.workflow.variable_indices(v) for v in self.workflow.variables if v in self.activated_items]
+        data = self.to_dict()
+
         display_object = DisplayObject(type_='workflow_state', data=data)
         displays = [display_object.to_dict()]
         return displays
@@ -1779,13 +1789,15 @@ class WorkflowState(DessiaObject):
     def progress(self):
         return len([b for b in self.workflow.blocks if b in self.activated_items])/len(self.workflow.blocks)
 
-    def block_evaluation(self, block):
+    def block_evaluation(self, block_index:int):
         """
         Select a block to evaluate
         """
+        block = self.workflow.blocks[block_index]        
+        
         for pipe in self._activable_pipes():
             self._evaluate_pipe(pipe)
-            
+
         if block in self._activable_blocks():
             self._evaluate_block(block)
             return True
