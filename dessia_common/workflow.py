@@ -1751,6 +1751,7 @@ class WorkflowState(DessiaObject):
     _standalone_in_db = True
     _allowed_methods = ['block_evaluation', 'evaluate_next_block',
                         'evaluate_maximum_blocks', 'add_input_value']
+    _non_serializable_attributes = ['activated_items']
     def __init__(self, workflow:Workflow, input_values, activated_items, values,
                  variables_values, start_time, output_value=None, log:str='', name:str=''):
         self.workflow = workflow
