@@ -516,7 +516,13 @@ class DessiaObject:
             file = open(filepath, 'w')
         else:
             file = filepath
-        json.dump(self.to_dict(use_pointers=True), file, indent=indent)
+            
+        try:
+            dict_ = self.to_dict(use_pointers=True)
+        except TypeError:
+            dict_ = self.to_dict()
+
+        json.dump(dict_, file, indent=indent)
         
         if isinstance(filepath, str):
             file.close()    
@@ -669,7 +675,10 @@ class DessiaObject:
         """
         Reproduce lifecycle on platform (serialization, display)
         """
-        dict_ = self.to_dict(use_pointers=True)
+        try:
+            dict_ = self.to_dict(use_pointers=True)
+        except TypeError:
+            dict_ = self.to_dict()
         json_dict = json.dumps(dict_)
         decoded_json = json.loads(json_dict)
         deserialized_object = self.dict_to_object(decoded_json)
@@ -981,9 +990,13 @@ def serialize_with_pointers(deserialized_element, memo=None, path='#'):
         memo = {}
     if isinstance(deserialized_element, DessiaObject):
         try:
-            serialized = deserialized_element.to_dict(use_pointers=True, memo=memo, path=path)
+            try:
+                serialized = deserialized_element.to_dict(use_pointers=True, memo=memo, path=path)
+            except TypeError:
+                serialized = deserialized_element.to_dict()
+                
         except TypeError:
-            warnings.warn('specific to_dict should implement memo and path arguments', Warning)
+            # warnings.warn('specific to_dict should implement memo and path arguments', Warning)
             serialized, memo = serialize_dict_with_pointers(deserialized_element.to_dict(), memo, path)
             
     elif isinstance(deserialized_element, dict):
@@ -1010,7 +1023,7 @@ def serialize_dict_with_pointers(dict_, memo, path):
                 try:
                     serialized_dict[key] = value.to_dict(use_pointers=True, path=value_path, memo=memo)
                 except TypeError:
-                    warnings.warn('specific to_dict should implement memo and path arguments', Warning)
+                    # warnings.warn('specific to_dict should implement memo and path arguments', Warning)
                     serialized_dict[key] = value.to_dict()
                 memo[value] = value_path
         elif isinstance(value, dict):
@@ -1045,7 +1058,7 @@ def serialize_sequence_with_pointers(seq, memo, path):
                 try:
                     serialized_value = value.to_dict(use_pointers=True, path=value_path, memo=memo)
                 except TypeError:
-                    warnings.warn('specific to_dict should implement memo and path arguments', Warning)
+                    # warnings.warn('specific to_dict should implement memo and path arguments', Warning)
                     serialized_value = value.to_dict()
                 memo[value] = value_path
             serialized_sequence.append(serialized_value)

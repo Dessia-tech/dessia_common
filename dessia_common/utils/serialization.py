@@ -30,10 +30,10 @@ def deserialize(serialized_element, sequence_annotation: str = 'List',
                                   pointers_memo=pointers_memo,
                                   path=path)
         except TypeError:
-            warnings.warn('specific dict_to_object of class {}'
-                          ' should implement global_dict and'
-                          ' pointers_memo arguments'.format(serialized_element.__class__.__name__),
-                          Warning)
+            # warnings.warn('specific dict_to_object of class {}'
+            #               ' should implement global_dict and'
+            #               ' pointers_memo arguments'.format(serialized_element.__class__.__name__),
+            #               Warning)
             return dict_to_object(serialized_element)
     elif dcty.is_sequence(serialized_element):
         return deserialize_sequence(sequence=serialized_element,
@@ -97,8 +97,8 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
                                             global_dict=global_dict,
                                             pointers_memo=pointers_memo)
             except TypeError:
-                warn_msg = 'specific dict_to_object of class {} should implement global_dict arguments'.format(class_.__name__)
-                warnings.warn(warn_msg, Warning)
+                # warn_msg = 'specific dict_to_object of class {} should implement global_dict arguments'.format(class_.__name__)
+                # warnings.warn(warn_msg, Warning)
                 obj = class_.dict_to_object(dict_)
             return obj
 
