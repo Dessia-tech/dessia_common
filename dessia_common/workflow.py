@@ -1806,16 +1806,21 @@ class WorkflowState(DessiaObject):
         variables_values = {k: deserialize(v)
                             for k, v in dict_['variables_values'].items()}
 
-        blocks = workflow.blocks
-        nbvs = workflow.nonblock_variables
-        activated_blocks = [blocks[i]
-                            for i in dict_['evaluated_blocks_indices']]
-        activated_pipes = [workflow.pipes[i]
-                           for i in dict_['evaluated_pipes_indices']]
-        activated_variables = [workflow.variable_from_index(i, blocks, nbvs)
-                               for i in dict_['evaluated_variables_indices']]
-        all_items = activated_blocks + activated_pipes + activated_variables
-        activated_items = {item: True for item in all_items}
+        activated_items = {
+            b: (True if i in dict_['evaluated_blocks_indices'] else False)
+            for i, b in enumerate(workflow.blocks)
+        }
+
+        activated_items.update({
+            p: (True if i in dict_['evaluated_pipes_indices'] else False)
+            for i, p in enumerate(workflow.pipes)
+        })
+
+        var_indices = dict_['evaluated_variables_indices']
+        activated_items.update({
+            v: (True if workflow.variable_indices(v) in var_indices else False)
+            for v in workflow.variables
+        })
 
         return cls(workflow=workflow, input_values=input_values,
                    activated_items=activated_items, values=dict_['values'],
@@ -1836,7 +1841,10 @@ class WorkflowState(DessiaObject):
 
     @property
     def progress(self):
-        return len([b for b in self.workflow.blocks if b in self.activated_items])/len(self.workflow.blocks)
+        activated_items = [b for b in self.workflow.blocks
+                           if b in self.activated_items
+                           and self.activated_items[b]]
+        return len(activated_items)/len(self.workflow.blocks)
 
     def block_evaluation(self, block_index: int) -> bool:
         """
