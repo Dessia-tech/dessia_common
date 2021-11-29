@@ -10,7 +10,8 @@ import tempfile
 import json
 import webbrowser
 import networkx as nx
-from typing import List, Union, Type, Any, Dict, Tuple, get_type_hints
+from typing import List, Union, Type, Any, Dict,\
+    Tuple, Optional, get_type_hints
 from copy import deepcopy
 from dessia_common.templates import workflow_template
 import itertools
@@ -22,7 +23,7 @@ from dessia_common import DessiaObject, DisplayObject, DessiaFilter, \
     prettyname, dict_to_object, serialize_dict, UntypedArgumentError,\
     recursive_type, recursive_instantiation, full_classname
 from dessia_common.vectored_objects import from_csv
-from dessia_common.typings import JsonSerializable, Subclass, MethodType
+from dessia_common.typings import JsonSerializable, MethodType
 import warnings
 
 # Type Aliases
@@ -1772,14 +1773,15 @@ class WorkflowState(DessiaObject):
         dict_ = DessiaObject.to_dict(self)
         dict_['evaluated_blocks_indices'] = [i for i, b
                                              in enumerate(self.workflow.blocks)
-                                             if b in self.activated_items]
-        dict_['evaluated_pipes_indices'] = [i for i, b
+                                             if b in self.activated_items
+                                             and self.activated_items[b]]
+        dict_['evaluated_pipes_indices'] = [i for i, p
                                             in enumerate(self.workflow.pipes)
-                                            if b in self.activated_items]
+                                            if p in self.activated_items
+                                            and self.activated_items[p]]
         dict_['evaluated_variables_indices'] = [
-            self.workflow.variable_indices(v)
-            for v in self.workflow.variables
-            if v in self.activated_items
+            self.workflow.variable_indices(v) for v in self.workflow.variables
+            if v in self.activated_items and self.activated_items[v]
         ]
         if self.output_value is not None:
             dict_.update({
@@ -1836,7 +1838,7 @@ class WorkflowState(DessiaObject):
     def progress(self):
         return len([b for b in self.workflow.blocks if b in self.activated_items])/len(self.workflow.blocks)
 
-    def block_evaluation(self, block_index:int):
+    def block_evaluation(self, block_index: int) -> bool:
         """
         Select a block to evaluate
         """
@@ -1851,7 +1853,7 @@ class WorkflowState(DessiaObject):
         else:
             return False
         
-    def evaluate_next_block(self):
+    def evaluate_next_block(self) -> Optional[Block]:
         """
         Evaluate a block
         """
@@ -2163,7 +2165,6 @@ class WorkflowRun(DessiaObject):
                                          progress_callback=progress_callback,
                                          name=name)
         return workflow_run
-
 
     @property
     def _method_jsonschemas(self):
