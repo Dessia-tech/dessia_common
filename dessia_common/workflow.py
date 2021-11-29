@@ -1852,6 +1852,7 @@ class WorkflowState(DessiaObject):
         """
         block = self.workflow.blocks[block_index]        
         
+        self.activate_inputs()
         for pipe in self._activable_pipes():
             self._evaluate_pipe(pipe)
 
@@ -1865,6 +1866,7 @@ class WorkflowState(DessiaObject):
         """
         Evaluate a block
         """
+        self.activate_inputs()
         for pipe in self._activable_pipes():
             self._evaluate_pipe(pipe)
             
@@ -1880,6 +1882,9 @@ class WorkflowState(DessiaObject):
         """
         Evaluate all possible blocks
         """
+        self.activate_inputs()
+
+        evaluated_blocks = []
         something_activated = True
         while something_activated:
             something_activated = False
@@ -1889,9 +1894,11 @@ class WorkflowState(DessiaObject):
                 something_activated = True
 
             for block in self._activable_blocks():
+                evaluated_blocks.append(block)
                 self._evaluate_block(block)
                 something_activated = True
-
+        return evaluated_blocks
+    
     def _activable_pipes(self):
         pipes = []
         for pipe in self.workflow.pipes:
