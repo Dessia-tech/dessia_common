@@ -10,7 +10,8 @@ import tempfile
 import json
 import webbrowser
 import networkx as nx
-from typing import List, Union, Type, Any, Dict, Tuple, get_type_hints
+from typing import List, Union, Type, Any, Dict,\
+    Tuple, Optional, get_type_hints
 from copy import deepcopy
 from dessia_common.templates import workflow_template
 import itertools
@@ -22,7 +23,7 @@ from dessia_common import DessiaObject, DisplayObject, DessiaFilter, \
     prettyname, dict_to_object, serialize_dict, UntypedArgumentError,\
     recursive_type, recursive_instantiation, full_classname
 from dessia_common.vectored_objects import from_csv
-from dessia_common.typings import JsonSerializable, Subclass, MethodType
+from dessia_common.typings import JsonSerializable, MethodType
 import warnings
 
 # Type Aliases
@@ -1519,7 +1520,6 @@ class Workflow(Block):
             name = self.name + ' run'
         return state.to_workflow_run(name=name)
 
-
     def start_run(self, input_values):
         activated_items = {p: False for p in self.pipes}
         activated_items.update({v: False for v in self.variables})
@@ -1527,7 +1527,8 @@ class Workflow(Block):
 
         values = {}
         variables_values = {}
-        return WorkflowState(self, input_values, activated_items, values, variables_values, start_time=time.time())
+        return WorkflowState(self, input_values, activated_items, values,
+                             variables_values, start_time=time.time())
 
     # def manual_run(self, input_values, name:str=''):
     #     log = ''
@@ -1548,7 +1549,6 @@ class Workflow(Block):
     #                              variables_values=variable_values,
     #                              evaluated_blocks = [],
     #                              log=log, name=name)
-
 
     def mxgraph_data(self):
         nodes = []
@@ -1747,12 +1747,16 @@ class WorkflowBlock(Block):
     def package_mix(self):
         return self.workflow.package_mix()
 
+
 class WorkflowState(DessiaObject):
     _standalone_in_db = True
     _allowed_methods = ['block_evaluation', 'evaluate_next_block',
                         'evaluate_maximum_blocks', 'add_input_value']
-    def __init__(self, workflow:Workflow, input_values, activated_items, values,
-                 variables_values, start_time, output_value=None, log:str='', name:str=''):
+    _non_serializable_attributes = ['activated_items']
+
+    def __init__(self, workflow: Workflow, input_values, activated_items,
+                 values, variables_values, start_time, output_value=None,
+                 log: str = '', name: str = ''):
         self.workflow = workflow
         self.input_values = input_values
         self.output_value = output_value
@@ -1766,11 +1770,63 @@ class WorkflowState(DessiaObject):
         DessiaObject.__init__(self, name=name)
 
     def to_dict(self):
-        d = DessiaObject.to_dict(self)
-        d['evaluated_blocks_indices'] = [i for i, b in enumerate(self.workflow.blocks) if b in self.activated_items]
-        d['evaluated_pipes_indices'] = [i for i, b in enumerate(self.workflow.blocks) if b in self.activated_items]
-        d['evaluated_variables_indices'] = [self.workflow.variable_indices(v) for v in self.workflow.variables if v in self.activated_items]
-        return d
+        dict_ = DessiaObject.to_dict(self)
+        dict_['evaluated_blocks_indices'] = [i for i, b
+                                             in enumerate(self.workflow.blocks)
+                                             if b in self.activated_items
+                                             and self.activated_items[b]]
+        dict_['evaluated_pipes_indices'] = [i for i, p
+                                            in enumerate(self.workflow.pipes)
+                                            if p in self.activated_items
+                                            and self.activated_items[p]]
+        dict_['evaluated_variables_indices'] = [
+            self.workflow.variable_indices(v) for v in self.workflow.variables
+            if v in self.activated_items and self.activated_items[v]
+        ]
+        if self.output_value is not None:
+            dict_.update({
+                'output_value': serialize(self.output_value),
+                'output_value_type': recursive_type(self.output_value)
+            })
+        return dict_
+
+    @classmethod
+    def dict_to_object(cls, dict_: JsonSerializable,
+                       force_generic: bool = False) -> 'WorkflowState':
+        workflow = Workflow.dict_to_object(dict_['workflow'])
+        if 'output_value' in dict_ and 'output_value_type' in dict_:
+            type_ = dict_['output_value_type']
+            value = dict_['output_value']
+            output_value = recursive_instantiation(type_=type_, value=value)
+        else:
+            output_value = None
+
+        input_values = {int(i): deserialize(v)
+                        for i, v in dict_['input_values'].items()}
+        variables_values = {k: deserialize(v)
+                            for k, v in dict_['variables_values'].items()}
+
+        activated_items = {
+            b: (True if i in dict_['evaluated_blocks_indices'] else False)
+            for i, b in enumerate(workflow.blocks)
+        }
+
+        activated_items.update({
+            p: (True if i in dict_['evaluated_pipes_indices'] else False)
+            for i, p in enumerate(workflow.pipes)
+        })
+
+        var_indices = dict_['evaluated_variables_indices']
+        activated_items.update({
+            v: (True if workflow.variable_indices(v) in var_indices else False)
+            for v in workflow.variables
+        })
+
+        return cls(workflow=workflow, input_values=input_values,
+                   activated_items=activated_items, values=dict_['values'],
+                   variables_values=variables_values,
+                   start_time=dict_['start_time'], output_value=output_value,
+                   log=dict_['log'], name=dict_['name'])
 
     def add_input_value(self, input_index, value):
         # TODO: Type checking?
@@ -1785,14 +1841,18 @@ class WorkflowState(DessiaObject):
 
     @property
     def progress(self):
-        return len([b for b in self.workflow.blocks if b in self.activated_items])/len(self.workflow.blocks)
+        activated_items = [b for b in self.workflow.blocks
+                           if b in self.activated_items
+                           and self.activated_items[b]]
+        return len(activated_items)/len(self.workflow.blocks)
 
-    def block_evaluation(self, block_index:int):
+    def block_evaluation(self, block_index: int) -> bool:
         """
         Select a block to evaluate
         """
         block = self.workflow.blocks[block_index]        
         
+        self.activate_inputs()
         for pipe in self._activable_pipes():
             self._evaluate_pipe(pipe)
 
@@ -1802,10 +1862,11 @@ class WorkflowState(DessiaObject):
         else:
             return False
         
-    def evaluate_next_block(self):
+    def evaluate_next_block(self) -> Optional[Block]:
         """
         Evaluate a block
         """
+        self.activate_inputs()
         for pipe in self._activable_pipes():
             self._evaluate_pipe(pipe)
             
@@ -1816,12 +1877,14 @@ class WorkflowState(DessiaObject):
             return block
         else:
             return None
-        
-        
+
     def continue_run(self):
         """
         Evaluate all possible blocks
         """
+        self.activate_inputs()
+
+        evaluated_blocks = []
         something_activated = True
         while something_activated:
             something_activated = False
@@ -1831,12 +1894,11 @@ class WorkflowState(DessiaObject):
                 something_activated = True
 
             for block in self._activable_blocks():
+                evaluated_blocks.append(block)
                 self._evaluate_block(block)
                 something_activated = True
-            
-            
-
-
+        return evaluated_blocks
+    
     def _activable_pipes(self):
         pipes = []
         for pipe in self.workflow.pipes:
@@ -1865,8 +1927,8 @@ class WorkflowState(DessiaObject):
             pipe.input_variable]
         self.activated_items[pipe.output_variable] = True
 
-
-    def _evaluate_block(self, block, progress_callback=lambda x:x, verbose=False):
+    def _evaluate_block(self, block, progress_callback=lambda x: x,
+                        verbose=False):
         if verbose:
             log_line = 'Evaluating block {}'.format(block.name)
             self.log += log_line + '\n'
@@ -1894,7 +1956,6 @@ class WorkflowState(DessiaObject):
 
         self.activated_items[block] = True
 
-
     def activate_inputs(self, check_all_inputs=False):
         """
         Returns if all inputs are activated
@@ -1919,7 +1980,6 @@ class WorkflowState(DessiaObject):
                 msg = 'Value {} of index {} in inputs has no value: should be instance of {}'
                 raise ValueError(msg.format(variable.name, index, variable.type_))
 
-
     def to_workflow_run(self, name=''):
         if self.progress == 1:
             return WorkflowRun(workflow=self.workflow,
@@ -1930,6 +1990,7 @@ class WorkflowState(DessiaObject):
                                log=self.log, name=name)
         else:
             raise ValueError('Workflow not completed')
+
 
 class WorkflowRun(DessiaObject):
     _standalone_in_db = True
@@ -2119,7 +2180,6 @@ class WorkflowRun(DessiaObject):
                                          progress_callback=progress_callback,
                                          name=name)
         return workflow_run
-
 
     @property
     def _method_jsonschemas(self):
