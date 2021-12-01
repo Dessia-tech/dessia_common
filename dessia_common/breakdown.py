@@ -19,7 +19,7 @@ def get_in_object_from_path(object_, path):
         except KeyError:
             print(object_, segments[0])
             
-            raise RuntimeError
+            raise RuntimeError('Cannot get in {} {}: end up @ {}'.format(object_, path, segments[0]))
     else:
         element = getattr(object_, segments[0])
 

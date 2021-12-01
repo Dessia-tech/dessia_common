@@ -11,7 +11,7 @@ import inspect
 
 import dessia_common as dc
 import dessia_common.utils.types as dcty
-from dessia_common.graph import explore_tree_from_leaves, cut_tree_final_branches
+from dessia_common.graph import explore_tree_from_leaves#, cut_tree_final_branches
 from dessia_common.breakdown import get_in_object_from_path
 import networkx as nx
 
@@ -115,7 +115,6 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
         
     
     subobjects = {}
-    memo = {}
     for key, value in init_dict.items():
         if class_argspec is not None and key in class_argspec.annotations:
             annotation = class_argspec.annotations[key]
@@ -138,22 +137,87 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
     
     return obj
 
+def find_references(value, path='#'):
+    if isinstance(value, dict):
+        return find_references_dict(value, path)
+    if dcty.isinstance_base_types(value):
+        return []
+    elif dcty.is_sequence(value):
+        return find_references_sequence(value, path)
+    else:
+        raise ValueError(value)
+
+
+def find_references_sequence(seq, path='#'):
+    if isinstance(seq, str):
+        raise ValueError
+
+
+    references = []
+    for ie, element in enumerate(seq):
+        path_value = '{}/{}'.format(path, ie)
+        references.extend(find_references(element, path=path_value))
+        # if value_nodes or value_edges:
+        
+    return references
+
+def find_references_dict(dict_, path='#'):
+    
+    if '$ref' in dict_:
+        return [(path, dict_['$ref'])]
+    
+    references = []
+    for key, value in dict_.items():
+        if not dcty.isinstance_base_types(value):
+            path_value = '{}/{}'.format(path, key)
+            references.extend(find_references(value, path=path_value))
+    return references
+
 
 def pointer_graph(value):
-    nodes, edges = pointer_graph_elements(value)
 
+    nodes = set()    
+    edges = set()
+    # print(find_references(value))
+    for path, reference in find_references(value):
+        segments = path.split('/')
+        nodes.add(segments[0])
+        previous_node = segments[0]
+        for s in segments[1:]:
+            node = '{}/{}'.format(previous_node, s)
+            nodes.add(node)            
+            edges.add((previous_node, node))
+            previous_node = node
+        edges.add((path, reference))
+        # print(path,'->', reference)
+            
+    
+            
     graph = nx.DiGraph()
-    graph.name = value['object_class']
-    graph.add_nodes_from(set(nodes))
+    graph.add_nodes_from(nodes)
     graph.add_edges_from(edges)
-
-    # import dessia_common.displays
+        
+    # nodes, edges = pointer_graph_elements(value)
+    # graph2 = nx.DiGraph()
+    # graph2.name = value['object_class']
+    # graph2.add_nodes_from(set(nodes))
+    # graph2.add_edges_from(edges)
     # print('old number nodes', graph.number_of_nodes())
-    # dessia_common.displays.draw_networkx_graph(graph)
-    graph = cut_tree_final_branches(graph)
+    # # dessia_common.displays.draw_networkx_graph(graph)
+    # graph2 = cut_tree_final_branches(graph2)
 
-    # dessia_common.displays.draw_networkx_graph(graph)
+    # # dessia_common.displays.draw_networkx_graph(graph)
     # print('new number nodes', graph.number_of_nodes())
+    
+    # extra_nodes = set(graph2.nodes).difference(set(graph.nodes))
+    # graph_diff = nx.subgraph(graph2, extra_nodes)
+    # import dessia_common.displays
+    # dessia_common.displays.draw_networkx_graph(graph_diff)
+    
+    # print(graph2.number_of_nodes(), graph.number_of_nodes())
+    # print(graph2.number_of_edges(), graph.number_of_edges())
+    # assert graph2.number_of_nodes() == graph.number_of_nodes()
+    # assert graph2.number_of_edges() == graph.number_of_edges()
 
     # dessia_common.displays.draw_networkx_graph(graph)
 

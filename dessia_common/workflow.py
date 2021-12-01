@@ -1767,8 +1767,13 @@ class WorkflowState(DessiaObject):
 
         DessiaObject.__init__(self, name=name)
 
-    def to_dict(self):
-        d = DessiaObject.to_dict(self)
+    def to_dict(self, use_pointers:bool=True, memo=None, path:str='#'):
+        if not use_pointers:
+            raise NotImplementedError('WorkflowState to_dict should not be called with use_pointers=False')
+        if memo is None:
+            memo = {}
+            
+        d = DessiaObject.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         d['evaluated_blocks_indices'] = [i for i, b in enumerate(self.workflow.blocks) if b in self.activated_items]
         d['evaluated_pipes_indices'] = [i for i, b in enumerate(self.workflow.blocks) if b in self.activated_items]
         d['evaluated_variables_indices'] = [self.workflow.variable_indices(v) for v in self.workflow.variables if v in self.activated_items]
@@ -2074,11 +2079,16 @@ class WorkflowRun(DessiaObject):
     #                start_time=dict_['start_time'], end_time=dict_['end_time'],
     #                log=dict_['log'], name=dict_['name'])
 
-    def to_dict(self):
+    def to_dict(self, use_pointers:bool=True, memo=None, path:str='#'):
         input_values = {}
-        memo = None
+        
+        if not use_pointers:
+            raise NotImplementedError('WorkflowRun to_dict should not be called with use_pointers=False')
+        if memo is None:
+            memo = {}
+        
         for i, v in self.input_values.items():
-            serialized_v, memo = serialize_with_pointers(v,memo, path='#/input_values/{}'.format(i))
+            serialized_v, memo = serialize_with_pointers(v, memo, path='#/input_values/{}'.format(i))
             input_values[i] = serialized_v
 
         variables_values = {}
