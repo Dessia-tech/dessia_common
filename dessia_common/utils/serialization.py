@@ -15,6 +15,94 @@ from dessia_common.graph import explore_tree_from_leaves#, cut_tree_final_branch
 from dessia_common.breakdown import get_in_object_from_path
 import networkx as nx
 
+def serialize_with_pointers(deserialized_element, memo=None, path='#'):
+    if memo is None:
+        memo = {}
+    if isinstance(deserialized_element, dc.DessiaObject):
+        try:
+            try:
+                serialized = deserialized_element.to_dict(use_pointers=True, memo=memo, path=path)
+            except TypeError:
+                serialized = deserialized_element.to_dict()
+                
+        except TypeError:
+            # warnings.warn('specific to_dict should implement memo and path arguments', Warning)
+            serialized, memo = serialize_dict_with_pointers(deserialized_element.to_dict(), memo, path)
+            
+    elif isinstance(deserialized_element, dict):
+        serialized, memo = serialize_dict_with_pointers(deserialized_element, memo, path)
+    elif dcty.is_sequence(deserialized_element):
+        serialized, memo = serialize_sequence_with_pointers(deserialized_element, memo, path)
+    else:
+        serialized = deserialized_element
+    return serialized, memo
+
+
+def serialize_dict_with_pointers(dict_, memo, path):
+        
+    serialized_dict = {}
+    dict_attrs_keys = []
+    seq_attrs_keys = []
+    for key, value in dict_.items():
+        value_path = '{}/{}'.format(path, key)
+        if hasattr(value, 'to_dict'):
+            # object
+            if value in memo:
+                serialized_dict[key] = {"$ref": memo[value]}
+            else:
+                try:
+                    serialized_dict[key] = value.to_dict(use_pointers=True, path=value_path, memo=memo)
+                except TypeError:
+                    # warnings.warn('specific to_dict should implement memo and path arguments', Warning)
+                    serialized_dict[key] = value.to_dict()
+                memo[value] = value_path
+        elif isinstance(value, dict):
+            dict_attrs_keys.append(key)
+        elif isinstance(value, (list, tuple)):
+            seq_attrs_keys.append(key)
+        else:
+            if not dcty.is_jsonable(value):
+                msg = 'Attribute {} of value {} is not json serializable'
+                raise SerializationError(msg.format(key, value))
+            serialized_dict[key] = value
+        
+    # Handle seq & dicts afterwards
+    for key in seq_attrs_keys:
+        value_path = '{}/{}'.format(path, key)
+        serialized_dict[key], memo = serialize_sequence_with_pointers(dict_[key], memo=memo, path=value_path)
+
+    for key in dict_attrs_keys:
+        value_path = '{}/{}'.format(path, key)
+        serialized_dict[key], memo = serialize_dict_with_pointers(dict_[key], memo=memo, path=value_path)
+    return serialized_dict, memo
+
+
+def serialize_sequence_with_pointers(seq, memo, path):
+    serialized_sequence = []
+    for ival, value in enumerate(seq):
+        value_path = '{}/{}'.format(path, ival)
+        if hasattr(value, 'to_dict'):
+            if value in memo:
+                serialized_value = {"$ref": memo[value]}
+            else:
+                try:
+                    serialized_value = value.to_dict(use_pointers=True, path=value_path, memo=memo)
+                except TypeError:
+                    # warnings.warn('specific to_dict should implement memo and path arguments', Warning)
+                    serialized_value = value.to_dict()
+                memo[value] = value_path
+            serialized_sequence.append(serialized_value)
+        elif isinstance(value, dict):
+            serialized_value, memo = serialize_dict_with_pointers(value, memo=memo, path=value_path)
+            serialized_sequence.append(serialized_value)
+        elif isinstance(value, (list, tuple)):
+            serialized_value, memo = serialize_sequence_with_pointers(value, memo=memo, path=value_path)
+            serialized_sequence.append(serialized_value)
+        else:
+            serialized_sequence.append(value)
+    return serialized_sequence, memo
+
+
 
 def deserialize(serialized_element, sequence_annotation: str = 'List',
                 global_dict=None, pointers_memo=None, path='#'):#, enforce_pointers=False):

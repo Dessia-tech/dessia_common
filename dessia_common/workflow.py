@@ -20,9 +20,10 @@ from dessia_common import DessiaObject, DisplayObject, DessiaFilter, \
     type_from_annotation,\
     enhanced_deep_attr, deprecation_warning, JSONSCHEMA_HEADER,\
     jsonschema_from_annotation, deserialize_argument, set_default_value,\
-    prettyname, serialize_dict, UntypedArgumentError,\
-    recursive_type, recursive_instantiation, serialize_with_pointers
-from dessia_common.utils.serialization import dict_to_object, deserialize
+    prettyname, serialize_dict,\
+    recursive_type, recursive_instantiation
+from dessia_common.errors import UntypedArgumentError
+from dessia_common.utils.serialization import dict_to_object, deserialize, serialize_with_pointers
 from dessia_common.utils.types import get_python_class_from_class_name, serialize_typing, full_classname, deserialize_typing
 from dessia_common.vectored_objects import from_csv
 from dessia_common.typings import JsonSerializable, MethodType

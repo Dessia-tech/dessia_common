@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ClassMethod Block now supports MethodType
 
 ### Changed
+- Moved errors to submodule dessia_common.errors
 - Full support of MethodType for ModelMethod Block
 
 ## 0.4.7

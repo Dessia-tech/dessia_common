@@ -16,8 +16,9 @@ import inspect
 import json
 from dessia_common.exports import XLSXWriter
 
+import dessia_common.errors
 from dessia_common.utils.diff import dict_diff, data_eq
-from dessia_common.utils.serialization import dict_to_object
+from dessia_common.utils.serialization import dict_to_object, serialize_dict_with_pointers
 from dessia_common.utils.types import is_jsonable, is_builtin, get_python_class_from_class_name, serialize_typing, full_classname, is_sequence, isinstance_base_types, is_typing, TYPING_EQUIVALENCES
 
 
@@ -51,39 +52,6 @@ _FORBIDDEN_ARGNAMES = ['self', 'cls', 'progress_callback', 'return']
 
 TYPES_FROM_STRING = {'unicode': str, 'str': str, 'float': float,
                      'int': int, 'bool': bool}
-
-
-class ExceptionWithTraceback(Exception):
-    def __init__(self, message, traceback_=''):
-        self.message = message
-        self.traceback = traceback_
-
-    def __str__(self):
-        return '{}\nTraceback:\n{}'.format(self.message, self.traceback)
-
-
-class DeepAttributeError(ExceptionWithTraceback, AttributeError):
-    pass
-
-
-class ModelError(Exception):
-    pass
-
-
-class ConsistencyError(Exception):
-    pass
-
-
-class SerializationError(Exception):
-    pass
-
-
-class DeserializationError(Exception):
-    pass
-
-
-class UntypedArgumentError(Exception):
-    pass
 
 
 # DEPRECATED_ATTRIBUTES = {'_editable_variss' : '_allowed_methods'}
@@ -955,7 +923,7 @@ def serialize_dict(dict_):
         else:
             if not is_jsonable(value):
                 msg = 'Attribute {} of value {} is not json serializable'
-                raise SerializationError(msg.format(key, value))
+                raise dessia_common.errors.SerializationError(msg.format(key, value))
             serialized_value = value
         serialized_dict[key] = serialized_value
     return serialized_dict
@@ -984,93 +952,6 @@ def serialize(deserialized_element):
     else:
         serialized = deserialized_element
     return serialized
-
-def serialize_with_pointers(deserialized_element, memo=None, path='#'):
-    if memo is None:
-        memo = {}
-    if isinstance(deserialized_element, DessiaObject):
-        try:
-            try:
-                serialized = deserialized_element.to_dict(use_pointers=True, memo=memo, path=path)
-            except TypeError:
-                serialized = deserialized_element.to_dict()
-                
-        except TypeError:
-            # warnings.warn('specific to_dict should implement memo and path arguments', Warning)
-            serialized, memo = serialize_dict_with_pointers(deserialized_element.to_dict(), memo, path)
-            
-    elif isinstance(deserialized_element, dict):
-        serialized, memo = serialize_dict_with_pointers(deserialized_element, memo, path)
-    elif is_sequence(deserialized_element):
-        serialized, memo = serialize_sequence_with_pointers(deserialized_element, memo, path)
-    else:
-        serialized = deserialized_element
-    return serialized, memo
-
-
-def serialize_dict_with_pointers(dict_, memo, path):
-        
-    serialized_dict = {}
-    dict_attrs_keys = []
-    seq_attrs_keys = []
-    for key, value in dict_.items():
-        value_path = '{}/{}'.format(path, key)
-        if hasattr(value, 'to_dict'):
-            # object
-            if value in memo:
-                serialized_dict[key] = {"$ref": memo[value]}
-            else:
-                try:
-                    serialized_dict[key] = value.to_dict(use_pointers=True, path=value_path, memo=memo)
-                except TypeError:
-                    # warnings.warn('specific to_dict should implement memo and path arguments', Warning)
-                    serialized_dict[key] = value.to_dict()
-                memo[value] = value_path
-        elif isinstance(value, dict):
-            dict_attrs_keys.append(key)
-        elif isinstance(value, (list, tuple)):
-            seq_attrs_keys.append(key)
-        else:
-            if not is_jsonable(value):
-                msg = 'Attribute {} of value {} is not json serializable'
-                raise SerializationError(msg.format(key, value))
-            serialized_dict[key] = value
-        
-    # Handle seq & dicts afterwards
-    for key in seq_attrs_keys:
-        value_path = '{}/{}'.format(path, key)
-        serialized_dict[key], memo = serialize_sequence_with_pointers(dict_[key], memo=memo, path=value_path)
-
-    for key in dict_attrs_keys:
-        value_path = '{}/{}'.format(path, key)
-        serialized_dict[key], memo = serialize_dict_with_pointers(dict_[key], memo=memo, path=value_path)
-    return serialized_dict, memo
-
-
-def serialize_sequence_with_pointers(seq, memo, path):
-    serialized_sequence = []
-    for ival, value in enumerate(seq):
-        value_path = '{}/{}'.format(path, ival)
-        if hasattr(value, 'to_dict'):
-            if value in memo:
-                serialized_value = {"$ref": memo[value]}
-            else:
-                try:
-                    serialized_value = value.to_dict(use_pointers=True, path=value_path, memo=memo)
-                except TypeError:
-                    # warnings.warn('specific to_dict should implement memo and path arguments', Warning)
-                    serialized_value = value.to_dict()
-                memo[value] = value_path
-            serialized_sequence.append(serialized_value)
-        elif isinstance(value, dict):
-            serialized_value, memo = serialize_dict_with_pointers(value, memo=memo, path=value_path)
-            serialized_sequence.append(serialized_value)
-        elif isinstance(value, (list, tuple)):
-            serialized_value, memo = serialize_sequence_with_pointers(value, memo=memo, path=value_path)
-            serialized_sequence.append(serialized_value)
-        else:
-            serialized_sequence.append(value)
-    return serialized_sequence, memo
 
 
 
@@ -1157,10 +1038,6 @@ def deepcopy_value(value, memo):
             return new_value
 
 
-
-
-
-
 def enhanced_deep_attr(obj, sequence):
     """
     Get deep attribute where Objects, Dicts and Lists
@@ -1209,7 +1086,8 @@ def enhanced_get_attr(obj, attr):
             classname = obj.__class__.__name__
             msg = "'{}' object has no attribute '{}'.".format(classname, attr)
             track += tb.format_exc()
-            raise DeepAttributeError(message=msg, traceback_=track)
+            raise dessia_common.errors.DeepAttributeError(message=msg,
+                                                          traceback_=track)
 
 
 def concatenate_attributes(prefix, suffix, type_: str = 'str'):
