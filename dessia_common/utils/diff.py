@@ -34,7 +34,7 @@ def diff(value1, value2, path='#'):
     
     if isinstance_base_types(value1):
         if value1 != value2:
-            diff.append(path, value1, value2)
+            diff_values.append((path, value1, value2))
         return diff_values, missing_keys_in_other_object, invalid_types
     elif is_sequence(value1):
         return sequence_diff(value1, value2, path=path)
@@ -44,6 +44,7 @@ def diff(value1, value2, path='#'):
     else:
         # return diff_values, missing_keys_in_other_object, invalid_types
         raise NotImplementedError('niy')
+
 
 def dict_diff(dict1, dict2, path='#'):
     missing_keys_in_other_object = []
@@ -69,7 +70,7 @@ def sequence_diff(seq1, seq2, path='#'):
     invalid_types = []
     
     if len(seq1) != len(seq2):
-        diff.append(path, seq1, seq2)
+        diff_values.append((path, seq1, seq2))
     else:
         for iv, (v1, v2) in enumerate(zip(seq1, seq2)):
             path_value = '{}/{}'.format(path, iv)
