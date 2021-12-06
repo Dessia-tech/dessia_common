@@ -1266,7 +1266,6 @@ class Workflow(Block):
 
         dict_['imposed_variables'] = imposed_variables
         dict_['imposed_variable_values'] = imposed_variable_values
-
         return dict_
 
     @classmethod
@@ -1771,6 +1770,10 @@ class WorkflowState(DessiaObject):
 
     def to_dict(self):
         dict_ = DessiaObject.to_dict(self)
+
+        values = {self.workflow.index(i): serialize(v)
+                  for i, v in self.values.items()}
+        dict_.update({'values': values})
         dict_['evaluated_blocks_indices'] = [i for i, b
                                              in enumerate(self.workflow.blocks)
                                              if b in self.activated_items
@@ -1801,6 +1804,8 @@ class WorkflowState(DessiaObject):
         else:
             output_value = None
 
+        values = {workflow.inputs[i]: deserialize(v)
+                  for i, v in dict_['values'].items()}
         input_values = {int(i): deserialize(v)
                         for i, v in dict_['input_values'].items()}
         variables_values = {k: deserialize(v)
@@ -1823,7 +1828,7 @@ class WorkflowState(DessiaObject):
         })
 
         return cls(workflow=workflow, input_values=input_values,
-                   activated_items=activated_items, values=dict_['values'],
+                   activated_items=activated_items, values=values,
                    variables_values=variables_values,
                    start_time=dict_['start_time'], output_value=output_value,
                    log=dict_['log'], name=dict_['name'])
@@ -1831,6 +1836,7 @@ class WorkflowState(DessiaObject):
     def add_input_value(self, input_index, value):
         # TODO: Type checking?
         self.input_values[input_index] = value
+        self.activate_inputs()
 
     def _displays(self) -> List[JsonSerializable]:
         data = self.to_dict()
