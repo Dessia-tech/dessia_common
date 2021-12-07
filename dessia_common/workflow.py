@@ -1163,25 +1163,20 @@ class Workflow(Block):
             memo = {}
 
         blocks = [b.__deepcopy__(memo=memo) for b in self.blocks]
-        nonblock_variables = [v.__deepcopy__(memo=memo)
-                              for v in self.nonblock_variables]
         pipes = []
         for pipe in self.pipes:
             input_index = self.variable_indices(pipe.input_variable)
-            pipe_input = self.variable_from_index(input_index, blocks,
-                                                  nonblock_variables)
+            pipe_input = self.variable_from_index(input_index)
 
             output_index = self.variable_indices(pipe.output_variable)
-            pipe_output = self.variable_from_index(output_index, blocks,
-                                                   nonblock_variables)
+            pipe_output = self.variable_from_index(output_index)
 
             copied_pipe = Pipe(pipe_input, pipe_output)
             memo[pipe] = copied_pipe
 
             pipes.append(copied_pipe)
 
-        output = self.variable_from_index(self.variable_indices(self.output),
-                                          blocks, nonblock_variables)
+        output = self.variable_from_index(self.variable_indices(self.output))
 
         imposed_variable_values = {}
         for variable, value in self.imposed_variable_values.items():
@@ -1339,8 +1334,7 @@ class Workflow(Block):
         msg = 'Method {} not in Workflow allowed methods'
         raise NotImplementedError(msg.format(method))
 
-    @classmethod
-    def variable_from_index(cls, index, blocks, nonblock_variables):
+    def variable_from_index(self, index: Union[int, Tuple[int, int, int]]):
         """
         Index elements are, in order :
         - Block index : int
@@ -1348,12 +1342,12 @@ class Workflow(Block):
         - Port index : int
         """
         if type(index) == int:
-            variable = nonblock_variables[index]
+            variable = self.nonblock_variables[index]
         else:
             if not index[1]:
-                variable = blocks[index[0]].inputs[index[2]]
+                variable = self.blocks[index[0]].inputs[index[2]]
             else:
-                variable = blocks[index[0]].outputs[index[2]]
+                variable = self.blocks[index[0]].outputs[index[2]]
         return variable
 
     def _get_graph(self):
@@ -1415,8 +1409,18 @@ class Workflow(Block):
         return disconnected_elements
 
     def index(self, variable):
-        index = self.inputs.index(variable)
+        warnings.warn(
+            "index method is deprecated, use input_index instead",
+            DeprecationWarning
+        )
+        index = self.input_index(variable)
         return index
+
+    def input_index(self, variable: VariableTypes) -> int:
+        return self.inputs.index(variable)
+
+    def variable_index(self, variable: VariableTypes) -> int:
+        return self.variables.index(variable)
 
     def layout(self, min_horizontal_spacing=300, min_vertical_spacing=200,
                max_height=800, max_length=1500):
@@ -1771,7 +1775,7 @@ class WorkflowState(DessiaObject):
     def to_dict(self):
         dict_ = DessiaObject.to_dict(self)
 
-        values = {self.workflow.index(i): serialize(v)
+        values = {self.workflow.variable_index(i): serialize(v)
                   for i, v in self.values.items()}
         dict_.update({'values': values})
         dict_['evaluated_blocks_indices'] = [i for i, b
@@ -1804,7 +1808,7 @@ class WorkflowState(DessiaObject):
         else:
             output_value = None
 
-        values = {workflow.inputs[i]: deserialize(v)
+        values = {workflow.variables[i]: deserialize(v)
                   for i, v in dict_['values'].items()}
         input_values = {int(i): deserialize(v)
                         for i, v in dict_['input_values'].items()}
