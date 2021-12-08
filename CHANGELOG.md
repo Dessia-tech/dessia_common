@@ -8,9 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unrealeased [=> 0.4.8]
 ### Added
 - ClassMethod Block now supports MethodType
+- WorkflowState add_input_values activates them
+- Several variables index computation methods
 
 ### Changed
+- Workflow.variable_from_indices is not a classmethod anymore
 - Full support of MethodType for ModelMethod Block
+
+### Fixed
+- WorkflowState now serialize its values keys in to_dict
 
 ## 0.4.7
 ## Added
