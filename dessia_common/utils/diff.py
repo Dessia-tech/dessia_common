@@ -111,10 +111,11 @@ def data_eq(value1, value2):
         return False
 
     # Test if _data_eq is customized
-    custom_method = (value1._data_eq.__func__
-                             is not dc.DessiaObject._data_eq.__func__)
-    if custom_method:
-        return value1._data_eq(value2)
+    if hasattr(value1, '_data_eq'):
+        custom_method = (value1._data_eq.__func__
+                                 is not dc.DessiaObject._data_eq.__func__)
+        if custom_method:
+            return value1._data_eq(value2)
 
     # Not custom, use generic implementation
     eq_dict = value1._serializable_dict()

@@ -2086,7 +2086,7 @@ class WorkflowRun(DessiaObject):
         # TODO : Should we add input_values and variables values in test ?
         if not data_eq(self.output_value,  other_workflow_run.output_value):
             return False
-        return self.workflow == other_workflow_run.workflow
+        return self.workflow._data_eq(other_workflow_run.workflow)
 
 
     def _data_hash(self):
