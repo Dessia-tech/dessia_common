@@ -19,11 +19,18 @@ manual_run = simulation_workflow.start_run({0: components, 1:component_connectio
 
 print(manual_run)
 
-manual_run.evaluate_next_block()
+evaluated_block = manual_run.evaluate_next_block()
+assert evaluated_block is not None
+print(evaluated_block)
 
-manual_run.block_evaluation(simulation_workflow.blocks[1])
+evaluated = manual_run.block_evaluation(1)
+print(evaluated)
+assert not evaluated
 
-manual_run.continue_run()
+manual_run.add_input_value(3, usage)
+
+evaluated_blocks = manual_run.continue_run()
+assert(manual_run.progress == 1)
 print(manual_run.progress)
 
-print(manual_run._displays())
+manual_run._displays()
