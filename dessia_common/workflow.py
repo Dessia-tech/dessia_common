@@ -15,6 +15,7 @@ from typing import List, Union, Type, Any, Dict,\
 from copy import deepcopy
 from dessia_common.templates import workflow_template
 import itertools
+
 from dessia_common import DessiaObject, DisplayObject, DessiaFilter, \
     is_sequence, list_hash, serialize, is_bounded, \
     type_from_annotation,\
@@ -23,6 +24,7 @@ from dessia_common import DessiaObject, DisplayObject, DessiaFilter, \
     prettyname, serialize_dict,\
     recursive_type, recursive_instantiation
 from dessia_common.errors import UntypedArgumentError
+from dessia_common.utils.diff import data_eq
 from dessia_common.utils.serialization import dict_to_object, deserialize, serialize_with_pointers
 from dessia_common.utils.types import get_python_class_from_class_name, serialize_typing, full_classname, deserialize_typing
 from dessia_common.vectored_objects import from_csv
@@ -2082,15 +2084,10 @@ class WorkflowRun(DessiaObject):
 
     def _data_eq(self, other_workflow_run):
         # TODO : Should we add input_values and variables values in test ?
-        if is_sequence(self.output_value):
-            if not is_sequence(other_workflow_run.output_value):
-                return False
-            equal_output = all([v == other_v for v, other_v
-                                in zip(self.output_value,
-                                       other_workflow_run.output_value)])
-        else:
-            equal_output = self.output_value == other_workflow_run.output_value
-        return self.workflow == other_workflow_run.workflow and equal_output
+        if not data_eq(self.output_value,  other_workflow_run.output_value):
+            return False
+        return self.workflow == other_workflow_run.workflow
+
 
     def _data_hash(self):
         # TODO : Should we add input_values and variables values in test ?

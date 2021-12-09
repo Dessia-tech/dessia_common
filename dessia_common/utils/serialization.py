@@ -10,6 +10,7 @@ import warnings
 import inspect
 
 import dessia_common as dc
+import dessia_common.errors as dc_err
 import dessia_common.utils.types as dcty
 from dessia_common.graph import explore_tree_from_leaves#, cut_tree_final_branches
 from dessia_common.breakdown import get_in_object_from_path
@@ -63,7 +64,7 @@ def serialize_dict_with_pointers(dict_, memo, path):
         else:
             if not dcty.is_jsonable(value):
                 msg = 'Attribute {} of value {} is not json serializable'
-                raise SerializationError(msg.format(key, value))
+                raise dc_err.SerializationError(msg.format(key, value))
             serialized_dict[key] = value
         
     # Handle seq & dicts afterwards
@@ -440,111 +441,47 @@ def pointer_graph_elements_dict(dict_, path='#'):
     return nodes, edges
 
 
-# def enforce_pointers(object_, serialized_dict, global_object=None, memo=None):
-#     """
-#     Enforce python pointers with respect to jsonpointers in serialized_dict
-#     Enforcing pointers aims at keeping same links accross the object
-#     To use after naive deserialization with broken links
-#     """
-#     # print(object_, is_sequence(object_))
+def pointers_analysis(obj):
+    dict_ = obj.to_dict()
     
-#     print('\n%%Enforce pointers', global_object)
-#     if global_object is None:
-#         raise ValueError('uuUUU')
-#         global_object = object_
-        
-#     if memo is None:
-#         memo = {}
-        
-#     if isinstance_base_types(object_):
-#         return object_
-#     elif is_sequence(object_):
-#         return enforce_pointers_in_sequence(object_, serialized_dict, global_object=global_object, memo=memo)
-#     elif isinstance(object_, dict):
-#         return enforce_pointers_in_dict(object_, serialized_dict, global_object=global_object, memo=memo)
-#     else:
-#         return enforce_pointers_in_object(object_, serialized_dict, global_object=global_object, memo=memo)
-
-# def enforce_pointers_in_sequence(seq, serialized_seq, global_object=None, memo=None):
-#     # print('enforcing in ', object_, global_object)
-
-#     # if global_object is None:
-#     #     global_object = seq
-        
-#     if memo is None:
-#         memo = {}
-
-
-#     enforced_seq = []
-#     for i, (seq_value, seq_serialized_value) in enumerate(zip(seq, serialized_seq)):
-#         # seq[i] = choose_enforce_pointers(seq_value, seq_serialized_value, global_object))
-#         enforced_seq.append(enforce_pointers(seq_value, seq_serialized_value,
-#                                              global_object=global_object,
-#                                              memo=memo))
-#     return enforced_seq
-
-
-
-# def enforce_pointers_in_dict(dict_, serialized_dict, global_object=None,
-#                              memo=None):
-#     if memo is None:
-#         memo = {}
-
-#     if '$ref' in serialized_dict:
-#         return get_in_object_from_path(global_object, serialized_dict['$ref'])
-
-#     dict_2 = {}
-#     for key, serialized_value in serialized_dict.items():
-#         if key in dict_:
-#             object_value = dict_[key]
-#             enforced_value = enforce_pointers(object_value, serialized_value, global_object=global_object)            
-#             # TODO: Enforce key as well? how to do it 
-#             dict_2[key] = enforced_value
-#     return dict_2
+    class_number = {}
+    composed_by = {}
+    class_from_path = {}
+    graph = pointer_graph(dict_)
+    for path1, path2 in graph.edges():
+        if path1 != '#':
+            print(path1, path2)
+            if path2 in class_from_path:
+                val2_class = class_from_path[path2]
+            else:
+                val2 = get_in_object_from_path(obj, path2)
+                val2_class = dcty.full_classname(val2)
+                # val2_class = val2['object_class']
+                class_from_path[path2] = val2_class
     
+            # if 'object_class' in val2:
+            # val2_class = val2['object_class']
+            class_number[val2_class] = class_number.get(val2_class, 0) + 1
     
-# def enforce_pointers_in_object(object_, serialized_dict, global_object=None,
-#                                memo=None):
-#     """
-#     handles objects
-#     """
-#     # print('\n\n## enforcing in ', object_, global_object)
-
-#     if global_object is None:
-#         global_object = object_
-#         print('\n#enforcing top level ', object_)
-        
-#     if memo is None:
-#         memo = {}
-
-#     # object2 = object_.copy()
-#     if '$ref' in serialized_dict:
-#         return get_in_object_from_path(global_object, serialized_dict['$ref'])
-        
-#     for key, serialized_value in serialized_dict.items():
-#         if hasattr(object_, key):
-#             object_value = getattr(object_, key)
             
+            if path1 in class_from_path:
+                val1_class = class_from_path[path1]
+            else:
+                val1 = get_in_object_from_path(obj, path1)
+                val1_class = dcty.full_classname(val1)
+                # val1_class = val1['object_class']
+                class_from_path[path1] = val1_class
+    
             
-#             # if is_sequence(serialized_value):
-#             #     enforced_value = []
-#             #     for seq_value, seq_serialized_value in zip(object_value, serialized_value):
-#             #         enforced_value.append(enforce_pointers(seq_value, seq_serialized_value, global_object=global_object))
+            if val1_class != val2_class:
+                if not val2_class in composed_by:
+                    composed_by[val2_class] = {}
                 
-#             # elif isinstance(serialized_value, dict):
-#             #     if '$ref' in serialized_value:
-#             #         path = serialized_value['$ref']
-#             #         enforced_value = get_in_object_from_path(global_object, path)
-#             #     else:
-#             #         enforced_value = enforce_pointers_in_object(object_value, serialized_value, global_object=global_object)
-#             # elif isinstance_base_types(object_value):
-#             #     enforced_value = object_value
-#             # # elif isinstance(serialized_value, type):
-#             # #     pass
-#             # else:
-#             #     pass
-#             #     # raise NotImplementedError(object_value, 'of type', type(object_value))
-#             enforced_value = enforce_pointers(object_value, serialized_value, global_object=global_object)
-#             # # Overriding value
-#             setattr(object_, key, enforced_value)
-#     return object_
+                if not val1_class in composed_by[val2_class]:
+                    composed_by[val2_class][val1_class] = 1
+                else:
+                    composed_by[val2_class][val1_class] += 1
+                
+    return class_number, composed_by
+                
+    
