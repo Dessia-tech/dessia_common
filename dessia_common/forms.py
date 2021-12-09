@@ -539,6 +539,7 @@ class Optimizer(DessiaObject):
 
 
 class Container(DessiaObject):
+    _standalone_in_db = True
     _allowed_methods = ["generate_from_text_files"]
 
     def __init__(self, models: List[StandaloneObject] = None, name: str = ""):
