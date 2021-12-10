@@ -286,29 +286,6 @@ def pointer_graph(value):
     graph.add_nodes_from(nodes)
     graph.add_edges_from(edges)
         
-    # nodes, edges = pointer_graph_elements(value)
-    # graph2 = nx.DiGraph()
-    # graph2.name = value['object_class']
-    # graph2.add_nodes_from(set(nodes))
-    # graph2.add_edges_from(edges)
-    # print('old number nodes', graph.number_of_nodes())
-    # # dessia_common.displays.draw_networkx_graph(graph)
-    # graph2 = cut_tree_final_branches(graph2)
-
-    # # dessia_common.displays.draw_networkx_graph(graph)
-    # print('new number nodes', graph.number_of_nodes())
-    
-    # extra_nodes = set(graph2.nodes).difference(set(graph.nodes))
-    # graph_diff = nx.subgraph(graph2, extra_nodes)
-    # import dessia_common.displays
-    # dessia_common.displays.draw_networkx_graph(graph_diff)
-    
-    # print(graph2.number_of_nodes(), graph.number_of_nodes())
-    # print(graph2.number_of_edges(), graph.number_of_edges())
-    # assert graph2.number_of_nodes() == graph.number_of_nodes()
-    # assert graph2.number_of_edges() == graph.number_of_edges()
-
-    # dessia_common.displays.draw_networkx_graph(graph)
 
     return graph
     
@@ -332,15 +309,6 @@ def dereference_jsonpointers(value):#, global_dict):
         #     print('ref', ref)
 
         for ref in order:
-            # print('R', ref)
-            # if not anc in pointers_memo:
-            #     raise ValueError('anc!!!')
-            
-                # serialized_element = get_in_object_from_path(value, anc)
-                # pointers_memo[anc] = deserialize(serialized_element=serialized_element,
-                #                                  global_dict=value, pointers_memo=pointers_memo)
-                # print('missing anc', anc)
-            # print('ref', ref)
             serialized_element = get_in_object_from_path(value, ref)
             # print(serialized_element)
             pointers_memo[ref] = deserialize(serialized_element=serialized_element,
@@ -351,34 +319,6 @@ def dereference_jsonpointers(value):#, global_dict):
     # print(pointers_memo.keys())
     return pointers_memo
             
-   
-#     if isinstance(value, (list, tuple)):
-#         return dereference_jsonpointers_sequence(value, global_dict)
-#     elif isinstance(value, dict):
-#         return dereference_jsonpointers_dict(value, global_dict)
-#     else:
-#         return value
-    
-# def dereference_jsonpointers_dict(dict_, global_dict):
-#     """
-#     Dereference a dict_ by inserting dicts references (not objects!)
-#     To be used before deserialization
-#     """
-#     if '$ref' in dict_:
-#         path = dict_['$ref']
-#         return get_in_object_from_path(global_dict, path)
-#     else:
-#         deref_dict = {}
-#         for key, value in dict_.items():
-#             deref_dict[key] = dereference_jsonpointers(value, global_dict)
-#         return deref_dict
-    
-
-# def dereference_jsonpointers_sequence(sequence, global_dict):
-#     deref_sequence = []
-#     for element in sequence:
-#         deref_sequence.append(dereference_jsonpointers(element, global_dict))
-#     return deref_sequence
 
 
 
