@@ -23,7 +23,8 @@ from dessia_common import DessiaObject, DisplayObject, DessiaFilter, \
     prettyname, dict_to_object, serialize_dict, UntypedArgumentError,\
     recursive_type, recursive_instantiation, full_classname
 from dessia_common.vectored_objects import from_csv
-from dessia_common.typings import JsonSerializable, MethodType
+from dessia_common.typings import JsonSerializable, MethodType,\
+    ClassMethodType
 import warnings
 
 # Type Aliases
@@ -311,7 +312,7 @@ class InstanciateModel(InstantiateModel):
 
 
 class ClassMethod(Block):
-    def __init__(self, method_type: MethodType[Type], name: str = ''):
+    def __init__(self, method_type: ClassMethodType[Type], name: str = ''):
         self.method_type = method_type
         inputs = []
         method = getattr(method_type.class_, method_type.name)
@@ -362,7 +363,7 @@ class ClassMethod(Block):
             method_name = dict_['method_name']
         class_ = get_python_class_from_class_name(classname)
         name = dict_['name']
-        method_type = MethodType(class_=class_, name=method_name)
+        method_type = ClassMethodType(class_=class_, name=method_name)
         return cls(method_type=method_type, name=name)
 
     def evaluate(self, values):
