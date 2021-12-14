@@ -1240,7 +1240,10 @@ class Workflow(Block):
         jsonschemas['run']['python_typing'] = serialize_typing(MethodType)
         return jsonschemas
 
-    def to_dict(self):
+    def to_dict(self, memo=None, use_pointers=True, path='#'):
+        if memo is None:
+            memo = {}
+            
         self.refresh_blocks_positions()
         dict_ = Block.to_dict(self)
         blocks = [b.to_dict() for b in self.blocks]
@@ -1255,16 +1258,25 @@ class Workflow(Block):
                                              for v in self.nonblock_variables],
                       'package_mix': self.package_mix()})
 
-        imposed_variables = []
-        imposed_variable_values = []
+        # imposed_variables = []
+        imposed_variable_values = {}
         for variable, value in self.imposed_variable_values.items():
-            imposed_variables.append(self.variable_indices(variable))
-            if hasattr(value, 'to_dict'):
-                imposed_variable_values.append(value.to_dict())
-            else:
-                imposed_variable_values.append(value)
+            var_index = self.variable_indices(variable)
+            # imposed_variables.append(var_index)
+            
+            if use_pointers:
+                path_value = '{}/{}'.format(path, var_index)
+                ser_value = serialize_with_pointers(value, memo=memo, path=path_value)
 
-        dict_['imposed_variables'] = imposed_variables
+            else:
+                ser_value = serialize(value)
+            imposed_variable_values[var_index] = ser_value
+            # if hasattr(value, 'to_dict'):
+            #     imposed_variable_values.append(value.to_dict(memopath=''))
+            # else:
+            #     imposed_variable_values.append(value)
+
+        # dict_['imposed_variables'] = imposed_variables
         dict_['imposed_variable_values'] = imposed_variable_values
         return dict_
 
@@ -1294,23 +1306,34 @@ class Workflow(Block):
             pipes.append(Pipe(variable1, variable2))
 
         output = blocks[dict_['output'][0]].outputs[dict_['output'][2]]
+        temp_workflow = cls(blocks=blocks, pipes=pipes, output=output)
 
         if 'imposed_variable_values' in dict_ and 'imposed_variables' in dict_:
+            # Legacy support of double list
             imposed_variable_values = {}
             iterator = zip(dict_['imposed_variables'],
                            dict_['imposed_variable_values'])
             for variable_index, serialized_value in iterator:
                 value = deserialize(serialized_value)
-                if type(variable_index) == int:
-                    variable = nonblock_variables[variable_index]
-                else:
-                    iblock, side, iport = variable_index
-                    if side:
-                        variable = blocks[iblock].outputs[iport]
-                    else:
-                        variable = blocks[iblock].inputs[iport]
+                variable = temp_workflow.variable_from_index(variable_index)
+                # if type(variable_index) == int:
+                #     variable = nonblock_variables[variable_index]
+                # else:
+                #     iblock, side, iport = variable_index
+                #     if side:
+                #         variable = blocks[iblock].outputs[iport]
+                #     else:
+                #         variable = blocks[iblock].inputs[iport]
 
                 imposed_variable_values[variable] = value
+        elif 'imposed_variable_values' in dict_:
+            # New format with a dict
+            imposed_variable_values = {}
+            for variable_index, serialized_value in dict_['imposed_variable_values']:
+                value = deserialize(serialized_value)
+                variable = temp_workflow.variable_from_index(variable_index)
+                imposed_variable_values[variable] = value
+                
         else:
             imposed_variable_values = None
         return cls(blocks=blocks, pipes=pipes, output=output,
