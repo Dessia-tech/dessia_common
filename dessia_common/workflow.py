@@ -2162,13 +2162,16 @@ class WorkflowRun(DessiaObject):
 
         variables_values = {}
         for k, v in self.variables_values.items():
-            serialized_v, memo = serialize_with_pointers(v, memo, path='#/variables_values/{}'.format(k))
+            serialized_v, memo = serialize_with_pointers(v, memo,
+                                                         path='#/variables_values/{}'.format(k))
             variables_values[k] = serialized_v
             
         # variables_values = {k: serialize(v)
         #                     for k, v in self.variables_values.items()}
+        workflow = self.workflow.to_dict(path='#/workflow', memo=memo)
+        
         dict_ = DessiaObject.base_dict(self)
-        dict_.update({'workflow': self.workflow.to_dict(),
+        dict_.update({'workflow': workflow,
                       'input_values': input_values,
                       'variables_values': variables_values,
                       'start_time': self.start_time, 'end_time': self.end_time,
