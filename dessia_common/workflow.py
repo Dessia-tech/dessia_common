@@ -21,7 +21,7 @@ from dessia_common import DessiaObject, DisplayObject, DessiaFilter, \
     enhanced_deep_attr, deprecation_warning, JSONSCHEMA_HEADER,\
     jsonschema_from_annotation, deserialize_argument, set_default_value,\
     prettyname, dict_to_object, serialize_dict, UntypedArgumentError,\
-    recursive_type, recursive_instantiation, full_classname
+    recursive_type, recursive_instantiation, full_classname, default_dict
 from dessia_common.vectored_objects import from_csv
 from dessia_common.typings import JsonSerializable, MethodType,\
     ClassMethodType
@@ -1336,6 +1336,10 @@ class Workflow(Block):
         msg = 'Method {} not in Workflow allowed methods'
         raise NotImplementedError(msg.format(method))
 
+    def method_dict(self, method_name: str = None,
+                    method_jsonschema: Any = None):
+        return {}
+
     def variable_from_index(self, index: Union[int, Tuple[int, int, int]]):
         """
         Index elements are, in order :
@@ -2184,7 +2188,7 @@ class WorkflowRun(DessiaObject):
             return dict_
         # TODO Check this result. Might raise an error
         return DessiaObject.method_dict(self, method_name=method_name,
-                                           method_jsonschema=method_jsonschema)
+                                        method_jsonschema=method_jsonschema)
 
     def run_again(self, input_values, progress_callback=None, name=None):
         workflow_run = self.workflow.run(input_values=input_values,
