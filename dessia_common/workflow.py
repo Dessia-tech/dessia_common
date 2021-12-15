@@ -1198,6 +1198,7 @@ class Workflow(Block):
     def _method_jsonschemas(self):
         jsonschemas = {'run': deepcopy(JSONSCHEMA_HEADER)}
         properties_dict = jsonschemas['run']['properties']
+        properties_dict.update({'classes': ['dessia_common.worflow.Workflow']})
         required_inputs = []
         for i, input_ in enumerate(self.inputs):
             current_dict = {}
@@ -2196,6 +2197,8 @@ class WorkflowRun(DessiaObject):
     def _method_jsonschemas(self):
         jsonschemas = self.workflow._method_jsonschemas
         jsonschemas['run_again'] = jsonschemas.pop('run')
+        workflow_run_class = "dessia_common.workflow.WorkflowRun"
+        jsonschemas['run_again']['classes'] = [workflow_run_class]
         return jsonschemas
 
 
