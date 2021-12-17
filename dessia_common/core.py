@@ -993,8 +993,9 @@ def getdeepattr(obj, attr):
 def deepcopy_value(value, memo):
     # Escaping unhashable types (list) that would be handled after
     try:
-        if value in memo:
-            return memo[value]
+        for key in memo.keys():
+            if value == key and isinstance(value, type(key)):
+                return memo[value]
     except TypeError:
         pass
 
