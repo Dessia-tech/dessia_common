@@ -2176,6 +2176,7 @@ class WorkflowRun(DessiaObject):
         
         if not use_pointers:
             raise NotImplementedError('WorkflowRun to_dict should not be called with use_pointers=False')
+            
         if memo is None:
             memo = {}
         

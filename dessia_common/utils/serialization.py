@@ -311,10 +311,17 @@ def dereference_jsonpointers(value):#, global_dict):
         for ref in order:
             serialized_element = get_in_object_from_path(value, ref)
             # print(serialized_element)
+            # try:
             pointers_memo[ref] = deserialize(serialized_element=serialized_element,
-                                             global_dict=value,
-                                             pointers_memo=pointers_memo,
-                                             path=ref)
+                                     global_dict=value,
+                                     pointers_memo=pointers_memo,
+                                     path=ref)
+            # except:
+            #     print(ref)
+            #     # print('\n', serialized_element)
+            #     # print('\n\n', pointers_memo)
+            #     return serialized_element, pointers_memo
+            #     raise RuntimeError('jjj')
             # print('\nref', ref, pointers_memo[ref])
     # print(pointers_memo.keys())
     return pointers_memo
@@ -382,7 +389,10 @@ def pointer_graph_elements_dict(dict_, path='#'):
 
 
 def pointers_analysis(obj):
-    dict_ = obj.to_dict()
+    if isinstance(obj, dict):
+        dict_ = obj
+    else:
+        dict_ = obj.to_dict()
     
     class_number = {}
     composed_by = {}
@@ -390,7 +400,7 @@ def pointers_analysis(obj):
     graph = pointer_graph(dict_)
     for path1, path2 in graph.edges():
         if path1 != '#':
-            print(path1, path2)
+            # print(path1, path2)
             if path2 in class_from_path:
                 val2_class = class_from_path[path2]
             else:
