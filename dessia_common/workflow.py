@@ -1845,7 +1845,7 @@ class WorkflowState(DessiaObject):
                    start_time=dict_['start_time'], output_value=output_value,
                    log=dict_['log'], name=dict_['name'])
 
-    def add_input_value(self, input_index, value):
+    def add_input_value(self, input_index: int, value: Any):
         # TODO: Type checking?
         self.input_values[input_index] = value
         self.activate_inputs()
