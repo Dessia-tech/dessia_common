@@ -21,9 +21,10 @@ from dessia_common import DessiaObject, DisplayObject, DessiaFilter, \
     enhanced_deep_attr, deprecation_warning, JSONSCHEMA_HEADER,\
     jsonschema_from_annotation, deserialize_argument, set_default_value,\
     prettyname, dict_to_object, serialize_dict, UntypedArgumentError,\
-    recursive_type, recursive_instantiation, full_classname
+    recursive_type, recursive_instantiation, full_classname, default_dict
 from dessia_common.vectored_objects import from_csv
-from dessia_common.typings import JsonSerializable, MethodType
+from dessia_common.typings import JsonSerializable, MethodType,\
+    ClassMethodType
 import warnings
 
 # Type Aliases
@@ -311,7 +312,7 @@ class InstanciateModel(InstantiateModel):
 
 
 class ClassMethod(Block):
-    def __init__(self, method_type: MethodType[Type], name: str = ''):
+    def __init__(self, method_type: ClassMethodType[Type], name: str = ''):
         self.method_type = method_type
         inputs = []
         method = getattr(method_type.class_, method_type.name)
@@ -362,7 +363,7 @@ class ClassMethod(Block):
             method_name = dict_['method_name']
         class_ = get_python_class_from_class_name(classname)
         name = dict_['name']
-        method_type = MethodType(class_=class_, name=method_name)
+        method_type = ClassMethodType(class_=class_, name=method_name)
         return cls(method_type=method_type, name=name)
 
     def evaluate(self, values):
@@ -1196,6 +1197,9 @@ class Workflow(Block):
     @property
     def _method_jsonschemas(self):
         jsonschemas = {'run': deepcopy(JSONSCHEMA_HEADER)}
+        jsonschemas['run'].update({
+            'classes': ['dessia_common.workflow.Workflow']
+        })
         properties_dict = jsonschemas['run']['properties']
         required_inputs = []
         for i, input_ in enumerate(self.inputs):
@@ -1333,6 +1337,10 @@ class Workflow(Block):
             return arguments
         msg = 'Method {} not in Workflow allowed methods'
         raise NotImplementedError(msg.format(method))
+
+    def method_dict(self, method_name: str = None,
+                    method_jsonschema: Any = None):
+        return {}
 
     def variable_from_index(self, index: Union[int, Tuple[int, int, int]]):
         """
@@ -2182,7 +2190,7 @@ class WorkflowRun(DessiaObject):
             return dict_
         # TODO Check this result. Might raise an error
         return DessiaObject.method_dict(self, method_name=method_name,
-                                           method_jsonschema=method_jsonschema)
+                                        method_jsonschema=method_jsonschema)
 
     def run_again(self, input_values, progress_callback=None, name=None):
         workflow_run = self.workflow.run(input_values=input_values,
@@ -2195,6 +2203,8 @@ class WorkflowRun(DessiaObject):
     def _method_jsonschemas(self):
         jsonschemas = self.workflow._method_jsonschemas
         jsonschemas['run_again'] = jsonschemas.pop('run')
+        workflow_run_class = "dessia_common.workflow.WorkflowRun"
+        jsonschemas['run_again']['classes'] = [workflow_run_class]
         return jsonschemas
 
 

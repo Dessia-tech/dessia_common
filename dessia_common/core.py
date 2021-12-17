@@ -25,7 +25,7 @@ except ImportError:
     from mypy_extensions import TypedDict  # <=3.7
 import traceback as tb
 from dessia_common.typings import Measure, JsonSerializable,\
-    Subclass, InstanceOf, MethodType
+    Subclass, InstanceOf, MethodType, ClassMethodType
 
 from importlib import import_module
 
@@ -1242,6 +1242,8 @@ def serialize_typing(typing_):
             return 'Subclass[{}]'.format(type_fullname(args[0]))
         elif origin is MethodType:
             return 'MethodType[{}]'.format(type_fullname(args[0]))
+        elif origin is ClassMethodType:
+            return 'ClassMethodType[{}]'.format(type_fullname(args[0]))
         else:
             msg = 'Serialization of typing {} is not implemented'
             raise NotImplementedError(msg.format(typing_))
@@ -1586,14 +1588,16 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
                 'type': 'object', 'instance_of': classname,
                 'standalone_in_db': class_._standalone_in_db
             })
-        elif origin is MethodType:
+        elif origin is MethodType or origin is ClassMethodType:
             class_type = get_args(typing_)[0]
+            classmethod_ = origin is ClassMethodType
             class_jss = jsonschema_from_annotation(
                 annotation=('class_', class_type), jsonschema_element={},
                 order=order, editable=editable, title='Class'
             )
             jsonschema_element[key].update({
                 'type': 'object', 'is_method': True,
+                'classmethod_': classmethod_,
                 'properties': {
                     'class_': class_jss['class_'],
                     'name': {'type': 'string'}}
