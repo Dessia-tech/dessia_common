@@ -30,7 +30,7 @@ except ImportError:
     from mypy_extensions import TypedDict  # <=3.7
 import traceback as tb
 from dessia_common.typings import Measure, JsonSerializable,\
-    Subclass, InstanceOf, MethodType
+    Subclass, InstanceOf, MethodType, ClassMethodType
 
 from importlib import import_module
 
@@ -1267,14 +1267,16 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
                 'type': 'object', 'instance_of': classname,
                 'standalone_in_db': class_._standalone_in_db
             })
-        elif origin is MethodType:
+        elif origin is MethodType or origin is ClassMethodType:
             class_type = get_args(typing_)[0]
+            classmethod_ = origin is ClassMethodType
             class_jss = jsonschema_from_annotation(
                 annotation=('class_', class_type), jsonschema_element={},
                 order=order, editable=editable, title='Class'
             )
             jsonschema_element[key].update({
                 'type': 'object', 'is_method': True,
+                'classmethod_': classmethod_,
                 'properties': {
                     'class_': class_jss['class_'],
                     'name': {'type': 'string'}}
@@ -1518,13 +1520,14 @@ def deserialize_argument(type_, argument):
                     msg += '{} and {} in {}'.format(type(argument),
                                                     type_, argument)
                     raise TypeError(msg)
-        elif issubclass(type_, DessiaObject):
+        elif type_ is Any:
+            # Any type
+            deserialized_arg = argument
+        elif inspect.isclass(type_) and issubclass(type_, DessiaObject):
             # Custom classes
             deserialized_arg = type_.dict_to_object(argument)
         else:
-            # Static Dict
-            # TODO We shouldn't normally end up here anymore. Check this
-            deserialized_arg = argument
+            raise TypeError("Deserialization of ype {} is Not Implemented".format(type_))
     return deserialized_arg
 
 

@@ -7,8 +7,9 @@
 from typing import List, Dict, Type, Tuple, Union, Any, TextIO, BinaryIO, \
     get_type_hints, get_origin, get_args
 
+
 from dessia_common.typings import Measure, JsonSerializable,\
-    Subclass, InstanceOf, MethodType
+    Subclass, InstanceOf, MethodType, ClassMethodType
     
 import json
 import collections
@@ -104,6 +105,8 @@ def serialize_typing(typing_):
             return 'Subclass[{}]'.format(type_fullname(args[0]))
         elif origin is MethodType:
             return 'MethodType[{}]'.format(type_fullname(args[0]))
+        elif origin is ClassMethodType:
+            return 'ClassMethodType[{}]'.format(type_fullname(args[0]))
         else:
             msg = 'Serialization of typing {} is not implemented'
             raise NotImplementedError(msg.format(typing_))
@@ -124,6 +127,7 @@ def type_fullname(arg):
     return full_argname
 
 
+
 def type_from_argname(argname):
     splitted_argname = argname.rsplit('.', 1)
     if argname:
@@ -132,6 +136,7 @@ def type_from_argname(argname):
         # TODO Check for dangerous eval
         return eval(splitted_argname[1])
     return Any
+
 
 
 def deserialize_typing(serialized_typing):
@@ -177,7 +182,4 @@ def deserialize_typing(serialized_typing):
             return Dict[key_type, value_type]
         # elif splitted_type[0] == 'Union':
         #     args = full_argname.split(', ')
-        
-        # Should be a class
-        return type_from_argname(serialized_typing)
-    raise NotImplementedError('Unhandled typing {} of type {}'.format(serialized_typing, type(serialized_typing)))
+    raise NotImplementedError('{}'.format(serialized_typing))
