@@ -1,19 +1,33 @@
-import math
 import dessia_common as dc
-from dessia_common.utils.types import isinstance_base_types, is_sequence, full_classname
-from copy import deepcopy as copy_deepcopy
+from dessia_common.utils.types import is_sequence
 
 
-def deepcopy(value, memo):
+def deepcopy_value(value, memo):
 
     if isinstance(value, type):  # For class
         return value
 
-    elif isinstance(value, (float, int)):
-        return value
+    elif isinstance(value, (float, int, str)):
+        copied_value = value
+        return copied_value
+
+    elif value is None:
+        return None
+
+    elif value.__class__.__name__ in ['Point2D', 'Point3D',
+                                      'Vector2D', 'Vector3D']:
+        copied_value = value.copy(deep=True, memo=memo)
+        return copied_value
+
+    elif isinstance(value, dc.DessiaObject):
+        memo_value = search_memo(value, memo)
+        if memo_value is not None:
+            return memo_value
+        copied_value = value.copy(deep=True, memo=memo)
+        memo[value] = copied_value
+        return copied_value
 
     elif hasattr(value, '__deepcopy__'):
-
         memo_value = search_memo(value, memo)
         if memo_value is not None:
             return memo_value
@@ -23,7 +37,6 @@ def deepcopy(value, memo):
         except TypeError:
             copied_value = value.__deepcopy__()
         memo[value] = copied_value
-        print('1', value, '=>', copied_value)
         return copied_value
 
     else:
@@ -34,11 +47,7 @@ def deepcopy(value, memo):
             return deepcopy_dict(value, memo)
 
         else:
-            new_value = copy_deepcopy(value, memo=memo)
-            # print(value, "=>", new_value)
-            memo[value] = new_value
-            print('5', value, '=>', new_value)
-            return new_value
+            raise NotImplementedError
 
 
 def deepcopy_dict(dict_value, memo):
@@ -48,18 +57,8 @@ def deepcopy_dict(dict_value, memo):
 
     copied_dict = {}
     for k, v in dict_value.items():
-        copied_k = deepcopy(k, memo=memo)
-        copied_v = deepcopy(v, memo=memo)
-        try:
-            memo[k] = copied_k
-            print('3', k, '=>', copied_k)
-        except TypeError:
-            pass
-        try:
-            memo[v] = copied_v
-            print('4', v, '=>', copied_v)
-        except TypeError:
-            pass
+        copied_k = deepcopy_value(k, memo=memo)
+        copied_v = deepcopy_value(v, memo=memo)
         copied_dict[copied_k] = copied_v
     return copied_dict
 
@@ -71,12 +70,7 @@ def deepcopy_sequence(seq_value, memo):
 
     copied_list = []
     for v in seq_value:
-        cv = deepcopy(v, memo=memo)
-        try:
-            memo[v] = cv
-            print('2', v, '=>', cv)
-        except TypeError:
-            pass
+        cv = deepcopy_value(v, memo=memo)
         copied_list.append(cv)
     return copied_list
 
@@ -84,6 +78,5 @@ def deepcopy_sequence(seq_value, memo):
 def search_memo(value, memo):
     for key in memo.keys():
         if isinstance(value, type(key)) and value == key:
-            print('0', value, '=>', (key, memo[key]))
             return memo[value]
     return None

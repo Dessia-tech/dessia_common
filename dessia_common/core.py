@@ -20,7 +20,7 @@ import dessia_common.errors
 from dessia_common.utils.diff import data_eq, dict_diff
 from dessia_common.utils.serialization import dict_to_object, serialize_dict_with_pointers
 from dessia_common.utils.types import is_jsonable, is_builtin, get_python_class_from_class_name, serialize_typing, full_classname, is_sequence, isinstance_base_types, is_typing, TYPING_EQUIVALENCES
-
+import dessia_common.utils.copy as dc_copy
 
 from typing import List, Dict, Type, Tuple, Union, Any, TextIO, BinaryIO, \
     get_type_hints, get_origin, get_args
@@ -508,9 +508,9 @@ class DessiaObject:
     def is_valid(self):
         return True
 
-    def copy(self, deep=True):
+    def copy(self, deep=True, memo=None):
         if deep:
-            return self.__deepcopy__()
+            return self.__deepcopy__(memo=memo)
         else:
             return self.__copy__()
 
@@ -1045,7 +1045,7 @@ def deepcopy_value(value, memo):
     #         memo[value] = new_value
     #         print('5', value, '=>', new_value)
     #         return new_value
-    return dessia_common.utils.copy.deepcopy(value, memo)
+    return dc_copy.deepcopy_value(value, memo)
 
 
 def enhanced_deep_attr(obj, sequence):
