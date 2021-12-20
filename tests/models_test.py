@@ -13,3 +13,6 @@ d = simulation_list.to_dict()
 simulation_list_2 = dc.DessiaObject.dict_to_object(d)
 
 assert simulation_list_2 == simulation_list
+
+simulation_list_copy = simulation_list.copy()
+assert simulation_list_copy == simulation_list
