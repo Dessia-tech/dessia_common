@@ -1842,13 +1842,14 @@ def deserialize_argument(type_, argument):
                     msg += '{} and {} in {}'.format(type(argument),
                                                     type_, argument)
                     raise TypeError(msg)
-        elif issubclass(type_, DessiaObject):
+        elif type_ is Any:
+            # Any type
+            deserialized_arg = argument
+        elif inspect.isclass(type_) and issubclass(type_, DessiaObject):
             # Custom classes
             deserialized_arg = type_.dict_to_object(argument)
         else:
-            # Static Dict
-            # TODO We shouldn't normally end up here anymore. Check this
-            deserialized_arg = argument
+            raise TypeError("Deserialization of ype {} is Not Implemented".format(type_))
     return deserialized_arg
 
 
