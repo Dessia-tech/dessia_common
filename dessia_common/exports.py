@@ -4,106 +4,21 @@
 
 """
 
-import collections
+# import collections
 import tempfile
-import numpy as npy
+# import numpy as npy
 
-import dessia_common.core
+# import dessia_common.core
+from  dessia_common.breakdown import object_breakdown
 
-from openpyxl.writer.excel import save_virtual_workbook
+
+# from openpyxl.writer.excel import save_virtual_workbook
 from openpyxl.styles.borders import Border, Side
 from openpyxl.styles import Alignment, PatternFill, Font
 from openpyxl import Workbook
 import openpyxl.utils
 
-def merge_breakdown_dicts(dict1, dict2):
-    dict3 = dict1.copy()
-    for class_name, refs in dict2.items():
-        if class_name in dict3:
-            # Decide by lower depth
-            for obj, path in refs.items():
-                if obj in dict3[class_name]:
-                    if len(path.split('.')) < len(dict3[class_name][obj].split('.')):
-                        dict3[class_name][obj] = path
-                else:
-                    dict3[class_name][obj] = path
-            # dict3[class_name].update(refs)
-        else:
-            dict3[class_name] = refs
-    return dict3
 
-def object_breakdown(obj, path=''):
-    bd_dict = {}
-    if obj is None:
-        return bd_dict
-
-    if (isinstance(obj, str) or isinstance(obj, float) or isinstance(obj, int)):
-        return bd_dict
-    
-    if isinstance(obj, npy.ndarray):
-        return bd_dict
-
-    if isinstance(obj, list) or isinstance(obj, tuple) or isinstance(obj, set):
-        if path:
-            path += '.'
-        
-        for i, li in enumerate(obj):
-            path2 = path + '{}'.format(i)
-            bd_dict = merge_breakdown_dicts(bd_dict, object_breakdown(li, path2))
-    elif isinstance(obj, dict):
-        if path:
-            path += '.'
-        
-        for k, v in obj.items():
-            path2 = path + str(k)
-            bd_dict = merge_breakdown_dicts(bd_dict, object_breakdown(v, path2))
-    else:
-        # Put object and break it down
-        if path: # avoid to get root object
-            if hasattr(obj, '__dict__'):
-                if obj.__class__.__name__ in bd_dict:  
-                    if obj in bd_dict[obj.__class__.__name__]:
-                        if len(path.split('.')) < len(bd_dict[obj.__class__.__name__][obj].split('.')):
-                            bd_dict[obj.__class__.__name__][obj] = path
-                    else:
-                        bd_dict[obj.__class__.__name__][obj] = path
-                else:
-                    bd_dict[obj.__class__.__name__] = collections.OrderedDict()
-                    bd_dict[obj.__class__.__name__][obj] = path
-            
-        if path:
-            path += '.'
-        
-        if isinstance(obj, dessia_common.core.DessiaObject):
-            obj_dict = obj._serializable_dict()
-        else:
-            if hasattr(obj, '__dict__'):
-                obj_dict = obj.__dict__
-            else:
-                obj_dict = {}
-        
-        for k, v in obj_dict.items():
-            # dict after lists
-            if not (isinstance(v, dict)\
-                    or isinstance(v, list)
-                    or isinstance(v, tuple)
-                    ):# Should be object or builtins                
-                dict2 = object_breakdown(v, path=path+k)
-                bd_dict = merge_breakdown_dicts(bd_dict, dict2)
-            
-        for k, v in obj_dict.items():
-            # First lists and tuples
-            if isinstance(v, list) or isinstance(v, tuple):                
-                dict2 = object_breakdown(v, path=path+k)
-                bd_dict = merge_breakdown_dicts(bd_dict, dict2)
-
-        for k, v in obj_dict.items():
-            # dict after lists
-            if isinstance(v, dict):                
-                dict2 = object_breakdown(v, path=path+k)
-                bd_dict = merge_breakdown_dicts(bd_dict, dict2)
-
-    return bd_dict
 
 
 
@@ -124,6 +39,7 @@ def is_builtins_list(l):
         if not (is_number(e) or isinstance(e, str)):
             return False
     return True
+
 
 class XLSXWriter:
  

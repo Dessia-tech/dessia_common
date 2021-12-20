@@ -88,6 +88,7 @@ object_ = wf.WorkflowRun.dict_to_object(dict_=dict_)
 
 assert hash(demo_workflow_run) == hash(object_)
 
+assert object_ == demo_workflow_run
 # Assert deserialization
 # demo_workflow_dict = demo_workflow.to_dict()
 # import json

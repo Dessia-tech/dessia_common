@@ -1,5 +1,5 @@
 from dessia_common.forms import *
-from dessia_common import enhanced_deep_attr, full_classname
+from dessia_common import enhanced_deep_attr, full_classname, DessiaObject
 
 standalone_subobject = StandaloneSubobject(floatarg=3.78)
 embedded_subobject = EmbeddedSubobject()
@@ -234,5 +234,11 @@ d = standalone_object.to_dict()
 obj = StandaloneObject.dict_to_object(d)
 
 assert standalone_object == obj
+
+# Test serialization
+d = standalone_object.to_dict(use_pointers=True)
+assert '$ref' in d['subobject_list'][0]
+o = DessiaObject.dict_to_object(d)
+assert not isinstance(o.subobject_list[0], dict)
 
 obj.to_xlsx('test')
