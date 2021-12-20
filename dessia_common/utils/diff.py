@@ -47,6 +47,15 @@ def diff(value1, value2, path='#'):
         return dict_diff(value1, value2, path=path)
     # elif hasattr(value1, '_data_eq'):
     else:
+        # Should be object
+        if hasattr(value1, '_data_eq'):
+            # DessiaObject
+            if value1._data_eq(value2):
+                return [], [], []
+        if value1 == value2:
+            return [], [], []
+        
+        # 
         # return diff_values, missing_keys_in_other_object, invalid_types
         raise NotImplementedError('Undefined type in diff: {}'.format(type(value1)))
 
