@@ -991,53 +991,61 @@ def getdeepattr(obj, attr):
 
 
 def deepcopy_value(value, memo):
-    # Escaping unhashable types (list) that would be handled after
-    try:
-        for key in memo.keys():
-            if value == key and isinstance(value, type(key)):
-                return memo[value]
-    except TypeError:
-        pass
-
-    if isinstance(value, type):  # For class
-        return value
-    elif hasattr(value, '__deepcopy__'):
-        try:
-            copied_value = value.__deepcopy__(memo)
-        except TypeError:
-            copied_value = value.__deepcopy__()
-        memo[value] = copied_value
-        return copied_value
-    else:
-        if isinstance(value, list):
-            copied_list = []
-            for v in value:
-                cv = deepcopy_value(v, memo=memo)
-                try:
-                    memo[v] = cv
-                except TypeError:
-                    pass
-                copied_list.append(cv)
-            return copied_list
-        elif isinstance(value, dict):
-            copied_dict = {}
-            for k, v in value.items():
-                copied_k = deepcopy_value(k, memo=memo)
-                copied_v = deepcopy_value(v, memo=memo)
-                try:
-                    memo[k] = copied_k
-                except TypeError:
-                    pass
-                try:
-                    memo[v] = copied_v
-                except TypeError:
-                    pass
-                copied_dict[copied_k] = copied_v
-            return copied_dict
-        else:
-            new_value = copy.deepcopy(value, memo=memo)
-            memo[value] = new_value
-            return new_value
+    # # Escaping unhashable types (list) that would be handled after
+    # # try:
+    # for key in memo.keys():
+    #     if value == key and isinstance(value, type(key)):
+    #         print('0', value, '=>', (key, memo[key]))
+    #         return memo[value]
+    # # except TypeError:
+    # #     pass
+    #
+    # if isinstance(value, type):  # For class
+    #     return value
+    # elif hasattr(value, '__deepcopy__'):
+    #     try:
+    #         copied_value = value.__deepcopy__(memo)
+    #     except TypeError:
+    #         copied_value = value.__deepcopy__()
+    #     memo[value] = copied_value
+    #     print('1', value, '=>', copied_value)
+    #     return copied_value
+    # else:
+    #     if isinstance(value, list):
+    #         copied_list = []
+    #         for v in value:
+    #             cv = deepcopy_value(v, memo=memo)
+    #             try:
+    #                 memo[v] = cv
+    #                 print('2', v, '=>', cv)
+    #             except TypeError:
+    #                 pass
+    #             copied_list.append(cv)
+    #         return copied_list
+    #     elif isinstance(value, dict):
+    #         copied_dict = {}
+    #         for k, v in value.items():
+    #             copied_k = deepcopy_value(k, memo=memo)
+    #             copied_v = deepcopy_value(v, memo=memo)
+    #             try:
+    #                 memo[k] = copied_k
+    #                 print('3', k, '=>', copied_k)
+    #             except TypeError:
+    #                 pass
+    #             try:
+    #                 memo[v] = copied_v
+    #                 print('4', v, '=>', copied_v)
+    #             except TypeError:
+    #                 pass
+    #             copied_dict[copied_k] = copied_v
+    #         return copied_dict
+    #     else:
+    #         new_value = copy.deepcopy(value, memo=memo)
+    #         # print(value, "=>", new_value)
+    #         memo[value] = new_value
+    #         print('5', value, '=>', new_value)
+    #         return new_value
+    return dessia_common.utils.copy.deepcopy(value, memo)
 
 
 def enhanced_deep_attr(obj, sequence):

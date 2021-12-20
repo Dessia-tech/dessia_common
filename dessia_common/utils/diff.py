@@ -35,7 +35,10 @@ def diff(value1, value2, path='#'):
         return diff_values, missing_keys_in_other_object, invalid_types
     
     if isinstance_base_types(value1):
-        if value1 != value2:
+        if isinstance(value1, float) and \
+                math.isclose(value1, value2, abs_tol=dc.FLOAT_TOLERANCE):
+            return diff_values, missing_keys_in_other_object, invalid_types
+        elif value1 != value2:
             diff_values.append((path, value1, value2))
         return diff_values, missing_keys_in_other_object, invalid_types
     elif is_sequence(value1):
@@ -92,7 +95,7 @@ def data_eq(value1, value2):
     
     if isinstance_base_types(value1):
         if isinstance(value1, float):
-            return math.isclose(value1, value2, abs_tol=1e-9)
+            return math.isclose(value1, value2, abs_tol=dc.FLOAT_TOLERANCE)
         else:
             # if not(value1 == value2):
                 # print('base types', value1, value2, value1 == value2)
