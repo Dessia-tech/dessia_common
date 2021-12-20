@@ -29,7 +29,7 @@ class AttributeType(Generic[T]):
         self.name = name
 
 
-class ClassAsttributeType(AttributeType[T]):
+class ClassAttributeType(AttributeType[T]):
     def __init__(self, class_: T, name: str):
         AttributeType.__init__(self, class_=class_, name=name)
 
