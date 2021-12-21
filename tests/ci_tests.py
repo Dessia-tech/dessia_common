@@ -5,6 +5,7 @@ import os
 scripts = ['displays.py',
            'workflow_with_models.py',
            'workflow/power_simulation.py',
+           'workflow/forms_workflow.py'
            'utils/algebra.py',
            'utils/interpolation.py',
            'utils/serialization.py',
