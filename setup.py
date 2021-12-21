@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-@author: Steven Masfaraud
+
 """
 
 from setuptools import setup

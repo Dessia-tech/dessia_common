@@ -8,8 +8,8 @@ Created on Wed Sep 29 14:35:47 2021
 
 import json
 
-MIN_FILE_COVERAGE = 32.0
-MIN_MODULE_COVERAGE = 59.0
+MIN_FILE_COVERAGE = 33.2
+MIN_MODULE_COVERAGE = 60.5
 
 untracked_modules = [
     "dessia_common/templates.py",

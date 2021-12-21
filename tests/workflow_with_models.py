@@ -94,6 +94,9 @@ assert demo_workflow_run2 == demo_workflow_run
 demo_workflow_run_copy = demo_workflow_run.copy()
 assert demo_workflow_run == demo_workflow_run_copy
 
+demo_workflow._check_platform()
+demo_workflow_run._check_platform()
+
 # Assert deserialization
 # demo_workflow_dict = demo_workflow.to_dict()
 # import json

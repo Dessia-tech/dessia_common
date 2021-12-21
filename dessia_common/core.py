@@ -656,6 +656,7 @@ class DessiaObject:
         if not valid:
             raise ValueError(hint)
         json.dumps(self._displays())
+        json.dumps(self._method_jsonschemas)
 
     def to_xlsx(self, filepath):
         writer = XLSXWriter(self)
