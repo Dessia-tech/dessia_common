@@ -6,7 +6,7 @@
 
 from dessia_common import DessiaObject
 import dessia_common.typings as dct
-from typing import List
+from typing import List, Dict
 
 
 class Submodel(DessiaObject):
@@ -103,4 +103,10 @@ class SystemSimulationResult(DessiaObject):
         self.system = system
         self.system_usage = system_usage
         self.output_power = output_power
-        DessiaObject.__init__(self, name=name)
+        DessiaObject.__init__(self, name=name)  
+        
+class SystemSimulationList(DessiaObject):
+    def __init__(self, simulations:List[SystemSimulationResult],
+                 name:str=''):
+        self.simulations = simulations
+        DessiaObject.__init__(self, name=name) 
