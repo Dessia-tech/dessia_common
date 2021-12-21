@@ -80,6 +80,8 @@ class SystemUsage(DessiaObject):
 
 
 class System(DessiaObject):
+    _dessia_methods = ['power_simulation']
+    
     def __init__(self, components: List[Component],
                  component_connections: List[ComponentConnection],
                  name: str = ''):
