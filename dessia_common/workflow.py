@@ -1816,7 +1816,7 @@ class WorkflowState(DessiaObject):
         else:
             output_value = None
 
-        values = {workflow.variables[i]: deserialize(v)
+        values = {workflow.variables[int(i)]: deserialize(v)
                   for i, v in dict_['values'].items()}
         input_values = {int(i): deserialize(v)
                         for i, v in dict_['input_values'].items()}
@@ -1995,8 +1995,10 @@ class WorkflowState(DessiaObject):
                 self.values[variable] = variable.default_value
                 self.activated_items[variable] = True
             elif check_all_inputs:
-                msg = 'Value {} of index {} in inputs has no value: should be instance of {}'
-                raise ValueError(msg.format(variable.name, index, variable.type_))
+                msg = 'Value {} of index {} in inputs has no value'
+                if isinstance(variable, TypedVariable):
+                    msg += ': should be instance of {}'.format(variable.type_)
+                raise ValueError(msg.format(variable.name, index))
 
     def to_workflow_run(self, name=''):
         if self.progress == 1:
