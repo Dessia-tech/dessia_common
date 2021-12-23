@@ -110,12 +110,6 @@ class TypedVariableWithDefaultValue(TypedVariable):
         return cls(type_=type_, default_value=default_value,
                    memorize=dict_['memorize'], name=dict_['name'])
 
-    def copy(self):
-        return TypedVariableWithDefaultValue(type_=self.type_,
-                                             default_value=self.default_value,
-                                             memorize=self.memorize,
-                                             name=self.name)
-
 
 def set_block_variable_names_from_dict(func):
     def func_wrapper(cls, dict_):
