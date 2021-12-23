@@ -48,9 +48,15 @@ def diff(value1, value2, path='#'):
     # elif hasattr(value1, '_data_eq'):
     else:
         # Should be object
+        # print(value1, isinstance(value1, dc.DessiaObject),  hasattr(value1, '_data_eq'))
+        # if isinstance(value1, dc.DessiaObject):
         if hasattr(value1, '_data_eq'):
             # DessiaObject
             if value1._data_eq(value2):
+                return [], [], []
+        elif hasattr(value2, '_data_eq'):
+            # DessiaObject
+            if value2._data_eq(value1):
                 return [], [], []
         if value1 == value2:
             return [], [], []
