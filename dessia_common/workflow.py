@@ -1182,12 +1182,16 @@ class Workflow(Block):
             name=self.name
         )
 
-
         pipes = []
         for pipe in self.pipes:
             input_index = self.variable_indices(pipe.input_variable)
-            
-            pipe_input = copied_workflow.variable_from_index(input_index)
+
+            if isinstance(input_index, int):
+                pipe_input = pipe.input_variable.copy()
+            elif isinstance(input_index, tuple):
+                pipe_input = copied_workflow.variable_from_index(input_index)
+            else:
+                raise ValueError("Could not find variable at index {}".format(input_index))
 
             output_index = self.variable_indices(pipe.output_variable)
             pipe_output = copied_workflow.variable_from_index(output_index)
@@ -1204,10 +1208,9 @@ class Workflow(Block):
 
         imposed_variable_values = {}
         for variable, value in self.imposed_variable_values.items():
-            new_variable =  copied_workflow.variable_from_index(self.variable_indices(variable))
+            new_variable = copied_workflow.variable_from_index(self.variable_indices(variable))
             imposed_variable_values[new_variable] = value
         # copied_workflow.imposed_variable_values = imposed_variable_values
-
 
         copied_workflow = Workflow(
             blocks=blocks, pipes=pipes, output=output,

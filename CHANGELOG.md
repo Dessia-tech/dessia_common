@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Full support of MethodType for ModelMethod Block
 
 ### Fixed
+- Re-instantiate nonblock_variable when copying workflow
 - WorkflowState now serialize its values keys in to_dict
 
 ## 0.4.7
