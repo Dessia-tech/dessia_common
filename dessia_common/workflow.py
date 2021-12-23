@@ -27,6 +27,7 @@ from dessia_common.errors import UntypedArgumentError
 from dessia_common.utils.diff import data_eq
 from dessia_common.utils.serialization import dict_to_object, deserialize, serialize_with_pointers
 from dessia_common.utils.types import get_python_class_from_class_name, serialize_typing, full_classname, deserialize_typing
+from dessia_common.utils.copy import deepcopy_value
 from dessia_common.vectored_objects import from_csv
 from dessia_common.typings import JsonSerializable, MethodType,\
     ClassMethodType
@@ -77,6 +78,9 @@ class TypedVariable(Variable):
         memorize = dict_['memorize']
         return cls(type_=type_, memorize=memorize, name=dict_['name'])
 
+    def copy(self, deep: bool = False, memo=None):
+        return TypedVariable(type_=self.type_, memorize=self.memorize, name=self.name)
+
 
 class VariableWithDefaultValue(Variable):
     has_default_value: bool = True
@@ -109,6 +113,13 @@ class TypedVariableWithDefaultValue(TypedVariable):
         default_value = deserialize(dict_['default_value'])
         return cls(type_=type_, default_value=default_value,
                    memorize=dict_['memorize'], name=dict_['name'])
+
+    def copy(self, deep: bool = False, memo=None):
+        copied_default_value = deepcopy_value(self.default_value, memo=memo)
+        return TypedVariableWithDefaultValue(type_=self.type_,
+                                             default_value=copied_default_value,
+                                             memorize=self.memorize,
+                                             name=self.name)
 
 
 def set_block_variable_names_from_dict(func):
