@@ -1484,10 +1484,27 @@ class Workflow(Block):
         return index
 
     def input_index(self, variable: VariableTypes) -> int:
-        return self.inputs.index(variable)
+        upstream_variable = self.get_upstream_nbv(variable)
+        return self.inputs.index(upstream_variable)
 
     def variable_index(self, variable: VariableTypes) -> int:
         return self.variables.index(variable)
+
+    def get_upstream_nbv(self, variable: VariableTypes) -> VariableTypes:
+        """
+        If given variable has an upstream nonblock_variable, return it
+        otherwise return given variable itself
+        """
+        if not self.nonblock_variables:
+            return variable
+        incoming_pipes = [p for p in self.pipes
+                          if p.output_variable == variable]
+        if incoming_pipes:
+            # Inputs can only be connected to one pipe
+            incoming_pipe = incoming_pipes[0]
+            if incoming_pipe.input_variable in self.nonblock_variables:
+                return incoming_pipe.input_variable
+        return variable
 
     def layout(self, min_horizontal_spacing=300, min_vertical_spacing=200,
                max_height=800, max_length=1500):
@@ -1555,8 +1572,6 @@ class Workflow(Block):
                 labels[variable] = variable.name
         nx.draw_networkx_labels(self.graph, pos, labels)
 
-
-
     def run(self, input_values, verbose=False,
             progress_callback=lambda x:None,
             name=None):
@@ -1564,7 +1579,6 @@ class Workflow(Block):
         
         state = self.start_run(input_values)
         state.activate_inputs(check_all_inputs=True)
-    
 
         start_time = time.time()
 
@@ -1576,7 +1590,6 @@ class Workflow(Block):
             print(log_line)
 
         state.continue_run(progress_callback=progress_callback)
-
 
         end_time = time.time()
         log_line = 'Workflow terminated in {} s'.format(end_time - start_time)
@@ -1915,12 +1928,12 @@ class WorkflowState(DessiaObject):
         self.activate_inputs()
 
     def add_several_input_values(self, indices: List[int],
-                                 values: Dict[str, Any]):
+                                 values: Dict[int, Any]):
         for i in indices:
-            self.add_input_value(input_index=i, value=values[str(i)])
+            self.add_input_value(input_index=i, value=values[i])
 
     def add_block_input_values(self, block_index: int,
-                               values: Dict[str, Any]):
+                               values: Dict[int, Any]):
         block = self.workflow.blocks[block_index]
         indices = [self.workflow.variable_index(i) for i in block.inputs]
         self.add_several_input_values(indices=indices, values=values)

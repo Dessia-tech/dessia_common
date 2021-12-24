@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unrealeased [=> 0.4.8]
 ### Added
+- Inputs can now search for upstream nonblock_variables
 - Add input_values addition bulk methods (from block_index & indice sequence)
 - Can compute jsonschema from Any annotation
 - Add more structure to dev objects
