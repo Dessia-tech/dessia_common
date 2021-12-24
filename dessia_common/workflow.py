@@ -1769,16 +1769,13 @@ class WorkflowBlock(Block):
 
     :param workflow: The WorkflowBlock's workflow
     :type workflow: Workflow
-    :param input_connections: Links ForEach's inputs to its workflow_block's inputs. input_connections[i] = [ForEach_input_j, WorkflowBlock_input_k]
-    :type input_connections: List[Tuple[Tuple[int, int, int], Tuple[int, int, int]]]
-    :param output_connections: Same but for outputs. output_connections[i] = [WorkflowBlock_output_j, ForEach_output_k]
-    :type output_connections: List[Tuple[Tuple[int, int, int], Tuple[int, int, int]]]
     """
 
     def __init__(self, workflow: Workflow,
                  name: str = ''):
         self.workflow = workflow
-        self.input_connections = None  # TODO: configuring port internal connections
+        # TODO: configuring port internal connections
+        self.input_connections = None
         self.output_connections = None
         inputs = []
         for i, variable in enumerate(self.workflow.inputs):
@@ -1840,9 +1837,11 @@ class WorkflowState(DessiaObject):
 
         DessiaObject.__init__(self, name=name)
 
-    def to_dict(self, use_pointers:bool=True, memo=None, path:str='#'):
+    def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#'):
         if not use_pointers:
-            raise NotImplementedError('WorkflowState to_dict should not be called with use_pointers=False')
+            msg = 'WorkflowState to_dict should not' \
+                  'be called with use_pointers=False'
+            raise NotImplementedError(msg)
         if memo is None:
             memo = {}
 
@@ -1915,6 +1914,17 @@ class WorkflowState(DessiaObject):
         self.input_values[input_index] = value
         self.activate_inputs()
 
+    def add_several_input_values(self, indices: List[int],
+                                 values: Dict[str, Any]):
+        for i in indices:
+            self.add_input_value(input_index=i, value=values[str(i)])
+
+    def add_block_input_values(self, block_index: int,
+                               values: Dict[str, Any]):
+        block = self.workflow.blocks[block_index]
+        indices = [self.workflow.variable_index(i) for i in block.inputs]
+        self.add_several_input_values(indices=indices, values=values)
+
     def _displays(self) -> List[JsonSerializable]:
         data = self.to_dict()
 
@@ -1929,7 +1939,8 @@ class WorkflowState(DessiaObject):
                            and self.activated_items[b]]
         return len(activated_items)/len(self.workflow.blocks)
 
-    def block_evaluation(self, block_index: int, progress_callback=lambda x:None) -> bool:
+    def block_evaluation(self, block_index: int,
+                         progress_callback=lambda x: None) -> bool:
         """
         Select a block to evaluate
         """
@@ -1946,7 +1957,7 @@ class WorkflowState(DessiaObject):
         else:
             return False
         
-    def evaluate_next_block(self, progress_callback=lambda x:None) -> Optional[Block]:
+    def evaluate_next_block(self, progress_callback=lambda x: None) -> Optional[Block]:
         """
         Evaluate a block
         """
@@ -1963,7 +1974,7 @@ class WorkflowState(DessiaObject):
         else:
             return None
 
-    def continue_run(self, progress_callback=lambda x:None):
+    def continue_run(self, progress_callback=lambda x: None):
         """
         Evaluate all possible blocks
         """
