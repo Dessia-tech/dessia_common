@@ -1241,7 +1241,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
             jsonschema_element[key].update({'additionalItems': False,
                                             'type': 'array', 'items': items})
         elif origin is dict:
-            # Dynamially created dict structure
+            # Dynamically created dict structure
             key_type, value_type = args
             if key_type != str:
                 # !!! Should we support other types ? Numeric ?
@@ -1298,7 +1298,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
             'type': 'object', 'is_class': True,
             'properties': {'name': {'type': 'string'}}
         })
-    elif issubclass(typing_, Measure):
+    elif inspect.isclass(typing_) and issubclass(typing_, Measure):
         ann = (key, float)
         jsonschema_element = jsonschema_from_annotation(
             annotation=ann, jsonschema_element=jsonschema_element,
@@ -1307,9 +1307,14 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
         jsonschema_element[key]['units'] = typing_.units
     elif typing_ is TextIO or typing_ is BinaryIO:
         jsonschema_element[key].update({'type': 'text', 'is_file': True})
+    elif typing_ is Any:
+        jsonschema_element[key].update({
+            'type': 'object',
+            'properties': {'.*': '.*'}
+        })
     else:
         classname = full_classname(object_=typing_, compute_for='class')
-        if issubclass(typing_, DessiaObject):
+        if inspect.isclass(typing_) and issubclass(typing_, DessiaObject):
             # Dessia custom classes
             jsonschema_element[key].update({
                 'type': 'object',

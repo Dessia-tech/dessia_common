@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unrealeased [=> 0.4.8]
 ### Added
+- Can compute jsonschema from Any annotation
 - Add more structure to dev objects
 - ClassMethod Block now supports MethodType
 - WorkflowState add_input_values activates them
