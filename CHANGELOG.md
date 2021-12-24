@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unrealeased [=> 0.4.8]
 ### Added
+- User Created variables are overriden to preserve default values
 - Inputs can now search for upstream nonblock_variables
 - Add input_values addition bulk methods (from block_index & indice sequence)
 - Can compute jsonschema from Any annotation

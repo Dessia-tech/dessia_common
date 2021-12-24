@@ -79,7 +79,8 @@ class TypedVariable(Variable):
         return cls(type_=type_, memorize=memorize, name=dict_['name'])
 
     def copy(self, deep: bool = False, memo=None):
-        return TypedVariable(type_=self.type_, memorize=self.memorize, name=self.name)
+        return TypedVariable(type_=self.type_, memorize=self.memorize,
+                             name=self.name)
 
 
 class VariableWithDefaultValue(Variable):
@@ -1123,13 +1124,32 @@ class Workflow(Block):
                 msg = "can't serialize block {} ({})".format(block, block.name)
                 raise ValueError(msg)
 
+        memo = {}
         for pipe in self.pipes:
+            upstream_var = pipe.input_variable
+            downstream_var = pipe.output_variable
             if pipe.input_variable not in self.variables:
-                self.variables.append(pipe.input_variable)
-                self.nonblock_variables.append(pipe.input_variable)
+                if upstream_var not in memo:
+                    # Copy output variable to keep default_value behavior
+                    # TODO We could add more intelligence
+                    #  here and check equivalence
+                    warning_msg = "Overriding user-created variable '{}' " \
+                                  "with downstream variable attributes"
+                    varname = upstream_var.name
+                    print(warning_msg.format(varname))
+                    overriden_variable = downstream_var.copy()
+                    overriden_variable.name = varname
+                    memo[upstream_var] = overriden_variable
+                    self.variables.append(overriden_variable)
+                    self.nonblock_variables.append(overriden_variable)
+                else:
+                    overriden_variable = memo[upstream_var]
+                pipe.input_variable = overriden_variable
+
             if pipe.output_variable not in self.variables:
-                self.variables.append(pipe.output_variable)
-                self.nonblock_variables.append(pipe.output_variable)
+                # TODO Does this work ? We don't search equivalent vars
+                self.variables.append(downstream_var)
+                self.nonblock_variables.append(downstream_var)
 
         self._utd_graph = False
 
@@ -1451,12 +1471,13 @@ class Workflow(Block):
                 iv1 = block.outputs.index(variable)
                 return ib1, ti1, iv1
 
+        upstream_variable = self.get_upstream_nbv(variable)
         # Free variable not attached to block
-        if variable in self.nonblock_variables:
-            return self.nonblock_variables.index(variable)
+        if upstream_variable in self.nonblock_variables:
+            # If an upstream nbv is found, get its index
+            return self.nonblock_variables.index(upstream_variable)
 
         msg = 'Something is wrong with variable {}'.format(variable.name)
-        self.plot()
         raise WorkflowError(msg)
 
     def block_from_variable(self, variable):
@@ -1573,7 +1594,7 @@ class Workflow(Block):
         nx.draw_networkx_labels(self.graph, pos, labels)
 
     def run(self, input_values, verbose=False,
-            progress_callback=lambda x:None,
+            progress_callback=lambda x: None,
             name=None):
         log = ''
         
@@ -1935,7 +1956,7 @@ class WorkflowState(DessiaObject):
     def add_block_input_values(self, block_index: int,
                                values: Dict[int, Any]):
         block = self.workflow.blocks[block_index]
-        indices = [self.workflow.variable_index(i) for i in block.inputs]
+        indices = [self.workflow.input_index(i) for i in block.inputs]
         self.add_several_input_values(indices=indices, values=values)
 
     def _displays(self) -> List[JsonSerializable]:
