@@ -3,6 +3,7 @@ from dessia_common.workflow import InstantiateModel, ModelMethod,\
     ForEach, MultiPlot, WorkflowRun
 from dessia_common.forms import Generator, Optimizer
 from dessia_common import MethodType
+import json
 
 instanciate_generator = InstantiateModel(model_class=Generator,
                                          name='Instantiate Generator')
@@ -51,6 +52,8 @@ pipe_int_1 = Pipe(input_variable=int_variable,
                   output_variable=instanciate_generator.inputs[1])
 pipe_name_1 = Pipe(input_variable=name_variable,
                    output_variable=instanciate_generator.inputs[2])
+pipe_name_2 = Pipe(input_variable=name_variable,
+                   output_variable=parallel_optimization.inputs[1])
 pipe_1 = Pipe(input_variable=instanciate_generator.outputs[0],
               output_variable=generator_generate.inputs[0])
 pipe_2 = Pipe(input_variable=generator_generate.outputs[1],
@@ -62,25 +65,37 @@ pipe_4 = Pipe(input_variable=parallel_optimization.outputs[0],
 
 blocks = [instanciate_generator, generator_generate,
           attribute_selection, parallel_optimization, display]
-pipes = [pipe_int_1, pipe_name_1, pipe_1, pipe_2, pipe_3, pipe_4]
-demo_workflow = Workflow(blocks=blocks, pipes=pipes,
-                         output=parallel_optimization.outputs[0])
+pipes = [pipe_int_1, pipe_name_1, pipe_name_2, pipe_1, pipe_2, pipe_3, pipe_4]
+workflow_ = Workflow(blocks=blocks, pipes=pipes,
+                     output=parallel_optimization.outputs[0])
 
-input_values = {0: 5, 3: 2, 4: "Test"}
+# Check Workflow
+serialized_workflow = workflow_.to_dict()
+deserialized_workflow = Workflow.dict_to_object(dict_=serialized_workflow)
 
-demo_workflow_run = demo_workflow.run(input_values=input_values,
-                                      verbose=True, name='Dev Objects')
+assert hash(workflow_) == hash(deserialized_workflow)
 
+input_values = {0: 5}
+workflow_run = workflow_.run(input_values=input_values,
+                             verbose=True, name='Dev Objects')
+
+# Check WorkflowRun
 # Assert to_dict, dict_to_object, hashes, eqs
-dict_ = demo_workflow_run.to_dict()
+dict_ = workflow_run.to_dict()
 object_ = WorkflowRun.dict_to_object(dict_=dict_)
 
-assert hash(demo_workflow_run) == hash(object_)
+assert hash(workflow_run) == hash(object_)
 
 # Assert deserialization
-demo_workflow_dict = demo_workflow.to_dict()
-import json
+demo_workflow_dict = workflow_.to_dict()
 demo_workflow_json = json.dumps(demo_workflow_dict)
 dict_from_json = json.loads(demo_workflow_json)
 deserialized_demo_workflow = Workflow.dict_to_object(dict_from_json)
-assert demo_workflow == deserialized_demo_workflow
+assert workflow_ == deserialized_demo_workflow
+
+
+# Check WorkflowState
+workflow_state = workflow_.start_run({})
+input_values = {0: 5, 3: "Test", 2: 2}
+workflow_state.add_block_input_values(0, input_values)
+
