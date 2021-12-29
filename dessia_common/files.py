@@ -7,15 +7,15 @@
 import io
 
 
-class BinaryFile(io.BytesIO()):
+class BinaryFile(io.BytesIO):
     def __init__(self, filename: str = ''):
-        io.BytesIO.__init__(self)
+        super().__init__()
         self.filename = filename
 
 
-class StringFile(io.StringIO()):
+class StringFile(io.StringIO):
     def __init__(self, filename: str = ''):
-        io.StringIO.__init__(self)
+        super().__init__()
         self.filename = filename
 
 
