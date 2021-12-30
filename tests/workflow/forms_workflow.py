@@ -96,6 +96,6 @@ assert workflow_ == deserialized_demo_workflow
 
 # Check WorkflowState
 workflow_state = workflow_.start_run({})
-input_values = {0: 5, 3: "Test", 2: 2}
+input_values = {'0': 5, '3': "Test", '2': 2}
 workflow_state.add_block_input_values(0, input_values)
 

@@ -32,6 +32,7 @@ from dessia_common.vectored_objects import from_csv
 from dessia_common.typings import JsonSerializable, MethodType,\
     ClassMethodType
 import warnings
+import logging
 
 # Type Aliases
 VariableTypes = Union['Variable', 'TypedVariable',
@@ -1853,7 +1854,7 @@ class WorkflowBlock(Block):
 class WorkflowState(DessiaObject):
     _standalone_in_db = True
     _allowed_methods = ['block_evaluation', 'evaluate_next_block',
-                        'evaluate_maximum_blocks', 'add_input_value']
+                        'evaluate_maximum_blocks', 'add_block_input_values']
     _non_serializable_attributes = ['activated_items']
 
     def __init__(self, workflow: Workflow, input_values, activated_items,
@@ -1944,17 +1945,20 @@ class WorkflowState(DessiaObject):
                    log=dict_['log'], name=dict_['name'])
 
     def add_input_value(self, input_index: int, value: Any):
+        print(input_index, value)
         # TODO: Type checking?
         self.input_values[input_index] = value
         self.activate_inputs()
 
     def add_several_input_values(self, indices: List[int],
-                                 values: Dict[int, Any]):
+                                 values: Dict[str, Any]):
         for i in indices:
-            self.add_input_value(input_index=i, value=values[i])
+            self.add_input_value(input_index=i, value=values[str(i)])
 
     def add_block_input_values(self, block_index: int,
-                               values: Dict[int, Any]):
+                               values: Dict[str, Any]):
+        logger = logging.getLogger(__name__)
+        logger.info("In method")
         block = self.workflow.blocks[block_index]
         indices = [self.workflow.input_index(i) for i in block.inputs]
         self.add_several_input_values(indices=indices, values=values)
