@@ -1509,10 +1509,7 @@ def deserialize_argument(type_, argument):
             msg = "Deserialization of typing {} is not implemented"
             raise NotImplementedError(msg.format(type_))
     elif type_ is TextIO:
-        try:
-            deserialized_arg = io.StringIO(argument.read().decode('utf8'))
-        finally:
-            argument.close()
+        deserialized_arg = argument
     elif type_ is BinaryIO:
         # files are supplied as io.BytesIO  which is compatible with : BinaryIO
         deserialized_arg = argument
