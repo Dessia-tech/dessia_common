@@ -148,7 +148,9 @@ class EmbeddedSubobject(DessiaObject):
 class EnhancedEmbeddedSubobject(EmbeddedSubobject):
     def __init__(self, embedded_list: List[int] = None,
                  embedded_array: List[List[float]] = None,
+                 standalone_subobject: StandaloneSubobject = DEF_SS,
                  name: str = 'Enhanced Embedded Subobject'):
+        self.standalone_subobject = standalone_subobject
         self.embedded_array = embedded_array
 
         EmbeddedSubobject.__init__(self, embedded_list=embedded_list,
@@ -158,14 +160,38 @@ class EnhancedEmbeddedSubobject(EmbeddedSubobject):
     def generate(cls, seed: int) -> 'EnhancedEmbeddedSubobject':
         embedded_list = [seed]
         embedded_array = [[seed, seed*10, seed*10]]*seed
+        standalone_subobject = StandaloneSubobject.generate(seed*3)
         name = 'Embedded Subobject' + str(seed)
         return cls(embedded_list=embedded_list, embedded_array=embedded_array,
+                   standalone_subobject=standalone_subobject, name=name)
+
+
+class CascadeEmbeddedSubobject(EmbeddedSubobject):
+    _standalone_in_db = True
+    _eq_is_data_eq = True
+
+    def __init__(self, embedded_list: List[int] = None,
+                 standalone_subobject: InheritingStandaloneSubobject = DEF_ISS,
+                 name: str = ''):
+        self.standalone_subobject = standalone_subobject
+
+        EmbeddedSubobject.__init__(self, embedded_list=embedded_list,
+                                   name=name)
+
+    @classmethod
+    def generate(cls, seed: int) -> 'CascadeEmbeddedSubobject':
+        multiplier = seed % 7 + 1
+        embedded_list = [7]*multiplier
+        standalone_subobject = InheritingStandaloneSubobject.generate(seed)
+        name = 'Cascaded Embedded Subobject ' + str(seed)
+        return cls(embedded_list=embedded_list,
+                   standalone_subobject=standalone_subobject,
                    name=name)
 
 
 DEF_ES = EmbeddedSubobject.generate(10)
 DEF_EES = EnhancedEmbeddedSubobject.generate(3)
-
+DEF_CES = CascadeEmbeddedSubobject.generate(2)
 
 UnionArg = Union[EmbeddedSubobject, EnhancedEmbeddedSubobject]
 
@@ -202,6 +228,7 @@ class StandaloneObject(DessiaObject):
                  union_arg: List[UnionArg],
                  subclass_arg: InstanceOf[StandaloneSubobject],
                  array_arg: List[List[float]],
+                 cascade_arg: CascadeEmbeddedSubobject,
                  name: str = 'Standalone Object Demo'):
         self.union_arg = union_arg
         self.builtin_list = builtin_list
@@ -216,6 +243,7 @@ class StandaloneObject(DessiaObject):
         self.standalone_subobject = standalone_subobject
         self.embedded_subobject = embedded_subobject
         self.subclass_arg = subclass_arg
+        self.cascade_arg = cascade_arg
         self.array_arg = array_arg
 
         DessiaObject.__init__(self, name=name)
@@ -242,6 +270,8 @@ class StandaloneObject(DessiaObject):
             subclass_arg = StandaloneSubobject.generate(-seed)
         else:
             subclass_arg = InheritingStandaloneSubobject.generate(seed)
+
+        cascade_arg = CascadeEmbeddedSubobject.generate(seed)
         return cls(standalone_subobject=standalone_subobject,
                    embedded_subobject=embedded_subobject,
                    dynamic_dict=dynamic_dict,
@@ -251,7 +281,7 @@ class StandaloneObject(DessiaObject):
                    intarg=intarg, strarg=strarg, object_list=object_list,
                    subobject_list=subobject_list, builtin_list=builtin_list,
                    union_arg=union_arg, subclass_arg=subclass_arg,
-                   array_arg=array_arg, name=name)
+                   array_arg=array_arg, cascade_arg=cascade_arg, name=name)
 
     @classmethod
     def generate_from_text(cls, stream: TextIO):
@@ -302,7 +332,6 @@ class StandaloneObject(DessiaObject):
         finally:
             stream.close()
         return cls.generate(seed=seed, name=my_file_name)
-
 
 
     def add_standalone_object(self, object_: StandaloneSubobject):
@@ -511,6 +540,7 @@ class StandaloneObjectWithDefaultValues(StandaloneObject):
                  union_arg: List[UnionArg] = None,
                  subclass_arg: InstanceOf[StandaloneSubobject] = DEF_ISS,
                  array_arg: List[List[float]] = None,
+                 cascade_arg: CascadeEmbeddedSubobject = DEF_CES,
                  name: str = 'Standalone Object Demo'):
         if dynamic_dict is None:
             dynamic_dict = {}
@@ -536,7 +566,8 @@ class StandaloneObjectWithDefaultValues(StandaloneObject):
             tuple_arg=tuple_arg, intarg=intarg, strarg=strarg,
             object_list=object_list, subobject_list=subobject_list,
             builtin_list=builtin_list, union_arg=union_arg,
-            subclass_arg=subclass_arg, array_arg=array_arg, name=name
+            subclass_arg=subclass_arg, array_arg=array_arg,
+            cascade_arg=cascade_arg, name=name
         )
 
 
