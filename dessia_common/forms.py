@@ -167,7 +167,6 @@ class EnhancedEmbeddedSubobject(EmbeddedSubobject):
 
 
 class CascadeEmbeddedSubobject(EmbeddedSubobject):
-    _standalone_in_db = True
     _eq_is_data_eq = True
 
     def __init__(self, embedded_list: List[int] = None,
@@ -332,7 +331,6 @@ class StandaloneObject(DessiaObject):
         finally:
             stream.close()
         return cls.generate(seed=seed, name=my_file_name)
-
 
     def add_standalone_object(self, object_: StandaloneSubobject):
         """
