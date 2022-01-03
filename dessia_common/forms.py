@@ -45,6 +45,8 @@ from dessia_common.vectored_objects import Catalog
 from numpy import linspace
 from math import cos
 
+from dessia_common.files import BinaryFile, StringFile
+import io
 
 class StandaloneSubobject(DessiaObject):
     _standalone_in_db = True
@@ -184,7 +186,8 @@ class StandaloneObject(DessiaObject):
     _standalone_in_db = True
     _generic_eq = True
     _allowed_methods = ['add_standalone_object', 'add_embedded_object',
-                        'add_float', 'generate_from_text', 'generate_from_bin']
+                        'add_float', 'generate_from_text', 'generate_from_bin',
+                        'generate_from_bin_file', 'generate_from_text_file']
 
     def __init__(self, standalone_subobject: StandaloneSubobject,
                  embedded_subobject: EmbeddedSubobject,
@@ -254,22 +257,53 @@ class StandaloneObject(DessiaObject):
     def generate_from_text(cls, stream: TextIO):
         try:
             my_string = stream.read()
+            # this is a hack for test until we get frontend support for types BinaryFile & StringFile
+            # a TextIO does not have filename, but it's ok since we return a StringFile from backend
+            my_file_name = stream.filename
             name, raw_seed = my_string.split(",")
             seed = int(raw_seed.strip())
         finally:
             stream.close()
-        return cls.generate(seed=seed, name=name)
+        return cls.generate(seed=seed, name=my_file_name)
 
     @classmethod
     def generate_from_bin(cls, stream: BinaryIO):
         # the user need to decode the binary as he see fit
         try:
             my_string = stream.read().decode('utf8')
+            # this is a hack for test until we get frontend support for types BinaryFile & StringFile
+            # a BinaryIO does not have filename, but it's ok since we return a BinaryFile from backend
+            my_file_name = stream.filename
             my_name, raw_seed = my_string.split(",")
             seed = int(raw_seed.strip())
         finally:
             stream.close()
-        return cls.generate(seed=seed, name="TODO From Bytes")
+        return cls.generate(seed=seed, name=my_file_name)
+
+    @classmethod
+    def generate_from_bin_file(cls, stream: BinaryFile):
+        # the user need to decode the binary as he see fit
+        try:
+            my_string = stream.read().decode('utf8')
+            my_file_name = stream.filename
+            my_name, raw_seed = my_string.split(",")
+            seed = int(raw_seed.strip())
+        finally:
+            stream.close()
+        return cls.generate(seed=seed, name= my_file_name)
+
+    @classmethod
+    def generate_from_text_file(cls, stream: StringFile):
+        try:
+            my_text = stream.read()
+            my_file_name =  stream.filename
+            name, raw_seed = my_text.split(",")
+            seed = int(raw_seed.strip())
+        finally:
+            stream.close()
+        return cls.generate(seed=seed, name=my_file_name)
+
+
 
     def add_standalone_object(self, object_: StandaloneSubobject):
         """
