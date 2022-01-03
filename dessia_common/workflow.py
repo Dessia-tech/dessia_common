@@ -25,14 +25,15 @@ from dessia_common import DessiaObject, DisplayObject, DessiaFilter, \
     recursive_type, recursive_instantiation
 from dessia_common.errors import UntypedArgumentError
 from dessia_common.utils.diff import data_eq
-from dessia_common.utils.serialization import dict_to_object, deserialize, serialize_with_pointers
-from dessia_common.utils.types import get_python_class_from_class_name, serialize_typing, full_classname, deserialize_typing
+from dessia_common.utils.serialization import dict_to_object, deserialize,\
+    serialize_with_pointers
+from dessia_common.utils.types import get_python_class_from_class_name,\
+    serialize_typing, full_classname, deserialize_typing
 from dessia_common.utils.copy import deepcopy_value
 from dessia_common.vectored_objects import from_csv
 from dessia_common.typings import JsonSerializable, MethodType,\
     ClassMethodType
 import warnings
-import logging
 
 # Type Aliases
 VariableTypes = Union['Variable', 'TypedVariable',
@@ -1125,30 +1126,13 @@ class Workflow(Block):
                 msg = "can't serialize block {} ({})".format(block, block.name)
                 raise ValueError(msg)
 
-        memo = {}
         for pipe in self.pipes:
             upstream_var = pipe.input_variable
             downstream_var = pipe.output_variable
-            if pipe.input_variable not in self.variables:
-                if upstream_var not in memo:
-                    # Copy output variable to keep default_value behavior
-                    # TODO We could add more intelligence
-                    #  here and check equivalence
-                    warning_msg = "Overriding user-created variable '{}' " \
-                                  "with downstream variable attributes"
-                    varname = upstream_var.name
-                    print(warning_msg.format(varname))
-                    overriden_variable = downstream_var.copy()
-                    overriden_variable.name = varname
-                    memo[upstream_var] = overriden_variable
-                    self.variables.append(overriden_variable)
-                    self.nonblock_variables.append(overriden_variable)
-                else:
-                    overriden_variable = memo[upstream_var]
-                pipe.input_variable = overriden_variable
-
-            if pipe.output_variable not in self.variables:
-                # TODO Does this work ? We don't search equivalent vars
+            if upstream_var not in self.variables:
+                self.variables.append(upstream_var)
+                self.nonblock_variables.append(upstream_var)
+            if downstream_var not in self.variables:
                 self.variables.append(downstream_var)
                 self.nonblock_variables.append(downstream_var)
 
@@ -1945,7 +1929,6 @@ class WorkflowState(DessiaObject):
                    log=dict_['log'], name=dict_['name'])
 
     def add_input_value(self, input_index: int, value: Any):
-        print(input_index, value)
         # TODO: Type checking?
         self.input_values[input_index] = value
         self.activate_inputs()
@@ -1957,8 +1940,6 @@ class WorkflowState(DessiaObject):
 
     def add_block_input_values(self, block_index: int,
                                values: Dict[str, Any]):
-        logger = logging.getLogger(__name__)
-        logger.info("In method")
         block = self.workflow.blocks[block_index]
         indices = [self.workflow.input_index(i) for i in block.inputs]
         self.add_several_input_values(indices=indices, values=values)
