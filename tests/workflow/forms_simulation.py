@@ -1,7 +1,7 @@
 from dessia_common.workflow import WorkflowRun, Workflow
 import json
 
-from dessia_common.models.workflows.forms_workflows import workflow_
+from dessia_common.models.workflows import workflow_
 
 # Check Workflow
 serialized_workflow = workflow_.to_dict()
