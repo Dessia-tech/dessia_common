@@ -17,6 +17,7 @@ untracked_modules = [
     "dessia_common/generation.py",
     "dessia_common/optimization.py",
     'workflows/forms_simulation.py',
+    'workflows/vectored_workflow.py'
     'models/tests.py',
 ]
 
@@ -43,7 +44,7 @@ for file_name, data in d['files'].items():
         # print('Testing if {} is above {}'.format(file_name, MIN_FILE_COVERAGE))
         if data['summary']['percent_covered'] < MIN_FILE_COVERAGE:
             raise RuntimeError('Module {} is not covered enough by tests: {}% expected minimum {}%'.format(
-                file_name, d['totals']['percent_covered'], MIN_MODULE_COVERAGE))
+                file_name, data['summary']['percent_covered'], MIN_FILE_COVERAGE))
         min_actual_coverage = min(
             min_actual_coverage, data['summary']['percent_covered'])
 
