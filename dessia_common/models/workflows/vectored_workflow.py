@@ -58,23 +58,23 @@ pipes = [
 ]
 
 # Workflow
-workflow = wf.Workflow(blocks=blocks, pipes=pipes,
+vectored_workflow = wf.Workflow(blocks=blocks, pipes=pipes,
                        output=filter_method.outputs[0],
                        name='Cars workflow')
 
 # # Input values
 input_values = {
-    workflow.index(import_csv.inputs[0]): 'cars.csv',
-    workflow.index(instantiate_pareto.inputs[0]): minimized_attributes,
-    workflow.index(instantiate_pareto.inputs[1]): True,
-    workflow.index(instantiate_catalog.inputs[4]): choice_args,
-    workflow.index(instantiate_catalog.inputs[3]): [],
-    workflow.index(instantiate_catalog.inputs[5]): 'Cars',
-    workflow.index(filter_method.inputs[1]): filters,
-    workflow.index(filtered_catalog.inputs[4]): choice_args,
-    workflow.index(filtered_catalog.inputs[3]): [],
-    workflow.index(filtered_catalog.inputs[5]): 'Filtered Cars',
+    vectored_workflow.index(import_csv.inputs[0]): 'cars.csv',
+    vectored_workflow.index(instantiate_pareto.inputs[0]): minimized_attributes,
+    vectored_workflow.index(instantiate_pareto.inputs[1]): True,
+    vectored_workflow.index(instantiate_catalog.inputs[4]): choice_args,
+    vectored_workflow.index(instantiate_catalog.inputs[3]): [],
+    vectored_workflow.index(instantiate_catalog.inputs[5]): 'Cars',
+    vectored_workflow.index(filter_method.inputs[1]): filters,
+    vectored_workflow.index(filtered_catalog.inputs[4]): choice_args,
+    vectored_workflow.index(filtered_catalog.inputs[3]): [],
+    vectored_workflow.index(filtered_catalog.inputs[5]): 'Filtered Cars',
     # workflow.index(objectives_method.inputs[1]): aimpoint,
     # workflow.index(objectives_method.inputs[2]): minimized_attributes
 }
-workflow_run = workflow.run(input_values=input_values)
+workflow_run = vectored_workflow.run(input_values=input_values)

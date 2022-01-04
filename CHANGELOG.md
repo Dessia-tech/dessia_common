@@ -7,17 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unrealeased [=> 0.4.8]
 ### Added
+- Inputs can now search for upstream nonblock_variables
+- Add input_values addition bulk methods (from block_index & indice sequence)
+- Can compute jsonschema from Any annotation
 - Add more structure to dev objects
 - ClassMethod Block now supports MethodType
 - WorkflowState add_input_values activates them
 - Several variables index computation methods
 
 ### Changed
+- data_eq checks for a dual non insinstance test before returning false
 - Moved errors to submodule dessia_common.errors
 - Workflow.variable_from_indices is not a classmethod anymore
 - Full support of MethodType for ModelMethod Block
 
 ### Fixed
+- Re-instantiate nonblock_variable when copying workflow
 - WorkflowState now serialize its values keys in to_dict
 
 ## 0.4.7

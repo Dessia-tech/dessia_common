@@ -97,9 +97,8 @@ def sequence_diff(seq1, seq2, path='#'):
 
 
 def data_eq(value1, value2):
-    
-    if type(value1) != type(value2):
-        # print('type', value1, value2)
+    if not isinstance(value2, type(value1))\
+            and not isinstance(value1, type(value2)):
         return False
     
     if isinstance_base_types(value1):

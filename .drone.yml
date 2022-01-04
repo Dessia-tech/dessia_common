@@ -10,7 +10,7 @@ steps:
   - git fetch --tags
   - python setup.py install
   - python scripts/dessia_object.py
-  - pip install sphinx sphinx-rtd-theme coverage
+  - pip install sphinx sphinx-rtd-theme coverage plot-data
   - cd doc
   - make html
   - cd ../tests
@@ -75,4 +75,3 @@ steps:
     password:
      from_secret: email_password
     from: technical@dessia.tech
-    recipients: [ root@dessia.tech ]

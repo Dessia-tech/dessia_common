@@ -7,4 +7,5 @@ Created on Tue Oct 19 17:32:48 2021
 """
 
 from .power_simulation import simulation_workflow
-from .vectored_workflow import workflow
+from .forms_workflow import workflow_
+from .vectored_workflow import vectored_workflow
