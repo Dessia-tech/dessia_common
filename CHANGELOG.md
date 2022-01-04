@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Several variables index computation methods
 
 ### Changed
+- data_eq checks for a dual non insinstance test before returning false
 - Moved errors to submodule dessia_common.errors
 - Workflow.variable_from_indices is not a classmethod anymore
 - Full support of MethodType for ModelMethod Block
