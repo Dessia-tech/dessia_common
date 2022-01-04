@@ -47,7 +47,7 @@ def deepcopy_value(value, memo):
             return deepcopy_dict(value, memo)
 
         else:
-            raise NotImplementedError
+            raise NotImplementedError('unhandle type for copy: {} of type {}'.format(value, value.__class__))
 
 
 def deepcopy_dict(dict_value, memo):

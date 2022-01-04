@@ -36,7 +36,8 @@ def is_jsonable(x):
         return True
     except:
         return False
-    
+
+
 def is_sequence(obj):
     """
     :param obj: Object to check
@@ -50,8 +51,10 @@ def is_sequence(obj):
 def is_builtin(type_):
     return type_ in TYPING_EQUIVALENCES
 
+
 def isinstance_base_types(obj):
     return isinstance(obj, str) or isinstance(obj, float) or isinstance(obj, int) or (obj is None)
+
 
 def get_python_class_from_class_name(full_class_name):
     module_name, class_name = full_class_name.rsplit('.', 1)
@@ -59,12 +62,14 @@ def get_python_class_from_class_name(full_class_name):
     class_ = getattr(module, class_name)
     return class_
 
+
 def unfold_deep_annotation(typing_=None):
     if is_typing(typing_):
         origin = get_origin(typing_)
         args = get_args(typing_)
         return origin, args
     return None, None
+
 
 def is_typing(object_: Any):
     has_module = hasattr(object_, '__module__')
@@ -75,6 +80,7 @@ def is_typing(object_: Any):
     has_origin = hasattr(object_, '__origin__')
     has_args = hasattr(object_, '__args__')
     return has_module and has_origin and has_args and in_typings
+
 
 def serialize_typing(typing_):
     if is_typing(typing_):
@@ -127,7 +133,6 @@ def type_fullname(arg):
     return full_argname
 
 
-
 def type_from_argname(argname):
     splitted_argname = argname.rsplit('.', 1)
     if argname:
@@ -138,13 +143,18 @@ def type_from_argname(argname):
     return Any
 
 
-
 def deserialize_typing(serialized_typing):
     # TODO : handling recursive deserialization
     if isinstance(serialized_typing, str):
         # TODO other builtins should be implemented
         if serialized_typing in ['float', 'builtins.float']:
             return float
+        if serialized_typing in ['int', 'builtins.int']:
+            return int
+        if serialized_typing in ['str', 'builtins.str']:
+            return str
+        if serialized_typing in ['bool', 'builtins.bool']:
+            return bool
 
         if serialized_typing == "TextFile":
             return TextIO

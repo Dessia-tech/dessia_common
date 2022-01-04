@@ -17,7 +17,7 @@ import json
 from dessia_common.exports import XLSXWriter
 
 import dessia_common.errors
-from dessia_common.utils.diff import data_eq, dict_diff
+from dessia_common.utils.diff import data_eq, diff
 from dessia_common.utils.serialization import dict_to_object, serialize_dict_with_pointers
 from dessia_common.utils.types import is_jsonable, is_builtin, get_python_class_from_class_name, serialize_typing, full_classname, is_sequence, isinstance_base_types, is_typing, TYPING_EQUIVALENCES
 from dessia_common.utils.copy import deepcopy_value
@@ -231,7 +231,7 @@ class DessiaObject:
         returns: different values, missing keys in other object
         """
         # return diff(self, other_object)
-        return dict_diff(self.to_dict(), other_object.to_dict())
+        return diff(self, other_object)
 
     @property
     def full_classname(self):
@@ -656,6 +656,7 @@ class DessiaObject:
         if not valid:
             raise ValueError(hint)
         json.dumps(self._displays())
+        json.dumps(self._method_jsonschemas)
 
     def to_xlsx(self, filepath):
         writer = XLSXWriter(self)
@@ -1446,10 +1447,7 @@ def deserialize_argument(type_, argument):
             msg = "Deserialization of typing {} is not implemented"
             raise NotImplementedError(msg.format(type_))
     elif type_ is TextIO:
-        try:
-            deserialized_arg = io.StringIO(argument.read().decode('utf8'))
-        finally:
-            argument.close()
+        deserialized_arg = argument
     elif type_ is BinaryIO:
         # files are supplied as io.BytesIO  which is compatible with : BinaryIO
         deserialized_arg = argument

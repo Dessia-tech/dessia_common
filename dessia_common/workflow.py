@@ -1143,9 +1143,13 @@ class Workflow(Block):
         self.output = self.outputs[0]
 
     def _data_hash(self):
+        output_hash = self.variable_indices(self.outputs[0])
+        if not isinstance(output_hash, int):
+            output_hash = sum(output_hash)
+            
         base_hash = len(self.blocks) \
                     + 11 * len(self.pipes) \
-                    + sum(self.variable_indices(self.outputs[0]))
+                    + output_hash
         block_hash = int(sum([b.equivalent_hash() for b in self.blocks])
                          % 10e5)
         return base_hash + block_hash
@@ -1164,33 +1168,51 @@ class Workflow(Block):
                 return False
         return True
 
+    def is_valid(self):
+        
+        return True
+
     def __deepcopy__(self, memo=None):
         if memo is None:
             memo = {}
 
-        blocks = [b.__deepcopy__(memo=memo) for b in self.blocks]
+        blocks = [b.__deepcopy__() for b in self.blocks]
+        copied_workflow = Workflow(
+            blocks=blocks, pipes=[], output=None,
+            name=self.name
+        )
+
+
         pipes = []
         for pipe in self.pipes:
             input_index = self.variable_indices(pipe.input_variable)
-            pipe_input = self.variable_from_index(input_index)
+            
+            pipe_input = copied_workflow.variable_from_index(input_index)
 
             output_index = self.variable_indices(pipe.output_variable)
-            pipe_output = self.variable_from_index(output_index)
-
+            pipe_output = copied_workflow.variable_from_index(output_index)
+            # print(input_index, output_index)
             copied_pipe = Pipe(pipe_input, pipe_output)
-            memo[pipe] = copied_pipe
+            # memo[pipe] = copied_pipe
 
             pipes.append(copied_pipe)
+            
+        # copied_workflow.pipes = pipes
 
-        output = self.variable_from_index(self.variable_indices(self.output))
+        output = copied_workflow.variable_from_index(self.variable_indices(self.output))
+        # copied_workflow.output = output
 
         imposed_variable_values = {}
         for variable, value in self.imposed_variable_values.items():
-            imposed_variable_values[memo[variable]] = value
+            new_variable =  copied_workflow.variable_from_index(self.variable_indices(variable))
+            imposed_variable_values[new_variable] = value
+        # copied_workflow.imposed_variable_values = imposed_variable_values
+
 
         copied_workflow = Workflow(
             blocks=blocks, pipes=pipes, output=output,
-            imposed_variable_values=imposed_variable_values, name=self.name
+            imposed_variable_values=imposed_variable_values,
+            name=self.name
         )
         return copied_workflow
 
@@ -1425,7 +1447,8 @@ class Workflow(Block):
         if variable in self.nonblock_variables:
             return self.nonblock_variables.index(variable)
 
-        msg = 'Some thing is wrong with variable {}'.format(variable.name)
+        msg = 'Something is wrong with variable {}'.format(variable.name)
+        self.plot()
         raise WorkflowError(msg)
 
     def block_from_variable(self, variable):
@@ -1527,7 +1550,8 @@ class Workflow(Block):
 
 
     def run(self, input_values, verbose=False,
-            progress_callback=None, name=None):
+            progress_callback=lambda x:None,
+            name=None):
         log = ''
         
         state = self.start_run(input_values)
@@ -1543,7 +1567,7 @@ class Workflow(Block):
         if verbose:
             print(log_line)
 
-        state.continue_run()
+        state.continue_run(progress_callback=progress_callback)
 
 
         end_time = time.time()
@@ -1849,7 +1873,7 @@ class WorkflowState(DessiaObject):
         else:
             output_value = None
 
-        values = {workflow.variables[i]: deserialize(v)
+        values = {workflow.variables[int(i)]: deserialize(v)
                   for i, v in dict_['values'].items()}
         input_values = {int(i): deserialize(v)
                         for i, v in dict_['input_values'].items()}
@@ -1897,7 +1921,7 @@ class WorkflowState(DessiaObject):
                            and self.activated_items[b]]
         return len(activated_items)/len(self.workflow.blocks)
 
-    def block_evaluation(self, block_index: int) -> bool:
+    def block_evaluation(self, block_index: int, progress_callback=lambda x:None) -> bool:
         """
         Select a block to evaluate
         """
@@ -1909,11 +1933,12 @@ class WorkflowState(DessiaObject):
 
         if block in self._activable_blocks():
             self._evaluate_block(block)
+            progress_callback(self.progress)
             return True
         else:
             return False
         
-    def evaluate_next_block(self) -> Optional[Block]:
+    def evaluate_next_block(self, progress_callback=lambda x:None) -> Optional[Block]:
         """
         Evaluate a block
         """
@@ -1925,11 +1950,12 @@ class WorkflowState(DessiaObject):
         if blocks:
             block = blocks[0]
             self._evaluate_block(block)
+            progress_callback(self.progress)
             return block
         else:
             return None
 
-    def continue_run(self):
+    def continue_run(self, progress_callback=lambda x:None):
         """
         Evaluate all possible blocks
         """
@@ -1947,6 +1973,7 @@ class WorkflowState(DessiaObject):
             for block in self._activable_blocks():
                 evaluated_blocks.append(block)
                 self._evaluate_block(block)
+                progress_callback(self.progress)
                 something_activated = True
         return evaluated_blocks
     
@@ -2028,8 +2055,10 @@ class WorkflowState(DessiaObject):
                 self.values[variable] = variable.default_value
                 self.activated_items[variable] = True
             elif check_all_inputs:
-                msg = 'Value {} of index {} in inputs has no value: should be instance of {}'
-                raise ValueError(msg.format(variable.name, index, variable.type_))
+                msg = 'Value {} of index {} in inputs has no value'
+                if isinstance(variable, TypedVariable):
+                    msg += ': should be instance of {}'.format(variable.type_)
+                raise ValueError(msg.format(variable.name, index))
 
     def to_workflow_run(self, name=''):
         if self.progress == 1:
