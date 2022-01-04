@@ -1,6 +1,6 @@
 from dessia_common.workflow import InstantiateModel, ModelMethod,\
-    TypedVariable, ModelAttribute, Pipe, Workflow, WorkflowBlock,\
-    ForEach, MultiPlot, WorkflowRun
+    TypedVariable, TypedVariableWithDefaultValue, ModelAttribute,\
+    Pipe, Workflow, WorkflowBlock, ForEach, MultiPlot, WorkflowRun
 from dessia_common.forms import Generator, Optimizer
 from dessia_common import MethodType
 import json
@@ -46,7 +46,8 @@ display_attributes = ['intarg', 'strarg', 'standalone_subobject/floatarg']
 display = MultiPlot(attributes=display_attributes, name='Display')
 
 int_variable = TypedVariable(type_=int, name="Some Integer")
-name_variable = TypedVariable(type_=str, name="Shared Name")
+name_variable = TypedVariableWithDefaultValue(type_=str, name="Shared Name",
+                                              default_value="Shared Name")
 
 pipe_int_1 = Pipe(input_variable=int_variable,
                   output_variable=instanciate_generator.inputs[1])
@@ -75,7 +76,7 @@ deserialized_workflow = Workflow.dict_to_object(dict_=serialized_workflow)
 
 assert hash(workflow_) == hash(deserialized_workflow)
 
-input_values = {0: 5}
+input_values = {0: 5, 2: 2}
 workflow_run = workflow_.run(input_values=input_values,
                              verbose=True, name='Dev Objects')
 
