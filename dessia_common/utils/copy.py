@@ -1,10 +1,10 @@
 import dessia_common as dc
-from dessia_common.utils.types import is_sequence
+from dessia_common.utils.types import is_sequence, is_typing
 
 
 def deepcopy_value(value, memo):
 
-    if isinstance(value, type):  # For class
+    if isinstance(value, type) or is_typing(value):  # For class
         return value
 
     elif isinstance(value, (float, int, str)):
@@ -47,7 +47,9 @@ def deepcopy_value(value, memo):
             return deepcopy_dict(value, memo)
 
         else:
-            raise NotImplementedError('unhandle type for copy: {} of type {}'.format(value, value.__class__))
+            raise NotImplementedError(
+                'unhandle type for copy: {} of type {}'.format(
+                    value, value.__class__))
 
 
 def deepcopy_dict(dict_value, memo):
