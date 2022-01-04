@@ -303,8 +303,6 @@ class StandaloneObject(DessiaObject):
             stream.close()
         return cls.generate(seed=seed, name=my_file_name)
 
-
-
     def add_standalone_object(self, object_: StandaloneSubobject):
         """
         This methods adds a standalone object to object_list.

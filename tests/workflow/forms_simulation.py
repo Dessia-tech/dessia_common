@@ -33,3 +33,8 @@ workflow_state = workflow_.start_run({})
 input_values = {'0': 5, '3': "Test", '2': 2}
 workflow_state.add_block_input_values(0, input_values)
 
+
+assert workflow_._check_platform() is None
+# assert workflow_run._check_platform() is None
+assert workflow_state._check_platform() is None
+
