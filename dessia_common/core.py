@@ -914,10 +914,11 @@ def serialize_dict(dict_):
     serialized_dict = {}
     for key, value in dict_.items():
         if hasattr(value, 'to_dict'):
-            try:
-                serialized_value = value.to_dict()
-            except TypeError:
-                serialized_value = value.to_dict()
+            # try:
+            #     serialized_value = value.to_dict()
+            # except TypeError:
+            #     # case of a class as an 
+            serialized_value = value.to_dict()
         elif isinstance(value, dict):
             serialized_value = serialize_dict(value)
         elif isinstance(value, (list, tuple)):
