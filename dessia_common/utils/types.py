@@ -192,4 +192,6 @@ def deserialize_typing(serialized_typing):
             return Dict[key_type, value_type]
         # elif splitted_type[0] == 'Union':
         #     args = full_argname.split(', ')
-    raise NotImplementedError('{}'.format(serialized_typing))
+        return get_python_class_from_class_name(serialized_typing)
+    raise NotImplementedError('{} of type {}'.format(serialized_typing,
+                                                     type(serialized_typing)))

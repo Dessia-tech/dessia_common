@@ -80,7 +80,7 @@ class RegularDecisionTreeGenerator(DecisionTreeGenerator):
     This is still experimental and might be buggy
     """
 
-    def __init__(self, number_possibilities:int, name:str=''):
+    def __init__(self, number_possibilities:List[int], name:str=''):
         self.number_possibilities = number_possibilities
         self.leaves_depth = len(self.number_possibilities) -1
         self.tree = dt.RegularDecisionTree(number_possibilities)
