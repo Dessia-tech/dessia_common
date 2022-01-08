@@ -1,7 +1,19 @@
 
 import os
 
-scripts = ['workflow_with_models.py', 'unit_tests.py', 'bson_valid.py',
+# for some akward reason, put scripts before unittests tests  
+scripts = ['displays.py',
+           'generation.py',
+           'models_test.py',
+           'workflow_with_models.py',
+           'workflow/power_simulation.py',
+           'workflow/forms_simulation.py',
+           'utils/algebra.py',
+           'utils/interpolation.py',
+           'utils/serialization.py',
+           # Unit tests after that
+           'unit_tests.py',
+           'bson_valid.py',
            ]
 
 for script_name in scripts:

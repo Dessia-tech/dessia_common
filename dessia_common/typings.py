@@ -16,6 +16,10 @@ class MethodType(Generic[T]):
     def __init__(self, class_: T, name: str):
         self.class_ = class_
         self.name = name
+        
+    def __deepcopy__(self):
+        return MethodType(self.class_, self.name)
+        
 
 
 class ClassMethodType(MethodType[T]):
@@ -29,7 +33,7 @@ class AttributeType(Generic[T]):
         self.name = name
 
 
-class ClassAsttributeType(AttributeType[T]):
+class ClassAttributeType(AttributeType[T]):
     def __init__(self, class_: T, name: str):
         AttributeType.__init__(self, class_=class_, name=name)
 

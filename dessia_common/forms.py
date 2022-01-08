@@ -45,6 +45,8 @@ from dessia_common.vectored_objects import Catalog
 from numpy import linspace
 from math import cos
 
+from dessia_common.files import BinaryFile, StringFile
+import io
 
 class StandaloneSubobject(DessiaObject):
     _standalone_in_db = True
@@ -184,11 +186,15 @@ class StandaloneObject(DessiaObject):
     _standalone_in_db = True
     _generic_eq = True
     _allowed_methods = ['add_standalone_object', 'add_embedded_object',
-                        'add_float', 'generate_from_file']
+                        'add_float', 'generate_from_text', 'generate_from_bin',
+                        'generate_from_bin_file', 'generate_from_text_file']
 
     def __init__(self, standalone_subobject: StandaloneSubobject,
                  embedded_subobject: EmbeddedSubobject,
-                 dynamic_dict: Dict[str, bool], tuple_arg: Tuple[str, int],
+                 dynamic_dict: Dict[str, bool],
+                 float_dict: Dict[str, float],
+                 string_dict: Dict[str, str],
+                 tuple_arg: Tuple[str, int],
                  intarg: int, strarg: str,
                  object_list: List[StandaloneSubobject],
                  subobject_list: List[EmbeddedSubobject],
@@ -205,6 +211,8 @@ class StandaloneObject(DessiaObject):
         self.strarg = strarg
         self.intarg = intarg
         self.dynamic_dict = dynamic_dict
+        self.float_dict = float_dict
+        self.string_dict = string_dict
         self.standalone_subobject = standalone_subobject
         self.embedded_subobject = embedded_subobject
         self.subclass_arg = subclass_arg
@@ -219,6 +227,8 @@ class StandaloneObject(DessiaObject):
         standalone_subobject = StandaloneSubobject.generate(seed)
         embedded_subobject = EmbeddedSubobject.generate(seed)
         dynamic_dict = {'n'+str(i): bool(seed % 2) for i in range(seed)}
+        float_dict = {'k'+str(i): seed*1.09 for i in range(seed)}
+        string_dict = {'key'+str(i): 'value'+str(i) for i in range(seed)}
         tuple_arg = ('value', seed * 3)
         intarg = seed
         strarg = str(seed) * floor(seed/3)
@@ -234,7 +244,10 @@ class StandaloneObject(DessiaObject):
             subclass_arg = InheritingStandaloneSubobject.generate(seed)
         return cls(standalone_subobject=standalone_subobject,
                    embedded_subobject=embedded_subobject,
-                   dynamic_dict=dynamic_dict, tuple_arg=tuple_arg,
+                   dynamic_dict=dynamic_dict,
+                   float_dict=float_dict,
+                   string_dict=string_dict,
+                   tuple_arg=tuple_arg,
                    intarg=intarg, strarg=strarg, object_list=object_list,
                    subobject_list=subobject_list, builtin_list=builtin_list,
                    union_arg=union_arg, subclass_arg=subclass_arg,
@@ -242,19 +255,53 @@ class StandaloneObject(DessiaObject):
 
     @classmethod
     def generate_from_text(cls, stream: TextIO):
-        print(stream)
-        string = stream.read()
-        print(string.split(","))
-        name, raw_seed = string.split(",")
-        seed = int(raw_seed.strip())
-        return cls.generate(seed=seed, name=name)
+        try:
+            my_string = stream.read()
+            # this is a hack for test until we get frontend support for types BinaryFile & StringFile
+            # a TextIO does not have filename, but it's ok since we return a StringFile from backend
+            my_file_name = stream.filename
+            name, raw_seed = my_string.split(",")
+            seed = int(raw_seed.strip())
+        finally:
+            stream.close()
+        return cls.generate(seed=seed, name=my_file_name)
 
     @classmethod
     def generate_from_bin(cls, stream: BinaryIO):
-        # string = stream.read()
-        # name, raw_seed = string.split(",")
-        # seed = int(raw_seed.strip())
-        return cls.generate(seed=0, name="TODO From Bytes")
+        # the user need to decode the binary as he see fit
+        try:
+            my_string = stream.read().decode('utf8')
+            # this is a hack for test until we get frontend support for types BinaryFile & StringFile
+            # a BinaryIO does not have filename, but it's ok since we return a BinaryFile from backend
+            my_file_name = stream.filename
+            my_name, raw_seed = my_string.split(",")
+            seed = int(raw_seed.strip())
+        finally:
+            stream.close()
+        return cls.generate(seed=seed, name=my_file_name)
+
+    @classmethod
+    def generate_from_bin_file(cls, stream: BinaryFile):
+        # the user need to decode the binary as he see fit
+        try:
+            my_string = stream.read().decode('utf8')
+            my_file_name = stream.filename
+            my_name, raw_seed = my_string.split(",")
+            seed = int(raw_seed.strip())
+        finally:
+            stream.close()
+        return cls.generate(seed=seed, name= my_file_name)
+
+    @classmethod
+    def generate_from_text_file(cls, stream: StringFile):
+        try:
+            my_text = stream.read()
+            my_file_name =  stream.filename
+            name, raw_seed = my_text.split(",")
+            seed = int(raw_seed.strip())
+        finally:
+            stream.close()
+        return cls.generate(seed=seed, name=my_file_name)
 
     def add_standalone_object(self, object_: StandaloneSubobject):
         """
@@ -452,6 +499,8 @@ class StandaloneObjectWithDefaultValues(StandaloneObject):
     def __init__(self, standalone_subobject: StandaloneSubobject = DEF_SS,
                  embedded_subobject: EmbeddedSubobject = DEF_ES,
                  dynamic_dict: Dict[str, bool] = None,
+                 float_dict: Dict[str, float] = None,
+                 string_dict: Dict[str, str] = None,
                  tuple_arg: Tuple[str, int] = ("Default Tuple", 0),
                  intarg: int = 1, strarg: str = "Default Strarg",
                  object_list: List[StandaloneSubobject] = None,
@@ -463,6 +512,10 @@ class StandaloneObjectWithDefaultValues(StandaloneObject):
                  name: str = 'Standalone Object Demo'):
         if dynamic_dict is None:
             dynamic_dict = {}
+        if float_dict is None:
+            float_dict = {}
+        if string_dict is None:
+            string_dict = {}
         if object_list is None:
             object_list = [DEF_SS]
         if subobject_list is None:
@@ -477,6 +530,7 @@ class StandaloneObjectWithDefaultValues(StandaloneObject):
         StandaloneObject.__init__(
             self, standalone_subobject=standalone_subobject,
             embedded_subobject=embedded_subobject, dynamic_dict=dynamic_dict,
+            float_dict=float_dict, string_dict=string_dict,
             tuple_arg=tuple_arg, intarg=intarg, strarg=strarg,
             object_list=object_list, subobject_list=subobject_list,
             builtin_list=builtin_list, union_arg=union_arg,
@@ -498,8 +552,6 @@ class Generator(DessiaObject):
         DessiaObject.__init__(self, name=name)
 
     def generate(self) -> List[StandaloneObject]:
-        # submodels = [Submodel(self.parameter * i)
-        #              for i in range(self.nb_solutions)]
         self.models = [StandaloneObject.generate(self.parameter + i)
                        for i in range(self.nb_solutions)]
         return self.models
@@ -516,3 +568,22 @@ class Optimizer(DessiaObject):
     def optimize(self, optimization_value: int = 3) -> int:
         self.model_to_optimize.intarg += optimization_value
         return self.model_to_optimize.intarg
+
+
+class Container(DessiaObject):
+    _standalone_in_db = True
+    _allowed_methods = ["generate_from_text_files"]
+
+    def __init__(self, models: List[StandaloneObject] = None, name: str = ""):
+        if models is None:
+            self.models = []
+        else:
+            self.models = models
+
+        DessiaObject.__init__(self, name=name)
+
+    @classmethod
+    def generate_from_text_files(cls, files: List[TextIO],
+                                 name: str = "Generated from text files"):
+        models = [StandaloneObject.generate_from_text(file) for file in files]
+        return cls(models=models, name=name)

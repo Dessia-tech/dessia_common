@@ -16,6 +16,11 @@ import inspect
 import json
 from dessia_common.exports import XLSXWriter
 
+import dessia_common.errors
+from dessia_common.utils.diff import data_eq, diff
+from dessia_common.utils.serialization import dict_to_object, serialize_dict_with_pointers
+from dessia_common.utils.types import is_jsonable, is_builtin, get_python_class_from_class_name, serialize_typing, full_classname, is_sequence, isinstance_base_types, is_typing, TYPING_EQUIVALENCES
+from dessia_common.utils.copy import deepcopy_value
 
 from typing import List, Dict, Type, Tuple, Union, Any, TextIO, BinaryIO, \
     get_type_hints, get_origin, get_args
@@ -25,7 +30,7 @@ except ImportError:
     from mypy_extensions import TypedDict  # <=3.7
 import traceback as tb
 from dessia_common.typings import Measure, JsonSerializable,\
-    Subclass, InstanceOf, MethodType
+    Subclass, InstanceOf, MethodType, ClassMethodType
 
 from importlib import import_module
 
@@ -36,8 +41,7 @@ JSONSCHEMA_HEADER = {"definitions": {},
                      "required": [],
                      "properties": {}}
 
-TYPING_EQUIVALENCES = {int: 'number', float: 'number',
-                       bool: 'boolean', str: 'string'}
+
 
 TYPES_STRINGS = {int: 'int', float: 'float', bool: 'boolean', str: 'str',
                  list: 'list', tuple: 'tuple', dict: 'dict'}
@@ -48,39 +52,6 @@ _FORBIDDEN_ARGNAMES = ['self', 'cls', 'progress_callback', 'return']
 
 TYPES_FROM_STRING = {'unicode': str, 'str': str, 'float': float,
                      'int': int, 'bool': bool}
-
-
-class ExceptionWithTraceback(Exception):
-    def __init__(self, message, traceback_=''):
-        self.message = message
-        self.traceback = traceback_
-
-    def __str__(self):
-        return '{}\nTraceback:\n{}'.format(self.message, self.traceback)
-
-
-class DeepAttributeError(ExceptionWithTraceback, AttributeError):
-    pass
-
-
-class ModelError(Exception):
-    pass
-
-
-class ConsistencyError(Exception):
-    pass
-
-
-class SerializationError(Exception):
-    pass
-
-
-class DeserializationError(Exception):
-    pass
-
-
-class UntypedArgumentError(Exception):
-    pass
 
 
 # DEPRECATED_ATTRIBUTES = {'_editable_variss' : '_allowed_methods'}
@@ -235,21 +206,8 @@ class DessiaObject:
         return object.__eq__(self, other_object)
 
     def _data_eq(self, other_object):
-        if full_classname(self) != full_classname(other_object):
-            return False
-
-        eq_dict = self._serializable_dict()
-        if 'name' in eq_dict:
-            del eq_dict['name']
-            
-        other_eq_dict = other_object._serializable_dict()
-
-        for key, value in eq_dict.items():
-            other_value = other_eq_dict[key]
-            if value != other_value:
-                return False
-        return True
-
+        return data_eq(self, other_object)
+        
     def _data_hash(self):
         hash_ = 0
         forbidden_keys = (self._non_data_eq_attributes
@@ -272,25 +230,8 @@ class DessiaObject:
         Make a diff between two objects
         returns: different values, missing keys in other object
         """
-        missing_keys_in_other_object = []
-        diff_values = {}
-        
-        # eq_dict = {k: v for k, v in self.to_dict().items()
-        #            if (k not in ['package_version', 'name'])\
-        #                and (k not in self._non_data_eq_attributes)}
-        eq_dict = self._serializable_dict()
-        # other_eq_dict = other_object.to_dict()
-        other_eq_dict = other_object._serializable_dict()
-
-        for key, value in eq_dict.items():
-            if key not in other_eq_dict:
-                missing_keys_in_other_object.append(key)
-            else:                
-                other_value = other_eq_dict[key]
-                if value != other_value:
-                    diff_values[key] = (value, other_value)
-                
-        return diff_values, missing_keys_in_other_object
+        # return diff(self, other_object)
+        return diff(self, other_object)
 
     @property
     def full_classname(self):
@@ -320,42 +261,47 @@ class DessiaObject:
                  and not k.startswith('_')}
         return dict_
 
-    def to_dict(self) -> JsonSerializable:
+    def to_dict(self, use_pointers=False, memo=None, path:str='#') -> JsonSerializable:
         """
         Generic to_dict method
         """
+        if memo is None:
+            memo = {}
+            
+            
+        # Default to dict
+        serialized_dict = self.base_dict()
         dict_ = self._serializable_dict()
-        if hasattr(self, 'Dict'):
-            # !!! This prevent us to call DessiaObject.to_dict()
-            # from an inheriting object which implement a Dict method,
-            # because of the infinite recursion it creates.
-            deprecation_warning(name='Dict', object_type='Function',
-                                use_instead='to_dict')
-            serialized_dict = self.Dict()
+        if use_pointers:
+            serialized_dict.update(serialize_dict_with_pointers(dict_, memo, path)[0])
         else:
-            # Default to dict
-            serialized_dict = self.base_dict()
             serialized_dict.update(serialize_dict(dict_))
-        # serialized_dict['hash'] = self.__hash__()
+
         return serialized_dict
 
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable,
-                       force_generic: bool = False) -> 'DessiaObject':
+                       force_generic: bool = False,
+                       global_dict=None,
+                       pointers_memo: Dict[str, Any]=None) -> 'DessiaObject':
         """
         Generic dict_to_object method
         """
-        if hasattr(cls, 'DictToObject'):
-            deprecation_warning(name='DictToObject', object_type='Function',
-                                use_instead='dict_to_object')
-            return cls.DictToObject(dict_)
+        # if hasattr(cls, 'DictToObject'):
+        #     deprecation_warning(name='DictToObject', object_type='Function',
+        #                         use_instead='dict_to_object')
+        #     return cls.DictToObject(dict_)
 
         if cls is not DessiaObject:
             obj = dict_to_object(dict_=dict_, class_=cls,
-                                 force_generic=force_generic)
+                                 force_generic=force_generic,
+                                 global_dict=global_dict,
+                                 pointers_memo=pointers_memo)
             return obj
         elif 'object_class' in dict_:
-            obj = dict_to_object(dict_=dict_, force_generic=force_generic)
+            obj = dict_to_object(dict_=dict_, force_generic=force_generic,
+                                 global_dict=global_dict,
+                                 pointers_memo=pointers_memo)
             return obj
         else:
             # Using default
@@ -539,7 +485,13 @@ class DessiaObject:
             file = open(filepath, 'w')
         else:
             file = filepath
-        json.dump(self.to_dict(), file, indent=indent)
+            
+        try:
+            dict_ = self.to_dict(use_pointers=True)
+        except TypeError:
+            dict_ = self.to_dict()
+
+        json.dump(dict_, file, indent=indent)
         
         if isinstance(filepath, str):
             file.close()    
@@ -556,9 +508,9 @@ class DessiaObject:
     def is_valid(self):
         return True
 
-    def copy(self, deep=True):
+    def copy(self, deep=True, memo=None):
         if deep:
-            return self.__deepcopy__()
+            return self.__deepcopy__(memo=memo)
         else:
             return self.__copy__()
 
@@ -616,7 +568,7 @@ class DessiaObject:
                                       debug_mode=False)
         else:
             msg = 'Class {} does not implement a plot_data method' \
-                  'to define what to plot'
+                  ' to define what to plot'
             raise NotImplementedError(msg.format(self.__class__.__name__))
 
     def mpl_plot(self, **kwargs):
@@ -640,6 +592,13 @@ class DessiaObject:
     def babylonjs(self, use_cdn=True, debug=False, **kwargs):
         self.volmdlr_volume_model(**kwargs).babylonjs(use_cdn=use_cdn,
                                                       debug=debug)
+
+    def save_babylonjs_to_file(self, filename:str=None, use_cdn:bool=True,
+                               debug:bool=False, **kwargs):
+        self.volmdlr_volume_model(**kwargs).save_babylonjs_to_file(filename=filename,
+                                                                   use_cdn=use_cdn,
+                                                                   debug=debug)
+
 
     def _displays(self, **kwargs) -> List[JsonSerializable]:
         if hasattr(self, '_display_angular'):
@@ -685,11 +644,19 @@ class DessiaObject:
         """
         Reproduce lifecycle on platform (serialization, display)
         """
-        self.dict_to_object(json.loads(json.dumps(self.to_dict())))
-        valid, hint = is_bson_valid(stringify_dict_keys(self.to_dict()))
+        try:
+            dict_ = self.to_dict(use_pointers=True)
+        except TypeError:
+            dict_ = self.to_dict()
+        json_dict = json.dumps(dict_)
+        decoded_json = json.loads(json_dict)
+        deserialized_object = self.dict_to_object(decoded_json)
+        assert deserialized_object._data_eq(self)
+        valid, hint = is_bson_valid(stringify_dict_keys(dict_))
         if not valid:
             raise ValueError(hint)
         json.dumps(self._displays())
+        json.dumps(self._method_jsonschemas)
 
     def to_xlsx(self, filepath):
         writer = XLSXWriter(self)
@@ -888,66 +855,6 @@ class CombinationEvolution(DessiaObject):
         return x, y
 
 
-def number2factor(number):
-    """
-    Temporary function : Add to some tools package
-    Finds all the ways to combine elements
-    """
-    factor_range = range(1, int(number ** 0.5) + 1)
-
-    if number:
-        factors = list(set(reduce(list.__add__, ([i, number // i]
-                                                 for i in factor_range
-                                                 if number % i == 0))))
-
-        grids = [(factor_x, int(number / factor_x))
-                 for factor_x in factors
-                 if (number / factor_x).is_integer()]
-    else:
-        grids = []
-    return grids
-
-
-def number3factor(number, complete=True):
-    """
-    Temporary function : Add to some tools package
-    Finds all the ways to combine elements
-    """
-    factor_range = range(1, int(number ** 0.5) + 1)
-
-    if number:
-        factors = list(set(reduce(list.__add__, ([i, number // i]
-                                                 for i in factor_range
-                                                 if number % i == 0))))
-        if not complete:
-            grids = get_incomplete_factors(number, factors)
-
-        else:
-            grids = [(factor_x, factor_y, int(number / (factor_x * factor_y)))
-                     for factor_x in factors
-                     for factor_y in factors
-                     if (number / (factor_x * factor_y)).is_integer()]
-        return grids
-    return []
-
-
-def get_incomplete_factors(number, factors):
-    """
-    TODO
-    """
-    grids = []
-    sets = []
-    for factor_x in factors:
-        for factor_y in factors:
-            value = number / (factor_x * factor_y)
-            if value.is_integer():
-                grid = (factor_x, factor_y, int(value))
-                if set(grid) not in sets:
-                    sets.append(set(grid))
-                    grids.append(grid)
-    return grids
-
-
 def dict_merge(old_dct, merge_dct, add_keys=True, extend_lists=True):
     """ Recursive dict merge. Inspired by :meth:``dict.update()``, instead of
     updating only top-level keys, dict_merge recurses down into dicts nested
@@ -989,14 +896,6 @@ def dict_merge(old_dct, merge_dct, add_keys=True, extend_lists=True):
     return dct
 
 
-def is_jsonable(x):
-    try:
-        json.dumps(x)
-        return True
-    except:
-        return False
-
-
 def stringify_dict_keys(obj):
     if isinstance(obj, (list, tuple)):
         new_obj = []
@@ -1011,11 +910,14 @@ def stringify_dict_keys(obj):
         return obj
     return new_obj
 
-
 def serialize_dict(dict_):
     serialized_dict = {}
     for key, value in dict_.items():
         if hasattr(value, 'to_dict'):
+            # try:
+            #     serialized_value = value.to_dict()
+            # except TypeError:
+            #     # case of a class as an 
             serialized_value = value.to_dict()
         elif isinstance(value, dict):
             serialized_value = serialize_dict(value)
@@ -1024,7 +926,7 @@ def serialize_dict(dict_):
         else:
             if not is_jsonable(value):
                 msg = 'Attribute {} of value {} is not json serializable'
-                raise SerializationError(msg.format(key, value))
+                raise dessia_common.errors.SerializationError(msg.format(key, value))
             serialized_value = value
         serialized_dict[key] = serialized_value
     return serialized_dict
@@ -1043,51 +945,17 @@ def serialize_sequence(seq):
             serialized_sequence.append(value)
     return serialized_sequence
 
-
-def get_python_class_from_class_name(full_class_name):
-    module_name, class_name = full_class_name.rsplit('.', 1)
-    module = import_module(module_name)
-    class_ = getattr(module, class_name)
-    return class_
-
-
-def dict_to_object(dict_, class_=None, force_generic: bool = False):
-    class_argspec = None
-    working_dict = dict_.copy()
-    if class_ is None and 'object_class' in working_dict:
-        class_ = get_python_class_from_class_name(working_dict['object_class'])
-
-    if class_ is not None and hasattr(class_, 'dict_to_object'):
-        different_methods = (class_.dict_to_object.__func__
-                             is not DessiaObject.dict_to_object.__func__)
-        if different_methods and not force_generic:
-            obj = class_.dict_to_object(dict_)
-            return obj
-
-        if class_._init_variables is None:
-            class_argspec = inspect.getfullargspec(class_)
-            init_dict = {k: v for k, v in working_dict.items()
-                         if k in class_argspec.args}
-        else:
-            init_dict = {k: v for k, v in working_dict.items()
-                         if k in class_._init_variables}
-        # TOCHECK Class method to generate init_dict ??
+def serialize(deserialized_element):
+    if isinstance(deserialized_element, DessiaObject):
+        serialized = deserialized_element.to_dict()
+    elif isinstance(deserialized_element, dict):
+        serialized = serialize_dict(deserialized_element)
+    elif is_sequence(deserialized_element):
+        serialized = serialize_sequence(deserialized_element)
     else:
-        init_dict = working_dict
+        serialized = deserialized_element
+    return serialized
 
-    subobjects = {}
-    for key, value in init_dict.items():
-        if class_argspec is not None and key in class_argspec.annotations:
-            annotation = class_argspec.annotations[key]
-        else:
-            annotation = None
-        subobjects[key] = deserialize(value, annotation)
-
-    if class_ is not None:
-        obj = class_(**subobjects)
-    else:
-        obj = subobjects
-    return obj
 
 
 def list_hash(list_):
@@ -1116,220 +984,8 @@ def dict_hash(dict_):
     return hash_
 
 
-def sequence_to_objects(sequence, annotation=None):
-    # TODO: rename to deserialize sequence? Or is this a duplicate ?
-    origin, args = unfold_deep_annotation(typing_=annotation)
-    deserialized_sequence = [deserialize(elt, args) for elt in sequence]
-    if origin is tuple:
-        return tuple(deserialized_sequence)
-    return deserialized_sequence
-
-
 def getdeepattr(obj, attr):
     return reduce(getattr, [obj] + attr.split('.'))
-
-
-def full_classname(object_, compute_for: str = 'instance'):
-    if compute_for == 'instance':
-        return object_.__class__.__module__ + '.' + object_.__class__.__name__
-    elif compute_for == 'class':
-        return object_.__module__ + '.' + object_.__name__
-    else:
-        msg = 'Cannot compute {} full classname for object {}'
-        raise NotImplementedError(msg.format(compute_for, object_))
-
-
-def serialization_test(obj):
-    # TODO: debug infinite recursion? Should we remove thhis ?
-    d = obj.to_dict()
-    obj2 = obj.dict_to_object(d)
-    if obj != obj2:
-        msg = 'Object in no more equal to himself '
-        msg += 'after serialization/deserialization!'
-        raise ModelError(msg)
-
-
-def deepcopy_value(value, memo):
-    # Escaping unhashable types (list) that would be handled after
-    try:
-        if value in memo:
-            return memo[value]
-    except TypeError:
-        pass
-
-    if isinstance(value, type):  # For class
-        return value
-    elif hasattr(value, '__deepcopy__'):
-        try:
-            copied_value = value.__deepcopy__(memo)
-        except TypeError:
-            copied_value = value.__deepcopy__()
-        memo[value] = copied_value
-        return copied_value
-    else:
-        if isinstance(value, list):
-            copied_list = []
-            for v in value:
-                cv = deepcopy_value(v, memo=memo)
-                try:
-                    memo[v] = cv
-                except TypeError:
-                    pass
-                copied_list.append(cv)
-            return copied_list
-        elif isinstance(value, dict):
-            copied_dict = {}
-            for k, v in value.items():
-                copied_k = deepcopy_value(k, memo=memo)
-                copied_v = deepcopy_value(v, memo=memo)
-                try:
-                    memo[k] = copied_k
-                except TypeError:
-                    pass
-                try:
-                    memo[v] = copied_v
-                except TypeError:
-                    pass
-                copied_dict[copied_k] = copied_v
-            return copied_dict
-        else:
-            new_value = copy.deepcopy(value, memo=memo)
-            memo[value] = new_value
-            return new_value
-
-
-def type_fullname(arg):
-    if arg.__module__ == 'builtins':
-        full_argname = '__builtins__.' + arg.__name__
-    else:
-        full_argname = serialize_typing(arg)
-    return full_argname
-
-
-def serialize_typing(typing_):
-    if is_typing(typing_):
-        origin = get_origin(typing_)
-        args = get_args(typing_)
-        if origin is Union:
-            if len(args) == 2 and type(None) in args:
-                # This is a false Union => Is a default value set to None
-                return serialize_typing(args[0])
-            else:
-                # Types union
-                argnames = ', '.join([type_fullname(a) for a in args])
-                return 'Union[{}]'.format(argnames)
-        elif origin is list:
-            return 'List[' + type_fullname(args[0]) + ']'
-        elif origin is tuple:
-            argnames = ', '.join([type_fullname(a) for a in args])
-            return 'Tuple[{}]'.format(argnames)
-        elif origin is collections.Iterator:
-            return 'Iterator[' + type_fullname(args[0]) + ']'
-        elif origin is dict:
-            key_type = type_fullname(args[0])
-            value_type = type_fullname(args[1])
-            return 'Dict[{}, {}]'.format(key_type, value_type)
-        elif origin is InstanceOf:
-            return 'InstanceOf[{}]'.format(type_fullname(args[0]))
-        elif origin is Subclass:
-            return 'Subclass[{}]'.format(type_fullname(args[0]))
-        elif origin is MethodType:
-            return 'MethodType[{}]'.format(type_fullname(args[0]))
-        else:
-            msg = 'Serialization of typing {} is not implemented'
-            raise NotImplementedError(msg.format(typing_))
-    if isinstance(typing_, type):
-        return full_classname(typing_, compute_for='class')
-    if typing_ is TextIO:
-        return "TextFile"
-    if typing_ is BinaryIO:
-        return "BinaryFile"
-    return str(typing_)
-
-
-def type_from_argname(argname):
-    splitted_argname = argname.rsplit('.', 1)
-    if argname:
-        if splitted_argname[0] != '__builtins__':
-            return get_python_class_from_class_name(argname)
-        # TODO Check for dangerous eval
-        return eval(splitted_argname[1])
-    return Any
-
-
-def deserialize_typing(serialized_typing):
-    # TODO : handling recursive deserialization
-    if isinstance(serialized_typing, str):
-        # TODO other builtins should be implemented
-        if serialized_typing in ['float', 'builtins.float']:
-            return float
-
-        if serialized_typing == "TextFile":
-            return TextIO
-        if serialized_typing == "BinaryFile":
-            return BinaryIO
-
-        if '[' in serialized_typing:
-            toptype, remains = serialized_typing.split('[', 1)
-            full_argname = remains.rsplit(']', 1)[0]
-        else:
-            toptype = serialized_typing
-            full_argname = ''
-        if toptype == 'List':
-            return List[type_from_argname(full_argname)]
-        elif toptype == 'Tuple':
-            if ', ' in full_argname:
-                args = full_argname.split(', ')
-                if len(args) == 0:
-                    return Tuple
-                elif len(args) == 1:
-                    type_ = type_from_argname(args[0])
-                    return Tuple[type_]
-                elif len(set(args)) == 1:
-                    type_ = type_from_argname(args[0])
-                    return Tuple[type_, ...]
-                else:
-                    msg = ("Heterogenous tuples are forbidden as types for"
-                           "workflow non-block variables.")
-                    raise TypeError(msg)
-            return Tuple[type_from_argname(full_argname)]
-        elif toptype == 'Dict':
-            args = full_argname.split(', ')
-            key_type = type_from_argname(args[0])
-            value_type = type_from_argname(args[1])
-            return Dict[key_type, value_type]
-        # elif splitted_type[0] == 'Union':
-        #     args = full_argname.split(', ')
-    raise NotImplementedError('{}'.format(serialized_typing))
-
-
-def serialize(deserialized_element):
-    if isinstance(deserialized_element, DessiaObject):
-        serialized = deserialized_element.to_dict()
-    elif isinstance(deserialized_element, dict):
-        serialized = serialize_dict(deserialized_element)
-    elif is_sequence(deserialized_element):
-        serialized = serialize_sequence(deserialized_element)
-    else:
-        serialized = deserialized_element
-    return serialized
-
-
-def deserialize(serialized_element, sequence_annotation: str = 'List'):
-    if isinstance(serialized_element, dict):
-        return dict_to_object(serialized_element)
-    elif is_sequence(serialized_element):
-        return sequence_to_objects(sequence=serialized_element,
-                                   annotation=sequence_annotation)
-    return serialized_element
-
-
-def unfold_deep_annotation(typing_=None):
-    if is_typing(typing_):
-        origin = get_origin(typing_)
-        args = get_args(typing_)
-        return origin, args
-    return None, None
 
 
 def enhanced_deep_attr(obj, sequence):
@@ -1380,7 +1036,8 @@ def enhanced_get_attr(obj, attr):
             classname = obj.__class__.__name__
             msg = "'{}' object has no attribute '{}'.".format(classname, attr)
             track += tb.format_exc()
-            raise DeepAttributeError(message=msg, traceback_=track)
+            raise dessia_common.errors.DeepAttributeError(message=msg,
+                                                          traceback_=track)
 
 
 def concatenate_attributes(prefix, suffix, type_: str = 'str'):
@@ -1443,18 +1100,6 @@ def is_bounded(filter_: DessiaFilter, value: float):
     return bounded
 
 
-def is_sequence(obj):
-    """
-    :param obj: Object to check
-    :return: bool. True if object is a sequence but not a string.
-                   False otherwise
-    """
-    return isinstance(obj, collections.abc.Sequence)\
-        and not isinstance(obj, str)
-
-
-def is_builtin(type_):
-    return type_ in TYPING_EQUIVALENCES
 
 
 def type_from_annotation(type_, module):
@@ -1471,15 +1116,6 @@ def type_from_annotation(type_, module):
     return type_
 
 
-def is_typing(object_: Any):
-    has_module = hasattr(object_, '__module__')
-    if has_module:
-        in_typings = object_.__module__ in ['typing', 'dessia_common.typings']
-    else:
-        return False
-    has_origin = hasattr(object_, '__origin__')
-    has_args = hasattr(object_, '__args__')
-    return has_module and has_origin and has_args and in_typings
 
 
 def jsonschema_from_annotation(annotation, jsonschema_element,
@@ -1544,7 +1180,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
             jsonschema_element[key].update({'additionalItems': False,
                                             'type': 'array', 'items': items})
         elif origin is dict:
-            # Dynamially created dict structure
+            # Dynamically created dict structure
             key_type, value_type = args
             if key_type != str:
                 # !!! Should we support other types ? Numeric ?
@@ -1579,14 +1215,16 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
                 'type': 'object', 'instance_of': classname,
                 'standalone_in_db': class_._standalone_in_db
             })
-        elif origin is MethodType:
+        elif origin is MethodType or origin is ClassMethodType:
             class_type = get_args(typing_)[0]
+            classmethod_ = origin is ClassMethodType
             class_jss = jsonschema_from_annotation(
                 annotation=('class_', class_type), jsonschema_element={},
                 order=order, editable=editable, title='Class'
             )
             jsonschema_element[key].update({
                 'type': 'object', 'is_method': True,
+                'classmethod_': classmethod_,
                 'properties': {
                     'class_': class_jss['class_'],
                     'name': {'type': 'string'}}
@@ -1599,7 +1237,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
             'type': 'object', 'is_class': True,
             'properties': {'name': {'type': 'string'}}
         })
-    elif issubclass(typing_, Measure):
+    elif inspect.isclass(typing_) and issubclass(typing_, Measure):
         ann = (key, float)
         jsonschema_element = jsonschema_from_annotation(
             annotation=ann, jsonschema_element=jsonschema_element,
@@ -1608,9 +1246,14 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
         jsonschema_element[key]['units'] = typing_.units
     elif typing_ is TextIO or typing_ is BinaryIO:
         jsonschema_element[key].update({'type': 'text', 'is_file': True})
+    elif typing_ is Any:
+        jsonschema_element[key].update({
+            'type': 'object',
+            'properties': {'.*': '.*'}
+        })
     else:
         classname = full_classname(object_=typing_, compute_for='class')
-        if issubclass(typing_, DessiaObject):
+        if inspect.isclass(typing_) and issubclass(typing_, DessiaObject):
             # Dessia custom classes
             jsonschema_element[key].update({
                 'type': 'object',
@@ -1810,10 +1453,10 @@ def deserialize_argument(type_, argument):
             msg = "Deserialization of typing {} is not implemented"
             raise NotImplementedError(msg.format(type_))
     elif type_ is TextIO:
-        deserialized_arg = io.StringIO(argument)
+        deserialized_arg = argument
     elif type_ is BinaryIO:
-        bytes_content = argument.encode('utf-8')
-        deserialized_arg = io.BytesIO(bytes_content)
+        # files are supplied as io.BytesIO  which is compatible with : BinaryIO
+        deserialized_arg = argument
     else:
         if type_ in TYPING_EQUIVALENCES.keys():
             if isinstance(argument, type_):
@@ -1827,13 +1470,14 @@ def deserialize_argument(type_, argument):
                     msg += '{} and {} in {}'.format(type(argument),
                                                     type_, argument)
                     raise TypeError(msg)
-        elif issubclass(type_, DessiaObject):
+        elif type_ is Any:
+            # Any type
+            deserialized_arg = argument
+        elif inspect.isclass(type_) and issubclass(type_, DessiaObject):
             # Custom classes
             deserialized_arg = type_.dict_to_object(argument)
         else:
-            # Static Dict
-            # TODO We shouldn't normally end up here anymore. Check this
-            deserialized_arg = argument
+            raise TypeError("Deserialization of ype {} is Not Implemented".format(type_))
     return deserialized_arg
 
 

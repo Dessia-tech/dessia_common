@@ -252,3 +252,54 @@ workflow_template = Template('''
 </body>
 </html>
 ''')
+
+
+visjs_template = Template('''
+<html>
+        <head>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.css" rel="stylesheet" />
+        <meta charset="utf-8"/>
+        <style type="text/css">
+            #mynetwork {
+                border: 1px solid lightgray;
+            }
+        </style>
+        <title>$name</title>
+    </head>
+    <body>
+    <div id="mynetwork"></div>
+
+    <script type="text/javascript">
+    var nodes = new vis.DataSet($nodes);
+
+var edges = new vis.DataSet($edges);
+
+
+// create a network
+    var container = document.getElementById('mynetwork');
+
+    // provide the data in the vis format
+    var data = {
+        nodes: nodes,
+        edges: edges
+    };
+
+    scale=function (min,max,total,value) {
+      if (max === min) {
+        return 0.5;
+      }
+      else {
+        var scale = 1 / (max);
+        return Math.max(0,(value )*scale);
+      }
+    }
+
+    var options = {edges: {scaling: {'customScalingFunction': scale}}};
+
+    // initialize your network!
+    var network = new vis.Network(container, data, options);
+</script>
+</body>
+</html>
+''')

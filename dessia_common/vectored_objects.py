@@ -6,6 +6,7 @@ Created on Wed Feb 19 15:56:12 2020
 @author: jezequel
 """
 
+from io import StringIO
 import math
 from typing import List, Dict, Any
 import numpy as np
@@ -282,7 +283,7 @@ class Catalog(DessiaObject):
             i = 0
             while bounded and i < len(filters):
                 filter_ = filters[i]
-                variable = filter_['attribute']
+                variable = filter_.attribute
                 value = line[self.get_variable_index(variable)]
                 bounded = is_bounded(filter_, value)
                 i += 1
@@ -290,6 +291,23 @@ class Catalog(DessiaObject):
 
         filtered_array = list(filter(apply_filters, self.array))
         return filtered_array
+
+    @classmethod
+    def from_csv(cls, file: StringIO, end: int = None, remove_duplicates: bool = False):
+        """
+        Generates MBSEs from given .csv file.
+        """
+        array = np.genfromtxt(file, dtype=None, delimiter=',',
+                               names=True, encoding=None)
+        variables = [v for v in array.dtype.fields.keys()]
+        lines = []
+        for i, line in enumerate(array):
+            if end is not None and i >= end:
+                break
+            if not remove_duplicates or (remove_duplicates
+                                         and line.tolist() not in lines):
+                lines.append(line.tolist())
+        return cls(lines, variables)
 
     def export_csv(self, attribute_name: str, indices: List[int], file: str):
         """
@@ -529,6 +547,21 @@ class Catalog(DessiaObject):
                               point_families=[point_family_0, point_family_1],
                               initial_view_on=True)]
 
+def from_csv(filename: str, end: int = None, remove_duplicates: bool = False):
+    """
+    Generates MBSEs from given .csv file.
+    """
+    array = np.genfromtxt(filename, dtype=None, delimiter=',',
+                           names=True, encoding=None)
+    variables = [v for v in array.dtype.fields.keys()]
+    lines = []
+    for i, line in enumerate(array):
+        if end is not None and i >= end:
+            break
+        if not remove_duplicates or (remove_duplicates
+                                     and line.tolist() not in lines):
+            lines.append(line.tolist())
+    return lines, variables
 
 def pareto_frontier(costs):
     """
@@ -550,18 +583,4 @@ def pareto_frontier(costs):
     return is_efficient
 
 
-def from_csv(filename: str, end: int = None, remove_duplicates: bool = False):
-    """
-    Generates MBSEs from given .csv file.
-    """
-    array = np.genfromtxt(filename, dtype=None, delimiter=',',
-                          names=True, encoding=None)
-    variables = [v for v in array.dtype.fields.keys()]
-    lines = []
-    for i, line in enumerate(array):
-        if end is not None and i >= end:
-            break
-        if not remove_duplicates or (remove_duplicates
-                                     and line.tolist() not in lines):
-            lines.append(line.tolist())
-    return lines, variables
+

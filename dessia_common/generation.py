@@ -80,7 +80,7 @@ class RegularDecisionTreeGenerator(DecisionTreeGenerator):
     This is still experimental and might be buggy
     """
 
-    def __init__(self, number_possibilities: List[int], name:str=''):
+    def __init__(self, number_possibilities:List[int], name:str=''):
         self.number_possibilities = number_possibilities
         self.leaves_depth = len(self.number_possibilities) - 1
         self.tree = dt.RegularDecisionTree(number_possibilities)
@@ -102,9 +102,14 @@ class RegularDecisionTreeGenerator(DecisionTreeGenerator):
 
         while not self.tree.finished:
             valid = self.is_vector_valid(self.tree.current_node)
+            if verbose:
+                print('current node: ', self.tree.current_node)
+                print('node vector validity:', valid)
             if valid:
                 model = self.model_from_vector(self.tree.current_node)
                 valid = self.is_model_valid(model)
+                if verbose:
+                    print('node model validity:', valid)
 
                 # TODO create a function in dectreee to know if a leaf
                 if self.tree.current_depth == self.leaves_depth:

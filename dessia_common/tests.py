@@ -6,7 +6,8 @@
 
 from dessia_common import DessiaObject
 import dessia_common.typings as dct
-from typing import List
+from typing import List, Dict
+
 
 class Submodel(DessiaObject):
     _generic_eq = True
@@ -54,41 +55,44 @@ class Optimizer(DessiaObject):
         
         
 class Component(DessiaObject):
-    def __init__(self, efficiency,
-                 name:str=''):
+    def __init__(self, efficiency, name: str = ''):
         self.efficiency = efficiency
         DessiaObject.__init__(self, name=name)
         
-    def power_simulation(self, power_value:dct.Power):
+    def power_simulation(self, power_value: dct.Power):
         return power_value*self.efficiency
-        
+
+
 class ComponentConnection(DessiaObject):
-    def __init__(self, input_component:Component,
-                 output_component:Component,
-                 name:str=''):
+    def __init__(self, input_component: Component,
+                 output_component: Component, name: str = ''):
         self.input_component = input_component
         self.output_component = output_component
         DessiaObject.__init__(self, name=name)
 
+
 class SystemUsage(DessiaObject):
-    def __init__(self, time:List[dct.Time], power:List[dct.Power],
-                 name:str=''):
+    def __init__(self, time: List[dct.Time], power: List[dct.Power],
+                 name: str = ''):
         self.time = time
         self.power = power
         DessiaObject.__init__(self, name=name)
-        
+
+
 class System(DessiaObject):
-    def __init__(self, components:List[Component],
-                 component_connections:List[ComponentConnection],
-                 name:str=''):
+    _dessia_methods = ['power_simulation']
+    
+    def __init__(self, components: List[Component],
+                 component_connections: List[ComponentConnection],
+                 name: str = ''):
         self.components = components
         self.component_connections = component_connections
         DessiaObject.__init__(self, name=name)
 
-    def output_power(self, input_power:dct.Power):
+    def output_power(self, input_power: dct.Power):
         return input_power*0.8
 
-    def power_simulation(self, usage:SystemUsage):
+    def power_simulation(self, usage: SystemUsage):
         output_power = []
         for time, input_power in zip(usage.time, usage.power):
             output_power.append(self.output_power(input_power))
@@ -96,12 +100,15 @@ class System(DessiaObject):
 
         
 class SystemSimulationResult(DessiaObject):
-    def __init__(self, system:System,
-                 system_usage:SystemUsage,
-                 output_power:List[dct.Power],
-                 name:str=''):
+    def __init__(self, system: System, system_usage: SystemUsage,
+                 output_power: List[dct.Power], name: str = ''):
         self.system = system
         self.system_usage = system_usage
         self.output_power = output_power
         DessiaObject.__init__(self, name=name)  
         
+class SystemSimulationList(DessiaObject):
+    def __init__(self, simulations:List[SystemSimulationResult],
+                 name:str=''):
+        self.simulations = simulations
+        DessiaObject.__init__(self, name=name) 

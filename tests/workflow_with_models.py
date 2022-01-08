@@ -84,9 +84,18 @@ demo_workflow_run = demo_workflow.run(input_values=input_values,
 
 # Assert to_dict, dict_to_object, hashes, eqs
 dict_ = demo_workflow_run.to_dict()
-object_ = wf.WorkflowRun.dict_to_object(dict_=dict_)
+demo_workflow_run2 = wf.WorkflowRun.dict_to_object(dict_=dict_)
 
-assert hash(demo_workflow_run) == hash(object_)
+assert hash(demo_workflow_run) == hash(demo_workflow_run2)
+
+assert demo_workflow_run2 == demo_workflow_run
+
+
+demo_workflow_run_copy = demo_workflow_run.copy()
+assert demo_workflow_run == demo_workflow_run_copy
+
+demo_workflow._check_platform()
+demo_workflow_run._check_platform()
 
 # Assert deserialization
 # demo_workflow_dict = demo_workflow.to_dict()
