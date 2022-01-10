@@ -14,7 +14,6 @@ MIN_MODULE_COVERAGE = 63.3
 untracked_modules = [
     "dessia_common/templates.py",
     "dessia_common/utils.py",
-    "dessia_common/generation.py",
     "dessia_common/optimization.py",
     'workflows/forms_simulation.py',
     'workflows/vectored_workflow.py',
