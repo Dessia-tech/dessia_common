@@ -6,7 +6,9 @@
 
 from dessia_common import DessiaObject
 import dessia_common.typings as dct
-from typing import List, Dict
+from typing import List, Dict, BinaryIO
+import volmdlr as vm
+
 
 
 class Submodel(DessiaObject):
@@ -55,12 +57,26 @@ class Optimizer(DessiaObject):
 
 
 class Component(DessiaObject):
-    def __init__(self, efficiency, name: str = ''):
+    _dessia_methods = ['upload_step']
+    
+    def __init__(self, efficiency: float,
+                 models: List[BinaryIO],
+                 name: str = ''):
         self.efficiency = efficiency
+        self.models = models
         DessiaObject.__init__(self, name=name)
 
     def power_simulation(self, power_value: dct.Power):
         return power_value * self.efficiency
+    
+    def upload_step(self):
+        vol_models = []
+        for model in self.models:
+            step = vm.step.Step(stream=model)
+            volume_model = step.to_volume_model(no_bug_mode=True)
+            vol_models.append(volume_model)
+        return vol_models
+
 
 
 class ComponentConnection(DessiaObject):
