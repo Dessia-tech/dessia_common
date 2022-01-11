@@ -23,5 +23,5 @@ dic_corresp = {i: j.name for i, j in enumerate(workflow.inputs)}
 
 # workflow.plot()
 
-c = Client(api_url='https://api.renault.dessia.tech')
-r = c.create_object_from_python_object(workflow)
+# c = Client(api_url='https://api.renault.dessia.tech')
+# r = c.create_object_from_python_object(workflow)
