@@ -52,15 +52,15 @@ class Optimizer(DessiaObject):
 
     def optimize(self, optimization_value: int = 3) -> None:
         self.model_to_optimize.value += optimization_value
-        
-        
+
+
 class Component(DessiaObject):
     def __init__(self, efficiency, name: str = ''):
         self.efficiency = efficiency
         DessiaObject.__init__(self, name=name)
-        
+
     def power_simulation(self, power_value: dct.Power):
-        return power_value*self.efficiency
+        return power_value * self.efficiency
 
 
 class ComponentConnection(DessiaObject):
@@ -81,7 +81,7 @@ class SystemUsage(DessiaObject):
 
 class System(DessiaObject):
     _dessia_methods = ['power_simulation']
-    
+
     def __init__(self, components: List[Component],
                  component_connections: List[ComponentConnection],
                  name: str = ''):
@@ -90,7 +90,7 @@ class System(DessiaObject):
         DessiaObject.__init__(self, name=name)
 
     def output_power(self, input_power: dct.Power):
-        return input_power*0.8
+        return input_power * 0.8
 
     def power_simulation(self, usage: SystemUsage):
         output_power = []
@@ -98,17 +98,18 @@ class System(DessiaObject):
             output_power.append(self.output_power(input_power))
         return SystemSimulationResult(self, usage, output_power)
 
-        
+
 class SystemSimulationResult(DessiaObject):
     def __init__(self, system: System, system_usage: SystemUsage,
                  output_power: List[dct.Power], name: str = ''):
         self.system = system
         self.system_usage = system_usage
         self.output_power = output_power
-        DessiaObject.__init__(self, name=name)  
-        
+        DessiaObject.__init__(self, name=name)
+
+
 class SystemSimulationList(DessiaObject):
-    def __init__(self, simulations:List[SystemSimulationResult],
-                 name:str=''):
+    def __init__(self, simulations: List[SystemSimulationResult],
+                 name: str = ''):
         self.simulations = simulations
-        DessiaObject.__init__(self, name=name) 
+        DessiaObject.__init__(self, name=name)

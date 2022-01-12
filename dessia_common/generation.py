@@ -8,10 +8,11 @@ class Generator(dc.DessiaObject):
     """
     Common parts of generator
     """
-    def __init__(self, name:str=''):
+
+    def __init__(self, name: str = ''):
         dc.DessiaObject.__init__(self, name=name)
 
-    def is_model_valid(self, model)->bool:        
+    def is_model_valid(self, model) -> bool:
         raise NotImplementedError('the method is_model_valid must be overloaded by subclassing class')
 
     def number_possibilities_from_model(self, model):
@@ -26,14 +27,14 @@ class TreeGenerator(Generator):
     _non_serializable_attributes = ['tree']
     _non_data_eq_attributes = ['tree']
 
-    def __init__(self, tree, name:str=''):
+    def __init__(self, tree, name: str = ''):
         self.tree = tree
         Generator.__init__(self, name=name)
 
-    def model_from_vector(self, vector:List[int]):        
+    def model_from_vector(self, vector: List[int]):
         raise NotImplementedError('the method model_from_vector must be overloaded by subclassing class')
 
-    def is_vector_valid(self, vector:List[int]) -> bool:
+    def is_vector_valid(self, vector: List[int]) -> bool:
         return True
 
     def number_possibilities_from_vector(self, vector):
@@ -50,15 +51,13 @@ class DecisionTreeGenerator(TreeGenerator):
     This is still experimental and might be buggy
     """
 
-    def __init__(self, name:str=''):
+    def __init__(self, name: str = ''):
         tree = dt.DecisionTree()
         TreeGenerator.__init__(self, tree, name=name)
 
-
-        
-    def generate(self, verbose:bool=False):
+    def generate(self, verbose: bool = False):
         model = self.model_from_vector(self.tree.current_node)
-        
+
         self.tree.SetCurrentNodeNumberPossibilities(self.number_possibilities_from_model(model))
         while not self.tree.finished:
             if verbose:
@@ -70,34 +69,34 @@ class DecisionTreeGenerator(TreeGenerator):
 
             if verbose:
                 print('node validity:', valid)
-            if  valid:
+            if valid:
                 number_possibilities = self.number_possibilities_from_model(model)
                 if verbose:
                     print('number possibilities', number_possibilities)
                 self.tree.SetCurrentNodeNumberPossibilities(number_possibilities)
-                
+
             # TODO create a function in dectreee to know if a leaf
             if valid and (number_possibilities == 0):
                 yield model
-                
+
             self.tree.NextNode(valid)
-                
-                
+
+
 class RegularDecisionTreeGenerator(TreeGenerator):
     """
     Abstract class, to be subclassed by real class
     This is still experimental and might be buggy
     """
 
-    def __init__(self, number_possibilities:List[int], name:str=''):
+    def __init__(self, number_possibilities: List[int], name: str = ''):
         self.number_possibilities = number_possibilities
         self.leaves_depth = len(self.number_possibilities) - 1
         tree = dt.RegularDecisionTree(number_possibilities)
         TreeGenerator.__init__(self, tree=tree, name=name)
 
-    def generate(self, sorted_nodes:bool=False,
-                 unique_nodes:bool=False,
-                 verbose:bool=False):
+    def generate(self, sorted_nodes: bool = False,
+                 unique_nodes: bool = False,
+                 verbose: bool = False):
         if sorted_nodes:
             if unique_nodes:
                 next_node_function = self.tree.NextSortedUniqueNode

@@ -4,6 +4,7 @@
 
 """
 
+
 class ExceptionWithTraceback(Exception):
     def __init__(self, message, traceback_=''):
         self.message = message

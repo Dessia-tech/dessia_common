@@ -48,6 +48,7 @@ from math import cos
 from dessia_common.files import BinaryFile, StringFile
 import io
 
+
 class StandaloneSubobject(DessiaObject):
     _standalone_in_db = True
     _generic_eq = True
@@ -65,7 +66,7 @@ class StandaloneSubobject(DessiaObject):
 
     @classmethod
     def generate_many(cls, seed: int) -> List['StandaloneSubobject']:
-        subobjects = [cls.generate((i+1)*1000) for i in range(seed)]
+        subobjects = [cls.generate((i + 1) * 1000) for i in range(seed)]
         return subobjects
 
     def contour(self):
@@ -134,7 +135,7 @@ class EmbeddedSubobject(DessiaObject):
     @classmethod
     def generate(cls, seed: int) -> 'EmbeddedSubobject':
         if not bool(seed % 2):
-            embedded_list = list(range(int(seed/2)))
+            embedded_list = list(range(int(seed / 2)))
         else:
             embedded_list = None
         name = 'Embedded Subobject' + str(seed)
@@ -142,7 +143,7 @@ class EmbeddedSubobject(DessiaObject):
 
     @classmethod
     def generate_many(cls, seed: int) -> List['EmbeddedSubobject']:
-        return [cls.generate(i) for i in range(ceil(seed/3))]
+        return [cls.generate(i) for i in range(ceil(seed / 3))]
 
 
 class EnhancedEmbeddedSubobject(EmbeddedSubobject):
@@ -157,7 +158,7 @@ class EnhancedEmbeddedSubobject(EmbeddedSubobject):
     @classmethod
     def generate(cls, seed: int) -> 'EnhancedEmbeddedSubobject':
         embedded_list = [seed]
-        embedded_array = [[seed, seed*10, seed*10]]*seed
+        embedded_array = [[seed, seed * 10, seed * 10]] * seed
         name = 'Embedded Subobject' + str(seed)
         return cls(embedded_list=embedded_list, embedded_array=embedded_array,
                    name=name)
@@ -226,16 +227,16 @@ class StandaloneObject(DessiaObject):
         is_even = not bool(seed % 2)
         standalone_subobject = StandaloneSubobject.generate(seed)
         embedded_subobject = EmbeddedSubobject.generate(seed)
-        dynamic_dict = {'n'+str(i): bool(seed % 2) for i in range(seed)}
-        float_dict = {'k'+str(i): seed*1.09 for i in range(seed)}
-        string_dict = {'key'+str(i): 'value'+str(i) for i in range(seed)}
+        dynamic_dict = {'n' + str(i): bool(seed % 2) for i in range(seed)}
+        float_dict = {'k' + str(i): seed * 1.09 for i in range(seed)}
+        string_dict = {'key' + str(i): 'value' + str(i) for i in range(seed)}
         tuple_arg = ('value', seed * 3)
         intarg = seed
-        strarg = str(seed) * floor(seed/3)
+        strarg = str(seed) * floor(seed / 3)
         object_list = StandaloneSubobject.generate_many(seed)
         subobject_list = EmbeddedSubobject.generate_many(seed)
-        builtin_list = [seed]*seed
-        array_arg = [builtin_list]*3
+        builtin_list = [seed] * seed
+        array_arg = [builtin_list] * 3
         union_arg = [EnhancedEmbeddedSubobject.generate(seed),
                      EmbeddedSubobject.generate(seed)]
         if is_even:
@@ -290,13 +291,13 @@ class StandaloneObject(DessiaObject):
             seed = int(raw_seed.strip())
         finally:
             stream.close()
-        return cls.generate(seed=seed, name= my_file_name)
+        return cls.generate(seed=seed, name=my_file_name)
 
     @classmethod
     def generate_from_text_file(cls, stream: StringFile):
         try:
             my_text = stream.read()
-            my_file_name =  stream.filename
+            my_file_name = stream.filename
             name, raw_seed = my_text.split(",")
             seed = int(raw_seed.strip())
         finally:
@@ -342,7 +343,7 @@ class StandaloneObject(DessiaObject):
         # Scatter Plot
         bounds = {'x': [0, 6], 'y': [100, 2000]}
         catalog = Catalog.random_2d(bounds=bounds, threshold=8000)
-        points = [plot_data.Point2D(cx=v[0], cy=v[1], name='Point'+str(i))
+        points = [plot_data.Point2D(cx=v[0], cy=v[1], name='Point' + str(i))
                   for i, v in enumerate(catalog.array)]
         axis = plot_data.Axis()
         tooltip = plot_data.Tooltip(attributes=attributes,
@@ -401,7 +402,7 @@ class StandaloneObject(DessiaObject):
         return [primitives_group, scatter_plot,
                 parallel_plot, multi_plot, graph2d]
 
-    def maldefined_method(self, arg0, arg1=1, arg2: int = 10, arg3 = 3):
+    def maldefined_method(self, arg0, arg1=1, arg2: int = 10, arg3=3):
         """
         Defining a docstring for testing parsing purpose
         """
@@ -430,14 +431,14 @@ class StandaloneObject(DessiaObject):
         [Clymene venisses sinat](http://est.net/umbram.html)
         protinus pulchra, sucos! Tanta haec varios tuaque,
         nisi Erigonen si aquae Hippomene inguine murmur.
-        
+
         1. Poma enim dextra icta capillis extinctum foedera
         2. Mediis requirit exercita ascendere fecisse sola
         3. Sua externis tigride saevarum
         4. Aves est pendebant sume latentis
-        
+
         ## Suum videre quondam generis dolentem simul femineos
-        
+
         Ille lacus progenitore Cycnum pressa, excidit silva
         [crudus](http://www.domino.com/nequevox), boum ducem vocari,
         ne monte tanto harenae.
@@ -448,23 +449,23 @@ class StandaloneObject(DessiaObject):
         Dedit putrefacta cortex.
         Tenet aut carmina quod proditione media; pro ense medicina
         vita repetit adrectisque inops e sentiat.
-        
+
         > Imagine caesaries superbos muneraque *ne terras* cunctis.
         Diversae Hesioneque
         > numinis regia at anima nascuntur Iovis.
         Sua fama quoque capillos lugubris
         > **egimus**, a ingenti [Ericthonio](http://raptos.org/lucem)
         iubebat!
-        
+
         ## Ponderis venit veteris mihi tofis
-        
+
         Propensum discedunt, iacere dedisti; lene potest caelo,
         felix flamma caecus decet excipit.
         *Aurum occiderat*, retro cum, quorum *Diana timuere At*.
         Ait Labros hasta mundi, **ut est** ruit nosse o gravet!
-        
+
         ## Qui aether undis nulla
-        
+
         Homines oppidaque nominibus devexo genitoris quoque,
         praesensque rota Saturnia.
         Auras cecinit fera quae mirantum imbris,
@@ -472,7 +473,7 @@ class StandaloneObject(DessiaObject):
         saepe adicit trepidant.
         [Siqua radiis quod](http://www.naris-pectebant.org/comeset)
         ad duabus alienisque, sponte; dum.
-        
+
         Occidit Babylonia dubitare. Vultus cui: erat dea!
         Iam ense forma est se, tibi pedem adfectat nec nostra.
         Armenta socium nutrix [precatur](http://in-fraxinus.io/)
@@ -481,7 +482,7 @@ class StandaloneObject(DessiaObject):
         Verum a, tuo quoque nec Mysum per posses;
         vigor danda meruit: tecum audire responsa
         [conplexae](http://quis.io/disrestat.html) et alios.
-        
+
         Agros grata illo animo mei nova, in magis furens et
         [modo](http://pondere.com/aquis) dimittere ubi neque es!
         Sua qua ac ire una facit Alcmene coepere

@@ -9,13 +9,13 @@ Created on Thu Nov 18 14:16:30 2021
 import networkx as nx
 
 
-def cut_tree_final_branches(graph:nx.DiGraph):
-    
+def cut_tree_final_branches(graph: nx.DiGraph):
+
     number_node_removed = 1
     while number_node_removed:
         nodes_to_delete = []
         # number_node_removed = 0
-        for node in graph.nodes():            
+        for node in graph.nodes():
             if graph.out_degree(node) == 0:
                 # It is a leaf
                 degree_in = graph.in_degree(node)
@@ -26,14 +26,15 @@ def cut_tree_final_branches(graph:nx.DiGraph):
                     degree_in = graph.in_degree(current_node)
         number_node_removed = len(nodes_to_delete)
         if number_node_removed:
-            new_nodes = [n for n in graph.nodes if not n in nodes_to_delete] 
+            new_nodes = [n for n in graph.nodes if not n in nodes_to_delete]
             graph = nx.subgraph(graph, new_nodes)
-            
+
     return graph
 
-def explore_tree_from_leaves(graph:nx.DiGraph):
+
+def explore_tree_from_leaves(graph: nx.DiGraph):
     exploration_order = []
-    explored = {n:False for n in graph.nodes}
+    explored = {n: False for n in graph.nodes}
     nn = graph.number_of_nodes()
     # print('nn', nn)
     successors = {}
@@ -51,12 +52,12 @@ def explore_tree_from_leaves(graph:nx.DiGraph):
                     node_successors = list(graph.successors(node))
                     successors[node] = node_successors
                     ns += 1
-                    
+
                 for out_node in node_successors:
                     if not explored[out_node]:
                         neighbors_explored = False
                         break
-                    
+
                 if neighbors_explored:
                     # Mark explored
                     explored[node] = True

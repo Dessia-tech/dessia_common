@@ -699,7 +699,7 @@ class Product(Block):
 
 
 class Filter(Block):
-    """ 
+    """
     :param filters: A list of dictionaries,
                     each corresponding to a value to filter.
                     The dictionary should be as follows :
@@ -902,7 +902,7 @@ class ModelAttribute(Block):
 
     def evaluate(self, values):
         return [enhanced_deep_attr(values[self.inputs[0]],
-                                      self.attribute_name)]
+                                   self.attribute_name)]
 
 
 class Sum(Block):
@@ -1156,10 +1156,10 @@ class Workflow(Block):
         output_hash = self.variable_indices(self.outputs[0])
         if not isinstance(output_hash, int):
             output_hash = sum(output_hash)
-            
+
         base_hash = len(self.blocks) \
-                    + 11 * len(self.pipes) \
-                    + output_hash
+            + 11 * len(self.pipes) \
+            + output_hash
         block_hash = int(sum([b.equivalent_hash() for b in self.blocks])
                          % 10e5)
         return base_hash + block_hash
@@ -1179,7 +1179,7 @@ class Workflow(Block):
         return True
 
     def is_valid(self):
-        
+
         return True
 
     def __deepcopy__(self, memo=None):
@@ -1210,7 +1210,7 @@ class Workflow(Block):
             # memo[pipe] = copied_pipe
 
             pipes.append(copied_pipe)
-            
+
         # copied_workflow.pipes = pipes
 
         output = copied_workflow.variable_from_index(self.variable_indices(self.output))
@@ -1257,7 +1257,7 @@ class Workflow(Block):
 
             annotation_jsonschema = jsonschema_from_annotation(
                 annotation=annotation, title=title,
-                order=i+1, jsonschema_element=current_dict,
+                order=i + 1, jsonschema_element=current_dict,
             )
             # Order is i+1 because of name that is at 0
             current_dict.update(annotation_jsonschema[str(i)])
@@ -1282,7 +1282,7 @@ class Workflow(Block):
     def to_dict(self, memo=None, use_pointers=True, path='#'):
         if memo is None:
             memo = {}
-            
+
         self.refresh_blocks_positions()
         dict_ = Block.to_dict(self)
         blocks = [b.to_dict() for b in self.blocks]
@@ -1302,7 +1302,7 @@ class Workflow(Block):
         for variable, value in self.imposed_variable_values.items():
             var_index = self.variable_indices(variable)
             # imposed_variables.append(var_index)
-            
+
             if use_pointers:
                 path_value = '{}/{}'.format(path, var_index)
                 ser_value = serialize_with_pointers(value, memo=memo, path=path_value)
@@ -1330,13 +1330,13 @@ class Workflow(Block):
 
         pipes = []
         for source, target in dict_['pipes']:
-            if type(source) == int:
+            if isinstance(source, int):
                 variable1 = nonblock_variables[source]
             else:
                 ib1, _, ip1 = source
                 variable1 = blocks[ib1].outputs[ip1]
 
-            if type(target) == int:
+            if isinstance(target, int):
                 variable2 = nonblock_variables[target]
             else:
                 ib2, _, ip2 = target
@@ -1372,7 +1372,7 @@ class Workflow(Block):
                 value = deserialize(serialized_value)
                 variable = temp_workflow.variable_from_index(variable_index)
                 imposed_variable_values[variable] = value
-                
+
         else:
             imposed_variable_values = None
         return cls(blocks=blocks, pipes=pipes, output=output,
@@ -1412,7 +1412,7 @@ class Workflow(Block):
         - int representin port side (0: input, 1: output)
         - Port index : int
         """
-        if type(index) == int:
+        if isinstance(index, int):
             variable = self.nonblock_variables[index]
         else:
             if not index[1]:
@@ -1582,7 +1582,7 @@ class Workflow(Block):
             progress_callback=lambda x: None,
             name=None):
         log = ''
-        
+
         state = self.start_run(input_values)
         state.activate_inputs(check_all_inputs=True)
 
@@ -1605,7 +1605,7 @@ class Workflow(Block):
             print(log_line)
 
         state.output_value = state.values[self.outputs[0]]
-        
+
         if not name:
             name = self.name + ' run'
         return state.to_workflow_run(name=name)
@@ -1629,11 +1629,11 @@ class Workflow(Block):
     #     log_line = log_msg.format(time.strftime('%d/%m/%Y %H:%M:%S UTC',
     #                                             time.gmtime(start_time)))
     #     log += (log_line + '\n')
-        
+
     #     variable_values = {}
     #     for index_input, value in input_values.items():
     #         variable_values[self.variable_indices(self.inputs[index_input])] = value
-        
+
     #     return ManualWorkflowRun(workflow=self, input_values=input_values,
     #                              output_value=None,
     #                              variables_values=variable_values,
@@ -1688,7 +1688,7 @@ class Workflow(Block):
         edges = []
         for pipe in self.pipes:
             input_index = self.variable_indices(pipe.input_variable)
-            if type(input_index) == int:
+            if isinstance(input_index, int):
                 node1 = input_index
             else:
                 ib1, is1, ip1 = input_index
@@ -1699,7 +1699,7 @@ class Workflow(Block):
                 node1 = [ib1, ip1]
 
             output_index = self.variable_indices(pipe.output_variable)
-            if type(output_index) == int:
+            if isinstance(output_index, int):
                 node2 = output_index
             else:
                 ib2, is2, ip2 = output_index
@@ -1762,7 +1762,7 @@ class Workflow(Block):
 
     def package_mix(self):
         """
-        
+
         """
         package_mix = {}
         for block in self.blocks:
@@ -1851,7 +1851,7 @@ class WorkflowState(DessiaObject):
         self.values = values
         self.start_time = start_time
         self.log = log
-        
+
         self.activated_items = activated_items
 
         DessiaObject.__init__(self, name=name)
@@ -1956,15 +1956,15 @@ class WorkflowState(DessiaObject):
         activated_items = [b for b in self.workflow.blocks
                            if b in self.activated_items
                            and self.activated_items[b]]
-        return len(activated_items)/len(self.workflow.blocks)
+        return len(activated_items) / len(self.workflow.blocks)
 
     def block_evaluation(self, block_index: int,
                          progress_callback=lambda x: None) -> bool:
         """
         Select a block to evaluate
         """
-        block = self.workflow.blocks[block_index]        
-        
+        block = self.workflow.blocks[block_index]
+
         self.activate_inputs()
         for pipe in self._activable_pipes():
             self._evaluate_pipe(pipe)
@@ -1975,7 +1975,7 @@ class WorkflowState(DessiaObject):
             return True
         else:
             return False
-        
+
     def evaluate_next_block(self, progress_callback=lambda x: None) -> Optional[Block]:
         """
         Evaluate a block
@@ -1983,7 +1983,7 @@ class WorkflowState(DessiaObject):
         self.activate_inputs()
         for pipe in self._activable_pipes():
             self._evaluate_pipe(pipe)
-            
+
         blocks = self._activable_blocks()
         if blocks:
             block = blocks[0]
@@ -2014,7 +2014,7 @@ class WorkflowState(DessiaObject):
                 progress_callback(self.progress)
                 something_activated = True
         return evaluated_blocks
-    
+
     def _activable_pipes(self):
         pipes = []
         for pipe in self.workflow.pipes:
@@ -2050,12 +2050,12 @@ class WorkflowState(DessiaObject):
             self.log += log_line + '\n'
             if verbose:
                 print(log_line)
-                
+
         output_values = block.evaluate({i: self.values[i]
                                         for i in block.inputs})
         for input_ in block.inputs:
             if input_.memorize:
-                indices = str(self.workflow.variable_indices(input_))# Str is strange
+                indices = str(self.workflow.variable_indices(input_))  # Str is strange
                 self.variables_values[indices] = self.values[input_]
         # Updating progress
         if progress_callback is not None:
@@ -2156,12 +2156,12 @@ class WorkflowRun(DessiaObject):
             },
             'start_time': {
                 "type": "number", "title": "Start Time",
-                "editable": False,  "python_typing": "builtins.int",
+                "editable": False, "python_typing": "builtins.int",
                 "description": "Start time of simulation", "order": 4
             },
             'end_time': {
                 "type": "number", "title": "End Time",
-                "editable": False,  "python_typing": "builtins.int",
+                "editable": False, "python_typing": "builtins.int",
                 "description": "End time of simulation", "order": 5
             },
             'log': {
@@ -2192,10 +2192,9 @@ class WorkflowRun(DessiaObject):
 
     def _data_eq(self, other_workflow_run):
         # TODO : Should we add input_values and variables values in test ?
-        if not data_eq(self.output_value,  other_workflow_run.output_value):
+        if not data_eq(self.output_value, other_workflow_run.output_value):
             return False
         return self.workflow._data_eq(other_workflow_run.workflow)
-
 
     def _data_hash(self):
         # TODO : Should we add input_values and variables values in test ?
@@ -2246,15 +2245,15 @@ class WorkflowRun(DessiaObject):
     #                start_time=dict_['start_time'], end_time=dict_['end_time'],
     #                log=dict_['log'], name=dict_['name'])
 
-    def to_dict(self, use_pointers:bool=True, memo=None, path:str='#'):
+    def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#'):
         input_values = {}
-        
+
         if not use_pointers:
             raise NotImplementedError('WorkflowRun to_dict should not be called with use_pointers=False')
-            
+
         if memo is None:
             memo = {}
-        
+
         for i, v in self.input_values.items():
             serialized_v, memo = serialize_with_pointers(v, memo, path='#/input_values/{}'.format(i))
             input_values[i] = serialized_v
@@ -2264,11 +2263,11 @@ class WorkflowRun(DessiaObject):
             serialized_v, memo = serialize_with_pointers(v, memo,
                                                          path='#/variables_values/{}'.format(k))
             variables_values[k] = serialized_v
-            
+
         # variables_values = {k: serialize(v)
         #                     for k, v in self.variables_values.items()}
         workflow = self.workflow.to_dict(path='#/workflow', memo=memo)
-        
+
         dict_ = DessiaObject.base_dict(self)
         dict_.update({'workflow': workflow,
                       'input_values': input_values,
@@ -2324,7 +2323,7 @@ class WorkflowRun(DessiaObject):
 
 def set_inputs_from_function(method, inputs=None):
     """
-    
+
     """
     if inputs is None:
         inputs = []
@@ -2341,7 +2340,7 @@ def set_inputs_from_function(method, inputs=None):
             try:
                 annotations = get_type_hints(method)
                 type_ = type_from_annotation(annotations[argument],
-                                                module=method.__module__)
+                                             module=method.__module__)
             except KeyError:
                 msg = 'Argument {} of method/function {} has no typing'
                 raise UntypedArgumentError(

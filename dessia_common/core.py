@@ -42,7 +42,6 @@ JSONSCHEMA_HEADER = {"definitions": {},
                      "properties": {}}
 
 
-
 TYPES_STRINGS = {int: 'int', float: 'float', bool: 'boolean', str: 'str',
                  list: 'list', tuple: 'tuple', dict: 'dict'}
 
@@ -84,10 +83,10 @@ def is_bson_valid(value, allow_nonstring_keys=False) -> Tuple[bool, str]:
     """
     if isinstance(value, (int, float, str)):
         return True, ''
-    
+
     if value is None:
         return True, ''
-    
+
     if isinstance(value, dict):
         for k, v in value.items():
             # Key check
@@ -107,14 +106,14 @@ def is_bson_valid(value, allow_nonstring_keys=False) -> Tuple[bool, str]:
             else:
                 log = 'key {} of dict is an unsuported type {}'
                 return False, log.format(k, type(k))
-        
+
             # Value Check
             v_valid, hint = is_bson_valid(
                 value=v, allow_nonstring_keys=allow_nonstring_keys
             )
             if not v_valid:
                 return False, hint
-        
+
     elif is_sequence(value):
         for v in value:
             valid, hint = is_bson_valid(
@@ -180,7 +179,7 @@ class DessiaObject:
     _ordered_attributes = []
     _titled_attributes = []
     _eq_is_data_eq = True
-    
+
     _init_variables = None
     _allowed_methods = []
     _whitelist_attributes = []
@@ -207,7 +206,7 @@ class DessiaObject:
 
     def _data_eq(self, other_object):
         return data_eq(self, other_object)
-        
+
     def _data_hash(self):
         hash_ = 0
         forbidden_keys = (self._non_data_eq_attributes
@@ -261,14 +260,13 @@ class DessiaObject:
                  and not k.startswith('_')}
         return dict_
 
-    def to_dict(self, use_pointers=False, memo=None, path:str='#') -> JsonSerializable:
+    def to_dict(self, use_pointers=False, memo=None, path: str = '#') -> JsonSerializable:
         """
         Generic to_dict method
         """
         if memo is None:
             memo = {}
-            
-            
+
         # Default to dict
         serialized_dict = self.base_dict()
         dict_ = self._serializable_dict()
@@ -283,7 +281,7 @@ class DessiaObject:
     def dict_to_object(cls, dict_: JsonSerializable,
                        force_generic: bool = False,
                        global_dict=None,
-                       pointers_memo: Dict[str, Any]=None) -> 'DessiaObject':
+                       pointers_memo: Dict[str, Any] = None) -> 'DessiaObject':
         """
         Generic dict_to_object method
         """
@@ -485,17 +483,17 @@ class DessiaObject:
             file = open(filepath, 'w')
         else:
             file = filepath
-            
+
         try:
             dict_ = self.to_dict(use_pointers=True)
         except TypeError:
             dict_ = self.to_dict()
 
         json.dump(dict_, file, indent=indent)
-        
+
         if isinstance(filepath, str):
-            file.close()    
-        
+            file.close()
+
     @classmethod
     def load_from_file(cls, filepath):
         if isinstance(filepath, str):
@@ -593,12 +591,11 @@ class DessiaObject:
         self.volmdlr_volume_model(**kwargs).babylonjs(use_cdn=use_cdn,
                                                       debug=debug)
 
-    def save_babylonjs_to_file(self, filename:str=None, use_cdn:bool=True,
-                               debug:bool=False, **kwargs):
+    def save_babylonjs_to_file(self, filename: str = None, use_cdn: bool = True,
+                               debug: bool = False, **kwargs):
         self.volmdlr_volume_model(**kwargs).save_babylonjs_to_file(filename=filename,
                                                                    use_cdn=use_cdn,
                                                                    debug=debug)
-
 
     def _displays(self, **kwargs) -> List[JsonSerializable]:
         if hasattr(self, '_display_angular'):
@@ -667,7 +664,7 @@ class DessiaObject:
         filepath can be a str or an io.StringIO
         """
         return self.volmdlr_volume_model().to_step(filepath=filepath)
-    
+
     def to_stl(self, filepath):
         """
         filepath can be a str or an io.StringIO
@@ -747,7 +744,7 @@ class ParameterSet(DessiaObject):
 
     @property
     def means(self):
-        means = {k: sum(v)/len(v) for k, v in self.values.items()}
+        means = {k: sum(v) / len(v) for k, v in self.values.items()}
         return means
 
 
@@ -910,6 +907,7 @@ def stringify_dict_keys(obj):
         return obj
     return new_obj
 
+
 def serialize_dict(dict_):
     serialized_dict = {}
     for key, value in dict_.items():
@@ -917,7 +915,7 @@ def serialize_dict(dict_):
             # try:
             #     serialized_value = value.to_dict()
             # except TypeError:
-            #     # case of a class as an 
+            #     # case of a class as an
             serialized_value = value.to_dict()
         elif isinstance(value, dict):
             serialized_value = serialize_dict(value)
@@ -945,6 +943,7 @@ def serialize_sequence(seq):
             serialized_sequence.append(value)
     return serialized_sequence
 
+
 def serialize(deserialized_element):
     if isinstance(deserialized_element, DessiaObject):
         serialized = deserialized_element.to_dict()
@@ -955,7 +954,6 @@ def serialize(deserialized_element):
     else:
         serialized = deserialized_element
     return serialized
-
 
 
 def list_hash(list_):
@@ -1100,8 +1098,6 @@ def is_bounded(filter_: DessiaFilter, value: float):
     return bounded
 
 
-
-
 def type_from_annotation(type_, module):
     """
     Clean up a proposed type if there are stringified
@@ -1114,8 +1110,6 @@ def type_from_annotation(type_, module):
             # Evaluating
             type_ = getattr(import_module(module), type_)
     return type_
-
-
 
 
 def jsonschema_from_annotation(annotation, jsonschema_element,
@@ -1621,7 +1615,7 @@ def parse_docstring(cls: Type) -> ParsedDocstring:
             arg = splitted_param[0]
             typestr = splitted_param[1]
             argname, argdesc = arg.split(":", maxsplit=1)
-            argtype = typestr.split(argname+":")[-1]
+            argtype = typestr.split(argname + ":")[-1]
             annotation = annotations[argname]
             args[argname] = {'desc': argdesc.strip(), 'type_': argtype.strip(),
                              'annotation': str(annotation)}

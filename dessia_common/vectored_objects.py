@@ -17,7 +17,7 @@ from pyDOE import lhs
 
 
 class ParetoSettings(DessiaObject):
-    """ 
+    """
     :param coeff_names: A dictionary containing the name of a variable as key and \
     a boolean for minimization as value.
     :type coeff_names: Dict[str, bool]
@@ -86,7 +86,7 @@ class Objective(DessiaObject):
         rating = 0
         for variable, value in values.items():
             coefficient = self.coefficients[variable]
-            rating += coefficient*value
+            rating += coefficient * value
         return rating
 
     @classmethod
@@ -99,9 +99,9 @@ class Objective(DessiaObject):
         for i, angle in enumerate(angles):
             matrix_i = np.identity(n)
             matrix_i[i, i] = math.cos(angle)
-            matrix_i[i+1, i] = -math.sin(angle)
-            matrix_i[i, i+1] = math.sin(angle)
-            matrix_i[i+1, i+1] = math.cos(angle)
+            matrix_i[i + 1, i] = -math.sin(angle)
+            matrix_i[i, i + 1] = math.sin(angle)
+            matrix_i[i + 1, i + 1] = math.cos(angle)
             matrix = np.dot(matrix, matrix_i)
         x = np.zeros(n)
         x[0] = 1
@@ -298,7 +298,7 @@ class Catalog(DessiaObject):
         Generates MBSEs from given .csv file.
         """
         array = np.genfromtxt(file, dtype=None, delimiter=',',
-                               names=True, encoding=None)
+                              names=True, encoding=None)
         variables = [v for v in array.dtype.fields.keys()]
         lines = []
         for i, line in enumerate(array):
@@ -408,9 +408,9 @@ class Catalog(DessiaObject):
                                          enabled=True)
         objectives = []
         while len(array) <= end:
-            line = [(bounds[v][1]-bounds[v][0])*np.random.rand() + bounds[v][0]
+            line = [(bounds[v][1] - bounds[v][0]) * np.random.rand() + bounds[v][0]
                     for v in variables]
-            if line[0]*line[1] >= threshold:
+            if line[0] * line[1] >= threshold:
                 array.append(line)
         return cls(array=array, variables=variables,
                    pareto_settings=pareto_settings, objectives=objectives,
@@ -472,15 +472,15 @@ class Catalog(DessiaObject):
                 self.objectives.append(best_objective)
         if not success:
             raise ValueError("No solutions found")
-            
+
     def plot_data(self):
         from plot_data.core import Tooltip, TextStyle, SurfaceStyle,\
             Scatter, ParallelPlot, PointFamily, MultiplePlots
         from plot_data.colors import GREY, LIGHTGREY, LIGHTGREEN, LIGHTBLUE
-            
+
         name_column_0 = self.variables[0]
         list_name = self.get_values(name_column_0)
-            
+
         list_settings = [name
                          for name in self.pareto_settings.minimized_attributes]
         list_value = [self.get_values(cv) for cv in self.choice_variables]
@@ -492,21 +492,21 @@ class Catalog(DessiaObject):
                 dict_element = {name_column_0: list_name[i]}
                 for k, setting in enumerate(self.choice_variables):
                     dict_element[setting] = list_value[k][i]
-                    
+
                 if p_frontier[i]:
                     elements[1].append(dict_element)
                 else:
                     elements[0].append(dict_element)
-             
+
         else:
             elements = [[], []]
             for i in range(len(list_name)):
                 dict_element = {name_column_0: list_name[i]}
                 for k, setting in enumerate(self.choice_variables):
                     dict_element[setting] = list_value[k][i]
-                    
+
                 elements[0].append(dict_element)
-        
+
         # ScatterPlot
         attributes = self.choice_variables
         text_style = TextStyle(text_color=GREY,
@@ -517,42 +517,43 @@ class Catalog(DessiaObject):
                                  surface_style=surface_style,
                                  text_style=text_style,
                                  tooltip_radius=10)
-        
+
         all_points = elements[0] + elements[1]
-        
+
         plots = []
-        
+
         # ScatterPlot
         for j in range(len(list_settings)):
-            for i in range(j+1, len(list_settings)):
+            for i in range(j + 1, len(list_settings)):
                 if len(plots) < 3:
                     plots.append(Scatter(tooltip=custom_tooltip,
                                          x_variable=list_settings[j],
                                          y_variable=list_settings[i],
                                          elements=all_points))
-        
+
         list_index_0 = [k for k in range(len(elements[0]))]
         point_family_0 = PointFamily(LIGHTBLUE, list_index_0,
                                      name='Non pareto')
-        
+
         n_pareto = len(elements[1])
-        list_index_1 = [len(all_points)-i-1 for i in range(n_pareto)]
+        list_index_1 = [len(all_points) - i - 1 for i in range(n_pareto)]
         point_family_1 = PointFamily(LIGHTGREEN, list_index_1, name='Pareto')
-        
+
         # ParallelPlot
         plots.append(ParallelPlot(elements=all_points,
                                   axes=attributes))
-        
+
         return [MultiplePlots(plots=plots, elements=all_points,
                               point_families=[point_family_0, point_family_1],
                               initial_view_on=True)]
+
 
 def from_csv(filename: str, end: int = None, remove_duplicates: bool = False):
     """
     Generates MBSEs from given .csv file.
     """
     array = np.genfromtxt(filename, dtype=None, delimiter=',',
-                           names=True, encoding=None)
+                          names=True, encoding=None)
     variables = [v for v in array.dtype.fields.keys()]
     lines = []
     for i, line in enumerate(array):
@@ -562,6 +563,7 @@ def from_csv(filename: str, end: int = None, remove_duplicates: bool = False):
                                      and line.tolist() not in lines):
             lines.append(line.tolist())
     return lines, variables
+
 
 def pareto_frontier(costs):
     """
@@ -581,6 +583,3 @@ def pareto_frontier(costs):
             # And keep self
             is_efficient[index] = True
     return is_efficient
-
-
-

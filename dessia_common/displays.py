@@ -5,8 +5,8 @@ from dessia_common.templates import visjs_template
 from networkx import DiGraph, Graph, kamada_kawai_layout
 
 
-def networkx_to_visjs_data(networkx_graph:Graph):
-    visjs_data = {'name':networkx_graph.name, 'nodes': [], 'edges': []}
+def networkx_to_visjs_data(networkx_graph: Graph):
+    visjs_data = {'name': networkx_graph.name, 'nodes': [], 'edges': []}
 
     pos = kamada_kawai_layout(networkx_graph)
 
@@ -15,14 +15,14 @@ def networkx_to_visjs_data(networkx_graph:Graph):
         node_data = {'id': i}
 
         if node in pos:
-            node_data['x'], node_data['y'] = pos[node] 
+            node_data['x'], node_data['y'] = pos[node]
 
         if 'name' not in node_dict and 'label' not in node_dict:
             if isinstance(node, str):
                 node_data['label'] = node
             elif isinstance(node, int):
                 node_data['label'] = str(node)
-            else:                  
+            else:
                 node_data['label'] = ''
         elif 'name' in node_dict and 'label' not in node_dict:
             node_data['label'] = node_dict['name']
@@ -57,13 +57,13 @@ def networkx_to_visjs_data(networkx_graph:Graph):
     return visjs_data
 
 
-def draw_networkx_graph(networkx_graph:Graph):
+def draw_networkx_graph(networkx_graph: Graph):
     visjs_data = networkx_to_visjs_data(networkx_graph)
     s = visjs_template.substitute(**visjs_data)
     with tempfile.NamedTemporaryFile(suffix=".html",
                                      delete=False) as file:
         file.write(bytes(s, 'utf8'))
-        
+
     # with open('graph_visJS.html', 'wb') as file:
     #     file.write(s.encode('utf-8'))
     webbrowser.open('file://' + os.path.realpath(file.name))
