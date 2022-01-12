@@ -45,6 +45,9 @@ from dessia_common.vectored_objects import Catalog
 from numpy import linspace
 from math import cos
 
+from dessia_common.files import BinaryFile, StringFile
+import io
+
 
 class StandaloneSubobject(DessiaObject):
     _standalone_in_db = True
@@ -63,7 +66,7 @@ class StandaloneSubobject(DessiaObject):
 
     @classmethod
     def generate_many(cls, seed: int) -> List['StandaloneSubobject']:
-        subobjects = [cls.generate((i+1)*1000) for i in range(seed)]
+        subobjects = [cls.generate((i + 1) * 1000) for i in range(seed)]
         return subobjects
 
     def contour(self):
@@ -132,7 +135,7 @@ class EmbeddedSubobject(DessiaObject):
     @classmethod
     def generate(cls, seed: int) -> 'EmbeddedSubobject':
         if not bool(seed % 2):
-            embedded_list = list(range(int(seed/2)))
+            embedded_list = list(range(int(seed / 2)))
         else:
             embedded_list = None
         name = 'Embedded Subobject' + str(seed)
@@ -140,7 +143,7 @@ class EmbeddedSubobject(DessiaObject):
 
     @classmethod
     def generate_many(cls, seed: int) -> List['EmbeddedSubobject']:
-        return [cls.generate(i) for i in range(ceil(seed/3))]
+        return [cls.generate(i) for i in range(ceil(seed / 3))]
 
 
 class EnhancedEmbeddedSubobject(EmbeddedSubobject):
@@ -155,7 +158,7 @@ class EnhancedEmbeddedSubobject(EmbeddedSubobject):
     @classmethod
     def generate(cls, seed: int) -> 'EnhancedEmbeddedSubobject':
         embedded_list = [seed]
-        embedded_array = [[seed, seed*10, seed*10]]*seed
+        embedded_array = [[seed, seed * 10, seed * 10]] * seed
         name = 'Embedded Subobject' + str(seed)
         return cls(embedded_list=embedded_list, embedded_array=embedded_array,
                    name=name)
@@ -184,11 +187,15 @@ class StandaloneObject(DessiaObject):
     _standalone_in_db = True
     _generic_eq = True
     _allowed_methods = ['add_standalone_object', 'add_embedded_object',
-                        'add_float', 'generate_from_file']
+                        'add_float', 'generate_from_text', 'generate_from_bin',
+                        'generate_from_bin_file', 'generate_from_text_file']
 
     def __init__(self, standalone_subobject: StandaloneSubobject,
                  embedded_subobject: EmbeddedSubobject,
-                 dynamic_dict: Dict[str, bool], tuple_arg: Tuple[str, int],
+                 dynamic_dict: Dict[str, bool],
+                 float_dict: Dict[str, float],
+                 string_dict: Dict[str, str],
+                 tuple_arg: Tuple[str, int],
                  intarg: int, strarg: str,
                  object_list: List[StandaloneSubobject],
                  subobject_list: List[EmbeddedSubobject],
@@ -205,6 +212,8 @@ class StandaloneObject(DessiaObject):
         self.strarg = strarg
         self.intarg = intarg
         self.dynamic_dict = dynamic_dict
+        self.float_dict = float_dict
+        self.string_dict = string_dict
         self.standalone_subobject = standalone_subobject
         self.embedded_subobject = embedded_subobject
         self.subclass_arg = subclass_arg
@@ -218,14 +227,16 @@ class StandaloneObject(DessiaObject):
         is_even = not bool(seed % 2)
         standalone_subobject = StandaloneSubobject.generate(seed)
         embedded_subobject = EmbeddedSubobject.generate(seed)
-        dynamic_dict = {'n'+str(i): bool(seed % 2) for i in range(seed)}
+        dynamic_dict = {'n' + str(i): bool(seed % 2) for i in range(seed)}
+        float_dict = {'k' + str(i): seed * 1.09 for i in range(seed)}
+        string_dict = {'key' + str(i): 'value' + str(i) for i in range(seed)}
         tuple_arg = ('value', seed * 3)
         intarg = seed
-        strarg = str(seed) * floor(seed/3)
+        strarg = str(seed) * floor(seed / 3)
         object_list = StandaloneSubobject.generate_many(seed)
         subobject_list = EmbeddedSubobject.generate_many(seed)
-        builtin_list = [seed]*seed
-        array_arg = [builtin_list]*3
+        builtin_list = [seed] * seed
+        array_arg = [builtin_list] * 3
         union_arg = [EnhancedEmbeddedSubobject.generate(seed),
                      EmbeddedSubobject.generate(seed)]
         if is_even:
@@ -234,7 +245,10 @@ class StandaloneObject(DessiaObject):
             subclass_arg = InheritingStandaloneSubobject.generate(seed)
         return cls(standalone_subobject=standalone_subobject,
                    embedded_subobject=embedded_subobject,
-                   dynamic_dict=dynamic_dict, tuple_arg=tuple_arg,
+                   dynamic_dict=dynamic_dict,
+                   float_dict=float_dict,
+                   string_dict=string_dict,
+                   tuple_arg=tuple_arg,
                    intarg=intarg, strarg=strarg, object_list=object_list,
                    subobject_list=subobject_list, builtin_list=builtin_list,
                    union_arg=union_arg, subclass_arg=subclass_arg,
@@ -242,19 +256,53 @@ class StandaloneObject(DessiaObject):
 
     @classmethod
     def generate_from_text(cls, stream: TextIO):
-        print(stream)
-        string = stream.read()
-        print(string.split(","))
-        name, raw_seed = string.split(",")
-        seed = int(raw_seed.strip())
-        return cls.generate(seed=seed, name=name)
+        try:
+            my_string = stream.read()
+            # this is a hack for test until we get frontend support for types BinaryFile & StringFile
+            # a TextIO does not have filename, but it's ok since we return a StringFile from backend
+            my_file_name = stream.filename
+            name, raw_seed = my_string.split(",")
+            seed = int(raw_seed.strip())
+        finally:
+            stream.close()
+        return cls.generate(seed=seed, name=my_file_name)
 
     @classmethod
     def generate_from_bin(cls, stream: BinaryIO):
-        # string = stream.read()
-        # name, raw_seed = string.split(",")
-        # seed = int(raw_seed.strip())
-        return cls.generate(seed=0, name="TODO From Bytes")
+        # the user need to decode the binary as he see fit
+        try:
+            my_string = stream.read().decode('utf8')
+            # this is a hack for test until we get frontend support for types BinaryFile & StringFile
+            # a BinaryIO does not have filename, but it's ok since we return a BinaryFile from backend
+            my_file_name = stream.filename
+            my_name, raw_seed = my_string.split(",")
+            seed = int(raw_seed.strip())
+        finally:
+            stream.close()
+        return cls.generate(seed=seed, name=my_file_name)
+
+    @classmethod
+    def generate_from_bin_file(cls, stream: BinaryFile):
+        # the user need to decode the binary as he see fit
+        try:
+            my_string = stream.read().decode('utf8')
+            my_file_name = stream.filename
+            my_name, raw_seed = my_string.split(",")
+            seed = int(raw_seed.strip())
+        finally:
+            stream.close()
+        return cls.generate(seed=seed, name=my_file_name)
+
+    @classmethod
+    def generate_from_text_file(cls, stream: StringFile):
+        try:
+            my_text = stream.read()
+            my_file_name = stream.filename
+            name, raw_seed = my_text.split(",")
+            seed = int(raw_seed.strip())
+        finally:
+            stream.close()
+        return cls.generate(seed=seed, name=my_file_name)
 
     def add_standalone_object(self, object_: StandaloneSubobject):
         """
@@ -295,7 +343,7 @@ class StandaloneObject(DessiaObject):
         # Scatter Plot
         bounds = {'x': [0, 6], 'y': [100, 2000]}
         catalog = Catalog.random_2d(bounds=bounds, threshold=8000)
-        points = [plot_data.Point2D(cx=v[0], cy=v[1], name='Point'+str(i))
+        points = [plot_data.Point2D(cx=v[0], cy=v[1], name='Point' + str(i))
                   for i, v in enumerate(catalog.array)]
         axis = plot_data.Axis()
         tooltip = plot_data.Tooltip(attributes=attributes,
@@ -354,7 +402,7 @@ class StandaloneObject(DessiaObject):
         return [primitives_group, scatter_plot,
                 parallel_plot, multi_plot, graph2d]
 
-    def maldefined_method(self, arg0, arg1=1, arg2: int = 10, arg3 = 3):
+    def maldefined_method(self, arg0, arg1=1, arg2: int = 10, arg3=3):
         """
         Defining a docstring for testing parsing purpose
         """
@@ -383,14 +431,14 @@ class StandaloneObject(DessiaObject):
         [Clymene venisses sinat](http://est.net/umbram.html)
         protinus pulchra, sucos! Tanta haec varios tuaque,
         nisi Erigonen si aquae Hippomene inguine murmur.
-        
+
         1. Poma enim dextra icta capillis extinctum foedera
         2. Mediis requirit exercita ascendere fecisse sola
         3. Sua externis tigride saevarum
         4. Aves est pendebant sume latentis
-        
+
         ## Suum videre quondam generis dolentem simul femineos
-        
+
         Ille lacus progenitore Cycnum pressa, excidit silva
         [crudus](http://www.domino.com/nequevox), boum ducem vocari,
         ne monte tanto harenae.
@@ -401,23 +449,23 @@ class StandaloneObject(DessiaObject):
         Dedit putrefacta cortex.
         Tenet aut carmina quod proditione media; pro ense medicina
         vita repetit adrectisque inops e sentiat.
-        
+
         > Imagine caesaries superbos muneraque *ne terras* cunctis.
         Diversae Hesioneque
         > numinis regia at anima nascuntur Iovis.
         Sua fama quoque capillos lugubris
         > **egimus**, a ingenti [Ericthonio](http://raptos.org/lucem)
         iubebat!
-        
+
         ## Ponderis venit veteris mihi tofis
-        
+
         Propensum discedunt, iacere dedisti; lene potest caelo,
         felix flamma caecus decet excipit.
         *Aurum occiderat*, retro cum, quorum *Diana timuere At*.
         Ait Labros hasta mundi, **ut est** ruit nosse o gravet!
-        
+
         ## Qui aether undis nulla
-        
+
         Homines oppidaque nominibus devexo genitoris quoque,
         praesensque rota Saturnia.
         Auras cecinit fera quae mirantum imbris,
@@ -425,7 +473,7 @@ class StandaloneObject(DessiaObject):
         saepe adicit trepidant.
         [Siqua radiis quod](http://www.naris-pectebant.org/comeset)
         ad duabus alienisque, sponte; dum.
-        
+
         Occidit Babylonia dubitare. Vultus cui: erat dea!
         Iam ense forma est se, tibi pedem adfectat nec nostra.
         Armenta socium nutrix [precatur](http://in-fraxinus.io/)
@@ -434,7 +482,7 @@ class StandaloneObject(DessiaObject):
         Verum a, tuo quoque nec Mysum per posses;
         vigor danda meruit: tecum audire responsa
         [conplexae](http://quis.io/disrestat.html) et alios.
-        
+
         Agros grata illo animo mei nova, in magis furens et
         [modo](http://pondere.com/aquis) dimittere ubi neque es!
         Sua qua ac ire una facit Alcmene coepere
@@ -452,6 +500,8 @@ class StandaloneObjectWithDefaultValues(StandaloneObject):
     def __init__(self, standalone_subobject: StandaloneSubobject = DEF_SS,
                  embedded_subobject: EmbeddedSubobject = DEF_ES,
                  dynamic_dict: Dict[str, bool] = None,
+                 float_dict: Dict[str, float] = None,
+                 string_dict: Dict[str, str] = None,
                  tuple_arg: Tuple[str, int] = ("Default Tuple", 0),
                  intarg: int = 1, strarg: str = "Default Strarg",
                  object_list: List[StandaloneSubobject] = None,
@@ -463,6 +513,10 @@ class StandaloneObjectWithDefaultValues(StandaloneObject):
                  name: str = 'Standalone Object Demo'):
         if dynamic_dict is None:
             dynamic_dict = {}
+        if float_dict is None:
+            float_dict = {}
+        if string_dict is None:
+            string_dict = {}
         if object_list is None:
             object_list = [DEF_SS]
         if subobject_list is None:
@@ -477,6 +531,7 @@ class StandaloneObjectWithDefaultValues(StandaloneObject):
         StandaloneObject.__init__(
             self, standalone_subobject=standalone_subobject,
             embedded_subobject=embedded_subobject, dynamic_dict=dynamic_dict,
+            float_dict=float_dict, string_dict=string_dict,
             tuple_arg=tuple_arg, intarg=intarg, strarg=strarg,
             object_list=object_list, subobject_list=subobject_list,
             builtin_list=builtin_list, union_arg=union_arg,
@@ -498,8 +553,6 @@ class Generator(DessiaObject):
         DessiaObject.__init__(self, name=name)
 
     def generate(self) -> List[StandaloneObject]:
-        # submodels = [Submodel(self.parameter * i)
-        #              for i in range(self.nb_solutions)]
         self.models = [StandaloneObject.generate(self.parameter + i)
                        for i in range(self.nb_solutions)]
         return self.models
@@ -516,3 +569,22 @@ class Optimizer(DessiaObject):
     def optimize(self, optimization_value: int = 3) -> int:
         self.model_to_optimize.intarg += optimization_value
         return self.model_to_optimize.intarg
+
+
+class Container(DessiaObject):
+    _standalone_in_db = True
+    _allowed_methods = ["generate_from_text_files"]
+
+    def __init__(self, models: List[StandaloneObject] = None, name: str = ""):
+        if models is None:
+            self.models = []
+        else:
+            self.models = models
+
+        DessiaObject.__init__(self, name=name)
+
+    @classmethod
+    def generate_from_text_files(cls, files: List[TextIO],
+                                 name: str = "Generated from text files"):
+        models = [StandaloneObject.generate_from_text(file) for file in files]
+        return cls(models=models, name=name)

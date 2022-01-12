@@ -17,6 +17,9 @@ class MethodType(Generic[T]):
         self.class_ = class_
         self.name = name
 
+    def __deepcopy__(self):
+        return MethodType(self.class_, self.name)
+
 
 class ClassMethodType(MethodType[T]):
     def __init__(self, class_: T, name: str):
@@ -29,7 +32,7 @@ class AttributeType(Generic[T]):
         self.name = name
 
 
-class ClassAsttributeType(AttributeType[T]):
+class ClassAttributeType(AttributeType[T]):
     def __init__(self, class_: T, name: str):
         AttributeType.__init__(self, class_=class_, name=name)
 
@@ -43,33 +46,42 @@ RGBColor = Tuple[float, float, float]
 class Measure(float):
     units = ''
 
+
 class Distance(Measure):
     units = 'm'
+
 
 class Torque(Measure):
     units = 'Nm'
 
+
 class Stress(Measure):
     units = 'Pa'
-    
+
+
 class Time(Measure):
     units = 's'
+
 
 class Speed(Measure):
     units = 'm/s'
 
+
 class Acceleration(Measure):
     units = 'm/s²'
 
+
 class Mass(Measure):
-    units ='Kg'
+    units = 'Kg'
+
 
 class Force(Measure):
     units = 'N'
 
+
 class Work(Measure):
     units = 'N*m'
-    
+
+
 class Power(Measure):
     units = 'N*m/s'
-    

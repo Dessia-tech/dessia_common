@@ -4,13 +4,28 @@ type: docker
 name: default
 
 steps:
+- name: check code complexity
+  image: python:3.9
+  commands:
+  - pip install radon
+  - ./code_quality.sh
+
+- name: check pep8 formatting
+  image: python:3.9
+  when:
+    branch: master
+  commands:
+    - git fetch --tags
+    - pip3 install -U pip autopep8
+    - bash check_pep8.sh
+        
 - name: install, run scripts and build doc
   image: python:3.8
   commands:
   - git fetch --tags
   - python setup.py install
   - python scripts/dessia_object.py
-  - pip install sphinx sphinx-rtd-theme coverage
+  - pip install sphinx sphinx-rtd-theme coverage plot-data
   - cd doc
   - make html
   - cd ../tests
@@ -29,6 +44,7 @@ steps:
   commands:
   - git fetch --tags
   - python setup.py sdist
+
 
 - name: upload to pypi
   image: plugins/pypi
@@ -65,4 +81,3 @@ steps:
     password:
      from_secret: email_password
     from: technical@dessia.tech
-    recipients: [ root@dessia.tech ]
