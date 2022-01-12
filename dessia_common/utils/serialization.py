@@ -16,6 +16,54 @@ from dessia_common.graph import explore_tree_from_leaves#, cut_tree_final_branch
 from dessia_common.breakdown import get_in_object_from_path
 import networkx as nx
 
+def serialize_dict(dict_):
+    serialized_dict = {}
+    for key, value in dict_.items():
+        if hasattr(value, 'to_dict'):
+            # try:
+            #     serialized_value = value.to_dict()
+            # except TypeError:
+            #     # case of a class as an
+            serialized_value = value.to_dict()
+        elif isinstance(value, dict):
+            serialized_value = serialize_dict(value)
+        elif isinstance(value, (list, tuple)):
+            serialized_value = serialize_sequence(value)
+        else:
+            if not dcty.is_jsonable(value):
+                msg = 'Attribute {} of value {} is not json serializable'
+                raise dc_err.SerializationError(msg.format(key, value))
+            serialized_value = value
+        serialized_dict[key] = serialized_value
+    return serialized_dict
+
+
+def serialize_sequence(seq):
+    serialized_sequence = []
+    for value in seq:
+        if hasattr(value, 'to_dict'):
+            serialized_sequence.append(value.to_dict())
+        elif isinstance(value, dict):
+            serialized_sequence.append(serialize_dict(value))
+        elif isinstance(value, (list, tuple)):
+            serialized_sequence.append(serialize_sequence(value))
+        else:
+            serialized_sequence.append(value)
+    return serialized_sequence
+
+
+def serialize(deserialized_element):
+    if isinstance(deserialized_element, dc.DessiaObject):
+        serialized = deserialized_element.to_dict()
+    elif isinstance(deserialized_element, dict):
+        serialized = serialize_dict(deserialized_element)
+    elif dcty.is_sequence(deserialized_element):
+        serialized = serialize_sequence(deserialized_element)
+    else:
+        serialized = deserialized_element
+    return serialized
+
+
 def serialize_with_pointers(deserialized_element, memo=None, path='#'):
     if memo is None:
         memo = {}

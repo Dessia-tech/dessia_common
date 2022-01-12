@@ -18,9 +18,13 @@ from dessia_common.exports import XLSXWriter
 
 import dessia_common.errors
 from dessia_common.utils.diff import data_eq, diff
-from dessia_common.utils.serialization import dict_to_object, serialize_dict_with_pointers
-from dessia_common.utils.types import is_jsonable, is_builtin, get_python_class_from_class_name, serialize_typing, full_classname, is_sequence, isinstance_base_types, is_typing, TYPING_EQUIVALENCES
+from dessia_common.utils.serialization import dict_to_object, serialize_dict_with_pointers, serialize_dict
+from dessia_common.utils.types import is_jsonable, is_builtin, get_python_class_from_class_name, serialize_typing,\
+    full_classname, is_sequence, isinstance_base_types, is_typing, TYPING_EQUIVALENCES, is_bson_valid
 from dessia_common.utils.copy import deepcopy_value
+from dessia_common.utils.jsonschema import default_dict, datatype_from_jsonschema
+from dessia_common.utils.docstrings import parse_docstring
+
 
 from typing import List, Dict, Type, Tuple, Union, Any, TextIO, BinaryIO, \
     get_type_hints, get_origin, get_args
@@ -77,53 +81,6 @@ def deprecation_warning(name, object_type, use_instead=None):
     return msg
 
 
-def is_bson_valid(value, allow_nonstring_keys=False) -> Tuple[bool, str]:
-    """
-    returns validity (bool) and a hint (str)
-    """
-    if isinstance(value, (int, float, str)):
-        return True, ''
-
-    if value is None:
-        return True, ''
-
-    if isinstance(value, dict):
-        for k, v in value.items():
-            # Key check
-            if isinstance(k, str):
-                if '.' in k:
-                    log = 'key {} of dict is a string containing a .,' \
-                          ' which is forbidden'
-                    return False, log.format(k)
-            elif isinstance(k, float):
-                log = 'key {} of dict is a float, which is forbidden'
-                return False, log.format(k)
-            elif isinstance(k, int):
-                if not allow_nonstring_keys:
-                    log = 'key {} of dict is an unsuported type {},' \
-                          ' use allow_nonstring_keys=True to allow'
-                    return False, log.format(k, type(k))
-            else:
-                log = 'key {} of dict is an unsuported type {}'
-                return False, log.format(k, type(k))
-
-            # Value Check
-            v_valid, hint = is_bson_valid(
-                value=v, allow_nonstring_keys=allow_nonstring_keys
-            )
-            if not v_valid:
-                return False, hint
-
-    elif is_sequence(value):
-        for v in value:
-            valid, hint = is_bson_valid(
-                value=v, allow_nonstring_keys=allow_nonstring_keys
-            )
-            if not valid:
-                return valid, hint
-    else:
-        return False, 'Unrecognized type: {}'.format(type(value))
-    return True, ''
 
 
 class DessiaObject:
@@ -908,52 +865,6 @@ def stringify_dict_keys(obj):
     return new_obj
 
 
-def serialize_dict(dict_):
-    serialized_dict = {}
-    for key, value in dict_.items():
-        if hasattr(value, 'to_dict'):
-            # try:
-            #     serialized_value = value.to_dict()
-            # except TypeError:
-            #     # case of a class as an
-            serialized_value = value.to_dict()
-        elif isinstance(value, dict):
-            serialized_value = serialize_dict(value)
-        elif isinstance(value, (list, tuple)):
-            serialized_value = serialize_sequence(value)
-        else:
-            if not is_jsonable(value):
-                msg = 'Attribute {} of value {} is not json serializable'
-                raise dessia_common.errors.SerializationError(msg.format(key, value))
-            serialized_value = value
-        serialized_dict[key] = serialized_value
-    return serialized_dict
-
-
-def serialize_sequence(seq):
-    serialized_sequence = []
-    for value in seq:
-        if hasattr(value, 'to_dict'):
-            serialized_sequence.append(value.to_dict())
-        elif isinstance(value, dict):
-            serialized_sequence.append(serialize_dict(value))
-        elif isinstance(value, (list, tuple)):
-            serialized_sequence.append(serialize_sequence(value))
-        else:
-            serialized_sequence.append(value)
-    return serialized_sequence
-
-
-def serialize(deserialized_element):
-    if isinstance(deserialized_element, DessiaObject):
-        serialized = deserialized_element.to_dict()
-    elif isinstance(deserialized_element, dict):
-        serialized = serialize_dict(deserialized_element)
-    elif is_sequence(deserialized_element):
-        serialized = serialize_sequence(deserialized_element)
-    else:
-        serialized = deserialized_element
-    return serialized
 
 
 def list_hash(list_):
@@ -1509,117 +1420,3 @@ def recursive_instantiation(type_, value):
         raise NotImplementedError(type_)
 
 
-def default_sequence(array_jsonschema):
-    if is_sequence(array_jsonschema['items']):
-        # Tuple jsonschema
-        if 'default_value' in array_jsonschema:
-            return array_jsonschema['default_value']
-        return [default_dict(v) for v in array_jsonschema['items']]
-    return None
-
-
-def datatype_from_jsonschema(jsonschema):
-    if jsonschema['type'] == 'object':
-        if 'classes' in jsonschema:
-            if len(jsonschema['classes']) > 1:
-                return 'union'
-            if 'standalone_in_db' in jsonschema:
-                if jsonschema['standalone_in_db']:
-                    return 'standalone_object'
-                return 'embedded_object'
-            return 'static_dict'
-        if 'instance_of' in jsonschema:
-            return 'instance_of'
-        if 'patternProperties' in jsonschema:
-            return 'dynamic_dict'
-        if 'method' in jsonschema and jsonschema['method']:
-            return 'embedded_object'
-        if 'is_class' in jsonschema and jsonschema['is_class']:
-            return 'class'
-
-    elif jsonschema['type'] == 'array':
-        if 'additionalItems' in jsonschema\
-                and not jsonschema['additionalItems']:
-            return 'heterogeneous_sequence'
-        return 'homogeneous_sequence'
-
-    elif jsonschema['type'] in ['number', 'string', 'boolean']:
-        if 'is_type' in jsonschema and jsonschema['is_type']:
-            return 'file'
-        return 'builtin'
-    return None
-
-
-def chose_default(jsonschema):
-    datatype = datatype_from_jsonschema(jsonschema)
-    if datatype in ['heterogeneous_sequence', 'homogeneous_sequence']:
-        return default_sequence(jsonschema)
-    elif datatype == 'static_dict':
-        return default_dict(jsonschema)
-    elif datatype in ['standalone_object', 'embedded_object',
-                      'instance_of', 'union']:
-        if 'default_value' in jsonschema:
-            return jsonschema['default_value']
-        return None
-    else:
-        return None
-
-
-def default_dict(jsonschema):
-    dict_ = {}
-    datatype = datatype_from_jsonschema(jsonschema)
-    if datatype in ['standalone_object', 'embedded_object', 'static_dict']:
-        if 'classes' in jsonschema:
-            dict_['object_class'] = jsonschema['classes'][0]
-        elif 'method' in jsonschema and jsonschema['method']:
-            # Method can have no classes in jsonschema
-            pass
-        else:
-            msg = "DessiaObject of type {} must have 'classes' in jsonschema"
-            raise ValueError(msg.format(jsonschema['python_typing']))
-        for property_, jss in jsonschema['properties'].items():
-            if 'default_value' in jss:
-                dict_[property_] = jss['default_value']
-            else:
-                dict_[property_] = chose_default(jss)
-    else:
-        return None
-    return dict_
-
-
-class ParsedAttribute(TypedDict):
-    desc: str
-    type_: str
-    annotation: str
-
-
-class ParsedDocstring(TypedDict):
-    description: str
-    attributes: Dict[str, ParsedAttribute]
-
-
-def parse_docstring(cls: Type) -> ParsedDocstring:
-    """
-    Parse docstring of given class. Refer to docs to see how docstrings
-    should be built.
-    """
-    annotations = get_type_hints(cls.__init__)
-    docstring = cls.__doc__
-    if docstring:
-        splitted_docstring = docstring.split(':param ')
-        parsed_docstring = {"description": splitted_docstring[0].strip()}
-        params = splitted_docstring[1:]
-        args = {}
-        for param in params:
-            splitted_param = param.split(':type ')
-            arg = splitted_param[0]
-            typestr = splitted_param[1]
-            argname, argdesc = arg.split(":", maxsplit=1)
-            argtype = typestr.split(argname + ":")[-1]
-            annotation = annotations[argname]
-            args[argname] = {'desc': argdesc.strip(), 'type_': argtype.strip(),
-                             'annotation': str(annotation)}
-            # TODO Should be serialize typing ?
-        parsed_docstring.update({'attributes': args})
-        return parsed_docstring
-    return {'description': "", 'attributes': {}}

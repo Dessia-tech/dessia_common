@@ -195,3 +195,51 @@ def deserialize_typing(serialized_typing):
         return get_python_class_from_class_name(serialized_typing)
     raise NotImplementedError('{} of type {}'.format(serialized_typing,
                                                      type(serialized_typing)))
+    
+def is_bson_valid(value, allow_nonstring_keys=False) -> Tuple[bool, str]:
+    """
+    returns validity (bool) and a hint (str)
+    """
+    if isinstance(value, (int, float, str)):
+        return True, ''
+
+    if value is None:
+        return True, ''
+
+    if isinstance(value, dict):
+        for k, v in value.items():
+            # Key check
+            if isinstance(k, str):
+                if '.' in k:
+                    log = 'key {} of dict is a string containing a .,' \
+                          ' which is forbidden'
+                    return False, log.format(k)
+            elif isinstance(k, float):
+                log = 'key {} of dict is a float, which is forbidden'
+                return False, log.format(k)
+            elif isinstance(k, int):
+                if not allow_nonstring_keys:
+                    log = 'key {} of dict is an unsuported type {},' \
+                          ' use allow_nonstring_keys=True to allow'
+                    return False, log.format(k, type(k))
+            else:
+                log = 'key {} of dict is an unsuported type {}'
+                return False, log.format(k, type(k))
+
+            # Value Check
+            v_valid, hint = is_bson_valid(
+                value=v, allow_nonstring_keys=allow_nonstring_keys
+            )
+            if not v_valid:
+                return False, hint
+
+    elif is_sequence(value):
+        for v in value:
+            valid, hint = is_bson_valid(
+                value=v, allow_nonstring_keys=allow_nonstring_keys
+            )
+            if not valid:
+                return valid, hint
+    else:
+        return False, 'Unrecognized type: {}'.format(type(value))
+    return True, ''

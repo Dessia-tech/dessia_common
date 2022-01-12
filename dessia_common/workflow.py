@@ -17,7 +17,7 @@ from dessia_common.templates import workflow_template
 import itertools
 
 from dessia_common import DessiaObject, DisplayObject, DessiaFilter, \
-    is_sequence, list_hash, serialize, is_bounded, \
+    is_sequence, list_hash, is_bounded, \
     type_from_annotation,\
     enhanced_deep_attr, deprecation_warning, JSONSCHEMA_HEADER,\
     jsonschema_from_annotation, deserialize_argument, set_default_value,\
@@ -26,7 +26,7 @@ from dessia_common import DessiaObject, DisplayObject, DessiaFilter, \
 from dessia_common.errors import UntypedArgumentError
 from dessia_common.utils.diff import data_eq
 from dessia_common.utils.serialization import dict_to_object, deserialize,\
-    serialize_with_pointers
+    serialize_with_pointers, serialize
 from dessia_common.utils.types import get_python_class_from_class_name,\
     serialize_typing, full_classname, deserialize_typing
 from dessia_common.utils.copy import deepcopy_value
