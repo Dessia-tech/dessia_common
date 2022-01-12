@@ -5,8 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unrealeased [=> 0.4.8]
+## 0.5.0
+
 ### Added
+- Workflow stop/start first features
+- Files Typings
 - Inputs can now search for upstream nonblock_variables
 - Add input_values addition bulk methods (from block_index & indice sequence)
 - Can compute jsonschema from Any annotation
@@ -24,6 +27,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Re-instantiate nonblock_variable when copying workflow
 - WorkflowState now serialize its values keys in to_dict
+- deepcopy of workflow 
+
+### Refactor
+- Separate in utils module
 
 ## 0.4.7
 ## Added
