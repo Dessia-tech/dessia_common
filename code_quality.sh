@@ -7,3 +7,14 @@ if [[ "$cq_result" ]];
 	  exit 64;
 	
 fi;
+
+pydoc_result=$(pydocstyle --count dessia_common *.py)
+echo $pydoc_result
+if [[ "$pydoc_result" ]];
+  then 
+	  echo "Error in doc quality check, run pydocstyle to correct docstrings">&2;
+	  exit 64;
+	
+fi;
+
+
