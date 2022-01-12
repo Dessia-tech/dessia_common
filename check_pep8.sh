@@ -1,9 +1,9 @@
 #!/bin/bash
 # check pep8 formatting for all files
 
-PEP8_CMD_TO_RUN='python3 -m autopep8 -i tests dessia_common/*.py'
+PEP8_CMD_TO_RUN='python3 -m autopep8 -i dessia_common/*.py'
 
-DETECTED_CHANGES=$(python3 -m autopep8 -d tests dessia_common/*.py)
+DETECTED_CHANGES=$(python3 -m autopep8 -d dessia_common/*.py)
 if [[ -n "$DETECTED_CHANGES" ]]
   then
   echo -e "\npep8 non conforming changes detected, please run :\n"
