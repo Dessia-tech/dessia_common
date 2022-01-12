@@ -1,5 +1,5 @@
 #!/bin/bash
-cq_result=$(radon cc --min F -e *pyx dessia_common)
+cq_result=$(radon cc --min D -e *pyx dessia_common)
 echo $cq_result
 if [[ "$cq_result" ]];
   then 
