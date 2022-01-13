@@ -100,6 +100,24 @@ def default_dict(jsonschema):
         return None
     return dict_
 
+def jsonschema_union_types(key, args, typing_, jsonschema_element,
+                           order, editable=None, title=None):
+    classnames = [dc.full_classname(object_=a, compute_for='class')
+                  for a in args]
+
+    standalone_args = [a._standalone_in_db for a in args]
+    if all(standalone_args):
+        standalone = True
+    elif not any(standalone_args):
+        standalone = False
+    else:
+        msg = "standalone_in_db values for type '{}'" \
+              " are not consistent"
+        raise ValueError(msg.format(typing_))
+    jsonschema_element[key].update({
+        'type': 'object', 'classes': classnames,
+        'standalone_in_db': standalone
+    })
 
 def jsonschema_from_annotation(annotation, jsonschema_element,
                                order, editable=None, title=None):
@@ -128,28 +146,15 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
             if len(args) == 2 and type(None) in args:
                 # This is a false Union => Is a default value set to None
                 ann = (key, args[0])
-                jsonschema_element = jsonschema_from_annotation(
+                
+                jsonschema_from_annotation(
                     annotation=ann, jsonschema_element=jsonschema_element,
                     order=order, editable=editable, title=title
                 )
             else:
                 # Types union
-                classnames = [dc.full_classname(object_=a, compute_for='class')
-                              for a in args]
-
-                standalone_args = [a._standalone_in_db for a in args]
-                if all(standalone_args):
-                    standalone = True
-                elif not any(standalone_args):
-                    standalone = False
-                else:
-                    msg = "standalone_in_db values for type '{}'" \
-                          " are not consistent"
-                    raise ValueError(msg.format(typing_))
-                jsonschema_element[key].update({
-                    'type': 'object', 'classes': classnames,
-                    'standalone_in_db': standalone
-                })
+                jsonschema_union_types(key, args, typing_, jsonschema_element,
+                                           order, editable=editable, title=title)
         elif origin in [list, collections.Iterator]:
             # Homogenous sequences
             jsonschema_element[key].update(jsonschema_sequence_recursion(
@@ -215,6 +220,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
         else:
             msg = "Jsonschema computation of typing {} is not implemented"
             raise NotImplementedError(msg.format(typing_))
+            
     elif hasattr(typing_, '__origin__') and typing_.__origin__ is type:
         jsonschema_element[key].update({
             'type': 'object', 'is_class': True,

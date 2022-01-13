@@ -1,5 +1,5 @@
 #!/bin/bash
-cq_result=$(radon cc --min D -e *pyx dessia_common)
+cq_result=$(radon cc --min E -e *pyx dessia_common)
 echo $cq_result
 if [[ "$cq_result" ]];
   then 
@@ -8,7 +8,7 @@ if [[ "$cq_result" ]];
 	
 fi;
 
-pydoc_result=$(pydocstyle --count dessia_common *.py)
+pydoc_result=$(pydocstyle --count --ignore D400,D415,D404 dessia_common *.py)
 echo $pydoc_result
 if [[ "$pydoc_result" ]];
   then 

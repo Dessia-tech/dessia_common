@@ -55,7 +55,7 @@ def merge_breakdown_dicts(dict1, dict2):
     return dict3
 
 
-def object_breakdown(obj, path=''):
+def breakdown(obj, path=''):
     bd_dict = {}
     if obj is None:
         return bd_dict
@@ -72,14 +72,14 @@ def object_breakdown(obj, path=''):
 
         for i, li in enumerate(obj):
             path2 = path + '{}'.format(i)
-            bd_dict = merge_breakdown_dicts(bd_dict, object_breakdown(li, path2))
+            bd_dict = merge_breakdown_dicts(bd_dict, breakdown(li, path2))
     elif isinstance(obj, dict):
         if path:
             path += '.'
 
         for k, v in obj.items():
             path2 = path + str(k)
-            bd_dict = merge_breakdown_dicts(bd_dict, object_breakdown(v, path2))
+            bd_dict = merge_breakdown_dicts(bd_dict, breakdown(v, path2))
     else:
         # Put object and break it down
         if path:  # avoid to get root object
@@ -94,40 +94,49 @@ def object_breakdown(obj, path=''):
                     bd_dict[obj.__class__.__name__] = collections.OrderedDict()
                     bd_dict[obj.__class__.__name__][obj] = path
 
-        if path:
-            path += '.'
 
-        if isinstance(obj, dessia_common.core.DessiaObject):
-            obj_dict = obj._serializable_dict()
-        else:
-            if hasattr(obj, '__dict__'):
-                obj_dict = obj.__dict__
-            else:
-                obj_dict = {}
-
-        for k, v in obj_dict.items():
-            # dict after lists
-            if not (isinstance(v, dict)
-                    or isinstance(v, list)
-                    or isinstance(v, tuple)
-                    ):  # Should be object or builtins
-                dict2 = object_breakdown(v, path=path + k)
-                bd_dict = merge_breakdown_dicts(bd_dict, dict2)
-
-        for k, v in obj_dict.items():
-            # First lists and tuples
-            if isinstance(v, list) or isinstance(v, tuple):
-                dict2 = object_breakdown(v, path=path + k)
-                bd_dict = merge_breakdown_dicts(bd_dict, dict2)
-
-        for k, v in obj_dict.items():
-            # dict after lists
-            if isinstance(v, dict):
-                dict2 = object_breakdown(v, path=path + k)
-                bd_dict = merge_breakdown_dicts(bd_dict, dict2)
+        bd_dict = merge_breakdown_dicts(bd_dict, object_breakdown(obj, path=path))
 
     return bd_dict
 
+
+def object_breakdown(obj, path=''):
+    """
+    Return breakdown dict of object (no preliminary checks)
+    """
+    if path:
+        path += '.'
+
+    bd_dict = {}
+    if isinstance(obj, dessia_common.core.DessiaObject):
+        obj_dict = obj._serializable_dict()
+    else:
+        if hasattr(obj, '__dict__'):
+            obj_dict = obj.__dict__
+        else:
+            obj_dict = {}
+
+    for k, v in obj_dict.items():
+        # dict after lists
+        if not (isinstance(v, dict)
+                or isinstance(v, list)
+                or isinstance(v, tuple)
+                ):  # Should be object or builtins
+            dict2 = breakdown(v, path=path + k)
+            bd_dict = merge_breakdown_dicts(bd_dict, dict2)
+
+    for k, v in obj_dict.items():
+        # First lists and tuples
+        if isinstance(v, list) or isinstance(v, tuple):
+            dict2 = breakdown(v, path=path + k)
+            bd_dict = merge_breakdown_dicts(bd_dict, dict2)
+
+    for k, v in obj_dict.items():
+        # dict after lists
+        if isinstance(v, dict):
+            dict2 = breakdown(v, path=path + k)
+            bd_dict = merge_breakdown_dicts(bd_dict, dict2)
+    return bd_dict
 
 def deep_getsizeof(o, ids=None):
     """Find the memory footprint of a Python object
