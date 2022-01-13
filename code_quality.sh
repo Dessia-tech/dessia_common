@@ -7,14 +7,12 @@ if [[ "$cq_result" ]];
 	  exit 64;
 	
 fi;
-
-pydoc_result=$(pydocstyle --count --ignore D400,D415,D404 dessia_common *.py)
-echo $pydoc_result
-if [[ "$pydoc_result" ]];
+nb_pydoc_errors=$(pydocstyle --count --ignore D400,D415,D404 dessia_common *.py | tail -1)
+echo $nb_pydoc_errors
+if [[ "$nb_pydoc_errors" -gt 680 ]];
   then 
 	  echo "Error in doc quality check, run pydocstyle to correct docstrings">&2;
 	  exit 64;
-	
 fi;
 
 

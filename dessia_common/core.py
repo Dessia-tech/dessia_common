@@ -128,17 +128,27 @@ class DessiaObject:
     _whitelist_attributes = []
 
     def __init__(self, name: str = '', **kwargs):
+        """
+        Generic init of DessiA Object. Only store name in self. To be overload
+        and call in specific class init 
+        """
         self.name = name
         for property_name, property_value in kwargs.items():
             setattr(self, property_name, property_value)
 
     def __hash__(self):
+        """
+        Compute a int from object
+        """
         if self._eq_is_data_eq:
             return self._data_hash()
         else:
             return object.__hash__(self)
 
     def __eq__(self, other_object):
+        """
+        Generic equality of two objects.
+        """
         if self._eq_is_data_eq:
             if self.__class__.__name__ != other_object.__class__.__name__:
                 return False
