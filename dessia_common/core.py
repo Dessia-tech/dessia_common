@@ -1019,8 +1019,6 @@ def type_from_annotation(type_, module):
     return type_
 
 
-
-
 def prettyname(namestr):
     pretty_name = ''
     if namestr:
@@ -1033,9 +1031,6 @@ def prettyname(namestr):
             if i < len(strings) - 1:
                 pretty_name += ' '
     return pretty_name
-
-
-
 
 
 def inspect_arguments(method, merge=False):
@@ -1069,77 +1064,15 @@ def deserialize_argument(type_, argument):
         return None
 
     if is_typing(type_):
-        origin = get_origin(type_)
-        args = get_args(type_)
-        if origin is Union:
-            # Check for Union false Positive (Default value = None)
-            if len(args) == 2 and type(None) in args:
-                return deserialize_argument(type_=args[0], argument=argument)
-
-            # Type union
-            classes = list(args)
-            instantiated = False
-            while instantiated is False:
-                # Find the last class in the hierarchy
-                hierarchy_lengths = [len(cls.mro()) for cls in classes]
-                max_length = max(hierarchy_lengths)
-                children_class_index = hierarchy_lengths.index(max_length)
-                children_class = classes[children_class_index]
-                try:
-                    # Try to deserialize
-                    # Throws KeyError if we try to put wrong dict into
-                    # dict_to_object. This means we try to instantiate
-                    # a children class with a parent dict_to_object
-                    deserialized_arg = children_class.dict_to_object(argument)
-
-                    # If it succeeds we have the right
-                    # class and instantiated object
-                    instantiated = True
-                except KeyError:
-                    # This is not the right class, we should go see the parent
-                    classes.remove(children_class)
-        elif origin in [list, collections.Iterator]:
-            # Homogenous sequences (lists)
-            sequence_subtype = args[0]
-            deserialized_arg = [deserialize_argument(sequence_subtype, arg)
-                                for arg in argument]
-            if origin is collections.Iterator:
-                deserialized_arg = iter(deserialized_arg)
-
-        elif origin is tuple:
-            # Heterogenous sequences (tuples)
-            deserialized_arg = tuple([deserialize_argument(t, arg)
-                                      for t, arg in zip(args, argument)])
-        elif origin is dict:
-            # Dynamic dict
-            deserialized_arg = argument
-        elif origin is InstanceOf:
-            classname = args[0]
-            object_class = full_classname(object_=classname,
-                                          compute_for='class')
-            class_ = get_python_class_from_class_name(object_class)
-            deserialized_arg = class_.dict_to_object(argument)
-        else:
-            msg = "Deserialization of typing {} is not implemented"
-            raise NotImplementedError(msg.format(type_))
-    elif type_ is TextIO:
-        deserialized_arg = argument
-    elif type_ is BinaryIO:
+        deserialized_arg = deserialize_from_typing(type_=type_,
+                                                   argument=argument)
+    elif type_ in [TextIO, BinaryIO]:
         # files are supplied as io.BytesIO  which is compatible with : BinaryIO
         deserialized_arg = argument
     else:
         if type_ in TYPING_EQUIVALENCES.keys():
-            if isinstance(argument, type_):
-                deserialized_arg = argument
-            else:
-                if isinstance(argument, int) and type_ == float:
-                    # Explicit conversion in this case
-                    deserialized_arg = float(argument)
-                else:
-                    msg = 'Given built-in type and argument are incompatible: '
-                    msg += '{} and {} in {}'.format(type(argument),
-                                                    type_, argument)
-                    raise TypeError(msg)
+            deserialized_arg = deserialize_builtin(type_=type_,
+                                                   argument=argument)
         elif type_ is Any:
             # Any type
             deserialized_arg = argument
@@ -1147,7 +1080,82 @@ def deserialize_argument(type_, argument):
             # Custom classes
             deserialized_arg = type_.dict_to_object(argument)
         else:
-            raise TypeError("Deserialization of ype {} is Not Implemented".format(type_))
+            msg = "Deserialization of type {} is Not Implemented"
+            raise TypeError(msg.format(type_))
+    return deserialized_arg
+
+
+def deserialize_union(argument, args):
+    # Check for Union false Positive (Default value = None)
+    if len(args) == 2 and type(None) in args:
+        return deserialize_argument(type_=args[0], argument=argument)
+
+    # Type union
+    classes = list(args)
+    instantiated = False
+    while instantiated is False:
+        # Find the last class in the hierarchy
+        hierarchy_lengths = [len(cls.mro()) for cls in classes]
+        max_length = max(hierarchy_lengths)
+        children_class_index = hierarchy_lengths.index(max_length)
+        children_class = classes[children_class_index]
+        try:
+            # Try to deserialize
+            # Throws KeyError if we try to put wrong dict into
+            # dict_to_object. This means we try to instantiate
+            # a children class with a parent dict_to_object
+            deserialized_arg = children_class.dict_to_object(argument)
+
+            # If it succeeds we have the right
+            # class and instantiated object
+            instantiated = True
+        except KeyError:
+            # This is not the right class, we should go see the parent
+            classes.remove(children_class)
+    return deserialized_arg
+
+
+def deserialize_builtin(type_, argument):
+    if isinstance(argument, type_):
+        return argument
+    if isinstance(argument, int) and type_ == float:
+        # Explicit conversion in this case
+        return float(argument)
+    msg = 'Given built-in type and argument are incompatible: '
+    msg += '{} and {} in {}'.format(type(argument),
+                                    type_, argument)
+    raise TypeError(msg)
+
+
+def deserialize_from_typing(type_, argument):
+    origin = get_origin(type_)
+    args = get_args(type_)
+    if origin is Union:
+        deserialized_arg = deserialize_union(argument=argument, args=args)
+    elif origin in [list, collections.Iterator]:
+        # Homogenous sequences (lists)
+        sequence_subtype = args[0]
+        deserialized_arg = [deserialize_argument(sequence_subtype, arg)
+                            for arg in argument]
+        if origin is collections.Iterator:
+            deserialized_arg = iter(deserialized_arg)
+
+    elif origin is tuple:
+        # Heterogenous sequences (tuples)
+        deserialized_arg = tuple([deserialize_argument(t, arg)
+                                  for t, arg in zip(args, argument)])
+    elif origin is dict:
+        # Dynamic dict
+        deserialized_arg = argument
+    elif origin is InstanceOf:
+        classname = args[0]
+        object_class = full_classname(object_=classname,
+                                      compute_for='class')
+        class_ = get_python_class_from_class_name(object_class)
+        deserialized_arg = class_.dict_to_object(argument)
+    else:
+        msg = "Deserialization of typing {} is not implemented"
+        raise NotImplementedError(msg.format(type_))
     return deserialized_arg
 
 
