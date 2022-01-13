@@ -21,14 +21,13 @@ from dessia_common import DessiaObject, DisplayObject, DessiaFilter, \
     type_from_annotation,\
     enhanced_deep_attr, deprecation_warning, JSONSCHEMA_HEADER,\
     jsonschema_from_annotation, deserialize_argument, set_default_value,\
-    prettyname, serialize_dict,\
-    recursive_type, recursive_instantiation
+    prettyname, serialize_dict
 from dessia_common.errors import UntypedArgumentError
 from dessia_common.utils.diff import data_eq
 from dessia_common.utils.serialization import dict_to_object, deserialize,\
-    serialize_with_pointers, serialize
+    serialize_with_pointers, serialize, recursive_instantiation
 from dessia_common.utils.types import get_python_class_from_class_name,\
-    serialize_typing, full_classname, deserialize_typing
+    serialize_typing, full_classname, deserialize_typing, recursive_type
 from dessia_common.utils.copy import deepcopy_value
 from dessia_common.vectored_objects import from_csv
 from dessia_common.typings import JsonSerializable, MethodType,\

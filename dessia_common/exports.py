@@ -9,7 +9,7 @@ import tempfile
 # import numpy as npy
 
 # import dessia_common.core
-from dessia_common.breakdown import object_breakdown
+from dessia_common.breakdown import breakdown
 
 
 # from openpyxl.writer.excel import save_virtual_workbook
@@ -68,7 +68,7 @@ class XLSXWriter:
         self.main_sheet = self.workbook.active
         self.object = object_
 
-        self.paths = object_breakdown(object_)
+        self.paths = breakdown(object_)
 
         self.classes_to_sheets = {}
         self.object_to_sheet_row = {}

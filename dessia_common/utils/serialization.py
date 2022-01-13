@@ -8,10 +8,12 @@ Created on Tue Nov 16 12:25:54 2021
 
 import warnings
 import inspect
-
+import collections
+from typing import get_origin, get_args, Union, Any, TextIO, BinaryIO
 import dessia_common as dc
 import dessia_common.errors as dc_err
 import dessia_common.utils.types as dcty
+from dessia_common.typings import InstanceOf
 from dessia_common.graph import explore_tree_from_leaves#, cut_tree_final_branches
 from dessia_common.breakdown import get_in_object_from_path
 import networkx as nx
@@ -203,9 +205,6 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
         
     
     if '$ref' in dict_:
-        # and dict_['$ref'] in pointers_memo:
-        # print(dict_['$ref'])
-        # print('This is a ref', path, pointers_memo[dict_['$ref']])
         return pointers_memo[dict_['$ref']]
     
     class_argspec = None
@@ -218,12 +217,14 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
         pointers_memo.update(dereference_jsonpointers(dict_))
         
         
-    working_dict = dict_
+    # working_dict = dict_
 
-    if class_ is None and 'object_class' in working_dict:
-        class_ = dcty.get_python_class_from_class_name(working_dict['object_class'])
+    if class_ is None and 'object_class' in dict_:
+        class_ = dcty.get_python_class_from_class_name(dict_['object_class'])
 
 
+    # Create init_dict
+    init_dict = None
     if class_ is not None and hasattr(class_, 'dict_to_object'):
         different_methods = (class_.dict_to_object.__func__
                              is not dc.DessiaObject.dict_to_object.__func__)
@@ -239,18 +240,14 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
                 obj = class_.dict_to_object(dict_)
             return obj
 
-        if class_._init_variables is None:
-            class_argspec = inspect.getfullargspec(class_)
-            init_dict = {k: v for k, v in working_dict.items()
-                         if k in class_argspec.args}
-        else:
-            init_dict = {k: v for k, v in working_dict.items()
-                         if k in class_._init_variables}
+        class_argspec = inspect.getfullargspec(class_)
+        init_dict = {k: v for k, v in dict_.items()
+                     if k in class_argspec.args}
         # TOCHECK Class method to generate init_dict ??
     else:
-        init_dict = working_dict
+        init_dict = dict_
         
-    
+
     subobjects = {}
     for key, value in init_dict.items():
         if class_argspec is not None and key in class_argspec.annotations:
@@ -273,6 +270,121 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
         obj = subobjects
     
     return obj
+
+def recursive_instantiation(type_, value):
+    if type_ in dcty.TYPES_STRINGS.values():
+        return eval(type_)(value)
+    elif isinstance(type_, str):
+        class_ = dcty.get_python_class_from_class_name(type_)
+        if inspect.isclass(class_):
+            return class_.dict_to_object(value)
+        else:
+            raise NotImplementedError
+    elif isinstance(type_, (list, tuple)):
+        return [recursive_instantiation(t, v) for t, v in zip(type_, value)]
+    elif type_ is None:
+        return value
+    else:
+        raise NotImplementedError(type_)
+
+def deserialize_with_typing(type_, argument):
+    """
+    Deserialize an object with a typing info
+    """
+    origin = get_origin(type_)
+    args = get_args(type_)
+    if origin is Union:
+        # Check for Union false Positive (Default value = None)
+        if len(args) == 2 and type(None) in args:
+            return deserialize_argument(type_=args[0], argument=argument)
+
+        # Type union
+        classes = list(args)
+        instantiated = False
+        while instantiated is False:
+            # Find the last class in the hierarchy
+            hierarchy_lengths = [len(cls.mro()) for cls in classes]
+            max_length = max(hierarchy_lengths)
+            children_class_index = hierarchy_lengths.index(max_length)
+            children_class = classes[children_class_index]
+            try:
+                # Try to deserialize
+                # Throws KeyError if we try to put wrong dict into
+                # dict_to_object. This means we try to instantiate
+                # a children class with a parent dict_to_object
+                deserialized_arg = children_class.dict_to_object(argument)
+
+                # If it succeeds we have the right
+                # class and instantiated object
+                instantiated = True
+            except KeyError:
+                # This is not the right class, we should go see the parent
+                classes.remove(children_class)
+    elif origin in [list, collections.Iterator]:
+        # Homogenous sequences (lists)
+        sequence_subtype = args[0]
+        deserialized_arg = [deserialize_argument(sequence_subtype, arg)
+                            for arg in argument]
+        if origin is collections.Iterator:
+            deserialized_arg = iter(deserialized_arg)
+
+    elif origin is tuple:
+        # Heterogenous sequences (tuples)
+        deserialized_arg = tuple([deserialize_argument(t, arg)
+                                  for t, arg in zip(args, argument)])
+    elif origin is dict:
+        # Dynamic dict
+        deserialized_arg = argument
+    elif origin is InstanceOf:
+        classname = args[0]
+        object_class = dc.full_classname(object_=classname,
+                                      compute_for='class')
+        class_ = dcty.get_python_class_from_class_name(object_class)
+        deserialized_arg = class_.dict_to_object(argument)
+    else:
+        msg = "Deserialization of typing {} is not implemented"
+        raise NotImplementedError(msg.format(type_))
+    return deserialized_arg
+
+
+def deserialize_argument(type_, argument):
+    """
+    Deserialize an argument of a function with the type
+    """
+    if argument is None:
+        return None
+
+    if dcty.is_typing(type_):
+        return deserialize_with_typing(type_, argument)
+    elif type_ is TextIO:
+        deserialized_arg = argument
+    elif type_ is BinaryIO:
+        # files are supplied as io.BytesIO  which is compatible with : BinaryIO
+        deserialized_arg = argument
+    else:
+        if type_ in dcty.TYPING_EQUIVALENCES.keys():
+            if isinstance(argument, type_):
+                deserialized_arg = argument
+            else:
+                if isinstance(argument, int) and type_ == float:
+                    # Explicit conversion in this case
+                    deserialized_arg = float(argument)
+                else:
+                    msg = 'Given built-in type and argument are incompatible: '
+                    msg += '{} and {} in {}'.format(type(argument),
+                                                    type_, argument)
+                    raise TypeError(msg)
+        elif type_ is Any:
+            # Any type
+            deserialized_arg = argument
+        elif inspect.isclass(type_) and issubclass(type_, dc.DessiaObject):
+            # Custom classes
+            deserialized_arg = type_.dict_to_object(argument)
+        else:
+            raise TypeError("Deserialization of ype {} is Not Implemented".format(type_))
+    return deserialized_arg
+
+
 
 def find_references(value, path='#'):
     if isinstance(value, dict):

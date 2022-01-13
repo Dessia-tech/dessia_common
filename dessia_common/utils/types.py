@@ -7,7 +7,7 @@
 from typing import List, Dict, Type, Tuple, Union, Any, TextIO, BinaryIO, \
     get_type_hints, get_origin, get_args
 
-
+import dessia_common as dc
 from dessia_common.typings import Measure, JsonSerializable,\
     Subclass, InstanceOf, MethodType, ClassMethodType
     
@@ -19,6 +19,13 @@ from importlib import import_module
 TYPING_EQUIVALENCES = {int: 'number', float: 'number',
                        bool: 'boolean', str: 'string'}
 
+TYPES_STRINGS = {int: 'int', float: 'float', bool: 'boolean', str: 'str',
+                 list: 'list', tuple: 'tuple', dict: 'dict'}
+
+SEQUENCE_TYPINGS = ['List', 'Sequence', 'Iterable']
+
+TYPES_FROM_STRING = {'unicode': str, 'str': str, 'float': float,
+                     'int': int, 'bool': bool}
 
 def full_classname(object_, compute_for: str = 'instance'):
     if compute_for == 'instance':
@@ -243,3 +250,19 @@ def is_bson_valid(value, allow_nonstring_keys=False) -> Tuple[bool, str]:
     else:
         return False, 'Unrecognized type: {}'.format(type(value))
     return True, ''
+
+# TODO recursive_type and recursive_type functions look weird
+def recursive_type(obj):
+    if isinstance(obj, tuple(list(TYPING_EQUIVALENCES.keys()) + [dict])):
+        type_ = TYPES_STRINGS[type(obj)]
+    elif isinstance(obj, dc.DessiaObject):
+        type_ = obj.__module__ + '.' + obj.__class__.__name__
+    elif isinstance(obj, (list, tuple)):
+        type_ = []
+        for element in obj:
+            type_.append(recursive_type(element))
+    elif obj is None:
+        type_ = None
+    else:
+        raise NotImplementedError(obj)
+    return type_

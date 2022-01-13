@@ -18,7 +18,7 @@ from dessia_common.exports import XLSXWriter
 
 import dessia_common.errors
 from dessia_common.utils.diff import data_eq, diff
-from dessia_common.utils.serialization import dict_to_object, serialize_dict_with_pointers, serialize_dict
+from dessia_common.utils.serialization import dict_to_object, serialize_dict_with_pointers, serialize_dict, deserialize_argument
 from dessia_common.utils.types import is_jsonable, is_builtin, get_python_class_from_class_name, serialize_typing,\
     full_classname, is_sequence, isinstance_base_types, is_typing, TYPING_EQUIVALENCES, is_bson_valid
 from dessia_common.utils.copy import deepcopy_value
@@ -39,18 +39,8 @@ from dessia_common.typings import Measure, JsonSerializable,\
 from importlib import import_module
 
 
-
-
-
-TYPES_STRINGS = {int: 'int', float: 'float', bool: 'boolean', str: 'str',
-                 list: 'list', tuple: 'tuple', dict: 'dict'}
-
-SEQUENCE_TYPINGS = ['List', 'Sequence', 'Iterable']
-
 _FORBIDDEN_ARGNAMES = ['self', 'cls', 'progress_callback', 'return']
 
-TYPES_FROM_STRING = {'unicode': str, 'str': str, 'float': float,
-                     'int': int, 'bool': bool}
 
 
 # DEPRECATED_ATTRIBUTES = {'_editable_variss' : '_allowed_methods'}
@@ -1032,7 +1022,7 @@ def prettyname(namestr):
                 pretty_name += ' '
     return pretty_name
 
-
+  
 def inspect_arguments(method, merge=False):
     # Find default value and required arguments of class construction
     args_specs = inspect.getfullargspec(method)
@@ -1057,139 +1047,5 @@ def inspect_arguments(method, merge=False):
             else:
                 arguments.append(argument)
     return arguments, default_arguments
-
-
-def deserialize_argument(type_, argument):
-    if argument is None:
-        return None
-
-    if is_typing(type_):
-        deserialized_arg = deserialize_from_typing(type_=type_,
-                                                   argument=argument)
-    elif type_ in [TextIO, BinaryIO]:
-        # files are supplied as io.BytesIO  which is compatible with : BinaryIO
-        deserialized_arg = argument
-    else:
-        if type_ in TYPING_EQUIVALENCES.keys():
-            deserialized_arg = deserialize_builtin(type_=type_,
-                                                   argument=argument)
-        elif type_ is Any:
-            # Any type
-            deserialized_arg = argument
-        elif inspect.isclass(type_) and issubclass(type_, DessiaObject):
-            # Custom classes
-            deserialized_arg = type_.dict_to_object(argument)
-        else:
-            msg = "Deserialization of type {} is Not Implemented"
-            raise TypeError(msg.format(type_))
-    return deserialized_arg
-
-
-def deserialize_union(argument, args):
-    # Check for Union false Positive (Default value = None)
-    if len(args) == 2 and type(None) in args:
-        return deserialize_argument(type_=args[0], argument=argument)
-
-    # Type union
-    classes = list(args)
-    instantiated = False
-    while instantiated is False:
-        # Find the last class in the hierarchy
-        hierarchy_lengths = [len(cls.mro()) for cls in classes]
-        max_length = max(hierarchy_lengths)
-        children_class_index = hierarchy_lengths.index(max_length)
-        children_class = classes[children_class_index]
-        try:
-            # Try to deserialize
-            # Throws KeyError if we try to put wrong dict into
-            # dict_to_object. This means we try to instantiate
-            # a children class with a parent dict_to_object
-            deserialized_arg = children_class.dict_to_object(argument)
-
-            # If it succeeds we have the right
-            # class and instantiated object
-            instantiated = True
-        except KeyError:
-            # This is not the right class, we should go see the parent
-            classes.remove(children_class)
-    return deserialized_arg
-
-
-def deserialize_builtin(type_, argument):
-    if isinstance(argument, type_):
-        return argument
-    if isinstance(argument, int) and type_ == float:
-        # Explicit conversion in this case
-        return float(argument)
-    msg = 'Given built-in type and argument are incompatible: '
-    msg += '{} and {} in {}'.format(type(argument),
-                                    type_, argument)
-    raise TypeError(msg)
-
-
-def deserialize_from_typing(type_, argument):
-    origin = get_origin(type_)
-    args = get_args(type_)
-    if origin is Union:
-        deserialized_arg = deserialize_union(argument=argument, args=args)
-    elif origin in [list, collections.Iterator]:
-        # Homogenous sequences (lists)
-        sequence_subtype = args[0]
-        deserialized_arg = [deserialize_argument(sequence_subtype, arg)
-                            for arg in argument]
-        if origin is collections.Iterator:
-            deserialized_arg = iter(deserialized_arg)
-
-    elif origin is tuple:
-        # Heterogenous sequences (tuples)
-        deserialized_arg = tuple([deserialize_argument(t, arg)
-                                  for t, arg in zip(args, argument)])
-    elif origin is dict:
-        # Dynamic dict
-        deserialized_arg = argument
-    elif origin is InstanceOf:
-        classname = args[0]
-        object_class = full_classname(object_=classname,
-                                      compute_for='class')
-        class_ = get_python_class_from_class_name(object_class)
-        deserialized_arg = class_.dict_to_object(argument)
-    else:
-        msg = "Deserialization of typing {} is not implemented"
-        raise NotImplementedError(msg.format(type_))
-    return deserialized_arg
-
-
-# TODO recursive_type and recursive_type functions look weird
-def recursive_type(obj):
-    if isinstance(obj, tuple(list(TYPING_EQUIVALENCES.keys()) + [dict])):
-        type_ = TYPES_STRINGS[type(obj)]
-    elif isinstance(obj, DessiaObject):
-        type_ = obj.__module__ + '.' + obj.__class__.__name__
-    elif isinstance(obj, (list, tuple)):
-        type_ = []
-        for element in obj:
-            type_.append(recursive_type(element))
-    elif obj is None:
-        type_ = None
-    else:
-        raise NotImplementedError(obj)
-    return type_
-
-
-def recursive_instantiation(type_, value):
-    if type_ in TYPES_STRINGS.values():
-        return eval(type_)(value)
-    elif isinstance(type_, str):
-        class_ = get_python_class_from_class_name(type_)
-        if inspect.isclass(class_):
-            return class_.dict_to_object(value)
-        else:
-            raise NotImplementedError
-    elif isinstance(type_, (list, tuple)):
-        return [recursive_instantiation(t, v) for t, v in zip(type_, value)]
-    elif type_ is None:
-        return value
-    else:
-        raise NotImplementedError(type_)
 
 
