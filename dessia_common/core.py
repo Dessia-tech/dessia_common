@@ -641,7 +641,7 @@ class Catalog(DessiaObject):
 
 class DisplayObject(DessiaObject):
     def __init__(self, type_: str,
-                 data: Union[JsonSerializable, DessiaObject],
+                 data: Union[JsonSerializable, DessiaObject, str],
                  reference_path: str = '', name: str = ''):
         if type_ == 'markdown':
             data = inspect.cleandoc(data)

@@ -1028,12 +1028,17 @@ class WorkflowError(Exception):
 class Workflow(Block):
     """
     :param blocks: A List with all the Blocks used by the Worklow.
-    :type blocks: List of Block objects
+    :type blocks: List[InstanceOf[Block]]
     :param pipes: A List of Pipe objects.
-    :type pipes: List of Pipe objects
+    :type pipes: List[Pipe]
     :param imposed_variable_values: A dictionary of imposed variable values.
-    :type imposed_variable_values: dict
-    :param name: The name of the block.
+    :type imposed_variable_values: Dict
+    :param description: A short description that will be displayed on
+        workflow card (frontend). Should be shorter than 100 chars
+    :type description: str
+    :param documentation: A long documentation that will be displayed on
+        workflow page (frontend). Can use markdown elements.
+    :param name: The name of the workflow.
     :type name: str
     """
     _standalone_in_db = True
@@ -1099,8 +1104,9 @@ class Workflow(Block):
         }
     }
 
-    def __init__(self, blocks, pipes, output, *,
-                 imposed_variable_values=None, name=''):
+    def __init__(self, blocks, pipes, output, *, imposed_variable_values=None,
+                 description: str = "", documentation: str = "",
+                 name: str = ""):
         self.blocks = blocks
         self.pipes = pipes
 
@@ -1148,6 +1154,9 @@ class Workflow(Block):
                 #     msg = 'Workflow as an untyped input variable: {}'
                 #     raise WorkflowError(msg.format(variable.name))
                 input_variables.append(variable)
+
+        self.description = description
+        self.documentation = documentation
 
         Block.__init__(self, input_variables, [output], name=name)
         self.output = self.outputs[0]
@@ -1230,9 +1239,13 @@ class Workflow(Block):
         return copied_workflow
 
     def _displays(self) -> List[JsonSerializable]:
-        display_object = DisplayObject(type_='workflow', data=self.to_dict())
-        displays = [display_object.to_dict()]
+        documentation = self.to_markdown()
+        workflow = DisplayObject(type_='workflow', data=self.to_dict())
+        displays = [documentation.to_dict(), workflow.to_dict()]
         return displays
+
+    def to_markdown(self):
+        return DisplayObject(type_="markdown", data=self.documentation)
 
     @property
     def _method_jsonschemas(self):
@@ -1316,6 +1329,8 @@ class Workflow(Block):
             #     imposed_variable_values.append(value)
 
         # dict_['imposed_variables'] = imposed_variables
+        dict_['description'] = self.description
+        dict_['documentation'] = self.documentation
         dict_['imposed_variable_values'] = imposed_variable_values
         return dict_
 
@@ -1377,7 +1392,8 @@ class Workflow(Block):
             imposed_variable_values = None
         return cls(blocks=blocks, pipes=pipes, output=output,
                    imposed_variable_values=imposed_variable_values,
-                   name=dict_['name'])
+                   description=dict_["description"],
+                   name=dict_["name"])
 
     def dict_to_arguments(self, dict_: JsonSerializable, method: str):
         if method in self._allowed_methods:
