@@ -1247,9 +1247,12 @@ class Workflow(Block):
         return copied_workflow
 
     def _displays(self) -> List[JsonSerializable]:
+        displays = []
         documentation = self.to_markdown()
+        if documentation.data:
+            displays.extend(documentation.to_dict())
         workflow = DisplayObject(type_='workflow', data=self.to_dict())
-        displays = [documentation.to_dict(), workflow.to_dict()]
+        displays.extend(workflow.to_dict())
         return displays
 
     def to_markdown(self):
