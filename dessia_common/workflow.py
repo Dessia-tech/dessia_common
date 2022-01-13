@@ -1096,6 +1096,14 @@ class Workflow(Block):
                     'python_typing': "dessia_common.workflow.VariableTypes"
                 }
             },
+            "description": {
+                "type": "string", "title": "Description", "editable": True,
+                "default_value": "", "python_typing": "builtins.str"
+            },
+            "documentation": {
+                "type": "string", "title": "Documentation", "editable": True,
+                "default_value": "", "python_typing": "builtins.str"
+            },
             "name": {
                 'type': 'string', 'title': 'Name', 'editable': True,
                 'order': 3, 'default_value': '',
