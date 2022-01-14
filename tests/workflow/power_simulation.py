@@ -17,6 +17,7 @@ print(workflow_run.log)
 
 workflow_run2 = DessiaObject.dict_to_object(workflow_run.to_dict())
 workflow_run._check_platform()
+workflow_run.jsonschema()
 
 manual_run = simulation_workflow.start_run({0: components1, 1:component_connections1})
 
@@ -37,3 +38,5 @@ assert(manual_run.progress == 1)
 print(manual_run.progress)
 
 manual_run._displays()
+
+manual_run.jsonschema()
