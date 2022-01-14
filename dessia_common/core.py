@@ -128,17 +128,29 @@ class DessiaObject:
     _whitelist_attributes = []
 
     def __init__(self, name: str = '', **kwargs):
+        """
+        Generic init of DessiA Object. Only store name in self. To be overload
+        and call in specific class init 
+        """
         self.name = name
         for property_name, property_value in kwargs.items():
             setattr(self, property_name, property_value)
 
     def __hash__(self):
+        """
+        Compute a int from object
+        """
         if self._eq_is_data_eq:
             return self._data_hash()
         else:
             return object.__hash__(self)
 
     def __eq__(self, other_object):
+        """
+        Generic equality of two objects. behavior can be controled by class 
+        attribute _eq_is_data_eq to tell if we must use python equality (based on memory addresses)
+        (_eq_is_data_eq = False) or a data equality (True)
+        """
         if self._eq_is_data_eq:
             if self.__class__.__name__ != other_object.__class__.__name__:
                 return False
@@ -177,9 +189,15 @@ class DessiaObject:
 
     @property
     def full_classname(self):
+        """
+        Full classname of class like: package.module.submodule.classname
+        """
         return full_classname(self)
 
     def base_dict(self):
+        """
+        A base dict for to_dict: put name, object class and version in a dict
+        """
         package_name = self.__module__.split('.')[0]
         if package_name in sys.modules:
             package = sys.modules[package_name]
@@ -263,6 +281,9 @@ class DessiaObject:
 
     @classmethod
     def jsonschema(cls):
+        """
+        Jsonschema of class: transfer python data structure to web standard
+        """
         if hasattr(cls, '_jsonschema'):
             _jsonschema = cls._jsonschema
             return _jsonschema
@@ -389,6 +410,9 @@ class DessiaObject:
         return jsonschemas
 
     def method_dict(self, method_name=None, method_jsonschema=None):
+        """
+        Return a jsonschema of a method arguments
+        """
         if method_name is None and method_jsonschema is None:
             msg = 'No method name not jsonschema provided'
             raise NotImplementedError(msg)
@@ -400,6 +424,9 @@ class DessiaObject:
         return dict_
 
     def dict_to_arguments(self, dict_, method):
+        """
+        Transform serialized argument of a method to python objects ready to use in method evaluation
+        """
         method_object = getattr(self, method)
         args_specs = inspect.getfullargspec(method_object)
         allowed_args = args_specs.args[1:]
@@ -419,6 +446,10 @@ class DessiaObject:
         return arguments
 
     def save_to_file(self, filepath, indent=2):
+        """
+        Save to a JSON file the object
+        :param filepath: either a string reprensenting the filepath or a stream
+        """
         if isinstance(filepath, str):
             if not filepath.endswith('.json'):
                 filepath += '.json'
@@ -439,6 +470,10 @@ class DessiaObject:
 
     @classmethod
     def load_from_file(cls, filepath):
+        """
+        Load object from a json file 
+        :param filepath: either a string reprensenting the filepath or a stream
+        """
         if isinstance(filepath, str):
             with open(filepath, 'r') as file:
                 dict_ = json.load(file)
@@ -498,7 +533,7 @@ class DessiaObject:
 
     def plot(self, **kwargs):
         """
-
+        Generic plot getting plot_data function to plot
         """
         if hasattr(self, 'plot_data'):
             import plot_data
@@ -513,6 +548,9 @@ class DessiaObject:
             raise NotImplementedError(msg.format(self.__class__.__name__))
 
     def mpl_plot(self, **kwargs):
+        """
+        Plot whith matplotlib through plot_data function
+        """
         axs = []
         if hasattr(self, 'plot_data'):
             try:
@@ -531,6 +569,10 @@ class DessiaObject:
         return axs
 
     def babylonjs(self, use_cdn=True, debug=False, **kwargs):
+        """
+        Show the 3D volmdlr of an object by calling volmdlr_volume_model method 
+        and plot in in browser
+        """
         self.volmdlr_volume_model(**kwargs).babylonjs(use_cdn=use_cdn,
                                                       debug=debug)
 
