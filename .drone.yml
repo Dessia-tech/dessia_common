@@ -5,13 +5,13 @@ name: default
 
 steps:
 - name: check code complexity & docs
-  image: python:3.9
+  image: python:3.8
   commands:
   - pip install radon pydocstyle
   - ./code_quality.sh
 
 - name: check pep8 formatting
-  image: python:3.9
+  image: python:3.8
   when:
     branch: master
   commands:

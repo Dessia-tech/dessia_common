@@ -17,7 +17,10 @@ assert simulation_list_2 == simulation_list
 simulation_list_copy = simulation_list.copy()
 assert simulation_list_copy == simulation_list
 
+simulation_list.jsonschema()
+
 system1._check_platform()
+system1.jsonschema()
 system1.save_to_file('system1')
 system1_lff = dc.DessiaObject.load_from_file('system1.json')
 assert system1_lff == system1
