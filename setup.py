@@ -115,7 +115,7 @@ setup(
         "numpy",
         "pandas",
         "mypy_extensions",
-        "scipy",
+        "scipy<=1.7.3",
         "pyDOE",
         "dectree",
         "openpyxl",
