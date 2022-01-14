@@ -12,6 +12,7 @@ import collections
 from typing import get_origin, get_args, Union, Any, TextIO, BinaryIO
 import dessia_common as dc
 import dessia_common.errors as dc_err
+import dessia_common.files
 import dessia_common.utils.types as dcty
 from dessia_common.typings import InstanceOf
 from dessia_common.graph import explore_tree_from_leaves#, cut_tree_final_branches
@@ -393,6 +394,8 @@ def find_references(value, path='#'):
         return []
     elif dcty.is_sequence(value):
         return find_references_sequence(value, path)
+    elif isinstance(value, dessia_common.files.BinaryFile) or isinstance(value, dessia_common.files.StringFile):
+        return []
     else:
         raise ValueError(value)
 
