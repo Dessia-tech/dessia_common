@@ -12,12 +12,23 @@ class BinaryFile(io.BytesIO):
         super().__init__()
         self.filename = filename
 
+    def copy(self):
+        file_copy = self.__class__(self.filename)
+        file_copy.write(self.data)
+        file_copy.seek(0)
+        return file_copy
+
 
 class StringFile(io.StringIO):
     def __init__(self, filename: str = ''):
         super().__init__()
         self.filename = filename
 
+    def copy(self):
+        file_copy = self.__class__(self.filename)
+        file_copy.write(self.data)
+        file_copy.seek(0)
+        return file_copy
 
 class XLSXFile(BinaryFile):
     extension = 'xlsx'

@@ -394,7 +394,7 @@ def find_references(value, path='#'):
         return []
     elif dcty.is_sequence(value):
         return find_references_sequence(value, path)
-    elif isinstance(value, dessia_common.files.BinaryFile) or isinstance(value, dessia_common.files.StringFile):
+    elif isinstance(value, (dessia_common.files.BinaryFile, dessia_common.files.StringFile)):
         return []
     else:
         raise ValueError(value)
