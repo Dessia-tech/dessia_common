@@ -5,13 +5,13 @@ name: default
 
 steps:
 - name: check code complexity & docs
-  image: python:3.7
+  image: python:3.8
   commands:
   - pip install radon pydocstyle
   - ./code_quality.sh
 
 - name: check pep8 formatting
-  image: python:3.7
+  image: python:3.8
   when:
     branch: master
   commands:
@@ -20,7 +20,7 @@ steps:
     - bash check_pep8.sh
         
 - name: install, run scripts and build doc
-  image: python:3.7
+  image: python:3.8
   commands:
   - git fetch --tags
   - python setup.py install
@@ -35,12 +35,12 @@ steps:
   - coverage report
 
 - name: develop
-  image: python:3.7
+  image: python:3.8
   commands:
   - python setup.py develop
 
 - name: generate sdist
-  image: python:3.7
+  image: python:3.8
   commands:
   - git fetch --tags
   - python setup.py sdist
