@@ -20,7 +20,7 @@ steps:
     - bash check_pep8.sh
         
 - name: install, run scripts and build doc
-  image: python:3.8
+  image: python:3.7
   commands:
   - git fetch --tags
   - python setup.py install
