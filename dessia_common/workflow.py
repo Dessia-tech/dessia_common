@@ -1857,10 +1857,11 @@ class WorkflowState(DessiaObject):
         DessiaObject.__init__(self, name=name)
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#'):
-        if not use_pointers:
-            msg = 'WorkflowState to_dict should not' \
-                  'be called with use_pointers=False'
-            raise NotImplementedError(msg)
+        # TODO hotfix comment below. We should uncomment this in the future
+        # if not use_pointers:
+        #     msg = 'WorkflowState to_dict should not' \
+        #           'be called with use_pointers=False'
+        #     raise NotImplementedError(msg)
         if memo is None:
             memo = {}
 
