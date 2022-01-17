@@ -2357,7 +2357,7 @@ class WorkflowRun(DessiaObject):
             if use_pointers:
                 serialized_v, memo = serialize_with_pointers(v, memo, path='#/input_values/{}'.format(i))
             else:
-                serialized_v = serialize_with_pointers(v)
+                serialized_v = serialize(v)
             input_values[i] = serialized_v
 
         variables_values = {}
