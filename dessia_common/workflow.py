@@ -1940,9 +1940,12 @@ class WorkflowState(DessiaObject):
 
     def add_block_input_values(self, block_index: int,
                                values: Dict[str, Any]):
-        block = self.workflow.blocks[block_index]
-        indices = [self.workflow.input_index(i) for i in block.inputs]
+        indices = self.block_inputs_global_indices(block_index)
         self.add_several_input_values(indices=indices, values=values)
+
+    def block_inputs_global_indices(self, block_index: int) -> List[int]:
+        block = self.workflow.blocks[block_index]
+        return [self.workflow.input_index(i) for i in block.inputs]
 
     def _displays(self) -> List[JsonSerializable]:
         data = self.to_dict()
