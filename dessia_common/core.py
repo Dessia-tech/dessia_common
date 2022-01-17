@@ -42,7 +42,6 @@ from importlib import import_module
 _FORBIDDEN_ARGNAMES = ['self', 'cls', 'progress_callback', 'return']
 
 
-
 # DEPRECATED_ATTRIBUTES = {'_editable_variss' : '_allowed_methods'}
 def deprecated(use_instead=None):
     def decorated(function):
@@ -65,8 +64,6 @@ def deprecation_warning(name, object_type, use_instead=None):
         msg += "Use {} instead.\n".format(use_instead)
     warnings.warn(msg, DeprecationWarning)
     return msg
-
-
 
 
 class DessiaObject:
@@ -130,7 +127,7 @@ class DessiaObject:
     def __init__(self, name: str = '', **kwargs):
         """
         Generic init of DessiA Object. Only store name in self. To be overload
-        and call in specific class init 
+        and call in specific class init
         """
         self.name = name
         for property_name, property_value in kwargs.items():
@@ -147,7 +144,7 @@ class DessiaObject:
 
     def __eq__(self, other_object):
         """
-        Generic equality of two objects. behavior can be controled by class 
+        Generic equality of two objects. behavior can be controled by class
         attribute _eq_is_data_eq to tell if we must use python equality (based on memory addresses)
         (_eq_is_data_eq = False) or a data equality (True)
         """
@@ -471,7 +468,7 @@ class DessiaObject:
     @classmethod
     def load_from_file(cls, filepath):
         """
-        Load object from a json file 
+        Load object from a json file
         :param filepath: either a string reprensenting the filepath or a stream
         """
         if isinstance(filepath, str):
@@ -570,7 +567,7 @@ class DessiaObject:
 
     def babylonjs(self, use_cdn=True, debug=False, **kwargs):
         """
-        Show the 3D volmdlr of an object by calling volmdlr_volume_model method 
+        Show the 3D volmdlr of an object by calling volmdlr_volume_model method
         and plot in in browser
         """
         self.volmdlr_volume_model(**kwargs).babylonjs(use_cdn=use_cdn,
@@ -893,8 +890,6 @@ def stringify_dict_keys(obj):
     return new_obj
 
 
-
-
 def list_hash(list_):
     hash_ = 0
     for element in list_:
@@ -1064,7 +1059,7 @@ def prettyname(namestr):
                 pretty_name += ' '
     return pretty_name
 
-  
+
 def inspect_arguments(method, merge=False):
     # Find default value and required arguments of class construction
     args_specs = inspect.getfullargspec(method)
@@ -1089,5 +1084,3 @@ def inspect_arguments(method, merge=False):
             else:
                 arguments.append(argument)
     return arguments, default_arguments
-
-
