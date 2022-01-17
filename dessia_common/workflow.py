@@ -49,6 +49,9 @@ class Variable(DessiaObject):
     has_default_value: bool = False
 
     def __init__(self, memorize: bool = False, name: str = ''):
+        """
+        Variable for workflow
+        """
         self.memorize = memorize
         DessiaObject.__init__(self, name=name)
         self.position = None
@@ -63,6 +66,10 @@ class TypedVariable(Variable):
     has_default_value: bool = False
 
     def __init__(self, type_: Type, memorize: bool = False, name: str = ''):
+        """
+        Variable for workflow with a typing
+        """
+
         Variable.__init__(self, memorize=memorize, name=name)
         self.type_ = type_
 
@@ -89,6 +96,9 @@ class VariableWithDefaultValue(Variable):
 
     def __init__(self, default_value: Any, memorize: bool = False,
                  name: str = ''):
+        """
+        A variable with a default value
+        """
         Variable.__init__(self, memorize=memorize, name=name)
         self.default_value = default_value
 
@@ -98,6 +108,9 @@ class TypedVariableWithDefaultValue(TypedVariable):
 
     def __init__(self, type_: Type, default_value: Any,
                  memorize: bool = False, name: str = ''):
+        """
+        Workflow variables wit a type and a default value
+        """
         TypedVariable.__init__(self, type_=type_, memorize=memorize, name=name)
         self.default_value = default_value
 
@@ -117,6 +130,15 @@ class TypedVariableWithDefaultValue(TypedVariable):
                    memorize=dict_['memorize'], name=dict_['name'])
 
     def copy(self, deep: bool = False, memo=None):
+        """
+
+        :param deep: DESCRIPTION, defaults to False
+        :type deep: bool, optional
+        :param memo: a memo to use, defaults to None
+        :type memo: TYPE, optional
+        :return: The copied object
+
+        """
         copied_default_value = deepcopy_value(self.default_value, memo=memo)
         return TypedVariableWithDefaultValue(type_=self.type_,
                                              default_value=copied_default_value,
@@ -147,6 +169,9 @@ class Block(DessiaObject):
     def __init__(self, inputs: List[VariableTypes],
                  outputs: List[VariableTypes],
                  position: Tuple[float, float] = None, name: str = ''):
+        """
+        An Abstract block. Do not instantiate alone
+        """
         self.inputs = inputs
         self.outputs = outputs
         if position is None:
@@ -693,6 +718,9 @@ class Product(Block):
         return cls(number_list=number_list, name=dict_['name'])
 
     def evaluate(self, values):
+        """
+        Computes the block: use itertools.product
+        """
         list_product = [values[var] for var in self.inputs]
         output_value = list(itertools.product(*list_product))
         return [output_value]
@@ -1883,6 +1911,10 @@ class WorkflowState(DessiaObject):
     def __init__(self, workflow: Workflow, input_values, activated_items,
                  values, variables_values, start_time, output_value=None,
                  log: str = '', name: str = ''):
+        """
+        A workflow State reprensents the state of execution of a workflow.
+        """
+
         self.workflow = workflow
         self.input_values = input_values
         self.output_value = output_value
@@ -1947,8 +1979,8 @@ class WorkflowState(DessiaObject):
                 serialized_output_value = serialize(self.output_value)
             else:
                 serialized_output_value, _ = serialize_with_pointers(self.output_value,
-                                                                  memo=memo,
-                                                                  path='#/output_value')
+                                                                     memo=memo,
+                                                                     path='#/output_value')
             dict_.update({
                 'output_value': serialized_output_value,
                 'output_value_type': recursive_type(self.output_value)
