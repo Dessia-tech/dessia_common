@@ -10,7 +10,8 @@ if [[ "$cq_result" ]];
 	  exit 64;
 	
 fi;
-nb_pydoc_errors=$(pydocstyle --count --ignore D400,D415,D404,D212,D205,D200,D203,D401 dessia_common *.py | tail -1)
+
+nb_pydoc_errors=$(pydocstyle --count --ignore D400,D415,D404,D212,D205,D200,D203,D401,D210 dessia_common *.py | tail -1)
 echo "$nb_pydoc_errors pydoc errors, limit is $max_pydoc_errors"
 if [[ "$nb_pydoc_errors" -gt "$max_pydoc_errors" ]];
   then 
