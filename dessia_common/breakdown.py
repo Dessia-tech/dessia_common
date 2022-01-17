@@ -94,7 +94,6 @@ def breakdown(obj, path=''):
                     bd_dict[obj.__class__.__name__] = collections.OrderedDict()
                     bd_dict[obj.__class__.__name__][obj] = path
 
-
         bd_dict = merge_breakdown_dicts(bd_dict, object_breakdown(obj, path=path))
 
     return bd_dict
@@ -137,6 +136,7 @@ def object_breakdown(obj, path=''):
             dict2 = breakdown(v, path=path + k)
             bd_dict = merge_breakdown_dicts(bd_dict, dict2)
     return bd_dict
+
 
 def deep_getsizeof(o, ids=None):
     """Find the memory footprint of a Python object
