@@ -2292,8 +2292,8 @@ class WorkflowRun(DessiaObject):
         input_values = {}
 
         # TODO hotfix comment below. We should uncomment this in the future
-        if not use_pointers:
-            raise NotImplementedError('WorkflowRun to_dict should not be called with use_pointers=False')
+        # if not use_pointers:
+        #     raise NotImplementedError('WorkflowRun to_dict should not be called with use_pointers=False')
 
         if memo is None:
             memo = {}
