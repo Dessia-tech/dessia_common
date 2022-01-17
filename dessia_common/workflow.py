@@ -1896,7 +1896,7 @@ class WorkflowState(DessiaObject):
         DessiaObject.__init__(self, name=name)
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#'):
-        # TODO hotfix comment below. We should uncomment this in the future
+        # TODO hotfix comment below. We should uncomment this in the future<
         # if not use_pointers:
         #     msg = 'WorkflowState to_dict should not' \
         #           'be called with use_pointers=False'
@@ -2291,6 +2291,7 @@ class WorkflowRun(DessiaObject):
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#'):
         input_values = {}
 
+        # TODO hotfix comment below. We should uncomment this in the future
         if not use_pointers:
             raise NotImplementedError('WorkflowRun to_dict should not be called with use_pointers=False')
 
