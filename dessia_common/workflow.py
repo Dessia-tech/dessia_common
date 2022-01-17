@@ -1530,7 +1530,9 @@ class Workflow(Block):
 
     def input_index(self, variable: VariableTypes) -> int:
         upstream_variable = self.get_upstream_nbv(variable)
-        return self.inputs.index(upstream_variable)
+        if upstream_variable in self.inputs:
+            return self.inputs.index(upstream_variable)
+        return None
 
     def variable_index(self, variable: VariableTypes) -> int:
         return self.variables.index(variable)
@@ -1985,7 +1987,8 @@ class WorkflowState(DessiaObject):
 
     def block_inputs_global_indices(self, block_index: int) -> List[int]:
         block = self.workflow.blocks[block_index]
-        return [self.workflow.input_index(i) for i in block.inputs]
+        indices = [self.workflow.input_index(i) for i in block.inputs]
+        return list(filter(lambda x: x is not None, indices))
 
     def _displays(self) -> List[JsonSerializable]:
         data = self.to_dict()
