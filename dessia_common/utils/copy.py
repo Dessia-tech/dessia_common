@@ -1,4 +1,5 @@
 import dessia_common as dc
+import dessia_common.files
 from dessia_common.utils.types import is_sequence, is_typing
 
 
@@ -26,6 +27,9 @@ def deepcopy_value(value, memo):
         copied_value = value.copy(deep=True, memo=memo)
         memo[value] = copied_value
         return copied_value
+
+    elif isinstance(value, (dessia_common.files.BinaryFile, dessia_common.files.StringFile)):
+        return value.copy()
 
     elif hasattr(value, '__deepcopy__'):
         memo_value = search_memo(value, memo)

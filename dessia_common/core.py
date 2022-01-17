@@ -811,7 +811,7 @@ class Catalog(DessiaObject):
 
 class DisplayObject(DessiaObject):
     def __init__(self, type_: str,
-                 data: Union[JsonSerializable, DessiaObject],
+                 data: Union[JsonSerializable, DessiaObject, str],
                  reference_path: str = '', name: str = ''):
         if type_ == 'markdown':
             data = inspect.cleandoc(data)
@@ -1189,8 +1189,6 @@ def type_from_annotation(type_, module):
     return type_
 
 
-
-
 def prettyname(namestr):
     pretty_name = ''
     if namestr:
@@ -1204,8 +1202,7 @@ def prettyname(namestr):
                 pretty_name += ' '
     return pretty_name
 
-
-
+  
 def inspect_arguments(method, merge=False):
     # Find default value and required arguments of class construction
     args_specs = inspect.getfullargspec(method)
@@ -1230,8 +1227,5 @@ def inspect_arguments(method, merge=False):
             else:
                 arguments.append(argument)
     return arguments, default_arguments
-
-
-
 
 
