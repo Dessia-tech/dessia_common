@@ -2314,12 +2314,12 @@ class WorkflowRun(DessiaObject):
                       'start_time': self.start_time, 'end_time': self.end_time,
                       'execution_time': self.execution_time, 'log': self.log})
 
-        if self.output_value is not None:
-            serialized_output, _ = serialize_with_pointers(self.output_value, memo, path='#/output_value')
-            dict_.update({
-                'output_value': serialized_output,
-                'output_value_type': recursive_type(self.output_value)
-            })
+        # if self.output_value is not None:
+        serialized_output, _ = serialize_with_pointers(self.output_value, memo, path='#/output_value')
+        dict_.update({
+            'output_value': serialized_output,
+            'output_value_type': recursive_type(self.output_value)
+        })
 
         return dict_
 
