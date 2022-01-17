@@ -1945,7 +1945,7 @@ class WorkflowState(DessiaObject):
             if use_pointers:
                 serialized_v, memo = serialize_with_pointers(v, memo, path='#/input_values/{}'.format(i))
             else:
-                serialized_v = serialize_with_pointers(v)
+                serialized_v = serialize(v)
             input_values[i] = serialized_v
 
         if use_pointers:
@@ -1976,11 +1976,12 @@ class WorkflowState(DessiaObject):
         ]
         if self.output_value is not None:
             if use_pointers:
-                serialized_output_value = serialize(self.output_value)
-            else:
                 serialized_output_value, _ = serialize_with_pointers(self.output_value,
                                                                      memo=memo,
                                                                      path='#/output_value')
+            else:
+                serialized_output_value = serialize(self.output_value)
+
             dict_.update({
                 'output_value': serialized_output_value,
                 'output_value_type': recursive_type(self.output_value)
