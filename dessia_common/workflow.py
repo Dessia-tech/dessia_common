@@ -49,6 +49,9 @@ class Variable(DessiaObject):
     has_default_value: bool = False
 
     def __init__(self, memorize: bool = False, name: str = ''):
+        """
+        Variable for workflow
+        """
         self.memorize = memorize
         DessiaObject.__init__(self, name=name)
         self.position = None
@@ -63,6 +66,10 @@ class TypedVariable(Variable):
     has_default_value: bool = False
 
     def __init__(self, type_: Type, memorize: bool = False, name: str = ''):
+        """
+        Variable for workflow with a typing
+        """
+
         Variable.__init__(self, memorize=memorize, name=name)
         self.type_ = type_
 
@@ -89,6 +96,9 @@ class VariableWithDefaultValue(Variable):
 
     def __init__(self, default_value: Any, memorize: bool = False,
                  name: str = ''):
+        """
+        A variable with a default value
+        """
         Variable.__init__(self, memorize=memorize, name=name)
         self.default_value = default_value
 
@@ -98,6 +108,9 @@ class TypedVariableWithDefaultValue(TypedVariable):
 
     def __init__(self, type_: Type, default_value: Any,
                  memorize: bool = False, name: str = ''):
+        """
+        Workflow variables wit a type and a default value
+        """
         TypedVariable.__init__(self, type_=type_, memorize=memorize, name=name)
         self.default_value = default_value
 
@@ -117,6 +130,15 @@ class TypedVariableWithDefaultValue(TypedVariable):
                    memorize=dict_['memorize'], name=dict_['name'])
 
     def copy(self, deep: bool = False, memo=None):
+        """
+
+        :param deep: DESCRIPTION, defaults to False
+        :type deep: bool, optional
+        :param memo: a memo to use, defaults to None
+        :type memo: TYPE, optional
+        :return: The copied object
+
+        """
         copied_default_value = deepcopy_value(self.default_value, memo=memo)
         return TypedVariableWithDefaultValue(type_=self.type_,
                                              default_value=copied_default_value,
@@ -147,6 +169,9 @@ class Block(DessiaObject):
     def __init__(self, inputs: List[VariableTypes],
                  outputs: List[VariableTypes],
                  position: Tuple[float, float] = None, name: str = ''):
+        """
+        An Abstract block. Do not instantiate alone
+        """
         self.inputs = inputs
         self.outputs = outputs
         if position is None:
@@ -693,6 +718,9 @@ class Product(Block):
         return cls(number_list=number_list, name=dict_['name'])
 
     def evaluate(self, values):
+        """
+        Computes the block: use itertools.product
+        """
         list_product = [values[var] for var in self.inputs]
         output_value = list(itertools.product(*list_product))
         return [output_value]
@@ -1883,6 +1911,10 @@ class WorkflowState(DessiaObject):
     def __init__(self, workflow: Workflow, input_values, activated_items,
                  values, variables_values, start_time, output_value=None,
                  log: str = '', name: str = ''):
+        """
+        A workflow State reprensents the state of execution of a workflow.
+        """
+
         self.workflow = workflow
         self.input_values = input_values
         self.output_value = output_value
@@ -1896,22 +1928,44 @@ class WorkflowState(DessiaObject):
         DessiaObject.__init__(self, name=name)
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#'):
-        if not use_pointers:
-            msg = 'WorkflowState to_dict should not' \
-                  'be called with use_pointers=False'
-            raise NotImplementedError(msg)
+        # if not use_pointers:
+        #     msg = 'WorkflowState to_dict should not' \
+        #           'be called with use_pointers=False'
+        #     raise NotImplementedError(msg)
         if memo is None:
             memo = {}
 
-        dict_ = DessiaObject.to_dict(self)
+        if use_pointers:
+            workflow = self.workflow.to_dict(path='#/workflow', memo=memo)
+        else:
+            workflow = self.workflow.to_dict(use_pointers=False)
 
-        values = {self.workflow.variable_index(i): serialize(v)
-                  for i, v in self.values.items()}
-        dict_.update({'values': values})
+        input_values = {}
+        for i, v in self.input_values.items():
+            if use_pointers:
+                serialized_v, memo = serialize_with_pointers(v, memo, path='#/input_values/{}'.format(i))
+            else:
+                serialized_v = serialize(v)
+            input_values[i] = serialized_v
+
+        if use_pointers:
+            values = {}
+            for i, v in self.values.items():
+                values[self.workflow.variable_index(i)] = serialize_with_pointers(v, memo, path='#/values/{}'.format(i))
+        else:
+            values = {self.workflow.variable_index(i): serialize(v)
+                      for i, v in self.values.items()}
+
+        dict_ = self.base_dict()
+        dict_.update({'workflow': workflow,
+                      'input_values': input_values,
+                      'values': values})
+
         dict_['evaluated_blocks_indices'] = [i for i, b
                                              in enumerate(self.workflow.blocks)
                                              if b in self.activated_items
                                              and self.activated_items[b]]
+
         dict_['evaluated_pipes_indices'] = [i for i, p
                                             in enumerate(self.workflow.pipes)
                                             if p in self.activated_items
@@ -1921,8 +1975,15 @@ class WorkflowState(DessiaObject):
             if v in self.activated_items and self.activated_items[v]
         ]
         if self.output_value is not None:
+            if use_pointers:
+                serialized_output_value, _ = serialize_with_pointers(self.output_value,
+                                                                     memo=memo,
+                                                                     path='#/output_value')
+            else:
+                serialized_output_value = serialize(self.output_value)
+
             dict_.update({
-                'output_value': serialize(self.output_value),
+                'output_value': serialized_output_value,
                 'output_value_type': recursive_type(self.output_value)
             })
         return dict_
@@ -2285,22 +2346,28 @@ class WorkflowRun(DessiaObject):
     #                log=dict_['log'], name=dict_['name'])
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#'):
-        input_values = {}
 
-        if not use_pointers:
-            raise NotImplementedError('WorkflowRun to_dict should not be called with use_pointers=False')
+        # if not use_pointers:
+        #     raise NotImplementedError('WorkflowRun to_dict should not be called with use_pointers=False')
 
         if memo is None:
             memo = {}
 
+        input_values = {}
         for i, v in self.input_values.items():
-            serialized_v, memo = serialize_with_pointers(v, memo, path='#/input_values/{}'.format(i))
+            if use_pointers:
+                serialized_v, memo = serialize_with_pointers(v, memo, path='#/input_values/{}'.format(i))
+            else:
+                serialized_v = serialize(v)
             input_values[i] = serialized_v
 
         variables_values = {}
         for k, v in self.variables_values.items():
-            serialized_v, memo = serialize_with_pointers(v, memo,
-                                                         path='#/variables_values/{}'.format(k))
+            if use_pointers:
+                serialized_v, memo = serialize_with_pointers(v, memo,
+                                                             path='#/variables_values/{}'.format(k))
+            else:
+                serialized_v = serialize(v)
             variables_values[k] = serialized_v
 
         # variables_values = {k: serialize(v)
@@ -2315,7 +2382,10 @@ class WorkflowRun(DessiaObject):
                       'execution_time': self.execution_time, 'log': self.log})
 
         # if self.output_value is not None:
-        serialized_output, _ = serialize_with_pointers(self.output_value, memo, path='#/output_value')
+        if use_pointers:
+            serialized_output, _ = serialize_with_pointers(self.output_value, memo, path='#/output_value')
+        else:
+            serialized_output = serialize(self.output_value)
         dict_.update({
             'output_value': serialized_output,
             'output_value_type': recursive_type(self.output_value)
