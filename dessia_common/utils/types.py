@@ -39,6 +39,9 @@ def full_classname(object_, compute_for: str = 'instance'):
 
 
 def is_jsonable(x):
+    """
+    returns if object can be dumped as it is in a json
+    """
     try:
         json.dumps(x)
         return True
@@ -61,6 +64,9 @@ def is_builtin(type_):
 
 
 def isinstance_base_types(obj):
+    """
+    returns True if the object is either a str, a float a int or None
+    """
     return isinstance(obj, str) or isinstance(obj, float) or isinstance(obj, int) or (obj is None)
 
 

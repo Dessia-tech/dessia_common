@@ -10,26 +10,15 @@ import math
 import dessia_common as dc
 from dessia_common.utils.types import isinstance_base_types, is_sequence, full_classname
 
-# def basic_dict_diff(dict1, dict2):
-#     missing_keys_in_other_object = []
-#     diff_values = []
-
-#     for key, value in dict1.items():
-#         if key not in dict2:
-#             missing_keys_in_other_object.append(key)
-#         else:
-#             other_value = dict2[key]
-#             if value != other_value:
-#                 diff_values.append(key, value, other_value)
-
-#     return diff_values, missing_keys_in_other_object
-
 
 def diff(value1, value2, path='#'):
     diff_values = []
     missing_keys_in_other_object = []
     invalid_types = []
 
+    if is_sequence(value1) and is_sequence(value2):
+        return sequence_diff(value1, value2, path=path)
+ 
     if not isinstance(value1, type(value2)):
         invalid_types.append(path)
         return diff_values, missing_keys_in_other_object, invalid_types
@@ -41,8 +30,6 @@ def diff(value1, value2, path='#'):
         elif value1 != value2:
             diff_values.append((path, value1, value2))
         return diff_values, missing_keys_in_other_object, invalid_types
-    elif is_sequence(value1):
-        return sequence_diff(value1, value2, path=path)
     elif isinstance(value1, dict):
         return dict_diff(value1, value2, path=path)
     # elif hasattr(value1, '_data_eq'):
@@ -52,12 +39,21 @@ def diff(value1, value2, path='#'):
             # DessiaObject
             if value1._data_eq(value2):
                 return [], [], []
+        
+            # Use same code snippet as in data_eq
+            eq_dict = value1._serializable_dict()
+            if 'name' in eq_dict:
+                del eq_dict['name']
 
+            other_eq_dict = value2._serializable_dict()
+
+            return dict_diff(eq_dict, other_eq_dict)
+
+        
         if value1 == value2:
             return [], [], []
 
-        #
-        # return diff_values, missing_keys_in_other_object, invalid_types
+        
         raise NotImplementedError('Undefined type in diff: {}'.format(type(value1)))
 
 
@@ -98,6 +94,9 @@ def sequence_diff(seq1, seq2, path='#'):
 
 
 def data_eq(value1, value2):
+    if is_sequence(value1) and is_sequence(value2):
+        return sequence_data_eq(value1, value2)
+
     if not isinstance(value2, type(value1))\
             and not isinstance(value1, type(value2)):
         return False
@@ -113,8 +112,6 @@ def data_eq(value1, value2):
     if isinstance(value1, dict):
         return dict_data_eq(value1, value2)
 
-    if is_sequence(value1):
-        return sequence_data_eq(value1, value2)
 
     # Else: its an object
 
