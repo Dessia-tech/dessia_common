@@ -35,7 +35,7 @@ try:
     from volmdlr import primitives3d as p3d
     import plot_data
     from plot_data.colors import *
-except:
+except ImportError:
     pass
 
 from dessia_common import DessiaObject

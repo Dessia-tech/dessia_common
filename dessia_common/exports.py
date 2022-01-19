@@ -226,7 +226,7 @@ class XLSXWriter:
                 try:  # Necessary to avoid error on empty cells
                     if len(str(cell.value)) > width:
                         width = len(cell.value)
-                except:
+                except AttributeError:
                     pass
             if width > 0:
                 adjusted_width = min((width + 0.5), max_width)

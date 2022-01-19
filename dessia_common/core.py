@@ -139,8 +139,7 @@ class DessiaObject:
         """
         if self._eq_is_data_eq:
             return self._data_hash()
-        else:
-            return object.__hash__(self)
+        return object.__hash__(self)
 
     def __eq__(self, other_object):
         """
@@ -259,10 +258,10 @@ class DessiaObject:
                                  global_dict=global_dict,
                                  pointers_memo=pointers_memo)
             return obj
-        else:
+        # else:
             # Using default
             # TODO: use jsonschema
-            raise NotImplementedError('No object_class in dict')
+        raise NotImplementedError('No object_class in dict')
 
     @classmethod
     def base_jsonschema(cls):
@@ -484,8 +483,8 @@ class DessiaObject:
     def copy(self, deep=True, memo=None):
         if deep:
             return self.__deepcopy__(memo=memo)
-        else:
-            return self.__copy__()
+        # else:
+        return self.__copy__()
 
     def __copy__(self):
         """
