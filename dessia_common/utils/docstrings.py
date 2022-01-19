@@ -14,6 +14,7 @@ class ParsedAttribute(TypedDict):
     type_: str
     annotation: str
 
+
 class ParsedDocstring(TypedDict):
     description: str
     attributes: Dict[str, ParsedAttribute]

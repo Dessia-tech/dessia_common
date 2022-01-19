@@ -26,4 +26,3 @@ blocks = [instanciate_system, simulate]
 pipes = [pipe_1]
 simulation_workflow = dcw.Workflow(blocks=blocks, pipes=pipes,
                                    output=simulate.outputs[0])
-
