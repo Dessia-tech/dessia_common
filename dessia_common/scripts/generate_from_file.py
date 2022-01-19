@@ -24,4 +24,3 @@ with open('../models/data/seed_file.csv') as stream0,\
         open('../models/data/seed_file_1.csv') as stream1:
     files = [stream0, stream1]
     container = Container.generate_from_text_files(files, name="Test Multiple")
-
