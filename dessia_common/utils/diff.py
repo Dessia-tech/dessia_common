@@ -18,7 +18,7 @@ def diff(value1, value2, path='#'):
 
     if is_sequence(value1) and is_sequence(value2):
         return sequence_diff(value1, value2, path=path)
- 
+
     if not isinstance(value1, type(value2)):
         invalid_types.append(path)
         return diff_values, missing_keys_in_other_object, invalid_types
@@ -39,7 +39,7 @@ def diff(value1, value2, path='#'):
             # DessiaObject
             if value1._data_eq(value2):
                 return [], [], []
-        
+
             # Use same code snippet as in data_eq
             eq_dict = value1._serializable_dict()
             if 'name' in eq_dict:
@@ -49,11 +49,9 @@ def diff(value1, value2, path='#'):
 
             return dict_diff(eq_dict, other_eq_dict)
 
-        
         if value1 == value2:
             return [], [], []
 
-        
         raise NotImplementedError('Undefined type in diff: {}'.format(type(value1)))
 
 
@@ -111,7 +109,6 @@ def data_eq(value1, value2):
 
     if isinstance(value1, dict):
         return dict_data_eq(value1, value2)
-
 
     # Else: its an object
 
