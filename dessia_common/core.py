@@ -217,7 +217,7 @@ class DessiaObject:
                  and not k.startswith('_')}
         return dict_
 
-    def to_dict(self, use_pointers:bool=True, memo=None, path: str = '#') -> JsonSerializable:
+    def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#') -> JsonSerializable:
         """
         Generic to_dict method
         """
@@ -632,7 +632,7 @@ class DessiaObject:
         assert deserialized_object._data_eq(self)
         copied_object = self.copy()
         assert copied_object._data_eq(self)
-        
+
         valid, hint = is_bson_valid(stringify_dict_keys(dict_))
         if not valid:
             raise ValueError(hint)
@@ -718,6 +718,7 @@ class Parameter(DessiaObject):
         if self.periodicity is not None:
             return (self.lower_bound - 0.5 * self.periodicity,
                     self.upper_bound + 0.5 * self.periodicity)
+        return None
 
 
 class ParameterSet(DessiaObject):

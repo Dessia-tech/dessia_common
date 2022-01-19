@@ -187,7 +187,7 @@ class Block(DessiaObject):
     def equivalent(self, other):
         return self.__class__.__name__ == other.__class__.__name__
 
-    def to_dict(self, use_pointers:bool=True, memo=None, path: str = '#'):
+    def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#'):
         dict_ = DessiaObject.base_dict(self)
         dict_['inputs'] = [i.to_dict() for i in self.inputs]
         dict_['outputs'] = [o.to_dict() for o in self.outputs]

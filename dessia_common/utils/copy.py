@@ -20,7 +20,7 @@ def deepcopy_value(value, memo):
                                       'Vector2D', 'Vector3D']:
         try:
             copied_value = value.copy(deep=True, memo=memo)
-        except  TypeError:
+        except TypeError:
             warnings.warn('{}.copy() does not implement deep and memo arguments'.format(value.__class__.__name__))
             copied_value = value.copy()
         return copied_value
@@ -31,7 +31,7 @@ def deepcopy_value(value, memo):
             return memo_value
         try:
             copied_value = value.copy(deep=True, memo=memo)
-        except  TypeError:
+        except TypeError:
             warnings.warn('{}.copy() does not implement deep and memo arguments'.format(value.__class__.__name__))
             copied_value = value.copy()
 

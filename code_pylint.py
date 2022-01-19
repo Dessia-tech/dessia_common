@@ -1,8 +1,8 @@
 from pylint.lint import Run
 
-MIN_NOTE = 3.15
+MIN_NOTE = 8.65
 
-MAX_ERROR_BY_TYPE = {'cyclic-import': 9,
+MAX_ERROR_BY_TYPE = {'cyclic-import': 8,
                      'too-many-lines': 0,
                      'bare-except': 0,
                      'no-else-return': 25,
@@ -12,11 +12,11 @@ MAX_ERROR_BY_TYPE = {'cyclic-import': 9,
                      'too-many-locals': 15,
                      'too-many-nested-blocks': 2,
                      'inconsistent-return-statements': 0,
-                     'arguments-differ': 29,
+                     'arguments-differ': 28,
                      'too-many-arguments': 10,
                      'undefined-variable': 0,
                      'function-redefined': 0,
-                     'attribute-defined-outside-init': 0,
+                     'attribute-defined-outside-init': 3,
                      'simplifiable-if-expression': 3,
                      'redefined-builtin': 3,
                      'unnecessary-comprehension': 5,
@@ -29,7 +29,7 @@ MAX_ERROR_BY_TYPE = {'cyclic-import': 9,
                      'eval-used': 2,
                      'too-many-statements': 1,
                      'superfluous-parens': 0,
-                     'chained-comparison': 0
+                     'chained-comparison': 1
                      }
 
 results = Run(['dessia_common', '--output-format=json'], do_exit=False)
