@@ -1,6 +1,6 @@
 #!/bin/bash
 
-max_pydoc_errors=485
+max_pydoc_errors=484
 
 cq_result=$(radon cc --min E -e *pyx dessia_common)
 echo $cq_result
