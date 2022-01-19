@@ -631,6 +631,9 @@ class DessiaObject:
         decoded_json = json.loads(json_dict)
         deserialized_object = self.dict_to_object(decoded_json)
         assert deserialized_object._data_eq(self)
+        copied_object = self.copy()
+        assert copied_object._data_eq(self)
+        
         valid, hint = is_bson_valid(stringify_dict_keys(dict_))
         if not valid:
             raise ValueError(hint)

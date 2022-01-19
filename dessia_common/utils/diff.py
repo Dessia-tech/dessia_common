@@ -52,6 +52,7 @@ def diff(value1, value2, path='#'):
             # DessiaObject
             if value1._data_eq(value2):
                 return [], [], []
+            
         if value1 == value2:
             return [], [], []
         
