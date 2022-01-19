@@ -31,6 +31,8 @@ def get_in_object_from_path(object_, path):
             if segment in element:
                 element = element[segment]
             else:
+                print(element, segments)
+                print(path)
                 element = element[int(segment)]
         else:
             element = getattr(element, segment)

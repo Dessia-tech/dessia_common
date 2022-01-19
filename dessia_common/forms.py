@@ -34,7 +34,7 @@ try:
     from volmdlr import primitives2d as p2d
     from volmdlr import primitives3d as p3d
     import plot_data
-    from plot_data.colors import *
+    import plot_data.colors
 except ImportError:
     pass
 
@@ -379,8 +379,8 @@ class StandaloneObject(DessiaObject):
 
         # The previous line instantiates a dataset with limited arguments but
         # several customizations are available
-        point_style = plot_data.PointStyle(color_fill=RED, color_stroke=BLACK)
-        edge_style = plot_data.EdgeStyle(color_stroke=BLUE, dashline=[10, 5])
+        point_style = plot_data.PointStyle(color_fill=plot_data.colors.RED, color_stroke=plot_data.colors.BLACK)
+        edge_style = plot_data.EdgeStyle(color_stroke=plot_data.colors.BLUE, dashline=[10, 5])
 
         custom_dataset = plot_data.Dataset(elements=elements1, name='I = f(t)',
                                            tooltip=tooltip,

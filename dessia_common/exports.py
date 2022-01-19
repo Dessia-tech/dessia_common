@@ -201,7 +201,7 @@ class XLSXWriter:
             self.autosize_sheet_columns(sheet, 5, 30)
 
     def save_to_file(self, filepath):
-
+        # TODO: split in two functions?
         if isinstance(filepath, str):
             real_filepath = filepath
             if not filepath.endswith('.xlsx'):

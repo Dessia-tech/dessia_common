@@ -217,7 +217,7 @@ class DessiaObject:
                  and not k.startswith('_')}
         return dict_
 
-    def to_dict(self, use_pointers:bool=True, memo=None, path: str = '#') -> JsonSerializable:
+    def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#') -> JsonSerializable:
         """
         Generic to_dict method
         """
@@ -446,6 +446,7 @@ class DessiaObject:
         Save to a JSON file the object
         :param filepath: either a string reprensenting the filepath or a stream
         """
+        # Maybe split in several functions for stream and file
         if isinstance(filepath, str):
             if not filepath.endswith('.json'):
                 filepath += '.json'
@@ -630,6 +631,9 @@ class DessiaObject:
         decoded_json = json.loads(json_dict)
         deserialized_object = self.dict_to_object(decoded_json)
         assert deserialized_object._data_eq(self)
+        copied_object = self.copy()
+        assert copied_object._data_eq(self)
+
         valid, hint = is_bson_valid(stringify_dict_keys(dict_))
         if not valid:
             raise ValueError(hint)
@@ -715,6 +719,7 @@ class Parameter(DessiaObject):
         if self.periodicity is not None:
             return (self.lower_bound - 0.5 * self.periodicity,
                     self.upper_bound + 0.5 * self.periodicity)
+        return None
 
 
 class ParameterSet(DessiaObject):
