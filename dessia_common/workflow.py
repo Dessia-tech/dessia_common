@@ -56,7 +56,7 @@ class Variable(DessiaObject):
         DessiaObject.__init__(self, name=name)
         self.position = None
 
-    def to_dict(self):
+    def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
         dict_ = DessiaObject.base_dict(self)
         dict_.update({'has_default_value': self.has_default_value})
         return dict_
@@ -73,7 +73,7 @@ class TypedVariable(Variable):
         Variable.__init__(self, memorize=memorize, name=name)
         self.type_ = type_
 
-    def to_dict(self):
+    def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
         dict_ = DessiaObject.base_dict(self)
         dict_.update({'type_': serialize_typing(self.type_),
                       'memorize': self.memorize,
@@ -187,7 +187,7 @@ class Block(DessiaObject):
     def equivalent(self, other):
         return self.__class__.__name__ == other.__class__.__name__
 
-    def to_dict(self):
+    def to_dict(self, use_pointers:bool=True, memo=None, path: str = '#'):
         dict_ = DessiaObject.base_dict(self)
         dict_['inputs'] = [i.to_dict() for i in self.inputs]
         dict_['outputs'] = [o.to_dict() for o in self.outputs]
@@ -230,7 +230,7 @@ class Display(Block):
         displays = object_._displays(**kwargs)
         return displays
 
-    def to_dict(self):
+    def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
         dict_ = Block.to_dict(self)
         dict_['order'] = self.order
         return dict_
@@ -263,7 +263,7 @@ class Import(Block):
             return False
         return self.type_ == other.type_
 
-    def to_dict(self):
+    def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
         dict_ = Block.to_dict(self)
         dict_['type_'] = self.type_
         return dict_
@@ -313,7 +313,7 @@ class InstantiateModel(Block):
         other_classname = other.model_class.__class__.__name__
         return classname == other_classname
 
-    def to_dict(self):
+    def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
         dict_ = Block.to_dict(self)
         dict_['model_class'] = full_classname(object_=self.model_class,
                                               compute_for='class')
@@ -380,7 +380,7 @@ class ClassMethod(Block):
         same_method = self.method_type.name == other.method_type.name
         return same_class and same_method
 
-    def to_dict(self):
+    def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
         dict_ = Block.to_dict(self)
         classname = full_classname(object_=self.method_type.class_,
                                    compute_for='class')
@@ -460,7 +460,7 @@ class ModelMethod(Block):
         same_method = self.method_type.name == other.method_type.name
         return same_model and same_method
 
-    def to_dict(self):
+    def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
         dict_ = Block.to_dict(self)
         classname = full_classname(object_=self.method_type.class_,
                                    compute_for='class')
@@ -542,7 +542,7 @@ class Sequence(Block):
             return False
         return self.number_arguments == other.number_arguments
 
-    def to_dict(self):
+    def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
         dict_ = Block.to_dict(self)
         dict_['number_arguments'] = self.number_arguments
         # if self.type_ is not None:
@@ -613,7 +613,7 @@ class ForEach(Block):
         wb_eq = self.workflow_block.equivalent(other.workflow_block)
         return wb_eq and input_eq
 
-    def to_dict(self):
+    def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
         dict_ = Block.to_dict(self)
         dict_.update({'workflow_block': self.workflow_block.to_dict(),
                       'iter_input_index': self.iter_input_index})
@@ -655,7 +655,7 @@ class Unpacker(Block):
     def equivalent_hash(self):
         return len(self.indices)
 
-    def to_dict(self):
+    def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
         dict_ = Block.to_dict(self)
         dict_['indices'] = self.indices
         return dict_
@@ -706,7 +706,7 @@ class Product(Block):
             return False
         return self.number_list == other.number_list
 
-    def to_dict(self):
+    def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
         dict_ = DessiaObject.base_dict(self)
         dict_.update({'number_list': self.number_list})
         return dict_
@@ -757,7 +757,7 @@ class Filter(Block):
         hashes = [hash(f) for f in self.filters]
         return int(sum(hashes) % 10e5)
 
-    def to_dict(self):
+    def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
         dict_ = Block.to_dict(self)
         dict_.update({'filters': [f.to_dict() for f in self.filters]})
         return dict_
@@ -850,7 +850,7 @@ class MultiPlot(Display):
                                  reference_path=reference_path)
         return [display_.to_dict()]
 
-    def to_dict(self):
+    def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
         dict_ = Block.to_dict(self)
         dict_.update({'attributes': self.attributes, 'order': self.order})
         return dict_
@@ -883,7 +883,7 @@ class ParallelPlot(MultiPlot):
         deprecation_warning(self.__class__.__name__, 'Class', 'MultiPlot')
         MultiPlot.__init__(self, attributes=attributes, order=order, name=name)
 
-    def to_dict(self):
+    def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
         dict_ = MultiPlot.to_dict(self)
         dict_.update({'object_class': 'dessia_common.workflow.MultiPlot'})
         return dict_
@@ -918,7 +918,7 @@ class ModelAttribute(Block):
             return False
         return self.attribute_name == other.attribute_name
 
-    def to_dict(self):
+    def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
         dict_ = Block.to_dict(self)
         dict_.update({'attribute_name': self.attribute_name})
         return dict_
@@ -949,7 +949,7 @@ class Sum(Block):
             return False
         return self.number_elements == other.number_elements
 
-    def to_dict(self):
+    def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
         dict_ = Block.to_dict(self)
         dict_.update({'number_elements': self.number_elements})
         return dict_
@@ -978,7 +978,7 @@ class Substraction(Block):
             return False
         return True
 
-    def to_dict(self):
+    def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
         dict_ = Block.to_dict(self)
         return dict_
 
@@ -1044,7 +1044,7 @@ class Pipe(DessiaObject):
 
         DessiaObject.__init__(self, name=name)
 
-    def to_dict(self):
+    def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
         return {'input_variable': self.input_variable,
                 'output_variable': self.output_variable}
 
@@ -1221,10 +1221,6 @@ class Workflow(Block):
         for block1, block2 in zip(self.blocks, other_workflow.blocks):
             if not block1.equivalent(block2):
                 return False
-        return True
-
-    def is_valid(self):
-
         return True
 
     def __deepcopy__(self, memo=None):
@@ -1880,7 +1876,7 @@ class WorkflowBlock(Block):
             return False
         return self.workflow == other.workflow
 
-    def to_dict(self):
+    def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
         dict_ = Block.to_dict(self)
         dict_.update({'workflow': self.workflow.to_dict()})
         return dict_

@@ -488,8 +488,8 @@ class Catalog(DessiaObject):
             cost = self.build_costs(self.pareto_settings)
             p_frontier = pareto_frontier(cost)
             elements = [[], []]  # point_non_pareto, point_pareto
-            for i in range(len(list_name)):
-                dict_element = {name_column_0: list_name[i]}
+            for i, name in enumerate(list_name):
+                dict_element = {name_column_0: name}
                 for k, setting in enumerate(self.choice_variables):
                     dict_element[setting] = list_value[k][i]
 
@@ -500,8 +500,8 @@ class Catalog(DessiaObject):
 
         else:
             elements = [[], []]
-            for i in range(len(list_name)):
-                dict_element = {name_column_0: list_name[i]}
+            for i, name in enumerate(list_name):
+                dict_element = {name_column_0: name}
                 for k, setting in enumerate(self.choice_variables):
                     dict_element[setting] = list_value[k][i]
 
@@ -523,7 +523,7 @@ class Catalog(DessiaObject):
         plots = []
 
         # ScatterPlot
-        for j in range(len(list_settings)):
+        for j, setting in enumerate(list_settings):
             for i in range(j + 1, len(list_settings)):
                 if len(plots) < 3:
                     plots.append(Scatter(tooltip=custom_tooltip,

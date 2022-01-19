@@ -20,7 +20,7 @@ import dessia_common.errors
 from dessia_common.utils.diff import data_eq, diff
 from dessia_common.utils.serialization import dict_to_object, serialize_dict_with_pointers, serialize_dict, deserialize_argument, serialize, deserialize
 from dessia_common.utils.types import is_jsonable, is_builtin, get_python_class_from_class_name, serialize_typing,\
-    full_classname, is_sequence, isinstance_base_types, is_typing, TYPING_EQUIVALENCES, is_bson_valid
+    full_classname, is_sequence, isinstance_base_types, is_typing, TYPING_EQUIVALENCES, is_bson_valid, TYPES_FROM_STRING
 from dessia_common.utils.copy import deepcopy_value
 from dessia_common.utils.jsonschema import default_dict, datatype_from_jsonschema, jsonschema_from_annotation, JSONSCHEMA_HEADER, set_default_value
 from dessia_common.utils.docstrings import parse_docstring
@@ -217,7 +217,7 @@ class DessiaObject:
                  and not k.startswith('_')}
         return dict_
 
-    def to_dict(self, use_pointers=False, memo=None, path: str = '#') -> JsonSerializable:
+    def to_dict(self, use_pointers:bool=True, memo=None, path: str = '#') -> JsonSerializable:
         """
         Generic to_dict method
         """
@@ -671,6 +671,9 @@ class DisplayObject(DessiaObject):
     def __init__(self, type_: str,
                  data: Union[JsonSerializable, DessiaObject, str],
                  reference_path: str = '', name: str = ''):
+        """
+        Container for data of display
+        """
         if type_ == 'markdown':
             data = inspect.cleandoc(data)
         self.type_ = type_
@@ -688,6 +691,9 @@ class Parameter(DessiaObject):
                               periodicity=periodicity)
 
     def random_value(self):
+        """
+        Sample a value within the bounds
+        """
         return random.uniform(self.lower_bound, self.upper_bound)
 
     def are_values_equal(self, value1, value2, tol=1e-2):
@@ -1046,6 +1052,9 @@ def type_from_annotation(type_, module):
 
 
 def prettyname(namestr):
+    """
+    Creates a pretty name from as str
+    """
     pretty_name = ''
     if namestr:
         strings = namestr.split('_')
