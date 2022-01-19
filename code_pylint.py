@@ -2,10 +2,10 @@ from pylint.lint import Run
 
 MIN_NOTE = 8.3
 
-MAX_ERROR_BY_TYPE = {'cyclic-import': 10,
+MAX_ERROR_BY_TYPE = {'cyclic-import': 11,
                      'too-many-lines': 0,
                      'bare-except': 0,
-                     'no-else-return': 25,
+                     'no-else-return': 27,
                      'no-self-use': 6,
                      'no-member': 18,
                      'unexpected-special-method-signature': 0,
