@@ -446,6 +446,7 @@ class DessiaObject:
         Save to a JSON file the object
         :param filepath: either a string reprensenting the filepath or a stream
         """
+        # Maybe split in several functions for stream and file
         if isinstance(filepath, str):
             if not filepath.endswith('.json'):
                 filepath += '.json'

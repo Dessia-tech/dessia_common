@@ -1209,16 +1209,16 @@ class Workflow(Block):
                          % 10e5)
         return base_hash + block_hash
 
-    def _data_eq(self, other_workflow):
+    def _data_eq(self, other_object):
         # TODO: implement imposed_variable_values in equality
-        if hash(self) != hash(other_workflow):
+        if hash(self) != hash(other_object):
             return False
 
-        if not Block.equivalent(self, other_workflow):
+        if not Block.equivalent(self, other_object):
             return False
 
         # TODO: temp , reuse graph!!!!
-        for block1, block2 in zip(self.blocks, other_workflow.blocks):
+        for block1, block2 in zip(self.blocks, other_object.blocks):
             if not block1.equivalent(block2):
                 return False
         return True
@@ -1327,7 +1327,7 @@ class Workflow(Block):
         jsonschemas['run']['python_typing'] = serialize_typing(MethodType)
         return jsonschemas
 
-    def to_dict(self, memo=None, use_pointers=True, path='#'):
+    def to_dict(self, use_pointers=True, memo=None, path='#'):
         if memo is None:
             memo = {}
 
@@ -2286,11 +2286,11 @@ class WorkflowRun(DessiaObject):
 
         DessiaObject.__init__(self, name=name)
 
-    def _data_eq(self, other_workflow_run):
+    def _data_eq(self, other_object):
         # TODO : Should we add input_values and variables values in test ?
-        if not data_eq(self.output_value, other_workflow_run.output_value):
+        if not data_eq(self.output_value, other_object.output_value):
             return False
-        return self.workflow._data_eq(other_workflow_run.workflow)
+        return self.workflow._data_eq(other_object.workflow)
 
     def _data_hash(self):
         # TODO : Should we add input_values and variables values in test ?
