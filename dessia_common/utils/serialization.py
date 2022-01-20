@@ -8,13 +8,65 @@ Created on Tue Nov 16 12:25:54 2021
 
 import warnings
 import inspect
-
+import collections
+from typing import get_origin, get_args, Union, Any, TextIO, BinaryIO
 import dessia_common as dc
 import dessia_common.errors as dc_err
+import dessia_common.files
 import dessia_common.utils.types as dcty
-from dessia_common.graph import explore_tree_from_leaves#, cut_tree_final_branches
+from dessia_common.typings import InstanceOf
+from dessia_common.graph import explore_tree_from_leaves  # , cut_tree_final_branches
 from dessia_common.breakdown import get_in_object_from_path
 import networkx as nx
+
+
+def serialize_dict(dict_):
+    serialized_dict = {}
+    for key, value in dict_.items():
+        if hasattr(value, 'to_dict'):
+            # try:
+            #     serialized_value = value.to_dict()
+            # except TypeError:
+            #     # case of a class as an
+            serialized_value = value.to_dict()
+        elif isinstance(value, dict):
+            serialized_value = serialize_dict(value)
+        elif isinstance(value, (list, tuple)):
+            serialized_value = serialize_sequence(value)
+        else:
+            if not dcty.is_jsonable(value):
+                msg = 'Attribute {} of value {} is not json serializable'
+                raise dc_err.SerializationError(msg.format(key, value))
+            serialized_value = value
+        serialized_dict[key] = serialized_value
+    return serialized_dict
+
+
+def serialize_sequence(seq):
+    serialized_sequence = []
+    for value in seq:
+        if hasattr(value, 'to_dict'):
+            serialized_sequence.append(value.to_dict())
+        elif isinstance(value, dict):
+            serialized_sequence.append(serialize_dict(value))
+        elif isinstance(value, (list, tuple)):
+            serialized_sequence.append(serialize_sequence(value))
+        else:
+            serialized_sequence.append(value)
+    return serialized_sequence
+
+
+def serialize(deserialized_element):
+    if isinstance(deserialized_element, dc.DessiaObject):
+        serialized = deserialized_element.to_dict()
+    elif isinstance(deserialized_element, dict):
+        serialized = serialize_dict(deserialized_element)
+    elif dcty.is_sequence(deserialized_element):
+        serialized = serialize_sequence(deserialized_element)
+    else:
+        serialized = deserialized_element
+    return serialized
+
 
 def serialize_with_pointers(deserialized_element, memo=None, path='#'):
     if memo is None:
@@ -25,11 +77,11 @@ def serialize_with_pointers(deserialized_element, memo=None, path='#'):
                 serialized = deserialized_element.to_dict(use_pointers=True, memo=memo, path=path)
             except TypeError:
                 serialized = deserialized_element.to_dict()
-                
+
         except TypeError:
             # warnings.warn('specific to_dict should implement memo and path arguments', Warning)
             serialized, memo = serialize_dict_with_pointers(deserialized_element.to_dict(), memo, path)
-            
+
     elif isinstance(deserialized_element, dict):
         serialized, memo = serialize_dict_with_pointers(deserialized_element, memo, path)
     elif dcty.is_sequence(deserialized_element):
@@ -40,7 +92,7 @@ def serialize_with_pointers(deserialized_element, memo=None, path='#'):
 
 
 def serialize_dict_with_pointers(dict_, memo, path):
-        
+
     serialized_dict = {}
     dict_attrs_keys = []
     seq_attrs_keys = []
@@ -66,7 +118,7 @@ def serialize_dict_with_pointers(dict_, memo, path):
                 msg = 'Attribute {} of value {} is not json serializable'
                 raise dc_err.SerializationError(msg.format(key, value))
             serialized_dict[key] = value
-        
+
     # Handle seq & dicts afterwards
     for key in seq_attrs_keys:
         value_path = '{}/{}'.format(path, key)
@@ -104,15 +156,14 @@ def serialize_sequence_with_pointers(seq, memo, path):
     return serialized_sequence, memo
 
 
-
 def deserialize(serialized_element, sequence_annotation: str = 'List',
-                global_dict=None, pointers_memo=None, path='#'):#, enforce_pointers=False):
+                global_dict=None, pointers_memo=None, path='#'):  # , enforce_pointers=False):
     # if pointers_memo is None:
     #     pointers_memo = {}
     if pointers_memo is not None:
         if path in pointers_memo:
             return pointers_memo[path]
-    
+
     if isinstance(serialized_element, dict):
         try:
             return dict_to_object(serialized_element, global_dict=global_dict,
@@ -132,6 +183,7 @@ def deserialize(serialized_element, sequence_annotation: str = 'List',
                                     path=path)
     return serialized_element
 
+
 def deserialize_sequence(sequence, annotation=None,
                          global_dict=None, pointers_memo=None,
                          path='#'):
@@ -150,16 +202,13 @@ def deserialize_sequence(sequence, annotation=None,
         return tuple(deserialized_sequence)
     return deserialized_sequence
 
+
 def dict_to_object(dict_, class_=None, force_generic: bool = False,
                    global_dict=None, pointers_memo=None, path='#'):
-        
-    
+
     if '$ref' in dict_:
-        # and dict_['$ref'] in pointers_memo:
-        # print(dict_['$ref'])
-        # print('This is a ref', path, pointers_memo[dict_['$ref']])
         return pointers_memo[dict_['$ref']]
-    
+
     class_argspec = None
 
     if pointers_memo is None:
@@ -168,14 +217,14 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
     if global_dict is None:
         global_dict = dict_
         pointers_memo.update(dereference_jsonpointers(dict_))
-        
-        
-    working_dict = dict_
 
-    if class_ is None and 'object_class' in working_dict:
-        class_ = dcty.get_python_class_from_class_name(working_dict['object_class'])
+    # working_dict = dict_
 
+    if class_ is None and 'object_class' in dict_:
+        class_ = dcty.get_python_class_from_class_name(dict_['object_class'])
 
+    # Create init_dict
+    init_dict = None
     if class_ is not None and hasattr(class_, 'dict_to_object'):
         different_methods = (class_.dict_to_object.__func__
                              is not dc.DessiaObject.dict_to_object.__func__)
@@ -191,25 +240,20 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
                 obj = class_.dict_to_object(dict_)
             return obj
 
-        if class_._init_variables is None:
-            class_argspec = inspect.getfullargspec(class_)
-            init_dict = {k: v for k, v in working_dict.items()
-                         if k in class_argspec.args}
-        else:
-            init_dict = {k: v for k, v in working_dict.items()
-                         if k in class_._init_variables}
+        class_argspec = inspect.getfullargspec(class_)
+        init_dict = {k: v for k, v in dict_.items()
+                     if k in class_argspec.args}
         # TOCHECK Class method to generate init_dict ??
     else:
-        init_dict = working_dict
-        
-    
+        init_dict = dict_
+
     subobjects = {}
     for key, value in init_dict.items():
         if class_argspec is not None and key in class_argspec.annotations:
             annotation = class_argspec.annotations[key]
         else:
             annotation = None
-        
+
         key_path = '{}/{}'.format(path, key)
         if key_path in pointers_memo:
             subobjects[key] = pointers_memo[key_path]
@@ -217,14 +261,130 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
             subobjects[key] = deserialize(value, annotation,
                                           global_dict=global_dict,
                                           pointers_memo=pointers_memo,
-                                          path=key_path)#, enforce_pointers=False)
+                                          path=key_path)  # , enforce_pointers=False)
 
     if class_ is not None:
         obj = class_(**subobjects)
     else:
         obj = subobjects
-    
+
     return obj
+
+
+def recursive_instantiation(type_, value):
+    if type_ in dcty.TYPES_STRINGS.values():
+        return eval(type_)(value)
+    elif isinstance(type_, str):
+        class_ = dcty.get_python_class_from_class_name(type_)
+        if inspect.isclass(class_):
+            return class_.dict_to_object(value)
+        else:
+            raise NotImplementedError
+    elif isinstance(type_, (list, tuple)):
+        return [recursive_instantiation(t, v) for t, v in zip(type_, value)]
+    elif type_ is None:
+        return value
+    else:
+        raise NotImplementedError(type_)
+
+
+def deserialize_with_typing(type_, argument):
+    """
+    Deserialize an object with a typing info
+    """
+    origin = get_origin(type_)
+    args = get_args(type_)
+    if origin is Union:
+        # Check for Union false Positive (Default value = None)
+        if len(args) == 2 and type(None) in args:
+            return deserialize_argument(type_=args[0], argument=argument)
+
+        # Type union
+        classes = list(args)
+        instantiated = False
+        while instantiated is False:
+            # Find the last class in the hierarchy
+            hierarchy_lengths = [len(cls.mro()) for cls in classes]
+            max_length = max(hierarchy_lengths)
+            children_class_index = hierarchy_lengths.index(max_length)
+            children_class = classes[children_class_index]
+            try:
+                # Try to deserialize
+                # Throws KeyError if we try to put wrong dict into
+                # dict_to_object. This means we try to instantiate
+                # a children class with a parent dict_to_object
+                deserialized_arg = children_class.dict_to_object(argument)
+
+                # If it succeeds we have the right
+                # class and instantiated object
+                instantiated = True
+            except KeyError:
+                # This is not the right class, we should go see the parent
+                classes.remove(children_class)
+    elif origin in [list, collections.Iterator]:
+        # Homogenous sequences (lists)
+        sequence_subtype = args[0]
+        deserialized_arg = [deserialize_argument(sequence_subtype, arg)
+                            for arg in argument]
+        if origin is collections.Iterator:
+            deserialized_arg = iter(deserialized_arg)
+
+    elif origin is tuple:
+        # Heterogenous sequences (tuples)
+        deserialized_arg = tuple([deserialize_argument(t, arg)
+                                  for t, arg in zip(args, argument)])
+    elif origin is dict:
+        # Dynamic dict
+        deserialized_arg = argument
+    elif origin is InstanceOf:
+        classname = args[0]
+        object_class = dc.full_classname(object_=classname,
+                                         compute_for='class')
+        class_ = dcty.get_python_class_from_class_name(object_class)
+        deserialized_arg = class_.dict_to_object(argument)
+    else:
+        msg = "Deserialization of typing {} is not implemented"
+        raise NotImplementedError(msg.format(type_))
+    return deserialized_arg
+
+
+def deserialize_argument(type_, argument):
+    """
+    Deserialize an argument of a function with the type
+    """
+    if argument is None:
+        return None
+
+    if dcty.is_typing(type_):
+        return deserialize_with_typing(type_, argument)
+    elif type_ is TextIO:
+        deserialized_arg = argument
+    elif type_ is BinaryIO:
+        # files are supplied as io.BytesIO  which is compatible with : BinaryIO
+        deserialized_arg = argument
+    else:
+        if type_ in dcty.TYPING_EQUIVALENCES.keys():
+            if isinstance(argument, type_):
+                deserialized_arg = argument
+            else:
+                if isinstance(argument, int) and type_ == float:
+                    # Explicit conversion in this case
+                    deserialized_arg = float(argument)
+                else:
+                    msg = 'Given built-in type and argument are incompatible: '
+                    msg += '{} and {} in {}'.format(type(argument),
+                                                    type_, argument)
+                    raise TypeError(msg)
+        elif type_ is Any:
+            # Any type
+            deserialized_arg = argument
+        elif inspect.isclass(type_) and issubclass(type_, dc.DessiaObject):
+            # Custom classes
+            deserialized_arg = type_.dict_to_object(argument)
+        else:
+            raise TypeError("Deserialization of ype {} is Not Implemented".format(type_))
+    return deserialized_arg
+
 
 def find_references(value, path='#'):
     if isinstance(value, dict):
@@ -233,6 +393,8 @@ def find_references(value, path='#'):
         return []
     elif dcty.is_sequence(value):
         return find_references_sequence(value, path)
+    elif isinstance(value, (dessia_common.files.BinaryFile, dessia_common.files.StringFile)):
+        return []
     else:
         raise ValueError(value)
 
@@ -241,20 +403,20 @@ def find_references_sequence(seq, path='#'):
     if isinstance(seq, str):
         raise ValueError
 
-
     references = []
     for ie, element in enumerate(seq):
         path_value = '{}/{}'.format(path, ie)
         references.extend(find_references(element, path=path_value))
         # if value_nodes or value_edges:
-        
+
     return references
 
+
 def find_references_dict(dict_, path='#'):
-    
+
     if '$ref' in dict_:
         return [(path, dict_['$ref'])]
-    
+
     references = []
     for key, value in dict_.items():
         if not dcty.isinstance_base_types(value):
@@ -265,7 +427,7 @@ def find_references_dict(dict_, path='#'):
 
 def pointer_graph(value):
 
-    nodes = set()    
+    nodes = set()
     edges = set()
     # print(find_references(value))
     for path, reference in find_references(value):
@@ -274,25 +436,22 @@ def pointer_graph(value):
         previous_node = segments[0]
         for s in segments[1:]:
             node = '{}/{}'.format(previous_node, s)
-            nodes.add(node)            
+            nodes.add(node)
             edges.add((previous_node, node))
             previous_node = node
         edges.add((path, reference))
         # print(path,'->', reference)
-            
-    
-            
+
     graph = nx.DiGraph()
     graph.add_nodes_from(nodes)
     graph.add_edges_from(edges)
-        
 
     return graph
-    
 
-def dereference_jsonpointers(value):#, global_dict):
+
+def dereference_jsonpointers(value):  # , global_dict):
     graph = pointer_graph(value)
-    
+
     pointers_memo = {}
     if '#' in graph.nodes:
         cycles = list(nx.simple_cycles(graph))
@@ -300,11 +459,11 @@ def dereference_jsonpointers(value):#, global_dict):
             for cycle in cycles:
                 print(cycle)
             raise NotImplementedError('Cycles in ref not handled')
-            
+
         order = list(explore_tree_from_leaves(graph))
         if '#' in order:
             order.remove('#')
-            
+
         # for ref in order:
         #     print('ref', ref)
 
@@ -313,9 +472,9 @@ def dereference_jsonpointers(value):#, global_dict):
             # print(serialized_element)
             # try:
             pointers_memo[ref] = deserialize(serialized_element=serialized_element,
-                                     global_dict=value,
-                                     pointers_memo=pointers_memo,
-                                     path=ref)
+                                             global_dict=value,
+                                             pointers_memo=pointers_memo,
+                                             path=ref)
             # except:
             #     print(ref)
             #     # print('\n', serialized_element)
@@ -325,9 +484,6 @@ def dereference_jsonpointers(value):#, global_dict):
             # print('\nref', ref, pointers_memo[ref])
     # print(pointers_memo.keys())
     return pointers_memo
-            
-
-
 
 
 def pointer_graph_elements(value, path='#'):
@@ -344,11 +500,9 @@ def pointer_graph_elements(value, path='#'):
         raise ValueError(value)
 
 
-
 def pointer_graph_elements_sequence(seq, path='#'):
     if isinstance(seq, str):
         raise ValueError
-
 
     edges = []
     nodes = []
@@ -356,32 +510,31 @@ def pointer_graph_elements_sequence(seq, path='#'):
         path_value = '{}/{}'.format(path, ie)
         value_nodes, value_edges = pointer_graph_elements(element, path=path_value)
         # if value_nodes or value_edges:
-        
+
         nodes.append(path_value)
         nodes.extend(value_nodes)
-        
+
         edges.append((path, path_value))
         edges.extend(value_edges)
 
-
     return nodes, edges
 
+
 def pointer_graph_elements_dict(dict_, path='#'):
-    
-    
+
     if '$ref' in dict_:
         return [path, dict_['$ref']], [(path, dict_['$ref'])]
-    
+
     edges = []
     nodes = []
     for key, value in dict_.items():
         if not dcty.isinstance_base_types(value):
             path_value = '{}/{}'.format(path, key)
             value_nodes, value_edges = pointer_graph_elements(value, path=path_value)
-            # if value_nodes or value_edges:        
+            # if value_nodes or value_edges:
             nodes.append(path_value)
             nodes.extend(value_nodes)
-        
+
             edges.append((path, path_value))
             edges.extend(value_edges)
 
@@ -393,7 +546,7 @@ def pointers_analysis(obj):
         dict_ = obj
     else:
         dict_ = obj.to_dict()
-    
+
     class_number = {}
     composed_by = {}
     class_from_path = {}
@@ -408,12 +561,11 @@ def pointers_analysis(obj):
                 val2_class = dcty.full_classname(val2)
                 # val2_class = val2['object_class']
                 class_from_path[path2] = val2_class
-    
+
             # if 'object_class' in val2:
             # val2_class = val2['object_class']
             class_number[val2_class] = class_number.get(val2_class, 0) + 1
-    
-            
+
             if path1 in class_from_path:
                 val1_class = class_from_path[path1]
             else:
@@ -421,17 +573,14 @@ def pointers_analysis(obj):
                 val1_class = dcty.full_classname(val1)
                 # val1_class = val1['object_class']
                 class_from_path[path1] = val1_class
-    
-            
+
             if val1_class != val2_class:
                 if not val2_class in composed_by:
                     composed_by[val2_class] = {}
-                
+
                 if not val1_class in composed_by[val2_class]:
                     composed_by[val2_class][val1_class] = 1
                 else:
                     composed_by[val2_class][val1_class] += 1
-                
+
     return class_number, composed_by
-                
-    

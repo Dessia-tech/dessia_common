@@ -59,8 +59,8 @@ pipes = [
 
 # Workflow
 vectored_workflow = wf.Workflow(blocks=blocks, pipes=pipes,
-                       output=filter_method.outputs[0],
-                       name='Cars workflow')
+                                output=filter_method.outputs[0],
+                                name='Cars workflow')
 
 # # Input values
 input_values = {

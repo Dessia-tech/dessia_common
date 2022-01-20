@@ -37,11 +37,11 @@ class TreeGenerator(Generator):
     def is_vector_valid(self, vector: List[int]) -> bool:
         return True
 
-    def number_possibilities_from_vector(self, vector):
+    def number_possibilities_from_vector(self, vector: List[int]):
         """
         This method is generic but can be overloaded to avoid model instanciation
         """
-        model = self.model_from_vector()
+        model = self.model_from_vector(vector)
         return self.number_possibilities_from_model(model)
 
 

@@ -9,7 +9,7 @@ import tempfile
 # import numpy as npy
 
 # import dessia_common.core
-from dessia_common.breakdown import object_breakdown
+from dessia_common.breakdown import breakdown
 
 
 # from openpyxl.writer.excel import save_virtual_workbook
@@ -68,7 +68,7 @@ class XLSXWriter:
         self.main_sheet = self.workbook.active
         self.object = object_
 
-        self.paths = object_breakdown(object_)
+        self.paths = breakdown(object_)
 
         self.classes_to_sheets = {}
         self.object_to_sheet_row = {}
@@ -201,7 +201,7 @@ class XLSXWriter:
             self.autosize_sheet_columns(sheet, 5, 30)
 
     def save_to_file(self, filepath):
-
+        # TODO: split in two functions?
         if isinstance(filepath, str):
             real_filepath = filepath
             if not filepath.endswith('.xlsx'):
@@ -226,7 +226,7 @@ class XLSXWriter:
                 try:  # Necessary to avoid error on empty cells
                     if len(str(cell.value)) > width:
                         width = len(cell.value)
-                except:
+                except AttributeError:
                     pass
             if width > 0:
                 adjusted_width = min((width + 0.5), max_width)

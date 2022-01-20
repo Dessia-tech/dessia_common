@@ -7,10 +7,10 @@
 from typing import List, Dict, Type, Tuple, Union, Any, TextIO, BinaryIO, \
     get_type_hints, get_origin, get_args
 
-
+import dessia_common as dc
 from dessia_common.typings import Measure, JsonSerializable,\
     Subclass, InstanceOf, MethodType, ClassMethodType
-    
+
 import json
 import collections
 from importlib import import_module
@@ -18,6 +18,14 @@ from importlib import import_module
 
 TYPING_EQUIVALENCES = {int: 'number', float: 'number',
                        bool: 'boolean', str: 'string'}
+
+TYPES_STRINGS = {int: 'int', float: 'float', bool: 'boolean', str: 'str',
+                 list: 'list', tuple: 'tuple', dict: 'dict'}
+
+SEQUENCE_TYPINGS = ['List', 'Sequence', 'Iterable']
+
+TYPES_FROM_STRING = {'unicode': str, 'str': str, 'float': float,
+                     'int': int, 'bool': bool}
 
 
 def full_classname(object_, compute_for: str = 'instance'):
@@ -28,13 +36,16 @@ def full_classname(object_, compute_for: str = 'instance'):
     else:
         msg = 'Cannot compute {} full classname for object {}'
         raise NotImplementedError(msg.format(compute_for, object_))
-        
+
 
 def is_jsonable(x):
+    """
+    returns if object can be dumped as it is in a json
+    """
     try:
         json.dumps(x)
         return True
-    except:
+    except TypeError:
         return False
 
 
@@ -53,6 +64,9 @@ def is_builtin(type_):
 
 
 def isinstance_base_types(obj):
+    """
+    returns True if the object is either a str, a float a int or None
+    """
     return isinstance(obj, str) or isinstance(obj, float) or isinstance(obj, int) or (obj is None)
 
 
@@ -195,3 +209,70 @@ def deserialize_typing(serialized_typing):
         return get_python_class_from_class_name(serialized_typing)
     raise NotImplementedError('{} of type {}'.format(serialized_typing,
                                                      type(serialized_typing)))
+
+
+def is_bson_valid(value, allow_nonstring_keys=False) -> Tuple[bool, str]:
+    """
+    returns validity (bool) and a hint (str)
+    """
+    if isinstance(value, (int, float, str)):
+        return True, ''
+
+    if value is None:
+        return True, ''
+
+    if isinstance(value, dict):
+        for k, v in value.items():
+            # Key check
+            if isinstance(k, str):
+                if '.' in k:
+                    log = 'key {} of dict is a string containing a .,' \
+                          ' which is forbidden'
+                    return False, log.format(k)
+            elif isinstance(k, float):
+                log = 'key {} of dict is a float, which is forbidden'
+                return False, log.format(k)
+            elif isinstance(k, int):
+                if not allow_nonstring_keys:
+                    log = 'key {} of dict is an unsuported type {},' \
+                          ' use allow_nonstring_keys=True to allow'
+                    return False, log.format(k, type(k))
+            else:
+                log = 'key {} of dict is an unsuported type {}'
+                return False, log.format(k, type(k))
+
+            # Value Check
+            v_valid, hint = is_bson_valid(
+                value=v, allow_nonstring_keys=allow_nonstring_keys
+            )
+            if not v_valid:
+                return False, hint
+
+    elif is_sequence(value):
+        for v in value:
+            valid, hint = is_bson_valid(
+                value=v, allow_nonstring_keys=allow_nonstring_keys
+            )
+            if not valid:
+                return valid, hint
+    else:
+        return False, 'Unrecognized type: {}'.format(type(value))
+    return True, ''
+
+# TODO recursive_type and recursive_type functions look weird
+
+
+def recursive_type(obj):
+    if isinstance(obj, tuple(list(TYPING_EQUIVALENCES.keys()) + [dict])):
+        type_ = TYPES_STRINGS[type(obj)]
+    elif isinstance(obj, dc.DessiaObject):
+        type_ = obj.__module__ + '.' + obj.__class__.__name__
+    elif isinstance(obj, (list, tuple)):
+        type_ = []
+        for element in obj:
+            type_.append(recursive_type(element))
+    elif obj is None:
+        type_ = None
+    else:
+        raise NotImplementedError(obj)
+    return type_

@@ -4,20 +4,21 @@ type: docker
 name: default
 
 steps:
-- name: check code complexity
-  image: python:3.9
+- name: check code complexity, docs & code quality
+  image: python:3.8
   commands:
-  - pip install radon
+  - pip install radon pydocstyle pylint
   - ./code_quality.sh
+  - python code_pylint.py
 
 - name: check pep8 formatting
-  image: python:3.9
+  image: python:3.8
   when:
     branch: master
   commands:
     - git fetch --tags
     - pip3 install -U pip autopep8
-    - bash check_pep8.sh
+    - bash code_pep8.sh
         
 - name: install, run scripts and build doc
   image: python:3.8
