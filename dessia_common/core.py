@@ -586,7 +586,7 @@ class DessiaObject:
                                 use_instead='display_angular')
             return self._display_angular(**kwargs)
 
-        reference_path = kwargs.get('reference_path', default='')
+        reference_path = kwargs.get('reference_path', '')
 
         displays = []
         if hasattr(self, 'babylon_data'):
