@@ -25,12 +25,12 @@ this module can also be seen as a template for Dessia's
 coding/naming style & convention.
 """
 
-from math import floor, ceil
+from math import floor, ceil, cos
 from typing import Dict, List, Tuple, Union, TextIO, BinaryIO
+from numpy import linspace
 
 try:
     import volmdlr as vm
-    from volmdlr.wires import Contour2D
     from volmdlr import primitives2d as p2d
     from volmdlr import primitives3d as p3d
     import plot_data
@@ -42,11 +42,8 @@ from dessia_common import DessiaObject
 from dessia_common.typings import InstanceOf, Distance
 from dessia_common.vectored_objects import Catalog
 
-from numpy import linspace
-from math import cos
 
 from dessia_common.files import BinaryFile, StringFile
-import io
 
 
 class StandaloneSubobject(DessiaObject):
@@ -74,7 +71,7 @@ class StandaloneSubobject(DessiaObject):
                   vm.Point2D(1, 1), vm.Point2D(1, 0)]
 
         crls = p2d.ClosedRoundedLineSegments2D(points=points, radius={})
-        return vm.wires.Contour2D(crls.primitives)
+        return crls
 
     def voldmlr_primitives(self):
         contour = self.contour()

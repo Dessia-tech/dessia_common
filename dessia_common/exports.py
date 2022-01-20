@@ -4,19 +4,12 @@
 
 """
 
-# import collections
 import tempfile
-# import numpy as npy
-
-# import dessia_common.core
-from dessia_common.breakdown import breakdown
-
-
-# from openpyxl.writer.excel import save_virtual_workbook
 from openpyxl.styles.borders import Border, Side
 from openpyxl.styles import Alignment, PatternFill, Font
 from openpyxl import Workbook
 import openpyxl.utils
+from dessia_common.breakdown import breakdown
 
 
 def is_hashable(v):

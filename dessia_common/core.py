@@ -14,7 +14,15 @@ import collections
 from copy import deepcopy
 import inspect
 import json
-from dessia_common.exports import XLSXWriter
+
+from typing import List, Dict, Union, Any, get_type_hints
+# try:
+#     from typing import TypedDict  # >=3.8
+# except ImportError:
+#     from mypy_extensions import TypedDict  # <=3.7
+import traceback as tb
+
+from importlib import import_module
 
 import dessia_common.errors
 from dessia_common.utils.diff import data_eq, diff
@@ -24,19 +32,11 @@ from dessia_common.utils.types import is_jsonable, is_builtin, get_python_class_
 from dessia_common.utils.copy import deepcopy_value
 from dessia_common.utils.jsonschema import default_dict, datatype_from_jsonschema, jsonschema_from_annotation, JSONSCHEMA_HEADER, set_default_value
 from dessia_common.utils.docstrings import parse_docstring
-
-
-from typing import List, Dict, Type, Tuple, Union, Any, TextIO, BinaryIO, \
-    get_type_hints, get_origin, get_args
-try:
-    from typing import TypedDict  # >=3.8
-except ImportError:
-    from mypy_extensions import TypedDict  # <=3.7
-import traceback as tb
+from dessia_common.exports import XLSXWriter
 from dessia_common.typings import Measure, JsonSerializable,\
     Subclass, InstanceOf, MethodType, ClassMethodType
 
-from importlib import import_module
+
 
 
 _FORBIDDEN_ARGNAMES = ['self', 'cls', 'progress_callback', 'return']
@@ -586,10 +586,8 @@ class DessiaObject:
                                 use_instead='display_angular')
             return self._display_angular(**kwargs)
 
-        if 'reference_path' in kwargs:
-            reference_path = kwargs['reference_path']
-        else:
-            reference_path = ''
+        reference_path = kwargs.get('reference_path', default='')
+
         displays = []
         if hasattr(self, 'babylon_data'):
             display_ = DisplayObject(type_='cad', data=self.babylon_data(),
@@ -665,10 +663,10 @@ class DessiaObject:
         return formats
 
 
-class Catalog(DessiaObject):
-    def __init__(self, objects: List[DessiaObject], name: str = ''):
-        self.objects = objects
-        DessiaObject.__init__(self, name=name)
+# class Catalog(DessiaObject):
+#     def __init__(self, objects: List[DessiaObject], name: str = ''):
+#         self.objects = objects
+#         DessiaObject.__init__(self, name=name)
 
 
 class DisplayObject(DessiaObject):
@@ -762,86 +760,86 @@ class DessiaFilter(DessiaObject):
         return same_attr and same_op and same_bound
 
 
-class Evolution(DessiaObject):
-    """
-    Defines a generic evolution
+# class Evolution(DessiaObject):
+#     """
+#     Defines a generic evolution
 
-    :param evolution: float list
-    :type evolution: list
-    """
-    _non_data_eq_attributes = ['name']
-    _non_data_hash_attributes = ['name']
-    _generic_eq = True
+#     :param evolution: float list
+#     :type evolution: list
+#     """
+#     _non_data_eq_attributes = ['name']
+#     _non_data_hash_attributes = ['name']
+#     _generic_eq = True
 
-    def __init__(self, evolution: List[float] = None, name: str = ''):
-        if evolution is None:
-            evolution = []
-        self.evolution = evolution
+#     def __init__(self, evolution: List[float] = None, name: str = ''):
+#         if evolution is None:
+#             evolution = []
+#         self.evolution = evolution
 
-        DessiaObject.__init__(self, name=name)
+#         DessiaObject.__init__(self, name=name)
 
-    def _displays(self):
-        displays = [{'angular_component': 'app-evolution1d',
-                     'table_show': False,
-                     'evolution': [self.evolution],
-                     'label_y': ['evolution']}]
-        return displays
+#     def _displays(self):
+#         displays = [{'angular_component': 'app-evolution1d',
+#                      'table_show': False,
+#                      'evolution': [self.evolution],
+#                      'label_y': ['evolution']}]
+#         return displays
 
-    def update(self, evolution):
-        """
-        Update the evolution list
-        """
-        self.evolution = evolution
+#     def update(self, evolution):
+#         """
+#         Update the evolution list
+#         """
+#         self.evolution = evolution
 
 
-class CombinationEvolution(DessiaObject):
-    _non_data_eq_attributes = ['name']
-    _non_data_hash_attributes = ['name']
-    _generic_eq = True
+# class CombinationEvolution(DessiaObject):
+#     _non_data_eq_attributes = ['name']
+#     _non_data_hash_attributes = ['name']
+#     _generic_eq = True
 
-    def __init__(self, evolution1: List[Evolution],
-                 evolution2: List[Evolution], title1: str = 'x',
-                 title2: str = 'y', name: str = ''):
+#     def __init__(self, evolution1: List[Evolution],
+#                  evolution2: List[Evolution], title1: str = 'x',
+#                  title2: str = 'y', name: str = ''):
 
-        self.evolution1 = evolution1
-        self.evolution2 = evolution2
+#         self.evolution1 = evolution1
+#         self.evolution2 = evolution2
 
-        self.x_, self.y_ = self.genere_xy()
+#         self.x_, self.y_ = self.genere_xy()
 
-        self.title1 = title1
-        self.title2 = title2
+#         self.title1 = title1
+#         self.title2 = title2
 
-        DessiaObject.__init__(self, name=name)
+#         DessiaObject.__init__(self, name=name)
 
-    def _displays(self):
-        displays = [{
-            'angular_component': 'app-evolution2d-combination-evolution',
-            'table_show': False,
-            'evolution_x': [self.x_], 'label_x': ['title1'],
-            'evolution_y': [self.y_], 'label_y': ['title2']
-        }]
-        return displays
+#     def _displays(self):
+#         displays = [{
+#             'angular_component': 'app-evolution2d-combination-evolution',
+#             'table_show': False,
+#             'evolution_x': [self.x_], 'label_x': ['title1'],
+#             'evolution_y': [self.y_], 'label_y': ['title2']
+#         }]
+#         return displays
 
-    def update(self, evol1, evol2):
-        """
-        Update the CombinationEvolution object
+#     def update(self, evol1, evol2):
+#         """
+#         Update the CombinationEvolution object
 
-        :param evol1: list
-        :param evol2: list
-        """
-        for evolution, ev1 in zip(self.evolution1, evol1):
-            evolution.update(ev1)
-        for evolution, ev2 in zip(self.evolution2, evol2):
-            evolution.update(ev2)
-        self.x_, self.y_ = self.genere_xy()
+#         :param evol1: list
+#         :param evol2: list
+#         """
+#         for evolution, ev1 in zip(self.evolution1, evol1):
+#             evolution.update(ev1)
+#         for evolution, ev2 in zip(self.evolution2, evol2):
+#             evolution.update(ev2)
+#         self.x_, self.y_ = self.genere_xy()
 
-    def genere_xy(self):
-        x, y = [], []
-        for evol in self.evolution1:
-            x = x + evol.evolution
-        for evol in self.evolution2:
-            y = y + evol.evolution
-        return x, y
+#     def genere_xy(self):
+#         x, y = [], []
+#         for evol in self.evolution1:
+#             x = x + evol.evolution
+#         for evol in self.evolution2:
+#             y = y + evol.evolution
+#         return x, y
 
 
 def dict_merge(old_dct, merge_dct, add_keys=True, extend_lists=True):
@@ -990,15 +988,15 @@ def concatenate_attributes(prefix, suffix, type_: str = 'str'):
             return prefix + '/' + str(suffix)
         elif is_sequence(prefix):
             return sequence_to_deepattr(prefix) + '/' + str(suffix)
-        else:
-            raise TypeError(wrong_prefix_format.format(type(prefix)))
+        raise TypeError(wrong_prefix_format.format(type(prefix)))
     elif type_ == 'sequence':
         if isinstance(prefix, str):
             return [prefix, suffix]
         elif is_sequence(prefix):
             return prefix + [suffix]
-        else:
-            raise TypeError(wrong_prefix_format.format(type(prefix)))
+
+        raise TypeError(wrong_prefix_format.format(type(prefix)))
+
     else:
         wrong_concat_type = 'Type {} for concatenation is not supported.'
         wrong_concat_type += 'Should be "str" or "sequence"'
@@ -1048,11 +1046,7 @@ def type_from_annotation(type_, module):
     """
     if isinstance(type_, str):
         # Evaluating types
-        if type_ in TYPES_FROM_STRING:
-            type_ = TYPES_FROM_STRING[type_]
-        else:
-            # Evaluating
-            type_ = getattr(import_module(module), type_)
+        type_ = TYPES_FROM_STRING.get(type_, default=getattr(import_module(module), type_))
     return type_
 
 

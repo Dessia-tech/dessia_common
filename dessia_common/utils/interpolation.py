@@ -26,9 +26,9 @@ def istep_from_value_on_list(list_: List[float], value: float,
         if abs(list_[0] - value) < abs(list_[-1] - value):
             # Closer to left
             return 0.
-        else:
+        # else:
             # Closer to right
-            return len(list_) - 1
+        return len(list_) - 1
 
     min_values = min(list_)
     max_values = max(list_)
@@ -43,8 +43,8 @@ def interpolate_from_istep(objects, istep: float):
     if istep1 == istep:
         # No interpolation needed
         return objects[int(istep)]
-    else:
-        alpha = istep - istep1
-        point1 = objects[istep1]
-        point2 = objects[istep1 + 1]
-        return (1 - alpha) * point1 + (alpha) * point2
+    # else:
+    alpha = istep - istep1
+    point1 = objects[istep1]
+    point2 = objects[istep1 + 1]
+    return (1 - alpha) * point1 + (alpha) * point2

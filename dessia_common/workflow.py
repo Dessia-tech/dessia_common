@@ -114,7 +114,7 @@ class TypedVariableWithDefaultValue(TypedVariable):
         TypedVariable.__init__(self, type_=type_, memorize=memorize, name=name)
         self.default_value = default_value
 
-    def to_dict(self):
+    def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#'):
         dict_ = DessiaObject.base_dict(self)
         dict_.update({'type_': serialize_typing(self.type_),
                       'default_value': serialize(self.default_value),

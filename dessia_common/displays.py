@@ -1,8 +1,8 @@
 import webbrowser
 import os
 import tempfile
-from dessia_common.templates import visjs_template
 from networkx import DiGraph, Graph, kamada_kawai_layout
+from dessia_common.templates import visjs_template
 
 
 def networkx_to_visjs_data(networkx_graph: Graph):
