@@ -6,7 +6,11 @@ Created on Wed Jan 12 19:24:11 2022
 @author: steven
 """
 
-from typing import TypedDict, Dict, get_type_hints, Type
+from typing import Dict, get_type_hints, Type
+try:
+    from typing import TypedDict  # >=3.8
+except ImportError:
+    from mypy_extensions import TypedDict  # <=3.7
 
 
 class ParsedAttribute(TypedDict):
