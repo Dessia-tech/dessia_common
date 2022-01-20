@@ -1,6 +1,6 @@
 from pylint.lint import Run
 
-MIN_NOTE = 8.7
+MIN_NOTE = 8.4
 
 MAX_ERROR_BY_TYPE = {'cyclic-import': 7,
                      'too-many-lines': 0,
