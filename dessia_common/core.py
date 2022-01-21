@@ -441,7 +441,7 @@ class DessiaObject:
                 arguments[arg] = deserialized_value
         return arguments
 
-    def save_to_file(self, filepath, indent=2):
+    def save_to_file(self, filepath: str, indent: int = 2):
         """
         Save to a JSON file the object
         :param filepath: either a string reprensenting the filepath or a stream
@@ -638,17 +638,17 @@ class DessiaObject:
         json.dumps(self._displays())
         json.dumps(self._method_jsonschemas)
 
-    def to_xlsx(self, filepath):
+    def to_xlsx(self, filepath: str):
         writer = XLSXWriter(self)
         writer.save_to_file(filepath)
 
-    def to_step(self, filepath):
+    def to_step(self, filepath: str):
         """
         filepath can be a str or an io.StringIO
         """
         return self.volmdlr_volume_model().to_step(filepath=filepath)
 
-    def to_stl(self, filepath):
+    def to_stl(self, filepath: str):
         """
         filepath can be a str or an io.StringIO
         """
