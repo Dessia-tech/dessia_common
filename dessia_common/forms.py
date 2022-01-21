@@ -540,6 +540,16 @@ DEF_SOWDV = StandaloneObjectWithDefaultValues()
 
 
 class Generator(DessiaObject):
+    """
+    A class that allow to generate several StandaloneObjects from different parameters
+
+    :param parameter: An "offset" for the seed that will be used in generation
+    :type parameter: int
+    :param nb_solutions: The max number of solutions that will be generated
+    :type nb_solutions: int
+    :param name: The name of the Generator. It is not used in object generation
+    :type name: str
+    """
     _standalone_in_db = True
 
     def __init__(self, parameter: int, nb_solutions: int = 25, name: str = ''):
@@ -550,12 +560,23 @@ class Generator(DessiaObject):
         DessiaObject.__init__(self, name=name)
 
     def generate(self) -> List[StandaloneObject]:
+        """
+        Generates a list of Standalone objects
+        """
         self.models = [StandaloneObject.generate(self.parameter + i)
                        for i in range(self.nb_solutions)]
         return self.models
 
 
 class Optimizer(DessiaObject):
+    """
+    Mock an optimization process
+
+    :param model_to_optimize: An object which will be modified (one of its attributes)
+    :type model_to_optimize: StandaloneObject
+    :param name: Name of the optimizer. Will not be used in the optimization process
+    :type name: str
+    """
     _standalone_in_db = True
 
     def __init__(self, model_to_optimize: StandaloneObject, name: str = ''):
@@ -564,6 +585,12 @@ class Optimizer(DessiaObject):
         DessiaObject.__init__(self, name=name)
 
     def optimize(self, optimization_value: int = 3) -> int:
+        """
+        Sums model value with given one
+
+        :param optimization_value: value that will be added to model's intarg attribute
+        :type optimization_value: int
+        """
         self.model_to_optimize.intarg += optimization_value
         return self.model_to_optimize.intarg
 
