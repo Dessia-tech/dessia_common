@@ -246,8 +246,13 @@ class Display(Block):
 
 
 class Export(Block):
-    def __init__(self, name: str = ""):
-        Block.__init__(self, inputs=inputs, outputs=outputs, name=name)
+    def __init__(self, method_type: MethodType, name: str = ""):
+        inputs = [TypedVariable(type_=method_type.class_)]
+
+        method = getattr(method_type.class_, method_type.name)
+
+        output = output_from_function(function=method, name="export_output")
+        Block.__init__(self, inputs=inputs, outputs=[output], name=name)
 
 
 class Import(Block):
@@ -357,20 +362,15 @@ class ClassMethod(Block):
     def __init__(self, method_type: ClassMethodType[Type], name: str = ''):
         self.method_type = method_type
         inputs = []
+
+        # TODO method_type should now have an helper to get method (get_method)
         method = getattr(method_type.class_, method_type.name)
         inputs = set_inputs_from_function(method, inputs)
 
         self.argument_names = [i.name for i in inputs]
-
         output_name = 'method result of {}'.format(method_type.name)
-        annotations = get_type_hints(method)
-        if 'return' in annotations:
-            type_ = type_from_annotation(annotations['return'],
-                                         method.__module__)
-            outputs = [TypedVariable(type_=type_, name=output_name)]
-        else:
-            outputs = [Variable(name=output_name)]
-        Block.__init__(self, inputs, outputs, name=name)
+        output = output_from_function(function=method, name=output_name)
+        Block.__init__(self, inputs, [output], name=name)
 
     def equivalent_hash(self):
         classname = self.method_type.class_.__name__
@@ -428,6 +428,8 @@ class ModelMethod(Block):
         self.method_type = method_type
         inputs = [TypedVariable(type_=method_type.class_,
                                 name='model at input')]
+
+        # TODO method_type has an helper to get method object (get_method)
         method = getattr(method_type.class_, method_type.name)
 
         inputs = set_inputs_from_function(method, inputs)
@@ -435,18 +437,11 @@ class ModelMethod(Block):
         # Storing argument names
         self.argument_names = [i.name for i in inputs[1:]]
 
-        result_output_name = 'method result of {}'.format(method_type.name)
-        annotations = get_type_hints(method)
-        if 'return' in annotations:
-            type_ = type_from_annotation(annotations['return'],
-                                         method.__module__)
-            return_output = TypedVariable(type_=type_, name=result_output_name)
-        else:
-            return_output = Variable(name=result_output_name)
+        return_output_name = 'method result of {}'.format(method_type.name)
+        return_output = output_from_function(function=method, name=return_output_name)
 
         model_output_name = 'model at output {}'.format(method_type.name)
-        model_output = TypedVariable(type_=method_type.class_,
-                                     name=model_output_name)
+        model_output = TypedVariable(type_=method_type.class_, name=model_output_name)
         outputs = [return_output, model_output]
         if name == '':
             name = 'Model method: {}'.format(method_type.name)
@@ -2465,6 +2460,15 @@ def set_inputs_from_function(method, inputs=None):
             else:
                 inputs.append(TypedVariable(type_=type_, name=argument))
     return inputs
+
+
+def output_from_function(function, name: str = "result output"):
+    annotations = get_type_hints(function)
+    if 'return' in annotations:
+        type_ = type_from_annotation(annotations['return'],
+                                     function.__module__)
+        return TypedVariable(type_=type_, name=name)
+    return Variable(name=name)
 
 
 def value_type_check(value, type_):
