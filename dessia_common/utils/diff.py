@@ -151,7 +151,7 @@ def sequence_data_eq(seq1, seq2):
         # print('len diff', seq1, seq2)
         return False
     else:
-        for iv, (v1, v2) in enumerate(zip(seq1, seq2)):
+        for v1, v2 in zip(seq1, seq2):
             if not data_eq(v1, v2):
                 # print('seq false')
                 return False

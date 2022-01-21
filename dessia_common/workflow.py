@@ -37,10 +37,6 @@ VariableTypes = Union['Variable', 'TypedVariable',
                       'VariableWithDefaultValue',
                       'TypedVariableWithDefaultValue']
 
-
-# VariableTypes = Subclass['Variable']
-
-
 class Variable(DessiaObject):
     _standalone_in_db = False
     _eq_is_data_eq = False
@@ -524,30 +520,6 @@ class ModelMethod(Block):
         return block_docstring
 
 
-# class Function(Block):
-#     def __init__(self, function: Callable, name: str = ''):
-#         self.function = function
-#         inputs = []
-#         annotations = get_type_hints(function)
-#         for arg_name in inspect.signature(function).parameters.keys():
-#             # TODO: Check why we need TypedVariables
-#             type_ = type_from_annotation(annotations[arg_name])
-#             inputs.append(TypedVariable(type_=type_, name=arg_name))
-#         out_type = type_from_annotation(annotations['return'])
-#         outputs = [TypedVariable(type_=out_type, name='Output function')]
-#
-#         Block.__init__(self, inputs, outputs, name=name)
-#
-#     def equivalent_hash(self):
-#         return int(hash(self.function.__name__) % 10e5)
-#
-#     def equivalent(self, other):
-#         return self.function == other.function
-#
-#     def evaluate(self, values):
-#         return self.function(*values)
-
-
 class Sequence(Block):
     def __init__(self, number_arguments: int, name: str = ''):
         # type_: Subclass[DessiaObject] = None,
@@ -555,12 +527,7 @@ class Sequence(Block):
         prefix = 'Sequence element {}'
         inputs = [Variable(name=prefix.format(i))
                   for i in range(self.number_arguments)]
-        # if type_ is None:
-        # else:
-        #     inputs = [TypedVariable(type_=type_, name=prefix.format(i))
-        #               for i in range(self.number_arguments)]
-
-        # self.type_ = type_
+        
         outputs = [TypedVariable(type_=list, name='sequence')]
         Block.__init__(self, inputs, outputs, name=name)
 
@@ -575,19 +542,11 @@ class Sequence(Block):
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
         dict_ = Block.to_dict(self)
         dict_['number_arguments'] = self.number_arguments
-        # if self.type_ is not None:
-        #     dict_['type_'] = serialize_typing(self.type_)
-        # else:
-        #     dict_['type_'] = None
         return dict_
 
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_):
-        # if dict_['type_'] is not None:
-        #     type_ = deserialize_typing(dict_['type_'])
-        # else:
-        #     type_ = None
         return cls(dict_['number_arguments'], dict_['name'])
 
     def evaluate(self, values):
@@ -1409,12 +1368,7 @@ class Workflow(Block):
             else:
                 ser_value = serialize(value)
             imposed_variable_values[var_index] = ser_value
-            # if hasattr(value, 'to_dict'):
-            #     imposed_variable_values.append(value.to_dict(memopath=''))
-            # else:
-            #     imposed_variable_values.append(value)
 
-        # dict_['imposed_variables'] = imposed_variables
         dict_['description'] = self.description
         dict_['documentation'] = self.documentation
         dict_['imposed_variable_values'] = imposed_variable_values
@@ -1456,14 +1410,6 @@ class Workflow(Block):
             for variable_index, serialized_value in iterator:
                 value = deserialize(serialized_value)
                 variable = temp_workflow.variable_from_index(variable_index)
-                # if type(variable_index) == int:
-                #     variable = nonblock_variables[variable_index]
-                # else:
-                #     iblock, side, iport = variable_index
-                #     if side:
-                #         variable = blocks[iblock].outputs[iport]
-                #     else:
-                #         variable = blocks[iblock].inputs[iport]
 
                 imposed_variable_values[variable] = value
         elif 'imposed_variable_values' in dict_:
@@ -1733,26 +1679,6 @@ class Workflow(Block):
         variables_values = {}
         return WorkflowState(self, input_values, activated_items, values,
                              variables_values, start_time=time.time())
-
-    # def manual_run(self, input_values, name:str=''):
-    #     log = ''
-
-    #     start_time = time.time()
-
-    #     log_msg = 'Starting manual workflow run at {}'
-    #     log_line = log_msg.format(time.strftime('%d/%m/%Y %H:%M:%S UTC',
-    #                                             time.gmtime(start_time)))
-    #     log += (log_line + '\n')
-
-    #     variable_values = {}
-    #     for index_input, value in input_values.items():
-    #         variable_values[self.variable_indices(self.inputs[index_input])] = value
-
-    #     return ManualWorkflowRun(workflow=self, input_values=input_values,
-    #                              output_value=None,
-    #                              variables_values=variable_values,
-    #                              evaluated_blocks = [],
-    #                              log=log, name=name)
 
     def mxgraph_data(self):
         nodes = []
@@ -2381,25 +2307,6 @@ class WorkflowRun(DessiaObject):
             ))
         return displays
 
-    # @classmethod
-    # def dict_to_object(cls, dict_):
-    #     workflow = Workflow.dict_to_object(dict_['workflow'])
-    #     if 'output_value' in dict_ and 'output_value_type' in dict_:
-    #         type_ = dict_['output_value_type']
-    #         value = dict_['output_value']
-    #         output_value = recursive_instantiation(type_=type_, value=value)
-    #     else:
-    #         output_value = None
-
-    #     input_values = {int(i): deserialize(v)
-    #                     for i, v in dict_['input_values'].items()}
-    #     variables_values = {k: deserialize(v)
-    #                         for k, v in dict_['variables_values'].items()}
-    #     return cls(workflow=workflow, output_value=output_value,
-    #                input_values=input_values,
-    #                variables_values=variables_values,
-    #                start_time=dict_['start_time'], end_time=dict_['end_time'],
-    #                log=dict_['log'], name=dict_['name'])
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#'):
 
