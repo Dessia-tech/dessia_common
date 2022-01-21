@@ -272,7 +272,7 @@ class StandaloneObject(DessiaObject):
             # this is a hack for test until we get frontend support for types BinaryFile & StringFile
             # a BinaryIO does not have filename, but it's ok since we return a BinaryFile from backend
             my_file_name = stream.filename
-            my_name, raw_seed = my_string.split(",")
+            _, raw_seed = my_string.split(",")
             seed = int(raw_seed.strip())
         finally:
             stream.close()
@@ -284,7 +284,7 @@ class StandaloneObject(DessiaObject):
         try:
             my_string = stream.read().decode('utf8')
             my_file_name = stream.filename
-            my_name, raw_seed = my_string.split(",")
+            _, raw_seed = my_string.split(",")
             seed = int(raw_seed.strip())
         finally:
             stream.close()
@@ -295,7 +295,7 @@ class StandaloneObject(DessiaObject):
         try:
             my_text = stream.read()
             my_file_name = stream.filename
-            name, raw_seed = my_text.split(",")
+            _, raw_seed = my_text.split(",")
             seed = int(raw_seed.strip())
         finally:
             stream.close()

@@ -240,11 +240,11 @@ class Catalog(DessiaObject):
     def generate_multiplot(self, values: Dict[str, Any] = None):
         # TOCHECK Avoid circular imports
         import plot_data
-        from plot_data.colors import BLACK, LIGHTBLUE, LIGHTGREY, BLUE
+        # from plot_data.colors import BLACK, LIGHTBLUE, LIGHTGREY, BLUE
 
         if values is None:
             values = []
-            for i, line in enumerate(self.array):
+            for line in self.array:
                 value = {}
                 for variable in self.variables:
                     value[variable] = self.get_value_by_name(line, variable)
@@ -252,7 +252,7 @@ class Catalog(DessiaObject):
                 #     value[objective_name] = ratings[i]
                 values.append(value)
 
-        fontsize = 12
+        # fontsize = 12
         first_vars = self.variables[:2]
         values2d = [{key: val[key]} for key in first_vars for val in values]
         rgbs = [[192, 11, 11], [14, 192, 11], [11, 11, 192]]
