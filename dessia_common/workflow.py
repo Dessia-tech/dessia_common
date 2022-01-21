@@ -10,17 +10,14 @@ import tempfile
 import json
 import webbrowser
 import networkx as nx
-from typing import List, Union, Type, Any, Dict,\
-    Tuple, Optional, get_type_hints
+from typing import List, Union, Type, Any, Dict, Tuple, Optional, get_type_hints
 from copy import deepcopy
 from dessia_common.templates import workflow_template
 import itertools
 
-from dessia_common import DessiaObject, DisplayObject, DessiaFilter, \
-    is_sequence, list_hash, is_bounded, \
-    type_from_annotation,\
-    enhanced_deep_attr, deprecation_warning, JSONSCHEMA_HEADER,\
-    jsonschema_from_annotation, deserialize_argument, set_default_value,\
+from dessia_common import DessiaObject, DisplayObject, DessiaFilter,  is_sequence,\
+    list_hash, is_bounded, type_from_annotation,enhanced_deep_attr, deprecation_warning,\
+    JSONSCHEMA_HEADER, jsonschema_from_annotation, deserialize_argument, set_default_value,\
     prettyname, serialize_dict
 from dessia_common.errors import UntypedArgumentError
 from dessia_common.utils.diff import data_eq
@@ -29,9 +26,10 @@ from dessia_common.utils.serialization import dict_to_object, deserialize,\
 from dessia_common.utils.types import get_python_class_from_class_name,\
     serialize_typing, full_classname, deserialize_typing, recursive_type
 from dessia_common.utils.copy import deepcopy_value
+from dessia_common.utils.docstrings import parse_docstring,  EMPTY_PARSED_ATTRIBUTE,\
+    FAILED_ATTRIBUTE_PARSING
 from dessia_common.vectored_objects import from_csv
-from dessia_common.typings import JsonSerializable, MethodType,\
-    ClassMethodType
+from dessia_common.typings import JsonSerializable, MethodType, ClassMethodType, InstanceOf
 import warnings
 
 # Type Aliases
@@ -205,6 +203,9 @@ class Block(DessiaObject):
             data['name'] = self.__class__.__name__
         return data
 
+    def _docstring(self):
+        return None
+
 
 class Display(Block):
     _displayable_input = 0
@@ -338,6 +339,15 @@ class InstantiateModel(Block):
     def package_mix(self):
         return {self.model_class.__module__.split('.')[0]: 1}
 
+    def _docstring(self):
+        docstring = self.model_class.__doc__
+        annotations = get_type_hints(self.model_class.__init__)
+        parsed_docstring = parse_docstring(docstring=docstring, annotations=annotations)
+        parsed_attributes = parsed_docstring["attributes"]
+        block_docstring = {i: parsed_attributes[i.name] if i.name in parsed_attributes
+                           else EMPTY_PARSED_ATTRIBUTE for i in self.inputs}
+        return block_docstring
+
 
 class InstanciateModel(InstantiateModel):
     def __init__(self, model_class: Type, name: str = ''):
@@ -409,6 +419,16 @@ class ClassMethod(Block):
                 if var in values}
         return [getattr(self.method_type.class_,
                         self.method_type.name)(**args)]
+
+    def _docstring(self):
+        method = self.method_type.get_method()
+        docstring = method.__doc__
+        annotations = get_type_hints(method)
+        parsed_docstring = parse_docstring(docstring=docstring, annotations=annotations)
+        parsed_attributes = parsed_docstring["attributes"]
+        block_docstring = {i: parsed_attributes[i.name] if i.name in parsed_attributes
+                           else EMPTY_PARSED_ATTRIBUTE for i in self.inputs}
+        return block_docstring
 
 
 class ModelMethod(Block):
@@ -492,6 +512,16 @@ class ModelMethod(Block):
 
     def package_mix(self):
         return {self.method_type.class_.__module__.split('.')[0]: 1}
+
+    def _docstring(self):
+        method = self.method_type.get_method()
+        docstring = method.__doc__
+        annotations = get_type_hints(method)
+        parsed_docstring = parse_docstring(docstring=docstring, annotations=annotations)
+        parsed_attributes = parsed_docstring["attributes"]
+        block_docstring = {i: parsed_attributes[i.name] if i.name in parsed_attributes
+                           else EMPTY_PARSED_ATTRIBUTE for i in self.inputs}
+        return block_docstring
 
 
 # class Function(Block):
@@ -637,6 +667,14 @@ class ForEach(Block):
             output = self.workflow_block.evaluate(values_workflow)[0]
             output_values.append(output)
         return [output_values]
+
+    def _docstring(self):
+        wb_docstring = self.workflow_block._docstring()
+        block_docstring = {}
+        for i, inputs in enumerate(zip(self.inputs, self.workflow_block.workflow.inputs)):
+            input_, workflow_input = inputs
+            block_docstring[input_] = wb_docstring[workflow_input]
+        return block_docstring
 
 
 class Unpacker(Block):
@@ -1282,6 +1320,10 @@ class Workflow(Block):
     def to_markdown(self):
         return DisplayObject(type_="markdown", data=self.documentation)
 
+    def _docstring(self):
+        docstrings = [b._docstring() for b in self.blocks]
+        return docstrings
+
     @property
     def _method_jsonschemas(self):
         jsonschemas = {'run': deepcopy(JSONSCHEMA_HEADER)}
@@ -1290,13 +1332,21 @@ class Workflow(Block):
         })
         properties_dict = jsonschemas['run']['properties']
         required_inputs = []
+        parsed_attributes = {}
         for i, input_ in enumerate(self.inputs):
             current_dict = {}
             annotation = (str(i), input_.type_)
             if input_ in self.nonblock_variables:
                 title = input_.name
+                parsed_attributes = None
             else:
                 input_block = self.block_from_variable(input_)
+                try:
+                    block_docstring = input_block._docstring()
+                    if input_ in block_docstring:
+                        parsed_attributes[str(i)] = block_docstring[input_]
+                except Exception:
+                    parsed_attributes[(str(i))] = FAILED_ATTRIBUTE_PARSING
                 if input_block.name:
                     name = input_block.name + ' - ' + input_.name
                     title = prettyname(name)
@@ -1304,8 +1354,8 @@ class Workflow(Block):
                     title = prettyname(input_.name)
 
             annotation_jsonschema = jsonschema_from_annotation(
-                annotation=annotation, title=title,
-                order=i + 1, jsonschema_element=current_dict,
+                annotation=annotation, title=title, order=i + 1,
+                jsonschema_element=current_dict, parsed_attributes=parsed_attributes
             )
             # Order is i+1 because of name that is at 0
             current_dict.update(annotation_jsonschema[str(i)])
@@ -1319,8 +1369,9 @@ class Workflow(Block):
                 current_dict.update(dict_)
             properties_dict[str(i)] = current_dict[str(i)]
         properties_dict[str(len(self.inputs) + 1)] = {
-            'type': 'string', 'title': 'WorkflowRun Name', 'editable': True,
-            'order': 0, 'default_value': '', 'python_typing': 'builtins.str'
+            'type': 'string', 'title': 'WorkflowRun Name', 'editable': True, 'order': 0,
+            "description": "Name for the resulting WorkflowRun",
+            'default_value': '', 'python_typing': 'builtins.str'
         }
         jsonschemas['run']['required'] = required_inputs
         jsonschemas['run']['method'] = True
@@ -1896,6 +1947,15 @@ class WorkflowBlock(Block):
 
     def package_mix(self):
         return self.workflow.package_mix()
+
+    def _docstring(self):
+        workflow_docstrings = self.workflow._docstring()
+        docstring = {}
+        for block_docstring in workflow_docstrings:
+            for input_ in self.workflow.inputs:
+                if block_docstring and input_ in block_docstring:
+                    docstring[input_] = block_docstring[input_]
+        return docstring
 
 
 class WorkflowState(DessiaObject):

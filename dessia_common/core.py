@@ -16,10 +16,6 @@ import inspect
 import json
 
 from typing import List, Dict, Union, Any, get_type_hints
-# try:
-#     from typing import TypedDict  # >=3.8
-# except ImportError:
-#     from mypy_extensions import TypedDict  # <=3.7
 import traceback as tb
 
 from importlib import import_module
@@ -31,7 +27,7 @@ from dessia_common.utils.types import is_jsonable, is_builtin, get_python_class_
     full_classname, is_sequence, isinstance_base_types, is_typing, TYPING_EQUIVALENCES, is_bson_valid, TYPES_FROM_STRING
 from dessia_common.utils.copy import deepcopy_value
 from dessia_common.utils.jsonschema import default_dict, datatype_from_jsonschema, jsonschema_from_annotation, JSONSCHEMA_HEADER, set_default_value
-from dessia_common.utils.docstrings import parse_docstring
+from dessia_common.utils.docstrings import parse_docstring, FAILED_DOCSTRING_PARSING
 from dessia_common.exports import XLSXWriter
 from dessia_common.typings import Measure, JsonSerializable,\
     Subclass, InstanceOf, MethodType, ClassMethodType
@@ -301,12 +297,10 @@ class DessiaObject:
 
         # Parse docstring
         try:
-            parsed_docstring = parse_docstring(cls)
+            docstring = cls.__doc__
+            parsed_docstring = parse_docstring(docstring=docstring, annotations=annotations)
         except Exception:
-            parsed_docstring = {
-                'description': 'Docstring parsing failed',
-                'attributes': {}
-            }
+            parsed_docstring = FAILED_DOCSTRING_PARSING
         parsed_attributes = parsed_docstring['attributes']
 
         # Initialize jsonschema
@@ -335,14 +329,11 @@ class DessiaObject:
             if name != 'return':
                 editable = name not in cls._non_editable_attributes
                 annotation_type = type_from_annotation(annotation[1], cls)
-                annotation = (annotation[0], annotation_type)
+                annotation = (name, annotation_type)
                 jss_elt = jsonschema_from_annotation(
-                    annotation=annotation, jsonschema_element={},
-                    order=order, editable=editable, title=title
+                    annotation=annotation, jsonschema_element={}, order=order,
+                    editable=editable, title=title, parsed_attributes=parsed_attributes
                 )
-                if name in parsed_attributes:
-                    description = parsed_attributes[name]['desc']
-                    jss_elt[name]['description'] = description
                 _jsonschema['properties'].update(jss_elt)
                 if name in default_arguments.keys():
                     default = set_default_value(_jsonschema['properties'],

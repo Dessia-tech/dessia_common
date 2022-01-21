@@ -3,8 +3,6 @@
 """
 JsonSchema generation functions
 """
-
-import io
 from copy import deepcopy
 import inspect
 import warnings
@@ -12,9 +10,8 @@ import collections
 from typing import get_origin, get_args, Union, get_type_hints, TextIO, BinaryIO
 import dessia_common as dc
 import dessia_common.utils.types as dc_types
-# from dessia_common.utils.serialization import
-from dessia_common.typings import Measure, JsonSerializable,\
-    Subclass, InstanceOf, MethodType, ClassMethodType, Any
+from dessia_common.typings import Measure, Subclass, MethodType, ClassMethodType, Any
+from dessia_common.utils.docstrings import FAILED_ATTRIBUTE_PARSING
 
 
 JSONSCHEMA_HEADER = {"definitions": {},
@@ -122,8 +119,8 @@ def jsonschema_union_types(key, args, typing_, jsonschema_element,
     })
 
 
-def jsonschema_from_annotation(annotation, jsonschema_element,
-                               order, editable=None, title=None):
+def jsonschema_from_annotation(annotation, jsonschema_element, order, editable=None, title=None,
+                               parsed_attributes=None):
     key, typing_ = annotation
     if isinstance(typing_, str):
         raise ValueError
@@ -133,9 +130,17 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
     if editable is None:
         editable = key not in ['return']
 
+    if parsed_attributes is not None and key in parsed_attributes:
+        try:
+            description = parsed_attributes[key]['desc']
+        except Exception:
+            description = FAILED_ATTRIBUTE_PARSING["desc"]
+    else:
+        description = ""
+
     # Compute base entries
     jsonschema_element[key] = {'title': title, 'editable': editable,
-                               'order': order,
+                               'order': order, 'description': description,
                                'python_typing': dc_types.serialize_typing(typing_)}
 
     if typing_ in dc_types.TYPING_EQUIVALENCES.keys():
