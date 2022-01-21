@@ -245,6 +245,11 @@ class Display(Block):
         return []
 
 
+class Export(Block):
+    def __init__(self, name: str = ""):
+        Block.__init__(self, inputs=inputs, outputs=outputs, name=name)
+
+
 class Import(Block):
     def __init__(self, type_: str, name: str = ''):
         self.type_ = type_
