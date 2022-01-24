@@ -16,7 +16,7 @@ class BinaryFile(io.BytesIO):
     def copy(self):
         """ Files deep copy  """
         file_copy = self.__class__(self.filename)
-        file_copy.write(self.data)
+        file_copy.write(self.getbuffer())
         file_copy.seek(0)
         return file_copy
 
@@ -34,7 +34,7 @@ class StringFile(io.StringIO):
     def copy(self):
         """ Files deep copy  """
         file_copy = self.__class__(self.filename)
-        file_copy.write(self.data)
+        file_copy.write(self.getvalue())
         file_copy.seek(0)
         return file_copy
 
