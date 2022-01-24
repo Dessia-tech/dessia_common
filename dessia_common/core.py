@@ -455,6 +455,7 @@ class DessiaObject:
 
         if isinstance(filepath, str):
             file.close()
+        return filepath
 
     @classmethod
     def load_from_file(cls, filepath):
@@ -637,6 +638,8 @@ class DessiaObject:
         """
         filepath can be a str or an io.StringIO
         """
+        a = self.volmdlr_volume_model().to_step(filepath=filepath)
+        print("To step : ", a)
         return self.volmdlr_volume_model().to_step(filepath=filepath)
 
     def to_stl(self, filepath: str):

@@ -9,6 +9,9 @@ import time
 import tempfile
 import json
 import webbrowser
+import zipfile
+import io
+
 import networkx as nx
 from typing import List, Union, Type, Any, Dict, Tuple, Optional, get_type_hints
 from copy import deepcopy
@@ -990,13 +993,15 @@ class Export(Block):
         output = output_from_function(function=method, name="export_output")
         Block.__init__(self, inputs=inputs, outputs=[output], name=name)
 
-    def eval_export(self, values, tempdir):
-        temp_file = tempfile.mkstemp(suffix='.html', dir=tempdir)[1]
-
-        with open(temp_file, 'wb') as file:
-            file.write(s.encode('utf-8'))
+    def evaluate(self, values):
+        # temp_file = tempfile.mkstemp(suffix='.html', dir=tempdir)[1]
+        #
+        # with open(temp_file, 'wb') as file:
+        #     file.write(s.encode('utf-8'))
         # args = {'filepath': temp_file.}
-        return [getattr(values[self.inputs[0]], self.method_type.name)()]
+        res = getattr(values[self.inputs[0]], self.method_type.name)("/tmp/workflow")
+        print("Evaluate export : ", res)
+        return [res]
 
 
 class Archive(Block):
@@ -1004,7 +1009,18 @@ class Archive(Block):
 
     def __init__(self, number_exports: int = 1, name=""):
         inputs = [Variable(name="export_" + str(i)) for i in range(number_exports)]
-        Block.__init__(self, inputs=inputs, outputs=[], name=name)
+        outputs = [Variable(name="zip archive")]
+        Block.__init__(self, inputs=inputs, outputs=outputs, name=name)
+
+    def evaluate(self, values):
+        archive = io.BytesIO()
+        zip_archive = zipfile.ZipFile(archive, 'a')
+        for input_ in self.inputs:
+            filename = values[input_]
+            print("Evaluate Archive : ", filename)
+            zip_archive.write(filename, os.path.basename(filename))
+        zip_archive.close()
+        return [archive]
 
 
 class Pipe(DessiaObject):
@@ -1523,16 +1539,16 @@ class Workflow(Block):
             graph.add_edge(pipe.input_variable, pipe.output_variable)
         return graph
 
-    def _workflow_by_type(self, type_: str):
+    def _block_by_type(self, type_: str):
         return [b for b in self.blocks if b._type == type_]
 
     @property
     def _computable_blocks(self):
-        return self._workflow_by_type("computable")
+        return self._block_by_type("computable")
 
     @property
     def _exportable_blocks(self):
-        return self._workflow_by_type("exportable")
+        return self._block_by_type("exportable")
 
     def variable_indices(self, variable):
         for iblock, block in enumerate(self.blocks):
@@ -2136,9 +2152,9 @@ class WorkflowState(DessiaObject):
                     pipes.append(pipe)
         return pipes
 
-    def _activable_blocks(self):
+    def _activable_blocks(self, type_: str = "computable"):
         blocks = []
-        for block in self.workflow._computable_blocks:
+        for block in self.workflow._block_by_type(type_=type_):
             if not self.activated_items[block]:
                 all_inputs_activated = True
                 for function_input in block.inputs:
@@ -2185,14 +2201,10 @@ class WorkflowState(DessiaObject):
 
         self.activated_items[block] = True
 
-    def _evaluate_export_block(self, block, tempdir):
-        output_values = block.eval_export({i: self.values[i] for i in block.inputs},
-                                          tempdir)
+    def _evaluate_export_block(self, block):
+        output_values = block.evaluate({i: self.values[i] for i in block.inputs})
         output_items = zip(block.outputs, output_values)
         for output, output_value in output_items:
-            # if output.memorize:
-            #     indices = str(self.workflow.variable_indices(output))
-            #     self.variables_values[indices] = output_value
             self.values[output] = output_value
             self.activated_items[output] = True
 
@@ -2245,15 +2257,14 @@ class WorkflowState(DessiaObject):
         return formats
 
     def export_archive(self):
-        if self.progress == 1:
+        if self.progress >= 1:
             archive_blocks = [isinstance(b, Archive) for b in self.workflow._exportable_blocks]
             if not any(archive_blocks):
                 raise ValueError("Workflow has no Archive export block")
-            index = archive_blocks.index(True)
-            print([self.activated_items[eb] for eb in self.workflow._exportable_blocks])
+            elif sum(archive_blocks) > 1:
+                raise ValueError("Workflow can only have one Archive export block")
             evaluated_blocks = []
             export_activated = True
-            dirpath = tempfile.mkdtemp()
             while export_activated:
                 export_activated = False
 
@@ -2261,11 +2272,14 @@ class WorkflowState(DessiaObject):
                     self._evaluate_pipe(pipe)
                     export_activated = True
 
-                for block in self.workflow._exportable_blocks:
+                for block in self._activable_blocks("exportable"):
                     evaluated_blocks.append(block)
                     self._evaluate_export_block(block)
                     export_activated = True
-
+            block_index = archive_blocks.index(True)
+            block = self.workflow._exportable_blocks[block_index]
+            output = block.outputs[0]
+            return self.values[output]
         else:
             raise RuntimeError("Workflow has not reached its output and cannot be exported")
 
