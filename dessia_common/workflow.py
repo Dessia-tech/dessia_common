@@ -2201,14 +2201,14 @@ class WorkflowState(DessiaObject):
 
         self.activated_items[block] = True
 
-    def _evaluate_export_block(self, block):
-        output_values = block.evaluate({i: self.values[i] for i in block.inputs})
-        output_items = zip(block.outputs, output_values)
-        for output, output_value in output_items:
-            self.values[output] = output_value
-            self.activated_items[output] = True
-
-        self.activated_items[block] = True
+    # def _evaluate_export_block(self, block):
+    #     output_values = block.evaluate({i: self.values[i] for i in block.inputs})
+    #     output_items = zip(block.outputs, output_values)
+    #     for output, output_value in output_items:
+    #         self.values[output] = output_value
+    #         self.activated_items[output] = True
+    #
+    #     self.activated_items[block] = True
 
     def activate_inputs(self, check_all_inputs=False):
         """
@@ -2274,7 +2274,7 @@ class WorkflowState(DessiaObject):
 
                 for block in self._activable_blocks("exportable"):
                     evaluated_blocks.append(block)
-                    self._evaluate_export_block(block)
+                    self._evaluate_block(block)
                     export_activated = True
             block_index = archive_blocks.index(True)
             block = self.workflow._exportable_blocks[block_index]

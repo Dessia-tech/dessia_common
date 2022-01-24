@@ -82,3 +82,5 @@ workflow_state = workflow_.start_run(values)
 workflow_state.continue_run()
 export_output = workflow_state.export_archive()
 print(export_output)
+# with open("archive.zip", "wb") as f:
+#     f.write(export_output.getbuffer())
