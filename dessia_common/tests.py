@@ -4,9 +4,9 @@
 
 """
 
+from typing import List
 from dessia_common import DessiaObject
 import dessia_common.typings as dct
-from typing import List, Dict
 
 
 class Submodel(DessiaObject):

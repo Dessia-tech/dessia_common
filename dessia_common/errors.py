@@ -7,7 +7,7 @@
 
 class ExceptionWithTraceback(Exception):
     def __init__(self, message, traceback_=''):
-        self.message = message
+        super().__init__(message)
         self.traceback = traceback_
 
     def __str__(self):

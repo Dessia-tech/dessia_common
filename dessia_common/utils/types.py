@@ -10,7 +10,7 @@ from typing import List, Dict, Type, Tuple, Union, Any, TextIO, BinaryIO, \
 import dessia_common as dc
 from dessia_common.typings import Measure, JsonSerializable,\
     Subclass, InstanceOf, MethodType, ClassMethodType
-    
+
 import json
 import collections
 from importlib import import_module
@@ -27,6 +27,7 @@ SEQUENCE_TYPINGS = ['List', 'Sequence', 'Iterable']
 TYPES_FROM_STRING = {'unicode': str, 'str': str, 'float': float,
                      'int': int, 'bool': bool}
 
+
 def full_classname(object_, compute_for: str = 'instance'):
     if compute_for == 'instance':
         return object_.__class__.__module__ + '.' + object_.__class__.__name__
@@ -35,13 +36,16 @@ def full_classname(object_, compute_for: str = 'instance'):
     else:
         msg = 'Cannot compute {} full classname for object {}'
         raise NotImplementedError(msg.format(compute_for, object_))
-        
+
 
 def is_jsonable(x):
+    """
+    returns if object can be dumped as it is in a json
+    """
     try:
         json.dumps(x)
         return True
-    except:
+    except TypeError:
         return False
 
 
@@ -60,6 +64,9 @@ def is_builtin(type_):
 
 
 def isinstance_base_types(obj):
+    """
+    returns True if the object is either a str, a float a int or None
+    """
     return isinstance(obj, str) or isinstance(obj, float) or isinstance(obj, int) or (obj is None)
 
 
@@ -202,7 +209,8 @@ def deserialize_typing(serialized_typing):
         return get_python_class_from_class_name(serialized_typing)
     raise NotImplementedError('{} of type {}'.format(serialized_typing,
                                                      type(serialized_typing)))
-    
+
+
 def is_bson_valid(value, allow_nonstring_keys=False) -> Tuple[bool, str]:
     """
     returns validity (bool) and a hint (str)
@@ -252,6 +260,8 @@ def is_bson_valid(value, allow_nonstring_keys=False) -> Tuple[bool, str]:
     return True, ''
 
 # TODO recursive_type and recursive_type functions look weird
+
+
 def recursive_type(obj):
     if isinstance(obj, tuple(list(TYPING_EQUIVALENCES.keys()) + [dict])):
         type_ = TYPES_STRINGS[type(obj)]

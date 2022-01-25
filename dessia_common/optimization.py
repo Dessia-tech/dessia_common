@@ -1,5 +1,4 @@
 
-import random
 import cma
 from typing import List
 import numpy as npy
@@ -9,7 +8,7 @@ import dessia_common.core as dc
 
 class Specifications(dc.DessiaObject):
     def __init__(self, name: str = ''):
-        self.name = name
+        dc.DessiaObject.__init__(self, name=name)
 
 
 class FixedAttributeValue(dc.DessiaObject):
@@ -17,7 +16,7 @@ class FixedAttributeValue(dc.DessiaObject):
 
     def __init__(self, attribute_name: str, value: float,
                  name: str = ''):
-        self.name = name
+        dc.DessiaObject.__init__(self, name=name)
         self.attribute_name = attribute_name
         self.value = value
 
@@ -27,7 +26,7 @@ class BoundedAttributeValue(dc.DessiaObject):
 
     def __init__(self, attribute_name: str, min_value: float, max_value: float,
                  name: str = ''):
-        self.name = name
+        dc.DessiaObject.__init__(self, name=name)
         self.attribute_name = attribute_name
         self.min_value = min_value
         self.max_value = max_value
@@ -69,7 +68,8 @@ class DrivenModelOptimizer(Optimizer):
     Abstract class
     """
 
-    def __init__(self, model):
+    def __init__(self, model, name:str=''):
+        Optimizer.__init__(self, name=name)
         self.model = model
 
     def get_model_from_vector(self):
@@ -88,7 +88,8 @@ class InstantiatingModelOptimizer(Optimizer):
                  name: str = ''):
         self.fixed_parameters = fixed_parameters
         self.optimization_bounds = optimization_bounds
-        self.name = name
+        Optimizer.__init__(self, name=name)
+        
 
         self.number_parameters = len(self.optimization_bounds)
 

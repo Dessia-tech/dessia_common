@@ -17,8 +17,11 @@ class MethodType(Generic[T]):
         self.class_ = class_
         self.name = name
 
-    def __deepcopy__(self):
+    def __deepcopy__(self, memo=None):
         return MethodType(self.class_, self.name)
+
+    def get_method(self):
+        return getattr(self.class_, self.name)
 
 
 class ClassMethodType(MethodType[T]):

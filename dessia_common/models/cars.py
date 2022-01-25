@@ -17,7 +17,7 @@ choice_args = ['MPG', 'Cylinders', 'Displacement', 'Horsepower',
 
 minimized_attributes = {'MPG': False, 'Horsepower': True,
                         'Weight': True, 'Acceleration': False}
-coefficients = {'Cylinders': 0, 'MPG': -0.70,  'Displacement': 0,
+coefficients = {'Cylinders': 0, 'MPG': -0.70, 'Displacement': 0,
                 'Horsepower': 0, 'Weight': 0.70, 'Acceleration': 0, 'Model': 0}
 
 pareto_settings = ParetoSettings(minimized_attributes=minimized_attributes,
