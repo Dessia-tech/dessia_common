@@ -1792,9 +1792,9 @@ class Workflow(Block):
         activated_items.update({b: False for b in self.blocks})
 
         values = {}
-        variables_values = {}
-        return WorkflowState(self, input_values, activated_items, values,
-                             variables_values, start_time=time.time())
+        # variables_values = {}
+        return WorkflowState(self, input_values, activated_items,
+                             values, start_time=time.time())
 
     def mxgraph_data(self):
         nodes = []
@@ -2007,7 +2007,7 @@ class WorkflowState(DessiaObject):
     _non_serializable_attributes = ['activated_items']
 
     def __init__(self, workflow: Workflow, input_values, activated_items,
-                 values, variables_values, start_time, output_value=None,
+                 values, start_time, output_value=None,
                  log: str = '', name: str = ''):
         """
         A workflow State reprensents the state of execution of a workflow.
@@ -2016,7 +2016,7 @@ class WorkflowState(DessiaObject):
         self.workflow = workflow
         self.input_values = input_values
         self.output_value = output_value
-        self.variables_values = variables_values
+        # self.variables_values = variables_values
         self.values = values
         self.start_time = start_time
         self.log = log
@@ -2084,6 +2084,8 @@ class WorkflowState(DessiaObject):
                 'output_value': serialized_output_value,
                 'output_value_type': recursive_type(self.output_value)
             })
+
+        dict_.update({'start_time': self.start_time, 'log': self.log})
         return dict_
 
     @classmethod
@@ -2101,8 +2103,8 @@ class WorkflowState(DessiaObject):
                   for i, v in dict_['values'].items()}
         input_values = {int(i): deserialize(v)
                         for i, v in dict_['input_values'].items()}
-        variables_values = {k: deserialize(v)
-                            for k, v in dict_['variables_values'].items()}
+        # variables_values = {k: deserialize(v)
+        #                     for k, v in dict_['variables_values'].items()}
 
         activated_items = {
             b: (True if i in dict_['evaluated_blocks_indices'] else False)
@@ -2122,7 +2124,7 @@ class WorkflowState(DessiaObject):
 
         return cls(workflow=workflow, input_values=input_values,
                    activated_items=activated_items, values=values,
-                   variables_values=variables_values,
+                   # variables_values=variables_values,
                    start_time=dict_['start_time'], output_value=output_value,
                    log=dict_['log'], name=dict_['name'])
 
@@ -2252,10 +2254,10 @@ class WorkflowState(DessiaObject):
 
         output_values = block.evaluate({i: self.values[i]
                                         for i in block.inputs})
-        for input_ in block.inputs:
-            if input_.memorize:
-                indices = str(self.workflow.variable_indices(input_))  # Str is strange
-                self.variables_values[indices] = self.values[input_]
+        # for input_ in block.inputs:
+        #     if input_.memorize:
+        #         indices = str(self.workflow.variable_indices(input_))  # Str is strange
+        #         self.variables_values[indices] = self.values[input_]
         # Updating progress
         if progress_callback is not None:
             progress_callback(self.progress)
@@ -2263,9 +2265,9 @@ class WorkflowState(DessiaObject):
         # Unpacking result of evaluation
         output_items = zip(block.outputs, output_values)
         for output, output_value in output_items:
-            if output.memorize:
-                indices = str(self.workflow.variable_indices(output))
-                self.variables_values[indices] = output_value
+            # if output.memorize:
+            #     indices = str(self.workflow.variable_indices(output))
+            #     self.variables_values[indices] = output_value
             self.values[output] = output_value
             self.activated_items[output] = True
 
@@ -2311,7 +2313,7 @@ class WorkflowState(DessiaObject):
             return WorkflowRun(workflow=self.workflow,
                                input_values=self.input_values,
                                output_value=self.output_value,
-                               variables_values=self.variables_values,
+                               # variables_values=self.variables_values,
                                start_time=self.start_time, end_time=time.time(),
                                log=self.log, name=name)
         else:
