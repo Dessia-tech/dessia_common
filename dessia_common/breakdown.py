@@ -8,7 +8,7 @@ import sys
 import collections
 import numpy as npy
 
-import dessia_common.core
+import dessia_common
 from dessia_common.utils.types import is_sequence
 
 
