@@ -3,8 +3,10 @@
 """
 
 """
-
+import io
 import tempfile
+import warnings
+
 from openpyxl.styles.borders import Border, Side
 from openpyxl.styles import Alignment, PatternFill, Font
 from openpyxl import Workbook
@@ -194,20 +196,35 @@ class XLSXWriter:
             self.autosize_sheet_columns(sheet, 5, 30)
 
     def save_to_file(self, filepath):
-        # TODO: split in two functions?
-        if isinstance(filepath, str):
-            real_filepath = filepath
-            if not filepath.endswith('.xlsx'):
-                real_filepath += '.xlsx'
-        else:
-            real_filepath = tempfile.NamedTemporaryFile().name
+        warnings.warn("Deprecated. Use to_xlsx instead", DeprecationWarning)
+        return self.to_xlsx(filepath=filepath)
+        # # TODO: split in two functions?
+        # if isinstance(filepath, str):
+        #     real_filepath = filepath
+        #     if not filepath.endswith('.xlsx'):
+        #         real_filepath += '.xlsx'
+        # else:
+        #     real_filepath = tempfile.NamedTemporaryFile().name
+        #
+        # self.workbook.save(real_filepath)
+        #
+        # if not isinstance(filepath, str):
+        #     with open(real_filepath, 'rb') as file:
+        #         filepath.seek(0)
+        #         filepath.write(file.read())
 
-        self.workbook.save(real_filepath)
+    def to_xlsx_stream(self):
+        virtual_workbook = io.BytesIO()
+        self.workbook.save(virtual_workbook)
+        return virtual_workbook
 
-        if not isinstance(filepath, str):
-            with open(real_filepath, 'rb') as file:
-                filepath.seek(0)
-                filepath.write(file.read())
+    def to_xlsx(self, filepath: str):
+        print("Here")
+        if not filepath.endswith('.xlsx'):
+            filepath += '.xlsx'
+            print('Changing name to {}'.format(filepath))
+        self.workbook.save(filepath)
+        return filepath
 
     def autosize_sheet_columns(self, sheet, min_width=5, max_width=30):
         # Autosize columns

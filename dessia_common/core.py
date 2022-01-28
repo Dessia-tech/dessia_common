@@ -638,9 +638,13 @@ class DessiaObject:
             file.write(json_stream.getvalue())
         return filepath
 
-    def to_xlsx(self, filepath: str):
+    def to_xlsx_stream(self) -> io.BytesIO:
         writer = XLSXWriter(self)
-        writer.save_to_file(filepath)
+        return writer.to_xlsx_stream()
+
+    def to_xlsx(self, filepath: str) -> str:
+        writer = XLSXWriter(self)
+        return writer.to_xlsx(filepath)
 
     def to_step(self, filepath: str):
         """
