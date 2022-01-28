@@ -23,143 +23,107 @@ import networkx as nx
 def serialize_dict(dict_):
     serialized_dict = {}
     for key, value in dict_.items():
-        if hasattr(value, 'to_dict'):
-            # try:
-            #     serialized_value = value.to_dict()
-            # except TypeError:
-            #     # case of a class as an
-            serialized_value = value.to_dict()
-        elif isinstance(value, dict):
-            serialized_value = serialize_dict(value)
-        elif isinstance(value, (list, tuple)):
-            serialized_value = serialize_sequence(value)
-        else:
-            if not dcty.is_jsonable(value):
-                msg = 'Attribute {} of value {} is not json serializable'
-                raise dc_err.SerializationError(msg.format(key, value))
-            serialized_value = value
-        serialized_dict[key] = serialized_value
+        serialized_dict[key] = serialize(value)
     return serialized_dict
 
 
 def serialize_sequence(seq):
     serialized_sequence = []
     for value in seq:
-        if hasattr(value, 'to_dict'):
-            serialized_sequence.append(value.to_dict())
-        elif isinstance(value, dict):
-            serialized_sequence.append(serialize_dict(value))
-        elif isinstance(value, (list, tuple)):
-            serialized_sequence.append(serialize_sequence(value))
-        else:
-            serialized_sequence.append(value)
+        serialized_sequence.append(serialize(value))
     return serialized_sequence
 
 
-def serialize(deserialized_element):
-    if isinstance(deserialized_element, dc.DessiaObject):
-        serialized = deserialized_element.to_dict()
-    elif isinstance(deserialized_element, dict):
-        serialized = serialize_dict(deserialized_element)
-    elif dcty.is_sequence(deserialized_element):
-        serialized = serialize_sequence(deserialized_element)
+def serialize(value):
+    if isinstance(value, dc.DessiaObject):
+        try:
+            serialized_value = value.to_dict(use_pointers=False)
+        except TypeError:
+            warnings.warn(f'specific to_dict of class {value.__class__} '
+                          'should implement use_pointers, memo and path arguments', Warning)
+            serialized_value = value.to_dict()
+    elif isinstance(value, dict):
+        serialized_value = serialize_dict(value)
+    elif dcty.is_sequence(value):
+        serialized_value = serialize_sequence(value)
     else:
-        serialized = deserialized_element
-    return serialized
+        if not dcty.is_jsonable(value):
+            msg = f'Element of value {value} is not json serializable'
+            raise dc_err.SerializationError(msg)
+        serialized_value = value
+    return serialized_value
 
 
-def serialize_with_pointers(deserialized_element, memo=None, path='#'):
+def serialize_with_pointers(value, memo=None, path='#'):
     if memo is None:
         memo = {}
-    if isinstance(deserialized_element, dc.DessiaObject):
+    if isinstance(value, dc.DessiaObject):
+        if value in memo:
+            return {'$ref': memo[value]}, memo
         try:
-            try:
-                serialized = deserialized_element.to_dict(use_pointers=True, memo=memo, path=path)
-            except TypeError:
-                serialized = deserialized_element.to_dict()
+            serialized = value.to_dict(use_pointers=True, memo=memo, path=path)
 
         except TypeError:
-            # warnings.warn('specific to_dict should implement memo and path arguments', Warning)
-            serialized, memo = serialize_dict_with_pointers(deserialized_element.to_dict(), memo, path)
-
-    elif isinstance(deserialized_element, dict):
-        serialized, memo = serialize_dict_with_pointers(deserialized_element, memo, path)
-    elif dcty.is_sequence(deserialized_element):
-        serialized, memo = serialize_sequence_with_pointers(deserialized_element, memo, path)
+            warnings.warn('specific to_dict should implement use_pointers, memo and path arguments', Warning)
+            serialized = value.to_dict()
+        memo[value] = path
+    elif hasattr(value, 'to_dict'):
+        serialized = value.to_dict()
+    elif isinstance(value, dict):
+        serialized, memo = serialize_dict_with_pointers(value, memo, path)
+    elif dcty.is_sequence(value):
+        serialized, memo = serialize_sequence_with_pointers(value, memo, path)
     else:
-        serialized = deserialized_element
+        if not dcty.is_jsonable(value):
+            msg = f'Element of value {value} is not json serializable'
+            raise dc_err.SerializationError(msg)
+        serialized = value
     return serialized, memo
 
 
 def serialize_dict_with_pointers(dict_, memo, path):
-
     serialized_dict = {}
     dict_attrs_keys = []
     seq_attrs_keys = []
+    other_keys = []
+    # Detecting type of keys
     for key, value in dict_.items():
-        value_path = '{}/{}'.format(path, key)
-        if hasattr(value, 'to_dict'):
-            # object
-            if value in memo:
-                serialized_dict[key] = {"$ref": memo[value]}
-            else:
-                try:
-                    serialized_dict[key] = value.to_dict(use_pointers=True, path=value_path, memo=memo)
-                except TypeError:
-                    # warnings.warn('specific to_dict should implement memo and path arguments', Warning)
-                    serialized_dict[key] = value.to_dict()
-                memo[value] = value_path
-        elif isinstance(value, dict):
+        value_path = f'{path}/{key}'
+        if isinstance(value, dict):
             dict_attrs_keys.append(key)
-        elif isinstance(value, (list, tuple)):
+        elif dcty.is_sequence(value): 
             seq_attrs_keys.append(key)
         else:
-            if not dcty.is_jsonable(value):
-                msg = 'Attribute {} of value {} is not json serializable'
-                raise dc_err.SerializationError(msg.format(key, value))
-            serialized_dict[key] = value
+            other_keys.append(key)
 
+    for key in other_keys:
+        value_path = f'{path}/{key}'
+        serialized_dict[key], memo = serialize_with_pointers(dict_[key], memo=memo, path=value_path)
     # Handle seq & dicts afterwards
     for key in seq_attrs_keys:
-        value_path = '{}/{}'.format(path, key)
+        value_path = f'{path}/{key}'
         serialized_dict[key], memo = serialize_sequence_with_pointers(dict_[key], memo=memo, path=value_path)
 
     for key in dict_attrs_keys:
-        value_path = '{}/{}'.format(path, key)
+        value_path = f'{path}/{key}'
         serialized_dict[key], memo = serialize_dict_with_pointers(dict_[key], memo=memo, path=value_path)
     return serialized_dict, memo
 
 
 def serialize_sequence_with_pointers(seq, memo, path):
     serialized_sequence = []
+    # print('path s  ', path)
     for ival, value in enumerate(seq):
         value_path = '{}/{}'.format(path, ival)
-        if hasattr(value, 'to_dict'):
-            if value in memo:
-                serialized_value = {"$ref": memo[value]}
-            else:
-                try:
-                    serialized_value = value.to_dict(use_pointers=True, path=value_path, memo=memo)
-                except TypeError:
-                    # warnings.warn('specific to_dict should implement memo and path arguments', Warning)
-                    serialized_value = value.to_dict()
-                memo[value] = value_path
-            serialized_sequence.append(serialized_value)
-        elif isinstance(value, dict):
-            serialized_value, memo = serialize_dict_with_pointers(value, memo=memo, path=value_path)
-            serialized_sequence.append(serialized_value)
-        elif isinstance(value, (list, tuple)):
-            serialized_value, memo = serialize_sequence_with_pointers(value, memo=memo, path=value_path)
-            serialized_sequence.append(serialized_value)
-        else:
-            serialized_sequence.append(value)
+        serialized_value, memo = serialize_with_pointers(value, memo, path=value_path)
+        serialized_sequence.append(serialized_value)
+
     return serialized_sequence, memo
 
 
 def deserialize(serialized_element, sequence_annotation: str = 'List',
                 global_dict=None, pointers_memo=None, path='#'):  # , enforce_pointers=False):
-    # if pointers_memo is None:
-    #     pointers_memo = {}
+
     if pointers_memo is not None:
         if path in pointers_memo:
             return pointers_memo[path]
@@ -170,10 +134,10 @@ def deserialize(serialized_element, sequence_annotation: str = 'List',
                                   pointers_memo=pointers_memo,
                                   path=path)
         except TypeError:
-            # warnings.warn('specific dict_to_object of class {}'
-            #               ' should implement global_dict and'
-            #               ' pointers_memo arguments'.format(serialized_element.__class__.__name__),
-            #               Warning)
+            warnings.warn(f'specific dict_to_object of class {serialized_element.__class__.__name__}'
+                          ' should implement global_dict and'
+                          ' pointers_memo arguments',
+                          Warning)
             return dict_to_object(serialized_element)
     elif dcty.is_sequence(serialized_element):
         return deserialize_sequence(sequence=serialized_element,
@@ -191,7 +155,7 @@ def deserialize_sequence(sequence, annotation=None,
     origin, args = dcty.unfold_deep_annotation(typing_=annotation)
     deserialized_sequence = []
     for ie, elt in enumerate(sequence):
-        path_elt = '{}/{}'.format(path, ie)
+        path_elt = f'{path}/{ie}'
         deserialized_element = deserialize(elt, args,
                                            global_dict=global_dict,
                                            pointers_memo=pointers_memo,
@@ -254,7 +218,7 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
         else:
             annotation = None
 
-        key_path = '{}/{}'.format(path, key)
+        key_path = f'{path}/{key}'
         if key_path in pointers_memo:
             subobjects[key] = pointers_memo[key_path]
         else:
@@ -405,7 +369,7 @@ def find_references_sequence(seq, path='#'):
 
     references = []
     for ie, element in enumerate(seq):
-        path_value = '{}/{}'.format(path, ie)
+        path_value = f'{path}/{ie}'
         references.extend(find_references(element, path=path_value))
         # if value_nodes or value_edges:
 
@@ -420,7 +384,7 @@ def find_references_dict(dict_, path='#'):
     references = []
     for key, value in dict_.items():
         if not dcty.isinstance_base_types(value):
-            path_value = '{}/{}'.format(path, key)
+            path_value = f'{path}/{key}'
             references.extend(find_references(value, path=path_value))
     return references
 
@@ -435,7 +399,7 @@ def pointer_graph(value):
         nodes.add(segments[0])
         previous_node = segments[0]
         for s in segments[1:]:
-            node = '{}/{}'.format(previous_node, s)
+            node = f'{previous_node}/{s}'
             nodes.add(node)
             edges.add((previous_node, node))
             previous_node = node
@@ -456,6 +420,8 @@ def dereference_jsonpointers(value):  # , global_dict):
     if '#' in graph.nodes:
         cycles = list(nx.simple_cycles(graph))
         if cycles:
+            # import dessia_common.displays
+            # dessia_common.displays.draw_networkx_graph(graph)
             for cycle in cycles:
                 print(cycle)
             raise NotImplementedError('Cycles in ref not handled')
@@ -507,7 +473,7 @@ def pointer_graph_elements_sequence(seq, path='#'):
     edges = []
     nodes = []
     for ie, element in enumerate(seq):
-        path_value = '{}/{}'.format(path, ie)
+        path_value = f'{path}/{ie}'
         value_nodes, value_edges = pointer_graph_elements(element, path=path_value)
         # if value_nodes or value_edges:
 
@@ -529,7 +495,7 @@ def pointer_graph_elements_dict(dict_, path='#'):
     nodes = []
     for key, value in dict_.items():
         if not dcty.isinstance_base_types(value):
-            path_value = '{}/{}'.format(path, key)
+            path_value = f'{path}/{key}'
             value_nodes, value_edges = pointer_graph_elements(value, path=path_value)
             # if value_nodes or value_edges:
             nodes.append(path_value)
