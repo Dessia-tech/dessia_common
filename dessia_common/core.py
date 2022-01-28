@@ -22,15 +22,13 @@ from importlib import import_module
 
 import dessia_common.errors
 from dessia_common.utils.diff import data_eq, diff
-from dessia_common.utils.serialization import dict_to_object, serialize_dict_with_pointers, serialize_dict, deserialize_argument, serialize, deserialize
-from dessia_common.utils.types import is_jsonable, is_builtin, get_python_class_from_class_name, serialize_typing,\
-    full_classname, is_sequence, isinstance_base_types, is_typing, TYPING_EQUIVALENCES, is_bson_valid, TYPES_FROM_STRING
+from dessia_common.utils.serialization import dict_to_object, serialize_dict_with_pointers, serialize_dict, deserialize_argument
+from dessia_common.utils.types import full_classname, is_sequence, is_bson_valid, TYPES_FROM_STRING
 from dessia_common.utils.copy import deepcopy_value
-from dessia_common.utils.jsonschema import default_dict, datatype_from_jsonschema, jsonschema_from_annotation, JSONSCHEMA_HEADER, set_default_value
+from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotation, JSONSCHEMA_HEADER, set_default_value
 from dessia_common.utils.docstrings import parse_docstring, FAILED_DOCSTRING_PARSING
 from dessia_common.exports import XLSXWriter
-from dessia_common.typings import Measure, JsonSerializable,\
-    Subclass, InstanceOf, MethodType, ClassMethodType
+from dessia_common.typings import JsonSerializable
 
 
 
@@ -54,10 +52,10 @@ def deprecated(use_instead=None):
 
 def deprecation_warning(name, object_type, use_instead=None):
     warnings.simplefilter('once', DeprecationWarning)
-    msg = "\n\n{} {} is deprecated.\n".format(object_type, name)
+    msg = f"\n\n{object_type} {name} is deprecated.\n"
     msg += "It will be removed in a future version.\n"
     if use_instead is not None:
-        msg += "Use {} instead.\n".format(use_instead)
+        msg += f"Use {use_instead} instead.\n"
     warnings.warn(msg, DeprecationWarning)
     return msg
 
@@ -427,7 +425,7 @@ class DessiaObject:
                     deserialized_value = deserialize_argument(arg_specs, value)
                 except TypeError:
                     msg = 'Error in deserialisation of value: '
-                    msg += '{} of expected type {}'.format(value, arg_specs)
+                    msg += f'{value} of expected type {arg_specs}'
                     raise TypeError(msg)
                 arguments[arg] = deserialized_value
         return arguments
@@ -441,7 +439,7 @@ class DessiaObject:
         if isinstance(filepath, str):
             if not filepath.endswith('.json'):
                 filepath += '.json'
-                print('Changing name to {}'.format(filepath))
+                print(f'Changing name to {filepath}')
             file = open(filepath, 'w')
         else:
             file = filepath
@@ -544,7 +542,7 @@ class DessiaObject:
             try:
                 plot_datas = self.plot_data(**kwargs)
             except TypeError as error:
-                raise TypeError('{}.{}'.format(self.__class__.__name__, error))
+                raise TypeError(f'{self.__class__.__name__}.{error}')
             for data in plot_datas:
                 if hasattr(data, 'mpl_plot'):
                     ax = data.mpl_plot()

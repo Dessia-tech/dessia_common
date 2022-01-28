@@ -108,21 +108,21 @@ class XLSXWriter:
             if (not k.startswith('_')) and k != 'name':
                 cell_link = None
                 if isinstance(v, dict):
-                    str_v = 'Dict of {} items'.format(len(v))
+                    str_v = f'Dict of {len(v)} items'
                 elif isinstance(v, list):
                     if is_builtins_list(v):
                         str_v = str(v)
                     else:
-                        str_v = 'List of {} items'.format(len(v))
+                        str_v = f'List of {len(v)} items'
 
                 elif isinstance(v, set):
-                    str_v = 'Set of {} items'.format(len(v))
+                    str_v = f'Set of {len(v)} items'
                 elif isinstance(v, float):
                     str_v = round(v, 6)
                 elif is_hashable(v) and v in self.object_to_sheet_row:
                     ref_sheet, ref_row_number, ref_path = self.object_to_sheet_row[v]
                     str_v = ref_path
-                    cell_link = '#{}!A{}'.format(ref_sheet.title, ref_row_number)
+                    cell_link = f'#{ref_sheet.title}!A{ref_row_number}'
                 else:
                     str_v = str(v)
 
@@ -139,7 +139,7 @@ class XLSXWriter:
                 # sheet.column_dimensions[column_name].width = column_width
 
     def write_object_id(self, sheet):
-        sheet.title = 'Object {}'.format(self.object.__class__.__name__)
+        sheet.title = f'Object {self.object.__class__.__name__}'
 
         sheet['A1'] = 'Module'
         sheet['B1'] = 'Class'
