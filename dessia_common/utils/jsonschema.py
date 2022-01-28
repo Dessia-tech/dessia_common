@@ -3,8 +3,6 @@
 """
 JsonSchema generation functions
 """
-
-import io
 from copy import deepcopy
 import inspect
 import warnings
@@ -12,9 +10,8 @@ import collections
 from typing import get_origin, get_args, Union, get_type_hints, TextIO, BinaryIO
 import dessia_common as dc
 import dessia_common.utils.types as dc_types
-# from dessia_common.utils.serialization import 
-from dessia_common.typings import Measure, JsonSerializable,\
-    Subclass, InstanceOf, MethodType, ClassMethodType, Any
+from dessia_common.typings import Measure, Subclass, MethodType, ClassMethodType, Any
+from dessia_common.utils.docstrings import FAILED_ATTRIBUTE_PARSING
 
 
 JSONSCHEMA_HEADER = {"definitions": {},
@@ -22,6 +19,7 @@ JSONSCHEMA_HEADER = {"definitions": {},
                      "type": "object",
                      "required": [],
                      "properties": {}}
+
 
 def default_sequence(array_jsonschema):
     if dc_types.is_sequence(array_jsonschema['items']):
@@ -100,6 +98,7 @@ def default_dict(jsonschema):
         return None
     return dict_
 
+
 def jsonschema_union_types(key, args, typing_, jsonschema_element,
                            order, editable=None, title=None):
     classnames = [dc.full_classname(object_=a, compute_for='class')
@@ -119,8 +118,9 @@ def jsonschema_union_types(key, args, typing_, jsonschema_element,
         'standalone_in_db': standalone
     })
 
-def jsonschema_from_annotation(annotation, jsonschema_element,
-                               order, editable=None, title=None):
+
+def jsonschema_from_annotation(annotation, jsonschema_element, order, editable=None, title=None,
+                               parsed_attributes=None):
     key, typing_ = annotation
     if isinstance(typing_, str):
         raise ValueError
@@ -130,9 +130,17 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
     if editable is None:
         editable = key not in ['return']
 
+    if parsed_attributes is not None and key in parsed_attributes:
+        try:
+            description = parsed_attributes[key]['desc']
+        except Exception:
+            description = FAILED_ATTRIBUTE_PARSING["desc"]
+    else:
+        description = ""
+
     # Compute base entries
     jsonschema_element[key] = {'title': title, 'editable': editable,
-                               'order': order,
+                               'order': order, 'description': description,
                                'python_typing': dc_types.serialize_typing(typing_)}
 
     if typing_ in dc_types.TYPING_EQUIVALENCES.keys():
@@ -146,7 +154,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
             if len(args) == 2 and type(None) in args:
                 # This is a false Union => Is a default value set to None
                 ann = (key, args[0])
-                
+
                 jsonschema_from_annotation(
                     annotation=ann, jsonschema_element=jsonschema_element,
                     order=order, editable=editable, title=title
@@ -154,7 +162,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
             else:
                 # Types union
                 jsonschema_union_types(key, args, typing_, jsonschema_element,
-                                           order, editable=editable, title=title)
+                                       order, editable=editable, title=title)
         elif origin in [list, collections.Iterator]:
             # Homogenous sequences
             jsonschema_element[key].update(jsonschema_sequence_recursion(
@@ -220,7 +228,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element,
         else:
             msg = "Jsonschema computation of typing {} is not implemented"
             raise NotImplementedError(msg.format(typing_))
-            
+
     elif hasattr(typing_, '__origin__') and typing_.__origin__ is type:
         jsonschema_element[key].update({
             'type': 'object', 'is_class': True,

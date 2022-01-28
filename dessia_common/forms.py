@@ -25,28 +25,25 @@ this module can also be seen as a template for Dessia's
 coding/naming style & convention.
 """
 
-from math import floor, ceil
+from math import floor, ceil, cos
 from typing import Dict, List, Tuple, Union, TextIO, BinaryIO
+from numpy import linspace
 
 try:
     import volmdlr as vm
-    from volmdlr.wires import Contour2D
     from volmdlr import primitives2d as p2d
     from volmdlr import primitives3d as p3d
     import plot_data
-    from plot_data.colors import *
-except:
+    import plot_data.colors
+except ImportError:
     pass
 
 from dessia_common import DessiaObject
 from dessia_common.typings import InstanceOf, Distance
 from dessia_common.vectored_objects import Catalog
 
-from numpy import linspace
-from math import cos
 
 from dessia_common.files import BinaryFile, StringFile
-import io
 
 
 class StandaloneSubobject(DessiaObject):
@@ -74,7 +71,7 @@ class StandaloneSubobject(DessiaObject):
                   vm.Point2D(1, 1), vm.Point2D(1, 0)]
 
         crls = p2d.ClosedRoundedLineSegments2D(points=points, radius={})
-        return vm.wires.Contour2D(crls.primitives)
+        return crls
 
     def voldmlr_primitives(self):
         contour = self.contour()
@@ -275,7 +272,7 @@ class StandaloneObject(DessiaObject):
             # this is a hack for test until we get frontend support for types BinaryFile & StringFile
             # a BinaryIO does not have filename, but it's ok since we return a BinaryFile from backend
             my_file_name = stream.filename
-            my_name, raw_seed = my_string.split(",")
+            _, raw_seed = my_string.split(",")
             seed = int(raw_seed.strip())
         finally:
             stream.close()
@@ -287,7 +284,7 @@ class StandaloneObject(DessiaObject):
         try:
             my_string = stream.read().decode('utf8')
             my_file_name = stream.filename
-            my_name, raw_seed = my_string.split(",")
+            _, raw_seed = my_string.split(",")
             seed = int(raw_seed.strip())
         finally:
             stream.close()
@@ -298,7 +295,7 @@ class StandaloneObject(DessiaObject):
         try:
             my_text = stream.read()
             my_file_name = stream.filename
-            name, raw_seed = my_text.split(",")
+            _, raw_seed = my_text.split(",")
             seed = int(raw_seed.strip())
         finally:
             stream.close()
@@ -379,8 +376,8 @@ class StandaloneObject(DessiaObject):
 
         # The previous line instantiates a dataset with limited arguments but
         # several customizations are available
-        point_style = plot_data.PointStyle(color_fill=RED, color_stroke=BLACK)
-        edge_style = plot_data.EdgeStyle(color_stroke=BLUE, dashline=[10, 5])
+        point_style = plot_data.PointStyle(color_fill=plot_data.colors.RED, color_stroke=plot_data.colors.BLACK)
+        edge_style = plot_data.EdgeStyle(color_stroke=plot_data.colors.BLUE, dashline=[10, 5])
 
         custom_dataset = plot_data.Dataset(elements=elements1, name='I = f(t)',
                                            tooltip=tooltip,
@@ -543,6 +540,16 @@ DEF_SOWDV = StandaloneObjectWithDefaultValues()
 
 
 class Generator(DessiaObject):
+    """
+    A class that allow to generate several StandaloneObjects from different parameters
+
+    :param parameter: An "offset" for the seed that will be used in generation
+    :type parameter: int
+    :param nb_solutions: The max number of solutions that will be generated
+    :type nb_solutions: int
+    :param name: The name of the Generator. It is not used in object generation
+    :type name: str
+    """
     _standalone_in_db = True
 
     def __init__(self, parameter: int, nb_solutions: int = 25, name: str = ''):
@@ -553,12 +560,23 @@ class Generator(DessiaObject):
         DessiaObject.__init__(self, name=name)
 
     def generate(self) -> List[StandaloneObject]:
+        """
+        Generates a list of Standalone objects
+        """
         self.models = [StandaloneObject.generate(self.parameter + i)
                        for i in range(self.nb_solutions)]
         return self.models
 
 
 class Optimizer(DessiaObject):
+    """
+    Mock an optimization process
+
+    :param model_to_optimize: An object which will be modified (one of its attributes)
+    :type model_to_optimize: StandaloneObject
+    :param name: Name of the optimizer. Will not be used in the optimization process
+    :type name: str
+    """
     _standalone_in_db = True
 
     def __init__(self, model_to_optimize: StandaloneObject, name: str = ''):
@@ -567,6 +585,12 @@ class Optimizer(DessiaObject):
         DessiaObject.__init__(self, name=name)
 
     def optimize(self, optimization_value: int = 3) -> int:
+        """
+        Sums model value with given one
+
+        :param optimization_value: value that will be added to model's intarg attribute
+        :type optimization_value: int
+        """
         self.model_to_optimize.intarg += optimization_value
         return self.model_to_optimize.intarg
 

@@ -18,31 +18,26 @@ from dessia_common.exports import XLSXWriter
 import time
 import datetime
 
+from typing import List, Dict, Union, Any, get_type_hints
+import traceback as tb
+from importlib import import_module
+
 import dessia_common.errors
 from dessia_common.utils.diff import data_eq, diff
-from dessia_common.utils.serialization import dict_to_object, serialize_dict_with_pointers, serialize_dict, deserialize_argument
+from dessia_common.utils.serialization import dict_to_object, serialize_dict_with_pointers, serialize_dict, deserialize_argument, serialize, deserialize
 from dessia_common.utils.types import is_jsonable, is_builtin, get_python_class_from_class_name, serialize_typing,\
-    full_classname, is_sequence, isinstance_base_types, is_typing, TYPING_EQUIVALENCES, is_bson_valid
+    full_classname, is_sequence, isinstance_base_types, is_typing, TYPING_EQUIVALENCES, is_bson_valid, TYPES_FROM_STRING
 from dessia_common.utils.copy import deepcopy_value
 from dessia_common.utils.jsonschema import default_dict, datatype_from_jsonschema, jsonschema_from_annotation, JSONSCHEMA_HEADER, set_default_value
-from dessia_common.utils.docstrings import parse_docstring
-
-
-from typing import List, Dict, Type, Tuple, Union, Any, TextIO, BinaryIO, \
-    get_type_hints, get_origin, get_args
-try:
-    from typing import TypedDict  # >=3.8
-except ImportError:
-    from mypy_extensions import TypedDict  # <=3.7
-import traceback as tb
+from dessia_common.utils.docstrings import parse_docstring, FAILED_DOCSTRING_PARSING
+from dessia_common.exports import XLSXWriter
 from dessia_common.typings import Measure, JsonSerializable,\
     Subclass, InstanceOf, MethodType, ClassMethodType
 
-from importlib import import_module
+
 
 
 _FORBIDDEN_ARGNAMES = ['self', 'cls', 'progress_callback', 'return']
-
 
 
 # DEPRECATED_ATTRIBUTES = {'_editable_variss' : '_allowed_methods'}
@@ -67,8 +62,6 @@ def deprecation_warning(name, object_type, use_instead=None):
         msg += "Use {} instead.\n".format(use_instead)
     warnings.warn(msg, DeprecationWarning)
     return msg
-
-
 
 
 class DessiaObject:
@@ -132,7 +125,7 @@ class DessiaObject:
     def __init__(self, name: str = '', **kwargs):
         """
         Generic init of DessiA Object. Only store name in self. To be overload
-        and call in specific class init 
+        and call in specific class init
         """
         self.name = name
         for property_name, property_value in kwargs.items():
@@ -144,12 +137,11 @@ class DessiaObject:
         """
         if self._eq_is_data_eq:
             return self._data_hash()
-        else:
-            return object.__hash__(self)
+        return object.__hash__(self)
 
     def __eq__(self, other_object):
         """
-        Generic equality of two objects. behavior can be controled by class 
+        Generic equality of two objects. behavior can be controled by class
         attribute _eq_is_data_eq to tell if we must use python equality (based on memory addresses)
         (_eq_is_data_eq = False) or a data equality (True)
         """
@@ -223,7 +215,7 @@ class DessiaObject:
                  and not k.startswith('_')}
         return dict_
 
-    def to_dict(self, use_pointers=False, memo=None, path: str = '#') -> JsonSerializable:
+    def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#') -> JsonSerializable:
         """
         Generic to_dict method
         """
@@ -264,10 +256,10 @@ class DessiaObject:
                                  global_dict=global_dict,
                                  pointers_memo=pointers_memo)
             return obj
-        else:
+        # else:
             # Using default
             # TODO: use jsonschema
-            raise NotImplementedError('No object_class in dict')
+        raise NotImplementedError('No object_class in dict')
 
     @classmethod
     def base_jsonschema(cls):
@@ -307,12 +299,10 @@ class DessiaObject:
 
         # Parse docstring
         try:
-            parsed_docstring = parse_docstring(cls)
+            docstring = cls.__doc__
+            parsed_docstring = parse_docstring(docstring=docstring, annotations=annotations)
         except Exception:
-            parsed_docstring = {
-                'description': 'Docstring parsing failed',
-                'attributes': {}
-            }
+            parsed_docstring = FAILED_DOCSTRING_PARSING
         parsed_attributes = parsed_docstring['attributes']
 
         # Initialize jsonschema
@@ -341,14 +331,11 @@ class DessiaObject:
             if name != 'return':
                 editable = name not in cls._non_editable_attributes
                 annotation_type = type_from_annotation(annotation[1], cls)
-                annotation = (annotation[0], annotation_type)
+                annotation = (name, annotation_type)
                 jss_elt = jsonschema_from_annotation(
-                    annotation=annotation, jsonschema_element={},
-                    order=order, editable=editable, title=title
+                    annotation=annotation, jsonschema_element={}, order=order,
+                    editable=editable, title=title, parsed_attributes=parsed_attributes
                 )
-                if name in parsed_attributes:
-                    description = parsed_attributes[name]['desc']
-                    jss_elt[name]['description'] = description
                 _jsonschema['properties'].update(jss_elt)
                 if name in default_arguments.keys():
                     default = set_default_value(_jsonschema['properties'],
@@ -452,6 +439,7 @@ class DessiaObject:
         Save to a JSON file the object
         :param filepath: either a string reprensenting the filepath or a stream
         """
+        # Maybe split in several functions for stream and file
         if isinstance(filepath, str):
             if not filepath.endswith('.json'):
                 filepath += '.json'
@@ -473,7 +461,7 @@ class DessiaObject:
     @classmethod
     def load_from_file(cls, filepath):
         """
-        Load object from a json file 
+        Load object from a json file
         :param filepath: either a string reprensenting the filepath or a stream
         """
         if isinstance(filepath, str):
@@ -489,8 +477,8 @@ class DessiaObject:
     def copy(self, deep=True, memo=None):
         if deep:
             return self.__deepcopy__(memo=memo)
-        else:
-            return self.__copy__()
+        # else:
+        return self.__copy__()
 
     def __copy__(self):
         """
@@ -572,7 +560,7 @@ class DessiaObject:
 
     def babylonjs(self, use_cdn=True, debug=False, **kwargs):
         """
-        Show the 3D volmdlr of an object by calling volmdlr_volume_model method 
+        Show the 3D volmdlr of an object by calling volmdlr_volume_model method
         and plot in in browser
         """
         self.volmdlr_volume_model(**kwargs).babylonjs(use_cdn=use_cdn,
@@ -591,10 +579,8 @@ class DessiaObject:
                                 use_instead='display_angular')
             return self._display_angular(**kwargs)
 
-        if 'reference_path' in kwargs:
-            reference_path = kwargs['reference_path']
-        else:
-            reference_path = ''
+        reference_path = kwargs.get('reference_path', '')
+
         displays = []
         if hasattr(self, 'babylon_data'):
             display_ = DisplayObject(type_='cad', data=self.babylon_data(),
@@ -636,6 +622,9 @@ class DessiaObject:
         decoded_json = json.loads(json_dict)
         deserialized_object = self.dict_to_object(decoded_json)
         assert deserialized_object._data_eq(self)
+        copied_object = self.copy()
+        assert copied_object._data_eq(self)
+
         valid, hint = is_bson_valid(stringify_dict_keys(dict_))
         if not valid:
             raise ValueError(hint)
@@ -667,16 +656,19 @@ class DessiaObject:
         return formats
 
 
-class Catalog(DessiaObject):
-    def __init__(self, objects: List[DessiaObject], name: str = ''):
-        self.objects = objects
-        DessiaObject.__init__(self, name=name)
+# class Catalog(DessiaObject):
+#     def __init__(self, objects: List[DessiaObject], name: str = ''):
+#         self.objects = objects
+#         DessiaObject.__init__(self, name=name)
 
 
 class DisplayObject(DessiaObject):
     def __init__(self, type_: str,
                  data: Union[JsonSerializable, DessiaObject, str],
                  reference_path: str = '', name: str = ''):
+        """
+        Container for data of display
+        """
         if type_ == 'markdown':
             data = inspect.cleandoc(data)
         self.type_ = type_
@@ -694,6 +686,9 @@ class Parameter(DessiaObject):
                               periodicity=periodicity)
 
     def random_value(self):
+        """
+        Sample a value within the bounds
+        """
         return random.uniform(self.lower_bound, self.upper_bound)
 
     def are_values_equal(self, value1, value2, tol=1e-2):
@@ -715,6 +710,7 @@ class Parameter(DessiaObject):
         if self.periodicity is not None:
             return (self.lower_bound - 0.5 * self.periodicity,
                     self.upper_bound + 0.5 * self.periodicity)
+        return None
 
 
 class ParameterSet(DessiaObject):
@@ -757,86 +753,86 @@ class DessiaFilter(DessiaObject):
         return same_attr and same_op and same_bound
 
 
-class Evolution(DessiaObject):
-    """
-    Defines a generic evolution
+# class Evolution(DessiaObject):
+#     """
+#     Defines a generic evolution
 
-    :param evolution: float list
-    :type evolution: list
-    """
-    _non_data_eq_attributes = ['name']
-    _non_data_hash_attributes = ['name']
-    _generic_eq = True
+#     :param evolution: float list
+#     :type evolution: list
+#     """
+#     _non_data_eq_attributes = ['name']
+#     _non_data_hash_attributes = ['name']
+#     _generic_eq = True
 
-    def __init__(self, evolution: List[float] = None, name: str = ''):
-        if evolution is None:
-            evolution = []
-        self.evolution = evolution
+#     def __init__(self, evolution: List[float] = None, name: str = ''):
+#         if evolution is None:
+#             evolution = []
+#         self.evolution = evolution
 
-        DessiaObject.__init__(self, name=name)
+#         DessiaObject.__init__(self, name=name)
 
-    def _displays(self):
-        displays = [{'angular_component': 'app-evolution1d',
-                     'table_show': False,
-                     'evolution': [self.evolution],
-                     'label_y': ['evolution']}]
-        return displays
+#     def _displays(self):
+#         displays = [{'angular_component': 'app-evolution1d',
+#                      'table_show': False,
+#                      'evolution': [self.evolution],
+#                      'label_y': ['evolution']}]
+#         return displays
 
-    def update(self, evolution):
-        """
-        Update the evolution list
-        """
-        self.evolution = evolution
+#     def update(self, evolution):
+#         """
+#         Update the evolution list
+#         """
+#         self.evolution = evolution
 
 
-class CombinationEvolution(DessiaObject):
-    _non_data_eq_attributes = ['name']
-    _non_data_hash_attributes = ['name']
-    _generic_eq = True
+# class CombinationEvolution(DessiaObject):
+#     _non_data_eq_attributes = ['name']
+#     _non_data_hash_attributes = ['name']
+#     _generic_eq = True
 
-    def __init__(self, evolution1: List[Evolution],
-                 evolution2: List[Evolution], title1: str = 'x',
-                 title2: str = 'y', name: str = ''):
+#     def __init__(self, evolution1: List[Evolution],
+#                  evolution2: List[Evolution], title1: str = 'x',
+#                  title2: str = 'y', name: str = ''):
 
-        self.evolution1 = evolution1
-        self.evolution2 = evolution2
+#         self.evolution1 = evolution1
+#         self.evolution2 = evolution2
 
-        self.x_, self.y_ = self.genere_xy()
+#         self.x_, self.y_ = self.genere_xy()
 
-        self.title1 = title1
-        self.title2 = title2
+#         self.title1 = title1
+#         self.title2 = title2
 
-        DessiaObject.__init__(self, name=name)
+#         DessiaObject.__init__(self, name=name)
 
-    def _displays(self):
-        displays = [{
-            'angular_component': 'app-evolution2d-combination-evolution',
-            'table_show': False,
-            'evolution_x': [self.x_], 'label_x': ['title1'],
-            'evolution_y': [self.y_], 'label_y': ['title2']
-        }]
-        return displays
+#     def _displays(self):
+#         displays = [{
+#             'angular_component': 'app-evolution2d-combination-evolution',
+#             'table_show': False,
+#             'evolution_x': [self.x_], 'label_x': ['title1'],
+#             'evolution_y': [self.y_], 'label_y': ['title2']
+#         }]
+#         return displays
 
-    def update(self, evol1, evol2):
-        """
-        Update the CombinationEvolution object
+#     def update(self, evol1, evol2):
+#         """
+#         Update the CombinationEvolution object
 
-        :param evol1: list
-        :param evol2: list
-        """
-        for evolution, ev1 in zip(self.evolution1, evol1):
-            evolution.update(ev1)
-        for evolution, ev2 in zip(self.evolution2, evol2):
-            evolution.update(ev2)
-        self.x_, self.y_ = self.genere_xy()
+#         :param evol1: list
+#         :param evol2: list
+#         """
+#         for evolution, ev1 in zip(self.evolution1, evol1):
+#             evolution.update(ev1)
+#         for evolution, ev2 in zip(self.evolution2, evol2):
+#             evolution.update(ev2)
+#         self.x_, self.y_ = self.genere_xy()
 
-    def genere_xy(self):
-        x, y = [], []
-        for evol in self.evolution1:
-            x = x + evol.evolution
-        for evol in self.evolution2:
-            y = y + evol.evolution
-        return x, y
+#     def genere_xy(self):
+#         x, y = [], []
+#         for evol in self.evolution1:
+#             x = x + evol.evolution
+#         for evol in self.evolution2:
+#             y = y + evol.evolution
+#         return x, y
 
 
 def dict_merge(old_dct, merge_dct, add_keys=True, extend_lists=True):
@@ -893,8 +889,6 @@ def stringify_dict_keys(obj):
     else:
         return obj
     return new_obj
-
-
 
 
 def list_hash(list_):
@@ -987,15 +981,15 @@ def concatenate_attributes(prefix, suffix, type_: str = 'str'):
             return prefix + '/' + str(suffix)
         elif is_sequence(prefix):
             return sequence_to_deepattr(prefix) + '/' + str(suffix)
-        else:
-            raise TypeError(wrong_prefix_format.format(type(prefix)))
+        raise TypeError(wrong_prefix_format.format(type(prefix)))
     elif type_ == 'sequence':
         if isinstance(prefix, str):
             return [prefix, suffix]
         elif is_sequence(prefix):
             return prefix + [suffix]
-        else:
-            raise TypeError(wrong_prefix_format.format(type(prefix)))
+
+        raise TypeError(wrong_prefix_format.format(type(prefix)))
+
     else:
         wrong_concat_type = 'Type {} for concatenation is not supported.'
         wrong_concat_type += 'Should be "str" or "sequence"'
@@ -1045,15 +1039,14 @@ def type_from_annotation(type_, module):
     """
     if isinstance(type_, str):
         # Evaluating types
-        if type_ in TYPES_FROM_STRING:
-            type_ = TYPES_FROM_STRING[type_]
-        else:
-            # Evaluating
-            type_ = getattr(import_module(module), type_)
+        type_ = TYPES_FROM_STRING.get(type_, default=getattr(import_module(module), type_))
     return type_
 
 
 def prettyname(namestr):
+    """
+    Creates a pretty name from as str
+    """
     pretty_name = ''
     if namestr:
         strings = namestr.split('_')
@@ -1066,7 +1059,7 @@ def prettyname(namestr):
                 pretty_name += ' '
     return pretty_name
 
-  
+
 def inspect_arguments(method, merge=False):
     # Find default value and required arguments of class construction
     args_specs = inspect.getfullargspec(method)
@@ -1091,5 +1084,3 @@ def inspect_arguments(method, merge=False):
             else:
                 arguments.append(argument)
     return arguments, default_arguments
-
-

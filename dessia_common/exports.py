@@ -4,19 +4,12 @@
 
 """
 
-# import collections
 import tempfile
-# import numpy as npy
-
-# import dessia_common.core
-from dessia_common.breakdown import breakdown
-
-
-# from openpyxl.writer.excel import save_virtual_workbook
 from openpyxl.styles.borders import Border, Side
 from openpyxl.styles import Alignment, PatternFill, Font
 from openpyxl import Workbook
 import openpyxl.utils
+from dessia_common.breakdown import breakdown
 
 
 def is_hashable(v):
@@ -201,7 +194,7 @@ class XLSXWriter:
             self.autosize_sheet_columns(sheet, 5, 30)
 
     def save_to_file(self, filepath):
-
+        # TODO: split in two functions?
         if isinstance(filepath, str):
             real_filepath = filepath
             if not filepath.endswith('.xlsx'):
@@ -226,7 +219,7 @@ class XLSXWriter:
                 try:  # Necessary to avoid error on empty cells
                     if len(str(cell.value)) > width:
                         width = len(cell.value)
-                except:
+                except AttributeError:
                     pass
             if width > 0:
                 adjusted_width = min((width + 0.5), max_width)

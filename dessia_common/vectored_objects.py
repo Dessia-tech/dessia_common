@@ -240,11 +240,11 @@ class Catalog(DessiaObject):
     def generate_multiplot(self, values: Dict[str, Any] = None):
         # TOCHECK Avoid circular imports
         import plot_data
-        from plot_data.colors import BLACK, LIGHTBLUE, LIGHTGREY, BLUE
+        # from plot_data.colors import BLACK, LIGHTBLUE, LIGHTGREY, BLUE
 
         if values is None:
             values = []
-            for i, line in enumerate(self.array):
+            for line in self.array:
                 value = {}
                 for variable in self.variables:
                     value[variable] = self.get_value_by_name(line, variable)
@@ -252,7 +252,7 @@ class Catalog(DessiaObject):
                 #     value[objective_name] = ratings[i]
                 values.append(value)
 
-        fontsize = 12
+        # fontsize = 12
         first_vars = self.variables[:2]
         values2d = [{key: val[key]} for key in first_vars for val in values]
         rgbs = [[192, 11, 11], [14, 192, 11], [11, 11, 192]]
@@ -488,8 +488,8 @@ class Catalog(DessiaObject):
             cost = self.build_costs(self.pareto_settings)
             p_frontier = pareto_frontier(cost)
             elements = [[], []]  # point_non_pareto, point_pareto
-            for i in range(len(list_name)):
-                dict_element = {name_column_0: list_name[i]}
+            for i, name in enumerate(list_name):
+                dict_element = {name_column_0: name}
                 for k, setting in enumerate(self.choice_variables):
                     dict_element[setting] = list_value[k][i]
 
@@ -500,8 +500,8 @@ class Catalog(DessiaObject):
 
         else:
             elements = [[], []]
-            for i in range(len(list_name)):
-                dict_element = {name_column_0: list_name[i]}
+            for i, name in enumerate(list_name):
+                dict_element = {name_column_0: name}
                 for k, setting in enumerate(self.choice_variables):
                     dict_element[setting] = list_value[k][i]
 
@@ -523,7 +523,7 @@ class Catalog(DessiaObject):
         plots = []
 
         # ScatterPlot
-        for j in range(len(list_settings)):
+        for j, setting in enumerate(list_settings):
             for i in range(j + 1, len(list_settings)):
                 if len(plots) < 3:
                     plots.append(Scatter(tooltip=custom_tooltip,

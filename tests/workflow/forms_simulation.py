@@ -2,6 +2,7 @@ from dessia_common.workflow import WorkflowRun, Workflow
 import json
 
 from dessia_common.models.workflows import workflow_
+from dessia_common.utils.jsonschema import default_dict
 
 # Check Workflow
 serialized_workflow = workflow_.to_dict()
@@ -37,3 +38,7 @@ workflow_._check_platform()
 workflow_run._check_platform()
 # workflow_state._check_platform()
 
+
+
+
+arguments = workflow_.dict_to_arguments(input_values, 'run')
