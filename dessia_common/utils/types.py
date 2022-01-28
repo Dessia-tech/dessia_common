@@ -109,16 +109,16 @@ def serialize_typing(typing_):
                 argnames = ', '.join([type_fullname(a) for a in args])
                 return f'Union[{argnames}]'.format()
         elif origin is list:
-            return f"List['{type_fullname(args[0])}']"
+            return f"List[{type_fullname(args[0])}]"
         elif origin is tuple:
             argnames = ', '.join([type_fullname(a) for a in args])
             return f'Tuple[{argnames}]'
         elif origin is collections.Iterator:
-            return f"Iterator[{type_fullname(args[0])}']"
+            return f"Iterator[{type_fullname(args[0])}]"
         elif origin is dict:
             key_type = type_fullname(args[0])
             value_type = type_fullname(args[1])
-            return f'Dict[{key_type},{value_type}]'
+            return f'Dict[{key_type}, {value_type}]'
         elif origin is InstanceOf:
             return f'InstanceOf[{type_fullname(args[0])}]'
         elif origin is Subclass:
