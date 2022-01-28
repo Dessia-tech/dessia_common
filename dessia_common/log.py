@@ -21,6 +21,9 @@ class Log(DessiaObject):
                  width_line: int = 100,
                  time_start: float = None,
                  name: str = ''):
+        """
+        A log file for based on markdown
+        """
         DessiaObject.__init__(self, name=name)
         self.width_line = width_line
         self.name_log = name_log
@@ -31,6 +34,9 @@ class Log(DessiaObject):
         self.last_offset = 0
 
     def add_time(self, offset:int = 0):
+        """
+        Add a timestamp
+        """
         line = ' '*offset
         line += time.asctime()
         time_elapsed = datetime.timedelta(seconds=time.time() - self.time_start)
@@ -39,6 +45,9 @@ class Log(DessiaObject):
 
 
     def add_lines(self, lines: List[str], offset:int = 0):
+        """
+        Add some lines to log content
+        """
         file = self.open()
         lines.extend(self.add_time(offset))
         lines.append('')
@@ -46,6 +55,9 @@ class Log(DessiaObject):
             file.write(line + '\n')
 
     def add_title(self, title: str):
+        """
+        Add a markdown title
+        """
         self.last_offset = 0
         title = title.upper()
         if len(title) > self.width_line - 4:
@@ -62,6 +74,9 @@ class Log(DessiaObject):
         self.add_lines(lines)
 
     def add_subtitle(self, title: str):
+        """
+        Add a markdown subtitle
+        """
         self.last_offset = 0
         title = title[0].upper() + title[1:]
         if len(title) > self.width_line:
@@ -71,6 +86,10 @@ class Log(DessiaObject):
         self.add_lines(lines)
 
     def add_subsubtitle(self, title: str):
+        """
+        Add a markdown subsubtitle
+        """
+
         offset = 2
         self.last_offset = offset
         title = title[0].upper() + title[1:]
@@ -81,6 +100,9 @@ class Log(DessiaObject):
         self.add_lines(lines, offset)
 
     def add_text(self, text: str):
+        """
+        Add some text
+        """
         offset = self.last_offset + 2
         line_length = self.width_line - offset
         number_line = math.ceil(len(text)/(line_length))
@@ -90,6 +112,9 @@ class Log(DessiaObject):
         self.add_lines(lines, offset)
 
     def add_table(self, title: List[str], elements: List[List[any]]):
+        """
+        Add a markdown table to the log
+        """
         offset = self.last_offset + 2
         number_column = len(title)
         line_length = self.width_line - offset
