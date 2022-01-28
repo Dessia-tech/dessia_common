@@ -3,7 +3,7 @@
 """
 
 """
-# import io
+import io
 import sys
 import warnings
 import math
@@ -33,12 +33,9 @@ from dessia_common.typings import Measure, JsonSerializable,\
     Subclass, InstanceOf, MethodType, ClassMethodType
 
 
-
-
 _FORBIDDEN_ARGNAMES = ['self', 'cls', 'progress_callback', 'return']
 
 
-# DEPRECATED_ATTRIBUTES = {'_editable_variss' : '_allowed_methods'}
 def deprecated(use_instead=None):
     def decorated(function):
         def wrapper(*args, **kwargs):
@@ -432,30 +429,13 @@ class DessiaObject:
                 arguments[arg] = deserialized_value
         return arguments
 
+    @deprecated(use_instead="to_json")
     def save_to_file(self, filepath: str, indent: int = 2):
         """
         Save to a JSON file the object
         :param filepath: either a string reprensenting the filepath or a stream
         """
-        # Maybe split in several functions for stream and file
-        if isinstance(filepath, str):
-            if not filepath.endswith('.json'):
-                filepath += '.json'
-                print('Changing name to {}'.format(filepath))
-            file = open(filepath, 'w')
-        else:
-            file = filepath
-
-        try:
-            dict_ = self.to_dict(use_pointers=True)
-        except TypeError:
-            dict_ = self.to_dict()
-
-        json.dump(dict_, file, indent=indent)
-
-        if isinstance(filepath, str):
-            file.close()
-        return filepath
+        return self.to_json(filepath=filepath, indent=indent)
 
     @classmethod
     def load_from_file(cls, filepath):
@@ -629,6 +609,34 @@ class DessiaObject:
             raise ValueError(hint)
         json.dumps(self._displays())
         json.dumps(self._method_jsonschemas)
+
+    def to_json_stream(self, indent: int = 2) -> io.StringIO:
+        stream = io.StringIO()
+        try:
+            dict_ = self.to_dict(use_pointers=True)
+        except TypeError:
+            dict_ = self.to_dict()
+
+        json.dump(dict_, stream, indent=indent)
+        return stream
+
+    def to_json(self, filepath: str, indent: int = 2) -> str:
+        """
+        Save object to a JSON file
+        :param filepath: either a string reprensenting the filepath or a stream
+        :type filepath: str
+        :param indent: level of indentation for json.dump function
+        :type indent: int
+
+        :return: filepath of created file
+        """
+        json_stream = self.to_json_stream(indent=indent)
+        if not filepath.endswith('.json'):
+            filepath += '.json'
+            print('Changing name to {}'.format(filepath))
+        with open(filepath, "w") as file:
+            file.write(json_stream.getvalue())
+        return filepath
 
     def to_xlsx(self, filepath: str):
         writer = XLSXWriter(self)

@@ -73,14 +73,8 @@ pipe_export_1 = Pipe(input_variable=export_txt.outputs[0], output_variable=zip_e
 blocks = [instanciate_generator, generator_generate, attribute_selection, parallel_optimization,
           unpack_results, export_txt, zip_export]
 pipes = [pipe_int_1, pipe_1, pipe_2, pipe_3, pipe_4, pipe_5, pipe_export_1]
-workflow_ = Workflow(blocks=blocks, pipes=pipes, output=parallel_optimization.outputs[0])
+workflow_export = Workflow(blocks=blocks, pipes=pipes, output=parallel_optimization.outputs[0],
+                           name="Workflow Test Export")
 
-values = {0: 1, 4: 2}
-workflow_run = workflow_.run(input_values=values, verbose=True)
-
-workflow_state = workflow_.start_run(values)
-workflow_state.continue_run()
-export_output = workflow_state.export_archive()
-print(export_output)
-# with open("archive.zip", "wb") as f:
-#     f.write(export_output.getbuffer())
+workflow_export_state = workflow_export.start_run({})
+workflow_export_state.name = "WorkflowState Test Export"

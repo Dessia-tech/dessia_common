@@ -67,4 +67,6 @@ blocks = [instanciate_generator, generator_generate,
           attribute_selection, parallel_optimization, display]
 pipes = [pipe_int_1, pipe_name_1, pipe_name_2, pipe_1, pipe_2, pipe_3, pipe_4]
 workflow_ = Workflow(blocks=blocks, pipes=pipes,
-                     output=parallel_optimization.outputs[0])
+                     output=parallel_optimization.outputs[0], name="Workflow with NBVs")
+workflow_state = workflow_.start_run({})
+workflow_state.name = "WorkflowState with NBVs"
