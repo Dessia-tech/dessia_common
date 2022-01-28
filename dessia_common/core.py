@@ -14,9 +14,6 @@ import collections
 from copy import deepcopy
 import inspect
 import json
-from dessia_common.exports import XLSXWriter
-import time
-import datetime
 
 from typing import List, Dict, Union, Any, get_type_hints
 import traceback as tb
@@ -31,8 +28,6 @@ from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotat
 from dessia_common.utils.docstrings import parse_docstring, FAILED_DOCSTRING_PARSING
 from dessia_common.exports import XLSXWriter
 from dessia_common.typings import JsonSerializable
-
-
 
 
 _FORBIDDEN_ARGNAMES = ['self', 'cls', 'progress_callback', 'return']

@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Fri Jan 21 10:22:48 2022
 
-@author: bricaud
 """
 
 from dessia_common import DessiaObject
@@ -26,8 +24,6 @@ class Log(DessiaObject):
         DessiaObject.__init__(self, name=name)
         self.width_line = width_line
         self.name_log = name_log
-        file = self.open('w')
-        self.close(file)
         if time_start is None:
             self.time_start = time.time()
         else:
@@ -41,12 +37,6 @@ class Log(DessiaObject):
         line += ' Time elapsed {}'.format(time_elapsed)
         return [line]
 
-    def open(self, option: str = 'a'):
-        file = open(self.name_log + '.log', option)
-        return file
-
-    def close(self, file):
-        file.close()
 
     def add_lines(self, lines: List[str], offset:int = 0):
         file = self.open()
@@ -54,7 +44,6 @@ class Log(DessiaObject):
         lines.append('')
         for line in lines:
             file.write(line + '\n')
-        self.close(file)
 
     def add_title(self, title: str):
         self.last_offset = 0
