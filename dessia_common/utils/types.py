@@ -107,26 +107,26 @@ def serialize_typing(typing_):
             else:
                 # Types union
                 argnames = ', '.join([type_fullname(a) for a in args])
-                return 'Union[{}]'.format(argnames)
+                return f'Union[{argnames}]'.format()
         elif origin is list:
-            return 'List[' + type_fullname(args[0]) + ']'
+            return f"List[{type_fullname(args[0])}]"
         elif origin is tuple:
             argnames = ', '.join([type_fullname(a) for a in args])
-            return 'Tuple[{}]'.format(argnames)
+            return f'Tuple[{argnames}]'
         elif origin is collections.Iterator:
-            return 'Iterator[' + type_fullname(args[0]) + ']'
+            return f"Iterator[{type_fullname(args[0])}]"
         elif origin is dict:
             key_type = type_fullname(args[0])
             value_type = type_fullname(args[1])
-            return 'Dict[{}, {}]'.format(key_type, value_type)
+            return f'Dict[{key_type}, {value_type}]'
         elif origin is InstanceOf:
-            return 'InstanceOf[{}]'.format(type_fullname(args[0]))
+            return f'InstanceOf[{type_fullname(args[0])}]'
         elif origin is Subclass:
-            return 'Subclass[{}]'.format(type_fullname(args[0]))
+            return f'Subclass[{type_fullname(args[0])}]'
         elif origin is MethodType:
-            return 'MethodType[{}]'.format(type_fullname(args[0]))
+            return 'fMethodType[{type_fullname(args[0])}]'
         elif origin is ClassMethodType:
-            return 'ClassMethodType[{}]'.format(type_fullname(args[0]))
+            return f'ClassMethodType[{type_fullname(args[0])}]'
         else:
             msg = 'Serialization of typing {} is not implemented'
             raise NotImplementedError(msg.format(typing_))
@@ -256,7 +256,7 @@ def is_bson_valid(value, allow_nonstring_keys=False) -> Tuple[bool, str]:
             if not valid:
                 return valid, hint
     else:
-        return False, 'Unrecognized type: {}'.format(type(value))
+        return False, f'Unrecognized type: {type(value)}'
     return True, ''
 
 # TODO recursive_type and recursive_type functions look weird
