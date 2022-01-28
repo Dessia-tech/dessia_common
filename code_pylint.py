@@ -12,7 +12,7 @@ MAX_ERROR_BY_TYPE = {
                      'too-many-branches': 12,
                      'unused-import': 10,
                      'unused-argument': 10,
-                     'cyclic-import': 9,
+                     'cyclic-import': 10,
                      'no-self-use': 7,
                      'unused-variable': 7,
                      'too-many-arguments': 10,
