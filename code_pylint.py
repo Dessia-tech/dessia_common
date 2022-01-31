@@ -68,7 +68,14 @@ results = Run(['dessia_common', '--output-format=json', '--reports=no'], do_exit
 # `exit` is deprecated, use `do_exit` instead
 sys.stdout = old_stdout
 
-pylint_note = results.linter.stats.global_note
+PYLINT_OBJECTS = True
+if hasattr(results.linter.stats,'global_note'):
+    pylint_note = results.linter.stats.global_note
+    PYLINT_OBJECT_STATS = True
+else:
+    pylint_note = results.linter.stats['global_note']
+    PYLINT_OBJECT_STATS = False
+
 print('Pylint note: ', pylint_note)
 assert pylint_note >= MIN_NOTE
 print('You can increase MIN_NOTE in pylint to {} (actual: {})'.format(pylint_note,
@@ -81,7 +88,13 @@ def extract_messages_by_type(type_):
 
 uncontrolled_errors = {}
 error_detected = False
-for error_type, number_errors in results.linter.stats.by_msg.items():
+
+if PYLINT_OBJECT_STATS:
+    stats_by_msg = results.linter.stats.by_msg
+else:
+    stats_by_msg = results.linter.stats['by_msg']
+
+for error_type, number_errors in stats_by_msg.items():
     if error_type in MAX_ERROR_BY_TYPE:
         if number_errors > MAX_ERROR_BY_TYPE[error_type]:
             error_detected = True
