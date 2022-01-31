@@ -22,12 +22,12 @@ Overloading the to_dict method
 Be careful with this method! It enhance performance but needs to be updated when the code changes!
 
 Overloading the to_dict method should:
- * implement the parameters of the base class:
+ * Implement the parameters of the base class:
 
    * use_pointers: a boolean that indicates if pointers should be inserted in the dict
    * memo: a dict [pythonobject -> path] of already serialized values
    * path: the path in the global object: for most case append '/attribute_name' to given path for your attributes
-
+ * Test if the object is in the memo if you want to use pointers
  * write the 'object_class' and 'name' in the dict for the dict to object: you can use DessiaObject.base_dict to do so.
 
 If calling recursively to_dict of subattributes, these arguments must be passed, as is for use_pointers and memo. Path must be created as a subpath with '/' delimiter:
@@ -42,6 +42,10 @@ If you want the object to be reinserted as a pointer elsewhere, you should put i
         # Init memo is None
         if memo is None:
             memo = {}
+
+        # If object is in the memo, inserting the pointer
+        if use_pointers and self in memo:
+            return {'$ref': memo[self]}
 
         # init dict
         dict_ = self.base_dict()
