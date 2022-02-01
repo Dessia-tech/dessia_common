@@ -162,7 +162,7 @@ class Block(DessiaObject):
     _standalone_in_db = False
     _eq_is_data_eq = False
     _non_serializable_attributes = []
-    _type = "computable"
+    # _type = "computable"
 
     def __init__(self, inputs: List[VariableTypes],
                  outputs: List[VariableTypes],
@@ -982,7 +982,7 @@ class Substraction(Block):
 
 
 class Export(Block):
-    _type = "exportable"
+    # _type = "exportable"
 
     def __init__(self, method_type: MethodType, name: str = ""):
         self.method_type = method_type
@@ -1005,7 +1005,7 @@ class Export(Block):
 
 
 class Archive(Block):
-    _type = "exportable"
+    # _type = "exportable"
 
     def __init__(self, number_exports: int = 1, name=""):
         inputs = [Variable(name="export_" + str(i)) for i in range(number_exports)]
@@ -1089,7 +1089,7 @@ class WorkflowError(Exception):
 class Workflow(Block):
     """
     :param blocks: A List with all the Blocks used by the Worklow.
-    :type blocks: List[InstanceOf[Block]]
+    :type blocks: List[Block]
     :param pipes: A List of Pipe objects.
     :type pipes: List[Pipe]
     :param imposed_variable_values: A dictionary of imposed variable values.
@@ -1412,7 +1412,7 @@ class Workflow(Block):
 
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable) -> 'Workflow':
-        blocks = [DessiaObject.dict_to_object(d) for d in dict_['blocks']]
+        blocks = [Block.dict_to_object(d) for d in dict_['blocks']]
         if 'nonblock_variables' in dict_:
             nonblock_variables = [dict_to_object(d)
                                   for d in dict_['nonblock_variables']]
@@ -1539,16 +1539,64 @@ class Workflow(Block):
             graph.add_edge(pipe.input_variable, pipe.output_variable)
         return graph
 
-    def _block_by_type(self, type_: str):
-        return [b for b in self.blocks if b._type == type_]
+    def _computable_blocks(self, progress: float):
+        if progress < 1:
+            return [b for b in self.blocks if not isinstance(b, (Export, Archive))]
 
     @property
-    def _computable_blocks(self):
-        return self._block_by_type("computable")
+    def runtime_blocks(self):
+        output_block = self.block_from_variable(self.output)
+        output_upstreams = self.upstream_blocks(output_block)
+        runtime_blocks = [output_block] + output_upstreams
+        i = 0
+        while output_upstreams and i <= len(self.blocks):
+            block_upstreams = []
+            for block in output_upstreams:
+                upstream_blocks = self.upstream_blocks(block)
+                block_upstreams.extend(self.upstream_blocks(block))
+            output_upstreams = block_upstreams
+            runtime_blocks.extend(block_upstreams)
+            i += 1
+        return runtime_blocks
 
     @property
-    def _exportable_blocks(self):
-        return self._block_by_type("exportable")
+    def export_blocks(self):
+        return [b for b in self.blocks if b not in self.runtime_blocks]
+
+    def upstream_blocks(self, block):
+        # Setting a dict here to foresee a future use. Might be unnecessary
+        upstream_variables = {"available": [], "nonblock": [], "wired": []}
+        input_upstreams = [self.upstream_variable(i) for i in block.inputs]
+        for variable in input_upstreams:
+            if variable is None:
+                upstream_variables["available"].append(variable)
+            elif variable in self.nonblock_variables:
+                upstream_variables["nonblock"].append(variable)
+            else:
+                upstream_variables["wired"].append(variable)
+        upstream_blocks = [self.block_from_variable(v) for v in upstream_variables["wired"]]
+        return list(set(upstream_blocks))
+
+    def get_upstream_nbv(self, variable: VariableTypes) -> VariableTypes:
+        """
+        If given variable has an upstream nonblock_variable, return it
+        otherwise return given variable itself
+        """
+        if not self.nonblock_variables:
+            return variable
+        upstream_variable = self.upstream_variable(variable)
+        if upstream_variable is not None and upstream_variable in self.nonblock_variables:
+            return upstream_variable
+        return variable
+
+    def upstream_variable(self, variable: VariableTypes) -> Optional[VariableTypes]:
+        incoming_pipes = [p for p in self.pipes
+                          if p.output_variable == variable]
+        if incoming_pipes:
+            # Inputs can only be connected to one pipe
+            incoming_pipe = incoming_pipes[0]
+            return incoming_pipe.input_variable
+        return None
 
     def variable_indices(self, variable):
         for iblock, block in enumerate(self.blocks):
@@ -1572,7 +1620,7 @@ class Workflow(Block):
         msg = 'Something is wrong with variable {}'.format(variable.name)
         raise WorkflowError(msg)
 
-    def block_from_variable(self, variable):
+    def block_from_variable(self, variable) -> Block:
         iblock, _, _ = self.variable_indices(variable)
         return self.blocks[iblock]
 
@@ -1602,22 +1650,6 @@ class Workflow(Block):
 
     def variable_index(self, variable: VariableTypes) -> int:
         return self.variables.index(variable)
-
-    def get_upstream_nbv(self, variable: VariableTypes) -> VariableTypes:
-        """
-        If given variable has an upstream nonblock_variable, return it
-        otherwise return given variable itself
-        """
-        if not self.nonblock_variables:
-            return variable
-        incoming_pipes = [p for p in self.pipes
-                          if p.output_variable == variable]
-        if incoming_pipes:
-            # Inputs can only be connected to one pipe
-            incoming_pipe = incoming_pipes[0]
-            if incoming_pipe.input_variable in self.nonblock_variables:
-                return incoming_pipe.input_variable
-        return variable
 
     def layout(self, min_horizontal_spacing=300, min_vertical_spacing=200,
                max_height=800, max_length=1500):
@@ -2082,10 +2114,8 @@ class WorkflowState(DessiaObject):
 
     @property
     def progress(self):
-        activated_items = [b for b in self.workflow.blocks
-                           if b in self.activated_items
-                           and self.activated_items[b]]
-        return len(activated_items) / len(self.workflow._computable_blocks)
+        evaluated_blocks = [self.activated_items[b] for b in self.workflow.runtime_blocks]
+        return sum(evaluated_blocks)/len(evaluated_blocks)
 
     def block_evaluation(self, block_index: int,
                          progress_callback=lambda x: None) -> bool:
@@ -2130,7 +2160,7 @@ class WorkflowState(DessiaObject):
 
         evaluated_blocks = []
         something_activated = True
-        while something_activated:
+        while something_activated and self.progress < 1:
             something_activated = False
 
             for pipe in self._activable_pipes():
@@ -2152,19 +2182,21 @@ class WorkflowState(DessiaObject):
                     pipes.append(pipe)
         return pipes
 
-    def _activable_blocks(self, type_: str = "computable"):
-        blocks = []
-        for block in self.workflow._block_by_type(type_=type_):
-            if not self.activated_items[block]:
-                all_inputs_activated = True
-                for function_input in block.inputs:
-                    if not self.activated_items[function_input]:
-                        all_inputs_activated = False
-                        break
+    def _activable_blocks(self):
+        if self.progress < 1:
+            blocks = self.workflow.runtime_blocks
+        else:
+            blocks = self.workflow.export_blocks
 
-                if all_inputs_activated:
-                    blocks.append(block)
-        return blocks
+        activable_blocks = [b for b in blocks if not self.activated_items[b]
+                            and self._block_activable_by_inputs(b)]
+        return activable_blocks
+
+    def _block_activable_by_inputs(self, block: Block):
+        for function_input in block.inputs:
+            if not self.activated_items[function_input]:
+                return False
+        return True
 
     def _evaluate_pipe(self, pipe):
         self.activated_items[pipe] = True

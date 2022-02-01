@@ -661,7 +661,7 @@ class DessiaObject:
         return self.volmdlr_volume_model().to_stl(filepath=filepath)
 
     def _export_formats(self):
-        formats = [('json', 'save_to_file', True),
+        formats = [('json', 'to_json', True),
                    ('xlsx', 'to_xlsx', False)]
         if hasattr(self, 'volmdlr_primitives'):
             formats.append(('step', 'to_step', True))

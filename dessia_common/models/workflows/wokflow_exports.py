@@ -78,3 +78,6 @@ workflow_export = Workflow(blocks=blocks, pipes=pipes, output=parallel_optimizat
 
 workflow_export_state = workflow_export.start_run({})
 workflow_export_state.name = "WorkflowState Test Export"
+
+workflow_export_state.add_block_input_values(0, {'0': 1, '1': "name", '4': 3})
+workflow_export_state.continue_run()
