@@ -1000,6 +1000,9 @@ class Export(Block):
         res = getattr(values[self.inputs[0]], self.method_type.name)()
         return [res]
 
+    def _export_format(self, block_index: int):
+        return "", "", None
+
 
 class ExportJson(Export):
     def __init__(self, model_class: Type, export_name: str = "", name: str = ""):
@@ -1041,6 +1044,9 @@ class Archive(Block):
                 else:
                     raise ValueError("Archive input is not a file-like object")
         return [archive]
+
+    def _export_format(self, block_index: int):
+        return 'zip', 'export_archive', False
 
 
 class Pipe(DessiaObject):
@@ -2301,13 +2307,11 @@ class WorkflowState(DessiaObject):
             raise ValueError('Workflow not completed')
 
     def _export_formats(self):
-        formats = []
-        for block in self.workflow.export_blocks:
-            if isinstance(block, Archive):
-                formats.append(('zip', 'export_archive', False))
-            # elif isinstance(block, Export):
-            #     formats.append(('', '', None))
-        return formats
+        export_formats = []
+        for i, block in enumerate(self.workflow.export_blocks):
+            if hasattr(block, "_export_format"):
+                export_formats.append(block._export_format(i))
+        return export_formats
 
     def export_archive(self):
         if self.progress >= 1:
