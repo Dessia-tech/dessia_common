@@ -12,6 +12,7 @@ from openpyxl.styles import Alignment, PatternFill, Font
 from openpyxl import Workbook
 import openpyxl.utils
 from dessia_common.breakdown import breakdown
+from dessia_common.files import XLSXFile
 
 
 def is_hashable(v):
@@ -213,8 +214,8 @@ class XLSXWriter:
         #         filepath.seek(0)
         #         filepath.write(file.read())
 
-    def to_xlsx_stream(self):
-        virtual_workbook = io.BytesIO()
+    def to_xlsx_stream(self) -> XLSXFile:
+        virtual_workbook = XLSXFile()
         self.workbook.save(virtual_workbook)
         return virtual_workbook
 

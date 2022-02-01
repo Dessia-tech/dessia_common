@@ -31,6 +31,7 @@ from dessia_common.utils.docstrings import parse_docstring, FAILED_DOCSTRING_PAR
 from dessia_common.exports import XLSXWriter
 from dessia_common.typings import Measure, JsonSerializable,\
     Subclass, InstanceOf, MethodType, ClassMethodType
+from dessia_common.files import JsonFile, XLSXFile
 
 
 _FORBIDDEN_ARGNAMES = ['self', 'cls', 'progress_callback', 'return']
@@ -610,8 +611,8 @@ class DessiaObject:
         json.dumps(self._displays())
         json.dumps(self._method_jsonschemas)
 
-    def to_json_stream(self, indent: int = 2) -> io.StringIO:
-        stream = io.StringIO()
+    def to_json_stream(self, indent: int = 2) -> JsonFile:
+        stream = JsonFile()
         try:
             dict_ = self.to_dict(use_pointers=True)
         except TypeError:
@@ -638,7 +639,7 @@ class DessiaObject:
             file.write(json_stream.getvalue())
         return filepath
 
-    def to_xlsx_stream(self) -> io.BytesIO:
+    def to_xlsx_stream(self) -> XLSXFile:
         writer = XLSXWriter(self)
         return writer.to_xlsx_stream()
 
