@@ -2152,7 +2152,7 @@ class WorkflowState(DessiaObject):
         else:
             return None
 
-    def continue_run(self, progress_callback=lambda x: None):
+    def continue_run(self, progress_callback=lambda x: None, export: bool = False):
         """
         Evaluate all possible blocks
         """
@@ -2160,7 +2160,7 @@ class WorkflowState(DessiaObject):
 
         evaluated_blocks = []
         something_activated = True
-        while something_activated and self.progress < 1:
+        while something_activated and (self.progress < 1 or export):
             something_activated = False
 
             for pipe in self._activable_pipes():
@@ -2170,7 +2170,8 @@ class WorkflowState(DessiaObject):
             for block in self._activable_blocks():
                 evaluated_blocks.append(block)
                 self._evaluate_block(block)
-                progress_callback(self.progress)
+                if not export:
+                    progress_callback(self.progress)
                 something_activated = True
         return evaluated_blocks
 
@@ -2281,7 +2282,7 @@ class WorkflowState(DessiaObject):
 
     def _export_formats(self):
         formats = []
-        for block in self.workflow._exportable_blocks:
+        for block in self.workflow.export_blocks:
             if isinstance(block, Archive):
                 formats.append(('zip', 'export_archive', False))
             # elif isinstance(block, Export):
@@ -2290,26 +2291,14 @@ class WorkflowState(DessiaObject):
 
     def export_archive(self):
         if self.progress >= 1:
-            archive_blocks = [isinstance(b, Archive) for b in self.workflow._exportable_blocks]
+            archive_blocks = [isinstance(b, Archive) for b in self.workflow.export_blocks]
             if not any(archive_blocks):
                 raise ValueError("Workflow has no Archive export block")
             elif sum(archive_blocks) > 1:
                 raise ValueError("Workflow can only have one Archive export block")
-            evaluated_blocks = []
-            export_activated = True
-            while export_activated:
-                export_activated = False
-
-                for pipe in self._activable_pipes():
-                    self._evaluate_pipe(pipe)
-                    export_activated = True
-
-                for block in self._activable_blocks("exportable"):
-                    evaluated_blocks.append(block)
-                    self._evaluate_block(block)
-                    export_activated = True
+            self.continue_run(export=True)
             block_index = archive_blocks.index(True)
-            block = self.workflow._exportable_blocks[block_index]
+            block = self.workflow.export_blocks[block_index]
             output = block.outputs[0]
             return self.values[output]
         else:
