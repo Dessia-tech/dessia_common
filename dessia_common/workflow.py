@@ -9,7 +9,7 @@ import time
 import tempfile
 import json
 import webbrowser
-import zipfile
+from zipfile import ZipFile
 import io
 
 import networkx as nx
@@ -33,6 +33,7 @@ from dessia_common.utils.docstrings import parse_docstring,  EMPTY_PARSED_ATTRIB
     FAILED_ATTRIBUTE_PARSING
 from dessia_common.vectored_objects import from_csv
 from dessia_common.typings import JsonSerializable, MethodType, ClassMethodType, InstanceOf
+from dessia_common.files import StringFile, BinaryFile
 import warnings
 
 # Type Aliases
@@ -982,31 +983,43 @@ class Substraction(Block):
 
 
 class Export(Block):
-    # _type = "exportable"
-
-    def __init__(self, method_type: MethodType, name: str = ""):
+    def __init__(self, method_type: MethodType, export_name: str = "", name: str = ""):
         self.method_type = method_type
+        if export_name:
+            self.export_name = export_name
+        else:
+            self.export_name = "export"
         inputs = [TypedVariable(type_=method_type.class_)]
 
-        method = getattr(method_type.class_, method_type.name)
+        method = method_type.get_method()
 
         output = output_from_function(function=method, name="export_output")
         Block.__init__(self, inputs=inputs, outputs=[output], name=name)
 
     def evaluate(self, values):
-        # temp_file = tempfile.mkstemp(suffix='.html', dir=tempdir)[1]
-        #
-        # with open(temp_file, 'wb') as file:
-        #     file.write(s.encode('utf-8'))
-        # args = {'filepath': temp_file.}
-        res = getattr(values[self.inputs[0]], self.method_type.name)("/tmp/workflow")
-        print("Evaluate export : ", res)
+        res = getattr(values[self.inputs[0]], self.method_type.name)()
         return [res]
 
 
-class Archive(Block):
-    # _type = "exportable"
+class ExportJson(Export):
+    def __init__(self, model_class: Type, export_name: str = "", name: str = ""):
+        method_type = MethodType(class_=model_class, name="to_json_stream")
 
+        Export.__init__(self, method_type=method_type, export_name=export_name, name=name)
+        if not export_name:
+            self.export_name += "_json"
+
+
+class ExportExcel(Export):
+    def __init__(self, model_class: Type, export_name: str = "", name: str = ""):
+        method_type = MethodType(class_=model_class, name="to_xlsx_stream")
+
+        Export.__init__(self, method_type=method_type, export_name=export_name, name=name)
+        if not export_name:
+            self.export_name += "_xlsx"
+
+
+class Archive(Block):
     def __init__(self, number_exports: int = 1, name=""):
         inputs = [Variable(name="export_" + str(i)) for i in range(number_exports)]
         outputs = [Variable(name="zip archive")]
@@ -1014,12 +1027,19 @@ class Archive(Block):
 
     def evaluate(self, values):
         archive = io.BytesIO()
-        zip_archive = zipfile.ZipFile(archive, 'a')
-        for input_ in self.inputs:
-            filename = values[input_]
-            print("Evaluate Archive : ", filename)
-            zip_archive.write(filename, os.path.basename(filename))
-        zip_archive.close()
+
+        with ZipFile(archive, 'w') as zip_archive:
+            for i, input_ in enumerate(self.inputs):
+                value = values[input_]
+                filename = 'file{}.{}'.format(str(i), value.extension)
+                if isinstance(value, StringFile):
+                    with zip_archive.open(filename, 'w') as file:
+                        file.write(value.getvalue().encode('utf-8'))
+                elif isinstance(value, BinaryFile):
+                    with zip_archive.open(filename, 'w') as file:
+                        file.write(value.getbuffer())
+                else:
+                    raise ValueError("Archive input is not a file-like object")
         return [archive]
 
 
@@ -2296,6 +2316,7 @@ class WorkflowState(DessiaObject):
                 raise ValueError("Workflow has no Archive export block")
             elif sum(archive_blocks) > 1:
                 raise ValueError("Workflow can only have one Archive export block")
+
             self.continue_run(export=True)
             block_index = archive_blocks.index(True)
             block = self.workflow.export_blocks[block_index]

@@ -1,5 +1,5 @@
-from dessia_common.workflow import InstantiateModel, ModelMethod, Export, TypedVariable,\
-    TypedVariableWithDefaultValue, ModelAttribute, Pipe, Workflow, WorkflowBlock, ForEach,\
+from dessia_common.workflow import InstantiateModel, ModelMethod, TypedVariable,\
+    ModelAttribute, Pipe, Workflow, WorkflowBlock, ForEach, ExportJson, ExportExcel, \
     Unpacker, Archive
 from dessia_common.forms import Generator, Optimizer, StandaloneObject
 from dessia_common import MethodType
@@ -43,10 +43,8 @@ parallel_optimization = ForEach(workflow_block=optimization_workflow_block,
 
 unpack_results = Unpacker(indices=[0, 1], name="Unpack Results")
 
-to_txt = MethodType(class_=StandaloneObject, name="to_json")
-export_txt = Export(method_type=to_txt, name="Export .txt")
-to_xlsx = MethodType(class_=StandaloneObject, name="to_xlsx")
-export_xlsx = Export(method_type=to_xlsx, name="Export CAD")
+export_txt = ExportJson(model_class=StandaloneObject, name="Export JSON")
+export_xlsx = ExportExcel(model_class=StandaloneObject, name="Export XLSX")
 
 zip_export = Archive(number_exports=2, name="Zip")
 
