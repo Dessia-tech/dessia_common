@@ -57,3 +57,7 @@ class CSVFile(StringFile):
 
 class MarkdownFile(StringFile):
     extension = 'md'
+
+
+class JsonFile(StringFile):
+    extension = "json"
