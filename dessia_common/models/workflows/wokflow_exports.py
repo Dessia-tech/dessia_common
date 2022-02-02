@@ -41,9 +41,9 @@ optimization_workflow_block = WorkflowBlock(workflow=optimization_workflow,
 parallel_optimization = ForEach(workflow_block=optimization_workflow_block,
                                 iter_input_index=0, name='ForEach')
 
-unpack_results = Unpacker(indices=[0, 1], name="Unpack Results")
+unpack_results = Unpacker(indices=[0], name="Unpack Results")
 
-export_txt = ExportJson(model_class=StandaloneObject, name="Export JSON")
+export_txt = ExportJson(model_class=Generator, name="Export JSON")
 export_xlsx = ExportExcel(model_class=StandaloneObject, name="Export XLSX")
 
 zip_export = Archive(number_exports=2, name="Zip")
@@ -60,9 +60,9 @@ pipe_3 = Pipe(input_variable=attribute_selection.outputs[0],
               output_variable=parallel_optimization.inputs[0])
 pipe_4 = Pipe(input_variable=parallel_optimization.outputs[0],
               output_variable=unpack_results.inputs[0])
-pipe_5 = Pipe(input_variable=unpack_results.outputs[0],
+pipe_5 = Pipe(input_variable=instanciate_generator.outputs[0],
               output_variable=export_txt.inputs[0])
-pipe_6 = Pipe(input_variable=unpack_results.outputs[1],
+pipe_6 = Pipe(input_variable=unpack_results.outputs[0],
               output_variable=export_xlsx.inputs[0])
 
 pipe_export_1 = Pipe(input_variable=export_txt.outputs[0], output_variable=zip_export.inputs[0])
@@ -76,10 +76,3 @@ workflow_export = Workflow(blocks=blocks, pipes=pipes, output=parallel_optimizat
 
 workflow_export_state = workflow_export.start_run({})
 workflow_export_state.name = "WorkflowState Test Export"
-
-workflow_export_state.add_block_input_values(0, {'0': 1, '1': "name", '4': 3})
-workflow_export_state.continue_run()
-stream = workflow_export_state.export_archive()
-
-# with open("/home/jezequel/Documents/Dessia/test_zip", "wb") as file:
-#     file.write(stream.getbuffer())
