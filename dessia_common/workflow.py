@@ -364,13 +364,12 @@ class ClassMethod(Block):
         self.method_type = method_type
         inputs = []
 
-        # TODO method_type should now have an helper to get method (get_method)
-        method = getattr(method_type.class_, method_type.name)
-        inputs = set_inputs_from_function(method, inputs)
+        self.method = method_type.get_method()
+        inputs = set_inputs_from_function(self.method, inputs)
 
         self.argument_names = [i.name for i in inputs]
         output_name = 'method result of {}'.format(method_type.name)
-        output = output_from_function(function=method, name=output_name)
+        output = output_from_function(function=self.method, name=output_name)
         Block.__init__(self, inputs, [output], name=name)
 
     def equivalent_hash(self):
@@ -413,8 +412,7 @@ class ClassMethod(Block):
         args = {arg_name: values[var]
                 for arg_name, var in zip(self.argument_names, self.inputs)
                 if var in values}
-        return [getattr(self.method_type.class_,
-                        self.method_type.name)(**args)]
+        return [self.method(**args)]
 
     def _docstring(self):
         method = self.method_type.get_method()
@@ -440,8 +438,7 @@ class ModelMethod(Block):
         inputs = [TypedVariable(type_=method_type.class_,
                                 name='model at input')]
 
-        # TODO method_type has an helper to get method object (get_method)
-        method = getattr(method_type.class_, method_type.name)
+        method = method_type.get_method()
 
         inputs = set_inputs_from_function(method, inputs)
 
