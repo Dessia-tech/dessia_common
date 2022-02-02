@@ -35,6 +35,10 @@ def serialize_sequence(seq):
 
 
 def serialize(value):
+    """
+    Main function for serialization without pointers
+    Calls recursively itself serialize_sequence and serialize_dict
+    """
     if isinstance(value, dc.DessiaObject):
         try:
             serialized_value = value.to_dict(use_pointers=False)
@@ -55,6 +59,9 @@ def serialize(value):
 
 
 def serialize_with_pointers(value, memo=None, path='#'):
+    """
+    Main function for serialization with pointers
+    """
     if memo is None:
         memo = {}
     if isinstance(value, dc.DessiaObject):
@@ -122,7 +129,10 @@ def serialize_sequence_with_pointers(seq, memo, path):
 
 
 def deserialize(serialized_element, sequence_annotation: str = 'List',
-                global_dict=None, pointers_memo=None, path='#'):  # , enforce_pointers=False):
+                global_dict=None, pointers_memo=None, path='#'):
+    """
+    Main function for deserialization, handle pointers
+    """
 
     if pointers_memo is not None:
         if path in pointers_memo:
@@ -351,6 +361,10 @@ def deserialize_argument(type_, argument):
 
 
 def find_references(value, path='#'):
+    """
+    Traverse recursively the value to find reference (pointers) in it
+    Calls recursively find_references_sequence and find_references_dict
+    """
     if isinstance(value, dict):
         return find_references_dict(value, path)
     if dcty.isinstance_base_types(value):
@@ -377,7 +391,6 @@ def find_references_sequence(seq, path='#'):
 
 
 def find_references_dict(dict_, path='#'):
-
     if '$ref' in dict_:
         return [(path, dict_['$ref'])]
 
@@ -390,6 +403,11 @@ def find_references_dict(dict_, path='#'):
 
 
 def pointer_graph(value):
+    """
+    Create a graph of subattributes of an object with edge representing either:
+     * the hierarchy of an subattribute to an attribute
+     * the pointer link between the 2 elements
+    """
 
     nodes = set()
     edges = set()
@@ -414,6 +432,9 @@ def pointer_graph(value):
 
 
 def dereference_jsonpointers(value):  # , global_dict):
+    """
+    Analyse the given dict
+    """
     graph = pointer_graph(value)
 
     pointers_memo = {}
@@ -424,7 +445,7 @@ def dereference_jsonpointers(value):  # , global_dict):
             # dessia_common.displays.draw_networkx_graph(graph)
             for cycle in cycles:
                 print(cycle)
-            raise NotImplementedError('Cycles in ref not handled')
+            raise NotImplementedError('Cycles in jsonpointers not handled')
 
         order = list(explore_tree_from_leaves(graph))
         if '#' in order:
@@ -453,17 +474,15 @@ def dereference_jsonpointers(value):  # , global_dict):
 
 
 def pointer_graph_elements(value, path='#'):
-    # edges = []
-    # nodes = []
-
+    
     if isinstance(value, dict):
         return pointer_graph_elements_dict(value, path)
     if dcty.isinstance_base_types(value):
         return [], []
     elif dcty.is_sequence(value):
         return pointer_graph_elements_sequence(value, path)
-    else:
-        raise ValueError(value)
+    
+    raise ValueError(value)
 
 
 def pointer_graph_elements_sequence(seq, path='#'):
