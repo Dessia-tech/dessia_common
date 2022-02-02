@@ -11,7 +11,7 @@ class ExceptionWithTraceback(Exception):
         self.traceback = traceback_
 
     def __str__(self):
-        return f'{self.message}\nTraceback:\n{self.traceback}'
+        return f'{self.args[0]}\nTraceback:\n{self.traceback}'
 
 
 class DeepAttributeError(ExceptionWithTraceback, AttributeError):

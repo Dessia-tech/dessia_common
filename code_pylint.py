@@ -3,7 +3,7 @@ from pylint.lint import Run
 MIN_NOTE = 8.4
 
 MAX_ERROR_BY_TYPE = {
-                     'consider-using-f-string': 36,
+                     'consider-using-f-string': 35,
                      'no-else-return': 23,
                      'arguments-differ': 22,
                      'no-member': 17,
@@ -12,7 +12,7 @@ MAX_ERROR_BY_TYPE = {
                      'too-many-branches': 12,
                      'unused-import': 10,
                      'unused-argument': 10,
-                     'cyclic-import': 10,
+                     'cyclic-import': 11,
                      'no-self-use': 7,
                      'unused-variable': 7,
                      'too-many-arguments': 10,

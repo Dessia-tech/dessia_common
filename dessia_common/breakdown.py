@@ -19,7 +19,7 @@ def get_in_object_from_path(object_, path):
             element = object_[segments[0]]
         except KeyError:
             print(object_, segments[0])
-            msg = f'Cannot get in dict path {path}: end up @ {segments[0]}. Dict keys: {object.keys()}'
+            msg = f'Cannot get in dict path {path}: end up @ {segments[0]}. Dict keys: {object_.keys()}'
             raise RuntimeError(msg)
     else:
         element = getattr(object_, segments[0])
