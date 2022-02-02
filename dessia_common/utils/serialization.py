@@ -73,6 +73,8 @@ def serialize_with_pointers(value, memo=None, path='#'):
         serialized, memo = serialize_dict_with_pointers(value, memo, path)
     elif dcty.is_sequence(value):
         serialized, memo = serialize_sequence_with_pointers(value, memo, path)
+    elif isinstance(value, (dessia_common.files.BinaryFile, dessia_common.files.StringFile)):
+        serialized = value
     else:
         if not dcty.is_jsonable(value):
             msg = f'Element of value {value} is not json serializable'
