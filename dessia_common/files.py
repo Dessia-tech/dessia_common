@@ -7,8 +7,9 @@ import io
 import openpyxl
 
 class BinaryFile(io.BytesIO):
-    extension = ''
     """Class for handling binary files with name"""
+
+    extension = ''
 
     def __init__(self, filename: str = ''):
         super().__init__()
@@ -37,11 +38,11 @@ class BinaryFile(io.BytesIO):
 
 
 class StringFile(io.StringIO):
-    extension = ''
     """
     class for handling text files with name
     default encoding : utf-8
     """
+    extension = ''
 
     def __init__(self, filename: str = ''):
         super().__init__()
