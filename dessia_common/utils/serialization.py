@@ -50,6 +50,8 @@ def serialize(value):
         serialized_value = serialize_dict(value)
     elif dcty.is_sequence(value):
         serialized_value = serialize_sequence(value)
+    elif isinstance(value, (dessia_common.files.BinaryFile, dessia_common.files.StringFile)):
+        serialized_value = value
     else:
         if not dcty.is_jsonable(value):
             msg = f'Element of value {value} is not json serializable'
