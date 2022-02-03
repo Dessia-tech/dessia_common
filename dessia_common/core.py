@@ -440,7 +440,7 @@ class DessiaObject:
             if not filepath.endswith('.json'):
                 filepath += '.json'
                 print(f'Changing name to {filepath}')
-            file = open(filepath, 'w')
+            file = open(filepath, 'w', encoding='utf-8')
         else:
             file = filepath
 
@@ -461,7 +461,7 @@ class DessiaObject:
         :param filepath: either a string reprensenting the filepath or a stream
         """
         if isinstance(filepath, str):
-            with open(filepath, 'r') as file:
+            with open(filepath, 'r', encoding='utf-8') as file:
                 dict_ = json.load(file)
         else:
             dict_ = json.loads(filepath.read().decode('utf-8'))
@@ -676,10 +676,10 @@ class DisplayObject(DessiaObject):
 
 class Parameter(DessiaObject):
     def __init__(self, lower_bound, upper_bound, periodicity=None, name=''):
-        DessiaObject.__init__(self, name=name,
-                              lower_bound=lower_bound,
-                              upper_bound=upper_bound,
-                              periodicity=periodicity)
+        DessiaObject.__init__(self, name=name)
+        self.lower_bound = lower_bound
+        self.upper_bound = upper_bound
+        self.periodicity = periodicity
 
     def random_value(self):
         """
@@ -978,7 +978,8 @@ def concatenate_attributes(prefix, suffix, type_: str = 'str'):
         elif is_sequence(prefix):
             return sequence_to_deepattr(prefix) + '/' + str(suffix)
         raise TypeError(wrong_prefix_format.format(type(prefix)))
-    elif type_ == 'sequence':
+    
+    if type_ == 'sequence':
         if isinstance(prefix, str):
             return [prefix, suffix]
         elif is_sequence(prefix):
@@ -986,10 +987,9 @@ def concatenate_attributes(prefix, suffix, type_: str = 'str'):
 
         raise TypeError(wrong_prefix_format.format(type(prefix)))
 
-    else:
-        wrong_concat_type = 'Type {} for concatenation is not supported.'
-        wrong_concat_type += 'Should be "str" or "sequence"'
-        raise ValueError(wrong_concat_type.format(type_))
+    wrong_concat_type = 'Type {} for concatenation is not supported.'
+    wrong_concat_type += 'Should be "str" or "sequence"'
+    raise ValueError(wrong_concat_type.format(type_))
 
 
 def deepattr_to_sequence(deepattr: str):

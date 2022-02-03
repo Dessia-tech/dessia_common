@@ -1,16 +1,17 @@
 from pylint.lint import Run
 
-MIN_NOTE = 8.4
+MIN_NOTE = 8.85
 
 MAX_ERROR_BY_TYPE = {
+                     'invalid-name': 27,
                      'consider-using-f-string': 35,
                      'no-else-return': 23,
                      'arguments-differ': 22,
-                     'no-member': 17,
+                     'no-member': 1,
                      'too-many-locals': 15,
                      'wrong-import-order': 12,
                      'too-many-branches': 12,
-                     'unused-import': 10,
+                     'unused-import': 9,
                      'unused-argument': 10,
                      'cyclic-import': 11,
                      'no-self-use': 7,
@@ -29,7 +30,6 @@ MAX_ERROR_BY_TYPE = {
                      'simplifiable-if-expression': 3,
                      'redefined-builtin': 3,
                      'broad-except': 3,
-                     'unspecified-encoding': 2,
                      'consider-using-get': 2,
                      'undefined-loop-variable': 2,
                      'consider-using-with': 2,
@@ -55,6 +55,8 @@ MAX_ERROR_BY_TYPE = {
                      'unexpected-special-method-signature': 0,
                      'too-many-lines': 0,
                      'bare-except': 0,
+                     'unspecified-encoding': 0,
+                     'no-else-raise': 0
                      }
 
 import os
