@@ -4,7 +4,7 @@ MIN_NOTE = 9.0
 
 MAX_ERROR_BY_TYPE = {
                      'invalid-name': 27,
-                     'consider-using-f-string': 36,
+                     'consider-using-f-string': 35,
                      'no-else-return': 23,
                      'arguments-differ': 22,
                      'no-member': 1,
@@ -13,7 +13,7 @@ MAX_ERROR_BY_TYPE = {
                      'too-many-branches': 12,
                      'unused-import': 9,
                      'unused-argument': 10,
-                     'cyclic-import': 10,
+                     'cyclic-import': 11,
                      'no-self-use': 7,
                      'unused-variable': 7,
                      'too-many-arguments': 10,
