@@ -26,11 +26,12 @@ class BinaryFile(io.BytesIO):
         template = cls()
         return template
 
-    def save_template_to_file(self, filename):
-        if self.extension and not filename.endswith(self.extension):
-            filename = f'{filename}.{self.extension}'
+    @classmethod
+    def save_template_to_file(cls, filename):
+        if cls.extension and not filename.endswith(cls.extension):
+            filename = f'{filename}.{cls.extension}'
         with open(filename, 'wb') as file:
-            stream = self.stream_template()
+            stream = cls.stream_template()
             stream.seek(0)
             file.write(stream.getvalue())
 
@@ -61,11 +62,12 @@ class StringFile(io.StringIO):
         template.seek(0)
         return template
 
-    def save_template_to_file(self, filename):        
-        if self.extension and not filename.endswith(self.extension):
-            filename = f'{filename}.{self.extension}'
+    @classmethod
+    def save_template_to_file(cls, filename):        
+        if cls.extension and not filename.endswith(cls.extension):
+            filename = f'{filename}.{cls.extension}'
         with open(filename, 'w') as file:
-            stream = self.stream_template()
+            stream = cls.stream_template()
             stream.seek(0)
             file.write(stream.getvalue())
 
