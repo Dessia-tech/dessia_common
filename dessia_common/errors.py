@@ -6,6 +6,9 @@
 
 
 class ExceptionWithTraceback(Exception):
+    """
+    Base class with a message and a traceback
+    """
     def __init__(self, message, traceback_=''):
         super().__init__(message)
         self.traceback = traceback_
