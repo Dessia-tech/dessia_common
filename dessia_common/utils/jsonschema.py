@@ -3,6 +3,7 @@
 """
 JsonSchema generation functions
 """
+import io
 from copy import deepcopy
 import inspect
 import warnings
@@ -242,7 +243,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element, order, editable=N
             order=order, editable=editable, title=title
         )
         jsonschema_element[key]['units'] = typing_.units
-    elif typing_ in [TextIO, BinaryIO, BinaryFile, StringFile]:
+    elif typing_ in [TextIO, BinaryIO] or isinstance(io.StringIO, io.BytesIO):
         jsonschema_element[key].update({'type': 'text', 'is_file': True})
     elif typing_ is Any:
         jsonschema_element[key].update({
