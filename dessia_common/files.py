@@ -66,7 +66,7 @@ class StringFile(io.StringIO):
     def save_template_to_file(cls, filename):        
         if cls.extension and not filename.endswith(cls.extension):
             filename = f'{filename}.{cls.extension}'
-        with open(filename, 'w') as file:
+        with open(filename, 'w', encoding='utf-8') as file:
             stream = cls.stream_template()
             stream.seek(0)
             file.write(stream.getvalue())
@@ -81,11 +81,11 @@ class XLSXFile(BinaryFile):
     @classmethod
     def stream_template(cls):
         template = cls()
-        wb = openpyxl.Workbook()
-        ws = wb.active
-        ws.title='Template of XLSX'
-        ws.cell(1, 1).value = 'Subclass this class to define your own template'
-        wb.save(template)
+        workbook = openpyxl.Workbook()
+        sheet = workbook.active
+        sheet.title='Template of XLSX'
+        sheet.cell(1, 1).value = 'Subclass this class to define your own template'
+        workbook.save(template)
         template.seek(0)
         return template
 
