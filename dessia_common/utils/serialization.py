@@ -98,7 +98,17 @@ def serialize_dict_with_pointers(dict_, memo, path):
     seq_attrs_keys = []
     other_keys = []
     # Detecting type of keys
+    
+    serialized_keys = {}
     for key, value in dict_.items():
+        # only way to serialize a key is to find it a the memo
+        if key in memo:
+            serialized_keys[key] = f'$ref:{memo[key]}'
+        else:
+            if not dcty.isinstance_base_types(key):
+                raise NotImplementedError(f'Unhandled type as key dict: {key}')
+            serialized_keys[key] = key
+        
         value_path = f'{path}/{key}'
         if isinstance(value, dict):
             dict_attrs_keys.append(key)
@@ -108,16 +118,16 @@ def serialize_dict_with_pointers(dict_, memo, path):
             other_keys.append(key)
 
     for key in other_keys:
-        value_path = f'{path}/{key}'
-        serialized_dict[key], memo = serialize_with_pointers(dict_[key], memo=memo, path=value_path)
+        value_path = f'{path}/{serialized_keys[key]}'
+        serialized_dict[serialized_keys[key]], memo = serialize_with_pointers(dict_[key], memo=memo, path=value_path)
     # Handle seq & dicts afterwards
     for key in seq_attrs_keys:
-        value_path = f'{path}/{key}'
-        serialized_dict[key], memo = serialize_sequence_with_pointers(dict_[key], memo=memo, path=value_path)
+        value_path = f'{path}/{serialized_keys[key]}'
+        serialized_dict[serialized_keys[key]], memo = serialize_sequence_with_pointers(dict_[key], memo=memo, path=value_path)
 
     for key in dict_attrs_keys:
-        value_path = f'{path}/{key}'
-        serialized_dict[key], memo = serialize_dict_with_pointers(dict_[key], memo=memo, path=value_path)
+        value_path = f'{path}/{serialized_keys[key]}'
+        serialized_dict[serialized_keys[key]], memo = serialize_dict_with_pointers(dict_[key], memo=memo, path=value_path)
     return serialized_dict, memo
 
 
@@ -400,6 +410,11 @@ def find_references_dict(dict_, path='#'):
 
     references = []
     for key, value in dict_.items():
+        # Looking if key is a ref itself:
+            if '$ref:' in key:
+                key_pointer = key.replace('$ref:', '')
+                references.append((path, key))
+        
         if not dcty.isinstance_base_types(value):
             path_value = f'{path}/{key}'
             references.extend(find_references(value, path=path_value))

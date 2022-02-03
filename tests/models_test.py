@@ -19,6 +19,9 @@ assert simulation_list_copy == simulation_list
 
 simulation_list.jsonschema()
 
+d = system1.to_dict()
+
+
 system1._check_platform()
 system1.jsonschema()
 system1.save_to_file('system1')

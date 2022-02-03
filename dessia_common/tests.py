@@ -4,9 +4,19 @@
 
 """
 
-from typing import List
+from typing import List, Dict
 from dessia_common import DessiaObject
 import dessia_common.typings as dct
+
+
+class Position2D(DessiaObject):
+
+    def __init__(self, x:float, y:float, name: str = ''):
+        self.x = x
+        self.y = y
+
+        DessiaObject.__init__(self, name=name)
+
 
 
 class Submodel(DessiaObject):
@@ -14,7 +24,6 @@ class Submodel(DessiaObject):
 
     def __init__(self, subvalue: int, name: str = ''):
         self.subvalue = subvalue
-        self.name = name
 
         DessiaObject.__init__(self, name=name)
 
@@ -84,9 +93,14 @@ class System(DessiaObject):
 
     def __init__(self, components: List[Component],
                  component_connections: List[ComponentConnection],
+                 # components_positions: Dict[Component, Position2D],# Handle when permited by jsonschema
                  name: str = ''):
         self.components = components
         self.component_connections = component_connections
+        self.components_positions = {}
+        for component in self.components:
+            self.components_positions[component] = Position2D(0., 0.)
+            
         DessiaObject.__init__(self, name=name)
 
     def output_power(self, input_power: dct.Power):
