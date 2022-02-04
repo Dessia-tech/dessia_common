@@ -3,7 +3,6 @@
 """
 JsonSchema generation functions
 """
-import io
 from copy import deepcopy
 import inspect
 import warnings
