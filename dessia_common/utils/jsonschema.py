@@ -11,7 +11,6 @@ import collections
 from typing import get_origin, get_args, Union, get_type_hints, TextIO, BinaryIO
 import dessia_common as dc
 import dessia_common.utils.types as dc_types
-from dessia_common.files import BinaryFile, StringFile
 from dessia_common.typings import Measure, Subclass, MethodType, ClassMethodType, Any
 from dessia_common.utils.docstrings import FAILED_ATTRIBUTE_PARSING
 
