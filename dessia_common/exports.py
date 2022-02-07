@@ -194,20 +194,16 @@ class XLSXWriter:
             self.autosize_sheet_columns(sheet, 5, 30)
 
     def save_to_file(self, filepath):
-        # TODO: split in two functions?
-        if isinstance(filepath, str):
-            real_filepath = filepath
-            if not filepath.endswith('.xlsx'):
-                real_filepath += '.xlsx'
-        else:
-            real_filepath = tempfile.NamedTemporaryFile().name
+        if not filepath.endswith('.xlsx'):
+            filepath += '.xlsx'
+            
+        with open(filepath, 'rb') as file:
+            self.save_to_stream(file)
+        
 
-        self.workbook.save(real_filepath)
+    def save_to_stream(self, stream):
+        self.workbook.save(stream)
 
-        if not isinstance(filepath, str):
-            with open(real_filepath, 'rb') as file:
-                filepath.seek(0)
-                filepath.write(file.read())
 
     def autosize_sheet_columns(self, sheet, min_width=5, max_width=30):
         # Autosize columns

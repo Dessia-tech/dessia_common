@@ -434,14 +434,11 @@ def pointer_graph(value):
 
     return graph
 
-
-def dereference_jsonpointers(value):  # , global_dict):
+def deserialization_order(dict_):
     """
-    Analyse the given dict
+    Analyse a dict representing an object and give a deserialization order
     """
-    graph = pointer_graph(value)
-
-    pointers_memo = {}
+    graph = pointer_graph(dict_)
     if '#' in graph.nodes:
         cycles = list(nx.simple_cycles(graph))
         if cycles:
@@ -454,26 +451,26 @@ def dereference_jsonpointers(value):  # , global_dict):
         order = list(explore_tree_from_leaves(graph))
         if '#' in order:
             order.remove('#')
+        return order
+    return []
+            
+    
 
-        # for ref in order:
-        #     print('ref', ref)
+def dereference_jsonpointers(dict_):  # , global_dict):
+    """
+    Analyse the given dict
+    """
 
-        for ref in order:
-            serialized_element = get_in_object_from_path(value, ref)
-            # print(serialized_element)
-            # try:
-            pointers_memo[ref] = deserialize(serialized_element=serialized_element,
-                                             global_dict=value,
-                                             pointers_memo=pointers_memo,
-                                             path=ref)
-            # except:
-            #     print(ref)
-            #     # print('\n', serialized_element)
-            #     # print('\n\n', pointers_memo)
-            #     return serialized_element, pointers_memo
-            #     raise RuntimeError('jjj')
-            # print('\nref', ref, pointers_memo[ref])
-    # print(pointers_memo.keys())
+
+    order = deserialization_order(dict_)
+    
+    pointers_memo = {}
+    for ref in order:
+        serialized_element = get_in_object_from_path(dict_, ref)
+        pointers_memo[ref] = deserialize(serialized_element=serialized_element,
+                                         global_dict=dict_,
+                                         pointers_memo=pointers_memo,
+                                         path=ref)
     return pointers_memo
 
 

@@ -430,41 +430,40 @@ class DessiaObject:
                 arguments[arg] = deserialized_value
         return arguments
 
-    def save_to_file(self, filepath, indent=2):
+    def save_to_file(self, filepath:str, indent:int=2):
+        if not filepath.endswith('.json'):
+            filepath += '.json'
+            print(f'Changing name to {filepath}')
+        with open(filepath, 'w', encoding='utf-8') as file:
+            self.save_to_stream(file)
+        
+    def save_to_stream(self, stream, indent:int=2):
         """
         Save to a JSON file the object
         :param filepath: either a string reprensenting the filepath or a stream
         """
-        # Maybe split in several functions for stream and file
-        if isinstance(filepath, str):
-            if not filepath.endswith('.json'):
-                filepath += '.json'
-                print(f'Changing name to {filepath}')
-            file = open(filepath, 'w')
-        else:
-            file = filepath
-
         try:
             dict_ = self.to_dict(use_pointers=True)
         except TypeError:
             dict_ = self.to_dict()
 
-        json.dump(dict_, file, indent=indent)
-
-        if isinstance(filepath, str):
-            file.close()
+        json.dump(dict_, stream, indent=indent)
+        
 
     @classmethod
-    def load_from_file(cls, filepath):
+    def load_from_stream(cls, stream):
+        dict_ = json.loads(stream.read().decode('utf-8'))
+        return cls.dict_to_object(dict_)
+
+    @classmethod
+    def load_from_file(cls, filepath:str):
         """
         Load object from a json file
         :param filepath: either a string reprensenting the filepath or a stream
         """
-        if isinstance(filepath, str):
-            with open(filepath, 'r') as file:
-                dict_ = json.load(file)
-        else:
-            dict_ = json.loads(filepath.read().decode('utf-8'))
+        with open(filepath, 'r', encoding='utf-8') as file:
+            dict_ = json.load(file)
+
         return cls.dict_to_object(dict_)
 
     def is_valid(self):
@@ -627,28 +626,44 @@ class DessiaObject:
         json.dumps(self._displays())
         json.dumps(self._method_jsonschemas)
 
-    def to_xlsx(self, filepath):
+    def to_xlsx(self, filepath:str):
+        with open(filepath, 'wb') as file:
+            self.to_xlsx_stream(file)
+            
+    def to_xlsx_stream(self, stream):
         writer = XLSXWriter(self)
-        writer.save_to_file(filepath)
+        writer.save_to_stream(stream)
 
-    def to_step(self, filepath):
+    def to_step(self, filepath:str):
         """
-        filepath can be a str or an io.StringIO
+        filepath is a str representing a filepath
         """
         return self.volmdlr_volume_model().to_step(filepath=filepath)
 
+    def to_step_stream(self, stream):
+        """
+        """
+        return self.volmdlr_volume_model().to_step_stream(stream=stream)
+
+
+    def to_stl_stream(self, stream):
+        """
+        """
+        return self.volmdlr_volume_model().to_stl_stream(stream=stream)
+
+
     def to_stl(self, filepath):
         """
-        filepath can be a str or an io.StringIO
+        filepath is a str representing a filepath
         """
         return self.volmdlr_volume_model().to_stl(filepath=filepath)
 
     def _export_formats(self):
-        formats = [('json', 'save_to_file', True),
-                   ('xlsx', 'to_xlsx', False)]
+        formats = [('json', 'save_to_stream', True),
+                   ('xlsx', 'to_xlsx_stream', False)]
         if hasattr(self, 'volmdlr_primitives'):
-            formats.append(('step', 'to_step', True))
-            formats.append(('stl', 'to_stl', False))
+            formats.append(('step', 'to_step_stream', True))
+            formats.append(('stl', 'to_stl_stream', False))
         return formats
 
 
