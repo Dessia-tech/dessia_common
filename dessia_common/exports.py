@@ -8,29 +8,35 @@ import tempfile
 import warnings
 
 from openpyxl.styles.borders import Border, Side
-from openpyxl.styles import Alignment, PatternFill, Font
+from openpyxl.styles import PatternFill, Font
 from openpyxl import Workbook
 import openpyxl.utils
 from dessia_common.breakdown import breakdown
 from dessia_common.files import XLSXFile
 
 
-def is_hashable(v):
-    """Determine whether `v` can be hashed."""
+def is_hashable(value):
+    """Determine whether `value` can be hashed."""
     try:
-        hash(v)
+        hash(value)
     except TypeError:
         return False
     return True
 
 
-def is_number(v):
-    return isinstance(v, int) or isinstance(v, float)
+def is_number(value):
+    """
+    Determine if the value is a int or a float
+    """
+    return isinstance(value, int) or isinstance(value, float)
 
 
-def is_builtins_list(l):
-    for e in l:
-        if not (is_number(e) or isinstance(e, str)):
+def is_builtins_list(list_):
+    """
+    Determin if a list is only composed of builtins
+    """
+    for element in list_:
+        if not (is_number(element) or isinstance(element, str)):
             return False
     return True
 
@@ -107,27 +113,27 @@ class XLSXWriter:
             cell = sheet.cell(row=row_number, column=2, value='No name in model')
         cell.border = self.thin_border
         i = 3
-        for (k, v) in sorted(obj.__dict__.items()):
+        for (k, value) in sorted(obj.__dict__.items()):
             if (not k.startswith('_')) and k != 'name':
                 cell_link = None
-                if isinstance(v, dict):
-                    str_v = f'Dict of {len(v)} items'
-                elif isinstance(v, list):
-                    if is_builtins_list(v):
-                        str_v = str(v)
+                if isinstance(value, dict):
+                    str_v = f'Dict of {len(value)} items'
+                elif isinstance(value, list):
+                    if is_builtins_list(value):
+                        str_v = str(value)
                     else:
-                        str_v = f'List of {len(v)} items'
+                        str_v = f'List of {len(value)} items'
 
-                elif isinstance(v, set):
-                    str_v = f'Set of {len(v)} items'
-                elif isinstance(v, float):
-                    str_v = round(v, 6)
-                elif is_hashable(v) and v in self.object_to_sheet_row:
-                    ref_sheet, ref_row_number, ref_path = self.object_to_sheet_row[v]
+                elif isinstance(value, set):
+                    str_v = f'Set of {len(value)} items'
+                elif isinstance(value, float):
+                    str_v = round(value, 6)
+                elif is_hashable(value) and value in self.object_to_sheet_row:
+                    ref_sheet, ref_row_number, ref_path = self.object_to_sheet_row[value]
                     str_v = ref_path
                     cell_link = f'#{ref_sheet.title}!A{ref_row_number}'
                 else:
-                    str_v = str(v)
+                    str_v = str(value)
 
                 cell = sheet.cell(row=row_number, column=i, value=str_v)
                 if cell_link:

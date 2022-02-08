@@ -12,6 +12,10 @@ from dessia_common.utils.types import isinstance_base_types, is_sequence, full_c
 
 
 def diff(value1, value2, path='#'):
+    """
+    Main function to get the diff of two objects
+    :return: a tuple of a list of diff between the objects, missing keys in other object and invalid types
+    """
     diff_values = []
     missing_keys_in_other_object = []
     invalid_types = []
