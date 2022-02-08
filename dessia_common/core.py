@@ -59,7 +59,6 @@ def deprecation_warning(name, object_type, use_instead=None):
     warnings.warn(msg, DeprecationWarning)
     return msg
 
-
 class DessiaObject:
     """
     Base class for Dessia's platform compatible objects.
@@ -247,7 +246,8 @@ class DessiaObject:
                                  global_dict=global_dict,
                                  pointers_memo=pointers_memo)
             return obj
-        elif 'object_class' in dict_:
+        
+        if 'object_class' in dict_:
             obj = dict_to_object(dict_=dict_, force_generic=force_generic,
                                  global_dict=global_dict,
                                  pointers_memo=pointers_memo)
@@ -435,7 +435,7 @@ class DessiaObject:
             filepath += '.json'
             print(f'Changing name to {filepath}')
         with open(filepath, 'w', encoding='utf-8') as file:
-            self.save_to_stream(file)
+            self.save_to_stream(file, indent=indent)
         
     def save_to_stream(self, stream, indent:int=2):
         """
