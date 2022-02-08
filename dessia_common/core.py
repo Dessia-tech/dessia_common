@@ -568,6 +568,10 @@ class DessiaObject:
                                                                    debug=debug)
 
     def _displays(self, **kwargs) -> List[JsonSerializable]:
+        """
+        Generate displays of the object to be plot in the DessiA Platform
+        """
+        
         if hasattr(self, '_display_angular'):
             # Retro-compatibility
             deprecation_warning(name='_display_angular', object_type='method',
@@ -608,6 +612,7 @@ class DessiaObject:
     def _check_platform(self):
         """
         Reproduce lifecycle on platform (serialization, display)
+        raise an error if something is wrong
         """
         try:
             dict_ = self.to_dict(use_pointers=True)
@@ -616,9 +621,13 @@ class DessiaObject:
         json_dict = json.dumps(dict_)
         decoded_json = json.loads(json_dict)
         deserialized_object = self.dict_to_object(decoded_json)
-        assert deserialized_object._data_eq(self)
+        if not deserialized_object._data_eq(self):
+            raise dessia_common.errors.DeserializationError('Object is not equal to itself'
+                                                            ' after serialization/deserialization')
         copied_object = self.copy()
-        assert copied_object._data_eq(self)
+        if not copied_object._data_eq(self):
+            raise dessia_common.errors.CopyError('Object is not equal to itself'
+                                                 ' after copy')
 
         valid, hint = is_bson_valid(stringify_dict_keys(dict_))
         if not valid:
@@ -627,34 +636,44 @@ class DessiaObject:
         json.dumps(self._method_jsonschemas)
 
     def to_xlsx(self, filepath:str):
+        """
+        Exports the object to an XLSX file given by the filepath
+        """
         with open(filepath, 'wb') as file:
             self.to_xlsx_stream(file)
             
     def to_xlsx_stream(self, stream):
+        """
+        Exports the object to an XLSX to a given stream
+        """
         writer = XLSXWriter(self)
         writer.save_to_stream(stream)
 
     def to_step(self, filepath:str):
         """
-        filepath is a str representing a filepath
+        Exports the CAD of the object to step. Works if the class define a custom volmdlr model
+        :param filepath: a str representing a filepath
         """
         return self.volmdlr_volume_model().to_step(filepath=filepath)
 
     def to_step_stream(self, stream):
         """
+        Exports the CAD of the object to a stream in the STEP format. Works if the class define a custom volmdlr model
         """
         return self.volmdlr_volume_model().to_step_stream(stream=stream)
 
 
     def to_stl_stream(self, stream):
         """
+        Exports the CAD of the object to STL to a given stream
         """
         return self.volmdlr_volume_model().to_stl_stream(stream=stream)
 
 
     def to_stl(self, filepath):
         """
-        filepath is a str representing a filepath
+        Exports the CAD of the object to STL. Works if the class define a custom volmdlr model
+        :param filepath: a str representing a filepath
         """
         return self.volmdlr_volume_model().to_stl(filepath=filepath)
 
