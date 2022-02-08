@@ -79,7 +79,10 @@ class XLSXWriter:
 
         self.write()
 
-    def write_class_header_to_row(self, obj_of_class, sheet, row_number):#, path=''):
+    def write_class_header_to_row(self, obj_of_class, sheet, row_number):
+        """
+        Writes to a sheet the class header: finds columns names from a class
+        """
         cell = sheet.cell(row=row_number, column=1, value='Path')
         cell.fill = self.pattern_color2
         cell.border = self.thin_border
@@ -101,6 +104,9 @@ class XLSXWriter:
                 i += 1
 
     def write_value_to_cell(self, value, sheet, row_number, column_number):
+        """
+        Write a given value to a cell. Insert it as a link if it is an object
+        """
         cell_link = None
         if isinstance(value, dict):
             str_v = f'Dict of {len(value)} items'
@@ -129,6 +135,9 @@ class XLSXWriter:
         
 
     def write_object_to_row(self, obj, sheet, row_number, path=''):
+        '''
+        Write on object to a row. Loops on its attributes to write its value in each cell
+        '''
         cell = sheet.cell(row=row_number, column=1, value=path)
         cell.border = self.thin_border
         if hasattr(obj, 'name'):
@@ -185,6 +194,9 @@ class XLSXWriter:
         sheet['A4'].border = self.thin_border
 
     def write(self):
+        '''
+        Generate the whole file
+        '''
         # name_column_width = 0
         self.write_object_id(self.main_sheet)
         self.write_class_header_to_row(self.object, self.main_sheet, 3)
@@ -212,10 +224,16 @@ class XLSXWriter:
         
 
     def save_to_stream(self, stream):
+        """
+        Saves the file to a binary stream
+        """
         self.workbook.save(stream)
 
 
     def autosize_sheet_columns(self, sheet, min_width=5, max_width=30):
+        '''
+        Autosize the sheet columns by analyzing the content. Min and max width must be specified
+        '''
         # Autosize columns
         for col in sheet.columns:
             width = min_width
