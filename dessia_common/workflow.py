@@ -998,7 +998,9 @@ class Export(Block):
         return [res]
 
     def _export_format(self, block_index: int):
-        return "", "", None
+        block_format = {"format": "", "method_name": "export",
+                        "text": None, "args": {"block_index": block_index}}
+        return block_format
 
 
 class ExportJson(Export):
@@ -1009,6 +1011,11 @@ class ExportJson(Export):
         if not export_name:
             self.export_name += "_json"
 
+    def _export_format(self, block_index: int):
+        block_format = {"format": "json", "method_name": "export",
+                        "text": True, "args": {"block_index": block_index}}
+        return block_format
+
 
 class ExportExcel(Export):
     def __init__(self, model_class: Type, export_name: str = "", name: str = ""):
@@ -1018,6 +1025,10 @@ class ExportExcel(Export):
         if not export_name:
             self.export_name += "_xlsx"
 
+    def _export_format(self, block_index: int):
+        block_format = {"format": "xlsx", "method_name": "export",
+                        "text": False, "args": {"block_index": block_index}}
+        return block_format
 
 class Archive(Block):
     def __init__(self, number_exports: int = 1, name=""):
@@ -1043,7 +1054,9 @@ class Archive(Block):
         return [archive]
 
     def _export_format(self, block_index: int):
-        return 'zip', 'export_archive', False
+        block_format = {"format": "zip", "method_name": "export",
+                        "text": False, "args": {"block_index": block_index}}
+        return block_format
 
 
 class Pipe(DessiaObject):
@@ -2305,22 +2318,25 @@ class WorkflowState(DessiaObject):
 
     def _export_formats(self):
         export_formats = []
-        for i, block in enumerate(self.workflow.export_blocks):
+        for i, block in enumerate(self.workflow.blocks):
             if hasattr(block, "_export_format"):
                 export_formats.append(block._export_format(i))
         return export_formats
 
-    def export_archive(self):
+    def export(self, block_index: int):
         if self.progress >= 1:
-            archive_blocks = [isinstance(b, Archive) for b in self.workflow.export_blocks]
-            if not any(archive_blocks):
-                raise ValueError("Workflow has no Archive export block")
-            elif sum(archive_blocks) > 1:
-                raise ValueError("Workflow can only have one Archive export block")
+            block = self.workflow.blocks[block_index]
+            # archive_blocks = [isinstance(b, Archive) for b in self.workflow.export_blocks]
+            # if not any(archive_blocks):
+            #     raise ValueError("Workflow has no Archive export block")
+            # elif sum(archive_blocks) > 1:
+            #     raise ValueError("Workflow can only have one Archive export block")
 
+            # TODO We should track different Export branches and run the only one concerned
+            # Should we use evaluate_block ?
             self.continue_run(export=True)
-            block_index = archive_blocks.index(True)
-            block = self.workflow.export_blocks[block_index]
+            # block_index = archive_blocks.index(True)
+            # block = self.workflow.export_blocks[block_index]
             output = block.outputs[0]
             return self.values[output]
         else:
