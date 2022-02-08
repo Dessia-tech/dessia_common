@@ -998,7 +998,7 @@ class Export(Block):
         return [res]
 
     def _export_format(self, block_index: int):
-        block_format = {"format": "", "method_name": "export",
+        block_format = {"extension": "", "method_name": "export",
                         "text": None, "args": {"block_index": block_index}}
         return block_format
 
@@ -1012,7 +1012,7 @@ class ExportJson(Export):
             self.export_name += "_json"
 
     def _export_format(self, block_index: int):
-        block_format = {"format": "json", "method_name": "export",
+        block_format = {"extension": "json", "method_name": "export",
                         "text": True, "args": {"block_index": block_index}}
         return block_format
 
@@ -1026,9 +1026,10 @@ class ExportExcel(Export):
             self.export_name += "_xlsx"
 
     def _export_format(self, block_index: int):
-        block_format = {"format": "xlsx", "method_name": "export",
+        block_format = {"extension": "xlsx", "method_name": "export",
                         "text": False, "args": {"block_index": block_index}}
         return block_format
+
 
 class Archive(Block):
     def __init__(self, number_exports: int = 1, name=""):
