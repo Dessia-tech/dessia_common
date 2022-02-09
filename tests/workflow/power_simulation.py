@@ -48,3 +48,12 @@ manual_run._displays()
 manual_run.to_dict(use_pointers=False)
 
 manual_run.jsonschema()
+
+# Testing that there is no pointer when use_pointers=False
+import json
+d = workflow_run.to_dict(use_pointers=False)
+s = json.dumps(d)
+if '$ref' in s:
+    ind_ref = s.index('$ref')
+    print(s[ind_ref-300:ind_ref+500])
+    raise ValueError('Pointer detected with use_pointers=False')

@@ -10,6 +10,7 @@ import collections
 from typing import get_origin, get_args, Union, get_type_hints, TextIO, BinaryIO
 import dessia_common as dc
 import dessia_common.utils.types as dc_types
+from dessia_common.files import BinaryFile, StringFile
 from dessia_common.typings import Measure, Subclass, MethodType, ClassMethodType, Any
 from dessia_common.utils.docstrings import FAILED_ATTRIBUTE_PARSING
 
@@ -241,7 +242,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element, order, editable=N
             order=order, editable=editable, title=title
         )
         jsonschema_element[key]['units'] = typing_.units
-    elif typing_ is TextIO or typing_ is BinaryIO:
+    elif typing_ in [TextIO, BinaryIO] or isinstance(typing_, (BinaryFile, StringFile)):
         jsonschema_element[key].update({'type': 'text', 'is_file': True})
     elif typing_ is Any:
         jsonschema_element[key].update({

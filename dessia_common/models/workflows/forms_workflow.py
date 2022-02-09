@@ -2,7 +2,7 @@ from dessia_common.workflow import InstantiateModel, ModelMethod,\
     TypedVariable, TypedVariableWithDefaultValue, ModelAttribute,\
     Pipe, Workflow, WorkflowBlock, ForEach, MultiPlot
 from dessia_common.forms import Generator, Optimizer
-from dessia_common import MethodType
+from dessia_common.typings import MethodType
 
 instanciate_generator = InstantiateModel(model_class=Generator,
                                          name='Instantiate Generator')
