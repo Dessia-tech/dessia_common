@@ -1011,6 +1011,18 @@ class ExportJson(Export):
         if not export_name:
             self.export_name += "_json"
 
+    def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
+        dict_ = Block.to_dict(self)
+        dict_['model_class'] = full_classname(object_=self.method_type.class_,
+                                              compute_for='class')
+        return dict_
+
+    @classmethod
+    @set_block_variable_names_from_dict
+    def dict_to_object(cls, dict_):
+        class_ = get_python_class_from_class_name(dict_['model_class'])
+        return cls(class_, name=dict_['name'])
+
     def _export_format(self, block_index: int):
         block_format = {"extension": "json", "method_name": "export",
                         "text": True, "args": {"block_index": block_index}}
@@ -1025,6 +1037,18 @@ class ExportExcel(Export):
         if not export_name:
             self.export_name += "_xlsx"
 
+    def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
+        dict_ = Block.to_dict(self)
+        dict_['model_class'] = full_classname(object_=self.method_type.class_,
+                                              compute_for='class')
+        return dict_
+
+    @classmethod
+    @set_block_variable_names_from_dict
+    def dict_to_object(cls, dict_):
+        class_ = get_python_class_from_class_name(dict_['model_class'])
+        return cls(class_, name=dict_['name'])
+
     def _export_format(self, block_index: int):
         block_format = {"extension": "xlsx", "method_name": "export",
                         "text": False, "args": {"block_index": block_index}}
@@ -1036,6 +1060,16 @@ class Archive(Block):
         inputs = [Variable(name="export_" + str(i)) for i in range(number_exports)]
         outputs = [Variable(name="zip archive")]
         Block.__init__(self, inputs=inputs, outputs=outputs, name=name)
+
+    def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#'):
+        dict_ = Block.to_dict(self)
+        dict_['number_exports'] = len(self.inputs)
+        return dict_
+
+    @classmethod
+    @set_block_variable_names_from_dict
+    def dict_to_object(cls, dict_):
+        return cls(number_exports=dict_["number_exports"], name=dict_['name'])
 
     def evaluate(self, values):
         archive = io.BytesIO()
@@ -1449,7 +1483,7 @@ class Workflow(Block):
 
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable) -> 'Workflow':
-        blocks = [Block.dict_to_object(d) for d in dict_['blocks']]
+        blocks = [DessiaObject.dict_to_object(d) for d in dict_['blocks']]
         if 'nonblock_variables' in dict_:
             nonblock_variables = [dict_to_object(d)
                                   for d in dict_['nonblock_variables']]
