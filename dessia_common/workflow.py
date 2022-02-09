@@ -1005,6 +1005,7 @@ class Export(Block):
 
 class ExportJson(Export):
     def __init__(self, model_class: Type, export_name: str = "", name: str = ""):
+        self.model_class = model_class
         method_type = MethodType(class_=model_class, name="to_json_stream")
 
         Export.__init__(self, method_type=method_type, export_name=export_name, name=name)
@@ -1031,6 +1032,7 @@ class ExportJson(Export):
 
 class ExportExcel(Export):
     def __init__(self, model_class: Type, export_name: str = "", name: str = ""):
+        self.model_class = model_class
         method_type = MethodType(class_=model_class, name="to_xlsx_stream")
 
         Export.__init__(self, method_type=method_type, export_name=export_name, name=name)
@@ -1057,6 +1059,7 @@ class ExportExcel(Export):
 
 class Archive(Block):
     def __init__(self, number_exports: int = 1, name=""):
+        self.number_exports = number_exports
         inputs = [Variable(name="export_" + str(i)) for i in range(number_exports)]
         outputs = [Variable(name="zip archive")]
         Block.__init__(self, inputs=inputs, outputs=outputs, name=name)
@@ -1089,7 +1092,7 @@ class Archive(Block):
         return [archive]
 
     def _export_format(self, block_index: int):
-        block_format = {"format": "zip", "method_name": "export",
+        block_format = {"extension": "zip", "method_name": "export",
                         "text": False, "args": {"block_index": block_index}}
         return block_format
 
@@ -2347,7 +2350,7 @@ class WorkflowState(DessiaObject):
             return WorkflowRun(workflow=self.workflow,
                                input_values=self.input_values,
                                output_value=self.output_value,
-                               # variables_values=self.variables_values,
+                               variables_values=self.values,
                                start_time=self.start_time, end_time=time.time(),
                                log=self.log, name=name)
         else:
