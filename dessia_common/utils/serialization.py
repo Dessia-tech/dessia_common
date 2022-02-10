@@ -3,7 +3,6 @@
 """
 Created on Tue Nov 16 12:25:54 2021
 
-@author: steven
 """
 
 import warnings

@@ -205,6 +205,10 @@ class DessiaObject:
         return dict_
 
     def _serializable_dict(self):
+        """
+        Returns a dict of attribute_name, values (still python, not serialized)
+        Keys are filtered with non serializable attributes controls
+        """
 
         dict_ = {k: v for k, v in self.__dict__.items()
                  if k not in self._non_serializable_attributes
