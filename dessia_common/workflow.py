@@ -17,6 +17,7 @@ from typing import List, Union, Type, Any, Dict, Tuple, Optional, get_type_hints
 from copy import deepcopy
 from dessia_common.templates import workflow_template
 import itertools
+from ast import literal_eval
 
 from dessia_common import DessiaObject, DisplayObject, DessiaFilter,  is_sequence,\
     list_hash, is_bounded, type_from_annotation,enhanced_deep_attr, deprecation_warning,\
@@ -40,6 +41,7 @@ import warnings
 VariableTypes = Union['Variable', 'TypedVariable',
                       'VariableWithDefaultValue',
                       'TypedVariableWithDefaultValue']
+
 
 class Variable(DessiaObject):
     _standalone_in_db = False
@@ -808,35 +810,26 @@ class MultiPlot(Display):
         objects = local_values[display_input]
         # pareto_settings = local_values[self.inputs[1]]
 
-        values = [{a: enhanced_deep_attr(o, a) for a in self.attributes}
-                  for o in objects]
+        values = [{a: enhanced_deep_attr(o, a) for a in self.attributes} for o in objects]
 
         first_vars = self.attributes[:2]
-        values2d = [{key: val[key]} for key in first_vars for val in
-                    values]
+        values2d = [{key: val[key]} for key in first_vars for val in values]
 
         tooltip = plot_data.Tooltip(name='Tooltip', attributes=self.attributes)
 
-        scatterplot = plot_data.Scatter(tooltip=tooltip,
-                                        x_variable=first_vars[0],
-                                        y_variable=first_vars[1],
-                                        elements=values2d,
+        scatterplot = plot_data.Scatter(tooltip=tooltip, x_variable=first_vars[0],
+                                        y_variable=first_vars[1], elements=values2d,
                                         name='Scatter Plot')
 
         rgbs = [[192, 11, 11], [14, 192, 11], [11, 11, 192]]
-        parallelplot = plot_data.ParallelPlot(
-            disposition='horizontal', axes=self.attributes,
-            rgbs=rgbs, elements=values
-        )
+        parallelplot = plot_data.ParallelPlot(disposition='horizontal', axes=self.attributes,
+                                              rgbs=rgbs, elements=values)
         objects = [scatterplot, parallelplot]
-        sizes = [plot_data.Window(width=560, height=300),
-                 plot_data.Window(width=560, height=300)]
+        sizes = [plot_data.Window(width=560, height=300), plot_data.Window(width=560, height=300)]
         coords = [(0, 0), (0, 300)]
-        multiplot = plot_data.MultiplePlots(elements=values, plots=objects,
-                                            sizes=sizes, coords=coords,
-                                            name='Results plot')
-        display_ = DisplayObject(type_='plot_data', data=multiplot,
-                                 reference_path=reference_path)
+        multiplot = plot_data.MultiplePlots(elements=values, plots=objects, sizes=sizes,
+                                            coords=coords, name='Results plot')
+        display_ = DisplayObject(type_='plot_data', data=multiplot, reference_path=reference_path)
         return [display_.to_dict()]
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
@@ -1571,8 +1564,7 @@ class Workflow(Block):
         msg = 'Method {} not in Workflow allowed methods'
         raise NotImplementedError(msg.format(method))
 
-    def method_dict(self, method_name: str = None,
-                    method_jsonschema: Any = None):
+    def method_dict(self, method_name: str = None, method_jsonschema: Any = None):
         return {}
 
     def variable_from_index(self, index: Union[int, Tuple[int, int, int]]):
@@ -1832,8 +1824,7 @@ class Workflow(Block):
 
         values = {}
         # variables_values = {}
-        return WorkflowState(self, input_values, activated_items,
-                             values, start_time=time.time())
+        return WorkflowState(self, input_values, activated_items, values, start_time=time.time())
 
     def mxgraph_data(self):
         nodes = []
@@ -2046,8 +2037,7 @@ class WorkflowState(DessiaObject):
     _non_serializable_attributes = ['activated_items']
 
     def __init__(self, workflow: Workflow, input_values, activated_items,
-                 values, start_time, output_value=None,
-                 log: str = '', name: str = ''):
+                 values, start_time, output_value=None, log: str = '', name: str = ''):
         """
         A workflow State reprensents the state of execution of a workflow.
         """
@@ -2063,6 +2053,19 @@ class WorkflowState(DessiaObject):
         self.activated_items = activated_items
 
         DessiaObject.__init__(self, name=name)
+
+    def __deepcopy__(self, memo=None):
+        if memo is None:
+            memo = {}
+
+        copied_workflow = self.workflow.copy(deep=True, memo=memo)
+        copied_input_values = deepcopy_value(value=self.input_values, memo=memo)
+        copied_wfs = copied_workflow.start_run(copied_input_values)
+        if self.progress > 0:
+            copied_wfs.continue_run()
+        copied_wfs.start_time = self.start_time
+        copied_wfs.log = self.log
+        return copied_wfs
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#'):
         # if not use_pointers:
@@ -2087,24 +2090,20 @@ class WorkflowState(DessiaObject):
 
         if use_pointers:
             values = {}
-            for i, v in self.values.items():
-                values[self.workflow.variable_index(i)] = serialize_with_pointers(v, memo, path='#/values/{}'.format(i))
+            for variable, value in self.values.items():
+                values[self.workflow.variable_index(variable)] = serialize_with_pointers(
+                    value=value, memo=memo, path='#/values/{}'.format(variable)
+                )
         else:
-            values = {self.workflow.variable_index(i): serialize(v)
-                      for i, v in self.values.items()}
+            values = {self.workflow.variable_index(i): serialize(v)for i, v in self.values.items()}
 
         dict_ = self.base_dict()
-        dict_.update({'workflow': workflow,
-                      'input_values': input_values,
-                      'values': values})
-
-        dict_['evaluated_blocks_indices'] = [i for i, b
-                                             in enumerate(self.workflow.blocks)
+        dict_.update({'workflow': workflow, 'input_values': input_values, 'values': values})
+        dict_['evaluated_blocks_indices'] = [i for i, b in enumerate(self.workflow.blocks)
                                              if b in self.activated_items
                                              and self.activated_items[b]]
 
-        dict_['evaluated_pipes_indices'] = [i for i, p
-                                            in enumerate(self.workflow.pipes)
+        dict_['evaluated_pipes_indices'] = [i for i, p in enumerate(self.workflow.pipes)
                                             if p in self.activated_items
                                             and self.activated_items[p]]
         dict_['evaluated_variables_indices'] = [
@@ -2113,8 +2112,7 @@ class WorkflowState(DessiaObject):
         ]
         if self.output_value is not None:
             if use_pointers:
-                serialized_output_value, _ = serialize_with_pointers(self.output_value,
-                                                                     memo=memo,
+                serialized_output_value, _ = serialize_with_pointers(self.output_value, memo=memo,
                                                                      path='#/output_value')
             else:
                 serialized_output_value = serialize(self.output_value)
@@ -2138,28 +2136,21 @@ class WorkflowState(DessiaObject):
         else:
             output_value = None
 
-        values = {workflow.variables[int(i)]: deserialize(v)
-                  for i, v in dict_['values'].items()}
-        input_values = {int(i): deserialize(v)
-                        for i, v in dict_['input_values'].items()}
+        values = {workflow.variables[int(i)]: deserialize(v) for i, v in dict_['values'].items()}
+
+        input_values = {int(i): deserialize(v) for i, v in dict_['input_values'].items()}
         # variables_values = {k: deserialize(v)
         #                     for k, v in dict_['variables_values'].items()}
 
-        activated_items = {
-            b: (True if i in dict_['evaluated_blocks_indices'] else False)
-            for i, b in enumerate(workflow.blocks)
-        }
+        activated_items = {b: (True if i in dict_['evaluated_blocks_indices'] else False)
+                           for i, b in enumerate(workflow.blocks)}
 
-        activated_items.update({
-            p: (True if i in dict_['evaluated_pipes_indices'] else False)
-            for i, p in enumerate(workflow.pipes)
-        })
+        activated_items.update({p: (True if i in dict_['evaluated_pipes_indices'] else False)
+                                for i, p in enumerate(workflow.pipes)})
 
         var_indices = dict_['evaluated_variables_indices']
-        activated_items.update({
-            v: (True if workflow.variable_indices(v) in var_indices else False)
-            for v in workflow.variables
-        })
+        activated_items.update({v: (True if workflow.variable_indices(v) in var_indices else False)
+                                for v in workflow.variables})
 
         return cls(workflow=workflow, input_values=input_values,
                    activated_items=activated_items, values=values,
@@ -2167,18 +2158,16 @@ class WorkflowState(DessiaObject):
                    start_time=dict_['start_time'], output_value=output_value,
                    log=dict_['log'], name=dict_['name'])
 
-    def add_input_value(self, input_index: int, value: Any):
+    def add_input_value(self, input_index: int, value):
         # TODO: Type checking?
         self.input_values[input_index] = value
         self.activate_inputs()
 
-    def add_several_input_values(self, indices: List[int],
-                                 values: Dict[str, Any]):
+    def add_several_input_values(self, indices: List[int], values):
         for i in indices:
             self.add_input_value(input_index=i, value=values[str(i)])
 
-    def add_block_input_values(self, block_index: int,
-                               values: Dict[str, Any]):
+    def add_block_input_values(self, block_index: int, values):
         indices = self.block_inputs_global_indices(block_index)
         self.add_several_input_values(indices=indices, values=values)
 
@@ -2275,6 +2264,9 @@ class WorkflowState(DessiaObject):
                             and self._block_activable_by_inputs(b)]
         return activable_blocks
 
+    def _get_activated_items(self):
+        return {k.name: v for k, v in self.activated_items.items()}
+
     def _block_activable_by_inputs(self, block: Block):
         for function_input in block.inputs:
             if not self.activated_items[function_input]:
@@ -2295,8 +2287,7 @@ class WorkflowState(DessiaObject):
             if verbose:
                 print(log_line)
 
-        output_values = block.evaluate({i: self.values[i]
-                                        for i in block.inputs})
+        output_values = block.evaluate({i: self.values[i] for i in block.inputs})
         # for input_ in block.inputs:
         #     if input_.memorize:
         #         indices = str(self.workflow.variable_indices(input_))  # Str is strange
@@ -2353,10 +2344,13 @@ class WorkflowState(DessiaObject):
 
     def to_workflow_run(self, name=''):
         if self.progress == 1:
+            variable_values = {self.workflow.variable_indices(v): self.values[v]
+                               for v in self.workflow.variables
+                               if v.memorize and v in self.values}
             return WorkflowRun(workflow=self.workflow,
                                input_values=self.input_values,
                                output_value=self.output_value,
-                               variables_values=self.values,
+                               variables_values=variable_values,
                                start_time=self.start_time, end_time=time.time(),
                                log=self.log, name=name)
         else:
@@ -2558,8 +2552,7 @@ class WorkflowRun(DessiaObject):
         msg = 'Method {} not in WorkflowRun allowed methods'
         raise NotImplementedError(msg.format(method))
 
-    def method_dict(self, method_name: str = None,
-                    method_jsonschema: Any = None):
+    def method_dict(self, method_name: str = None, method_jsonschema: Any = None):
         if method_name is not None and method_name == 'run_again' \
                 and method_jsonschema is not None:
             dict_ = serialize_dict(self.input_values)

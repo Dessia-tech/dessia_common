@@ -16,16 +16,14 @@ import collections
 from importlib import import_module
 
 
-TYPING_EQUIVALENCES = {int: 'number', float: 'number',
-                       bool: 'boolean', str: 'string'}
+TYPING_EQUIVALENCES = {int: 'number', float: 'number', bool: 'boolean', str: 'string'}
 
 TYPES_STRINGS = {int: 'int', float: 'float', bool: 'boolean', str: 'str',
                  list: 'list', tuple: 'tuple', dict: 'dict'}
 
 SEQUENCE_TYPINGS = ['List', 'Sequence', 'Iterable']
 
-TYPES_FROM_STRING = {'unicode': str, 'str': str, 'float': float,
-                     'int': int, 'bool': bool}
+TYPES_FROM_STRING = {'unicode': str, 'str': str, 'float': float, 'int': int, 'bool': bool}
 
 
 def full_classname(object_, compute_for: str = 'instance'):
