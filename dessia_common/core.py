@@ -363,8 +363,7 @@ class DessiaObject:
             method = getattr(class_, method_name)
 
             if not isinstance(method, property):
-                required_args, default_args = inspect_arguments(method=method,
-                                                                merge=False)
+                required_args, default_args = inspect_arguments(method=method, merge=False)
                 annotations = get_type_hints(method)
                 if annotations:
                     jsonschemas[method_name] = deepcopy(JSONSCHEMA_HEADER)
@@ -375,21 +374,18 @@ class DessiaObject:
                         argname = annotation[0]
                         if argname not in _FORBIDDEN_ARGNAMES:
                             if argname in required_args:
-                                jsonschemas[method_name]['required'].append(
-                                    str(i))
+                                jsonschemas[method_name]['required'].append(str(i))
                             jsonschema_element = \
-                                jsonschema_from_annotation(annotation, {}, i)[
-                                    argname]
+                                jsonschema_from_annotation(annotation, {}, i)[argname]
 
-                            jsonschemas[method_name]['properties'][
-                                str(i)] = jsonschema_element
+                            jsonschemas[method_name]['properties'][str(i)] = jsonschema_element
                             if argname in default_args.keys():
                                 default = set_default_value(
                                     jsonschemas[method_name]['properties'],
                                     str(i),
-                                    default_args[argname])
-                                jsonschemas[method_name]['properties'].update(
-                                    default)
+                                    default_args[argname]
+                                )
+                                jsonschemas[method_name]['properties'].update(default)
         return jsonschemas
 
     def method_dict(self, method_name=None, method_jsonschema=None):

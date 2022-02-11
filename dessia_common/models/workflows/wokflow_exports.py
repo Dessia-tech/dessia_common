@@ -74,6 +74,6 @@ pipes = [pipe_int_1, pipe_1, pipe_2, pipe_3, pipe_4, pipe_5, pipe_6, pipe_export
 workflow_export = Workflow(blocks=blocks, pipes=pipes, output=parallel_optimization.outputs[0],
                            name="Workflow Test Export")
 
-workflow_export_state = workflow_export.start_run({0: 2, 4: 3})
+workflow_export_state = workflow_export.start_run({})
 workflow_export_state.name = "WorkflowState Test Export"
 

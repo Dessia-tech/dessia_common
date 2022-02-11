@@ -2032,7 +2032,7 @@ class WorkflowBlock(Block):
 
 class WorkflowState(DessiaObject):
     _standalone_in_db = True
-    _allowed_methods = ['block_evaluation', 'evaluate_next_block',
+    _allowed_methods = ['block_evaluation', 'evaluate_next_block', 'continue_run',
                         'evaluate_maximum_blocks', 'add_block_input_values']
     _non_serializable_attributes = ['activated_items']
 
@@ -2061,8 +2061,16 @@ class WorkflowState(DessiaObject):
         copied_workflow = self.workflow.copy(deep=True, memo=memo)
         copied_input_values = deepcopy_value(value=self.input_values, memo=memo)
         copied_wfs = copied_workflow.start_run(copied_input_values)
-        if self.progress > 0:
+        print("Self progress", self.progress, "Copy progress", copied_wfs.progress)
+        if self.progress == 1:
             copied_wfs.continue_run()
+        elif self.progress > 0:
+            i = 0
+            while copied_wfs.progress < self.progress and i <= len(self.workflow.blocks):
+                print("Self progress", self.progress, "Copy progress", copied_wfs.progress)
+                copied_wfs.evaluate_next_block()
+                i += 1
+        print("Self progress", self.progress, "Copy progress", copied_wfs.progress)
         copied_wfs.start_time = self.start_time
         copied_wfs.log = self.log
         return copied_wfs
@@ -2167,7 +2175,7 @@ class WorkflowState(DessiaObject):
         for i in indices:
             self.add_input_value(input_index=i, value=values[str(i)])
 
-    def add_block_input_values(self, block_index: int, values):
+    def add_block_input_values(self, block_index: int, values: Dict[str, Any]):
         indices = self.block_inputs_global_indices(block_index)
         self.add_several_input_values(indices=indices, values=values)
 
@@ -2265,7 +2273,8 @@ class WorkflowState(DessiaObject):
         return activable_blocks
 
     def _get_activated_items(self):
-        return {k.name: v for k, v in self.activated_items.items()}
+        active_items = {k.name: v for k, v in self.activated_items.items()}
+        return active_items
 
     def _block_activable_by_inputs(self, block: Block):
         for function_input in block.inputs:
