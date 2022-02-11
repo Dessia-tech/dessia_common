@@ -61,6 +61,16 @@ class Variable(DessiaObject):
         dict_.update({'has_default_value': self.has_default_value})
         return dict_
 
+    # def equivalent_hash(self):
+    #     return int(self.memorize) + len(self.name)
+    #
+    # def equivalent(self, other: 'Variable'):
+    #     if self.__class__.__name__ == other.__class__.__name__:
+    #         return False
+    #     same_memorize = self.memorize == other.memorize
+    #     same_name = self.name == other.name
+    #     return same_name and same_memorize
+
 
 class TypedVariable(Variable):
     has_default_value: bool = False
@@ -90,6 +100,14 @@ class TypedVariable(Variable):
         return TypedVariable(type_=self.type_, memorize=self.memorize,
                              name=self.name)
 
+    # def equivalent_hash(self):
+    #     return int(self.memorize)*3 + len(self.name)*5 + len(self.type_.__name__)*7
+    #
+    # def equivalent(self, other: 'TypedVariable'):
+    #     if not Variable.equivalent(self, other):
+    #         return False
+    #     return self.type_ == other.type_
+
 
 class VariableWithDefaultValue(Variable):
     has_default_value: bool = True
@@ -101,6 +119,14 @@ class VariableWithDefaultValue(Variable):
         """
         Variable.__init__(self, memorize=memorize, name=name)
         self.default_value = default_value
+
+    # def equivalent_hash(self):
+    #     return int(self.memorize)*3 + len(self.name)*11 + hash(self.default_value)
+    #
+    # def equivalent(self, other: 'VariableWithDefaultValue'):
+    #     if not Variable.equivalent(self, other):
+    #         return False
+    #     return self.default_value == other.default_value
 
 
 class TypedVariableWithDefaultValue(TypedVariable):
@@ -144,6 +170,18 @@ class TypedVariableWithDefaultValue(TypedVariable):
                                              default_value=copied_default_value,
                                              memorize=self.memorize,
                                              name=self.name)
+
+    # def equivalent_hash(self):
+    #     hash_memorize = int(self.memorize)*9
+    #     hash_name = len(self.name)*5
+    #     hash_default_value = hash(self.default_value)
+    #     hash_type = len(self.type_.__name__)*3
+    #     return hash_memorize + hash_name + hash_default_value + hash_type
+    #
+    # def equivalent(self, other: 'TypedVariableWithDefaultValue'):
+    #     if not TypedVariable.equivalent(self, other):
+    #         return False
+    #     return self.default_value == other.default_value
 
 
 def set_block_variable_names_from_dict(func):
@@ -303,8 +341,7 @@ class InstantiateModel(Block):
 
         inputs = set_inputs_from_function(self.model_class.__init__, inputs)
 
-        outputs = [TypedVariable(type_=self.model_class,
-                                 name='Instanciated object')]
+        outputs = [TypedVariable(type_=self.model_class, name='Instanciated object')]
         Block.__init__(self, inputs, outputs, name=name)
 
     def equivalent_hash(self):
@@ -2061,19 +2098,52 @@ class WorkflowState(DessiaObject):
         copied_workflow = self.workflow.copy(deep=True, memo=memo)
         copied_input_values = deepcopy_value(value=self.input_values, memo=memo)
         copied_wfs = copied_workflow.start_run(copied_input_values)
-        print("Self progress", self.progress, "Copy progress", copied_wfs.progress)
         if self.progress == 1:
             copied_wfs.continue_run()
         elif self.progress > 0:
             i = 0
             while copied_wfs.progress < self.progress and i <= len(self.workflow.blocks):
-                print("Self progress", self.progress, "Copy progress", copied_wfs.progress)
                 copied_wfs.evaluate_next_block()
                 i += 1
-        print("Self progress", self.progress, "Copy progress", copied_wfs.progress)
         copied_wfs.start_time = self.start_time
         copied_wfs.log = self.log
         return copied_wfs
+
+    def __hash__(self):
+        workflow_hash = hash(self.workflow)
+        output_hash = hash(self.output_value)
+        input_values_hash = sum([i*hash(v) for i, v in self.input_values])
+        values_hash = sum([len(k.name)*hash(v) for k, v in self.values])
+        return workflow_hash + output_hash + input_values_hash + values_hash
+
+    def __eq__(self, other: 'WorkflowState'):
+        if self.__class__.__name__ != other.__class__.__name__:
+            return False
+
+        if self.workflow != other.workflow:
+            return False
+
+        for index, value in self.input_values.items():
+            other_value = other.input_values[index]
+            if value != other_value:
+                return False
+
+        if self.output_value != other.output_value:
+            return False
+
+        for block, other_block in zip(self.workflow.blocks, other.workflow.blocks):
+            variables = block.inputs + block.outputs
+            other_variables = other_block.inputs + other_block.outputs
+            for variable, other_variable in zip(variables, other_variables):
+                variables_evaluated = [variable in self.values,
+                                       other_variable in other.values]
+                if all(variables_evaluated):
+                    if self.values[variable] != other.values[other_variable]:
+                        return False
+                elif any(variables_evaluated):
+                    return False
+
+        return True
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#'):
         # if not use_pointers:
@@ -2275,6 +2345,12 @@ class WorkflowState(DessiaObject):
     def _get_activated_items(self):
         active_items = {k.name: v for k, v in self.activated_items.items()}
         return active_items
+
+    def shared_vars(self):
+        """
+        dev function to check variables match with workflow
+        """
+        [print(i in self.workflow.variables) for i in self.values.keys()]
 
     def _block_activable_by_inputs(self, block: Block):
         for function_input in block.inputs:
