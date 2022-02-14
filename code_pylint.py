@@ -7,7 +7,10 @@ from pylint.lint import Run
 
 MIN_NOTE = 8.85
 
-UNWATCHED_ERRORS = ['fixme', 'trailing-whitespace']
+UNWATCHED_ERRORS = ['fixme',
+                    'trailing-whitespace',
+                    'import-error'
+                    ]
 
 MAX_ERROR_BY_TYPE = {
                      'protected-access': 27,
