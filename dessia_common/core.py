@@ -463,7 +463,6 @@ class DessiaObject:
         for arg in class_argspec.args:
             if arg != 'self':
                 value = self.__dict__[arg]
-
                 if hasattr(value, '__copy__'):
                     dict_[arg] = value.__copy__()
                 else:
@@ -908,29 +907,25 @@ def stringify_dict_keys(obj):
     return new_obj
 
 
+def choose_hash(object_):
+    if is_sequence(object_):
+        return list_hash(object_)
+    elif isinstance(object_, dict):
+        return dict_hash(object_)
+    elif isinstance(object_, str):
+        return sum([ord(e) for e in object_])
+    else:
+        return hash(object_)
+
+
 def list_hash(list_):
-    hash_ = 0
-    for element in list_:
-        if is_sequence(element):
-            hash_ += list_hash(element)
-        elif isinstance(element, dict):
-            hash_ += dict_hash(element)
-        elif isinstance(element, str):
-            hash_ += sum([ord(e) for e in element])
-        else:
-            hash_ += hash(element)
-    return hash_
+    return sum([choose_hash(e) for e in list_])
 
 
 def dict_hash(dict_):
     hash_ = 0
     for key, value in dict_.items():
-        if is_sequence(value):
-            hash_ += list_hash(value)
-        elif isinstance(value, dict):
-            hash_ += dict_hash(value)
-        else:
-            hash_ += hash(key) + hash(value)
+        hash_ += hash(key) + choose_hash(value)
     return hash_
 
 
