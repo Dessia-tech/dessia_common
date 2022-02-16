@@ -552,10 +552,11 @@ class Generator(DessiaObject):
     """
     _standalone_in_db = True
 
-    def __init__(self, parameter: int, nb_solutions: int = 25, name: str = ''):
+    def __init__(self, parameter: int, nb_solutions: int = 25,
+                 models: List[StandaloneObject] = None, name: str = ''):
         self.parameter = parameter
         self.nb_solutions = nb_solutions
-        self.models = None
+        self.models = models
 
         DessiaObject.__init__(self, name=name)
 
