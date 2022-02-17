@@ -238,6 +238,10 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
                                           pointers_memo=pointers_memo,
                                           path=key_path)  # , enforce_pointers=False)
 
+    # recreate if not in dict
+    if 'name' not in subobjects:
+        subobjects['name'] = ''
+        
     if class_ is not None:
         obj = class_(**subobjects)
     else:

@@ -135,11 +135,7 @@ for error_type, number_errors in stats_by_msg.items():
         elif number_errors < max_errors:
             print('You can lower number of {} to {} (actual {})'.format(
                 error_type, number_errors, max_errors))
-    
-                # uncontrolled_errors[error_type] = number_errors
 
-# if uncontrolled_errors:
-#     print('Uncontrolled errors', uncontrolled_errors)
 
 if error_detected:
     raise RuntimeError('Too many errors\nRun pylint dessia_common to get the errors')

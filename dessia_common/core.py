@@ -190,20 +190,22 @@ class DessiaObject:
         """
         A base dict for to_dict: put name, object class and version in a dict
         """
-        package_name = self.__module__.split('.')[0]
-        if package_name in sys.modules:
-            package = sys.modules[package_name]
-            if hasattr(package, '__version__'):
-                package_version = package.__version__
-            else:
-                package_version = None
+        
+        if self.name:
+            dict_ = {'name': self.name}
         else:
-            package_version = None
-
-        object_class = self.__module__ + '.' + self.__class__.__name__
-        dict_ = {'name': self.name, 'object_class': object_class}
-        if package_version:
-            dict_['package_version'] = package_version
+            dict_ = {}
+        
+        if self._standalone_in_db:
+            package_name = self.__module__.split('.')[0]
+            if package_name in sys.modules:
+                package = sys.modules[package_name]
+                if hasattr(package, '__version__'):
+                    dict_['package_version'] = package.__version__
+    
+            object_class = f'{self.__module__ }.{self.__class__.__name__}'
+            dict_['object_class'] = object_class
+                
         return dict_
 
     def _serializable_dict(self):
@@ -215,6 +217,9 @@ class DessiaObject:
         dict_ = {k: v for k, v in self.__dict__.items()
                  if k not in self._non_serializable_attributes
                  and not k.startswith('_')}
+
+        if not self.name:
+            del dict_['name']
         return dict_
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#') -> JsonSerializable:
@@ -242,10 +247,6 @@ class DessiaObject:
         """
         Generic dict_to_object method
         """
-        # if hasattr(cls, 'DictToObject'):
-        #     deprecation_warning(name='DictToObject', object_type='Function',
-        #                         use_instead='dict_to_object')
-        #     return cls.DictToObject(dict_)
 
         if cls is not DessiaObject:
             obj = dict_to_object(dict_=dict_, class_=cls,
