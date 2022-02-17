@@ -191,10 +191,11 @@ class DessiaObject:
         A base dict for to_dict: put name, object class and version in a dict
         """
         
+        dict_ = {'object_class': f'{self.__module__ }.{self.__class__.__name__}'}
+
         if self.name:
-            dict_ = {'name': self.name}
-        else:
-            dict_ = {}
+            dict_['name'] = self.name
+        
         
         if self._standalone_in_db:
             package_name = self.__module__.split('.')[0]
@@ -202,9 +203,6 @@ class DessiaObject:
                 package = sys.modules[package_name]
                 if hasattr(package, '__version__'):
                     dict_['package_version'] = package.__version__
-    
-            object_class = f'{self.__module__ }.{self.__class__.__name__}'
-            dict_['object_class'] = object_class
                 
         return dict_
 
