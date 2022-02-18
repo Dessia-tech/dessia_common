@@ -3,31 +3,29 @@
 """
 
 """
-import io
 import sys
 import warnings
 import math
 import random
-# import copy
 from functools import reduce
 import collections
 from copy import deepcopy
 import inspect
 import json
 
-from typing import List, Dict, Union, Any, get_type_hints
+from typing import List, Dict, Union, Any, Tuple, get_type_hints
 import traceback as tb
 
 from importlib import import_module
 
 import dessia_common.errors
-from dessia_common.utils.diff import data_eq, diff
+from dessia_common.utils.diff import data_eq, diff, dict_hash, list_hash
 from dessia_common.utils.serialization import dict_to_object, serialize_dict_with_pointers,\
-                                                serialize_dict, deserialize_argument
+    serialize_dict, deserialize_argument
 from dessia_common.utils.types import full_classname, is_sequence, is_bson_valid, TYPES_FROM_STRING
 from dessia_common.utils.copy import deepcopy_value
 from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotation,\
-                                           JSONSCHEMA_HEADER, set_default_value
+    JSONSCHEMA_HEADER, set_default_value
 from dessia_common.utils.docstrings import parse_docstring, FAILED_DOCSTRING_PARSING
 from dessia_common.exports import XLSXWriter
 from dessia_common.files import JsonFile, XLSXFile
@@ -249,7 +247,7 @@ class DessiaObject:
                                  global_dict=global_dict,
                                  pointers_memo=pointers_memo)
             return obj
-        elif 'object_class' in dict_:
+        if 'object_class' in dict_:
             obj = dict_to_object(dict_=dict_, force_generic=force_generic,
                                  global_dict=global_dict,
                                  pointers_memo=pointers_memo)
@@ -632,7 +630,7 @@ class DessiaObject:
         if not filepath.endswith('.json'):
             filepath += '.json'
             print(f'Changing name to {filepath}')
-        with open(filepath, "w") as file:
+        with open(filepath, "w", encoding="utf-8") as file:
             file.write(json_stream.getvalue())
         return filepath
 
@@ -648,8 +646,7 @@ class DessiaObject:
         """
         filepath can be a str or an io.StringIO
         """
-        a = self.volmdlr_volume_model().to_step(filepath=filepath)
-        print("To step : ", a)
+        self.volmdlr_volume_model().to_step(filepath=filepath)
         return self.volmdlr_volume_model().to_step(filepath=filepath)
 
     def to_stl(self, filepath: str):
@@ -911,28 +908,6 @@ def stringify_dict_keys(obj):
     return new_obj
 
 
-def choose_hash(object_):
-    if is_sequence(object_):
-        return list_hash(object_)
-    elif isinstance(object_, dict):
-        return dict_hash(object_)
-    elif isinstance(object_, str):
-        return sum([ord(e) for e in object_])
-    else:
-        return hash(object_)
-
-
-def list_hash(list_):
-    return sum([choose_hash(e) for e in list_])
-
-
-def dict_hash(dict_):
-    hash_ = 0
-    for key, value in dict_.items():
-        hash_ += hash(key) + choose_hash(value)
-    return hash_
-
-
 def getdeepattr(obj, attr):
     return reduce(getattr, [obj] + attr.split('.'))
 
@@ -995,16 +970,15 @@ def concatenate_attributes(prefix, suffix, type_: str = 'str'):
     if type_ == 'str':
         if isinstance(prefix, str):
             return prefix + '/' + str(suffix)
-        elif is_sequence(prefix):
+        if is_sequence(prefix):
             return sequence_to_deepattr(prefix) + '/' + str(suffix)
         raise TypeError(wrong_prefix_format.format(type(prefix)))
-    
+
     if type_ == 'sequence':
         if isinstance(prefix, str):
             return [prefix, suffix]
-        elif is_sequence(prefix):
+        if is_sequence(prefix):
             return prefix + [suffix]
-
         raise TypeError(wrong_prefix_format.format(type(prefix)))
 
     wrong_concat_type = 'Type {} for concatenation is not supported.'
@@ -1078,21 +1052,15 @@ def prettyname(namestr):
 
 def inspect_arguments(method, merge=False):
     # Find default value and required arguments of class construction
-    args_specs = inspect.getfullargspec(method)
-    nargs = len(args_specs.args) - 1
-
-    if args_specs.defaults is not None:
-        ndefault_args = len(args_specs.defaults)
-    else:
-        ndefault_args = 0
+    argspecs = inspect.getfullargspec(method)
+    nargs, ndefault_args = split_argspecs(argspecs)
 
     default_arguments = {}
     arguments = []
-    for iargument, argument in enumerate(args_specs.args[1:]):
+    for iargument, argument in enumerate(argspecs.args[1:]):
         if argument not in _FORBIDDEN_ARGNAMES:
             if iargument >= nargs - ndefault_args:
-                default_value = args_specs.defaults[ndefault_args - nargs
-                                                    + iargument]
+                default_value = argspecs.defaults[ndefault_args - nargs + iargument]
                 if merge:
                     arguments.append((argument, default_value))
                 else:
@@ -1100,3 +1068,13 @@ def inspect_arguments(method, merge=False):
             else:
                 arguments.append(argument)
     return arguments, default_arguments
+
+
+def split_argspecs(argspecs) -> Tuple[int, int]:
+    nargs = len(argspecs.args) - 1
+
+    if argspecs.defaults is not None:
+        ndefault_args = len(argspecs.defaults)
+    else:
+        ndefault_args = 0
+    return nargs, ndefault_args

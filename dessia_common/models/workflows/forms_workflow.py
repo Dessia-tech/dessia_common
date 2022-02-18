@@ -54,18 +54,18 @@ pipe_name_1 = Pipe(input_variable=name_variable,
                    output_variable=instanciate_generator.inputs[3])
 pipe_name_2 = Pipe(input_variable=name_variable,
                    output_variable=parallel_optimization.inputs[1])
-pipe_1 = Pipe(input_variable=instanciate_generator.outputs[0],
-              output_variable=generator_generate.inputs[0])
-pipe_2 = Pipe(input_variable=generator_generate.outputs[1],
-              output_variable=attribute_selection.inputs[0])
-pipe_3 = Pipe(input_variable=attribute_selection.outputs[0],
-              output_variable=parallel_optimization.inputs[0])
-pipe_4 = Pipe(input_variable=parallel_optimization.outputs[0],
-              output_variable=display.inputs[0])
+pipe_gene = Pipe(input_variable=instanciate_generator.outputs[0],
+                      output_variable=generator_generate.inputs[0])
+pipe_attr = Pipe(input_variable=generator_generate.outputs[1],
+                 output_variable=attribute_selection.inputs[0])
+pipe_opti = Pipe(input_variable=attribute_selection.outputs[0],
+                 output_variable=parallel_optimization.inputs[0])
+pipe_disp = Pipe(input_variable=parallel_optimization.outputs[0],
+                 output_variable=display.inputs[0])
 
 blocks = [instanciate_generator, generator_generate,
           attribute_selection, parallel_optimization, display]
-pipes = [pipe_int_1, pipe_name_1, pipe_name_2, pipe_1, pipe_2, pipe_3, pipe_4]
+pipes = [pipe_int_1, pipe_name_1, pipe_name_2, pipe_gene, pipe_attr, pipe_opti, pipe_disp]
 workflow_ = Workflow(blocks=blocks, pipes=pipes,
                      output=parallel_optimization.outputs[0], name="Workflow with NBVs")
 workflow_state = workflow_.start_run({})

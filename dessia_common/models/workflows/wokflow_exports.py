@@ -1,3 +1,7 @@
+"""
+Script for workflow with exports creationZ
+"""
+
 from dessia_common.workflow import InstantiateModel, ModelMethod, TypedVariable,\
     ModelAttribute, Pipe, Workflow, WorkflowBlock, ForEach, ExportJson, ExportExcel, \
     Unpacker, Archive, MultiPlot
@@ -76,4 +80,3 @@ input_values = {workflow_export.input_index(instanciate_generator.inputs[0]): 0,
                 workflow_export.input_index(instanciate_generator.inputs[1]): 5}
 
 workflow_export_run = workflow_export.run(input_values)
-

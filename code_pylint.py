@@ -5,30 +5,27 @@ v1.0
 
 from pylint.lint import Run
 
-MIN_NOTE = 8.85
+MIN_NOTE = 9
 
-UNWATCHED_ERRORS = ['fixme',
-                    'trailing-whitespace',
-                    'import-error'
-                    ]
+UNWATCHED_ERRORS = ['fixme', 'trailing-whitespace', 'import-error']
 
 MAX_ERROR_BY_TYPE = {
                      'protected-access': 27,
-                     'invalid-name': 27,
-                     'consider-using-f-string': 35,
-                     'no-else-return': 23,
-                     'arguments-differ': 22,
+                     'invalid-name': 22,
+                     'consider-using-f-string': 17,
+                     'no-else-return': 17,
+                     'arguments-differ': 18,
                      'no-member': 1,
-                     'too-many-locals': 15,
-                     'wrong-import-order': 12,
-                     'too-many-branches': 12,
-                     'unused-import': 9,
+                     'too-many-locals': 14,
+                     'wrong-import-order': 11,
+                     'too-many-branches': 10,
+                     'unused-import': 2,
                      'unused-argument': 10,
                      'cyclic-import': 11,
-                     'no-self-use': 7,
-                     'unused-variable': 7,
+                     'no-self-use': 6,
+                     'unused-variable': 6,
                      'trailing-whitespace': 11,
-                     'empty-docstring': 11,
+                     'empty-docstring': 8,
                      'missing-module-docstring': 10,
                      'too-many-arguments': 10,
                      'too-few-public-methods': 5,
@@ -39,7 +36,7 @@ MAX_ERROR_BY_TYPE = {
                      'consider-merging-isinstance': 6,
                      'abstract-method': 6,
                      'import-outside-toplevel': 6,
-                     'too-many-instance-attributes': 5,
+                     'too-many-instance-attributes': 4,
                      'consider-iterating-dictionary': 4,
                      'attribute-defined-outside-init': 3,
                      'simplifiable-if-expression': 3,
@@ -51,7 +48,7 @@ MAX_ERROR_BY_TYPE = {
                      'eval-used': 2,
                      'too-many-nested-blocks': 2,
                      'bad-staticmethod-argument': 1,
-                     'too-many-public-methods': 1,
+                     'too-many-public-methods': 2,
                      'consider-using-generator': 1,
                      'too-many-statements': 1,
                      'chained-comparison': 1,
