@@ -107,7 +107,10 @@ print('You can increase MIN_NOTE in pylint to {} (actual: {})'.format(pylint_not
 
 
 def extract_messages_by_type(type_):
-    return [m for m in results.linter.reporter.messages if m.symbol == type_]
+    if PYLINT_OBJECT_STATS:
+        return [m for m in results.linter.reporter.messages if m.symbol == type_]
+    else:
+        return [m for m in results.linter.reporter.messages if m['symbol'] == type_]
 
 
 # uncontrolled_errors = {}
