@@ -2374,13 +2374,6 @@ class WorkflowState(DessiaObject):
         for pipe in activable_pipes:
             self._evaluate_pipe(pipe)
 
-    def _activable_pipes_json(self):
-        """
-        dev method
-        """
-        pipes = self._activable_pipes()
-        return [self.workflow.pipes.index(p) for p in pipes]
-
     def _activable_blocks(self):
         if self.progress < 1:
             blocks = self.workflow.runtime_blocks
@@ -2390,26 +2383,6 @@ class WorkflowState(DessiaObject):
         activable_blocks = [b for b in blocks if not self.activated_items[b]
                             and self._block_activable_by_inputs(b)]
         return activable_blocks
-
-    def _get_activated_items(self):
-        """
-        dev method
-        """
-        active_items = {}
-        for item, value in self.activated_items.items():
-            if isinstance(item, Pipe):
-                active_items["Pipe " + str(self.workflow.pipes.index(item))] = value
-            elif isinstance(item, Variable):
-                active_items["Variable " + str(self.workflow.variable_indices(item))] = value
-            else:
-                active_items["Block " + str(self.workflow.blocks.index(item))] = value
-        return active_items
-
-    def shared_vars(self):
-        """
-        dev function to check variables match with workflow
-        """
-        [print(i in self.workflow.variables) for i in self.values.keys()]
 
     def _block_activable_by_inputs(self, block: Block):
         for function_input in block.inputs:
@@ -2430,10 +2403,6 @@ class WorkflowState(DessiaObject):
                 print(log_line)
 
         output_values = block.evaluate({i: self.values[i] for i in block.inputs})
-        # for input_ in block.inputs:
-        #     if input_.memorize:
-        #         indices = str(self.workflow.variable_indices(input_))  # Str is strange
-        #         self.variables_values[indices] = self.values[input_]
         # Updating progress
         if progress_callback is not None:
             progress_callback(self.progress)
@@ -2441,23 +2410,10 @@ class WorkflowState(DessiaObject):
         # Unpacking result of evaluation
         output_items = zip(block.outputs, output_values)
         for output, output_value in output_items:
-            # print(output.name, output_value)
-            # if output.memorize:
-            #     indices = str(self.workflow.variable_indices(output))
-            #     self.variables_values[indices] = output_value
             self.values[output] = output_value
             self.activated_items[output] = True
 
         self.activated_items[block] = True
-
-    # def _evaluate_export_block(self, block):
-    #     output_values = block.evaluate({i: self.values[i] for i in block.inputs})
-    #     output_items = zip(block.outputs, output_values)
-    #     for output, output_value in output_items:
-    #         self.values[output] = output_value
-    #         self.activated_items[output] = True
-    #
-    #     self.activated_items[block] = True
 
     def activate_inputs(self, check_all_inputs=False):
         """
@@ -2506,17 +2462,10 @@ class WorkflowState(DessiaObject):
     def export(self, block_index: int):
         if self.progress >= 1:
             block = self.workflow.blocks[block_index]
-            # archive_blocks = [isinstance(b, Archive) for b in self.workflow.export_blocks]
-            # if not any(archive_blocks):
-            #     raise ValueError("Workflow has no Archive export block")
-            # elif sum(archive_blocks) > 1:
-            #     raise ValueError("Workflow can only have one Archive export block")
 
             # TODO We should track different Export branches and run the only one concerned
             # Should we use evaluate_block ?
             self.continue_run(export=True)
-            # block_index = archive_blocks.index(True)
-            # block = self.workflow.export_blocks[block_index]
             output = block.outputs[0]
             return self.values[output]
         else:
@@ -2665,15 +2614,6 @@ class WorkflowRun(WorkflowState):
         workflow_run_class = "dessia_common.workflow.WorkflowRun"
         jsonschemas['run_again']['classes'] = [workflow_run_class]
         return jsonschemas
-
-    # def _find_closest_activable_block(self, block: Block):
-    #     if block in self._activable_blocks():
-    #         return block
-    #     upstream_blocks = self.workflow.upstream_blocks(block)
-    #     activable_upstream_blocks = [b in self._activable_blocks() for b in upstream_blocks]
-    #     if all(activable_upstream_blocks):
-    #         return block
-    #
 
 
 def set_inputs_from_function(method, inputs=None):
