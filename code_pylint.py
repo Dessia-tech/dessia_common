@@ -1,8 +1,19 @@
+'''
+Read pylint errors to see if number of errors does not exceed specified limits
+v1.0
+'''
+
 from pylint.lint import Run
 
 MIN_NOTE = 8.85
 
+UNWATCHED_ERRORS = ['fixme',
+                    'trailing-whitespace',
+                    'import-error'
+                    ]
+
 MAX_ERROR_BY_TYPE = {
+                     'protected-access': 27,
                      'invalid-name': 27,
                      'consider-using-f-string': 35,
                      'no-else-return': 23,
@@ -16,7 +27,11 @@ MAX_ERROR_BY_TYPE = {
                      'cyclic-import': 11,
                      'no-self-use': 7,
                      'unused-variable': 7,
+                     'trailing-whitespace': 11,
+                     'empty-docstring': 11,
+                     'missing-module-docstring': 10,
                      'too-many-arguments': 10,
+                     'too-few-public-methods': 5,
                      'unnecessary-comprehension': 5,
                      'no-value-for-parameter': 2,
                      'too-many-return-statements': 7,
@@ -56,7 +71,14 @@ MAX_ERROR_BY_TYPE = {
                      'too-many-lines': 0,
                      'bare-except': 0,
                      'unspecified-encoding': 0,
-                     'no-else-raise': 0
+                     'no-else-raise': 0,
+                     'bad-indentation': 0,
+                     'reimported': 0,
+                     'use-implicit-booleaness-not-comparison': 0,
+                     'misplaced-bare-raise': 0,
+                     'redefined-argument-from-local': 0,
+                     'import-error': 0,
+                     'unsubscriptable-object': 0
                      }
 
 import os
@@ -88,7 +110,7 @@ def extract_messages_by_type(type_):
     return [m for m in results.linter.reporter.messages if m.symbol == type_]
 
 
-uncontrolled_errors = {}
+# uncontrolled_errors = {}
 error_detected = False
 
 if PYLINT_OBJECT_STATS:
@@ -97,24 +119,27 @@ else:
     stats_by_msg = results.linter.stats['by_msg']
 
 for error_type, number_errors in stats_by_msg.items():
-    if error_type in MAX_ERROR_BY_TYPE:
-        if number_errors > MAX_ERROR_BY_TYPE[error_type]:
+    if error_type not in UNWATCHED_ERRORS:
+        if error_type in MAX_ERROR_BY_TYPE:
+            max_errors = MAX_ERROR_BY_TYPE[error_type]
+        else:
+            max_errors = 0
+            
+        if number_errors > max_errors:
             error_detected = True
             print('Fix some {} errors: {}/{}'.format(error_type,
                                                      number_errors,
-                                                     MAX_ERROR_BY_TYPE[error_type]))
+                                                     max_errors))
             for message in extract_messages_by_type(error_type):
                 print('{} line {}: {}'.format(message.path, message.line, message.msg))
-        elif number_errors < MAX_ERROR_BY_TYPE[error_type]:
+        elif number_errors < max_errors:
             print('You can lower number of {} to {} (actual {})'.format(
-                error_type, number_errors, MAX_ERROR_BY_TYPE[error_type]))
+                error_type, number_errors, max_errors))
+    
+                # uncontrolled_errors[error_type] = number_errors
 
-    else:
-        if not error_type in uncontrolled_errors:
-            uncontrolled_errors[error_type] = number_errors
-
-if uncontrolled_errors:
-    print('Uncontrolled errors', uncontrolled_errors)
+# if uncontrolled_errors:
+#     print('Uncontrolled errors', uncontrolled_errors)
 
 if error_detected:
     raise RuntimeError('Too many errors\nRun pylint dessia_common to get the errors')

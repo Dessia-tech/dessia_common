@@ -3,7 +3,6 @@
 """
 Created on Tue Nov 16 12:25:54 2021
 
-@author: steven
 """
 
 import warnings
@@ -213,8 +212,6 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
                                             global_dict=global_dict,
                                             pointers_memo=pointers_memo)
             except TypeError:
-                # warn_msg = 'specific dict_to_object of class {} should implement global_dict arguments'.format(class_.__name__)
-                # warnings.warn(warn_msg, Warning)
                 obj = class_.dict_to_object(dict_)
             return obj
 
