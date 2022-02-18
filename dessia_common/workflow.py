@@ -1823,9 +1823,9 @@ class WorkflowState(DessiaObject):
 
         output_value = deepcopy_value(value=self.output_value, memo=memo)
 
-        workflow_state = WorkflowState(workflow=workflow, input_values=input_values, activated_items=activated_items,
-                                       values=values, start_time=self.start_time, end_time=self.end_time,
-                                       output_value=output_value, log=self.log, name=self.name)
+        workflow_state = self.__class__(workflow=workflow, input_values=input_values, activated_items=activated_items,
+                                        values=values, start_time=self.start_time, end_time=self.end_time,
+                                        output_value=output_value, log=self.log, name=self.name)
         return workflow_state
 
     def _data_hash(self):
@@ -1859,7 +1859,7 @@ class WorkflowState(DessiaObject):
                     # Check variables progress state
                     return False
 
-                if self.activated_items[variable]:
+                if self.activated_items[variable] and variable in self.values:
                     if self.values[variable] != other_object.values[other_variable]:
                         # Check variable values for evaluated ones
                         return False
