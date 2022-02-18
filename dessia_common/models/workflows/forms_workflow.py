@@ -51,7 +51,7 @@ name_variable = TypedVariableWithDefaultValue(type_=str, name="Shared Name",
 pipe_int_1 = Pipe(input_variable=int_variable,
                   output_variable=instanciate_generator.inputs[1])
 pipe_name_1 = Pipe(input_variable=name_variable,
-                   output_variable=instanciate_generator.inputs[2])
+                   output_variable=instanciate_generator.inputs[3])
 pipe_name_2 = Pipe(input_variable=name_variable,
                    output_variable=parallel_optimization.inputs[1])
 pipe_1 = Pipe(input_variable=instanciate_generator.outputs[0],
