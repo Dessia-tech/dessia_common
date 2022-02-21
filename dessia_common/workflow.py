@@ -78,7 +78,7 @@ class TypedVariable(Variable):
     def dict_to_object(cls, dict_):
         type_ = deserialize_typing(dict_['type_'])
         memorize = dict_['memorize']
-        return cls(type_=type_, memorize=memorize, name=dict_['name'])
+        return cls(type_=type_, memorize=memorize, name=dict_.get('name', ''))
 
     def copy(self, deep: bool = False, memo=None):
         return TypedVariable(type_=self.type_, memorize=self.memorize,
@@ -121,7 +121,7 @@ class TypedVariableWithDefaultValue(TypedVariable):
         type_ = get_python_class_from_class_name(dict_['type_'])
         default_value = deserialize(dict_['default_value'])
         return cls(type_=type_, default_value=default_value,
-                   memorize=dict_['memorize'], name=dict_['name'])
+                   memorize=dict_['memorize'], name=dict_.get('name', ''))
 
     def copy(self, deep: bool = False, memo=None):
         """
@@ -235,7 +235,7 @@ class Display(Block):
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_):
-        return cls(order=dict_['order'], name=dict_['name'])
+        return cls(order=dict_['order'], name=dict_.get('name', ''))
 
     @staticmethod
     def evaluate(self):
@@ -268,7 +268,7 @@ class Import(Block):
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_):
-        return cls(type_=dict_['type_'], name=dict_['name'])
+        return cls(type_=dict_['type_'], name=dict_.get('name', ''))
 
     def evaluate(self, values):
         dirname = os.path.dirname(__file__)
@@ -326,7 +326,7 @@ class InstantiateModel(Block):
         else:
             classname = dict_['model_class']
         class_ = get_python_class_from_class_name(classname)
-        return cls(class_, name=dict_['name'])
+        return cls(class_, name=dict_.get('name', ''))
 
     def evaluate(self, values):
         args = {var.name: values[var] for var in self.inputs}
@@ -405,7 +405,7 @@ class ClassMethod(Block):
             classname = dict_['model_class']
             method_name = dict_['method_name']
         class_ = get_python_class_from_class_name(classname)
-        name = dict_['name']
+        name = dict_.get('name', '')
         method_type = ClassMethodType(class_=class_, name=method_name)
         return cls(method_type=method_type, name=name)
 
@@ -495,7 +495,7 @@ class ModelMethod(Block):
             classname = dict_['model_class']
             method_name = dict_['method_name']
         class_ = get_python_class_from_class_name(classname)
-        name = dict_['name']
+        name = dict_.get('name', '')
         method_type = MethodType(class_=class_, name=method_name)
         return cls(method_type=method_type, name=name)
 
@@ -547,7 +547,7 @@ class Sequence(Block):
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_):
-        return cls(dict_['number_arguments'], dict_['name'])
+        return cls(dict_['number_arguments'], dict_.get('name', ''))
 
     def evaluate(self, values):
         return [[values[var] for var in self.inputs]]
@@ -614,7 +614,7 @@ class ForEach(Block):
         workflow_block = WorkflowBlock.dict_to_object(dict_['workflow_block'])
         iter_input_index = dict_['iter_input_index']
         return cls(workflow_block=workflow_block,
-                   iter_input_index=iter_input_index, name=dict_['name'])
+                   iter_input_index=iter_input_index, name=dict_.get('name', ''))
 
     def evaluate(self, values):
         values_workflow = {var2: values[var1]
@@ -659,7 +659,7 @@ class Unpacker(Block):
 
     @classmethod
     def dict_to_object(cls, dict_):
-        return cls(dict_['indices'], dict_['name'])
+        return cls(dict_['indices'], dict_.get('name', ''))
 
     def evaluate(self, values):
         return [values[self.inputs[0]][i] for i in self.indices]
@@ -676,7 +676,7 @@ class Flatten(Block):
 
     @classmethod
     def dict_to_object(cls, dict_):
-        return cls(dict_['name'])
+        return cls(dict_.get('name', ''))
 
     def evaluate(self, values):
         output = []
@@ -712,7 +712,7 @@ class Product(Block):
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_):
         number_list = dict_['number_list']
-        return cls(number_list=number_list, name=dict_['name'])
+        return cls(number_list=number_list, name=dict_.get('name', ''))
 
     def evaluate(self, values):
         """
@@ -762,7 +762,7 @@ class Filter(Block):
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_):
-        return cls([DessiaFilter.dict_to_object(d) for d in dict_['filters']], dict_['name'])
+        return cls([DessiaFilter.dict_to_object(d) for d in dict_['filters']], dict_.get('name', ''))
 
     def evaluate(self, values):
         ouput_values = []
@@ -857,7 +857,7 @@ class MultiPlot(Display):
     def dict_to_object(cls, dict_):
         return cls(attributes=dict_['attributes'],
                    order=dict_['order'],
-                   name=dict_['name'])
+                   name=dict_.get('name', ''))
 
     @staticmethod
     def evaluate(_):
@@ -889,7 +889,7 @@ class ParallelPlot(MultiPlot):
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_):
         return MultiPlot(attributes=dict_['attributes'], order=dict_['order'],
-                         name=dict_['name'])
+                         name=dict_.get('name', ''))
 
 
 class ModelAttribute(Block):
@@ -923,7 +923,7 @@ class ModelAttribute(Block):
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_):
-        return cls(dict_['attribute_name'], dict_['name'])
+        return cls(dict_['attribute_name'], dict_.get('name', ''))
 
     def evaluate(self, values):
         return [enhanced_deep_attr(values[self.inputs[0]],
@@ -954,7 +954,7 @@ class Sum(Block):
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_):
-        return cls(dict_['number_elements'], dict_['name'])
+        return cls(dict_['number_elements'], dict_.get('name', ''))
 
     @staticmethod
     def evaluate(values):
@@ -981,7 +981,7 @@ class Substraction(Block):
 
     @classmethod
     def dict_to_object(cls, dict_):
-        return cls(dict_['name'])
+        return cls(dict_.get('name', ''))
 
     def evaluate(self, values):
         return [values[self.inputs[0]] - values[self.inputs[1]]]
@@ -1862,7 +1862,7 @@ class WorkflowBlock(Block):
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_):
         b = cls(workflow=Workflow.dict_to_object(dict_['workflow']),
-                name=dict_['name'])
+                name=dict_.get('name', ''))
 
         return b
 
@@ -2008,7 +2008,7 @@ class WorkflowState(DessiaObject):
                    activated_items=activated_items, values=values,
                    variables_values=variables_values,
                    start_time=dict_['start_time'], output_value=output_value,
-                   log=dict_['log'], name=dict_['name'])
+                   log=dict_['log'], name=dict_.get('name', ''))
 
     def add_input_value(self, input_index: int, value: Any):
         # TODO: Type checking?

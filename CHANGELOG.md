@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Workflow inputs documentation from docstrings
 - Workflow description and documentation
 
+### Changed
+- name is not inserted if empty in to_dict
+
+
 ## 0.5.0
 
 ### Added
