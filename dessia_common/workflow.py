@@ -1910,6 +1910,9 @@ class WorkflowState(DessiaObject):
         DessiaObject.__init__(self, name=name)
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#'):
+        '''
+        Transform the object to a dict
+        '''
         # if not use_pointers:
         #     msg = 'WorkflowState to_dict should not' \
         #           'be called with use_pointers=False'
@@ -2034,7 +2037,11 @@ class WorkflowState(DessiaObject):
         return displays
 
     @property
-    def progress(self):
+    def progress(self) -> float:
+        '''
+        Return the progress, a float between 0. (nothing has been evaluated),
+        to 1. (every computational block evaluated)
+        '''
         activated_items = [b for b in self.workflow.blocks
                            if b in self.activated_items
                            and self.activated_items[b]]
@@ -2106,6 +2113,9 @@ class WorkflowState(DessiaObject):
         return pipes
 
     def _activable_blocks(self):
+        '''
+        Returns a list of all activable blocks, ie blocks that havec all inputs ready for evaluation
+        '''
         blocks = []
         for block in self.workflow.blocks:
             if not self.activated_items[block]:
@@ -2120,6 +2130,9 @@ class WorkflowState(DessiaObject):
         return blocks
 
     def _evaluate_pipe(self, pipe):
+        '''
+        Propagate data between the two variables linked by the pipe, and store it into the object
+        '''
         self.activated_items[pipe] = True
         self.values[pipe.output_variable] = self.values[
             pipe.input_variable]

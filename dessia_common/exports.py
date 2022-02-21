@@ -4,7 +4,6 @@
 
 """
 
-import tempfile
 from openpyxl.styles.borders import Border, Side
 from openpyxl.styles import PatternFill, Font
 from openpyxl import Workbook
@@ -80,7 +79,10 @@ class XLSXWriter:
 
         self.write()
 
-    def write_class_header_to_row(self, obj_of_class, sheet, row_number, path=''):
+    def write_class_header_to_row(self, obj_of_class, sheet, row_number):
+        """
+        Writes to a sheet the class header: finds columns names from a class
+        """
         cell = sheet.cell(row=row_number, column=1, value='Path')
         cell.fill = self.pattern_color2
         cell.border = self.thin_border
@@ -101,42 +103,53 @@ class XLSXWriter:
                 cell.font = self.white_font
                 i += 1
 
+    def write_value_to_cell(self, value, sheet, row_number, column_number):
+        """
+        Write a given value to a cell. Insert it as a link if it is an object
+        """
+        cell_link = None
+        if isinstance(value, dict):
+            str_v = f'Dict of {len(value)} items'
+        elif isinstance(value, list):
+            if is_builtins_list(value):
+                str_v = str(value)
+            else:
+                str_v = f'List of {len(value)} items'
+
+        elif isinstance(value, set):
+            str_v = f'Set of {len(value)} items'
+        elif isinstance(value, float):
+            str_v = round(value, 6)
+        elif is_hashable(value) and value in self.object_to_sheet_row:
+            ref_sheet, ref_row_number, ref_path = self.object_to_sheet_row[value]
+            str_v = ref_path
+            cell_link = f'#{ref_sheet.title}!A{ref_row_number}'
+        else:
+            str_v = str(value)
+
+        cell = sheet.cell(row=row_number, column=column_number, value=str_v)
+        if cell_link:
+            cell.hyperlink = cell_link
+
+        cell.border = self.thin_border
+        
+
     def write_object_to_row(self, obj, sheet, row_number, path=''):
+        '''
+        Write on object to a row. Loops on its attributes to write its value in each cell
+        '''
         cell = sheet.cell(row=row_number, column=1, value=path)
         cell.border = self.thin_border
         if hasattr(obj, 'name'):
             cell = sheet.cell(row=row_number, column=2, value=obj.name)
         else:
             cell = sheet.cell(row=row_number, column=2, value='No name in model')
+            
         cell.border = self.thin_border
         i = 3
         for (k, value) in sorted(obj.__dict__.items()):
             if (not k.startswith('_')) and k != 'name':
-                cell_link = None
-                if isinstance(value, dict):
-                    str_v = f'Dict of {len(value)} items'
-                elif isinstance(value, list):
-                    if is_builtins_list(value):
-                        str_v = str(value)
-                    else:
-                        str_v = f'List of {len(value)} items'
-
-                elif isinstance(value, set):
-                    str_v = f'Set of {len(value)} items'
-                elif isinstance(value, float):
-                    str_v = round(value, 6)
-                elif is_hashable(value) and value in self.object_to_sheet_row:
-                    ref_sheet, ref_row_number, ref_path = self.object_to_sheet_row[value]
-                    str_v = ref_path
-                    cell_link = f'#{ref_sheet.title}!A{ref_row_number}'
-                else:
-                    str_v = str(value)
-
-                cell = sheet.cell(row=row_number, column=i, value=str_v)
-                if cell_link:
-                    cell.hyperlink = cell_link
-
-                cell.border = self.thin_border
+                self.write_value_to_cell(value, sheet, row_number, i)
 
                 i += 1
 
@@ -181,6 +194,9 @@ class XLSXWriter:
         sheet['A4'].border = self.thin_border
 
     def write(self):
+        '''
+        Generate the whole file
+        '''
         # name_column_width = 0
         self.write_object_id(self.main_sheet)
         self.write_class_header_to_row(self.object, self.main_sheet, 3)
@@ -200,22 +216,24 @@ class XLSXWriter:
             self.autosize_sheet_columns(sheet, 5, 30)
 
     def save_to_file(self, filepath):
-        # TODO: split in two functions?
-        if isinstance(filepath, str):
-            real_filepath = filepath
-            if not filepath.endswith('.xlsx'):
-                real_filepath += '.xlsx'
-        else:
-            real_filepath = tempfile.NamedTemporaryFile().name
+        if not filepath.endswith('.xlsx'):
+            filepath += '.xlsx'
+            
+        with open(filepath, 'rb') as file:
+            self.save_to_stream(file)
+        
 
-        self.workbook.save(real_filepath)
+    def save_to_stream(self, stream):
+        """
+        Saves the file to a binary stream
+        """
+        self.workbook.save(stream)
 
-        if not isinstance(filepath, str):
-            with open(real_filepath, 'rb') as file:
-                filepath.seek(0)
-                filepath.write(file.read())
 
     def autosize_sheet_columns(self, sheet, min_width=5, max_width=30):
+        '''
+        Autosize the sheet columns by analyzing the content. Min and max width must be specified
+        '''
         # Autosize columns
         for col in sheet.columns:
             width = min_width
