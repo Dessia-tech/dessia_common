@@ -20,6 +20,9 @@ import networkx as nx
 
 
 def serialize_dict(dict_):
+    """
+    Serialize a dict into a dict (values are serialized)
+    """
     serialized_dict = {}
     for key, value in dict_.items():
         serialized_dict[key] = serialize(value)
@@ -27,6 +30,9 @@ def serialize_dict(dict_):
 
 
 def serialize_sequence(seq):
+    """
+    Serialize a sequence (list or sequence) into a list of dicts
+    """
     serialized_sequence = []
     for value in seq:
         serialized_sequence.append(serialize(value))
@@ -92,6 +98,9 @@ def serialize_with_pointers(value, memo=None, path='#'):
 
 
 def serialize_dict_with_pointers(dict_, memo, path):
+    '''
+    Serialize a dict recursively with jsonpointers using a memo dict at a given path of the top level object
+    '''
     serialized_dict = {}
     dict_attrs_keys = []
     seq_attrs_keys = []
