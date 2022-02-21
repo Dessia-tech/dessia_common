@@ -1437,7 +1437,7 @@ class Workflow(Block):
         return cls(blocks=blocks, pipes=pipes, output=output,
                    imposed_variable_values=imposed_variable_values,
                    description=description, documentation=documentation,
-                   name=dict_["name"])
+                   name=dict_.get('name', ''))
 
     def dict_to_arguments(self, dict_: JsonSerializable, method: str):
         if method in self._allowed_methods:
