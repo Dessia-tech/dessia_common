@@ -130,6 +130,9 @@ def serialize_dict_with_pointers(dict_, memo, path):
 
 
 def serialize_sequence_with_pointers(seq, memo, path):
+    '''
+    Serialize a sequence (list or tuple) using jsonpointers
+    '''
     serialized_sequence = []
     # print('path s  ', path)
     for ival, value in enumerate(seq):
@@ -191,7 +194,10 @@ def deserialize_sequence(sequence, annotation=None,
 
 def dict_to_object(dict_, class_=None, force_generic: bool = False,
                    global_dict=None, pointers_memo=None, path='#'):
-
+    '''
+    Transform a dict to an object
+    '''
+    
     if '$ref' in dict_:
         return pointers_memo[dict_['$ref']]
 
