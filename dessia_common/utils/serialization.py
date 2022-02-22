@@ -153,16 +153,23 @@ def deserialize(serialized_element, sequence_annotation: str = 'List',
             return pointers_memo[path]
 
     if isinstance(serialized_element, dict):
-        try:
-            return dict_to_object(serialized_element, global_dict=global_dict,
-                                  pointers_memo=pointers_memo,
-                                  path=path)
-        except TypeError:
-            warnings.warn(f'specific dict_to_object of class {serialized_element.__class__.__name__}'
-                          ' should implement global_dict and'
-                          ' pointers_memo arguments',
-                          Warning)
-            return dict_to_object(serialized_element)
+        if 'object_class' in serialized_element:
+            # Calling dict to object
+            try:
+                return dict_to_object(serialized_element, global_dict=global_dict,
+                                      pointers_memo=pointers_memo,
+                                      path=path)
+            except TypeError:
+                warnings.warn(f'specific dict_to_object of class {serialized_element.__class__.__name__}'
+                              ' should implement global_dict and'
+                              ' pointers_memo arguments',
+                              Warning)
+                return dict_to_object(serialized_element)
+        # deserilaize dict
+        return deserialize_dict(serialized_element, 
+                                global_dict=global_dict,
+                                pointers_memo=pointers_memo,
+                                path=path)
     elif dcty.is_sequence(serialized_element):
         return deserialize_sequence(sequence=serialized_element,
                                     annotation=sequence_annotation,
@@ -190,6 +197,25 @@ def deserialize_sequence(sequence, annotation=None,
         return tuple(deserialized_sequence)
     return deserialized_sequence
 
+def deserialize_dict(dict_,
+                     global_dict=None, pointers_memo=None,
+                     path='#'):
+    deserialized_dict = []
+    for key, element in dict_.items():
+        path_elt = f'{path}/{key}'
+        if key.startswith('$ref:'):
+            reference = key[5:]
+            deser_key = pointers_memo[reference]
+        else:
+            deser_key = key
+            
+        deserialized_element = deserialize(element, 
+                                           global_dict=global_dict,
+                                           pointers_memo=pointers_memo,
+                                           path=path_elt)
+        deserialized_dict[deser_key] = deserialized_element
+
+    return deserialized_dict
 
 def dict_to_object(dict_, class_=None, force_generic: bool = False,
                    global_dict=None, pointers_memo=None, path='#'):
@@ -411,9 +437,9 @@ def find_references_dict(dict_, path='#'):
     references = []
     for key, value in dict_.items():
         # Looking if key is a ref itself:
-            if '$ref:' in key:
-                key_pointer = key.replace('$ref:', '')
-                references.append((path, key))
+        if '$ref:' in key:
+            # key_pointer = key.replace('$ref:', '')
+            references.append((path, key))
         
         if not dcty.isinstance_base_types(value):
             path_value = f'{path}/{key}'
