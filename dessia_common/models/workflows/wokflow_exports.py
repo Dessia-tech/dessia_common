@@ -23,8 +23,7 @@ optimization = ModelMethod(method_type=generate_method, name='Optimization')
 
 model_fetcher = ModelAttribute(attribute_name='model_to_optimize', name='Model Fetcher')
 
-pipe1_opt = Pipe(input_variable=instanciate_optimizer.outputs[0],
-                 output_variable=optimization.inputs[0])
+pipe1_opt = Pipe(input_variable=instanciate_optimizer.outputs[0], output_variable=optimization.inputs[0])
 pipe2_opt = Pipe(input_variable=optimization.outputs[1], output_variable=model_fetcher.inputs[0])
 optimization_blocks = [instanciate_optimizer, optimization, model_fetcher]
 optimization_pipes = [pipe1_opt, pipe2_opt]
@@ -33,8 +32,7 @@ optimization_workflow = Workflow(blocks=optimization_blocks, pipes=optimization_
 
 optimization_workflow_block = WorkflowBlock(workflow=optimization_workflow, name='Workflow Block')
 
-parallel_optimization = ForEach(workflow_block=optimization_workflow_block,
-                                iter_input_index=0, name='ForEach')
+parallel_optimization = ForEach(workflow_block=optimization_workflow_block, iter_input_index=0, name='ForEach')
 
 display_attributes = ['intarg', 'strarg', 'standalone_subobject/floatarg']
 display = MultiPlot(attributes=display_attributes, name='Display')
@@ -49,27 +47,21 @@ zip_export = Archive(number_exports=2, name="Zip")
 int_variable = TypedVariable(type_=int, name="Some Integer")
 
 pipe_int_1 = Pipe(input_variable=int_variable, output_variable=instanciate_generator.inputs[1])
-pipe_1 = Pipe(input_variable=instanciate_generator.outputs[0],
-              output_variable=generator_generate.inputs[0])
-pipe_2 = Pipe(input_variable=generator_generate.outputs[1],
-              output_variable=attribute_selection.inputs[0])
-pipe_3 = Pipe(input_variable=attribute_selection.outputs[0],
-              output_variable=parallel_optimization.inputs[0])
-pipe_4 = Pipe(input_variable=parallel_optimization.outputs[0],
-              output_variable=unpack_results.inputs[0])
+pipe_1 = Pipe(input_variable=instanciate_generator.outputs[0], output_variable=generator_generate.inputs[0])
+pipe_2 = Pipe(input_variable=generator_generate.outputs[1], output_variable=attribute_selection.inputs[0])
+pipe_3 = Pipe(input_variable=attribute_selection.outputs[0], output_variable=parallel_optimization.inputs[0])
+pipe_4 = Pipe(input_variable=parallel_optimization.outputs[0], output_variable=unpack_results.inputs[0])
 pipe_5 = Pipe(input_variable=instanciate_generator.outputs[0], output_variable=export_txt.inputs[0])
 pipe_6 = Pipe(input_variable=unpack_results.outputs[0], output_variable=export_xlsx.inputs[0])
 
-pipe_display = Pipe(input_variable=parallel_optimization.outputs[0],
-                    output_variable=display.inputs[0])
+pipe_display = Pipe(input_variable=parallel_optimization.outputs[0], output_variable=display.inputs[0])
 
 pipe_export_1 = Pipe(input_variable=export_txt.outputs[0], output_variable=zip_export.inputs[0])
 pipe_export_2 = Pipe(input_variable=export_xlsx.outputs[0], output_variable=zip_export.inputs[1])
 
 blocks = [instanciate_generator, generator_generate, attribute_selection, parallel_optimization,
           display, unpack_results, export_txt, zip_export, export_xlsx]
-pipes = [pipe_int_1, pipe_1, pipe_2, pipe_3, pipe_4, pipe_5, pipe_6,
-         pipe_display, pipe_export_1, pipe_export_2]
+pipes = [pipe_int_1, pipe_1, pipe_2, pipe_3, pipe_4, pipe_5, pipe_6, pipe_display, pipe_export_1, pipe_export_2]
 workflow_export = Workflow(blocks=blocks, pipes=pipes, output=parallel_optimization.outputs[0],
                            name="Workflow Test Export")
 

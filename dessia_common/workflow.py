@@ -850,7 +850,7 @@ class Export(Block):
 class ExportJson(Export):
     def __init__(self, model_class: Type, export_name: str = "", name: str = ""):
         self.model_class = model_class
-        method_type = MethodType(class_=model_class, name="to_json_stream")
+        method_type = MethodType(class_=model_class, name="save_to_stream")
 
         Export.__init__(self, method_type=method_type, export_name=export_name, name=name)
         if not export_name:
