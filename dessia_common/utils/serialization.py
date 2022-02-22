@@ -211,6 +211,9 @@ def deserialize_sequence(sequence, annotation=None,
 def deserialize_dict(dict_,
                      global_dict=None, pointers_memo=None,
                      path='#'):
+    """
+    Deserialize a dict to a dict (not an object) Values and keys are deserialized
+    """
     deserialized_dict = []
     for key, element in dict_.items():
         path_elt = f'{path}/{key}'
@@ -430,6 +433,9 @@ def find_references(value, path='#'):
 
 
 def find_references_sequence(seq, path='#'):
+    """
+    Find references in a sequence
+    """
     if isinstance(seq, str):
         raise ValueError
 
@@ -443,6 +449,9 @@ def find_references_sequence(seq, path='#'):
 
 
 def find_references_dict(dict_, path='#'):
+    """
+    Find references in a dict
+    """
     if '$ref' in dict_:
         return [(path, dict_['$ref'])]
 
