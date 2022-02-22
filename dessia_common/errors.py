@@ -38,5 +38,9 @@ class DeserializationError(Exception):
     pass
 
 
+class CopyError(Exception):
+    pass
+
+
 class UntypedArgumentError(Exception):
     pass

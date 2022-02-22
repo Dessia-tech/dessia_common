@@ -843,9 +843,8 @@ class Export(Block):
         return [res]
 
     def _export_format(self, block_index: int):
-        block_format = {"extension": self.extension, "method_name": "export",
-                        "text": self.text, "args": {"block_index": block_index}}
-        return block_format
+        args = {"block_index": block_index}
+        return {"extension": self.extension, "method_name": "export", "text": self.text, "args": args}
 
 
 class ExportJson(Export):
@@ -856,6 +855,7 @@ class ExportJson(Export):
         Export.__init__(self, method_type=method_type, export_name=export_name, name=name)
         if not export_name:
             self.export_name += "_json"
+        self.extension = "json"
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
         dict_ = Block.to_dict(self)
@@ -877,6 +877,7 @@ class ExportExcel(Export):
         Export.__init__(self, method_type=method_type, export_name=export_name, name=name)
         if not export_name:
             self.export_name += "_xlsx"
+        self.extension = "xlsx"
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
         dict_ = Block.to_dict(self)
@@ -1871,6 +1872,9 @@ class WorkflowState(DessiaObject):
         return True
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#'):
+        """
+        Transform object into a dict
+        """
         # if not use_pointers:
         #     raise NotImplementedError('WorkflowState to_dict should not be called with use_pointers=False')
         if memo is None:
@@ -1997,7 +2001,8 @@ class WorkflowState(DessiaObject):
     @property
     def progress(self):
         """
-        Compute current progress of WorkflowState
+        Return the current progress, a float between 0. (nothing has been evaluated),
+        to 1. (every computational block evaluated)
         """
         evaluated_blocks = [self.activated_items[b] for b in self.workflow.runtime_blocks]
         progress = sum(evaluated_blocks)/len(evaluated_blocks)
@@ -2080,7 +2085,7 @@ class WorkflowState(DessiaObject):
 
     def _activable_blocks(self):
         """
-        Returns all current activable blocks
+        Returns a list of all activable blocks, ie blocks that havec all inputs ready for evaluation
         """
         if self.progress < 1:
             blocks = self.workflow.runtime_blocks
@@ -2099,7 +2104,7 @@ class WorkflowState(DessiaObject):
 
     def _evaluate_pipe(self, pipe):
         """
-        Evaluate given pipe
+        Propagate data between the two variables linked by the pipe, and store it into the object
         """
         self.activated_items[pipe] = True
         self.values[pipe.output_variable] = self.values[pipe.input_variable]

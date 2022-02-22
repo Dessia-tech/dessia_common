@@ -57,7 +57,6 @@ def deprecation_warning(name, object_type, use_instead=None):
     warnings.warn(msg, DeprecationWarning)
     return msg
 
-
 class DessiaObject:
     """
     Base class for Dessia's platform compatible objects.
@@ -247,6 +246,7 @@ class DessiaObject:
                                  global_dict=global_dict,
                                  pointers_memo=pointers_memo)
             return obj
+
         if 'object_class' in dict_:
             obj = dict_to_object(dict_=dict_, force_generic=force_generic,
                                  global_dict=global_dict,
@@ -426,25 +426,40 @@ class DessiaObject:
                 arguments[arg] = deserialized_value
         return arguments
 
-    @deprecated(use_instead="to_json")
-    def save_to_file(self, filepath: str, indent: int = 2):
+    def save_to_file(self, filepath:str, indent:int=2):
         """
-        Save to a JSON file the object
+        Save object to a JSON file
         :param filepath: either a string reprensenting the filepath or a stream
         """
-        return self.to_json(filepath=filepath, indent=indent)
+        if not filepath.endswith('.json'):
+            filepath += '.json'
+            print(f'Changing name to {filepath}')
+        with open(filepath, 'w', encoding='utf-8') as file:
+            self.save_to_stream(file, indent=indent)
+        
+    def save_to_stream(self, stream, indent:int=2):
+        try:
+            dict_ = self.to_dict(use_pointers=True)
+        except TypeError:
+            dict_ = self.to_dict()
+
+        json.dump(dict_, stream, indent=indent)
+        
 
     @classmethod
-    def load_from_file(cls, filepath):
+    def load_from_stream(cls, stream):
+        dict_ = json.loads(stream.read().decode('utf-8'))
+        return cls.dict_to_object(dict_)
+
+    @classmethod
+    def load_from_file(cls, filepath:str):
         """
         Load object from a json file
         :param filepath: either a string reprensenting the filepath or a stream
         """
-        if isinstance(filepath, str):
-            with open(filepath, 'r', encoding='utf-8') as file:
-                dict_ = json.load(file)
-        else:
-            dict_ = json.loads(filepath.read().decode('utf-8'))
+        with open(filepath, 'r', encoding='utf-8') as file:
+            dict_ = json.load(file)
+
         return cls.dict_to_object(dict_)
 
     def is_valid(self):
@@ -548,6 +563,10 @@ class DessiaObject:
                                                                    debug=debug)
 
     def _displays(self, **kwargs) -> List[JsonSerializable]:
+        """
+        Generate displays of the object to be plot in the DessiA Platform
+        """
+        
         if hasattr(self, '_display_angular'):
             # Retro-compatibility
             deprecation_warning(name='_display_angular', object_type='method',
@@ -588,6 +607,7 @@ class DessiaObject:
     def _check_platform(self):
         """
         Reproduce lifecycle on platform (serialization, display)
+        raise an error if something is wrong
         """
         try:
             dict_ = self.to_dict(use_pointers=True)
@@ -596,9 +616,13 @@ class DessiaObject:
         json_dict = json.dumps(dict_)
         decoded_json = json.loads(json_dict)
         deserialized_object = self.dict_to_object(decoded_json)
-        assert deserialized_object._data_eq(self)
+        if not deserialized_object._data_eq(self):
+            raise dessia_common.errors.DeserializationError('Object is not equal to itself'
+                                                            ' after serialization/deserialization')
         copied_object = self.copy()
-        assert copied_object._data_eq(self)
+        if not copied_object._data_eq(self):
+            raise dessia_common.errors.CopyError('Object is not equal to itself'
+                                                 ' after copy')
 
         valid, hint = is_bson_valid(stringify_dict_keys(dict_))
         if not valid:
@@ -606,70 +630,54 @@ class DessiaObject:
         json.dumps(self._displays())
         json.dumps(self._method_jsonschemas)
 
-    def to_json_stream(self, indent: int = 2) -> JsonFile:
-        stream = JsonFile()
-        try:
-            dict_ = self.to_dict(use_pointers=True)
-        except TypeError:
-            dict_ = self.to_dict()
-
-        json.dump(dict_, stream, indent=indent)
-        return stream
-
-    def to_json(self, filepath: str, indent: int = 2) -> str:
+    def to_xlsx(self, filepath:str):
         """
-        Save object to a JSON file
-        :param filepath: either a string reprensenting the filepath or a stream
-        :type filepath: str
-        :param indent: level of indentation for json.dump function
-        :type indent: int
-
-        :return: filepath of created file
+        Exports the object to an XLSX file given by the filepath
         """
-        json_stream = self.to_json_stream(indent=indent)
-        if not filepath.endswith('.json'):
-            filepath += '.json'
-            print(f'Changing name to {filepath}')
-        with open(filepath, "w", encoding="utf-8") as file:
-            file.write(json_stream.getvalue())
-        return filepath
-
-    def to_xlsx_stream(self) -> XLSXFile:
+        with open(filepath, 'wb') as file:
+            self.to_xlsx_stream(file)
+            
+    def to_xlsx_stream(self, stream):
+        """
+        Exports the object to an XLSX to a given stream
+        """
         writer = XLSXWriter(self)
-        return writer.to_xlsx_stream()
+        writer.save_to_stream(stream)
 
-    def to_xlsx(self, filepath: str) -> str:
-        writer = XLSXWriter(self)
-        return writer.to_xlsx(filepath)
-
-    def to_step(self, filepath: str):
+    def to_step(self, filepath:str):
         """
-        filepath can be a str or an io.StringIO
+        Exports the CAD of the object to step. Works if the class define a custom volmdlr model
+        :param filepath: a str representing a filepath
         """
         self.volmdlr_volume_model().to_step(filepath=filepath)
         return self.volmdlr_volume_model().to_step(filepath=filepath)
 
-    def to_stl(self, filepath: str):
+    def to_step_stream(self, stream):
         """
-        filepath can be a str or an io.StringIO
+        Exports the CAD of the object to a stream in the STEP format. Works if the class define a custom volmdlr model
+        """
+        return self.volmdlr_volume_model().to_step_stream(stream=stream)
+
+    def to_stl_stream(self, stream):
+        """
+        Exports the CAD of the object to STL to a given stream
+        """
+        return self.volmdlr_volume_model().to_stl_stream(stream=stream)
+
+    def to_stl(self, filepath):
+        """
+        Exports the CAD of the object to STL. Works if the class define a custom volmdlr model
+        :param filepath: a str representing a filepath
         """
         return self.volmdlr_volume_model().to_stl(filepath=filepath)
 
     def _export_formats(self):
-        formats = [{"extension": "json", "method_name": "to_json_stream",
-                    "text": True, "args": {}},
-                   {"extension": "xlsx", "method_name": "to_xlsx_stream",
-                    "text": False, "args": {}}]
-        # formats = [('json', 'to_json', True),
-        #            ('xlsx', 'to_xlsx', False)]
+        formats = [{"extension": "json", "method_name": "save_to_stream", "text": True, "args": {}},
+                   {"extension": "xlsx", "method_name": "to_xlsx_stream", "text": False, "args": {}}]
         if hasattr(self, 'volmdlr_primitives'):
-            formats3d = [{"extension": "step", "method_name": "to_step",
-                          "text": True, "args": {}},
-                         {"extension": "stl", "method_name": "to_stl",
-                          "text": False, "args": {}}]
+            formats3d = [{"extension": "step", "method_name": "to_step_stream", "text": True, "args": {}},
+                         {"extension": "stl", "method_name": "to_stl_stream", "text": False, "args": {}}]
             formats.extend(formats3d)
-            # formats.append(('step', 'to_step', True))
-            # formats.append(('stl', 'to_stl', False))
         return formats
 
 
