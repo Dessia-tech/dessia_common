@@ -96,6 +96,9 @@ def sequence_diff(seq1, seq2, path='#'):
 
 
 def data_eq(value1, value2):
+    """
+    Returns if 2 values are data equal
+    """
     if is_sequence(value1) and is_sequence(value2):
         return sequence_data_eq(value1, value2)
 
