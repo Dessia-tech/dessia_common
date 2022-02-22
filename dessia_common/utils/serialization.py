@@ -3,7 +3,6 @@
 """
 Created on Tue Nov 16 12:25:54 2021
 
-@author: steven
 """
 
 import warnings
@@ -21,6 +20,9 @@ import networkx as nx
 
 
 def serialize_dict(dict_):
+    """
+    Serialize a dict into a dict (values are serialized)
+    """
     serialized_dict = {}
     for key, value in dict_.items():
         serialized_dict[key] = serialize(value)
@@ -28,6 +30,9 @@ def serialize_dict(dict_):
 
 
 def serialize_sequence(seq):
+    """
+    Serialize a sequence (list or sequence) into a list of dicts
+    """
     serialized_sequence = []
     for value in seq:
         serialized_sequence.append(serialize(value))
@@ -93,6 +98,9 @@ def serialize_with_pointers(value, memo=None, path='#'):
 
 
 def serialize_dict_with_pointers(dict_, memo, path):
+    '''
+    Serialize a dict recursively with jsonpointers using a memo dict at a given path of the top level object
+    '''
     serialized_dict = {}
     dict_attrs_keys = []
     seq_attrs_keys = []
@@ -132,6 +140,9 @@ def serialize_dict_with_pointers(dict_, memo, path):
 
 
 def serialize_sequence_with_pointers(seq, memo, path):
+    '''
+    Serialize a sequence (list or tuple) using jsonpointers
+    '''
     serialized_sequence = []
     # print('path s  ', path)
     for ival, value in enumerate(seq):
@@ -219,7 +230,10 @@ def deserialize_dict(dict_,
 
 def dict_to_object(dict_, class_=None, force_generic: bool = False,
                    global_dict=None, pointers_memo=None, path='#'):
-
+    '''
+    Transform a dict to an object
+    '''
+    
     if '$ref' in dict_:
         return pointers_memo[dict_['$ref']]
 
@@ -249,8 +263,6 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
                                             global_dict=global_dict,
                                             pointers_memo=pointers_memo)
             except TypeError:
-                # warn_msg = 'specific dict_to_object of class {} should implement global_dict arguments'.format(class_.__name__)
-                # warnings.warn(warn_msg, Warning)
                 obj = class_.dict_to_object(dict_)
             return obj
 
@@ -475,14 +487,11 @@ def pointer_graph(value):
 
     return graph
 
-
-def dereference_jsonpointers(value):  # , global_dict):
+def deserialization_order(dict_):
     """
-    Analyse the given dict
+    Analyse a dict representing an object and give a deserialization order
     """
-    graph = pointer_graph(value)
-
-    pointers_memo = {}
+    graph = pointer_graph(dict_)
     if '#' in graph.nodes:
         cycles = list(nx.simple_cycles(graph))
         if cycles:
@@ -495,26 +504,26 @@ def dereference_jsonpointers(value):  # , global_dict):
         order = list(explore_tree_from_leaves(graph))
         if '#' in order:
             order.remove('#')
+        return order
+    return []
+            
+    
 
-        # for ref in order:
-        #     print('ref', ref)
+def dereference_jsonpointers(dict_):  # , global_dict):
+    """
+    Analyse the given dict
+    """
 
-        for ref in order:
-            serialized_element = get_in_object_from_path(value, ref)
-            # print(serialized_element)
-            # try:
-            pointers_memo[ref] = deserialize(serialized_element=serialized_element,
-                                             global_dict=value,
-                                             pointers_memo=pointers_memo,
-                                             path=ref)
-            # except:
-            #     print(ref)
-            #     # print('\n', serialized_element)
-            #     # print('\n\n', pointers_memo)
-            #     return serialized_element, pointers_memo
-            #     raise RuntimeError('jjj')
-            # print('\nref', ref, pointers_memo[ref])
-    # print(pointers_memo.keys())
+
+    order = deserialization_order(dict_)
+    
+    pointers_memo = {}
+    for ref in order:
+        serialized_element = get_in_object_from_path(dict_, ref)
+        pointers_memo[ref] = deserialize(serialized_element=serialized_element,
+                                         global_dict=dict_,
+                                         pointers_memo=pointers_memo,
+                                         path=ref)
     return pointers_memo
 
 

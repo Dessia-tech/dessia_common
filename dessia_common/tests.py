@@ -20,7 +20,7 @@ class Position2D(DessiaObject):
 
 
 class Submodel(DessiaObject):
-    _generic_eq = True
+    _standalone_in_db = True
 
     def __init__(self, subvalue: int, name: str = ''):
         self.subvalue = subvalue
@@ -29,7 +29,7 @@ class Submodel(DessiaObject):
 
 
 class Model(DessiaObject):
-    _generic_eq = True
+    _standalone_in_db = True
 
     def __init__(self, value: int, submodel: Submodel, name: str = ''):
         self.value = value
@@ -39,6 +39,8 @@ class Model(DessiaObject):
 
 
 class Generator(DessiaObject):
+    _standalone_in_db = True
+
     def __init__(self, parameter: int, nb_solutions: int = 25, name: str = ''):
         self.parameter = parameter
         self.nb_solutions = nb_solutions
@@ -54,6 +56,8 @@ class Generator(DessiaObject):
 
 
 class Optimizer(DessiaObject):
+    _standalone_in_db = True
+
     def __init__(self, model_to_optimize: Model, name: str = ''):
         self.model_to_optimize = model_to_optimize
 
@@ -64,6 +68,8 @@ class Optimizer(DessiaObject):
 
 
 class Component(DessiaObject):
+    _standalone_in_db = True
+
     def __init__(self, efficiency, name: str = ''):
         self.efficiency = efficiency
         DessiaObject.__init__(self, name=name)
@@ -81,6 +87,8 @@ class ComponentConnection(DessiaObject):
 
 
 class SystemUsage(DessiaObject):
+    _standalone_in_db = True
+
     def __init__(self, time: List[dct.Time], power: List[dct.Power],
                  name: str = ''):
         self.time = time
@@ -89,6 +97,7 @@ class SystemUsage(DessiaObject):
 
 
 class System(DessiaObject):
+    _standalone_in_db = True
     _dessia_methods = ['power_simulation']
 
     def __init__(self, components: List[Component],
@@ -114,6 +123,8 @@ class System(DessiaObject):
 
 
 class SystemSimulationResult(DessiaObject):
+    _standalone_in_db = True
+
     def __init__(self, system: System, system_usage: SystemUsage,
                  output_power: List[dct.Power], name: str = ''):
         self.system = system
@@ -123,6 +134,8 @@ class SystemSimulationResult(DessiaObject):
 
 
 class SystemSimulationList(DessiaObject):
+    _standalone_in_db = True
+
     def __init__(self, simulations: List[SystemSimulationResult],
                  name: str = ''):
         self.simulations = simulations

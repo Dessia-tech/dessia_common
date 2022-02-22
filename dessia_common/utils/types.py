@@ -4,12 +4,10 @@
 
 """
 
-from typing import List, Dict, Type, Tuple, Union, Any, TextIO, BinaryIO, \
-    get_type_hints, get_origin, get_args
+from typing import List, Dict, Tuple, Union, Any, TextIO, BinaryIO, get_origin, get_args
 
 import dessia_common as dc
-from dessia_common.typings import Measure, JsonSerializable,\
-    Subclass, InstanceOf, MethodType, ClassMethodType
+from dessia_common.typings import Subclass, InstanceOf, MethodType, ClassMethodType
 
 import json
 import collections

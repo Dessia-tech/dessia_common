@@ -10,7 +10,6 @@ import pkg_resources
 
 from dessia_common.vectored_objects import Catalog, Objective, ParetoSettings,\
     ObjectiveSettings, pareto_frontier
-import os
 
 choice_args = ['MPG', 'Cylinders', 'Displacement', 'Horsepower',
                'Weight', 'Acceleration', 'Model']  # Ordered
