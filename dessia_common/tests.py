@@ -93,7 +93,7 @@ class System(DessiaObject):
 
     def __init__(self, components: List[Component],
                  component_connections: List[ComponentConnection],
-                 # components_positions: Dict[Component, Position2D],# Handle when permited by jsonschema
+                 components_positions: Dict[Component, Position2D],# Handle when permited by jsonschema
                  name: str = ''):
         self.components = components
         self.component_connections = component_connections
