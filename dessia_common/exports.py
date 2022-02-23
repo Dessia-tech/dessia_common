@@ -3,14 +3,11 @@
 """
 
 """
-import warnings
-
 from openpyxl.styles.borders import Border, Side
 from openpyxl.styles import PatternFill, Font
 from openpyxl import Workbook
 import openpyxl.utils
 from dessia_common.breakdown import breakdown
-from dessia_common.files import XLSXFile
 
 
 def is_hashable(value):

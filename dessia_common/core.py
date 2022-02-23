@@ -28,7 +28,6 @@ from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotat
     JSONSCHEMA_HEADER, set_default_value
 from dessia_common.utils.docstrings import parse_docstring, FAILED_DOCSTRING_PARSING
 from dessia_common.exports import XLSXWriter
-from dessia_common.files import JsonFile, XLSXFile
 from dessia_common.typings import JsonSerializable
 
 
