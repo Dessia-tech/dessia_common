@@ -5,7 +5,7 @@ v1.0
 
 from pylint.lint import Run
 
-MIN_NOTE = 8.85
+MIN_NOTE = 8.83
 
 UNWATCHED_ERRORS = ['fixme',
                     'trailing-whitespace',
