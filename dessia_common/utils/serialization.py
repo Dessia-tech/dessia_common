@@ -117,7 +117,7 @@ def serialize_dict_with_pointers(dict_, memo, path):
                 raise NotImplementedError(f'Unhandled type as key dict: {key}')
             serialized_keys[key] = key
         
-        value_path = f'{path}/{key}'
+        value_path = f'{path}/{serialized_keys[key]}'
         if isinstance(value, dict):
             dict_attrs_keys.append(key)
         elif dcty.is_sequence(value): 
