@@ -182,6 +182,8 @@ def jsonschema_from_annotation(annotation, jsonschema_element, order, editable=N
             if key_type != str:
                 # !!! Should we support other types ? Numeric ?
                 raise NotImplementedError('Non strings keys not supported')
+            if value_type not in dc_types.TYPING_EQUIVALENCES:
+                raise ValueError(f'Dicts should have only builtins keys and values, got {value_type}')
             jsonschema_element[key].update({
                 'type': 'object',
                 'patternProperties': {
