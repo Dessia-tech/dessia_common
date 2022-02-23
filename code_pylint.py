@@ -16,19 +16,11 @@ MAX_ERROR_BY_TYPE = {
                      'no-else-return': 17,
                      'arguments-differ': 18,
                      'no-member': 1,
-<<<<<<< HEAD
                      'too-many-locals': 14,
                      'wrong-import-order': 11,
                      'too-many-branches': 10,
                      'unused-import': 2,
                      'unused-argument': 10,
-=======
-                     'too-many-locals': 15,
-                     'wrong-import-order': 11,
-                     'too-many-branches': 11,
-                     'unused-import': 9,
-                     'unused-argument': 9,
->>>>>>> origin/dev
                      'cyclic-import': 11,
                      'no-self-use': 6,
                      'unused-variable': 6,
@@ -56,11 +48,7 @@ MAX_ERROR_BY_TYPE = {
                      'eval-used': 2,
                      'too-many-nested-blocks': 2,
                      'bad-staticmethod-argument': 1,
-<<<<<<< HEAD
-                     'too-many-public-methods': 2,
-=======
                      'too-many-public-methods': 2,# Try to lower by splitting DessiaObject and Workflow
->>>>>>> origin/dev
                      'consider-using-generator': 1,
                      'too-many-statements': 1,
                      'chained-comparison': 1,
