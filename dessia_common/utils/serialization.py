@@ -131,11 +131,15 @@ def serialize_dict_with_pointers(dict_, memo, path):
     # Handle seq & dicts afterwards
     for key in seq_attrs_keys:
         value_path = f'{path}/{serialized_keys[key]}'
-        serialized_dict[serialized_keys[key]], memo = serialize_sequence_with_pointers(dict_[key], memo=memo, path=value_path)
+        serialized_dict[serialized_keys[key]], memo = serialize_sequence_with_pointers(dict_[key],
+                                                                                       memo=memo,
+                                                                                       path=value_path)
 
     for key in dict_attrs_keys:
         value_path = f'{path}/{serialized_keys[key]}'
-        serialized_dict[serialized_keys[key]], memo = serialize_dict_with_pointers(dict_[key], memo=memo, path=value_path)
+        serialized_dict[serialized_keys[key]], memo = serialize_dict_with_pointers(dict_[key],
+                                                                                   memo=memo,
+                                                                                   path=value_path)
     return serialized_dict, memo
 
 

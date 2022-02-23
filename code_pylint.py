@@ -14,10 +14,10 @@ UNWATCHED_ERRORS = ['fixme',
 
 MAX_ERROR_BY_TYPE = {
                      'protected-access': 27,
-                     'invalid-name': 27,
+                     'invalid-name': 24,
                      'consider-using-f-string': 35,
                      'no-else-return': 23,
-                     'arguments-differ': 22,
+                     'arguments-differ': 23,
                      'no-member': 1,
                      'too-many-locals': 15,
                      'wrong-import-order': 11,

@@ -238,7 +238,7 @@ class Display(Block):
         return cls(order=dict_['order'], name=dict_['name'])
 
     @staticmethod
-    def evaluate(self):
+    def evaluate():
         return []
 
 
@@ -1861,10 +1861,10 @@ class WorkflowBlock(Block):
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_):
-        b = cls(workflow=Workflow.dict_to_object(dict_['workflow']),
+        block = cls(workflow=Workflow.dict_to_object(dict_['workflow']),
                 name=dict_['name'])
 
-        return b
+        return block
 
     def evaluate(self, values):
         args = {self.inputs.index(input_): v for input_, v in values.items()}
@@ -1926,11 +1926,11 @@ class WorkflowState(DessiaObject):
             workflow = self.workflow.to_dict(use_pointers=False)
 
         input_values = {}
-        for i, v in self.input_values.items():
+        for i, value in self.input_values.items():
             if use_pointers:
-                serialized_v, memo = serialize_with_pointers(v, memo, path='#/input_values/{}'.format(i))
+                serialized_v, memo = serialize_with_pointers(value, memo, path='#/input_values/{}'.format(i))
             else:
-                serialized_v = serialize(v)
+                serialized_v = serialize(value)
             input_values[i] = serialized_v
 
         if use_pointers:
@@ -2330,20 +2330,20 @@ class WorkflowRun(DessiaObject):
             memo = {}
 
         input_values = {}
-        for i, v in self.input_values.items():
+        for i, value in self.input_values.items():
             if use_pointers:
-                serialized_v, memo = serialize_with_pointers(v, memo, path='#/input_values/{}'.format(i))
+                serialized_v, memo = serialize_with_pointers(value, memo, path='#/input_values/{}'.format(i))
             else:
-                serialized_v = serialize(v)
+                serialized_v = serialize(value)
             input_values[i] = serialized_v
 
         variables_values = {}
-        for k, v in self.variables_values.items():
+        for k, value in self.variables_values.items():
             if use_pointers:
-                serialized_v, memo = serialize_with_pointers(v, memo,
+                serialized_v, memo = serialize_with_pointers(value, memo,
                                                              path='#/variables_values/{}'.format(k))
             else:
-                serialized_v = serialize(v)
+                serialized_v = serialize(value)
             variables_values[k] = serialized_v
 
         # variables_values = {k: serialize(v)
