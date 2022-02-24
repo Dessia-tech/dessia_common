@@ -113,8 +113,12 @@ class TypedVariableWithDefaultValue(TypedVariable):
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
                        pointers_memo: Dict[str, Any] = None) -> 'TypedVariableWithDefaultValue':
         type_ = deserialize_typing(dict_['type_'])
-        default_value = deserialize(dict_['default_value'])
-        return cls(type_=type_, default_value=default_value, memorize=dict_['memorize'], name=dict_['name'])
+        default_value = deserialize(dict_['default_value'], global_dict=global_dict,
+                                    pointers_memo=pointers_memo)
+        return cls(type_=type_,
+                   default_value=default_value,
+                   memorize=dict_['memorize'],
+                   name=dict_['name'])
 
     def copy(self, deep: bool = False, memo=None):
         """
@@ -1232,7 +1236,8 @@ class Workflow(Block):
             var_index = self.variable_indices(variable)
 
             if use_pointers:
-                ser_value = serialize_with_pointers(value, memo=memo, path=f"{path}/{var_index}")
+                ser_value, memo = serialize_with_pointers(value, memo=memo,
+                                                          path=f"{path}/imposed_variable_values/{var_index}")
 
             else:
                 ser_value = serialize(value)
@@ -1275,7 +1280,7 @@ class Workflow(Block):
             imposed_variable_values = {}
             iterator = zip(dict_['imposed_variables'], dict_['imposed_variable_values'])
             for variable_index, serialized_value in iterator:
-                value = deserialize(serialized_value)
+                value = deserialize(serialized_value, global_dict=global_dict, pointers_memo=pointers_memo)
                 variable = temp_workflow.variable_from_index(variable_index)
 
                 imposed_variable_values[variable] = value
@@ -1283,7 +1288,7 @@ class Workflow(Block):
             # New format with a dict
             imposed_variable_values = {}
             for variable_index, serialized_value in dict_['imposed_variable_values']:
-                value = deserialize(serialized_value)
+                value = deserialize(serialized_value, global_dict=global_dict, pointers_memo=pointers_memo)
                 variable = temp_workflow.variable_from_index(variable_index)
                 imposed_variable_values[variable] = value
 
@@ -1888,7 +1893,7 @@ class WorkflowState(DessiaObject):
         input_values = {}
         for input_, value in self.input_values.items():
             if use_pointers:
-                serialized_v, memo = serialize_with_pointers(value=value, memo=memo, path=f"#/input_values/{input_}")
+                serialized_v, memo = serialize_with_pointers(value=value, memo=memo, path=f"{path}/input_values/{input_}")
             else:
                 serialized_v = serialize(value)
             input_values[input_] = serialized_v
@@ -1896,8 +1901,9 @@ class WorkflowState(DessiaObject):
         if use_pointers:
             values = {}
             for variable, value in self.values.items():
-                values[self.workflow.variable_index(variable)] = serialize_with_pointers(value=value, memo=memo,
-                                                                                         path=f"#/values/{variable}")
+                variable_index = self.workflow.variable_index(variable)
+                serialized_value, memo = serialize_with_pointers(value=value, memo=memo, path=f"{path}/values/{variable_index}")
+                values[variable_index] = serialized_value
         else:
             values = {self.workflow.variable_index(i): serialize(v) for i, v in self.values.items()}
 
@@ -1913,8 +1919,8 @@ class WorkflowState(DessiaObject):
                                                 if v in self.activated_items and self.activated_items[v]]
         if self.output_value is not None:
             if use_pointers:
-                serialized_output_value, _ = serialize_with_pointers(self.output_value, memo=memo,
-                                                                     path='#/output_value')
+                serialized_output_value, memo = serialize_with_pointers(self.output_value, memo=memo,
+                                                                        path='#/output_value')
             else:
                 serialized_output_value = serialize(self.output_value)
 
@@ -1935,9 +1941,11 @@ class WorkflowState(DessiaObject):
         else:
             output_value = None
 
-        values = {workflow.variables[int(i)]: deserialize(v) for i, v in dict_['values'].items()}
+        values = {workflow.variables[int(i)]: deserialize(v, global_dict=global_dict, pointers_memo=pointers_memo)\
+                  for i, v in dict_['values'].items()}
 
-        input_values = {int(i): deserialize(v) for i, v in dict_['input_values'].items()}
+        input_values = {int(i): deserialize(v, global_dict=global_dict, pointers_memo=pointers_memo)\
+                        for i, v in dict_['input_values'].items()}
 
         activated_items = {b: (True if i in dict_['evaluated_blocks_indices'] else False)
                            for i, b in enumerate(workflow.blocks)}

@@ -197,9 +197,6 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
     '''
     Transform a dict to an object
     '''
-    
-    if '$ref' in dict_:
-        return pointers_memo[dict_['$ref']]
 
     class_argspec = None
 
@@ -209,6 +206,9 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
     if global_dict is None:
         global_dict = dict_
         pointers_memo.update(dereference_jsonpointers(dict_))
+
+    if '$ref' in dict_:
+        return pointers_memo[dict_['$ref']]
 
     # working_dict = dict_
 
