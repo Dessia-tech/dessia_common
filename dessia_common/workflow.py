@@ -21,7 +21,7 @@ from dessia_common import DessiaObject, DisplayObject, DessiaFilter,  is_sequenc
     deserialize_argument, set_default_value, prettyname, serialize_dict
 from dessia_common.errors import UntypedArgumentError
 from dessia_common.utils.serialization import dict_to_object, deserialize, serialize_with_pointers, serialize,\
-    recursive_instantiation
+                                              dereference_jsonpointers
 from dessia_common.utils.types import get_python_class_from_class_name, serialize_typing, full_classname,\
     deserialize_typing, recursive_type
 from dessia_common.utils.copy import deepcopy_value
@@ -1886,10 +1886,13 @@ class WorkflowState(DessiaObject):
             memo = {}
 
         if use_pointers:
-            workflow = self.workflow.to_dict(path='#/workflow', memo=memo)
+            workflow_dict = self.workflow.to_dict(path=f'{path}/workflow', memo=memo)
         else:
-            workflow = self.workflow.to_dict(use_pointers=False)
+            workflow_dict = self.workflow.to_dict(use_pointers=False)
 
+        dict_ = self.base_dict()
+        dict_['workflow'] = workflow_dict
+        
         input_values = {}
         for input_, value in self.input_values.items():
             if use_pointers:
@@ -1899,6 +1902,22 @@ class WorkflowState(DessiaObject):
                 serialized_v = serialize(value)
             input_values[input_] = serialized_v
 
+        dict_['input_values'] = input_values
+
+
+        # Output value: priority for reference before values
+        if self.output_value is not None:
+            if use_pointers:
+                serialized_output_value, memo = serialize_with_pointers(self.output_value, memo=memo,
+                                                                        path=f'{path}/output_value')
+            else:
+                serialized_output_value = serialize(self.output_value)
+
+            dict_.update({'output_value': serialized_output_value,
+                          'output_value_type': recursive_type(self.output_value)})
+
+
+        # Values
         if use_pointers:
             values = {}
             for variable, value in self.values.items():
@@ -1909,8 +1928,8 @@ class WorkflowState(DessiaObject):
         else:
             values = {self.workflow.variable_index(i): serialize(v) for i, v in self.values.items()}
 
-        dict_ = self.base_dict()
-        dict_.update({'workflow': workflow, 'input_values': input_values, 'values': values})
+        dict_['values'] = values
+        
         dict_['evaluated_blocks_indices'] = [i for i, b in enumerate(self.workflow.blocks)
                                              if b in self.activated_items and self.activated_items[b]]
 
@@ -1919,38 +1938,41 @@ class WorkflowState(DessiaObject):
 
         dict_['evaluated_variables_indices'] = [self.workflow.variable_indices(v) for v in self.workflow.variables
                                                 if v in self.activated_items and self.activated_items[v]]
-        if self.output_value is not None:
-            if use_pointers:
-                serialized_output_value, memo = serialize_with_pointers(self.output_value, memo=memo,
-                                                                        path='#/output_value')
-            else:
-                serialized_output_value = serialize(self.output_value)
-
-            dict_.update({'output_value': serialized_output_value,
-                          'output_value_type': recursive_type(self.output_value)})
 
         dict_.update({'start_time': self.start_time, 'end_time': self.end_time, 'log': self.log})
         return dict_
 
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None) -> 'WorkflowState':
+                        global_dict=None, pointers_memo: Dict[str, Any] = None, path:str='#') -> 'WorkflowState':
+        
+        if pointers_memo is None:
+            pointers_memo = {}
+            
+        if global_dict is None:
+            global_dict = dict_
+            pointers_memo.update(dereference_jsonpointers(dict_))
+
+        
         workflow = Workflow.dict_to_object(dict_['workflow'])
-        if 'output_value' in dict_ and 'output_value_type' in dict_:
-            type_ = dict_['output_value_type']
+        if 'output_value' in dict_:# and 'output_value_type' in dict_:
+            # type_ = dict_['output_value_type']
             value = dict_['output_value']
-            output_value = recursive_instantiation(type_=type_, value=value)
+            output_value = deserialize(value, global_dict=dict_,
+                                        pointers_memo=pointers_memo, path=f'{path}/output_value')
         else:
             output_value = None
 
-        values = {workflow.variables[int(i)]: deserialize(v, global_dict=global_dict, pointers_memo=pointers_memo)\
+        values = {workflow.variables[int(i)]: deserialize(v,
+                                                          global_dict=dict_,
+                                                          pointers_memo=pointers_memo)\
                   for i, v in dict_['values'].items()}
 
-        input_values = {int(i): deserialize(v, global_dict=global_dict, pointers_memo=pointers_memo)\
+        input_values = {int(i): deserialize(v, global_dict=dict_, pointers_memo=pointers_memo)\
                         for i, v in dict_['input_values'].items()}
 
         activated_items = {b: (True if i in dict_['evaluated_blocks_indices'] else False)
-                           for i, b in enumerate(workflow.blocks)}
+                            for i, b in enumerate(workflow.blocks)}
 
         activated_items.update({p: (True if i in dict_['evaluated_pipes_indices'] else False)
                                 for i, p in enumerate(workflow.pipes)})
@@ -1965,8 +1987,8 @@ class WorkflowState(DessiaObject):
                                 for v in workflow.variables})
 
         return cls(workflow=workflow, input_values=input_values, activated_items=activated_items,
-                   values=values, start_time=dict_['start_time'], end_time=dict_['end_time'],
-                   output_value=output_value, log=dict_['log'], name=dict_['name'])
+                    values=values, start_time=dict_['start_time'], end_time=dict_['end_time'],
+                    output_value=output_value, log=dict_['log'], name=dict_['name'])
 
     def add_input_value(self, input_index: int, value):
         """

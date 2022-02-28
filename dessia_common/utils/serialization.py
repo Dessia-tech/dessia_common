@@ -144,7 +144,7 @@ def serialize_sequence_with_pointers(seq, memo, path):
 
 
 def deserialize(serialized_element, sequence_annotation: str = 'List',
-                global_dict=None, pointers_memo=None, path='#'):
+                global_dict=None, pointers_memo=None, path:str='#'):
     """
     Main function for deserialization, handle pointers
     """
@@ -261,7 +261,7 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
     return obj
 
 
-def recursive_instantiation(type_, value):
+def deserialize_with_type(type_, value):
     if type_ in dcty.TYPES_STRINGS.values():
         return eval(type_)(value)
     elif isinstance(type_, str):
@@ -271,7 +271,7 @@ def recursive_instantiation(type_, value):
         else:
             raise NotImplementedError
     elif isinstance(type_, (list, tuple)):
-        return [recursive_instantiation(t, v) for t, v in zip(type_, value)]
+        return [deserialize_with_type(t, v) for t, v in zip(type_, value)]
     elif type_ is None:
         return value
     else:
