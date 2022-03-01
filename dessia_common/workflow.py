@@ -1699,7 +1699,7 @@ class Workflow(Block):
 
     def package_mix(self):
         """
-        Computea structure showing percentages of packages used
+        Compute a structure showing percentages of packages used
         """
         package_mix = {}
         for block in self.blocks:
@@ -2134,7 +2134,7 @@ class WorkflowState(DessiaObject):
 
     def _activable_blocks(self):
         """
-        Returns a list of all activable blocks, ie blocks that havec all inputs ready for evaluation
+        Returns a list of all activable blocks, ie blocks that have all inputs ready for evaluation
         """
         if self.progress < 1:
             blocks = self.workflow.runtime_blocks
