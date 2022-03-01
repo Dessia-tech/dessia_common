@@ -28,21 +28,21 @@ workflow_run.to_dict(use_pointers=False)
 
 manual_run = simulation_workflow.start_run({0: components1, 1:component_connections1})
 
-print(manual_run)
+# print(manual_run)
 
 evaluated_block = manual_run.evaluate_next_block()
 assert evaluated_block is not None
-print(evaluated_block)
+# print(evaluated_block)
 
 evaluated = manual_run.block_evaluation(1)
-print(evaluated)
+# print(evaluated)
 assert not evaluated
 
 manual_run.add_input_value(3, usage1)
 
 evaluated_blocks = manual_run.continue_run()
 assert(manual_run.progress == 1)
-print(manual_run.progress)
+print('progress: ', manual_run.progress)
 
 manual_run._displays()
 manual_run.to_dict(use_pointers=False)

@@ -97,6 +97,7 @@ class XLSFile(BinaryFile):
     """
     extension = 'xls'
 
+
 class XLSMFile(XLSXFile):
     """
     Excel XML with macros
@@ -127,6 +128,7 @@ class CSVFile(StringFile):
         template.seek(0)
         return template
 
+
 class MarkdownFile(StringFile):
     """
     Markdown file
@@ -142,3 +144,10 @@ class MarkdownFile(StringFile):
                        ' to define your own filetype')
         template.seek(0)
         return template
+
+
+class JsonFile(StringFile):
+    """
+    A .json extended file
+    """
+    extension = "json"

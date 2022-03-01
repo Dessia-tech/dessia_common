@@ -161,3 +161,24 @@ def sequence_data_eq(seq1, seq2):
                 return False
 
     return True
+
+
+def choose_hash(object_):
+    if is_sequence(object_):
+        return list_hash(object_)
+    if isinstance(object_, dict):
+        return dict_hash(object_)
+    if isinstance(object_, str):
+        return sum([ord(e) for e in object_])
+    return hash(object_)
+
+
+def list_hash(list_):
+    return sum([choose_hash(e) for e in list_])
+
+
+def dict_hash(dict_):
+    hash_ = 0
+    for key, value in dict_.items():
+        hash_ += hash(key) + choose_hash(value)
+    return hash_

@@ -5,32 +5,29 @@ v1.0
 
 from pylint.lint import Run
 
-MIN_NOTE = 8.85
+MIN_NOTE = 9
 
-UNWATCHED_ERRORS = ['fixme',
-                    'trailing-whitespace',
-                    'import-error'
-                    ]
+UNWATCHED_ERRORS = ['fixme', 'trailing-whitespace', 'import-error']
 
 MAX_ERROR_BY_TYPE = {
                      'protected-access': 27,
-                     'invalid-name': 27,
-                     'consider-using-f-string': 35,
-                     'no-else-return': 23,
-                     'arguments-differ': 22,
+                     'invalid-name': 22,
+                     'consider-using-f-string': 16,
+                     'no-else-return': 17,
+                     'arguments-differ': 5,
                      'no-member': 1,
-                     'too-many-locals': 15,
-                     'wrong-import-order': 12,
-                     'too-many-branches': 12,
-                     'unused-import': 9,
-                     'unused-argument': 10,
+                     'too-many-locals': 14,
+                     'wrong-import-order': 11,
+                     'too-many-branches': 9,
+                     'unused-import': 0,
+                     'unused-argument': 9,
                      'cyclic-import': 11,
-                     'no-self-use': 7,
-                     'unused-variable': 7,
+                     'no-self-use': 6,
+                     'unused-variable': 6,
                      'trailing-whitespace': 11,
-                     'empty-docstring': 11,
+                     'empty-docstring': 8,
                      'missing-module-docstring': 10,
-                     'too-many-arguments': 10,
+                     'too-many-arguments': 6,
                      'too-few-public-methods': 5,
                      'unnecessary-comprehension': 5,
                      'no-value-for-parameter': 2,
@@ -39,11 +36,10 @@ MAX_ERROR_BY_TYPE = {
                      'consider-merging-isinstance': 6,
                      'abstract-method': 6,
                      'import-outside-toplevel': 6,
-                     'too-many-instance-attributes': 5,
+                     'too-many-instance-attributes': 4,
                      'consider-iterating-dictionary': 4,
                      'attribute-defined-outside-init': 3,
                      'simplifiable-if-expression': 3,
-                     'redefined-builtin': 3,
                      'broad-except': 3,
                      'consider-using-get': 2,
                      'undefined-loop-variable': 2,
@@ -51,13 +47,15 @@ MAX_ERROR_BY_TYPE = {
                      'eval-used': 2,
                      'too-many-nested-blocks': 2,
                      'bad-staticmethod-argument': 1,
-                     'too-many-public-methods': 1,
+                     'too-many-public-methods': 2,# Try to lower by splitting DessiaObject and Workflow
                      'consider-using-generator': 1,
                      'too-many-statements': 1,
                      'chained-comparison': 1,
                      'wildcard-import': 1,
                      'use-maxsplit-arg': 1,
+                     'duplicate-code': 1,
                      # No tolerance errors
+                     'redefined-builtin': 0,
                      'arguments-renamed': 0,
                      'ungrouped-imports': 0,
                      'super-init-not-called': 0,

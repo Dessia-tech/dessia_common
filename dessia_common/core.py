@@ -3,42 +3,37 @@
 """
 
 """
-# import io
 import sys
 import warnings
 import math
 import random
-# import copy
 from functools import reduce
 import collections
 from copy import deepcopy
 import inspect
 import json
 
-from typing import List, Dict, Union, Any, get_type_hints
+from typing import List, Dict, Union, Any, Tuple, get_type_hints
 import traceback as tb
 
 from importlib import import_module
 
 import dessia_common.errors
-from dessia_common.utils.diff import data_eq, diff
+from dessia_common.utils.diff import data_eq, diff, dict_hash, list_hash
 from dessia_common.utils.serialization import dict_to_object, serialize_dict_with_pointers,\
-                                                serialize_dict, deserialize_argument
+    serialize_dict, deserialize_argument
 from dessia_common.utils.types import full_classname, is_sequence, is_bson_valid, TYPES_FROM_STRING
 from dessia_common.utils.copy import deepcopy_value
 from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotation,\
-                                           JSONSCHEMA_HEADER, set_default_value
+    JSONSCHEMA_HEADER, set_default_value
 from dessia_common.utils.docstrings import parse_docstring, FAILED_DOCSTRING_PARSING
 from dessia_common.exports import XLSXWriter
 from dessia_common.typings import JsonSerializable
 
 
-
-
 _FORBIDDEN_ARGNAMES = ['self', 'cls', 'progress_callback', 'return']
 
 
-# DEPRECATED_ATTRIBUTES = {'_editable_variss' : '_allowed_methods'}
 def deprecated(use_instead=None):
     def decorated(function):
         def wrapper(*args, **kwargs):
@@ -60,7 +55,6 @@ def deprecation_warning(name, object_type, use_instead=None):
         msg += f"Use {use_instead} instead.\n"
     warnings.warn(msg, DeprecationWarning)
     return msg
-
 
 class DessiaObject:
     """
@@ -238,10 +232,8 @@ class DessiaObject:
         return serialized_dict
 
     @classmethod
-    def dict_to_object(cls, dict_: JsonSerializable,
-                       force_generic: bool = False,
-                       global_dict=None,
-                       pointers_memo: Dict[str, Any] = None) -> 'DessiaObject':
+    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path:str='#') -> 'DessiaObject':
         """
         Generic dict_to_object method
         """
@@ -250,12 +242,15 @@ class DessiaObject:
             obj = dict_to_object(dict_=dict_, class_=cls,
                                  force_generic=force_generic,
                                  global_dict=global_dict,
-                                 pointers_memo=pointers_memo)
+                                 pointers_memo=pointers_memo,
+                                 path=path)
             return obj
-        elif 'object_class' in dict_:
+
+        if 'object_class' in dict_:
             obj = dict_to_object(dict_=dict_, force_generic=force_generic,
                                  global_dict=global_dict,
-                                 pointers_memo=pointers_memo)
+                                 pointers_memo=pointers_memo,
+                                 path=path)
             return obj
         # else:
             # Using default
@@ -370,8 +365,7 @@ class DessiaObject:
             method = getattr(class_, method_name)
 
             if not isinstance(method, property):
-                required_args, default_args = inspect_arguments(method=method,
-                                                                merge=False)
+                required_args, default_args = inspect_arguments(method=method, merge=False)
                 annotations = get_type_hints(method)
                 if annotations:
                     jsonschemas[method_name] = deepcopy(JSONSCHEMA_HEADER)
@@ -382,21 +376,18 @@ class DessiaObject:
                         argname = annotation[0]
                         if argname not in _FORBIDDEN_ARGNAMES:
                             if argname in required_args:
-                                jsonschemas[method_name]['required'].append(
-                                    str(i))
+                                jsonschemas[method_name]['required'].append(str(i))
                             jsonschema_element = \
-                                jsonschema_from_annotation(annotation, {}, i)[
-                                    argname]
+                                jsonschema_from_annotation(annotation, {}, i)[argname]
 
-                            jsonschemas[method_name]['properties'][
-                                str(i)] = jsonschema_element
+                            jsonschemas[method_name]['properties'][str(i)] = jsonschema_element
                             if argname in default_args.keys():
                                 default = set_default_value(
                                     jsonschemas[method_name]['properties'],
                                     str(i),
-                                    default_args[argname])
-                                jsonschemas[method_name]['properties'].update(
-                                    default)
+                                    default_args[argname]
+                                )
+                                jsonschemas[method_name]['properties'].update(default)
         return jsonschemas
 
     def method_dict(self, method_name=None, method_jsonschema=None):
@@ -435,41 +426,40 @@ class DessiaObject:
                 arguments[arg] = deserialized_value
         return arguments
 
-    def save_to_file(self, filepath, indent=2):
+    def save_to_file(self, filepath:str, indent:int=2):
         """
-        Save to a JSON file the object
+        Save object to a JSON file
         :param filepath: either a string reprensenting the filepath or a stream
         """
-        # Maybe split in several functions for stream and file
-        if isinstance(filepath, str):
-            if not filepath.endswith('.json'):
-                filepath += '.json'
-                print(f'Changing name to {filepath}')
-            file = open(filepath, 'w', encoding='utf-8')
-        else:
-            file = filepath
-
+        if not filepath.endswith('.json'):
+            filepath += '.json'
+            print(f'Changing name to {filepath}')
+        with open(filepath, 'w', encoding='utf-8') as file:
+            self.save_to_stream(file, indent=indent)
+        
+    def save_to_stream(self, stream, indent:int=2):
         try:
             dict_ = self.to_dict(use_pointers=True)
         except TypeError:
             dict_ = self.to_dict()
 
-        json.dump(dict_, file, indent=indent)
-
-        if isinstance(filepath, str):
-            file.close()
+        json.dump(dict_, stream, indent=indent)
+        
 
     @classmethod
-    def load_from_file(cls, filepath):
+    def load_from_stream(cls, stream):
+        dict_ = json.loads(stream.read().decode('utf-8'))
+        return cls.dict_to_object(dict_)
+
+    @classmethod
+    def load_from_file(cls, filepath:str):
         """
         Load object from a json file
         :param filepath: either a string reprensenting the filepath or a stream
         """
-        if isinstance(filepath, str):
-            with open(filepath, 'r', encoding='utf-8') as file:
-                dict_ = json.load(file)
-        else:
-            dict_ = json.loads(filepath.read().decode('utf-8'))
+        with open(filepath, 'r', encoding='utf-8') as file:
+            dict_ = json.load(file)
+
         return cls.dict_to_object(dict_)
 
     def is_valid(self):
@@ -490,7 +480,6 @@ class DessiaObject:
         for arg in class_argspec.args:
             if arg != 'self':
                 value = self.__dict__[arg]
-
                 if hasattr(value, '__copy__'):
                     dict_[arg] = value.__copy__()
                 else:
@@ -574,6 +563,10 @@ class DessiaObject:
                                                                    debug=debug)
 
     def _displays(self, **kwargs) -> List[JsonSerializable]:
+        """
+        Generate displays of the object to be plot in the DessiA Platform
+        """
+        
         if hasattr(self, '_display_angular'):
             # Retro-compatibility
             deprecation_warning(name='_display_angular', object_type='method',
@@ -614,6 +607,7 @@ class DessiaObject:
     def _check_platform(self):
         """
         Reproduce lifecycle on platform (serialization, display)
+        raise an error if something is wrong
         """
         try:
             dict_ = self.to_dict(use_pointers=True)
@@ -622,9 +616,13 @@ class DessiaObject:
         json_dict = json.dumps(dict_)
         decoded_json = json.loads(json_dict)
         deserialized_object = self.dict_to_object(decoded_json)
-        assert deserialized_object._data_eq(self)
+        if not deserialized_object._data_eq(self):
+            raise dessia_common.errors.DeserializationError('Object is not equal to itself'
+                                                            ' after serialization/deserialization')
         copied_object = self.copy()
-        assert copied_object._data_eq(self)
+        if not copied_object._data_eq(self):
+            raise dessia_common.errors.CopyError('Object is not equal to itself'
+                                                 ' after copy')
 
         valid, hint = is_bson_valid(stringify_dict_keys(dict_))
         if not valid:
@@ -632,28 +630,54 @@ class DessiaObject:
         json.dumps(self._displays())
         json.dumps(self._method_jsonschemas)
 
-    def to_xlsx(self, filepath):
+    def to_xlsx(self, filepath:str):
+        """
+        Exports the object to an XLSX file given by the filepath
+        """
+        with open(filepath, 'wb') as file:
+            self.to_xlsx_stream(file)
+            
+    def to_xlsx_stream(self, stream):
+        """
+        Exports the object to an XLSX to a given stream
+        """
         writer = XLSXWriter(self)
-        writer.save_to_file(filepath)
+        writer.save_to_stream(stream)
 
-    def to_step(self, filepath):
+    def to_step(self, filepath:str):
         """
-        filepath can be a str or an io.StringIO
+        Exports the CAD of the object to step. Works if the class define a custom volmdlr model
+        :param filepath: a str representing a filepath
         """
+        self.volmdlr_volume_model().to_step(filepath=filepath)
         return self.volmdlr_volume_model().to_step(filepath=filepath)
+
+    def to_step_stream(self, stream):
+        """
+        Exports the CAD of the object to a stream in the STEP format. Works if the class define a custom volmdlr model
+        """
+        return self.volmdlr_volume_model().to_step_stream(stream=stream)
+
+    def to_stl_stream(self, stream):
+        """
+        Exports the CAD of the object to STL to a given stream
+        """
+        return self.volmdlr_volume_model().to_stl_stream(stream=stream)
 
     def to_stl(self, filepath):
         """
-        filepath can be a str or an io.StringIO
+        Exports the CAD of the object to STL. Works if the class define a custom volmdlr model
+        :param filepath: a str representing a filepath
         """
         return self.volmdlr_volume_model().to_stl(filepath=filepath)
 
     def _export_formats(self):
-        formats = [('json', 'save_to_file', True),
-                   ('xlsx', 'to_xlsx', False)]
+        formats = [{"extension": "json", "method_name": "save_to_stream", "text": True, "args": {}},
+                   {"extension": "xlsx", "method_name": "to_xlsx_stream", "text": False, "args": {}}]
         if hasattr(self, 'volmdlr_primitives'):
-            formats.append(('step', 'to_step', True))
-            formats.append(('stl', 'to_stl', False))
+            formats3d = [{"extension": "step", "method_name": "to_step_stream", "text": True, "args": {}},
+                         {"extension": "stl", "method_name": "to_stl_stream", "text": False, "args": {}}]
+            formats.extend(formats3d)
         return formats
 
 
@@ -892,32 +916,6 @@ def stringify_dict_keys(obj):
     return new_obj
 
 
-def list_hash(list_):
-    hash_ = 0
-    for element in list_:
-        if is_sequence(element):
-            hash_ += list_hash(element)
-        elif isinstance(element, dict):
-            hash_ += dict_hash(element)
-        elif isinstance(element, str):
-            hash_ += sum([ord(e) for e in element])
-        else:
-            hash_ += hash(element)
-    return hash_
-
-
-def dict_hash(dict_):
-    hash_ = 0
-    for key, value in dict_.items():
-        if is_sequence(value):
-            hash_ += list_hash(value)
-        elif isinstance(value, dict):
-            hash_ += dict_hash(value)
-        else:
-            hash_ += hash(key) + hash(value)
-    return hash_
-
-
 def getdeepattr(obj, attr):
     return reduce(getattr, [obj] + attr.split('.'))
 
@@ -980,16 +978,15 @@ def concatenate_attributes(prefix, suffix, type_: str = 'str'):
     if type_ == 'str':
         if isinstance(prefix, str):
             return prefix + '/' + str(suffix)
-        elif is_sequence(prefix):
+        if is_sequence(prefix):
             return sequence_to_deepattr(prefix) + '/' + str(suffix)
         raise TypeError(wrong_prefix_format.format(type(prefix)))
-    
+
     if type_ == 'sequence':
         if isinstance(prefix, str):
             return [prefix, suffix]
-        elif is_sequence(prefix):
+        if is_sequence(prefix):
             return prefix + [suffix]
-
         raise TypeError(wrong_prefix_format.format(type(prefix)))
 
     wrong_concat_type = 'Type {} for concatenation is not supported.'
@@ -1063,21 +1060,15 @@ def prettyname(namestr):
 
 def inspect_arguments(method, merge=False):
     # Find default value and required arguments of class construction
-    args_specs = inspect.getfullargspec(method)
-    nargs = len(args_specs.args) - 1
-
-    if args_specs.defaults is not None:
-        ndefault_args = len(args_specs.defaults)
-    else:
-        ndefault_args = 0
+    argspecs = inspect.getfullargspec(method)
+    nargs, ndefault_args = split_argspecs(argspecs)
 
     default_arguments = {}
     arguments = []
-    for iargument, argument in enumerate(args_specs.args[1:]):
+    for iargument, argument in enumerate(argspecs.args[1:]):
         if argument not in _FORBIDDEN_ARGNAMES:
             if iargument >= nargs - ndefault_args:
-                default_value = args_specs.defaults[ndefault_args - nargs
-                                                    + iargument]
+                default_value = argspecs.defaults[ndefault_args - nargs + iargument]
                 if merge:
                     arguments.append((argument, default_value))
                 else:
@@ -1085,3 +1076,13 @@ def inspect_arguments(method, merge=False):
             else:
                 arguments.append(argument)
     return arguments, default_arguments
+
+
+def split_argspecs(argspecs) -> Tuple[int, int]:
+    nargs = len(argspecs.args) - 1
+
+    if argspecs.defaults is not None:
+        ndefault_args = len(argspecs.defaults)
+    else:
+        ndefault_args = 0
+    return nargs, ndefault_args
