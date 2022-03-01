@@ -10,7 +10,7 @@ scripts = ['displays.py',
            'workflow_with_models.py',
            'workflow/power_simulation.py',
            'workflow/forms_simulation.py',
-           'workflow_state_equalities.py',
+           'workflow/workflow_state_equalities.py',
            # Utils
            'utils/algebra.py',
            'utils/interpolation.py',
