@@ -3,7 +3,6 @@
 """
 
 """
-
 from openpyxl.styles.borders import Border, Side
 from openpyxl.styles import PatternFill, Font
 from openpyxl import Workbook
@@ -45,10 +44,8 @@ class XLSXWriter:
     grey1 = "f1f1f1"
     white_font = Font(color="FFFFFF")
 
-    thin_border = Border(left=Side(style='thin'),
-                         right=Side(style='thin'),
-                         top=Side(style='thin'),
-                         bottom=Side(style='thin'))
+    thin_border = Border(left=Side(style='thin'), right=Side(style='thin'),
+                         top=Side(style='thin'), bottom=Side(style='thin'))
 
     def __init__(self, object_):
 
@@ -132,12 +129,11 @@ class XLSXWriter:
             cell.hyperlink = cell_link
 
         cell.border = self.thin_border
-        
 
     def write_object_to_row(self, obj, sheet, row_number, path=''):
-        '''
+        """
         Write on object to a row. Loops on its attributes to write its value in each cell
-        '''
+        """
         cell = sheet.cell(row=row_number, column=1, value=path)
         cell.border = self.thin_border
         if hasattr(obj, 'name'):
@@ -194,9 +190,9 @@ class XLSXWriter:
         sheet['A4'].border = self.thin_border
 
     def write(self):
-        '''
+        """
         Generate the whole file
-        '''
+        """
         # name_column_width = 0
         self.write_object_id(self.main_sheet)
         self.write_class_header_to_row(self.object, self.main_sheet, 3)
@@ -218,10 +214,10 @@ class XLSXWriter:
     def save_to_file(self, filepath):
         if not filepath.endswith('.xlsx'):
             filepath += '.xlsx'
-            
+            print(f"Changing name to {filepath}")
+
         with open(filepath, 'rb') as file:
             self.save_to_stream(file)
-        
 
     def save_to_stream(self, stream):
         """
@@ -229,11 +225,10 @@ class XLSXWriter:
         """
         self.workbook.save(stream)
 
-
     def autosize_sheet_columns(self, sheet, min_width=5, max_width=30):
-        '''
+        """
         Autosize the sheet columns by analyzing the content. Min and max width must be specified
-        '''
+        """
         # Autosize columns
         for col in sheet.columns:
             width = min_width

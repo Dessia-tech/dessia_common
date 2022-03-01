@@ -14,16 +14,16 @@ import collections
 from importlib import import_module
 
 
-TYPING_EQUIVALENCES = {int: 'number', float: 'number',
-                       bool: 'boolean', str: 'string'}
+TYPING_EQUIVALENCES = {int: 'number', float: 'number', bool: 'boolean', str: 'string'}
 
 TYPES_STRINGS = {int: 'int', float: 'float', bool: 'boolean', str: 'str',
                  list: 'list', tuple: 'tuple', dict: 'dict'}
 
 SEQUENCE_TYPINGS = ['List', 'Sequence', 'Iterable']
 
-TYPES_FROM_STRING = {'unicode': str, 'str': str, 'float': float,
-                     'int': int, 'bool': bool}
+TYPES_FROM_STRING = {'unicode': str, 'str': str, 'float': float, 'int': int, 'bool': bool}
+
+SERIALIZED_BUILTINS = ['float', 'builtins.float', 'int', 'builtins.int', 'str', 'builtins.str', 'bool', 'builtins.bool']
 
 
 def full_classname(object_, compute_for: str = 'instance'):
@@ -53,8 +53,7 @@ def is_sequence(obj):
     :return: bool. True if object is a sequence but not a string.
                    False otherwise
     """
-    return isinstance(obj, collections.abc.Sequence)\
-        and not isinstance(obj, str)
+    return isinstance(obj, collections.abc.Sequence) and not isinstance(obj, str)
 
 
 def is_builtin(type_):
@@ -96,38 +95,7 @@ def is_typing(object_: Any):
 
 def serialize_typing(typing_):
     if is_typing(typing_):
-        origin = get_origin(typing_)
-        args = get_args(typing_)
-        if origin is Union:
-            if len(args) == 2 and type(None) in args:
-                # This is a false Union => Is a default value set to None
-                return serialize_typing(args[0])
-            else:
-                # Types union
-                argnames = ', '.join([type_fullname(a) for a in args])
-                return f'Union[{argnames}]'.format()
-        elif origin is list:
-            return f"List[{type_fullname(args[0])}]"
-        elif origin is tuple:
-            argnames = ', '.join([type_fullname(a) for a in args])
-            return f'Tuple[{argnames}]'
-        elif origin is collections.Iterator:
-            return f"Iterator[{type_fullname(args[0])}]"
-        elif origin is dict:
-            key_type = type_fullname(args[0])
-            value_type = type_fullname(args[1])
-            return f'Dict[{key_type}, {value_type}]'
-        elif origin is InstanceOf:
-            return f'InstanceOf[{type_fullname(args[0])}]'
-        elif origin is Subclass:
-            return f'Subclass[{type_fullname(args[0])}]'
-        elif origin is MethodType:
-            return 'fMethodType[{type_fullname(args[0])}]'
-        elif origin is ClassMethodType:
-            return f'ClassMethodType[{type_fullname(args[0])}]'
-        else:
-            msg = 'Serialization of typing {} is not implemented'
-            raise NotImplementedError(msg.format(typing_))
+        return serialize_typing_types(typing_)
     if isinstance(typing_, type):
         return full_classname(typing_, compute_for='class')
     if typing_ is TextIO:
@@ -135,6 +103,43 @@ def serialize_typing(typing_):
     if typing_ is BinaryIO:
         return "BinaryFile"
     return str(typing_)
+
+
+def serialize_typing_types(typing_):
+    origin = get_origin(typing_)
+    args = get_args(typing_)
+    if origin is Union:
+        return serialize_union_typing(args)
+    if origin is list:
+        return f"List[{type_fullname(args[0])}]"
+    if origin is tuple:
+        argnames = ', '.join([type_fullname(a) for a in args])
+        return f'Tuple[{argnames}]'
+    if origin is collections.Iterator:
+        return f"Iterator[{type_fullname(args[0])}]"
+    if origin is dict:
+        key_type = type_fullname(args[0])
+        value_type = type_fullname(args[1])
+        return f'Dict[{key_type}, {value_type}]'
+    if origin is InstanceOf:
+        return f'InstanceOf[{type_fullname(args[0])}]'
+    if origin is Subclass:
+        return f'Subclass[{type_fullname(args[0])}]'
+    if origin is MethodType:
+        return f'MethodType[{type_fullname(args[0])}]'
+    if origin is ClassMethodType:
+        return f'ClassMethodType[{type_fullname(args[0])}]'
+    raise NotImplementedError(f"Serialization of typing {typing_} is not implemented")
+
+
+def serialize_union_typing(args):
+    if len(args) == 2 and type(None) in args:
+        # This is a false Union => Is a default value set to None
+        return serialize_typing(args[0])
+    else:
+        # Types union
+        argnames = ', '.join([type_fullname(a) for a in args])
+        return f'Union[{argnames}]'
 
 
 def type_fullname(arg):
@@ -159,19 +164,11 @@ def deserialize_typing(serialized_typing):
     # TODO : handling recursive deserialization
     if isinstance(serialized_typing, str):
         # TODO other builtins should be implemented
-        if serialized_typing in ['float', 'builtins.float']:
-            return float
-        if serialized_typing in ['int', 'builtins.int']:
-            return int
-        if serialized_typing in ['str', 'builtins.str']:
-            return str
-        if serialized_typing in ['bool', 'builtins.bool']:
-            return bool
+        if serialized_typing in SERIALIZED_BUILTINS:
+            return deserialize_builtin_typing(serialized_typing)
 
-        if serialized_typing == "TextFile":
-            return TextIO
-        if serialized_typing == "BinaryFile":
-            return BinaryIO
+        if serialized_typing in ["TextFile", "BinaryFile"]:
+            return deserialize_file_typing(serialized_typing)
 
         if '[' in serialized_typing:
             toptype, remains = serialized_typing.split('[', 1)
@@ -182,31 +179,50 @@ def deserialize_typing(serialized_typing):
         if toptype == 'List':
             return List[type_from_argname(full_argname)]
         elif toptype == 'Tuple':
-            if ', ' in full_argname:
-                args = full_argname.split(', ')
-                if len(args) == 0:
-                    return Tuple
-                elif len(args) == 1:
-                    type_ = type_from_argname(args[0])
-                    return Tuple[type_]
-                elif len(set(args)) == 1:
-                    type_ = type_from_argname(args[0])
-                    return Tuple[type_, ...]
-                else:
-                    msg = ("Heterogenous tuples are forbidden as types for"
-                           "workflow non-block variables.")
-                    raise TypeError(msg)
-            return Tuple[type_from_argname(full_argname)]
+            return deserialize_tuple_typing(full_argname)
         elif toptype == 'Dict':
             args = full_argname.split(', ')
             key_type = type_from_argname(args[0])
             value_type = type_from_argname(args[1])
             return Dict[key_type, value_type]
-        # elif splitted_type[0] == 'Union':
-        #     args = full_argname.split(', ')
         return get_python_class_from_class_name(serialized_typing)
-    raise NotImplementedError('{} of type {}'.format(serialized_typing,
-                                                     type(serialized_typing)))
+    raise NotImplementedError('{} of type {}'.format(serialized_typing, type(serialized_typing)))
+
+
+def deserialize_tuple_typing(full_argname):
+    if ', ' in full_argname:
+        args = full_argname.split(', ')
+        if len(args) == 0:
+            return Tuple
+        elif len(args) == 1:
+            type_ = type_from_argname(args[0])
+            return Tuple[type_]
+        elif len(set(args)) == 1:
+            type_ = type_from_argname(args[0])
+            return Tuple[type_, ...]
+        else:
+            raise TypeError("Heterogenous tuples are forbidden as types for workflow non-block variables.")
+    return Tuple[type_from_argname(full_argname)]
+
+
+def deserialize_file_typing(serialized_typing):
+    if serialized_typing == "TextFile":
+        return TextIO
+    if serialized_typing == "BinaryFile":
+        return BinaryIO
+    raise NotImplementedError(f"File typing {serialized_typing} deserialization is not implemented")
+
+
+def deserialize_builtin_typing(serialized_typing):
+    if serialized_typing in ['float', 'builtins.float']:
+        return float
+    if serialized_typing in ['int', 'builtins.int']:
+        return int
+    if serialized_typing in ['str', 'builtins.str']:
+        return str
+    if serialized_typing in ['bool', 'builtins.bool']:
+        return bool
+    raise NotImplementedError(f"Builtin typing of {serialized_typing} deserialization is not implemented")
 
 
 def is_bson_valid(value, allow_nonstring_keys=False) -> Tuple[bool, str]:

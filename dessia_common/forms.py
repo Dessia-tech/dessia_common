@@ -258,7 +258,7 @@ class StandaloneObject(DessiaObject):
             # this is a hack for test until we get frontend support for types BinaryFile & StringFile
             # a TextIO does not have filename, but it's ok since we return a StringFile from backend
             my_file_name = stream.filename
-            name, raw_seed = my_string.split(",")
+            _, raw_seed = my_string.split(",")
             seed = int(raw_seed.strip())
         finally:
             stream.close()
@@ -552,10 +552,11 @@ class Generator(DessiaObject):
     """
     _standalone_in_db = True
 
-    def __init__(self, parameter: int, nb_solutions: int = 25, name: str = ''):
+    def __init__(self, parameter: int, nb_solutions: int = 25,
+                 models: List[StandaloneObject] = None, name: str = ''):
         self.parameter = parameter
         self.nb_solutions = nb_solutions
-        self.models = None
+        self.models = models
 
         DessiaObject.__init__(self, name=name)
 
