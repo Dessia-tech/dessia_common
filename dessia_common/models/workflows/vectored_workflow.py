@@ -18,16 +18,16 @@ instantiate_pareto = wf.InstantiateModel(model_class=ParetoSettings, name='Paret
 instantiate_catalog = wf.InstantiateModel(model_class=Catalog, name='Cars Instantiation')
 filter_method = wf.ModelMethod(dct.MethodType(Catalog, 'filter_'), name='Filters')
 filtered_catalog = wf.InstantiateModel(model_class=Catalog, name='Filtered Catalog')
-display = wf.Display(order=0, name="Display")
+display_ = wf.Display(order=0, name="Display")
 filtered = wf.Display(order=1, name="Filtered")
 
-blocks = [import_csv, instantiate_pareto, instantiate_catalog, filter_method, filtered_catalog, display, filtered]
+blocks = [import_csv, instantiate_pareto, instantiate_catalog, filter_method, filtered_catalog, display_, filtered]
 
 # Pipes
 pipes = [wf.Pipe(import_csv.outputs[0], instantiate_catalog.inputs[0]),
          wf.Pipe(import_csv.outputs[1], instantiate_catalog.inputs[1]),
          wf.Pipe(instantiate_pareto.outputs[0], instantiate_catalog.inputs[2]),
-         wf.Pipe(instantiate_catalog.outputs[0], display.inputs[0]),
+         wf.Pipe(instantiate_catalog.outputs[0], display_.inputs[0]),
          wf.Pipe(instantiate_catalog.outputs[0], filter_method.inputs[0]),
          wf.Pipe(filter_method.outputs[0], filtered_catalog.inputs[0]),
          wf.Pipe(import_csv.outputs[1], filtered_catalog.inputs[1]),

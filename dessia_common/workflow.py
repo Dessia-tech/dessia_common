@@ -233,7 +233,8 @@ class Display(Block):
 
     @classmethod
     @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_):
+    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path:str='#'):
         return cls(order=dict_['order'], name=dict_['name'])
 
     @staticmethod
@@ -265,7 +266,8 @@ class Import(Block):
 
     @classmethod
     @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_):
+    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path:str='#'):
         return cls(type_=dict_['type_'], name=dict_['name'])
 
     def evaluate(self, values):
@@ -308,7 +310,8 @@ class InstantiateModel(Block):
 
     @classmethod
     @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_):
+    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path:str='#'):
         if 'model_class_module' in dict_:  # TODO Retro-compatibility. Remove this in future versions
             module_name = dict_['model_class_module']
             classname = module_name + '.' + dict_['model_class']
@@ -367,7 +370,8 @@ class ClassMethod(Block):
 
     @classmethod
     @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_) -> 'ClassMethod':
+    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path:str='#') -> 'ClassMethod':
         if 'method_type' in dict_:
             classname = dict_['method_type']['class_']
             method_name = dict_['method_type']['name']
@@ -442,7 +446,8 @@ class ModelMethod(Block):
 
     @classmethod
     @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_) -> 'ModelMethod':
+    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path:str='#') -> 'ModelMethod':
         if 'method_type' in dict_:
             classname = dict_['method_type']['class_']
             method_name = dict_['method_type']['name']
@@ -493,7 +498,8 @@ class Sequence(Block):
 
     @classmethod
     @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_):
+    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path:str='#'):
         return cls(dict_['number_arguments'], dict_['name'])
 
     def evaluate(self, values):
@@ -545,7 +551,8 @@ class ForEach(Block):
 
     @classmethod
     @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_):
+    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path:str='#'):
         workflow_block = WorkflowBlock.dict_to_object(dict_['workflow_block'])
         iter_input_index = dict_['iter_input_index']
         return cls(workflow_block=workflow_block, iter_input_index=iter_input_index, name=dict_['name'])
@@ -587,7 +594,7 @@ class Unpacker(Block):
 
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None) -> 'Unpacker':
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path:str='#') -> 'Unpacker':
         return cls(dict_['indices'], dict_['name'])
 
     def evaluate(self, values):
@@ -605,7 +612,7 @@ class Flatten(Block):
 
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None) -> 'Flatten':
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path:str='#') -> 'Flatten':
         return cls(dict_['name'])
 
     def evaluate(self, values):
@@ -635,7 +642,8 @@ class Product(Block):
 
     @classmethod
     @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_):
+    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path:str='#'):
         number_list = dict_['number_list']
         return cls(number_list=number_list, name=dict_['name'])
 
@@ -681,7 +689,8 @@ class Filter(Block):
 
     @classmethod
     @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_):
+    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path:str='#'):
         return cls([DessiaFilter.dict_to_object(d) for d in dict_['filters']], dict_['name'])
 
     def evaluate(self, values):
@@ -750,7 +759,8 @@ class MultiPlot(Display):
 
     @classmethod
     @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_):
+    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path:str='#'):
         return cls(attributes=dict_['attributes'], order=dict_['order'], name=dict_['name'])
 
     @staticmethod
@@ -785,7 +795,8 @@ class ModelAttribute(Block):
 
     @classmethod
     @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_):
+    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path:str='#'):
         return cls(dict_['attribute_name'], dict_['name'])
 
     def evaluate(self, values):
@@ -811,7 +822,8 @@ class Sum(Block):
 
     @classmethod
     @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_):
+    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path:str='#'):
         return cls(dict_['number_elements'], dict_['name'])
 
     @staticmethod
@@ -868,7 +880,8 @@ class ExportJson(Export):
 
     @classmethod
     @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_):
+    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path:str='#'):
         class_ = get_python_class_from_class_name(dict_['model_class'])
         return cls(class_, name=dict_['name'])
 
@@ -890,7 +903,8 @@ class ExportExcel(Export):
 
     @classmethod
     @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_):
+    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path:str='#'):
         class_ = get_python_class_from_class_name(dict_['model_class'])
         return cls(class_, name=dict_['name'])
 
@@ -908,7 +922,8 @@ class Archive(Block):
 
     @classmethod
     @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_):
+    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path:str='#'):
         return cls(number_exports=dict_["number_exports"], name=dict_['name'])
 
     def evaluate(self, values):
@@ -1249,7 +1264,7 @@ class Workflow(Block):
 
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None) -> 'Workflow':
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path:str='#') -> 'Workflow':
         blocks = [DessiaObject.dict_to_object(d) for d in dict_['blocks']]
         if 'nonblock_variables' in dict_:
             nonblock_variables = [dict_to_object(d) for d in dict_['nonblock_variables']]
@@ -1946,6 +1961,8 @@ class WorkflowState(DessiaObject):
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
                         global_dict=None, pointers_memo: Dict[str, Any] = None, path:str='#') -> 'WorkflowState':
         
+        # This is copy pasted from generic dict to object, because it is difficult to do a decorator 
+        # for both classmethod and function
         if pointers_memo is None:
             pointers_memo = {}
             
@@ -2304,8 +2321,8 @@ class WorkflowRun(WorkflowState):
                 local_values[input_] = self.variable_values[input_adress]
                 if i == block._displayable_input:
                     reference_path = 'variable_values/' + strindices
-            display = block.display_(local_values=local_values, reference_path=reference_path)
-            displays.extend(display)
+            display_ = block.display_(local_values=local_values, reference_path=reference_path)
+            displays.extend(display_)
         if isinstance(self.output_value, DessiaObject):
             displays.extend(self.output_value._displays(reference_path='output_value'))
         return displays

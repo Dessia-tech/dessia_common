@@ -230,7 +230,7 @@ class DessiaObject:
 
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None) -> 'DessiaObject':
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path:str='#') -> 'DessiaObject':
         """
         Generic dict_to_object method
         """
@@ -243,13 +243,15 @@ class DessiaObject:
             obj = dict_to_object(dict_=dict_, class_=cls,
                                  force_generic=force_generic,
                                  global_dict=global_dict,
-                                 pointers_memo=pointers_memo)
+                                 pointers_memo=pointers_memo,
+                                 path=path)
             return obj
 
         if 'object_class' in dict_:
             obj = dict_to_object(dict_=dict_, force_generic=force_generic,
                                  global_dict=global_dict,
-                                 pointers_memo=pointers_memo)
+                                 pointers_memo=pointers_memo,
+                                 path=path)
             return obj
         # else:
             # Using default

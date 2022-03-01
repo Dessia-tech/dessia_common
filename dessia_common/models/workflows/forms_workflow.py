@@ -42,7 +42,7 @@ parallel_optimization = ForEach(workflow_block=optimization_workflow_block,
                                 iter_input_index=0, name='ForEach')
 
 display_attributes = ['intarg', 'strarg', 'standalone_subobject/floatarg']
-display = MultiPlot(attributes=display_attributes, name='Display')
+display_ = MultiPlot(attributes=display_attributes, name='Display')
 
 int_variable = TypedVariable(type_=int, name="Some Integer")
 name_variable = TypedVariableWithDefaultValue(type_=str, name="Shared Name",
@@ -61,10 +61,10 @@ pipe_attr = Pipe(input_variable=generator_generate.outputs[1],
 pipe_opti = Pipe(input_variable=attribute_selection.outputs[0],
                  output_variable=parallel_optimization.inputs[0])
 pipe_disp = Pipe(input_variable=parallel_optimization.outputs[0],
-                 output_variable=display.inputs[0])
+                 output_variable=display_.inputs[0])
 
 blocks = [instanciate_generator, generator_generate,
-          attribute_selection, parallel_optimization, display]
+          attribute_selection, parallel_optimization, display_]
 pipes = [pipe_int_1, pipe_name_1, pipe_name_2, pipe_gene, pipe_attr, pipe_opti, pipe_disp]
 workflow_ = Workflow(blocks=blocks, pipes=pipes,
                      output=parallel_optimization.outputs[0], name="Workflow with NBVs")
