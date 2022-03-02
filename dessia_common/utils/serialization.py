@@ -231,9 +231,8 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
             return obj
 
         class_argspec = inspect.getfullargspec(class_)
-        class_args = class_argspec.args+class_argspec.kwonlyargs
         init_dict = {k: v for k, v in dict_.items()
-                     if k in class_args}
+                     if k in class_argspec.args+class_argspec.kwonlyargs}
         # TOCHECK Class method to generate init_dict ??
     else:
         init_dict = dict_
