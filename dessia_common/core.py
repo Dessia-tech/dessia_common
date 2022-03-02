@@ -618,6 +618,7 @@ class DessiaObject:
         decoded_json = json.loads(json_dict)
         deserialized_object = self.dict_to_object(decoded_json)
         if not deserialized_object._data_eq(self):
+            print('data diff: ', self._data_diff(deserialized_object))
             raise dessia_common.errors.DeserializationError('Object is not equal to itself'
                                                             ' after serialization/deserialization')
         copied_object = self.copy()
