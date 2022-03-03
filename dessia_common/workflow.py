@@ -1250,6 +1250,17 @@ class Workflow(Block):
         jsonschemas['start_run']['required'] = []
         return jsonschemas
 
+    def _export_formats(self):
+        """
+        Reads block to compute available export formats
+        """
+        export_formats = DessiaObject._export_formats(self)
+        export_formats.append({'extension': 'py',
+                               'method_name': 'save_script_to_stream',
+                               'text': True,
+                               'args': {}})
+        return export_formats
+
     def to_dict(self, use_pointers=True, memo=None, path='#'):
         if memo is None:
             memo = {}
@@ -2301,7 +2312,7 @@ class WorkflowState(DessiaObject):
         """
         Reads block to compute available export formats
         """
-        export_formats = []
+        export_formats = DessiaObject._export_formats(self)
         for i, block in enumerate(self.workflow.blocks):
             if hasattr(block, "_export_format"):
                 export_formats.append(block._export_format(i))
