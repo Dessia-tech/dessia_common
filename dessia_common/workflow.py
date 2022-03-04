@@ -1114,7 +1114,7 @@ class Workflow(Block):
 
         base_hash = len(self.blocks) + 11 * len(self.pipes) + output_hash
         block_hash = int(sum([b.equivalent_hash() for b in self.blocks]) % 10e5)
-        return base_hash + block_hash
+        return (base_hash + block_hash) % 1000000000
 
     def _data_eq(self, other_object):  # TODO: implement imposed_variable_values in equality
         if hash(self) != hash(other_object) or not Block.equivalent(self, other_object):
@@ -1855,7 +1855,7 @@ class WorkflowState(DessiaObject):
         output = choose_hash(self.output_value)
         input_values = sum([i*choose_hash(v) for i, v in self.input_values.items()])
         values = sum([len(k.name)*choose_hash(v) for k, v in self.values.items()])
-        return progress + workflow + output + input_values + values
+        return (progress + workflow + output + input_values + values) % 1000000000
 
     def _data_eq(self, other_object: 'WorkflowState'):
         if not (self.__class__.__name__ == other_object.__class__.__name__
