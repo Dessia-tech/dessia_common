@@ -110,7 +110,7 @@ def serialize_dict_with_pointers(dict_, memo, path):
         value_path = f'{path}/{key}'
         if isinstance(value, dict):
             dict_attrs_keys.append(key)
-        elif dcty.is_sequence(value): 
+        elif dcty.is_sequence(value):
             seq_attrs_keys.append(key)
         else:
             other_keys.append(key)
@@ -144,7 +144,7 @@ def serialize_sequence_with_pointers(seq, memo, path):
 
 
 def deserialize(serialized_element, sequence_annotation: str = 'List',
-                global_dict=None, pointers_memo=None, path:str='#'):
+                global_dict=None, pointers_memo=None, path: str = '#'):
     """
     Main function for deserialization, handle pointers
     """
@@ -232,7 +232,7 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
 
         class_argspec = inspect.getfullargspec(class_)
         init_dict = {k: v for k, v in dict_.items()
-                     if k in class_argspec.args}
+                     if k in class_argspec.args + class_argspec.kwonlyargs}
         # TOCHECK Class method to generate init_dict ??
     else:
         init_dict = dict_
@@ -446,6 +446,7 @@ def pointer_graph(value):
 
     return graph
 
+
 def deserialization_order(dict_):
     """
     Analyse a dict representing an object and give a deserialization order
@@ -465,17 +466,15 @@ def deserialization_order(dict_):
             order.remove('#')
         return order
     return []
-            
-    
+
 
 def dereference_jsonpointers(dict_):  # , global_dict):
     """
     Analyse the given dict
     """
 
-
     order = deserialization_order(dict_)
-    
+
     pointers_memo = {}
     for ref in order:
         serialized_element = get_in_object_from_path(dict_, ref)
@@ -487,14 +486,14 @@ def dereference_jsonpointers(dict_):  # , global_dict):
 
 
 def pointer_graph_elements(value, path='#'):
-    
+
     if isinstance(value, dict):
         return pointer_graph_elements_dict(value, path)
     if dcty.isinstance_base_types(value):
         return [], []
     elif dcty.is_sequence(value):
         return pointer_graph_elements_sequence(value, path)
-    
+
     raise ValueError(value)
 
 
@@ -542,7 +541,7 @@ def pointer_graph_elements_dict(dict_, path='#'):
 def pointers_analysis(obj):
     """
     Analyse on object to output stats on pointer use in the object
-    :returns: a tuple of 2 dicts: one giving the number of pointer use by class 
+    :returns: a tuple of 2 dicts: one giving the number of pointer use by class
     """
     if isinstance(obj, dict):
         dict_ = obj
