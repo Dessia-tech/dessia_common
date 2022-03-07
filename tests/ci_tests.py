@@ -5,9 +5,13 @@ import os
 scripts = ['displays.py',
            'generation.py',
            'models_test.py',
-           'workflow_with_models.py',
+           'files.py',
+           # Workflows
+           'workflow/workflow_with_models.py',
            'workflow/power_simulation.py',
            'workflow/forms_simulation.py',
+           'workflow/workflow_state_equalities.py',
+           # Utils
            'utils/algebra.py',
            'utils/interpolation.py',
            'utils/serialization.py',

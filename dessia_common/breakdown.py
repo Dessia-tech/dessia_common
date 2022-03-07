@@ -8,7 +8,7 @@ import sys
 import collections
 import numpy as npy
 
-import dessia_common.core
+import dessia_common
 from dessia_common.utils.types import is_sequence
 
 
@@ -18,9 +18,8 @@ def get_in_object_from_path(object_, path):
         try:
             element = object_[segments[0]]
         except KeyError:
-            print(object_, segments[0])
-
-            raise RuntimeError('Cannot get in {} {}: end up @ {}'.format(object_, path, segments[0]))
+            msg = f'Cannot get in dict path {path}: end up @ {segments[0]}. Dict keys: {object_.keys()}'
+            raise RuntimeError(msg)
     else:
         element = getattr(object_, segments[0])
 
@@ -31,8 +30,6 @@ def get_in_object_from_path(object_, path):
             if segment in element:
                 element = element[segment]
             else:
-                print(element, segments)
-                print(path)
                 element = element[int(segment)]
         else:
             element = getattr(element, segment)
@@ -72,16 +69,16 @@ def breakdown(obj, path=''):
         if path:
             path += '.'
 
-        for i, li in enumerate(obj):
+        for i, element in enumerate(obj):
             path2 = path + '{}'.format(i)
-            bd_dict = merge_breakdown_dicts(bd_dict, breakdown(li, path2))
+            bd_dict = merge_breakdown_dicts(bd_dict, breakdown(element, path2))
     elif isinstance(obj, dict):
         if path:
             path += '.'
 
-        for k, v in obj.items():
+        for k, value in obj.items():
             path2 = path + str(k)
-            bd_dict = merge_breakdown_dicts(bd_dict, breakdown(v, path2))
+            bd_dict = merge_breakdown_dicts(bd_dict, breakdown(value, path2))
     else:
         # Put object and break it down
         if path:  # avoid to get root object
@@ -117,30 +114,30 @@ def object_breakdown(obj, path=''):
         else:
             obj_dict = {}
 
-    for k, v in obj_dict.items():
+    for k, value in obj_dict.items():
         # dict after lists
-        if not (isinstance(v, dict)
-                or isinstance(v, list)
-                or isinstance(v, tuple)
+        if not (isinstance(value, dict)
+                or isinstance(value, list)
+                or isinstance(value, tuple)
                 ):  # Should be object or builtins
-            dict2 = breakdown(v, path=path + k)
+            dict2 = breakdown(value, path=path + k)
             bd_dict = merge_breakdown_dicts(bd_dict, dict2)
 
-    for k, v in obj_dict.items():
+    for k, value in obj_dict.items():
         # First lists and tuples
-        if isinstance(v, list) or isinstance(v, tuple):
-            dict2 = breakdown(v, path=path + k)
+        if isinstance(value, list) or isinstance(value, tuple):
+            dict2 = breakdown(value, path=path + k)
             bd_dict = merge_breakdown_dicts(bd_dict, dict2)
 
-    for k, v in obj_dict.items():
+    for k, value in obj_dict.items():
         # dict after lists
-        if isinstance(v, dict):
-            dict2 = breakdown(v, path=path + k)
+        if isinstance(value, dict):
+            dict2 = breakdown(value, path=path + k)
             bd_dict = merge_breakdown_dicts(bd_dict, dict2)
     return bd_dict
 
 
-def deep_getsizeof(o, ids=None):
+def deep_getsizeof(obj, ids=None):
     """Find the memory footprint of a Python object
 
     This is a recursive function that drills down a Python object graph
@@ -160,23 +157,23 @@ def deep_getsizeof(o, ids=None):
         ids = set()
 
     d = deep_getsizeof
-    if id(o) in ids:
+    if id(obj) in ids:
         return 0
 
-    r = sys.getsizeof(o)
-    ids.add(id(o))
+    r = sys.getsizeof(obj)
+    ids.add(id(obj))
 
-    if isinstance(o, str):
+    if isinstance(obj, str):
         return r
 
     # if isinstance(o, collections.Mapping):
     #     return r + sum(d(k, ids) + d(v, ids) for k, v in o.items())
 
-    if isinstance(o, collections.Mapping):
-        return r + sum(d(k, ids) + d(v, ids) for k, v in o.items())
+    if isinstance(obj, collections.Mapping):
+        return r + sum(d(k, ids) + d(v, ids) for k, v in obj.items())
 
-    if isinstance(o, collections.Container):
-        return r + sum(d(x, ids) for x in o.__dict__.values())
+    if isinstance(obj, collections.Container):
+        return r + sum(d(x, ids) for x in obj.__dict__.values())
 
     return r
 

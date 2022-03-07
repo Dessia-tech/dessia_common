@@ -1,8 +1,8 @@
 import webbrowser
 import os
 import tempfile
-from dessia_common.templates import visjs_template
 from networkx import DiGraph, Graph, kamada_kawai_layout
+from dessia_common.templates import visjs_template
 
 
 def networkx_to_visjs_data(networkx_graph: Graph):
@@ -59,10 +59,10 @@ def networkx_to_visjs_data(networkx_graph: Graph):
 
 def draw_networkx_graph(networkx_graph: Graph):
     visjs_data = networkx_to_visjs_data(networkx_graph)
-    s = visjs_template.substitute(**visjs_data)
+    content = visjs_template.substitute(**visjs_data)
     with tempfile.NamedTemporaryFile(suffix=".html",
                                      delete=False) as file:
-        file.write(bytes(s, 'utf8'))
+        file.write(bytes(content, 'utf8'))
 
     # with open('graph_visJS.html', 'wb') as file:
     #     file.write(s.encode('utf-8'))

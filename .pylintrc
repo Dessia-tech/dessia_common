@@ -229,7 +229,7 @@ indent-string='    '
 max-line-length=120
 
 # Maximum number of lines in a module.
-max-module-lines=2500
+max-module-lines=2470
 
 # Allow the body of a class to be on the same line as the declaration if body
 # contains single statement.
@@ -351,11 +351,7 @@ function-naming-style=snake_case
 #function-rgx=
 
 # Good variable names which should always be accepted, separated by a comma.
-good-names=i,
-           j,
-           k,
-           ex,
-           Run,
+good-names=i,j,k,n,ie,x,xi,x0,
            _
 
 # Good variable names regexes, separated by a comma. If names match any regex,
@@ -410,7 +406,7 @@ variable-naming-style=snake_case
 [DESIGN]
 
 # Maximum number of arguments for function / method.
-max-args=5
+max-args=6
 
 # Maximum number of attributes for a class (see R0902).
 max-attributes=7

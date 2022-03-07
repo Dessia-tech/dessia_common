@@ -2,7 +2,7 @@ from dessia_common.workflow import InstantiateModel, ModelMethod,\
     TypedVariable, TypedVariableWithDefaultValue, ModelAttribute,\
     Pipe, Workflow, WorkflowBlock, ForEach, MultiPlot
 from dessia_common.forms import Generator, Optimizer
-from dessia_common import MethodType
+from dessia_common.typings import MethodType
 
 instanciate_generator = InstantiateModel(model_class=Generator,
                                          name='Instantiate Generator')
@@ -42,7 +42,7 @@ parallel_optimization = ForEach(workflow_block=optimization_workflow_block,
                                 iter_input_index=0, name='ForEach')
 
 display_attributes = ['intarg', 'strarg', 'standalone_subobject/floatarg']
-display = MultiPlot(attributes=display_attributes, name='Display')
+display_ = MultiPlot(attributes=display_attributes, name='Display')
 
 int_variable = TypedVariable(type_=int, name="Some Integer")
 name_variable = TypedVariableWithDefaultValue(type_=str, name="Shared Name",
@@ -51,20 +51,22 @@ name_variable = TypedVariableWithDefaultValue(type_=str, name="Shared Name",
 pipe_int_1 = Pipe(input_variable=int_variable,
                   output_variable=instanciate_generator.inputs[1])
 pipe_name_1 = Pipe(input_variable=name_variable,
-                   output_variable=instanciate_generator.inputs[2])
+                   output_variable=instanciate_generator.inputs[3])
 pipe_name_2 = Pipe(input_variable=name_variable,
                    output_variable=parallel_optimization.inputs[1])
-pipe_1 = Pipe(input_variable=instanciate_generator.outputs[0],
-              output_variable=generator_generate.inputs[0])
-pipe_2 = Pipe(input_variable=generator_generate.outputs[1],
-              output_variable=attribute_selection.inputs[0])
-pipe_3 = Pipe(input_variable=attribute_selection.outputs[0],
-              output_variable=parallel_optimization.inputs[0])
-pipe_4 = Pipe(input_variable=parallel_optimization.outputs[0],
-              output_variable=display.inputs[0])
+pipe_gene = Pipe(input_variable=instanciate_generator.outputs[0],
+                 output_variable=generator_generate.inputs[0])
+pipe_attr = Pipe(input_variable=generator_generate.outputs[1],
+                 output_variable=attribute_selection.inputs[0])
+pipe_opti = Pipe(input_variable=attribute_selection.outputs[0],
+                 output_variable=parallel_optimization.inputs[0])
+pipe_disp = Pipe(input_variable=parallel_optimization.outputs[0],
+                 output_variable=display_.inputs[0])
 
 blocks = [instanciate_generator, generator_generate,
-          attribute_selection, parallel_optimization, display]
-pipes = [pipe_int_1, pipe_name_1, pipe_name_2, pipe_1, pipe_2, pipe_3, pipe_4]
+          attribute_selection, parallel_optimization, display_]
+pipes = [pipe_int_1, pipe_name_1, pipe_name_2, pipe_gene, pipe_attr, pipe_opti, pipe_disp]
 workflow_ = Workflow(blocks=blocks, pipes=pipes,
-                     output=parallel_optimization.outputs[0])
+                     output=parallel_optimization.outputs[0], name="Workflow with NBVs")
+workflow_state = workflow_.start_run({})
+workflow_state.name = "WorkflowState with NBVs"
