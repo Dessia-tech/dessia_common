@@ -232,7 +232,7 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
 
         class_argspec = inspect.getfullargspec(class_)
         init_dict = {k: v for k, v in dict_.items()
-                     if k in class_argspec.args}
+                     if k in class_argspec.args+class_argspec.kwonlyargs}
         # TOCHECK Class method to generate init_dict ??
     else:
         init_dict = dict_
@@ -252,6 +252,7 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
                                           global_dict=global_dict,
                                           pointers_memo=pointers_memo,
                                           path=key_path)  # , enforce_pointers=False)
+
 
     if class_ is not None:
         obj = class_(**subobjects)
