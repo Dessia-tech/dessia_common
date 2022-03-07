@@ -396,7 +396,7 @@ class DessiaObject:
         Return a jsonschema of a method arguments
         """
         if method_name is None and method_jsonschema is None:
-            msg = 'No method name not jsonschema provided'
+            msg = 'No method name nor jsonschema provided'
             raise NotImplementedError(msg)
 
         if method_name is not None and method_jsonschema is None:
