@@ -1977,11 +1977,22 @@ class WorkflowState(DessiaObject):
         else:
             output_value = None
 
-        values = {workflow.variables[int(i)]: deserialize(v,
-                                                          global_dict=dict_,
-                                                          pointers_memo=pointers_memo)
-                  for i, v in dict_['values'].items()}
 
+        values = {}
+        if 'values' in dict_:            
+            for i, v in dict_['values'].items():
+                values[workflow.variables[int(i)]] = deserialize(v,
+                                                                 global_dict=dict_,
+                                                                 pointers_memo=pointers_memo,
+                                                                 path=f'{path}/values/{i}')
+        elif 'variable_values' in dict_:
+            # Retrocompat with variable value may be removed after v0.10.0:             
+            for i, v in dict_['variable_values'].items():
+                values[workflow.variables[int(i)]] = deserialize(v,
+                                                                 global_dict=dict_,
+                                                                 pointers_memo=pointers_memo,
+                                                                 path=f'{path}/variable_values/{i}')
+                
         input_values = {int(i): deserialize(v, global_dict=dict_, pointers_memo=pointers_memo)
                         for i, v in dict_['input_values'].items()}
 
