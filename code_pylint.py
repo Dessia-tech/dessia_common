@@ -47,7 +47,7 @@ MAX_ERROR_BY_TYPE = {
                      'eval-used': 2,
                      'too-many-nested-blocks': 2,
                      'bad-staticmethod-argument': 1,
-                     'too-many-public-methods': 2,# Try to lower by splitting DessiaObject and Workflow
+                     'too-many-public-methods': 2,  # Try to lower by splitting DessiaObject and Workflow
                      'consider-using-generator': 1,
                      'too-many-statements': 1,
                      'chained-comparison': 1,
@@ -91,7 +91,7 @@ results = Run(['dessia_common', '--output-format=json', '--reports=no'], do_exit
 sys.stdout = old_stdout
 
 PYLINT_OBJECTS = True
-if hasattr(results.linter.stats,'global_note'):
+if hasattr(results.linter.stats, 'global_note'):
     pylint_note = results.linter.stats.global_note
     PYLINT_OBJECT_STATS = True
 else:
@@ -122,7 +122,7 @@ for error_type, number_errors in stats_by_msg.items():
             max_errors = MAX_ERROR_BY_TYPE[error_type]
         else:
             max_errors = 0
-            
+
         if number_errors > max_errors:
             error_detected = True
             print('Fix some {} errors: {}/{}'.format(error_type,
@@ -133,8 +133,8 @@ for error_type, number_errors in stats_by_msg.items():
         elif number_errors < max_errors:
             print('You can lower number of {} to {} (actual {})'.format(
                 error_type, number_errors, max_errors))
-    
-                # uncontrolled_errors[error_type] = number_errors
+
+            # uncontrolled_errors[error_type] = number_errors
 
 # if uncontrolled_errors:
 #     print('Uncontrolled errors', uncontrolled_errors)

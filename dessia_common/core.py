@@ -56,6 +56,7 @@ def deprecation_warning(name, object_type, use_instead=None):
     warnings.warn(msg, DeprecationWarning)
     return msg
 
+
 class DessiaObject:
     """
     Base class for Dessia's platform compatible objects.
@@ -230,7 +231,7 @@ class DessiaObject:
 
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path:str='#') -> 'DessiaObject':
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'DessiaObject':
         """
         Generic dict_to_object method
         """
@@ -427,7 +428,7 @@ class DessiaObject:
                 arguments[arg] = deserialized_value
         return arguments
 
-    def save_to_file(self, filepath:str, indent:int=2):
+    def save_to_file(self, filepath: str, indent: int = 2):
         """
         Save object to a JSON file
         :param filepath: either a string reprensenting the filepath or a stream
@@ -437,15 +438,14 @@ class DessiaObject:
             print(f'Changing name to {filepath}')
         with open(filepath, 'w', encoding='utf-8') as file:
             self.save_to_stream(file, indent=indent)
-        
-    def save_to_stream(self, stream, indent:int=2):
+
+    def save_to_stream(self, stream, indent: int = 2):
         try:
             dict_ = self.to_dict(use_pointers=True)
         except TypeError:
             dict_ = self.to_dict()
 
         json.dump(dict_, stream, indent=indent)
-        
 
     @classmethod
     def load_from_stream(cls, stream):
@@ -453,7 +453,7 @@ class DessiaObject:
         return cls.dict_to_object(dict_)
 
     @classmethod
-    def load_from_file(cls, filepath:str):
+    def load_from_file(cls, filepath: str):
         """
         Load object from a json file
         :param filepath: either a string reprensenting the filepath or a stream
@@ -567,7 +567,7 @@ class DessiaObject:
         """
         Generate displays of the object to be plot in the DessiA Platform
         """
-        
+
         if hasattr(self, '_display_angular'):
             # Retro-compatibility
             deprecation_warning(name='_display_angular', object_type='method',
@@ -632,13 +632,13 @@ class DessiaObject:
         json.dumps(self._displays())
         json.dumps(self._method_jsonschemas)
 
-    def to_xlsx(self, filepath:str):
+    def to_xlsx(self, filepath: str):
         """
         Exports the object to an XLSX file given by the filepath
         """
         with open(filepath, 'wb') as file:
             self.to_xlsx_stream(file)
-            
+
     def to_xlsx_stream(self, stream):
         """
         Exports the object to an XLSX to a given stream
@@ -646,7 +646,7 @@ class DessiaObject:
         writer = XLSXWriter(self)
         writer.save_to_stream(stream)
 
-    def to_step(self, filepath:str):
+    def to_step(self, filepath: str):
         """
         Exports the CAD of the object to step. Works if the class define a custom volmdlr model
         :param filepath: a str representing a filepath

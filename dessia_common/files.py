@@ -6,6 +6,7 @@
 import io
 import openpyxl
 
+
 class BinaryFile(io.BytesIO):
     """Class for handling binary files with name"""
 
@@ -64,7 +65,7 @@ class StringFile(io.StringIO):
         return template
 
     @classmethod
-    def save_template_to_file(cls, filename):        
+    def save_template_to_file(cls, filename):
         if cls.extension and not filename.endswith(cls.extension):
             filename = f'{filename}.{cls.extension}'
         with open(filename, 'w', encoding='utf-8') as file:
@@ -84,7 +85,7 @@ class XLSXFile(BinaryFile):
         template = cls()
         workbook = openpyxl.Workbook()
         sheet = workbook.active
-        sheet.title='Template of XLSX'
+        sheet.title = 'Template of XLSX'
         sheet.cell(1, 1).value = 'Subclass this class to define your own template'
         workbook.save(template)
         template.seek(0)
@@ -118,13 +119,13 @@ class CSVFile(StringFile):
     https://en.wikipedia.org/wiki/Comma-separated_values
     """
     extension = 'csv'
-    
+
     @classmethod
     def stream_template(cls):
         template = cls()
         template.write('"col A", "col B", "col C"\n')
         template.write('"abc", 1, 1.23\n')
-        
+
         template.seek(0)
         return template
 
