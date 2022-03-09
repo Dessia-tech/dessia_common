@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+- Enhanced get attr use literal eval to try to get dict keys
+
 ## 0.6.0
 ### Added
 - Exports in workflows

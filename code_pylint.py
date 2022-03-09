@@ -12,7 +12,7 @@ UNWATCHED_ERRORS = ['fixme', 'trailing-whitespace', 'import-error']
 MAX_ERROR_BY_TYPE = {
                      'protected-access': 27,
                      'invalid-name': 22,
-                     'consider-using-f-string': 16,
+                     'consider-using-f-string': 15,
                      'no-else-return': 17,
                      'arguments-differ': 5,
                      'no-member': 1,
@@ -32,7 +32,7 @@ MAX_ERROR_BY_TYPE = {
                      'unnecessary-comprehension': 5,
                      'no-value-for-parameter': 2,
                      'too-many-return-statements': 7,
-                     'raise-missing-from': 7,
+                     'raise-missing-from': 6,
                      'consider-merging-isinstance': 6,
                      'abstract-method': 6,
                      'import-outside-toplevel': 6,
