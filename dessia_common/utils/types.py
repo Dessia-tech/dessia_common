@@ -236,7 +236,7 @@ def is_bson_valid(value, allow_nonstring_keys=False) -> Tuple[bool, str]:
         return True, ''
 
     if isinstance(value, dict):
-        for k, v in value.items():
+        for k, subvalue in value.items():
             # Key check
             if isinstance(k, str):
                 if '.' in k:
@@ -257,15 +257,15 @@ def is_bson_valid(value, allow_nonstring_keys=False) -> Tuple[bool, str]:
 
             # Value Check
             v_valid, hint = is_bson_valid(
-                value=v, allow_nonstring_keys=allow_nonstring_keys
+                value=subvalue, allow_nonstring_keys=allow_nonstring_keys
             )
             if not v_valid:
                 return False, hint
 
     elif is_sequence(value):
-        for v in value:
+        for subvalue in value:
             valid, hint = is_bson_valid(
-                value=v, allow_nonstring_keys=allow_nonstring_keys
+                value=subvalue, allow_nonstring_keys=allow_nonstring_keys
             )
             if not valid:
                 return valid, hint
