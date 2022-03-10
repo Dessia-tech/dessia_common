@@ -81,10 +81,11 @@ class TypedVariable(Variable):
     def copy(self, deep: bool = False, memo=None):
         return TypedVariable(type_=self.type_, memorize=self.memorize, name=self.name)
 
-    def to_script(self, variable_index:int):
+    def to_script(self, variable_index: int):
         script = f"variable_{variable_index} = TypedVariable(type={serialize_typing(self.type_)}, "
         script += f"memorize={self.memorize}, name='{self.name}')\n"
         return script
+
 
 class VariableWithDefaultValue(Variable):
     has_default_value: bool = True
@@ -344,7 +345,8 @@ class InstantiateModel(Block):
         script = "dcw.InstantiateModel("
         script += f"{full_classname(object_=self.model_class, compute_for='class')}, name='{self.name}')"
         return script, [full_classname(object_=self.model_class, compute_for='class')]
-    
+
+
 class ClassMethod(Block):
     def __init__(self, method_type: ClassMethodType[Type], name: str = ''):
         self.method_type = method_type
@@ -490,6 +492,7 @@ class ModelMethod(Block):
         script += f"{full_classname(object_=self.method_type.class_, compute_for='class')}, '{self.method_type.name}')"
         script += f", name='{self.name}')"
         return script, [full_classname(object_=self.method_type.class_, compute_for='class')]
+
 
 class Sequence(Block):
     def __init__(self, number_arguments: int, name: str = ''):
@@ -819,6 +822,7 @@ class ModelAttribute(Block):
         script = "dcw.ModelAttribute('{attribute_name}', name='{self.name}')"
         return script, []
 
+
 class Sum(Block):
     def __init__(self, number_elements: int = 2, name: str = ''):
         self.number_elements = number_elements
@@ -1005,10 +1009,11 @@ class Pipe(DessiaObject):
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
         return {'input_variable': self.input_variable, 'output_variable': self.output_variable}
 
-    def to_script(self, pipe_index:int, input_name:str, output_name:str):
-        
+    def to_script(self, pipe_index: int, input_name: str, output_name: str):
+
         script = f"pipe_{pipe_index} = dcw.Pipe({input_name}, {output_name})"
         return script
+
 
 class WorkflowError(Exception):
     pass
@@ -1745,11 +1750,10 @@ class Workflow(Block):
         fraction_sum = sum(package_mix.values())
         return {pn: f / fraction_sum for pn, f in package_mix.items()}
 
-
     def to_script(self):
         variable_index = 0
         classes = []
-        
+
         script_blocks = ''
         for ib, block in enumerate(self.blocks):
             block_script, classes_block = block.to_script(block_index=ib)
@@ -1763,9 +1767,8 @@ class Workflow(Block):
             script += f'import {module}\n'
         script += '\n'
         script += script_blocks
-        script += 'blocks = [{}]\n'.format(', '.join(['block_'+str(i) for i in range(len(self.blocks))]))
+        script += 'blocks = [{}]\n'.format(', '.join(['block_' + str(i) for i in range(len(self.blocks))]))
 
-            
         for ip, pipe in enumerate(self.pipes):
             input_index = self.variable_indices(pipe.input_variable)
             if isinstance(input_index, int):
@@ -1781,28 +1784,28 @@ class Workflow(Block):
                 output_name = f'variable_{variable_index}'
                 variable_index += 1
             else:
-                output_name = f"block_{output_index[0]}.inputs[{output_index[2]}]" + '\n'       
+                output_name = f"block_{output_index[0]}.inputs[{output_index[2]}]" + '\n'
             script += pipe.to_script(pipe_index=ip, input_name=input_name, output_name=output_name) + '\n'
 
-        script += 'pipes = [{}]\n'.format(', '.join(['pipe_'+str(i) for i in range(len(self.pipes))]))
-            
+        script += 'pipes = [{}]\n'.format(', '.join(['pipe_' + str(i) for i in range(len(self.pipes))]))
+
         workflow_output_index = self.variable_indices(pipe.output_variable)
-        output_name = f"block_{workflow_output_index[0]}.outputs[{workflow_output_index[2]}]"       
+        output_name = f"block_{workflow_output_index[0]}.outputs[{workflow_output_index[2]}]"
         script += f"workflow = dcw.Workflow(blocks, pipes, output={output_name},name='{self.name}')\n"
         return script
 
-    def save_script_to_stream(self, stream:io.StringIO):
+    def save_script_to_stream(self, stream: io.StringIO):
         string = self.to_script()
         stream.seek(0)
         stream.write(string)
-        
-        
-    def save_script_to_file(self, filename:str):
+
+    def save_script_to_file(self, filename: str):
         if not filename.endswith('.py'):
             filename += '.py'
-            
+
         with open(filename, 'w') as file:
-            self.save_script_to_stream(file)            
+            self.save_script_to_stream(file)
+
 
 class WorkflowBlock(Block):
     """
