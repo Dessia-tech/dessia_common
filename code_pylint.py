@@ -10,8 +10,8 @@ MIN_NOTE = 9
 UNWATCHED_ERRORS = ['fixme', 'trailing-whitespace', 'import-error']
 
 MAX_ERROR_BY_TYPE = {
-                     'protected-access': 27,
-                     'invalid-name': 22,
+                     'protected-access': 28,
+                     'invalid-name': 21,
                      'consider-using-f-string': 16,
                      'no-else-return': 17,
                      'arguments-differ': 5,
