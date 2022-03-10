@@ -5,14 +5,14 @@ v1.0
 
 from pylint.lint import Run
 
-MIN_NOTE = 9
+MIN_NOTE = 9.05
 
 UNWATCHED_ERRORS = ['fixme', 'trailing-whitespace', 'import-error']
 
 MAX_ERROR_BY_TYPE = {
                      'protected-access': 28,
                      'invalid-name': 21,
-                     'consider-using-f-string': 16,
+                     'consider-using-f-string': 13,
                      'no-else-return': 17,
                      'arguments-differ': 5,
                      'no-member': 1,
