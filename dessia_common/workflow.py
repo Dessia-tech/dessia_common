@@ -1812,7 +1812,7 @@ class Workflow(Block):
                 output_name = f"block_{output_index[0]}.inputs[{output_index[2]}]" + '\n'
             script += pipe.to_script(pipe_index=ip, input_name=input_name, output_name=output_name) + '\n'
 
-        script += 'pipes = [{}]\n'.format(', '.join(['pipe_' + str(i) for i in range(len(self.pipes))]))
+        script += f"pipes = [{', '.join(['pipe_' + str(i) for i in range(len(self.pipes))])}]\n"
 
         workflow_output_index = self.variable_indices(self.output)
         output_name = f"block_{workflow_output_index[0]}.outputs[{workflow_output_index[2]}]"

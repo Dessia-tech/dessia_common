@@ -156,26 +156,26 @@ def deep_getsizeof(obj, ids=None):
     if ids is None:
         ids = set()
 
-    d = deep_getsizeof
+    dgso = deep_getsizeof
     if id(obj) in ids:
         return 0
 
-    r = sys.getsizeof(obj)
+    result = sys.getsizeof(obj)
     ids.add(id(obj))
 
     if isinstance(obj, str):
-        return r
+        return result
 
     # if isinstance(o, collections.Mapping):
     #     return r + sum(d(k, ids) + d(v, ids) for k, v in o.items())
 
     if isinstance(obj, collections.Mapping):
-        return r + sum(d(k, ids) + d(v, ids) for k, v in obj.items())
+        return result + sum(dgso(k, ids) + dgso(v, ids) for k, v in obj.items())
 
     if isinstance(obj, collections.Container):
-        return r + sum(d(x, ids) for x in obj.__dict__.values())
+        return result + sum(dgso(x, ids) for x in obj.__dict__.values())
 
-    return r
+    return result
 
 
 def breakdown_analysis(obj):
