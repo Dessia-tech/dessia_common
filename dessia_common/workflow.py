@@ -818,7 +818,7 @@ class ModelAttribute(Block):
     def evaluate(self, values):
         return [enhanced_deep_attr(values[self.inputs[0]], self.attribute_name)]
 
-    def to_script(self, block_index):
+    def to_script(self):
         script = "dcw.ModelAttribute('{attribute_name}', name='{self.name}')"
         return script, []
 
@@ -1953,23 +1953,19 @@ class WorkflowState(DessiaObject):
         activated_items = {}
         for item, value in self.activated_items.items():
             if isinstance(item, Variable):
-                variable_indices = self.workflow.variable_indices(item)
-                copied_item = workflow.variable_from_index(variable_indices)
+                copied_item = workflow.variable_from_index(self.workflow.variable_indices(item))
             elif isinstance(item, Block):
-                block_index = self.workflow.blocks.index(item)
-                copied_item = workflow.blocks[block_index]
+                copied_item = workflow.blocks[self.workflow.blocks.index(item)]
             elif isinstance(item, Pipe):
-                pipe_index = self.workflow.pipes.index(item)
-                copied_item = workflow.pipes[pipe_index]
+                copied_item = workflow.pipes[self.workflow.pipes.index(item)]
             else:
                 raise ValueError(f"WorkflowState Copy Error : item {item} cannot be activated")
             activated_items[copied_item] = value
 
-        output_value = deepcopy_value(value=self.output_value, memo=memo)
-
         workflow_state = self.__class__(workflow=workflow, input_values=input_values, activated_items=activated_items,
                                         values=values, start_time=self.start_time, end_time=self.end_time,
-                                        output_value=output_value, log=self.log, name=self.name)
+                                        output_value=deepcopy_value(value=self.output_value, memo=memo),
+                                        log=self.log, name=self.name)
         return workflow_state
 
     def _data_hash(self):
