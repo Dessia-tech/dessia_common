@@ -68,7 +68,7 @@ class DrivenModelOptimizer(Optimizer):
     Abstract class
     """
 
-    def __init__(self, model, name:str=''):
+    def __init__(self, model, name: str = ''):
         Optimizer.__init__(self, name=name)
         self.model = model
 
@@ -89,7 +89,6 @@ class InstantiatingModelOptimizer(Optimizer):
         self.fixed_parameters = fixed_parameters
         self.optimization_bounds = optimization_bounds
         Optimizer.__init__(self, name=name)
-        
 
         self.number_parameters = len(self.optimization_bounds)
 

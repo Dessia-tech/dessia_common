@@ -140,7 +140,7 @@ class XLSXWriter:
             cell = sheet.cell(row=row_number, column=2, value=obj.name)
         else:
             cell = sheet.cell(row=row_number, column=2, value='No name in model')
-            
+
         cell.border = self.thin_border
         i = 3
         for (k, value) in sorted(obj.__dict__.items()):

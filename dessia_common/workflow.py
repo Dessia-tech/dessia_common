@@ -16,7 +16,7 @@ from typing import List, Union, Type, Any, Dict, Tuple, Optional, get_type_hints
 from copy import deepcopy
 from dessia_common.templates import workflow_template
 import itertools
-from dessia_common import DessiaObject, DisplayObject, DessiaFilter,  is_sequence, is_bounded,\
+from dessia_common import DessiaObject, DisplayObject, DessiaFilter, is_sequence, is_bounded,\
     type_from_annotation, enhanced_deep_attr, split_argspecs, JSONSCHEMA_HEADER, jsonschema_from_annotation,\
     deserialize_argument, set_default_value, prettyname, serialize_dict
 from dessia_common.errors import UntypedArgumentError
@@ -25,7 +25,7 @@ from dessia_common.utils.serialization import dict_to_object, deserialize, seria
 from dessia_common.utils.types import get_python_class_from_class_name, serialize_typing, full_classname,\
     deserialize_typing, recursive_type
 from dessia_common.utils.copy import deepcopy_value
-from dessia_common.utils.docstrings import parse_docstring,  EMPTY_PARSED_ATTRIBUTE, FAILED_ATTRIBUTE_PARSING
+from dessia_common.utils.docstrings import parse_docstring, EMPTY_PARSED_ATTRIBUTE, FAILED_ATTRIBUTE_PARSING
 from dessia_common.utils.diff import choose_hash
 from dessia_common.vectored_objects import from_csv
 from dessia_common.typings import JsonSerializable, MethodType, ClassMethodType
@@ -238,7 +238,7 @@ class Display(Block):
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path:str='#'):
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
         return cls(order=dict_['order'], name=dict_['name'])
 
     @staticmethod
@@ -271,7 +271,7 @@ class Import(Block):
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path:str='#'):
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
         return cls(type_=dict_['type_'], name=dict_['name'])
 
     def evaluate(self, values):
@@ -315,7 +315,7 @@ class InstantiateModel(Block):
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path:str='#'):
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
         if 'model_class_module' in dict_:  # TODO Retro-compatibility. Remove this in future versions
             module_name = dict_['model_class_module']
             classname = module_name + '.' + dict_['model_class']
@@ -379,7 +379,7 @@ class ClassMethod(Block):
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path:str='#') -> 'ClassMethod':
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'ClassMethod':
         if 'method_type' in dict_:
             classname = dict_['method_type']['class_']
             method_name = dict_['method_type']['name']
@@ -455,7 +455,7 @@ class ModelMethod(Block):
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path:str='#') -> 'ModelMethod':
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'ModelMethod':
         if 'method_type' in dict_:
             classname = dict_['method_type']['class_']
             method_name = dict_['method_type']['name']
@@ -512,7 +512,7 @@ class Sequence(Block):
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path:str='#'):
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
         return cls(dict_['number_arguments'], dict_['name'])
 
     def evaluate(self, values):
@@ -565,7 +565,7 @@ class ForEach(Block):
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path:str='#'):
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
         workflow_block = WorkflowBlock.dict_to_object(dict_['workflow_block'])
         iter_input_index = dict_['iter_input_index']
         return cls(workflow_block=workflow_block, iter_input_index=iter_input_index, name=dict_['name'])
@@ -607,7 +607,7 @@ class Unpacker(Block):
 
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path:str='#') -> 'Unpacker':
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'Unpacker':
         return cls(dict_['indices'], dict_['name'])
 
     def evaluate(self, values):
@@ -625,7 +625,7 @@ class Flatten(Block):
 
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path:str='#') -> 'Flatten':
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'Flatten':
         return cls(dict_['name'])
 
     def evaluate(self, values):
@@ -656,7 +656,7 @@ class Product(Block):
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path:str='#'):
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
         number_list = dict_['number_list']
         return cls(number_list=number_list, name=dict_['name'])
 
@@ -703,7 +703,7 @@ class Filter(Block):
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path:str='#'):
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
         return cls([DessiaFilter.dict_to_object(d) for d in dict_['filters']], dict_['name'])
 
     def evaluate(self, values):
@@ -773,7 +773,7 @@ class MultiPlot(Display):
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path:str='#'):
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
         return cls(attributes=dict_['attributes'], order=dict_['order'], name=dict_['name'])
 
     @staticmethod
@@ -809,7 +809,7 @@ class ModelAttribute(Block):
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path:str='#'):
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
         return cls(dict_['attribute_name'], dict_['name'])
 
     def evaluate(self, values):
@@ -839,7 +839,7 @@ class Sum(Block):
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path:str='#'):
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
         return cls(dict_['number_elements'], dict_['name'])
 
     @staticmethod
@@ -897,7 +897,7 @@ class ExportJson(Export):
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path:str='#'):
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
         class_ = get_python_class_from_class_name(dict_['model_class'])
         return cls(class_, name=dict_['name'])
 
@@ -920,7 +920,7 @@ class ExportExcel(Export):
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path:str='#'):
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
         class_ = get_python_class_from_class_name(dict_['model_class'])
         return cls(class_, name=dict_['name'])
 
@@ -939,7 +939,7 @@ class Archive(Block):
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path:str='#'):
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
         return cls(number_exports=dict_["number_exports"], name=dict_['name'])
 
     def evaluate(self, values):
@@ -1134,7 +1134,7 @@ class Workflow(Block):
 
         base_hash = len(self.blocks) + 11 * len(self.pipes) + output_hash
         block_hash = int(sum([b.equivalent_hash() for b in self.blocks]) % 10e5)
-        return base_hash + block_hash
+        return (base_hash + block_hash) % 1000000000
 
     def _data_eq(self, other_object):  # TODO: implement imposed_variable_values in equality
         if hash(self) != hash(other_object) or not Block.equivalent(self, other_object):
@@ -1295,7 +1295,7 @@ class Workflow(Block):
 
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path:str='#') -> 'Workflow':
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'Workflow':
         blocks = [DessiaObject.dict_to_object(d) for d in dict_['blocks']]
         if 'nonblock_variables' in dict_:
             nonblock_variables = [dict_to_object(d) for d in dict_['nonblock_variables']]
@@ -1939,12 +1939,12 @@ class WorkflowState(DessiaObject):
         return workflow_state
 
     def _data_hash(self):
-        progress = int(100*self.progress)
+        progress = int(100 * self.progress)
         workflow = hash(self.workflow)
         output = choose_hash(self.output_value)
-        input_values = sum([i*choose_hash(v) for i, v in self.input_values.items()])
-        values = sum([len(k.name)*choose_hash(v) for k, v in self.values.items()])
-        return progress + workflow + output + input_values + values
+        input_values = sum([i * choose_hash(v) for i, v in self.input_values.items()])
+        values = sum([len(k.name) * choose_hash(v) for k, v in self.values.items()])
+        return (progress + workflow + output + input_values + values) % 1000000000
 
     def _data_eq(self, other_object: 'WorkflowState'):
         if not (self.__class__.__name__ == other_object.__class__.__name__
@@ -1996,7 +1996,7 @@ class WorkflowState(DessiaObject):
 
         dict_ = self.base_dict()
         dict_['workflow'] = workflow_dict
-        
+
         input_values = {}
         for input_, value in self.input_values.items():
             if use_pointers:
@@ -2008,7 +2008,6 @@ class WorkflowState(DessiaObject):
 
         dict_['input_values'] = input_values
 
-
         # Output value: priority for reference before values
         if self.output_value is not None:
             if use_pointers:
@@ -2019,7 +2018,6 @@ class WorkflowState(DessiaObject):
 
             dict_.update({'output_value': serialized_output_value,
                           'output_value_type': recursive_type(self.output_value)})
-
 
         # Values
         if use_pointers:
@@ -2033,7 +2031,7 @@ class WorkflowState(DessiaObject):
             values = {self.workflow.variable_index(i): serialize(v) for i, v in self.values.items()}
 
         dict_['values'] = values
-        
+
         dict_['evaluated_blocks_indices'] = [i for i, b in enumerate(self.workflow.blocks)
                                              if b in self.activated_items and self.activated_items[b]]
 
@@ -2048,37 +2046,36 @@ class WorkflowState(DessiaObject):
 
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                        global_dict=None, pointers_memo: Dict[str, Any] = None, path:str='#') -> 'WorkflowState':
-        
-        # This is copy pasted from generic dict to object, because it is difficult to do a decorator 
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'WorkflowState':
+
+        # This is copy pasted from generic dict to object, because it is difficult to do a decorator
         # for both classmethod and function
         if pointers_memo is None:
             pointers_memo = {}
-            
+
         if global_dict is None:
             global_dict = dict_
             pointers_memo.update(dereference_jsonpointers(dict_))
 
-        
         workflow = Workflow.dict_to_object(dict_['workflow'])
-        if 'output_value' in dict_:# and 'output_value_type' in dict_:
+        if 'output_value' in dict_:  # and 'output_value_type' in dict_:
             # type_ = dict_['output_value_type']
             value = dict_['output_value']
             output_value = deserialize(value, global_dict=dict_,
-                                        pointers_memo=pointers_memo, path=f'{path}/output_value')
+                                       pointers_memo=pointers_memo, path=f'{path}/output_value')
         else:
             output_value = None
 
         values = {workflow.variables[int(i)]: deserialize(v,
                                                           global_dict=dict_,
-                                                          pointers_memo=pointers_memo)\
+                                                          pointers_memo=pointers_memo)
                   for i, v in dict_['values'].items()}
 
-        input_values = {int(i): deserialize(v, global_dict=dict_, pointers_memo=pointers_memo)\
+        input_values = {int(i): deserialize(v, global_dict=dict_, pointers_memo=pointers_memo)
                         for i, v in dict_['input_values'].items()}
 
         activated_items = {b: (True if i in dict_['evaluated_blocks_indices'] else False)
-                            for i, b in enumerate(workflow.blocks)}
+                           for i, b in enumerate(workflow.blocks)}
 
         activated_items.update({p: (True if i in dict_['evaluated_pipes_indices'] else False)
                                 for i, p in enumerate(workflow.pipes)})
@@ -2093,8 +2090,8 @@ class WorkflowState(DessiaObject):
                                 for v in workflow.variables})
 
         return cls(workflow=workflow, input_values=input_values, activated_items=activated_items,
-                    values=values, start_time=dict_['start_time'], end_time=dict_['end_time'],
-                    output_value=output_value, log=dict_['log'], name=dict_['name'])
+                   values=values, start_time=dict_['start_time'], end_time=dict_['end_time'],
+                   output_value=output_value, log=dict_['log'], name=dict_['name'])
 
     def add_input_value(self, input_index: int, value):
         """
@@ -2143,7 +2140,7 @@ class WorkflowState(DessiaObject):
         to 1. (every computational block evaluated)
         """
         evaluated_blocks = [self.activated_items[b] for b in self.workflow.runtime_blocks]
-        progress = sum(evaluated_blocks)/len(evaluated_blocks)
+        progress = sum(evaluated_blocks) / len(evaluated_blocks)
         if progress == 1 and self.end_time is None:
             self.end_time = time.time()
         return progress

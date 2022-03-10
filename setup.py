@@ -98,6 +98,7 @@ setup(
     version=get_version(),
     description="Common tools for DessIA software",
     long_description=readme(),
+    long_description_content_type='text/markdown',
     keywords=["Dessia", "SDK", "engineering"],
     url="https://github.com/Dessia-tech/dessia-common",
     author="Steven Masfaraud",
