@@ -17,6 +17,7 @@ from typing import List, Dict, Union, Any, Tuple, get_type_hints
 import traceback as tb
 
 from importlib import import_module
+from ast import literal_eval
 
 import dessia_common.errors
 from dessia_common.utils.diff import data_eq, diff, dict_hash, list_hash
@@ -942,7 +943,7 @@ def enhanced_deep_attr(obj, sequence):
         # Is direct attribute
         return enhanced_get_attr(obj=obj, attr=sequence)
 
-    # Get direct attrivute
+    # Get direct attribute
     subobj = enhanced_get_attr(obj=obj, attr=sequence[0])
     if len(sequence) > 1:
         # Recursively get deep attributes
@@ -952,26 +953,30 @@ def enhanced_deep_attr(obj, sequence):
 
 def enhanced_get_attr(obj, attr):
     """
-    Safely get attribute in obj.
-    Obj can be of Object, Dict, or List type
+    Safely get attribute in obj. Obj can be of Object, Dict, or List type
 
     :param obj: Parent object in which find given attribute
-    :param attr: String or integer that represents
-                      name or index of attribute
+    :param attr: String or integer that represents name or index of attribute
     :return: Value of attribute
     """
     try:
         return getattr(obj, attr)
     except (TypeError, AttributeError):
+        classname = obj.__class__.__name__
         track = tb.format_exc()
         try:
             return obj[attr]
+        except KeyError:
+            try:
+                attr = literal_eval(attr)
+                return obj[attr]
+            except KeyError:
+                track += tb.format_exc()
+                msg = f"'{classname}' object has no attribute '{attr}'."
         except TypeError:
-            classname = obj.__class__.__name__
-            msg = "'{}' object has no attribute '{}'.".format(classname, attr)
             track += tb.format_exc()
-            raise dessia_common.errors.DeepAttributeError(message=msg,
-                                                          traceback_=track)
+            msg = f"Object of type '{classname}' is not subscriptable. Failed to deeply get '{attr}' from it"
+    raise dessia_common.errors.DeepAttributeError(message=msg, traceback_=track)
 
 
 def concatenate_attributes(prefix, suffix, type_: str = 'str'):
