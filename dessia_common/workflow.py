@@ -1007,10 +1007,15 @@ class Pipe(DessiaObject):
         DessiaObject.__init__(self, name=name)
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
+        """
+        transform the pipe into a dict
+        """
         return {'input_variable': self.input_variable, 'output_variable': self.output_variable}
 
     def to_script(self, pipe_index: int, input_name: str, output_name: str):
-
+        """
+        Transform the pipe into a little chunk of code
+        """
         script = f"pipe_{pipe_index} = dcw.Pipe({input_name}, {output_name})"
         return script
 
@@ -1172,6 +1177,9 @@ class Workflow(Block):
         return copied_workflow
 
     def copy_pipe(self, pipe: Pipe, copied_workflow: 'Workflow') -> Pipe:
+        """
+        Copy a pipe to another workflow
+        """
         upstream_index = self.variable_indices(pipe.input_variable)
 
         if isinstance(upstream_index, int):
@@ -1186,6 +1194,9 @@ class Workflow(Block):
         return Pipe(pipe_upstream, pipe_downstream)
 
     def _displays(self) -> List[JsonSerializable]:
+        """
+        Computes the displays of the objects
+        """
         displays = []
         documentation = self.to_markdown()
         if documentation.data:
@@ -1596,6 +1607,9 @@ class Workflow(Block):
         return coordinates
 
     def refresh_blocks_positions(self):
+        """
+        Recomputes block positions
+        """
         coordinates = self.layout()
         for i, block in enumerate(self.blocks):
             block.position = coordinates[block]
@@ -1603,7 +1617,9 @@ class Workflow(Block):
             nonblock.position = coordinates[nonblock]
 
     def plot_graph(self):
-
+        """
+        Plot graph by means of networking and matplotlib
+        """
         pos = nx.kamada_kawai_layout(self.graph)
         nx.draw_networkx_nodes(self.graph, pos, self.blocks, node_shape='s', node_color='grey')
         nx.draw_networkx_nodes(self.graph, pos, self.variables, node_color='b')
@@ -1657,6 +1673,9 @@ class Workflow(Block):
         return WorkflowState(self, input_values=input_values)
 
     def jointjs_data(self):
+        """
+        Computes the data needed for jointjs ploting
+        """
         coordinates = self.layout()
         blocks = []
         for block in self.blocks:
@@ -1716,7 +1735,10 @@ class Workflow(Block):
         webbrowser.open('file://' + temp_file)
 
     def is_valid(self):
-        # Checking types of each end of pipes
+        """
+        Tell if the workflow is valid:
+            * check type compatibility of pipes inputs/outputs
+        """
         for pipe in self.pipes:
             if hasattr(pipe.input_variable, 'type_') and hasattr(pipe.output_variable, 'type_'):
                 type1 = pipe.input_variable.type_
@@ -1733,7 +1755,7 @@ class Workflow(Block):
                                             f"{pipe.output_variable.type_}")
         return True
 
-    def package_mix(self):
+    def package_mix(self) -> Dict[str, float]:
         """
         Compute a structure showing percentages of packages used
         """
@@ -1750,7 +1772,10 @@ class Workflow(Block):
         fraction_sum = sum(package_mix.values())
         return {pn: f / fraction_sum for pn, f in package_mix.items()}
 
-    def to_script(self):
+    def to_script(self) -> str:
+        """
+        Computes a script representing the workflow.
+        """
         variable_index = 0
         classes = []
 
@@ -1795,11 +1820,17 @@ class Workflow(Block):
         return script
 
     def save_script_to_stream(self, stream: io.StringIO):
+        """
+        Save the workflow to a python script to a stream
+        """
         string = self.to_script()
         stream.seek(0)
         stream.write(string)
 
     def save_script_to_file(self, filename: str):
+        """
+        Save the workflow to a python script to a file on the disk
+        """
         if not filename.endswith('.py'):
             filename += '.py'
 
