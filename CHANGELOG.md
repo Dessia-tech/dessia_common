@@ -5,11 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased [0.6.0]
+## Unreleased
+
 ### Added
-- Details page for workflows
+
+## 0.6.0
+### Added
+- Exports in workflows
 - Workflow inputs documentation from docstrings
 - Workflow description and documentation
+- Custom Dessia FileTypes
+
+### Changed
+- split export functions in two: one to write to a file, one to save in a stream
+- to_dict use jsonpointers, des
+
+## 0.5.1
+### Fixed
+- copy problems
+- more tests
 
 ### Changed
 - name is not inserted if empty in to_dict

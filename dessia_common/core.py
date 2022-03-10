@@ -395,7 +395,7 @@ class DessiaObject:
         Return a jsonschema of a method arguments
         """
         if method_name is None and method_jsonschema is None:
-            msg = 'No method name not jsonschema provided'
+            msg = 'No method name nor jsonschema provided'
             raise NotImplementedError(msg)
 
         if method_name is not None and method_jsonschema is None:
@@ -616,6 +616,7 @@ class DessiaObject:
         decoded_json = json.loads(json_dict)
         deserialized_object = self.dict_to_object(decoded_json)
         if not deserialized_object._data_eq(self):
+            print('data diff: ', self._data_diff(deserialized_object))
             raise dessia_common.errors.DeserializationError('Object is not equal to itself'
                                                             ' after serialization/deserialization')
         copied_object = self.copy()
