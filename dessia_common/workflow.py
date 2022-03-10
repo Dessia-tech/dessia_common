@@ -341,7 +341,7 @@ class InstantiateModel(Block):
                            else EMPTY_PARSED_ATTRIBUTE for i in self.inputs}
         return block_docstring
 
-    def to_script(self, block_index):
+    def to_script(self):
         script = "dcw.InstantiateModel("
         script += f"{full_classname(object_=self.model_class, compute_for='class')}, name='{self.name}')"
         return script, [full_classname(object_=self.model_class, compute_for='class')]
@@ -487,7 +487,7 @@ class ModelMethod(Block):
                            else EMPTY_PARSED_ATTRIBUTE for i in self.inputs}
         return block_docstring
 
-    def to_script(self, block_index):
+    def to_script(self):
         script = "dcw.ModelMethod(method_type=dct.MethodType("
         script += f"{full_classname(object_=self.method_type.class_, compute_for='class')}, '{self.method_type.name}')"
         script += f", name='{self.name}')"
@@ -1781,7 +1781,7 @@ class Workflow(Block):
 
         script_blocks = ''
         for ib, block in enumerate(self.blocks):
-            block_script, classes_block = block.to_script(block_index=ib)
+            block_script, classes_block = block.to_script()
             classes.extend(classes_block)
             script_blocks += f'block_{ib} = {block_script}\n'
 
@@ -1814,7 +1814,7 @@ class Workflow(Block):
 
         script += 'pipes = [{}]\n'.format(', '.join(['pipe_' + str(i) for i in range(len(self.pipes))]))
 
-        workflow_output_index = self.variable_indices(pipe.output_variable)
+        workflow_output_index = self.variable_indices(self.output)
         output_name = f"block_{workflow_output_index[0]}.outputs[{workflow_output_index[2]}]"
         script += f"workflow = dcw.Workflow(blocks, pipes, output={output_name},name='{self.name}')\n"
         return script
@@ -1834,7 +1834,7 @@ class Workflow(Block):
         if not filename.endswith('.py'):
             filename += '.py'
 
-        with open(filename, 'w') as file:
+        with open(filename, 'w', encoding='utf-8') as file:
             self.save_script_to_stream(file)
 
 
