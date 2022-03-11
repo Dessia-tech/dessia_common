@@ -225,7 +225,8 @@ class XLSXWriter:
         """
         self.workbook.save(stream)
 
-    def autosize_sheet_columns(self, sheet, min_width=5, max_width=30):
+    @staticmethod
+    def autosize_sheet_columns(sheet, min_width=5, max_width=30):
         """
         Autosize the sheet columns by analyzing the content. Min and max width must be specified
         """
