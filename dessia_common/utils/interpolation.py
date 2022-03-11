@@ -32,7 +32,7 @@ def istep_from_value_on_list(list_: List[float], value: float,
 
     min_values = min(list_)
     max_values = max(list_)
-    raise ValueError('Specified value not found in list_: {} not in [{}, {}]'.format(value, min_values, max_values))
+    raise ValueError(f'Specified value not found in list_: {value} not in [{min_values}, {max_values}]')
 
 
 def interpolate_from_istep(objects, istep: float):

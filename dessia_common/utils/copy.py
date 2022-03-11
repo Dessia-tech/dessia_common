@@ -21,7 +21,7 @@ def deepcopy_value(value, memo):
         try:
             copied_value = value.copy(deep=True, memo=memo)
         except TypeError:
-            warnings.warn('{}.copy() does not implement deep and memo arguments'.format(value.__class__.__name__))
+            warnings.warn(f'{value.__class__.__name__}.copy() does not implement deep and memo arguments')
             copied_value = value.copy()
         return copied_value
 
@@ -32,7 +32,7 @@ def deepcopy_value(value, memo):
         try:
             copied_value = value.copy(deep=True, memo=memo)
         except TypeError:
-            warnings.warn('{}.copy() does not implement deep and memo arguments'.format(value.__class__.__name__))
+            warnings.warn(f'{value.__class__.__name__}.copy() does not implement deep and memo arguments')
             copied_value = value.copy()
 
         memo[value] = copied_value
@@ -61,9 +61,7 @@ def deepcopy_value(value, memo):
             return deepcopy_dict(value, memo)
 
         else:
-            raise NotImplementedError(
-                'unhandle type for copy: {} of type {}'.format(
-                    value, value.__class__))
+            raise NotImplementedError(f'unhandle type for copy: {value} of type {value.__class__}')
 
 
 def deepcopy_dict(dict_value, memo):

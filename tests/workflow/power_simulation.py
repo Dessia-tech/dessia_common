@@ -57,3 +57,5 @@ if '$ref' in s:
     ind_ref = s.index('$ref')
     print(s[ind_ref-300:ind_ref+500])
     raise ValueError('Pointer detected with use_pointers=False')
+    
+simulation_workflow.save_script_to_file('_simulation_workflow')
