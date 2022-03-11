@@ -81,6 +81,11 @@ class TypedVariable(Variable):
     def copy(self, deep: bool = False, memo=None):
         return TypedVariable(type_=self.type_, memorize=self.memorize, name=self.name)
 
+    def to_script(self, variable_index: int):
+        script = f"variable_{variable_index} = TypedVariable(type={serialize_typing(self.type_)}, "
+        script += f"memorize={self.memorize}, name='{self.name}')\n"
+        return script
+
 
 class VariableWithDefaultValue(Variable):
     has_default_value: bool = True
@@ -336,6 +341,11 @@ class InstantiateModel(Block):
                            else EMPTY_PARSED_ATTRIBUTE for i in self.inputs}
         return block_docstring
 
+    def to_script(self):
+        script = "dcw.InstantiateModel("
+        script += f"{full_classname(object_=self.model_class, compute_for='class')}, name='{self.name}')"
+        return script, [full_classname(object_=self.model_class, compute_for='class')]
+
 
 class ClassMethod(Block):
     def __init__(self, method_type: ClassMethodType[Type], name: str = ''):
@@ -476,6 +486,12 @@ class ModelMethod(Block):
         block_docstring = {i: parsed_attributes[i.name] if i.name in parsed_attributes
                            else EMPTY_PARSED_ATTRIBUTE for i in self.inputs}
         return block_docstring
+
+    def to_script(self):
+        script = "dcw.ModelMethod(method_type=dct.MethodType("
+        script += f"{full_classname(object_=self.method_type.class_, compute_for='class')}, '{self.method_type.name}')"
+        script += f", name='{self.name}')"
+        return script, [full_classname(object_=self.method_type.class_, compute_for='class')]
 
 
 class Sequence(Block):
@@ -802,6 +818,10 @@ class ModelAttribute(Block):
     def evaluate(self, values):
         return [enhanced_deep_attr(values[self.inputs[0]], self.attribute_name)]
 
+    def to_script(self):
+        script = "dcw.ModelAttribute('{attribute_name}', name='{self.name}')"
+        return script, []
+
 
 class Sum(Block):
     def __init__(self, number_elements: int = 2, name: str = ''):
@@ -987,7 +1007,17 @@ class Pipe(DessiaObject):
         DessiaObject.__init__(self, name=name)
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
+        """
+        transform the pipe into a dict
+        """
         return {'input_variable': self.input_variable, 'output_variable': self.output_variable}
+
+    def to_script(self, pipe_index: int, input_name: str, output_name: str):
+        """
+        Transform the pipe into a little chunk of code
+        """
+        script = f"pipe_{pipe_index} = dcw.Pipe({input_name}, {output_name})"
+        return script
 
 
 class WorkflowError(Exception):
@@ -1147,6 +1177,9 @@ class Workflow(Block):
         return copied_workflow
 
     def copy_pipe(self, pipe: Pipe, copied_workflow: 'Workflow') -> Pipe:
+        """
+        Copy a pipe to another workflow
+        """
         upstream_index = self.variable_indices(pipe.input_variable)
 
         if isinstance(upstream_index, int):
@@ -1161,6 +1194,9 @@ class Workflow(Block):
         return Pipe(pipe_upstream, pipe_downstream)
 
     def _displays(self) -> List[JsonSerializable]:
+        """
+        Computes the displays of the objects
+        """
         displays = []
         documentation = self.to_markdown()
         if documentation.data:
@@ -1229,6 +1265,17 @@ class Workflow(Block):
         jsonschemas['start_run'] = deepcopy(jsonschemas['run'])
         jsonschemas['start_run']['required'] = []
         return jsonschemas
+
+    def _export_formats(self):
+        """
+        Reads block to compute available export formats
+        """
+        export_formats = DessiaObject._export_formats(self)
+        export_formats.append({'extension': 'py',
+                               'method_name': 'save_script_to_stream',
+                               'text': True,
+                               'args': {}})
+        return export_formats
 
     def to_dict(self, use_pointers=True, memo=None, path='#'):
         if memo is None:
@@ -1560,6 +1607,9 @@ class Workflow(Block):
         return coordinates
 
     def refresh_blocks_positions(self):
+        """
+        Recomputes block positions
+        """
         coordinates = self.layout()
         for i, block in enumerate(self.blocks):
             block.position = coordinates[block]
@@ -1567,7 +1617,9 @@ class Workflow(Block):
             nonblock.position = coordinates[nonblock]
 
     def plot_graph(self):
-
+        """
+        Plot graph by means of networking and matplotlib
+        """
         pos = nx.kamada_kawai_layout(self.graph)
         nx.draw_networkx_nodes(self.graph, pos, self.blocks, node_shape='s', node_color='grey')
         nx.draw_networkx_nodes(self.graph, pos, self.variables, node_color='b')
@@ -1621,6 +1673,9 @@ class Workflow(Block):
         return WorkflowState(self, input_values=input_values)
 
     def jointjs_data(self):
+        """
+        Computes the data needed for jointjs ploting
+        """
         coordinates = self.layout()
         blocks = []
         for block in self.blocks:
@@ -1680,7 +1735,10 @@ class Workflow(Block):
         webbrowser.open('file://' + temp_file)
 
     def is_valid(self):
-        # Checking types of each end of pipes
+        """
+        Tell if the workflow is valid:
+            * check type compatibility of pipes inputs/outputs
+        """
         for pipe in self.pipes:
             if hasattr(pipe.input_variable, 'type_') and hasattr(pipe.output_variable, 'type_'):
                 type1 = pipe.input_variable.type_
@@ -1697,7 +1755,7 @@ class Workflow(Block):
                                             f"{pipe.output_variable.type_}")
         return True
 
-    def package_mix(self):
+    def package_mix(self) -> Dict[str, float]:
         """
         Compute a structure showing percentages of packages used
         """
@@ -1713,6 +1771,71 @@ class Workflow(Block):
         # Adimension
         fraction_sum = sum(package_mix.values())
         return {pn: f / fraction_sum for pn, f in package_mix.items()}
+
+    def to_script(self) -> str:
+        """
+        Computes a script representing the workflow.
+        """
+        variable_index = 0
+        classes = []
+
+        script_blocks = ''
+        for ib, block in enumerate(self.blocks):
+            block_script, classes_block = block.to_script()
+            classes.extend(classes_block)
+            script_blocks += f'block_{ib} = {block_script}\n'
+
+        script = 'import dessia_common.workflow as dcw\nimport dessia_common.typings as dct\n\n'
+
+        modules = {'.'.join(c.split('.')[:-1]) for c in classes}
+        for module in modules:
+            script += f'import {module}\n'
+        script += '\n'
+        script += script_blocks
+        script += 'blocks = [{}]\n'.format(', '.join(['block_' + str(i) for i in range(len(self.blocks))]))
+
+        for ip, pipe in enumerate(self.pipes):
+            input_index = self.variable_indices(pipe.input_variable)
+            if isinstance(input_index, int):
+                script += pipe.input_variable.to_script(variable_index=variable_index) + '\n'
+                input_name = f'variable_{variable_index}'
+                variable_index += 1
+            else:
+                input_name = f"block_{input_index[0]}.outputs[{input_index[2]}]" + '\n'
+
+            output_index = self.variable_indices(pipe.output_variable)
+            if isinstance(output_index, int):
+                script += pipe.output_variable.to_script(variable_index=variable_index) + '\n'
+                output_name = f'variable_{variable_index}'
+                variable_index += 1
+            else:
+                output_name = f"block_{output_index[0]}.inputs[{output_index[2]}]" + '\n'
+            script += pipe.to_script(pipe_index=ip, input_name=input_name, output_name=output_name) + '\n'
+
+        script += f"pipes = [{', '.join(['pipe_' + str(i) for i in range(len(self.pipes))])}]\n"
+
+        workflow_output_index = self.variable_indices(self.output)
+        output_name = f"block_{workflow_output_index[0]}.outputs[{workflow_output_index[2]}]"
+        script += f"workflow = dcw.Workflow(blocks, pipes, output={output_name},name='{self.name}')\n"
+        return script
+
+    def save_script_to_stream(self, stream: io.StringIO):
+        """
+        Save the workflow to a python script to a stream
+        """
+        string = self.to_script()
+        stream.seek(0)
+        stream.write(string)
+
+    def save_script_to_file(self, filename: str):
+        """
+        Save the workflow to a python script to a file on the disk
+        """
+        if not filename.endswith('.py'):
+            filename += '.py'
+
+        with open(filename, 'w', encoding='utf-8') as file:
+            self.save_script_to_stream(file)
 
 
 class WorkflowBlock(Block):
@@ -1830,23 +1953,19 @@ class WorkflowState(DessiaObject):
         activated_items = {}
         for item, value in self.activated_items.items():
             if isinstance(item, Variable):
-                variable_indices = self.workflow.variable_indices(item)
-                copied_item = workflow.variable_from_index(variable_indices)
+                copied_item = workflow.variable_from_index(self.workflow.variable_indices(item))
             elif isinstance(item, Block):
-                block_index = self.workflow.blocks.index(item)
-                copied_item = workflow.blocks[block_index]
+                copied_item = workflow.blocks[self.workflow.blocks.index(item)]
             elif isinstance(item, Pipe):
-                pipe_index = self.workflow.pipes.index(item)
-                copied_item = workflow.pipes[pipe_index]
+                copied_item = workflow.pipes[self.workflow.pipes.index(item)]
             else:
                 raise ValueError(f"WorkflowState Copy Error : item {item} cannot be activated")
             activated_items[copied_item] = value
 
-        output_value = deepcopy_value(value=self.output_value, memo=memo)
-
         workflow_state = self.__class__(workflow=workflow, input_values=input_values, activated_items=activated_items,
                                         values=values, start_time=self.start_time, end_time=self.end_time,
-                                        output_value=output_value, log=self.log, name=self.name)
+                                        output_value=deepcopy_value(value=self.output_value, memo=memo),
+                                        log=self.log, name=self.name)
         return workflow_state
 
     def _data_hash(self):
@@ -2220,7 +2339,7 @@ class WorkflowState(DessiaObject):
         """
         Reads block to compute available export formats
         """
-        export_formats = []
+        export_formats = DessiaObject._export_formats(self)
         for i, block in enumerate(self.workflow.blocks):
             if hasattr(block, "_export_format"):
                 export_formats.append(block._export_format(i))
