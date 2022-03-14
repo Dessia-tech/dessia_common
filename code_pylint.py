@@ -35,7 +35,7 @@ MAX_ERROR_BY_TYPE = {
                      'raise-missing-from': 7,
                      'consider-merging-isinstance': 6,
                      'abstract-method': 6,
-                     'import-outside-toplevel': 6,
+                     'import-outside-toplevel': 7,
                      'too-many-instance-attributes': 4,
                      'consider-iterating-dictionary': 4,
                      'attribute-defined-outside-init': 3,

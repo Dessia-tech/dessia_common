@@ -498,18 +498,6 @@ class DessiaObject:
                 dict_[arg] = deepcopy_value(getattr(self, arg), memo=memo)
         return self.__class__(**dict_)
 
-    def volmdlr_volume_model(self, **kwargs):
-        if hasattr(self, 'volmdlr_primitives'):
-            import volmdlr as vm  # !!! Avoid circular imports, is this OK ?
-            if hasattr(self, 'volmdlr_primitives_step_frames'):
-                return vm.core.MovingVolumeModel(
-                    self.volmdlr_primitives(**kwargs),
-                    self.volmdlr_primitives_step_frames(**kwargs)
-                )
-            return vm.core.VolumeModel(self.volmdlr_primitives(**kwargs))
-        msg = 'Object of type {} does not implement volmdlr_primitives'
-        raise NotImplementedError(msg.format(self.__class__.__name__))
-
     def plot(self, **kwargs):
         """
         Generic plot getting plot_data function to plot
@@ -547,20 +535,6 @@ class DessiaObject:
 
         return axs
 
-    def babylonjs(self, use_cdn=True, debug=False, **kwargs):
-        """
-        Show the 3D volmdlr of an object by calling volmdlr_volume_model method
-        and plot in in browser
-        """
-        self.volmdlr_volume_model(**kwargs).babylonjs(use_cdn=use_cdn,
-                                                      debug=debug)
-
-    def save_babylonjs_to_file(self, filename: str = None, use_cdn: bool = True,
-                               debug: bool = False, **kwargs):
-        self.volmdlr_volume_model(**kwargs).save_babylonjs_to_file(filename=filename,
-                                                                   use_cdn=use_cdn,
-                                                                   debug=debug)
-
     def _displays(self, **kwargs) -> List[JsonSerializable]:
         """
         Generate displays of the object to be plot in the DessiA Platform
@@ -577,13 +551,6 @@ class DessiaObject:
         displays = []
         if hasattr(self, 'babylon_data'):
             display_ = DisplayObject(type_='cad', data=self.babylon_data(),
-                                     reference_path=reference_path)
-            displays.append(display_.to_dict())
-        elif hasattr(self, 'volmdlr_primitives')\
-                or (self.__class__.volmdlr_volume_model
-                    is not DessiaObject.volmdlr_volume_model):
-            model = self.volmdlr_volume_model()
-            display_ = DisplayObject(type_='cad', data=model.babylon_data(),
                                      reference_path=reference_path)
             displays.append(display_.to_dict())
         if hasattr(self, 'plot_data'):
@@ -644,6 +611,31 @@ class DessiaObject:
         writer = XLSXWriter(self)
         writer.save_to_stream(stream)
 
+    @staticmethod
+    def _export_formats():
+        formats = [{"extension": "json", "method_name": "save_to_stream", "text": True, "args": {}},
+                   {"extension": "xlsx", "method_name": "to_xlsx_stream", "text": False, "args": {}}]
+        return formats
+
+
+class PhysicalObject(DessiaObject):
+    """
+    Represent an object with CAD capabilities
+    """
+
+    def volmdlr_primitives(self):
+        """
+        Return a list of volmdlr primitives to build up volume model
+        """
+        return []
+
+    def volmdlr_volume_model(self, **kwargs):
+        """
+        Gives the volmdlr VolumeModel
+        """
+        import volmdlr as vm  # !!! Avoid circular imports, is this OK ?
+        return vm.core.VolumeModel(self.volmdlr_primitives(**kwargs))
+
     def to_step(self, filepath: str):
         """
         Exports the CAD of the object to step. Works if the class define a custom volmdlr model
@@ -671,14 +663,55 @@ class DessiaObject:
         """
         return self.volmdlr_volume_model().to_stl(filepath=filepath)
 
-    def _export_formats(self):
-        formats = [{"extension": "json", "method_name": "save_to_stream", "text": True, "args": {}},
-                   {"extension": "xlsx", "method_name": "to_xlsx_stream", "text": False, "args": {}}]
-        if hasattr(self, 'volmdlr_primitives'):
-            formats3d = [{"extension": "step", "method_name": "to_step_stream", "text": True, "args": {}},
-                         {"extension": "stl", "method_name": "to_stl_stream", "text": False, "args": {}}]
-            formats.extend(formats3d)
+    def _displays(self, **kwargs):
+        """
+        Compute the list of displays
+        """
+        reference_path = kwargs.get('reference_path', '')
+        displays = DessiaObject._displays(self, **kwargs)
+
+        model = self.volmdlr_volume_model()
+        display_ = DisplayObject(type_='cad', data=model.babylon_data(),
+                                 reference_path=reference_path)
+        displays.append(display_.to_dict())
+
+    def babylonjs(self, use_cdn=True, debug=False, **kwargs):
+        """
+        Show the 3D volmdlr of an object by calling volmdlr_volume_model method
+        and plot in in browser
+        """
+        self.volmdlr_volume_model(**kwargs).babylonjs(use_cdn=use_cdn,
+                                                      debug=debug)
+
+    def save_babylonjs_to_file(self, filename: str = None, use_cdn: bool = True,
+                               debug: bool = False, **kwargs):
+        self.volmdlr_volume_model(**kwargs).save_babylonjs_to_file(filename=filename,
+                                                                   use_cdn=use_cdn,
+                                                                   debug=debug)
+
+    @staticmethod
+    def _export_formats():
+        formats = DessiaObject._export_formats()
+        formats3d = [{"extension": "step", "method_name": "to_step_stream", "text": True, "args": {}},
+                     {"extension": "stl", "method_name": "to_stl_stream", "text": False, "args": {}}]
+        formats.extend(formats3d)
         return formats
+
+
+class MovingObject(PhysicalObject):
+
+    def volmdlr_primitives_step_frames(self):
+        """
+        Return a list of volmdlr primitives to build up volume model
+        """
+        raise NotImplementedError('Object inheriting MovingObject should implement volmdlr_primitives_step_frames')
+
+    def volmdlr_volume_model(self, **kwargs):
+        import volmdlr as vm  # !!! Avoid circular imports, is this OK ?
+        return vm.core.MovingVolumeModel(
+            self.volmdlr_primitives(**kwargs),
+            self.volmdlr_primitives_step_frames(**kwargs)
+        )
 
 
 # class Catalog(DessiaObject):

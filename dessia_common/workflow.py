@@ -1014,7 +1014,8 @@ class Pipe(DessiaObject):
         """
         return {'input_variable': self.input_variable, 'output_variable': self.output_variable}
 
-    def to_script(self, pipe_index: int, input_name: str, output_name: str):
+    @staticmethod
+    def to_script(pipe_index: int, input_name: str, output_name: str):
         """
         Transform the pipe into a little chunk of code
         """
@@ -1272,7 +1273,7 @@ class Workflow(Block):
         """
         Reads block to compute available export formats
         """
-        export_formats = DessiaObject._export_formats(self)
+        export_formats = DessiaObject._export_formats()
         export_formats.append({'extension': 'py',
                                'method_name': 'save_script_to_stream',
                                'text': True,
@@ -2343,7 +2344,7 @@ class WorkflowState(DessiaObject):
         """
         Reads block to compute available export formats
         """
-        export_formats = DessiaObject._export_formats(self)
+        export_formats = DessiaObject._export_formats()
         for i, block in enumerate(self.workflow.blocks):
             if hasattr(block, "_export_format"):
                 export_formats.append(block._export_format(i))
