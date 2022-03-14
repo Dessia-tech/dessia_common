@@ -1431,6 +1431,9 @@ class Workflow(Block):
             graph.add_edge(pipe.input_variable, pipe.output_variable)
         return graph
 
+    def test_xavier(self):
+        return "Hello Xavier"
+
     @property
     def runtime_blocks(self):
         """
