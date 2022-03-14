@@ -3,7 +3,6 @@
 """
 Created on Tue Nov 16 12:25:54 2021
 
-@author: steven
 """
 
 import warnings
@@ -21,6 +20,9 @@ import networkx as nx
 
 
 def serialize_dict(dict_):
+    """
+    Serialize a dict into a dict (values are serialized)
+    """
     serialized_dict = {}
     for key, value in dict_.items():
         serialized_dict[key] = serialize(value)
@@ -28,6 +30,9 @@ def serialize_dict(dict_):
 
 
 def serialize_sequence(seq):
+    """
+    Serialize a sequence (list or sequence) into a list of dicts
+    """
     serialized_sequence = []
     for value in seq:
         serialized_sequence.append(serialize(value))
@@ -35,6 +40,10 @@ def serialize_sequence(seq):
 
 
 def serialize(value):
+    """
+    Main function for serialization without pointers
+    Calls recursively itself serialize_sequence and serialize_dict
+    """
     if isinstance(value, dc.DessiaObject):
         try:
             serialized_value = value.to_dict(use_pointers=False)
@@ -46,6 +55,8 @@ def serialize(value):
         serialized_value = serialize_dict(value)
     elif dcty.is_sequence(value):
         serialized_value = serialize_sequence(value)
+    elif isinstance(value, (dessia_common.files.BinaryFile, dessia_common.files.StringFile)):
+        serialized_value = value
     else:
         if not dcty.is_jsonable(value):
             msg = f'Element of value {value} is not json serializable'
@@ -55,6 +66,9 @@ def serialize(value):
 
 
 def serialize_with_pointers(value, memo=None, path='#'):
+    """
+    Main function for serialization with pointers
+    """
     if memo is None:
         memo = {}
     if isinstance(value, dc.DessiaObject):
@@ -73,6 +87,8 @@ def serialize_with_pointers(value, memo=None, path='#'):
         serialized, memo = serialize_dict_with_pointers(value, memo, path)
     elif dcty.is_sequence(value):
         serialized, memo = serialize_sequence_with_pointers(value, memo, path)
+    elif isinstance(value, (dessia_common.files.BinaryFile, dessia_common.files.StringFile)):
+        serialized = value
     else:
         if not dcty.is_jsonable(value):
             msg = f'Element of value {value} is not json serializable'
@@ -82,6 +98,9 @@ def serialize_with_pointers(value, memo=None, path='#'):
 
 
 def serialize_dict_with_pointers(dict_, memo, path):
+    '''
+    Serialize a dict recursively with jsonpointers using a memo dict at a given path of the top level object
+    '''
     serialized_dict = {}
     dict_attrs_keys = []
     seq_attrs_keys = []
@@ -91,7 +110,7 @@ def serialize_dict_with_pointers(dict_, memo, path):
         value_path = f'{path}/{key}'
         if isinstance(value, dict):
             dict_attrs_keys.append(key)
-        elif dcty.is_sequence(value): 
+        elif dcty.is_sequence(value):
             seq_attrs_keys.append(key)
         else:
             other_keys.append(key)
@@ -111,6 +130,9 @@ def serialize_dict_with_pointers(dict_, memo, path):
 
 
 def serialize_sequence_with_pointers(seq, memo, path):
+    '''
+    Serialize a sequence (list or tuple) using jsonpointers
+    '''
     serialized_sequence = []
     # print('path s  ', path)
     for ival, value in enumerate(seq):
@@ -122,7 +144,10 @@ def serialize_sequence_with_pointers(seq, memo, path):
 
 
 def deserialize(serialized_element, sequence_annotation: str = 'List',
-                global_dict=None, pointers_memo=None, path='#'):  # , enforce_pointers=False):
+                global_dict=None, pointers_memo=None, path: str = '#'):
+    """
+    Main function for deserialization, handle pointers
+    """
 
     if pointers_memo is not None:
         if path in pointers_memo:
@@ -169,9 +194,9 @@ def deserialize_sequence(sequence, annotation=None,
 
 def dict_to_object(dict_, class_=None, force_generic: bool = False,
                    global_dict=None, pointers_memo=None, path='#'):
-
-    if '$ref' in dict_:
-        return pointers_memo[dict_['$ref']]
+    '''
+    Transform a dict to an object
+    '''
 
     class_argspec = None
 
@@ -181,6 +206,9 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
     if global_dict is None:
         global_dict = dict_
         pointers_memo.update(dereference_jsonpointers(dict_))
+
+    if '$ref' in dict_:
+        return pointers_memo[dict_['$ref']]
 
     # working_dict = dict_
 
@@ -199,14 +227,12 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
                                             global_dict=global_dict,
                                             pointers_memo=pointers_memo)
             except TypeError:
-                # warn_msg = 'specific dict_to_object of class {} should implement global_dict arguments'.format(class_.__name__)
-                # warnings.warn(warn_msg, Warning)
                 obj = class_.dict_to_object(dict_)
             return obj
 
         class_argspec = inspect.getfullargspec(class_)
         init_dict = {k: v for k, v in dict_.items()
-                     if k in class_argspec.args}
+                     if k in class_argspec.args + class_argspec.kwonlyargs}
         # TOCHECK Class method to generate init_dict ??
     else:
         init_dict = dict_
@@ -235,7 +261,7 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
     return obj
 
 
-def recursive_instantiation(type_, value):
+def deserialize_with_type(type_, value):
     if type_ in dcty.TYPES_STRINGS.values():
         return eval(type_)(value)
     elif isinstance(type_, str):
@@ -245,7 +271,7 @@ def recursive_instantiation(type_, value):
         else:
             raise NotImplementedError
     elif isinstance(type_, (list, tuple)):
-        return [recursive_instantiation(t, v) for t, v in zip(type_, value)]
+        return [deserialize_with_type(t, v) for t, v in zip(type_, value)]
     elif type_ is None:
         return value
     else:
@@ -351,6 +377,10 @@ def deserialize_argument(type_, argument):
 
 
 def find_references(value, path='#'):
+    """
+    Traverse recursively the value to find reference (pointers) in it
+    Calls recursively find_references_sequence and find_references_dict
+    """
     if isinstance(value, dict):
         return find_references_dict(value, path)
     if dcty.isinstance_base_types(value):
@@ -377,7 +407,6 @@ def find_references_sequence(seq, path='#'):
 
 
 def find_references_dict(dict_, path='#'):
-
     if '$ref' in dict_:
         return [(path, dict_['$ref'])]
 
@@ -390,6 +419,11 @@ def find_references_dict(dict_, path='#'):
 
 
 def pointer_graph(value):
+    """
+    Create a graph of subattributes of an object with edge representing either:
+     * the hierarchy of an subattribute to an attribute
+     * the pointer link between the 2 elements
+    """
 
     nodes = set()
     edges = set()
@@ -413,10 +447,11 @@ def pointer_graph(value):
     return graph
 
 
-def dereference_jsonpointers(value):  # , global_dict):
-    graph = pointer_graph(value)
-
-    pointers_memo = {}
+def deserialization_order(dict_):
+    """
+    Analyse a dict representing an object and give a deserialization order
+    """
+    graph = pointer_graph(dict_)
     if '#' in graph.nodes:
         cycles = list(nx.simple_cycles(graph))
         if cycles:
@@ -424,37 +459,33 @@ def dereference_jsonpointers(value):  # , global_dict):
             # dessia_common.displays.draw_networkx_graph(graph)
             for cycle in cycles:
                 print(cycle)
-            raise NotImplementedError('Cycles in ref not handled')
+            raise NotImplementedError('Cycles in jsonpointers not handled')
 
         order = list(explore_tree_from_leaves(graph))
         if '#' in order:
             order.remove('#')
+        return order
+    return []
 
-        # for ref in order:
-        #     print('ref', ref)
 
-        for ref in order:
-            serialized_element = get_in_object_from_path(value, ref)
-            # print(serialized_element)
-            # try:
-            pointers_memo[ref] = deserialize(serialized_element=serialized_element,
-                                             global_dict=value,
-                                             pointers_memo=pointers_memo,
-                                             path=ref)
-            # except:
-            #     print(ref)
-            #     # print('\n', serialized_element)
-            #     # print('\n\n', pointers_memo)
-            #     return serialized_element, pointers_memo
-            #     raise RuntimeError('jjj')
-            # print('\nref', ref, pointers_memo[ref])
-    # print(pointers_memo.keys())
+def dereference_jsonpointers(dict_):  # , global_dict):
+    """
+    Analyse the given dict
+    """
+
+    order = deserialization_order(dict_)
+
+    pointers_memo = {}
+    for ref in order:
+        serialized_element = get_in_object_from_path(dict_, ref)
+        pointers_memo[ref] = deserialize(serialized_element=serialized_element,
+                                         global_dict=dict_,
+                                         pointers_memo=pointers_memo,
+                                         path=ref)
     return pointers_memo
 
 
 def pointer_graph_elements(value, path='#'):
-    # edges = []
-    # nodes = []
 
     if isinstance(value, dict):
         return pointer_graph_elements_dict(value, path)
@@ -462,8 +493,8 @@ def pointer_graph_elements(value, path='#'):
         return [], []
     elif dcty.is_sequence(value):
         return pointer_graph_elements_sequence(value, path)
-    else:
-        raise ValueError(value)
+
+    raise ValueError(value)
 
 
 def pointer_graph_elements_sequence(seq, path='#'):
@@ -508,6 +539,10 @@ def pointer_graph_elements_dict(dict_, path='#'):
 
 
 def pointers_analysis(obj):
+    """
+    Analyse on object to output stats on pointer use in the object
+    :returns: a tuple of 2 dicts: one giving the number of pointer use by class
+    """
     if isinstance(obj, dict):
         dict_ = obj
     else:

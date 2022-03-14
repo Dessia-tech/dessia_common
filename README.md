@@ -18,3 +18,8 @@ Python at a version > 3.8 is required.
 
 The main usage is to make your objects inherit from dessia_common.DessiaObject
 This will give them the powers to be handled by dessia platforms
+
+## Changelog & roadmap
+
+See markdown files in the repo CHANGELOG.md and ROADMAP.md for details.
+

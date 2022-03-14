@@ -12,6 +12,10 @@ from dessia_common.utils.types import isinstance_base_types, is_sequence, full_c
 
 
 def diff(value1, value2, path='#'):
+    """
+    Main function to get the diff of two objects
+    :return: a tuple of a list of diff between the objects, missing keys in other object and invalid types
+    """
     diff_values = []
     missing_keys_in_other_object = []
     invalid_types = []
@@ -157,3 +161,24 @@ def sequence_data_eq(seq1, seq2):
                 return False
 
     return True
+
+
+def choose_hash(object_):
+    if is_sequence(object_):
+        return list_hash(object_)
+    if isinstance(object_, dict):
+        return dict_hash(object_)
+    if isinstance(object_, str):
+        return sum([ord(e) for e in object_])
+    return hash(object_)
+
+
+def list_hash(list_):
+    return sum([choose_hash(e) for e in list_])
+
+
+def dict_hash(dict_):
+    hash_ = 0
+    for key, value in dict_.items():
+        hash_ += hash(key) + choose_hash(value)
+    return hash_

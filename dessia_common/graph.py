@@ -26,7 +26,7 @@ def cut_tree_final_branches(graph: nx.DiGraph):
                     degree_in = graph.in_degree(current_node)
         number_node_removed = len(nodes_to_delete)
         if number_node_removed:
-            new_nodes = [n for n in graph.nodes if not n in nodes_to_delete]
+            new_nodes = [n for n in graph.nodes if n not in nodes_to_delete]
             graph = nx.subgraph(graph, new_nodes)
 
     return graph
