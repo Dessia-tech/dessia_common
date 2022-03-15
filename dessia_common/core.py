@@ -12,6 +12,8 @@ import collections
 from copy import deepcopy
 import inspect
 import json
+import traceback
+from operator import attrgetter
 
 from typing import List, Dict, Union, Any, Tuple, get_type_hints
 import traceback as tb
@@ -29,6 +31,8 @@ from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotat
 from dessia_common.utils.docstrings import parse_docstring, FAILED_DOCSTRING_PARSING
 from dessia_common.exports import XLSXWriter
 from dessia_common.typings import JsonSerializable
+import dessia_common.templates as templates
+from dessia_common.displays import DisplayObject, DisplaySetting
 
 
 _FORBIDDEN_ARGNAMES = ['self', 'cls', 'progress_callback', 'return']
@@ -500,6 +504,9 @@ class DessiaObject:
                 dict_[arg] = deepcopy_value(getattr(self, arg), memo=memo)
         return self.__class__(**dict_)
 
+    def plot_data(self):
+        return []
+
     def plot(self, **kwargs):
         """
         Generic plot getting plot_data function to plot
@@ -537,40 +544,72 @@ class DessiaObject:
 
         return axs
 
+    def displays_settings(self) -> List[DisplaySetting]:
+        """
+        Returns a list of json describing how to call subdisplays
+        """
+        return [DisplaySetting('markdown', 'markdown', 'to_markdown', None),
+                DisplaySetting('plot_data', 'plot_data', 'plot_data', None)
+                ]
+
+    def _display_from_selector(self, selector: str, **kwargs):
+        reference_path = kwargs.get('reference_path', '')
+
+        for display_setting in self.displays_settings():
+            if display_setting.selector == selector:
+                track = ''
+                try:
+                    data = attrgetter(display_setting.method)(self)(**display_setting.arguments)
+                    print('c', attrgetter(display_setting.method)(self))
+                    # data = getattr(self, display_setting.method)(**display_setting.arguments)
+                except:
+                    data = None
+                    track = traceback.format_exc()
+                print(attrgetter(display_setting.method)(self))
+                print(track)
+                print('a', display_setting.to_dict())
+                print('b2', data)
+                return DisplayObject(type_=display_setting.type,
+                                     data=data,
+                                     reference_path=reference_path,
+                                     traceback=track)
+
     def _displays(self, **kwargs) -> List[JsonSerializable]:
         """
         Generate displays of the object to be plot in the DessiA Platform
         """
-
-        if hasattr(self, '_display_angular'):
-            # Retro-compatibility
-            deprecation_warning(name='_display_angular', object_type='method',
-                                use_instead='display_angular')
-            return self._display_angular(**kwargs)
-
         reference_path = kwargs.get('reference_path', '')
 
         displays = []
-        if hasattr(self, 'babylon_data'):
-            display_ = DisplayObject(type_='cad', data=self.babylon_data(),
-                                     reference_path=reference_path)
-            displays.append(display_.to_dict())
-        if hasattr(self, 'plot_data'):
-            plot_data = self.plot_data()
-            if is_sequence(plot_data):
-                for plot in plot_data:
-                    display_ = DisplayObject(type_='plot_data', data=plot,
-                                             reference_path=reference_path)
-                    displays.append(display_.to_dict())
-            else:
-                msg = 'plot_data must return a sequence. Found {}'
-                raise ValueError(msg.format(type(plot_data)))
-        if hasattr(self, 'to_markdown'):
-            markdown = self.to_markdown()
-            display_ = DisplayObject(type_='markdown', data=markdown,
-                                     reference_path=reference_path)
-            displays.append(display_.to_dict())
+        for display_setting in self.displays_settings():
+            # print(display_setting)
+            display = self._display_from_selector(display_setting.selector, reference_path=reference_path)
+            displays.append(display.to_dict())
         return displays
+
+        # if hasattr(self, 'babylon_data'):
+        #     display_ = DisplayObject(type_='cad', data=self.babylon_data(),
+        #                              reference_path=reference_path)
+        #     displays.append(display_.to_dict())
+        # if hasattr(self, 'plot_data'):
+        #     plot_data = self.plot_data()
+        #     if is_sequence(plot_data):
+        #         for plot in plot_data:
+        #             display_ = DisplayObject(type_='plot_data', data=plot,
+        #                                      reference_path=reference_path)
+        #             displays.append(display_.to_dict())
+        #     else:
+        #         msg = 'plot_data must return a sequence. Found {}'
+        #         raise ValueError(msg.format(type(plot_data)))
+        # if hasattr(self, 'to_markdown'):
+        #     markdown = self.to_markdown()
+        #     display_ = DisplayObject(type_='markdown', data=markdown,
+        #                              reference_path=reference_path)
+        #     displays.append(display_.to_dict())
+        # return displays
+
+    def to_markdown(self):
+        return templates.dessia_object_markdown_template.substitute(name= self.name)
 
     def _check_platform(self):
         """
@@ -624,6 +663,14 @@ class PhysicalObject(DessiaObject):
     """
     Represent an object with CAD capabilities
     """
+
+    def displays_settings(self):
+        """
+        Returns a list of json describing how to call subdisplays
+        """
+        display_settings = DessiaObject.displays_settings()
+        display_settings.append(DisplaySetting('cad', 'babylon_data', None))
+        return display_settings
 
     def volmdlr_primitives(self):
         """
@@ -720,22 +767,6 @@ class MovingObject(PhysicalObject):
 #     def __init__(self, objects: List[DessiaObject], name: str = ''):
 #         self.objects = objects
 #         DessiaObject.__init__(self, name=name)
-
-
-class DisplayObject(DessiaObject):
-    def __init__(self, type_: str,
-                 data: Union[JsonSerializable, DessiaObject, str],
-                 reference_path: str = '', name: str = ''):
-        """
-        Container for data of display
-        """
-        if type_ == 'markdown':
-            data = inspect.cleandoc(data)
-        self.type_ = type_
-        self.data = data
-
-        self.reference_path = reference_path
-        DessiaObject.__init__(self, name=name)
 
 
 class Parameter(DessiaObject):

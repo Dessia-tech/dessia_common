@@ -1,8 +1,59 @@
 import webbrowser
 import os
 import tempfile
+import inspect
+
+from typing import Union
 from networkx import DiGraph, Graph, kamada_kawai_layout
 from dessia_common.templates import visjs_template
+from dessia_common.typings import JsonSerializable
+
+
+class DisplaySetting:
+    def __init__(self, selector, type_, method, arguments=None):
+        self.selector = selector
+        self.type = type_
+        self.method = method
+        if not arguments:
+            arguments = {}
+        self.arguments = arguments
+
+    def to_dict(self):
+        return {'selector': self.selector,
+                'type': self.type,
+                'method': self.method,
+                'arguments': self.arguments}
+
+    def compose(self, attribute):
+        return DisplaySetting(self.selector, self.type, f'{attribute}.{self.method}', self.arguments)
+
+
+class DisplayObject:
+    def __init__(self,
+                 type_: str,
+                 data: Union[JsonSerializable, str],
+                 reference_path: str = '',
+                 traceback: str = '',
+                 name: str = ''):
+        """
+        Container for data of display
+        A traceback can be set if display fails to be generated.
+        """
+        if data and type_ == 'markdown':
+            print('b', data)
+            data = inspect.cleandoc(data)
+        self.type_ = type_
+        self.data = data
+        self.traceback = traceback
+        self.reference_path = reference_path
+        self.name = name
+
+    def to_dict(self):
+        return {'type_': self.type_,
+                'data': self.data,
+                'traceback': self.traceback,
+                'reference_path': self.reference_path,
+                'name': self.name}
 
 
 def networkx_to_visjs_data(networkx_graph: Graph):
@@ -41,7 +92,7 @@ def networkx_to_visjs_data(networkx_graph: Graph):
 
     list_nodes = list(networkx_graph.nodes)
     is_digraph = isinstance(networkx_graph, DiGraph)
-    print(is_digraph)
+    # print(is_digraph)
     for edge in networkx_graph.edges:
         index1 = list_nodes.index(edge[0])
         index2 = list_nodes.index(edge[1])

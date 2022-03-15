@@ -1,5 +1,18 @@
 from string import Template
 
+
+dessia_object_markdown_template = Template('''
+# Default Dessia Object markdown
+
+This is a markdown file https://www.markdownguide.org/cheat-sheet/
+
+The good practice is to create a string python template and move the template to another python module
+(like templates.py) to avoid mix python code and markdown, as python syntax conflicts with markdown
+
+You can substitute values with object attributes like the name of the object: $name
+
+''')
+
 workflow_template = Template('''
 <!DOCTYPE html>
 <html>

@@ -18,7 +18,7 @@ from dessia_common.templates import workflow_template
 import itertools
 from dessia_common import DessiaObject, DisplayObject, DessiaFilter, is_sequence, is_bounded,\
     type_from_annotation, enhanced_deep_attr, split_argspecs, JSONSCHEMA_HEADER, jsonschema_from_annotation,\
-    deserialize_argument, set_default_value, prettyname, serialize_dict
+    deserialize_argument, set_default_value, prettyname, serialize_dict, DisplaySetting
 from dessia_common.errors import UntypedArgumentError
 from dessia_common.utils.serialization import dict_to_object, deserialize, serialize_with_pointers, serialize,\
                                               dereference_jsonpointers
@@ -751,6 +751,7 @@ class MultiPlot(Display):
             reference_path = 'output_value'  # TODO bof bof bof
         else:
             reference_path = kwargs['reference_path']
+
         objects = local_values[self.inputs[self._displayable_input]]
         values = [{a: enhanced_deep_attr(o, a) for a in self.attributes} for o in objects]
         values2d = [{key: val[key]} for key in self.attributes[:2] for val in values]
@@ -1194,23 +1195,21 @@ class Workflow(Block):
         pipe_downstream = copied_workflow.variable_from_index(downstream_index)
         return Pipe(pipe_upstream, pipe_downstream)
 
-    def _displays(self) -> List[JsonSerializable]:
+    def displays_settings(self) -> List[DisplaySetting]:
         """
         Computes the displays of the objects
         """
-        displays = []
-        documentation = self.to_markdown()
-        if documentation.data:
-            displays.append(documentation.to_dict())
-        workflow = DisplayObject(type_='workflow', data=self.to_dict())
-        displays.append(workflow.to_dict())
-        return displays
+        display_settings = []
+        display_settings.append(DisplaySetting('documentation', 'markdown', 'to_markdown', None))
+        display_settings.append(DisplaySetting('workflow', 'workflow', 'to_dict', None))
+        return display_settings
 
     def to_markdown(self):
         """
         Sets workflow documentation as markdown
         """
-        return DisplayObject(type_="markdown", data=self.documentation)
+        return self.documentation
+        # return DisplayObject(type_="markdown", data=self.documentation)
 
     def _docstring(self):
         """
@@ -2157,12 +2156,13 @@ class WorkflowState(DessiaObject):
         indices = self.workflow.block_inputs_global_indices(block_index)
         self.add_several_input_values(indices=indices, values=values)
 
-    def _displays(self) -> List[JsonSerializable]:
-        data = self.to_dict()
-
-        display_object = DisplayObject(type_='workflow_state', data=data)
-        displays = [display_object.to_dict()]
-        return displays
+    def displays_settings(self) -> List[DisplaySetting]:
+        """
+        Computes the displays of the objects
+        """
+        display_settings = []
+        display_settings.append(DisplaySetting('workflow-state', 'workflow_state', 'to_dict', None))
+        return display_settings
 
     @property
     def progress(self):
@@ -2417,32 +2417,45 @@ class WorkflowRun(WorkflowState):
         """
         return {self.workflow.variable_indices(k): v for k, v in self.values.items() if k.memorize}
 
-    def _displays(self) -> List[JsonSerializable]:
-        # Init display with workflow view
-        displays = self.workflow._displays()
+    def displays_settings(self) -> List[DisplaySetting]:
+        """
+        Computes the displays of the objects
+        """
+        display_settings = self.workflow.displays_settings()
+
+        display_settings.append(DisplaySetting('workflow-state', 'workflow_state', 'to_dict', None))
 
         # Find & order displayable blocks
         d_blocks = [b for b in self.workflow.blocks if hasattr(b, 'display_')]
         sorted_d_blocks = sorted(d_blocks, key=lambda b: b.order)
+        for block in sorted_d_blocks:
+            block_index = self.workflow.blocks.index(block)
+            block_display = block.displays_settings(block_index=block_index)
+            block_display.method = 'block_display'
+            block_display.arguments = {'block_index': block_index}
+            display_settings.append(block_display)
 
+        if isinstance(self.output_value, DessiaObject):
+            output_display_settings = [ds.compose('output_value') for ds in self.output_value.displays_settings()]
+            display_settings.extend(output_display_settings)
+
+        return display_settings
+
+    def block_display(self, block_index: int):
         self._activate_activable_pipes()
         self.activate_inputs()
-        for block in sorted_d_blocks:
-            if block in self._activable_blocks():
-                self._evaluate_block(block)
-            reference_path = ''
-            local_values = {}
-            for i, input_ in enumerate(block.inputs):
-                input_adress = self.workflow.variable_indices(input_)
-                strindices = str(input_adress)
-                local_values[input_] = self.variable_values[input_adress]
-                if i == block._displayable_input:
-                    reference_path = 'variable_values/' + strindices
-            display_ = block.display_(local_values=local_values, reference_path=reference_path)
-            displays.extend(display_)
-        if isinstance(self.output_value, DessiaObject):
-            displays.extend(self.output_value._displays(reference_path='output_value'))
-        return displays
+        block = self.blocks[block_index]
+        if block in self._activable_blocks():
+            self._evaluate_block(block)
+        reference_path = ''
+        local_values = {}
+        for i, input_ in enumerate(block.inputs):
+            input_adress = self.workflow.variable_indices(input_)
+            local_values[input_] = self.variable_values[input_adress]
+            if i == block._displayable_input:
+                reference_path = f'variable_values/{input_adress}'
+        display_ = block.display_(local_values=local_values, reference_path=reference_path)
+        return display_
 
     def dict_to_arguments(self, dict_: JsonSerializable, method: str):
         if method in self._allowed_methods:
