@@ -1199,7 +1199,7 @@ class Workflow(Block):
         return Pipe(pipe_upstream, pipe_downstream)
 
     @staticmethod
-    def displays_settings() -> List[DisplaySetting]:
+    def display_settings() -> List[DisplaySetting]:
         """
         Computes the displays of the objects
         """
@@ -2185,7 +2185,7 @@ class WorkflowState(DessiaObject):
         self.add_several_input_values(indices=indices, values=values)
 
     @staticmethod
-    def displays_settings() -> List[DisplaySetting]:
+    def display_settings() -> List[DisplaySetting]:
         """
         Computes the displays of the objects
         """
@@ -2446,11 +2446,11 @@ class WorkflowRun(WorkflowState):
         """
         return {self.workflow.variable_indices(k): v for k, v in self.values.items() if k.memorize}
 
-    def displays_settings(self) -> List[DisplaySetting]:
+    def display_settings(self) -> List[DisplaySetting]:
         """
         Computes the displays settings of the objects
         """
-        display_settings = self.workflow.displays_settings()
+        display_settings = self.workflow.display_settings()
 
         display_settings.append(DisplaySetting('workflow-state', 'workflow_state', 'to_dict', None))
 
@@ -2459,13 +2459,13 @@ class WorkflowRun(WorkflowState):
         sorted_d_blocks = sorted(d_blocks, key=lambda b: b.order)
         for block in sorted_d_blocks:
             block_index = self.workflow.blocks.index(block)
-            block_display = block.displays_settings(block_index=block_index)
+            block_display = block.display_settings(block_index=block_index)
             block_display.method = 'block_display'
             block_display.arguments = {'block_index': block_index}
             display_settings.append(block_display)
 
         if isinstance(self.output_value, DessiaObject):
-            output_display_settings = [ds.compose('output_value') for ds in self.output_value.displays_settings()]
+            output_display_settings = [ds.compose('output_value') for ds in self.output_value.display_settings()]
             display_settings.extend(output_display_settings)
 
         return display_settings

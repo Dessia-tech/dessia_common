@@ -544,7 +544,7 @@ class DessiaObject:
         return axs
 
     @staticmethod
-    def displays_settings() -> List[DisplaySetting]:
+    def display_settings() -> List[DisplaySetting]:
         """
         Returns a list of json describing how to call subdisplays
         """
@@ -558,7 +558,7 @@ class DessiaObject:
         """
         reference_path = kwargs.get('reference_path', '')
 
-        for display_setting in self.displays_settings():
+        for display_setting in self.display_settings():
             if display_setting.selector == selector:
                 track = ''
                 try:
@@ -579,7 +579,7 @@ class DessiaObject:
         reference_path = kwargs.get('reference_path', '')
 
         displays = []
-        for display_setting in self.displays_settings():
+        for display_setting in self.display_settings():
             display = self._display_from_selector(display_setting.selector, reference_path=reference_path)
             displays.append(display.to_dict())
         return displays
@@ -641,11 +641,11 @@ class PhysicalObject(DessiaObject):
     """
 
     @staticmethod
-    def displays_settings():
+    def display_settings():
         """
         Returns a list of json describing how to call subdisplays
         """
-        display_settings = DessiaObject.displays_settings()
+        display_settings = DessiaObject.display_settings()
         display_settings.append(DisplaySetting('cad', 'babylon_data', None))
         return display_settings
 
