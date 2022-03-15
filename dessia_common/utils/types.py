@@ -288,7 +288,25 @@ def recursive_type(obj):
     return type_
 
 
+def union_is_default_value(typing_: Type) -> bool:
+    """
+    Union typings can be False positives.
+    An argument of a function that has a default_value set to None is Optional[T],
+    which is an alias for Union[T, NoneType]. This function checks if this is the case.
+    """
+    args = get_args(typing_)
+    return len(args) == 2 and type(None) in args
+
+
 def typematch(type_: Type, match_against: Type) -> bool:
+    """
+        Return wether type_ matches against match_against.
+        match_against needs to be "wider" than type_, and the check is not bilateral
+    """
+    if type_ == match_against:
+        # If types are strictly equal, then it should pass straight away
+        return True
+
     if match_against is Any:
         return True
 
@@ -301,17 +319,21 @@ def typematch(type_: Type, match_against: Type) -> bool:
 
         match_against_origin = get_origin(match_against)
         match_against_args = get_args(match_against)
+
+        if type_origin is Union:
+            if union_is_default_value(type_):
+                return typematch(type_args[0], match_against)
+
         if type_origin != match_against_origin:
             return False
 
         if type_origin is list:
-            print("LIST")
             return typematch(type_args[0], match_against_args[0])
 
         if type_origin is tuple:
-            print("TUPLE")
             return all([typematch(a, b) for a, b in zip(type_args, match_against_args)])
 
+        # Otherwise, it is not implemented
         raise NotImplementedError(f"Type {type_} is a complex typing and cannot be matched against others yet")
 
     if not is_typing(match_against):
@@ -320,8 +342,6 @@ def typematch(type_: Type, match_against: Type) -> bool:
     origin = get_origin(match_against)
     args = get_args(match_against)
     if origin is Union:
-        print(args)
         matches = [typematch(type_, subtype) for subtype in args]
-        print(matches)
         return any(matches)
     return False
