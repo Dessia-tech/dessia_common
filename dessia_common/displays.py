@@ -50,13 +50,19 @@ class DisplayObject:
         A traceback can be set if display fails to be generated.
         """
         if data and type_ == 'markdown':
-            print('b', data)
-            data = inspect.cleandoc(data)
+            self.data_cleaning()
+
         self.type_ = type_
         self.data = data
         self.traceback = traceback
         self.reference_path = reference_path
         self.name = name
+
+    def data_cleaning(self):
+        """
+        in case 
+        """
+        self.data = inspect.cleandoc(self.data)
 
     def to_dict(self):
         """

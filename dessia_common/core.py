@@ -12,7 +12,6 @@ import collections
 from copy import deepcopy
 import inspect
 import json
-import traceback
 from operator import attrgetter
 
 from typing import List, Dict, Any, Tuple, get_type_hints
@@ -31,7 +30,7 @@ from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotat
 from dessia_common.utils.docstrings import parse_docstring, FAILED_DOCSTRING_PARSING
 from dessia_common.exports import XLSXWriter
 from dessia_common.typings import JsonSerializable
-import dessia_common.templates as templates
+from dessia_common import templates
 from dessia_common.displays import DisplayObject, DisplaySetting
 
 
@@ -566,7 +565,7 @@ class DessiaObject:
                     data = attrgetter(display_setting.method)(self)(**display_setting.arguments)
                 except:
                     data = None
-                    track = traceback.format_exc()
+                    track = tb.format_exc()
                 return DisplayObject(type_=display_setting.type,
                                      data=data,
                                      reference_path=reference_path,

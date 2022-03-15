@@ -1,8 +1,13 @@
 '''
 Read pylint errors to see if number of errors does not exceed specified limits
-v1.0
+v1.1
+
+Changes:
+    v1.1: move imports to top
 '''
 
+import os
+import sys
 from pylint.lint import Run
 
 MIN_NOTE = 9.05
@@ -22,7 +27,7 @@ MAX_ERROR_BY_TYPE = {
                      'unused-import': 0,
                      'unused-argument': 9,
                      'cyclic-import': 11,
-                     'no-self-use': 8,
+                     'no-self-use': 7,
                      'unused-variable': 6,
                      'trailing-whitespace': 11,
                      'empty-docstring': 8,
@@ -67,7 +72,7 @@ MAX_ERROR_BY_TYPE = {
                      'inconsistent-return-statements': 0,
                      'unexpected-special-method-signature': 0,
                      'too-many-lines': 0,
-                     'bare-except': 0,
+                     'bare-except': 1,
                      'unspecified-encoding': 0,
                      'no-else-raise': 0,
                      'bad-indentation': 0,
@@ -79,8 +84,6 @@ MAX_ERROR_BY_TYPE = {
                      'unsubscriptable-object': 0
                      }
 
-import os
-import sys
 f = open(os.devnull, 'w')
 
 old_stdout = sys.stdout
