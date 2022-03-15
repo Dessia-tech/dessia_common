@@ -1198,7 +1198,9 @@ class Workflow(Block):
         pipe_downstream = copied_workflow.variable_from_index(downstream_index)
         return Pipe(pipe_upstream, pipe_downstream)
 
-    def displays_settings(self) -> List[DisplaySetting]:
+
+    @staticmethod
+    def displays_settings() -> List[DisplaySetting]:
         """
         Computes the displays of the objects
         """
@@ -2183,7 +2185,8 @@ class WorkflowState(DessiaObject):
         indices = self.workflow.block_inputs_global_indices(block_index)
         self.add_several_input_values(indices=indices, values=values)
 
-    def displays_settings(self) -> List[DisplaySetting]:
+    @staticmethod
+    def displays_settings() -> List[DisplaySetting]:
         """
         Computes the displays of the objects
         """
@@ -2446,7 +2449,7 @@ class WorkflowRun(WorkflowState):
 
     def displays_settings(self) -> List[DisplaySetting]:
         """
-        Computes the displays of the objects
+        Computes the displays settings of the objects
         """
         display_settings = self.workflow.displays_settings()
 
@@ -2469,6 +2472,9 @@ class WorkflowRun(WorkflowState):
         return display_settings
 
     def block_display(self, block_index: int):
+        """
+        Computes the display of associated block to use integrate it in the workflow run displays
+        """
         self._activate_activable_pipes()
         self.activate_inputs()
         block = self.blocks[block_index]

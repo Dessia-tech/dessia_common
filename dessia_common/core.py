@@ -544,7 +544,8 @@ class DessiaObject:
 
         return axs
 
-    def displays_settings(self) -> List[DisplaySetting]:
+    @staticmethod
+    def displays_settings() -> List[DisplaySetting]:
         """
         Returns a list of json describing how to call subdisplays
         """
@@ -639,7 +640,8 @@ class PhysicalObject(DessiaObject):
     Represent an object with CAD capabilities
     """
 
-    def displays_settings(self):
+    @staticmethod
+    def displays_settings():
         """
         Returns a list of json describing how to call subdisplays
         """
