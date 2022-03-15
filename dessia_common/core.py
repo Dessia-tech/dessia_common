@@ -571,6 +571,7 @@ class DessiaObject:
                                      data=data,
                                      reference_path=reference_path,
                                      traceback=track)
+        raise ValueError(f'No such selector {selector} in display of class {self.__class__.__name__}')
 
     def _displays(self, **kwargs) -> List[JsonSerializable]:
         """
