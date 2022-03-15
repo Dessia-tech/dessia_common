@@ -1521,6 +1521,11 @@ class Workflow(Block):
         return [i for i in indices if i is not None]
 
     def match_variables(self) -> Dict[Variable, list[Variable]]:
+        """
+        Runs a check for every variable to find its matchable counterparts which means :
+        - Variables are compatible workflow-wise
+        - Their types are compatible
+        """
         ports_matched = {}
         for variable in self.variables:
             if isinstance(variable, TypedVariable):
@@ -1538,6 +1543,13 @@ class Workflow(Block):
         return ports_matched
 
     def variable_compatibility(self, variable: Variable, other_variable: Variable) -> bool:
+        """
+        Two variables are compatible if :
+        - They are not equal
+        - They don't share the same block
+        - They are not input/input or output/output
+        - They are typed
+        """
         if variable == other_variable:
             # If this is the same variable, it is not compatible
             return False
@@ -1546,7 +1558,7 @@ class Workflow(Block):
         other_adress = self.variable_indices(other_variable)
 
         if variable not in self.nonblock_variables and other_variable not in self.nonblock_variables:
-            # If both aren't NBVs we need to check more non-equality element
+            # If both aren't NBVs we need to check more non-equality elements
             same_block = adress[0] == other_adress[0]
             same_side = adress[1] == other_adress[1]
             if same_block or same_side:
@@ -1560,13 +1572,6 @@ class Workflow(Block):
             # Variable must be typed to be seen compatible
             return False
         return True
-
-    def variable_types(self):
-        for variable in self.variables:
-            if isinstance(variable, TypedVariable):
-                print(f"{self.variable_indices(variable)} of type {variable.type_}")
-            else:
-                print(f"{self.variable_indices(variable)} has no type")
 
     def layout(self, min_horizontal_spacing=300, min_vertical_spacing=200, max_height=800, max_length=1500):
         """

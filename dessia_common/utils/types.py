@@ -303,14 +303,14 @@ def typematch(type_: Type, match_against: Type) -> bool:
         Return wether type_ matches against match_against.
         match_against needs to be "wider" than type_, and the check is not bilateral
     """
-    if type_ == match_against:
-        # If types are strictly equal, then it should pass straight away
-        return True
-
-    if match_against is Any:
+    # TODO Implement a more intelligent check for Unions : Union[T, U] should match against Union[T, U, V]
+    # TODO Implement a check for Dict
+    if type_ == match_against or match_against is Any:
+        # Trivial cases. If types are strictly equal, then it should pass straight away
         return True
 
     if is_typing(type_):
+        # Complex typing for the first type_. Cases : List, Tuple, Union
         type_origin = get_origin(type_)
         type_args = get_args(type_)
         if not is_typing(match_against):
@@ -321,10 +321,12 @@ def typematch(type_: Type, match_against: Type) -> bool:
         match_against_args = get_args(match_against)
 
         if type_origin is Union:
+            # Check for default values false positive
             if union_is_default_value(type_):
                 return typematch(type_args[0], match_against)
 
         if type_origin != match_against_origin:
+            # Being strict for now. Is there any other case than default values where this would be wrong ?
             return False
 
         if type_origin is list:
@@ -337,8 +339,11 @@ def typematch(type_: Type, match_against: Type) -> bool:
         raise NotImplementedError(f"Type {type_} is a complex typing and cannot be matched against others yet")
 
     if not is_typing(match_against):
+        # type_ and match_against aren't complex : check for subclass only
         if issubclass(type_, match_against):
             return True
+
+    # type_ is not complex and match_against is
     origin = get_origin(match_against)
     args = get_args(match_against)
     if origin is Union:
