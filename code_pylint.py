@@ -5,14 +5,14 @@ v1.0
 
 from pylint.lint import Run
 
-MIN_NOTE = 9
+MIN_NOTE = 9.05
 
 UNWATCHED_ERRORS = ['fixme', 'trailing-whitespace', 'import-error']
 
 MAX_ERROR_BY_TYPE = {
-                     'protected-access': 27,
-                     'invalid-name': 22,
-                     'consider-using-f-string': 16,
+                     'protected-access': 28,
+                     'invalid-name': 21,
+                     'consider-using-f-string': 13,
                      'no-else-return': 17,
                      'arguments-differ': 5,
                      'no-member': 1,
@@ -22,7 +22,7 @@ MAX_ERROR_BY_TYPE = {
                      'unused-import': 0,
                      'unused-argument': 9,
                      'cyclic-import': 11,
-                     'no-self-use': 6,
+                     'no-self-use': 8,
                      'unused-variable': 6,
                      'trailing-whitespace': 11,
                      'empty-docstring': 8,
@@ -35,7 +35,7 @@ MAX_ERROR_BY_TYPE = {
                      'raise-missing-from': 7,
                      'consider-merging-isinstance': 6,
                      'abstract-method': 6,
-                     'import-outside-toplevel': 6,
+                     'import-outside-toplevel': 7,
                      'too-many-instance-attributes': 4,
                      'consider-iterating-dictionary': 4,
                      'attribute-defined-outside-init': 3,

@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 
 ### Added
+- Physical Object: splitting CAD capabilities from DessiaObject
+- Workflow to script (for a few block to begin with)
 
 ## 0.6.0
 ### Added
