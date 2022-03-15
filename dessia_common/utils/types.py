@@ -310,33 +310,7 @@ def typematch(type_: Type, match_against: Type) -> bool:
         return True
 
     if is_typing(type_):
-        # Complex typing for the first type_. Cases : List, Tuple, Union
-        type_origin = get_origin(type_)
-        type_args = get_args(type_)
-        if not is_typing(match_against):
-            # Type matching is unilateral and match against should be more open than type_
-            return False
-
-        match_against_origin = get_origin(match_against)
-        match_against_args = get_args(match_against)
-
-        if type_origin is Union:
-            # Check for default values false positive
-            if union_is_default_value(type_):
-                return typematch(type_args[0], match_against)
-
-        if type_origin != match_against_origin:
-            # Being strict for now. Is there any other case than default values where this would be wrong ?
-            return False
-
-        if type_origin is list:
-            return typematch(type_args[0], match_against_args[0])
-
-        if type_origin is tuple:
-            return all([typematch(a, b) for a, b in zip(type_args, match_against_args)])
-
-        # Otherwise, it is not implemented
-        raise NotImplementedError(f"Type {type_} is a complex typing and cannot be matched against others yet")
+        return complex_first_type_match(type_, match_against)
 
     if not is_typing(match_against):
         # type_ and match_against aren't complex : check for subclass only
@@ -350,3 +324,36 @@ def typematch(type_: Type, match_against: Type) -> bool:
         matches = [typematch(type_, subtype) for subtype in args]
         return any(matches)
     return False
+
+
+def complex_first_type_match(type_: Type, match_against: Type):
+    """
+    Match type when type_ is a complex typing (List, Union, Tuple,...)
+    """
+    # Complex typing for the first type_. Cases : List, Tuple, Union
+    type_origin = get_origin(type_)
+    type_args = get_args(type_)
+    if not is_typing(match_against):
+        # Type matching is unilateral and match against should be more open than type_
+        return False
+
+    match_against_origin = get_origin(match_against)
+    match_against_args = get_args(match_against)
+
+    if type_origin is Union:
+        # Check for default values false positive
+        if union_is_default_value(type_):
+            return typematch(type_args[0], match_against)
+
+    if type_origin != match_against_origin:
+        # Being strict for now. Is there any other case than default values where this would be wrong ?
+        return False
+
+    if type_origin is list:
+        return typematch(type_args[0], match_against_args[0])
+
+    if type_origin is tuple:
+        return all(typematch(a, b) for a, b in zip(type_args, match_against_args))
+
+    # Otherwise, it is not implemented
+    raise NotImplementedError(f"Type {type_} is a complex typing and cannot be matched against others yet")
