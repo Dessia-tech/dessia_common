@@ -4,7 +4,7 @@
 
 """
 
-from typing import List, Dict, Tuple, Union, Any, TextIO, BinaryIO, get_origin, get_args
+from typing import List, Dict, Tuple, Union, Any, Type, TextIO, BinaryIO, get_origin, get_args
 
 import dessia_common as dc
 from dessia_common.typings import Subclass, InstanceOf, MethodType, ClassMethodType
@@ -84,13 +84,9 @@ def unfold_deep_annotation(typing_=None):
 
 def is_typing(object_: Any):
     has_module = hasattr(object_, '__module__')
-    if has_module:
-        in_typings = object_.__module__ in ['typing', 'dessia_common.typings']
-    else:
-        return False
     has_origin = hasattr(object_, '__origin__')
     has_args = hasattr(object_, '__args__')
-    return has_module and has_origin and has_args and in_typings
+    return has_module and has_origin and has_args
 
 
 def serialize_typing(typing_):
@@ -290,3 +286,42 @@ def recursive_type(obj):
     else:
         raise NotImplementedError(obj)
     return type_
+
+
+def typematch(type_: Type, match_against: Type) -> bool:
+    if match_against is Any:
+        return True
+
+    if is_typing(type_):
+        type_origin = get_origin(type_)
+        type_args = get_args(type_)
+        if not is_typing(match_against):
+            # Type matching is unilateral and match against should be more open than type_
+            return False
+
+        match_against_origin = get_origin(match_against)
+        match_against_args = get_args(match_against)
+        if type_origin != match_against_origin:
+            return False
+
+        if type_origin is list:
+            print("LIST")
+            return typematch(type_args[0], match_against_args[0])
+
+        if type_origin is tuple:
+            print("TUPLE")
+            return all([typematch(a, b) for a, b in zip(type_args, match_against_args)])
+
+        raise NotImplementedError(f"Type {type_} is a complex typing and cannot be matched against others yet")
+
+    if not is_typing(match_against):
+        if issubclass(type_, match_against):
+            return True
+    origin = get_origin(match_against)
+    args = get_args(match_against)
+    if origin is Union:
+        print(args)
+        matches = [typematch(type_, subtype) for subtype in args]
+        print(matches)
+        return any(matches)
+    return False
