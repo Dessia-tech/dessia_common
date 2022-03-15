@@ -553,6 +553,9 @@ class DessiaObject:
                 ]
 
     def _display_from_selector(self, selector: str, **kwargs):
+        """
+        Generate the display from the selector
+        """
         reference_path = kwargs.get('reference_path', '')
 
         for display_setting in self.displays_settings():
@@ -560,15 +563,9 @@ class DessiaObject:
                 track = ''
                 try:
                     data = attrgetter(display_setting.method)(self)(**display_setting.arguments)
-                    print('c', attrgetter(display_setting.method)(self))
-                    # data = getattr(self, display_setting.method)(**display_setting.arguments)
                 except:
                     data = None
                     track = traceback.format_exc()
-                print(attrgetter(display_setting.method)(self))
-                print(track)
-                print('a', display_setting.to_dict())
-                print('b2', data)
                 return DisplayObject(type_=display_setting.type,
                                      data=data,
                                      reference_path=reference_path,
@@ -582,31 +579,9 @@ class DessiaObject:
 
         displays = []
         for display_setting in self.displays_settings():
-            # print(display_setting)
             display = self._display_from_selector(display_setting.selector, reference_path=reference_path)
             displays.append(display.to_dict())
         return displays
-
-        # if hasattr(self, 'babylon_data'):
-        #     display_ = DisplayObject(type_='cad', data=self.babylon_data(),
-        #                              reference_path=reference_path)
-        #     displays.append(display_.to_dict())
-        # if hasattr(self, 'plot_data'):
-        #     plot_data = self.plot_data()
-        #     if is_sequence(plot_data):
-        #         for plot in plot_data:
-        #             display_ = DisplayObject(type_='plot_data', data=plot,
-        #                                      reference_path=reference_path)
-        #             displays.append(display_.to_dict())
-        #     else:
-        #         msg = 'plot_data must return a sequence. Found {}'
-        #         raise ValueError(msg.format(type(plot_data)))
-        # if hasattr(self, 'to_markdown'):
-        #     markdown = self.to_markdown()
-        #     display_ = DisplayObject(type_='markdown', data=markdown,
-        #                              reference_path=reference_path)
-        #     displays.append(display_.to_dict())
-        # return displays
 
     def to_markdown(self):
         return templates.dessia_object_markdown_template.substitute(name= self.name)

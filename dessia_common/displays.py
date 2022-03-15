@@ -11,6 +11,9 @@ from dessia_common.typings import JsonSerializable
 
 class DisplaySetting:
     def __init__(self, selector, type_, method, arguments=None):
+        """
+        Describe what method to call to get a display
+        """
         self.selector = selector
         self.type = type_
         self.method = method
@@ -19,12 +22,19 @@ class DisplaySetting:
         self.arguments = arguments
 
     def to_dict(self):
+        """
+        Serialization
+        """
         return {'selector': self.selector,
                 'type': self.type,
                 'method': self.method,
                 'arguments': self.arguments}
 
     def compose(self, attribute):
+        """
+        In case of a parent getting the display settings of a children this methods allow to inject the attribute name
+        to method name
+        """
         return DisplaySetting(self.selector, self.type, f'{attribute}.{self.method}', self.arguments)
 
 
@@ -49,6 +59,9 @@ class DisplayObject:
         self.name = name
 
     def to_dict(self):
+        """
+        Simple serialization
+        """
         return {'type_': self.type_,
                 'data': self.data,
                 'traceback': self.traceback,
@@ -57,6 +70,9 @@ class DisplayObject:
 
 
 def networkx_to_visjs_data(networkx_graph: Graph):
+    """
+    Compute visjs data to plot from a networkx graph
+    """
     visjs_data = {'name': networkx_graph.name, 'nodes': [], 'edges': []}
 
     pos = kamada_kawai_layout(networkx_graph)
@@ -109,6 +125,9 @@ def networkx_to_visjs_data(networkx_graph: Graph):
 
 
 def draw_networkx_graph(networkx_graph: Graph):
+    """
+    Draw a networkx graph in a browser using VisJS library
+    """
     visjs_data = networkx_to_visjs_data(networkx_graph)
     content = visjs_template.substitute(**visjs_data)
     with tempfile.NamedTemporaryFile(suffix=".html",

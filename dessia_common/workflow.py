@@ -1158,6 +1158,9 @@ class Workflow(Block):
         return True
 
     def __deepcopy__(self, memo=None):
+        """
+        Returns the deep copy
+        """
         if memo is None:
             memo = {}
 
@@ -1220,6 +1223,9 @@ class Workflow(Block):
 
     @property
     def _method_jsonschemas(self):
+        """
+        Compute the run jsonschema (had to be overloaded)
+        """
         jsonschemas = {'run': deepcopy(JSONSCHEMA_HEADER)}
         jsonschemas['run'].update({'classes': ['dessia_common.workflow.Workflow']})
         properties_dict = jsonschemas['run']['properties']
@@ -1278,6 +1284,9 @@ class Workflow(Block):
         return export_formats
 
     def to_dict(self, use_pointers=True, memo=None, path='#'):
+        """
+        Compute a dict from the object content
+        """
         if memo is None:
             memo = {}
 
@@ -1312,6 +1321,9 @@ class Workflow(Block):
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'Workflow':
+        """
+        Recompute the object from a dict
+        """
         blocks = [DessiaObject.dict_to_object(d) for d in dict_['blocks']]
         if 'nonblock_variables' in dict_:
             nonblock_variables = [dict_to_object(d) for d in dict_['nonblock_variables']]
@@ -1373,6 +1385,9 @@ class Workflow(Block):
                    description=description, documentation=documentation, name=dict_["name"])
 
     def dict_to_arguments(self, dict_: JsonSerializable, method: str):
+        """
+        Process a json of arguments and deserialize them
+        """
         dict_ = {int(k): v for k, v in dict_.items()}  # serialisation set keys as strings
         if method in self._allowed_methods:
             arguments_values = {}
@@ -1409,6 +1424,9 @@ class Workflow(Block):
         return variable
 
     def _get_graph(self):
+        """
+        Cached property for graph 
+        """
         if not self._utd_graph:
             self._cached_graph = self._graph()
             self._utd_graph = True
@@ -1417,6 +1435,9 @@ class Workflow(Block):
     graph = property(_get_graph)
 
     def _graph(self):
+        """
+        Compute the networkx graph of the workflow 
+        """
         graph = nx.DiGraph()
         graph.add_nodes_from(self.variables)
         graph.add_nodes_from(self.blocks)
@@ -1529,6 +1550,9 @@ class Workflow(Block):
         return self.blocks[iblock]
 
     def output_disconnected_elements(self):
+        """
+        Return blocks and variables that are not attached to the output
+        """
         disconnected_elements = []
         ancestors = nx.ancestors(self.graph, self.output)
         for block in self.blocks:
@@ -1541,6 +1565,9 @@ class Workflow(Block):
         return disconnected_elements
 
     def index(self, variable):
+        """
+        Deprecated, will be remove in version 0.8.0
+        """
         warnings.warn("index method is deprecated, use input_index instead", DeprecationWarning)
         return self.input_index(variable)
 
