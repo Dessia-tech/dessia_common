@@ -60,7 +60,7 @@ class DisplayObject:
 
     def data_cleaning(self):
         """
-        in case 
+        Cleanup tabs in markdown
         """
         self.data = inspect.cleandoc(self.data)
 
