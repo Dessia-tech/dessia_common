@@ -15,7 +15,7 @@ import json
 import traceback
 from operator import attrgetter
 
-from typing import List, Dict, Union, Any, Tuple, get_type_hints
+from typing import List, Dict, Any, Tuple, get_type_hints
 import traceback as tb
 
 from importlib import import_module
@@ -585,7 +585,7 @@ class DessiaObject:
         return displays
 
     def to_markdown(self):
-        return templates.dessia_object_markdown_template.substitute(name= self.name)
+        return templates.dessia_object_markdown_template.substitute(name=self.name)
 
     def _check_platform(self):
         """
