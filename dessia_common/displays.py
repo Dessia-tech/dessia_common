@@ -49,14 +49,16 @@ class DisplayObject:
         Container for data of display
         A traceback can be set if display fails to be generated.
         """
-        if data and type_ == 'markdown':
-            self.data_cleaning()
 
         self.type_ = type_
         self.data = data
         self.traceback = traceback
         self.reference_path = reference_path
         self.name = name
+
+        if data and type_ == 'markdown':
+            self.data_cleaning()
+
 
     def data_cleaning(self):
         """
