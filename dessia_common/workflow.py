@@ -1198,7 +1198,6 @@ class Workflow(Block):
         pipe_downstream = copied_workflow.variable_from_index(downstream_index)
         return Pipe(pipe_upstream, pipe_downstream)
 
-
     @staticmethod
     def displays_settings() -> List[DisplaySetting]:
         """
@@ -1427,7 +1426,7 @@ class Workflow(Block):
 
     def _get_graph(self):
         """
-        Cached property for graph 
+        Cached property for graph
         """
         if not self._utd_graph:
             self._cached_graph = self._graph()
@@ -1438,7 +1437,7 @@ class Workflow(Block):
 
     def _graph(self):
         """
-        Compute the networkx graph of the workflow 
+        Compute the networkx graph of the workflow
         """
         graph = nx.DiGraph()
         graph.add_nodes_from(self.variables)

@@ -217,7 +217,7 @@ class XLSXWriter:
                                                      len(obj_paths) + 1)
             self.autosize_sheet_columns(sheet, 5, 30)
 
-    def save_to_file(self, filepath:str):
+    def save_to_file(self, filepath: str):
         """
         Save to a filepath (open) and write
         """
