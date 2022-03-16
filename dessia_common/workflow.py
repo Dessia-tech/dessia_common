@@ -1257,7 +1257,8 @@ class Workflow(Block):
                 dict_ = set_default_value(jsonschema_element=current_dict, key=str(i),
                                           default_value=input_.default_value)
                 current_dict.update(dict_)
-            properties_dict[str(i)] = current_dict[str(i)]
+            if not input_ in self.imposed_variable_values: # Removes from Optional in edits
+                properties_dict[str(i)] = current_dict[str(i)]
         properties_dict[str(len(self.inputs) + 1)] = {'type': 'string', 'title': 'WorkflowRun Name', 'editable': True,
                                                       'order': 0, "description": "Name for the resulting WorkflowRun",
                                                       'default_value': '', 'python_typing': 'builtins.str'}
@@ -1430,9 +1431,6 @@ class Workflow(Block):
         for pipe in self.pipes:
             graph.add_edge(pipe.input_variable, pipe.output_variable)
         return graph
-
-    def test_xavier(self):
-        return "Hello Xavier"
 
     @property
     def runtime_blocks(self):
@@ -2319,6 +2317,9 @@ class WorkflowState(DessiaObject):
                 value = self.input_values[index]
                 self.values[variable] = value
                 self.activated_items[variable] = True
+            elif variable in self.workflow.imposed_variable_values :
+                self.values[variable] = self.workflow.imposed_variable_values[variable]
+                self.activated_items[variable] =  True
             elif hasattr(variable, 'default_value'):
                 self.values[variable] = variable.default_value
                 self.activated_items[variable] = True
