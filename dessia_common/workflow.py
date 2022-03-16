@@ -1568,7 +1568,7 @@ class Workflow(Block):
         indices = [self.input_index(i) for i in block.inputs]
         return [i for i in indices if i is not None]
 
-    def match_variables(self) -> Dict[Variable, list[Variable]]:
+    def match_variables(self) -> Dict[Variable, List[Variable]]:
         """
         Runs a check for every variable to find its matchable counterparts which means :
         - Variables are compatible workflow-wise
