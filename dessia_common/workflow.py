@@ -1568,27 +1568,34 @@ class Workflow(Block):
         indices = [self.input_index(i) for i in block.inputs]
         return [i for i in indices if i is not None]
 
-    def match_variables(self) -> Dict[Variable, List[Variable]]:
+    def match_variables(self, serialize_output: bool = False):
         """
         Runs a check for every variable to find its matchable counterparts which means :
         - Variables are compatible workflow-wise
         - Their types are compatible
         """
-        ports_matched = {}
+        variable_match = {}
         for variable in self.variables:
             if isinstance(variable, TypedVariable):
                 vartype = variable.type_
             else:
                 continue
-            ports_matched[variable] = []
+            if serialize_output:
+                varkey = self.variable_indices(variable)
+            else:
+                varkey = variable
+            variable_match[varkey] = []
             for other_variable in self.variables:
                 if not self.variable_compatibility(variable, other_variable):
                     continue
                 other_vartype = other_variable.type_
                 if typematch(vartype, other_vartype):
-                    print(f"{self.variable_indices(variable)} MATCHES {self.variable_indices(other_variable)}")
-                    ports_matched[variable].append(other_variable)
-        return ports_matched
+                    if serialize_output:
+                        varval = self.variable_indices(other_variable)
+                    else:
+                        varval = other_variable
+                    variable_match[varkey].append(varval)
+        return variable_match
 
     def variable_compatibility(self, variable: Variable, other_variable: Variable) -> bool:
         """
