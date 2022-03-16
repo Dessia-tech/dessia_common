@@ -1355,7 +1355,11 @@ class Workflow(Block):
                 value = deserialize(serialized_value, global_dict=global_dict, pointers_memo=pointers_memo)
                 variable = temp_workflow.variable_from_index(variable_index)
                 imposed_variable_values[variable] = value
-
+        elif 'imposed_variable_indices' in dict_ :
+            imposed_variable_values = {}
+            for variable_index in dict_['imposed_variable_indices']:
+                variable = temp_workflow.variable_from_index(variable_index)
+                imposed_variable_values[variable] = variable.default_value
         else:
             imposed_variable_values = None
 
