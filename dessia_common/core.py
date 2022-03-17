@@ -524,7 +524,7 @@ class DessiaObject:
 
     def mpl_plot(self, **kwargs):
         """
-        Plot whith matplotlib through plot_data function
+        Plot with matplotlib using plot_data function
         """
         axs = []
         if hasattr(self, 'plot_data'):

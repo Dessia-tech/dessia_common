@@ -57,6 +57,8 @@ def serialize(value):
         serialized_value = serialize_sequence(value)
     elif isinstance(value, (dessia_common.files.BinaryFile, dessia_common.files.StringFile)):
         serialized_value = value
+    elif type(value) == type or dcty.is_typing(value):
+        return dcty.serialize_typing(value)
     else:
         if not dcty.is_jsonable(value):
             msg = f'Element of value {value} is not json serializable'
@@ -470,7 +472,10 @@ def deserialization_order(dict_):
 
 def dereference_jsonpointers(dict_):  # , global_dict):
     """
-    Analyse the given dict
+    Analyse the given dict to:
+    - find jsonpointers
+    - deserialize them in the right order to respect pointers graph
+    :returns: a dict with key the path of the item and the value is the python object 
     """
 
     order = deserialization_order(dict_)
@@ -498,6 +503,9 @@ def pointer_graph_elements(value, path='#'):
 
 
 def pointer_graph_elements_sequence(seq, path='#'):
+    """
+    Compute
+    """
     if isinstance(seq, str):
         raise ValueError
 
