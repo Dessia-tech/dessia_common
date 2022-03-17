@@ -580,8 +580,8 @@ class DessiaObject:
 
         displays = []
         for display_setting in self.display_settings():
-            display = self._display_from_selector(display_setting.selector, reference_path=reference_path)
-            displays.append(display.to_dict())
+            display_ = self._display_from_selector(display_setting.selector, reference_path=reference_path)
+            displays.append(display_.to_dict())
         return displays
 
     def to_markdown(self):

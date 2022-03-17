@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Tue Nov 16 12:25:54 2021
+Serialization Tools
 
 """
 
@@ -475,7 +475,7 @@ def dereference_jsonpointers(dict_):  # , global_dict):
     Analyse the given dict to:
     - find jsonpointers
     - deserialize them in the right order to respect pointers graph
-    :returns: a dict with key the path of the item and the value is the python object 
+    :returns: a dict with key the path of the item and the value is the python object
     """
 
     order = deserialization_order(dict_)

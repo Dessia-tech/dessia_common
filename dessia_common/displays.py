@@ -59,7 +59,6 @@ class DisplayObject:
         if data and type_ == 'markdown':
             self.data_cleaning()
 
-
     def data_cleaning(self):
         """
         Cleanup tabs in markdown
