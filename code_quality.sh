@@ -1,6 +1,6 @@
 #!/bin/bash
 
-max_pydoc_errors=365
+max_pydoc_errors=293
 
 cq_result=$(radon cc --min F -e *pyx dessia_common)
 echo $cq_result
@@ -11,7 +11,7 @@ if [[ "$cq_result" ]];
 	
 fi;
 
-nb_pydoc_errors=$(pydocstyle --count --ignore D400,D415,D404,D212,D205,D200,D203,D401,D210,D204 dessia_common/*.py | tail -1)
+nb_pydoc_errors=$(pydocstyle --count dessia_common/*.py | tail -1)
 echo "$nb_pydoc_errors pydoc errors, limit is $max_pydoc_errors"
 if [[ "$nb_pydoc_errors" -gt "$max_pydoc_errors" ]];
   then 
