@@ -23,7 +23,7 @@ from dessia_common.errors import UntypedArgumentError
 from dessia_common.utils.serialization import dict_to_object, deserialize, serialize_with_pointers, serialize,\
                                               dereference_jsonpointers
 from dessia_common.utils.types import get_python_class_from_class_name, serialize_typing, full_classname,\
-    deserialize_typing, recursive_type
+    deserialize_typing, recursive_type, typematch
 from dessia_common.utils.copy import deepcopy_value
 from dessia_common.utils.docstrings import parse_docstring, EMPTY_PARSED_ATTRIBUTE, FAILED_ATTRIBUTE_PARSING
 from dessia_common.utils.diff import choose_hash
@@ -1567,6 +1567,66 @@ class Workflow(Block):
         block = self.blocks[block_index]
         indices = [self.input_index(i) for i in block.inputs]
         return [i for i in indices if i is not None]
+
+    def match_variables(self, serialize_output: bool = False):
+        """
+        Runs a check for every variable to find its matchable counterparts which means :
+        - Variables are compatible workflow-wise
+        - Their types are compatible
+        """
+        variable_match = {}
+        for variable in self.variables:
+            if isinstance(variable, TypedVariable):
+                vartype = variable.type_
+            else:
+                continue
+            if serialize_output:
+                varkey = self.variable_indices(variable)
+            else:
+                varkey = variable
+            variable_match[varkey] = []
+            for other_variable in self.variables:
+                if not self.variable_compatibility(variable, other_variable):
+                    continue
+                other_vartype = other_variable.type_
+                if typematch(vartype, other_vartype):
+                    if serialize_output:
+                        varval = self.variable_indices(other_variable)
+                    else:
+                        varval = other_variable
+                    variable_match[varkey].append(varval)
+        return variable_match
+
+    def variable_compatibility(self, variable: Variable, other_variable: Variable) -> bool:
+        """
+        Two variables are compatible if :
+        - They are not equal
+        - They don't share the same block
+        - They are not input/input or output/output
+        - They are typed
+        """
+        if variable == other_variable:
+            # If this is the same variable, it is not compatible
+            return False
+
+        adress = self.variable_indices(variable)
+        other_adress = self.variable_indices(other_variable)
+
+        if variable not in self.nonblock_variables and other_variable not in self.nonblock_variables:
+            # If both aren't NBVs we need to check more non-equality elements
+            same_block = adress[0] == other_adress[0]
+            same_side = adress[1] == other_adress[1]
+            if same_block or same_side:
+                # A variable cannot be compatible with one on a same block
+                # or being the same side (input/input, output/output)
+                return False
+        # If both are NBVs, non-equality has already been checked
+        # If one is NBV and not the other, there is no need to check non-equality
+
+        if not (isinstance(variable, TypedVariable) and isinstance(other_variable, TypedVariable)):
+            # Variable must be typed to be seen compatible
+            return False
+        return True
 
     def layout(self, min_horizontal_spacing=300, min_vertical_spacing=200, max_height=800, max_length=1500):
         """
