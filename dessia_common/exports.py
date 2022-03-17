@@ -48,6 +48,9 @@ class XLSXWriter:
                          top=Side(style='thin'), bottom=Side(style='thin'))
 
     def __init__(self, object_):
+        """
+        :param object_: an Dessiaobject to write as excel
+        """
 
         self.pattern_color1 = PatternFill(
             fill_type="solid",
@@ -154,6 +157,9 @@ class XLSXWriter:
                 # sheet.column_dimensions[column_name].width = column_width
 
     def write_object_id(self, sheet):
+        """
+        Write object id to a given sheet
+        """
         sheet.title = f'Object {self.object.__class__.__name__}'
 
         sheet['A1'] = 'Module'
@@ -211,7 +217,10 @@ class XLSXWriter:
                                                      len(obj_paths) + 1)
             self.autosize_sheet_columns(sheet, 5, 30)
 
-    def save_to_file(self, filepath):
+    def save_to_file(self, filepath: str):
+        """
+        Save to a filepath (open) and write
+        """
         if not filepath.endswith('.xlsx'):
             filepath += '.xlsx'
             print(f"Changing name to {filepath}")

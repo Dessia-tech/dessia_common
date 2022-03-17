@@ -1,3 +1,7 @@
+"""
+Tools for copying objects
+"""
+
 import warnings
 import dessia_common as dc
 import dessia_common.files
