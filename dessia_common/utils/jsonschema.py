@@ -100,24 +100,16 @@ def default_dict(jsonschema):
     return dict_
 
 
-def jsonschema_union_types(key, args, typing_, jsonschema_element,
-                           order, editable=None, title=None):
-    classnames = [dc.full_classname(object_=a, compute_for='class')
-                  for a in args]
-
+def jsonschema_union_types(key, args, typing_, jsonschema_element):
+    classnames = [dc.full_classname(object_=a, compute_for='class') for a in args]
     standalone_args = [a._standalone_in_db for a in args]
     if all(standalone_args):
         standalone = True
     elif not any(standalone_args):
         standalone = False
     else:
-        msg = "standalone_in_db values for type '{}'" \
-              " are not consistent"
-        raise ValueError(msg.format(typing_))
-    jsonschema_element[key].update({
-        'type': 'object', 'classes': classnames,
-        'standalone_in_db': standalone
-    })
+        raise ValueError(f"standalone_in_db values for type '{typing_}' are not consistent")
+    jsonschema_element[key].update({'type': 'object', 'classes': classnames, 'standalone_in_db': standalone})
 
 
 def jsonschema_from_annotation(annotation, jsonschema_element, order, editable=None, title=None,
@@ -152,18 +144,14 @@ def jsonschema_from_annotation(annotation, jsonschema_element, order, editable=N
         origin = get_origin(typing_)
         args = get_args(typing_)
         if origin is Union:
-            if len(args) == 2 and type(None) in args:
+            if dc_types.union_is_default_value(typing_):
                 # This is a false Union => Is a default value set to None
                 ann = (key, args[0])
-
-                jsonschema_from_annotation(
-                    annotation=ann, jsonschema_element=jsonschema_element,
-                    order=order, editable=editable, title=title
-                )
+                jsonschema_from_annotation(annotation=ann, jsonschema_element=jsonschema_element,
+                                           order=order, editable=editable, title=title)
             else:
                 # Types union
-                jsonschema_union_types(key, args, typing_, jsonschema_element,
-                                       order, editable=editable, title=title)
+                jsonschema_union_types(key, args, typing_, jsonschema_element)
         elif origin in [list, collections.Iterator]:
             # Homogenous sequences
             jsonschema_element[key].update(jsonschema_sequence_recursion(
@@ -174,8 +162,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element, order, editable=N
             items = []
             for type_ in args:
                 items.append({'type': dc_types.TYPING_EQUIVALENCES[type_]})
-            jsonschema_element[key].update({'additionalItems': False,
-                                            'type': 'array', 'items': items})
+            jsonschema_element[key].update({'additionalItems': False, 'type': 'array', 'items': items})
         elif origin is dict:
             # Dynamically created dict structure
             key_type, value_type = args
