@@ -57,7 +57,7 @@ def serialize(value):
         serialized_value = serialize_sequence(value)
     elif isinstance(value, (dessia_common.files.BinaryFile, dessia_common.files.StringFile)):
         serialized_value = value
-    elif type(value) == type or dcty.is_typing(value):
+    elif isinstance(value, type) or dcty.is_typing(value):
         return dcty.serialize_typing(value)
     else:
         if not dcty.is_jsonable(value):
