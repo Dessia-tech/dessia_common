@@ -10,7 +10,7 @@ import os
 import sys
 from pylint.lint import Run
 
-MIN_NOTE = 9.35
+MIN_NOTE = 9.1
 
 UNWATCHED_ERRORS = ['fixme', 'trailing-whitespace', 'import-error']
 
