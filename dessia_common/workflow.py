@@ -2297,15 +2297,14 @@ class WorkflowRun(WorkflowState):
             end_time = time.time()
         self.end_time = end_time
         self.execution_time = end_time - start_time
+        self.variable_values = {workflow.variable_indices(k): v for k, v in values.items() if k.memorize}
         WorkflowState.__init__(self, workflow=workflow, input_values=input_values, activated_items=activated_items,
                                values=values, start_time=start_time, output_value=output_value, log=log, name=name)
 
-    @property
-    def variable_values(self):
-        """
-        Jsonable saved values
-        """
-        return {self.workflow.variable_indices(k): v for k, v in self.values.items() if k.memorize}
+    def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#'):
+        dict_ = WorkflowState.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
+        dict_["variable_values"] = {k: serialize(v) for k, v in self.variable_values.items()}
+        return dict_
 
     def _displays(self) -> List[JsonSerializable]:
         # Init display with workflow view
