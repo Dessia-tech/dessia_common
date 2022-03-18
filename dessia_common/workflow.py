@@ -1263,7 +1263,8 @@ class Workflow(Block):
                 dict_ = set_default_value(jsonschema_element=current_dict, key=str(i),
                                           default_value=input_.default_value)
                 current_dict.update(dict_)
-            properties_dict[str(i)] = current_dict[str(i)]
+            if not input_ in self.imposed_variable_values:  # Removes from Optional in edits
+                properties_dict[str(i)] = current_dict[str(i)]
         properties_dict[str(len(self.inputs) + 1)] = {'type': 'string', 'title': 'WorkflowRun Name', 'editable': True,
                                                       'order': 0, "description": "Name for the resulting WorkflowRun",
                                                       'default_value': '', 'python_typing': 'builtins.str'}
@@ -1366,7 +1367,11 @@ class Workflow(Block):
                 value = deserialize(serialized_value, global_dict=global_dict, pointers_memo=pointers_memo)
                 variable = temp_workflow.variable_from_index(variable_index)
                 imposed_variable_values[variable] = value
-
+        elif 'imposed_variable_indices' in dict_:
+            imposed_variable_values = {}
+            for variable_index in dict_['imposed_variable_indices']:
+                variable = temp_workflow.variable_from_index(variable_index)
+                imposed_variable_values[variable] = variable.default_value
         else:
             imposed_variable_values = None
 
@@ -2404,6 +2409,9 @@ class WorkflowState(DessiaObject):
             if index in self.input_values:
                 value = self.input_values[index]
                 self.values[variable] = value
+                self.activated_items[variable] = True
+            elif variable in self.workflow.imposed_variable_values:
+                self.values[variable] = self.workflow.imposed_variable_values[variable]
                 self.activated_items[variable] = True
             elif hasattr(variable, 'default_value'):
                 self.values[variable] = variable.default_value
