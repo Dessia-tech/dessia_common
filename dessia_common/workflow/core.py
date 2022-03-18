@@ -1167,8 +1167,6 @@ class Workflow(Block):
             self.save_script_to_stream(file)
 
 
-
-
 class WorkflowState(DessiaObject):
     _standalone_in_db = True
     _allowed_methods = ['block_evaluation', 'evaluate_next_block', 'continue_run',
@@ -1774,9 +1772,6 @@ class WorkflowRun(WorkflowState):
         jsonschemas['run_again'] = jsonschemas.pop('run')
         jsonschemas['run_again']['classes'] = ["dessia_common.workflow.WorkflowRun"]
         return jsonschemas
-
-
-
 
 
 def value_type_check(value, type_):
