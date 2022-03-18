@@ -855,8 +855,12 @@ class Export(Block):
         Block.__init__(self, inputs=[TypedVariable(type_=method_type.class_)], outputs=[output], name=name)
 
     def evaluate(self, values):
-        res = getattr(values[self.inputs[0]], self.method_type.name)()
-        return [res]
+        if self.text:
+            stream = StringFile()
+        else:
+            stream = BinaryFile()
+        getattr(values[self.inputs[0]], self.method_type.name)(stream)
+        return [stream]
 
     def _export_format(self, block_index: int):
         args = {"block_index": block_index}
@@ -872,6 +876,7 @@ class ExportJson(Export):
         if not export_name:
             self.export_name += "_json"
         self.extension = "json"
+        self.text = True
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
         dict_ = Block.to_dict(self)
@@ -895,6 +900,7 @@ class ExportExcel(Export):
         if not export_name:
             self.export_name += "_xlsx"
         self.extension = "xlsx"
+        self.test = False
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
         dict_ = Block.to_dict(self)
