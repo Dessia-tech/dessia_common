@@ -228,11 +228,15 @@ def jsonschema_from_annotation(annotation, jsonschema_element, order, editable=N
                     'class_': class_jss['class_'],
                     'name': {'type': 'string'}}
             })
+        elif origin is type:
+            jsonschema_element[key].update({'type': 'object', 'is_class': True,
+                                            'properties': {'name': {'type': 'string'}}})
         else:
             msg = "Jsonschema computation of typing {} is not implemented"
             raise NotImplementedError(msg.format(typing_))
 
     elif hasattr(typing_, '__origin__') and typing_.__origin__ is type:
+        # TODO Is this deprecated ? Should be used in 3.8 and not 3.9 ?
         jsonschema_element[key].update({
             'type': 'object', 'is_class': True,
             'properties': {'name': {'type': 'string'}}
