@@ -106,6 +106,7 @@ setup(
     include_package_data=True,
     packages=[
         "dessia_common",
+        "dessia_common.workflow",
         "dessia_common.utils",
         "dessia_common.models",
         "dessia_common.models.workflows",
