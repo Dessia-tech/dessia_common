@@ -2302,6 +2302,9 @@ class WorkflowRun(WorkflowState):
                                values=values, start_time=start_time, output_value=output_value, log=log, name=name)
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#'):
+        """
+        Adds variable values to super WorkflowState dict
+        """
         dict_ = WorkflowState.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         dict_["variable_values"] = {k: serialize(v) for k, v in self.variable_values.items()}
         return dict_
