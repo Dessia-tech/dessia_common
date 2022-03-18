@@ -855,8 +855,12 @@ class Export(Block):
         Block.__init__(self, inputs=[TypedVariable(type_=method_type.class_)], outputs=[output], name=name)
 
     def evaluate(self, values):
-        res = getattr(values[self.inputs[0]], self.method_type.name)()
-        return [res]
+        if self.text:
+            stream = StringFile()
+        else:
+            stream = BinaryFile()
+        getattr(values[self.inputs[0]], self.method_type.name)(stream)
+        return [stream]
 
     def _export_format(self, block_index: int):
         args = {"block_index": block_index}
@@ -872,6 +876,7 @@ class ExportJson(Export):
         if not export_name:
             self.export_name += "_json"
         self.extension = "json"
+        self.text = True
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
         dict_ = Block.to_dict(self)
@@ -895,6 +900,7 @@ class ExportExcel(Export):
         if not export_name:
             self.export_name += "_xlsx"
         self.extension = "xlsx"
+        self.test = False
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
         dict_ = Block.to_dict(self)
@@ -2106,7 +2112,7 @@ class WorkflowState(DessiaObject):
 
         evaluated_blocks = []
         something_activated = True
-        while something_activated and (self.progress < 1 or export):
+        while something_activated:  # and (self.progress < 1 or export)
             something_activated = False
 
             for pipe in self._activable_pipes():
@@ -2297,15 +2303,17 @@ class WorkflowRun(WorkflowState):
             end_time = time.time()
         self.end_time = end_time
         self.execution_time = end_time - start_time
+        self.variable_values = {workflow.variable_indices(k): v for k, v in values.items() if k.memorize}
         WorkflowState.__init__(self, workflow=workflow, input_values=input_values, activated_items=activated_items,
                                values=values, start_time=start_time, output_value=output_value, log=log, name=name)
 
-    @property
-    def variable_values(self):
+    def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#'):
         """
-        Jsonable saved values
+        Adds variable values to super WorkflowState dict
         """
-        return {self.workflow.variable_indices(k): v for k, v in self.values.items() if k.memorize}
+        dict_ = WorkflowState.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
+        dict_["variable_values"] = {str(k): serialize(v) for k, v in self.variable_values.items()}
+        return dict_
 
     def _displays(self) -> List[JsonSerializable]:
         # Init display with workflow view
