@@ -2106,7 +2106,7 @@ class WorkflowState(DessiaObject):
 
         evaluated_blocks = []
         something_activated = True
-        while something_activated and (self.progress < 1 or export):
+        while something_activated:  # and (self.progress < 1 or export)
             something_activated = False
 
             for pipe in self._activable_pipes():

@@ -934,6 +934,7 @@ def enhanced_deep_attr(obj, sequence):
                      path to deep attribute.
     :return: Value of deep attribute
     """
+    print(obj, sequence)
     if isinstance(sequence, str):
         # Sequence is a string and not a sequence of deep attributes
         if '/' in sequence:
@@ -968,6 +969,7 @@ def enhanced_get_attr(obj, attr):
             return obj[attr]
         except KeyError:
             try:
+                print(obj, attr)
                 attr = literal_eval(attr)
                 return obj[attr]
             except KeyError:

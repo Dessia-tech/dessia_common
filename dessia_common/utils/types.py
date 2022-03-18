@@ -3,8 +3,7 @@
 """
 
 """
-
-from typing import List, Dict, Tuple, Union, Any, TextIO, BinaryIO, get_origin, get_args
+from typing import Any, Dict, List, Tuple, Type, Union, TextIO, BinaryIO, get_origin, get_args
 
 import dessia_common as dc
 from dessia_common.typings import Subclass, InstanceOf, MethodType, ClassMethodType
@@ -129,6 +128,8 @@ def serialize_typing_types(typing_):
         return f'MethodType[{type_fullname(args[0])}]'
     if origin is ClassMethodType:
         return f'ClassMethodType[{type_fullname(args[0])}]'
+    if origin is type:
+        return "Type"
     raise NotImplementedError(f"Serialization of typing {typing_} is not implemented")
 
 
@@ -169,6 +170,9 @@ def deserialize_typing(serialized_typing):
 
         if serialized_typing in ["TextFile", "BinaryFile"]:
             return deserialize_file_typing(serialized_typing)
+
+        if serialized_typing == "Type":
+            return Type
 
         if '[' in serialized_typing:
             toptype, remains = serialized_typing.split('[', 1)
