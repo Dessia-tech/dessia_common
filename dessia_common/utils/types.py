@@ -3,8 +3,7 @@
 """
 
 """
-
-from typing import List, Dict, Tuple, Union, Any, Type, TextIO, BinaryIO, get_origin, get_args
+from typing import Any, Dict, List, Tuple, Type, Union, TextIO, BinaryIO, get_origin, get_args
 
 import dessia_common as dc
 from dessia_common.typings import Subclass, InstanceOf, MethodType, ClassMethodType
@@ -125,6 +124,8 @@ def serialize_typing_types(typing_):
         return f'MethodType[{type_fullname(args[0])}]'
     if origin is ClassMethodType:
         return f'ClassMethodType[{type_fullname(args[0])}]'
+    if origin is type:
+        return "Type"
     raise NotImplementedError(f"Serialization of typing {typing_} is not implemented")
 
 
@@ -165,6 +166,9 @@ def deserialize_typing(serialized_typing):
 
         if serialized_typing in ["TextFile", "BinaryFile"]:
             return deserialize_file_typing(serialized_typing)
+
+        if serialized_typing == "Type":
+            return Type
 
         if '[' in serialized_typing:
             toptype, remains = serialized_typing.split('[', 1)
@@ -232,7 +236,7 @@ def is_bson_valid(value, allow_nonstring_keys=False) -> Tuple[bool, str]:
         return True, ''
 
     if isinstance(value, dict):
-        for k, v in value.items():
+        for k, subvalue in value.items():
             # Key check
             if isinstance(k, str):
                 if '.' in k:
@@ -253,15 +257,15 @@ def is_bson_valid(value, allow_nonstring_keys=False) -> Tuple[bool, str]:
 
             # Value Check
             v_valid, hint = is_bson_valid(
-                value=v, allow_nonstring_keys=allow_nonstring_keys
+                value=subvalue, allow_nonstring_keys=allow_nonstring_keys
             )
             if not v_valid:
                 return False, hint
 
     elif is_sequence(value):
-        for v in value:
+        for subvalue in value:
             valid, hint = is_bson_valid(
-                value=v, allow_nonstring_keys=allow_nonstring_keys
+                value=subvalue, allow_nonstring_keys=allow_nonstring_keys
             )
             if not valid:
                 return valid, hint

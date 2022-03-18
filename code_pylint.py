@@ -15,13 +15,13 @@ MIN_NOTE = 9.1
 UNWATCHED_ERRORS = ['fixme', 'trailing-whitespace', 'import-error']
 
 MAX_ERROR_BY_TYPE = {
-                     'protected-access': 26,
-                     'invalid-name': 21,
+                     'protected-access': 27,
+                     'invalid-name': 22,
                      'consider-using-f-string': 13,
                      'no-else-return': 17,
                      'arguments-differ': 3,
                      'no-member': 1,
-                     'too-many-locals': 14,
+                     'too-many-locals': 15,
                      'wrong-import-order': 11,
                      'too-many-branches': 9,
                      'unused-import': 0,
@@ -36,8 +36,8 @@ MAX_ERROR_BY_TYPE = {
                      'too-few-public-methods': 5,
                      'unnecessary-comprehension': 5,
                      'no-value-for-parameter': 2,
-                     'too-many-return-statements': 7,
-                     'raise-missing-from': 7,
+                     'too-many-return-statements': 8,
+                     'raise-missing-from': 6,
                      'consider-merging-isinstance': 6,
                      'abstract-method': 6,
                      'import-outside-toplevel': 7,

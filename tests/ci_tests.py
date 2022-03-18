@@ -6,6 +6,7 @@ scripts = ['displays.py',
            'generation.py',
            'models_test.py',
            'files.py',
+           'vectored_objects.py',
            # Workflows
            'workflow/workflow_with_models.py',
            'workflow/power_simulation.py',

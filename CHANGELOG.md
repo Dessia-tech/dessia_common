@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Physical Object: splitting CAD capabilities from DessiaObject
 - Workflow to script (for a few block to begin with)
 
+### Changed
+- Enhanced get attr use literal eval to try to get dict keys
+
 ## 0.6.0
 ### Added
 - Exports in workflows

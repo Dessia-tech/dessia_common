@@ -2,7 +2,6 @@ from dessia_common.workflow import WorkflowRun, Workflow
 import json
 
 from dessia_common.models.workflows import workflow_
-from dessia_common.utils.jsonschema import default_dict
 
 # Check Workflow
 serialized_workflow = workflow_.to_dict(use_pointers=False)
