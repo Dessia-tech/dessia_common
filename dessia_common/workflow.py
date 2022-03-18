@@ -2312,7 +2312,7 @@ class WorkflowRun(WorkflowState):
         Adds variable values to super WorkflowState dict
         """
         dict_ = WorkflowState.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
-        dict_["variable_values"] = {k: serialize(v) for k, v in self.variable_values.items()}
+        dict_["variable_values"] = {str(k): serialize(v) for k, v in self.variable_values.items()}
         return dict_
 
     def _displays(self) -> List[JsonSerializable]:
