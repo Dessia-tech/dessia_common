@@ -18,9 +18,8 @@ from pyDOE import lhs
 
 class ParetoSettings(DessiaObject):
     """
-    :param coeff_names: A dictionary containing the name of a variable as key and \
-    a boolean for minimization as value.
-    :type coeff_names: Dict[str, bool]
+    :param minimized_attributes: A dictionary containing the name of a variable as key
+                                 and a boolean for minimization as value.
     :param enabled: List of strings representing ordered variables names.
     :type enabled: bool
     :param name: The name of the block.
@@ -29,8 +28,7 @@ class ParetoSettings(DessiaObject):
     _generic_eq = True
     _ordered_attributes = ['name', 'enabled', 'minimized_attributes']
 
-    def __init__(self, minimized_attributes: Dict[str, bool],
-                 enabled: bool = True, name: str = ''):
+    def __init__(self, minimized_attributes: Dict[str, bool], enabled: bool = True, name: str = ''):
         self.enabled = enabled
         self.minimized_attributes = minimized_attributes
 
@@ -41,8 +39,7 @@ class ObjectiveSettings(DessiaObject):
     _generic_eq = True
     _ordered_attributes = ['name', 'enabled', 'n_near_values']
 
-    def __init__(self, n_near_values: int = 4,
-                 enabled: bool = True, name: str = ''):
+    def __init__(self, n_near_values: int = 4, enabled: bool = True, name: str = ''):
         self.n_near_values = n_near_values
         self.enabled = enabled
 
@@ -53,11 +50,6 @@ class Objective(DessiaObject):
     """
     Defines an objective function
 
-    :param coeff_names: List of strings representing ordered variables names.
-    :type coeff_names: [str]
-    :param coeff_values: List of floats representing coefficients.
-    :type coeff_values: [float]
-
     Order is kept. It means that coefficients are applied to the variables
     in the same order as they are defined.
     """
@@ -66,14 +58,12 @@ class Objective(DessiaObject):
     _ordered_attributes = ['name', 'settings', 'coefficients']
     _non_serializable_attributes = ['coeff_names']
 
-    def __init__(self, coefficients: Dict[str, float],
-                 directions: Dict[str, bool],
+    def __init__(self, coefficients: Dict[str, float], directions: Dict[str, bool],
                  settings: ObjectiveSettings, name: str = ''):
         for variable in coefficients:
             if variable not in directions:
-                msg = "Coefficient for variable {}".format(variable)
-                msg += " was found but no direction is specified."
-                msg += " Add {} to directions dict.".format(variable)
+                msg = f"Coefficient for variable {variable} was found but no direction is specified." \
+                      f"Add {variable} to directions dict."
                 raise KeyError(msg)
         self.coefficients = coefficients
         self.directions = directions
@@ -110,10 +100,8 @@ class Objective(DessiaObject):
         return unsigned
 
     @classmethod
-    def from_angles(cls, angles: List[float], variables: List[str],
-                    directions: Dict[str, bool],
-                    settings: ObjectiveSettings = None,
-                    name="Generated from angles") -> 'Objective':
+    def from_angles(cls, angles: List[float], variables: List[str], directions: Dict[str, bool],
+                    settings: ObjectiveSettings = None, name="Generated from angles") -> 'Objective':
         if not isinstance(angles, list) and not isinstance(angles, np.ndarray):
             angles = [angles]
         generated_coefficients = cls.coefficients_from_angles(angles=angles)
@@ -129,8 +117,7 @@ class Objective(DessiaObject):
         if settings is None:
             settings = ObjectiveSettings()
 
-        return Objective(coefficients=coefficients, directions=directions,
-                         settings=settings, name=name)
+        return Objective(coefficients=coefficients, directions=directions, settings=settings, name=name)
 
 
 class Catalog(DessiaObject):
@@ -141,8 +128,6 @@ class Catalog(DessiaObject):
     :param objectives: List of objectives to apply to
                        catalog vectored objects
     :type objectives: [Objective]
-    # :param objects: List of vectored objects.
-    # :type objects: [VectoredObject]
     :param choice_variables: List of string. List of variable names
                              that represent choice arguments
     :type choice_variables: [str]
@@ -153,17 +138,12 @@ class Catalog(DessiaObject):
     _generic_eq = True
     _standalone_in_db = True
     _ordered_attributes = ['name', 'pareto_settings', 'objectives']
-    _non_editable_attributes = ['array', 'variables', 'choice_variables',
-                                'generated_best_objectives']
-    # _export_formats = ['csv']
+    _non_editable_attributes = ['array', 'variables', 'choice_variables', 'generated_best_objectives']
     _allowed_methods = ['find_best_objective']
     _whitelist_attributes = ['variables']
 
-    def __init__(self, array: List[List[float]], variables: List[str],
-                 pareto_settings: ParetoSettings = None,
-                 objectives: List[Objective] = None,
-                 choice_variables: List[str] = None,
-                 name: str = ''):
+    def __init__(self, array: List[List[float]], variables: List[str], pareto_settings: ParetoSettings = None,
+                 objectives: List[Objective] = None, choice_variables: List[str] = None, name: str = ''):
         DessiaObject.__init__(self, name=name)
 
         self.array = array
@@ -183,17 +163,14 @@ class Catalog(DessiaObject):
         self.generated_best_objectives = 0
 
     @classmethod
-    def concatenate(cls, catalogs: List['Catalog'],
-                    pareto_settings: ParetoSettings = None,
-                    objectives: List[Objective] = None,
-                    choice_variables: List[str] = None,
+    def concatenate(cls, catalogs: List['Catalog'], pareto_settings: ParetoSettings = None,
+                    objectives: List[Objective] = None, choice_variables: List[str] = None,
                     name: str = '') -> 'Catalog':
         varsets = [set(c.variables) for c in catalogs]
         var_intersection = list(set.intersection(*varsets))
 
         if choice_variables is not None:
-            choice_variables = [var for var in choice_variables
-                                if var in var_intersection]
+            choice_variables = [var for var in choice_variables if var in var_intersection]
         else:
             choice_variables = var_intersection
 
@@ -201,46 +178,20 @@ class Catalog(DessiaObject):
         for cat in catalogs:
             indices = [cat.get_variable_index(v) for v in var_intersection]
             for line in cat.array:
-                line_intersection = [v for j, v in enumerate(line)
-                                     if j in indices]
+                line_intersection = [v for j, v in enumerate(line) if j in indices]
                 array_intersection.append(line_intersection)
 
         if pareto_settings is None:
             min_attrs = {var: True for var in choice_variables}
-            pareto_settings = ParetoSettings(minimized_attributes=min_attrs,
-                                             enabled=False)
+            pareto_settings = ParetoSettings(minimized_attributes=min_attrs, enabled=False)
 
-        catalog = cls(array=array_intersection, variables=var_intersection,
-                      pareto_settings=pareto_settings, objectives=objectives,
-                      choice_variables=choice_variables, name=name)
+        catalog = cls(array=array_intersection, variables=var_intersection, pareto_settings=pareto_settings,
+                      objectives=objectives, choice_variables=choice_variables, name=name)
         return catalog
-
-    # def __getitem__(self, item):
-    #     print('Getitem', item)
-    #     return self.array[item]
-    #
-    # def __getattr__(self, item):
-    #     if isinstance(item, (list, tuple)):
-    #         return enhanced_deep_attr(self, item)w
-    #     elif isinstance(item, str) and '.' in item:
-    #         sequence = item.split('.')
-    #         healed_sequence = []
-    #         for i, attr in enumerate(sequence):
-    #             try:
-    #                 healed_sequence.append(int(attr))
-    #             except ValueError:
-    #                 if attr in self.variables:
-    #                     healed_sequence.append(self.get_variable_index(attr))
-    #                 else:
-    #                     healed_sequence.append(attr)
-    #         print(healed_sequence)
-    #         return enhanced_deep_attr(self, healed_sequence)
-    #     return self.__getattribute__(item)
 
     def generate_multiplot(self, values: Dict[str, Any] = None):
         # TOCHECK Avoid circular imports
         import plot_data
-        # from plot_data.colors import BLACK, LIGHTBLUE, LIGHTGREY, BLUE
 
         if values is None:
             values = []
@@ -248,36 +199,28 @@ class Catalog(DessiaObject):
                 value = {}
                 for variable in self.variables:
                     value[variable] = self.get_value_by_name(line, variable)
-                # for objective_name, ratings in objective_ratings.items():
-                #     value[objective_name] = ratings[i]
                 values.append(value)
 
-        # fontsize = 12
         first_vars = self.variables[:2]
         values2d = [{key: val[key]} for key in first_vars for val in values]
         rgbs = [[192, 11, 11], [14, 192, 11], [11, 11, 192]]
 
-        tooltip = plot_data.Tooltip(attributes=self.variables,
-                                    name='Tooltip')
+        tooltip = plot_data.Tooltip(attributes=self.variables, name='Tooltip')
 
-        scatterplot = plot_data.Scatter(axis=plot_data.Axis(), tooltip=tooltip,
-                                        x_variable=first_vars[0],
-                                        y_variable=first_vars[1],
-                                        elements=values2d, name='Scatter Plot')
+        scatterplot = plot_data.Scatter(axis=plot_data.Axis(), tooltip=tooltip, x_variable=first_vars[0],
+                                        y_variable=first_vars[1], elements=values2d, name='Scatter Plot')
 
-        parallelplot = plot_data.ParallelPlot(disposition='horizontal',
-                                              axes=self.variables,
+        parallelplot = plot_data.ParallelPlot(disposition='horizontal', axes=self.variables,
                                               rgbs=rgbs, elements=values)
         objects = [scatterplot, parallelplot]
         sizes = [plot_data.Window(width=560, height=300),
                  plot_data.Window(width=560, height=300)]
         coords = [(0, 0), (0, 300)]
-        multiplot = plot_data.MultiplePlots(plots=objects, elements=values,
-                                            sizes=sizes, coords=coords,
-                                            name='Results plot')
+        multiplot = plot_data.MultiplePlots(plots=objects, elements=values, sizes=sizes,
+                                            coords=coords, name='Results plot')
         return multiplot
 
-    def filter_(self, filters: List[DessiaFilter]):
+    def filter_(self, filters: List[DessiaFilter], name: str = ''):
         def apply_filters(line):
             bounded = True
             i = 0
@@ -290,15 +233,19 @@ class Catalog(DessiaObject):
             return bounded
 
         filtered_array = list(filter(apply_filters, self.array))
-        return filtered_array
+        return self.__class__(filtered_array,
+                              variables=self.variables,
+                              pareto_settings=self.pareto_settings,
+                              objectives=self.objectives,
+                              choice_variables=self.choice_variables,
+                              name=name)
 
     @classmethod
     def from_csv(cls, file: StringIO, end: int = None, remove_duplicates: bool = False):
         """
         Generates MBSEs from given .csv file.
         """
-        array = np.genfromtxt(file, dtype=None, delimiter=',',
-                              names=True, encoding=None)
+        array = np.genfromtxt(file, dtype=None, delimiter=',', names=True, encoding=None)
         variables = [v for v in array.dtype.fields.keys()]
         lines = []
         for i, line in enumerate(array):
@@ -543,8 +490,7 @@ class Catalog(DessiaObject):
         plots.append(ParallelPlot(elements=all_points,
                                   axes=attributes))
 
-        return [MultiplePlots(plots=plots, elements=all_points,
-                              point_families=[point_family_0, point_family_1],
+        return [MultiplePlots(plots=plots, elements=all_points, point_families=[point_family_0, point_family_1],
                               initial_view_on=True)]
 
 
@@ -552,15 +498,13 @@ def from_csv(filename: str, end: int = None, remove_duplicates: bool = False):
     """
     Generates MBSEs from given .csv file.
     """
-    array = np.genfromtxt(filename, dtype=None, delimiter=',',
-                          names=True, encoding=None)
+    array = np.genfromtxt(filename, dtype=None, delimiter=',', names=True, encoding=None)
     variables = [v for v in array.dtype.fields.keys()]
     lines = []
     for i, line in enumerate(array):
         if end is not None and i >= end:
             break
-        if not remove_duplicates or (remove_duplicates
-                                     and line.tolist() not in lines):
+        if not remove_duplicates or (remove_duplicates and line.tolist() not in lines):
             lines.append(line.tolist())
     return lines, variables
 
@@ -568,9 +512,6 @@ def from_csv(filename: str, end: int = None, remove_duplicates: bool = False):
 def pareto_frontier(costs):
     """
     Find the pareto-efficient points
-
-    :param catalog: Catalog object on which to apply pareto_frontier
-                    computation
     :return: A (n_points, ) boolean array, indicating whether each point
              is Pareto efficient
     """
@@ -578,8 +519,7 @@ def pareto_frontier(costs):
     for index, cost in enumerate(costs):
         if is_efficient[index]:
             # Keep any point with a lower cost
-            is_efficient[is_efficient] = np.any(costs[is_efficient] < cost,
-                                                axis=1)
+            is_efficient[is_efficient] = np.any(costs[is_efficient] < cost, axis=1)
             # And keep self
             is_efficient[index] = True
     return is_efficient

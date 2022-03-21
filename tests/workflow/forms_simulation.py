@@ -2,7 +2,6 @@ from dessia_common.workflow import WorkflowRun, Workflow
 import json
 
 from dessia_common.models.workflows import workflow_
-from dessia_common.utils.jsonschema import default_dict
 
 # Check Workflow
 serialized_workflow = workflow_.to_dict(use_pointers=False)
@@ -16,6 +15,23 @@ input_values = {workflow_.input_index(parameter_input): 5,
                 workflow_.input_index(integer_input): 2,
                 workflow_.input_index(string_input): "Test"}
 workflow_run = workflow_.run(input_values=input_values, verbose=True, name='Dev Objects')
+
+variable_match = workflow_.match_variables(True)
+
+match_dict = {(0, 0, 0): [0],
+              (0, 0, 1): [0],
+              (0, 0, 2): [(1, 1, 0)],
+              (0, 0, 3): [1],
+              (0, 1, 0): [(1, 0, 0)],
+              (1, 0, 0): [(0, 1, 0)],
+              (1, 1, 0): [],
+              (1, 1, 1): [],
+              (3, 0, 1): [1],
+              (3, 0, 2): [0],
+              0: [(0, 0, 0), (0, 0, 1), (3, 0, 2)],
+              1: [(0, 0, 3), (3, 0, 1)]}
+
+assert variable_match == match_dict
 
 # Check WorkflowRun
 # Assert to_dict, dict_to_object, hashes, eqs

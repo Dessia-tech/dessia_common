@@ -12,11 +12,13 @@ import collections
 from copy import deepcopy
 import inspect
 import json
+from operator import attrgetter
 
-from typing import List, Dict, Union, Any, Tuple, get_type_hints
+from typing import List, Dict, Any, Tuple, get_type_hints
 import traceback as tb
 
 from importlib import import_module
+from ast import literal_eval
 
 import dessia_common.errors
 from dessia_common.utils.diff import data_eq, diff, dict_hash, list_hash
@@ -29,6 +31,8 @@ from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotat
 from dessia_common.utils.docstrings import parse_docstring, FAILED_DOCSTRING_PARSING
 from dessia_common.exports import XLSXWriter
 from dessia_common.typings import JsonSerializable
+from dessia_common import templates
+from dessia_common.displays import DisplayObject, DisplaySetting
 
 
 _FORBIDDEN_ARGNAMES = ['self', 'cls', 'progress_callback', 'return']
@@ -500,17 +504,8 @@ class DessiaObject:
                 dict_[arg] = deepcopy_value(getattr(self, arg), memo=memo)
         return self.__class__(**dict_)
 
-    def volmdlr_volume_model(self, **kwargs):
-        if hasattr(self, 'volmdlr_primitives'):
-            import volmdlr as vm  # !!! Avoid circular imports, is this OK ?
-            if hasattr(self, 'volmdlr_primitives_step_frames'):
-                return vm.core.MovingVolumeModel(
-                    self.volmdlr_primitives(**kwargs),
-                    self.volmdlr_primitives_step_frames(**kwargs)
-                )
-            return vm.core.VolumeModel(self.volmdlr_primitives(**kwargs))
-        msg = 'Object of type {} does not implement volmdlr_primitives'
-        raise NotImplementedError(msg.format(self.__class__.__name__))
+    def plot_data(self):
+        return []
 
     def plot(self, **kwargs):
         """
@@ -530,7 +525,7 @@ class DessiaObject:
 
     def mpl_plot(self, **kwargs):
         """
-        Plot whith matplotlib through plot_data function
+        Plot with matplotlib using plot_data function
         """
         axs = []
         if hasattr(self, 'plot_data'):
@@ -549,61 +544,49 @@ class DessiaObject:
 
         return axs
 
-    def babylonjs(self, use_cdn=True, debug=False, **kwargs):
+    @staticmethod
+    def display_settings() -> List[DisplaySetting]:
         """
-        Show the 3D volmdlr of an object by calling volmdlr_volume_model method
-        and plot in in browser
+        Returns a list of json describing how to call subdisplays
         """
-        self.volmdlr_volume_model(**kwargs).babylonjs(use_cdn=use_cdn,
-                                                      debug=debug)
+        return [DisplaySetting('markdown', 'markdown', 'to_markdown', None),
+                DisplaySetting('plot_data', 'plot_data', 'plot_data', None)
+                ]
 
-    def save_babylonjs_to_file(self, filename: str = None, use_cdn: bool = True,
-                               debug: bool = False, **kwargs):
-        self.volmdlr_volume_model(**kwargs).save_babylonjs_to_file(filename=filename,
-                                                                   use_cdn=use_cdn,
-                                                                   debug=debug)
+    def _display_from_selector(self, selector: str, **kwargs):
+        """
+        Generate the display from the selector
+        """
+        reference_path = kwargs.get('reference_path', '')
+
+        for display_setting in self.display_settings():
+            if display_setting.selector == selector:
+                track = ''
+                try:
+                    data = attrgetter(display_setting.method)(self)(**display_setting.arguments)
+                except:
+                    data = None
+                    track = tb.format_exc()
+                return DisplayObject(type_=display_setting.type,
+                                     data=data,
+                                     reference_path=reference_path,
+                                     traceback=track)
+        raise ValueError(f'No such selector {selector} in display of class {self.__class__.__name__}')
 
     def _displays(self, **kwargs) -> List[JsonSerializable]:
         """
         Generate displays of the object to be plot in the DessiA Platform
         """
-
-        if hasattr(self, '_display_angular'):
-            # Retro-compatibility
-            deprecation_warning(name='_display_angular', object_type='method',
-                                use_instead='display_angular')
-            return self._display_angular(**kwargs)
-
         reference_path = kwargs.get('reference_path', '')
 
         displays = []
-        if hasattr(self, 'babylon_data'):
-            display_ = DisplayObject(type_='cad', data=self.babylon_data(),
-                                     reference_path=reference_path)
-            displays.append(display_.to_dict())
-        elif hasattr(self, 'volmdlr_primitives')\
-                or (self.__class__.volmdlr_volume_model
-                    is not DessiaObject.volmdlr_volume_model):
-            model = self.volmdlr_volume_model()
-            display_ = DisplayObject(type_='cad', data=model.babylon_data(),
-                                     reference_path=reference_path)
-            displays.append(display_.to_dict())
-        if hasattr(self, 'plot_data'):
-            plot_data = self.plot_data()
-            if is_sequence(plot_data):
-                for plot in plot_data:
-                    display_ = DisplayObject(type_='plot_data', data=plot,
-                                             reference_path=reference_path)
-                    displays.append(display_.to_dict())
-            else:
-                msg = 'plot_data must return a sequence. Found {}'
-                raise ValueError(msg.format(type(plot_data)))
-        if hasattr(self, 'to_markdown'):
-            markdown = self.to_markdown()
-            display_ = DisplayObject(type_='markdown', data=markdown,
-                                     reference_path=reference_path)
+        for display_setting in self.display_settings():
+            display_ = self._display_from_selector(display_setting.selector, reference_path=reference_path)
             displays.append(display_.to_dict())
         return displays
+
+    def to_markdown(self):
+        return templates.dessia_object_markdown_template.substitute(name=self.name)
 
     def _check_platform(self):
         """
@@ -646,6 +629,40 @@ class DessiaObject:
         writer = XLSXWriter(self)
         writer.save_to_stream(stream)
 
+    @staticmethod
+    def _export_formats():
+        formats = [{"extension": "json", "method_name": "save_to_stream", "text": True, "args": {}},
+                   {"extension": "xlsx", "method_name": "to_xlsx_stream", "text": False, "args": {}}]
+        return formats
+
+
+class PhysicalObject(DessiaObject):
+    """
+    Represent an object with CAD capabilities
+    """
+
+    @staticmethod
+    def display_settings():
+        """
+        Returns a list of json describing how to call subdisplays
+        """
+        display_settings = DessiaObject.display_settings()
+        display_settings.append(DisplaySetting('cad', 'babylon_data', None))
+        return display_settings
+
+    def volmdlr_primitives(self):
+        """
+        Return a list of volmdlr primitives to build up volume model
+        """
+        return []
+
+    def volmdlr_volume_model(self, **kwargs):
+        """
+        Gives the volmdlr VolumeModel
+        """
+        import volmdlr as vm  # !!! Avoid circular imports, is this OK ?
+        return vm.core.VolumeModel(self.volmdlr_primitives(**kwargs))
+
     def to_step(self, filepath: str):
         """
         Exports the CAD of the object to step. Works if the class define a custom volmdlr model
@@ -673,36 +690,61 @@ class DessiaObject:
         """
         return self.volmdlr_volume_model().to_stl(filepath=filepath)
 
-    def _export_formats(self):
-        formats = [{"extension": "json", "method_name": "save_to_stream", "text": True, "args": {}},
-                   {"extension": "xlsx", "method_name": "to_xlsx_stream", "text": False, "args": {}}]
-        if hasattr(self, 'volmdlr_primitives'):
-            formats3d = [{"extension": "step", "method_name": "to_step_stream", "text": True, "args": {}},
-                         {"extension": "stl", "method_name": "to_stl_stream", "text": False, "args": {}}]
-            formats.extend(formats3d)
+    def _displays(self, **kwargs):
+        """
+        Compute the list of displays
+        """
+        reference_path = kwargs.get('reference_path', '')
+        displays = DessiaObject._displays(self, **kwargs)
+
+        model = self.volmdlr_volume_model()
+        display_ = DisplayObject(type_='cad', data=model.babylon_data(),
+                                 reference_path=reference_path)
+        displays.append(display_.to_dict())
+
+    def babylonjs(self, use_cdn=True, debug=False, **kwargs):
+        """
+        Show the 3D volmdlr of an object by calling volmdlr_volume_model method
+        and plot in in browser
+        """
+        self.volmdlr_volume_model(**kwargs).babylonjs(use_cdn=use_cdn,
+                                                      debug=debug)
+
+    def save_babylonjs_to_file(self, filename: str = None, use_cdn: bool = True,
+                               debug: bool = False, **kwargs):
+        self.volmdlr_volume_model(**kwargs).save_babylonjs_to_file(filename=filename,
+                                                                   use_cdn=use_cdn,
+                                                                   debug=debug)
+
+    @staticmethod
+    def _export_formats():
+        formats = DessiaObject._export_formats()
+        formats3d = [{"extension": "step", "method_name": "to_step_stream", "text": True, "args": {}},
+                     {"extension": "stl", "method_name": "to_stl_stream", "text": False, "args": {}}]
+        formats.extend(formats3d)
         return formats
+
+
+class MovingObject(PhysicalObject):
+
+    def volmdlr_primitives_step_frames(self):
+        """
+        Return a list of volmdlr primitives to build up volume model
+        """
+        raise NotImplementedError('Object inheriting MovingObject should implement volmdlr_primitives_step_frames')
+
+    def volmdlr_volume_model(self, **kwargs):
+        import volmdlr as vm  # !!! Avoid circular imports, is this OK ?
+        return vm.core.MovingVolumeModel(
+            self.volmdlr_primitives(**kwargs),
+            self.volmdlr_primitives_step_frames(**kwargs)
+        )
 
 
 # class Catalog(DessiaObject):
 #     def __init__(self, objects: List[DessiaObject], name: str = ''):
 #         self.objects = objects
 #         DessiaObject.__init__(self, name=name)
-
-
-class DisplayObject(DessiaObject):
-    def __init__(self, type_: str,
-                 data: Union[JsonSerializable, DessiaObject, str],
-                 reference_path: str = '', name: str = ''):
-        """
-        Container for data of display
-        """
-        if type_ == 'markdown':
-            data = inspect.cleandoc(data)
-        self.type_ = type_
-        self.data = data
-
-        self.reference_path = reference_path
-        DessiaObject.__init__(self, name=name)
 
 
 class Parameter(DessiaObject):
@@ -942,7 +984,7 @@ def enhanced_deep_attr(obj, sequence):
         # Is direct attribute
         return enhanced_get_attr(obj=obj, attr=sequence)
 
-    # Get direct attrivute
+    # Get direct attribute
     subobj = enhanced_get_attr(obj=obj, attr=sequence[0])
     if len(sequence) > 1:
         # Recursively get deep attributes
@@ -952,26 +994,30 @@ def enhanced_deep_attr(obj, sequence):
 
 def enhanced_get_attr(obj, attr):
     """
-    Safely get attribute in obj.
-    Obj can be of Object, Dict, or List type
+    Safely get attribute in obj. Obj can be of Object, Dict, or List type
 
     :param obj: Parent object in which find given attribute
-    :param attr: String or integer that represents
-                      name or index of attribute
+    :param attr: String or integer that represents name or index of attribute
     :return: Value of attribute
     """
     try:
         return getattr(obj, attr)
     except (TypeError, AttributeError):
+        classname = obj.__class__.__name__
         track = tb.format_exc()
         try:
             return obj[attr]
+        except KeyError:
+            try:
+                attr = literal_eval(attr)
+                return obj[attr]
+            except KeyError:
+                track += tb.format_exc()
+                msg = f"'{classname}' object has no attribute '{attr}'."
         except TypeError:
-            classname = obj.__class__.__name__
-            msg = "'{}' object has no attribute '{}'.".format(classname, attr)
             track += tb.format_exc()
-            raise dessia_common.errors.DeepAttributeError(message=msg,
-                                                          traceback_=track)
+            msg = f"Object of type '{classname}' is not subscriptable. Failed to deeply get '{attr}' from it"
+    raise dessia_common.errors.DeepAttributeError(message=msg, traceback_=track)
 
 
 def concatenate_attributes(prefix, suffix, type_: str = 'str'):
