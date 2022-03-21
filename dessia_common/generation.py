@@ -52,6 +52,9 @@ class DecisionTreeGenerator(TreeGenerator):
     """
 
     def __init__(self, name: str = ''):
+        """
+        :param name: The name of the generator
+        """
         tree = dt.DecisionTree()
         TreeGenerator.__init__(self, tree, name=name)
 
@@ -97,6 +100,23 @@ class RegularDecisionTreeGenerator(TreeGenerator):
     def generate(self, sorted_nodes: bool = False,
                  unique_nodes: bool = False,
                  verbose: bool = False):
+        """
+        
+        Parameters
+        ----------
+        sorted_nodes : bool, optional
+            DESCRIPTION. The default is False.
+        unique_nodes : bool, optional
+            DESCRIPTION. The default is False.
+        verbose : bool, optional
+            DESCRIPTION. The default is False.
+
+        Yields
+        ------
+        model : TYPE
+            DESCRIPTION.
+
+        """
         if sorted_nodes:
             if unique_nodes:
                 next_node_function = self.tree.NextSortedUniqueNode

@@ -104,7 +104,7 @@ class DessiaObject:
 
 
     :ivar str name: Name of object.
-    :ivar Any **kwargs: Additionnal user metadata
+    :ivar Any kwargs: Additionnal user metadata
     """
     _standalone_in_db = False
     _non_serializable_attributes = []

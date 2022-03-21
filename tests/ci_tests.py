@@ -8,6 +8,7 @@ scripts = ['displays.py',
            'files.py',
            'vectored_objects.py',
            # Workflows
+           'workflow/blocks.py',
            'workflow/workflow_with_models.py',
            'workflow/power_simulation.py',
            'workflow/forms_simulation.py',

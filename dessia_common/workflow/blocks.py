@@ -20,8 +20,8 @@ from dessia_common.utils.docstrings import parse_docstring, EMPTY_PARSED_ATTRIBU
 from dessia_common.errors import UntypedArgumentError
 from dessia_common.typings import JsonSerializable, MethodType, ClassMethodType
 from dessia_common.files import StringFile, BinaryFile
-from dessia_common.workflow.core import Block, VariableTypes, Variable, TypedVariable, \
-    set_block_variable_names_from_dict, TypedVariableWithDefaultValue, Workflow
+from dessia_common.workflow.core import Block, VariableTypes, Variable, TypedVariable, VariableWithDefaultValue,\
+    TypedVariableWithDefaultValue, set_block_variable_names_from_dict, Workflow
 
 
 def set_inputs_from_function(method, inputs=None):
