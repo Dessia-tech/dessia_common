@@ -33,6 +33,5 @@ filters = [
 objective_settings = ObjectiveSettings()
 objective = Objective({}, {}, objective_settings)
 
-filtered_array = catalog.filter_(filters)
-filtered_catalog = Catalog(array=filtered_array, variables=catalog.variables, objectives=[objective])
+filtered_catalog = catalog.filter_(filters)
 merged_catalog = Catalog.concatenate(catalogs=[catalog, filtered_catalog])
