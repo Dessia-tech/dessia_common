@@ -1114,7 +1114,9 @@ class Workflow(Block):
             classes.extend(classes_block)
             script_blocks += f'block_{ib} = {block_script}\n'
 
-        script = 'import dessia_common.workflow as dcw\nimport dessia_common.typings as dct\n\n'
+        script = ('import dessia_common.workflow as dcw\n'
+                  + 'import dessia_common.workflow.blocks as dcw_blocks\n'
+                  + 'import dessia_common.typings as dct\n\n')
 
         modules = {'.'.join(c.split('.')[:-1]) for c in classes}
         for module in modules:

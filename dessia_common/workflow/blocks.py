@@ -102,42 +102,42 @@ class Display(Block):
         return []
 
 
-class Import(Block):
-    def __init__(self, type_: str, name: str = ''):
-        """
-        Block that enables file imports
-        """
-        self.type_ = type_
-        inputs = [TypedVariable(type_=str, name='Input filename'),
-                  TypedVariableWithDefaultValue(type_=bool, default_value=True, name='Remove duplicates')]
-        outputs = [Variable(name='Array'), Variable(name='Variables')]
-        Block.__init__(self, inputs=inputs, outputs=outputs, name=name)
+# class Import(Block):
+#     def __init__(self, type_: str, name: str = ''):
+#         """
+#         Block that enables file imports
+#         """
+#         self.type_ = type_
+#         inputs = [TypedVariable(type_=str, name='Input filename'),
+#                   TypedVariableWithDefaultValue(type_=bool, default_value=True, name='Remove duplicates')]
+#         outputs = [Variable(name='Array'), Variable(name='Variables')]
+#         Block.__init__(self, inputs=inputs, outputs=outputs, name=name)
 
-    def equivalent_hash(self):
-        return len(self.type_)
+#     def equivalent_hash(self):
+#         return len(self.type_)
 
-    def equivalent(self, other):
-        return Block.equivalent(self, other) and self.type_ == other.type_
+#     def equivalent(self, other):
+#         return Block.equivalent(self, other) and self.type_ == other.type_
 
-    def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
-        dict_ = Block.to_dict(self)
-        dict_['type_'] = self.type_
-        return dict_
+#     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
+#         dict_ = Block.to_dict(self)
+#         dict_['type_'] = self.type_
+#         return dict_
 
-    @classmethod
-    @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
-        return cls(type_=dict_['type_'], name=dict_['name'])
+#     @classmethod
+#     @set_block_variable_names_from_dict
+#     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
+#                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
+#         return cls(type_=dict_['type_'], name=dict_['name'])
 
-    def evaluate(self, values):
-        dirname = os.path.dirname(__file__)
-        relative_filepath = 'models/data/' + values[self.inputs[0]]
-        filename = os.path.join(dirname, relative_filepath)
-        if self.type_ == 'csv':
-            array, variables = from_csv(filename=filename, end=None, remove_duplicates=True)
-            return [array, variables]
-        raise NotImplementedError(f"File type {self.type_} not supported")
+#     def evaluate(self, values):
+#         dirname = os.path.dirname(__file__)
+#         relative_filepath = 'models/data/' + values[self.inputs[0]]
+#         filename = os.path.join(dirname, relative_filepath)
+#         if self.type_ == 'csv':
+#             array, variables = from_csv(filename=filename, end=None, remove_duplicates=True)
+#             return [array, variables]
+#         raise NotImplementedError(f"File type {self.type_} not supported")
 
 
 class InstantiateModel(Block):
@@ -197,7 +197,7 @@ class InstantiateModel(Block):
         return block_docstring
 
     def to_script(self):
-        script = "dcw.InstantiateModel("
+        script = "dcw_blocks.InstantiateModel("
         script += f"{full_classname(object_=self.model_class, compute_for='class')}, name='{self.name}')"
         return script, [full_classname(object_=self.model_class, compute_for='class')]
 
@@ -343,7 +343,7 @@ class ModelMethod(Block):
         return block_docstring
 
     def to_script(self):
-        script = "dcw.ModelMethod(method_type=dct.MethodType("
+        script = "dcw_blocks.ModelMethod(method_type=dct.MethodType("
         script += f"{full_classname(object_=self.method_type.class_, compute_for='class')}, '{self.method_type.name}')"
         script += f", name='{self.name}')"
         return script, [full_classname(object_=self.method_type.class_, compute_for='class')]
@@ -737,7 +737,34 @@ class ModelAttribute(Block):
         return [enhanced_deep_attr(values[self.inputs[0]], self.attribute_name)]
 
     def to_script(self):
-        script = "dcw.ModelAttribute('{attribute_name}', name='{self.name}')"
+        script = "dcw_blocks.ModelAttribute('{attribute_name}', name='{self.name}')"
+        return script, []
+
+
+class SetModelAttribute(ModelAttribute):
+    """
+    :param attribute_name: The name of the attribute to set.
+    :type attribute_name: str
+    :param name: The name of the block.
+    :type name: str
+    """
+
+    def __init__(self, attribute_name: str, name: str = ''):
+        self.attribute_name = attribute_name
+        inputs = [Variable(name='Model'), Variable(name=f'Value to insert for attribute {attribute_name}')]
+        outputs = [Variable(name=f'Model with changed attribute {attribute_name}')]
+        Block.__init__(self, inputs, outputs, name=name)
+
+    def equivalent_hash(self):
+        return 3 + len(self.attribute_name)
+
+    def evaluate(self, values):
+        model = values[self.inputs[0]]
+        setattr(model, self.attribute_name, values[self.inputs[1]])
+        return [model]
+
+    def to_script(self):
+        script = "dcw_blocks.SetModelAttribute('{attribute_name}', name='{self.name}')"
         return script, []
 
 
