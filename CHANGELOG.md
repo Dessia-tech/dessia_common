@@ -9,10 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Physical Object: splitting CAD capabilities from DessiaObject
-- Workflow to script (for a few block to begin with)
+- Workflow to script (for a few blocks to begin with)
+- Separate evaluation of displays with display settings feature
+- workflow: port matching 
 
 ### Changed
 - Enhanced get attr use literal eval to try to get dict keys
+- moved blocks in dessia_common.workflow.blocks, retrocompatbility with previous behavior
+
+### Deleted
+- Import Block in workflow
 
 ## 0.6.0
 ### Added

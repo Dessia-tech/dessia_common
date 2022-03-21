@@ -6,7 +6,6 @@ Created on Fri Mar 18 18:52:32 2022
 @author: masfaraud
 """
 
-import os
 import inspect
 
 from zipfile import ZipFile
@@ -18,7 +17,6 @@ from dessia_common import DessiaObject, DisplayObject, DessiaFilter, is_bounded,
     type_from_annotation
 from dessia_common.utils.types import get_python_class_from_class_name, full_classname
 from dessia_common.utils.docstrings import parse_docstring, EMPTY_PARSED_ATTRIBUTE
-from dessia_common.vectored_objects import from_csv
 from dessia_common.errors import UntypedArgumentError
 from dessia_common.typings import JsonSerializable, MethodType, ClassMethodType
 from dessia_common.files import StringFile, BinaryFile
@@ -100,44 +98,6 @@ class Display(Block):
     @staticmethod
     def evaluate(self):
         return []
-
-
-# class Import(Block):
-#     def __init__(self, type_: str, name: str = ''):
-#         """
-#         Block that enables file imports
-#         """
-#         self.type_ = type_
-#         inputs = [TypedVariable(type_=str, name='Input filename'),
-#                   TypedVariableWithDefaultValue(type_=bool, default_value=True, name='Remove duplicates')]
-#         outputs = [Variable(name='Array'), Variable(name='Variables')]
-#         Block.__init__(self, inputs=inputs, outputs=outputs, name=name)
-
-#     def equivalent_hash(self):
-#         return len(self.type_)
-
-#     def equivalent(self, other):
-#         return Block.equivalent(self, other) and self.type_ == other.type_
-
-#     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
-#         dict_ = Block.to_dict(self)
-#         dict_['type_'] = self.type_
-#         return dict_
-
-#     @classmethod
-#     @set_block_variable_names_from_dict
-#     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-#                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
-#         return cls(type_=dict_['type_'], name=dict_['name'])
-
-#     def evaluate(self, values):
-#         dirname = os.path.dirname(__file__)
-#         relative_filepath = 'models/data/' + values[self.inputs[0]]
-#         filename = os.path.join(dirname, relative_filepath)
-#         if self.type_ == 'csv':
-#             array, variables = from_csv(filename=filename, end=None, remove_duplicates=True)
-#             return [array, variables]
-#         raise NotImplementedError(f"File type {self.type_} not supported")
 
 
 class InstantiateModel(Block):
@@ -737,11 +697,11 @@ class ModelAttribute(Block):
         return [enhanced_deep_attr(values[self.inputs[0]], self.attribute_name)]
 
     def to_script(self):
-        script = "dcw_blocks.ModelAttribute('{attribute_name}', name='{self.name}')"
+        script = f"dcw_blocks.ModelAttribute('{self.attribute_name}', name='{self.name}')"
         return script, []
 
 
-class SetModelAttribute(ModelAttribute):
+class SetModelAttribute(Block):
     """
     :param attribute_name: The name of the attribute to set.
     :type attribute_name: str
@@ -758,13 +718,27 @@ class SetModelAttribute(ModelAttribute):
     def equivalent_hash(self):
         return 3 + len(self.attribute_name)
 
+    def equivalent(self, other):
+        return Block.equivalent(self, other) and self.attribute_name == other.attribute_name
+
+    def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
+        dict_ = Block.to_dict(self)
+        dict_.update({'attribute_name': self.attribute_name})
+        return dict_
+
+    @classmethod
+    @set_block_variable_names_from_dict
+    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
+        return cls(dict_['attribute_name'], dict_['name'])
+
     def evaluate(self, values):
         model = values[self.inputs[0]]
         setattr(model, self.attribute_name, values[self.inputs[1]])
         return [model]
 
     def to_script(self):
-        script = "dcw_blocks.SetModelAttribute('{attribute_name}', name='{self.name}')"
+        script = f"dcw_blocks.SetModelAttribute('{self.attribute_name}', name='{self.name}')"
         return script, []
 
 
