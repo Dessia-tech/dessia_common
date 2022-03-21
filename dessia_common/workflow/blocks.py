@@ -20,6 +20,8 @@ from dessia_common.utils.docstrings import parse_docstring, EMPTY_PARSED_ATTRIBU
 from dessia_common.errors import UntypedArgumentError
 from dessia_common.typings import JsonSerializable, MethodType, ClassMethodType
 from dessia_common.files import StringFile, BinaryFile
+
+# VariableWithDefaultValue is unused but if removed cause get_hints of typing to get lost. Bug tracked by CI
 from dessia_common.workflow.core import Block, VariableTypes, Variable, TypedVariable, VariableWithDefaultValue,\
     TypedVariableWithDefaultValue, set_block_variable_names_from_dict, Workflow
 
