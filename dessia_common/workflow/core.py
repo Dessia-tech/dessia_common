@@ -29,9 +29,6 @@ from dessia_common.utils.diff import choose_hash
 from dessia_common.typings import JsonSerializable, MethodType
 import warnings
 
-# Type Aliases
-VariableTypes = Union['Variable', 'TypedVariable', 'VariableWithDefaultValue', 'TypedVariableWithDefaultValue']
-
 
 class Variable(DessiaObject):
     _standalone_in_db = False
@@ -154,7 +151,7 @@ class Block(DessiaObject):
     _eq_is_data_eq = False
     _non_serializable_attributes = []
 
-    def __init__(self, inputs: List[VariableTypes], outputs: List[VariableTypes],
+    def __init__(self, inputs: List[Variable], outputs: List[Variable],
                  position: Tuple[float, float] = (0, 0), name: str = ''):
         """
         An Abstract block. Do not instantiate alone
@@ -220,14 +217,14 @@ class Pipe(DessiaObject):
         "properties": {
             "input_variable": {
                 "type": "object", "editable": True, "order": 0,
-                "python_typing": "List[dessia_common.workflow.VariableTypes]",
+                "python_typing": "List[dessia_common.workflow.Variable]",
                 "classes": ["dessia_common.workflow.Variable", "dessia_common.workflow.TypedVariable",
                             "dessia_common.workflow.VariableWithDefaultValue",
                             "dessia_common.workflow.TypedVariableWithDefaultValue"]
             },
             "output_variable": {
                 "type": "object", "editable": True, "order": 1,
-                "python_typing": "List[dessia_common.workflow.VariableTypes]",
+                "python_typing": "List[dessia_common.workflow.Variable]",
                 "classes": ["dessia_common.workflow.Variable", "dessia_common.workflow.TypedVariable",
                             "dessia_common.workflow.VariableWithDefaultValue",
                             "dessia_common.workflow.TypedVariableWithDefaultValue"],
@@ -238,7 +235,7 @@ class Pipe(DessiaObject):
     }
     _eq_is_data_eq = False
 
-    def __init__(self, input_variable: VariableTypes, output_variable: VariableTypes, name: str = ''):
+    def __init__(self, input_variable: Variable, output_variable: Variable, name: str = ''):
         self.input_variable = input_variable
         self.output_variable = output_variable
         DessiaObject.__init__(self, name=name)
@@ -306,10 +303,10 @@ class Workflow(Block):
                 }
             },
             "outputs": {
-                "type": "array", "order": 2, "python_typing": "List[dessia_common.workflow.VariableTypes]",
+                "type": "array", "order": 2, "python_typing": "List[dessia_common.workflow.Variable]",
                 'items': {
                     'type': 'array', 'items': {'type': 'number'},
-                    'python_typing': "dessia_common.workflow.VariableTypes"
+                    'python_typing': "dessia_common.workflow.Variable"
                 }
             },
             "description": {"type": "string", "title": "Description", "editable": True,
@@ -735,7 +732,7 @@ class Workflow(Block):
         upstream_blocks = [self.block_from_variable(v) for v in upstream_variables["wired"]]
         return list(set(upstream_blocks))
 
-    def get_upstream_nbv(self, variable: VariableTypes) -> VariableTypes:
+    def get_upstream_nbv(self, variable: Variable) -> Variable:
         """
         If given variable has an upstream nonblock_variable, return it
         otherwise return given variable itself
@@ -747,7 +744,7 @@ class Workflow(Block):
             return upstream_variable
         return variable
 
-    def upstream_variable(self, variable: VariableTypes) -> Optional[VariableTypes]:
+    def upstream_variable(self, variable: Variable) -> Optional[Variable]:
         """
         Returns upstream variable if given variable is connected to a pipe as a pipe output
 
@@ -759,7 +756,7 @@ class Workflow(Block):
             return incoming_pipe.input_variable
         return None
 
-    def variable_indices(self, variable: VariableTypes) -> Union[Tuple[int, int, int], int]:
+    def variable_indices(self, variable: Variable) -> Union[Tuple[int, int, int], int]:
         """
         Returns global adress of given variable as a tuple or an int
 
@@ -813,7 +810,7 @@ class Workflow(Block):
         warnings.warn("index method is deprecated, use input_index instead", DeprecationWarning)
         return self.input_index(variable)
 
-    def input_index(self, variable: VariableTypes) -> Optional[int]:
+    def input_index(self, variable: Variable) -> Optional[int]:
         """
         If variable is a workflow input, returns its index
         """
@@ -822,7 +819,7 @@ class Workflow(Block):
             return self.inputs.index(upstream_variable)
         return None
 
-    def variable_index(self, variable: VariableTypes) -> int:
+    def variable_index(self, variable: Variable) -> int:
         """
         Returns variable index in variables sequence
         """

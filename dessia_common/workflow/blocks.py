@@ -21,9 +21,8 @@ from dessia_common.errors import UntypedArgumentError
 from dessia_common.typings import JsonSerializable, MethodType, ClassMethodType
 from dessia_common.files import StringFile, BinaryFile
 
-# VariableWithDefaultValue is unused but if removed cause get_hints of typing to get lost. Bug tracked by CI
-from dessia_common.workflow.core import Block, VariableTypes, Variable, TypedVariable, VariableWithDefaultValue,\
-    TypedVariableWithDefaultValue, set_block_variable_names_from_dict, Workflow
+from dessia_common.workflow.core import Block, Variable, TypedVariable, TypedVariableWithDefaultValue,\
+    set_block_variable_names_from_dict, Workflow
 
 
 def set_inputs_from_function(method, inputs=None):
@@ -66,7 +65,7 @@ class Display(Block):
     _displayable_input = 0
     _non_editable_attributes = ['inputs']
 
-    def __init__(self, inputs: List[VariableTypes] = None, order: int = 0, name: str = ''):
+    def __init__(self, inputs: List[Variable] = None, order: int = 0, name: str = ''):
         """
         Abstract class for display behaviors
         """
@@ -81,7 +80,7 @@ class Display(Block):
     def equivalent_hash(self):
         return self.order
 
-    def display_(self, local_values: Dict[VariableTypes, Any], **kwargs):
+    def display_(self, local_values: Dict[Variable, Any], **kwargs):
         object_ = local_values[self.inputs[self._displayable_input]]
         displays = object_._displays(**kwargs)
         return displays
