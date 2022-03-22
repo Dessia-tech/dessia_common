@@ -101,7 +101,7 @@ class RegularDecisionTreeGenerator(TreeGenerator):
                  unique_nodes: bool = False,
                  verbose: bool = False):
         """
-        
+
         Parameters
         ----------
         sorted_nodes : bool, optional
