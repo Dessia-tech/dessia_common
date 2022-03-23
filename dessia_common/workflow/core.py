@@ -1770,8 +1770,11 @@ class WorkflowRun(WorkflowState):
 
     @property
     def _method_jsonschemas(self):
-        jsonschemas = self.workflow._method_jsonschemas
-        jsonschemas['run_again'] = jsonschemas.pop('run')
+        # TODO This is outdated now that WorkflowRun inherits from WorkflowState and has already broke once.
+        #  We should outsource the "run" jsonschema computation from workflow in order to mutualize it with run_again,
+        #  and have WorkflowRun have its inheritances from WorkflowState _method_jsonschema method
+        workflow_jsonschemas = self.workflow._method_jsonschemas
+        jsonschemas = {"run_again": workflow_jsonschemas.pop('run')}
         jsonschemas['run_again']['classes'] = ["dessia_common.workflow.WorkflowRun"]
         return jsonschemas
 
