@@ -23,7 +23,7 @@ from ast import literal_eval
 import dessia_common.errors
 from dessia_common.utils.diff import data_eq, diff, dict_hash, list_hash
 from dessia_common.utils.serialization import dict_to_object, serialize_dict_with_pointers,\
-    serialize_dict, deserialize_argument
+    serialize_dict, deserialize_argument, serialize
 from dessia_common.utils.types import full_classname, is_sequence, is_bson_valid, TYPES_FROM_STRING
 from dessia_common.utils.copy import deepcopy_value
 from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotation,\
@@ -550,7 +550,7 @@ class DessiaObject:
         Returns a list of json describing how to call subdisplays
         """
         return [DisplaySetting('markdown', 'markdown', 'to_markdown', None),
-                DisplaySetting('plot_data', 'plot_data', 'plot_data', None)
+                DisplaySetting('plot_data', 'plot_data', 'plot_data', None, serialize_data=True)
                 ]
 
     def _display_from_selector(self, selector: str, **kwargs):
@@ -567,6 +567,9 @@ class DessiaObject:
                 except:
                     data = None
                     track = tb.format_exc()
+
+                if display_setting.serialize_data:
+                    data = serialize(data)
                 return DisplayObject(type_=display_setting.type,
                                      data=data,
                                      reference_path=reference_path,
