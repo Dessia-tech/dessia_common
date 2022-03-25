@@ -193,7 +193,8 @@ class Block(DessiaObject):
             data['name'] = self.__class__.__name__
         return data
 
-    def _docstring(self):
+    @staticmethod
+    def _docstring():
         """
         Base function for submodel docstring computing
         """
