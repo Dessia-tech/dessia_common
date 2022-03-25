@@ -67,7 +67,7 @@ class TypedVariable(Variable):
 
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'TypedVariable':
+                       global_dict=None, pointers_memo: Dict[str, Any] = None) -> 'TypedVariable':
         type_ = deserialize_typing(dict_['type_'])
         memorize = dict_['memorize']
         return cls(type_=type_, memorize=memorize, name=dict_['name'])
@@ -110,7 +110,7 @@ class TypedVariableWithDefaultValue(TypedVariable):
 
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
-                       pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'TypedVariableWithDefaultValue':
+                       pointers_memo: Dict[str, Any] = None) -> 'TypedVariableWithDefaultValue':
         type_ = deserialize_typing(dict_['type_'])
         default_value = deserialize(dict_['default_value'], global_dict=global_dict,
                                     pointers_memo=pointers_memo)

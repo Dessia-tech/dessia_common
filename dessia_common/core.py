@@ -632,7 +632,8 @@ class DessiaObject:
         writer = XLSXWriter(self)
         writer.save_to_stream(stream)
 
-    def _export_formats(self):
+    @staticmethod
+    def _export_formats():
         formats = [{"extension": "json", "method_name": "save_to_stream", "text": True, "args": {}},
                    {"extension": "xlsx", "method_name": "to_xlsx_stream", "text": False, "args": {}}]
         return formats
