@@ -718,9 +718,8 @@ class PhysicalObject(DessiaObject):
                                                                    use_cdn=use_cdn,
                                                                    debug=debug)
 
-    @staticmethod
-    def _export_formats():
-        formats = DessiaObject._export_formats()
+    def _export_formats(self):
+        formats = DessiaObject._export_formats(self)
         formats3d = [{"extension": "step", "method_name": "to_step_stream", "text": True, "args": {}},
                      {"extension": "stl", "method_name": "to_stl_stream", "text": False, "args": {}}]
         formats.extend(formats3d)
