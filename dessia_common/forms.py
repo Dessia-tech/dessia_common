@@ -219,8 +219,7 @@ class StandaloneObject(DessiaObject):
         DessiaObject.__init__(self, name=name)
 
     @classmethod
-    def generate(cls, seed: int,
-                 name: str = 'Standalone Object Demo') -> 'StandaloneObject':
+    def generate(cls, seed: int, name: str = 'Standalone Object Demo') -> 'StandaloneObject':
         is_even = not bool(seed % 2)
         standalone_subobject = StandaloneSubobject.generate(seed)
         embedded_subobject = EmbeddedSubobject.generate(seed)
