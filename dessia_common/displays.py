@@ -10,7 +10,7 @@ from dessia_common.typings import JsonSerializable
 
 
 class DisplaySetting:
-    def __init__(self, selector, type_, method, arguments=None):
+    def __init__(self, selector, type_, method, arguments=None, serialize_data: bool = False):
         """
         Describe what method to call to get a display
         """
@@ -20,6 +20,7 @@ class DisplaySetting:
         if not arguments:
             arguments = {}
         self.arguments = arguments
+        self.serialize_data = serialize_data
 
     def to_dict(self):
         """
@@ -28,6 +29,7 @@ class DisplaySetting:
         return {'selector': self.selector,
                 'type': self.type,
                 'method': self.method,
+                'serialize_data': self.serialize_data,
                 'arguments': self.arguments}
 
     def compose(self, attribute):
@@ -69,6 +71,7 @@ class DisplayObject:
         """
         Simple serialization
         """
+
         return {'type_': self.type_,
                 'data': self.data,
                 'traceback': self.traceback,

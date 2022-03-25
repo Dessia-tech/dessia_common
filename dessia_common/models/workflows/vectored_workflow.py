@@ -3,6 +3,7 @@ from dessia_common.typings import ClassMethodType
 from dessia_common.vectored_objects import Catalog, ParetoSettings
 from dessia_common.core import DessiaFilter
 import dessia_common.workflow as wf
+import dessia_common.workflow.blocks as wfb
 import dessia_common.typings as dct
 
 choice_args = ['MPG', 'Cylinders', 'Displacement', 'Horsepower', 'Weight', 'Acceleration', 'Model']  # Ordered
@@ -15,15 +16,16 @@ filters = [DessiaFilter(attribute='MPG', operator='gte', bound=10),
            DessiaFilter(attribute='MPG', operator='lte', bound=35)]
 
 # Blocks
-import_csv = wf.ClassMethod(ClassMethodType(Catalog, 'from_csv'))
-instantiate_pareto = wf.InstantiateModel(model_class=ParetoSettings, name='Pareto Settings')
-set_pareto_catalog = wf.SetModelAttribute('pareto_settings', name='Set Pareto in catalog')
-filter_method = wf.ModelMethod(dct.MethodType(Catalog, 'filter_'), name='Filters')
+import_csv = wfb.ClassMethod(ClassMethodType(Catalog, 'from_csv'))
+instantiate_pareto = wfb.InstantiateModel(model_class=ParetoSettings, name='Pareto Settings')
+set_pareto_catalog = wfb.SetModelAttribute('pareto_settings', name='Set Pareto in catalog')
+filter_method = wfb.ModelMethod(dct.MethodType(Catalog, 'filter_'), name='Filters')
 # filtered_catalog = wf.InstantiateModel(model_class=Catalog, name='Filtered Catalog')
-display_ = wf.Display(order=0, name="Display")
-filtered = wf.Display(order=1, name="Display of filtered object")
+display_ = wfb.Display(order=0, name="Display")
+filtered = wfb.Display(order=1, name="Display of filtered object")
 
 blocks = [import_csv, instantiate_pareto, set_pareto_catalog, filter_method, display_, filtered]
+
 
 # Pipes
 pipes = [
@@ -58,3 +60,7 @@ input_values = {
     # vectored_workflow.input_index(filtered_catalog.inputs[5]): 'Filtered Cars',
 }
 workflow_run = vectored_workflow.run(input_values=input_values)
+
+# Testing jsonschema blocks
+for block in blocks:
+    print(block.jsonschema())
