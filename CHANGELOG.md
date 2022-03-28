@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Fixed
+- FileTypes looks for subclass in jsonschema computation instead of wrong isinstance
+
 ### Added
 - Physical Object: splitting CAD capabilities from DessiaObject
 - Workflow to script (for a few blocks to begin with)
