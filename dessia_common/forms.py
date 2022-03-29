@@ -68,8 +68,8 @@ class StandaloneSubobject(DessiaObject):
 
     def contour(self):
         origin = self.floatarg
-        points = [vm.Point2D(origin, origin), vm.Point2D(origin, origin+1),
-                  vm.Point2D(origin+1, origin+1), vm.Point2D(origin+1, origin)]
+        points = [vm.Point2D(origin, origin), vm.Point2D(origin, origin + 1),
+                  vm.Point2D(origin + 1, origin + 1), vm.Point2D(origin + 1, origin)]
 
         crls = p2d.ClosedRoundedLineSegments2D(points=points, radius={})
         return crls
