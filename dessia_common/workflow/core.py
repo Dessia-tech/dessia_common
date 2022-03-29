@@ -24,7 +24,7 @@ from dessia_common.utils.serialization import dict_to_object, deserialize, seria
 from dessia_common.utils.types import serialize_typing,\
     deserialize_typing, recursive_type, typematch
 from dessia_common.utils.copy import deepcopy_value
-from dessia_common.utils.docstrings import FAILED_ATTRIBUTE_PARSING
+from dessia_common.utils.docstrings import FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE
 from dessia_common.utils.diff import choose_hash
 from dessia_common.typings import JsonSerializable, MethodType
 import warnings
@@ -197,7 +197,8 @@ class Block(DessiaObject):
         """
         Base function for submodel docstring computing
         """
-        return None
+        block_docstring = {i: EMPTY_PARSED_ATTRIBUTE for i in self.inputs}
+        return block_docstring
 
 
 class Pipe(DessiaObject):
