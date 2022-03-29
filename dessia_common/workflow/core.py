@@ -584,6 +584,8 @@ class Workflow(Block):
         output = blocks[dict_['output'][0]].outputs[dict_['output'][2]]
         temp_workflow = cls(blocks=blocks, pipes=pipes, output=output)
 
+        # For now, frontend only stores informations about imposed_variables in imposed_variable_indices
+        # For now, dict_['imposed_variable_values`] is always {}
         if 'imposed_variable_values' in dict_ and dict_['imposed_variable_values'] != {}:
             # New format with a dict
             imposed_variable_values = {}
