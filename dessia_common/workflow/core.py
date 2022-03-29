@@ -584,22 +584,30 @@ class Workflow(Block):
         output = blocks[dict_['output'][0]].outputs[dict_['output'][2]]
         temp_workflow = cls(blocks=blocks, pipes=pipes, output=output)
 
-        # For now, frontend only stores informations about imposed_variables in imposed_variable_indices
-        # For now, dict_['imposed_variable_values`] is always {}
-        if 'imposed_variable_values' in dict_ and dict_['imposed_variable_values'] != {}:
-            # New format with a dict
+        if 'imposed_variable_values' in dict_ and 'imposed_variables' in dict_:
+            # Legacy support of double list
             imposed_variable_values = {}
-            for variable_index, serialized_value in dict_['imposed_variable_values']:
+            iterator = zip(dict_['imposed_variables'], dict_['imposed_variable_values'])
+            for variable_index, serialized_value in iterator:
                 value = deserialize(serialized_value, global_dict=global_dict, pointers_memo=pointers_memo)
                 variable = temp_workflow.variable_from_index(variable_index)
+
                 imposed_variable_values[variable] = value
-        elif 'imposed_variable_indices' in dict_:
+        else :
             imposed_variable_values = {}
-            for variable_index in dict_['imposed_variable_indices']:
-                variable = temp_workflow.variable_from_index(variable_index)
-                imposed_variable_values[variable] = variable.default_value
-        else:
-            imposed_variable_values = None
+            if 'imposed_variable_indices' in dict_:
+                for variable_index in dict_['imposed_variable_indices']:
+                    variable = temp_workflow.variable_from_index(variable_index)
+                    imposed_variable_values[variable] = variable.default_value
+
+            if 'imposed_variable_values' in dict_:
+                # New format with a dict
+                for variable_index, serialized_value in dict_['imposed_variable_values']:
+                    value = deserialize(serialized_value, global_dict=global_dict, pointers_memo=pointers_memo)
+                    variable = temp_workflow.variable_from_index(variable_index)
+                    imposed_variable_values[variable] = value
+            else:
+                imposed_variable_values = None
 
         if "description" in dict_:
             # Retro-compatibility
