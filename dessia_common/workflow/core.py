@@ -584,16 +584,7 @@ class Workflow(Block):
         output = blocks[dict_['output'][0]].outputs[dict_['output'][2]]
         temp_workflow = cls(blocks=blocks, pipes=pipes, output=output)
 
-        if 'imposed_variable_values' in dict_ and 'imposed_variables' in dict_:
-            # Legacy support of double list
-            imposed_variable_values = {}
-            iterator = zip(dict_['imposed_variables'], dict_['imposed_variable_values'])
-            for variable_index, serialized_value in iterator:
-                value = deserialize(serialized_value, global_dict=global_dict, pointers_memo=pointers_memo)
-                variable = temp_workflow.variable_from_index(variable_index)
-
-                imposed_variable_values[variable] = value
-        elif 'imposed_variable_values' in dict_:
+        if 'imposed_variable_values' in dict_ and dict_['imposed_variable_values'] != {}:
             # New format with a dict
             imposed_variable_values = {}
             for variable_index, serialized_value in dict_['imposed_variable_values']:
