@@ -210,7 +210,8 @@ class Catalog(DessiaObject):
         scatterplot = plot_data.Scatter(axis=plot_data.Axis(), tooltip=tooltip, x_variable=first_vars[0],
                                         y_variable=first_vars[1], elements=values2d, name='Scatter Plot')
 
-        parallelplot = plot_data.ParallelPlot(disposition='horizontal', axes=self.variables, rgbs=rgbs, elements=values)
+        parallelplot = plot_data.ParallelPlot(disposition='horizontal', axes=self.variables,
+                                              rgbs=rgbs, elements=values)
         objects = [scatterplot, parallelplot]
         sizes = [plot_data.Window(width=560, height=300),
                  plot_data.Window(width=560, height=300)]
@@ -219,7 +220,7 @@ class Catalog(DessiaObject):
                                             coords=coords, name='Results plot')
         return multiplot
 
-    def filter_(self, filters: List[DessiaFilter]):
+    def filter_(self, filters: List[DessiaFilter], name: str = ''):
         def apply_filters(line):
             bounded = True
             i = 0
@@ -232,7 +233,12 @@ class Catalog(DessiaObject):
             return bounded
 
         filtered_array = list(filter(apply_filters, self.array))
-        return filtered_array
+        return self.__class__(filtered_array,
+                              variables=self.variables,
+                              pareto_settings=self.pareto_settings,
+                              objectives=self.objectives,
+                              choice_variables=self.choice_variables,
+                              name=name)
 
     @classmethod
     def from_csv(cls, file: StringIO, end: int = None, remove_duplicates: bool = False):

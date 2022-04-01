@@ -83,13 +83,9 @@ def unfold_deep_annotation(typing_=None):
 
 def is_typing(object_: Any):
     has_module = hasattr(object_, '__module__')
-    if has_module:
-        in_typings = object_.__module__ in ['typing', 'dessia_common.typings']
-    else:
-        return False
     has_origin = hasattr(object_, '__origin__')
     has_args = hasattr(object_, '__args__')
-    return has_module and has_origin and has_args and in_typings
+    return has_module and has_origin and has_args
 
 
 def serialize_typing(typing_):
@@ -294,3 +290,74 @@ def recursive_type(obj):
     else:
         raise NotImplementedError(obj)
     return type_
+
+
+def union_is_default_value(typing_: Type) -> bool:
+    """
+    Union typings can be False positives.
+    An argument of a function that has a default_value set to None is Optional[T],
+    which is an alias for Union[T, NoneType]. This function checks if this is the case.
+    """
+    args = get_args(typing_)
+    return len(args) == 2 and type(None) in args
+
+
+def typematch(type_: Type, match_against: Type) -> bool:
+    """
+        Return wether type_ matches against match_against.
+        match_against needs to be "wider" than type_, and the check is not bilateral
+    """
+    # TODO Implement a more intelligent check for Unions : Union[T, U] should match against Union[T, U, V]
+    # TODO Implement a check for Dict
+    if type_ == match_against or match_against is Any:
+        # Trivial cases. If types are strictly equal, then it should pass straight away
+        return True
+
+    if is_typing(type_):
+        return complex_first_type_match(type_, match_against)
+
+    if not is_typing(match_against):
+        # type_ and match_against aren't complex : check for subclass only
+        if issubclass(type_, match_against):
+            return True
+
+    # type_ is not complex and match_against is
+    origin = get_origin(match_against)
+    args = get_args(match_against)
+    if origin is Union:
+        matches = [typematch(type_, subtype) for subtype in args]
+        return any(matches)
+    return False
+
+
+def complex_first_type_match(type_: Type, match_against: Type):
+    """
+    Match type when type_ is a complex typing (List, Union, Tuple,...)
+    """
+    # Complex typing for the first type_. Cases : List, Tuple, Union
+    type_origin = get_origin(type_)
+    type_args = get_args(type_)
+    if not is_typing(match_against):
+        # Type matching is unilateral and match against should be more open than type_
+        return False
+
+    match_against_origin = get_origin(match_against)
+    match_against_args = get_args(match_against)
+
+    if type_origin is Union:
+        # Check for default values false positive
+        if union_is_default_value(type_):
+            return typematch(type_args[0], match_against)
+
+    if type_origin != match_against_origin:
+        # Being strict for now. Is there any other case than default values where this would be wrong ?
+        return False
+
+    if type_origin is list:
+        return typematch(type_args[0], match_against_args[0])
+
+    if type_origin is tuple:
+        return all(typematch(a, b) for a, b in zip(type_args, match_against_args))
+
+    # Otherwise, it is not implemented
+    raise NotImplementedError(f"Type {type_} is a complex typing and cannot be matched against others yet")

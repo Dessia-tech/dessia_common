@@ -16,6 +16,23 @@ input_values = {workflow_.input_index(parameter_input): 5,
                 workflow_.input_index(string_input): "Test"}
 workflow_run = workflow_.run(input_values=input_values, verbose=True, name='Dev Objects')
 
+variable_match = workflow_.match_variables(True)
+
+match_dict = {(0, 0, 0): [0],
+              (0, 0, 1): [0],
+              (0, 0, 2): [(1, 1, 0)],
+              (0, 0, 3): [1],
+              (0, 1, 0): [(1, 0, 0)],
+              (1, 0, 0): [(0, 1, 0)],
+              (1, 1, 0): [],
+              (1, 1, 1): [],
+              (3, 0, 1): [1],
+              (3, 0, 2): [0],
+              0: [(0, 0, 0), (0, 0, 1), (3, 0, 2)],
+              1: [(0, 0, 3), (3, 0, 1)]}
+
+assert variable_match == match_dict
+
 # Check WorkflowRun
 # Assert to_dict, dict_to_object, hashes, eqs
 dict_ = workflow_run.to_dict(use_pointers=False)

@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Tue Nov 16 12:32:31 2021
+Interpolation tools
 
-@author: steven
 """
 
 from typing import List
@@ -11,6 +10,9 @@ from typing import List
 
 def istep_from_value_on_list(list_: List[float], value: float,
                              extrapolate=False):
+    """
+    Return the float index of a value in a list of objects
+    """
     for ipoint, (point1, point2) in enumerate(zip(list_[:-1],
                                                   list_[1:])):
 
@@ -32,10 +34,13 @@ def istep_from_value_on_list(list_: List[float], value: float,
 
     min_values = min(list_)
     max_values = max(list_)
-    raise ValueError('Specified value not found in list_: {} not in [{}, {}]'.format(value, min_values, max_values))
+    raise ValueError(f'Specified value not found in list_: {value} not in [{min_values}, {max_values}]')
 
 
 def interpolate_from_istep(objects, istep: float):
+    """
+    Return the interpolated object from a float index and a list of objects
+    """
     n_objects = len(objects)
     if (istep < 0) or (istep > n_objects - 1):
         raise ValueError('Extrapolating is not supported')

@@ -7,12 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## v0.7.0
+
+### Fixed
+- FileTypes looks for subclass in jsonschema computation instead of wrong isinstance
+
 ### Added
+- Physical Object: splitting CAD capabilities from DessiaObject
+- Workflow to script (for a few blocks to begin with)
+- Separate evaluation of displays with display settings feature
+- workflow: port matching 
 
 ### Changed
 - Enhanced get attr use literal eval to try to get dict keys
+- moved blocks in dessia_common.workflow.blocks, retrocompatbility with previous behavior
 
-## 0.6.0
+### Deleted
+- Import Block in workflow
+
+## v0.6.0
 ### Added
 - Exports in workflows
 - Workflow inputs documentation from docstrings
@@ -23,12 +36,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - split export functions in two: one to write to a file, one to save in a stream
 - to_dict use jsonpointers, des
 
-## 0.5.1
+## v0.5.1
 ### Fixed
 - copy problems
 - more tests
 
-## 0.5.0
+## v0.5.0
 
 ### Added
 - Workflow stop/start first features
@@ -55,13 +68,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Refactor
 - Separate in utils module
 
-## 0.4.7
+## v0.4.7
 ## Added
 - File typings
 - Support for Iterator typing
 - Object's default_dicts now implement objct_class
 
-## 0.4.6
+## v0.4.6
 
 ### Added
 ### Fixed

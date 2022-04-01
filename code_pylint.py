@@ -1,33 +1,38 @@
 '''
 Read pylint errors to see if number of errors does not exceed specified limits
-v1.0
+v1.1
+
+Changes:
+    v1.1: move imports to top
 '''
 
+import os
+import sys
 from pylint.lint import Run
 
-MIN_NOTE = 9
+MIN_NOTE = 9.1
 
 UNWATCHED_ERRORS = ['fixme', 'trailing-whitespace', 'import-error']
 
 MAX_ERROR_BY_TYPE = {
-                     'protected-access': 27,
-                     'invalid-name': 22,
-                     'consider-using-f-string': 13,
+                     'protected-access': 26,
+                     'invalid-name': 19,
+                     'consider-using-f-string': 10,
                      'no-else-return': 17,
-                     'arguments-differ': 5,
+                     'arguments-differ': 12,
                      'no-member': 1,
-                     'too-many-locals': 15,
-                     'wrong-import-order': 11,
+                     'too-many-locals': 14,
+                     'wrong-import-order': 10,
                      'too-many-branches': 9,
-                     'unused-import': 0,
-                     'unused-argument': 9,
+                     'unused-import': 1,
+                     'unused-argument': 6,
                      'cyclic-import': 11,
                      'no-self-use': 6,
                      'unused-variable': 6,
                      'trailing-whitespace': 11,
-                     'empty-docstring': 8,
-                     'missing-module-docstring': 10,
-                     'too-many-arguments': 6,
+                     'empty-docstring': 7,
+                     'missing-module-docstring': 9,
+                     'too-many-arguments': 5,
                      'too-few-public-methods': 5,
                      'unnecessary-comprehension': 5,
                      'no-value-for-parameter': 2,
@@ -35,7 +40,7 @@ MAX_ERROR_BY_TYPE = {
                      'raise-missing-from': 6,
                      'consider-merging-isinstance': 6,
                      'abstract-method': 6,
-                     'import-outside-toplevel': 6,
+                     'import-outside-toplevel': 7,
                      'too-many-instance-attributes': 4,
                      'consider-iterating-dictionary': 4,
                      'attribute-defined-outside-init': 3,
@@ -67,7 +72,7 @@ MAX_ERROR_BY_TYPE = {
                      'inconsistent-return-statements': 0,
                      'unexpected-special-method-signature': 0,
                      'too-many-lines': 0,
-                     'bare-except': 0,
+                     'bare-except': 1,
                      'unspecified-encoding': 0,
                      'no-else-raise': 0,
                      'bad-indentation': 0,
@@ -79,8 +84,6 @@ MAX_ERROR_BY_TYPE = {
                      'unsubscriptable-object': 0
                      }
 
-import os
-import sys
 f = open(os.devnull, 'w')
 
 old_stdout = sys.stdout
