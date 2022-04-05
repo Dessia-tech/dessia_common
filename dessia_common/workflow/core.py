@@ -894,6 +894,20 @@ class Workflow(Block):
             return False
         return True
 
+    def update_positions(self) -> dict:
+        graph = nx.Graph()
+        graph.add_nodes_from(list(range(0, len(workflow.blocks))))
+
+        for pipe in workflow.pipes:
+            upstream_block = workflow.block_from_variable(pipe.output_variable)
+            upstream_index = workflow.blocks.index(upstream_block)
+
+            downstream_block = workflow.block_from_variable(pipe.input_variable)
+            downstream_index = workflow.blocks.index(downstream_block)
+            graph.add_edge(upstream_index, downstream_index)
+
+        return nx.spring_layout(graph)
+
     def layout(self, min_horizontal_spacing=300, min_vertical_spacing=200, max_height=800, max_length=1500):
         """
         Computes workflow layout
