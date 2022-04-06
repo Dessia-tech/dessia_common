@@ -894,7 +894,7 @@ class Workflow(Block):
             return False
         return True
 
-    def update_positions(self) -> dict:
+    def get_positions(self):
         graph = nx.Graph()
         graph.add_nodes_from(list(range(0, len(self.blocks))))
 
@@ -907,6 +907,34 @@ class Workflow(Block):
             graph.add_edge(upstream_index, downstream_index)
 
         return nx.spring_layout(graph)
+
+    def get_positions_with_optimal_distance(self, optimal_distance = 400):
+        graph = nx.Graph()
+        graph.add_nodes_from(list(range(0, len(self.blocks))))
+
+        for pipe in self.pipes:
+            upstream_block = self.block_from_variable(pipe.output_variable)
+            upstream_index = self.blocks.index(upstream_block)
+
+            downstream_block = self.block_from_variable(pipe.input_variable)
+            downstream_index = self.blocks.index(downstream_block)
+            graph.add_edge(upstream_index, downstream_index)
+
+        return nx.spring_layout(graph,optimal_distance)
+
+    def update_positions(self):
+        positions = self.get_positions_with_optimal_distance()
+        for block_index in range(0, len(self.blocks)) :
+            pos = positions[block_index]
+            print("Old position : "+str(self.blocks[block_index].position))
+            self.blocks[block_index].position = (pos[0], pos[1])
+            print("New position : "+str(self.blocks[block_index].position))
+
+    def test_xavier(self):
+        return "toto"
+
+    def test_xavier2(self):
+        return
 
     def layout(self, min_horizontal_spacing=300, min_vertical_spacing=200, max_height=800, max_length=1500):
         """
