@@ -1290,7 +1290,9 @@ class WorkflowState(DessiaObject):
             workflow_dict = self.workflow.to_dict(use_pointers=False)
 
         dict_ = self.base_dict()
-        dict_['object_class'] = 'dessia_common.workflow.core.WorkflowState'# To force migrating from dessia_common.workflow
+
+        # Force migrating from dessia_common.workflow
+        dict_['object_class'] = 'dessia_common.workflow.core.WorkflowState'
 
         dict_['workflow'] = workflow_dict
 
@@ -1697,7 +1699,7 @@ class WorkflowRun(WorkflowState):
         Adds variable values to super WorkflowState dict
         """
         dict_ = WorkflowState.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
-        dict_['object_class'] = 'dessia_common.workflow.core.WorkflowRun'# To force migrating from dessia_common.workflow
+        dict_['object_class'] = 'dessia_common.workflow.core.WorkflowRun'  # Force migrating from dessia_common.workflow
         dict_["variable_values"] = {str(k): serialize(v) for k, v in self.variable_values.items()}
         return dict_
 
