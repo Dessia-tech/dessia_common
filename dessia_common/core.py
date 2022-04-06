@@ -704,7 +704,7 @@ class PhysicalObject(DessiaObject):
         display_ = DisplayObject(type_='cad', data=model.babylon_data(),
                                  reference_path=reference_path)
         displays.append(display_.to_dict())
-        
+
         return displays
 
     def babylonjs(self, use_cdn=True, debug=False, **kwargs):
