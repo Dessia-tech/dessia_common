@@ -705,6 +705,8 @@ class PhysicalObject(DessiaObject):
                                  reference_path=reference_path)
         displays.append(display_.to_dict())
 
+        return displays
+
     def babylonjs(self, use_cdn=True, debug=False, **kwargs):
         """
         Show the 3D volmdlr of an object by calling volmdlr_volume_model method
