@@ -24,7 +24,7 @@ from dessia_common.utils.serialization import dict_to_object, deserialize, seria
 from dessia_common.utils.types import serialize_typing,\
     deserialize_typing, recursive_type, typematch
 from dessia_common.utils.copy import deepcopy_value
-from dessia_common.utils.docstrings import FAILED_ATTRIBUTE_PARSING
+from dessia_common.utils.docstrings import FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE
 from dessia_common.utils.diff import choose_hash
 from dessia_common.typings import JsonSerializable, MethodType
 import warnings
@@ -197,7 +197,8 @@ class Block(DessiaObject):
         """
         Base function for submodel docstring computing
         """
-        return None
+        block_docstring = {i: EMPTY_PARSED_ATTRIBUTE for i in self.inputs}
+        return block_docstring
 
 
 class Pipe(DessiaObject):
@@ -524,6 +525,7 @@ class Workflow(Block):
 
         self.refresh_blocks_positions()
         dict_ = Block.to_dict(self)
+        dict_['object_class'] = 'dessia_common.workflow.core.Workflow'# TO force migrating from dessia_common.workflow
         blocks = [b.to_dict() for b in self.blocks]
         pipes = []
         for pipe in self.pipes:
@@ -1288,6 +1290,8 @@ class WorkflowState(DessiaObject):
             workflow_dict = self.workflow.to_dict(use_pointers=False)
 
         dict_ = self.base_dict()
+        dict_['object_class'] = 'dessia_common.workflow.core.WorkflowState'# To force migrating from dessia_common.workflow
+
         dict_['workflow'] = workflow_dict
 
         input_values = {}
@@ -1693,6 +1697,7 @@ class WorkflowRun(WorkflowState):
         Adds variable values to super WorkflowState dict
         """
         dict_ = WorkflowState.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
+        dict_['object_class'] = 'dessia_common.workflow.core.WorkflowRun'# To force migrating from dessia_common.workflow
         dict_["variable_values"] = {str(k): serialize(v) for k, v in self.variable_values.items()}
         return dict_
 
