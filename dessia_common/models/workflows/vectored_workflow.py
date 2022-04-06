@@ -63,4 +63,4 @@ workflow_run = vectored_workflow.run(input_values=input_values)
 
 # Testing jsonschema blocks
 for block in blocks:
-    print(block.jsonschema())
+    block.jsonschema()

@@ -235,7 +235,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element, order, editable=N
             order=order, editable=editable, title=title
         )
         jsonschema_element[key]['units'] = typing_.units
-    elif typing_ in [TextIO, BinaryIO] or isinstance(typing_, (BinaryFile, StringFile)):
+    elif typing_ in [TextIO, BinaryIO] or issubclass(typing_, (BinaryFile, StringFile)):
         jsonschema_element[key].update({'type': 'text', 'is_file': True})
     elif typing_ is Any:
         jsonschema_element[key].update({
