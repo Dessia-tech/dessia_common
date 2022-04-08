@@ -632,8 +632,7 @@ class DessiaObject:
         writer = XLSXWriter(self)
         writer.save_to_stream(stream)
 
-    @staticmethod
-    def _export_formats():
+    def _export_formats(self):
         formats = [{"extension": "json", "method_name": "save_to_stream", "text": True, "args": {}},
                    {"extension": "xlsx", "method_name": "to_xlsx_stream", "text": False, "args": {}}]
         return formats
@@ -705,6 +704,8 @@ class PhysicalObject(DessiaObject):
                                  reference_path=reference_path)
         displays.append(display_.to_dict())
 
+        return displays
+
     def babylonjs(self, use_cdn=True, debug=False, **kwargs):
         """
         Show the 3D volmdlr of an object by calling volmdlr_volume_model method
@@ -719,9 +720,8 @@ class PhysicalObject(DessiaObject):
                                                                    use_cdn=use_cdn,
                                                                    debug=debug)
 
-    @staticmethod
-    def _export_formats():
-        formats = DessiaObject._export_formats()
+    def _export_formats(self):
+        formats = DessiaObject._export_formats(self)
         formats3d = [{"extension": "step", "method_name": "to_step_stream", "text": True, "args": {}},
                      {"extension": "stl", "method_name": "to_stl_stream", "text": False, "args": {}}]
         formats.extend(formats3d)

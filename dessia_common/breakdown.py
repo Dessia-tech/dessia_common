@@ -30,7 +30,19 @@ def get_in_object_from_path(object_, path):
             if segment in element:
                 element = element[segment]
             else:
-                element = element[int(segment)]
+                try:
+                    key = int(segment)
+                except ValueError:
+                    # should be a tuple
+                    key = []
+                    for subsegment in segment.strip('()').replace(' ', '').split(','):
+                        try:
+                            subkey = int(subsegment)
+                        except ValueError:
+                            subkey = subsegment
+                        key.append(subkey)
+                    key = tuple(key)
+                element = element[key]
         else:
             element = getattr(element, segment)
 
