@@ -550,8 +550,7 @@ class DessiaObject:
         Returns a list of json describing how to call subdisplays
         """
         return [DisplaySetting('markdown', 'markdown', 'to_markdown', None),
-                DisplaySetting('plot_data', 'plot_data', 'plot_data', None, serialize_data=True)
-                ]
+                DisplaySetting('plot_data', 'plot_data', 'plot_data', None, serialize_data=True)]
 
     def _display_from_selector(self, selector: str, **kwargs):
         """
@@ -570,10 +569,8 @@ class DessiaObject:
 
                 if display_setting.serialize_data:
                     data = serialize(data)
-                return DisplayObject(type_=display_setting.type,
-                                     data=data,
-                                     reference_path=reference_path,
-                                     traceback=track)
+                return DisplayObject(type_=display_setting.type, data=data,
+                                     reference_path=reference_path, traceback=track)
         raise ValueError(f'No such selector {selector} in display of class {self.__class__.__name__}')
 
     def _displays(self, **kwargs) -> List[JsonSerializable]:
@@ -650,7 +647,7 @@ class PhysicalObject(DessiaObject):
         Returns a list of json describing how to call subdisplays
         """
         display_settings = DessiaObject.display_settings()
-        display_settings.append(DisplaySetting('cad', 'babylon_data', None))
+        display_settings.append(DisplaySetting(selector='cad', type_='babylon_data', method='volmdlr_volume_model'))
         return display_settings
 
     def volmdlr_primitives(self):
@@ -701,10 +698,6 @@ class PhysicalObject(DessiaObject):
         displays = DessiaObject._displays(self, **kwargs)
 
         model = self.volmdlr_volume_model()
-        display_ = DisplayObject(type_='cad', data=model.babylon_data(),
-                                 reference_path=reference_path)
-        displays.append(display_.to_dict())
-
         return displays
 
     def babylonjs(self, use_cdn=True, debug=False, **kwargs):

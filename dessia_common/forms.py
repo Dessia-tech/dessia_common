@@ -38,7 +38,8 @@ try:
 except ImportError:
     pass
 
-from dessia_common import DessiaObject
+from dessia_common import DessiaObject, PhysicalObject
+from dessia_common import DessiaObject, PhysicalObject
 from dessia_common.typings import InstanceOf, Distance
 from dessia_common.vectored_objects import Catalog
 
@@ -168,7 +169,7 @@ DEF_EES = EnhancedEmbeddedSubobject.generate(3)
 UnionArg = Union[EmbeddedSubobject, EnhancedEmbeddedSubobject]
 
 
-class StandaloneObject(DessiaObject):
+class StandaloneObject(PhysicalObject):
     """
     Dev Object for testing purpose
 
