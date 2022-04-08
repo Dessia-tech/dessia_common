@@ -1292,7 +1292,7 @@ class WorkflowState(DessiaObject):
             workflow_dict = self.workflow.to_dict(use_pointers=False)
 
         dict_ = self.base_dict()
-        # To force migrating from dessia_common.workflow
+        # Force migrating from dessia_common.workflow
         dict_['object_class'] = 'dessia_common.workflow.core.WorkflowState'
 
         dict_['workflow'] = workflow_dict
