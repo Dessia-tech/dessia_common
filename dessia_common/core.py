@@ -694,11 +694,7 @@ class PhysicalObject(DessiaObject):
         """
         Compute the list of displays
         """
-        reference_path = kwargs.get('reference_path', '')
-        displays = DessiaObject._displays(self, **kwargs)
-
-        model = self.volmdlr_volume_model()
-        return displays
+        return DessiaObject._displays(self, **kwargs)
 
     def babylonjs(self, use_cdn=True, debug=False, **kwargs):
         """
@@ -1043,7 +1039,7 @@ def concatenate_attributes(prefix, suffix, type_: str = 'str'):
 def deepattr_to_sequence(deepattr: str):
     sequence = deepattr.split('/')
     healed_sequence = []
-    for i, attribute in enumerate(sequence):
+    for attribute in sequence:
         try:
             healed_sequence.append(int(attribute))
         except ValueError:
