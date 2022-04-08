@@ -1,16 +1,20 @@
 '''
 Read pylint errors to see if number of errors does not exceed specified limits
-v1.1
+v1.2
 
 Changes:
     v1.1: move imports to top
+    v1.2: limit to 100 message to avoid overflow, global note check at end, ratchet effects
 '''
+
 
 import os
 import sys
 from pylint.lint import Run
 
-MIN_NOTE = 9.1
+MIN_NOTE = 9.10
+# RATCHET_NOTE = 0.4
+# RATCHET_ERRORS = 3
 
 UNWATCHED_ERRORS = ['fixme', 'trailing-whitespace', 'import-error']
 
@@ -101,18 +105,13 @@ else:
     pylint_note = results.linter.stats['global_note']
     PYLINT_OBJECT_STATS = False
 
-print('Pylint note: ', pylint_note)
-assert pylint_note >= MIN_NOTE
-print('You can increase MIN_NOTE in pylint to {} (actual: {})'.format(pylint_note,
-                                                                      MIN_NOTE))
-
 
 def extract_messages_by_type(type_):
     return [m for m in results.linter.reporter.messages if m.symbol == type_]
 
 
-# uncontrolled_errors = {}
 error_detected = False
+error_over_ratchet_limit = False
 
 if PYLINT_OBJECT_STATS:
     stats_by_msg = results.linter.stats.by_msg
@@ -126,21 +125,32 @@ for error_type, number_errors in stats_by_msg.items():
         else:
             max_errors = 0
 
+        # if number_errors < max_errors - RATCHET_ERRORS:
+        #     error_over_ratchet_limit = True
+
         if number_errors > max_errors:
             error_detected = True
             print('Fix some {} errors: {}/{}'.format(error_type,
                                                      number_errors,
                                                      max_errors))
-            for message in extract_messages_by_type(error_type):
+            for message in extract_messages_by_type(error_type)[:30]:
                 print('{} line {}: {}'.format(message.path, message.line, message.msg))
         elif number_errors < max_errors:
             print('You can lower number of {} to {} (actual {})'.format(
                 error_type, number_errors, max_errors))
 
-            # uncontrolled_errors[error_type] = number_errors
-
-# if uncontrolled_errors:
-#     print('Uncontrolled errors', uncontrolled_errors)
 
 if error_detected:
     raise RuntimeError('Too many errors\nRun pylint dessia_common to get the errors')
+
+if error_over_ratchet_limit:
+    raise RuntimeError('Please lower the error limits in code_pylint.py MAX_ERROR_BY_TYPE according to warnings above')
+
+print('Pylint note: ', pylint_note)
+# if pylint_note > MIN_NOTE + RATCHET_NOTE:
+#     raise ValueError(f'MIN_NOTE in code_pylint.py is too low, increase to at least {MIN_NOTE + RATCHET_NOTE}, max {pylint_note}')
+if pylint_note < MIN_NOTE:
+    raise ValueError(f'Pylint not is too low: {pylint_note}, expected {MIN_NOTE}')
+
+print('You can increase MIN_NOTE in pylint to {} (actual: {})'.format(pylint_note,
+                                                                      MIN_NOTE))
