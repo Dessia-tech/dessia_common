@@ -24,7 +24,7 @@ from dessia_common.utils.serialization import dict_to_object, deserialize, seria
 from dessia_common.utils.types import serialize_typing,\
     deserialize_typing, recursive_type, typematch
 from dessia_common.utils.copy import deepcopy_value
-from dessia_common.utils.docstrings import FAILED_ATTRIBUTE_PARSING
+from dessia_common.utils.docstrings import FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE
 from dessia_common.utils.diff import choose_hash
 from dessia_common.typings import JsonSerializable, MethodType
 import warnings
@@ -67,7 +67,7 @@ class TypedVariable(Variable):
 
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None) -> 'TypedVariable':
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'TypedVariable':
         type_ = deserialize_typing(dict_['type_'])
         memorize = dict_['memorize']
         return cls(type_=type_, memorize=memorize, name=dict_['name'])
@@ -110,7 +110,7 @@ class TypedVariableWithDefaultValue(TypedVariable):
 
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
-                       pointers_memo: Dict[str, Any] = None) -> 'TypedVariableWithDefaultValue':
+                       pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'TypedVariableWithDefaultValue':
         type_ = deserialize_typing(dict_['type_'])
         default_value = deserialize(dict_['default_value'], global_dict=global_dict,
                                     pointers_memo=pointers_memo)
@@ -193,12 +193,12 @@ class Block(DessiaObject):
             data['name'] = self.__class__.__name__
         return data
 
-    @staticmethod
-    def _docstring():
+    def _docstring(self):
         """
         Base function for submodel docstring computing
         """
-        return None
+        block_docstring = {i: EMPTY_PARSED_ATTRIBUTE for i in self.inputs}
+        return block_docstring
 
 
 class Pipe(DessiaObject):
@@ -511,11 +511,9 @@ class Workflow(Block):
         """
         Reads block to compute available export formats
         """
-        export_formats = DessiaObject._export_formats()
-        export_formats.append({'extension': 'py',
-                               'method_name': 'save_script_to_stream',
-                               'text': True,
-                               'args': {}})
+        export_formats = DessiaObject._export_formats(self)
+        export_formats.append({'extension': 'py', 'method_name': 'save_script_to_stream',
+                               'text': True, 'args': {}})
         return export_formats
 
     def to_dict(self, use_pointers=True, memo=None, path='#'):
@@ -1624,7 +1622,7 @@ class WorkflowState(DessiaObject):
         """
         Reads block to compute available export formats
         """
-        export_formats = DessiaObject._export_formats()
+        export_formats = DessiaObject._export_formats(self)
         for i, block in enumerate(self.workflow.blocks):
             if hasattr(block, "_export_format"):
                 export_formats.append(block._export_format(i))
@@ -1702,6 +1700,7 @@ class WorkflowRun(WorkflowState):
         dict_ = WorkflowState.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         # To force migrating from dessia_common.workflow
         dict_['object_class'] = 'dessia_common.workflow.core.WorkflowRun'
+
         dict_["variable_values"] = {str(k): serialize(v) for k, v in self.variable_values.items()}
         return dict_
 
