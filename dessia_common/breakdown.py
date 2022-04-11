@@ -12,6 +12,32 @@ import dessia_common
 from dessia_common.utils.types import is_sequence
 
 
+def extract_from_object(object_, segment):
+    if is_sequence(object_):
+        return object_[int(segment)]
+    elif isinstance(object_, dict):
+        if segment in object_:
+            return object_[segment]
+
+        try:
+            return object_[int(segment)]
+        except ValueError:
+            # should be a tuple
+            if segment.startswith('(') and segment.endswith(')')  and ',' in segment:
+                key = []
+                for subsegment in segment.strip('()').replace(' ', '').split(','):
+                    try:
+                        subkey = int(subsegment)
+                    except ValueError:
+                        subkey = subsegment
+                    key.append(subkey)
+                return object_[tuple(key)]
+            else:
+                raise NotImplementedError(f'Segment {segment} unhandled')
+    
+    # Finally, it is a regular object
+    return getattr(object_, segment)
+
 def get_in_object_from_path(object_, path):
     segments = path.lstrip('#/').split('/')
     if isinstance(object_, dict):
@@ -24,30 +50,7 @@ def get_in_object_from_path(object_, path):
         element = getattr(object_, segments[0])
 
     for segment in segments[1:]:
-        if is_sequence(element):
-            element = element[int(segment)]
-        elif isinstance(element, dict):  # A dict?
-            if segment in element:
-                element = element[segment]
-            else:
-                try:
-                    key = int(segment)
-                except ValueError:
-                    # should be a tuple
-                    if segment.startswith('(') and segment.endswith(')')  and ',' in segment:
-                        key = []
-                        for subsegment in segment.strip('()').replace(' ', '').split(','):
-                            try:
-                                subkey = int(subsegment)
-                            except ValueError:
-                                subkey = subsegment
-                            key.append(subkey)
-                        key = tuple(key)
-                    else:
-                        raise NotImplementedError(f'Segment {segment} of path {path} unhandled')
-                element = element[key]
-        else:
-            element = getattr(element, segment)
+        element = extract_from_object(element, segment)
 
     return element
 
