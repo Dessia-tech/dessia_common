@@ -938,9 +938,10 @@ class Workflow(Block):
         Recomputes block positions
         """
         coordinates = self.layout()
-        for i, block in enumerate(self.blocks):
+        for block in self.blocks:
+            # TODO merge these two loops
             block.position = coordinates[block]
-        for i, nonblock in enumerate(self.nonblock_variables):
+        for nonblock in self.nonblock_variables:
             nonblock.position = coordinates[nonblock]
 
     def plot_graph(self):
@@ -1517,7 +1518,7 @@ class WorkflowState(DessiaObject):
         Returns all current activable pipes
         """
         pipes = []
-        for i, pipe in enumerate(self.workflow.pipes):
+        for pipe in self.workflow.pipes:
             if not self.activated_items[pipe] and self.activated_items[pipe.input_variable]:
                 pipes.append(pipe)
         return pipes

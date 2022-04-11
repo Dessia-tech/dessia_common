@@ -38,7 +38,7 @@ try:
 except ImportError:
     pass
 
-from dessia_common import DessiaObject
+from dessia_common import DessiaObject, PhysicalObject
 from dessia_common.typings import InstanceOf, Distance
 from dessia_common.vectored_objects import Catalog
 
@@ -168,7 +168,7 @@ DEF_EES = EnhancedEmbeddedSubobject.generate(3)
 UnionArg = Union[EmbeddedSubobject, EnhancedEmbeddedSubobject]
 
 
-class StandaloneObject(DessiaObject):
+class StandaloneObject(PhysicalObject):
     """
     Dev Object for testing purpose
 
@@ -187,19 +187,12 @@ class StandaloneObject(DessiaObject):
                         'add_float', 'generate_from_text', 'generate_from_bin',
                         'generate_from_bin_file', 'generate_from_text_file']
 
-    def __init__(self, standalone_subobject: StandaloneSubobject,
-                 embedded_subobject: EmbeddedSubobject,
-                 dynamic_dict: Dict[str, bool],
-                 float_dict: Dict[str, float],
-                 string_dict: Dict[str, str],
-                 tuple_arg: Tuple[str, int],
-                 intarg: int, strarg: str,
-                 object_list: List[StandaloneSubobject],
-                 subobject_list: List[EmbeddedSubobject],
-                 builtin_list: List[int],
-                 union_arg: List[UnionArg],
-                 subclass_arg: InstanceOf[StandaloneSubobject],
-                 array_arg: List[List[float]],
+    def __init__(self, standalone_subobject: StandaloneSubobject, embedded_subobject: EmbeddedSubobject,
+                 dynamic_dict: Dict[str, bool], float_dict: Dict[str, float], string_dict: Dict[str, str],
+                 tuple_arg: Tuple[str, int], intarg: int, strarg: str,
+                 object_list: List[StandaloneSubobject], subobject_list: List[EmbeddedSubobject],
+                 builtin_list: List[int], union_arg: List[UnionArg],
+                 subclass_arg: InstanceOf[StandaloneSubobject], array_arg: List[List[float]],
                  name: str = 'Standalone Object Demo'):
         self.union_arg = union_arg
         self.builtin_list = builtin_list
@@ -216,7 +209,7 @@ class StandaloneObject(DessiaObject):
         self.subclass_arg = subclass_arg
         self.array_arg = array_arg
 
-        DessiaObject.__init__(self, name=name)
+        PhysicalObject.__init__(self, name=name)
 
     @classmethod
     def generate(cls, seed: int,

@@ -356,7 +356,7 @@ class WorkflowBlock(Block):
         self.input_connections = None
         self.output_connections = None
         inputs = []
-        for i, variable in enumerate(self.workflow.inputs):
+        for variable in self.workflow.inputs:
             input_ = variable.copy()
             input_.name = f"{name} - {variable.name}"
             inputs.append(input_)
@@ -463,8 +463,7 @@ class ForEach(Block):
     def _docstring(self):
         wb_docstring = self.workflow_block._docstring()
         block_docstring = {}
-        for i, inputs in enumerate(zip(self.inputs, self.workflow_block.workflow.inputs)):
-            input_, workflow_input = inputs
+        for input_, workflow_input in zip(self.inputs, self.workflow_block.workflow.inputs):
             block_docstring[input_] = wb_docstring[workflow_input]
         return block_docstring
 
