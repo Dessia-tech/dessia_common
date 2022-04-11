@@ -34,14 +34,17 @@ def get_in_object_from_path(object_, path):
                     key = int(segment)
                 except ValueError:
                     # should be a tuple
-                    key = []
-                    for subsegment in segment.strip('()').replace(' ', '').split(','):
-                        try:
-                            subkey = int(subsegment)
-                        except ValueError:
-                            subkey = subsegment
-                        key.append(subkey)
-                    key = tuple(key)
+                    if segment.startswith('(') and segment.endswith(')')  and ',' in segment:
+                        key = []
+                        for subsegment in segment.strip('()').replace(' ', '').split(','):
+                            try:
+                                subkey = int(subsegment)
+                            except ValueError:
+                                subkey = subsegment
+                            key.append(subkey)
+                        key = tuple(key)
+                    else:
+                        raise NotImplementedError(f'Segment {segment} of path {path} unhandled')
                 element = element[key]
         else:
             element = getattr(element, segment)
