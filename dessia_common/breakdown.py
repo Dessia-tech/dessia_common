@@ -33,23 +33,15 @@ def extract_from_object(object_, segment):
                     key.append(subkey)
                 return object_[tuple(key)]
             else:
-                raise NotImplementedError(f'Segment {segment} unhandled')
+                raise NotImplementedError(f'Cannot extract segment {segment} from object {object_}')
     
     # Finally, it is a regular object
     return getattr(object_, segment)
 
 def get_in_object_from_path(object_, path):
     segments = path.lstrip('#/').split('/')
-    if isinstance(object_, dict):
-        try:
-            element = object_[segments[0]]
-        except KeyError:
-            msg = f'Cannot get in dict path {path}: end up @ {segments[0]}. Dict keys: {object_.keys()}'
-            raise RuntimeError(msg)
-    else:
-        element = getattr(object_, segments[0])
-
-    for segment in segments[1:]:
+    element = object_
+    for segment in segments:
         element = extract_from_object(element, segment)
 
     return element
