@@ -94,7 +94,7 @@ f = open(os.devnull, 'w')
 old_stdout = sys.stdout
 sys.stdout = f
 
-results = Run(['mechanical_components', '--output-format=json', '--reports=no'], do_exit=False)
+results = Run(['dessia_common', '--output-format=json', '--reports=no'], do_exit=False)
 # `exit` is deprecated, use `do_exit` instead
 sys.stdout = old_stdout
 
