@@ -5,6 +5,7 @@
 """
 
 import sys
+from ast import literal_eval
 import collections
 import numpy as npy
 
@@ -21,7 +22,7 @@ def attrmethod_getter(object_, attr_methods):
             method, _, attributes = segment.partition('(')
             attributes = attributes[:-1]
             if attributes:
-                object_ = getattr(object_, method)(eval(attributes))
+                object_ = getattr(object_, method)(literal_eval(attributes))
             else:
                 object_ = getattr(object_, method)()
         else:
