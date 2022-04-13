@@ -13,14 +13,14 @@ def deepcopy_value(value, memo):
     if isinstance(value, type) or is_typing(value):  # For class
         return value
 
-    elif isinstance(value, (float, int, str)):
+    if isinstance(value, (float, int, str)):
         copied_value = value
         return copied_value
 
-    elif value is None:
+    if value is None:
         return None
 
-    elif value.__class__.__name__ in ['Point2D', 'Point3D',
+    if value.__class__.__name__ in ['Point2D', 'Point3D',
                                       'Vector2D', 'Vector3D']:
         try:
             copied_value = value.copy(deep=True, memo=memo)
@@ -29,7 +29,7 @@ def deepcopy_value(value, memo):
             copied_value = value.copy()
         return copied_value
 
-    elif isinstance(value, dc.DessiaObject):
+    if isinstance(value, dc.DessiaObject):
         memo_value = search_memo(value, memo)
         if memo_value is not None:
             return memo_value
@@ -42,10 +42,10 @@ def deepcopy_value(value, memo):
         memo[value] = copied_value
         return copied_value
 
-    elif isinstance(value, (dessia_common.files.BinaryFile, dessia_common.files.StringFile)):
+    if isinstance(value, (dessia_common.files.BinaryFile, dessia_common.files.StringFile)):
         return value.copy()
 
-    elif hasattr(value, '__deepcopy__'):
+    if hasattr(value, '__deepcopy__'):
         memo_value = search_memo(value, memo)
         if memo_value is not None:
             return memo_value
@@ -57,15 +57,13 @@ def deepcopy_value(value, memo):
         memo[value] = copied_value
         return copied_value
 
-    else:
-        if is_sequence(value):
-            return deepcopy_sequence(value, memo)
+    if is_sequence(value):
+        return deepcopy_sequence(value, memo)
 
-        elif isinstance(value, dict):
-            return deepcopy_dict(value, memo)
+    if isinstance(value, dict):
+        return deepcopy_dict(value, memo)
 
-        else:
-            raise NotImplementedError(f'unhandle type for copy: {value} of type {value.__class__}')
+    raise NotImplementedError(f'unhandle type for copy: {value} of type {value.__class__}')
 
 
 def deepcopy_dict(dict_value, memo):

@@ -10,15 +10,15 @@ import os
 import sys
 from pylint.lint import Run
 
-MIN_NOTE = 9.1
+MIN_NOTE = 9.3
 
 UNWATCHED_ERRORS = ['fixme', 'trailing-whitespace', 'import-error']
 
 MAX_ERROR_BY_TYPE = {
                      'protected-access': 26,
-                     'invalid-name': 18,
+                     'invalid-name': 8,
                      'consider-using-f-string': 10,
-                     'no-else-return': 17,
+                     'no-else-return': 4,
                      'arguments-differ': 12,
                      'no-member': 1,
                      'too-many-locals': 14,
@@ -28,7 +28,7 @@ MAX_ERROR_BY_TYPE = {
                      'unused-argument': 6,
                      'cyclic-import': 11,
                      'no-self-use': 6,
-                     'unused-variable': 6,
+                     'unused-variable': 1,
                      'trailing-whitespace': 11,
                      'empty-docstring': 7,
                      'missing-module-docstring': 9,

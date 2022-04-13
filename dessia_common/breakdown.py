@@ -15,7 +15,7 @@ from dessia_common.utils.types import is_sequence
 def extract_from_object(object_, segment):
     if is_sequence(object_):
         return object_[int(segment)]
-    elif isinstance(object_, dict):
+    if isinstance(object_, dict):
         if segment in object_:
             return object_[segment]
 
@@ -32,8 +32,8 @@ def extract_from_object(object_, segment):
                         subkey = subsegment
                     key.append(subkey)
                 return object_[tuple(key)]
-            else:
-                raise NotImplementedError(f'Cannot extract segment {segment} from object {object_}')
+            # else:
+            raise NotImplementedError(f'Cannot extract segment {segment} from object {object_}')
     
     # Finally, it is a regular object
     return getattr(object_, segment)

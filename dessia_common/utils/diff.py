@@ -31,7 +31,7 @@ def diff(value1, value2, path='#'):
         if isinstance(value1, float) and \
                 math.isclose(value1, value2, abs_tol=dc.FLOAT_TOLERANCE):
             return diff_values, missing_keys_in_other_object, invalid_types
-        elif value1 != value2:
+        if value1 != value2:
             diff_values.append((path, value1, value2))
         return diff_values, missing_keys_in_other_object, invalid_types
     elif isinstance(value1, dict):
@@ -69,8 +69,8 @@ def dict_diff(dict1, dict2, path='#'):
         if key not in dict2:
             missing_keys_in_other_object.append(key)
         else:
-            dk, mkk, itk = diff(value, dict2[key], path=path_key)
-            diff_values.extend(dk)
+            diff_key, mkk, itk = diff(value, dict2[key], path=path_key)
+            diff_values.extend(diff_key)
             missing_keys_in_other_object.extend(mkk)
             invalid_types.extend(itk)
 
@@ -85,8 +85,8 @@ def sequence_diff(seq1, seq2, path='#'):
     if len(seq1) != len(seq2):
         diff_values.append((path, seq1, seq2))
     else:
-        for iv, (v1, v2) in enumerate(zip(seq1, seq2)):
-            path_value = '{}/{}'.format(path, iv)
+        for i, (v1, v2) in enumerate(zip(seq1, seq2)):
+            path_value = '{}/{}'.format(path, i)
             dv, mkv, itv = diff(v1, v2, path=path_value)
             # print('dvs', dv, v1, v2)
             diff_values.extend(dv)
@@ -106,10 +106,8 @@ def data_eq(value1, value2):
     if isinstance_base_types(value1):
         if isinstance(value1, float):
             return math.isclose(value1, value2, abs_tol=dc.FLOAT_TOLERANCE)
-        else:
-            # if not(value1 == value2):
-            # print('base types', value1, value2, value1 == value2)
-            return value1 == value2
+        
+        return value1 == value2
 
     if isinstance(value1, dict):
         return dict_data_eq(value1, value2)
@@ -141,24 +139,20 @@ def dict_data_eq(dict1, dict2):
 
     for key, value in dict1.items():
         if key not in dict2:
-            # print('missing key', key)
             return False
-        else:
-            if not data_eq(value, dict2[key]):
-                # print('dict key !=', key, value, dict2[key])
-                return False
+        if not data_eq(value, dict2[key]):
+            return False
     return True
 
 
 def sequence_data_eq(seq1, seq2):
     if len(seq1) != len(seq2):
-        # print('len diff', seq1, seq2)
         return False
-    else:
-        for v1, v2 in zip(seq1, seq2):
-            if not data_eq(v1, v2):
-                # print('seq false')
-                return False
+
+    for v1, v2 in zip(seq1, seq2):
+        if not data_eq(v1, v2):
+            # print('seq false')
+            return False
 
     return True
 
