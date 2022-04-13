@@ -249,6 +249,7 @@ assert directattr == 'TestStr'
 # Test to_dict/dict_to_object
 d = standalone_object.to_dict()
 obj = StandaloneObject.dict_to_object(d)
+standalone_object._check_platform()
 
 assert standalone_object == obj
 

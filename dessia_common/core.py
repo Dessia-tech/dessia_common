@@ -647,7 +647,8 @@ class PhysicalObject(DessiaObject):
         Returns a list of json describing how to call subdisplays
         """
         display_settings = DessiaObject.display_settings()
-        display_settings.append(DisplaySetting(selector='cad', type_='babylon_data', method='volmdlr_volume_model'))
+        display_settings.append(DisplaySetting(selector='cad', type_='babylon_data', method='volmdlr_volume_model',
+                                               serialize_data=True))
         return display_settings
 
     def volmdlr_primitives(self):
