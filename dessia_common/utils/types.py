@@ -30,7 +30,7 @@ def full_classname(object_, compute_for: str = 'instance'):
         return object_.__class__.__module__ + '.' + object_.__class__.__name__
     if compute_for == 'class':
         return object_.__module__ + '.' + object_.__name__
-    
+
     msg = 'Cannot compute {} full classname for object {}'
     raise NotImplementedError(msg.format(compute_for, object_))
 
@@ -200,7 +200,7 @@ def deserialize_tuple_typing(full_argname):
         if len(set(args)) == 1:
             type_ = type_from_argname(args[0])
             return Tuple[type_, ...]
-        
+
         raise TypeError("Heterogenous tuples are forbidden as types for workflow non-block variables.")
     return Tuple[type_from_argname(full_argname)]
 

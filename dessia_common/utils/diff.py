@@ -106,7 +106,7 @@ def data_eq(value1, value2):
     if isinstance_base_types(value1):
         if isinstance(value1, float):
             return math.isclose(value1, value2, abs_tol=dc.FLOAT_TOLERANCE)
-        
+
         return value1 == value2
 
     if isinstance(value1, dict):

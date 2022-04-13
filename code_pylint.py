@@ -107,7 +107,6 @@ else:
     PYLINT_OBJECT_STATS = False
 
 
-
 def extract_messages_by_type(type_):
     return [m for m in results.linter.reporter.messages if m.symbol == type_]
 
@@ -155,4 +154,4 @@ if pylint_note < MIN_NOTE:
     raise ValueError(f'Pylint not is too low: {pylint_note}, expected {MIN_NOTE}')
 
 print('You can increase MIN_NOTE in pylint to {} (actual: {})'.format(pylint_note,
-                                                                          MIN_NOTE))
+                                                                      MIN_NOTE))

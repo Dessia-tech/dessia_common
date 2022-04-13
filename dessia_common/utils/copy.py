@@ -21,7 +21,7 @@ def deepcopy_value(value, memo):
         return None
 
     if value.__class__.__name__ in ['Point2D', 'Point3D',
-                                      'Vector2D', 'Vector3D']:
+                                    'Vector2D', 'Vector3D']:
         try:
             copied_value = value.copy(deep=True, memo=memo)
         except TypeError:

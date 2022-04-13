@@ -271,12 +271,12 @@ def deserialize_with_type(type_, value):
         if inspect.isclass(class_):
             return class_.dict_to_object(value)
         raise NotImplementedError(f'Cannot get class from name {type_}')
-    
+
     if isinstance(type_, (list, tuple)):
         return [deserialize_with_type(t, v) for t, v in zip(type_, value)]
     if type_ is None:
         return value
-    
+
     raise NotImplementedError(type_)
 
 
