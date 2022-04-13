@@ -12,6 +12,7 @@ import numpy as npy
 import dessia_common
 from dessia_common.utils.types import is_sequence
 
+
 def attrmethod_getter(object_, attr_methods):
     """
     Float with . in attributes are not handled
@@ -28,8 +29,7 @@ def attrmethod_getter(object_, attr_methods):
         else:
             object_ = getattr(object_, segment)
     return object_
-        
-        
+
 
 def get_in_object_from_path(object_, path):
     segments = path.lstrip('#/').split('/')
