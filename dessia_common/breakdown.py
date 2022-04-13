@@ -11,6 +11,24 @@ import numpy as npy
 import dessia_common
 from dessia_common.utils.types import is_sequence
 
+def attrmethod_getter(object_, attr_methods):
+    """
+    Float with . in attributes are not handled
+    """
+    # TODO: escape . inside ()
+    for segment in attr_methods.split('.'):
+        if '(' in segment:
+            method, _, attributes = segment.partition('(')
+            attributes = attributes[:-1]
+            if attributes:
+                object_ = getattr(object_, method)(eval(attributes))
+            else:
+                object_ = getattr(object_, method)()
+        else:
+            object_ = getattr(object_, segment)
+    return object_
+        
+        
 
 def get_in_object_from_path(object_, path):
     segments = path.lstrip('#/').split('/')
