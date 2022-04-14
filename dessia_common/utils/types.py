@@ -3,6 +3,7 @@
 """
 
 """
+from ast import literal_eval
 from typing import Any, Dict, List, Tuple, Type, Union, TextIO, BinaryIO, get_origin, get_args
 
 import dessia_common as dc
@@ -152,8 +153,7 @@ def type_from_argname(argname):
     if argname:
         if splitted_argname[0] != '__builtins__':
             return get_python_class_from_class_name(argname)
-        # TODO Check for dangerous eval
-        return eval(splitted_argname[1])
+        return literal_eval(splitted_argname[1])
     return Any
 
 
