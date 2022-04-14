@@ -266,18 +266,18 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
 def deserialize_with_type(type_, value):
     if type_ in dcty.TYPES_STRINGS.values():
         return eval(type_)(value)
-    elif isinstance(type_, str):
+    if isinstance(type_, str):
         class_ = dcty.get_python_class_from_class_name(type_)
         if inspect.isclass(class_):
             return class_.dict_to_object(value)
-        else:
-            raise NotImplementedError
-    elif isinstance(type_, (list, tuple)):
+        raise NotImplementedError(f'Cannot get class from name {type_}')
+
+    if isinstance(type_, (list, tuple)):
         return [deserialize_with_type(t, v) for t, v in zip(type_, value)]
-    elif type_ is None:
+    if type_ is None:
         return value
-    else:
-        raise NotImplementedError(type_)
+
+    raise NotImplementedError(type_)
 
 
 def deserialize_with_typing(type_, argument):
@@ -387,12 +387,11 @@ def find_references(value, path='#'):
         return find_references_dict(value, path)
     if dcty.isinstance_base_types(value):
         return []
-    elif dcty.is_sequence(value):
+    if dcty.is_sequence(value):
         return find_references_sequence(value, path)
-    elif isinstance(value, (dessia_common.files.BinaryFile, dessia_common.files.StringFile)):
+    if isinstance(value, (dessia_common.files.BinaryFile, dessia_common.files.StringFile)):
         return []
-    else:
-        raise ValueError(value)
+    raise ValueError(value)
 
 
 def find_references_sequence(seq, path='#'):
