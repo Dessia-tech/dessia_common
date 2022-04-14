@@ -228,6 +228,8 @@ def jsonschema_from_annotation(annotation, jsonschema_element, order, editable=N
             'type': 'object', 'is_class': True,
             'properties': {'name': {'type': 'string'}}
         })
+    elif typing_ is Any:
+        jsonschema_element[key].update({'type': 'object', 'properties': {'.*': '.*'}})
     elif inspect.isclass(typing_) and issubclass(typing_, Measure):
         ann = (key, float)
         jsonschema_element = jsonschema_from_annotation(
@@ -237,11 +239,6 @@ def jsonschema_from_annotation(annotation, jsonschema_element, order, editable=N
         jsonschema_element[key]['units'] = typing_.units
     elif typing_ in [TextIO, BinaryIO] or issubclass(typing_, (BinaryFile, StringFile)):
         jsonschema_element[key].update({'type': 'text', 'is_file': True})
-    elif typing_ is Any:
-        jsonschema_element[key].update({
-            'type': 'object',
-            'properties': {'.*': '.*'}
-        })
     else:
         classname = dc.full_classname(object_=typing_, compute_for='class')
         if inspect.isclass(typing_) and issubclass(typing_, dc.DessiaObject):
