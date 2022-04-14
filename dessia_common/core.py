@@ -33,6 +33,7 @@ from dessia_common.exports import XLSXWriter
 from dessia_common.typings import JsonSerializable
 from dessia_common import templates
 from dessia_common.displays import DisplayObject, DisplaySetting
+from dessia_common.breakdown import attrmethod_getter
 
 
 _FORBIDDEN_ARGNAMES = ['self', 'cls', 'progress_callback', 'return']
@@ -562,7 +563,7 @@ class DessiaObject:
             if display_setting.selector == selector:
                 track = ''
                 try:
-                    data = attrgetter(display_setting.method)(self)(**display_setting.arguments)
+                    data = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
                 except:
                     data = None
                     track = tb.format_exc()
@@ -647,7 +648,9 @@ class PhysicalObject(DessiaObject):
         Returns a list of json describing how to call subdisplays
         """
         display_settings = DessiaObject.display_settings()
-        display_settings.append(DisplaySetting(selector='cad', type_='babylon_data', method='volmdlr_volume_model'))
+        display_settings.append(DisplaySetting(selector='cad', type_='babylon_data',
+                                               method='volmdlr_volume_model().babylon_data',
+                                               serialize_data=True))
         return display_settings
 
     def volmdlr_primitives(self):
@@ -690,11 +693,11 @@ class PhysicalObject(DessiaObject):
         """
         return self.volmdlr_volume_model().to_stl(filepath=filepath)
 
-    def _displays(self, **kwargs):
-        """
-        Compute the list of displays
-        """
-        return DessiaObject._displays(self, **kwargs)
+    # def _displays(self, **kwargs):
+    #     """
+    #     Compute the list of displays
+    #     """
+    #     return DessiaObject._displays(self, **kwargs)
 
     def babylonjs(self, use_cdn=True, debug=False, **kwargs):
         """

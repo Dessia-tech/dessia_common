@@ -5,6 +5,7 @@
 """
 
 import sys
+from ast import literal_eval
 import collections
 import numpy as npy
 
@@ -12,9 +13,28 @@ import dessia_common
 from dessia_common.utils.types import is_sequence
 
 
+def attrmethod_getter(object_, attr_methods):
+    """
+    Float with . in attributes are not handled
+    """
+    # TODO: escape . inside ()
+    for segment in attr_methods.split('.'):
+        if '(' in segment:
+            method, _, attributes = segment.partition('(')
+            attributes = attributes[:-1]
+            if attributes:
+                object_ = getattr(object_, method)(literal_eval(attributes))
+            else:
+                object_ = getattr(object_, method)()
+        else:
+            object_ = getattr(object_, segment)
+    return object_
+
+
 def extract_from_object(object_, segment):
     if is_sequence(object_):
         return object_[int(segment)]
+
     if isinstance(object_, dict):
         if segment in object_:
             return object_[segment]
