@@ -31,39 +31,39 @@ def attrmethod_getter(object_, attr_methods):
     return object_
 
 
+def extract_from_object(object_, segment):
+    if is_sequence(object_):
+        return object_[int(segment)]
+
+    if isinstance(object_, dict):
+        if segment in object_:
+            return object_[segment]
+
+        try:
+            return object_[int(segment)]
+        except ValueError:
+            # should be a tuple
+            if segment.startswith('(') and segment.endswith(')') and ',' in segment:
+                key = []
+                for subsegment in segment.strip('()').replace(' ', '').split(','):
+                    try:
+                        subkey = int(subsegment)
+                    except ValueError:
+                        subkey = subsegment
+                    key.append(subkey)
+                return object_[tuple(key)]
+            # else:
+            raise NotImplementedError(f'Cannot extract segment {segment} from object {object_}')
+
+    # Finally, it is a regular object
+    return getattr(object_, segment)
+
+
 def get_in_object_from_path(object_, path):
     segments = path.lstrip('#/').split('/')
-    if isinstance(object_, dict):
-        try:
-            element = object_[segments[0]]
-        except KeyError:
-            msg = f'Cannot get in dict path {path}: end up @ {segments[0]}. Dict keys: {object_.keys()}'
-            raise RuntimeError(msg)
-    else:
-        element = getattr(object_, segments[0])
-
-    for segment in segments[1:]:
-        if is_sequence(element):
-            element = element[int(segment)]
-        elif isinstance(element, dict):  # A dict?
-            if segment in element:
-                element = element[segment]
-            else:
-                try:
-                    key = int(segment)
-                except ValueError:
-                    # should be a tuple
-                    key = []
-                    for subsegment in segment.strip('()').replace(' ', '').split(','):
-                        try:
-                            subkey = int(subsegment)
-                        except ValueError:
-                            subkey = subsegment
-                        key.append(subkey)
-                    key = tuple(key)
-                element = element[key]
-        else:
-            element = getattr(element, segment)
+    element = object_
+    for segment in segments:
+        element = extract_from_object(element, segment)
 
     return element
 
