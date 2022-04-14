@@ -367,15 +367,14 @@ class Workflow(Block):
         self.description = description
         self.documentation = documentation
 
-        output.memorize = True
+        if output is not None:
+            output.memorize = True
 
         Block.__init__(self, input_variables, [output], name=name)
         self.output = self.outputs[0]
 
     def _data_hash(self):
-        output_hash = self.variable_indices(self.outputs[0])
-        if not isinstance(output_hash, int):
-            output_hash = sum(output_hash)
+        output_hash = hash(self.variable_indices(self.outputs[0]))
 
         base_hash = len(self.blocks) + 11 * len(self.pipes) + output_hash
         block_hash = int(sum([b.equivalent_hash() for b in self.blocks]) % 10e5)
@@ -399,8 +398,12 @@ class Workflow(Block):
 
         blocks = [b.__deepcopy__() for b in self.blocks]
         output_adress = self.variable_indices(self.output)
-        output_block = blocks[output_adress[0]]
-        output = output_block.outputs[output_adress[2]]
+        if output_adress is None:
+            output = None
+        else:
+            output_block = blocks[output_adress[0]]
+            output = output_block.outputs[output_adress[2]]
+
         copied_workflow = Workflow(blocks=blocks, pipes=[], output=output, name=self.name)
 
         pipes = [self.copy_pipe(pipe=p, copied_workflow=copied_workflow) for p in self.pipes]
@@ -580,7 +583,10 @@ class Workflow(Block):
 
             pipes.append(Pipe(variable1, variable2))
 
-        output = blocks[dict_['output'][0]].outputs[dict_['output'][2]]
+        if dict_['output'] is not None:
+            output = blocks[dict_['output'][0]].outputs[dict_['output'][2]]
+        else:
+            output = None
         temp_workflow = cls(blocks=blocks, pipes=pipes, output=output)
 
         if 'imposed_variable_values' in dict_ and 'imposed_variables' in dict_:
@@ -755,13 +761,16 @@ class Workflow(Block):
             return incoming_pipe.input_variable
         return None
 
-    def variable_indices(self, variable: Variable) -> Union[Tuple[int, int, int], int]:
+    def variable_indices(self, variable: Variable) -> Optional[Union[Tuple[int, int, int], int]]:
         """
         Returns global adress of given variable as a tuple or an int
 
         If variable is non block, return index of variable in variables sequence
         Else returns global adress (ib, i, ip)
         """
+        if variable is None:
+            return None
+
         for iblock, block in enumerate(self.blocks):
             if variable in block.inputs:
                 ib1 = iblock
@@ -845,7 +854,7 @@ class Workflow(Block):
             else:
                 continue
             if serialize_output:
-                varkey = self.variable_indices(variable)
+                varkey = str(self.variable_indices(variable))
             else:
                 varkey = variable
             variable_match[varkey] = []
@@ -855,7 +864,7 @@ class Workflow(Block):
                 other_vartype = other_variable.type_
                 if typematch(vartype, other_vartype):
                     if serialize_output:
-                        varval = self.variable_indices(other_variable)
+                        varval = str(self.variable_indices(other_variable))
                     else:
                         varval = other_variable
                     variable_match[varkey].append(varval)
@@ -1142,6 +1151,8 @@ class Workflow(Block):
         script += f"pipes = [{', '.join(['pipe_' + str(i) for i in range(len(self.pipes))])}]\n"
 
         workflow_output_index = self.variable_indices(self.output)
+        if workflow_output_index is None:
+            raise ValueError("A workflow output must be set")
         output_name = f"block_{workflow_output_index[0]}.outputs[{workflow_output_index[2]}]"
         script += f"workflow = dcw.Workflow(blocks, pipes, output={output_name},name='{self.name}')\n"
         return script
