@@ -1713,6 +1713,7 @@ class WorkflowRun(WorkflowState):
             for key, value in variable_values.items():
                 variable_values[str(key)], memo = serialize_with_pointers(value, memo=memo,
                                                                           path=f'{path}/variable_values/{key}')
+            dict_["variable_values"] = variable_values
         else:
             dict_["variable_values"] = {str(k): serialize(v) for k, v in self.variable_values.items()}
 
