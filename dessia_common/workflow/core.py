@@ -1700,10 +1700,23 @@ class WorkflowRun(WorkflowState):
         """
         Adds variable values to super WorkflowState dict
         """
+
+        if memo is None:
+            memo = {}  # To make sure we have the good ref for next steps
         dict_ = WorkflowState.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
+
         # To force migrating from dessia_common.workflow
         dict_['object_class'] = 'dessia_common.workflow.core.WorkflowRun'
-        dict_["variable_values"] = {str(k): serialize(v) for k, v in self.variable_values.items()}
+
+        if use_pointers:
+            variable_values = {}
+            for key, value in variable_values.items():
+                variable_values[str(key)], memo = serialize_with_pointers(value, memo=memo,
+                                                                          path=f'{path}/variable_values/{key}')
+            dict_["variable_values"] = variable_values
+        else:
+            dict_["variable_values"] = {str(k): serialize(v) for k, v in self.variable_values.items()}
+
         return dict_
 
     def display_settings(self) -> List[DisplaySetting]:
