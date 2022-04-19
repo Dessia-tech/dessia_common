@@ -705,7 +705,9 @@ class Workflow(Block):
             for block in output_upstreams:
                 block_upstreams.extend(self.upstream_blocks(block))
             output_upstreams = block_upstreams
-            runtime_blocks.extend(block_upstreams)
+            for candidate in block_upstreams:
+                if candidate not in runtime_blocks:
+                    runtime_blocks.append(candidate)
             i += 1
         return runtime_blocks
 
