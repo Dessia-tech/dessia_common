@@ -10,6 +10,7 @@ from dessia_common import DessiaObject
 from dessia_common.models.workflows import simulation_workflow
 from dessia_common.models.power_test import components1, component_connections1, usage1
 from dessia_common.utils.serialization import serialize
+from dessia_common.breakdown import get_in_object_from_path
 
 simulation_workflow.to_dict(use_pointers=False)
 input_values = {0:components1,
@@ -17,6 +18,11 @@ input_values = {0:components1,
                 3:usage1}
 
 workflow_run = simulation_workflow.run(input_values)
+
+system_in_values = workflow_run.variable_values[(0, 1, 0)]
+system_from_get = get_in_object_from_path(workflow_run, '#/variable_values/(0, 1, 0)')
+assert system_in_values == system_from_get
+
 print(workflow_run.log)
 
 arguments = {str(k):serialize(v) for k,v in input_values.items()}
