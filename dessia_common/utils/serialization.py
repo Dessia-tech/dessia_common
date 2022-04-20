@@ -136,7 +136,6 @@ def serialize_sequence_with_pointers(seq, memo, path):
     Serialize a sequence (list or tuple) using jsonpointers
     '''
     serialized_sequence = []
-    # print('path s  ', path)
     for ival, value in enumerate(seq):
         value_path = '{}/{}'.format(path, ival)
         serialized_value, memo = serialize_with_pointers(value, memo, path=value_path)
@@ -227,7 +226,8 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
             try:
                 obj = class_.dict_to_object(dict_,
                                             global_dict=global_dict,
-                                            pointers_memo=pointers_memo)
+                                            pointers_memo=pointers_memo,
+                                            path=path)
             except TypeError:
                 obj = class_.dict_to_object(dict_)
             return obj
@@ -247,6 +247,7 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
             annotation = None
 
         key_path = f'{path}/{key}'
+
         if key_path in pointers_memo:
             subobjects[key] = pointers_memo[key_path]
         else:
@@ -254,7 +255,6 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
                                           global_dict=global_dict,
                                           pointers_memo=pointers_memo,
                                           path=key_path)  # , enforce_pointers=False)
-
     if class_ is not None:
         obj = class_(**subobjects)
     else:
@@ -428,18 +428,29 @@ def pointer_graph(value):
 
     nodes = set()
     edges = set()
-    # print(find_references(value))
     for path, reference in find_references(value):
-        segments = path.split('/')
-        nodes.add(segments[0])
-        previous_node = segments[0]
-        for s in segments[1:]:
-            node = f'{previous_node}/{s}'
+        # Slitting path & reference to add missing nodes
+        # For path
+        path_segments = path.split('/')
+        nodes.add(path_segments[0])
+        previous_node = path_segments[0]
+        for segment in path_segments[1:]:
+            node = f'{previous_node}/{segment}'
             nodes.add(node)
             edges.add((previous_node, node))
             previous_node = node
+
+        # For reference
+        reference_segments = reference.split('/')
+        nodes.add(reference_segments[0])
+        previous_node = reference_segments[0]
+        for segment in reference_segments[1:]:
+            node = f'{previous_node}/{segment}'
+            nodes.add(node)
+            edges.add((previous_node, node))
+            previous_node = node
+
         edges.add((path, reference))
-        # print(path,'->', reference)
 
     graph = nx.DiGraph()
     graph.add_nodes_from(nodes)
@@ -486,6 +497,7 @@ def dereference_jsonpointers(dict_):  # , global_dict):
                                          global_dict=dict_,
                                          pointers_memo=pointers_memo,
                                          path=ref)
+
     return pointers_memo
 
 
@@ -561,7 +573,6 @@ def pointers_analysis(obj):
     graph = pointer_graph(dict_)
     for path1, path2 in graph.edges():
         if path1 != '#':
-            # print(path1, path2)
             if path2 in class_from_path:
                 val2_class = class_from_path[path2]
             else:
