@@ -5,6 +5,7 @@ Serialization Tools
 
 """
 
+from ast import literal_eval
 import warnings
 import inspect
 import collections
@@ -265,7 +266,7 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
 
 def deserialize_with_type(type_, value):
     if type_ in dcty.TYPES_STRINGS.values():
-        return eval(type_)(value)
+        return literal_eval(type_)(value)
     elif isinstance(type_, str):
         class_ = dcty.get_python_class_from_class_name(type_)
         if inspect.isclass(class_):
