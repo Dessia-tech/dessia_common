@@ -240,10 +240,6 @@ class DessiaObject:
         """
         Generic dict_to_object method
         """
-        # if hasattr(cls, 'DictToObject'):
-        #     deprecation_warning(name='DictToObject', object_type='Function',
-        #                         use_instead='dict_to_object')
-        #     return cls.DictToObject(dict_)
 
         if cls is not DessiaObject:
             obj = dict_to_object(dict_=dict_, class_=cls,
@@ -259,9 +255,7 @@ class DessiaObject:
                                  pointers_memo=pointers_memo,
                                  path=path)
             return obj
-        # else:
-            # Using default
-            # TODO: use jsonschema
+
         raise NotImplementedError('No object_class in dict')
 
     @classmethod
