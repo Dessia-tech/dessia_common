@@ -3,8 +3,7 @@
 """
 Gathers all workflow relative features
 """
-
-
+import ast
 import time
 import tempfile
 import json
@@ -388,6 +387,18 @@ class Workflow(Block):
         for block1, block2 in zip(self.blocks, other_object.blocks):
             if not block1.equivalent(block2):
                 return False
+
+        if len(self.imposed_variable_values) != len(other_object.imposed_variable_values) : 
+            return False
+        for imposed_key1, imposed_key2 in zip(self.imposed_variable_values.keys(),
+                                                  other_object.imposed_variable_values.keys()):
+            if hash(imposed_key1) != hash(imposed_key2):
+                return False
+            imposed_value1 = self.imposed_variable_values[imposed_key1]
+            imposed_value2 = other_object.imposed_variable_values[imposed_key2]
+            if hash(imposed_value1) != hash(imposed_value2):
+                return False
+
         return True
 
     def __deepcopy__(self, memo=None):
@@ -546,7 +557,7 @@ class Workflow(Block):
 
             else:
                 ser_value = serialize(value)
-            imposed_variable_values[var_index] = ser_value
+            imposed_variable_values[str(var_index)] = ser_value
 
         dict_.update({'description': self.description, 'documentation': self.documentation,
                       'imposed_variable_values': imposed_variable_values})
@@ -600,7 +611,8 @@ class Workflow(Block):
                     imposed_variable_values[variable] = variable.default_value
             if 'imposed_variable_values' in dict_:
                 # New format with a dict
-                for variable_index, serialized_value in dict_['imposed_variable_values'].items():
+                for variable_index_str, serialized_value in dict_['imposed_variable_values'].items():
+                    variable_index = ast.literal_eval(variable_index_str)
                     value = deserialize(serialized_value, global_dict=global_dict, pointers_memo=pointers_memo)
                     variable = temp_workflow.variable_from_index(variable_index)
                     imposed_variable_values[variable] = value
