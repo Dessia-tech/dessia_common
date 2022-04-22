@@ -63,6 +63,10 @@ def get_in_object_from_path(object_, path):
     segments = path.lstrip('#/').split('/')
     element = object_
     for segment in segments:
+        if '$ref' in element:
+            # Going down in the object and it is a reference
+            # Evaluating subreference
+            element = get_in_object_from_path(object_, element['$ref'])
         element = extract_from_object(element, segment)
 
     return element
