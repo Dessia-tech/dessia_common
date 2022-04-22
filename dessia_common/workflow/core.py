@@ -609,7 +609,7 @@ class Workflow(Block):
                 variable = temp_workflow.variable_from_index(variable_index)
 
                 imposed_variable_values[variable] = value
-        else :
+        else:
             imposed_variable_values = {}
             if 'imposed_variable_indices' in dict_:
                 for variable_index in dict_['imposed_variable_indices']:
