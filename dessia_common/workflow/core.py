@@ -387,10 +387,10 @@ class Workflow(Block):
             if not block1.equivalent(block2):
                 return False
 
-        if len(self.imposed_variable_values) != len(other_object.imposed_variable_values) : 
+        if len(self.imposed_variable_values) != len(other_object.imposed_variable_values):
             return False
         for imposed_key1, imposed_key2 in zip(self.imposed_variable_values.keys(),
-                                                  other_object.imposed_variable_values.keys()):
+                                              other_object.imposed_variable_values.keys()):
             if hash(imposed_key1) != hash(imposed_key2):
                 return False
             imposed_value1 = self.imposed_variable_values[imposed_key1]
