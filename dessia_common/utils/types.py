@@ -29,11 +29,11 @@ SERIALIZED_BUILTINS = ['float', 'builtins.float', 'int', 'builtins.int', 'str', 
 def full_classname(object_, compute_for: str = 'instance'):
     if compute_for == 'instance':
         return object_.__class__.__module__ + '.' + object_.__class__.__name__
-    elif compute_for == 'class':
+    if compute_for == 'class':
         return object_.__module__ + '.' + object_.__name__
-    else:
-        msg = 'Cannot compute {} full classname for object {}'
-        raise NotImplementedError(msg.format(compute_for, object_))
+
+    msg = 'Cannot compute {} full classname for object {}'
+    raise NotImplementedError(msg.format(compute_for, object_))
 
 
 def is_jsonable(x):
@@ -134,10 +134,10 @@ def serialize_union_typing(args):
     if len(args) == 2 and type(None) in args:
         # This is a false Union => Is a default value set to None
         return serialize_typing(args[0])
-    else:
-        # Types union
-        argnames = ', '.join([type_fullname(a) for a in args])
-        return f'Union[{argnames}]'
+
+    # Types union
+    argnames = ', '.join([type_fullname(a) for a in args])
+    return f'Union[{argnames}]'
 
 
 def type_fullname(arg):
@@ -178,9 +178,9 @@ def deserialize_typing(serialized_typing):
             full_argname = ''
         if toptype == 'List':
             return List[type_from_argname(full_argname)]
-        elif toptype == 'Tuple':
+        if toptype == 'Tuple':
             return deserialize_tuple_typing(full_argname)
-        elif toptype == 'Dict':
+        if toptype == 'Dict':
             args = full_argname.split(', ')
             key_type = type_from_argname(args[0])
             value_type = type_from_argname(args[1])
@@ -194,14 +194,14 @@ def deserialize_tuple_typing(full_argname):
         args = full_argname.split(', ')
         if len(args) == 0:
             return Tuple
-        elif len(args) == 1:
+        if len(args) == 1:
             type_ = type_from_argname(args[0])
             return Tuple[type_]
-        elif len(set(args)) == 1:
+        if len(set(args)) == 1:
             type_ = type_from_argname(args[0])
             return Tuple[type_, ...]
-        else:
-            raise TypeError("Heterogenous tuples are forbidden as types for workflow non-block variables.")
+
+        raise TypeError("Heterogenous tuples are forbidden as types for workflow non-block variables.")
     return Tuple[type_from_argname(full_argname)]
 
 

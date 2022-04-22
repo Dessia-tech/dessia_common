@@ -35,12 +35,11 @@ def cut_tree_final_branches(graph: nx.DiGraph):
 def explore_tree_from_leaves(graph: nx.DiGraph):
     exploration_order = []
     explored = {n: False for n in graph.nodes}
-    nn = graph.number_of_nodes()
-    # print('nn', nn)
+    number_nodes = graph.number_of_nodes()
     successors = {}
 
-    ns = 0
-    while nn:
+    # ns = 0
+    while number_nodes:
         found_node = False
         # Finding a starting node
         for node in graph.nodes:
@@ -51,7 +50,7 @@ def explore_tree_from_leaves(graph: nx.DiGraph):
                 else:
                     node_successors = list(graph.successors(node))
                     successors[node] = node_successors
-                    ns += 1
+                    # ns += 1
 
                 for out_node in node_successors:
                     if not explored[out_node]:
@@ -62,7 +61,7 @@ def explore_tree_from_leaves(graph: nx.DiGraph):
                     # Mark explored
                     explored[node] = True
                     exploration_order.append(node)
-                    nn -= 1
+                    number_nodes -= 1
                     found_node = True
                     break
         if not found_node:
