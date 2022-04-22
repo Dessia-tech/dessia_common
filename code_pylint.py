@@ -19,10 +19,10 @@ UNWATCHED_ERRORS = ['fixme', 'trailing-whitespace', 'import-error']
 
 MAX_ERROR_BY_TYPE = {
                      'protected-access': 26,
-                     'invalid-name': 8,
+                     'invalid-name': 7,
                      'consider-using-f-string': 10,
                      'no-else-return': 4,
-                     'arguments-differ': 12,
+                     'arguments-differ': 2,
                      'no-member': 1,
                      'too-many-locals': 14,
                      'wrong-import-order': 10,
