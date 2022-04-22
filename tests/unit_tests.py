@@ -249,6 +249,10 @@ assert directattr == 'TestStr'
 # Test to_dict/dict_to_object
 d = standalone_object.to_dict()
 obj = StandaloneObject.dict_to_object(d)
+standalone_object._check_platform()
+
+# Testing not empty cad displays
+assert standalone_object._display_from_selector('cad').data
 
 assert standalone_object == obj
 

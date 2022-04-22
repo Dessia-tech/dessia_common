@@ -33,6 +33,7 @@ from dessia_common.exports import XLSXWriter
 from dessia_common.typings import JsonSerializable
 from dessia_common import templates
 from dessia_common.displays import DisplayObject, DisplaySetting
+from dessia_common.breakdown import attrmethod_getter
 
 
 _FORBIDDEN_ARGNAMES = ['self', 'cls', 'progress_callback', 'return']
@@ -239,10 +240,6 @@ class DessiaObject:
         """
         Generic dict_to_object method
         """
-        # if hasattr(cls, 'DictToObject'):
-        #     deprecation_warning(name='DictToObject', object_type='Function',
-        #                         use_instead='dict_to_object')
-        #     return cls.DictToObject(dict_)
 
         if cls is not DessiaObject:
             obj = dict_to_object(dict_=dict_, class_=cls,
@@ -258,9 +255,7 @@ class DessiaObject:
                                  pointers_memo=pointers_memo,
                                  path=path)
             return obj
-        # else:
-            # Using default
-            # TODO: use jsonschema
+
         raise NotImplementedError('No object_class in dict')
 
     @classmethod
@@ -550,8 +545,7 @@ class DessiaObject:
         Returns a list of json describing how to call subdisplays
         """
         return [DisplaySetting('markdown', 'markdown', 'to_markdown', None),
-                DisplaySetting('plot_data', 'plot_data', 'plot_data', None, serialize_data=True)
-                ]
+                DisplaySetting('plot_data', 'plot_data', 'plot_data', None, serialize_data=True)]
 
     def _display_from_selector(self, selector: str, **kwargs):
         """
@@ -563,17 +557,15 @@ class DessiaObject:
             if display_setting.selector == selector:
                 track = ''
                 try:
-                    data = attrgetter(display_setting.method)(self)(**display_setting.arguments)
+                    data = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
                 except:
                     data = None
                     track = tb.format_exc()
 
                 if display_setting.serialize_data:
                     data = serialize(data)
-                return DisplayObject(type_=display_setting.type,
-                                     data=data,
-                                     reference_path=reference_path,
-                                     traceback=track)
+                return DisplayObject(type_=display_setting.type, data=data,
+                                     reference_path=reference_path, traceback=track)
         raise ValueError(f'No such selector {selector} in display of class {self.__class__.__name__}')
 
     def _displays(self, **kwargs) -> List[JsonSerializable]:
@@ -649,7 +641,9 @@ class PhysicalObject(DessiaObject):
         Returns a list of json describing how to call subdisplays
         """
         display_settings = DessiaObject.display_settings()
-        display_settings.append(DisplaySetting('cad', 'babylon_data', None))
+        display_settings.append(DisplaySetting(selector='cad', type_='babylon_data',
+                                               method='volmdlr_volume_model().babylon_data',
+                                               serialize_data=True))
         return display_settings
 
     def volmdlr_primitives(self):
@@ -692,19 +686,11 @@ class PhysicalObject(DessiaObject):
         """
         return self.volmdlr_volume_model().to_stl(filepath=filepath)
 
-    def _displays(self, **kwargs):
-        """
-        Compute the list of displays
-        """
-        reference_path = kwargs.get('reference_path', '')
-        displays = DessiaObject._displays(self, **kwargs)
-
-        model = self.volmdlr_volume_model()
-        display_ = DisplayObject(type_='cad', data=model.babylon_data(),
-                                 reference_path=reference_path)
-        displays.append(display_.to_dict())
-
-        return displays
+    # def _displays(self, **kwargs):
+    #     """
+    #     Compute the list of displays
+    #     """
+    #     return DessiaObject._displays(self, **kwargs)
 
     def babylonjs(self, use_cdn=True, debug=False, **kwargs):
         """
@@ -1048,7 +1034,7 @@ def concatenate_attributes(prefix, suffix, type_: str = 'str'):
 def deepattr_to_sequence(deepattr: str):
     sequence = deepattr.split('/')
     healed_sequence = []
-    for i, attribute in enumerate(sequence):
+    for attribute in sequence:
         try:
             healed_sequence.append(int(attribute))
         except ValueError:

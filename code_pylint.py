@@ -10,20 +10,19 @@ Changes:
 
 import os
 import sys
+from pylint import __version__
 from pylint.lint import Run
 
-MIN_NOTE = 9.10
-# RATCHET_NOTE = 0.4
-# RATCHET_ERRORS = 3
+MIN_NOTE = 9.17
 
 UNWATCHED_ERRORS = ['fixme', 'trailing-whitespace', 'import-error']
 
 MAX_ERROR_BY_TYPE = {
                      'protected-access': 26,
-                     'invalid-name': 19,
+                     'invalid-name': 8,
                      'consider-using-f-string': 10,
-                     'no-else-return': 17,
-                     'arguments-differ': 2,
+                     'no-else-return': 4,
+                     'arguments-differ': 12,
                      'no-member': 1,
                      'too-many-locals': 14,
                      'wrong-import-order': 10,
@@ -31,8 +30,8 @@ MAX_ERROR_BY_TYPE = {
                      'unused-import': 1,
                      'unused-argument': 6,
                      'cyclic-import': 11,
-                     'no-self-use': 8,
-                     'unused-variable': 6,
+                     'no-self-use': 6,
+                     'unused-variable': 1,
                      'trailing-whitespace': 11,
                      'empty-docstring': 7,
                      'missing-module-docstring': 9,
@@ -87,6 +86,8 @@ MAX_ERROR_BY_TYPE = {
                      'import-error': 0,
                      'unsubscriptable-object': 0
                      }
+
+print('pylint version: ', __version__)
 
 f = open(os.devnull, 'w')
 
