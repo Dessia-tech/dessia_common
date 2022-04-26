@@ -53,7 +53,7 @@ class StandaloneSubobject(PhysicalObject):
     def __init__(self, floatarg: Distance, name: str = 'Standalone Subobject'):
         self.floatarg = floatarg
 
-        DessiaObject.__init__(self, name=name)
+        PhysicalObject.__init__(self, name=name)
 
     @classmethod
     def generate(cls, seed: int) -> 'StandaloneSubobject':
