@@ -1012,6 +1012,9 @@ class Workflow(Block):
 
         state.output_value = state.values[self.outputs[0]]
 
+        name_index = str(len(self.inputs) + 1)
+        if name is None and name_index in input_values:
+            name = input_values[name_index]
         if not name:
             name = self.name + ' run'
         return state.to_workflow_run(name=name)
