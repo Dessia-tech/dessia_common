@@ -206,7 +206,6 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
 
     if global_dict is None:
         global_dict = dict_
-        print('deref', dict_['object_class'])
         pointers_memo.update(dereference_jsonpointers(dict_))
 
     if '$ref' in dict_:
