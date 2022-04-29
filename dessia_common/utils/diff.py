@@ -34,29 +34,29 @@ def diff(value1, value2, path='#'):
         if value1 != value2:
             diff_values.append((path, value1, value2))
         return diff_values, missing_keys_in_other_object, invalid_types
-    elif isinstance(value1, dict):
+    if isinstance(value1, dict):
         return dict_diff(value1, value2, path=path)
     # elif hasattr(value1, '_data_eq'):
-    else:
-        # Should be object
-        if hasattr(value1, '_data_eq'):
-            # DessiaObject
-            if value1._data_eq(value2):
-                return [], [], []
 
-            # Use same code snippet as in data_eq
-            eq_dict = value1._serializable_dict()
-            if 'name' in eq_dict:
-                del eq_dict['name']
-
-            other_eq_dict = value2._serializable_dict()
-
-            return dict_diff(eq_dict, other_eq_dict)
-
-        if value1 == value2:
+    # Should be object
+    if hasattr(value1, '_data_eq'):
+        # DessiaObject
+        if value1._data_eq(value2):
             return [], [], []
 
-        raise NotImplementedError('Undefined type in diff: {}'.format(type(value1)))
+        # Use same code snippet as in data_eq
+        eq_dict = value1._serializable_dict()
+        if 'name' in eq_dict:
+            del eq_dict['name']
+
+        other_eq_dict = value2._serializable_dict()
+
+        return dict_diff(eq_dict, other_eq_dict)
+
+    if value1 == value2:
+        return [], [], []
+
+    raise NotImplementedError('Undefined type in diff: {}'.format(type(value1)))
 
 
 def dict_diff(dict1, dict2, path='#'):
