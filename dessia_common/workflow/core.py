@@ -6,6 +6,7 @@ Gathers all workflow relative features
 
 
 import time
+import datetime
 import tempfile
 import json
 import webbrowser
@@ -639,8 +640,8 @@ class Workflow(Block):
                     arguments_values[i] = deserialized_value
 
             name_index = len(self.inputs) + 1
-            if str(name_index) in dict_:
-                name = dict_[str(name_index)]
+            if name_index in dict_:
+                name = dict_[name_index]
             else:
                 name = None
             arguments = {'input_values': arguments_values, 'name': name}
@@ -974,6 +975,7 @@ class Workflow(Block):
         state.activate_inputs(check_all_inputs=True)
 
         start_time = time.time()
+        start_timestamp = datetime.datetime.now()
 
         log_msg = 'Starting workflow run at {}'
         log_line = log_msg.format(time.strftime('%d/%m/%Y %H:%M:%S UTC', time.gmtime(start_time)))
@@ -993,7 +995,8 @@ class Workflow(Block):
         state.output_value = state.values[self.outputs[0]]
 
         if not name:
-            name = self.name + ' run'
+            timestamp = start_timestamp.strftime("%m-%d (%H:%M)")
+            name = f"{self.name} @ [{timestamp}]"
         return state.to_workflow_run(name=name)
 
     def start_run(self, input_values=None):
