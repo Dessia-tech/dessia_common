@@ -41,7 +41,7 @@ def extract_from_object(object_, segment):
 
         try:
             return object_[int(segment)]
-        except ValueError:
+        except ValueError as error:
             # should be a tuple
             if segment.startswith('(') and segment.endswith(')') and ',' in segment:
                 key = []
@@ -53,7 +53,7 @@ def extract_from_object(object_, segment):
                     key.append(subkey)
                 return object_[tuple(key)]
             # else:
-            raise NotImplementedError(f'Cannot extract segment {segment} from object {object_}')
+            raise ValueError(f'Cannot extract segment {segment} from object {object_}') from error
 
     # Finally, it is a regular object
     return getattr(object_, segment)
@@ -67,7 +67,11 @@ def get_in_object_from_path(object_, path):
             # Going down in the object and it is a reference
             # Evaluating subreference
             element = get_in_object_from_path(object_, element['$ref'])
-        element = extract_from_object(element, segment)
+        try:
+            element = extract_from_object(element, segment)
+        except ValueError as err:
+            print(err)
+            raise ValueError(f'Cannot get segment {segment} from path {path} in element {element}') from err
 
     return element
 

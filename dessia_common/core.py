@@ -420,10 +420,10 @@ class DessiaObject:
                 value = dict_[str(i)]
                 try:
                     deserialized_value = deserialize_argument(arg_specs, value)
-                except TypeError:
+                except TypeError as err:
                     msg = 'Error in deserialisation of value: '
                     msg += f'{value} of expected type {arg_specs}'
-                    raise TypeError(msg)
+                    raise TypeError(msg) from err
                 arguments[arg] = deserialized_value
         return arguments
 
@@ -527,7 +527,7 @@ class DessiaObject:
             try:
                 plot_datas = self.plot_data(**kwargs)
             except TypeError as error:
-                raise TypeError(f'{self.__class__.__name__}.{error}')
+                raise TypeError(f'{self.__class__.__name__}.{error}') from error
             for data in plot_datas:
                 if hasattr(data, 'mpl_plot'):
                     ax = data.mpl_plot()
@@ -601,6 +601,7 @@ class DessiaObject:
                                                             ' after serialization/deserialization')
         copied_object = self.copy()
         if not copied_object._data_eq(self):
+            print('data diff: ', self._data_diff(copied_object))
             raise dessia_common.errors.CopyError('Object is not equal to itself'
                                                  ' after copy')
 

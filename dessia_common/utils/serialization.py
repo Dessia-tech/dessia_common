@@ -155,17 +155,17 @@ def deserialize(serialized_element, sequence_annotation: str = 'List',
             return pointers_memo[path]
 
     if isinstance(serialized_element, dict):
-        try:
-            return dict_to_object(serialized_element, global_dict=global_dict,
-                                  pointers_memo=pointers_memo,
-                                  path=path)
-        except TypeError:
-            warnings.warn(f'specific dict_to_object of class {serialized_element.__class__.__name__}'
-                          ' should implement global_dict and'
-                          ' pointers_memo arguments',
-                          Warning)
-            return dict_to_object(serialized_element)
-    elif dcty.is_sequence(serialized_element):
+        # try:
+        return dict_to_object(serialized_element, global_dict=global_dict,
+                              pointers_memo=pointers_memo,
+                              path=path)
+        # except TypeError:
+        #     warnings.warn(f'specific dict_to_object of class {serialized_element.__class__.__name__}'
+        #                   ' should implement global_dict and'
+        #                   ' pointers_memo arguments',
+        #                   Warning)
+        #     return dict_to_object(serialized_element)
+    if dcty.is_sequence(serialized_element):
         return deserialize_sequence(sequence=serialized_element,
                                     annotation=sequence_annotation,
                                     global_dict=global_dict,
@@ -206,6 +206,7 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
 
     if global_dict is None:
         global_dict = dict_
+        print('deref', dict_['object_class'])
         pointers_memo.update(dereference_jsonpointers(dict_))
 
     if '$ref' in dict_:
@@ -229,7 +230,10 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
                                             pointers_memo=pointers_memo,
                                             path=path)
             except TypeError:
+                warnings.warn(f'specific to_dict of class {class_.__name__} '
+                              'should implement use_pointers, memo and path arguments', Warning)
                 obj = class_.dict_to_object(dict_)
+
             return obj
 
         class_argspec = inspect.getfullargspec(class_)
@@ -346,10 +350,9 @@ def deserialize_argument(type_, argument):
     """
     if argument is None:
         return None
-
     if dcty.is_typing(type_):
         return deserialize_with_typing(type_, argument)
-    elif type_ is TextIO:
+    if type_ is TextIO:
         deserialized_arg = argument
     elif type_ is BinaryIO:
         # files are supplied as io.BytesIO  which is compatible with : BinaryIO
@@ -507,7 +510,7 @@ def pointer_graph_elements(value, path='#'):
         return pointer_graph_elements_dict(value, path)
     if dcty.isinstance_base_types(value):
         return [], []
-    elif dcty.is_sequence(value):
+    if dcty.is_sequence(value):
         return pointer_graph_elements_sequence(value, path)
 
     raise ValueError(value)

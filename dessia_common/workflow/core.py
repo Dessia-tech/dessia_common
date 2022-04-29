@@ -339,8 +339,8 @@ class Workflow(Block):
             self.variables.extend(block.outputs)
             try:
                 self.coordinates[block] = (0, 0)
-            except ValueError:
-                raise ValueError(f"Cannot serialize block {block} ({block.name})")
+            except ValueError as err:
+                raise ValueError(f"Cannot serialize block {block} ({block.name})") from err
 
         for pipe in self.pipes:
             upstream_var = pipe.input_variable
@@ -1074,13 +1074,13 @@ class Workflow(Block):
                 if type1 != type2:
                     try:
                         issubclass(pipe.input_variable.type_, pipe.output_variable.type_)
-                    except TypeError:  # TODO: need of a real typing check
+                    except TypeError as error:  # TODO: need of a real typing check
                         consistent = True
                         if not consistent:
                             raise TypeError(f"Inconsistent pipe type from pipe input {pipe.input_variable.name}"
                                             f"to pipe output {pipe.output_variable.name}: "
                                             f"{pipe.input_variable.type_} incompatible with"
-                                            f"{pipe.output_variable.type_}")
+                                            f"{pipe.output_variable.type_}") from error
         return True
 
     def package_mix(self) -> Dict[str, float]:
