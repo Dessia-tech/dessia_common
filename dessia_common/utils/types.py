@@ -3,6 +3,7 @@
 """
 
 """
+from ast import literal_eval
 from typing import Any, Dict, List, Tuple, Type, Union, TextIO, BinaryIO, get_origin, get_args
 
 import dessia_common as dc
@@ -23,6 +24,8 @@ SEQUENCE_TYPINGS = ['List', 'Sequence', 'Iterable']
 TYPES_FROM_STRING = {'unicode': str, 'str': str, 'float': float, 'int': int, 'bool': bool}
 
 SERIALIZED_BUILTINS = ['float', 'builtins.float', 'int', 'builtins.int', 'str', 'builtins.str', 'bool', 'builtins.bool']
+
+_PYTHON_CLASS_CACHE = {}
 
 
 def full_classname(object_, compute_for: str = 'instance'):
@@ -67,9 +70,16 @@ def isinstance_base_types(obj):
 
 
 def get_python_class_from_class_name(full_class_name):
+    cached_value = _PYTHON_CLASS_CACHE.get(full_class_name, None)
+    if cached_value is not None:
+        return cached_value
+
     module_name, class_name = full_class_name.rsplit('.', 1)
     module = import_module(module_name)
     class_ = getattr(module, class_name)
+
+    # Storing in cache
+    _PYTHON_CLASS_CACHE[full_class_name] = class_
     return class_
 
 
@@ -152,8 +162,7 @@ def type_from_argname(argname):
     if argname:
         if splitted_argname[0] != '__builtins__':
             return get_python_class_from_class_name(argname)
-        # TODO Check for dangerous eval
-        return eval(splitted_argname[1])
+        return literal_eval(splitted_argname[1])
     return Any
 
 

@@ -3,6 +3,8 @@
 """
 
 """
+
+import time
 import sys
 import warnings
 import math
@@ -12,7 +14,7 @@ import collections
 from copy import deepcopy
 import inspect
 import json
-from operator import attrgetter
+# from operator import attrgetter
 
 from typing import List, Dict, Any, Tuple, get_type_hints
 import traceback as tb
@@ -580,8 +582,36 @@ class DessiaObject:
             displays.append(display_.to_dict())
         return displays
 
-    def to_markdown(self):
+    def to_markdown(self) -> str:
+        """
+        Render a markdown of the object output type: string
+        """
         return templates.dessia_object_markdown_template.substitute(name=self.name)
+
+    def _performance_analysis(self):
+        """
+        Prints time of rendering some commons operations (serialization, hash, displays)
+        """
+        data_hash_time = time.time()
+        self._data_hash()
+        data_hash_time = time.time() - data_hash_time
+        print(f'Data hash time: {round(data_hash_time, 3)} seconds')
+
+        todict_time = time.time()
+        dict_ = self.to_dict()
+        todict_time = time.time() - todict_time
+        print(f'to_dict time: {round(todict_time, 3)} seconds')
+
+        dto_time = time.time()
+        self.dict_to_object(dict_)
+        dto_time = time.time() - dto_time
+        print(f'dict_to_object time: {round(dto_time, 3)} seconds')
+
+        for display_setting in self.display_settings():
+            display_time = time.time()
+            self._display_from_selector(display_setting.selector)
+            display_time = time.time() - display_time
+            print(f'Generation of display {display_setting.selector} in: {round(display_time, 6)} seconds')
 
     def _check_platform(self):
         """
@@ -625,8 +655,7 @@ class DessiaObject:
         writer = XLSXWriter(self)
         writer.save_to_stream(stream)
 
-    @staticmethod
-    def _export_formats():
+    def _export_formats(self):
         formats = [{"extension": "json", "method_name": "save_to_stream", "text": True, "args": {}},
                    {"extension": "xlsx", "method_name": "to_xlsx_stream", "text": False, "args": {}}]
         return formats
@@ -708,9 +737,8 @@ class PhysicalObject(DessiaObject):
                                                                    use_cdn=use_cdn,
                                                                    debug=debug)
 
-    @staticmethod
-    def _export_formats():
-        formats = DessiaObject._export_formats()
+    def _export_formats(self):
+        formats = DessiaObject._export_formats(self)
         formats3d = [{"extension": "step", "method_name": "to_step_stream", "text": True, "args": {}},
                      {"extension": "stl", "method_name": "to_stl_stream", "text": False, "args": {}}]
         formats.extend(formats3d)

@@ -19,7 +19,7 @@ UNWATCHED_ERRORS = ['fixme', 'trailing-whitespace', 'import-error']
 
 MAX_ERROR_BY_TYPE = {
                      'protected-access': 26,
-                     'invalid-name': 8,
+                     'invalid-name': 7,
                      'consider-using-f-string': 10,
                      'no-else-return': 0,
                      'arguments-differ': 12,
@@ -52,7 +52,6 @@ MAX_ERROR_BY_TYPE = {
                      'consider-using-get': 2,
                      'undefined-loop-variable': 2,
                      'consider-using-with': 2,
-                     'eval-used': 2,
                      'too-many-nested-blocks': 2,
                      'bad-staticmethod-argument': 1,
                      'too-many-public-methods': 2,  # Try to lower by splitting DessiaObject and Workflow
@@ -63,6 +62,7 @@ MAX_ERROR_BY_TYPE = {
                      'use-maxsplit-arg': 1,
                      'duplicate-code': 1,
                      # No tolerance errors
+                     'eval-used': 0,
                      'redefined-builtin': 0,
                      'arguments-renamed': 0,
                      'ungrouped-imports': 0,
