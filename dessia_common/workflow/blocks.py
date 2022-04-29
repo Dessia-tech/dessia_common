@@ -39,8 +39,9 @@ def set_inputs_from_function(method, inputs=None):
             try:
                 annotations = get_type_hints(method)
                 type_ = type_from_annotation(annotations[argument], module=method.__module__)
-            except KeyError:
-                raise UntypedArgumentError(f"Argument {argument} of method/function {method.__name__} has no typing")
+            except KeyError as error:
+                raise UntypedArgumentError(f"Argument {argument} of method/function {method.__name__} has no typing")\
+                    from error
             if iarg >= nargs - ndefault_args:
                 default = args_specs.defaults[ndefault_args - nargs + iarg]
                 input_ = TypedVariableWithDefaultValue(type_=type_, default_value=default, name=argument)
