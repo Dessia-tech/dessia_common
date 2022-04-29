@@ -7,8 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+- performance analysis function
+
 ### Fixed
 - Any typing does not trigger error with subclass anymore
+
+### Performance
+- types: caching type from calling import_module
 
 ## v0.7.0
 
