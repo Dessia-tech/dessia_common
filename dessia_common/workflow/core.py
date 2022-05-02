@@ -1737,10 +1737,10 @@ class WorkflowRun(WorkflowState):
         sorted_d_blocks = sorted(d_blocks, key=lambda b: b.order)
         for block in sorted_d_blocks:
             block_index = self.workflow.blocks.index(block)
-            block_display = block.display_settings(block_index=block_index)
+            block_display = block.display_settings()
             block_display.method = 'block_display'
             block_display.arguments = {'block_index': block_index}
-            display_settings.append(block_display)
+            display_settings.extend(block_display)
 
         if isinstance(self.output_value, DessiaObject):
             output_display_settings = [ds.compose('output_value') for ds in self.output_value.display_settings()]
