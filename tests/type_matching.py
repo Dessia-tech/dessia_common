@@ -1,11 +1,13 @@
 from dessia_common.utils.types import typematch
-from dessia_common import DessiaObject
+from dessia_common import DessiaObject, PhysicalObject
 from dessia_common.forms import StandaloneObject, StandaloneObjectWithDefaultValues
-from typing import List, Tuple, Union, Any, Optional
+from typing import List, Tuple, Union, Any, Optional, Dict
 from dessia_common.typings import Measure
 
+# TRIVIAL AND SPECIFIC
 assert typematch(DessiaObject, Any)
 assert typematch(int, Any)
+assert typematch(int, float) and not typematch(float, int)
 
 # INHERITANCE
 # DessiaObject should pass a test against object, but not the other way around
@@ -23,8 +25,13 @@ assert typematch(List[StandaloneObjectWithDefaultValues], List[StandaloneObject]
 assert typematch(Tuple[int, str], Tuple[int, str])
 assert not typematch(Tuple[int, int], Tuple[str, int])
 
+# DICTS
+assert typematch(Dict[str, PhysicalObject], Dict[str, DessiaObject])
+assert not typematch(Dict[str, str], Dict[int, str]) and not typematch(Dict[str, str], Dict[str, int])
+
 # DEFAULT VALUES
 assert typematch(Optional[List[StandaloneObject]], List[DessiaObject])
+assert typematch(List[StandaloneObject], Optional[List[DessiaObject]])
 assert typematch(Union[List[StandaloneObject], type(None)], List[DessiaObject])
 
 # UNION
@@ -33,7 +40,7 @@ assert not typematch(DessiaObject, Union[str, int])
 assert not typematch(Union[DessiaObject, int], DessiaObject)
 assert typematch(StandaloneObjectWithDefaultValues, Union[DessiaObject, StandaloneObject])
 assert typematch(Union[str, int], Union[str, int])
-# assert not typematch(Union[str, int], Union[str, int, bool])  # TODO Not implemented yet
+assert typematch(Union[str, int], Union[bool, int, str])
 assert typematch(Union[str, int], Union[int, str])
 
 # UNEQUAL COMPLEX
