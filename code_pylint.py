@@ -1,24 +1,27 @@
 '''
 Read pylint errors to see if number of errors does not exceed specified limits
-v1.1
+v1.2
 
 Changes:
     v1.1: move imports to top
+    v1.2: limit to 100 message to avoid overflow, global note check at end, ratchet effects
 '''
+
 
 import os
 import sys
+from pylint import __version__
 from pylint.lint import Run
 
-MIN_NOTE = 9.1
+MIN_NOTE = 9.17
 
 UNWATCHED_ERRORS = ['fixme', 'trailing-whitespace', 'import-error']
 
 MAX_ERROR_BY_TYPE = {
                      'protected-access': 26,
-                     'invalid-name': 19,
+                     'invalid-name': 7,
                      'consider-using-f-string': 10,
-                     'no-else-return': 17,
+                     'no-else-return': 0,
                      'arguments-differ': 12,
                      'no-member': 1,
                      'too-many-locals': 14,
@@ -28,7 +31,7 @@ MAX_ERROR_BY_TYPE = {
                      'unused-argument': 6,
                      'cyclic-import': 11,
                      'no-self-use': 6,
-                     'unused-variable': 6,
+                     'unused-variable': 1,
                      'trailing-whitespace': 11,
                      'empty-docstring': 7,
                      'missing-module-docstring': 9,
@@ -37,7 +40,7 @@ MAX_ERROR_BY_TYPE = {
                      'unnecessary-comprehension': 5,
                      'no-value-for-parameter': 2,
                      'too-many-return-statements': 8,
-                     'raise-missing-from': 6,
+                     'raise-missing-from': 0,
                      'consider-merging-isinstance': 6,
                      'abstract-method': 6,
                      'import-outside-toplevel': 7,
@@ -49,7 +52,6 @@ MAX_ERROR_BY_TYPE = {
                      'consider-using-get': 2,
                      'undefined-loop-variable': 2,
                      'consider-using-with': 2,
-                     'eval-used': 2,
                      'too-many-nested-blocks': 2,
                      'bad-staticmethod-argument': 1,
                      'too-many-public-methods': 2,  # Try to lower by splitting DessiaObject and Workflow
@@ -60,6 +62,7 @@ MAX_ERROR_BY_TYPE = {
                      'use-maxsplit-arg': 1,
                      'duplicate-code': 1,
                      # No tolerance errors
+                     'eval-used': 0,
                      'redefined-builtin': 0,
                      'arguments-renamed': 0,
                      'ungrouped-imports': 0,
@@ -84,6 +87,8 @@ MAX_ERROR_BY_TYPE = {
                      'unsubscriptable-object': 0
                      }
 
+print('pylint version: ', __version__)
+
 f = open(os.devnull, 'w')
 
 old_stdout = sys.stdout
@@ -101,18 +106,13 @@ else:
     pylint_note = results.linter.stats['global_note']
     PYLINT_OBJECT_STATS = False
 
-print('Pylint note: ', pylint_note)
-assert pylint_note >= MIN_NOTE
-print('You can increase MIN_NOTE in pylint to {} (actual: {})'.format(pylint_note,
-                                                                      MIN_NOTE))
-
 
 def extract_messages_by_type(type_):
     return [m for m in results.linter.reporter.messages if m.symbol == type_]
 
 
-# uncontrolled_errors = {}
 error_detected = False
+error_over_ratchet_limit = False
 
 if PYLINT_OBJECT_STATS:
     stats_by_msg = results.linter.stats.by_msg
@@ -126,21 +126,32 @@ for error_type, number_errors in stats_by_msg.items():
         else:
             max_errors = 0
 
+        # if number_errors < max_errors - RATCHET_ERRORS:
+        #     error_over_ratchet_limit = True
+
         if number_errors > max_errors:
             error_detected = True
             print('Fix some {} errors: {}/{}'.format(error_type,
                                                      number_errors,
                                                      max_errors))
-            for message in extract_messages_by_type(error_type):
+            for message in extract_messages_by_type(error_type)[:30]:
                 print('{} line {}: {}'.format(message.path, message.line, message.msg))
         elif number_errors < max_errors:
             print('You can lower number of {} to {} (actual {})'.format(
                 error_type, number_errors, max_errors))
 
-            # uncontrolled_errors[error_type] = number_errors
-
-# if uncontrolled_errors:
-#     print('Uncontrolled errors', uncontrolled_errors)
 
 if error_detected:
     raise RuntimeError('Too many errors\nRun pylint dessia_common to get the errors')
+
+if error_over_ratchet_limit:
+    raise RuntimeError('Please lower the error limits in code_pylint.py MAX_ERROR_BY_TYPE according to warnings above')
+
+print('Pylint note: ', pylint_note)
+# if pylint_note > MIN_NOTE + RATCHET_NOTE:
+#     raise ValueError(f'MIN_NOTE in code_pylint.py is too low, increase to at least {MIN_NOTE + RATCHET_NOTE}, max {pylint_note}')
+if pylint_note < MIN_NOTE:
+    raise ValueError(f'Pylint not is too low: {pylint_note}, expected {MIN_NOTE}')
+
+print('You can increase MIN_NOTE in pylint to {} (actual: {})'.format(pylint_note,
+                                                                      MIN_NOTE))

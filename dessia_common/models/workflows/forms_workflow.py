@@ -1,6 +1,5 @@
-from dessia_common.workflow import InstantiateModel, ModelMethod,\
-    TypedVariable, TypedVariableWithDefaultValue, ModelAttribute,\
-    Pipe, Workflow, WorkflowBlock, ForEach, MultiPlot
+from dessia_common.workflow import InstantiateModel, ModelMethod, TypedVariable, TypedVariableWithDefaultValue,\
+    ModelAttribute, Pipe, Workflow, WorkflowBlock, ForEach, MultiPlot
 from dessia_common.forms import Generator, Optimizer
 from dessia_common.typings import MethodType
 
@@ -47,7 +46,5 @@ pipe_disp = Pipe(input_variable=parallel_optimization.outputs[0], output_variabl
 blocks = [instanciate_generator, generator_generate, attribute_selection, parallel_optimization, display_]
 pipes = [pipe_int_1, pipe_name_1, pipe_name_2, pipe_gene, pipe_attr, pipe_opti, pipe_disp]
 workflow_ = Workflow(blocks=blocks, pipes=pipes, output=parallel_optimization.outputs[0], name="Workflow with NBVs")
-
-
 workflow_state = workflow_.start_run({})
 workflow_state.name = "WorkflowState with NBVs"

@@ -67,15 +67,15 @@ def chose_default(jsonschema):
     datatype = datatype_from_jsonschema(jsonschema)
     if datatype in ['heterogeneous_sequence', 'homogeneous_sequence']:
         return default_sequence(jsonschema)
-    elif datatype == 'static_dict':
+    if datatype == 'static_dict':
         return default_dict(jsonschema)
-    elif datatype in ['standalone_object', 'embedded_object',
-                      'instance_of', 'union']:
+    if datatype in ['standalone_object', 'embedded_object',
+                    'instance_of', 'union']:
         if 'default_value' in jsonschema:
             return jsonschema['default_value']
         return None
-    else:
-        return None
+
+    return None
 
 
 def default_dict(jsonschema):
@@ -228,6 +228,8 @@ def jsonschema_from_annotation(annotation, jsonschema_element, order, editable=N
             'type': 'object', 'is_class': True,
             'properties': {'name': {'type': 'string'}}
         })
+    elif typing_ is Any:
+        jsonschema_element[key].update({'type': 'object', 'properties': {'.*': '.*'}})
     elif inspect.isclass(typing_) and issubclass(typing_, Measure):
         ann = (key, float)
         jsonschema_element = jsonschema_from_annotation(
@@ -237,11 +239,6 @@ def jsonschema_from_annotation(annotation, jsonschema_element, order, editable=N
         jsonschema_element[key]['units'] = typing_.units
     elif typing_ in [TextIO, BinaryIO] or issubclass(typing_, (BinaryFile, StringFile)):
         jsonschema_element[key].update({'type': 'text', 'is_file': True})
-    elif typing_ is Any:
-        jsonschema_element[key].update({
-            'type': 'object',
-            'properties': {'.*': '.*'}
-        })
     else:
         classname = dc.full_classname(object_=typing_, compute_for='class')
         if inspect.isclass(typing_) and issubclass(typing_, dc.DessiaObject):

@@ -3,6 +3,8 @@
 """
 
 """
+
+import time
 import sys
 import warnings
 import math
@@ -12,7 +14,7 @@ import collections
 from copy import deepcopy
 import inspect
 import json
-from operator import attrgetter
+# from operator import attrgetter
 
 from typing import List, Dict, Any, Tuple, get_type_hints
 import traceback as tb
@@ -33,6 +35,7 @@ from dessia_common.exports import XLSXWriter
 from dessia_common.typings import JsonSerializable
 from dessia_common import templates
 from dessia_common.displays import DisplayObject, DisplaySetting
+from dessia_common.breakdown import attrmethod_getter
 
 
 _FORBIDDEN_ARGNAMES = ['self', 'cls', 'progress_callback', 'return']
@@ -239,10 +242,6 @@ class DessiaObject:
         """
         Generic dict_to_object method
         """
-        # if hasattr(cls, 'DictToObject'):
-        #     deprecation_warning(name='DictToObject', object_type='Function',
-        #                         use_instead='dict_to_object')
-        #     return cls.DictToObject(dict_)
 
         if cls is not DessiaObject:
             obj = dict_to_object(dict_=dict_, class_=cls,
@@ -258,9 +257,7 @@ class DessiaObject:
                                  pointers_memo=pointers_memo,
                                  path=path)
             return obj
-        # else:
-            # Using default
-            # TODO: use jsonschema
+
         raise NotImplementedError('No object_class in dict')
 
     @classmethod
@@ -425,10 +422,10 @@ class DessiaObject:
                 value = dict_[str(i)]
                 try:
                     deserialized_value = deserialize_argument(arg_specs, value)
-                except TypeError:
+                except TypeError as err:
                     msg = 'Error in deserialisation of value: '
                     msg += f'{value} of expected type {arg_specs}'
-                    raise TypeError(msg)
+                    raise TypeError(msg) from err
                 arguments[arg] = deserialized_value
         return arguments
 
@@ -532,7 +529,7 @@ class DessiaObject:
             try:
                 plot_datas = self.plot_data(**kwargs)
             except TypeError as error:
-                raise TypeError(f'{self.__class__.__name__}.{error}')
+                raise TypeError(f'{self.__class__.__name__}.{error}') from error
             for data in plot_datas:
                 if hasattr(data, 'mpl_plot'):
                     ax = data.mpl_plot()
@@ -550,8 +547,7 @@ class DessiaObject:
         Returns a list of json describing how to call subdisplays
         """
         return [DisplaySetting('markdown', 'markdown', 'to_markdown', None),
-                DisplaySetting('plot_data', 'plot_data', 'plot_data', None, serialize_data=True)
-                ]
+                DisplaySetting('plot_data', 'plot_data', 'plot_data', None, serialize_data=True)]
 
     def _display_from_selector(self, selector: str, **kwargs):
         """
@@ -563,17 +559,15 @@ class DessiaObject:
             if display_setting.selector == selector:
                 track = ''
                 try:
-                    data = attrgetter(display_setting.method)(self)(**display_setting.arguments)
+                    data = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
                 except:
                     data = None
                     track = tb.format_exc()
 
                 if display_setting.serialize_data:
                     data = serialize(data)
-                return DisplayObject(type_=display_setting.type,
-                                     data=data,
-                                     reference_path=reference_path,
-                                     traceback=track)
+                return DisplayObject(type_=display_setting.type, data=data,
+                                     reference_path=reference_path, traceback=track)
         raise ValueError(f'No such selector {selector} in display of class {self.__class__.__name__}')
 
     def _displays(self, **kwargs) -> List[JsonSerializable]:
@@ -588,8 +582,36 @@ class DessiaObject:
             displays.append(display_.to_dict())
         return displays
 
-    def to_markdown(self):
+    def to_markdown(self) -> str:
+        """
+        Render a markdown of the object output type: string
+        """
         return templates.dessia_object_markdown_template.substitute(name=self.name)
+
+    def _performance_analysis(self):
+        """
+        Prints time of rendering some commons operations (serialization, hash, displays)
+        """
+        data_hash_time = time.time()
+        self._data_hash()
+        data_hash_time = time.time() - data_hash_time
+        print(f'Data hash time: {round(data_hash_time, 3)} seconds')
+
+        todict_time = time.time()
+        dict_ = self.to_dict()
+        todict_time = time.time() - todict_time
+        print(f'to_dict time: {round(todict_time, 3)} seconds')
+
+        dto_time = time.time()
+        self.dict_to_object(dict_)
+        dto_time = time.time() - dto_time
+        print(f'dict_to_object time: {round(dto_time, 3)} seconds')
+
+        for display_setting in self.display_settings():
+            display_time = time.time()
+            self._display_from_selector(display_setting.selector)
+            display_time = time.time() - display_time
+            print(f'Generation of display {display_setting.selector} in: {round(display_time, 6)} seconds')
 
     def _check_platform(self):
         """
@@ -609,6 +631,7 @@ class DessiaObject:
                                                             ' after serialization/deserialization')
         copied_object = self.copy()
         if not copied_object._data_eq(self):
+            print('data diff: ', self._data_diff(copied_object))
             raise dessia_common.errors.CopyError('Object is not equal to itself'
                                                  ' after copy')
 
@@ -632,8 +655,7 @@ class DessiaObject:
         writer = XLSXWriter(self)
         writer.save_to_stream(stream)
 
-    @staticmethod
-    def _export_formats():
+    def _export_formats(self):
         formats = [{"extension": "json", "method_name": "save_to_stream", "text": True, "args": {}},
                    {"extension": "xlsx", "method_name": "to_xlsx_stream", "text": False, "args": {}}]
         return formats
@@ -650,7 +672,9 @@ class PhysicalObject(DessiaObject):
         Returns a list of json describing how to call subdisplays
         """
         display_settings = DessiaObject.display_settings()
-        display_settings.append(DisplaySetting('cad', 'babylon_data', None))
+        display_settings.append(DisplaySetting(selector='cad', type_='babylon_data',
+                                               method='volmdlr_volume_model().babylon_data',
+                                               serialize_data=True))
         return display_settings
 
     def volmdlr_primitives(self):
@@ -693,19 +717,11 @@ class PhysicalObject(DessiaObject):
         """
         return self.volmdlr_volume_model().to_stl(filepath=filepath)
 
-    def _displays(self, **kwargs):
-        """
-        Compute the list of displays
-        """
-        reference_path = kwargs.get('reference_path', '')
-        displays = DessiaObject._displays(self, **kwargs)
-
-        model = self.volmdlr_volume_model()
-        display_ = DisplayObject(type_='cad', data=model.babylon_data(),
-                                 reference_path=reference_path)
-        displays.append(display_.to_dict())
-
-        return displays
+    # def _displays(self, **kwargs):
+    #     """
+    #     Compute the list of displays
+    #     """
+    #     return DessiaObject._displays(self, **kwargs)
 
     def babylonjs(self, use_cdn=True, debug=False, **kwargs):
         """
@@ -721,9 +737,8 @@ class PhysicalObject(DessiaObject):
                                                                    use_cdn=use_cdn,
                                                                    debug=debug)
 
-    @staticmethod
-    def _export_formats():
-        formats = DessiaObject._export_formats()
+    def _export_formats(self):
+        formats = DessiaObject._export_formats(self)
         formats3d = [{"extension": "step", "method_name": "to_step_stream", "text": True, "args": {}},
                      {"extension": "stl", "method_name": "to_stl_stream", "text": False, "args": {}}]
         formats.extend(formats3d)
@@ -1050,7 +1065,7 @@ def concatenate_attributes(prefix, suffix, type_: str = 'str'):
 def deepattr_to_sequence(deepattr: str):
     sequence = deepattr.split('/')
     healed_sequence = []
-    for i, attribute in enumerate(sequence):
+    for attribute in sequence:
         try:
             healed_sequence.append(int(attribute))
         except ValueError:

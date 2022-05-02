@@ -39,8 +39,9 @@ def set_inputs_from_function(method, inputs=None):
             try:
                 annotations = get_type_hints(method)
                 type_ = type_from_annotation(annotations[argument], module=method.__module__)
-            except KeyError:
-                raise UntypedArgumentError(f"Argument {argument} of method/function {method.__name__} has no typing")
+            except KeyError as error:
+                raise UntypedArgumentError(f"Argument {argument} of method/function {method.__name__} has no typing")\
+                    from error
             if iarg >= nargs - ndefault_args:
                 default = args_specs.defaults[ndefault_args - nargs + iarg]
                 input_ = TypedVariableWithDefaultValue(type_=type_, default_value=default, name=argument)
@@ -356,7 +357,7 @@ class WorkflowBlock(Block):
         self.input_connections = None
         self.output_connections = None
         inputs = []
-        for i, variable in enumerate(self.workflow.inputs):
+        for variable in self.workflow.inputs:
             input_ = variable.copy()
             input_.name = f"{name} - {variable.name}"
             inputs.append(input_)
@@ -379,7 +380,8 @@ class WorkflowBlock(Block):
 
     @classmethod
     @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_):
+    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
         return cls(workflow=Workflow.dict_to_object(dict_['workflow']), name=dict_['name'])
 
     def evaluate(self, values):
@@ -463,8 +465,7 @@ class ForEach(Block):
     def _docstring(self):
         wb_docstring = self.workflow_block._docstring()
         block_docstring = {}
-        for i, inputs in enumerate(zip(self.inputs, self.workflow_block.workflow.inputs)):
-            input_, workflow_input = inputs
+        for input_, workflow_input in zip(self.inputs, self.workflow_block.workflow.inputs):
             block_docstring[input_] = wb_docstring[workflow_input]
         return block_docstring
 

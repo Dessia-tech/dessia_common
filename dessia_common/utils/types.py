@@ -3,6 +3,7 @@
 """
 
 """
+from ast import literal_eval
 from typing import Any, Dict, List, Tuple, Type, Union, TextIO, BinaryIO, get_origin, get_args
 
 import dessia_common as dc
@@ -24,15 +25,17 @@ TYPES_FROM_STRING = {'unicode': str, 'str': str, 'float': float, 'int': int, 'bo
 
 SERIALIZED_BUILTINS = ['float', 'builtins.float', 'int', 'builtins.int', 'str', 'builtins.str', 'bool', 'builtins.bool']
 
+_PYTHON_CLASS_CACHE = {}
+
 
 def full_classname(object_, compute_for: str = 'instance'):
     if compute_for == 'instance':
         return object_.__class__.__module__ + '.' + object_.__class__.__name__
-    elif compute_for == 'class':
+    if compute_for == 'class':
         return object_.__module__ + '.' + object_.__name__
-    else:
-        msg = 'Cannot compute {} full classname for object {}'
-        raise NotImplementedError(msg.format(compute_for, object_))
+
+    msg = 'Cannot compute {} full classname for object {}'
+    raise NotImplementedError(msg.format(compute_for, object_))
 
 
 def is_jsonable(x):
@@ -67,9 +70,16 @@ def isinstance_base_types(obj):
 
 
 def get_python_class_from_class_name(full_class_name):
+    cached_value = _PYTHON_CLASS_CACHE.get(full_class_name, None)
+    if cached_value is not None:
+        return cached_value
+
     module_name, class_name = full_class_name.rsplit('.', 1)
     module = import_module(module_name)
     class_ = getattr(module, class_name)
+
+    # Storing in cache
+    _PYTHON_CLASS_CACHE[full_class_name] = class_
     return class_
 
 
@@ -133,10 +143,10 @@ def serialize_union_typing(args):
     if len(args) == 2 and type(None) in args:
         # This is a false Union => Is a default value set to None
         return serialize_typing(args[0])
-    else:
-        # Types union
-        argnames = ', '.join([type_fullname(a) for a in args])
-        return f'Union[{argnames}]'
+
+    # Types union
+    argnames = ', '.join([type_fullname(a) for a in args])
+    return f'Union[{argnames}]'
 
 
 def type_fullname(arg):
@@ -152,8 +162,7 @@ def type_from_argname(argname):
     if argname:
         if splitted_argname[0] != '__builtins__':
             return get_python_class_from_class_name(argname)
-        # TODO Check for dangerous eval
-        return eval(splitted_argname[1])
+        return literal_eval(splitted_argname[1])
     return Any
 
 
@@ -178,9 +187,9 @@ def deserialize_typing(serialized_typing):
             full_argname = ''
         if toptype == 'List':
             return List[type_from_argname(full_argname)]
-        elif toptype == 'Tuple':
+        if toptype == 'Tuple':
             return deserialize_tuple_typing(full_argname)
-        elif toptype == 'Dict':
+        if toptype == 'Dict':
             args = full_argname.split(', ')
             key_type = type_from_argname(args[0])
             value_type = type_from_argname(args[1])
@@ -194,14 +203,14 @@ def deserialize_tuple_typing(full_argname):
         args = full_argname.split(', ')
         if len(args) == 0:
             return Tuple
-        elif len(args) == 1:
+        if len(args) == 1:
             type_ = type_from_argname(args[0])
             return Tuple[type_]
-        elif len(set(args)) == 1:
+        if len(set(args)) == 1:
             type_ = type_from_argname(args[0])
             return Tuple[type_, ...]
-        else:
-            raise TypeError("Heterogenous tuples are forbidden as types for workflow non-block variables.")
+
+        raise TypeError("Heterogenous tuples are forbidden as types for workflow non-block variables.")
     return Tuple[type_from_argname(full_argname)]
 
 
@@ -309,7 +318,7 @@ def typematch(type_: Type, match_against: Type) -> bool:
     """
     # TODO Implement a more intelligent check for Unions : Union[T, U] should match against Union[T, U, V]
     # TODO Implement a check for Dict
-    if type_ == match_against or match_against is Any:
+    if type_ == match_against or match_against is Any or particular_typematches(type_, match_against):
         # Trivial cases. If types are strictly equal, then it should pass straight away
         return True
 
@@ -322,42 +331,76 @@ def typematch(type_: Type, match_against: Type) -> bool:
             return True
 
     # type_ is not complex and match_against is
-    origin = get_origin(match_against)
-    args = get_args(match_against)
+    match_against, origin, args = heal_type(match_against)
     if origin is Union:
         matches = [typematch(type_, subtype) for subtype in args]
         return any(matches)
     return False
 
 
-def complex_first_type_match(type_: Type, match_against: Type):
+def complex_first_type_match(type_: Type, match_against: Type) -> bool:
     """
     Match type when type_ is a complex typing (List, Union, Tuple,...)
     """
     # Complex typing for the first type_. Cases : List, Tuple, Union
-    type_origin = get_origin(type_)
-    type_args = get_args(type_)
     if not is_typing(match_against):
         # Type matching is unilateral and match against should be more open than type_
         return False
 
-    match_against_origin = get_origin(match_against)
-    match_against_args = get_args(match_against)
-
-    if type_origin is Union:
-        # Check for default values false positive
-        if union_is_default_value(type_):
-            return typematch(type_args[0], match_against)
+    # Inspecting and healing types
+    type_, type_origin, type_args = heal_type(type_)
+    match_against, match_against_origin, match_against_args = heal_type(match_against)
 
     if type_origin != match_against_origin:
         # Being strict for now. Is there any other case than default values where this would be wrong ?
         return False
 
     if type_origin is list:
+        # Can only have one arg, should match
         return typematch(type_args[0], match_against_args[0])
 
     if type_origin is tuple:
+        # Order matters, all args should match
         return all(typematch(a, b) for a, b in zip(type_args, match_against_args))
+
+    if type_origin is dict:
+        # key type AND value type should match
+        return typematch(type_args[0], match_against_args[0]) and typematch(type_args[1], match_against_args[1])
+
+    if type_origin is Union:
+        # type args must be a subset of match_against args set
+        type_argsset = set(type_args)
+        match_against_argsset = set(match_against_args)
+        return type_argsset.issubset(match_against_argsset)
 
     # Otherwise, it is not implemented
     raise NotImplementedError(f"Type {type_} is a complex typing and cannot be matched against others yet")
+
+
+def heal_type(type_: Type):
+    """
+    Inspect type and returns its params
+
+    For now, only checks wether the type is an 'Optional' / Union[T, NoneType],
+    which should be flattened and not considered
+
+    returns the cleaned type, origin and args
+    """
+    type_origin = get_origin(type_)
+    type_args = get_args(type_)
+    if type_origin is Union:
+        # Check for default values false positive
+        if union_is_default_value(type_):
+            type_ = type_args[0]
+            type_origin = get_origin(type_)
+            type_args = get_args(type_)
+    return type_, type_origin, type_args
+
+
+def particular_typematches(type_: Type, match_against: Type) -> bool:
+    """
+    Checks for specific cases of typematches and returns and boolean
+    """
+    if type_ is int and match_against is float:
+        return True
+    return False

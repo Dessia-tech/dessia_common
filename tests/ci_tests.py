@@ -13,6 +13,9 @@ scripts = ['displays.py',
            'workflow/power_simulation.py',
            'workflow/forms_simulation.py',
            'workflow/workflow_state_equalities.py',
+           'workflow/workflow_diverge_converge.py',
+           # breakdown
+           'breakdown.py',
            # Utils
            'utils/algebra.py',
            'utils/interpolation.py',
