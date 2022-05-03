@@ -437,9 +437,8 @@ class Workflow(Block):
         """
         Computes the displays of the objects
         """
-        display_settings = []
-        display_settings.append(DisplaySetting('documentation', 'markdown', 'to_markdown', None))
-        display_settings.append(DisplaySetting('workflow', 'workflow', 'to_dict', None))
+        display_settings = [DisplaySetting('documentation', 'markdown', 'to_markdown', None),
+                            DisplaySetting('workflow', 'workflow', 'to_dict', None)]
         return display_settings
 
     def to_markdown(self):
@@ -1447,9 +1446,7 @@ class WorkflowState(DessiaObject):
         """
         Computes the displays of the objects
         """
-        display_settings = []
-        display_settings.append(DisplaySetting('workflow-state', 'workflow_state', 'to_dict', None))
-        return display_settings
+        return [DisplaySetting('workflow-state', 'workflow_state', 'to_dict', None)]
 
     @property
     def progress(self):
@@ -1733,14 +1730,14 @@ class WorkflowRun(WorkflowState):
         display_settings.append(DisplaySetting('workflow-state', 'workflow_state', 'to_dict', None))
 
         # Find & order displayable blocks
-        d_blocks = [b for b in self.workflow.blocks if hasattr(b, 'display_')]
+        d_blocks = [b for b in self.workflow.blocks if hasattr(b, 'display_') and hasattr(b, "_display_settings")]
+        # Change last line to isinstance ?
         sorted_d_blocks = sorted(d_blocks, key=lambda b: b.order)
         for block in sorted_d_blocks:
             block_index = self.workflow.blocks.index(block)
-            block_display = block.display_settings()
-            block_display.method = 'block_display'
-            block_display.arguments = {'block_index': block_index}
-            display_settings.extend(block_display)
+            settings = block._display_settings(block_index)  # Code intel is not working properly here
+            if settings is not None:
+                display_settings.append(settings)
 
         if isinstance(self.output_value, DessiaObject):
             output_display_settings = [ds.compose('output_value') for ds in self.output_value.display_settings()]
