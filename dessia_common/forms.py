@@ -26,7 +26,7 @@ coding/naming style & convention.
 """
 
 from math import floor, ceil, cos
-from typing import Dict, List, Tuple, Union, TextIO, BinaryIO
+from typing import Dict, List, Tuple, Union
 from numpy import linspace
 
 try:
@@ -46,14 +46,14 @@ from dessia_common.vectored_objects import Catalog
 from dessia_common.files import BinaryFile, StringFile
 
 
-class StandaloneSubobject(DessiaObject):
+class StandaloneSubobject(PhysicalObject):
     _standalone_in_db = True
     _generic_eq = True
 
     def __init__(self, floatarg: Distance, name: str = 'Standalone Subobject'):
         self.floatarg = floatarg
 
-        DessiaObject.__init__(self, name=name)
+        PhysicalObject.__init__(self, name=name)
 
     @classmethod
     def generate(cls, seed: int) -> 'StandaloneSubobject':
@@ -67,16 +67,16 @@ class StandaloneSubobject(DessiaObject):
         return subobjects
 
     def contour(self):
-        points = [vm.Point2D(0, 0), vm.Point2D(0, 1),
-                  vm.Point2D(1, 1), vm.Point2D(1, 0)]
+        origin = self.floatarg
+        points = [vm.Point2D(origin, origin), vm.Point2D(origin, origin + 1),
+                  vm.Point2D(origin + 1, origin + 1), vm.Point2D(origin + 1, origin)]
 
         crls = p2d.ClosedRoundedLineSegments2D(points=points, radius={})
         return crls
 
     def voldmlr_primitives(self):
         contour = self.contour()
-        volumes = [p3d.ExtrudedProfile(vm.O3D, vm.X3D, vm.Z3D,
-                                       contour, [], vm.Y3D)]
+        volumes = [p3d.ExtrudedProfile(vm.O3D, vm.X3D, vm.Z3D, contour, [], vm.Y3D)]
         return volumes
 
 
@@ -149,16 +149,14 @@ class EnhancedEmbeddedSubobject(EmbeddedSubobject):
                  name: str = 'Enhanced Embedded Subobject'):
         self.embedded_array = embedded_array
 
-        EmbeddedSubobject.__init__(self, embedded_list=embedded_list,
-                                   name=name)
+        EmbeddedSubobject.__init__(self, embedded_list=embedded_list, name=name)
 
     @classmethod
     def generate(cls, seed: int) -> 'EnhancedEmbeddedSubobject':
         embedded_list = [seed]
         embedded_array = [[seed, seed * 10, seed * 10]] * seed
         name = 'Embedded Subobject' + str(seed)
-        return cls(embedded_list=embedded_list, embedded_array=embedded_array,
-                   name=name)
+        return cls(embedded_list=embedded_list, embedded_array=embedded_array, name=name)
 
 
 DEF_ES = EmbeddedSubobject.generate(10)
@@ -184,8 +182,7 @@ class StandaloneObject(PhysicalObject):
     _standalone_in_db = True
     _generic_eq = True
     _allowed_methods = ['add_standalone_object', 'add_embedded_object',
-                        'add_float', 'generate_from_text', 'generate_from_bin',
-                        'generate_from_bin_file', 'generate_from_text_file']
+                        'add_float', 'generate_from_text', 'generate_from_bin']
 
     def __init__(self, standalone_subobject: StandaloneSubobject, embedded_subobject: EmbeddedSubobject,
                  dynamic_dict: Dict[str, bool], float_dict: Dict[str, float], string_dict: Dict[str, str],
@@ -212,8 +209,7 @@ class StandaloneObject(PhysicalObject):
         PhysicalObject.__init__(self, name=name)
 
     @classmethod
-    def generate(cls, seed: int,
-                 name: str = 'Standalone Object Demo') -> 'StandaloneObject':
+    def generate(cls, seed: int, name: str = 'Standalone Object Demo') -> 'StandaloneObject':
         is_even = not bool(seed % 2)
         standalone_subobject = StandaloneSubobject.generate(seed)
         embedded_subobject = EmbeddedSubobject.generate(seed)
@@ -233,65 +229,27 @@ class StandaloneObject(PhysicalObject):
             subclass_arg = StandaloneSubobject.generate(-seed)
         else:
             subclass_arg = InheritingStandaloneSubobject.generate(seed)
-        return cls(standalone_subobject=standalone_subobject,
-                   embedded_subobject=embedded_subobject,
-                   dynamic_dict=dynamic_dict,
-                   float_dict=float_dict,
-                   string_dict=string_dict,
-                   tuple_arg=tuple_arg,
-                   intarg=intarg, strarg=strarg, object_list=object_list,
-                   subobject_list=subobject_list, builtin_list=builtin_list,
-                   union_arg=union_arg, subclass_arg=subclass_arg,
+        return cls(standalone_subobject=standalone_subobject, embedded_subobject=embedded_subobject,
+                   dynamic_dict=dynamic_dict, float_dict=float_dict, string_dict=string_dict, tuple_arg=tuple_arg,
+                   intarg=intarg, strarg=strarg, object_list=object_list, subobject_list=subobject_list,
+                   builtin_list=builtin_list, union_arg=union_arg, subclass_arg=subclass_arg,
                    array_arg=array_arg, name=name)
 
     @classmethod
-    def generate_from_text(cls, stream: TextIO):
-        try:
-            my_string = stream.read()
-            # this is a hack for test until we get frontend support for types BinaryFile & StringFile
-            # a TextIO does not have filename, but it's ok since we return a StringFile from backend
-            my_file_name = stream.filename
-            _, raw_seed = my_string.split(",")
-            seed = int(raw_seed.strip())
-        finally:
-            stream.close()
+    def generate_from_bin(cls, stream: BinaryFile):
+        # User need to decode the binary as he see fit
+        my_string = stream.read().decode('utf8')
+        my_file_name = stream.filename
+        _, raw_seed = my_string.split(",")
+        seed = int(raw_seed.strip())
         return cls.generate(seed=seed, name=my_file_name)
 
     @classmethod
-    def generate_from_bin(cls, stream: BinaryIO):
-        # the user need to decode the binary as he see fit
-        try:
-            my_string = stream.read().decode('utf8')
-            # this is a hack for test until we get frontend support for types BinaryFile & StringFile
-            # a BinaryIO does not have filename, but it's ok since we return a BinaryFile from backend
-            my_file_name = stream.filename
-            _, raw_seed = my_string.split(",")
-            seed = int(raw_seed.strip())
-        finally:
-            stream.close()
-        return cls.generate(seed=seed, name=my_file_name)
-
-    @classmethod
-    def generate_from_bin_file(cls, stream: BinaryFile):
-        # the user need to decode the binary as he see fit
-        try:
-            my_string = stream.read().decode('utf8')
-            my_file_name = stream.filename
-            _, raw_seed = my_string.split(",")
-            seed = int(raw_seed.strip())
-        finally:
-            stream.close()
-        return cls.generate(seed=seed, name=my_file_name)
-
-    @classmethod
-    def generate_from_text_file(cls, stream: StringFile):
-        try:
-            my_text = stream.read()
-            my_file_name = stream.filename
-            _, raw_seed = my_text.split(",")
-            seed = int(raw_seed.strip())
-        finally:
-            stream.close()
+    def generate_from_text(cls, stream: StringFile):
+        my_text = stream.getvalue()
+        my_file_name = stream.filename
+        _, raw_seed = my_text.split(",")
+        seed = int(raw_seed.strip())
         return cls.generate(seed=seed, name=my_file_name)
 
     def add_standalone_object(self, object_: StandaloneSubobject):
@@ -327,37 +285,27 @@ class StandaloneObject(PhysicalObject):
 
         # Contour
         contour = self.standalone_subobject.contour().plot_data()
-        primitives_group = plot_data.PrimitiveGroup(primitives=[contour],
-                                                    name='Contour')
+        primitives_group = plot_data.PrimitiveGroup(primitives=[contour], name='Contour')
 
         # Scatter Plot
         bounds = {'x': [0, 6], 'y': [100, 2000]}
         catalog = Catalog.random_2d(bounds=bounds, threshold=8000)
-        points = [plot_data.Point2D(cx=v[0], cy=v[1], name='Point' + str(i))
-                  for i, v in enumerate(catalog.array)]
+        points = [plot_data.Point2D(cx=v[0], cy=v[1], name='Point' + str(i)) for i, v in enumerate(catalog.array)]
         axis = plot_data.Axis()
-        tooltip = plot_data.Tooltip(attributes=attributes,
-                                    name='Tooltips')
-        scatter_plot = plot_data.Scatter(axis=axis, tooltip=tooltip,
-                                         elements=points,
-                                         x_variable=attributes[0],
-                                         y_variable=attributes[1],
-                                         name='Scatter Plot')
+        tooltip = plot_data.Tooltip(attributes=attributes, name='Tooltips')
+        scatter_plot = plot_data.Scatter(axis=axis, tooltip=tooltip, x_variable=attributes[0],
+                                         y_variable=attributes[1], name='Scatter Plot')
 
         # Parallel Plot
         attributes = ['cx', 'cy', 'color_fill', 'color_stroke']
-        parallel_plot = plot_data.ParallelPlot(elements=points,
-                                               axes=attributes,
-                                               name='Parallel Plot')
+        parallel_plot = plot_data.ParallelPlot(elements=points, axes=attributes, name='Parallel Plot')
 
         # Multi Plot
         objects = [scatter_plot, parallel_plot]
-        sizes = [plot_data.Window(width=560, height=300),
-                 plot_data.Window(width=560, height=300)]
+        sizes = [plot_data.Window(width=560, height=300), plot_data.Window(width=560, height=300)]
         coords = [(0, 0), (300, 0)]
-        multi_plot = plot_data.MultiplePlots(elements=points, plots=objects,
-                                             sizes=sizes, coords=coords,
-                                             name='Multiple Plot')
+        multi_plot = plot_data.MultiplePlots(elements=points, plots=objects, sizes=sizes,
+                                             coords=coords, name='Multiple Plot')
 
         attribute_names = ['time', 'electric current']
         tooltip = plot_data.Tooltip(attributes=attribute_names)
@@ -367,15 +315,12 @@ class StandaloneObject(PhysicalObject):
         for time, current in zip(time1, current1):
             elements1.append({'time': time, 'electric current': current})
 
-        # The previous line instantiates a dataset with limited arguments but
-        # several customizations are available
+        # The previous line instantiates a dataset with limited arguments but several customizations are available
         point_style = plot_data.PointStyle(color_fill=plot_data.colors.RED, color_stroke=plot_data.colors.BLACK)
         edge_style = plot_data.EdgeStyle(color_stroke=plot_data.colors.BLUE, dashline=[10, 5])
 
-        custom_dataset = plot_data.Dataset(elements=elements1, name='I = f(t)',
-                                           tooltip=tooltip,
-                                           point_style=point_style,
-                                           edge_style=edge_style)
+        custom_dataset = plot_data.Dataset(elements=elements1, name='I = f(t)', tooltip=tooltip,
+                                           point_style=point_style, edge_style=edge_style)
 
         # Now let's create another dataset for the purpose of this exercice
         time2 = linspace(0, 20, 100)
@@ -387,8 +332,7 @@ class StandaloneObject(PhysicalObject):
         dataset2 = plot_data.Dataset(elements=elements2, name='I2 = f(t)')
 
         graph2d = plot_data.Graph2D(graphs=[custom_dataset, dataset2],
-                                    x_variable=attribute_names[0],
-                                    y_variable=attribute_names[1])
+                                    x_variable=attribute_names[0], y_variable=attribute_names[1])
         return [primitives_group, scatter_plot,
                 parallel_plot, multi_plot, graph2d]
 
@@ -518,15 +462,12 @@ class StandaloneObjectWithDefaultValues(StandaloneObject):
         if array_arg is None:
             array_arg = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
 
-        StandaloneObject.__init__(
-            self, standalone_subobject=standalone_subobject,
-            embedded_subobject=embedded_subobject, dynamic_dict=dynamic_dict,
-            float_dict=float_dict, string_dict=string_dict,
-            tuple_arg=tuple_arg, intarg=intarg, strarg=strarg,
-            object_list=object_list, subobject_list=subobject_list,
-            builtin_list=builtin_list, union_arg=union_arg,
-            subclass_arg=subclass_arg, array_arg=array_arg, name=name
-        )
+        StandaloneObject.__init__(self, standalone_subobject=standalone_subobject,
+                                  embedded_subobject=embedded_subobject, dynamic_dict=dynamic_dict,
+                                  float_dict=float_dict, string_dict=string_dict, tuple_arg=tuple_arg, intarg=intarg,
+                                  strarg=strarg, object_list=object_list, subobject_list=subobject_list,
+                                  builtin_list=builtin_list, union_arg=union_arg, subclass_arg=subclass_arg,
+                                  array_arg=array_arg, name=name)
 
 
 DEF_SOWDV = StandaloneObjectWithDefaultValues()
@@ -545,8 +486,7 @@ class Generator(DessiaObject):
     """
     _standalone_in_db = True
 
-    def __init__(self, parameter: int, nb_solutions: int = 25,
-                 models: List[StandaloneObject] = None, name: str = ''):
+    def __init__(self, parameter: int, nb_solutions: int = 25, models: List[StandaloneObject] = None, name: str = ''):
         self.parameter = parameter
         self.nb_solutions = nb_solutions
         self.models = models
@@ -557,8 +497,7 @@ class Generator(DessiaObject):
         """
         Generates a list of Standalone objects
         """
-        self.models = [StandaloneObject.generate(self.parameter + i)
-                       for i in range(self.nb_solutions)]
+        self.models = [StandaloneObject.generate(self.parameter + i) for i in range(self.nb_solutions)]
         return self.models
 
 
@@ -602,7 +541,6 @@ class Container(DessiaObject):
         DessiaObject.__init__(self, name=name)
 
     @classmethod
-    def generate_from_text_files(cls, files: List[TextIO],
-                                 name: str = "Generated from text files"):
+    def generate_from_text_files(cls, files: List[StringFile], name: str = "Generated from text files"):
         models = [StandaloneObject.generate_from_text(file) for file in files]
         return cls(models=models, name=name)

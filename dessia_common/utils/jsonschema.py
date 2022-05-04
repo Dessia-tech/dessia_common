@@ -67,15 +67,15 @@ def chose_default(jsonschema):
     datatype = datatype_from_jsonschema(jsonschema)
     if datatype in ['heterogeneous_sequence', 'homogeneous_sequence']:
         return default_sequence(jsonschema)
-    elif datatype == 'static_dict':
+    if datatype == 'static_dict':
         return default_dict(jsonschema)
-    elif datatype in ['standalone_object', 'embedded_object',
-                      'instance_of', 'union']:
+    if datatype in ['standalone_object', 'embedded_object',
+                    'instance_of', 'union']:
         if 'default_value' in jsonschema:
             return jsonschema['default_value']
         return None
-    else:
-        return None
+
+    return None
 
 
 def default_dict(jsonschema):
