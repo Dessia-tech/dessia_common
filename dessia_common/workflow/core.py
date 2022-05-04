@@ -859,7 +859,7 @@ class Workflow(Block):
                 other_vartype = other_variable.type_
                 if typematch(vartype, other_vartype):
                     if serialize_output:
-                        varval = str(self.variable_indices(other_variable))
+                        varval = self.variable_indices(other_variable)
                     else:
                         varval = other_variable
                     variable_match[varkey].append(varval)
