@@ -1309,7 +1309,7 @@ class WorkflowState(DessiaObject):
                                                              path=f"{path}/input_values/{input_}")
             else:
                 serialized_v = serialize(value)
-            input_values[input_] = serialized_v
+            input_values[str(input_)] = serialized_v
 
         dict_['input_values'] = input_values
 
@@ -1331,9 +1331,9 @@ class WorkflowState(DessiaObject):
                 variable_index = self.workflow.variable_index(variable)
                 serialized_value, memo = serialize_with_pointers(value=value, memo=memo,
                                                                  path=f"{path}/values/{variable_index}")
-                values[variable_index] = serialized_value
+                values[str(variable_index)] = serialized_value
         else:
-            values = {self.workflow.variable_index(i): serialize(v) for i, v in self.values.items()}
+            values = {str(self.workflow.variable_index(i)): serialize(v) for i, v in self.values.items()}
 
         dict_['values'] = values
 
