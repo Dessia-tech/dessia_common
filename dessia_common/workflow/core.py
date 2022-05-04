@@ -849,7 +849,7 @@ class Workflow(Block):
             else:
                 continue
             if serialize_output:
-                varkey = self.variable_indices(variable)
+                varkey = str(self.variable_indices(variable))
             else:
                 varkey = variable
             variable_match[varkey] = []
@@ -859,7 +859,7 @@ class Workflow(Block):
                 other_vartype = other_variable.type_
                 if typematch(vartype, other_vartype):
                     if serialize_output:
-                        varval = self.variable_indices(other_variable)
+                        varval = str(self.variable_indices(other_variable))
                     else:
                         varval = other_variable
                     variable_match[varkey].append(varval)
