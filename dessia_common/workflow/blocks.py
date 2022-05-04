@@ -648,7 +648,7 @@ class MultiPlot(Display):
 
     @staticmethod
     def _display_settings(block_index: int) -> DisplaySetting:
-        display_settings = DisplaySetting(selector="display_"+str(block_index), type_="plot_data",
+        display_settings = DisplaySetting(selector="display_" + str(block_index), type_="plot_data",
                                           method="block_display", arguments={'block_index': block_index})
         return display_settings
 
