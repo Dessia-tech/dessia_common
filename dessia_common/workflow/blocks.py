@@ -22,7 +22,7 @@ from dessia_common.typings import JsonSerializable, MethodType, ClassMethodType
 from dessia_common.files import StringFile, BinaryFile
 
 from dessia_common.workflow.core import Block, Variable, TypedVariable, TypedVariableWithDefaultValue,\
-    set_block_variable_names_from_dict, Workflow
+    set_block_variable_names_from_dict, Workflow, DisplaySetting
 
 
 def set_inputs_from_function(method, inputs=None):
@@ -647,6 +647,12 @@ class MultiPlot(Display):
                                             coords=[(0, 0), (0, 300)], name='Results plot')
         display_ = DisplayObject(type_='plot_data', data=multiplot, reference_path=reference_path)
         return [display_.to_dict()]
+
+    @staticmethod
+    def _display_settings(block_index: int) -> DisplaySetting:
+        display_settings = DisplaySetting(selector="display_" + str(block_index), type_="plot_data",
+                                          method="block_display", arguments={'block_index': block_index})
+        return display_settings
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
         dict_ = Block.to_dict(self)

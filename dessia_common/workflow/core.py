@@ -5,6 +5,7 @@ Gathers all workflow relative features
 """
 import ast
 import time
+import datetime
 import tempfile
 import json
 import webbrowser
@@ -450,9 +451,8 @@ class Workflow(Block):
         """
         Computes the displays of the objects
         """
-        display_settings = []
-        display_settings.append(DisplaySetting('documentation', 'markdown', 'to_markdown', None))
-        display_settings.append(DisplaySetting('workflow', 'workflow', 'to_dict', None))
+        display_settings = [DisplaySetting('documentation', 'markdown', 'to_markdown', None),
+                            DisplaySetting('workflow', 'workflow', 'to_dict', None)]
         return display_settings
 
     def to_markdown(self):
@@ -656,8 +656,8 @@ class Workflow(Block):
                     arguments_values[i] = deserialized_value
 
             name_index = len(self.inputs) + 1
-            if str(name_index) in dict_:
-                name = dict_[str(name_index)]
+            if name_index in dict_:
+                name = dict_[name_index]
             else:
                 name = None
             arguments = {'input_values': arguments_values, 'name': name}
@@ -994,6 +994,7 @@ class Workflow(Block):
         state.activate_inputs(check_all_inputs=True)
 
         start_time = time.time()
+        start_timestamp = datetime.datetime.now()
 
         log_msg = 'Starting workflow run at {}'
         log_line = log_msg.format(time.strftime('%d/%m/%Y %H:%M:%S UTC', time.gmtime(start_time)))
@@ -1016,7 +1017,8 @@ class Workflow(Block):
         if name is None and name_index in input_values:
             name = input_values[name_index]
         if not name:
-            name = self.name + ' run'
+            timestamp = start_timestamp.strftime("%m-%d (%H:%M)")
+            name = f"{self.name} @ [{timestamp}]"
         return state.to_workflow_run(name=name)
 
     def start_run(self, input_values=None):
@@ -1332,7 +1334,7 @@ class WorkflowState(DessiaObject):
                                                              path=f"{path}/input_values/{input_}")
             else:
                 serialized_v = serialize(value)
-            input_values[input_] = serialized_v
+            input_values[str(input_)] = serialized_v
 
         dict_['input_values'] = input_values
 
@@ -1354,9 +1356,9 @@ class WorkflowState(DessiaObject):
                 variable_index = self.workflow.variable_index(variable)
                 serialized_value, memo = serialize_with_pointers(value=value, memo=memo,
                                                                  path=f"{path}/values/{variable_index}")
-                values[variable_index] = serialized_value
+                values[str(variable_index)] = serialized_value
         else:
-            values = {self.workflow.variable_index(i): serialize(v) for i, v in self.values.items()}
+            values = {str(self.workflow.variable_index(i)): serialize(v) for i, v in self.values.items()}
 
         dict_['values'] = values
 
@@ -1469,9 +1471,7 @@ class WorkflowState(DessiaObject):
         """
         Computes the displays of the objects
         """
-        display_settings = []
-        display_settings.append(DisplaySetting('workflow-state', 'workflow_state', 'to_dict', None))
-        return display_settings
+        return [DisplaySetting('workflow-state', 'workflow_state', 'to_dict', None)]
 
     @property
     def progress(self):
@@ -1754,14 +1754,14 @@ class WorkflowRun(WorkflowState):
         display_settings.append(DisplaySetting('workflow-state', 'workflow_state', 'to_dict', None))
 
         # Find & order displayable blocks
-        d_blocks = [b for b in self.workflow.blocks if hasattr(b, 'display_')]
+        d_blocks = [b for b in self.workflow.blocks if hasattr(b, 'display_') and hasattr(b, "_display_settings")]
+        # Change last line to isinstance ?
         sorted_d_blocks = sorted(d_blocks, key=lambda b: b.order)
         for block in sorted_d_blocks:
             block_index = self.workflow.blocks.index(block)
-            block_display = block.display_settings(block_index=block_index)
-            block_display.method = 'block_display'
-            block_display.arguments = {'block_index': block_index}
-            display_settings.append(block_display)
+            settings = block._display_settings(block_index)  # Code intel is not working properly here
+            if settings is not None:
+                display_settings.append(settings)
 
         if isinstance(self.output_value, DessiaObject):
             output_display_settings = [ds.compose('output_value') for ds in self.output_value.display_settings()]
