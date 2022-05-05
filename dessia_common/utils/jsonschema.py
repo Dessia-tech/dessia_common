@@ -7,7 +7,7 @@ from copy import deepcopy
 import inspect
 import warnings
 import collections
-from typing import get_origin, get_args, Union, get_type_hints, TextIO, BinaryIO
+from typing import get_origin, get_args, Union, get_type_hints
 import dessia_common as dc
 import dessia_common.utils.types as dc_types
 from dessia_common.files import BinaryFile, StringFile
