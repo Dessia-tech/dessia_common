@@ -344,27 +344,27 @@ def deserialize_argument(type_, argument):
         return deserialize_with_typing(type_, argument)
     if isinstance(argument, (StringFile, BinaryFile)):
         return argument
-    else:
-        if type_ in dcty.TYPING_EQUIVALENCES.keys():
-            if isinstance(argument, type_):
-                deserialized_arg = argument
-            else:
-                if isinstance(argument, int) and type_ == float:
-                    # Explicit conversion in this case
-                    deserialized_arg = float(argument)
-                else:
-                    msg = f"Given built-in type and argument are incompatible: " \
-                          f"{type(argument)} and {type_} in {argument}"
-                    raise TypeError(msg)
-        elif type_ is Any:
-            # Any type
-            deserialized_arg = argument
-        elif inspect.isclass(type_) and issubclass(type_, dc.DessiaObject):
-            # Custom classes
-            deserialized_arg = type_.dict_to_object(argument)
+
+    if type_ in dcty.TYPING_EQUIVALENCES.keys():
+        if isinstance(argument, type_):
+            return argument
+        elif isinstance(argument, int) and type_ == float:
+            # Explicit conversion in this case
+            return float(argument)
         else:
-            raise TypeError("Deserialization of ype {} is Not Implemented".format(type_))
-    return deserialized_arg
+            msg = f"Given built-in type and argument are incompatible: " \
+                  f"{type(argument)} and {type_} in {argument}"
+            raise TypeError(msg)
+
+    elif type_ is Any:
+        # Any type
+        return argument
+    elif inspect.isclass(type_) and issubclass(type_, dc.DessiaObject):
+        # Custom classes
+        return type_.dict_to_object(argument)
+
+    raise TypeError("Deserialization of ype {} is Not Implemented".format(type_))
+
 
 
 def find_references(value, path='#'):
