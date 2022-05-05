@@ -15,14 +15,12 @@ import networkx as nx
 from typing import List, Union, Type, Any, Dict, Tuple, Optional
 from copy import deepcopy
 from dessia_common.templates import workflow_template
-from dessia_common import DessiaObject, is_sequence,\
-    JSONSCHEMA_HEADER, jsonschema_from_annotation,\
+from dessia_common import DessiaObject, is_sequence, JSONSCHEMA_HEADER, jsonschema_from_annotation,\
     deserialize_argument, set_default_value, prettyname, serialize_dict, DisplaySetting
 
 from dessia_common.utils.serialization import dict_to_object, deserialize, serialize_with_pointers, serialize,\
                                               dereference_jsonpointers
-from dessia_common.utils.types import serialize_typing,\
-    deserialize_typing, recursive_type, typematch
+from dessia_common.utils.types import serialize_typing, deserialize_typing, recursive_type, typematch
 from dessia_common.utils.copy import deepcopy_value
 from dessia_common.utils.docstrings import FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE
 from dessia_common.utils.diff import choose_hash
@@ -1775,7 +1773,7 @@ class WorkflowRun(WorkflowState):
         """
         self._activate_activable_pipes()
         self.activate_inputs()
-        block = self.blocks[block_index]
+        block = self.workflow.blocks[block_index]
         if block in self._activable_blocks():
             self._evaluate_block(block)
         reference_path = ''
