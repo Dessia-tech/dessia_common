@@ -54,6 +54,10 @@ class Distance(Measure):
     units = 'm'
 
 
+class Angle(Measure):
+    units = 'radians'
+
+
 class Torque(Measure):
     units = 'Nm'
 
