@@ -549,7 +549,7 @@ class DessiaObject:
         return [DisplaySetting('markdown', 'markdown', 'to_markdown', None),
                 DisplaySetting('plot_data', 'plot_data', 'plot_data', None, serialize_data=True)]
 
-    def _display_from_selector(self, selector: str, **kwargs):
+    def _display_from_selector(self, selector: str, **kwargs) -> DisplayObject:
         """
         Generate the display from the selector
         """
@@ -568,6 +568,12 @@ class DessiaObject:
                     data = serialize(data)
                 return DisplayObject(type_=display_setting.type, data=data,
                                      reference_path=reference_path, traceback=track)
+        raise ValueError(f'No such selector {selector} in display of class {self.__class__.__name__}')
+
+    def _display_settings_from_selector(self, selector: str):
+        for display_setting in self.display_settings():
+            if display_setting.selector == selector:
+                return display_setting
         raise ValueError(f'No such selector {selector} in display of class {self.__class__.__name__}')
 
     def _displays(self, **kwargs) -> List[JsonSerializable]:
