@@ -26,11 +26,8 @@ class DisplaySetting:
         """
         Serialization
         """
-        return {'selector': self.selector,
-                'type': self.type,
-                'method': self.method,
-                'serialize_data': self.serialize_data,
-                'arguments': self.arguments}
+        return {'selector': self.selector, 'type': self.type, 'method': self.method,
+                'serialize_data': self.serialize_data, 'arguments': self.arguments}
 
     def compose(self, attribute):
         """
@@ -41,12 +38,8 @@ class DisplaySetting:
 
 
 class DisplayObject:
-    def __init__(self,
-                 type_: str,
-                 data: Union[JsonSerializable, str],
-                 reference_path: str = '',
-                 traceback: str = '',
-                 name: str = ''):
+    def __init__(self, type_: str, data: Union[JsonSerializable, str], reference_path: str = '',
+                 traceback: str = '', name: str = ''):
         """
         Container for data of display
         A traceback can be set if display fails to be generated.
@@ -71,12 +64,8 @@ class DisplayObject:
         """
         Simple serialization
         """
-
-        return {'type_': self.type_,
-                'data': self.data,
-                'traceback': self.traceback,
-                'reference_path': self.reference_path,
-                'name': self.name}
+        return {'type_': self.type_, 'data': self.data, 'traceback': self.traceback,
+                'reference_path': self.reference_path, 'name': self.name}
 
 
 def networkx_to_visjs_data(networkx_graph: Graph):
