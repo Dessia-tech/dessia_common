@@ -554,20 +554,17 @@ class DessiaObject:
         """
         reference_path = kwargs.get('reference_path', '')
 
-        for display_setting in self.display_settings():
-            if display_setting.selector == selector:
-                track = ''
-                try:
-                    data = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
-                except:
-                    data = None
-                    track = tb.format_exc()
+        display_setting = self._display_settings_from_selector(selector)
+        track = ''
+        try:
+            data = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
+        except:
+            data = None
+            track = tb.format_exc()
 
-                if display_setting.serialize_data:
-                    data = serialize(data)
-                return DisplayObject(type_=display_setting.type, data=data,
-                                     reference_path=reference_path, traceback=track)
-        raise ValueError(f'No such selector {selector} in display of class {self.__class__.__name__}')
+        if display_setting.serialize_data:
+            data = serialize(data)
+        return DisplayObject(type_=display_setting.type, data=data, reference_path=reference_path, traceback=track)
 
     def _display_settings_from_selector(self, selector: str):
         for display_setting in self.display_settings():

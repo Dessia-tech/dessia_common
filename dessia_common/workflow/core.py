@@ -1779,16 +1779,7 @@ class WorkflowRun(WorkflowState):
             return self.workflow._display_from_selector(selector)
 
         if selector == "workflow-state":
-            display_setting = self._display_settings_from_selector(selector)
-            try:
-                data = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
-            except:
-                data = None
-                track = tb.format_exc()
-
-            if display_setting.serialize_data:
-                data = serialize(data)
-            return DisplayObject(type_=display_setting.type, data=data, reference_path="", traceback=track)
+            return DessiaObject._display_from_selector(self, selector)
 
         # Displays for blocks (getting reference path from block_display return)
         display_setting = self._display_settings_from_selector(selector)
