@@ -75,7 +75,7 @@ MAX_ERROR_BY_TYPE = {
                      'inconsistent-return-statements': 0,
                      'unexpected-special-method-signature': 0,
                      'too-many-lines': 0,
-                     'bare-except': 1,
+                     'bare-except': 2,
                      'unspecified-encoding': 0,
                      'no-else-raise': 0,
                      'bad-indentation': 0,
