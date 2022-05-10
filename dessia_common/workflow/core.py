@@ -1397,15 +1397,12 @@ class WorkflowState(DessiaObject):
         values = {}
         if 'values' in dict_:
             for i, value in dict_['values'].items():
-                values[workflow.variables[int(i)]] = deserialize(value,
-                                                                 global_dict=dict_,
+                values[workflow.variables[int(i)]] = deserialize(value, global_dict=dict_,
                                                                  pointers_memo=pointers_memo,
                                                                  path=f'{path}/values/{i}')
         elif 'variable_values' in dict_:
-            # Retrocompat with variable value may be removed after v0.10.0:
             for i, value in dict_['variable_values'].items():
-                values[workflow.variables[int(i)]] = deserialize(value,
-                                                                 global_dict=dict_,
+                values[workflow.variables[int(i)]] = deserialize(value, global_dict=dict_,
                                                                  pointers_memo=pointers_memo,
                                                                  path=f'{path}/variable_values/{i}')
 
@@ -1725,7 +1722,6 @@ class WorkflowRun(WorkflowState):
         """
         Adds variable values to super WorkflowState dict
         """
-
         if memo is None:
             memo = {}  # To make sure we have the good ref for next steps
         dict_ = WorkflowState.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
@@ -1735,7 +1731,7 @@ class WorkflowRun(WorkflowState):
 
         if use_pointers:
             variable_values = {}
-            for key, value in variable_values.items():
+            for key, value in self.variable_values.items():
                 variable_values[str(key)], memo = serialize_with_pointers(value, memo=memo,
                                                                           path=f'{path}/variable_values/{key}')
             dict_["variable_values"] = variable_values
