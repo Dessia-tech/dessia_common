@@ -11,9 +11,11 @@ import json
 import webbrowser
 
 import io
-import networkx as nx
 from typing import List, Union, Type, Any, Dict, Tuple, Optional
 from copy import deepcopy
+import warnings
+import traceback as tb
+import networkx as nx
 from dessia_common.templates import workflow_template
 from dessia_common import DessiaObject, is_sequence, JSONSCHEMA_HEADER, jsonschema_from_annotation,\
     deserialize_argument, set_default_value, prettyname, serialize_dict, DisplaySetting
@@ -27,8 +29,6 @@ from dessia_common.utils.diff import choose_hash
 from dessia_common.typings import JsonSerializable, MethodType
 from dessia_common.displays import DisplayObject
 from dessia_common.breakdown import attrmethod_getter
-import warnings
-import traceback as tb
 
 
 class Variable(DessiaObject):
