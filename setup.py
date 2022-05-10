@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 """
+Setup
 
+Changelog:
+v1.0: add branch to local version if possible
 """
 
 from setuptools import setup
