@@ -626,10 +626,10 @@ class MultiPlot(Display):
 
     def display_(self, local_values, **kwargs):
         import plot_data
-        if 'reference_path' not in kwargs:
-            reference_path = 'output_value'  # TODO bof bof bof
-        else:
-            reference_path = kwargs['reference_path']
+        # if 'reference_path' not in kwargs:
+        #     reference_path = 'output_value'  # TODO bof bof bof
+        # else:
+        #     reference_path = kwargs['reference_path']
 
         objects = local_values[self.inputs[self._displayable_input]]
         values = [{a: enhanced_deep_attr(o, a) for a in self.attributes} for o in objects]
@@ -645,13 +645,13 @@ class MultiPlot(Display):
         sizes = [plot_data.Window(width=560, height=300), plot_data.Window(width=560, height=300)]
         multiplot = plot_data.MultiplePlots(elements=values, plots=objects, sizes=sizes,
                                             coords=[(0, 0), (0, 300)], name='Results plot')
-        display_ = DisplayObject(type_='plot_data', data=multiplot, reference_path=reference_path)
-        return [display_.to_dict()]
+        return [multiplot.to_dict()]
 
     @staticmethod
     def _display_settings(block_index: int) -> DisplaySetting:
         display_settings = DisplaySetting(selector="display_" + str(block_index), type_="plot_data",
-                                          method="block_display", arguments={'block_index': block_index})
+                                          method="block_display", arguments={'block_index': block_index},
+                                          serialize_data=True)
         return display_settings
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
