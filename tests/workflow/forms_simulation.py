@@ -18,6 +18,7 @@ workflow_run = workflow_.run(input_values=input_values, verbose=True, name='Dev 
 
 variable_match = workflow_.match_variables(True)
 
+
 match_dict = {'(0, 0, 0)': ['0'],
               '(0, 0, 1)': ['0'],
               '(0, 0, 2)': ['(1, 1, 0)'],
@@ -30,6 +31,7 @@ match_dict = {'(0, 0, 0)': ['0'],
               '(3, 0, 2)': ['0'],
               '0': ['(0, 0, 0)', '(0, 0, 1)', '(3, 0, 2)'],
               '1': ['(0, 0, 3)', '(3, 0, 1)']}
+
 assert variable_match == match_dict
 
 # Check WorkflowRun

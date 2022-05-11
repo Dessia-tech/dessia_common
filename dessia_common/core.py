@@ -14,7 +14,6 @@ import collections
 from copy import deepcopy
 import inspect
 import json
-# from operator import attrgetter
 
 from typing import List, Dict, Any, Tuple, get_type_hints
 import traceback as tb
@@ -549,25 +548,28 @@ class DessiaObject:
         return [DisplaySetting('markdown', 'markdown', 'to_markdown', None),
                 DisplaySetting('plot_data', 'plot_data', 'plot_data', None, serialize_data=True)]
 
-    def _display_from_selector(self, selector: str, **kwargs):
+    def _display_from_selector(self, selector: str, **kwargs) -> DisplayObject:
         """
         Generate the display from the selector
         """
         reference_path = kwargs.get('reference_path', '')
 
+        display_setting = self._display_settings_from_selector(selector)
+        track = ''
+        try:
+            data = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
+        except:
+            data = None
+            track = tb.format_exc()
+
+        if display_setting.serialize_data:
+            data = serialize(data)
+        return DisplayObject(type_=display_setting.type, data=data, reference_path=reference_path, traceback=track)
+
+    def _display_settings_from_selector(self, selector: str):
         for display_setting in self.display_settings():
             if display_setting.selector == selector:
-                track = ''
-                try:
-                    data = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
-                except:
-                    data = None
-                    track = tb.format_exc()
-
-                if display_setting.serialize_data:
-                    data = serialize(data)
-                return DisplayObject(type_=display_setting.type, data=data,
-                                     reference_path=reference_path, traceback=track)
+                return display_setting
         raise ValueError(f'No such selector {selector} in display of class {self.__class__.__name__}')
 
     def _displays(self, **kwargs) -> List[JsonSerializable]:

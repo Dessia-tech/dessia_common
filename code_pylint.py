@@ -18,14 +18,14 @@ MIN_NOTE = 9.17
 UNWATCHED_ERRORS = ['fixme', 'trailing-whitespace', 'import-error']
 
 MAX_ERROR_BY_TYPE = {
-                     'protected-access': 26,
+                     'protected-access': 29,
                      'invalid-name': 7,
-                     'consider-using-f-string': 10,
+                     'consider-using-f-string': 9,
                      'no-else-return': 0,
-                     'arguments-differ': 12,
+                     'arguments-differ': 2,
                      'no-member': 1,
                      'too-many-locals': 14,
-                     'wrong-import-order': 10,
+                     'wrong-import-order': 7,
                      'too-many-branches': 9,
                      'unused-import': 1,
                      'unused-argument': 6,
@@ -75,7 +75,7 @@ MAX_ERROR_BY_TYPE = {
                      'inconsistent-return-statements': 0,
                      'unexpected-special-method-signature': 0,
                      'too-many-lines': 0,
-                     'bare-except': 1,
+                     'bare-except': 2,
                      'unspecified-encoding': 0,
                      'no-else-raise': 0,
                      'bad-indentation': 0,
