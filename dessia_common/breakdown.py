@@ -53,7 +53,8 @@ def extract_from_object(object_, segment):
                     key.append(subkey)
                 return object_[tuple(key)]
             # else:
-            raise ValueError(f'Cannot extract segment {segment} from object {object_}') from error
+            message_error = f'Cannot extract segment {segment} from object {object_}'
+            raise ValueError(message_error) from error
 
     # Finally, it is a regular object
     return getattr(object_, segment)
