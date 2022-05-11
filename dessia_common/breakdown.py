@@ -71,7 +71,8 @@ def get_in_object_from_path(object_, path):
             element = extract_from_object(element, segment)
         except ValueError as err:
             print(err)
-            raise ValueError(f'Cannot get segment {segment} from path {path} in element {element}') from err
+            err_msg = f'Cannot get segment {segment} from path {path} in element {element}'
+            raise ValueError(err_msg) from err
 
     return element
 
