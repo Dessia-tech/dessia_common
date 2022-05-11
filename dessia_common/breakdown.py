@@ -41,7 +41,7 @@ def extract_from_object(object_, segment):
 
         try:
             return object_[int(segment)]
-        except ValueError as error:
+        except ValueError as _:
             # should be a tuple
             if segment.startswith('(') and segment.endswith(')') and ',' in segment:
                 key = []
@@ -54,7 +54,7 @@ def extract_from_object(object_, segment):
                 return object_[tuple(key)]
             # else:
             message_error = f'Cannot extract segment {segment} from object {object_}'
-            raise ValueError(message_error) from error
+            raise ValueError(message_error)
 
     # Finally, it is a regular object
     return getattr(object_, segment)
@@ -73,7 +73,7 @@ def get_in_object_from_path(object_, path):
         except ValueError as err:
             print(err)
             err_msg = f'Cannot get segment {segment} from path {path} in element {element}'
-            raise ValueError(err_msg) from err
+            raise ValueError(err_msg)
 
     return element
 
