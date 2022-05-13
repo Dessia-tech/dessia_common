@@ -281,8 +281,8 @@ class Workflow(Block):
     _eq_is_data_eq = True
     _jsonschema = {
         "definitions": {}, "$schema": "http://json-schema.org/draft-07/schema#", "type": "object", "title": "Workflow",
-        "required": ["blocks", "pipes", "outputs"], "python_typing": 'dessia_common.workflow.Pipe',
-        "standalone_in_db": True,
+        "required": ["blocks", "pipes", "outputs"], "python_typing": 'dessia_common.workflow.core.Workflow',
+        "classes": ["dessia_common.workflow.core.Workflow"], "standalone_in_db": True,
         "properties": {
             "blocks": {
                 "type": "array", "order": 0, "editable": True,
