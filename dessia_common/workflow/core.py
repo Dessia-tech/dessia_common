@@ -214,7 +214,7 @@ class Pipe(DessiaObject):
     _jsonschema = {
         "definitions": {}, "$schema": "http://json-schema.org/draft-07/schema#", "type": "object",
         "title": "Pipe", "python_typing": 'dessia_common.workflow.Pipe', "standalone_in_db": False,
-        "required": ["input_variable", "output_variable"],
+        "classes": ["dessia_common.workflow.core.Pipe"], "required": ["input_variable", "output_variable"],
         "properties": {
             "input_variable": {
                 "type": "object", "editable": True, "order": 0,
@@ -1677,7 +1677,7 @@ class WorkflowRun(WorkflowState):
     _jsonschema = {
         "definitions": {}, "$schema": "http://json-schema.org/draft-07/schema#", "type": "object",
         "standalone_in_db": True, "title": "WorkflowRun Base Schema", "required": [],
-        "python_typing": 'dessia_common.workflow.Pipe',
+        "python_typing": 'dessia_common.workflow.WorkflowRun', "classes": ["dessia_common.workflow.core.WorkflowRun"]
         "properties": {
             "workflow": {"type": "object", "title": "Workflow", "python_typing": "dessia_common.workflow.Workflow",
                          "classes": ["dessia_common.workflow.Workflow"], "order": 0,
