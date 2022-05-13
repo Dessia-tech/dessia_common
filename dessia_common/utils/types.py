@@ -14,7 +14,7 @@ import collections
 from importlib import import_module
 
 
-TYPING_EQUIVALENCES = {int: 'number', float: 'number', bool: 'boolean', str: 'string'}
+TYPING_EQUIVALENCES = {int: 'number', float: 'number', bool: 'boolean', str: 'string', Any: ".*"}
 
 TYPES_STRINGS = {int: 'int', float: 'float', bool: 'boolean', str: 'str',
                  list: 'list', tuple: 'tuple', dict: 'dict'}

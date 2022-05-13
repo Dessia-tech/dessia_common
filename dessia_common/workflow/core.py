@@ -279,48 +279,11 @@ class Workflow(Block):
     _standalone_in_db = True
     _allowed_methods = ['run', 'start_run']
     _eq_is_data_eq = True
-    _jsonschema = {
-        "definitions": {}, "$schema": "http://json-schema.org/draft-07/schema#", "type": "object", "title": "Workflow",
-        "required": ["blocks", "pipes", "outputs"], "python_typing": 'dessia_common.workflow.Pipe',
-        "standalone_in_db": True,
-        "properties": {
-            "blocks": {
-                "type": "array", "order": 0, "editable": True,
-                "python_typing": "SubclassOf[dessia_common.workflow.Block]",
-                "items": {"type": "object", "editable": True,
-                          "classes": ["dessia_common.workflow.InstanciateModel", "dessia_common.workflow.ModelMethod",
-                                      "dessia_common.workflow.ForEach", "dessia_common.workflow.ModelAttribute",
-                                      "dessia_common.workflow.Function", "dessia_common.workflow.Sequence",
-                                      "dessia_common.workflow.ForEach", "dessia_common.workflow.Unpacker",
-                                      "dessia_common.workflow.Flatten", "dessia_common.workflow.Filter",
-                                      "dessia_common.workflow.ParallelPlot", "dessia_common.workflow.Sum",
-                                      "dessia_common.workflow.Substraction"]},
-            },
-            "pipes": {
-                "type": "array", "order": 1, "editable": True, "python_typing": "List[dessia_common.workflow.Pipe]",
-                "items": {
-                    'type': 'objects', 'classes': ["dessia_common.workflow.Pipe"],
-                    "python_type": "dessia_common.workflow.Pipe", "editable": True
-                }
-            },
-            "outputs": {
-                "type": "array", "order": 2, "python_typing": "List[dessia_common.workflow.Variable]",
-                'items': {
-                    'type': 'array', 'items': {'type': 'number'},
-                    'python_typing': "dessia_common.workflow.Variable"
-                }
-            },
-            "description": {"type": "string", "title": "Description", "editable": True,
-                            "default_value": "", "python_typing": "builtins.str"},
-            "documentation": {"type": "string", "title": "Documentation", "editable": True,
-                              "default_value": "", "python_typing": "builtins.str"},
-            "name": {'type': 'string', 'title': 'Name', 'editable': True, 'order': 3,
-                     'default_value': '', 'python_typing': 'builtins.str'}
-        }
-    }
+    _non_editable_attributes = ["blocks", "pipes", "output", "imposed_variable_values"]
 
-    def __init__(self, blocks, pipes, output, *, imposed_variable_values=None,
-                 description: str = "", documentation: str = "", name: str = ""):
+    def __init__(self, blocks: List[Block], pipes: List[Pipe], output: Variable, *,
+                 imposed_variable_values: Dict[str, Any] = None, description: str = "",
+                 documentation: str = "", name: str = ""):
         self.blocks = blocks
         self.pipes = pipes
 
