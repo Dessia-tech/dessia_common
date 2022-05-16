@@ -7,11 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## v0.8.0
+
 ### Added
 - performance analysis function
 
 ### Fixed
+- babylon display fix
 - Any typing does not trigger error with subclass anymore
+- workflow: imposed variable values fixes
 
 ### Performance
 - types: caching type from calling import_module
