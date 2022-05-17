@@ -1677,7 +1677,7 @@ class WorkflowRun(WorkflowState):
     _jsonschema = {
         "definitions": {}, "$schema": "http://json-schema.org/draft-07/schema#", "type": "object",
         "standalone_in_db": True, "title": "WorkflowRun Base Schema", "required": [],
-        "python_typing": 'dessia_common.workflow.WorkflowRun', "classes": ["dessia_common.workflow.core.WorkflowRun"]
+        "python_typing": 'dessia_common.workflow.WorkflowRun', "classes": ["dessia_common.workflow.core.WorkflowRun"],
         "properties": {
             "workflow": {"type": "object", "title": "Workflow", "python_typing": "dessia_common.workflow.Workflow",
                          "classes": ["dessia_common.workflow.Workflow"], "order": 0,
