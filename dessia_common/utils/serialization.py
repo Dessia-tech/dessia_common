@@ -20,7 +20,6 @@ from dessia_common.graph import explore_tree_from_leaves  # , cut_tree_final_bra
 from dessia_common.breakdown import get_in_object_from_path
 
 
-
 def serialize_dict(dict_):
     """
     Serialize a dict into a dict (values are serialized)
