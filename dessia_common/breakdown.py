@@ -39,22 +39,22 @@ def extract_from_object(object_, segment):
         if segment in object_:
             return object_[segment]
 
-        try:
+        if segment.isdigit():
             return object_[int(segment)]
-        except ValueError as _:
-            # should be a tuple
-            if segment.startswith('(') and segment.endswith(')') and ',' in segment:
-                key = []
-                for subsegment in segment.strip('()').replace(' ', '').split(','):
-                    try:
-                        subkey = int(subsegment)
-                    except ValueError:
-                        subkey = subsegment
-                    key.append(subkey)
-                return object_[tuple(key)]
-            # else:
-            message_error = f'Cannot extract segment {segment} from object {object_}'
-            raise ValueError(message_error)
+
+        # should be a tuple
+        if segment.startswith('(') and segment.endswith(')') and ',' in segment:
+            key = []
+            for subsegment in segment.strip('()').replace(' ', '').split(','):
+                if subsegment.isdigit():
+                    subkey = int(subsegment)
+                else:
+                    subkey = subsegment
+                key.append(subkey)
+            return object_[tuple(key)]
+        # else:
+        message_error = f'Cannot extract segment {segment} from object {object_}'
+        raise ValueError(message_error)
 
     # Finally, it is a regular object
     return getattr(object_, segment)
