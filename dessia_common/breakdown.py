@@ -31,6 +31,10 @@ def attrmethod_getter(object_, attr_methods):
     return object_
 
 
+class ExtractionError(Exception):
+    pass
+
+
 def extract_from_object(object_, segment):
     if is_sequence(object_):
         return object_[int(segment)]
@@ -54,7 +58,7 @@ def extract_from_object(object_, segment):
             return object_[tuple(key)]
         # else:
         message_error = f'Cannot extract segment {segment} from object {object_}'
-        raise ValueError(message_error)
+        raise ExtractionError(message_error)
 
     # Finally, it is a regular object
     return getattr(object_, segment)
@@ -70,9 +74,9 @@ def get_in_object_from_path(object_, path):
             element = get_in_object_from_path(object_, element['$ref'])
         try:
             element = extract_from_object(element, segment)
-        except ValueError as err:
-            err_msg = f'Cannot get segment {segment} from path {path} in element {element}'
-            raise ValueError(err_msg) from err
+        except ExtractionError:
+            err_msg = f'Cannot get segment {segment} from path {path} in element {str(element)[:500]}'
+            raise ExtractionError(err_msg)
 
     return element
 
