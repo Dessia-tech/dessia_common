@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 """
+Setup
 
+Changelog:
+v1.0: add branch to local version if possible
 """
 
 from setuptools import setup
@@ -85,12 +88,31 @@ def get_version():
             version = check_output(cmd.split()).decode().strip()[:]
         except CalledProcessError:
             raise RuntimeError("Unable to get version number from git tags")
-        return version_from_git_describe(version)
+        version = version_from_git_describe(version)
     else:
         # Extract the version from the PKG-INFO file.
         with open(join(d, "PKG-INFO")) as f:
             version = version_re.search(f.read()).group(1)
+
+    branch = get_branch()
+    if branch and branch != 'master':
+        if '+' in version:
+            version += f'.{branch}'
+        else:
+            version += f'+{branch}'
     return version
+
+
+def get_branch():
+
+    if isdir(join(dirname(__file__), ".git")):
+        cmd = "git branch --show-current"
+        try:
+            return check_output(cmd.split()).decode().strip()[:]
+        except CalledProcessError:
+            pass
+
+    return None
 
 
 setup(
