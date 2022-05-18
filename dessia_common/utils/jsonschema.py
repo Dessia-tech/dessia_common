@@ -7,7 +7,7 @@ from copy import deepcopy
 import inspect
 import warnings
 import collections
-from typing import get_origin, get_args, Union, get_type_hints, TextIO, BinaryIO
+from typing import get_origin, get_args, Union, get_type_hints
 import dessia_common as dc
 import dessia_common.utils.types as dc_types
 from dessia_common.files import BinaryFile, StringFile
@@ -237,7 +237,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element, order, editable=N
             order=order, editable=editable, title=title
         )
         jsonschema_element[key]['units'] = typing_.units
-    elif typing_ in [TextIO, BinaryIO] or issubclass(typing_, (BinaryFile, StringFile)):
+    elif issubclass(typing_, (BinaryFile, StringFile)):
         jsonschema_element[key].update({'type': 'text', 'is_file': True})
     else:
         classname = dc.full_classname(object_=typing_, compute_for='class')

@@ -39,7 +39,7 @@ MAX_ERROR_BY_TYPE = {
                      'too-few-public-methods': 5,
                      'unnecessary-comprehension': 5,
                      'no-value-for-parameter': 2,
-                     'too-many-return-statements': 8,
+                     'too-many-return-statements': 9,
                      'raise-missing-from': 0,
                      'consider-merging-isinstance': 6,
                      'abstract-method': 6,
