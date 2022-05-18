@@ -128,6 +128,8 @@ class TypedVariableWithDefaultValue(TypedVariable):
         :type memo: TYPE, optional
         :return: The copied object
         """
+        if memo is None:
+            memo = {}
         copied_default_value = deepcopy_value(self.default_value, memo=memo)
         return TypedVariableWithDefaultValue(type_=self.type_, default_value=copied_default_value,
                                              memorize=self.memorize, name=self.name)
