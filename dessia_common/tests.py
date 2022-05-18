@@ -103,7 +103,7 @@ class System(DessiaObject):
 
     def power_simulation(self, usage: SystemUsage):
         output_power = []
-        for time, input_power in zip(usage.time, usage.power):
+        for _, input_power in zip(usage.time, usage.power):
             output_power.append(self.output_power(input_power))
         return SystemSimulationResult(self, usage, output_power)
 
