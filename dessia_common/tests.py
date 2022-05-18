@@ -3,7 +3,7 @@
 """
 
 """
-
+from time import sleep
 from typing import List
 from dessia_common import DessiaObject
 import dessia_common.typings as dct
@@ -44,6 +44,20 @@ class Generator(DessiaObject):
                      for i in range(self.nb_solutions)]
         self.models = [Model(self.parameter + i, submodels[i])
                        for i in range(self.nb_solutions)]
+
+    def long_generation(self, progress_callback=lambda x: None) -> List[Model]:
+        submodels = [Submodel(self.parameter * i)
+                     for i in range(self.nb_solutions)]
+        models = [Model(self.parameter + i, submodels[i]) for i in range(self.nb_solutions)]
+        # Delay to simulate long generateion
+        print('Beginning a long optimisation...')
+        for i in range(20):
+            print(f'Loop n°{i+1}/20')
+            progress = i / 19.
+            progress_callback(progress)
+            sleep(4.)
+
+        return models
 
 
 class Optimizer(DessiaObject):
