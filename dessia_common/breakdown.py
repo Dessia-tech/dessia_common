@@ -37,7 +37,11 @@ class ExtractionError(Exception):
 
 def extract_from_object(object_, segment):
     if is_sequence(object_):
-        return object_[int(segment)]
+        try:
+            return object_[int(segment)]
+        except ValueError:
+            message_error = f'Cannot extract segment {segment} from object {object_}: segment is not a sequence index'
+            raise ExtractionError(message_error)
 
     if isinstance(object_, dict):
         if segment in object_:
