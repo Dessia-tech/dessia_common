@@ -47,6 +47,12 @@ class Generator(DessiaObject):
                        for i in range(self.nb_solutions)]
 
     def long_generation(self, progress_callback=lambda x: None) -> List[Model]:
+        """
+        This method aims to test:
+            * lots of prints to be catched
+            * progress update
+            * long computation
+        """
         submodels = [Submodel(self.parameter * i)
                      for i in range(self.nb_solutions)]
         models = [Model(self.parameter + i, submodels[i]) for i in range(self.nb_solutions)]
