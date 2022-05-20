@@ -31,6 +31,7 @@ class Model(DessiaObject):
 
 class Generator(DessiaObject):
     _standalone_in_db = True
+    _allowed_methods = ['long_generation']
 
     def __init__(self, parameter: int, nb_solutions: int = 25, name: str = ''):
         self.parameter = parameter
@@ -50,13 +51,13 @@ class Generator(DessiaObject):
                      for i in range(self.nb_solutions)]
         models = [Model(self.parameter + i, submodels[i]) for i in range(self.nb_solutions)]
         # Delay to simulate long generateion
-        print('Beginning a long optimisation...')
-        for i in range(20):
-            print(f'Loop n°{i+1}/20')
-            progress = i / 19.
+        print('Beginning a long generation...')
+        for i in range(500):
+            print(f'Loop n°{i+1} / 500')
+            progress = i / 499.
             progress_callback(progress)
-            sleep(4.)
-
+            sleep(0.3)
+        print('Generation complete')
         return models
 
 
