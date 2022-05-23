@@ -44,7 +44,13 @@ def extract_from_object(object_, segment):
             return object_[segment]
 
         if segment.isdigit():
-            return object_[int(segment)]
+            intifyed_segment = int(segment)
+            if intifyed_segment in object_:
+                return object_[intifyed_segment]
+            if segment in object_:
+                return object_[segment]
+
+            raise ExtractionError(f'Cannot extract segment {segment} from object {str(object_)[:200]}')
 
         # should be a tuple
         if segment.startswith('(') and segment.endswith(')') and ',' in segment:
