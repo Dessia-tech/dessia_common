@@ -2,7 +2,7 @@ from string import Template
 
 
 dessia_object_markdown_template = Template('''
-# $name [$class]
+# Object $name of class $class_
 
 This is a markdown file https://www.markdownguide.org/cheat-sheet/
 
