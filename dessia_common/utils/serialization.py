@@ -342,7 +342,7 @@ def deserialize_argument(type_, argument):
         return None
     if dcty.is_typing(type_):
         return deserialize_with_typing(type_, argument)
-    if type_ in [TextIO, BinaryIO] or isinstance(type_, (StringFile, BinaryFile)):
+    if type_ in [TextIO, BinaryIO] or issubclass(type_, (StringFile, BinaryFile)):
         deserialized_arg = argument
     else:
         if type_ in dcty.TYPING_EQUIVALENCES.keys():
@@ -363,7 +363,7 @@ def deserialize_argument(type_, argument):
             # Custom classes
             deserialized_arg = type_.dict_to_object(argument)
         else:
-            raise TypeError("Deserialization of ype {} is Not Implemented".format(type_))
+            raise TypeError(f"Deserialization of type {type_} is Not Implemented")
     return deserialized_arg
 
 
