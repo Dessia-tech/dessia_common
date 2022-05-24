@@ -363,7 +363,7 @@ def deserialize_argument(type_, argument):
             # Custom classes
             deserialized_arg = type_.dict_to_object(argument)
         else:
-            raise TypeError("Deserialization of ype {} is Not Implemented".format(type_))
+            raise TypeError("Deserialization of type {} is Not Implemented".format(type_))
     return deserialized_arg
 
 
