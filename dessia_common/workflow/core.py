@@ -1430,6 +1430,16 @@ class WorkflowState(DessiaObject):
                    values=values, start_time=dict_['start_time'], end_time=dict_['end_time'],
                    output_value=output_value, log=dict_['log'], name=dict_['name'])
 
+    # def dict_to_arguments(self, dict_: JsonSerializable, method: str):
+    #     if method in self._allowed_methods:
+    #         print(method)
+    #         if method == 'add_block_input_values':
+    #             print(dict_)
+            # return self.workflow.dict_to_arguments(dict_=dict_, method='run')
+        # _allowed_methods = ['block_evaluation', 'evaluate_next_block', 'continue_run',
+        #                     'evaluate_maximum_blocks']
+        # raise NotImplementedError(f"Method {method} not allowed for WorkflowState")
+
     def add_input_value(self, input_index: int, value):
         """
         Add a value for given input
@@ -1455,7 +1465,7 @@ class WorkflowState(DessiaObject):
                 value = values[index]
             self.add_input_value(input_index=index, value=value)
 
-    def add_block_input_values(self, block_index: int, values):
+    def add_block_input_values(self, block_index: int, values: Dict[str, Any]):
         """
         Add inputs values for given block
         """
@@ -1649,16 +1659,18 @@ class WorkflowState(DessiaObject):
         """
         Reads block to compute available export formats
         """
-        export_formats = DessiaObject._export_formats(self)
+        export_formats = []
         for i, block in enumerate(self.workflow.blocks):
             if hasattr(block, "_export_format"):
                 export_formats.append(block._export_format(i))
+        print(export_formats)
         return export_formats
 
     def export(self, block_index: int):
         """
         Perform export
         """
+        print("EXPORTING")
         if self.progress >= 1:
             block = self.workflow.blocks[block_index]
             # TODO We should track different Export branches and run the only one concerned.
