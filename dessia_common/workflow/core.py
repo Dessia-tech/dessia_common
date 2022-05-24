@@ -649,9 +649,11 @@ class Workflow(Block):
         dict_ = {int(k): v for k, v in dict_.items()}  # serialisation set keys as strings
         if method in self._allowed_methods:
             arguments_values = {}
+            method_jsonschema = self._method_jsonschemas[method]
             for i, input_ in enumerate(self.inputs):
+                is_required = str(i) in method_jsonschema['required']
                 has_default = input_.has_default_value
-                if not has_default or (has_default and i in dict_):
+                if (not has_default or (has_default and i in dict_)) and is_required:
                     value = dict_[i]
                     deserialized_value = deserialize_argument(type_=input_.type_, argument=value)
                     arguments_values[i] = deserialized_value
@@ -660,7 +662,7 @@ class Workflow(Block):
             if name_index in dict_:
                 name = dict_[name_index]
             else:
-                name = None
+                name = ""
             arguments = {'input_values': arguments_values, 'name': name}
             return arguments
         raise NotImplementedError(f"Method {method} not in Workflow allowed methods")
