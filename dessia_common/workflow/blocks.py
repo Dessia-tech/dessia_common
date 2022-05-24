@@ -786,8 +786,12 @@ class Substraction(Block):
         return [values[self.inputs[0]] - values[self.inputs[1]]]
 
 
+JSON_EXPORT_METHOD_TYPE = MethodType(class_=DessiaObject, name="save_to_stream")
+
+
 class Export(Block):
-    def __init__(self, method_type: MethodType, export_name: str = "", name: str = ""):
+    def __init__(self, method_type: MethodType = JSON_EXPORT_METHOD_TYPE, text: bool = True, extension: str = "json",
+                 export_name: str = "", name: str = ""):
         self.method_type = method_type
         if not export_name:
             export_name = "export"
@@ -795,8 +799,8 @@ class Export(Block):
 
         method = method_type.get_method()
 
-        self.extension = ""
-        self.text = None
+        self.extension = extension
+        self.text = text
 
         output = output_from_function(function=method, name="export_output")
         Block.__init__(self, inputs=[TypedVariable(type_=method_type.class_)], outputs=[output], name=name)
