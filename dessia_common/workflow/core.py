@@ -1758,7 +1758,6 @@ class WorkflowRun(WorkflowState):
         WorkflowState.__init__(self, workflow=workflow, input_values=input_values, activated_items=activated_items,
                                values=values, start_time=start_time, output_value=output_value, log=log, name=name)
 
-
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#'):
         """
         Adds variable values to super WorkflowState dict
