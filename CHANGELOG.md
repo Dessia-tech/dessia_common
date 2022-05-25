@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Fixed
+- Prevent foreach name from being it's iter_input name
+
 ## v0.8.0
 
 ### Added

@@ -420,12 +420,12 @@ class ForEach(Block):
         inputs = []
         for i, workflow_input in enumerate(self.workflow_block.inputs):
             if i == iter_input_index:
-                name = 'Iterable input: ' + workflow_input.name
-                inputs.append(Variable(name=name))
+                variable_name = 'Iterable input: ' + workflow_input.name
+                inputs.append(Variable(name=variable_name))
             else:
                 input_ = workflow_input.copy()
                 input_.name = 'binding ' + input_.name
-                inputs.append(input_)
+            inputs.append(input_)
         output_variable = Variable(name='Foreach output')
         self.output_connections = None  # TODO: configuring port internal connections
         self.input_connections = None
