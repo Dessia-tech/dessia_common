@@ -1365,14 +1365,22 @@ class WorkflowState(DessiaObject):
 
         dict_['values'] = values
 
-        # dict_['evaluated_blocks_indices'] = [i for i, b in enumerate(self.workflow.blocks)
-        #                                      if b in self.activated_items and self.activated_items[b]]
+        # In the future comment these below and rely only on activated items
+        dict_['evaluated_blocks_indices'] = [i for i, b in enumerate(self.workflow.blocks)
+                                             if b in self.activated_items and self.activated_items[b]]
 
-        # dict_['evaluated_pipes_indices'] = [i for i, p in enumerate(self.workflow.pipes)
-        #                                     if p in self.activated_items and self.activated_items[p]]
+        dict_['evaluated_pipes_indices'] = [i for i, p in enumerate(self.workflow.pipes)
+                                            if p in self.activated_items and self.activated_items[p]]
 
-        # dict_['evaluated_variables_indices'] = [self.workflow.variable_indices(v) for v in self.workflow.variables
-        #                                         if v in self.activated_items and self.activated_items[v]]
+        dict_['evaluated_variables_indices'] = [self.workflow.variable_indices(v) for v in self.workflow.variables
+                                                if v in self.activated_items and self.activated_items[v]]
+
+        # Uncomment when refs are handled as dict keys
+        # activated_items = {}
+        # for key, activated in self.activated_items.items():
+        #     s_key, memo = serialize_with_pointers(key, memo=memo, path=f'{path}/activated_items/{key}')
+        #     print('s_key', s_key)
+        #     activated_items[s_key] = activated
 
         dict_.update({'start_time': self.start_time, 'end_time': self.end_time, 'log': self.log})
         return dict_
