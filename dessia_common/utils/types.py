@@ -286,6 +286,10 @@ def is_bson_valid(value, allow_nonstring_keys=False) -> Tuple[bool, str]:
 
 
 def recursive_type(obj):
+    """
+    What is the difference with serialize typing?
+    """
+
     if isinstance(obj, tuple(list(TYPING_EQUIVALENCES.keys()) + [dict])):
         type_ = TYPES_STRINGS[type(obj)]
     elif isinstance(obj, dc.DessiaObject):

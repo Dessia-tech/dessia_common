@@ -478,6 +478,9 @@ def dereference_jsonpointers(dict_):  # , global_dict):
     """
 
     order = deserialization_order(dict_)
+    # print('\norder of')
+    # if 'object_class' in dict_:
+    #     print(dict_['object_class'])
 
     pointers_memo = {}
     for ref in order:

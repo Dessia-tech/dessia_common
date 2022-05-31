@@ -1365,6 +1365,49 @@ class WorkflowState(DessiaObject):
 
         dict_['values'] = values
 
+        # In the future comment these below and rely only on activated items
+        dict_['evaluated_blocks_indices'] = [i for i, b in enumerate(self.workflow.blocks)
+                                             if b in self.activated_items and self.activated_items[b]]
+
+        dict_['evaluated_pipes_indices'] = [i for i, p in enumerate(self.workflow.pipes)
+                                            if p in self.activated_items and self.activated_items[p]]
+
+        dict_['evaluated_variables_indices'] = [self.workflow.variable_indices(v) for v in self.workflow.variables
+                                                if v in self.activated_items and self.activated_items[v]]
+
+        # Uncomment when refs are handled as dict keys
+        # activated_items = {}
+        # for key, activated in self.activated_items.items():
+        #     s_key, memo = serialize_with_pointers(key, memo=memo, path=f'{path}/activated_items/{key}')
+        #     print('s_key', s_key)
+        #     activated_items[s_key] = activated
+
+        dict_.update({'start_time': self.start_time, 'end_time': self.end_time, 'log': self.log})
+        return dict_
+
+    def state_display(self):
+        """
+        Compute display
+        """
+
+        memo = {}
+
+        workflow_dict = self.workflow.to_dict(path='#/workflow', memo=memo)
+
+        dict_ = self.base_dict()
+        # Force migrating from dessia_common.workflow
+        dict_['object_class'] = 'dessia_common.workflow.core.WorkflowState'
+
+        dict_['workflow'] = workflow_dict
+
+        dict_['filled_inputs'] = list(sorted(self.input_values.keys()))
+
+        # Output value: priority for reference before values
+        if self.output_value is not None:
+            serialized_output_value, memo = serialize_with_pointers(self.output_value, memo=memo,
+                                                                    path='#/output_value')
+            dict_['output_value'] = serialized_output_value
+
         dict_['evaluated_blocks_indices'] = [i for i, b in enumerate(self.workflow.blocks)
                                              if b in self.activated_items and self.activated_items[b]]
 
@@ -1471,7 +1514,7 @@ class WorkflowState(DessiaObject):
         """
         Computes the displays of the objects
         """
-        return [DisplaySetting('workflow-state', 'workflow_state', 'to_dict', None)]
+        return [DisplaySetting('workflow-state', 'workflow_state', 'state_display', None)]
 
     @property
     def progress(self):
@@ -1752,7 +1795,7 @@ class WorkflowRun(WorkflowState):
         """
         display_settings = self.workflow.display_settings()
 
-        display_settings.append(DisplaySetting('workflow-state', 'workflow_state', 'to_dict', None))
+        display_settings.append(DisplaySetting('workflow-state', 'workflow_state', 'state_display', None))
 
         # Find & order displayable blocks
         d_blocks = [b for b in self.workflow.blocks if hasattr(b, 'display_') and hasattr(b, "_display_settings")]
