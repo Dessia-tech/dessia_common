@@ -375,7 +375,8 @@ class WorkflowBlock(Block):
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
         dict_ = Block.to_dict(self)
-        dict_.update({'workflow': self.workflow.to_dict()})
+        dict_.update({'workflow': self.workflow.to_dict(use_pointers=use_pointers, memo=memo,
+                                                        path=f'{path}/workflow')})
         return dict_
 
     @classmethod
