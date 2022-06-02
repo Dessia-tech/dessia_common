@@ -53,5 +53,3 @@ pipes = [pipe_int_1, pipe_name_1, pipe_name_2, pipe_gene, pipe_attr, pipe_opti, 
 workflow_ = Workflow(blocks=blocks, pipes=pipes, output=parallel_optimization.outputs[0], name="Workflow with NBVs")
 workflow_state = workflow_.start_run({})
 workflow_state.name = "WorkflowState with NBVs"
-
-
