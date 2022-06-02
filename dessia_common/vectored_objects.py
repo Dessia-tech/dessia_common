@@ -393,8 +393,7 @@ class Catalog(DessiaObject):
             objective = Objective.from_angles(angles=x,
                                               variables=names,
                                               directions=minimized)
-            best_on_pareto = min([objective.apply_individual(pareto_value)
-                                  for pareto_value in pareto_values])
+            best_on_pareto = min((objective.apply_individual(pareto_value) for pareto_value in pareto_values))
             rating = objective.apply_individual(values)
             delta = rating - best_on_pareto
             return delta
@@ -473,22 +472,18 @@ class Catalog(DessiaObject):
         for j, setting in enumerate(list_settings):
             for i in range(j + 1, len(list_settings)):
                 if len(plots) < 3:
-                    plots.append(Scatter(tooltip=custom_tooltip,
-                                         x_variable=list_settings[j],
-                                         y_variable=list_settings[i],
-                                         elements=all_points))
+                    plots.append(Scatter(tooltip=custom_tooltip, x_variable=setting,
+                                         y_variable=list_settings[i], elements=all_points))
 
         list_index_0 = [k for k in range(len(elements[0]))]
-        point_family_0 = PointFamily(LIGHTBLUE, list_index_0,
-                                     name='Non pareto')
+        point_family_0 = PointFamily(LIGHTBLUE, list_index_0, name='Non pareto')
 
         n_pareto = len(elements[1])
         list_index_1 = [len(all_points) - i - 1 for i in range(n_pareto)]
         point_family_1 = PointFamily(LIGHTGREEN, list_index_1, name='Pareto')
 
         # ParallelPlot
-        plots.append(ParallelPlot(elements=all_points,
-                                  axes=attributes))
+        plots.append(ParallelPlot(elements=all_points, axes=attributes))
 
         return [MultiplePlots(plots=plots, elements=all_points, point_families=[point_family_0, point_family_1],
                               initial_view_on=True)]

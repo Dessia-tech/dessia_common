@@ -163,12 +163,12 @@ def choose_hash(object_):
     if isinstance(object_, dict):
         return dict_hash(object_)
     if isinstance(object_, str):
-        return sum([ord(e) for e in object_])
+        return sum((ord(e) for e in object_))
     return hash(object_)
 
 
 def list_hash(list_):
-    return sum([choose_hash(e) for e in list_])
+    return sum((choose_hash(e) for e in list_))
 
 
 def dict_hash(dict_):

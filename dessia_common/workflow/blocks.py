@@ -635,7 +635,7 @@ class MultiPlot(Display):
         return Block.equivalent(self, other) and same_attributes and same_order
 
     def equivalent_hash(self):
-        return sum([len(a) for a in self.attributes]) + self.order
+        return sum((len(a) for a in self.attributes)) + self.order
 
     def display_(self, local_values, **kwargs):
         import plot_data
