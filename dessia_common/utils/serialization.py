@@ -157,6 +157,7 @@ def deserialize(serialized_element, sequence_annotation: str = 'List',
 
     if isinstance(serialized_element, dict):
         # try:
+        print(serialized_element)
         return dict_to_object(serialized_element, global_dict=global_dict,
                               pointers_memo=pointers_memo,
                               path=path)
@@ -206,15 +207,27 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
         pointers_memo = {}
 
     if global_dict is None:
+        # This is faulty when the user customizes its dict_to_objects
+        # but uses intermediates generic methods : dict is not the real global
+        # See the try/except in the ref fetching below
         global_dict = dict_
         pointers_memo.update(dereference_jsonpointers(dict_))
 
     if '$ref' in dict_:
+        # try:
         return pointers_memo[dict_['$ref']]
+        # except KeyError:
+        #     # Creates copies of objects which breaks referencement
+        #     extracted_dict = get_in_object_from_path(global_dict, path=dict_['$ref'])
+        #     extracted_obj = deserialize(extracted_dict, global_dict=global_dict,
+        #                                    pointers_memo=pointers_memo, path=path)
+        #     pointers_memo.update({path: extracted_obj})
+        #     return extracted_obj
 
     if class_ is None and 'object_class' in dict_:
         class_ = dcty.get_python_class_from_class_name(dict_['object_class'])
 
+    print("CLASS", class_)
     # Create init_dict
     if class_ is not None and hasattr(class_, 'dict_to_object'):
         different_methods = (class_.dict_to_object.__func__ is not dc.DessiaObject.dict_to_object.__func__)
@@ -246,12 +259,12 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
             annotation = None
 
         key_path = f'{path}/{key}'
-
         if key_path in pointers_memo:
             subobjects[key] = pointers_memo[key_path]
         else:
             subobjects[key] = deserialize(value, annotation, global_dict=global_dict,
                                           pointers_memo=pointers_memo, path=key_path)  # , enforce_pointers=False)
+            pointers_memo.update({key_path: subobjects[key]})
     if class_ is not None:
         obj = class_(**subobjects)
     else:
