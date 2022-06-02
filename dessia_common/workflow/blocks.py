@@ -813,6 +813,10 @@ class Export(Block):
         getattr(values[self.inputs[0]], self.method_type.name)(stream)
         return [stream]
 
+    def export(self, stream, values):
+        getattr(values[self.inputs[0]], self.method_type.name)(stream)
+        return [stream]
+
     def _export_format(self, block_index: int):
         args = {"block_index": block_index}
         return {"extension": self.extension, "method_name": "export", "text": self.text, "args": args}

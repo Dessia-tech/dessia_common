@@ -1605,6 +1605,29 @@ class WorkflowState(DessiaObject):
 
         self.activated_items[block] = True
 
+    def _evaluate_export_block(self, block, stream, verbose=False):
+        if verbose:
+            log_line = f"Evaluating block {block.name}"
+            self.log += log_line + '\n'
+            if verbose:
+                print(log_line)
+        args = {}
+        for i in block.inputs:
+            args[i] = self.values[i]
+            incoming_pipes = [p for p in self.workflow.pipes if p.output_variable == i]
+            # TODO : Horrible hotfix. Why is that that block input is not in self.values ?
+            if incoming_pipes:  # Inputs can only be connected to one pipe
+                incoming_pipe = incoming_pipes[0]
+                self._evaluate_pipe(incoming_pipe)
+        output_values = block.export(stream, args)
+
+        output_items = zip(block.outputs, output_values)
+        for output, output_value in output_items:
+            self.values[output] = output_value
+            self.activated_items[output] = True
+
+        self.activated_items[block] = True
+
     def activate_inputs(self, check_all_inputs=False):
         """
         Returns if all inputs are activated
@@ -1655,7 +1678,7 @@ class WorkflowState(DessiaObject):
                 export_formats.append(block._export_format(i))
         return export_formats
 
-    def export(self, block_index: int):
+    def export(self, stream, block_index: int):
         """
         Perform export
         """
@@ -1663,10 +1686,16 @@ class WorkflowState(DessiaObject):
             block = self.workflow.blocks[block_index]
             # TODO We should track different Export branches and run the only one concerned.
             #  Should we use evaluate_block ?
-            self.continue_run(export=True)
-            output = block.outputs[0]
-            return self.values[output]
-        raise RuntimeError("Workflow has not reached its output and cannot be exported")
+            if not hasattr(block, "export"):
+                raise ValueError(f"Block at index {block_index} is not an export block")
+            else:
+                # Code intel not seeing above check
+                self._evaluate_export_block(block, stream)
+            # self.continue_run(export=True)
+            # output = block.outputs[0]
+            # return self.values[output]
+        else:
+            raise RuntimeError("Workflow has not reached its output and cannot be exported")
 
 
 class WorkflowRun(WorkflowState):
