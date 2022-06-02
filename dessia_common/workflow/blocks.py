@@ -810,8 +810,7 @@ class Export(Block):
             stream = StringFile()
         else:
             stream = BinaryFile()
-        getattr(values[self.inputs[0]], self.method_type.name)(stream)
-        return [stream]
+        return self.export(stream=stream, values=values)
 
     def export(self, stream, values):
         getattr(values[self.inputs[0]], self.method_type.name)(stream)
