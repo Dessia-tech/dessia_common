@@ -82,7 +82,11 @@ def get_in_object_from_path(object_, path):
         if isinstance(element, dict) and '$ref' in element:
             # Going down in the object and it is a reference
             # Evaluating subreference
-            element = get_in_object_from_path(object_, element['$ref'])
+            try:
+                element = get_in_object_from_path(object_, element['$ref'])
+            except RecursionError as err:
+                err_msg = f'Cannot get segment {segment} from path {path} in element {str(element)[:500]}'
+                raise RecursionError(err_msg) from err
         try:
             element = extract_from_object(element, segment)
         except ExtractionError:
