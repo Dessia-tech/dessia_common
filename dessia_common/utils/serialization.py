@@ -319,7 +319,7 @@ def deserialize_with_typing(type_, argument):
 
     elif origin is tuple:
         # Heterogenous sequences (tuples)
-        deserialized_arg = tuple([deserialize_argument(t, arg) for t, arg in zip(args, argument)])
+        deserialized_arg = tuple((deserialize_argument(t, arg) for t, arg in zip(args, argument)))
     elif origin is dict:
         # Dynamic dict
         deserialized_arg = argument

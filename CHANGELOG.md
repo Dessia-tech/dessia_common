@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Fixed
+
+- Temporarly remove workflow-state from workflow run display settings
+
 ## v0.8.0
 
 ### Added
