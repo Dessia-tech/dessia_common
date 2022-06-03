@@ -60,6 +60,43 @@ If you want the object to be reinserted as a pointer elsewhere, you should put i
 
         return dict_
 
+Overloading the dict_to_object method 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Be also careful with this method!
+
+Overloading the to_dict method should:
+ * Implement the parameters of the base class:
+
+   * global_dict: default to None.
+   * pointers_memo: a dict [pythonobject -> path] of already serialized values
+   * path: the path in the global object: for most case append '/attribute_name' to given path for your attributes
+
+If calling recursively to_dict of subattributes, these arguments must be passed, as is for use_pointers and memo. Path must be created as a subpath with '/' delimiter:
+
+.. code-block:: python
+   
+    @classmethod
+    def dict_to_object(cls, dict_, global_dict=None, pointers_memo=None, path='#'):
+        '''
+        This is my specific dict to object
+        '''
+        # Init pointers memo
+        if pointers_memo is None:
+            pointers_memo = {}
+
+        # If global dict is none, we should populate pointer memo with an analysis of dict_
+        if global_dict is None:
+            global_dict = dict_
+            pointers_memo.update(dereference_jsonpointers(dict_))
+                
+        # getting attributes from dict. Very bad names by the way.
+        attr1 = dict_['attr1']
+        attr2 = dict_['attr2']
+        # Instantiate
+        return cls(attr1=attr1, attr2=attr2)
+
+
 
 
 Object Equality
