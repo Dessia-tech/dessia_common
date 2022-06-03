@@ -21,25 +21,20 @@ def diff(value1, value2, path='#'):
     invalid_types = []
 
     if is_sequence(value1) and is_sequence(value2):
-        print(1)
         return sequence_diff(value1, value2, path=path)
 
     if not isinstance(value1, type(value2)):
         invalid_types.append(path)
-        print(2)
         return diff_values, missing_keys_in_other_object, invalid_types
 
     if isinstance_base_types(value1):
         if isinstance(value1, float) and \
                 math.isclose(value1, value2, abs_tol=dc.FLOAT_TOLERANCE):
-            print(3)
             return diff_values, missing_keys_in_other_object, invalid_types
         if value1 != value2:
             diff_values.append((path, value1, value2))
-        print(4)
         return diff_values, missing_keys_in_other_object, invalid_types
     if isinstance(value1, dict):
-        print(5)
         return dict_diff(value1, value2, path=path)
     # elif hasattr(value1, '_data_eq'):
 
@@ -55,7 +50,6 @@ def diff(value1, value2, path='#'):
             del eq_dict['name']
 
         other_eq_dict = value2._serializable_dict()
-        print(6)
         return dict_diff(eq_dict, other_eq_dict, path=path)
 
     if value1 == value2:
