@@ -227,7 +227,6 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
     if class_ is None and 'object_class' in dict_:
         class_ = dcty.get_python_class_from_class_name(dict_['object_class'])
 
-    print("CLASS", class_)
     # Create init_dict
     if class_ is not None and hasattr(class_, 'dict_to_object'):
         different_methods = (class_.dict_to_object.__func__ is not dc.DessiaObject.dict_to_object.__func__)
@@ -264,7 +263,7 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
         else:
             subobjects[key] = deserialize(value, annotation, global_dict=global_dict,
                                           pointers_memo=pointers_memo, path=key_path)  # , enforce_pointers=False)
-            pointers_memo.update({key_path: subobjects[key]})
+            # pointers_memo.update({key_path: subobjects[key]})
     if class_ is not None:
         obj = class_(**subobjects)
     else:
