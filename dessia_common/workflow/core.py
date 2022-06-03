@@ -380,7 +380,7 @@ class Workflow(Block):
         output_hash = hash(self.variable_indices(self.outputs[0]))
 
         base_hash = len(self.blocks) + 11 * len(self.pipes) + output_hash
-        block_hash = int(sum([b.equivalent_hash() for b in self.blocks]) % 10e5)
+        block_hash = int(sum((b.equivalent_hash() for b in self.blocks)) % 10e5)
         return (base_hash + block_hash) % 1000000000
 
     def _data_eq(self, other_object):  # TODO: implement imposed_variable_values in equality
@@ -1272,8 +1272,8 @@ class WorkflowState(DessiaObject):
         progress = int(100 * self.progress)
         workflow = hash(self.workflow)
         output = choose_hash(self.output_value)
-        input_values = sum([i * choose_hash(v) for i, v in self.input_values.items()])
-        values = sum([len(k.name) * choose_hash(v) for k, v in self.values.items()])
+        input_values = sum((i * choose_hash(v) for i, v in self.input_values.items()))
+        values = sum((len(k.name) * choose_hash(v) for k, v in self.values.items()))
         return (progress + workflow + output + input_values + values) % 1000000000
 
     def _data_eq(self, other_object: 'WorkflowState'):
@@ -1795,7 +1795,7 @@ class WorkflowRun(WorkflowState):
         """
         display_settings = self.workflow.display_settings()
 
-        display_settings.append(DisplaySetting('workflow-state', 'workflow_state', 'state_display', None))
+        # display_settings.append(DisplaySetting('workflow-state', 'workflow_state', 'state_display', None))
 
         # Find & order displayable blocks
         d_blocks = [b for b in self.workflow.blocks if hasattr(b, 'display_') and hasattr(b, "_display_settings")]
