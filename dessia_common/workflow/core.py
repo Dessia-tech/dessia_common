@@ -1024,11 +1024,11 @@ class Workflow(Block):
             name = f"{self.name} @ [{timestamp}]"
         return state.to_workflow_run(name=name)
 
-    def start_run(self, input_values=None):
+    def start_run(self, input_values=None, name: str = None):
         """
         Partial run of a workflow. Yields a WorkflowState
         """
-        return WorkflowState(self, input_values=input_values)
+        return WorkflowState(self, input_values=input_values, name=name)
 
     def jointjs_data(self):
         """
