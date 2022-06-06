@@ -50,8 +50,7 @@ def diff(value1, value2, path='#'):
             del eq_dict['name']
 
         other_eq_dict = value2._serializable_dict()
-
-        return dict_diff(eq_dict, other_eq_dict)
+        return dict_diff(eq_dict, other_eq_dict, path=path)
 
     if value1 == value2:
         return [], [], []
