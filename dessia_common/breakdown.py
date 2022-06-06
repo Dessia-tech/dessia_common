@@ -37,14 +37,25 @@ class ExtractionError(Exception):
 
 def extract_from_object(object_, segment):
     if is_sequence(object_):
-        return object_[int(segment)]
+        try:
+            return object_[int(segment)]
+        except ValueError:
+            message_error = (f'Cannot extract segment {segment} from object {{str(object_)[:500]}}:'
+                             + 'segment is not a sequence index')
+            raise ExtractionError(message_error)
 
     if isinstance(object_, dict):
         if segment in object_:
             return object_[segment]
 
         if segment.isdigit():
-            return object_[int(segment)]
+            intifyed_segment = int(segment)
+            if intifyed_segment in object_:
+                return object_[intifyed_segment]
+            if segment in object_:
+                return object_[segment]
+
+            raise ExtractionError(f'Cannot extract segment {segment} from object {str(object_)[:200]}')
 
         # should be a tuple
         if segment.startswith('(') and segment.endswith(')') and ',' in segment:
@@ -57,7 +68,7 @@ def extract_from_object(object_, segment):
                 key.append(subkey)
             return object_[tuple(key)]
         # else:
-        message_error = f'Cannot extract segment {segment} from object {object_}'
+        message_error = f'Cannot extract segment {segment} from object {str(object_)[:500]}'
         raise ExtractionError(message_error)
 
     # Finally, it is a regular object

@@ -50,8 +50,7 @@ def diff(value1, value2, path='#'):
             del eq_dict['name']
 
         other_eq_dict = value2._serializable_dict()
-
-        return dict_diff(eq_dict, other_eq_dict)
+        return dict_diff(eq_dict, other_eq_dict, path=path)
 
     if value1 == value2:
         return [], [], []
@@ -163,12 +162,12 @@ def choose_hash(object_):
     if isinstance(object_, dict):
         return dict_hash(object_)
     if isinstance(object_, str):
-        return sum([ord(e) for e in object_])
+        return sum((ord(e) for e in object_))
     return hash(object_)
 
 
 def list_hash(list_):
-    return sum([choose_hash(e) for e in list_])
+    return sum((choose_hash(e) for e in list_))
 
 
 def dict_hash(dict_):
