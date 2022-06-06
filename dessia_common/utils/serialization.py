@@ -204,10 +204,11 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
 
     if global_dict is None or pointers_memo is None:
         global_dict = dict_
-        pointers_memo.update(dereference_jsonpointers(dict_))
 
-    if pointers_memo is None:
-        pointers_memo = {}
+        if pointers_memo is None:
+            pointers_memo = {}
+
+        pointers_memo.update(dereference_jsonpointers(dict_))
 
     if '$ref' in dict_:
         return pointers_memo[dict_['$ref']]
