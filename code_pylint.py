@@ -84,7 +84,8 @@ MAX_ERROR_BY_TYPE = {
                      'misplaced-bare-raise': 0,
                      'redefined-argument-from-local': 0,
                      'import-error': 0,
-                     'unsubscriptable-object': 0
+                     'unsubscriptable-object': 0,
+                     'unnecessary-dunder-call': 4
                      }
 
 print('pylint version: ', __version__)
