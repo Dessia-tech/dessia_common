@@ -209,7 +209,6 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
     if pointers_memo is None:
         pointers_memo = {}
 
-
     if '$ref' in dict_:
         return pointers_memo[dict_['$ref']]
 
