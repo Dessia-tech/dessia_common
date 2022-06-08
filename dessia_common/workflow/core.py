@@ -1795,7 +1795,7 @@ class WorkflowRun(WorkflowState):
         """
         display_settings = self.workflow.display_settings()
 
-        display_settings.append(DisplaySetting('workflow-state', 'workflow_state', 'state_display', None))
+        # display_settings.append(DisplaySetting('workflow-state', 'workflow_state', 'state_display', None))
 
         # Find & order displayable blocks
         d_blocks = [b for b in self.workflow.blocks if hasattr(b, 'display_') and hasattr(b, "_display_settings")]
