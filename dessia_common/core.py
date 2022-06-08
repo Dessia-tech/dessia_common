@@ -11,7 +11,7 @@ import math
 import random
 from functools import reduce
 import collections
-from copy import deepcopy
+from copy import deepcopy, copy
 import inspect
 import json
 
@@ -157,7 +157,9 @@ class DessiaObject:
 
     def _data_hash(self):
         hash_ = 0
-        forbidden_keys = (self._non_data_eq_attributes + self._non_data_hash_attributes + ['package_version', 'name'])
+        forbidden_keys = (self._non_data_eq_attributes
+                          + self._non_data_hash_attributes
+                          + ['package_version', 'name'])
         for key, value in self._serializable_dict().items():
             if key not in forbidden_keys:
                 if is_sequence(value):
@@ -165,7 +167,7 @@ class DessiaObject:
                 elif isinstance(value, dict):
                     hash_ += dict_hash(value)
                 elif isinstance(value, str):
-                    hash_ += sum((ord(v) for v in value))
+                    hash_ += sum(ord(v) for v in value)
                 else:
                     hash_ += hash(value)
         return int(hash_ % 1e5)
@@ -175,6 +177,7 @@ class DessiaObject:
         Make a diff between two objects
         returns: different values, missing keys in other object
         """
+        # return diff(self, other_object)
         return diff(self, other_object)
 
     @property
@@ -465,9 +468,8 @@ class DessiaObject:
 
     def copy(self, deep=True, memo=None):
         if deep:
-            return self.__deepcopy__(memo=memo)
-        # else:
-        return self.__copy__()
+            return deepcopy(self, memo=memo)
+        return copy(self)
 
     def __copy__(self):
         """
