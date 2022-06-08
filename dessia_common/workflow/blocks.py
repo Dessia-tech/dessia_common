@@ -425,7 +425,7 @@ class ForEach(Block):
             else:
                 input_ = workflow_input.copy()
                 input_.name = 'binding ' + input_.name
-            inputs.append(input_)
+                inputs.append(input_)
         output_variable = Variable(name='Foreach output')
         self.output_connections = None  # TODO: configuring port internal connections
         self.input_connections = None
