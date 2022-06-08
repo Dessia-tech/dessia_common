@@ -2,6 +2,7 @@
 Tools for copying objects
 """
 
+import copy
 import warnings
 import dessia_common as dc
 import dessia_common.files
@@ -51,9 +52,10 @@ def deepcopy_value(value, memo):
             return memo_value
 
         try:
-            copied_value = value.__deepcopy__(memo)
+            copied_value = copy.deepcopy(value, memo=memo)
         except TypeError:
-            copied_value = value.__deepcopy__()
+            # Memo arg not handled
+            copied_value = copy.deepcopy(value)
         memo[value] = copied_value
         return copied_value
 

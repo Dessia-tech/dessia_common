@@ -375,7 +375,8 @@ class WorkflowBlock(Block):
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
         dict_ = Block.to_dict(self)
-        dict_.update({'workflow': self.workflow.to_dict()})
+        dict_.update({'workflow': self.workflow.to_dict(use_pointers=use_pointers, memo=memo,
+                                                        path=f'{path}/workflow')})
         return dict_
 
     @classmethod
@@ -622,7 +623,7 @@ class MultiPlot(Display):
         return Block.equivalent(self, other) and same_attributes and same_order
 
     def equivalent_hash(self):
-        return sum([len(a) for a in self.attributes]) + self.order
+        return sum(len(a) for a in self.attributes) + self.order
 
     def display_(self, local_values, **kwargs):
         import plot_data

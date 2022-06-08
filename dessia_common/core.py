@@ -11,7 +11,7 @@ import math
 import random
 from functools import reduce
 import collections
-from copy import deepcopy
+from copy import deepcopy, copy
 import inspect
 import json
 
@@ -167,7 +167,7 @@ class DessiaObject:
                 elif isinstance(value, dict):
                     hash_ += dict_hash(value)
                 elif isinstance(value, str):
-                    hash_ += sum([ord(v) for v in value])
+                    hash_ += sum(ord(v) for v in value)
                 else:
                     hash_ += hash(value)
         return int(hash_ % 1e5)
@@ -468,9 +468,8 @@ class DessiaObject:
 
     def copy(self, deep=True, memo=None):
         if deep:
-            return self.__deepcopy__(memo=memo)
-        # else:
-        return self.__copy__()
+            return deepcopy(self, memo=memo)
+        return copy(self)
 
     def __copy__(self):
         """
@@ -588,7 +587,8 @@ class DessiaObject:
         """
         Render a markdown of the object output type: string
         """
-        return templates.dessia_object_markdown_template.substitute(name=self.name)
+        return templates.dessia_object_markdown_template.substitute(name=self.name,
+                                                                    class_=self.__class__.__name__)
 
     def _performance_analysis(self):
         """

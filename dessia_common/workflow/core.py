@@ -128,6 +128,8 @@ class TypedVariableWithDefaultValue(TypedVariable):
         :type memo: TYPE, optional
         :return: The copied object
         """
+        if memo is None:
+            memo = {}
         copied_default_value = deepcopy_value(self.default_value, memo=memo)
         return TypedVariableWithDefaultValue(type_=self.type_, default_value=copied_default_value,
                                              memorize=self.memorize, name=self.name)
@@ -214,7 +216,7 @@ class Pipe(DessiaObject):
     _jsonschema = {
         "definitions": {}, "$schema": "http://json-schema.org/draft-07/schema#", "type": "object",
         "title": "Pipe", "python_typing": 'dessia_common.workflow.Pipe', "standalone_in_db": False,
-        "required": ["input_variable", "output_variable"],
+        "classes": ["dessia_common.workflow.core.Pipe"], "required": ["input_variable", "output_variable"],
         "properties": {
             "input_variable": {
                 "type": "object", "editable": True, "order": 0,
@@ -281,8 +283,8 @@ class Workflow(Block):
     _eq_is_data_eq = True
     _jsonschema = {
         "definitions": {}, "$schema": "http://json-schema.org/draft-07/schema#", "type": "object", "title": "Workflow",
-        "required": ["blocks", "pipes", "outputs"], "python_typing": 'dessia_common.workflow.Pipe',
-        "standalone_in_db": True,
+        "required": ["blocks", "pipes", "outputs"], "python_typing": 'dessia_common.workflow.core.Workflow',
+        "classes": ["dessia_common.workflow.core.Workflow"], "standalone_in_db": True,
         "properties": {
             "blocks": {
                 "type": "array", "order": 0, "editable": True,
@@ -378,7 +380,7 @@ class Workflow(Block):
         output_hash = hash(self.variable_indices(self.outputs[0]))
 
         base_hash = len(self.blocks) + 11 * len(self.pipes) + output_hash
-        block_hash = int(sum([b.equivalent_hash() for b in self.blocks]) % 10e5)
+        block_hash = int(sum(b.equivalent_hash() for b in self.blocks) % 10e5)
         return (base_hash + block_hash) % 1000000000
 
     def _data_eq(self, other_object):  # TODO: implement imposed_variable_values in equality
@@ -1019,11 +1021,11 @@ class Workflow(Block):
             name = f"{self.name} @ [{timestamp}]"
         return state.to_workflow_run(name=name)
 
-    def start_run(self, input_values=None):
+    def start_run(self, input_values=None, name: str = None):
         """
         Partial run of a workflow. Yields a WorkflowState
         """
-        return WorkflowState(self, input_values=input_values)
+        return WorkflowState(self, input_values=input_values, name=name)
 
     def jointjs_data(self):
         """
@@ -1267,8 +1269,8 @@ class WorkflowState(DessiaObject):
         progress = int(100 * self.progress)
         workflow = hash(self.workflow)
         output = choose_hash(self.output_value)
-        input_values = sum([i * choose_hash(v) for i, v in self.input_values.items()])
-        values = sum([len(k.name) * choose_hash(v) for k, v in self.values.items()])
+        input_values = sum(i * choose_hash(v) for (i, v) in self.input_values.items())
+        values = sum(len(k.name) * choose_hash(v) for (k, v) in self.values.items())
         return (progress + workflow + output + input_values + values) % 1000000000
 
     def _data_eq(self, other_object: 'WorkflowState'):
@@ -1359,6 +1361,49 @@ class WorkflowState(DessiaObject):
             values = {str(self.workflow.variable_index(i)): serialize(v) for i, v in self.values.items()}
 
         dict_['values'] = values
+
+        # In the future comment these below and rely only on activated items
+        dict_['evaluated_blocks_indices'] = [i for i, b in enumerate(self.workflow.blocks)
+                                             if b in self.activated_items and self.activated_items[b]]
+
+        dict_['evaluated_pipes_indices'] = [i for i, p in enumerate(self.workflow.pipes)
+                                            if p in self.activated_items and self.activated_items[p]]
+
+        dict_['evaluated_variables_indices'] = [self.workflow.variable_indices(v) for v in self.workflow.variables
+                                                if v in self.activated_items and self.activated_items[v]]
+
+        # Uncomment when refs are handled as dict keys
+        # activated_items = {}
+        # for key, activated in self.activated_items.items():
+        #     s_key, memo = serialize_with_pointers(key, memo=memo, path=f'{path}/activated_items/{key}')
+        #     print('s_key', s_key)
+        #     activated_items[s_key] = activated
+
+        dict_.update({'start_time': self.start_time, 'end_time': self.end_time, 'log': self.log})
+        return dict_
+
+    def state_display(self):
+        """
+        Compute display
+        """
+
+        memo = {}
+
+        workflow_dict = self.workflow.to_dict(path='#/workflow', memo=memo)
+
+        dict_ = self.base_dict()
+        # Force migrating from dessia_common.workflow
+        dict_['object_class'] = 'dessia_common.workflow.core.WorkflowState'
+
+        dict_['workflow'] = workflow_dict
+
+        dict_['filled_inputs'] = list(sorted(self.input_values.keys()))
+
+        # Output value: priority for reference before values
+        if self.output_value is not None:
+            serialized_output_value, memo = serialize_with_pointers(self.output_value, memo=memo,
+                                                                    path='#/output_value')
+            dict_['output_value'] = serialized_output_value
 
         dict_['evaluated_blocks_indices'] = [i for i, b in enumerate(self.workflow.blocks)
                                              if b in self.activated_items and self.activated_items[b]]
@@ -1466,7 +1511,7 @@ class WorkflowState(DessiaObject):
         """
         Computes the displays of the objects
         """
-        return [DisplaySetting('workflow-state', 'workflow_state', 'to_dict', None)]
+        return [DisplaySetting('workflow-state', 'workflow_state', 'state_display', None)]
 
     @property
     def progress(self):
@@ -1674,7 +1719,7 @@ class WorkflowRun(WorkflowState):
     _jsonschema = {
         "definitions": {}, "$schema": "http://json-schema.org/draft-07/schema#", "type": "object",
         "standalone_in_db": True, "title": "WorkflowRun Base Schema", "required": [],
-        "python_typing": 'dessia_common.workflow.Pipe',
+        "python_typing": 'dessia_common.workflow.WorkflowRun', "classes": ["dessia_common.workflow.core.WorkflowRun"],
         "properties": {
             "workflow": {"type": "object", "title": "Workflow", "python_typing": "dessia_common.workflow.Workflow",
                          "classes": ["dessia_common.workflow.Workflow"], "order": 0,
@@ -1747,7 +1792,7 @@ class WorkflowRun(WorkflowState):
         """
         display_settings = self.workflow.display_settings()
 
-        display_settings.append(DisplaySetting('workflow-state', 'workflow_state', 'to_dict', None))
+        # display_settings.append(DisplaySetting('workflow-state', 'workflow_state', 'state_display', None))
 
         # Find & order displayable blocks
         d_blocks = [b for b in self.workflow.blocks if hasattr(b, 'display_') and hasattr(b, "_display_settings")]
