@@ -202,11 +202,12 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
 
     class_argspec = None
 
-    if pointers_memo is None:
-        pointers_memo = {}
-
-    if global_dict is None:
+    if global_dict is None or pointers_memo is None:
         global_dict = dict_
+
+        if pointers_memo is None:
+            pointers_memo = {}
+
         pointers_memo.update(dereference_jsonpointers(dict_))
 
     if '$ref' in dict_:
@@ -319,7 +320,7 @@ def deserialize_with_typing(type_, argument):
 
     elif origin is tuple:
         # Heterogenous sequences (tuples)
-        deserialized_arg = tuple([deserialize_argument(t, arg) for t, arg in zip(args, argument)])
+        deserialized_arg = tuple(deserialize_argument(t, arg) for (t, arg) in zip(args, argument))
     elif origin is dict:
         # Dynamic dict
         deserialized_arg = argument
