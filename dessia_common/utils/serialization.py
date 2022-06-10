@@ -202,11 +202,12 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
 
     class_argspec = None
 
-    if pointers_memo is None:
-        pointers_memo = {}
-
-    if global_dict is None:
+    if global_dict is None or pointers_memo is None:
         global_dict = dict_
+
+        if pointers_memo is None:
+            pointers_memo = {}
+
         pointers_memo.update(dereference_jsonpointers(dict_))
 
     if '$ref' in dict_:
@@ -319,7 +320,7 @@ def deserialize_with_typing(type_, argument):
 
     elif origin is tuple:
         # Heterogenous sequences (tuples)
-        deserialized_arg = tuple([deserialize_argument(t, arg) for t, arg in zip(args, argument)])
+        deserialized_arg = tuple(deserialize_argument(t, arg) for (t, arg) in zip(args, argument))
     elif origin is dict:
         # Dynamic dict
         deserialized_arg = argument
@@ -342,7 +343,7 @@ def deserialize_argument(type_, argument):
         return None
     if dcty.is_typing(type_):
         return deserialize_with_typing(type_, argument)
-    if type_ in [TextIO, BinaryIO, StringFile, BinaryFile]:
+    if type_ in [TextIO, BinaryIO] or issubclass(type_, (StringFile, BinaryFile)):
         deserialized_arg = argument
     else:
         if type_ in dcty.TYPING_EQUIVALENCES.keys():
@@ -363,7 +364,7 @@ def deserialize_argument(type_, argument):
             # Custom classes
             deserialized_arg = type_.dict_to_object(argument)
         else:
-            raise TypeError("Deserialization of ype {} is Not Implemented".format(type_))
+            raise TypeError(f"Deserialization of type {type_} is Not Implemented")
     return deserialized_arg
 
 
@@ -478,6 +479,9 @@ def dereference_jsonpointers(dict_):  # , global_dict):
     """
 
     order = deserialization_order(dict_)
+    # print('\norder of')
+    # if 'object_class' in dict_:
+    #     print(dict_['object_class'])
 
     pointers_memo = {}
     for ref in order:

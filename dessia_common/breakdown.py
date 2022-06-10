@@ -31,29 +31,45 @@ def attrmethod_getter(object_, attr_methods):
     return object_
 
 
+class ExtractionError(Exception):
+    pass
+
+
 def extract_from_object(object_, segment):
     if is_sequence(object_):
-        return object_[int(segment)]
+        try:
+            return object_[int(segment)]
+        except ValueError:
+            message_error = (f'Cannot extract segment {segment} from object {{str(object_)[:500]}}:'
+                             + 'segment is not a sequence index')
+            raise ExtractionError(message_error)
 
     if isinstance(object_, dict):
         if segment in object_:
             return object_[segment]
 
-        try:
-            return object_[int(segment)]
-        except ValueError as error:
-            # should be a tuple
-            if segment.startswith('(') and segment.endswith(')') and ',' in segment:
-                key = []
-                for subsegment in segment.strip('()').replace(' ', '').split(','):
-                    try:
-                        subkey = int(subsegment)
-                    except ValueError:
-                        subkey = subsegment
-                    key.append(subkey)
-                return object_[tuple(key)]
-            # else:
-            raise ValueError(f'Cannot extract segment {segment} from object {object_}') from error
+        if segment.isdigit():
+            intifyed_segment = int(segment)
+            if intifyed_segment in object_:
+                return object_[intifyed_segment]
+            if segment in object_:
+                return object_[segment]
+
+            raise ExtractionError(f'Cannot extract segment {segment} from object {str(object_)[:200]}')
+
+        # should be a tuple
+        if segment.startswith('(') and segment.endswith(')') and ',' in segment:
+            key = []
+            for subsegment in segment.strip('()').replace(' ', '').split(','):
+                if subsegment.isdigit():
+                    subkey = int(subsegment)
+                else:
+                    subkey = subsegment
+                key.append(subkey)
+            return object_[tuple(key)]
+        # else:
+        message_error = f'Cannot extract segment {segment} from object {str(object_)[:500]}'
+        raise ExtractionError(message_error)
 
     # Finally, it is a regular object
     return getattr(object_, segment)
@@ -69,9 +85,9 @@ def get_in_object_from_path(object_, path):
             element = get_in_object_from_path(object_, element['$ref'])
         try:
             element = extract_from_object(element, segment)
-        except ValueError as err:
-            print(err)
-            raise ValueError(f'Cannot get segment {segment} from path {path} in element {element}') from err
+        except ExtractionError:
+            err_msg = f'Cannot get segment {segment} from path {path} in element {str(element)[:500]}'
+            raise ExtractionError(err_msg)
 
     return element
 
