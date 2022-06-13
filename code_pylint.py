@@ -40,7 +40,7 @@ MAX_ERROR_BY_TYPE = {
                      'unnecessary-comprehension': 5,
                      'no-value-for-parameter': 2,
                      'too-many-return-statements': 8,
-                     'raise-missing-from': 0,
+                     'raise-missing-from': 2,
                      'consider-merging-isinstance': 6,
                      'abstract-method': 6,
                      'import-outside-toplevel': 7,
@@ -84,7 +84,8 @@ MAX_ERROR_BY_TYPE = {
                      'misplaced-bare-raise': 0,
                      'redefined-argument-from-local': 0,
                      'import-error': 0,
-                     'unsubscriptable-object': 0
+                     'unsubscriptable-object': 0,
+                     'unnecessary-dunder-call': 4
                      }
 
 print('pylint version: ', __version__)
