@@ -293,7 +293,7 @@ class StandaloneObject(PhysicalObject):
         points = [plot_data.Point2D(cx=v[0], cy=v[1], name='Point' + str(i)) for i, v in enumerate(catalog.array)]
         axis = plot_data.Axis()
         tooltip = plot_data.Tooltip(attributes=attributes, name='Tooltips')
-        scatter_plot = plot_data.Scatter(axis=axis, tooltip=tooltip, x_variable=attributes[0],
+        scatter_plot = plot_data.Scatter(elements=points, axis=axis, tooltip=tooltip, x_variable=attributes[0],
                                          y_variable=attributes[1], name='Scatter Plot')
 
         # Parallel Plot

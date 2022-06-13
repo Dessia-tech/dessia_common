@@ -422,8 +422,7 @@ class DessiaObject:
                 try:
                     deserialized_value = deserialize_argument(arg_specs, value)
                 except TypeError as err:
-                    msg = 'Error in deserialisation of value: '
-                    msg += f'{value} of expected type {arg_specs}'
+                    msg = f'Error in deserialisation of value: {value} of expected type {arg_specs}'
                     raise TypeError(msg) from err
                 arguments[arg] = deserialized_value
         return arguments
@@ -509,14 +508,11 @@ class DessiaObject:
         if hasattr(self, 'plot_data'):
             import plot_data
             for data in self.plot_data(**kwargs):
-                plot_data.plot_canvas(plot_data_object=data,
-                                      canvas_id='canvas',
-                                      width=1400, height=900,
-                                      debug_mode=False)
+                plot_data.plot_canvas(plot_data_object=data, canvas_id='canvas',
+                                      width=1400, height=900, debug_mode=False)
         else:
-            msg = 'Class {} does not implement a plot_data method' \
-                  ' to define what to plot'
-            raise NotImplementedError(msg.format(self.__class__.__name__))
+            msg = f'Class {self.__class__.__name__} does not implement a plot_data method to define what to plot'
+            raise NotImplementedError(msg)
 
     def mpl_plot(self, **kwargs):
         """
@@ -533,10 +529,8 @@ class DessiaObject:
                     ax = data.mpl_plot()
                     axs.append(ax)
         else:
-            msg = 'Class {} does not implement a plot_data method' \
-                  'to define what to plot'
+            msg = 'Class {} does not implement a plot_data method to define what to plot'
             raise NotImplementedError(msg.format(self.__class__.__name__))
-
         return axs
 
     @staticmethod
@@ -587,8 +581,7 @@ class DessiaObject:
         """
         Render a markdown of the object output type: string
         """
-        return templates.dessia_object_markdown_template.substitute(name=self.name,
-                                                                    class_=self.__class__.__name__)
+        return templates.dessia_object_markdown_template.substitute(name=self.name, class_=self.__class__.__name__)
 
     def _performance_analysis(self):
         """
@@ -634,8 +627,7 @@ class DessiaObject:
         copied_object = self.copy()
         if not copied_object._data_eq(self):
             print('data diff: ', self._data_diff(copied_object))
-            raise dessia_common.errors.CopyError('Object is not equal to itself'
-                                                 ' after copy')
+            raise dessia_common.errors.CopyError('Object is not equal to itself after copy')
 
         valid, hint = is_bson_valid(stringify_dict_keys(dict_))
         if not valid:
