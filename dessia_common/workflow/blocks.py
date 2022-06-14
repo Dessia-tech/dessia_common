@@ -787,11 +787,8 @@ class Substraction(Block):
         return [values[self.inputs[0]] - values[self.inputs[1]]]
 
 
-JSON_EXPORT_METHOD_TYPE = MethodType(class_=DessiaObject, name="save_to_stream")
-
-
 class Export(Block):
-    def __init__(self, method_type: MethodType = JSON_EXPORT_METHOD_TYPE, text: bool = True, extension: str = "json",
+    def __init__(self, method_type: MethodType[Type], text: bool, extension: str = "json",
                  export_name: str = "", name: str = ""):
         self.method_type = method_type
         if not export_name:
@@ -805,6 +802,31 @@ class Export(Block):
 
         output = output_from_function(function=method, name="export_output")
         Block.__init__(self, inputs=[TypedVariable(type_=method_type.class_)], outputs=[output], name=name)
+
+    def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
+        dict_ = Block.to_dict(self)
+        classname = full_classname(object_=self.method_type.class_, compute_for='class')
+        method_type_dict = {'class_': classname, 'name': self.method_type.name}
+        dict_.update({'method_type': method_type_dict, 'text': self.text, "extension": self.extension,
+                      "export_name": self.export_name, "name": self.name})
+        return dict_
+
+    @classmethod
+    @set_block_variable_names_from_dict
+    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'Export':
+        if 'method_type' in dict_:
+            classname = dict_['method_type']['class_']
+            method_name = dict_['method_type']['name']
+        else:
+            # Retro-compatibility
+            classname = dict_['model_class']
+            method_name = dict_['method_name']
+
+        class_ = get_python_class_from_class_name(classname)
+        method_type = MethodType(class_=class_, name=method_name)
+        return cls(method_type=method_type, text=dict_["text"], extension=dict_["extension"],
+                   export_name=dict_["export_name"], name=dict_['name'])
 
     def evaluate(self, values):
         if self.text:

@@ -1658,12 +1658,12 @@ class WorkflowState(DessiaObject):
                 print(log_line)
         args = {}
         for i in block.inputs:
-            args[i] = self.values[i]
             incoming_pipes = [p for p in self.workflow.pipes if p.output_variable == i]
             # TODO : Horrible hotfix. Why is that that block input is not in self.values ?
             if incoming_pipes:  # Inputs can only be connected to one pipe
                 incoming_pipe = incoming_pipes[0]
                 self._evaluate_pipe(incoming_pipe)
+            args[i] = self.values[i]
         output_values = block.export(stream, args)
 
         output_items = zip(block.outputs, output_values)
