@@ -1527,6 +1527,31 @@ class WorkflowState(DessiaObject):
             self.end_time = time.time()
         return progress
 
+    def _upstream_until_activable(self, block: Block, branch_blocks: List[Block] = None) -> List[Block]:
+        """
+        Returns a backward computed list of block until we reach one or several that are all fully activable by inputs
+        """
+        if branch_blocks is None:
+            branch_blocks = [block]
+        upstream_blocks = self.workflow.upstream_blocks(block)
+        print(upstream_blocks, [self._block_activable_by_values(b) for b in upstream_blocks])
+        # if all(self._block_activable_by_values(b) for b in upstream_blocks):
+        #     branch_blocks.extend(upstream_blocks)
+        #     return branch_blocks
+        for upstream_block in upstream_blocks:
+            if upstream_block not in branch_blocks:
+                branch_blocks.append(upstream_block)
+            if not self._block_activable_by_values(upstream_block):
+                branch_blocks = self._upstream_until_activable(block=upstream_block, branch_blocks=branch_blocks)
+        return branch_blocks
+
+    def _block_activable_by_values(self, block: Block):
+        activable = []
+        for input_ in block.inputs:
+            upstream_variable = self.workflow.upstream_variable(input_)
+            activable.append(self.values or upstream_variable is not None and upstream_variable in self.values)
+        return all(activable)
+
     def block_evaluation(self, block_index: int, progress_callback=lambda x: None) -> bool:
         """
         Select a block to evaluate
@@ -1582,6 +1607,10 @@ class WorkflowState(DessiaObject):
                 something_activated = True
         return evaluated_blocks
 
+    def run_export_branch(self, end_block):
+        return 0
+
+
     def _activable_pipes(self):
         """
         Returns all current activable pipes
@@ -1624,6 +1653,7 @@ class WorkflowState(DessiaObject):
         Propagate data between the two variables linked by the pipe, and store it into the object
         """
         self.activated_items[pipe] = True
+        print(pipe.output_variable, pipe.input_variable)
         self.values[pipe.output_variable] = self.values[pipe.input_variable]
         self.activated_items[pipe.output_variable] = True
 
@@ -1663,6 +1693,8 @@ class WorkflowState(DessiaObject):
             if incoming_pipes:  # Inputs can only be connected to one pipe
                 incoming_pipe = incoming_pipes[0]
                 self._evaluate_pipe(incoming_pipe)
+            print(i)
+            print(self.values)
             args[i] = self.values[i]
         output_values = block.export(stream, args)
 
@@ -1727,7 +1759,12 @@ class WorkflowState(DessiaObject):
         """
         Perform export
         """
+        print("OUTPUT", self.values[self.workflow.output])
+        print({(k.name, v) for k, v in self.values.items()})
         if self.progress >= 1:
+            print("CONTINUE RUN")
+            self.continue_run(export=True)
+            print({(k.name, v) for k, v in self.values.items()})
             block = self.workflow.blocks[block_index]
             # TODO We should track different Export branches and run the only one concerned.
             #  Should we use evaluate_block ?

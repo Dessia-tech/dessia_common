@@ -844,56 +844,56 @@ class Export(Block):
         return {"extension": self.extension, "method_name": "export", "text": self.text, "args": args}
 
 
-class ExportJson(Export):
-    def __init__(self, model_class: Type, export_name: str = "", name: str = ""):
-        self.model_class = model_class
-        method_type = MethodType(class_=model_class, name="save_to_stream")
-
-        Export.__init__(self, method_type=method_type, export_name=export_name, name=name)
-        if not export_name:
-            self.export_name += "_json"
-        self.extension = "json"
-        self.text = True
-
-    def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
-        dict_ = Block.to_dict(self)
-        dict_['model_class'] = full_classname(object_=self.method_type.class_, compute_for='class')
-        return dict_
-
-    @classmethod
-    @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
-        class_ = get_python_class_from_class_name(dict_['model_class'])
-        return cls(class_, name=dict_['name'])
-
-
-class ExportExcel(Export):
-    def __init__(self, model_class: Type, export_name: str = "", name: str = ""):
-        self.model_class = model_class
-        method_type = MethodType(class_=model_class, name="to_xlsx_stream")
-
-        Export.__init__(self, method_type=method_type, export_name=export_name, name=name)
-        if not export_name:
-            self.export_name += "_xlsx"
-        self.extension = "xlsx"
-        self.test = False
-
-    def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
-        dict_ = Block.to_dict(self)
-        dict_['model_class'] = full_classname(object_=self.method_type.class_, compute_for='class')
-        return dict_
-
-    @classmethod
-    @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
-        class_ = get_python_class_from_class_name(dict_['model_class'])
-        return cls(class_, name=dict_['name'])
+# class ExportJson(Export):
+#     def __init__(self, model_class: Type, export_name: str = "", name: str = ""):
+#         self.model_class = model_class
+#         method_type = MethodType(class_=model_class, name="save_to_stream")
+#
+#         Export.__init__(self, method_type=method_type, export_name=export_name, name=name)
+#         if not export_name:
+#             self.export_name += "_json"
+#         self.extension = "json"
+#         self.text = True
+#
+#     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
+#         dict_ = Block.to_dict(self)
+#         dict_['model_class'] = full_classname(object_=self.method_type.class_, compute_for='class')
+#         return dict_
+#
+#     @classmethod
+#     @set_block_variable_names_from_dict
+#     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
+#                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
+#         class_ = get_python_class_from_class_name(dict_['model_class'])
+#         return cls(class_, name=dict_['name'])
+#
+#
+# class ExportExcel(Export):
+#     def __init__(self, model_class: Type, export_name: str = "", name: str = ""):
+#         self.model_class = model_class
+#         method_type = MethodType(class_=model_class, name="to_xlsx_stream")
+#
+#         Export.__init__(self, method_type=method_type, export_name=export_name, name=name)
+#         if not export_name:
+#             self.export_name += "_xlsx"
+#         self.extension = "xlsx"
+#         self.test = False
+#
+#     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
+#         dict_ = Block.to_dict(self)
+#         dict_['model_class'] = full_classname(object_=self.method_type.class_, compute_for='class')
+#         return dict_
+#
+#     @classmethod
+#     @set_block_variable_names_from_dict
+#     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
+#                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
+#         class_ = get_python_class_from_class_name(dict_['model_class'])
+#         return cls(class_, name=dict_['name'])
 
 
 class Archive(Block):
-    def __init__(self, number_exports: int = 1, name=""):
+    def __init__(self, number_exports: int = 1, name: str = ""):
         self.number_exports = number_exports
         inputs = [Variable(name="export_" + str(i)) for i in range(number_exports)]
         Block.__init__(self, inputs=inputs, outputs=[Variable(name="zip archive")], name=name)
@@ -910,9 +910,15 @@ class Archive(Block):
         return cls(number_exports=dict_["number_exports"], name=dict_['name'])
 
     def evaluate(self, values):
-        archive = io.BytesIO()
-        with ZipFile(archive, 'w') as zip_archive:
+        archive = BinaryFile()
+        self.export(stream=archive, values=values)
+        return [archive]
+
+    def export(self, stream, values):
+        with ZipFile(stream, 'w') as zip_archive:
             for i, input_ in enumerate(self.inputs):
+                print(input_)
+                print(values)
                 value = values[input_]
                 filename = f"file{i}.{value.extension}"
                 if isinstance(value, StringFile):
@@ -923,7 +929,7 @@ class Archive(Block):
                         file.write(value.getbuffer())
                 else:
                     raise ValueError("Archive input is not a file-like object")
-        return [archive]
+        return [stream]
 
     @staticmethod
     def _export_format(block_index: int):
