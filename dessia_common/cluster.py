@@ -14,7 +14,7 @@ class ClusterResult(dc.DessiaObject):
     """
     _standalone_in_db = True
 
-    def __init__(self, data: List[dc.DessiaObject] = [], labels: List[int] = [], name: str = ''):
+    def __init__(self, data: List[dc.DessiaObject], labels: List[int], name: str = ''):
         dc.DessiaObject.__init__(self, name=name)
         self.data = data
         self.labels = labels
