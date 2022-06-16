@@ -11,8 +11,14 @@ csv_cars = pkg_resources.resource_stream('dessia_common', 'models/data/cars.csv'
 
 all_cars, variables = tests.Car.from_csv(csv_cars)
 
-clustest = cluster.ClusterResult.fromAgglomerativeClustering(all_cars, n_clusters = 10)
-clusters_list = clustest.data_to_clusters(clustest.data, clustest.labels)
+dbtest = cluster.ClusterResult.fromDBSCAN(all_cars, eps = 15)
+aggclustest = cluster.ClusterResult.fromAgglomerativeClustering(all_cars, n_clusters = 10)
+kmeanstest = cluster.ClusterResult.fromKMeans(all_cars, n_clusters = 10)
+
+
+db_list = dbtest.data_to_clusters(all_cars, dbtest.labels)
+agg_list = aggclustest.data_to_clusters(all_cars, aggclustest.labels)
+kmeans_list = kmeanstest.data_to_clusters(all_cars, kmeanstest.labels)
 
 
 
