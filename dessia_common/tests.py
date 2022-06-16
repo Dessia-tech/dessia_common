@@ -7,6 +7,8 @@ from time import sleep
 from typing import List
 from dessia_common import DessiaObject
 import dessia_common.typings as dct
+from io import StringIO
+import numpy as np
 
 
 class Submodel(DessiaObject):
@@ -147,3 +149,69 @@ class SystemSimulationList(DessiaObject):
                  name: str = ''):
         self.simulations = simulations
         DessiaObject.__init__(self, name=name)
+        
+        
+class Car(DessiaObject):
+    """
+    Defines a car
+    """
+    _standalone_in_db = True
+
+    def __init__(self, name: str, MPG: float, Cylinders: float, Displacement: float, Horsepower: float, Weight: float,
+                 Acceleration: float, Model: float, Origin: str):
+        DessiaObject.__init__(self, name=name)
+
+        self.mpg = MPG
+        self.cylinders = Cylinders
+        self.displacement = Displacement
+        self.horsepower = Horsepower
+        self.weight = Weight
+        self.acceleration = Acceleration
+        self.model = Model
+        self.origin = Origin
+        
+        
+    def to_vector(self):            
+        list_formated_car = []
+        for feature in self.export_features():
+            list_formated_car.append(getattr(self, feature.lower()))
+            
+        return list_formated_car     
+    
+    
+    def export_features(self):
+        return ['MPG', 'Cylinders', 'Displacement', 'Horsepower', 'Weight', 'Acceleration', 'Model']
+
+    
+class CarsList(DessiaObject):
+    """
+    Defines cars list from a standard csv file.
+    Created to develop cluster.py.
+    """
+    _standalone_in_db = True
+
+    def __init__(self, array: List[List[float]], variables: List[str], name: str = ''):
+        DessiaObject.__init__(self, name=name)
+        self.cars = array
+        self.variables = variables
+        
+
+    @classmethod
+    def from_csv(cls, file: StringIO, end: int = None, remove_duplicates: bool = False):
+        """
+        Generates MBSEs from given .csv file.
+        """
+        array = np.genfromtxt(file, dtype=None, delimiter=',', names=True, encoding=None)
+        variables = [v for v in array.dtype.fields.keys()]
+        cars = []
+        for i, line in enumerate(array):
+            if end is not None and i >= end:
+                break
+            if not remove_duplicates or (remove_duplicates and line.tolist() not in cars):
+                cars.append( Car(*line.tolist()) )
+                
+        return cls(cars, variables)
+    
+    
+    def to_matrix(self):
+        return [car.to_vector() for car in self.cars]
