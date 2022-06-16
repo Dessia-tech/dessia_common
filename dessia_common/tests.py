@@ -181,25 +181,12 @@ class Car(DessiaObject):
     
     def export_features(self):
         return ['MPG', 'Cylinders', 'Displacement', 'Horsepower', 'Weight', 'Acceleration', 'Model']
-
     
-class CarsList(DessiaObject):
-    """
-    Defines cars list from a standard csv file.
-    Created to develop cluster.py.
-    """
-    _standalone_in_db = True
-
-    def __init__(self, array: List[List[float]], variables: List[str], name: str = ''):
-        DessiaObject.__init__(self, name=name)
-        self.cars = array
-        self.variables = variables
-        
-
+    
     @classmethod
     def from_csv(cls, file: StringIO, end: int = None, remove_duplicates: bool = False):
         """
-        Generates MBSEs from given .csv file.
+        Generates Cars from given .csv file.
         """
         array = np.genfromtxt(file, dtype=None, delimiter=',', names=True, encoding=None)
         variables = [v for v in array.dtype.fields.keys()]
@@ -208,10 +195,6 @@ class CarsList(DessiaObject):
             if end is not None and i >= end:
                 break
             if not remove_duplicates or (remove_duplicates and line.tolist() not in cars):
-                cars.append( Car(*line.tolist()) )
+                cars.append( cls(*line.tolist()) )
                 
-        return cls(cars, variables)
-    
-    
-    def to_matrix(self):
-        return [car.to_vector() for car in self.cars]
+        return cars, variables
