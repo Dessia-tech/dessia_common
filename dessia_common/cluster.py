@@ -21,21 +21,22 @@ class ClusterResult(dc.DessiaObject):
         
         
     @classmethod
-    def fromAgglomerativeClustering(cls, data, 
-                                    n_clusters=2, affinity='euclidean', memory=None, 
-                                    connectivity=None, compute_full_tree='auto', linkage='ward', 
-                                    distance_threshold=None, compute_distances=False):
+    def fromAgglomerativeClustering(cls, data: List[dc.DessiaObject], 
+                                    n_clusters: int = 2):#, affinity: str = 'euclidean', memory: str = None, 
+                                    # connectivity=None, compute_full_tree='auto', linkage='ward', 
+                                    # distance_threshold=None, compute_distances=False):
         
-        skl_cluster = cluster.AgglomerativeClustering(n_clusters=n_clusters, affinity=affinity, memory=memory, 
-                                                      connectivity=connectivity, compute_full_tree=compute_full_tree, 
-                                                      linkage=linkage, distance_threshold=distance_threshold, compute_distances=compute_distances)
+        skl_cluster = cluster.AgglomerativeClustering(n_clusters=n_clusters)
+        # , affinity=affinity, memory=memory, 
+        #                                               connectivity=connectivity, compute_full_tree=compute_full_tree, 
+        #                                               linkage=linkage, distance_threshold=distance_threshold, compute_distances=compute_distances)
         
         skl_cluster.fit(cls.to_matrix(data))
         return cls(data, skl_cluster.labels_.tolist())
    
     
     @staticmethod
-    def to_matrix(data):
+    def to_matrix(data: List[dc.DessiaObject]):
         if 'to_vector' not in dir(data[0]):
             raise NotImplementedError("\nDessiaObject must have a 'to_vector method'.")
             
@@ -47,7 +48,7 @@ class ClusterResult(dc.DessiaObject):
     
     @staticmethod 
     # Is it really pertinent to have a staticmethod for that since we will only call it when having a ClusterResult
-    def data_to_clusters(data, labels):
+    def data_to_clusters(data: List[dc.DessiaObject], labels: npy.ndarray):
         clusters_list = []
         for i in range(npy.max(labels) + 1):
             clusters_list.append([])
