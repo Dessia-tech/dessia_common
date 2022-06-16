@@ -34,16 +34,16 @@ def set_inputs_from_function(method, inputs=None):
     args_specs = inspect.getfullargspec(method)
     nargs, ndefault_args = split_argspecs(args_specs)
 
-    for iarg, argument in enumerate(args_specs.args[1:]):
-        if argument not in ['self', 'progress_callback']:
+    for iarg, argument in enumerate(args_specs.args):
+        if argument not in ['self', 'cls', 'progress_callback']:
             try:
                 annotations = get_type_hints(method)
                 type_ = type_from_annotation(annotations[argument], module=method.__module__)
             except KeyError as error:
                 raise UntypedArgumentError(f"Argument {argument} of method/function {method.__name__} has no typing")\
                     from error
-            if iarg >= nargs - ndefault_args:
-                default = args_specs.defaults[ndefault_args - nargs + iarg]
+            if iarg > nargs - ndefault_args:
+                default = args_specs.defaults[ndefault_args - nargs + iarg - 1]
                 input_ = TypedVariableWithDefaultValue(type_=type_, default_value=default, name=argument)
                 inputs.append(input_)
             else:
@@ -165,6 +165,10 @@ class InstantiateModel(Block):
 
 
 class ClassMethod(Block):
+    """
+    Handles static method as well
+    """
+
     def __init__(self, method_type: ClassMethodType[Type], name: str = ''):
         self.method_type = method_type
         inputs = []
