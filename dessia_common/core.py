@@ -577,7 +577,6 @@ class DessiaObject:
         """
         reference_path = kwargs.get('reference_path', '')
 
-
         displays = []
         for display_setting in self.display_settings():
             display_ = self._display_from_selector(display_setting.selector, reference_path=reference_path)

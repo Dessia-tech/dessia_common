@@ -1454,7 +1454,7 @@ class WorkflowState(DessiaObject):
         #                                                          pointers_memo=pointers_memo,
         #                                                          path=f'{path}/variable_values/{i}')
 
-        input_values = {int(i): deserialize(v, global_dict=dict_, pointers_memo=pointers_memo)
+        input_values = {int(i): deserialize(v, global_dict=dict_, pointers_memo=pointers_memo, path=f"{path}/input_values/{i}")
                         for i, v in dict_['input_values'].items()}
 
         activated_items = {b: (True if i in dict_['evaluated_blocks_indices'] else False)
@@ -1830,7 +1830,7 @@ class WorkflowRun(WorkflowState):
         display_setting = self._display_settings_from_selector(selector)
         try:
             data, reference_path = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
-        except:
+        except ValueError:
             data, reference_path = None, ""
             track = tb.format_exc()
 
