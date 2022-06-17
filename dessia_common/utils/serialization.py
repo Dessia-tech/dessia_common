@@ -210,7 +210,13 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
         pointers_memo.update(dereference_jsonpointers(dict_))
 
     if '$ref' in dict_:
-        return pointers_memo[dict_['$ref']]
+        try:
+            return pointers_memo[dict_['$ref']]
+        except KeyError as err:
+            print('keys in memo:')
+            for key in sorted(pointers_memo.keys()):
+                print(f'\t{key}')
+            raise KeyError(f"Pointer {dict_['$ref']} not in memo") from err
 
     if class_ is None and 'object_class' in dict_:
         class_ = dcty.get_python_class_from_class_name(dict_['object_class'])
