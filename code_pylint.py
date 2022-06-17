@@ -29,7 +29,7 @@ MAX_ERROR_BY_TYPE = {
                      'too-many-branches': 9,
                      'unused-import': 1,
                      'unused-argument': 6,
-                     'cyclic-import': 8,
+                     'cyclic-import': 10,
                      'no-self-use': 6,
                      'unused-variable': 1,
                      'trailing-whitespace': 11,
