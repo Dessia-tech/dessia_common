@@ -1830,7 +1830,7 @@ class WorkflowRun(WorkflowState):
         display_setting = self._display_settings_from_selector(selector)
         try:
             data, reference_path = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
-        except ValueError:
+        except :
             data, reference_path = None, ""
             track = tb.format_exc()
 
