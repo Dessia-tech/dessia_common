@@ -5,10 +5,10 @@
 """
 from time import sleep
 from typing import List
+from io import StringIO
+import numpy as npy
 from dessia_common import DessiaObject
 import dessia_common.typings as dct
-from io import StringIO
-import numpy as np
 
 
 class Submodel(DessiaObject):
@@ -156,31 +156,31 @@ class Car(DessiaObject):
     Defines a car
     """
     _standalone_in_db = True
+    _export_features = ['mpg', 'cylinders', 'displacement', 'horsepower', 
+                        'weight', 'acceleration', 'model']
 
-    def __init__(self, name: str, MPG: float, Cylinders: float, Displacement: float, Horsepower: float, Weight: float,
-                 Acceleration: float, Model: float, Origin: str):
+    def __init__(self, name: str, mpg: float, cylinders: float, 
+                 displacement: dct.Distance, horsepower: float, 
+                 weight: dct.Mass, acceleration: dct.Time, model: float, 
+                 origin: str):
         DessiaObject.__init__(self, name=name)
 
-        self.mpg = MPG
-        self.cylinders = Cylinders
-        self.displacement = Displacement
-        self.horsepower = Horsepower
-        self.weight = Weight
-        self.acceleration = Acceleration
-        self.model = Model
-        self.origin = Origin
+        self.mpg = mpg
+        self.cylinders = cylinders
+        self.displacement = displacement
+        self.horsepower = horsepower
+        self.weight = weight
+        self.acceleration = acceleration
+        self.model = model
+        self.origin = origin
         
         
     def to_vector(self):            
         list_formated_car = []
-        for feature in self.export_features():
+        for feature in self._export_features:
             list_formated_car.append(getattr(self, feature.lower()))
             
         return list_formated_car     
-    
-    
-    def export_features(self):
-        return ['MPG', 'Cylinders', 'Displacement', 'Horsepower', 'Weight', 'Acceleration', 'Model']
     
     
     @classmethod
@@ -188,13 +188,16 @@ class Car(DessiaObject):
         """
         Generates Cars from given .csv file.
         """
-        array = np.genfromtxt(file, dtype=None, delimiter=',', names=True, encoding=None)
-        variables = [v for v in array.dtype.fields.keys()]
+        array = npy.genfromtxt(file, dtype=None, delimiter=',', names=True, encoding=None)
+        list_fields_keys = list(array.dtype.fields.keys())
+        variables = list(list_fields_keys)
         cars = []
         for i, line in enumerate(array):
             if end is not None and i >= end:
                 break
             if not remove_duplicates or (remove_duplicates and line.tolist() not in cars):
-                cars.append( cls(*line.tolist()) )
+                attr_list = list(line)
+                attr_list[3] /= 1000
+                cars.append( cls(*attr_list) )
                 
         return cars, variables

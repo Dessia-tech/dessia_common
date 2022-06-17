@@ -1,10 +1,15 @@
+"""
+Library for building clusters on data.
+"""
 from typing import List
+
 import numpy as npy
-import dessia_common.core as dc
-import plot_data
 from sklearn import cluster, manifold
+
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
+
+import plot_data
+import dessia_common.core as dc
 
 
 class ClusterResult(dc.DessiaObject):
@@ -20,7 +25,7 @@ class ClusterResult(dc.DessiaObject):
         
         
     @classmethod
-    def from_AgglomerativeClustering(cls, data: List[dc.DessiaObject], n_clusters: int = 2, 
+    def from_agglomerative_clustering(cls, data: List[dc.DessiaObject], n_clusters: int = 2, 
                                     affinity: str = 'euclidean', distance_threshold: float = None):
         
         skl_cluster = cluster.AgglomerativeClustering(n_clusters=n_clusters, affinity=affinity, 
@@ -30,7 +35,7 @@ class ClusterResult(dc.DessiaObject):
     
     
     @classmethod
-    def from_KMeans(cls, data: List[dc.DessiaObject], n_clusters: int = 2, 
+    def from_kmeans(cls, data: List[dc.DessiaObject], n_clusters: int = 2, 
                    n_init: int = 10, tolerance: float = 1e-4):
         
         skl_cluster = cluster.KMeans(n_clusters=n_clusters, n_init=n_init, tol=tolerance)
@@ -39,14 +44,14 @@ class ClusterResult(dc.DessiaObject):
     
     
     @classmethod
-    def from_DBSCAN(cls, data: List[dc.DessiaObject], eps: float = 0.5, min_samples: int = 5, 
+    def from_dbscan(cls, data: List[dc.DessiaObject], eps: float = 0.5, min_samples: int = 5, 
                    norm_number: float = 2, leaf_size: int = 30):
         
         skl_cluster = cluster.DBSCAN(eps=eps, min_samples=min_samples, p=norm_number, leaf_size=leaf_size)
         skl_cluster.fit(cls.to_matrix(data))
         if npy.max(skl_cluster.labels_) == -1:
             raise ValueError("\nAll labels are -1 valued which means DBSCAN did not add any element to any cluster.\n" +
-                                      "Try to change 'eps' hyperparamerer.")
+                             "Try to change 'eps' hyperparamerer.")
 
         return cls(data, skl_cluster.labels_.tolist())
    
@@ -76,12 +81,11 @@ class ClusterResult(dc.DessiaObject):
         
     
     def check_dimensionality(self, data: List[dc.DessiaObject]):
-        _, s, _ = npy.linalg.svd(self.to_matrix(data))
-        normed_s = s/npy.sum(s)
+        _, singular_values, _ = npy.linalg.svd(self.to_matrix(data))
+        normed_singular_values = singular_values/npy.sum(singular_values)
         plt.figure()
-        plt.semilogy(normed_s, linestyle = 'None', marker = 'o')
+        plt.semilogy(normed_singular_values, linestyle = 'None', marker = 'o')
         plt.grid()
-        return
     
     
     def plot_data(self):
@@ -91,22 +95,28 @@ class ClusterResult(dc.DessiaObject):
                 
         elements = []
         for i in range(len(matrix_mds)):
-            elements.append({"X_MDS": matrix_mds[i, 0].tolist(), "Y_MDS": matrix_mds[i, 1]})
+            elements.append({"X_MDS": matrix_mds[i, 0].tolist(), 
+                             "Y_MDS": matrix_mds[i, 1]})
             
         dataset_list = []
         for i in range(n_clusters):
             dataset_list.append([])
         for i, label in enumerate(self.labels):
-            dataset_list[label].append({"X_MDS": matrix_mds[i, 0].tolist(), "Y_MDS": matrix_mds[i, 1]})
+            dataset_list[label].append({"X_MDS": matrix_mds[i, 0].tolist(), 
+                                        "Y_MDS": matrix_mds[i, 1]})
 
         cmp_f = plt.cm.get_cmap('jet', n_clusters)(range(n_clusters))
         edge_style = plot_data.EdgeStyle(line_width = 0.0001)
         for i in range(n_clusters):
             color = plot_data.colors.Color(cmp_f[i][0], cmp_f[i][1], cmp_f[i][2])
             point_style = plot_data.PointStyle(color_fill=color, color_stroke=color)
-            dataset_list[i] = plot_data.Dataset(elements=dataset_list[i], edge_style=edge_style, point_style=point_style)
+            dataset_list[i] = plot_data.Dataset(elements=dataset_list[i], 
+                                                edge_style=edge_style, 
+                                                point_style=point_style)
         
-        scatter_plot = plot_data.Graph2D(x_variable = "X_MDS", y_variable = "Y_MDS", graphs=dataset_list)
+        scatter_plot = plot_data.Graph2D(x_variable = "X_MDS", 
+                                         y_variable = "Y_MDS", 
+                                         graphs=dataset_list)
         
         return plot_data.plot_canvas(plot_data_object=scatter_plot, debug_mode=True)
     
