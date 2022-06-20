@@ -2,7 +2,6 @@
 Library for building clusters on data.
 """
 from typing import List
-import warnings
 
 import numpy as npy
 from sklearn import cluster, manifold
