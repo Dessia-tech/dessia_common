@@ -115,7 +115,6 @@ def get_branch():
 
     return None
 
-
 setup(
     name="dessia_common",
     version=get_version(),
