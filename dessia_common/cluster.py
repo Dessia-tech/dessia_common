@@ -49,14 +49,7 @@ class ClusterResult(dc.DessiaObject):
         
         skl_cluster = cluster.DBSCAN(eps=eps, min_samples=min_samples, p=norm_number, leaf_size=leaf_size)
         skl_cluster.fit(cls.to_matrix(data))
-        
-        if npy.max(skl_cluster.labels_) == -1:
-            skl_cluster.labels_ += 1
-            
-        # if npy.max(skl_cluster.labels_) == -1:
-        #     raise ValueError("\nAll labels are -1 valued which means DBSCAN 
-        # did not add any element to any cluster.\n" +
-        #                      "Try to change 'eps' hyperparamerer.")
+        skl_cluster.labels_ += 1 # To test
 
         return cls(data, skl_cluster.labels_.tolist())
    

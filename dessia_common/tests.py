@@ -189,8 +189,7 @@ class Car(DessiaObject):
         Generates Cars from given .csv file.
         """
         array = npy.genfromtxt(file, dtype=None, delimiter=',', names=True, encoding=None)
-        list_fields_keys = list(array.dtype.fields.keys())
-        variables = list(list_fields_keys)
+        variables = list(array.dtype.fields.keys())
         cars = []
         for i, line in enumerate(array):
             if end is not None and i >= end:

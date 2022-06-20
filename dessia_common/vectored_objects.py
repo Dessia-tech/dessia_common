@@ -96,7 +96,7 @@ class Objective(DessiaObject):
         x = np.zeros(n)
         x[0] = 1
         signed = np.dot(matrix.T, x).tolist()
-        unsigned = [v for v in signed]
+        unsigned = np.copy(signed).tolist()
         return unsigned
 
     @classmethod
@@ -246,7 +246,7 @@ class Catalog(DessiaObject):
         Generates MBSEs from given .csv file.
         """
         array = np.genfromtxt(file, dtype=None, delimiter=',', names=True, encoding=None)
-        variables = [v for v in array.dtype.fields.keys()]
+        variables = list(array.dtype.fields.keys())
         lines = []
         for i, line in enumerate(array):
             if end is not None and i >= end:
@@ -427,8 +427,7 @@ class Catalog(DessiaObject):
         name_column_0 = self.variables[0]
         list_name = self.get_values(name_column_0)
 
-        list_settings = [name
-                         for name in self.pareto_settings.minimized_attributes]
+        list_settings = list(self.pareto_settings.minimized_attributes)
         list_value = [self.get_values(cv) for cv in self.choice_variables]
         if self.pareto_is_enabled:
             cost = self.build_costs(self.pareto_settings)
@@ -477,7 +476,7 @@ class Catalog(DessiaObject):
                                          y_variable=list_settings[i],
                                          elements=all_points))
 
-        list_index_0 = [k for k in range(len(elements[0]))]
+        list_index_0 = list(range(len(elements[0])))
         point_family_0 = PointFamily(LIGHTBLUE, list_index_0,
                                      name='Non pareto')
 
@@ -498,7 +497,7 @@ def from_csv(filename: str, end: int = None, remove_duplicates: bool = False):
     Generates MBSEs from given .csv file.
     """
     array = np.genfromtxt(filename, dtype=None, delimiter=',', names=True, encoding=None)
-    variables = [v for v in array.dtype.fields.keys()]
+    variables = list(array.dtype.fields.keys())
     lines = []
     for i, line in enumerate(array):
         if end is not None and i >= end:
