@@ -34,5 +34,5 @@ except RuntimeError:
     else:
         print('License was expected to be unvalid, test passed')
         test_passed = True
-    
+
 assert test_passed

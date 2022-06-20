@@ -15,11 +15,11 @@ import dessia_common as dc
 # =============================================================================
 # Vehicle specs
 # =============================================================================
-specs = {'SCx' : 1,
-         'Crr' : 0.01,
-         'mass' : 1200,
-         'powertrain_efficiency' : 0.7,
-         'charge_efficiency' : 0.5}
+specs = {'SCx': 1,
+         'Crr': 0.01,
+         'mass': 1200,
+         'powertrain_efficiency': 0.7,
+         'charge_efficiency': 0.5}
 
 # =============================================================================
 # Electrical Specs
@@ -47,52 +47,52 @@ power_profile_3, time_3 = power_profile.WltpProfile(specs, (3, ))
 t_wltp3 = electrical.Evolution(list(time_3))
 p_wltp3 = electrical.Evolution(list(power_profile_3))
 t_load = electrical.Evolution(list(range(10)))
-p_load = electrical.Evolution([1e5]*10)
+p_load = electrical.Evolution([1e5] * 10)
 t_end = electrical.Evolution(list(range(10)))
-p_end = electrical.Evolution([-2e4]*10)
+p_end = electrical.Evolution([-2e4] * 10)
 
 ce_end = electrical.CombinationEvolution(evolution1=[t_end],
-                                   evolution2=[p_end],
-                                   name='End Profile')
+                                         evolution2=[p_end],
+                                         name='End Profile')
 ce_wltp1 = electrical.CombinationEvolution(evolution1=[t_wltp1],
-                                     evolution2=[p_wltp1],
-                                     name='WLTP1 profile')
+                                           evolution2=[p_wltp1],
+                                           name='WLTP1 profile')
 ce_wltp2 = electrical.CombinationEvolution(evolution1=[t_wltp2],
-                                     evolution2=[p_wltp2],
-                                     name='WLTP2 profile')
+                                           evolution2=[p_wltp2],
+                                           name='WLTP2 profile')
 ce_wltp3 = electrical.CombinationEvolution(evolution1=[t_wltp3],
-                                     evolution2=[p_wltp3],
-                                     name='WLTP3 profile')
+                                           evolution2=[p_wltp3],
+                                           name='WLTP3 profile')
 ce_load = electrical.CombinationEvolution(evolution1=[t_load],
-                                    evolution2=[p_load],
-                                    name='Load Profile')
+                                          evolution2=[p_load],
+                                          name='Load Profile')
 
-load_bat = electrical.PowerProfile(soc_init=0.05*180000,
-                             combination_evolutions=[ce_load],
-                             loop=True,
-                             soc_end=0.95*180000,
-                             charger=True,
-                             name='Load profile')
+load_bat = electrical.PowerProfile(soc_init=0.05 * 180000,
+                                   combination_evolutions=[ce_load],
+                                   loop=True,
+                                   soc_end=0.95 * 180000,
+                                   charger=True,
+                                   name='Load profile')
 end_bat = electrical.PowerProfile(combination_evolutions=[ce_end],
-                            loop=False,
-                            power_accuracy=0.2,
-                            soc_init=0.1*180000,
-                            name='End profile')
+                                  loop=False,
+                                  power_accuracy=0.2,
+                                  soc_init=0.1 * 180000,
+                                  name='End profile')
 wltp_bat = electrical.PowerProfile(combination_evolutions=[ce_wltp1, ce_wltp2, ce_wltp3],
-                             loop=True,
-                             power_accuracy=0.2,
-                             soc_init=0.95*180000,
-                             max_loop=1,
-                             soc_end=0.1*180000,
-                             use_selection=False,
-                             name='WLTP profile')
+                                   loop=True,
+                                   power_accuracy=0.2,
+                                   soc_init=0.95 * 180000,
+                                   max_loop=1,
+                                   soc_end=0.1 * 180000,
+                                   use_selection=False,
+                                   name='WLTP profile')
 
 comb_profile_wltp = electrical.CombinationPowerProfile([wltp_bat],
-                                                 name='wltp_profil')
+                                                       name='wltp_profil')
 comb_profile_load = electrical.CombinationPowerProfile([load_bat],
-                                                 name='load_profil')
+                                                       name='load_profil')
 comb_profile_end = electrical.CombinationPowerProfile([end_bat],
-                                                name='end_soc_profil')
+                                                      name='end_soc_profil')
 
 # =============================================================================
 # Electrical Optimizer
@@ -103,11 +103,11 @@ block_ebo = wf.InstanciateModel(eo.ElecBatteryOptimizer, name='EBO')
 optimize_ebo = wf.ModelMethod(eo.ElecBatteryOptimizer, 'Optimize', 'Optimize EBO')
 attribute_selection_ebo = wf.ModelAttribute('powerpack_electric_simulators', 'Attribute Selection EBO')
 
-filters = [{'attribute' : 'bms.battery.number_module_parallel', 'operator' : 'gt', 'bound' : 2},
-           {'attribute' : 'bms.battery.number_module_serie', 'operator' : 'lte', 'bound' : 10},
-           {'attribute' : 'bms.number_cells', 'operator' : 'gte', 'bound' : 750},
-           {'attribute' : 'bms.number_cells', 'operator' : 'lte', 'bound' : 800},
-           {'attribute' : 'bms.battery.number_cells', 'operator' : 'gt', 'bound' : 700}]
+filters = [{'attribute': 'bms.battery.number_module_parallel', 'operator': 'gt', 'bound': 2},
+           {'attribute': 'bms.battery.number_module_serie', 'operator': 'lte', 'bound': 10},
+           {'attribute': 'bms.number_cells', 'operator': 'gte', 'bound': 750},
+           {'attribute': 'bms.number_cells', 'operator': 'lte', 'bound': 800},
+           {'attribute': 'bms.battery.number_cells', 'operator': 'gt', 'bound': 700}]
 
 filter_sort = wf.Filter(filters, 'Filters EBO')
 
@@ -135,17 +135,17 @@ input_values = {0: cells.CELL1_2RC,
 #run_default_dict = models.get_jsonschema_default_dict(methods_jsonschemas['run'])
 #serialized_run_default_dict = workflow.dict_to_arguments(run_default_dict, 'run')['input_variables_values']
 
-## From serialized default dict to input_values
+# From serialized default dict to input_values
 #sdd_to_iv = {}
-#for variable, default_value in serialized_run_default_dict.items():
+# for variable, default_value in serialized_run_default_dict.items():
 #    sdd_to_iv[variable] = input_values[variable]
 #
 #sdd_to_iv['10'] = 2
 #run1 = workflow.run(sdd_to_iv)
 
-## Setting values before dict_to_arguments
+# Setting values before dict_to_arguments
 #run_dict = {}
-#for i, input_ in enumerate(block_ebo.inputs):
+# for i, input_ in enumerate(block_ebo.inputs):
 #    if str(i) in run_default_dict:
 #        run_dict[str(i)] = input_values[input_]
 #
@@ -154,7 +154,7 @@ input_values = {0: cells.CELL1_2RC,
 #
 #run2 = workflow.run(serialized_run_dict['input_variables_values'])
 #
-## Requetes
+# Requetes
 #r = c.CreateObject(workflow)
 #reference = r.json()
 #job = c.SubmitJob(reference['object_class'], reference['id'], 'run', run_dict)
