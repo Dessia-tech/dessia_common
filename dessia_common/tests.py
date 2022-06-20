@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
+Test module for dessia_common
 
 """
 from time import sleep

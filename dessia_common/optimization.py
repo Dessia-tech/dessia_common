@@ -1,4 +1,7 @@
+"""
+Optimization package for dessia_common
 
+"""
 import cma
 from typing import List
 import numpy as npy
