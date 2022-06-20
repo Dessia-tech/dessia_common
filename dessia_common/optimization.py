@@ -2,8 +2,8 @@
 Optimization package for dessia_common
 
 """
-import cma
 from typing import List
+import cma
 import numpy as npy
 import scipy.optimize
 import dessia_common.core as dc
@@ -141,7 +141,7 @@ class InstantiatingModelOptimizer(Optimizer):
         x0 = npy.random.random(self.number_parameters)
 
         bounds = self.cma_bounds()
-        xra, fx = cma.fmin(self.objective_from_dimensionless_vector,
+        xra, fx_opt = cma.fmin(self.objective_from_dimensionless_vector,
                            x0, 0.6, options={'bounds': bounds,
                                              'tolfun': 1e-3,
                                              'maxiter': 250,
@@ -153,4 +153,4 @@ class InstantiatingModelOptimizer(Optimizer):
 
         model = self.instantiate_model(attributes_values)
 
-        return model, fx
+        return model, fx_opt

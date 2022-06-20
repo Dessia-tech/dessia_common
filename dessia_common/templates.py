@@ -1,3 +1,7 @@
+"""
+templates for dessia_common
+
+"""
 from string import Template
 
 

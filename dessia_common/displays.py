@@ -1,3 +1,7 @@
+"""
+displays for dessia_common
+
+"""
 import webbrowser
 import os
 import tempfile

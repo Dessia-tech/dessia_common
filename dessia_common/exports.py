@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
+exports for dessia_common
 
 """
 from openpyxl.styles.borders import Border, Side
@@ -23,7 +24,7 @@ def is_number(value):
     """
     Determine if the value is a int or a float
     """
-    return isinstance(value, int) or isinstance(value, float)
+    return isinstance(value, (int, float))
 
 
 def is_builtins_list(list_):
@@ -213,8 +214,7 @@ class XLSXWriter:
                 self.write_object_to_row(obj, sheet, row_number, path)
             self.write_class_header_to_row(obj, sheet, 1)
 
-            sheet.auto_filter.ref = "A1:{}{}".format(openpyxl.utils.cell.get_column_letter(sheet.max_column),
-                                                     len(obj_paths) + 1)
+            sheet.auto_filter.ref = f"A1:{openpyxl.utils.cell.get_column_letter(sheet.max_column)}{len(obj_paths) + 1}"
             self.autosize_sheet_columns(sheet, 5, 30)
 
     def save_to_file(self, filepath: str):

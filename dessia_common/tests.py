@@ -150,19 +150,19 @@ class SystemSimulationList(DessiaObject):
                  name: str = ''):
         self.simulations = simulations
         DessiaObject.__init__(self, name=name)
-        
-        
+
+
 class Car(DessiaObject):
     """
     Defines a car
     """
     _standalone_in_db = True
-    _export_features = ['mpg', 'cylinders', 'displacement', 'horsepower', 
+    _export_features = ['mpg', 'cylinders', 'displacement', 'horsepower',
                         'weight', 'acceleration', 'model']
 
-    def __init__(self, name: str, mpg: float, cylinders: float, 
-                 displacement: dct.Distance, horsepower: float, 
-                 weight: dct.Mass, acceleration: dct.Time, model: float, 
+    def __init__(self, name: str, mpg: float, cylinders: float,
+                 displacement: dct.Distance, horsepower: float,
+                 weight: dct.Mass, acceleration: dct.Time, model: float,
                  origin: str):
         DessiaObject.__init__(self, name=name)
 
@@ -174,16 +174,16 @@ class Car(DessiaObject):
         self.acceleration = acceleration
         self.model = model
         self.origin = origin
-        
-        
-    def to_vector(self):            
+
+
+    def to_vector(self):
         list_formated_car = []
         for feature in self._export_features:
             list_formated_car.append(getattr(self, feature.lower()))
-            
-        return list_formated_car     
-    
-    
+
+        return list_formated_car
+
+
     @classmethod
     def from_csv(cls, file: StringIO, end: int = None, remove_duplicates: bool = False):
         """
@@ -199,5 +199,5 @@ class Car(DessiaObject):
                 attr_list = list(line)
                 attr_list[3] /= 1000
                 cars.append( cls(*attr_list) )
-                
+
         return cars, variables

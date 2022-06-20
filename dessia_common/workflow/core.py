@@ -1135,10 +1135,10 @@ class Workflow(Block):
         classes = []
 
         script_blocks = ''
-        for ib, block in enumerate(self.blocks):
+        for idxb, block in enumerate(self.blocks):
             block_script, classes_block = block.to_script()
             classes.extend(classes_block)
-            script_blocks += f'block_{ib} = {block_script}\n'
+            script_blocks += f'block_{idxb} = {block_script}\n'
 
         script = ('import dessia_common.workflow as dcw\n'
                   + 'import dessia_common.workflow.blocks as dcw_blocks\n'
@@ -1149,9 +1149,9 @@ class Workflow(Block):
             script += f'import {module}\n'
         script += '\n'
         script += script_blocks
-        script += 'blocks = [{}]\n'.format(', '.join(['block_' + str(i) for i in range(len(self.blocks))]))
+        script += f"blocks = [{', '.join(['block_' + str(i) for i in range(len(self.blocks))])}]\n"
 
-        for ip, pipe in enumerate(self.pipes):
+        for idxp, pipe in enumerate(self.pipes):
             input_index = self.variable_indices(pipe.input_variable)
             if isinstance(input_index, int):
                 script += pipe.input_variable.to_script(variable_index=variable_index) + '\n'
@@ -1167,7 +1167,7 @@ class Workflow(Block):
                 variable_index += 1
             else:
                 output_name = f"block_{output_index[0]}.inputs[{output_index[2]}]" + '\n'
-            script += pipe.to_script(pipe_index=ip, input_name=input_name, output_name=output_name) + '\n'
+            script += pipe.to_script(pipe_index=idxp, input_name=input_name, output_name=output_name) + '\n'
 
         script += f"pipes = [{', '.join(['pipe_' + str(i) for i in range(len(self.pipes))])}]\n"
 
@@ -1454,10 +1454,10 @@ class WorkflowState(DessiaObject):
         input_values = {int(i): deserialize(v, global_dict=dict_, pointers_memo=pointers_memo)
                         for i, v in dict_['input_values'].items()}
 
-        activated_items = {b: (True if i in dict_['evaluated_blocks_indices'] else False)
+        activated_items = {b: i in dict_['evaluated_blocks_indices']
                            for i, b in enumerate(workflow.blocks)}
 
-        activated_items.update({p: (True if i in dict_['evaluated_pipes_indices'] else False)
+        activated_items.update({p: i in dict_['evaluated_pipes_indices']
                                 for i, p in enumerate(workflow.pipes)})
 
         var_indices = []
@@ -1466,7 +1466,7 @@ class WorkflowState(DessiaObject):
                 var_indices.append(tuple(variable_indices))  # json serialisation loses tuples
             else:
                 var_indices.append(variable_indices)
-        activated_items.update({v: (True if workflow.variable_indices(v) in var_indices else False)
+        activated_items.update({v: workflow.variable_indices(v) in var_indices
                                 for v in workflow.variables})
 
         return cls(workflow=workflow, input_values=input_values, activated_items=activated_items,

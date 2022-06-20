@@ -55,7 +55,7 @@ def diff(value1, value2, path='#'):
     if value1 == value2:
         return [], [], []
 
-    raise NotImplementedError('Undefined type in diff: {}'.format(type(value1)))
+    raise NotImplementedError(f'Undefined type in diff: {type(value1)}')
 
 
 def dict_diff(dict1, dict2, path='#'):
@@ -64,7 +64,7 @@ def dict_diff(dict1, dict2, path='#'):
     invalid_types = []
 
     for key, value in dict1.items():
-        path_key = '{}/{}'.format(path, key)
+        path_key = f'{path}/{key}'
         if key not in dict2:
             missing_keys_in_other_object.append(key)
         else:
@@ -85,12 +85,12 @@ def sequence_diff(seq1, seq2, path='#'):
         diff_values.append((path, seq1, seq2))
     else:
         for i, (v1, v2) in enumerate(zip(seq1, seq2)):
-            path_value = '{}/{}'.format(path, i)
-            dv, mkv, itv = diff(v1, v2, path=path_value)
+            path_value = f'{path}/{i}'
+            diff_value, missing_key_value, invalid_type_value = diff(v1, v2, path=path_value)
             # print('dvs', dv, v1, v2)
-            diff_values.extend(dv)
-            missing_keys_in_other_object.extend(mkv)
-            invalid_types.extend(itv)
+            diff_values.extend(diff_value)
+            missing_keys_in_other_object.extend(missing_key_value)
+            invalid_types.extend(invalid_type_value)
     return diff_values, missing_keys_in_other_object, invalid_types
 
 

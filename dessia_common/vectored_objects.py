@@ -11,9 +11,10 @@ import math
 from typing import List, Dict, Any
 import numpy as np
 import pandas as pd
-from dessia_common import DessiaObject, Parameter, is_bounded, DessiaFilter
 from scipy.optimize import minimize
 from pyDOE import lhs
+from dessia_common import DessiaObject, Parameter, is_bounded, DessiaFilter
+
 
 
 class ParetoSettings(DessiaObject):
