@@ -175,14 +175,12 @@ class Car(DessiaObject):
         self.model = model
         self.origin = origin
 
-
     def to_vector(self):
         list_formated_car = []
         for feature in self._export_features:
             list_formated_car.append(getattr(self, feature.lower()))
 
         return list_formated_car
-
 
     @classmethod
     def from_csv(cls, file: StringIO, end: int = None, remove_duplicates: bool = False):
@@ -198,6 +196,6 @@ class Car(DessiaObject):
             if not remove_duplicates or (remove_duplicates and line.tolist() not in cars):
                 attr_list = list(line)
                 attr_list[3] /= 1000
-                cars.append( cls(*attr_list) )
+                cars.append(cls(*attr_list))
 
         return cars, variables

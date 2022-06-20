@@ -142,11 +142,11 @@ class InstantiatingModelOptimizer(Optimizer):
 
         bounds = self.cma_bounds()
         xra, fx_opt = cma.fmin(self.objective_from_dimensionless_vector,
-                           x0, 0.6, options={'bounds': bounds,
-                                             'tolfun': 1e-3,
-                                             'maxiter': 250,
-                                             'verbose': 0,
-                                             'ftarget': 0.2})[0:2]
+                               x0, 0.6, options={'bounds': bounds,
+                                                 'tolfun': 1e-3,
+                                                 'maxiter': 250,
+                                                 'verbose': 0,
+                                                 'ftarget': 0.2})[0:2]
 
         attributes_values = self.vector_to_attributes_values(
             self.dimensionless_vector_to_vector(xra))

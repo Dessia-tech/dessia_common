@@ -16,7 +16,6 @@ from pyDOE import lhs
 from dessia_common import DessiaObject, Parameter, is_bounded, DessiaFilter
 
 
-
 class ParetoSettings(DessiaObject):
     """
     :param minimized_attributes: A dictionary containing the name of a variable as key

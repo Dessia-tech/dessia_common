@@ -172,7 +172,7 @@ def object_breakdown(obj, path=''):
 
     for k, value in obj_dict.items():
         # dict after lists
-        if not isinstance(value, (dict, list, tuple)): # Should be object or builtins
+        if not isinstance(value, (dict, list, tuple)):  # Should be object or builtins
             dict2 = breakdown(value, path=path + k)
             bd_dict = merge_breakdown_dicts(bd_dict, dict2)
 
