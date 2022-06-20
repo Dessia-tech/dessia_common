@@ -14,7 +14,7 @@ import dessia_common.core as dc
 
 class ClusterResult(dc.DessiaObject):
     """
-    Cluster object to instantiate and compute clusters on data
+    Cluster object to instantiate and compute clusters on data.
     """
     _standalone_in_db = True
 
