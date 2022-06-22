@@ -144,6 +144,9 @@ setup(
         "dectree",
         "openpyxl",
         "parameterized",
+        "matplotlib",
+        "sklearn",
+        "cma"
     ],
     python_requires=">=3.7",
 )
