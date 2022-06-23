@@ -25,8 +25,66 @@ class ClusterResult(dc.DessiaObject):
 
     @classmethod
     def from_agglomerative_clustering(cls, data: List[dc.DessiaObject], n_clusters: int = 2,
-                                      affinity: str = 'euclidean', distance_threshold: float = None):
+                                      affinity: str = 'euclidean', linkage: str = 'ward', 
+                                      distance_threshold: float = None):
+        """
+        Internet doc
+        ----------
+            Hierarchical clustering is a general family of clustering algorithms that 
+            build nested clusters by merging or splitting them successively. 
+            This hierarchy of clusters is represented as a tree (or dendrogram). 
+            The root of the tree is the unique cluster that gathers all the samples, 
+            the leaves being the clusters with only one sample. See the Wikipedia page 
+            for more details.
+            
+            The AgglomerativeClustering object performs a hierarchical clustering using 
+            a bottom up approach: each observation starts in its own cluster, and clusters 
+            are successively merged together. The linkage criteria determines the metric 
+            used for the merge strategy: Ward minimizes the sum of squared differences within all clusters. 
+            
+            It is a variance-minimizing approach and in this sense is similar to the 
+            k-means objective function but tackled with an agglomerative hierarchical approach.
+            Maximum or complete linkage minimizes the maximum distance between observations of pairs of clusters.
+            Average linkage minimizes the average of the distances between all observations of pairs of clusters.
+            Single linkage minimizes the distance between the closest observations of pairs of clusters.
+            AgglomerativeClustering can also scale to large number of samples when it is used 
+            jointly with a connectivity matrix, but is computationally expensive when no connectivity 
+            constraints are added between samples: it considers at each step all the possible merges.
+                
+            Source : https://scikit-learn.org/stable/modules/clustering.html#hierarchical-clustering
+        
+        Parameters
+        ----------
+        cls : ClusterResult class object
+        
+        data : List[dc.DessiaObject]
+            list of DessiaObject.
+            
+        n_clusters : int or None, default = 2
+            The number of clusters to find. 
+            It must be None if distance_threshold is not None.
+            
+        affinity : str or callable, default = ’euclidean’
+            Metric used to compute the linkage. 
+            Can be “euclidean”, “l1”, “l2”, “manhattan”, “cosine”, or “precomputed”. 
+            If linkage is “ward”, only “euclidean” is accepted. 
+            If “precomputed”, a distance matrix (instead of a similarity matrix) 
+            is needed as input for the fit method.
+            
+        linkage: {‘ward’, ‘complete’, ‘average’, ‘single’}, default = ’ward’
+            Which linkage criterion to use. 
+            The linkage criterion determines which distance to use between sets of observation. 
+            The algorithm will merge the pairs of cluster that minimize this criterion.
+            - ‘ward’ minimizes the variance of the clusters being merged.
+            - ‘average’ uses the average of the distances of each observation of the two sets.
+            - ‘complete’ or ‘maximum’ linkage uses the maximum distances between all observations of the two sets.
+            - ‘single’ uses the minimum of the distances between all observations of the two sets.
 
+        distance_threshold : float, default = None
+            The linkage distance threshold above which, clusters will not be merged. 
+            If not None, n_clusters must be None and compute_full_tree must be True.
+
+        """
         skl_cluster = cluster.AgglomerativeClustering(n_clusters=n_clusters, affinity=affinity,
                                                       distance_threshold=distance_threshold)
         skl_cluster.fit(cls.to_matrix(data))
