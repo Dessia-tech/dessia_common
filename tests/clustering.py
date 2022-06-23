@@ -2,11 +2,6 @@
 Cluster.py package testing.
 """
 import pkg_resources
-import numpy as npy
-from io import StringIO
-
-from dessia_common.vectored_objects import Catalog, ParetoSettings, Objective, ObjectiveSettings
-from dessia_common import DessiaFilter
 from dessia_common import tests, cluster
 
 choice_args = ['MPG', 'Cylinders', 'Displacement', 'Horsepower', 'Weight', 'Acceleration', 'Model']  # Ordered
