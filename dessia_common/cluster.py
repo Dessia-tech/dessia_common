@@ -51,7 +51,7 @@ class ClusterResult(dc.DessiaObject):
             jointly with a connectivity matrix, but is computationally expensive when no connectivity 
             constraints are added between samples: it considers at each step all the possible merges.
                 
-            Source : https://scikit-learn.org/stable/modules/clustering.html#hierarchical-clustering
+            See more : https://scikit-learn.org/stable/modules/clustering.html#hierarchical-clustering
         
         Parameters
         ----------
@@ -93,6 +93,41 @@ class ClusterResult(dc.DessiaObject):
     @classmethod
     def from_kmeans(cls, data: List[dc.DessiaObject], n_clusters: int = 2,
                     n_init: int = 10, tolerance: float = 1e-4):
+        
+        """
+        Internet doc
+        ----------
+            The KMeans algorithm clusters data by trying to separate samples in n groups of equal variance, 
+            minimizing a criterion known as the inertia or within-cluster sum-of-squares (see below). 
+            This algorithm requires the number of clusters to be specified. It scales well to large number 
+            of samples and has been used across a large range of application areas in many different fields.
+            The k-means algorithm divides a set of samples into disjoint clusters , each described by the mean 
+            of the samples in the cluster. The means are commonly called the cluster “centroids”; note that 
+            they are not, in general, points from, although they live in the same space.
+            The K-means algorithm aims to choose centroids that minimise the inertia, or within-cluster 
+            sum-of-squares criterion.
+            
+            See more : https://scikit-learn.org/stable/modules/clustering.html#k-means
+        
+        Parameters
+        ----------
+        cls : ClusterResult class object
+        
+        data : List[dc.DessiaObject]
+            list of DessiaObject.
+            
+        n_clusters : int, default = 8
+            The number of clusters to form as well as the number of centroids to generate.
+
+        n_init : int, default = 10
+            Number of time the k-means algorithm will be run with different centroid seeds. 
+            The final results will be the best output of n_init consecutive runs in terms of inertia.
+
+        tolerance : float, default = 1e-4
+            Relative tolerance with regards to Frobenius norm of the difference in the cluster centers 
+            of two consecutive iterations to declare convergence.
+
+        """
 
         skl_cluster = cluster.KMeans(n_clusters=n_clusters, n_init=n_init, tol=tolerance)
         skl_cluster.fit(cls.to_matrix(data))
@@ -100,12 +135,51 @@ class ClusterResult(dc.DessiaObject):
 
     @classmethod
     def from_dbscan(cls, data: List[dc.DessiaObject], eps: float = 0.5, min_samples: int = 5,
-                    norm_number: float = 2, leaf_size: int = 30):
+                    p: float = 2, leaf_size: int = 30):
+        """
+        Internet doc
+        ----------
+            The DBSCAN algorithm views clusters as areas of high density separated by areas of low density. 
+            Due to this rather generic view, clusters found by DBSCAN can be any shape, as opposed to k-means 
+            which assumes that clusters are convex shaped. The central component to the DBSCAN is the concept 
+            of core samples, which are samples that are in areas of high density. A cluster is therefore a set 
+            of core samples, each close to each other (measured by some distance measure) and a set of non-core 
+            samples that are close to a core sample (but are not themselves core samples). 
+            There are two parameters to the algorithm, min_samples and eps, which define formally what we mean 
+            when we say dense. Higher min_samples or lower eps indicate higher density necessary to form a cluster.
+            
+            See more : https://scikit-learn.org/stable/modules/clustering.html#dbscan
+        
+        Parameters
+        ----------
+        cls : ClusterResult class object
+        
+        data : List[dc.DessiaObject]
+            list of DessiaObject.
+            
+        eps : float, default = 0.5
+            The maximum distance between two samples for one to be considered as in the neighborhood of the other. 
+            This is not a maximum bound on the distances of points within a cluster. 
+            This is the most important DBSCAN parameter to choose appropriately for your data 
+            set and distance function.
 
-        skl_cluster = cluster.DBSCAN(eps=eps, min_samples=min_samples, p=norm_number, leaf_size=leaf_size)
+        min_samples : int, default = 5
+            The number of samples (or total weight) in a neighborhood for a point to be considered as a core point. 
+            This includes the point itself.
+
+        p : float, default = None
+            The power of the Minkowski metric to be used to calculate distance between points. 
+            If None, then p=2 (equivalent to the Euclidean distance).
+            
+        leaf_size : int, default = 30
+            Leaf size passed to BallTree or cKDTree. This can affect the speed of the construction and query, 
+            as well as the memory required to store the tree. The optimal value depends on the nature of the problem.
+
+        """
+
+        skl_cluster = cluster.DBSCAN(eps=eps, min_samples=min_samples, p=p, leaf_size=leaf_size)
         skl_cluster.fit(cls.to_matrix(data))
         skl_cluster.labels_ += 1  # To test
-
         return cls(data, skl_cluster.labels_.tolist())
 
     @staticmethod
@@ -114,7 +188,7 @@ class ClusterResult(dc.DessiaObject):
         for element in data:
             data_matrix.append(element.to_vector())
         return npy.array(data_matrix)
-
+    
     @staticmethod
     # Is it really pertinent to have a staticmethod for that since we will only call it when having a ClusterResult
     def data_to_clusters(data: List[dc.DessiaObject], labels: npy.ndarray):
