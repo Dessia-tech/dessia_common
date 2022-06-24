@@ -23,9 +23,10 @@ class ClusterResult(dc.DessiaObject):
         dc.DessiaObject.__init__(self, name=name)
         self.data = data
         self.labels = labels
+        self.n_clusters = self.set_n_clusters()
 
     @classmethod
-    def from_agglomerative_clustering(cls, data: List[dc.DessiaObject], n_clusters: int = 2,
+    def from_agglomerative_clustering(cls, data: List[dc.DessiaObject] or List[List], n_clusters: int = 2,
                                       affinity: str = 'euclidean', linkage: str = 'ward', 
                                       distance_threshold: float = None):
         """
@@ -88,7 +89,7 @@ class ClusterResult(dc.DessiaObject):
         """
         skl_cluster = cluster.AgglomerativeClustering(n_clusters=n_clusters, affinity=affinity,
                                                       distance_threshold=distance_threshold)
-        skl_cluster.fit(cls.to_matrix(data))
+        skl_cluster.fit(data if cls.is_already_matrix(data) else cls.to_matrix(data))
         return cls(data, skl_cluster.labels_.tolist())
 
     @classmethod
@@ -129,7 +130,7 @@ class ClusterResult(dc.DessiaObject):
 
         """
         skl_cluster = cluster.KMeans(n_clusters=n_clusters, n_init=n_init, tol=tol)
-        skl_cluster.fit(cls.to_matrix(data))
+        skl_cluster.fit(data if cls.is_already_matrix(data) else cls.to_matrix(data))
         return cls(data, skl_cluster.labels_.tolist())
 
     @classmethod
@@ -176,7 +177,7 @@ class ClusterResult(dc.DessiaObject):
 
         """
         skl_cluster = cluster.DBSCAN(eps=eps, min_samples=min_samples, p=p, leaf_size=leaf_size)
-        skl_cluster.fit(cls.to_matrix(data))
+        skl_cluster.fit(data if cls.is_already_matrix(data) else cls.to_matrix(data))
         skl_cluster.labels_ += 1  # To test
         return cls(data, skl_cluster.labels_.tolist())
 
@@ -188,16 +189,31 @@ class ClusterResult(dc.DessiaObject):
         return npy.array(data_matrix)
     
     @staticmethod
+    def is_already_matrix(data: List[dc.DessiaObject] or List[List]):
+        if isinstance(data[0], dc.DessiaObject):
+            return False
+        elif isinstance(data[0], list):
+            return True
+        else:
+            raise ValueError(f"The elements of data list are of type {type(data[0]).__name__}. " +
+                             "They must be instance of {dc.DessiaObject.__module__}.DessiaObject or list.")
+        
+    @staticmethod
     # Is it really pertinent to have a staticmethod for that since we will only call it when having a ClusterResult
     def data_to_clusters(data: List[dc.DessiaObject], labels: npy.ndarray):
         clusters_list = []
         for i in range(npy.max(labels) + 1):
             clusters_list.append([])
-
         for i, label in enumerate(labels):
             clusters_list[label].append(data[i])
-
         return clusters_list
+    
+    def set_n_clusters(self):
+        if len(self.labels) == 0:
+            n_clusters = 0
+        else:
+            n_clusters = max(self.labels) + 1
+        return n_clusters
 
     def check_dimensionality(self, data: List[dc.DessiaObject]):
         _, singular_values, _ = npy.linalg.svd(self.to_matrix(data))
@@ -209,7 +225,7 @@ class ClusterResult(dc.DessiaObject):
     def plot_data(self):
         n_clusters = npy.max(self.labels) + 1
         encoding_mds = manifold.MDS(metric=True, n_jobs=-1, n_components=2)
-        matrix_mds = encoding_mds.fit_transform(self.to_matrix(self.data))
+        matrix_mds = encoding_mds.fit_transform(self.data if self.is_already_matrix(self.data) else self.to_matrix(self.data))
 
         elements = []
         for i in range(len(matrix_mds)):
