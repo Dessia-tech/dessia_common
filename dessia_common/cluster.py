@@ -16,11 +16,8 @@ class ClusterResult(dc.DessiaObject):
     """
     Cluster object to instantiate and compute clusters on data.
     """
-    _generic_eq = True
     _standalone_in_db = True
-    _ordered_attributes = ['name']
-    _non_editable_attributes = ['data', 'labels']
-    _allowed_methods = ['from_agglomerative_clustering']
+    _allowed_methods = ['from_agglomerative_clustering', 'from_kmeans', 'from_dbscan']
 
     def __init__(self, data: List[dc.DessiaObject] = [], labels: List[int] = [], name: str = ''):
         dc.DessiaObject.__init__(self, name=name)
