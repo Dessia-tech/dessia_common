@@ -236,10 +236,6 @@ class DessiaObject:
 
         return serialized_dict
 
-    def to_vector(self):
-        raise NotImplementedError(f"{self.__class__.__name__} objects must have a " +
-                                  "'to_vector' method to be handled in ClusterResult object.")
-
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'DessiaObject':

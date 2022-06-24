@@ -19,7 +19,7 @@ class ClusterResult(dc.DessiaObject):
     _standalone_in_db = True
     _allowed_methods = ['from_agglomerative_clustering', 'from_kmeans', 'from_dbscan']
 
-    def __init__(self, data: List[dc.DessiaObject] = None, labels: List[int] = None, name: str = ''):
+    def __init__(self, data: List[dc.DessiaObject] or List[List] = None, labels: List[int] = None, name: str = ''):
         dc.DessiaObject.__init__(self, name=name)
         self.data = data
         self.labels = labels
@@ -89,11 +89,11 @@ class ClusterResult(dc.DessiaObject):
         """
         skl_cluster = cluster.AgglomerativeClustering(n_clusters=n_clusters, affinity=affinity,
                                                       distance_threshold=distance_threshold, linkage=linkage)
-        skl_cluster.fit(data if cls.is_already_matrix(data) else cls.to_matrix(data))
+        skl_cluster.fit(cls.to_matrix(data))
         return cls(data, skl_cluster.labels_.tolist())
 
     @classmethod
-    def from_kmeans(cls, data: List[dc.DessiaObject], n_clusters: int = 2,
+    def from_kmeans(cls, data: List[dc.DessiaObject] or List[List], n_clusters: int = 2,
                     n_init: int = 10, tol: float = 1e-4):
         """
         Internet doc
@@ -130,11 +130,11 @@ class ClusterResult(dc.DessiaObject):
 
         """
         skl_cluster = cluster.KMeans(n_clusters=n_clusters, n_init=n_init, tol=tol)
-        skl_cluster.fit(data if cls.is_already_matrix(data) else cls.to_matrix(data))
+        skl_cluster.fit(cls.to_matrix(data))
         return cls(data, skl_cluster.labels_.tolist())
 
     @classmethod
-    def from_dbscan(cls, data: List[dc.DessiaObject], eps: float = 0.5, min_samples: int = 5,
+    def from_dbscan(cls, data: List[dc.DessiaObject] or List[List], eps: float = 0.5, min_samples: int = 5,
                     mink_power: float = 2, leaf_size: int = 30):
         """
         Internet doc
@@ -177,30 +177,26 @@ class ClusterResult(dc.DessiaObject):
 
         """
         skl_cluster = cluster.DBSCAN(eps=eps, min_samples=min_samples, p=mink_power, leaf_size=leaf_size)
-        skl_cluster.fit(data if cls.is_already_matrix(data) else cls.to_matrix(data))
+        skl_cluster.fit(cls.to_matrix(data))
         skl_cluster.labels_ += 1  # To test
         return cls(data, skl_cluster.labels_.tolist())
 
     @staticmethod
-    def to_matrix(data: List[dc.DessiaObject]):
+    def to_matrix(data: List[dc.DessiaObject] or List[List]):
+        if 'to_vector' not in dir(data[0]):
+            if not isinstance(data[0], list):
+                raise NotImplementedError(f"{data[0].__class__.__name__} objects must have a " +
+                                          "'to_vector' method to be handled in ClusterResult object.")
+            return data
+
         data_matrix = []
         for element in data:
             data_matrix.append(element.to_vector())
-        return npy.array(data_matrix)
-
-    @staticmethod
-    def is_already_matrix(data: List[dc.DessiaObject] or List[List]):
-        if isinstance(data[0], dc.DessiaObject):
-            return False
-        if isinstance(data[0], list):
-            return True
-
-        raise ValueError(f"The elements of data list are of type {type(data[0]).__name__}. " +
-                         "They must be instance of {dc.DessiaObject.__module__}.DessiaObject or list.")
+        return data_matrix
 
     @staticmethod
     # Is it really pertinent to have a staticmethod for that since we will only call it when having a ClusterResult
-    def data_to_clusters(data: List[dc.DessiaObject], labels: npy.ndarray):
+    def data_to_clusters(data: List[dc.DessiaObject] or List[List], labels: npy.ndarray):
         clusters_list = []
         for i in range(npy.max(labels) + 1):
             clusters_list.append([])
@@ -215,18 +211,20 @@ class ClusterResult(dc.DessiaObject):
             n_clusters = max(self.labels) + 1
         return n_clusters
 
-    def check_dimensionality(self, data: List[dc.DessiaObject]):
-        _, singular_values, _ = npy.linalg.svd(self.to_matrix(data))
+    def check_dimensionality(self):
+        _, singular_values, _ = npy.linalg.svd(self.to_matrix(self.data))
         normed_singular_values = singular_values / npy.sum(singular_values)
         plt.figure()
         plt.semilogy(normed_singular_values, linestyle='None', marker='o')
         plt.grid()
+        plt.title("Normalized singular values of data")
+        plt.xlabel("Index of reduced basis vector")
+        plt.ylabel("Singular value")
 
     def plot_data(self):
         n_clusters = npy.max(self.labels) + 1
         encoding_mds = manifold.MDS(metric=True, n_jobs=-1, n_components=2)
-        matrix_mds = encoding_mds.fit_transform(self.data if self.is_already_matrix(self.data)
-                                                else self.to_matrix(self.data))
+        matrix_mds = encoding_mds.fit_transform(self.to_matrix(self.data))
 
         elements = []
         for i in range(len(matrix_mds)):

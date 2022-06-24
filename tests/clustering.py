@@ -18,11 +18,11 @@ kmeanstest = cluster.ClusterResult.from_kmeans(all_cars, n_clusters=10)
 
 
 db_list = dbtest.data_to_clusters(all_cars, dbtest.labels)
-agg_list = aggclustest.data_to_clusters(all_cars, aggclustest.labels)
+agg_list = aggclustest.data_to_clusters(cars_matrix, aggclustest.labels)
 # kmeans_list = kmeanstest.data_to_clusters(all_cars, kmeanstest.labels)
 
-# dbtest.check_dimensionality(all_cars)
-# aggclustest.check_dimensionality(all_cars)
+dbtest.check_dimensionality(all_cars)
+aggclustest.check_dimensionality(all_cars)
 # kmeanstest.check_dimensionality(all_cars)
 
 dbtest.plot_data()
