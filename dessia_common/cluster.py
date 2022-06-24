@@ -19,7 +19,7 @@ class ClusterResult(dc.DessiaObject):
     _standalone_in_db = True
     _allowed_methods = ['from_agglomerative_clustering', 'from_kmeans', 'from_dbscan']
 
-    def __init__(self, data: List[dc.DessiaObject] = [], labels: List[int] = [], name: str = ''):
+    def __init__(self, data: List[dc.DessiaObject] = None, labels: List[int] = None, name: str = ''):
         dc.DessiaObject.__init__(self, name=name)
         self.data = data
         self.labels = labels
@@ -88,7 +88,7 @@ class ClusterResult(dc.DessiaObject):
 
         """
         skl_cluster = cluster.AgglomerativeClustering(n_clusters=n_clusters, affinity=affinity,
-                                                      distance_threshold=distance_threshold)
+                                                      distance_threshold=distance_threshold, linkage=linkage)
         skl_cluster.fit(data if cls.is_already_matrix(data) else cls.to_matrix(data))
         return cls(data, skl_cluster.labels_.tolist())
 
@@ -192,11 +192,11 @@ class ClusterResult(dc.DessiaObject):
     def is_already_matrix(data: List[dc.DessiaObject] or List[List]):
         if isinstance(data[0], dc.DessiaObject):
             return False
-        elif isinstance(data[0], list):
+        if isinstance(data[0], list):
             return True
-        else:
-            raise ValueError(f"The elements of data list are of type {type(data[0]).__name__}. " +
-                             "They must be instance of {dc.DessiaObject.__module__}.DessiaObject or list.")
+        
+        raise ValueError(f"The elements of data list are of type {type(data[0]).__name__}. " +
+                         "They must be instance of {dc.DessiaObject.__module__}.DessiaObject or list.")
         
     @staticmethod
     # Is it really pertinent to have a staticmethod for that since we will only call it when having a ClusterResult
@@ -209,7 +209,7 @@ class ClusterResult(dc.DessiaObject):
         return clusters_list
     
     def set_n_clusters(self):
-        if len(self.labels) == 0:
+        if self.labels is None:
             n_clusters = 0
         else:
             n_clusters = max(self.labels) + 1
@@ -225,7 +225,8 @@ class ClusterResult(dc.DessiaObject):
     def plot_data(self):
         n_clusters = npy.max(self.labels) + 1
         encoding_mds = manifold.MDS(metric=True, n_jobs=-1, n_components=2)
-        matrix_mds = encoding_mds.fit_transform(self.data if self.is_already_matrix(self.data) else self.to_matrix(self.data))
+        matrix_mds = encoding_mds.fit_transform(self.data if self.is_already_matrix(self.data) 
+                                                else self.to_matrix(self.data))
 
         elements = []
         for i in range(len(matrix_mds)):
