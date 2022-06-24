@@ -3,7 +3,6 @@ Cluster.py package testing.
 """
 import pkg_resources
 from dessia_common import tests, cluster
-import numpy as np
 
 choice_args = ['MPG', 'Cylinders', 'Displacement', 'Horsepower', 'Weight', 'Acceleration', 'Model']  # Ordered
 csv_cars = pkg_resources.resource_stream('dessia_common', 'models/data/cars.csv')

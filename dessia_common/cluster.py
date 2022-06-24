@@ -19,7 +19,7 @@ class ClusterResult(dc.DessiaObject):
     _standalone_in_db = True
     _allowed_methods = ['from_agglomerative_clustering', 'from_kmeans', 'from_dbscan']
 
-    def __init__(self, data: List[dc.DessiaObject] or List[List[float]] = None, 
+    def __init__(self, data: List[dc.DessiaObject] = None, 
                  labels: List[int] = None, name: str = ''):
         dc.DessiaObject.__init__(self, name=name)
         self.data = data
@@ -27,7 +27,7 @@ class ClusterResult(dc.DessiaObject):
         self.n_clusters = self.set_n_clusters()
 
     @classmethod
-    def from_agglomerative_clustering(cls, data: List[dc.DessiaObject] or List[List[float]], n_clusters: int = 2,
+    def from_agglomerative_clustering(cls, data: List[dc.DessiaObject], n_clusters: int = 2,
                                       affinity: str = 'euclidean', linkage: str = 'ward',
                                       distance_threshold: float = None):
         """
@@ -94,7 +94,7 @@ class ClusterResult(dc.DessiaObject):
         return cls(data, skl_cluster.labels_.tolist())
 
     @classmethod
-    def from_kmeans(cls, data: List[dc.DessiaObject] or List[List[float]], n_clusters: int = 2,
+    def from_kmeans(cls, data: List[dc.DessiaObject], n_clusters: int = 2,
                     n_init: int = 10, tol: float = 1e-4):
         """
         Internet doc
@@ -135,7 +135,7 @@ class ClusterResult(dc.DessiaObject):
         return cls(data, skl_cluster.labels_.tolist())
 
     @classmethod
-    def from_dbscan(cls, data: List[dc.DessiaObject] or List[List[float]], eps: float = 0.5, min_samples: int = 5,
+    def from_dbscan(cls, data: List[dc.DessiaObject], eps: float = 0.5, min_samples: int = 5,
                     mink_power: float = 2, leaf_size: int = 30):
         """
         Internet doc
@@ -183,13 +183,10 @@ class ClusterResult(dc.DessiaObject):
         return cls(data, skl_cluster.labels_.tolist())
 
     @staticmethod
-    def to_matrix(data: List[dc.DessiaObject] or List[List[float]]):
+    def to_matrix(data: List[dc.DessiaObject]):
         if 'to_vector' not in dir(data[0]):
-            if not isinstance(data[0], list):
-                raise NotImplementedError(f"{data[0].__class__.__name__} objects must have a " +
-                                          "'to_vector' method to be handled in ClusterResult object.")
-            return data
-
+            raise NotImplementedError(f"{data[0].__class__.__name__} objects must have a " +
+                                      "'to_vector' method to be handled in ClusterResult object.")
         data_matrix = []
         for element in data:
             data_matrix.append(element.to_vector())
@@ -197,7 +194,7 @@ class ClusterResult(dc.DessiaObject):
 
     @staticmethod
     # Is it really pertinent to have a staticmethod for that since we will only call it when having a ClusterResult
-    def data_to_clusters(data: List[dc.DessiaObject] or List[List[float]], labels: npy.ndarray):
+    def data_to_clusters(data: List[dc.DessiaObject], labels: npy.ndarray):
         clusters_list = []
         for i in range(npy.max(labels) + 1):
             clusters_list.append([])
