@@ -16,9 +16,13 @@ class ClusterResult(dc.DessiaObject):
     """
     Cluster object to instantiate and compute clusters on data.
     """
+    _generic_eq = True
     _standalone_in_db = True
+    _ordered_attributes = ['name']
+    _non_editable_attributes = ['data', 'labels']
+    _allowed_methods = ['from_agglomerative_clustering']
 
-    def __init__(self, data: List[dc.DessiaObject], labels: List[int], name: str = ''):
+    def __init__(self, data: List[dc.DessiaObject] = [], labels: List[int] = [], name: str = ''):
         dc.DessiaObject.__init__(self, name=name)
         self.data = data
         self.labels = labels
@@ -92,8 +96,7 @@ class ClusterResult(dc.DessiaObject):
 
     @classmethod
     def from_kmeans(cls, data: List[dc.DessiaObject], n_clusters: int = 2,
-                    n_init: int = 10, tolerance: float = 1e-4):
-        
+                    n_init: int = 10, tol: float = 1e-4):
         """
         Internet doc
         ----------
@@ -123,13 +126,12 @@ class ClusterResult(dc.DessiaObject):
             Number of time the k-means algorithm will be run with different centroid seeds. 
             The final results will be the best output of n_init consecutive runs in terms of inertia.
 
-        tolerance : float, default = 1e-4
+        tol : float, default = 1e-4
             Relative tolerance with regards to Frobenius norm of the difference in the cluster centers 
             of two consecutive iterations to declare convergence.
 
         """
-
-        skl_cluster = cluster.KMeans(n_clusters=n_clusters, n_init=n_init, tol=tolerance)
+        skl_cluster = cluster.KMeans(n_clusters=n_clusters, n_init=n_init, tol=tol)
         skl_cluster.fit(cls.to_matrix(data))
         return cls(data, skl_cluster.labels_.tolist())
 
@@ -176,7 +178,6 @@ class ClusterResult(dc.DessiaObject):
             as well as the memory required to store the tree. The optimal value depends on the nature of the problem.
 
         """
-
         skl_cluster = cluster.DBSCAN(eps=eps, min_samples=min_samples, p=p, leaf_size=leaf_size)
         skl_cluster.fit(cls.to_matrix(data))
         skl_cluster.labels_ += 1  # To test
