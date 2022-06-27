@@ -150,6 +150,11 @@ class ClusterResult(dc.DessiaObject):
             when we say dense. Higher min_samples or lower eps indicate higher density necessary to form a cluster.
 
             See more : https://scikit-learn.org/stable/modules/clustering.html#dbscan
+        
+        !! WARNING !!
+        ----------
+            All labels are summed with 1 in order to improve the code simplicity and ease to use.
+            Then -1 labelled values are now at 0 and must be considered as excluded values when using DBSCAN.
 
         Parameters
         ----------
