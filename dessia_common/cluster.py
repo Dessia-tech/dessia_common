@@ -224,7 +224,6 @@ class ClusterResult(dc.DessiaObject):
         plt.ylabel("Singular value")
 
     def plot_data(self):
-        n_clusters = npy.max(self.labels) + 1
         encoding_mds = manifold.MDS(metric=True, n_jobs=-1, n_components=2)
         matrix_mds = encoding_mds.fit_transform(self.to_matrix(self.data))
 
@@ -234,15 +233,15 @@ class ClusterResult(dc.DessiaObject):
                              "Y_MDS": matrix_mds[i, 1]})
 
         dataset_list = []
-        for i in range(n_clusters):
+        for i in range(self.n_clusters):
             dataset_list.append([])
         for i, label in enumerate(self.labels):
             dataset_list[label].append({"X_MDS": matrix_mds[i, 0].tolist(),
                                         "Y_MDS": matrix_mds[i, 1]})
 
-        cmp_f = plt.cm.get_cmap('jet', n_clusters)(range(n_clusters))
+        cmp_f = plt.cm.get_cmap('jet', self.n_clusters)(range(self.n_clusters))
         edge_style = plot_data.EdgeStyle(line_width=0.0001)
-        for i in range(n_clusters):
+        for i in range(self.n_clusters):
             color = plot_data.colors.Color(cmp_f[i][0], cmp_f[i][1], cmp_f[i][2])
             point_style = plot_data.PointStyle(color_fill=color, color_stroke=color)
             dataset_list[i] = plot_data.Dataset(elements=dataset_list[i],
