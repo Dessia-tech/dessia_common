@@ -154,7 +154,7 @@ class ClusterResult(dc.DessiaObject):
         !! WARNING !!
         ----------
             All labels are summed with 1 in order to improve the code simplicity and ease to use.
-            Then -1 labelled values are now at 0 and must be considered as excluded values when using DBSCAN.
+            Then -1 labelled values are now at 0 and must not be considered as clustered values when using DBSCAN.
 
         Parameters
         ----------
@@ -198,7 +198,6 @@ class ClusterResult(dc.DessiaObject):
         return data_matrix
 
     @staticmethod
-    # Is it really pertinent to have a staticmethod for that since we will only call it when having a ClusterResult
     def data_to_clusters(data: List[dc.DessiaObject], labels: npy.ndarray):
         clusters_list = []
         for i in range(npy.max(labels) + 1):
