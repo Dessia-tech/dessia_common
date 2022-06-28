@@ -10,6 +10,7 @@ from io import StringIO
 import numpy as npy
 from dessia_common import DessiaObject
 import dessia_common.typings as dct
+import dessia_common.files as dcf
 
 
 class Submodel(DessiaObject):
@@ -183,7 +184,7 @@ class Car(DessiaObject):
         return list_formated_car
 
     @classmethod
-    def from_csv(cls, file: StringIO, end: int = None, remove_duplicates: bool = False):
+    def from_csv(cls, file: dcf.StringFile, end: int = None, remove_duplicates: bool = False):
         """
         Generates Cars from given .csv file.
         """
@@ -198,4 +199,4 @@ class Car(DessiaObject):
                 attr_list[3] /= 1000
                 cars.append(cls(*attr_list))
 
-        return cars, variables
+        return cars

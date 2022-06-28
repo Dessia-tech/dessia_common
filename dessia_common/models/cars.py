@@ -35,3 +35,7 @@ objective = Objective({}, {}, objective_settings)
 
 filtered_catalog = catalog.filter_(filters)
 merged_catalog = Catalog.concatenate(catalogs=[catalog, filtered_catalog])
+
+# 
+csv_cars = pkg_resources.resource_stream('dessia_common', 'models/data/cars.csv')
+all_cars = tests.Car.from_csv(csv_cars)
