@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
+dessia_common
 
 """
 
@@ -335,7 +336,7 @@ class DessiaObject:
                     editable=editable, title=title, parsed_attributes=parsed_attributes
                 )
                 _jsonschema['properties'].update(jss_elt)
-                if name in default_arguments.keys():
+                if name in default_arguments:
                     default = set_default_value(_jsonschema['properties'],
                                                 name,
                                                 default_arguments[name])
@@ -383,7 +384,7 @@ class DessiaObject:
                                 jsonschema_from_annotation(annotation, {}, i)[argname]
 
                             jsonschemas[method_name]['properties'][str(i)] = jsonschema_element
-                            if argname in default_args.keys():
+                            if argname in default_args:
                                 default = set_default_value(
                                     jsonschemas[method_name]['properties'],
                                     str(i),

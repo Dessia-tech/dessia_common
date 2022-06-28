@@ -136,7 +136,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element, order, editable=N
                                'order': order, 'description': description,
                                'python_typing': dc_types.serialize_typing(typing_)}
 
-    if typing_ in dc_types.TYPING_EQUIVALENCES.keys():
+    if typing_ in dc_types.TYPING_EQUIVALENCES:
         # Python Built-in type
         jsonschema_element[key]['type'] = dc_types.TYPING_EQUIVALENCES[typing_]
 

@@ -17,7 +17,7 @@ def istep_from_value_on_list(list_: List[float], value: float,
                                                   list_[1:])):
 
         point1_s, point2_s = sorted((point1, point2))
-        if (point1_s <= value) and (value <= point2_s):
+        if point1_s <= value <= point2_s:
             alpha = (value - point1_s) / (point2_s - point1_s)
             if alpha < 0 or alpha > 1:
                 raise ValueError

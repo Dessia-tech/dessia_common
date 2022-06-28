@@ -1,3 +1,7 @@
+"""
+forms_workflow tools
+
+"""
 from dessia_common.workflow import InstantiateModel, ModelMethod, TypedVariable, TypedVariableWithDefaultValue,\
     ModelAttribute, Pipe, Workflow, WorkflowBlock, ForEach, MultiPlot
 from dessia_common.forms import Generator, Optimizer

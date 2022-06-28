@@ -10,6 +10,7 @@ import warnings
 import inspect
 import collections
 from typing import get_origin, get_args, Union, Any, TextIO, BinaryIO
+import networkx as nx
 import dessia_common as dc
 import dessia_common.errors as dc_err
 from dessia_common.files import StringFile, BinaryFile
@@ -17,7 +18,6 @@ import dessia_common.utils.types as dcty
 from dessia_common.typings import InstanceOf
 from dessia_common.graph import explore_tree_from_leaves  # , cut_tree_final_branches
 from dessia_common.breakdown import get_in_object_from_path
-import networkx as nx
 
 
 def serialize_dict(dict_):
@@ -138,7 +138,7 @@ def serialize_sequence_with_pointers(seq, memo, path):
     '''
     serialized_sequence = []
     for ival, value in enumerate(seq):
-        value_path = '{}/{}'.format(path, ival)
+        value_path = f'{path}/{ival}'
         serialized_value, memo = serialize_with_pointers(value, memo, path=value_path)
         serialized_sequence.append(serialized_value)
 
@@ -346,7 +346,7 @@ def deserialize_argument(type_, argument):
     if type_ in [TextIO, BinaryIO] or issubclass(type_, (StringFile, BinaryFile)):
         deserialized_arg = argument
     else:
-        if type_ in dcty.TYPING_EQUIVALENCES.keys():
+        if type_ in dcty.TYPING_EQUIVALENCES:
             if isinstance(argument, type_):
                 deserialized_arg = argument
             else:
