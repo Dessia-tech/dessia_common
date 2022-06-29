@@ -184,6 +184,7 @@ class ClusterResult(dc.DessiaObject):
 
     @staticmethod
     def to_matrix(data: List[dc.DessiaObject]):
+        print(data)
         if 'to_vector' not in dir(data[0]):
             raise NotImplementedError(f"{data[0].__class__.__name__} objects must have a " +
                                       "'to_vector' method to be handled in ClusterResult object.")
