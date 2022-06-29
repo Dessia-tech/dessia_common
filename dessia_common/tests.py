@@ -161,9 +161,9 @@ class Car(DessiaObject):
     _export_features = ['mpg', 'cylinders', 'displacement', 'horsepower',
                         'weight', 'acceleration', 'model']
 
-    def __init__(self, name: str, mpg: float, cylinders: float,
+    def __init__(self, name: str, mpg: float, cylinders: int,
                  displacement: dct.Distance, horsepower: float,
-                 weight: dct.Mass, acceleration: dct.Time, model: float,
+                 weight: dct.Mass, acceleration: dct.Time, model: int,
                  origin: str):
         DessiaObject.__init__(self, name=name)
 

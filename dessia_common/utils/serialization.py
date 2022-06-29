@@ -11,6 +11,7 @@ import inspect
 import collections
 from typing import get_origin, get_args, Union, Any, TextIO, BinaryIO
 import networkx as nx
+import numpy as npy
 import dessia_common as dc
 import dessia_common.errors as dc_err
 from dessia_common.files import StringFile, BinaryFile
@@ -58,6 +59,10 @@ def serialize(value):
         serialized_value = serialize_sequence(value)
     elif isinstance(value, (BinaryFile, StringFile)):
         serialized_value = value
+    elif isinstance(value, npy.int64):
+        serialized_value = int(value)
+    elif isinstance(value, npy.float64):
+        serialized_value = float(value)
     elif isinstance(value, type) or dcty.is_typing(value):
         return dcty.serialize_typing(value)
     else:
@@ -83,6 +88,7 @@ def serialize_with_pointers(value, memo=None, path='#'):
         except TypeError:
             warnings.warn('specific to_dict should implement use_pointers, memo and path arguments', Warning)
             serialized = value.to_dict()
+
         memo[value] = path
     elif hasattr(value, 'to_dict'):
         serialized = value.to_dict()
@@ -92,6 +98,8 @@ def serialize_with_pointers(value, memo=None, path='#'):
         serialized, memo = serialize_sequence_with_pointers(value, memo, path)
     elif isinstance(value, (BinaryFile, StringFile)):
         serialized = value
+    elif isinstance(value, (npy.int64, npy.float64)):
+        serialized = serialize(value)
     else:
         if not dcty.is_jsonable(value):
             msg = f'Element of value {value} is not json serializable'

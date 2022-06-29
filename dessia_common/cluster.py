@@ -112,24 +112,18 @@ class ClusterResult(dc.DessiaObject):
 
             See more : https://scikit-learn.org/stable/modules/clustering.html#k-means
 
-        Parameters
-        ----------
-        cls : ClusterResult class object
-
-        data : List[dc.DessiaObject]
-            list of DessiaObject.
-
-        n_clusters : int, default = 8
-            The number of clusters to form as well as the number of centroids to generate.
-
-        n_init : int, default = 10
-            Number of time the k-means algorithm will be run with different centroid seeds.
+        :param data: The future clustered data.
+        :type data: List[dc.DessiaObject]
+        :param n_clusters: number of wished clusters, defaults to 2
+        :type n_clusters: int, optional
+        :param n_init: Number of time the k-means algorithm will be run with different centroid seeds, defaults to 10
             The final results will be the best output of n_init consecutive runs in terms of inertia.
-
-        tol : float, default = 1e-4
-            Relative tolerance with regards to Frobenius norm of the difference in the cluster centers
-            of two consecutive iterations to declare convergence.
-
+        :type n_init: int, optional
+        :param tol: Relative tolerance with regards to Frobenius norm of the difference in the cluster centers
+            of two consecutive iterations to declare convergence., defaults to 1e-4
+        :type tol: float, optional
+        :return: _description_
+        :rtype: _type_
         """
         skl_cluster = cluster.KMeans(n_clusters=n_clusters, n_init=n_init, tol=tol)
         skl_cluster.fit(cls.to_matrix(data))
