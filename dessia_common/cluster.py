@@ -13,14 +13,21 @@ import dessia_common.core as dc
 
 
 class ClusterResult(dc.DessiaObject):
-    """
-    Cluster object to instantiate and compute clusters on data.
-    """
     _standalone_in_db = True
     _allowed_methods = ['from_agglomerative_clustering', 'from_kmeans', 'from_dbscan']
 
     def __init__(self, data: List[dc.DessiaObject] = None, 
                  labels: List[int] = None, name: str = ''):
+        """
+        Cluster object to instantiate and compute clusters on data.
+
+        :param data: The future clustered data, defaults to None
+        :type data: List[dc.DessiaObject], optional
+        :param labels: The list of data labels, ordered the same as data, defaults to None
+        :type labels: List[int], optional
+        :param name: The name of ClusterResult object, defaults to ''
+        :type name: str, optional
+        """
         dc.DessiaObject.__init__(self, name=name)
         self.data = data
         self.labels = labels
@@ -56,37 +63,31 @@ class ClusterResult(dc.DessiaObject):
 
             See more : https://scikit-learn.org/stable/modules/clustering.html#hierarchical-clustering
 
-        Parameters
-        ----------
-        cls : ClusterResult class object
-
-        data : List[dc.DessiaObject]
-            list of DessiaObject.
-
-        n_clusters : int or None, default = 2
-            The number of clusters to find.
-            It must be None if distance_threshold is not None.
-
-        affinity : str or callable, default = ’euclidean’
-            Metric used to compute the linkage.
-            Can be “euclidean”, “l1”, “l2”, “manhattan”, “cosine”, or “precomputed”.
+        :param data: The future clustered data.
+        :type data: List[dc.DessiaObject]
+        :param n_clusters: number of wished clusters, defaults to 2, 
+            Must be None if distance_threshold is not None
+        :type n_clusters: int, optional
+        :param affinity: metric used to compute the linkage, defaults to 'euclidean'.
+            Can be one of [“euclidean”, “l1”, “l2”, “manhattan”, “cosine”, or “precomputed”].
             If linkage is “ward”, only “euclidean” is accepted.
-            If “precomputed”, a distance matrix (instead of a similarity matrix)
+            If “precomputed”, a distance matrix (instead of a similarity matrix) 
             is needed as input for the fit method.
-
-        linkage: {‘ward’, ‘complete’, ‘average’, ‘single’}, default = ’ward’
-            Which linkage criterion to use.
+        :type affinity: str, optional
+        :param linkage: Which linkage criterion to use, defaults to 'ward'
+            Can be one of [‘ward’, ‘complete’, ‘average’, ‘single’]
             The linkage criterion determines which distance to use between sets of observation.
             The algorithm will merge the pairs of cluster that minimize this criterion.
-            - ‘ward’ minimizes the variance of the clusters being merged.
-            - ‘average’ uses the average of the distances of each observation of the two sets.
-            - ‘complete’ or ‘maximum’ linkage uses the maximum distances between all observations of the two sets.
-            - ‘single’ uses the minimum of the distances between all observations of the two sets.
-
-        distance_threshold : float, default = None
-            The linkage distance threshold above which, clusters will not be merged.
-            If not None, n_clusters must be None and compute_full_tree must be True.
-
+                - ‘ward’ minimizes the variance of the clusters being merged.
+                - ‘average’ uses the average of the distances of each observation of the two sets.
+                - ‘complete’ or ‘maximum’ linkage uses the maximum distances between all observations of the two sets.
+                - ‘single’ uses the minimum of the distances between all observations of the two sets.
+        :type linkage: str, optional
+        :param distance_threshold: The linkage distance above which clusters will not be merged, defaults to None
+            If not None, n_clusters must be None.
+        :type distance_threshold: float, optional
+        :return: a ClusterResult object that knows the data and their labels
+        :rtype: ClusterResult
         """
         skl_cluster = cluster.AgglomerativeClustering(n_clusters=n_clusters, affinity=affinity,
                                                       distance_threshold=distance_threshold, linkage=linkage)
