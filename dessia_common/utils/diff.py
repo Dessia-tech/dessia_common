@@ -99,6 +99,12 @@ def data_eq(value1, value2):
     if is_sequence(value1) and is_sequence(value2):
         return sequence_data_eq(value1, value2)
 
+    if isinstance(value1, npy.int64) or isinstance(value2, npy.int64):
+        return value1 == value2
+
+    if isinstance(value1, npy.float64) or isinstance(value2, npy.float64):
+        return math.isclose(value1, value2, abs_tol=dc.FLOAT_TOLERANCE)
+
     if not isinstance(value2, type(value1))\
             and not isinstance(value1, type(value2)):
         return False
@@ -111,12 +117,6 @@ def data_eq(value1, value2):
 
     if isinstance(value1, dict):
         return dict_data_eq(value1, value2)
-    
-    if isinstance(value1, npy.int64): 
-        return value1 == value2
-    
-    if isinstance(value1, npy.float64): 
-        return math.isclose(value1, value2, abs_tol=dc.FLOAT_TOLERANCE)
 
     # Else: its an object
 

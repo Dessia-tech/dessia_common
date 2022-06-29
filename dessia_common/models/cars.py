@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Mon Feb 17 17:00:35 2020
 
-@author: jezequel
 """
 
 import pkg_resources
 
 from dessia_common.vectored_objects import Catalog, ParetoSettings, Objective, ObjectiveSettings
 from dessia_common import DessiaFilter
+from dessia_common.tests import Car
 
 choice_args = ['MPG', 'Cylinders', 'Displacement', 'Horsepower', 'Weight', 'Acceleration', 'Model']  # Ordered
 
@@ -36,6 +35,6 @@ objective = Objective({}, {}, objective_settings)
 filtered_catalog = catalog.filter_(filters)
 merged_catalog = Catalog.concatenate(catalogs=[catalog, filtered_catalog])
 
-# 
+#
 csv_cars = pkg_resources.resource_stream('dessia_common', 'models/data/cars.csv')
-all_cars = tests.Car.from_csv(csv_cars)
+all_cars = Car.from_csv(csv_cars)

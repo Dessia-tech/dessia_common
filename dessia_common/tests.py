@@ -6,7 +6,6 @@ Test module for dessia_common
 """
 from time import sleep
 from typing import List
-from io import StringIO
 import numpy as npy
 from dessia_common import DessiaObject
 import dessia_common.typings as dct
