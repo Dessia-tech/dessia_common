@@ -247,4 +247,4 @@ class ClusterResult(dc.DessiaObject):
                                           y_variable="Y_MDS",
                                           graphs=dataset_list)
 
-        return plot_data.plot_canvas(plot_data_object=scatter_plot, debug_mode=True)
+        return [scatter_plot] #.plot_canvas(plot_data_object=scatter_plot, debug_mode=True)
