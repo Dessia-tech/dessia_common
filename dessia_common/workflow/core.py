@@ -1451,7 +1451,8 @@ class WorkflowState(DessiaObject):
         #                                                          pointers_memo=pointers_memo,
         #                                                          path=f'{path}/variable_values/{i}')
 
-        input_values = {int(i): deserialize(v, global_dict=dict_, pointers_memo=pointers_memo)
+        input_values = {int(i): deserialize(v, global_dict=dict_, pointers_memo=pointers_memo,
+                                            path=f"{path}/input_values/{i}")
                         for i, v in dict_['input_values'].items()}
 
         activated_items = {b: i in dict_['evaluated_blocks_indices']
