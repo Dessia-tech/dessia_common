@@ -1821,6 +1821,10 @@ class WorkflowRun(WorkflowState):
         # TODO THIS IS A TEMPORARY DIRTY HOTFIX OVERWRITE.
         #  WE SHOULD IMPLEMENT A WAY TO GET RID OF REFERENCE PATH WITH URLS
         track = ""
+        if "reference_path" in kwargs:
+            reference_path = kwargs["reference_path"]
+        else:
+            reference_path = ""
         if selector in ["documentation", "workflow"]:
             return self.workflow._display_from_selector(selector)
 
@@ -1830,9 +1834,15 @@ class WorkflowRun(WorkflowState):
         # Displays for blocks (getting reference path from block_display return)
         display_setting = self._display_settings_from_selector(selector)
         try:
-            data, reference_path = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
+            if display_setting.method == "block_display":
+                # Specific hotfix : we propagate reference_path through block_display method
+                data, reference_path = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
+            else:
+                # But not when calling result objects display methods. We end up here using Block Display because
+                # it is very poor and cannot know which type of display its value will implement
+                data = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
         except:
-            data, reference_path = None, ""
+            data = None
             track = tb.format_exc()
 
         if display_setting.serialize_data:
