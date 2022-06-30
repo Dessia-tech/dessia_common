@@ -31,6 +31,7 @@ class ClusterResult(dc.DessiaObject):
         dc.DessiaObject.__init__(self, name=name)
         self.data = data
         self.labels = labels
+        self.data_matrix = self.to_matrix(data)
         self.n_clusters = self.set_n_clusters()
 
     @classmethod
@@ -220,7 +221,7 @@ class ClusterResult(dc.DessiaObject):
 
     def plot_data(self):
         encoding_mds = manifold.MDS(metric=True, n_jobs=-1, n_components=2)
-        matrix_mds = encoding_mds.fit_transform(self.to_matrix(self.data))
+        matrix_mds = encoding_mds.fit_transform(self.data_matrix)
 
         elements = []
         for i in range(len(matrix_mds)):
@@ -248,3 +249,19 @@ class ClusterResult(dc.DessiaObject):
                                           graphs=dataset_list)
 
         return [scatter_plot] #.plot_canvas(plot_data_object=scatter_plot, debug_mode=True)
+
+
+# Function to implement, to find a good eps parameter for dbscan
+# def nearestneighbors(self):
+#     vectors = []
+#     for machine in self.machines:
+#         vector = machine.to_vector()
+#         vectors.append(vector)
+#     neigh = NearestNeighbors(n_neighbors=14)
+#     vectors = StandardScaler().fit_transform(vectors)
+#     nbrs = neigh.fit(vectors)
+#     distances, indices = nbrs.kneighbors(vectors)
+#     distances = npy.sort(distances, axis=0)
+#     distances = distances[:, 1]
+#     plt.plot(distances)
+#     plt.show()
