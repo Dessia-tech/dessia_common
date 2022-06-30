@@ -16,7 +16,7 @@ db_list = dbtest.data_to_clusters(all_cars, dbtest.labels)
 agg_list = aggclustest.data_to_clusters(all_cars, aggclustest.labels)
 # kmeans_list = kmeanstest.data_to_clusters(all_cars, kmeanstest.labels)
 
-dbtest.check_dimensionality()
+# dbtest.check_dimensionality()
 # aggclustest.check_dimensionality()
 # # kmeanstest.check_dimensionality(all_cars)
 
