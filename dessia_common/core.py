@@ -570,7 +570,7 @@ class DessiaObject:
         for display_setting in self.display_settings():
             if display_setting.selector == selector:
                 return display_setting
-        raise ValueError(f'No such selector {selector} in display of class {self.__class__.__name__}')
+        raise ValueError(f"No such selector '{selector}' in display of class '{self.__class__.__name__}'")
 
     def _displays(self, **kwargs) -> List[JsonSerializable]:
         """
@@ -588,8 +588,7 @@ class DessiaObject:
         """
         Render a markdown of the object output type: string
         """
-        return templates.dessia_object_markdown_template.substitute(name=self.name,
-                                                                    class_=self.__class__.__name__)
+        return templates.dessia_object_markdown_template.substitute(name=self.name, class_=self.__class__.__name__)
 
     def _performance_analysis(self):
         """
