@@ -28,7 +28,7 @@ from dessia_common.utils.docstrings import FAILED_ATTRIBUTE_PARSING, EMPTY_PARSE
 from dessia_common.utils.diff import choose_hash
 from dessia_common.typings import JsonSerializable, MethodType
 from dessia_common.displays import DisplayObject
-from dessia_common.breakdown import attrmethod_getter
+from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path, ExtractionError
 
 
 class Variable(DessiaObject):
@@ -1809,6 +1809,20 @@ class WorkflowRun(WorkflowState):
             display_settings.extend(output_display_settings)
 
         return display_settings
+
+    def _get_from_path(self, path: str):
+        """
+        Extracts subobject at given path. Tries the generic function, then applies specific cases if it fails.
+        Returns found object
+        """
+        try:
+            return get_in_object_from_path(self, path)
+        except ExtractionError:
+            segments = path.split("/")
+            first_segment = segments[1]
+            if first_segment == "values" and len(segments) == 3:
+                print(path)
+        raise NotImplementedError(f"WorkflowRun : Specific object from path method is not defined for path '{path}'")
 
     def _display_from_selector(self, selector: str, **kwargs) -> DisplayObject:
         """
