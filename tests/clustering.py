@@ -22,7 +22,7 @@ agg_list = aggclustest.data_to_clusters(all_cars, aggclustest.labels)
 # aggclustest.check_dimensionality()
 # # kmeanstest.check_dimensionality(all_cars)
 
-# dbtest.plot()
+dbtest.plot()
 # aggclustest.plot()
 # # kmeanstest.plot()
 

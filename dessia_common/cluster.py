@@ -222,33 +222,49 @@ class ClusterResult(dc.DessiaObject):
         plt.ylabel("Singular value")
 
     def plot_data(self):
-        encoding_mds = manifold.MDS(metric=True, n_jobs=-1, n_components=2)
-        matrix_mds = encoding_mds.fit_transform(self.data_matrix)
+        # encoding_mds = manifold.MDS(metric=True, n_jobs=-1, n_components=2)
+        # matrix_mds = encoding_mds.fit_transform(self.data_matrix)
 
+        # elements = []
+        # for i in range(len(matrix_mds)):
+        #     elements.append({"X_MDS": matrix_mds[i, 0].tolist(),
+        #                       "Y_MDS": matrix_mds[i, 1]})
+
+        # dataset_list = []
+        # for i in range(self.n_clusters):
+        #     dataset_list.append([])
+        # for i, label in enumerate(self.labels):
+        #     dataset_list[label].append({"X_MDS": matrix_mds[i, 0].tolist(),
+        #                                 "Y_MDS": matrix_mds[i, 1]})
+
+        # cmp_f = plt.cm.get_cmap('jet', self.n_clusters)(range(self.n_clusters))
+        # edge_style = plot_data.EdgeStyle(line_width=0.0001)
+        # for i in range(self.n_clusters):
+        #     color = plot_data.colors.Color(cmp_f[i][0], cmp_f[i][1], cmp_f[i][2])
+        #     point_style = plot_data.PointStyle(color_fill=color, color_stroke=color)
+        #     dataset_list[i] = plot_data.Dataset(elements=dataset_list[i],
+        #                                         edge_style=edge_style,
+        #                                         point_style=point_style)
+
+        # scatter_plot = plot_data.Graph2D(x_variable="X_MDS",
+        #                                   y_variable="Y_MDS",
+        #                                   graphs=dataset_list)
+        
         elements = []
-        for i in range(len(matrix_mds)):
-            elements.append({"X_MDS": matrix_mds[i, 0].tolist(),
-                              "Y_MDS": matrix_mds[i, 1]})
+        SHAPES = ['round', 'square', 'triangle', 'ellipse']
+        COLORS = [colors.RED, colors.BLUE, colors.GREEN, colors.YELLOW, colors.ORANGE, colors.VIOLET]
+        for i in range(50):
+            random_shape = SHAPES[random.randint(0, len(SHAPES) - 1)]
+            random_color = COLORS[random.randint(0, len(SHAPES) - 1)]
+            elements.append({'mass': random.uniform(0, 50),
+                             'length': random.uniform(0, 100),
+                             'shape': random_shape,
+                             'color': random_color
+                             })
 
-        dataset_list = []
-        for i in range(self.n_clusters):
-            dataset_list.append([])
-        for i, label in enumerate(self.labels):
-            dataset_list[label].append({"X_MDS": matrix_mds[i, 0].tolist(),
-                                        "Y_MDS": matrix_mds[i, 1]})
 
-        cmp_f = plt.cm.get_cmap('jet', self.n_clusters)(range(self.n_clusters))
-        edge_style = plot_data.EdgeStyle(line_width=0.0001)
-        for i in range(self.n_clusters):
-            color = plot_data.colors.Color(cmp_f[i][0], cmp_f[i][1], cmp_f[i][2])
-            point_style = plot_data.PointStyle(color_fill=color, color_stroke=color)
-            dataset_list[i] = plot_data.Dataset(elements=dataset_list[i],
-                                                edge_style=edge_style,
-                                                point_style=point_style)
-
-        scatter_plot = plot_data.Graph2D(x_variable="X_MDS",
-                                          y_variable="Y_MDS",
-                                          graphs=dataset_list)
+        scatter_plot = plot_data.Scatter(elements=elements,
+                                        x_variable='mass', y_variable='length')
         return [scatter_plot]
 
 
