@@ -1827,9 +1827,9 @@ class WorkflowRun(WorkflowState):
         #  WE SHOULD IMPLEMENT A WAY TO GET RID OF REFERENCE PATH WITH URLS
         track = ""
         if "reference_path" in kwargs:
-            reference_path = kwargs["reference_path"]
+            refpath = kwargs["reference_path"]
         else:
-            reference_path = ""
+            refpath = ""
         if selector in ["documentation", "workflow"]:
             return self.workflow._display_from_selector(selector)
 
@@ -1841,7 +1841,7 @@ class WorkflowRun(WorkflowState):
         try:
             if display_setting.method == "block_display":
                 # Specific hotfix : we propagate reference_path through block_display method
-                display_object, reference_path = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
+                display_object, refpath = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
                 data = display_object["data"]
             else:
                 # But not when calling result objects display methods.
@@ -1853,7 +1853,7 @@ class WorkflowRun(WorkflowState):
 
         if display_setting.serialize_data:
             data = serialize(data)
-        return DisplayObject(type_=display_setting.type, data=data, reference_path=reference_path, traceback=track)
+        return DisplayObject(type_=display_setting.type, data=data, reference_path=refpath, traceback=track)
 
     def block_display(self, block_index: int, display_index: int):
         """
