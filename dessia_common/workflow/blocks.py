@@ -159,8 +159,8 @@ class InstantiateModel(Block):
         return block_docstring
 
     def to_script(self):
-        script = "dcw_blocks.InstantiateModel("
-        script += f"{full_classname(object_=self.model_class, compute_for='class')}, name='{self.name}')"
+        script = f"InstantiateModel(" \
+                 f"{full_classname(object_=self.model_class, compute_for='class')}, name='{self.name}')"
         return script, [full_classname(object_=self.model_class, compute_for='class')]
 
 
@@ -228,6 +228,12 @@ class ClassMethod(Block):
         block_docstring = {i: parsed_attributes[i.name] if i.name in parsed_attributes
                            else EMPTY_PARSED_ATTRIBUTE for i in self.inputs}
         return block_docstring
+
+    def to_script(self):
+        script = f"ClassMethod(method_type=dct.ClassMethodType(" \
+                 f"{full_classname(object_=self.method_type.class_, compute_for='class')}, '{self.method_type.name}')" \
+                 f", name='{self.name}')"
+        return script, [full_classname(object_=self.method_type.class_, compute_for='class')]
 
 
 class ModelMethod(Block):
@@ -309,9 +315,9 @@ class ModelMethod(Block):
         return block_docstring
 
     def to_script(self):
-        script = "dcw_blocks.ModelMethod(method_type=dct.MethodType("
-        script += f"{full_classname(object_=self.method_type.class_, compute_for='class')}, '{self.method_type.name}')"
-        script += f", name='{self.name}')"
+        script = f"ModelMethod(method_type=dct.MethodType(" \
+                 f"{full_classname(object_=self.method_type.class_, compute_for='class')}, '{self.method_type.name}')" \
+                 f", name='{self.name}')"
         return script, [full_classname(object_=self.method_type.class_, compute_for='class')]
 
 
@@ -341,6 +347,10 @@ class Sequence(Block):
 
     def evaluate(self, values):
         return [[values[var] for var in self.inputs]]
+
+    def to_script(self):
+        script = f"Sequence(number_arguments={len(self.inputs)}, name='{self.name}')"
+        return script, []
 
 
 class WorkflowBlock(Block):
@@ -710,7 +720,7 @@ class ModelAttribute(Block):
         return [enhanced_deep_attr(values[self.inputs[0]], self.attribute_name)]
 
     def to_script(self):
-        script = f"dcw_blocks.ModelAttribute('{self.attribute_name}', name='{self.name}')"
+        script = f"ModelAttribute('{self.attribute_name}', name='{self.name}')"
         return script, []
 
 

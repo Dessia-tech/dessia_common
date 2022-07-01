@@ -1140,7 +1140,7 @@ class Workflow(Block):
         for ib, block in enumerate(self.blocks):
             block_script, classes_block = block.to_script()
             classes.extend(classes_block)
-            script_blocks += f'block_{ib} = {block_script}\n'
+            script_blocks += f'block_{ib} = dcw_blocks.{block_script}\n'
 
         modules = {'.'.join(c.split('.')[:-1]) for c in classes}
         for module in modules:
@@ -1167,7 +1167,7 @@ class Workflow(Block):
                 variable_index += 1
             else:
                 output_name = f"block_{output_index[0]}.inputs[{output_index[2]}]"
-            script_pipes += f"pipe_{ip} = dcw.Pipe({input_name},{output_name})\n"
+            script_pipes += f"pipe_{ip} = dcw.Pipe({input_name}, {output_name})\n"
         script_pipes += f"pipes = [{', '.join(['pipe_' + str(i) for i in range(len(self.pipes))])}]\n"
 
         # --- Building script ---
