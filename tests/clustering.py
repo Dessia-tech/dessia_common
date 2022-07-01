@@ -31,10 +31,10 @@ agg_list = aggclustest.data_to_clusters(all_cars, aggclustest.labels)
 aggclustest._check_platform()
 # kmeanstest._check_platform()
 
-data_method = wf.MethodType(class_= tests.Car, name='from_csv')
+data_method = wf.MethodType(class_=tests.Car, name='from_csv')
 block_data = wf.ClassMethod(method_type=data_method, name='data load')
 
-cluster_method = wf.MethodType(class_= cluster.ClusterResult, name='from_agglomerative_clustering')
+cluster_method = wf.MethodType(class_=cluster.ClusterResult, name='from_agglomerative_clustering')
 block_cluster = wf.ClassMethod(method_type=cluster_method, name='clustering')
 
 display_cluster = wf.Display(name='Display Cluster')
@@ -43,7 +43,7 @@ block_workflow = [block_cluster, display_cluster]
 pipe_worflow = [wf.Pipe(block_cluster.outputs[0], display_cluster.inputs[0])]
 workflow = wf.Workflow(block_workflow, pipe_worflow, block_cluster.outputs[0])
 
-workflow_run = workflow.run({workflow.index(block_cluster.inputs[0]):all_cars})
+workflow_run = workflow.run({workflow.index(block_cluster.inputs[0]): all_cars})
 cresult = workflow_run.output_value._display_from_selector('plot_data')
 
 # ff=workflow_run.output_value.display_settings()[1]
@@ -53,10 +53,6 @@ workflow.plot()
 workflow.display_settings()
 workflow_run.output_value.plot()
 
-gg=workflow_run._display_from_selector('plot_data')
+gg = workflow_run._display_from_selector('plot_data')
 json.dumps(gg.to_dict())
 workflow_run._displays
-
-
-
-

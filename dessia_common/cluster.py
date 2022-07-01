@@ -16,15 +16,17 @@ class ClusterResult(dc.DessiaObject):
     _standalone_in_db = True
     _allowed_methods = ['from_agglomerative_clustering', 'from_kmeans', 'from_dbscan']
 
-    def __init__(self, data: List[dc.DessiaObject] = None, 
+    def __init__(self, data: List[dc.DessiaObject] = None,
                  labels: List[int] = None, name: str = ''):
         """
         Cluster object to instantiate and compute clusters on data.
 
         :param data: The future clustered data, defaults to None
         :type data: List[dc.DessiaObject], optional
+
         :param labels: The list of data labels, ordered the same as data, defaults to None
         :type labels: List[int], optional
+
         :param name: The name of ClusterResult object, defaults to ''
         :type name: str, optional
         """
@@ -67,15 +69,18 @@ class ClusterResult(dc.DessiaObject):
 
         :param data: The future clustered data.
         :type data: List[dc.DessiaObject]
-        :param n_clusters: number of wished clusters, defaults to 2, 
+
+        :param n_clusters: number of wished clusters, defaults to 2,
             Must be None if distance_threshold is not None
         :type n_clusters: int, optional
+
         :param affinity: metric used to compute the linkage, defaults to 'euclidean'.
             Can be one of [“euclidean”, “l1”, “l2”, “manhattan”, “cosine”, or “precomputed”].
             If linkage is “ward”, only “euclidean” is accepted.
-            If “precomputed”, a distance matrix (instead of a similarity matrix) 
+            If “precomputed”, a distance matrix (instead of a similarity matrix)
             is needed as input for the fit method.
         :type affinity: str, optional
+
         :param linkage: Which linkage criterion to use, defaults to 'ward'
             Can be one of [‘ward’, ‘complete’, ‘average’, ‘single’]
             The linkage criterion determines which distance to use between sets of observation.
@@ -85,11 +90,14 @@ class ClusterResult(dc.DessiaObject):
                 - ‘complete’ or ‘maximum’ linkage uses the maximum distances between all observations of the two sets.
                 - ‘single’ uses the minimum of the distances between all observations of the two sets.
         :type linkage: str, optional
+
         :param distance_threshold: The linkage distance above which clusters will not be merged, defaults to None
             If not None, n_clusters must be None.
         :type distance_threshold: float, optional
+
         :return: a ClusterResult object that knows the data and their labels
         :rtype: ClusterResult
+
         """
         skl_cluster = cluster.AgglomerativeClustering(n_clusters=n_clusters, affinity=affinity,
                                                       distance_threshold=distance_threshold, linkage=linkage)
@@ -116,16 +124,21 @@ class ClusterResult(dc.DessiaObject):
 
         :param data: The future clustered data.
         :type data: List[dc.DessiaObject]
+
         :param n_clusters: number of wished clusters, defaults to 2
         :type n_clusters: int, optional
+
         :param n_init: Number of time the k-means algorithm will be run with different centroid seeds, defaults to 10
             The final results will be the best output of n_init consecutive runs in terms of inertia.
         :type n_init: int, optional
+
         :param tol: Relative tolerance with regards to Frobenius norm of the difference in the cluster centers
             of two consecutive iterations to declare convergence., defaults to 1e-4
         :type tol: float, optional
-        :return: _description_
-        :rtype: _type_
+
+        :return: a ClusterResult object that knows the data and their labels
+        :rtype: ClusterResult
+
         """
         skl_cluster = cluster.KMeans(n_clusters=n_clusters, n_init=n_init, tol=tol)
         skl_cluster.fit(cls.to_matrix(data))
@@ -147,36 +160,35 @@ class ClusterResult(dc.DessiaObject):
             when we say dense. Higher min_samples or lower eps indicate higher density necessary to form a cluster.
 
             See more : https://scikit-learn.org/stable/modules/clustering.html#dbscan
-        
+
         !! WARNING !!
         ----------
             All labels are summed with 1 in order to improve the code simplicity and ease to use.
             Then -1 labelled values are now at 0 and must not be considered as clustered values when using DBSCAN.
 
-        Parameters
-        ----------
-        cls : ClusterResult class object
+        :param data: The future clustered data.
+        :type data: List[dc.DessiaObject]
 
-        data : List[dc.DessiaObject]
-            list of DessiaObject.
+        :param eps: The maximum distance between two samples for one to be considered as in the neighborhood of the other.
+        This is not a maximum bound on the distances of points within a cluster.
+        This is the most important DBSCAN parameter to choose appropriately for your data
+        set and distance function, defaults to 0.5
+        :type eps: float, optional
 
-        eps : float, default = 0.5
-            The maximum distance between two samples for one to be considered as in the neighborhood of the other.
-            This is not a maximum bound on the distances of points within a cluster.
-            This is the most important DBSCAN parameter to choose appropriately for your data
-            set and distance function.
+        :param min_samples: The number of samples (or total weight) in a neighborhood for a point to be considered as a core point.
+        This includes the point itself, defaults to 5
+        :type min_samples: int, optional
 
-        min_samples : int, default = 5
-            The number of samples (or total weight) in a neighborhood for a point to be considered as a core point.
-            This includes the point itself.
+        :param mink_power: The power of the Minkowski metric to be used to calculate distance between points.
+        If None, then mink_power=2 (equivalent to the Euclidean distance)., defaults to 2
+        :type mink_power: float, optional
 
-        mink_power : float, default = None
-            The power of the Minkowski metric to be used to calculate distance between points.
-            If None, then p=2 (equivalent to the Euclidean distance).
+        :param leaf_size: Leaf size passed to BallTree or cKDTree. This can affect the speed of the construction and query,
+        as well as the memory required to store the tree. The optimal value depends on the nature of the problem, defaults to 30
+        :type leaf_size: int, optional
 
-        leaf_size : int, default = 30
-            Leaf size passed to BallTree or cKDTree. This can affect the speed of the construction and query,
-            as well as the memory required to store the tree. The optimal value depends on the nature of the problem.
+        :return: a ClusterResult object that knows the data and their labels
+        :rtype: ClusterResult
 
         """
         skl_cluster = cluster.DBSCAN(eps=eps, min_samples=min_samples, p=mink_power, leaf_size=leaf_size)
@@ -219,7 +231,7 @@ class ClusterResult(dc.DessiaObject):
         plt.title("Normalized singular values of data")
         plt.xlabel("Index of reduced basis vector")
         plt.ylabel("Singular value")
-        
+
     def build_mds(self):
         encoding_mds = manifold.MDS(metric=True, n_jobs=1, n_components=2, random_state=1)
         scaled_matrix = preprocessing.StandardScaler().fit_transform(self.data_matrix)
