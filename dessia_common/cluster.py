@@ -222,8 +222,8 @@ class ClusterResult(dc.DessiaObject):
         
     def build_mds(self):
         encoding_mds = manifold.MDS(metric=True, n_jobs=1, n_components=2, random_state=1)
-        scaled_matrix = preprocessing.StandardScaler().fit_transform(self.data_matrix)
-        return encoding_mds.fit_transform(scaled_matrix).tolist()
+        # scaled_matrix = preprocessing.StandardScaler().fit_transform(self.data_matrix)
+        return encoding_mds.fit_transform(self.data_matrix).tolist()
 
     def plot_data(self):
         elements = []

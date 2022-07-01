@@ -27,8 +27,8 @@ agg_list = aggclustest.data_to_clusters(all_cars, aggclustest.labels)
 # aggclustest.plot()
 # # kmeanstest.plot()
 
-dbtest._check_platform()
-# aggclustest._check_platform()
+# dbtest._check_platform()
+aggclustest._check_platform()
 # kmeanstest._check_platform()
 
 data_method = wf.MethodType(class_= tests.Car, name='from_csv')
