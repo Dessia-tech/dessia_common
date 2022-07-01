@@ -101,7 +101,9 @@ class ClusterResult(dc.DessiaObject):
         """
         skl_cluster = cluster.AgglomerativeClustering(n_clusters=n_clusters, affinity=affinity,
                                                       distance_threshold=distance_threshold, linkage=linkage)
-        skl_cluster.fit(cls.to_matrix(data))
+        scaled_matrix = preprocessing.StandardScaler().fit_transform(cls.to_matrix(data))
+        scaled_matrix = list([list(map(float, row)) for row in scaled_matrix])
+        skl_cluster.fit(scaled_matrix)
         return cls(data, skl_cluster.labels_.tolist())
 
     @classmethod
@@ -141,7 +143,9 @@ class ClusterResult(dc.DessiaObject):
 
         """
         skl_cluster = cluster.KMeans(n_clusters=n_clusters, n_init=n_init, tol=tol)
-        skl_cluster.fit(cls.to_matrix(data))
+        scaled_matrix = preprocessing.StandardScaler().fit_transform(cls.to_matrix(data))
+        scaled_matrix = list([list(map(float, row)) for row in scaled_matrix])
+        skl_cluster.fit(scaled_matrix)
         return cls(data, skl_cluster.labels_.tolist())
 
     @classmethod
@@ -192,7 +196,9 @@ class ClusterResult(dc.DessiaObject):
 
         """
         skl_cluster = cluster.DBSCAN(eps=eps, min_samples=min_samples, p=mink_power, leaf_size=leaf_size)
-        skl_cluster.fit(cls.to_matrix(data))
+        scaled_matrix = preprocessing.StandardScaler().fit_transform(cls.to_matrix(data))
+        scaled_matrix = list([list(map(float, row)) for row in scaled_matrix])
+        skl_cluster.fit(scaled_matrix)
         skl_cluster.labels_ += 1  # To test
         return cls(data, skl_cluster.labels_.tolist())
 
