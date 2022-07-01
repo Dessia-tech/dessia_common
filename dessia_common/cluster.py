@@ -4,13 +4,11 @@ Library for building clusters on data.
 from typing import List
 
 import numpy as npy
-from sklearn import cluster, manifold
+from sklearn import cluster, manifold, preprocessing
 
 import matplotlib.pyplot as plt
 
 import plot_data
-import plot_data.colors as colors
-import random
 import dessia_common.core as dc
 
 
@@ -224,7 +222,8 @@ class ClusterResult(dc.DessiaObject):
         
     def build_mds(self):
         encoding_mds = manifold.MDS(metric=True, n_jobs=1, n_components=2, random_state=1)
-        return encoding_mds.fit_transform(self.data_matrix).tolist()
+        scaled_matrix = preprocessing.StandardScaler().fit_transform(self.data_matrix)
+        return encoding_mds.fit_transform(scaled_matrix).tolist()
 
     def plot_data(self):
         elements = []
