@@ -1800,16 +1800,21 @@ class WorkflowRun(WorkflowState):
 
         # Find & order displayable blocks
         d_blocks = [b for b in self.workflow.blocks if hasattr(b, 'display_') and hasattr(b, "_display_settings")]
-        # Change last line to isinstance ?
+        # Change last line to isinstance ? Not possible because of circular imports ?
         sorted_d_blocks = sorted(d_blocks, key=lambda b: b.order)
         for block in sorted_d_blocks:
             block_index = self.workflow.blocks.index(block)
-            settings = block._display_settings(block_index)  # Code intel is not working properly here
+            local_values = {}
+            for i, input_ in enumerate(block.inputs):
+                input_adress = self.workflow.variable_indices(input_)
+                local_values[input_] = self.variable_values[input_adress]
+            settings = block._display_settings(block_index, local_values)  # Code intel is not working properly here
             if settings is not None:
-                display_settings.append(settings)
+                display_settings.extend(settings)
 
         if isinstance(self.output_value, DessiaObject):
-            output_display_settings = [ds.compose('output_value') for ds in self.output_value.display_settings()]
+            output_display_settings = [ds.compose(attribute='output_value', serialize_data=True)
+                                       for ds in self.output_value.display_settings()]
             display_settings.extend(output_display_settings)
 
         return display_settings
@@ -1836,10 +1841,11 @@ class WorkflowRun(WorkflowState):
         try:
             if display_setting.method == "block_display":
                 # Specific hotfix : we propagate reference_path through block_display method
-                data, reference_path = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
+                display_object, reference_path = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
+                data = display_object["data"]
             else:
-                # But not when calling result objects display methods. We end up here using Block Display because
-                # it is very poor and cannot know which type of display its value will implement
+                # But not when calling result objects display methods.
+                # We end up here when evaluating output value display
                 data = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
         except:
             data = None
@@ -1849,7 +1855,7 @@ class WorkflowRun(WorkflowState):
             data = serialize(data)
         return DisplayObject(type_=display_setting.type, data=data, reference_path=reference_path, traceback=track)
 
-    def block_display(self, block_index: int):
+    def block_display(self, block_index: int, display_index: int):
         """
         Computes the display of associated block to use integrate it in the workflow run displays
         """
@@ -1866,7 +1872,7 @@ class WorkflowRun(WorkflowState):
             if i == block._displayable_input:
                 reference_path = f'variable_values/{input_adress}'
         display_ = block.display_(local_values=local_values, reference_path=reference_path)
-        return display_, reference_path
+        return display_[display_index], reference_path
 
     def dict_to_arguments(self, dict_: JsonSerializable, method: str):
         if method in self._allowed_methods:
