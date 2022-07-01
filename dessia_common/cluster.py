@@ -29,6 +29,7 @@ class ClusterResult(dc.DessiaObject):
 
         :param name: The name of ClusterResult object, defaults to ''
         :type name: str, optional
+        
         """
         dc.DessiaObject.__init__(self, name=name)
         self.data = data
@@ -40,7 +41,7 @@ class ClusterResult(dc.DessiaObject):
     @classmethod
     def from_agglomerative_clustering(cls, data: List[dc.DessiaObject], n_clusters: int = 2,
                                       affinity: str = 'euclidean', linkage: str = 'ward',
-                                      distance_threshold: float = None):
+                                      distance_threshold: float = None, scaling: bool = False):
         """
         Internet doc
         ----------
@@ -94,6 +95,10 @@ class ClusterResult(dc.DessiaObject):
         :param distance_threshold: The linkage distance above which clusters will not be merged, defaults to None
             If not None, n_clusters must be None.
         :type distance_threshold: float, optional
+        
+        :param scaling: Whether to scale the data or not before clustering.
+        Formula is scaled_x = ( x - mean ) / standard_deviation, default to False
+        :type scaling: bool, optional
 
         :return: a ClusterResult object that knows the data and their labels
         :rtype: ClusterResult
@@ -101,14 +106,17 @@ class ClusterResult(dc.DessiaObject):
         """
         skl_cluster = cluster.AgglomerativeClustering(n_clusters=n_clusters, affinity=affinity,
                                                       distance_threshold=distance_threshold, linkage=linkage)
-        scaled_matrix = preprocessing.StandardScaler().fit_transform(cls.to_matrix(data))
-        scaled_matrix = list([list(map(float, row)) for row in scaled_matrix])
+        if scaling:
+            scaled_matrix = cls.scale_data(cls.to_matrix(data))
+        else:
+            scaled_matrix = cls.to_matrix(data)
+            
         skl_cluster.fit(scaled_matrix)
         return cls(data, skl_cluster.labels_.tolist())
 
     @classmethod
     def from_kmeans(cls, data: List[dc.DessiaObject], n_clusters: int = 2,
-                    n_init: int = 10, tol: float = 1e-4):
+                    n_init: int = 10, tol: float = 1e-4, scaling: bool = False):
         """
         Internet doc
         ----------
@@ -137,20 +145,26 @@ class ClusterResult(dc.DessiaObject):
         :param tol: Relative tolerance with regards to Frobenius norm of the difference in the cluster centers
             of two consecutive iterations to declare convergence., defaults to 1e-4
         :type tol: float, optional
+        
+        :param scaling: Whether to scale the data or not before clustering.
+        Formula is scaled_x = ( x - mean ) / standard_deviation, default to False
+        :type scaling: bool, optional
 
         :return: a ClusterResult object that knows the data and their labels
         :rtype: ClusterResult
 
         """
         skl_cluster = cluster.KMeans(n_clusters=n_clusters, n_init=n_init, tol=tol)
-        scaled_matrix = preprocessing.StandardScaler().fit_transform(cls.to_matrix(data))
-        scaled_matrix = list([list(map(float, row)) for row in scaled_matrix])
+        if scaling:
+            scaled_matrix = cls.scale_data(cls.to_matrix(data))
+        else:
+            scaled_matrix = cls.to_matrix(data)
         skl_cluster.fit(scaled_matrix)
         return cls(data, skl_cluster.labels_.tolist())
 
     @classmethod
     def from_dbscan(cls, data: List[dc.DessiaObject], eps: float = 0.5, min_samples: int = 5,
-                    mink_power: float = 2, leaf_size: int = 30):
+                    mink_power: float = 2, leaf_size: int = 30, scaling: bool = False):
         """
         Internet doc
         ----------
@@ -164,11 +178,6 @@ class ClusterResult(dc.DessiaObject):
             when we say dense. Higher min_samples or lower eps indicate higher density necessary to form a cluster.
 
             See more : https://scikit-learn.org/stable/modules/clustering.html#dbscan
-
-        !! WARNING !!
-        ----------
-            All labels are summed with 1 in order to improve the code simplicity and ease to use.
-            Then -1 labelled values are now at 0 and must not be considered as clustered values when using DBSCAN.
 
         :param data: The future clustered data.
         :type data: List[dc.DessiaObject]
@@ -184,23 +193,39 @@ class ClusterResult(dc.DessiaObject):
         :type min_samples: int, optional
 
         :param mink_power: The power of the Minkowski metric to be used to calculate distance between points.
-        If None, then mink_power=2 (equivalent to the Euclidean distance)., defaults to 2
+        If None, then mink_power=2 (equivalent to the Euclidean distance), defaults to 2
         :type mink_power: float, optional
 
         :param leaf_size: Leaf size passed to BallTree or cKDTree. This can affect the speed of the construction and query,
         as well as the memory required to store the tree. The optimal value depends on the nature of the problem, defaults to 30
         :type leaf_size: int, optional
+        
+        :param scaling: Whether to scale the data or not before clustering.
+        Formula is scaled_x = ( x - mean ) / standard_deviation, default to False
+        :type scaling: bool, optional
 
         :return: a ClusterResult object that knows the data and their labels
         :rtype: ClusterResult
+        
+        !! WARNING !!
+        ----------
+            All labels are summed with 1 in order to improve the code simplicity and ease to use.
+            Then -1 labelled values are now at 0 and must not be considered as clustered values when using DBSCAN.
 
         """
         skl_cluster = cluster.DBSCAN(eps=eps, min_samples=min_samples, p=mink_power, leaf_size=leaf_size)
-        scaled_matrix = preprocessing.StandardScaler().fit_transform(cls.to_matrix(data))
-        scaled_matrix = list([list(map(float, row)) for row in scaled_matrix])
+        if scaling:
+            scaled_matrix = cls.scale_data(cls.to_matrix(data))
+        else:
+            scaled_matrix = cls.to_matrix(data)
         skl_cluster.fit(scaled_matrix)
-        skl_cluster.labels_ += 1  # To test
         return cls(data, skl_cluster.labels_.tolist())
+    
+    
+    @staticmethod
+    def scale_data(data_matrix: List[List[float]]):
+        scaled_matrix = preprocessing.StandardScaler().fit_transform(data_matrix)
+        return list([list(map(float, row)) for row in scaled_matrix])
 
     @staticmethod
     def to_matrix(data: List[dc.DessiaObject]):
@@ -228,13 +253,18 @@ class ClusterResult(dc.DessiaObject):
             n_clusters = max(self.labels) + 1
         return n_clusters
 
-    def check_dimensionality(self):
-        _, singular_values, _ = npy.linalg.svd(self.to_matrix(self.data))
+    def check_dimensionality(self, scaling = False):
+        if scaling:
+            data_matrix = self.scale_data(self.data_matrix)
+        else:
+            data_matrix = self.data_matrix
+            
+        _, singular_values, _ = npy.linalg.svd(data_matrix)
         normed_singular_values = singular_values / npy.sum(singular_values)
         plt.figure()
         plt.semilogy(normed_singular_values, linestyle='None', marker='o')
         plt.grid()
-        plt.title("Normalized singular values of data")
+        plt.title("Normalized singular values of data" + (" with pre-scale" if scaling else ""))
         plt.xlabel("Index of reduced basis vector")
         plt.ylabel("Singular value")
 
@@ -253,6 +283,9 @@ class ClusterResult(dc.DessiaObject):
         dataset_list = []
         for i in range(self.n_clusters):
             dataset_list.append([])
+        if -1 in self.labels:
+            dataset_list.append([])
+            
         for i, label in enumerate(self.labels):
             dataset_list[label].append({"X_MDS": self.mds_matrix[i][0],
                                         "Y_MDS": self.mds_matrix[i][1]})
@@ -263,6 +296,13 @@ class ClusterResult(dc.DessiaObject):
             color = plot_data.colors.Color(cmp_f[i][0], cmp_f[i][1], cmp_f[i][2])
             point_style = plot_data.PointStyle(color_fill=color, color_stroke=color)
             dataset_list[i] = plot_data.Dataset(elements=dataset_list[i],
+                                                edge_style=edge_style,
+                                                point_style=point_style)
+            
+        if -1 in self.labels:
+            color = plot_data.colors.Color(0, 0, 0)
+            point_style = plot_data.PointStyle(color_fill=color, color_stroke=color)
+            dataset_list[-1] = plot_data.Dataset(elements=dataset_list[-1],
                                                 edge_style=edge_style,
                                                 point_style=point_style)
 

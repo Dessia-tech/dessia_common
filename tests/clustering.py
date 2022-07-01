@@ -17,42 +17,42 @@ kmeanstest = cluster.ClusterResult.from_kmeans(all_cars, n_clusters=5)
 
 db_list = dbtest.data_to_clusters(all_cars, dbtest.labels)
 agg_list = aggclustest.data_to_clusters(all_cars, aggclustest.labels)
-# kmeans_list = kmeanstest.data_to_clusters(all_cars, kmeanstest.labels)
+kmeans_list = kmeanstest.data_to_clusters(all_cars, kmeanstest.labels)
 
-# dbtest.check_dimensionality()
-# aggclustest.check_dimensionality()
-# # kmeanstest.check_dimensionality(all_cars)
+dbtest.check_dimensionality(True)
+aggclustest.check_dimensionality()
+kmeanstest.check_dimensionality(True)
 
 # dbtest.plot()
 # aggclustest.plot()
-# # kmeanstest.plot()
+# kmeanstest.plot()
 
 # dbtest._check_platform()
-aggclustest._check_platform()
+# aggclustest._check_platform()
 # kmeanstest._check_platform()
 
-data_method = wf.MethodType(class_=tests.Car, name='from_csv')
-block_data = wf.ClassMethod(method_type=data_method, name='data load')
+# data_method = wf.MethodType(class_=tests.Car, name='from_csv')
+# block_data = wf.ClassMethod(method_type=data_method, name='data load')
 
-cluster_method = wf.MethodType(class_=cluster.ClusterResult, name='from_agglomerative_clustering')
-block_cluster = wf.ClassMethod(method_type=cluster_method, name='clustering')
+# cluster_method = wf.MethodType(class_=cluster.ClusterResult, name='from_agglomerative_clustering')
+# block_cluster = wf.ClassMethod(method_type=cluster_method, name='clustering')
 
-display_cluster = wf.Display(name='Display Cluster')
+# display_cluster = wf.Display(name='Display Cluster')
 
-block_workflow = [block_cluster, display_cluster]
-pipe_worflow = [wf.Pipe(block_cluster.outputs[0], display_cluster.inputs[0])]
-workflow = wf.Workflow(block_workflow, pipe_worflow, block_cluster.outputs[0])
+# block_workflow = [block_cluster, display_cluster]
+# pipe_worflow = [wf.Pipe(block_cluster.outputs[0], display_cluster.inputs[0])]
+# workflow = wf.Workflow(block_workflow, pipe_worflow, block_cluster.outputs[0])
 
-workflow_run = workflow.run({workflow.index(block_cluster.inputs[0]): all_cars})
-cresult = workflow_run.output_value._display_from_selector('plot_data')
+# workflow_run = workflow.run({workflow.index(block_cluster.inputs[0]): all_cars})
+# cresult = workflow_run.output_value._display_from_selector('plot_data')
 
-# ff=workflow_run.output_value.display_settings()[1]
-# ff.selector
+# # ff=workflow_run.output_value.display_settings()[1]
+# # ff.selector
 
-workflow.plot()
-workflow.display_settings()
-workflow_run.output_value.plot()
+# workflow.plot()
+# workflow.display_settings()
+# workflow_run.output_value.plot()
 
-gg = workflow_run._display_from_selector('plot_data')
-json.dumps(gg.to_dict())
-workflow_run._displays
+# gg = workflow_run._display_from_selector('plot_data')
+# json.dumps(gg.to_dict())
+# workflow_run._displays
