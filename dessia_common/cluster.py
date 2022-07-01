@@ -35,6 +35,7 @@ class ClusterResult(dc.DessiaObject):
         self.labels = labels
         self.data_matrix = self.to_matrix(data)
         self.n_clusters = self.set_n_clusters()
+        self.mds_matrix = self.build_mds()
 
     @classmethod
     def from_agglomerative_clustering(cls, data: List[dc.DessiaObject], n_clusters: int = 2,
@@ -220,51 +221,36 @@ class ClusterResult(dc.DessiaObject):
         plt.title("Normalized singular values of data")
         plt.xlabel("Index of reduced basis vector")
         plt.ylabel("Singular value")
+        
+    def build_mds(self):
+        encoding_mds = manifold.MDS(metric=True, n_jobs=1, n_components=2, random_state=1)
+        return encoding_mds.fit_transform(self.data_matrix).tolist()
 
     def plot_data(self):
-        # encoding_mds = manifold.MDS(metric=True, n_jobs=-1, n_components=2)
-        # matrix_mds = encoding_mds.fit_transform(self.data_matrix)
-
-        # elements = []
-        # for i in range(len(matrix_mds)):
-        #     elements.append({"X_MDS": matrix_mds[i, 0].tolist(),
-        #                       "Y_MDS": matrix_mds[i, 1]})
-
-        # dataset_list = []
-        # for i in range(self.n_clusters):
-        #     dataset_list.append([])
-        # for i, label in enumerate(self.labels):
-        #     dataset_list[label].append({"X_MDS": matrix_mds[i, 0].tolist(),
-        #                                 "Y_MDS": matrix_mds[i, 1]})
-
-        # cmp_f = plt.cm.get_cmap('jet', self.n_clusters)(range(self.n_clusters))
-        # edge_style = plot_data.EdgeStyle(line_width=0.0001)
-        # for i in range(self.n_clusters):
-        #     color = plot_data.colors.Color(cmp_f[i][0], cmp_f[i][1], cmp_f[i][2])
-        #     point_style = plot_data.PointStyle(color_fill=color, color_stroke=color)
-        #     dataset_list[i] = plot_data.Dataset(elements=dataset_list[i],
-        #                                         edge_style=edge_style,
-        #                                         point_style=point_style)
-
-        # scatter_plot = plot_data.Graph2D(x_variable="X_MDS",
-        #                                   y_variable="Y_MDS",
-        #                                   graphs=dataset_list)
-        
         elements = []
-        SHAPES = ['round', 'square', 'triangle', 'ellipse']
-        COLORS = [colors.RED, colors.BLUE, colors.GREEN, colors.YELLOW, colors.ORANGE, colors.VIOLET]
-        for i in range(50):
-            random_shape = SHAPES[random.randint(0, len(SHAPES) - 1)]
-            random_color = COLORS[random.randint(0, len(SHAPES) - 1)]
-            elements.append({'mass': random.uniform(0, 50),
-                             'length': random.uniform(0, 100),
-                             'shape': random_shape,
-                             'color': random_color
-                             })
+        for i in range(len(self.mds_matrix)):
+            elements.append({"X_MDS": self.mds_matrix[i][0],
+                             "Y_MDS": self.mds_matrix[i][1]})
 
+        dataset_list = []
+        for i in range(self.n_clusters):
+            dataset_list.append([])
+        for i, label in enumerate(self.labels):
+            dataset_list[label].append({"X_MDS": self.mds_matrix[i][0],
+                                        "Y_MDS": self.mds_matrix[i][1]})
 
-        scatter_plot = plot_data.Scatter(elements=elements,
-                                        x_variable='mass', y_variable='length')
+        cmp_f = plt.cm.get_cmap('jet', self.n_clusters)(range(self.n_clusters))
+        edge_style = plot_data.EdgeStyle(line_width=0.0001)
+        for i in range(self.n_clusters):
+            color = plot_data.colors.Color(cmp_f[i][0], cmp_f[i][1], cmp_f[i][2])
+            point_style = plot_data.PointStyle(color_fill=color, color_stroke=color)
+            dataset_list[i] = plot_data.Dataset(elements=dataset_list[i],
+                                                edge_style=edge_style,
+                                                point_style=point_style)
+
+        scatter_plot = plot_data.Graph2D(x_variable="X_MDS",
+                                         y_variable="Y_MDS",
+                                         graphs=dataset_list)
         return [scatter_plot]
 
 

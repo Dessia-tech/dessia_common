@@ -1,6 +1,7 @@
 """
 Cluster.py package testing.
 """
+import json
 import pkg_resources
 from dessia_common import tests, cluster
 import dessia_common.workflow as wf
@@ -22,11 +23,11 @@ agg_list = aggclustest.data_to_clusters(all_cars, aggclustest.labels)
 # aggclustest.check_dimensionality()
 # # kmeanstest.check_dimensionality(all_cars)
 
-dbtest.plot()
+# dbtest.plot()
 # aggclustest.plot()
 # # kmeanstest.plot()
 
-# dbtest._check_platform()
+dbtest._check_platform()
 # aggclustest._check_platform()
 # kmeanstest._check_platform()
 
@@ -51,6 +52,11 @@ cresult = workflow_run.output_value._display_from_selector('plot_data')
 workflow.plot()
 workflow.display_settings()
 workflow_run.output_value.plot()
+
+gg=workflow_run._display_from_selector('plot_data')
+json.dumps(gg.to_dict())
+workflow_run._displays
+
 
 
 
