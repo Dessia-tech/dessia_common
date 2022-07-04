@@ -159,7 +159,7 @@ class InstantiateModel(Block):
         return block_docstring
 
     def to_script(self):
-        script = f"InstantiateModel(" \
+        script = f"InstantiateModel(model_class=" \
                  f"{full_classname(object_=self.model_class, compute_for='class')}, name='{self.name}')"
         return script, [full_classname(object_=self.model_class, compute_for='class')]
 
@@ -565,6 +565,9 @@ class Product(Block):
         output_value = list(itertools.product(*list_product))
         return [output_value]
 
+    def to_script(self):
+        script = f"Product(number_list={self.number_list}, name='{self.name}')"
+        return script, []
 
 class Filter(Block):
     """
@@ -720,7 +723,7 @@ class ModelAttribute(Block):
         return [enhanced_deep_attr(values[self.inputs[0]], self.attribute_name)]
 
     def to_script(self):
-        script = f"ModelAttribute('{self.attribute_name}', name='{self.name}')"
+        script = f"ModelAttribute(attribute_name='{self.attribute_name}', name='{self.name}')"
         return script, []
 
 
@@ -761,7 +764,7 @@ class SetModelAttribute(Block):
         return [model]
 
     def to_script(self):
-        script = f"dcw_blocks.SetModelAttribute('{self.attribute_name}', name='{self.name}')"
+        script = f"SetModelAttribute(attribute_name='{self.attribute_name}', name='{self.name}')"
         return script, []
 
 
@@ -792,6 +795,9 @@ class Sum(Block):
     def evaluate(values):
         return [sum(values)]
 
+    def to_script(self):
+        script = f"Sum(number_elements={self.number_elements}, name='{self.name}')"
+        return script,[]
 
 class Substraction(Block):
     def __init__(self, name: str = ''):
@@ -799,6 +805,10 @@ class Substraction(Block):
 
     def evaluate(self, values):
         return [values[self.inputs[0]] - values[self.inputs[1]]]
+
+    def to_script(self):
+        script = f"Substraction(name='{self.name}')"
+        return script,[]
 
 
 class Export(Block):
