@@ -35,7 +35,7 @@ from dessia_common.exports import XLSXWriter
 from dessia_common.typings import JsonSerializable
 from dessia_common import templates
 from dessia_common.displays import DisplayObject, DisplaySetting
-from dessia_common.breakdown import attrmethod_getter
+from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
 
 
 _FORBIDDEN_ARGNAMES = ['self', 'cls', 'progress_callback', 'return']
@@ -180,6 +180,9 @@ class DessiaObject:
         """
         # return diff(self, other_object)
         return diff(self, other_object)
+
+    def _get_from_path(self, path: str):
+        return get_in_object_from_path(self, path)
 
     @property
     def full_classname(self):
@@ -570,7 +573,7 @@ class DessiaObject:
         for display_setting in self.display_settings():
             if display_setting.selector == selector:
                 return display_setting
-        raise ValueError(f'No such selector {selector} in display of class {self.__class__.__name__}')
+        raise ValueError(f"No such selector '{selector}' in display of class '{self.__class__.__name__}'")
 
     def _displays(self, **kwargs) -> List[JsonSerializable]:
         """
@@ -588,8 +591,7 @@ class DessiaObject:
         """
         Render a markdown of the object output type: string
         """
-        return templates.dessia_object_markdown_template.substitute(name=self.name,
-                                                                    class_=self.__class__.__name__)
+        return templates.dessia_object_markdown_template.substitute(name=self.name, class_=self.__class__.__name__)
 
     def _performance_analysis(self):
         """
