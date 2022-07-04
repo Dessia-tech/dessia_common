@@ -9,6 +9,7 @@ from sklearn import cluster, manifold, preprocessing
 import matplotlib.pyplot as plt
 
 import plot_data
+from plot_data.core import Dataset
 import dessia_common.core as dc
 
 
@@ -153,6 +154,7 @@ class ClusterResult(dc.DessiaObject):
         skl_cluster = cls.fit_cluster(skl_cluster, data, scaling)
         return cls(data, skl_cluster.labels_.tolist())
 
+
     @classmethod
     def from_dbscan(cls, data: List[dc.DessiaObject], eps: float = 0.5, min_samples: int = 5,
                     mink_power: float = 2, leaf_size: int = 30, scaling: bool = False):
@@ -207,22 +209,23 @@ class ClusterResult(dc.DessiaObject):
         skl_cluster = cluster.DBSCAN(eps=eps, min_samples=min_samples, p=mink_power, leaf_size=leaf_size)
         skl_cluster = cls.fit_cluster(skl_cluster, data, scaling)
         return cls(data, skl_cluster.labels_.tolist())
-    
-    
+
+
     @staticmethod
-    def fit_cluster(skl_cluster, data, scaling):
+    def fit_cluster(skl_cluster: cluster, data: List[dc.DessiaObject], scaling: bool = False):
         if scaling:
             scaled_matrix = ClusterResult.scale_data(ClusterResult.to_matrix(data))
         else:
             scaled_matrix = ClusterResult.to_matrix(data)
         skl_cluster.fit(scaled_matrix)
         return skl_cluster
-    
-    
+
+
     @staticmethod
     def scale_data(data_matrix: List[List[float]]):
         scaled_matrix = preprocessing.StandardScaler().fit_transform(data_matrix)
         return list([list(map(float, row)) for row in scaled_matrix])
+
 
     @staticmethod
     def to_matrix(data: List[dc.DessiaObject]):
@@ -234,6 +237,7 @@ class ClusterResult(dc.DessiaObject):
             data_matrix.append(element.to_vector())
         return data_matrix
 
+
     @staticmethod
     def data_to_clusters(data: List[dc.DessiaObject], labels: npy.ndarray):
         clusters_list = []
@@ -243,6 +247,7 @@ class ClusterResult(dc.DessiaObject):
             clusters_list[label].append(data[i])
         return clusters_list
 
+
     def set_n_clusters(self):
         if self.labels is None:
             n_clusters = 0
@@ -250,7 +255,8 @@ class ClusterResult(dc.DessiaObject):
             n_clusters = max(self.labels) + 1
         return n_clusters
 
-    def check_dimensionality(self, scaling = False):
+
+    def check_dimensionality(self, scaling: bool = False):
         if scaling:
             data_matrix = self.scale_data(self.data_matrix)
         else:
@@ -265,46 +271,60 @@ class ClusterResult(dc.DessiaObject):
         plt.xlabel("Index of reduced basis vector")
         plt.ylabel("Singular value")
 
+
     def build_mds(self):
         encoding_mds = manifold.MDS(metric=True, n_jobs=1, n_components=2, random_state=1)
         # scaled_matrix = self.scale_data(self.data_matrix)
         scaled_matrix = npy.copy(self.data_matrix)
         return encoding_mds.fit_transform(scaled_matrix).tolist()
 
+
     def plot_data(self, attributes: List[str] = None):
-        dataset_list = self.build_datasets(attributes)
+        if attributes is None:
+            new_attributes = self.data[0]._export_features
+        else:
+            new_attributes = list(attributes)
+            
+        dataset_list = self.build_datasets(new_attributes)
         
         # Because graph2D are not handled in scatter_matrix
         data_list = []
         for data in self.data:
             data_list.append(data.to_dict())
             
-        scatter_matrix = plot_data.ScatterMatrix(elements=data_list, axes=attributes)
+        scatter_matrix = plot_data.ScatterMatrix(elements=data_list, axes=new_attributes)
         
+        multiplot = self.build_multiplot(dataset_list, new_attributes)
+                
         scatter_plot = plot_data.Graph2D(x_variable="X_MDS",
                                          y_variable="Y_MDS",
                                          graphs=dataset_list)
 
-        return [scatter_matrix, scatter_plot]
-    
-    
+        return [multiplot, scatter_matrix, scatter_plot]
+
+
+    def build_multiplot(self, dataset_list: List[Dataset], attributes: List[str]):
+        list_scatters = []
+        for x_num in range(len(attributes) - 1):
+            for y_num in range(x_num + 1, len(attributes)):
+                list_scatters.append(plot_data.Graph2D(x_variable=attributes[x_num],
+                                                       y_variable=attributes[y_num],
+                                                       graphs=dataset_list))
+                
+        return plot_data.MultiplePlots(plots=list_scatters, elements=dataset_list,
+                                       initial_view_on=True)
+
+
     def build_datasets(self, attributes: List[str]):
         dataset_list = []
         tooltip_list = []
+        nb_dataset = (self.n_clusters if -1 not in self.labels else self.n_clusters + 1)
         dim_MDS = ["X_MDS", "Y_MDS", "Z_MDS"][:len(self.mds_matrix[0])]
-        if attributes is None:
-            new_attributes = list(self.data[0]._export_features)
-        else:
-            new_attributes = list(attributes)
+        new_attributes = attributes + dim_MDS
             
-        new_attributes += dim_MDS
-            
-        for i in range(self.n_clusters):
+        for i in range(nb_dataset):
             dataset_list.append([])
-            tooltip_list.append(plot_data.Tooltip(attributes=new_attributes))
-        if -1 in self.labels:
-            dataset_list.append([])
-            tooltip_list.append(plot_data.Tooltip(attributes=new_attributes))
+            tooltip_list.append(plot_data.Tooltip(attributes=new_attributes + ["Cluster Label"]))
         
         for i, label in enumerate(self.labels):
             dataset_row = {"Cluster Label": (label if label != -1 else "Excluded")}
@@ -317,22 +337,17 @@ class ClusterResult(dc.DessiaObject):
 
         cmp_f = plt.cm.get_cmap('jet', self.n_clusters)(range(self.n_clusters))
         edge_style = plot_data.EdgeStyle(line_width=0.0001)
-        for i in range(self.n_clusters):
-            color = plot_data.colors.Color(cmp_f[i][0], cmp_f[i][1], cmp_f[i][2])
+        for i in range(nb_dataset):
+            if i == self.n_clusters:
+                color = plot_data.colors.Color(0, 0, 0)
+            else:
+                color = plot_data.colors.Color(cmp_f[i][0], cmp_f[i][1], cmp_f[i][2])
             point_style = plot_data.PointStyle(color_fill=color, color_stroke=color)
             dataset_list[i] = plot_data.Dataset(elements=dataset_list[i],
                                                 edge_style=edge_style,
                                                 point_style=point_style,
                                                 tooltip=tooltip_list[i])
-            
-        if -1 in self.labels:
-            color = plot_data.colors.Color(0, 0, 0)
-            point_style = plot_data.PointStyle(color_fill=color, color_stroke=color)
-            dataset_list[-1] = plot_data.Dataset(elements=dataset_list[-1],
-                                                 edge_style=edge_style,
-                                                 point_style=point_style,
-                                                 tooltip=tooltip_list[-1])
-            
+
         return dataset_list
 
 

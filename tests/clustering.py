@@ -11,7 +11,7 @@ csv_cars = pkg_resources.resource_stream('dessia_common', 'models/data/cars.csv'
 all_cars = tests.Car.from_csv(csv_cars)
 
 dbtest = cluster.ClusterResult.from_dbscan(all_cars, eps=100)
-aggclustest = cluster.ClusterResult.from_agglomerative_clustering(all_cars, n_clusters=5)
+aggclustest = cluster.ClusterResult.from_agglomerative_clustering(all_cars, n_clusters=10)
 # kmeanstest = cluster.ClusterResult.from_kmeans(all_cars, n_clusters=5)
 
 
@@ -23,8 +23,8 @@ agg_list = aggclustest.data_to_clusters(all_cars, aggclustest.labels)
 # aggclustest.check_dimensionality()
 # kmeanstest.check_dimensionality()
 
-dbtest.plot(attributes=['weight', 'mpg', 'cylinders', 'displacement'])
-# aggclustest.plot()
+# dbtest.plot(attributes=['weight', 'mpg', 'cylinders', 'displacement'])
+aggclustest.plot(attributes=['weight', 'mpg', 'cylinders', 'displacement'])
 # kmeanstest.plot()
 
 # dbtest._check_platform()
