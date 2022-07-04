@@ -267,8 +267,8 @@ class ClusterResult(dc.DessiaObject):
 
     def build_mds(self):
         encoding_mds = manifold.MDS(metric=True, n_jobs=1, n_components=2, random_state=1)
-        scaled_matrix = preprocessing.StandardScaler().fit_transform(self.data_matrix)
-        scaled_matrix = list([list(map(float, row)) for row in scaled_matrix])
+        # scaled_matrix = self.scale_data(self.data_matrix)
+        scaled_matrix = npy.copy(self.data_matrix)
         return encoding_mds.fit_transform(scaled_matrix).tolist()
 
     def plot_data(self):
@@ -281,16 +281,15 @@ class ClusterResult(dc.DessiaObject):
         tooltip_list = []
         for i in range(self.n_clusters):
             dataset_list.append([])
-            tooltip_list.append(plot_data.Tooltip(attributes=['X_MDS', 'Y_MDS'],
-                                                  text = f"Cluster label : {i}"))
+            tooltip_list.append(plot_data.Tooltip(attributes=['X_MDS', 'Y_MDS', 'Cluster Label']))
         if -1 in self.labels:
             dataset_list.append([])
-            tooltip_list.append(plot_data.Tooltip(attributes=['X_MDS', 'Y_MDS'],
-                                                  text = "Excluded data"))
+            tooltip_list.append(plot_data.Tooltip(attributes=['X_MDS', 'Y_MDS', 'Cluster Label']))
         
         for i, label in enumerate(self.labels):
             dataset_list[label].append({"X_MDS": self.mds_matrix[i][0],
-                                        "Y_MDS": self.mds_matrix[i][1]})
+                                        "Y_MDS": self.mds_matrix[i][1],
+                                        "Cluster Label": (label if label != -1 else "Excluded")})
 
         cmp_f = plt.cm.get_cmap('jet', self.n_clusters)(range(self.n_clusters))
         edge_style = plot_data.EdgeStyle(line_width=0.0001)
@@ -313,7 +312,8 @@ class ClusterResult(dc.DessiaObject):
         scatter_plot = plot_data.Graph2D(x_variable="X_MDS",
                                          y_variable="Y_MDS",
                                          graphs=dataset_list)
-        return [scatter_plot]
+
+        return [scatter_plot, scatter_plot]
 
 
 # Function to implement, to find a good eps parameter for dbscan

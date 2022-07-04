@@ -12,12 +12,12 @@ all_cars = tests.Car.from_csv(csv_cars)
 
 dbtest = cluster.ClusterResult.from_dbscan(all_cars, eps=100)
 aggclustest = cluster.ClusterResult.from_agglomerative_clustering(all_cars, n_clusters=5)
-kmeanstest = cluster.ClusterResult.from_kmeans(all_cars, n_clusters=5)
+# kmeanstest = cluster.ClusterResult.from_kmeans(all_cars, n_clusters=5)
 
 
 db_list = dbtest.data_to_clusters(all_cars, dbtest.labels)
 agg_list = aggclustest.data_to_clusters(all_cars, aggclustest.labels)
-kmeans_list = kmeanstest.data_to_clusters(all_cars, kmeanstest.labels)
+# kmeans_list = kmeanstest.data_to_clusters(all_cars, kmeanstest.labels)
 
 # dbtest.check_dimensionality()
 # aggclustest.check_dimensionality()
