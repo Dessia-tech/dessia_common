@@ -23,7 +23,7 @@ agg_list = aggclustest.data_to_clusters(all_cars, aggclustest.labels)
 # aggclustest.check_dimensionality()
 # kmeanstest.check_dimensionality()
 
-dbtest.plot()
+dbtest.plot(attributes=['weight', 'mpg', 'cylinders', 'displacement'])
 # aggclustest.plot()
 # kmeanstest.plot()
 

@@ -271,25 +271,49 @@ class ClusterResult(dc.DessiaObject):
         scaled_matrix = npy.copy(self.data_matrix)
         return encoding_mds.fit_transform(scaled_matrix).tolist()
 
-    def plot_data(self):
-        elements = []
-        for i in range(len(self.mds_matrix)):
-            elements.append({"X_MDS": self.mds_matrix[i][0],
-                             "Y_MDS": self.mds_matrix[i][1]})
+    def plot_data(self, attributes: List[str] = None):
+        dataset_list = self.build_datasets(attributes)
+        
+        # Because graph2D are not handled in scatter_matrix
+        data_list = []
+        for data in self.data:
+            data_list.append(data.to_dict())
+            
+        scatter_matrix = plot_data.ScatterMatrix(elements=data_list, axes=attributes)
+        
+        scatter_plot = plot_data.Graph2D(x_variable="X_MDS",
+                                         y_variable="Y_MDS",
+                                         graphs=dataset_list)
 
+        return [scatter_matrix, scatter_plot]
+    
+    
+    def build_datasets(self, attributes: List[str]):
         dataset_list = []
         tooltip_list = []
+        dim_MDS = ["X_MDS", "Y_MDS", "Z_MDS"][:len(self.mds_matrix[0])]
+        if attributes is None:
+            new_attributes = list(self.data[0]._export_features)
+        else:
+            new_attributes = list(attributes)
+            
+        new_attributes += dim_MDS
+            
         for i in range(self.n_clusters):
             dataset_list.append([])
-            tooltip_list.append(plot_data.Tooltip(attributes=['X_MDS', 'Y_MDS', 'Cluster Label']))
+            tooltip_list.append(plot_data.Tooltip(attributes=new_attributes))
         if -1 in self.labels:
             dataset_list.append([])
-            tooltip_list.append(plot_data.Tooltip(attributes=['X_MDS', 'Y_MDS', 'Cluster Label']))
+            tooltip_list.append(plot_data.Tooltip(attributes=new_attributes))
         
         for i, label in enumerate(self.labels):
-            dataset_list[label].append({"X_MDS": self.mds_matrix[i][0],
-                                        "Y_MDS": self.mds_matrix[i][1],
-                                        "Cluster Label": (label if label != -1 else "Excluded")})
+            dataset_row = {"Cluster Label": (label if label != -1 else "Excluded")}
+            for attribute in new_attributes:
+                if attribute in dim_MDS:
+                    dataset_row[attribute] = self.mds_matrix[i][dim_MDS.index(attribute)]
+                else:
+                    dataset_row[attribute] = getattr(self.data[i], attribute)
+            dataset_list[label].append(dataset_row)
 
         cmp_f = plt.cm.get_cmap('jet', self.n_clusters)(range(self.n_clusters))
         edge_style = plot_data.EdgeStyle(line_width=0.0001)
@@ -308,12 +332,9 @@ class ClusterResult(dc.DessiaObject):
                                                  edge_style=edge_style,
                                                  point_style=point_style,
                                                  tooltip=tooltip_list[-1])
+            
+        return dataset_list
 
-        scatter_plot = plot_data.Graph2D(x_variable="X_MDS",
-                                         y_variable="Y_MDS",
-                                         graphs=dataset_list)
-
-        return [scatter_plot, scatter_plot]
 
 
 # Function to implement, to find a good eps parameter for dbscan
