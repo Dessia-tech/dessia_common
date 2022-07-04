@@ -278,11 +278,16 @@ class ClusterResult(dc.DessiaObject):
                              "Y_MDS": self.mds_matrix[i][1]})
 
         dataset_list = []
+        tooltip_list = []
         for i in range(self.n_clusters):
             dataset_list.append([])
+            tooltip_list.append(plot_data.Tooltip(attributes=['X_MDS', 'Y_MDS'],
+                                                  text = f"Cluster label : {i}"))
         if -1 in self.labels:
             dataset_list.append([])
-            
+            tooltip_list.append(plot_data.Tooltip(attributes=['X_MDS', 'Y_MDS'],
+                                                  text = "Excluded data"))
+        
         for i, label in enumerate(self.labels):
             dataset_list[label].append({"X_MDS": self.mds_matrix[i][0],
                                         "Y_MDS": self.mds_matrix[i][1]})
@@ -294,14 +299,16 @@ class ClusterResult(dc.DessiaObject):
             point_style = plot_data.PointStyle(color_fill=color, color_stroke=color)
             dataset_list[i] = plot_data.Dataset(elements=dataset_list[i],
                                                 edge_style=edge_style,
-                                                point_style=point_style)
+                                                point_style=point_style,
+                                                tooltip=tooltip_list[i])
             
         if -1 in self.labels:
             color = plot_data.colors.Color(0, 0, 0)
             point_style = plot_data.PointStyle(color_fill=color, color_stroke=color)
             dataset_list[-1] = plot_data.Dataset(elements=dataset_list[-1],
-                                                edge_style=edge_style,
-                                                point_style=point_style)
+                                                 edge_style=edge_style,
+                                                 point_style=point_style,
+                                                 tooltip=tooltip_list[-1])
 
         scatter_plot = plot_data.Graph2D(x_variable="X_MDS",
                                          y_variable="Y_MDS",
