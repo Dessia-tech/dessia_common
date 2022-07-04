@@ -477,7 +477,10 @@ class Workflow(Block):
         parsed_attributes = {}
         for i, input_ in enumerate(self.inputs):
             current_dict = {}
-            annotation = (str(i), input_.type_)
+            if isinstance(input_, TypedVariable) or isinstance(input_, TypedVariableWithDefaultValue):
+                annotation = (str(i), input_.type_)
+            else :
+                annotation = (str(i), Any)
             if input_ in self.nonblock_variables:
                 title = input_.name
                 parsed_attributes = None
