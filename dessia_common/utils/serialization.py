@@ -5,11 +5,11 @@ Serialization Tools
 
 """
 
-from ast import literal_eval
 import warnings
 import inspect
 import collections
-from typing import get_origin, get_args, Union, Any, TextIO, BinaryIO
+from ast import literal_eval
+from typing import get_origin, get_args, Union, Any
 import networkx as nx
 import dessia_common as dc
 import dessia_common.errors as dc_err
@@ -101,16 +101,15 @@ def serialize_with_pointers(value, memo=None, path='#'):
 
 
 def serialize_dict_with_pointers(dict_, memo, path):
-    '''
+    """
     Serialize a dict recursively with jsonpointers using a memo dict at a given path of the top level object
-    '''
+    """
     serialized_dict = {}
     dict_attrs_keys = []
     seq_attrs_keys = []
     other_keys = []
     # Detecting type of keys
     for key, value in dict_.items():
-        value_path = f'{path}/{key}'
         if isinstance(value, dict):
             dict_attrs_keys.append(key)
         elif dcty.is_sequence(value):
@@ -133,9 +132,9 @@ def serialize_dict_with_pointers(dict_, memo, path):
 
 
 def serialize_sequence_with_pointers(seq, memo, path):
-    '''
+    """
     Serialize a sequence (list or tuple) using jsonpointers
-    '''
+    """
     serialized_sequence = []
     for ival, value in enumerate(seq):
         value_path = f'{path}/{ival}'
@@ -284,6 +283,7 @@ def deserialize_with_typing(type_, argument):
     """
     origin = get_origin(type_)
     args = get_args(type_)
+    deserialized_arg = None
     if origin is Union:
         # Check for Union false Positive (Default value = None)
         if len(args) == 2 and type(None) in args:
@@ -343,29 +343,29 @@ def deserialize_argument(type_, argument):
         return None
     if dcty.is_typing(type_):
         return deserialize_with_typing(type_, argument)
-    if type_ in [TextIO, BinaryIO] or issubclass(type_, (StringFile, BinaryFile)):
-        deserialized_arg = argument
-    else:
-        if type_ in dcty.TYPING_EQUIVALENCES:
-            if isinstance(argument, type_):
-                deserialized_arg = argument
-            else:
-                if isinstance(argument, int) and type_ == float:
-                    # Explicit conversion in this case
-                    deserialized_arg = float(argument)
-                else:
-                    msg = f"Given built-in type and argument are incompatible: " \
-                          f"{type(argument)} and {type_} in {argument}"
-                    raise TypeError(msg)
-        elif type_ is Any:
-            # Any type
-            deserialized_arg = argument
-        elif inspect.isclass(type_) and issubclass(type_, dc.DessiaObject):
-            # Custom classes
-            deserialized_arg = type_.dict_to_object(argument)
-        else:
-            raise TypeError(f"Deserialization of type {type_} is Not Implemented")
-    return deserialized_arg
+
+    if type_ in [TextIO, BinaryIO] or  isinstance(argument, (StringFile, BinaryFile)):
+        return argument
+
+    if type_ in dcty.TYPING_EQUIVALENCES:
+        if isinstance(argument, type_):
+            return argument
+        if isinstance(argument, int) and type_ == float:
+            # Explicit conversion in this case
+            return float(argument)
+        # else ...
+        msg = f"Given built-in type and argument are incompatible: " \
+              f"{type(argument)} and {type_} in {argument}"
+        raise TypeError(msg)
+
+    if type_ is Any:
+        # Any type
+        return argument
+    if inspect.isclass(type_) and issubclass(type_, dc.DessiaObject):
+        # Custom classes
+        return type_.dict_to_object(argument)
+
+    raise TypeError(f"Deserialization of ype {type_} is Not Implemented")
 
 
 def find_references(value, path='#'):
@@ -587,10 +587,10 @@ def pointers_analysis(obj):
                 class_from_path[path1] = val1_class
 
             if val1_class != val2_class:
-                if not val2_class in composed_by:
+                if val2_class not in composed_by:
                     composed_by[val2_class] = {}
 
-                if not val1_class in composed_by[val2_class]:
+                if val1_class not in composed_by[val2_class]:
                     composed_by[val2_class][val1_class] = 1
                 else:
                     composed_by[val2_class][val1_class] += 1
