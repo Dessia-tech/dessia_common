@@ -105,7 +105,7 @@ class Display(Block):
         input_variables = [f"Variable(memorize={input.memorize}, name='{input.name}')" for input in self.inputs]
         inputs= '['+",".join(input_variables)+']'
         script = f"Display(inputs={inputs}, order={self.order}, name='{self.name}')"
-        return script, ["dessia_common.workflow.Variable"]
+        return script, ["dessia_common.workflow.Variable", self.full_classname]
 
 
 class InstantiateModel(Block):
@@ -167,7 +167,7 @@ class InstantiateModel(Block):
     def to_script(self):
         script = f"InstantiateModel(model_class=" \
                  f"{self.model_class.__name__}, name='{self.name}')"
-        return script, [full_classname(object_=self.model_class, compute_for='class')]
+        return script, [full_classname(object_=self.model_class, compute_for='class'), self.full_classname]
 
 
 class ClassMethod(Block):
@@ -239,7 +239,14 @@ class ClassMethod(Block):
         script = f"ClassMethod(method_type=ClassMethodType(" \
                  f"{self.method_type.class_.__name__}, '{self.method_type.name}')" \
                  f", name='{self.name}')"
-        return script, [full_classname(object_=self.method_type.class_, compute_for='class'), "dessia_common.typings.ClassMethodType"]
+
+        imports = [
+            full_classname(object_=self.method_type, compute_for='instance'),
+            full_classname(object_=self.method_type.class_, compute_for='class'),
+            self.full_classname
+        ]
+
+        return script, imports
 
 
 class ModelMethod(Block):
@@ -324,7 +331,13 @@ class ModelMethod(Block):
         script = f"ModelMethod(method_type=MethodType(" \
                  f"{self.method_type.class_.__name__}, '{self.method_type.name}')" \
                  f", name='{self.name}')"
-        return script, [full_classname(object_=self.method_type.class_, compute_for='class'),"dessia_common.typings.MethodType"]
+
+        imports = [
+            full_classname(object_=self.method_type, compute_for='instance'),
+            full_classname(object_=self.method_type.class_, compute_for='class'),
+            self.full_classname
+        ]
+        return script, imports
 
 
 class Sequence(Block):
@@ -356,7 +369,7 @@ class Sequence(Block):
 
     def to_script(self):
         script = f"Sequence(number_arguments={len(self.inputs)}, name='{self.name}')"
-        return script, []
+        return script, [self.full_classname]
 
 
 class WorkflowBlock(Block):
@@ -422,6 +435,17 @@ class WorkflowBlock(Block):
                     docstring[input_] = block_docstring[input_]
         return docstring
 
+    def to_script(self):
+        PREFIX = 'sub_'
+        imports, sub_script = self.workflow._to_script(PREFIX)
+        script_workflow = f"\n# --- Subworkflow --- \n" \
+                 f"{sub_script}" \
+                 f"# --- End Subworkflow --- \n"
+
+        script = f"WorkflowBlock(workflow={PREFIX}workflow, name='{self.name}')"
+
+        imports.append(self.full_classname)
+        return [script_workflow, script], imports
 
 class ForEach(Block):
     """
@@ -518,7 +542,7 @@ class Unpacker(Block):
 
     def to_script(self):
         script = f"Unpacker(indices={self.indices}, name='{self.name}')"
-        return script, []
+        return script, [self.full_classname]
 
 
 class Flatten(Block):
@@ -543,7 +567,7 @@ class Flatten(Block):
 
     def to_script(self):
         script = f"Flatten(name='{self.name}')"
-        return script, []
+        return script, [self.full_classname]
 
 class Product(Block):
     def __init__(self, number_list: int, name: str = ''):
@@ -580,7 +604,7 @@ class Product(Block):
 
     def to_script(self):
         script = f"Product(number_list={self.number_list}, name='{self.name}')"
-        return script, []
+        return script, [self.full_classname]
 
 class Filter(Block):
     """
@@ -637,7 +661,9 @@ class Filter(Block):
         filter_variables = [f"DessiaFilter(attribute='{f.attribute}', operator='{f.operator}', bound={f.bound}, name='{f.name}')" for f in self.filters]
         filters = '['+",".join(filter_variables)+']'
         script = f"Filter(filters={filters}, name='{self.name}')"
-        return script, ['dessia_common.DessiaFilter']
+
+        filter_classname = DessiaFilter("","",0).full_classname
+        return script, [filter_classname, self.full_classname]
 
 class MultiPlot(Display):
     """
@@ -708,7 +734,7 @@ class MultiPlot(Display):
     def to_script(self):
         # attributes: List[str], order: int = 0, name: str = ''):
         script = f"MultiPlot(attributes={self.attributes}, order={self.order}, name='{self.name}')"
-        return script, []
+        return script, [self.full_classname]
 
 class ModelAttribute(Block):
     """
@@ -746,7 +772,7 @@ class ModelAttribute(Block):
 
     def to_script(self):
         script = f"ModelAttribute(attribute_name='{self.attribute_name}', name='{self.name}')"
-        return script, []
+        return script, [self.full_classname]
 
 
 class SetModelAttribute(Block):
@@ -787,7 +813,7 @@ class SetModelAttribute(Block):
 
     def to_script(self):
         script = f"SetModelAttribute(attribute_name='{self.attribute_name}', name='{self.name}')"
-        return script, []
+        return script, [self.full_classname]
 
 
 class Sum(Block):
@@ -819,7 +845,7 @@ class Sum(Block):
 
     def to_script(self):
         script = f"Sum(number_elements={self.number_elements}, name='{self.name}')"
-        return script,[]
+        return script,[self.full_classname]
 
 class Substraction(Block):
     def __init__(self, name: str = ''):
@@ -830,7 +856,7 @@ class Substraction(Block):
 
     def to_script(self):
         script = f"Substraction(name='{self.name}')"
-        return script,[]
+        return script,[self.full_classname]
 
 
 class Export(Block):
@@ -960,4 +986,4 @@ class Archive(Block):
 
     def to_script(self):
         script = f"Archive(number_exports={self.number_exports}, name='{self.name}')"
-        return script, []
+        return script, [self.full_classname]
