@@ -1683,7 +1683,7 @@ class WorkflowState(DessiaObject):
         If state is complete, returns a WorkflowRun
         """
         if self.progress == 1:
-            values = {v: self.values[v] for v in self.workflow.variables if v.memorize and v in self.values}
+            values = {v: self.values[v] for v in self.workflow.variables if v in self.values}
             return WorkflowRun(workflow=self.workflow, input_values=self.input_values, output_value=self.output_value,
                                values=values, activated_items=self.activated_items, start_time=self.start_time,
                                end_time=self.end_time, log=self.log, name=name)
@@ -1776,7 +1776,7 @@ class WorkflowRun(WorkflowState):
         dict_['object_class'] = 'dessia_common.workflow.core.WorkflowRun'
 
         # TODO REMOVING THIS TEMPORARLY TO PREVENT DISPLAYS TO BE LOST WITH POINTERS
-        # VARIABLE_VALUES ARE NOT SET BACK IN DICT_TO_OBJECT
+        #  VARIABLE_VALUES ARE NOT SET BACK IN DICT_TO_OBJECT
         # if use_pointers:
         #     variable_values = {}
         #     for key, value in self.variable_values.items():
@@ -1823,8 +1823,9 @@ class WorkflowRun(WorkflowState):
             first_segment = segments[1]
             if first_segment == "values" and len(segments) == 3:
                 varindex = int(segments[2])
-                variable = self.workflow.variable_from_index(varindex)
-                return self.values[variable]
+                variable = self.workflow.variables[varindex]
+                upstream = self.workflow.get_upstream_nbv(variable)
+                return self.values[upstream]
         raise NotImplementedError(f"WorkflowRun : Specific object from path method is not defined for path '{path}'")
 
     def _display_from_selector(self, selector: str, **kwargs) -> DisplayObject:
