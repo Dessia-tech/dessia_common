@@ -86,6 +86,17 @@ class Display(Block):
         displays = object_._displays(**kwargs)
         return displays
 
+    def _display_settings(self, block_index: int, local_values: Dict[Variable, Any]) -> List[DisplaySetting]:
+        object_ = local_values[self.inputs[self._displayable_input]]
+        display_settings = []
+        for i, display_setting in enumerate(object_.display_settings()):
+            display_setting.selector = f"display_{block_index}_{i}"
+            display_setting.method = "block_display"
+            display_setting.arguments = {"block_index": block_index, "display_index": i}
+            display_setting.serialize_data = True
+            display_settings.append(display_setting)
+        return display_settings
+
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
         dict_ = Block.to_dict(self)
         dict_['order'] = self.order
@@ -648,12 +659,11 @@ class MultiPlot(Display):
                                             coords=[(0, 0), (0, 300)], name='Results plot')
         return [multiplot.to_dict()]
 
-    @staticmethod
-    def _display_settings(block_index: int) -> DisplaySetting:
+    def _display_settings(self, block_index: int, local_values: Dict[Variable, Any] = None) -> List[DisplaySetting]:
         display_settings = DisplaySetting(selector="display_" + str(block_index), type_="plot_data",
-                                          method="block_display", arguments={'block_index': block_index},
-                                          serialize_data=True)
-        return display_settings
+                                          method="block_display", serialize_data=True,
+                                          arguments={'block_index': block_index, "display_index": 0})
+        return [display_settings]
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
         dict_ = Block.to_dict(self)
