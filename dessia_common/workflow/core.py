@@ -1132,10 +1132,9 @@ class Workflow(Block):
             raise ValueError("A workflow output must be set")
 
         # --- Imports ---
-        script_imports = ('import builtins\n'
-                  + 'import dessia_common.workflow as dcw\n'
-                  + 'import dessia_common.workflow.blocks as dcw_blocks\n'
-                  + 'import dessia_common.typings as dct\n\n')
+        script_imports = f'import dessia_common.workflow as dcw\n' \
+                         f'import dessia_common.workflow.blocks as dcw_blocks\n' \
+                         f'\n' \
 
         # --- Blocks ---
         script_blocks = "# -- Blocks -- \n"
@@ -1145,9 +1144,12 @@ class Workflow(Block):
             classes.extend(classes_block)
             script_blocks += f'block_{ib} = dcw_blocks.{block_script}\n'
 
-        modules = {'.'.join(c.split('.')[:-1]) for c in classes}
-        for module in modules:
-            script_imports += f'import {module}\n'
+        for c in classes:
+            module = c.split('.')[:-1]
+            class_ = c.split('.')[-1]
+            import_line = f"from {'.'.join(module)} import {class_}"
+            if import_line not in script_imports :
+                script_imports += f"{import_line} \n"
 
         script_blocks+= 'blocks = [{}]\n'.format(', '.join(['block_' + str(i) for i in range(len(self.blocks))]))
 

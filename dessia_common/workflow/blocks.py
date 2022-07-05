@@ -101,6 +101,12 @@ class Display(Block):
     def evaluate(self):
         return []
 
+    def to_script(self):
+        input_variables = [f"Variable(memorize={input.memorize}, name='{input.name}')" for input in self.inputs]
+        inputs= '['+",".join(input_variables)+']'
+        script = f"Display(inputs={inputs}, order={self.order}, name='{self.name}')"
+        return script, ["dessia_common.workflow.Variable"]
+
 
 class InstantiateModel(Block):
     """
@@ -160,7 +166,7 @@ class InstantiateModel(Block):
 
     def to_script(self):
         script = f"InstantiateModel(model_class=" \
-                 f"{full_classname(object_=self.model_class, compute_for='class')}, name='{self.name}')"
+                 f"{self.model_class.__name__}, name='{self.name}')"
         return script, [full_classname(object_=self.model_class, compute_for='class')]
 
 
@@ -230,10 +236,10 @@ class ClassMethod(Block):
         return block_docstring
 
     def to_script(self):
-        script = f"ClassMethod(method_type=dct.ClassMethodType(" \
-                 f"{full_classname(object_=self.method_type.class_, compute_for='class')}, '{self.method_type.name}')" \
+        script = f"ClassMethod(method_type=ClassMethodType(" \
+                 f"{self.method_type.class_.__name__}, '{self.method_type.name}')" \
                  f", name='{self.name}')"
-        return script, [full_classname(object_=self.method_type.class_, compute_for='class')]
+        return script, [full_classname(object_=self.method_type.class_, compute_for='class'), "dessia_common.typings.ClassMethodType"]
 
 
 class ModelMethod(Block):
@@ -315,10 +321,10 @@ class ModelMethod(Block):
         return block_docstring
 
     def to_script(self):
-        script = f"ModelMethod(method_type=dct.MethodType(" \
-                 f"{full_classname(object_=self.method_type.class_, compute_for='class')}, '{self.method_type.name}')" \
+        script = f"ModelMethod(method_type=MethodType(" \
+                 f"{self.method_type.class_.__name__}, '{self.method_type.name}')" \
                  f", name='{self.name}')"
-        return script, [full_classname(object_=self.method_type.class_, compute_for='class')]
+        return script, [full_classname(object_=self.method_type.class_, compute_for='class'),"dessia_common.typings.MethodType"]
 
 
 class Sequence(Block):
@@ -510,6 +516,10 @@ class Unpacker(Block):
     def evaluate(self, values):
         return [values[self.inputs[0]][i] for i in self.indices]
 
+    def to_script(self):
+        script = f"Unpacker(indices={self.indices}, name='{self.name}')"
+        return script, []
+
 
 class Flatten(Block):
     def __init__(self, name: str = ''):
@@ -531,6 +541,9 @@ class Flatten(Block):
             output.extend(value)
         return [output]
 
+    def to_script(self):
+        script = f"Flatten(name='{self.name}')"
+        return script, []
 
 class Product(Block):
     def __init__(self, number_list: int, name: str = ''):
@@ -620,6 +633,11 @@ class Filter(Block):
                 ouput_values.append(object_)
         return [ouput_values]
 
+    def to_script(self):
+        filter_variables = [f"DessiaFilter(attribute='{f.attribute}', operator='{f.operator}', bound={f.bound}, name='{f.name}')" for f in self.filters]
+        filters = '['+",".join(filter_variables)+']'
+        script = f"Filter(filters={filters}, name='{self.name}')"
+        return script, ['dessia_common.DessiaFilter']
 
 class MultiPlot(Display):
     """
@@ -687,6 +705,10 @@ class MultiPlot(Display):
     def evaluate(_):
         return []
 
+    def to_script(self):
+        # attributes: List[str], order: int = 0, name: str = ''):
+        script = f"MultiPlot(attributes={self.attributes}, order={self.order}, name='{self.name}')"
+        return script, []
 
 class ModelAttribute(Block):
     """
@@ -838,6 +860,12 @@ class Export(Block):
         args = {"block_index": block_index}
         return {"extension": self.extension, "method_name": "export", "text": self.text, "args": args}
 
+    def to_script(self):
+        script = f"Export(method_type=dct.MethodType(" \
+                 f"{full_classname(object_=self.method_type.class_, compute_for='class')}, '{self.method_type.name}')" \
+                 f", name='{self.name}'" \
+                 f", export_name='{self.export_name}')"
+        return script, [full_classname(object_=self.method_type.class_, compute_for='class')]
 
 class ExportJson(Export):
     def __init__(self, model_class: Type, export_name: str = "", name: str = ""):
@@ -862,6 +890,9 @@ class ExportJson(Export):
         class_ = get_python_class_from_class_name(dict_['model_class'])
         return cls(class_, name=dict_['name'])
 
+    def to_script(self):
+        script = f"ExportJson(model_class={full_classname(object_=self.method_type.class_, compute_for='class')}, export_name='{self.export_name}', name='{self.name}')"
+        return  script, []
 
 class ExportExcel(Export):
     def __init__(self, model_class: Type, export_name: str = "", name: str = ""):
@@ -886,6 +917,9 @@ class ExportExcel(Export):
         class_ = get_python_class_from_class_name(dict_['model_class'])
         return cls(class_, name=dict_['name'])
 
+    def to_script(self):
+        script = f"ExportExcel(model_class={full_classname(object_=self.method_type.class_, compute_for='class')}, export_name='{self.export_name}', name='{self.name}')"
+        return  script, []
 
 class Archive(Block):
     def __init__(self, number_exports: int = 1, name=""):
@@ -923,3 +957,7 @@ class Archive(Block):
     @staticmethod
     def _export_format(block_index: int):
         return {"extension": "zip", "method_name": "export", "text": False, "args": {"block_index": block_index}}
+
+    def to_script(self):
+        script = f"Archive(number_exports={self.number_exports}, name='{self.name}')"
+        return script, []
