@@ -98,7 +98,7 @@ class Display(Block):
         return cls(order=dict_['order'], name=dict_['name'])
 
     @staticmethod
-    def evaluate(self):
+    def evaluate(_):
         return []
 
     def _to_script(self)-> [str, List[str]]:

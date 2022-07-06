@@ -28,7 +28,7 @@ from dessia_common.utils.docstrings import FAILED_ATTRIBUTE_PARSING, EMPTY_PARSE
 from dessia_common.utils.diff import choose_hash
 from dessia_common.typings import JsonSerializable, MethodType
 from dessia_common.displays import DisplayObject
-from dessia_common.breakdown import attrmethod_getter
+from dessia_common.breakdown import attrmethod_getter, ExtractionError
 
 
 class Variable(DessiaObject):
@@ -1492,13 +1492,14 @@ class WorkflowState(DessiaObject):
         #                                                          pointers_memo=pointers_memo,
         #                                                          path=f'{path}/variable_values/{i}')
 
-        input_values = {int(i): deserialize(v, global_dict=dict_, pointers_memo=pointers_memo)
+        input_values = {int(i): deserialize(v, global_dict=dict_, pointers_memo=pointers_memo,
+                                            path=f"{path}/input_values/{i}")
                         for i, v in dict_['input_values'].items()}
 
-        activated_items = {b: (True if i in dict_['evaluated_blocks_indices'] else False)
+        activated_items = {b: i in dict_['evaluated_blocks_indices']
                            for i, b in enumerate(workflow.blocks)}
 
-        activated_items.update({p: (True if i in dict_['evaluated_pipes_indices'] else False)
+        activated_items.update({p: i in dict_['evaluated_pipes_indices']
                                 for i, p in enumerate(workflow.pipes)})
 
         var_indices = []
@@ -1507,7 +1508,7 @@ class WorkflowState(DessiaObject):
                 var_indices.append(tuple(variable_indices))  # json serialisation loses tuples
             else:
                 var_indices.append(variable_indices)
-        activated_items.update({v: (True if workflow.variable_indices(v) in var_indices else False)
+        activated_items.update({v: workflow.variable_indices(v) in var_indices
                                 for v in workflow.variables})
 
         return cls(workflow=workflow, input_values=input_values, activated_items=activated_items,
@@ -1851,6 +1852,22 @@ class WorkflowRun(WorkflowState):
 
         return display_settings
 
+    def _get_from_path(self, path: str):
+        """
+        Extracts subobject at given path. Tries the generic function, then applies specific cases if it fails.
+        Returns found object
+        """
+        try:
+            return DessiaObject._get_from_path(self, path)
+        except ExtractionError:
+            segments = path.split("/")
+            first_segment = segments[1]
+            if first_segment == "values" and len(segments) == 3:
+                varindex = int(segments[2])
+                variable = self.workflow.variable_from_index(varindex)
+                return self.values[variable]
+        raise NotImplementedError(f"WorkflowRun : Specific object from path method is not defined for path '{path}'")
+
     def _display_from_selector(self, selector: str, **kwargs) -> DisplayObject:
         """
         Generate the display from the selector
@@ -1858,6 +1875,10 @@ class WorkflowRun(WorkflowState):
         # TODO THIS IS A TEMPORARY DIRTY HOTFIX OVERWRITE.
         #  WE SHOULD IMPLEMENT A WAY TO GET RID OF REFERENCE PATH WITH URLS
         track = ""
+        if "reference_path" in kwargs:
+            reference_path = kwargs["reference_path"]
+        else:
+            reference_path = ""
         if selector in ["documentation", "workflow"]:
             return self.workflow._display_from_selector(selector)
 
@@ -1867,9 +1888,15 @@ class WorkflowRun(WorkflowState):
         # Displays for blocks (getting reference path from block_display return)
         display_setting = self._display_settings_from_selector(selector)
         try:
-            data, reference_path = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
+            if display_setting.method == "block_display":
+                # Specific hotfix : we propagate reference_path through block_display method
+                data, reference_path = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
+            else:
+                # But not when calling result objects display methods. We end up here using Block Display because
+                # it is very poor and cannot know which type of display its value will implement
+                data = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
         except:
-            data, reference_path = None, ""
+            data = None
             track = tb.format_exc()
 
         if display_setting.serialize_data:

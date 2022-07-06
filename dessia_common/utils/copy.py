@@ -74,9 +74,9 @@ def deepcopy_dict(dict_value, memo):
         return memo_value
 
     copied_dict = {}
-    for k, v in dict_value.items():
-        copied_k = deepcopy_value(k, memo=memo)
-        copied_v = deepcopy_value(v, memo=memo)
+    for key, value in dict_value.items():
+        copied_k = deepcopy_value(key, memo=memo)
+        copied_v = deepcopy_value(value, memo=memo)
         copied_dict[copied_k] = copied_v
     return copied_dict
 
@@ -87,9 +87,9 @@ def deepcopy_sequence(seq_value, memo):
         return memo_value
 
     copied_list = []
-    for v in seq_value:
-        cv = deepcopy_value(v, memo=memo)
-        copied_list.append(cv)
+    for value in seq_value:
+        copied_value = deepcopy_value(value, memo=memo)
+        copied_list.append(copied_value)
     return copied_list
 
 
