@@ -1178,7 +1178,14 @@ class Workflow(Block):
                       f"{script_pipes}\n" \
                       f"{prefix}workflow = Workflow({prefix}blocks, {prefix}pipes, output={output_name}, name='{self.name}')\n"
 
-
+        for k,v in self.imposed_variable_values.items():
+            variable_indice = self.variable_indices(k)
+            if (isinstance(variable_indice,int)):
+                variable_str = variable_indice
+            else :
+                [block_index,_,variable_index] = variable_indice
+                variable_str = f"{prefix}blocks[{block_index}].inputs[{variable_index}]"
+            full_script += f"{prefix}workflow.imposed_variable_values[{variable_str}] = {v}\n"
 
         return classes, full_script
 
