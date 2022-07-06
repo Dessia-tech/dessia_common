@@ -1192,6 +1192,8 @@ class Workflow(Block):
 
         classes, full_script = self._to_script()
         classes.append(self.full_classname)
+        if len(self.pipes) > 0:
+            classes.append(self.pipes[0].full_classname)
 
         script_imports = ""
         for c in classes:
