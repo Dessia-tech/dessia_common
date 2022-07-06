@@ -1133,7 +1133,9 @@ class Workflow(Block):
             raise ValueError("A workflow output must be set")
 
           # --- Blocks ---
-        script_blocks = f"# -- {prefix}Blocks -- \n"
+        script_blocks = ""
+        if prefix == "":
+            script_blocks += f"# -- {prefix}Blocks -- \n"
         classes = []
         for ib, block in enumerate(self.blocks):
             block_script, classes_block = block.to_script()
@@ -1146,7 +1148,9 @@ class Workflow(Block):
         script_blocks+= prefix + 'blocks = [{}]\n'.format(', '.join([prefix + 'block_' + str(i) for i in range(len(self.blocks))]))
 
         # --- Pipes ---
-        script_pipes = f"# -- {prefix}Pipes -- \n"
+        script_pipes = ""
+        if prefix == "":
+            script_pipes += f"# -- Pipes -- \n"
         variable_index = 0
         for ip, pipe in enumerate(self.pipes):
             input_index = self.variable_indices(pipe.input_variable)
@@ -1172,7 +1176,7 @@ class Workflow(Block):
 
         full_script = f"{script_blocks}\n" \
                       f"{script_pipes}\n" \
-                      f"\n{prefix}workflow = Workflow({prefix}blocks, {prefix}pipes, output={output_name}, name='{self.name}')\n"
+                      f"{prefix}workflow = Workflow({prefix}blocks, {prefix}pipes, output={output_name}, name='{self.name}')\n"
 
 
 

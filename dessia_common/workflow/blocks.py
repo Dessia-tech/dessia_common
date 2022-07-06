@@ -514,6 +514,15 @@ class ForEach(Block):
             block_docstring[input_] = wb_docstring[workflow_input]
         return block_docstring
 
+    def to_script(self):
+        wfblock_script, wfblock_classes = self.workflow_block.to_script()
+        wfblock_script = f"{wfblock_script[0]}\n" \
+                         f"wfblock = {wfblock_script[1]}"
+        foreach_script = f"ForEach(workflow_block=wfblock, iter_input_index={self.iter_input_index})"
+
+        wfblock_classes.append(self.full_classname)
+        return [wfblock_script, foreach_script], wfblock_classes
+
 
 class Unpacker(Block):
     def __init__(self, indices: List[int], name: str = ''):
