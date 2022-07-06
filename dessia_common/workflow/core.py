@@ -1138,7 +1138,7 @@ class Workflow(Block):
             script_blocks += f"# -- {prefix}Blocks -- \n"
         classes = []
         for ib, block in enumerate(self.blocks):
-            block_script, classes_block = block.to_script()
+            block_script, classes_block = block._to_script()
             classes.extend(classes_block)
             if not isinstance(block_script, str): # WorkflowBlock need to define the subworkflow before defining block_i
                 script_blocks += f"{block_script[0]}\n"
@@ -1163,7 +1163,7 @@ class Workflow(Block):
 
             output_index = self.variable_indices(pipe.output_variable)
             if isinstance(output_index, int): #NBV handling
-                script_pipes += pipe.output_variable.to_script(variable_index=variable_index) + '\n'
+                script_pipes += pipe.output_variable._to_script(variable_index=variable_index) + '\n'
                 output_name = f'{prefix}variable_{variable_index}'
                 variable_index += 1
             else:
