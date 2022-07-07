@@ -39,7 +39,6 @@ class ClusterResult(dc.DessiaObject):
         self.labels = labels
         self.data_matrix = self.to_matrix(data)
         self.n_clusters = self.set_n_clusters()
-        self.mds_matrix = self.compute_mds()
 
     @classmethod
     def from_agglomerative_clustering(cls, data: List[dc.DessiaObject], n_clusters: int = 2,
@@ -152,11 +151,9 @@ class ClusterResult(dc.DessiaObject):
         :rtype: ClusterResult
 
         """
-        t = time.time()
         skl_cluster = cluster.KMeans(
             n_clusters=n_clusters, n_init=n_init, tol=tol)
         skl_cluster = cls.fit_cluster(skl_cluster, data, scaling)
-        print('fit : ', time.time() - t)
         return cls(data, skl_cluster.labels_.tolist())
 
     @classmethod
@@ -274,18 +271,6 @@ class ClusterResult(dc.DessiaObject):
         plt.ylabel("Singular value")
         print('dimensionality : ', time.time() - t)
 
-    def compute_mds(self):
-        t = time.time()
-        max_size = 100
-        encoding_mds = manifold.MDS(
-            metric=True, n_jobs=1, n_components=2, random_state=1)
-        # scaled_matrix = self.scale_data(self.data_matrix)
-        if len(self.data_matrix) > max_size:
-            return None
-        else:
-            return encoding_mds.fit_transform(npy.copy(self.data_matrix)).tolist()
-        print('mds :', time.time() - t)
-
     def plot_data(self, attributes: List[str] = None):
         if attributes is None:
             new_attributes = self.data[0]._export_features
@@ -326,24 +311,17 @@ class ClusterResult(dc.DessiaObject):
         tooltip_list = []
         nb_dataset = (self.n_clusters if -
                       1 not in self.labels else self.n_clusters + 1)
-        dim_MDS = (["X_MDS", "Y_MDS", "Z_MDS"]
-                   [:len(self.mds_matrix[0])] if self.mds_matrix else [])
-        new_attributes = attributes + dim_MDS
 
         for i_label in range(nb_dataset):
             dataset_list.append([])
             tooltip_list.append(plot_data.Tooltip(
-                attributes=new_attributes + ["Cluster Label"]))
+                attributes=attributes + ["Cluster Label"]))
 
         for idx, label in enumerate(self.labels):
             dataset_row = {"Cluster Label": (
                 label if label != -1 else "Excluded")}
-            for attribute in new_attributes:
-                if attribute in dim_MDS:
-                    dataset_row[attribute] = self.mds_matrix[idx][dim_MDS.index(
-                        attribute)]
-                else:
-                    dataset_row[attribute] = getattr(self.data[idx], attribute)
+            for attribute in attributes:
+                dataset_row[attribute] = getattr(self.data[idx], attribute)
             dataset_list[label].append(dataset_row)
 
         cmp_f = plt.cm.get_cmap(

@@ -815,7 +815,6 @@ class HeterogeneousList(DessiaObject):
         # msg = "You are actually calling the standard 'data_matrix' method "
         # msg += "from dessia_common.HeterogeneousList class."
         # warnings.warn(msg)
-
         matrix = []
         for dessia_object in self.dessia_objects:
             matrix.append([getattr(dessia_object, attr)
