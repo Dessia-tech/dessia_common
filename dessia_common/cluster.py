@@ -241,23 +241,6 @@ class ClusterResult(dc.DessiaObject):
             n_clusters = max(self.labels) + 1
         return n_clusters
 
-    def check_dimensionality(self, scaling: bool = False):
-        if scaling:
-            data_matrix = self.scale_data(self.data_matrix)
-        else:
-            data_matrix = self.data_matrix
-
-        _, singular_values, _ = npy.linalg.svd(
-            npy.array(data_matrix), full_matrices=False)
-        normed_singular_values = singular_values / npy.sum(singular_values)
-        plt.figure()
-        plt.semilogy(normed_singular_values, linestyle='None', marker='o')
-        plt.grid()
-        plt.title("Normalized singular values of data" +
-                  (" with pre-scale" if scaling else ""))
-        plt.xlabel("Index of reduced basis vector")
-        plt.ylabel("Singular value")
-
     def plot_data(self, attributes: List[str] = None):
         if attributes is None:
             new_attributes = self.data.common_attributes

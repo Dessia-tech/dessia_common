@@ -9,6 +9,7 @@ import time
 import sys
 import warnings
 import math
+import numpy as npy
 import random
 from functools import reduce
 import collections
@@ -790,12 +791,13 @@ class HeterogeneousList(DessiaObject):
     def common_attributes(self):
         standard_attributes = get_attribute_names(DessiaObject)
         objects_class = {}
-        
+
         for dessia_object in self.dessia_objects:
             if hasattr(dessia_object, '_export_features'):
                 objects_class[dessia_object.__class__] = dessia_object._export_features
             else:
-                objects_class[dessia_object.__class__] = set(get_attribute_names(dessia_object.__class__)).difference(standard_attributes)
+                objects_class[dessia_object.__class__] = set(get_attribute_names(
+                    dessia_object.__class__)).difference(standard_attributes)
 
         all_class = list(objects_class)
         common_attributes = set(get_attribute_names(all_class[0])).difference(standard_attributes)
@@ -828,6 +830,13 @@ class HeterogeneousList(DessiaObject):
         # Plot a correlation matrix when plot_data.heatmap will be improved
         correlation_matrix = []
 
+        # Dimensionality plot
+        _, singular_points = self.singular_values()
+        dimensionality_plot = [plot_data.Scatter(elements=singular_points,
+                                                 x_variable='Index of reduced basis vector',
+                                                 y_variable='Singular value',
+                                                 log_scale_y=True)]
+
         # Scattermatrix
         data_list = []
         for data in self.dessia_objects:
@@ -844,11 +853,20 @@ class HeterogeneousList(DessiaObject):
                                                       y_variable=col_attr,
                                                       elements=data_list))
 
-        scatter_matrix = [plot_data.MultiplePlots(
-            plots=subplots, elements=data_list, initial_view_on=True)]
+        scatter_matrix = [plot_data.MultiplePlots(plots=subplots, elements=data_list, initial_view_on=True)]
 
-        return scatter_matrix + correlation_matrix
-    
+        return dimensionality_plot + scatter_matrix + correlation_matrix
+
+    def singular_values(self):
+        _, singular_values, _ = npy.linalg.svd(npy.array(self.matrix), full_matrices=False)
+        normed_singular_values = singular_values / npy.sum(singular_values)
+
+        singular_points = []
+        for idx, value in enumerate(normed_singular_values):
+            singular_points.append({'Singular value': value,
+                                    'Index of reduced basis vector': idx + 1})
+        return normed_singular_values, singular_points
+
     def to_markdown(self):
         """
         Render a markdown of the object output type: string
