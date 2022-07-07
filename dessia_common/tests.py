@@ -225,15 +225,16 @@ class ClusTester_d1(DessiaObject):
         self.p1 = p1
 
     @classmethod
-    def create_dataset(cls, nb_clusters: float = 10, nb_points: int = 2500):
+    def create_dataset(cls, nb_clusters: float = 10, nb_points: int = 2500, 
+                       mean_borns: List[float] = [-50, 50], std_borns: List[float] = [-5, 5]):
         means_list = []
         std_list = []
         data_list = []
         cluster_sizes = cls.set_cluster_sizes(nb_points, nb_clusters)
 
         for cluster_size in cluster_sizes:
-            means_list = [random.uniform(-50, 50) for i in range(cls._nb_dims)]
-            std_list = [random.uniform(-5, 5) for i in range(cls._nb_dims)]
+            means_list = [random.uniform(*mean_borns) for i in range(cls._nb_dims)]
+            std_list = [random.uniform(*std_borns) for i in range(cls._nb_dims)]
             for idx_point in range(cluster_size):
                 new_data = cls(
                     *[random.normalvariate(means_list[dim], std_list[dim]) for dim in range(cls._nb_dims)])
