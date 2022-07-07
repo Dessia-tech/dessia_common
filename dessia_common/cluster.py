@@ -5,7 +5,7 @@ from typing import List
 import time
 
 import numpy as npy
-from sklearn import cluster, manifold, preprocessing
+from sklearn import cluster, preprocessing
 
 import matplotlib.pyplot as plt
 
@@ -19,7 +19,7 @@ class ClusterResult(dc.DessiaObject):
     _allowed_methods = ['from_agglomerative_clustering',
                         'from_kmeans', 'from_dbscan']
 
-    def __init__(self, data: List[dc.DessiaObject] = None,
+    def __init__(self, data: dc.HeterogeneousList = None,
                  labels: List[int] = None, name: str = ''):
         """
         Cluster object to instantiate and compute clusters on data.
@@ -37,7 +37,7 @@ class ClusterResult(dc.DessiaObject):
         dc.DessiaObject.__init__(self, name=name)
         self.data = data
         self.labels = labels
-        self.data_matrix = self.to_matrix(data)
+        self.data_matrix = data.matrix
         self.n_clusters = self.set_n_clusters()
 
     @classmethod
@@ -215,10 +215,9 @@ class ClusterResult(dc.DessiaObject):
     @staticmethod
     def fit_cluster(skl_cluster: cluster, data: List[dc.DessiaObject], scaling: bool = False):
         if scaling:
-            scaled_matrix = ClusterResult.scale_data(
-                ClusterResult.data_matrix(data))
+            scaled_matrix = ClusterResult.scale_data(data.matrix)
         else:
-            scaled_matrix = ClusterResult.data_matrix(data)
+            scaled_matrix = data.matrix
         skl_cluster.fit(scaled_matrix)
         return skl_cluster
 
@@ -227,14 +226,14 @@ class ClusterResult(dc.DessiaObject):
         scaled_matrix = preprocessing.StandardScaler().fit_transform(data_matrix)
         return list([list(map(float, row)) for row in scaled_matrix])
 
-    def data_matrix(data: List[dc.DessiaObject]):
-        if 'to_vector' not in dir(data[0]):
-            raise NotImplementedError(f"{data[0].__class__.__name__} objects must have a " +
-                                      "'to_vector' method to be handled in ClusterResult object.")
-        data_matrix = []
-        for element in data:
-            data_matrix.append(element.to_vector())
-        return data_matrix
+    # def data_matrix(data: List[dc.DessiaObject]):
+    #     if 'to_vector' not in dir(data[0]):
+    #         raise NotImplementedError(f"{data[0].__class__.__name__} objects must have a " +
+    #                                   "'to_vector' method to be handled in ClusterResult object.")
+    #     data_matrix = []
+    #     for element in data:
+    #         data_matrix.append(element.to_vector())
+    #     return data_matrix
 
     @staticmethod
     def data_to_clusters(data: List[dc.DessiaObject], labels: npy.ndarray):
@@ -273,7 +272,7 @@ class ClusterResult(dc.DessiaObject):
 
     def plot_data(self, attributes: List[str] = None):
         if attributes is None:
-            new_attributes = self.data[0]._export_features
+            new_attributes = self.data.common_attributes #[0]._export_features
         else:
             new_attributes = list(attributes)
         dataset_list = self.build_datasets(new_attributes)
@@ -286,14 +285,7 @@ class ClusterResult(dc.DessiaObject):
 
         multiplots = self.build_multiplot(dataset_list, new_attributes)
 
-        if self.mds_matrix:
-            scatter_plot = [plot_data.Graph2D(x_variable="X_MDS",
-                                              y_variable="Y_MDS",
-                                              graphs=dataset_list)]
-        else:
-            scatter_plot = []
-
-        return multiplots + scatter_plot
+        return multiplots
 
     def build_multiplot(self, dataset_list: List[Dataset], attributes: List[str]):
         list_scatters = []
@@ -321,7 +313,7 @@ class ClusterResult(dc.DessiaObject):
             dataset_row = {"Cluster Label": (
                 label if label != -1 else "Excluded")}
             for attribute in attributes:
-                dataset_row[attribute] = getattr(self.data[idx], attribute)
+                dataset_row[attribute] = getattr(self.data.dessia_objects[idx], attribute)
             dataset_list[label].append(dataset_row)
 
         cmp_f = plt.cm.get_cmap(

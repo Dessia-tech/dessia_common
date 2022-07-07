@@ -5,10 +5,12 @@ Test module for dessia_common
 
 """
 from time import sleep
+import inspect
 from typing import List
 import random
 import numpy as npy
 from dessia_common import DessiaObject
+from dessia_common.core import get_attribute_names
 import dessia_common.typings as dct
 import dessia_common.files as dcf
 
@@ -209,87 +211,32 @@ class Car(DessiaObject):
         return cars
 
 
-class Worms(DessiaObject):
-    """
-    Defines a dataset of worms from file
-    """
-    _standalone_in_db = True
-    _export_features = ['p1', 'p2']
-    _non_data_hash_attributes = ['name']
-
-    def __init__(self, name: str, p1: float, p2: float):
-        DessiaObject.__init__(self, name=name)
-        self.p1 = p1
-        self.p2 = p2
-
-    @classmethod
-    def from_file(cls, file: dcf.StringFile, delimiter: str = ',', end: int = None, remove_duplicates: bool = False):
-        """
-        Generates Cars from given .csv file.
-        """
-        array = npy.genfromtxt(
-            file, dtype=None, delimiter=delimiter, names=True, encoding=None)
-        dataset = []
-        for i, line in enumerate(array):
-            if end is not None and i >= end:
-                break
-            if not remove_duplicates or (remove_duplicates and line.tolist() not in dataset):
-                attr_list = list(line)
-
-                for j in range(len(attr_list)):
-                    if isinstance(attr_list[j], npy.int64):
-                        attr_list[j] = int(attr_list[j])
-                    elif isinstance(attr_list[j], npy.float64):
-                        attr_list[j] = float(attr_list[j])
-
-                dataset.append(cls(str(i), *attr_list))
-        return dataset
-
-    def to_vector(self):
-        list_formated_worm = []
-        for feature in self._export_features:
-            list_formated_worm.append(getattr(self, feature.lower()))
-        return list_formated_worm
-
-
-class ClusTester(DessiaObject):
+class ClusTester_d1(DessiaObject):
     """
     Creates a dataset from a number of clusters and dimensions
     """
     _standalone_in_db = True
-    _export_features = []
+    _export_features = [f'p{i+1}' for i in range(1)]
     _non_data_hash_attributes = ['name']
+    _nb_dims = 1
 
-    def __init__(self, p1: float = None, p2: float = None, p3: float = None,
-                 p4: float = None, p5: float = None, p6: float = None, p7: float = None,
-                 p8: float = None, p9: float = None, p10: float = None, name: str = ''):
+    def __init__(self, p1: float, name: str = ''):
         DessiaObject.__init__(self, name=name)
         self.p1 = p1
-        self.p2 = p2
-        self.p3 = p3
-        self.p4 = p4
-        self.p5 = p5
-        self.p6 = p6
-        self.p7 = p7
-        self.p8 = p8
-        self.p9 = p9
-        self.p10 = p10
 
     @classmethod
-    def create_dataset(cls, nb_clusters: float = 10, nb_dims: int = 10, nb_points: int = 2500):
+    def create_dataset(cls, nb_clusters: float = 10, nb_points: int = 2500):
         means_list = []
         std_list = []
         data_list = []
-        list_attr = [f'p{i+1}' for i in range(nb_dims)]
         cluster_sizes = cls.set_cluster_sizes(nb_points, nb_clusters)
 
         for cluster_size in cluster_sizes:
-            means_list = [random.uniform(-50, 50) for i in range(nb_dims)]
-            std_list = [random.uniform(-5, 5) for i in range(nb_dims)]
+            means_list = [random.uniform(-50, 50) for i in range(cls._nb_dims)]
+            std_list = [random.uniform(-5, 5) for i in range(cls._nb_dims)]
             for idx_point in range(cluster_size):
                 new_data = cls(
-                    *[random.normalvariate(means_list[dim], std_list[dim]) for dim in range(nb_dims)])
-                new_data.set_export_features(list_attr)
+                    *[random.normalvariate(means_list[dim], std_list[dim]) for dim in range(cls._nb_dims)])
                 data_list.append(new_data)
 
         return data_list
@@ -317,11 +264,76 @@ class ClusTester(DessiaObject):
         plt.plot(x_coords, y_coords, **kwargs)
         return
 
-    def set_export_features(self, list_attr: List[str]):
-        self._export_features = list_attr
-
     def to_vector(self):
         clustester_vectored = []
         for feature in self._export_features:
             clustester_vectored.append(getattr(self, feature.lower()))
         return clustester_vectored
+
+
+class ClusTester_d2(ClusTester_d1):
+    _export_features = [f'p{i+1}' for i in range(2)]
+    _nb_dims = 2
+    def __init__(self, p1: float, p2: float, name: str = ''):
+        ClusTester_d1.__init__(self, p1, name=name)
+        self.p2 = p2
+
+class ClusTester_d3(ClusTester_d2):
+    _export_features = [f'p{i+1}' for i in range(3)]
+    _nb_dims = 3
+    def __init__(self, p1: float, p2: float, p3: float, name: str = ''):
+        ClusTester_d2.__init__(self, p1, p2, name=name)
+        self.p3 = p3
+
+class ClusTester_d4(ClusTester_d3):
+    _export_features = [f'p{i+1}' for i in range(4)]
+    _nb_dims = 4
+    def __init__(self, p1: float, p2: float, p3: float, p4: float, name: str = ''):
+        ClusTester_d3.__init__(self, p1, p2, p3, name=name)
+        self.p4 = p4
+        
+class ClusTester_d5(ClusTester_d4):
+    _export_features = [f'p{i+1}' for i in range(5)]
+    _nb_dims = 5
+    def __init__(self, p1: float, p2: float, p3: float, p4: float, p5: float, name: str = ''):
+        ClusTester_d4.__init__(self, p1, p2, p3, p4, name=name)
+        self.p5 = p5
+        
+class ClusTester_d6(ClusTester_d5):
+    _export_features = [f'p{i+1}' for i in range(6)]
+    def __init__(self, p1: float, p2: float, p3: float, p4: float, p5: float, 
+                 p6: float, name: str = ''):
+        ClusTester_d5.__init__(self, p1, p2, p3, p4, p5, name=name)
+        self.p6 = p6
+        
+class ClusTester_d7(ClusTester_d6):
+    _export_features = [f'p{i+1}' for i in range(7)]
+    _nb_dims = 7
+    def __init__(self, p1: float, p2: float, p3: float, p4: float, p5: float, 
+                 p6: float, p7: float, name: str = ''):
+        ClusTester_d6.__init__(self, p1, p2, p3, p4, p5, p6, name=name)
+        self.p7 = p7
+
+class ClusTester_d8(ClusTester_d7):
+    _export_features = [f'p{i+1}' for i in range(8)]
+    _nb_dims = 8
+    def __init__(self, p1: float, p2: float, p3: float, p4: float, p5: float, 
+                 p6: float, p7: float, p8: float, name: str = ''):
+        ClusTester_d7.__init__(self, p1, p2, p3, p4, p5, p6, p7, name=name)
+        self.p8 = p8
+
+class ClusTester_d9(ClusTester_d8):
+    _export_features = [f'p{i+1}' for i in range(9)]
+    _nb_dims = 9
+    def __init__(self, p1: float, p2: float, p3: float, p4: float, p5: float, 
+                 p6: float, p7: float, p8: float, p9: float, name: str = ''):
+        ClusTester_d8.__init__(self, p1, p2, p3, p4, p5, p6, p7, p8, name=name)
+        self.p9 = p9
+
+class ClusTester_d10(ClusTester_d9):
+    _export_features = [f'p{i+1}' for i in range(10)]
+    _nb_dims = 10
+    def __init__(self, p1: float, p2: float, p3: float, p4: float, p5: float, 
+                 p6: float, p7: float, p8: float, p9: float, p10: float, name: str = ''):
+        ClusTester_d9.__init__(self, p1, p2, p3, p4, p5, p6, p7, p8, p9, name=name)
+        self.p10 = p10
