@@ -30,6 +30,8 @@ from dessia_common.typings import JsonSerializable, MethodType
 from dessia_common.displays import DisplayObject
 from dessia_common.breakdown import attrmethod_getter, ExtractionError
 
+from dessia_common.workflow.utils import ToScriptElement
+
 
 class Variable(DessiaObject):
     _standalone_in_db = False
@@ -76,11 +78,13 @@ class TypedVariable(Variable):
     def copy(self, deep: bool = False, memo=None):
         return TypedVariable(type_=self.type_, memorize=self.memorize, name=self.name)
 
-    def to_script(self) -> str:
+    def to_script(self) -> ToScriptElement:
         script = f"TypedVariable(type_={serialize_typing(self.type_)}, "
         script += f"memorize={self.memorize}, name='{self.name}')\n"
-        return script
 
+        imports = [self.full_classname]
+        # imports_as_is =[]
+        return ToScriptElement(declaration=script, imports=imports)
 
 class VariableWithDefaultValue(Variable):
     has_default_value: bool = True
@@ -1132,16 +1136,16 @@ class Workflow(Block):
         if workflow_output_index is None:
             raise ValueError("A workflow output must be set")
 
+
           # --- Blocks ---
         script_blocks = ""
         classes = []
         for ib, block in enumerate(self.blocks):
-            block_script, classes_block = block._to_script()
-            classes.extend(classes_block)
-            if not isinstance(block_script, str): # WorkflowBlock need to define the subworkflow before defining block_i
-                script_blocks += f"{block_script[0]}\n"
-                block_script = block_script[1]
-            script_blocks += f'{prefix}block_{ib} = {block_script}\n'
+            block_script = block._to_script()
+            classes.extend(block_script.imports)
+            if block_script.before_declaration is not None:
+                script_blocks += f"{block_script.before_declaration}\n"
+            script_blocks += f'{prefix}block_{ib} = {block_script.declaration}\n'
 
         script_blocks+= prefix + 'blocks = [{}]\n'\
             .format(', '.join([prefix + 'block_' + str(i) for i in range(len(self.blocks))]))
@@ -1185,7 +1189,7 @@ class Workflow(Block):
                 variable_str = f"{prefix}blocks[{block_index}].inputs[{variable_index}]"
             full_script += f"{prefix}workflow.imposed_variable_values[{variable_str}] = {v}\n"
 
-        return classes, full_script
+        return ToScriptElement(declaration=full_script, imports=classes)
 
     def to_script(self) -> str:
         """
@@ -1195,13 +1199,13 @@ class Workflow(Block):
         if workflow_output_index is None:
             raise ValueError("A workflow output must be set")
 
-        classes, full_script = self._to_script()
-        classes.append(self.full_classname)
+        self_script = self._to_script()
+        self_script.imports.append(self.full_classname)
         if len(self.pipes) > 0:
-            classes.append(self.pipes[0].full_classname)
+            self_script.imports.append(self.pipes[0].full_classname)
 
         imports_dict: Dict[str, List[str]] = {}
-        for c in classes:
+        for c in self_script.imports:
             module = '.'.join(c.split('.')[:-1])
             class_ = c.split('.')[-1]
             if imports_dict.get(module) is None:
@@ -1215,7 +1219,7 @@ class Workflow(Block):
             script_imports += f"from {module} import {', '.join(class_list)}\n"
 
         return f"{script_imports}\n" \
-               f"{full_script}"
+               f"{self_script.declaration}"
 
     def save_script_to_stream(self, stream: io.StringIO):
         """
