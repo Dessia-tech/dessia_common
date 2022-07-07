@@ -37,7 +37,6 @@ from dessia_common import templates
 from dessia_common.displays import DisplayObject, DisplaySetting
 from dessia_common.breakdown import attrmethod_getter
 
-
 _FORBIDDEN_ARGNAMES = ['self', 'cls', 'progress_callback', 'return']
 
 
@@ -662,6 +661,10 @@ class DessiaObject:
                    {"extension": "xlsx", "method_name": "to_xlsx_stream", "text": False, "args": {}}]
         return formats
 
+    def to_vector(self):
+        raise NotImplementedError(f"{self.__class__.__name__} objects must have a " +
+                                  "'to_vector' method to be handled in ClusterResult object.")
+    
 
 class PhysicalObject(DessiaObject):
     """
@@ -763,6 +766,87 @@ class MovingObject(PhysicalObject):
         )
 
 
+class HeterogeneousList(DessiaObject):
+    _standalone_in_db = True
+
+    def __init__(self, dessia_objects: List[DessiaObject] = None, name: str = ''):
+        DessiaObject.__init__(self, name=name)
+        self.dessia_objects = dessia_objects
+        self.common_attributes = self.common_attributes()
+
+    def common_attributes(self):
+        standard_attributes = get_attribute_names(DessiaObject)
+        objects_class = list(set(dessia_object.__class__ for dessia_object in self.dessia_objects))
+        
+        common_attributes = set(get_attribute_names(objects_class[0])).difference(standard_attributes)
+        if hasattr(objects_class[0], '_export_features'):
+            if len(getattr(objects_class[0], '_export_features')) != 0:
+                common_attributes = objects_class[0]._export_features
+
+        for klass in objects_class[1:]:
+            klass_attributes = get_attribute_names(klass)
+            if hasattr(klass, '_export_features'):
+                if len(getattr(klass, '_export_features')) != 0:
+                    klass_attributes = klass._export_features
+            common_attributes = common_attributes.intersection(klass_attributes)
+            
+        return list(attr for attr in get_attribute_names(objects_class[0]) if attr in common_attributes)
+
+    @property
+    def matrix(self):
+        # warnings.simplefilter('once')
+        # msg = "You are actually calling the standard 'data_matrix' method "
+        # msg += "from dessia_common.HeterogeneousList class."
+        # warnings.warn(msg)
+ 
+        matrix = []
+        for dessia_object in self.dessia_objects:
+            matrix.append([getattr(dessia_object, attr) for attr in self.common_attributes])
+        return matrix
+    
+    def plot_data(self):
+        import plot_data
+        # Plot a correlation matrix when plot_data.heatmap will be improved
+        correlation_matrix = []
+        
+        # Scattermatrix
+        data_list = []
+        for data in self.dessia_objects:
+            data_list.append({attr: getattr(data, attr) for attr in self.common_attributes 
+                              if getattr(data, attr) is not None})
+        scatter_matrix = plot_data.ScatterMatrix(elements=data_list, axes=list(data_list[0].keys()))
+        plot_data.plot_canvas(plot_data_object=scatter_matrix, debug_mode=True)
+        
+        subplots = []
+        for line_num, line_attr in enumerate(data_list[0]):
+            for col_num, col_attr in enumerate(data_list[0]):
+                if line_attr == col_attr:
+                    subplots.append(plot_data.Histogram(x_variable=line_attr, elements=data_list))
+                else:
+                    subplots.append(plot_data.Scatter(x_variable=line_attr, 
+                                                      y_variable=col_attr,
+                                                      elements=data_list))
+                
+        multiplot = plot_data.MultiplePlots(plots=subplots, elements=data_list, initial_view_on=True)
+        plot_data.plot_canvas(plot_data_object=multiplot, debug_mode=True)
+        return scatter_matrix + multiplot + correlation_matrix
+
+
+        
+class HomogeneousList(HeterogeneousList):
+    _standalone_in_db = True
+
+    def __init__(self, dessia_objects: List[DessiaObject] = None, name: str = ''):
+        HeterogeneousList.__init__(self, dessia_objects=dessia_objects, name=name)
+    
+    @property
+    def data_matrix(self):
+        data_matrix = []
+        for dessia_object in self.dessia_objects:
+            data_matrix.append(dessia_object.to_vector())
+        return data_matrix
+
+        
 # class Catalog(DessiaObject):
 #     def __init__(self, objects: List[DessiaObject], name: str = ''):
 #         self.objects = objects
@@ -1156,3 +1240,13 @@ def split_argspecs(argspecs) -> Tuple[int, int]:
     else:
         ndefault_args = 0
     return nargs, ndefault_args
+
+
+def get_attribute_names(object_class):
+    attributes = [attribute[0] for attribute in inspect.getmembers(object_class, lambda x:not(inspect.isroutine(x))) 
+                  if not attribute[0].startswith('__') 
+                  and not attribute[0].endswith('__')
+                  and isinstance(attribute[1], (float, int, complex, bool))]
+    attributes += [attribute for attribute in inspect.signature(object_class.__init__).parameters.keys()
+                   if attribute not in _FORBIDDEN_ARGNAMES]
+    return attributes
