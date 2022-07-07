@@ -2,6 +2,7 @@
 Library for building clusters on data.
 """
 from typing import List
+import time
 
 import numpy as npy
 from sklearn import cluster, manifold, preprocessing
@@ -15,7 +16,8 @@ import dessia_common.core as dc
 
 class ClusterResult(dc.DessiaObject):
     _standalone_in_db = True
-    _allowed_methods = ['from_agglomerative_clustering', 'from_kmeans', 'from_dbscan']
+    _allowed_methods = ['from_agglomerative_clustering',
+                        'from_kmeans', 'from_dbscan']
 
     def __init__(self, data: List[dc.DessiaObject] = None,
                  labels: List[int] = None, name: str = ''):
@@ -30,14 +32,14 @@ class ClusterResult(dc.DessiaObject):
 
         :param name: The name of ClusterResult object, defaults to ''
         :type name: str, optional
-        
+
         """
         dc.DessiaObject.__init__(self, name=name)
         self.data = data
         self.labels = labels
         self.data_matrix = self.to_matrix(data)
         self.n_clusters = self.set_n_clusters()
-        self.mds_matrix = self.build_mds()
+        self.mds_matrix = self.compute_mds()
 
     @classmethod
     def from_agglomerative_clustering(cls, data: List[dc.DessiaObject], n_clusters: int = 2,
@@ -96,7 +98,7 @@ class ClusterResult(dc.DessiaObject):
         :param distance_threshold: The linkage distance above which clusters will not be merged, defaults to None
             If not None, n_clusters must be None.
         :type distance_threshold: float, optional
-        
+
         :param scaling: Whether to scale the data or not before clustering.
         Formula is scaled_x = ( x - mean ) / standard_deviation, default to False
         :type scaling: bool, optional
@@ -141,7 +143,7 @@ class ClusterResult(dc.DessiaObject):
         :param tol: Relative tolerance with regards to Frobenius norm of the difference in the cluster centers
             of two consecutive iterations to declare convergence., defaults to 1e-4
         :type tol: float, optional
-        
+
         :param scaling: Whether to scale the data or not before clustering.
         Formula is scaled_x = ( x - mean ) / standard_deviation, default to False
         :type scaling: bool, optional
@@ -150,10 +152,12 @@ class ClusterResult(dc.DessiaObject):
         :rtype: ClusterResult
 
         """
-        skl_cluster = cluster.KMeans(n_clusters=n_clusters, n_init=n_init, tol=tol)
+        t = time.time()
+        skl_cluster = cluster.KMeans(
+            n_clusters=n_clusters, n_init=n_init, tol=tol)
         skl_cluster = cls.fit_cluster(skl_cluster, data, scaling)
+        print('fit : ', time.time() - t)
         return cls(data, skl_cluster.labels_.tolist())
-
 
     @classmethod
     def from_dbscan(cls, data: List[dc.DessiaObject], eps: float = 0.5, min_samples: int = 5,
@@ -192,43 +196,41 @@ class ClusterResult(dc.DessiaObject):
         :param leaf_size: Leaf size passed to BallTree or cKDTree. This can affect the speed of the construction and query,
         as well as the memory required to store the tree. The optimal value depends on the nature of the problem, defaults to 30
         :type leaf_size: int, optional
-        
+
         :param scaling: Whether to scale the data or not before clustering.
         Formula is scaled_x = ( x - mean ) / standard_deviation, default to False
         :type scaling: bool, optional
 
         :return: a ClusterResult object that knows the data and their labels
         :rtype: ClusterResult
-        
+
         !! WARNING !!
         ----------
             All labels are summed with 1 in order to improve the code simplicity and ease to use.
             Then -1 labelled values are now at 0 and must not be considered as clustered values when using DBSCAN.
 
         """
-        skl_cluster = cluster.DBSCAN(eps=eps, min_samples=min_samples, p=mink_power, leaf_size=leaf_size)
+        skl_cluster = cluster.DBSCAN(
+            eps=eps, min_samples=min_samples, p=mink_power, leaf_size=leaf_size)
         skl_cluster = cls.fit_cluster(skl_cluster, data, scaling)
         return cls(data, skl_cluster.labels_.tolist())
-
 
     @staticmethod
     def fit_cluster(skl_cluster: cluster, data: List[dc.DessiaObject], scaling: bool = False):
         if scaling:
-            scaled_matrix = ClusterResult.scale_data(ClusterResult.to_matrix(data))
+            scaled_matrix = ClusterResult.scale_data(
+                ClusterResult.data_matrix(data))
         else:
-            scaled_matrix = ClusterResult.to_matrix(data)
+            scaled_matrix = ClusterResult.data_matrix(data)
         skl_cluster.fit(scaled_matrix)
         return skl_cluster
-
 
     @staticmethod
     def scale_data(data_matrix: List[List[float]]):
         scaled_matrix = preprocessing.StandardScaler().fit_transform(data_matrix)
         return list([list(map(float, row)) for row in scaled_matrix])
 
-
-    @staticmethod
-    def to_matrix(data: List[dc.DessiaObject]):
+    def data_matrix(data: List[dc.DessiaObject]):
         if 'to_vector' not in dir(data[0]):
             raise NotImplementedError(f"{data[0].__class__.__name__} objects must have a " +
                                       "'to_vector' method to be handled in ClusterResult object.")
@@ -236,7 +238,6 @@ class ClusterResult(dc.DessiaObject):
         for element in data:
             data_matrix.append(element.to_vector())
         return data_matrix
-
 
     @staticmethod
     def data_to_clusters(data: List[dc.DessiaObject], labels: npy.ndarray):
@@ -247,7 +248,6 @@ class ClusterResult(dc.DessiaObject):
             clusters_list[label].append(data[i])
         return clusters_list
 
-
     def set_n_clusters(self):
         if self.labels is None:
             n_clusters = 0
@@ -255,101 +255,114 @@ class ClusterResult(dc.DessiaObject):
             n_clusters = max(self.labels) + 1
         return n_clusters
 
-
     def check_dimensionality(self, scaling: bool = False):
+        t = time.time()
         if scaling:
             data_matrix = self.scale_data(self.data_matrix)
         else:
             data_matrix = self.data_matrix
-            
-        _, singular_values, _ = npy.linalg.svd(data_matrix)
+
+        _, singular_values, _ = npy.linalg.svd(
+            npy.array(data_matrix), full_matrices=False)
         normed_singular_values = singular_values / npy.sum(singular_values)
         plt.figure()
         plt.semilogy(normed_singular_values, linestyle='None', marker='o')
         plt.grid()
-        plt.title("Normalized singular values of data" + (" with pre-scale" if scaling else ""))
+        plt.title("Normalized singular values of data" +
+                  (" with pre-scale" if scaling else ""))
         plt.xlabel("Index of reduced basis vector")
         plt.ylabel("Singular value")
+        print('dimensionality : ', time.time() - t)
 
-
-    def build_mds(self):
-        encoding_mds = manifold.MDS(metric=True, n_jobs=1, n_components=2, random_state=1)
+    def compute_mds(self):
+        t = time.time()
+        max_size = 100
+        encoding_mds = manifold.MDS(
+            metric=True, n_jobs=1, n_components=2, random_state=1)
         # scaled_matrix = self.scale_data(self.data_matrix)
-        scaled_matrix = npy.copy(self.data_matrix)
-        return encoding_mds.fit_transform(scaled_matrix).tolist()
-
+        if len(self.data_matrix) > max_size:
+            return None
+        else:
+            return encoding_mds.fit_transform(npy.copy(self.data_matrix)).tolist()
+        print('mds :', time.time() - t)
 
     def plot_data(self, attributes: List[str] = None):
         if attributes is None:
             new_attributes = self.data[0]._export_features
         else:
             new_attributes = list(attributes)
-            
         dataset_list = self.build_datasets(new_attributes)
-        
-        # Because graph2D are not handled in scatter_matrix
-        data_list = []
-        for data in self.data:
-            data_list.append(data.to_dict())
-            
-        scatter_matrix = plot_data.ScatterMatrix(elements=data_list, axes=new_attributes)
-        
-        multiplot = self.build_multiplot(dataset_list, new_attributes)
-                
-        scatter_plot = plot_data.Graph2D(x_variable="X_MDS",
-                                         y_variable="Y_MDS",
-                                         graphs=dataset_list)
 
-        return [multiplot, scatter_matrix, scatter_plot]
+        # # Because graph2D are not handled in scatter_matrix
+        # data_list = []
+        # for data in self.data:
+        #     data_list.append(data.to_dict())
+        # scatter_matrix = [plot_data.ScatterMatrix(elements=data_list, axes=new_attributes)]
 
+        multiplots = self.build_multiplot(dataset_list, new_attributes)
+
+        if self.mds_matrix:
+            scatter_plot = [plot_data.Graph2D(x_variable="X_MDS",
+                                              y_variable="Y_MDS",
+                                              graphs=dataset_list)]
+        else:
+            scatter_plot = []
+
+        return multiplots + scatter_plot
 
     def build_multiplot(self, dataset_list: List[Dataset], attributes: List[str]):
         list_scatters = []
-        for x_num in range(len(attributes) - 1):
-            for y_num in range(x_num + 1, len(attributes)):
+        for x_num in range(len(attributes)):
+            for y_num in range(len(attributes)):
                 list_scatters.append(plot_data.Graph2D(x_variable=attributes[x_num],
                                                        y_variable=attributes[y_num],
                                                        graphs=dataset_list))
-                
-        return plot_data.MultiplePlots(plots=list_scatters, elements=dataset_list,
-                                       initial_view_on=True)
 
+        return [plot_data.MultiplePlots(plots=list_scatters, elements=dataset_list,
+                                        initial_view_on=True)]
 
     def build_datasets(self, attributes: List[str]):
         dataset_list = []
         tooltip_list = []
-        nb_dataset = (self.n_clusters if -1 not in self.labels else self.n_clusters + 1)
-        dim_MDS = ["X_MDS", "Y_MDS", "Z_MDS"][:len(self.mds_matrix[0])]
+        nb_dataset = (self.n_clusters if -
+                      1 not in self.labels else self.n_clusters + 1)
+        dim_MDS = (["X_MDS", "Y_MDS", "Z_MDS"]
+                   [:len(self.mds_matrix[0])] if self.mds_matrix else [])
         new_attributes = attributes + dim_MDS
-            
-        for i in range(nb_dataset):
+
+        for i_label in range(nb_dataset):
             dataset_list.append([])
-            tooltip_list.append(plot_data.Tooltip(attributes=new_attributes + ["Cluster Label"]))
-        
-        for i, label in enumerate(self.labels):
-            dataset_row = {"Cluster Label": (label if label != -1 else "Excluded")}
+            tooltip_list.append(plot_data.Tooltip(
+                attributes=new_attributes + ["Cluster Label"]))
+
+        for idx, label in enumerate(self.labels):
+            dataset_row = {"Cluster Label": (
+                label if label != -1 else "Excluded")}
             for attribute in new_attributes:
                 if attribute in dim_MDS:
-                    dataset_row[attribute] = self.mds_matrix[i][dim_MDS.index(attribute)]
+                    dataset_row[attribute] = self.mds_matrix[idx][dim_MDS.index(
+                        attribute)]
                 else:
-                    dataset_row[attribute] = getattr(self.data[i], attribute)
+                    dataset_row[attribute] = getattr(self.data[idx], attribute)
             dataset_list[label].append(dataset_row)
 
-        cmp_f = plt.cm.get_cmap('jet', self.n_clusters)(range(self.n_clusters))
+        cmp_f = plt.cm.get_cmap(
+            'hsv', self.n_clusters + 1)(range(self.n_clusters + 1))
         edge_style = plot_data.EdgeStyle(line_width=0.0001)
-        for i in range(nb_dataset):
-            if i == self.n_clusters:
+        for idx in range(nb_dataset):
+            if idx == self.n_clusters:
                 color = plot_data.colors.Color(0, 0, 0)
             else:
-                color = plot_data.colors.Color(cmp_f[i][0], cmp_f[i][1], cmp_f[i][2])
-            point_style = plot_data.PointStyle(color_fill=color, color_stroke=color)
-            dataset_list[i] = plot_data.Dataset(elements=dataset_list[i],
-                                                edge_style=edge_style,
-                                                point_style=point_style,
-                                                tooltip=tooltip_list[i])
+                color = plot_data.colors.Color(
+                    cmp_f[idx][0], cmp_f[idx][1], cmp_f[idx][2])
+            point_style = plot_data.PointStyle(
+                color_fill=color, color_stroke=color, size=1)
+            dataset_list[idx] = plot_data.Dataset(elements=dataset_list[idx],
+                                                  edge_style=edge_style,
+                                                  point_style=point_style,
+                                                  tooltip=tooltip_list[idx])
 
         return dataset_list
-
 
 
 # Function to implement, to find a good eps parameter for dbscan
