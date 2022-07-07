@@ -1134,8 +1134,6 @@ class Workflow(Block):
 
           # --- Blocks ---
         script_blocks = ""
-        if prefix == "":
-            script_blocks += f"# -- {prefix}Blocks -- \n"
         classes = []
         for ib, block in enumerate(self.blocks):
             block_script, classes_block = block._to_script()
@@ -1145,12 +1143,11 @@ class Workflow(Block):
                 block_script = block_script[1]
             script_blocks += f'{prefix}block_{ib} = {block_script}\n'
 
-        script_blocks+= prefix + 'blocks = [{}]\n'.format(', '.join([prefix + 'block_' + str(i) for i in range(len(self.blocks))]))
+        script_blocks+= prefix + 'blocks = [{}]\n'\
+            .format(', '.join([prefix + 'block_' + str(i) for i in range(len(self.blocks))]))
 
         # --- Pipes ---
         script_pipes = ""
-        if prefix == "":
-            script_pipes += f"# -- Pipes -- \n"
         variable_index = 0
         for ip, pipe in enumerate(self.pipes):
             input_index = self.variable_indices(pipe.input_variable)
@@ -1176,11 +1173,12 @@ class Workflow(Block):
 
         full_script = f"{script_blocks}\n" \
                       f"{script_pipes}\n" \
-                      f"{prefix}workflow = Workflow({prefix}blocks, {prefix}pipes, output={output_name}, name='{self.name}')\n"
+                      f"{prefix}workflow = " \
+                      f"Workflow({prefix}blocks, {prefix}pipes, output={output_name}, name='{self.name}')\n"
 
         for k,v in self.imposed_variable_values.items():
             variable_indice = self.variable_indices(k)
-            if (isinstance(variable_indice,int)):
+            if isinstance(variable_indice,int):
                 variable_str = variable_indice
             else :
                 [block_index,_,variable_index] = variable_indice
@@ -1206,7 +1204,7 @@ class Workflow(Block):
         for c in classes:
             module = '.'.join(c.split('.')[:-1])
             class_ = c.split('.')[-1]
-            if imports_dict.get(module) == None:
+            if imports_dict.get(module) is None:
                 imports_dict[module] = [class_]
             else:
                 if class_ not in imports_dict[module]:

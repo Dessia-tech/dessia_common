@@ -344,7 +344,7 @@ def deserialize_argument(type_, argument):
     if dcty.is_typing(type_):
         return deserialize_with_typing(type_, argument)
 
-    if type_ in [TextIO, BinaryIO] or  isinstance(argument, (StringFile, BinaryFile)):
+    if type_ in [TextIO, BinaryIO] or isinstance(argument, (StringFile, BinaryFile)):
         return argument
 
     if type_ in dcty.TYPING_EQUIVALENCES:

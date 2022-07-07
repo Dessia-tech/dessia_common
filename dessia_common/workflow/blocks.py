@@ -101,9 +101,9 @@ class Display(Block):
     def evaluate(_):
         return []
 
-    def _to_script(self)-> [str, List[str]]:
+    def _to_script(self) -> [str, List[str]]:
         input_variables = [f"Variable(memorize={input.memorize}, name='{input.name}')" for input in self.inputs]
-        inputs= '['+",".join(input_variables)+']'
+        inputs = '[' + ",".join(input_variables) + ']'
         script = f"Display(inputs={inputs}, order={self.order}, name='{self.name}')"
         return script, ["dessia_common.workflow.Variable", self.full_classname]
 
@@ -164,7 +164,7 @@ class InstantiateModel(Block):
                            else EMPTY_PARSED_ATTRIBUTE for i in self.inputs}
         return block_docstring
 
-    def _to_script(self)-> [str, List[str]]:
+    def _to_script(self) -> [str, List[str]]:
         script = f"InstantiateModel(model_class=" \
                  f"{self.model_class.__name__}, name='{self.name}')"
         return script, [full_classname(object_=self.model_class, compute_for='class'), self.full_classname]
@@ -235,7 +235,7 @@ class ClassMethod(Block):
                            else EMPTY_PARSED_ATTRIBUTE for i in self.inputs}
         return block_docstring
 
-    def _to_script(self)-> [str, List[str]]:
+    def _to_script(self) -> [str, List[str]]:
         script = f"ClassMethod(method_type=ClassMethodType(" \
                  f"{self.method_type.class_.__name__}, '{self.method_type.name}')" \
                  f", name='{self.name}')"
@@ -327,7 +327,7 @@ class ModelMethod(Block):
                            else EMPTY_PARSED_ATTRIBUTE for i in self.inputs}
         return block_docstring
 
-    def _to_script(self)-> [str, List[str]]:
+    def _to_script(self) -> [str, List[str]]:
         script = f"ModelMethod(method_type=MethodType(" \
                  f"{self.method_type.class_.__name__}, '{self.method_type.name}')" \
                  f", name='{self.name}')"
@@ -367,7 +367,7 @@ class Sequence(Block):
     def evaluate(self, values):
         return [[values[var] for var in self.inputs]]
 
-    def _to_script(self)-> [str, List[str]]:
+    def _to_script(self) -> [str, List[str]]:
         script = f"Sequence(number_arguments={len(self.inputs)}, name='{self.name}')"
         return script, [self.full_classname]
 
@@ -435,17 +435,18 @@ class WorkflowBlock(Block):
                     docstring[input_] = block_docstring[input_]
         return docstring
 
-    def _to_script(self)-> [[str,str], List[str]]:
+    def _to_script(self) -> [[str, str], List[str]]:
         PREFIX = 'sub_'
         imports, sub_script = self.workflow._to_script(PREFIX)
         script_workflow = f"\n# --- Subworkflow --- \n" \
-                 f"{sub_script}" \
-                 f"# --- End Subworkflow --- \n"
+            f"{sub_script}" \
+            f"# --- End Subworkflow --- \n"
 
         script = f"WorkflowBlock(workflow={PREFIX}workflow, name='{self.name}')"
 
         imports.append(self.full_classname)
         return [script_workflow, script], imports
+
 
 class ForEach(Block):
     """
@@ -514,7 +515,7 @@ class ForEach(Block):
             block_docstring[input_] = wb_docstring[workflow_input]
         return block_docstring
 
-    def _to_script(self)-> [[str,str], List[str]]:
+    def _to_script(self) -> [[str, str], List[str]]:
         wfblock_script, wfblock_classes = self.workflow_block._to_script()
         wfblock_script = f"{wfblock_script[0]}\n" \
                          f"wfblock = {wfblock_script[1]}"
@@ -549,7 +550,7 @@ class Unpacker(Block):
     def evaluate(self, values):
         return [values[self.inputs[0]][i] for i in self.indices]
 
-    def _to_script(self)-> [str, List[str]]:
+    def _to_script(self) -> [str, List[str]]:
         script = f"Unpacker(indices={self.indices}, name='{self.name}')"
         return script, [self.full_classname]
 
@@ -574,9 +575,10 @@ class Flatten(Block):
             output.extend(value)
         return [output]
 
-    def _to_script(self)-> [str, List[str]]:
+    def _to_script(self) -> [str, List[str]]:
         script = f"Flatten(name='{self.name}')"
         return script, [self.full_classname]
+
 
 class Product(Block):
     def __init__(self, number_list: int, name: str = ''):
@@ -614,6 +616,7 @@ class Product(Block):
     def _to_script(self) -> [str, List[str]]:
         script = f"Product(number_list={self.number_list}, name='{self.name}')"
         return script, [self.full_classname]
+
 
 class Filter(Block):
     """
@@ -667,12 +670,15 @@ class Filter(Block):
         return [ouput_values]
 
     def _to_script(self) -> [str, List[str]]:
-        filter_variables = [f"DessiaFilter(attribute='{f.attribute}', operator='{f.operator}', bound={f.bound}, name='{f.name}')" for f in self.filters]
-        filters = '['+",".join(filter_variables)+']'
+        filter_variables = [f"DessiaFilter("
+                            f"attribute='{f.attribute}', operator='{f.operator}', bound={f.bound}, name='{f.name}'"
+                            f")" for f in self.filters]
+        filters = '[' + ",".join(filter_variables) + ']'
         script = f"Filter(filters={filters}, name='{self.name}')"
 
-        filter_classname = DessiaFilter("","",0).full_classname
+        filter_classname = DessiaFilter("", "", 0).full_classname
         return script, [filter_classname, self.full_classname]
+
 
 class MultiPlot(Display):
     """
@@ -740,10 +746,11 @@ class MultiPlot(Display):
     def evaluate(_):
         return []
 
-    def _to_script(self)-> [str, List[str]]:
+    def _to_script(self) -> [str, List[str]]:
         # attributes: List[str], order: int = 0, name: str = ''):
         script = f"MultiPlot(attributes={self.attributes}, order={self.order}, name='{self.name}')"
         return script, [self.full_classname]
+
 
 class ModelAttribute(Block):
     """
@@ -779,7 +786,7 @@ class ModelAttribute(Block):
     def evaluate(self, values):
         return [enhanced_deep_attr(values[self.inputs[0]], self.attribute_name)]
 
-    def _to_script(self)-> [str, List[str]]:
+    def _to_script(self) -> [str, List[str]]:
         script = f"ModelAttribute(attribute_name='{self.attribute_name}', name='{self.name}')"
         return script, [self.full_classname]
 
@@ -820,7 +827,7 @@ class SetModelAttribute(Block):
         setattr(model, self.attribute_name, values[self.inputs[1]])
         return [model]
 
-    def _to_script(self)-> [str, List[str]]:
+    def _to_script(self) -> [str, List[str]]:
         script = f"SetModelAttribute(attribute_name='{self.attribute_name}', name='{self.name}')"
         return script, [self.full_classname]
 
@@ -852,9 +859,10 @@ class Sum(Block):
     def evaluate(values):
         return [sum(values)]
 
-    def _to_script(self)-> [str, List[str]]:
+    def _to_script(self) -> [str, List[str]]:
         script = f"Sum(number_elements={self.number_elements}, name='{self.name}')"
-        return script,[self.full_classname]
+        return script, [self.full_classname]
+
 
 class Substraction(Block):
     def __init__(self, name: str = ''):
@@ -863,9 +871,9 @@ class Substraction(Block):
     def evaluate(self, values):
         return [values[self.inputs[0]] - values[self.inputs[1]]]
 
-    def _to_script(self)-> [str, List[str]]:
+    def _to_script(self) -> [str, List[str]]:
         script = f"Substraction(name='{self.name}')"
-        return script,[self.full_classname]
+        return script, [self.full_classname]
 
 
 class Export(Block):
@@ -895,12 +903,13 @@ class Export(Block):
         args = {"block_index": block_index}
         return {"extension": self.extension, "method_name": "export", "text": self.text, "args": args}
 
-    def _to_script(self)-> [str, List[str]]:
+    def _to_script(self) -> [str, List[str]]:
         script = f"Export(method_type=dct.MethodType(" \
                  f"{full_classname(object_=self.method_type.class_, compute_for='class')}, '{self.method_type.name}')" \
                  f", name='{self.name}'" \
                  f", export_name='{self.export_name}')"
         return script, [full_classname(object_=self.method_type.class_, compute_for='class')]
+
 
 class ExportJson(Export):
     def __init__(self, model_class: Type, export_name: str = "", name: str = ""):
@@ -925,9 +934,12 @@ class ExportJson(Export):
         class_ = get_python_class_from_class_name(dict_['model_class'])
         return cls(class_, name=dict_['name'])
 
-    def _to_script(self)-> [str, List[str]]:
-        script = f"ExportJson(model_class={full_classname(object_=self.method_type.class_, compute_for='class')}, export_name='{self.export_name}', name='{self.name}')"
-        return  script, []
+    def _to_script(self) -> [str, List[str]]:
+        script = f"ExportJson(" \
+                 f"model_class={full_classname(object_=self.method_type.class_, compute_for='class')}," \
+                 f" export_name='{self.export_name}', name='{self.name}')"
+        return script, []
+
 
 class ExportExcel(Export):
     def __init__(self, model_class: Type, export_name: str = "", name: str = ""):
@@ -952,9 +964,12 @@ class ExportExcel(Export):
         class_ = get_python_class_from_class_name(dict_['model_class'])
         return cls(class_, name=dict_['name'])
 
-    def _to_script(self)-> [str, List[str]]:
-        script = f"ExportExcel(model_class={full_classname(object_=self.method_type.class_, compute_for='class')}, export_name='{self.export_name}', name='{self.name}')"
-        return  script, []
+    def _to_script(self) -> [str, List[str]]:
+        script = f"ExportExcel(" \
+                 f"model_class={full_classname(object_=self.method_type.class_, compute_for='class')}," \
+                 f" export_name='{self.export_name}', name='{self.name}')"
+        return script, []
+
 
 class Archive(Block):
     def __init__(self, number_exports: int = 1, name=""):
@@ -993,6 +1008,6 @@ class Archive(Block):
     def _export_format(block_index: int):
         return {"extension": "zip", "method_name": "export", "text": False, "args": {"block_index": block_index}}
 
-    def _to_script(self)-> [str, List[str]]:
+    def _to_script(self) -> [str, List[str]]:
         script = f"Archive(number_exports={self.number_exports}, name='{self.name}')"
         return script, [self.full_classname]

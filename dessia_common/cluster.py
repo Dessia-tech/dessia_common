@@ -19,7 +19,7 @@ class ClusterResult(dc.DessiaObject):
     _standalone_in_db = True
     _allowed_methods = ['from_agglomerative_clustering', 'from_kmeans', 'from_dbscan']
 
-    def __init__(self, data: List[dc.DessiaObject] = None, 
+    def __init__(self, data: List[dc.DessiaObject] = None,
                  labels: List[int] = None, name: str = ''):
         dc.DessiaObject.__init__(self, name=name)
         self.data = data
