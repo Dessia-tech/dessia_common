@@ -229,7 +229,8 @@ class DessiaObject:
         serialized_dict = self.base_dict()
         dict_ = self._serializable_dict()
         if use_pointers:
-            serialized_dict.update(serialize_dict_with_pointers(dict_, memo, path)[0])
+            serialized_dict.update(
+                serialize_dict_with_pointers(dict_, memo, path)[0])
         else:
             serialized_dict.update(serialize_dict(dict_))
 
@@ -298,7 +299,8 @@ class DessiaObject:
         # Parse docstring
         try:
             docstring = cls.__doc__
-            parsed_docstring = parse_docstring(docstring=docstring, annotations=annotations)
+            parsed_docstring = parse_docstring(
+                docstring=docstring, annotations=annotations)
         except Exception:
             parsed_docstring = FAILED_DOCSTRING_PARSING
         parsed_attributes = parsed_docstring['attributes']
@@ -367,7 +369,8 @@ class DessiaObject:
             method = getattr(class_, method_name)
 
             if not isinstance(method, property):
-                required_args, default_args = inspect_arguments(method=method, merge=False)
+                required_args, default_args = inspect_arguments(
+                    method=method, merge=False)
                 annotations = get_type_hints(method)
                 if annotations:
                     jsonschemas[method_name] = deepcopy(JSONSCHEMA_HEADER)
@@ -378,18 +381,22 @@ class DessiaObject:
                         argname = annotation[0]
                         if argname not in _FORBIDDEN_ARGNAMES:
                             if argname in required_args:
-                                jsonschemas[method_name]['required'].append(str(i))
+                                jsonschemas[method_name]['required'].append(
+                                    str(i))
                             jsonschema_element = \
-                                jsonschema_from_annotation(annotation, {}, i)[argname]
+                                jsonschema_from_annotation(
+                                    annotation, {}, i)[argname]
 
-                            jsonschemas[method_name]['properties'][str(i)] = jsonschema_element
+                            jsonschemas[method_name]['properties'][str(
+                                i)] = jsonschema_element
                             if argname in default_args:
                                 default = set_default_value(
                                     jsonschemas[method_name]['properties'],
                                     str(i),
                                     default_args[argname]
                                 )
-                                jsonschemas[method_name]['properties'].update(default)
+                                jsonschemas[method_name]['properties'].update(
+                                    default)
         return jsonschemas
 
     def method_dict(self, method_name=None, method_jsonschema=None):
@@ -527,7 +534,8 @@ class DessiaObject:
             try:
                 plot_datas = self.plot_data(**kwargs)
             except TypeError as error:
-                raise TypeError(f'{self.__class__.__name__}.{error}') from error
+                raise TypeError(
+                    f'{self.__class__.__name__}.{error}') from error
             for data in plot_datas:
                 if hasattr(data, 'mpl_plot'):
                     ax = data.mpl_plot()
@@ -556,7 +564,8 @@ class DessiaObject:
         display_setting = self._display_settings_from_selector(selector)
         track = ''
         try:
-            data = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
+            data = attrmethod_getter(self, display_setting.method)(
+                **display_setting.arguments)
         except:
             data = None
             track = tb.format_exc()
@@ -569,7 +578,8 @@ class DessiaObject:
         for display_setting in self.display_settings():
             if display_setting.selector == selector:
                 return display_setting
-        raise ValueError(f"No such selector '{selector}' in display of class '{self.__class__.__name__}'")
+        raise ValueError(
+            f"No such selector '{selector}' in display of class '{self.__class__.__name__}'")
 
     def _displays(self, **kwargs) -> List[JsonSerializable]:
         """
@@ -579,7 +589,8 @@ class DessiaObject:
 
         displays = []
         for display_setting in self.display_settings():
-            display_ = self._display_from_selector(display_setting.selector, reference_path=reference_path)
+            display_ = self._display_from_selector(
+                display_setting.selector, reference_path=reference_path)
             displays.append(display_.to_dict())
         return displays
 
@@ -612,7 +623,8 @@ class DessiaObject:
             display_time = time.time()
             self._display_from_selector(display_setting.selector)
             display_time = time.time() - display_time
-            print(f'Generation of display {display_setting.selector} in: {round(display_time, 6)} seconds')
+            print(
+                f'Generation of display {display_setting.selector} in: {round(display_time, 6)} seconds')
 
     def _check_platform(self):
         """
@@ -664,7 +676,7 @@ class DessiaObject:
     def to_vector(self):
         raise NotImplementedError(f"{self.__class__.__name__} objects must have a " +
                                   "'to_vector' method to be handled in ClusterResult object.")
-    
+
 
 class PhysicalObject(DessiaObject):
     """
@@ -756,7 +768,8 @@ class MovingObject(PhysicalObject):
         """
         Return a list of volmdlr primitives to build up volume model
         """
-        raise NotImplementedError('Object inheriting MovingObject should implement volmdlr_primitives_step_frames')
+        raise NotImplementedError(
+            'Object inheriting MovingObject should implement volmdlr_primitives_step_frames')
 
     def volmdlr_volume_model(self, **kwargs):
         import volmdlr as vm  # !!! Avoid circular imports, is this OK ?
@@ -776,9 +789,11 @@ class HeterogeneousList(DessiaObject):
 
     def common_attributes(self):
         standard_attributes = get_attribute_names(DessiaObject)
-        objects_class = list(set(dessia_object.__class__ for dessia_object in self.dessia_objects))
-        
-        common_attributes = set(get_attribute_names(objects_class[0])).difference(standard_attributes)
+        objects_class = list(
+            set(dessia_object.__class__ for dessia_object in self.dessia_objects))
+
+        common_attributes = set(get_attribute_names(
+            objects_class[0])).difference(standard_attributes)
         if hasattr(objects_class[0], '_export_features'):
             if len(getattr(objects_class[0], '_export_features')) != 0:
                 common_attributes = objects_class[0]._export_features
@@ -788,8 +803,10 @@ class HeterogeneousList(DessiaObject):
             if hasattr(klass, '_export_features'):
                 if len(getattr(klass, '_export_features')) != 0:
                     klass_attributes = klass._export_features
-            common_attributes = common_attributes.intersection(klass_attributes)
-            
+            common_attributes = common_attributes.intersection(
+                klass_attributes)
+
+        # attributes' order kept
         return list(attr for attr in get_attribute_names(objects_class[0]) if attr in common_attributes)
 
     @property
@@ -798,47 +815,54 @@ class HeterogeneousList(DessiaObject):
         # msg = "You are actually calling the standard 'data_matrix' method "
         # msg += "from dessia_common.HeterogeneousList class."
         # warnings.warn(msg)
- 
+
         matrix = []
         for dessia_object in self.dessia_objects:
-            matrix.append([getattr(dessia_object, attr) for attr in self.common_attributes])
+            matrix.append([getattr(dessia_object, attr)
+                          for attr in self.common_attributes])
         return matrix
-    
+
     def plot_data(self):
         import plot_data
         # Plot a correlation matrix when plot_data.heatmap will be improved
         correlation_matrix = []
-        
+
         # Scattermatrix
         data_list = []
         for data in self.dessia_objects:
-            data_list.append({attr: getattr(data, attr) for attr in self.common_attributes 
+            data_list.append({attr: getattr(data, attr) for attr in self.common_attributes
                               if getattr(data, attr) is not None})
-        scatter_matrix = plot_data.ScatterMatrix(elements=data_list, axes=list(data_list[0].keys()))
-        plot_data.plot_canvas(plot_data_object=scatter_matrix, debug_mode=True)
-        
         subplots = []
         for line_num, line_attr in enumerate(data_list[0]):
             for col_num, col_attr in enumerate(data_list[0]):
                 if line_attr == col_attr:
-                    subplots.append(plot_data.Histogram(x_variable=line_attr, elements=data_list))
+                    subplots.append(plot_data.Histogram(
+                        x_variable=line_attr, elements=data_list))
                 else:
-                    subplots.append(plot_data.Scatter(x_variable=line_attr, 
+                    subplots.append(plot_data.Scatter(x_variable=line_attr,
                                                       y_variable=col_attr,
                                                       elements=data_list))
-                
-        multiplot = plot_data.MultiplePlots(plots=subplots, elements=data_list, initial_view_on=True)
-        plot_data.plot_canvas(plot_data_object=multiplot, debug_mode=True)
-        return scatter_matrix + multiplot + correlation_matrix
+
+        scatter_matrix = [plot_data.MultiplePlots(
+            plots=subplots, elements=data_list, initial_view_on=True)]
+        plot_data.plot_canvas(
+            plot_data_object=scatter_matrix[0], debug_mode=True)
+        return scatter_matrix + correlation_matrix
+    
+    def to_markdown(self):
+        """
+        Render a markdown of the object output type: string
+        """
+        return templates.heterogeneouslist_markdown_template.substitute(name=self.name, class_=self.__class__.__name__)
 
 
-        
 class HomogeneousList(HeterogeneousList):
     _standalone_in_db = True
 
     def __init__(self, dessia_objects: List[DessiaObject] = None, name: str = ''):
-        HeterogeneousList.__init__(self, dessia_objects=dessia_objects, name=name)
-    
+        HeterogeneousList.__init__(
+            self, dessia_objects=dessia_objects, name=name)
+
     @property
     def data_matrix(self):
         data_matrix = []
@@ -846,7 +870,7 @@ class HomogeneousList(HeterogeneousList):
             data_matrix.append(dessia_object.to_vector())
         return data_matrix
 
-        
+
 # class Catalog(DessiaObject):
 #     def __init__(self, objects: List[DessiaObject], name: str = ''):
 #         self.objects = objects
@@ -874,11 +898,13 @@ class Parameter(DessiaObject):
         return math.isclose(value1, value2, abs_tol=tol)
 
     def normalize(self, value):
-        normalized_value = (value - self.lower_bound) / (self.upper_bound - self.lower_bound)
+        normalized_value = (value - self.lower_bound) / \
+            (self.upper_bound - self.lower_bound)
         return normalized_value
 
     def original_value(self, normalized_value):
-        value = normalized_value * (self.upper_bound - self.lower_bound) + self.lower_bound
+        value = normalized_value * \
+            (self.upper_bound - self.lower_bound) + self.lower_bound
         return value
 
     def optimizer_bounds(self):
@@ -1123,7 +1149,8 @@ def enhanced_get_attr(obj, attr):
         except TypeError:
             track += tb.format_exc()
             msg = f"Object of type '{classname}' is not subscriptable. Failed to deeply get '{attr}' from it"
-    raise dessia_common.errors.DeepAttributeError(message=msg, traceback_=track)
+    raise dessia_common.errors.DeepAttributeError(
+        message=msg, traceback_=track)
 
 
 def concatenate_attributes(prefix, suffix, type_: str = 'str'):
@@ -1191,7 +1218,8 @@ def type_from_annotation(type_, module):
     """
     if isinstance(type_, str):
         # Evaluating types
-        type_ = TYPES_FROM_STRING.get(type_, default=getattr(import_module(module), type_))
+        type_ = TYPES_FROM_STRING.get(
+            type_, default=getattr(import_module(module), type_))
     return type_
 
 
@@ -1222,7 +1250,8 @@ def inspect_arguments(method, merge=False):
     for iargument, argument in enumerate(argspecs.args[1:]):
         if argument not in _FORBIDDEN_ARGNAMES:
             if iargument >= nargs - ndefault_args:
-                default_value = argspecs.defaults[ndefault_args - nargs + iargument]
+                default_value = argspecs.defaults[ndefault_args -
+                                                  nargs + iargument]
                 if merge:
                     arguments.append((argument, default_value))
                 else:
@@ -1243,8 +1272,8 @@ def split_argspecs(argspecs) -> Tuple[int, int]:
 
 
 def get_attribute_names(object_class):
-    attributes = [attribute[0] for attribute in inspect.getmembers(object_class, lambda x:not(inspect.isroutine(x))) 
-                  if not attribute[0].startswith('__') 
+    attributes = [attribute[0] for attribute in inspect.getmembers(object_class, lambda x:not(inspect.isroutine(x)))
+                  if not attribute[0].startswith('__')
                   and not attribute[0].endswith('__')
                   and isinstance(attribute[1], (float, int, complex, bool))]
     attributes += [attribute for attribute in inspect.signature(object_class.__init__).parameters.keys()
