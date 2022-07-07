@@ -9,7 +9,7 @@ import warnings
 import inspect
 import collections
 from ast import literal_eval
-from typing import get_origin, get_args, Union, Any
+from typing import get_origin, get_args, Union, Any, BinaryIO, TextIO
 import networkx as nx
 import dessia_common as dc
 import dessia_common.errors as dc_err
@@ -344,7 +344,7 @@ def deserialize_argument(type_, argument):
     if dcty.is_typing(type_):
         return deserialize_with_typing(type_, argument)
 
-    if type_ in [TextIO, BinaryIO] or  isinstance(argument, (StringFile, BinaryFile)):
+    if type_ in [TextIO, BinaryIO] or isinstance(argument, (StringFile, BinaryFile)):
         return argument
 
     if type_ in dcty.TYPING_EQUIVALENCES:
