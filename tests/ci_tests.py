@@ -1,7 +1,7 @@
 
 import os
 
-# for some akward reason, put scripts before unittests tests  
+# for some akward reason, put scripts before unittests tests
 scripts = ['displays.py',
            'generation.py',
            'models_test.py',

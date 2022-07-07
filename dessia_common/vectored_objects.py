@@ -11,9 +11,9 @@ import math
 from typing import List, Dict, Any
 import numpy as np
 import pandas as pd
-from dessia_common import DessiaObject, Parameter, is_bounded, DessiaFilter
 from scipy.optimize import minimize
 from pyDOE import lhs
+from dessia_common import DessiaObject, Parameter, is_bounded, DessiaFilter
 
 
 class ParetoSettings(DessiaObject):
@@ -96,7 +96,7 @@ class Objective(DessiaObject):
         x = np.zeros(n)
         x[0] = 1
         signed = np.dot(matrix.T, x).tolist()
-        unsigned = [v for v in signed]
+        unsigned = np.copy(signed).tolist()
         return unsigned
 
     @classmethod
@@ -246,7 +246,7 @@ class Catalog(DessiaObject):
         Generates MBSEs from given .csv file.
         """
         array = np.genfromtxt(file, dtype=None, delimiter=',', names=True, encoding=None)
-        variables = [v for v in array.dtype.fields.keys()]
+        variables = list(array.dtype.fields.keys())
         lines = []
         for i, line in enumerate(array):
             if end is not None and i >= end:
@@ -393,8 +393,7 @@ class Catalog(DessiaObject):
             objective = Objective.from_angles(angles=x,
                                               variables=names,
                                               directions=minimized)
-            best_on_pareto = min([objective.apply_individual(pareto_value)
-                                  for pareto_value in pareto_values])
+            best_on_pareto = min(objective.apply_individual(pareto_value) for pareto_value in pareto_values)
             rating = objective.apply_individual(values)
             delta = rating - best_on_pareto
             return delta
@@ -428,8 +427,7 @@ class Catalog(DessiaObject):
         name_column_0 = self.variables[0]
         list_name = self.get_values(name_column_0)
 
-        list_settings = [name
-                         for name in self.pareto_settings.minimized_attributes]
+        list_settings = list(self.pareto_settings.minimized_attributes)
         list_value = [self.get_values(cv) for cv in self.choice_variables]
         if self.pareto_is_enabled:
             cost = self.build_costs(self.pareto_settings)
@@ -474,11 +472,11 @@ class Catalog(DessiaObject):
             for i in range(j + 1, len(list_settings)):
                 if len(plots) < 3:
                     plots.append(Scatter(tooltip=custom_tooltip,
-                                         x_variable=list_settings[j],
+                                         x_variable=setting,
                                          y_variable=list_settings[i],
                                          elements=all_points))
 
-        list_index_0 = [k for k in range(len(elements[0]))]
+        list_index_0 = list(range(len(elements[0])))
         point_family_0 = PointFamily(LIGHTBLUE, list_index_0,
                                      name='Non pareto')
 
@@ -499,7 +497,7 @@ def from_csv(filename: str, end: int = None, remove_duplicates: bool = False):
     Generates MBSEs from given .csv file.
     """
     array = np.genfromtxt(filename, dtype=None, delimiter=',', names=True, encoding=None)
-    variables = [v for v in array.dtype.fields.keys()]
+    variables = list(array.dtype.fields.keys())
     lines = []
     for i, line in enumerate(array):
         if end is not None and i >= end:

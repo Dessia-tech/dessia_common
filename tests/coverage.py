@@ -51,6 +51,6 @@ for file_name, data in d['files'].items():
 
 if min_actual_coverage > MIN_MODULE_COVERAGE + RATCHET_COVERAGE:
     raise RuntimeError(f'MIN_MODULE_COVERAGE is too low: raise it to maximum {min_actual_coverage}')
-    
+
 print('[Coverage] You can increase MIN_MODULE_COVERAGE to maximum {}% (actual:{})%'.format(
     min_actual_coverage, MIN_MODULE_COVERAGE))

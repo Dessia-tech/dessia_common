@@ -13,9 +13,9 @@ from dessia_common.utils.serialization import serialize
 from dessia_common.breakdown import get_in_object_from_path
 
 simulation_workflow.to_dict(use_pointers=False)
-input_values = {0:components1,
-                1:component_connections1,
-                3:usage1}
+input_values = {0: components1,
+                1: component_connections1,
+                3: usage1}
 
 workflow_run = simulation_workflow.run(input_values)
 
@@ -25,7 +25,7 @@ assert system_in_values == system_from_get
 
 print(workflow_run.log)
 
-arguments = {str(k):serialize(v) for k,v in input_values.items()}
+arguments = {str(k): serialize(v) for k, v in input_values.items()}
 arguments = simulation_workflow.dict_to_arguments(arguments, 'run')
 
 workflow_run2 = DessiaObject.dict_to_object(workflow_run.to_dict())
@@ -33,7 +33,7 @@ workflow_run._check_platform()
 workflow_run.jsonschema()
 workflow_run.to_dict(use_pointers=False)
 
-manual_run = simulation_workflow.start_run({0: components1, 1:component_connections1})
+manual_run = simulation_workflow.start_run({0: components1, 1: component_connections1})
 
 # print(manual_run)
 
@@ -62,7 +62,7 @@ d = workflow_run.to_dict(use_pointers=False)
 s = json.dumps(d)
 if '$ref' in s:
     ind_ref = s.index('$ref')
-    print(s[ind_ref-300:ind_ref+500])
+    print(s[ind_ref - 300:ind_ref + 500])
     raise ValueError('Pointer detected with use_pointers=False')
 
 simulation_workflow.save_script_to_file('_simulation_workflow')

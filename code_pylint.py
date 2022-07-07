@@ -18,7 +18,7 @@ MIN_NOTE = 9.17
 UNWATCHED_ERRORS = ['fixme', 'trailing-whitespace', 'import-error']
 
 MAX_ERROR_BY_TYPE = {
-                     'protected-access': 29,
+                     'protected-access': 30,
                      'invalid-name': 7,
                      'consider-using-f-string': 9,
                      'no-else-return': 0,
@@ -28,14 +28,14 @@ MAX_ERROR_BY_TYPE = {
                      'wrong-import-order': 7,
                      'too-many-branches': 9,
                      'unused-import': 1,
-                     'unused-argument': 6,
-                     'cyclic-import': 11,
+                     'unused-argument': 5,
+                     'cyclic-import': 10,
                      'no-self-use': 6,
                      'unused-variable': 1,
                      'trailing-whitespace': 11,
                      'empty-docstring': 7,
-                     'missing-module-docstring': 9,
-                     'too-many-arguments': 5,
+                     'missing-module-docstring': 1,
+                     'too-many-arguments': 6,
                      'too-few-public-methods': 5,
                      'unnecessary-comprehension': 5,
                      'no-value-for-parameter': 2,
@@ -44,13 +44,13 @@ MAX_ERROR_BY_TYPE = {
                      'consider-merging-isinstance': 6,
                      'abstract-method': 6,
                      'import-outside-toplevel': 7,
-                     'too-many-instance-attributes': 4,
+                     'too-many-instance-attributes': 5,
                      'consider-iterating-dictionary': 4,
                      'attribute-defined-outside-init': 3,
                      'simplifiable-if-expression': 3,
                      'broad-except': 3,
-                     'consider-using-get': 2,
-                     'undefined-loop-variable': 2,
+                     'consider-using-get': 1,
+                     'undefined-loop-variable': 1,
                      'consider-using-with': 2,
                      'too-many-nested-blocks': 2,
                      'bad-staticmethod-argument': 1,
@@ -84,7 +84,8 @@ MAX_ERROR_BY_TYPE = {
                      'misplaced-bare-raise': 0,
                      'redefined-argument-from-local': 0,
                      'import-error': 0,
-                     'unsubscriptable-object': 0
+                     'unsubscriptable-object': 0,
+                     'unnecessary-dunder-call': 4
                      }
 
 print('pylint version: ', __version__)

@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
+Types tools
 
 """
 from ast import literal_eval
 from typing import Any, Dict, List, Tuple, Type, Union, TextIO, BinaryIO, get_origin, get_args
 
-import dessia_common as dc
-from dessia_common.typings import Subclass, InstanceOf, MethodType, ClassMethodType
-
 import json
 import collections
 from importlib import import_module
+
+import dessia_common as dc
+from dessia_common.typings import Subclass, InstanceOf, MethodType, ClassMethodType
 
 
 TYPING_EQUIVALENCES = {int: 'number', float: 'number', bool: 'boolean', str: 'string'}
@@ -66,7 +67,7 @@ def isinstance_base_types(obj):
     """
     returns True if the object is either a str, a float a int or None
     """
-    return isinstance(obj, str) or isinstance(obj, float) or isinstance(obj, int) or (obj is None)
+    return isinstance(obj, (str, float, int)) or (obj is None)
 
 
 def get_python_class_from_class_name(full_class_name):
@@ -195,7 +196,7 @@ def deserialize_typing(serialized_typing):
             value_type = type_from_argname(args[1])
             return Dict[key_type, value_type]
         return get_python_class_from_class_name(serialized_typing)
-    raise NotImplementedError('{} of type {}'.format(serialized_typing, type(serialized_typing)))
+    raise NotImplementedError(f'{serialized_typing} of type {type(serialized_typing)}')
 
 
 def deserialize_tuple_typing(full_argname):
@@ -286,6 +287,10 @@ def is_bson_valid(value, allow_nonstring_keys=False) -> Tuple[bool, str]:
 
 
 def recursive_type(obj):
+    """
+    What is the difference with serialize typing?
+    """
+
     if isinstance(obj, tuple(list(TYPING_EQUIVALENCES.keys()) + [dict])):
         type_ = TYPES_STRINGS[type(obj)]
     elif isinstance(obj, dc.DessiaObject):

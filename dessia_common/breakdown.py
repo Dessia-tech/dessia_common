@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
+Code for breakdowns
 
 """
 
@@ -31,29 +32,45 @@ def attrmethod_getter(object_, attr_methods):
     return object_
 
 
+class ExtractionError(Exception):
+    pass
+
+
 def extract_from_object(object_, segment):
     if is_sequence(object_):
-        return object_[int(segment)]
+        try:
+            return object_[int(segment)]
+        except ValueError as err:
+            message_error = (f'Cannot extract segment {segment} from object {{str(object_)[:500]}}:'
+                             + 'segment is not a sequence index')
+            raise ExtractionError(message_error) from err
 
     if isinstance(object_, dict):
         if segment in object_:
             return object_[segment]
 
-        try:
-            return object_[int(segment)]
-        except ValueError as error:
-            # should be a tuple
-            if segment.startswith('(') and segment.endswith(')') and ',' in segment:
-                key = []
-                for subsegment in segment.strip('()').replace(' ', '').split(','):
-                    try:
-                        subkey = int(subsegment)
-                    except ValueError:
-                        subkey = subsegment
-                    key.append(subkey)
-                return object_[tuple(key)]
-            # else:
-            raise ValueError(f'Cannot extract segment {segment} from object {object_}') from error
+        if segment.isdigit():
+            intifyed_segment = int(segment)
+            if intifyed_segment in object_:
+                return object_[intifyed_segment]
+            if segment in object_:
+                return object_[segment]
+
+            raise ExtractionError(f'Cannot extract segment {segment} from object {str(object_)[:200]}')
+
+        # should be a tuple
+        if segment.startswith('(') and segment.endswith(')') and ',' in segment:
+            key = []
+            for subsegment in segment.strip('()').replace(' ', '').split(','):
+                if subsegment.isdigit():
+                    subkey = int(subsegment)
+                else:
+                    subkey = subsegment
+                key.append(subkey)
+            return object_[tuple(key)]
+        # else:
+        message_error = f'Cannot extract segment {segment} from object {str(object_)[:500]}'
+        raise ExtractionError(message_error)
 
     # Finally, it is a regular object
     return getattr(object_, segment)
@@ -66,12 +83,16 @@ def get_in_object_from_path(object_, path):
         if isinstance(element, dict) and '$ref' in element:
             # Going down in the object and it is a reference
             # Evaluating subreference
-            element = get_in_object_from_path(object_, element['$ref'])
+            try:
+                element = get_in_object_from_path(object_, element['$ref'])
+            except RecursionError as err:
+                err_msg = f'Cannot get segment {segment} from path {path} in element {str(element)[:500]}'
+                raise RecursionError(err_msg) from err
         try:
             element = extract_from_object(element, segment)
-        except ValueError as err:
-            print(err)
-            raise ValueError(f'Cannot get segment {segment} from path {path} in element {element}') from err
+        except ExtractionError as err:
+            err_msg = f'Cannot get segment {segment} from path {path} in element {str(element)[:500]}'
+            raise ExtractionError(err_msg) from err
 
     return element
 
@@ -98,18 +119,18 @@ def breakdown(obj, path=''):
     if obj is None:
         return bd_dict
 
-    if (isinstance(obj, str) or isinstance(obj, float) or isinstance(obj, int)):
+    if isinstance(obj, (str, float, int)):
         return bd_dict
 
     if isinstance(obj, npy.ndarray):
         return bd_dict
 
-    if isinstance(obj, list) or isinstance(obj, tuple) or isinstance(obj, set):
+    if isinstance(obj, (list, tuple, set)):
         if path:
             path += '.'
 
         for i, element in enumerate(obj):
-            path2 = path + '{}'.format(i)
+            path2 = f'{path}{i}'
             bd_dict = merge_breakdown_dicts(bd_dict, breakdown(element, path2))
     elif isinstance(obj, dict):
         if path:
@@ -155,16 +176,13 @@ def object_breakdown(obj, path=''):
 
     for k, value in obj_dict.items():
         # dict after lists
-        if not (isinstance(value, dict)
-                or isinstance(value, list)
-                or isinstance(value, tuple)
-                ):  # Should be object or builtins
+        if not isinstance(value, (dict, list, tuple)):  # Should be object or builtins
             dict2 = breakdown(value, path=path + k)
             bd_dict = merge_breakdown_dicts(bd_dict, dict2)
 
     for k, value in obj_dict.items():
         # First lists and tuples
-        if isinstance(value, list) or isinstance(value, tuple):
+        if isinstance(value, (list, tuple)):
             dict2 = breakdown(value, path=path + k)
             bd_dict = merge_breakdown_dicts(bd_dict, dict2)
 

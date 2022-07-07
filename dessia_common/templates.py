@@ -1,8 +1,12 @@
+"""
+templates for dessia_common
+
+"""
 from string import Template
 
 
 dessia_object_markdown_template = Template('''
-# Default Dessia Object markdown
+# Object $name of class $class_
 
 This is a markdown file https://www.markdownguide.org/cheat-sheet/
 

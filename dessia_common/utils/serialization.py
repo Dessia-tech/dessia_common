@@ -9,7 +9,7 @@ import warnings
 import inspect
 import collections
 from ast import literal_eval
-from typing import get_origin, get_args, Union, Any
+from typing import get_origin, get_args, Union, Any, BinaryIO, TextIO
 import networkx as nx
 import dessia_common as dc
 import dessia_common.errors as dc_err
@@ -201,11 +201,12 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
 
     class_argspec = None
 
-    if pointers_memo is None:
-        pointers_memo = {}
-
-    if global_dict is None:
+    if global_dict is None or pointers_memo is None:
         global_dict = dict_
+
+        if pointers_memo is None:
+            pointers_memo = {}
+
         pointers_memo.update(dereference_jsonpointers(dict_))
 
     if '$ref' in dict_:
@@ -319,7 +320,7 @@ def deserialize_with_typing(type_, argument):
 
     elif origin is tuple:
         # Heterogenous sequences (tuples)
-        deserialized_arg = tuple((deserialize_argument(t, arg) for t, arg in zip(args, argument)))
+        deserialized_arg = tuple(deserialize_argument(t, arg) for (t, arg) in zip(args, argument))
     elif origin is dict:
         # Dynamic dict
         deserialized_arg = argument
@@ -342,7 +343,8 @@ def deserialize_argument(type_, argument):
         return None
     if dcty.is_typing(type_):
         return deserialize_with_typing(type_, argument)
-    if isinstance(argument, (StringFile, BinaryFile)):
+
+    if type_ in [TextIO, BinaryIO] or isinstance(argument, (StringFile, BinaryFile)):
         return argument
 
     if type_ in dcty.TYPING_EQUIVALENCES:
@@ -477,6 +479,9 @@ def dereference_jsonpointers(dict_):  # , global_dict):
     """
 
     order = deserialization_order(dict_)
+    # print('\norder of')
+    # if 'object_class' in dict_:
+    #     print(dict_['object_class'])
 
     pointers_memo = {}
     for ref in order:
