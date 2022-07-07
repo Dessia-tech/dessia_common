@@ -9,7 +9,7 @@ import warnings
 import inspect
 import collections
 from ast import literal_eval
-from typing import get_origin, get_args, Union, Any
+from typing import get_origin, get_args, Union, Any, BinaryIO, TextIO
 import networkx as nx
 import dessia_common as dc
 import dessia_common.errors as dc_err

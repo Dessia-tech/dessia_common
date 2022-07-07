@@ -40,10 +40,10 @@ def extract_from_object(object_, segment):
     if is_sequence(object_):
         try:
             return object_[int(segment)]
-        except ValueError as error:
+        except ValueError as err:
             message_error = (f'Cannot extract segment {segment} from object {{str(object_)[:500]}}:'
                              + 'segment is not a sequence index')
-            raise ExtractionError(message_error) from error
+            raise ExtractionError(message_error) from err
 
     if isinstance(object_, dict):
         if segment in object_:
@@ -90,9 +90,9 @@ def get_in_object_from_path(object_, path):
                 raise RecursionError(err_msg) from err
         try:
             element = extract_from_object(element, segment)
-        except ExtractionError as error:
+        except ExtractionError as err:
             err_msg = f'Cannot get segment {segment} from path {path} in element {str(element)[:500]}'
-            raise ExtractionError(err_msg) from error
+            raise ExtractionError(err_msg) from err
 
     return element
 
