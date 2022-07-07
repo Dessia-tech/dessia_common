@@ -2,7 +2,6 @@
 Library for building clusters on data.
 """
 from typing import List
-import time
 
 import numpy as npy
 from sklearn import cluster, preprocessing
@@ -41,7 +40,7 @@ class ClusterResult(dc.DessiaObject):
         self.n_clusters = self.set_n_clusters()
 
     @classmethod
-    def from_agglomerative_clustering(cls, data: List[dc.DessiaObject], n_clusters: int = 2,
+    def from_agglomerative_clustering(cls, data: dc.HeterogeneousList, n_clusters: int = 2,
                                       affinity: str = 'euclidean', linkage: str = 'ward',
                                       distance_threshold: float = None, scaling: bool = False):
         """
@@ -112,7 +111,7 @@ class ClusterResult(dc.DessiaObject):
         return cls(data, skl_cluster.labels_.tolist())
 
     @classmethod
-    def from_kmeans(cls, data: List[dc.DessiaObject], n_clusters: int = 2,
+    def from_kmeans(cls, data: dc.HeterogeneousList, n_clusters: int = 2,
                     n_init: int = 10, tol: float = 1e-4, scaling: bool = False):
         """
         Internet doc
@@ -157,7 +156,7 @@ class ClusterResult(dc.DessiaObject):
         return cls(data, skl_cluster.labels_.tolist())
 
     @classmethod
-    def from_dbscan(cls, data: List[dc.DessiaObject], eps: float = 0.5, min_samples: int = 5,
+    def from_dbscan(cls, data: dc.HeterogeneousList, eps: float = 0.5, min_samples: int = 5,
                     mink_power: float = 2, leaf_size: int = 30, scaling: bool = False):
         """
         Internet doc
@@ -213,7 +212,7 @@ class ClusterResult(dc.DessiaObject):
         return cls(data, skl_cluster.labels_.tolist())
 
     @staticmethod
-    def fit_cluster(skl_cluster: cluster, data: List[dc.DessiaObject], scaling: bool = False):
+    def fit_cluster(skl_cluster: cluster, data: dc.HeterogeneousList, scaling: bool = False):
         if scaling:
             scaled_matrix = ClusterResult.scale_data(data.matrix)
         else:
@@ -226,17 +225,8 @@ class ClusterResult(dc.DessiaObject):
         scaled_matrix = preprocessing.StandardScaler().fit_transform(data_matrix)
         return list([list(map(float, row)) for row in scaled_matrix])
 
-    # def data_matrix(data: List[dc.DessiaObject]):
-    #     if 'to_vector' not in dir(data[0]):
-    #         raise NotImplementedError(f"{data[0].__class__.__name__} objects must have a " +
-    #                                   "'to_vector' method to be handled in ClusterResult object.")
-    #     data_matrix = []
-    #     for element in data:
-    #         data_matrix.append(element.to_vector())
-    #     return data_matrix
-
     @staticmethod
-    def data_to_clusters(data: List[dc.DessiaObject], labels: npy.ndarray):
+    def data_to_clusters(data: dc.HeterogeneousList, labels: npy.ndarray):
         clusters_list = []
         for i in range(npy.max(labels) + 1):
             clusters_list.append([])
@@ -252,7 +242,6 @@ class ClusterResult(dc.DessiaObject):
         return n_clusters
 
     def check_dimensionality(self, scaling: bool = False):
-        t = time.time()
         if scaling:
             data_matrix = self.scale_data(self.data_matrix)
         else:
@@ -268,23 +257,15 @@ class ClusterResult(dc.DessiaObject):
                   (" with pre-scale" if scaling else ""))
         plt.xlabel("Index of reduced basis vector")
         plt.ylabel("Singular value")
-        print('dimensionality : ', time.time() - t)
 
     def plot_data(self, attributes: List[str] = None):
         if attributes is None:
-            new_attributes = self.data.common_attributes #[0]._export_features
+            new_attributes = self.data.common_attributes
         else:
             new_attributes = list(attributes)
         dataset_list = self.build_datasets(new_attributes)
 
-        # # Because graph2D are not handled in scatter_matrix
-        # data_list = []
-        # for data in self.data:
-        #     data_list.append(data.to_dict())
-        # scatter_matrix = [plot_data.ScatterMatrix(elements=data_list, axes=new_attributes)]
-
         multiplots = self.build_multiplot(dataset_list, new_attributes)
-
         return multiplots
 
     def build_multiplot(self, dataset_list: List[Dataset], attributes: List[str]):
@@ -294,7 +275,6 @@ class ClusterResult(dc.DessiaObject):
                 list_scatters.append(plot_data.Graph2D(x_variable=attributes[x_num],
                                                        y_variable=attributes[y_num],
                                                        graphs=dataset_list))
-
         return [plot_data.MultiplePlots(plots=list_scatters, elements=dataset_list,
                                         initial_view_on=True)]
 
@@ -331,7 +311,6 @@ class ClusterResult(dc.DessiaObject):
                                                   edge_style=edge_style,
                                                   point_style=point_style,
                                                   tooltip=tooltip_list[idx])
-
         return dataset_list
 
 
