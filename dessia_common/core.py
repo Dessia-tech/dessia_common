@@ -776,21 +776,27 @@ class HeterogeneousList(DessiaObject):
 
     def common_attributes(self):
         standard_attributes = get_attribute_names(DessiaObject)
-        objects_class = list(set(dessia_object.__class__ for dessia_object in self.dessia_objects))
+        objects_class = {}
         
-        common_attributes = set(get_attribute_names(objects_class[0])).difference(standard_attributes)
-        if hasattr(objects_class[0], '_export_features'):
-            if len(getattr(objects_class[0], '_export_features')) != 0:
-                common_attributes = objects_class[0]._export_features
+        for dessia_object in self.dessia_objects:
+            if hasattr(dessia_object, '_export_features'):
+                objects_class[dessia_object.__class__] = dessia_object._export_features
+            else:
+                objects_class[dessia_object.__class__] = set(get_attribute_names(dessia_object.__class__)).difference(standard_attributes)
 
-        for klass in objects_class[1:]:
+        all_class = list(objects_class)
+        common_attributes = set(get_attribute_names(all_class[0])).difference(standard_attributes)
+        if hasattr(all_class[0], '_export_features'):
+            common_attributes = set(all_class[0]._export_features)
+
+        for klass in all_class[1:]:
             klass_attributes = get_attribute_names(klass)
             if hasattr(klass, '_export_features'):
-                if len(getattr(klass, '_export_features')) != 0:
-                    klass_attributes = klass._export_features
+                klass_attributes = klass._export_features
             common_attributes = common_attributes.intersection(klass_attributes)
-            
-        return list(attr for attr in get_attribute_names(objects_class[0]) if attr in common_attributes)
+
+        # attributes' order kept this way, not with set or sorted(set)
+        return list(attr for attr in get_attribute_names(all_class[0]) if attr in common_attributes)
 
     @property
     def matrix(self):
@@ -826,25 +832,32 @@ class HeterogeneousList(DessiaObject):
                     subplots.append(plot_data.Scatter(x_variable=line_attr, 
                                                       y_variable=col_attr,
                                                       elements=data_list))
-                
-        multiplot = plot_data.MultiplePlots(plots=subplots, elements=data_list, initial_view_on=True)
-        plot_data.plot_canvas(plot_data_object=multiplot, debug_mode=True)
-        return scatter_matrix + multiplot + correlation_matrix
 
+        scatter_matrix = [plot_data.MultiplePlots(
+            plots=subplots, elements=data_list, initial_view_on=True)]
 
-        
-class HomogeneousList(HeterogeneousList):
-    _standalone_in_db = True
-
-    def __init__(self, dessia_objects: List[DessiaObject] = None, name: str = ''):
-        HeterogeneousList.__init__(self, dessia_objects=dessia_objects, name=name)
+        return scatter_matrix + correlation_matrix
     
-    @property
-    def data_matrix(self):
-        data_matrix = []
-        for dessia_object in self.dessia_objects:
-            data_matrix.append(dessia_object.to_vector())
-        return data_matrix
+    def to_markdown(self):
+        """
+        Render a markdown of the object output type: string
+        """
+        return templates.heterogeneouslist_markdown_template.substitute(name=self.name, class_=self.__class__.__name__)
+
+
+# class HomogeneousList(HeterogeneousList):
+#     _standalone_in_db = True
+
+#     def __init__(self, dessia_objects: List[DessiaObject] = None, name: str = ''):
+#         HeterogeneousList.__init__(
+#             self, dessia_objects=dessia_objects, name=name)
+
+#     @property
+#     def data_matrix(self):
+#         data_matrix = []
+#         for dessia_object in self.dessia_objects:
+#             data_matrix.append(dessia_object.to_vector())
+#         return data_matrix
 
         
 # class Catalog(DessiaObject):
