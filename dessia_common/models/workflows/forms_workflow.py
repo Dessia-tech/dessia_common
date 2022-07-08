@@ -49,10 +49,14 @@ pipe_name_2 = Pipe(input_variable=name_variable, output_variable=parallel_optimi
 pipe_gene = Pipe(input_variable=instanciate_generator.outputs[0], output_variable=generator_generate.inputs[0])
 pipe_attr = Pipe(input_variable=generator_generate.outputs[1], output_variable=attribute_selection.inputs[0])
 pipe_opti = Pipe(input_variable=attribute_selection.outputs[0], output_variable=parallel_optimization.inputs[0])
+pipe_disp = Pipe(input_variable=parallel_optimization.outputs[0], output_variable=display_.inputs[0])
 pipe_mult = Pipe(input_variable=parallel_optimization.outputs[0], output_variable=multiplot.inputs[0])
 pipe_unpack = Pipe(input_variable=parallel_optimization.outputs[0], output_variable=unpacker.inputs[0])
 pipe_disp = Pipe(input_variable=unpacker.outputs[0], output_variable=display_.inputs[0])
 
+
+blocks = [instanciate_generator, generator_generate, attribute_selection, parallel_optimization, display_]
+pipes = [pipe_int_1, pipe_name_1, pipe_name_2, pipe_gene, pipe_attr, pipe_opti, pipe_disp]
 
 blocks = [instanciate_generator, generator_generate, attribute_selection,
           parallel_optimization, multiplot, unpacker, display_]
