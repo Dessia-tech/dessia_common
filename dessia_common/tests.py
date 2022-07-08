@@ -161,7 +161,7 @@ class Car(DessiaObject):
     Defines a car
     """
     _standalone_in_db = True
-    _export_features = ['mpg', 'displacement',
+    _features = ['mpg', 'displacement',
                         'horsepower', 'acceleration', 'weight']
     _non_data_hash_attributes = ['name']
 
@@ -216,7 +216,7 @@ class ClusTester_d1(DessiaObject):
     Creates a dataset from a number of clusters and dimensions
     """
     _standalone_in_db = True
-    _export_features = [f'p{i+1}' for i in range(1)]
+    _features = [f'p{i+1}' for i in range(1)]
     _non_data_hash_attributes = ['name']
     _nb_dims = 1
 
@@ -225,7 +225,7 @@ class ClusTester_d1(DessiaObject):
         self.p1 = p1
 
     @classmethod
-    def create_dataset(cls, nb_clusters: float = 10, nb_points: int = 2500, 
+    def create_dataset(cls, nb_clusters: float = 10, nb_points: int = 2500,
                        mean_borns: List[float] = [-50, 50], std_borns: List[float] = [-5, 5]):
         means_list = []
         std_list = []
@@ -292,25 +292,25 @@ class ClusTester_d4(ClusTester_d3):
     def __init__(self, p1: float, p2: float, p3: float, p4: float, name: str = ''):
         ClusTester_d3.__init__(self, p1, p2, p3, name=name)
         self.p4 = p4
-        
+
 class ClusTester_d5(ClusTester_d4):
     _export_features = [f'p{i+1}' for i in range(5)]
     _nb_dims = 5
     def __init__(self, p1: float, p2: float, p3: float, p4: float, p5: float, name: str = ''):
         ClusTester_d4.__init__(self, p1, p2, p3, p4, name=name)
         self.p5 = p5
-        
+
 class ClusTester_d6(ClusTester_d5):
     _export_features = [f'p{i+1}' for i in range(6)]
-    def __init__(self, p1: float, p2: float, p3: float, p4: float, p5: float, 
+    def __init__(self, p1: float, p2: float, p3: float, p4: float, p5: float,
                  p6: float, name: str = ''):
         ClusTester_d5.__init__(self, p1, p2, p3, p4, p5, name=name)
         self.p6 = p6
-        
+
 class ClusTester_d7(ClusTester_d6):
     _export_features = [f'p{i+1}' for i in range(7)]
     _nb_dims = 7
-    def __init__(self, p1: float, p2: float, p3: float, p4: float, p5: float, 
+    def __init__(self, p1: float, p2: float, p3: float, p4: float, p5: float,
                  p6: float, p7: float, name: str = ''):
         ClusTester_d6.__init__(self, p1, p2, p3, p4, p5, p6, name=name)
         self.p7 = p7
@@ -318,7 +318,7 @@ class ClusTester_d7(ClusTester_d6):
 class ClusTester_d8(ClusTester_d7):
     _export_features = [f'p{i+1}' for i in range(8)]
     _nb_dims = 8
-    def __init__(self, p1: float, p2: float, p3: float, p4: float, p5: float, 
+    def __init__(self, p1: float, p2: float, p3: float, p4: float, p5: float,
                  p6: float, p7: float, p8: float, name: str = ''):
         ClusTester_d7.__init__(self, p1, p2, p3, p4, p5, p6, p7, name=name)
         self.p8 = p8
@@ -326,7 +326,7 @@ class ClusTester_d8(ClusTester_d7):
 class ClusTester_d9(ClusTester_d8):
     _export_features = [f'p{i+1}' for i in range(9)]
     _nb_dims = 9
-    def __init__(self, p1: float, p2: float, p3: float, p4: float, p5: float, 
+    def __init__(self, p1: float, p2: float, p3: float, p4: float, p5: float,
                  p6: float, p7: float, p8: float, p9: float, name: str = ''):
         ClusTester_d8.__init__(self, p1, p2, p3, p4, p5, p6, p7, p8, name=name)
         self.p9 = p9
@@ -334,7 +334,7 @@ class ClusTester_d9(ClusTester_d8):
 class ClusTester_d10(ClusTester_d9):
     _export_features = [f'p{i+1}' for i in range(10)]
     _nb_dims = 10
-    def __init__(self, p1: float, p2: float, p3: float, p4: float, p5: float, 
+    def __init__(self, p1: float, p2: float, p3: float, p4: float, p5: float,
                  p6: float, p7: float, p8: float, p9: float, p10: float, name: str = ''):
         ClusTester_d9.__init__(self, p1, p2, p3, p4, p5, p6, p7, p8, p9, name=name)
         self.p10 = p10

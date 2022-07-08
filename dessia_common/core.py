@@ -793,21 +793,21 @@ class HeterogeneousList(DessiaObject):
         objects_class = {}
 
         for dessia_object in self.dessia_objects:
-            if hasattr(dessia_object, '_export_features'):
-                objects_class[dessia_object.__class__] = dessia_object._export_features
+            if hasattr(dessia_object, '_features'):
+                objects_class[dessia_object.__class__] = dessia_object._features
             else:
                 objects_class[dessia_object.__class__] = set(get_attribute_names(
                     dessia_object.__class__)).difference(standard_attributes)
 
         all_class = list(objects_class)
         common_attributes = set(get_attribute_names(all_class[0])).difference(standard_attributes)
-        if hasattr(all_class[0], '_export_features'):
-            common_attributes = set(all_class[0]._export_features)
+        if hasattr(all_class[0], '_features'):
+            common_attributes = set(all_class[0]._features)
 
         for klass in all_class[1:]:
             klass_attributes = get_attribute_names(klass)
-            if hasattr(klass, '_export_features'):
-                klass_attributes = klass._export_features
+            if hasattr(klass, '_features'):
+                klass_attributes = klass._features
             common_attributes = common_attributes.intersection(klass_attributes)
 
         # attributes' order kept this way, not with set or sorted(set)
