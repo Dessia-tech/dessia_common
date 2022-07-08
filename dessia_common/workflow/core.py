@@ -78,13 +78,17 @@ class TypedVariable(Variable):
     def copy(self, deep: bool = False, memo=None):
         return TypedVariable(type_=self.type_, memorize=self.memorize, name=self.name)
 
-    def to_script(self) -> ToScriptElement:
+    def _to_script(self) -> ToScriptElement:
         script = f"TypedVariable(type_={serialize_typing(self.type_)}, "
         script += f"memorize={self.memorize}, name='{self.name}')\n"
 
         imports = [self.full_classname]
-        # imports_as_is =[]
-        return ToScriptElement(declaration=script, imports=imports)
+        imports_as_is = None
+        if "builtins" in serialize_typing(self.type_):
+            imports_as_is = ["builtins"]
+        else:
+            imports.append(serialize_typing(self.type_))
+        return ToScriptElement(declaration=script, imports=imports, imports_as_is=imports_as_is)
 
 class VariableWithDefaultValue(Variable):
     has_default_value: bool = True
@@ -1127,10 +1131,10 @@ class Workflow(Block):
         fraction_sum = sum(package_mix.values())
         return {pn: f / fraction_sum for pn, f in package_mix.items()}
 
-    def _to_script(self, prefix : str = '') -> Tuple[List[str], str]:
+    def _to_script(self, prefix : str = '') -> ToScriptElement:
         """
         Computes elements for a to_script interpretation
-        :returns: List[imports_to_add], block_script, pipe_script
+        :returns: ToSriptElement
         """
         workflow_output_index = self.variable_indices(self.output)
         if workflow_output_index is None:
@@ -1139,10 +1143,11 @@ class Workflow(Block):
 
           # --- Blocks ---
         script_blocks = ""
-        classes = []
+        imports = []
+        imports_as_is = []
         for ib, block in enumerate(self.blocks):
             block_script = block._to_script()
-            classes.extend(block_script.imports)
+            imports.extend(block_script.imports)
             if block_script.before_declaration is not None:
                 script_blocks += f"{block_script.before_declaration}\n"
             script_blocks += f'{prefix}block_{ib} = {block_script.declaration}\n'
@@ -1157,15 +1162,21 @@ class Workflow(Block):
             input_index = self.variable_indices(pipe.input_variable)
             if isinstance(input_index, int): # NBV handling
                 input_name = f'{prefix}variable_{variable_index}'
-                script_pipes += f'{input_name } = {pipe.input_variable.to_script()}'
+                input_script_elements = pipe.input_variable._to_script()
+                imports.extend(input_script_elements.imports)
+                imports_as_is.extend((input_script_elements.imports_as_is))
+                script_pipes += f'{input_name } = {input_script_elements.declaration}'
                 variable_index += 1
             else:
                 input_name = f"{prefix}block_{input_index[0]}.outputs[{input_index[2]}]"
 
             output_index = self.variable_indices(pipe.output_variable)
             if isinstance(output_index, int): #NBV handling
-                script_pipes += pipe.output_variable._to_script(variable_index=variable_index) + '\n'
                 output_name = f'{prefix}variable_{variable_index}'
+                output_script_elements = pipe.output_variable._to_script()
+                imports.extend(output_script_elements.imports)
+                imports_as_is.extend(output_script_elements.imports_as_is)
+                script_pipes += f'{output_name } = {output_script_elements.declaration}'
                 variable_index += 1
             else:
                 output_name = f"{prefix}block_{output_index[0]}.inputs[{output_index[2]}]"
@@ -1189,7 +1200,7 @@ class Workflow(Block):
                 variable_str = f"{prefix}blocks[{block_index}].inputs[{variable_index}]"
             full_script += f"{prefix}workflow.imposed_variable_values[{variable_str}] = {v}\n"
 
-        return ToScriptElement(declaration=full_script, imports=classes)
+        return ToScriptElement(declaration=full_script, imports=imports, imports_as_is=imports_as_is)
 
     def to_script(self) -> str:
         """
@@ -1217,6 +1228,9 @@ class Workflow(Block):
         script_imports = ""
         for module,class_list in imports_dict.items():
             script_imports += f"from {module} import {', '.join(class_list)}\n"
+
+        for import_as_is in self_script.imports_as_is:
+            script_imports += f"import {import_as_is}\n"
 
         return f"{script_imports}\n" \
                f"{self_script.declaration}"
