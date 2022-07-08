@@ -1215,22 +1215,7 @@ class Workflow(Block):
         if len(self.pipes) > 0:
             self_script.imports.append(self.pipes[0].full_classname)
 
-        imports_dict: Dict[str, List[str]] = {}
-        for c in self_script.imports:
-            module = '.'.join(c.split('.')[:-1])
-            class_ = c.split('.')[-1]
-            if imports_dict.get(module) is None:
-                imports_dict[module] = [class_]
-            else:
-                if class_ not in imports_dict[module]:
-                    imports_dict[module].append(class_)
-
-        script_imports = ""
-        for module,class_list in imports_dict.items():
-            script_imports += f"from {module} import {', '.join(class_list)}\n"
-
-        for import_as_is in self_script.imports_as_is:
-            script_imports += f"import {import_as_is}\n"
+        script_imports = self_script.imports_to_str()
 
         return f"{script_imports}\n" \
                f"{self_script.declaration}"
