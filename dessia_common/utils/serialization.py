@@ -149,16 +149,13 @@ def deserialize(serialized_element, sequence_annotation: str = 'List',
     """
     Main function for deserialization, handle pointers
     """
-
     if pointers_memo is not None:
         if path in pointers_memo:
             return pointers_memo[path]
 
     if isinstance(serialized_element, dict):
         # try:
-        return dict_to_object(serialized_element, global_dict=global_dict,
-                              pointers_memo=pointers_memo,
-                              path=path)
+        return dict_to_object(serialized_element, global_dict=global_dict, pointers_memo=pointers_memo, path=path)
         # except TypeError:
         #     warnings.warn(f'specific dict_to_object of class {serialized_element.__class__.__name__}'
         #                   ' should implement global_dict and'
@@ -166,11 +163,8 @@ def deserialize(serialized_element, sequence_annotation: str = 'List',
         #                   Warning)
         #     return dict_to_object(serialized_element)
     if dcty.is_sequence(serialized_element):
-        return deserialize_sequence(sequence=serialized_element,
-                                    annotation=sequence_annotation,
-                                    global_dict=global_dict,
-                                    pointers_memo=pointers_memo,
-                                    path=path)
+        return deserialize_sequence(sequence=serialized_element, annotation=sequence_annotation,
+                                    global_dict=global_dict, pointers_memo=pointers_memo, path=path)
     return serialized_element
 
 
@@ -182,10 +176,8 @@ def deserialize_sequence(sequence, annotation=None,
     deserialized_sequence = []
     for ie, elt in enumerate(sequence):
         path_elt = f'{path}/{ie}'
-        deserialized_element = deserialize(elt, args,
-                                           global_dict=global_dict,
-                                           pointers_memo=pointers_memo,
-                                           path=path_elt)
+        deserialized_element = deserialize(elt, args, global_dict=global_dict,
+                                           pointers_memo=pointers_memo, path=path_elt)
         deserialized_sequence.append(deserialized_element)
     if origin is tuple:
         # Keeping as a tuple
@@ -198,7 +190,6 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
     """
     Transform a dict to an object
     """
-
     class_argspec = None
 
     if global_dict is None or pointers_memo is None:
@@ -218,13 +209,9 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
     # Create init_dict
     if class_ is not None and hasattr(class_, 'dict_to_object'):
         different_methods = (class_.dict_to_object.__func__ is not dc.DessiaObject.dict_to_object.__func__)
-
         if different_methods and not force_generic:
             try:
-                obj = class_.dict_to_object(dict_,
-                                            global_dict=global_dict,
-                                            pointers_memo=pointers_memo,
-                                            path=path)
+                obj = class_.dict_to_object(dict_, global_dict=global_dict, pointers_memo=pointers_memo, path=path)
             except TypeError:
                 warnings.warn(f'specific to_dict of class {class_.__name__} '
                               'should implement use_pointers, memo and path arguments', Warning)

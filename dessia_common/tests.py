@@ -36,10 +36,10 @@ class Generator(DessiaObject):
     _standalone_in_db = True
     _allowed_methods = ['long_generation']
 
-    def __init__(self, parameter: int, nb_solutions: int = 25, name: str = ''):
+    def __init__(self, parameter: int, nb_solutions: int = 25, models: List[Model] = None, name: str = ''):
         self.parameter = parameter
         self.nb_solutions = nb_solutions
-        self.models = None
+        self.models = models
 
         DessiaObject.__init__(self, name=name)
 
