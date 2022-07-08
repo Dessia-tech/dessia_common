@@ -90,6 +90,7 @@ class TypedVariable(Variable):
             imports.append(serialize_typing(self.type_))
         return ToScriptElement(declaration=script, imports=imports, imports_as_is=imports_as_is)
 
+
 class VariableWithDefaultValue(Variable):
     has_default_value: bool = True
 
@@ -256,7 +257,6 @@ class Pipe(DessiaObject):
         transform the pipe into a dict
         """
         return {'input_variable': self.input_variable, 'output_variable': self.output_variable}
-
 
 
 class WorkflowError(Exception):
@@ -487,7 +487,7 @@ class Workflow(Block):
             current_dict = {}
             if isinstance(input_, TypedVariable) or isinstance(input_, TypedVariableWithDefaultValue):
                 annotation = (str(i), input_.type_)
-            else :
+            else:
                 annotation = (str(i), Any)
             if input_ in self.nonblock_variables:
                 title = input_.name
@@ -1131,7 +1131,7 @@ class Workflow(Block):
         fraction_sum = sum(package_mix.values())
         return {pn: f / fraction_sum for pn, f in package_mix.items()}
 
-    def _to_script(self, prefix : str = '') -> ToScriptElement:
+    def _to_script(self, prefix: str = '') -> ToScriptElement:
         """
         Computes elements for a to_script interpretation
         :returns: ToSriptElement
@@ -1139,7 +1139,6 @@ class Workflow(Block):
         workflow_output_index = self.variable_indices(self.output)
         if workflow_output_index is None:
             raise ValueError("A workflow output must be set")
-
 
           # --- Blocks ---
         script_blocks = ""
@@ -1152,7 +1151,7 @@ class Workflow(Block):
                 script_blocks += f"{block_script.before_declaration}\n"
             script_blocks += f'{prefix}block_{ib} = {block_script.declaration}\n'
 
-        script_blocks+= prefix + 'blocks = [{}]\n'\
+        script_blocks += prefix + 'blocks = [{}]\n'\
             .format(', '.join([prefix + 'block_' + str(i) for i in range(len(self.blocks))]))
 
         # --- Pipes ---
@@ -1160,7 +1159,7 @@ class Workflow(Block):
         variable_index = 0
         for ip, pipe in enumerate(self.pipes):
             input_index = self.variable_indices(pipe.input_variable)
-            if isinstance(input_index, int): # NBV handling
+            if isinstance(input_index, int):  # NBV handling
                 input_name = f'{prefix}variable_{variable_index}'
                 input_script_elements = pipe.input_variable._to_script()
                 imports.extend(input_script_elements.imports)
@@ -1171,7 +1170,7 @@ class Workflow(Block):
                 input_name = f"{prefix}block_{input_index[0]}.outputs[{input_index[2]}]"
 
             output_index = self.variable_indices(pipe.output_variable)
-            if isinstance(output_index, int): #NBV handling
+            if isinstance(output_index, int):  # NBV handling
                 output_name = f'{prefix}variable_{variable_index}'
                 output_script_elements = pipe.output_variable._to_script()
                 imports.extend(output_script_elements.imports)
@@ -1191,12 +1190,12 @@ class Workflow(Block):
                       f"{prefix}workflow = " \
                       f"Workflow({prefix}blocks, {prefix}pipes, output={output_name}, name='{self.name}')\n"
 
-        for k,v in self.imposed_variable_values.items():
+        for k, v in self.imposed_variable_values.items():
             variable_indice = self.variable_indices(k)
-            if isinstance(variable_indice,int):
+            if isinstance(variable_indice, int):
                 variable_str = variable_indice
-            else :
-                [block_index,_,variable_index] = variable_indice
+            else:
+                [block_index, _, variable_index] = variable_indice
                 variable_str = f"{prefix}blocks[{block_index}].inputs[{variable_index}]"
             full_script += f"{prefix}workflow.imposed_variable_values[{variable_str}] = {v}\n"
 

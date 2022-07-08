@@ -115,7 +115,6 @@ class Display(Block):
         return ToScriptElement(declaration=script, imports=imports)
 
 
-
 class InstantiateModel(Block):
     """
     :param model_class: The class to instanciate.
@@ -460,6 +459,7 @@ class WorkflowBlock(Block):
         imports = workflow_script.imports + [self.full_classname]
         return ToScriptElement(declaration=script, before_declaration=script_workflow, imports=imports)
 
+
 class ForEach(Block):
     """
     A block to iterate on an input and perform an parralel for (iterations are not dependant)
@@ -537,7 +537,6 @@ class ForEach(Block):
         return ToScriptElement(declaration=foreach_script, before_declaration=wfblock_script, imports=imports)
 
 
-
 class Unpacker(Block):
     def __init__(self, indices: List[int], name: str = ''):
         self.indices = indices
@@ -566,7 +565,6 @@ class Unpacker(Block):
     def _to_script(self) -> ToScriptElement:
         script = f"Unpacker(indices={self.indices}, name='{self.name}')"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
-
 
 
 class Flatten(Block):
@@ -892,6 +890,7 @@ class Substraction(Block):
         script = f"Substraction(name='{self.name}')"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
+
 class Export(Block):
     def __init__(self, method_type: MethodType, export_name: str = "", name: str = ""):
         self.method_type = method_type
@@ -931,7 +930,6 @@ class Export(Block):
             full_classname(object_=self.method_type.class_, compute_for='class'),
         ]
         return ToScriptElement(declaration=script, imports=imports)
-
 
 
 class ExportJson(Export):

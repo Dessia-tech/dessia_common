@@ -8,6 +8,7 @@ Created on Thu July 7 14:52:32 2022
 
 from typing import List, Dict
 
+
 class ToScriptElement:
     """
     Class meant to improve to_script readability
