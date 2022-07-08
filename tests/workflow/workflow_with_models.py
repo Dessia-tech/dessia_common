@@ -3,6 +3,8 @@
 """
 A simple workflow composed of functions
 """
+import builtins
+
 import dessia_common.typings as dct
 import dessia_common.workflow as wf
 from dessia_common import DessiaFilter
@@ -44,10 +46,11 @@ pipe_4 = wf.Pipe(input_variable=parallel_optimization.outputs[0], output_variabl
 pipe_51 = wf.Pipe(input_variable=unpacker.outputs[0], output_variable=sequence.inputs[0])
 pipe_52 = wf.Pipe(input_variable=unpacker.outputs[2], output_variable=sequence.inputs[1])
 pipe_6 = wf.Pipe(input_variable=sequence.outputs[0], output_variable=filter_sort.inputs[0])
+pipe_7 = wf.Pipe(input_variable=wf.TypedVariable(type_=builtins.int), output_variable=optimization.inputs[1])
 
 blocks = [instanciate_generator, generator_generate, attribute_selection,
           parallel_optimization, unpacker, sequence, filter_sort]
-pipes = [pipe_1, pipe_2, pipe_3, pipe_4, pipe_51, pipe_52, pipe_6]
+pipes = [pipe_1, pipe_2, pipe_3, pipe_4, pipe_51, pipe_52, pipe_6, pipe_7]
 demo_workflow = wf.Workflow(blocks=blocks, pipes=pipes, output=unpacker.outputs[0])
 
 input_values = {0: 5}
