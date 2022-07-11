@@ -547,8 +547,8 @@ class Product(Block):
         return Block.equivalent(self, other) and self.number_list == other.number_list
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
-        dict_ = DessiaObject.base_dict(self)
-        dict_.update({'number_list': self.number_list})
+        dict_ = Block.to_dict(self)
+        dict_['number_list'] = self.number_list
         return dict_
 
     @classmethod
