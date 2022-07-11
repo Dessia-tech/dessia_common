@@ -8,7 +8,7 @@ from ast import literal_eval
 from typing import Any, Dict, List, Tuple, Type, Union, TextIO, BinaryIO, get_origin, get_args
 
 import json
-import collections
+import collections.abc
 from importlib import import_module
 
 import dessia_common as dc
@@ -121,7 +121,7 @@ def serialize_typing_types(typing_):
     if origin is tuple:
         argnames = ', '.join([type_fullname(a) for a in args])
         return f'Tuple[{argnames}]'
-    if origin is collections.Iterator:
+    if origin is collections.abc.Iterator:
         return f"Iterator[{type_fullname(args[0])}]"
     if origin is dict:
         key_type = type_fullname(args[0])
@@ -161,9 +161,11 @@ def type_fullname(arg):
 def type_from_argname(argname):
     splitted_argname = argname.rsplit('.', 1)
     if argname:
-        if splitted_argname[0] != '__builtins__':
-            return get_python_class_from_class_name(argname)
-        return literal_eval(splitted_argname[1])
+        if splitted_argname[0] == '__builtins__':
+            argname = f"builtins.{splitted_argname[1]}"
+        # if splitted_argname[0] != '__builtins__':
+        return get_python_class_from_class_name(argname)
+        # return literal_eval(splitted_argname[1])
     return Any
 
 
@@ -183,6 +185,7 @@ def deserialize_typing(serialized_typing):
         if '[' in serialized_typing:
             toptype, remains = serialized_typing.split('[', 1)
             full_argname = remains.rsplit(']', 1)[0]
+            # return toptype[deserialize_typing(full_argname)]
         else:
             toptype = serialized_typing
             full_argname = ''
@@ -190,11 +193,21 @@ def deserialize_typing(serialized_typing):
             return List[type_from_argname(full_argname)]
         if toptype == 'Tuple':
             return deserialize_tuple_typing(full_argname)
+        if toptype == "Iterator":
+            return collections.abc.Iterator[type_from_argname(full_argname)]
         if toptype == 'Dict':
             args = full_argname.split(', ')
             key_type = type_from_argname(args[0])
             value_type = type_from_argname(args[1])
             return Dict[key_type, value_type]
+        if toptype == "InstanceOf":
+            return InstanceOf[type_from_argname(full_argname)]
+        # if toptype == "Subclass":
+        #     return InstanceOf[type_from_argname(full_argname)]
+        # if toptype == "MethodType":
+        #     return InstanceOf[type_from_argname(full_argname)]
+        # if toptype == "ClassMethodType":
+        #     return InstanceOf[type_from_argname(full_argname)]
         return get_python_class_from_class_name(serialized_typing)
     raise NotImplementedError(f'{serialized_typing} of type {type(serialized_typing)}')
 
