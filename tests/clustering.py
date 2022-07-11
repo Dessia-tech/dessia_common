@@ -4,12 +4,16 @@ Cluster.py package testing.
 import json
 import pkg_resources
 from dessia_common import tests, cluster
-from dessia_common.core import HeterogeneousList
+from dessia_common.core import HeterogeneousList, DessiaObject
 import dessia_common.workflow as wf
 
 # Standard cars homogeneous dataset from the Internet
 csv_cars = pkg_resources.resource_stream('dessia_common', 'models/data/cars.csv')
-all_cars_homomgeneous = HeterogeneousList(tests.Car.from_csv(csv_cars))
+# When attribute _features is not specified in class Car
+all_cars_without_features = HeterogeneousList(tests.Car.from_csv(csv_cars))
+# When attribute _features is specified in class CarWithFeatures
+csv_cars = pkg_resources.resource_stream('dessia_common', 'models/data/cars.csv')
+all_cars_with_features = HeterogeneousList(tests.CarWithFeatures.from_csv(csv_cars))
 
 # Auto-generated heterogeneous small dataset with nb_clusters clusters of points in nb_dims dimensions
 mean_borns = [-50, 50]
@@ -17,7 +21,8 @@ std_borns = [-2, 2]
 small_clustesters_heterogeneous = HeterogeneousList(
     tests.ClusTester_d5.create_dataset(nb_clusters = 10, nb_points = 250, mean_borns = mean_borns, std_borns = std_borns) +
     tests.ClusTester_d4.create_dataset(nb_clusters = 10, nb_points = 250, mean_borns = mean_borns, std_borns = std_borns) +
-    tests.ClusTester_d3.create_dataset(nb_clusters = 10, nb_points = 250, mean_borns = mean_borns, std_borns = std_borns))
+    tests.ClusTester_d3.create_dataset(nb_clusters = 10, nb_points = 250, mean_borns = mean_borns, std_borns = std_borns),
+    use_to_vector = False)
 
 # Auto-generated heterogeneous large dataset with nb_clusters clusters of points in nb_dims dimensions
 mean_borns = [-50, 50]
@@ -25,22 +30,32 @@ std_borns = [-2, 2]
 big_clustesters_heterogeneous = HeterogeneousList(
     tests.ClusTester_d9.create_dataset(nb_clusters = 10, nb_points = 500, mean_borns = mean_borns, std_borns = std_borns) +
     tests.ClusTester_d7.create_dataset(nb_clusters = 10, nb_points = 500, mean_borns = mean_borns, std_borns = std_borns) +
-    tests.ClusTester_d8.create_dataset(nb_clusters = 10, nb_points = 500, mean_borns = mean_borns, std_borns = std_borns))
+    tests.ClusTester_d8.create_dataset(nb_clusters = 10, nb_points = 500, mean_borns = mean_borns, std_borns = std_borns),
+    use_to_vector = False)
 
 # Generate ClusterResults from HeterogeneousLists
-dbtest = cluster.ClusterResult.from_dbscan(all_cars_homomgeneous, eps=50)
+dbtest_without = cluster.ClusterResult.from_dbscan(all_cars_without_features, eps=50)
+dbtest_with = cluster.ClusterResult.from_dbscan(all_cars_with_features, eps=50)
 aggclustest = cluster.ClusterResult.from_agglomerative_clustering(big_clustesters_heterogeneous, n_clusters=10)
 kmeanstest = cluster.ClusterResult.from_kmeans(small_clustesters_heterogeneous, n_clusters=10, scaling=False)
 
+# Build sublists from clustering
+clustered_cars_without = cluster.CategorizedList(all_cars_without_features, dbtest_without)
+clustered_cars_with = cluster.CategorizedList(all_cars_with_features, dbtest_with)
+aggclustest_clustered = cluster.CategorizedList(big_clustesters_heterogeneous, aggclustest)
+kmeanstest_clustered = cluster.CategorizedList(small_clustesters_heterogeneous, kmeanstest)
+
 # Test ClusterResults instances on platform
-dbtest._check_platform()
+dbtest_without._check_platform()
+dbtest_with._check_platform()
 aggclustest._check_platform()
 kmeanstest._check_platform()
 
 # Test plots outside platform
-dbtest.plot(attributes=all_cars_homomgeneous.common_attributes)
-aggclustest.plot(attributes=big_clustesters_heterogeneous.common_attributes)
-kmeanstest.plot()
+clustered_cars_without.plot()
+clustered_cars_with.plot()
+aggclustest_clustered.plot()
+kmeanstest_clustered.plot()
 
 
 # =============================================================================

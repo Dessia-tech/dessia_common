@@ -161,8 +161,6 @@ class Car(DessiaObject):
     Defines a car
     """
     _standalone_in_db = True
-    _features = ['mpg', 'displacement',
-                        'horsepower', 'acceleration', 'weight']
     _non_data_hash_attributes = ['name']
 
     def __init__(self, name: str, mpg: float, cylinders: int,
@@ -182,7 +180,7 @@ class Car(DessiaObject):
 
     def to_vector(self):
         list_formated_car = []
-        for feature in self._export_features:
+        for feature in ['mpg', 'displacement', 'horsepower', 'acceleration', 'weight']:
             list_formated_car.append(getattr(self, feature.lower()))
         return list_formated_car
 
@@ -209,6 +207,23 @@ class Car(DessiaObject):
 
                 cars.append(cls(*attr_list))
         return cars
+
+
+class CarWithFeatures(Car):
+    _features = ['mpg', 'displacement', 'horsepower', 'acceleration', 'weight']
+
+    def __init__(self, name: str, mpg: float, cylinders: int,
+                 displacement: dct.Distance, horsepower: float,
+                 weight: dct.Mass, acceleration: dct.Time, model: int,
+                 origin: str):
+        Car.__init__(self, name, mpg, cylinders, displacement, horsepower,
+                     weight, acceleration, model, origin)
+
+    def to_vector(self):
+        list_formated_car = []
+        for feature in self._features:
+            list_formated_car.append(getattr(self, feature.lower()))
+        return list_formated_car
 
 
 class ClusTester_d1(DessiaObject):
@@ -265,50 +280,50 @@ class ClusTester_d1(DessiaObject):
         plt.plot(x_coords, y_coords, **kwargs)
         return
 
-    def to_vector(self):
-        clustester_vectored = []
-        for feature in self._export_features:
-            clustester_vectored.append(getattr(self, feature.lower()))
-        return clustester_vectored
+    # def to_vector(self):
+    #     clustester_vectored = []
+    #     for feature in self._features:
+    #         clustester_vectored.append(getattr(self, feature.lower()))
+    #     return clustester_vectored
 
 
 class ClusTester_d2(ClusTester_d1):
-    _export_features = [f'p{i+1}' for i in range(2)]
+    _features = [f'p{i+1}' for i in range(2)]
     _nb_dims = 2
     def __init__(self, p1: float, p2: float, name: str = ''):
         ClusTester_d1.__init__(self, p1, name=name)
         self.p2 = p2
 
 class ClusTester_d3(ClusTester_d2):
-    _export_features = [f'p{i+1}' for i in range(3)]
+    _features = [f'p{i+1}' for i in range(3)]
     _nb_dims = 3
     def __init__(self, p1: float, p2: float, p3: float, name: str = ''):
         ClusTester_d2.__init__(self, p1, p2, name=name)
         self.p3 = p3
 
 class ClusTester_d4(ClusTester_d3):
-    _export_features = [f'p{i+1}' for i in range(4)]
+    _features = [f'p{i+1}' for i in range(4)]
     _nb_dims = 4
     def __init__(self, p1: float, p2: float, p3: float, p4: float, name: str = ''):
         ClusTester_d3.__init__(self, p1, p2, p3, name=name)
         self.p4 = p4
 
 class ClusTester_d5(ClusTester_d4):
-    _export_features = [f'p{i+1}' for i in range(5)]
+    _features = [f'p{i+1}' for i in range(5)]
     _nb_dims = 5
     def __init__(self, p1: float, p2: float, p3: float, p4: float, p5: float, name: str = ''):
         ClusTester_d4.__init__(self, p1, p2, p3, p4, name=name)
         self.p5 = p5
 
 class ClusTester_d6(ClusTester_d5):
-    _export_features = [f'p{i+1}' for i in range(6)]
+    _features = [f'p{i+1}' for i in range(6)]
     def __init__(self, p1: float, p2: float, p3: float, p4: float, p5: float,
                  p6: float, name: str = ''):
         ClusTester_d5.__init__(self, p1, p2, p3, p4, p5, name=name)
         self.p6 = p6
 
 class ClusTester_d7(ClusTester_d6):
-    _export_features = [f'p{i+1}' for i in range(7)]
+    _features = [f'p{i+1}' for i in range(7)]
     _nb_dims = 7
     def __init__(self, p1: float, p2: float, p3: float, p4: float, p5: float,
                  p6: float, p7: float, name: str = ''):
@@ -316,7 +331,7 @@ class ClusTester_d7(ClusTester_d6):
         self.p7 = p7
 
 class ClusTester_d8(ClusTester_d7):
-    _export_features = [f'p{i+1}' for i in range(8)]
+    _features = [f'p{i+1}' for i in range(8)]
     _nb_dims = 8
     def __init__(self, p1: float, p2: float, p3: float, p4: float, p5: float,
                  p6: float, p7: float, p8: float, name: str = ''):
@@ -324,7 +339,7 @@ class ClusTester_d8(ClusTester_d7):
         self.p8 = p8
 
 class ClusTester_d9(ClusTester_d8):
-    _export_features = [f'p{i+1}' for i in range(9)]
+    _features = [f'p{i+1}' for i in range(9)]
     _nb_dims = 9
     def __init__(self, p1: float, p2: float, p3: float, p4: float, p5: float,
                  p6: float, p7: float, p8: float, p9: float, name: str = ''):
@@ -332,7 +347,7 @@ class ClusTester_d9(ClusTester_d8):
         self.p9 = p9
 
 class ClusTester_d10(ClusTester_d9):
-    _export_features = [f'p{i+1}' for i in range(10)]
+    _features = [f'p{i+1}' for i in range(10)]
     _nb_dims = 10
     def __init__(self, p1: float, p2: float, p3: float, p4: float, p5: float,
                  p6: float, p7: float, p8: float, p9: float, p10: float, name: str = ''):

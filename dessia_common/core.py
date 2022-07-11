@@ -782,66 +782,77 @@ class MovingObject(PhysicalObject):
 
 class HeterogeneousList(DessiaObject):
     _standalone_in_db = True
-
-    def __init__(self, dessia_objects: List[DessiaObject] = None, name: str = ''):
+    def __init__(self, dessia_objects: List[DessiaObject] = None, use_to_vector: bool = True, name: str = ''):
         DessiaObject.__init__(self, name=name)
         self.dessia_objects = dessia_objects
-        self.common_attributes = self.common_attributes()
+        self.use_to_vector = use_to_vector
+        self.matrix, self.common_attributes = self.matrix()
+
 
     def common_attributes(self):
         standard_attributes = get_attribute_names(DessiaObject)
-        objects_class = {}
-
-        for dessia_object in self.dessia_objects:
-            if hasattr(dessia_object, '_features'):
-                objects_class[dessia_object.__class__] = dessia_object._features
-            else:
-                objects_class[dessia_object.__class__] = set(get_attribute_names(
-                    dessia_object.__class__)).difference(standard_attributes)
-
-        all_class = list(objects_class)
+        all_class = list(set(dessia_object.__class__ for dessia_object in self.dessia_objects))
         common_attributes = set(get_attribute_names(all_class[0])).difference(standard_attributes)
-        if hasattr(all_class[0], '_features'):
+        if hasattr(all_class[0], "_features"):
             common_attributes = set(all_class[0]._features)
 
         for klass in all_class[1:]:
             klass_attributes = get_attribute_names(klass)
-            if hasattr(klass, '_features'):
+            if hasattr(klass, "_features"):
                 klass_attributes = klass._features
             common_attributes = common_attributes.intersection(klass_attributes)
 
         # attributes' order kept this way, not with set or sorted(set)
         return list(attr for attr in get_attribute_names(all_class[0]) if attr in common_attributes)
 
-    @property
-    def matrix(self):
-        # warnings.simplefilter('once')
-        # msg = "You are actually calling the standard 'data_matrix' method "
-        # msg += "from dessia_common.HeterogeneousList class."
-        # warnings.warn(msg)
-        matrix = []
-        for dessia_object in self.dessia_objects:
-            matrix.append([getattr(dessia_object, attr)
-                          for attr in self.common_attributes])
-        return matrix
 
-    def plot_data(self):
+    def matrix(self):
+        matrix = []
+        if not self.use_to_vector:
+            common_attributes = self.common_attributes()
+            for dessia_object in self.dessia_objects:
+                matrix.append([getattr(dessia_object, attr) for attr in common_attributes])
+        else:
+            has_features = True
+            for dessia_object in self.dessia_objects:
+                if not hasattr(dessia_object, "_features"):
+                    has_features = False
+                matrix.append(dessia_object.to_vector())
+            if has_features:
+                common_attributes = self.common_attributes()
+            else:
+                common_attributes = [f'p{col+1}' for col in range(len(matrix[0]))]
+        return matrix, common_attributes
+
+
+    def singular_values(self):
+        _, singular_values, _ = npy.linalg.svd(npy.array(self.matrix), full_matrices=False)
+        normed_singular_values = singular_values / npy.sum(singular_values)
+
+        singular_points = []
+        for idx, value in enumerate(normed_singular_values):
+            singular_points.append({'Index of reduced basis vector': idx + 1,
+                                    'Singular value': value})
+        return normed_singular_values, singular_points
+
+
+    def plot_data(self, **kwargs):
         import plot_data
-        # Plot a correlation matrix when plot_data.heatmap will be improved
-        correlation_matrix = []
+        # Plot a correlation matrix : To develop
+        # correlation_matrix = []
 
         # Dimensionality plot
-        _, singular_points = self.singular_values()
-        dimensionality_plot = [plot_data.Scatter(elements=singular_points,
-                                                 x_variable='Index of reduced basis vector',
-                                                 y_variable='Singular value',
-                                                 log_scale_y=True)]
+        dimensionality_plot = self.plot_dimensionality()
 
         # Scattermatrix
         data_list = []
-        for data in self.dessia_objects:
-            data_list.append({attr: getattr(data, attr) for attr in self.common_attributes
-                              if getattr(data, attr) is not None})
+        for row, data in enumerate(self.dessia_objects):
+            if hasattr(data, self.common_attributes[0]):
+                data_list.append({attr: getattr(data, attr) for attr in self.common_attributes
+                                  if getattr(data, attr) is not None})
+            else:
+                data_list.append({f'p{col+1}': self.matrix[row][col] for col in range(len(self.matrix[0]))})
+
         subplots = []
         for line_num, line_attr in enumerate(data_list[0]):
             for col_num, col_attr in enumerate(data_list[0]):
@@ -851,21 +862,34 @@ class HeterogeneousList(DessiaObject):
                 else:
                     subplots.append(plot_data.Scatter(x_variable=line_attr,
                                                       y_variable=col_attr,
-                                                      elements=data_list))
+                                                      elements=data_list,
+                                                      axis=dimensionality_plot.axis,
+                                                      point_style=dimensionality_plot.point_style))
+        scatter_matrix = plot_data.MultiplePlots(plots=subplots, elements=data_list, initial_view_on=True)
+        return [dimensionality_plot, scatter_matrix]
 
-        scatter_matrix = [plot_data.MultiplePlots(plots=subplots, elements=data_list, initial_view_on=True)]
 
-        return dimensionality_plot + scatter_matrix + correlation_matrix
+    def plot_dimensionality(self):
+        import plot_data
+        _, singular_points = self.singular_values()
 
-    def singular_values(self):
-        _, singular_values, _ = npy.linalg.svd(npy.array(self.matrix), full_matrices=False)
-        normed_singular_values = singular_values / npy.sum(singular_values)
+        axis_style = plot_data.EdgeStyle(line_width=0.5, color_stroke=plot_data.colors.GREY)
+        axis = plot_data.Axis(nb_points_x=len(singular_points), nb_points_y=len(singular_points),
+                              axis_style=axis_style)
+        point_style = plot_data.PointStyle(color_fill=plot_data.colors.BLUE,
+                                           color_stroke=plot_data.colors.BLUE,
+                                           stroke_width=0.1,
+                                           size=2,
+                                           shape='circle')
 
-        singular_points = []
-        for idx, value in enumerate(normed_singular_values):
-            singular_points.append({'Singular value': value,
-                                    'Index of reduced basis vector': idx + 1})
-        return normed_singular_values, singular_points
+        dimensionality_plot = plot_data.Scatter(elements=singular_points,
+                                                 x_variable='Index of reduced basis vector',
+                                                 y_variable='Singular value',
+                                                 log_scale_y=True,
+                                                 axis=axis,
+                                                 point_style=point_style)
+        return dimensionality_plot
+
 
     def to_markdown(self):
         """
@@ -874,19 +898,17 @@ class HeterogeneousList(DessiaObject):
         return templates.heterogeneouslist_markdown_template.substitute(name=self.name, class_=self.__class__.__name__)
 
 
-# class HomogeneousList(HeterogeneousList):
-#     _standalone_in_db = True
+class HomogeneousList(HeterogeneousList):
 
-#     def __init__(self, dessia_objects: List[DessiaObject] = None, name: str = ''):
-#         HeterogeneousList.__init__(
-#             self, dessia_objects=dessia_objects, name=name)
+    def __init__(self, dessia_objects: List[DessiaObject] = None, name: str = ''):
+        HeterogeneousList.__init__(
+            self, dessia_objects=dessia_objects, name=name)
 
-#     @property
-#     def data_matrix(self):
-#         data_matrix = []
-#         for dessia_object in self.dessia_objects:
-#             data_matrix.append(dessia_object.to_vector())
-#         return data_matrix
+    def matrix(self):
+        matrix = []
+        for dessia_object in self.dessia_objects:
+            matrix.append(dessia_object.to_vector())
+        return matrix
 
 
 # class Catalog(DessiaObject):

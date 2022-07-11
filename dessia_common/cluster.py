@@ -3,7 +3,6 @@ Library for building clusters on data.
 """
 from typing import List
 
-import numpy as npy
 from sklearn import cluster, preprocessing
 
 import matplotlib.pyplot as plt
@@ -18,8 +17,7 @@ class ClusterResult(dc.DessiaObject):
     _allowed_methods = ['from_agglomerative_clustering',
                         'from_kmeans', 'from_dbscan']
 
-    def __init__(self, data: dc.HeterogeneousList = None,
-                 labels: List[int] = None, name: str = ''):
+    def __init__(self, labels: List[int] = None, name: str = ''):
         """
         Cluster object to instantiate and compute clusters on data.
 
@@ -34,9 +32,7 @@ class ClusterResult(dc.DessiaObject):
 
         """
         dc.DessiaObject.__init__(self, name=name)
-        self.data = data
         self.labels = labels
-        self.data_matrix = data.matrix
         self.n_clusters = self.set_n_clusters()
 
     @classmethod
@@ -108,7 +104,7 @@ class ClusterResult(dc.DessiaObject):
         skl_cluster = cluster.AgglomerativeClustering(n_clusters=n_clusters, affinity=affinity,
                                                       distance_threshold=distance_threshold, linkage=linkage)
         skl_cluster = cls.fit_cluster(skl_cluster, data, scaling)
-        return cls(data, skl_cluster.labels_.tolist())
+        return cls(skl_cluster.labels_.tolist())
 
     @classmethod
     def from_kmeans(cls, data: dc.HeterogeneousList, n_clusters: int = 2,
@@ -153,7 +149,7 @@ class ClusterResult(dc.DessiaObject):
         skl_cluster = cluster.KMeans(
             n_clusters=n_clusters, n_init=n_init, tol=tol)
         skl_cluster = cls.fit_cluster(skl_cluster, data, scaling)
-        return cls(data, skl_cluster.labels_.tolist())
+        return cls(skl_cluster.labels_.tolist())
 
     @classmethod
     def from_dbscan(cls, data: dc.HeterogeneousList, eps: float = 0.5, min_samples: int = 5,
@@ -209,7 +205,7 @@ class ClusterResult(dc.DessiaObject):
         skl_cluster = cluster.DBSCAN(
             eps=eps, min_samples=min_samples, p=mink_power, leaf_size=leaf_size)
         skl_cluster = cls.fit_cluster(skl_cluster, data, scaling)
-        return cls(data, skl_cluster.labels_.tolist())
+        return cls(skl_cluster.labels_.tolist())
 
     @staticmethod
     def fit_cluster(skl_cluster: cluster, data: dc.HeterogeneousList, scaling: bool = False):
@@ -225,15 +221,6 @@ class ClusterResult(dc.DessiaObject):
         scaled_matrix = preprocessing.StandardScaler().fit_transform(data_matrix)
         return list([list(map(float, row)) for row in scaled_matrix])
 
-    @staticmethod
-    def data_to_clusters(data: dc.HeterogeneousList, labels: npy.ndarray):
-        clusters_list = []
-        for i in range(npy.max(labels) + 1):
-            clusters_list.append([])
-        for i, label in enumerate(labels):
-            clusters_list[label].append(data[i])
-        return clusters_list
-
     def set_n_clusters(self):
         if self.labels is None:
             n_clusters = 0
@@ -241,27 +228,111 @@ class ClusterResult(dc.DessiaObject):
             n_clusters = max(self.labels) + 1
         return n_clusters
 
-    def plot_data(self, attributes: List[str] = None):
-        if attributes is None:
-            new_attributes = self.data.common_attributes
-        else:
-            new_attributes = list(attributes)
-        dataset_list = self.build_datasets(new_attributes)
+    # def plot_data(self, attributes: List[str] = None):
+    #     if attributes is None:
+    #         new_attributes = self.data.common_attributes
+    #     else:
+    #         new_attributes = list(attributes)
+    #     dataset_list = self.build_datasets(new_attributes)
 
-        multiplots = self.build_multiplot(dataset_list, new_attributes)
-        return multiplots
+    #     multiplots = self.build_multiplot(dataset_list, new_attributes)
+    #     return multiplots
 
-    def build_multiplot(self, dataset_list: List[Dataset], attributes: List[str]):
+    # def build_multiplot(self, dataset_list: List[Dataset], attributes: List[str]):
+    #     list_scatters = []
+    #     for x_num in range(len(attributes)):
+    #         for y_num in range(len(attributes)):
+    #             list_scatters.append(plot_data.Graph2D(x_variable=attributes[x_num],
+    #                                                    y_variable=attributes[y_num],
+    #                                                    graphs=dataset_list))
+    #     return [plot_data.MultiplePlots(plots=list_scatters, elements=dataset_list,
+    #                                     initial_view_on=True)]
+
+    # def build_datasets(self, attributes: List[str]):
+    #     dataset_list = []
+    #     tooltip_list = []
+    #     nb_dataset = (self.n_clusters if -
+    #                   1 not in self.labels else self.n_clusters + 1)
+
+    #     for i_label in range(nb_dataset):
+    #         dataset_list.append([])
+    #         tooltip_list.append(plot_data.Tooltip(
+    #             attributes=attributes + ["Cluster Label"]))
+
+    #     for idx, label in enumerate(self.labels):
+    #         dataset_row = {"Cluster Label": (
+    #             label if label != -1 else "Excluded")}
+    #         for attribute in attributes:
+    #             dataset_row[attribute] = getattr(self.data.dessia_objects[idx], attribute)
+    #         dataset_list[label].append(dataset_row)
+
+    #     cmp_f = plt.cm.get_cmap(
+    #         'hsv', self.n_clusters + 1)(range(self.n_clusters + 1))
+    #     edge_style = plot_data.EdgeStyle(line_width=0.0001)
+    #     for idx in range(nb_dataset):
+    #         if idx == self.n_clusters:
+    #             color = plot_data.colors.Color(0, 0, 0)
+    #         else:
+    #             color = plot_data.colors.Color(
+    #                 cmp_f[idx][0], cmp_f[idx][1], cmp_f[idx][2])
+    #         point_style = plot_data.PointStyle(
+    #             color_fill=color, color_stroke=color, size=1)
+    #         dataset_list[idx] = plot_data.Dataset(elements=dataset_list[idx],
+    #                                               edge_style=edge_style,
+    #                                               point_style=point_style,
+    #                                               tooltip=tooltip_list[idx])
+    #     return dataset_list
+
+
+# Here because of cyclic import if in core.py
+class CategorizedList(dc.HeterogeneousList):
+    def __init__(self, heterogeneous_list: dc.HeterogeneousList, cluster_result: ClusterResult):
+        for attribute in heterogeneous_list.__dict__:
+            setattr(self, attribute, getattr(heterogeneous_list, attribute))
+        self.name += "_clustered"
+        self.labels = cluster_result.labels
+        self.n_clusters = cluster_result.n_clusters
+
+    def clustered_sublists(self):
+        sublists = []
+        label_tags = sorted(list(map(str, set(self.labels).difference({-1}))))
+        for i in range(max(self.labels) + 1):
+            sublists.append([])
+        if -1 in self.labels:
+            sublists.append([])
+            label_tags.append("outliers")
+
+        for i, label in enumerate(self.labels):
+            sublists[label].append(self.dessia_objects[i])
+
+        return [dc.HeterogeneousList(dessia_objects=sublist, name=self.name + f"_{label_tag}")
+                for label_tag, sublist in zip(label_tags, sublists)]
+
+    def plot_data(self):
+        # Plot a correlation matrix when plot_data.heatmap will be improved
+        # correlation_matrix = []
+
+        # Dimensionality plot
+        dimensionality_plot = self.plot_dimensionality()
+
+        # Scattermatrix
+        datasets_list = self.build_datasets()
+        scatter_matrix = self.build_multiplot(datasets_list)
+
+        return [dimensionality_plot, scatter_matrix]
+
+    def build_multiplot(self, datasets_list: List[Dataset]):
         list_scatters = []
-        for x_num in range(len(attributes)):
-            for y_num in range(len(attributes)):
-                list_scatters.append(plot_data.Graph2D(x_variable=attributes[x_num],
-                                                       y_variable=attributes[y_num],
-                                                       graphs=dataset_list))
-        return [plot_data.MultiplePlots(plots=list_scatters, elements=dataset_list,
-                                        initial_view_on=True)]
+        for x_num in range(len(self.common_attributes)):
+            for y_num in range(len(self.common_attributes)):
+                list_scatters.append(plot_data.Graph2D(x_variable=self.common_attributes[x_num],
+                                                       y_variable=self.common_attributes[y_num],
+                                                       graphs=datasets_list))
+        return plot_data.MultiplePlots(plots=list_scatters, elements=datasets_list,
+                                       initial_view_on=True)
 
-    def build_datasets(self, attributes: List[str]):
+
+    def build_datasets(self):
         dataset_list = []
         tooltip_list = []
         nb_dataset = (self.n_clusters if -
@@ -269,14 +340,19 @@ class ClusterResult(dc.DessiaObject):
 
         for i_label in range(nb_dataset):
             dataset_list.append([])
-            tooltip_list.append(plot_data.Tooltip(
-                attributes=attributes + ["Cluster Label"]))
+            tooltip_list.append(plot_data.Tooltip(attributes=self.common_attributes + ["Cluster Label"]))
 
         for idx, label in enumerate(self.labels):
             dataset_row = {"Cluster Label": (
                 label if label != -1 else "Excluded")}
-            for attribute in attributes:
-                dataset_row[attribute] = getattr(self.data.dessia_objects[idx], attribute)
+
+            if hasattr(self.dessia_objects[idx], self.common_attributes[0]):
+                for attribute in self.common_attributes:
+                    dataset_row[attribute] = getattr(self.dessia_objects[idx], attribute)
+            else:
+                for col in range(len(self.matrix[0])):
+                    dataset_row[f'p{col+1}'] = self.matrix[idx][col]
+
             dataset_list[label].append(dataset_row)
 
         cmp_f = plt.cm.get_cmap(
@@ -295,6 +371,8 @@ class ClusterResult(dc.DessiaObject):
                                                   point_style=point_style,
                                                   tooltip=tooltip_list[idx])
         return dataset_list
+
+
 
 
 # Function to implement, to find a good eps parameter for dbscan
