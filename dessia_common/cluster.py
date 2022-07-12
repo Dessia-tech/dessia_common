@@ -17,7 +17,7 @@ class ClusterResult(dc.DessiaObject):
     _allowed_methods = ['from_agglomerative_clustering',
                         'from_kmeans', 'from_dbscan']
 
-    def __init__(self, labels: List[int] = None, name: str = ''):
+    def __init__(self, data: dc.HeterogeneousList = None, labels: List[int] = None, name: str = ''):
         """
         Cluster object to instantiate and compute clusters on data.
 
@@ -32,6 +32,7 @@ class ClusterResult(dc.DessiaObject):
 
         """
         dc.DessiaObject.__init__(self, name=name)
+        self.data = data
         self.labels = labels
         self.n_clusters = self.set_n_clusters()
 
@@ -104,7 +105,7 @@ class ClusterResult(dc.DessiaObject):
         skl_cluster = cluster.AgglomerativeClustering(n_clusters=n_clusters, affinity=affinity,
                                                       distance_threshold=distance_threshold, linkage=linkage)
         skl_cluster = cls.fit_cluster(skl_cluster, data, scaling)
-        return cls(skl_cluster.labels_.tolist())
+        return cls(data, skl_cluster.labels_.tolist())
 
     @classmethod
     def from_kmeans(cls, data: dc.HeterogeneousList, n_clusters: int = 2,
@@ -149,7 +150,7 @@ class ClusterResult(dc.DessiaObject):
         skl_cluster = cluster.KMeans(
             n_clusters=n_clusters, n_init=n_init, tol=tol)
         skl_cluster = cls.fit_cluster(skl_cluster, data, scaling)
-        return cls(skl_cluster.labels_.tolist())
+        return cls(data, skl_cluster.labels_.tolist())
 
     @classmethod
     def from_dbscan(cls, data: dc.HeterogeneousList, eps: float = 0.5, min_samples: int = 5,
@@ -205,7 +206,7 @@ class ClusterResult(dc.DessiaObject):
         skl_cluster = cluster.DBSCAN(
             eps=eps, min_samples=min_samples, p=mink_power, leaf_size=leaf_size)
         skl_cluster = cls.fit_cluster(skl_cluster, data, scaling)
-        return cls(skl_cluster.labels_.tolist())
+        return cls(data, skl_cluster.labels_.tolist())
 
     @staticmethod
     def fit_cluster(skl_cluster: cluster, data: dc.HeterogeneousList, scaling: bool = False):
@@ -287,11 +288,11 @@ class ClusterResult(dc.DessiaObject):
 # Here because of cyclic import if in core.py
 class CategorizedList(dc.HeterogeneousList):
     def __init__(self, heterogeneous_list: dc.HeterogeneousList, cluster_result: ClusterResult):
-        # for attribute in heterogeneous_list.__dict__:
-        #     setattr(self, attribute, getattr(heterogeneous_list, attribute))
-        dc.HeterogeneousList.__init__(self, dessia_objects=heterogeneous_list.dessia_objects,
-                                      use_to_vector=heterogeneous_list.use_to_vector,
-                                      name=heterogeneous_list.name)
+        for attribute in heterogeneous_list.__dict__:
+            setattr(self, attribute, getattr(heterogeneous_list, attribute))
+        # dc.HeterogeneousList.__init__(self, dessia_objects=heterogeneous_list.dessia_objects,
+        #                               use_to_vector=heterogeneous_list.use_to_vector,
+        #                               name=heterogeneous_list.name)
         self.name += "_clustered"
         self.labels = cluster_result.labels
         self.n_clusters = cluster_result.n_clusters
