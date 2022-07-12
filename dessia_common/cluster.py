@@ -296,6 +296,7 @@ class CategorizedList(dc.HeterogeneousList):
         self.name += "_clustered"
         self.labels = cluster_result.labels
         self.n_clusters = cluster_result.n_clusters
+        self.cluster_result = cluster_result
 
     def clustered_sublists(self):
         sublists = []
@@ -334,7 +335,6 @@ class CategorizedList(dc.HeterogeneousList):
                                                        graphs=datasets_list))
         return plot_data.MultiplePlots(plots=list_scatters, elements=datasets_list,
                                        initial_view_on=True)
-
 
     def build_datasets(self):
         dataset_list = []
