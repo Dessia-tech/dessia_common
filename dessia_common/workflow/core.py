@@ -575,9 +575,20 @@ class Workflow(Block):
         """
         Recompute the object from a dict
         """
-        blocks = [DessiaObject.dict_to_object(d) for d in dict_['blocks']]
+        if global_dict is None or pointers_memo is None:
+            global_dict = dict_
+
+            if pointers_memo is None:
+                pointers_memo = {}
+
+            pointers_memo.update(dereference_jsonpointers(dict_))
+
+        blocks = [deserialize(serialized_element=d, global_dict=global_dict, pointers_memo=pointers_memo)
+                  for d in dict_["blocks"]]
         if 'nonblock_variables' in dict_:
-            nonblock_variables = [dict_to_object(d) for d in dict_['nonblock_variables']]
+            nonblock_variables = [deserialize(serialized_element=d, global_dict=global_dict,
+                                              pointers_memo=pointers_memo)
+                                  for d in dict_['nonblock_variables']]
         else:
             nonblock_variables = []
 
