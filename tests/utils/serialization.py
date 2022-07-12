@@ -52,11 +52,11 @@ assert serialized_typing == 'Tuple[dessia_common.forms.StandaloneObject, dessia_
 deserialized_typing = deserialize_typing(serialized_typing)
 assert deserialized_typing == Tuple[StandaloneObject, ...]
 
-test_typing = collections.abc.Iterator[StandaloneObject]
-serialized_typing = serialize_typing(test_typing)
-assert serialized_typing == 'Iterator[dessia_common.forms.StandaloneObject]'
-deserialized_typing = deserialize_typing(serialized_typing)
-assert deserialized_typing == test_typing
+# test_typing = collections.abc.Iterator[StandaloneObject]
+# serialized_typing = serialize_typing(test_typing)
+# assert serialized_typing == 'Iterator[dessia_common.forms.StandaloneObject]'
+# deserialized_typing = deserialize_typing(serialized_typing)
+# assert deserialized_typing == test_typing
 
 # Nested sequences
 test_typing = List[List[StandaloneObject]]
