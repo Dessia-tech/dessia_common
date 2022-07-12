@@ -574,7 +574,8 @@ class Workflow(Block):
         """
         Recompute the object from a dict
         """
-        global_dict = update_pointers_data(global_dict=global_dict, current_dict=dict_, pointers_memo=pointers_memo)
+        global_dict, pointers_memo = update_pointers_data(global_dict=global_dict, current_dict=dict_,
+                                                          pointers_memo=pointers_memo)
 
         blocks = [deserialize(serialized_element=d, global_dict=global_dict, pointers_memo=pointers_memo)
                   for d in dict_["blocks"]]
@@ -1425,7 +1426,8 @@ class WorkflowState(DessiaObject):
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'WorkflowState':
 
-        global_dict = update_pointers_data(global_dict=global_dict, current_dict=dict_, pointers_memo=pointers_memo)
+        global_dict, pointers_memo = update_pointers_data(global_dict=global_dict, current_dict=dict_,
+                                                          pointers_memo=pointers_memo)
 
         workflow = Workflow.dict_to_object(dict_['workflow'])
         if 'output_value' in dict_:  # and 'output_value_type' in dict_:

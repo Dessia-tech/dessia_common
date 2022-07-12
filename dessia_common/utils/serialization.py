@@ -192,7 +192,8 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
     """
     class_argspec = None
 
-    global_dict = update_pointers_data(global_dict=global_dict, current_dict=dict_, pointers_memo=pointers_memo)
+    global_dict, pointers_memo = update_pointers_data(global_dict=global_dict, current_dict=dict_,
+                                                      pointers_memo=pointers_memo)
 
     if '$ref' in dict_:
         return pointers_memo[dict_['$ref']]
@@ -438,7 +439,7 @@ def update_pointers_data(global_dict, current_dict, pointers_memo):
             pointers_memo = {}
 
         pointers_memo.update(dereference_jsonpointers(current_dict))
-    return global_dict
+    return global_dict, pointers_memo
 
 
 def deserialization_order(dict_):
