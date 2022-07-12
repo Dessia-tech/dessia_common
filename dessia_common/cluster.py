@@ -289,7 +289,7 @@ class CategorizedList(dc.HeterogeneousList):
     def __init__(self, heterogeneous_list: dc.HeterogeneousList, cluster_result: ClusterResult):
         # for attribute in heterogeneous_list.__dict__:
         #     setattr(self, attribute, getattr(heterogeneous_list, attribute))
-        dc.HeterogeneousList.__init__(self, dessia_objects=heterogeneous_list,
+        dc.HeterogeneousList.__init__(self, dessia_objects=heterogeneous_list.dessia_objects,
                                       use_to_vector=heterogeneous_list.use_to_vector,
                                       name=heterogeneous_list.name)
         self.name += "_clustered"
