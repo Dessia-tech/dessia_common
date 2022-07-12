@@ -119,8 +119,8 @@ def serialize_typing_types(typing_):
     if origin is tuple:
         argnames = ', '.join([type_fullname(a) for a in args])
         return f'Tuple[{argnames}]'
-    if origin is Iterator:
-        return f"Iterator[{type_fullname(args[0])}]"
+    # if origin is Iterator:
+    #     return f"Iterator[{type_fullname(args[0])}]"
     if origin is dict:
         key_type = type_fullname(args[0])
         value_type = type_fullname(args[1])
@@ -198,8 +198,8 @@ def deserialize_typing(serialized_typing):
             return List[type_from_argname(full_argname)]
         if toptype == 'Tuple':
             return deserialize_tuple_typing(full_argname)
-        if toptype == "Iterator":
-            return Iterator[type_from_argname(full_argname)]
+        # if toptype == "Iterator":
+        #     return Iterator[type_from_argname(full_argname)]
         if toptype == 'Dict':
             args = full_argname.split(', ')
             key_type = type_from_argname(args[0])
