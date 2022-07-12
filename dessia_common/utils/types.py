@@ -4,11 +4,10 @@
 Types tools
 
 """
-from ast import literal_eval
-from typing import Any, Dict, List, Tuple, Type, Union, TextIO, BinaryIO, get_origin, get_args
+from typing import Any, Dict, List, Tuple, Type, Union, get_origin, get_args
 
 import json
-import collections.abc
+from collections.abc import Iterator, Sequence
 from importlib import import_module
 
 import dessia_common as dc
@@ -57,7 +56,7 @@ def is_sequence(obj):
     :return: bool. True if object is a sequence but not a string.
                    False otherwise
     """
-    return isinstance(obj, collections.abc.Sequence) and not isinstance(obj, str)
+    return isinstance(obj, Sequence) and not isinstance(obj, str)
 
 
 def is_builtin(type_):
@@ -120,7 +119,7 @@ def serialize_typing_types(typing_):
     if origin is tuple:
         argnames = ', '.join([type_fullname(a) for a in args])
         return f'Tuple[{argnames}]'
-    if origin is collections.abc.Iterator:
+    if origin is Iterator:
         return f"Iterator[{type_fullname(args[0])}]"
     if origin is dict:
         key_type = type_fullname(args[0])
@@ -168,7 +167,7 @@ def type_from_argname(argname):
     return Any
 
 
-TYPING_FROM_SERIALIZED_NAME = {"List": List, "Tuple": Tuple, "Iterator": collections.abc.Iterator, "Dict": Dict}
+TYPING_FROM_SERIALIZED_NAME = {"List": List, "Tuple": Tuple, "Iterator": Iterator, "Dict": Dict}
 
 
 def deserialize_typing(serialized_typing):

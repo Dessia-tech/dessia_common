@@ -192,13 +192,7 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
     """
     class_argspec = None
 
-    if global_dict is None or pointers_memo is None:
-        global_dict = dict_
-
-        if pointers_memo is None:
-            pointers_memo = {}
-
-        pointers_memo.update(dereference_jsonpointers(dict_))
+    global_dict = update_pointers_data(global_dict=global_dict, current_dict=dict_, pointers_memo=pointers_memo)
 
     if '$ref' in dict_:
         return pointers_memo[dict_['$ref']]
@@ -434,6 +428,17 @@ def pointer_graph(value):
     graph.add_edges_from(edges)
 
     return graph
+
+
+def update_pointers_data(global_dict, current_dict, pointers_memo):
+    if global_dict is None or pointers_memo is None:
+        global_dict = current_dict
+
+        if pointers_memo is None:
+            pointers_memo = {}
+
+        pointers_memo.update(dereference_jsonpointers(current_dict))
+    return global_dict
 
 
 def deserialization_order(dict_):
