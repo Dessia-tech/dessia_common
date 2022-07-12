@@ -343,6 +343,34 @@ class Sequence(Block):
         return [[values[var] for var in self.inputs]]
 
 
+class Concatenate(Block):
+    def __init__(self, number_arguments: int, name: str = ''):
+        self.number_arguments = number_arguments
+        inputs = [Variable(name=f"Sequence element {i}") for i in range(self.number_arguments)]
+        outputs = [TypedVariable(type_=list, name='sequence')]
+        Block.__init__(self, inputs, outputs, name=name)
+
+    def equivalent_hash(self):
+        return self.number_arguments
+
+    def equivalent(self, other):
+        return Block.equivalent(self, other) and self.number_arguments == other.number_arguments
+
+    def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
+        dict_ = Block.to_dict(self)
+        dict_['number_arguments'] = self.number_arguments
+        return dict_
+
+    @classmethod
+    @set_block_variable_names_from_dict
+    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
+        return cls(dict_['number_arguments'], dict_['name'])
+
+    def evaluate(self, values):
+        return sum(values[var] for var in self.inputs)
+
+
 class WorkflowBlock(Block):
     """
     Wrapper around workflow to put it in a block of another workflow
