@@ -21,8 +21,7 @@ std_borns = [-2, 2]
 small_clustesters_heterogeneous = HeterogeneousList(
     tests.ClusTester_d5.create_dataset(nb_clusters = 10, nb_points = 250, mean_borns = mean_borns, std_borns = std_borns) +
     tests.ClusTester_d4.create_dataset(nb_clusters = 10, nb_points = 250, mean_borns = mean_borns, std_borns = std_borns) +
-    tests.ClusTester_d3.create_dataset(nb_clusters = 10, nb_points = 250, mean_borns = mean_borns, std_borns = std_borns),
-    use_to_vector = False)
+    tests.ClusTester_d3.create_dataset(nb_clusters = 10, nb_points = 250, mean_borns = mean_borns, std_borns = std_borns))
 
 # Auto-generated heterogeneous large dataset with nb_clusters clusters of points in nb_dims dimensions
 mean_borns = [-50, 50]
@@ -30,8 +29,7 @@ std_borns = [-2, 2]
 big_clustesters_heterogeneous = HeterogeneousList(
     tests.ClusTester_d9.create_dataset(nb_clusters = 10, nb_points = 500, mean_borns = mean_borns, std_borns = std_borns) +
     tests.ClusTester_d7.create_dataset(nb_clusters = 10, nb_points = 500, mean_borns = mean_borns, std_borns = std_borns) +
-    tests.ClusTester_d8.create_dataset(nb_clusters = 10, nb_points = 500, mean_borns = mean_borns, std_borns = std_borns),
-    use_to_vector = False)
+    tests.ClusTester_d8.create_dataset(nb_clusters = 10, nb_points = 500, mean_borns = mean_borns, std_borns = std_borns))
 
 # Generate ClusterResults from HeterogeneousLists
 dbtest_without = cluster.ClusterResult.from_dbscan(all_cars_without_features, eps=50)

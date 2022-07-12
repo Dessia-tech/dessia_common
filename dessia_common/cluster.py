@@ -229,74 +229,14 @@ class ClusterResult(dc.DessiaObject):
             n_clusters = max(self.labels) + 1
         return n_clusters
 
-    # def plot_data(self, attributes: List[str] = None):
-    #     if attributes is None:
-    #         new_attributes = self.data.common_attributes
-    #     else:
-    #         new_attributes = list(attributes)
-    #     dataset_list = self.build_datasets(new_attributes)
-
-    #     multiplots = self.build_multiplot(dataset_list, new_attributes)
-    #     return multiplots
-
-    # def build_multiplot(self, dataset_list: List[Dataset], attributes: List[str]):
-    #     list_scatters = []
-    #     for x_num in range(len(attributes)):
-    #         for y_num in range(len(attributes)):
-    #             list_scatters.append(plot_data.Graph2D(x_variable=attributes[x_num],
-    #                                                    y_variable=attributes[y_num],
-    #                                                    graphs=dataset_list))
-    #     return [plot_data.MultiplePlots(plots=list_scatters, elements=dataset_list,
-    #                                     initial_view_on=True)]
-
-    # def build_datasets(self, attributes: List[str]):
-    #     dataset_list = []
-    #     tooltip_list = []
-    #     nb_dataset = (self.n_clusters if -
-    #                   1 not in self.labels else self.n_clusters + 1)
-
-    #     for i_label in range(nb_dataset):
-    #         dataset_list.append([])
-    #         tooltip_list.append(plot_data.Tooltip(
-    #             attributes=attributes + ["Cluster Label"]))
-
-    #     for idx, label in enumerate(self.labels):
-    #         dataset_row = {"Cluster Label": (
-    #             label if label != -1 else "Excluded")}
-    #         for attribute in attributes:
-    #             dataset_row[attribute] = getattr(self.data.dessia_objects[idx], attribute)
-    #         dataset_list[label].append(dataset_row)
-
-    #     cmp_f = plt.cm.get_cmap(
-    #         'hsv', self.n_clusters + 1)(range(self.n_clusters + 1))
-    #     edge_style = plot_data.EdgeStyle(line_width=0.0001)
-    #     for idx in range(nb_dataset):
-    #         if idx == self.n_clusters:
-    #             color = plot_data.colors.Color(0, 0, 0)
-    #         else:
-    #             color = plot_data.colors.Color(
-    #                 cmp_f[idx][0], cmp_f[idx][1], cmp_f[idx][2])
-    #         point_style = plot_data.PointStyle(
-    #             color_fill=color, color_stroke=color, size=1)
-    #         dataset_list[idx] = plot_data.Dataset(elements=dataset_list[idx],
-    #                                               edge_style=edge_style,
-    #                                               point_style=point_style,
-    #                                               tooltip=tooltip_list[idx])
-    #     return dataset_list
-
 
 # Here because of cyclic import if in core.py
 class CategorizedList(dc.HeterogeneousList):
-    def __init__(self, cluster_result: ClusterResult):
-        for attribute in cluster_result.data.__dict__:
-            setattr(self, attribute, getattr(cluster_result.data, attribute))
-        # dc.HeterogeneousList.__init__(self, dessia_objects=heterogeneous_list.dessia_objects,
-        #                               use_to_vector=heterogeneous_list.use_to_vector,
-        #                               name=heterogeneous_list.name)
-        self.name += "_clustered"
-        self.labels = cluster_result.labels
-        self.n_clusters = cluster_result.n_clusters
-        self.cluster_result = cluster_result
+    def __init__(self, dessia_objects: List[dc.DessiaObject], labels: List[int], name: str = ''):
+        dc.HeterogeneousList.__init__(self, dessia_objects=dessia_objects, name=name)
+        if name == '':
+            self.name += "unnamed_CategorizedList"
+        self.labels = labels
 
     def clustered_sublists(self):
         sublists = []

@@ -24,6 +24,7 @@ from importlib import import_module
 from ast import literal_eval
 
 import dessia_common.errors
+import dessia_common.typings as dct
 from dessia_common.utils.diff import data_eq, diff, dict_hash, list_hash
 from dessia_common.utils.serialization import dict_to_object, serialize_dict_with_pointers,\
     serialize_dict, deserialize_argument, serialize
@@ -117,6 +118,7 @@ class DessiaObject:
     _ordered_attributes = []
     _titled_attributes = []
     _eq_is_data_eq = True
+    _vector_features = None
 
     _init_variables = None
     _allowed_methods = []
@@ -675,8 +677,20 @@ class DessiaObject:
         return formats
 
     def to_vector(self):
-        raise NotImplementedError(f"{self.__class__.__name__} objects must have a " +
-                                  "'to_vector' method to be handled in ClusterResult object.")
+        list_vectored_objects = []
+        for feature in self.vector_features():
+            list_vectored_objects.append(getattr(self, feature.lower()))
+            if not hasattr(self, feature.lower()):
+                raise NotImplementedError(f"{feature} is not an attribute for {self.__class__.__name__} objects. " +
+                                          f"<to_vector> method must be customized in {self.__class__.__name__} to " +
+                                          "handle computed values that are not class or instance attributes.")
+        return list_vectored_objects
+
+    @classmethod
+    def vector_features(cls):
+        if cls._vector_features is None:
+            return list(set(get_attribute_names(cls)).difference(get_attribute_names(DessiaObject)))
+        return cls._vector_features
 
 
 class PhysicalObject(DessiaObject):
@@ -782,25 +796,18 @@ class MovingObject(PhysicalObject):
 
 class HeterogeneousList(DessiaObject):
     _standalone_in_db = True
-    def __init__(self, dessia_objects: List[DessiaObject] = None, use_to_vector: bool = True, name: str = ''):
+    def __init__(self, dessia_objects: List[DessiaObject] = None, name: str = ''):
         DessiaObject.__init__(self, name=name)
         self.dessia_objects = dessia_objects
-        self.use_to_vector = use_to_vector
-        self.matrix, self.common_attributes = self.matrix()
+        self.common_attributes = self.common_attributes()
+        self.matrix = self.matrix()
 
 
     def common_attributes(self):
-        standard_attributes = get_attribute_names(DessiaObject)
         all_class = list(set(dessia_object.__class__ for dessia_object in self.dessia_objects))
-        common_attributes = set(get_attribute_names(all_class[0])).difference(standard_attributes)
-        if hasattr(all_class[0], "_features"):
-            common_attributes = set(all_class[0]._features)
-
+        common_attributes = set(all_class[0].vector_features())
         for klass in all_class[1:]:
-            klass_attributes = get_attribute_names(klass)
-            if hasattr(klass, "_features"):
-                klass_attributes = klass._features
-            common_attributes = common_attributes.intersection(klass_attributes)
+            common_attributes = common_attributes.intersection(set(klass.vector_features()))
 
         # attributes' order kept this way, not with set or sorted(set)
         return list(attr for attr in get_attribute_names(all_class[0]) if attr in common_attributes)
@@ -808,21 +815,11 @@ class HeterogeneousList(DessiaObject):
 
     def matrix(self):
         matrix = []
-        if not self.use_to_vector:
-            common_attributes = self.common_attributes()
-            for dessia_object in self.dessia_objects:
-                matrix.append([getattr(dessia_object, attr) for attr in common_attributes])
-        else:
-            has_features = True
-            for dessia_object in self.dessia_objects:
-                if not hasattr(dessia_object, "_features"):
-                    has_features = False
-                matrix.append(dessia_object.to_vector())
-            if has_features:
-                common_attributes = self.common_attributes()
-            else:
-                common_attributes = [f'p{col+1}' for col in range(len(matrix[0]))]
-        return matrix, common_attributes
+        for dessia_object in self.dessia_objects:
+            temp_row = dessia_object.to_vector()
+            matrix.append(list(col for attr, col in zip(self.common_attributes, temp_row)
+                               if attr in dessia_object.vector_features()))
+        return matrix
 
 
     def singular_values(self):
@@ -847,11 +844,7 @@ class HeterogeneousList(DessiaObject):
         # Scattermatrix
         data_list = []
         for row, data in enumerate(self.dessia_objects):
-            if hasattr(data, self.common_attributes[0]):
-                data_list.append({attr: getattr(data, attr) for attr in self.common_attributes
-                                  if getattr(data, attr) is not None})
-            else:
-                data_list.append({f'p{col+1}': self.matrix[row][col] for col in range(len(self.matrix[0]))})
+            data_list.append({attr: self.matrix[row][col] for col, attr in enumerate(self.common_attributes)})
 
         subplots = []
         for line_num, line_attr in enumerate(data_list[0]):
@@ -1316,6 +1309,8 @@ def get_attribute_names(object_class):
                   if not attribute[0].startswith('__')
                   and not attribute[0].endswith('__')
                   and isinstance(attribute[1], (float, int, complex, bool))]
-    attributes += [attribute for attribute in inspect.signature(object_class.__init__).parameters.keys()
+    subclass_numeric_attributes = [name for name, param in inspect.signature(object_class.__init__).parameters.items()
+                                   if any(item in inspect.getmro(param.annotation) for item in [float, int, bool, complex])]
+    attributes += [attribute for attribute in subclass_numeric_attributes
                    if attribute not in _FORBIDDEN_ARGNAMES]
     return attributes
