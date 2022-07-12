@@ -199,7 +199,7 @@ def deserialize_typing(serialized_typing):
         if toptype == 'Tuple':
             return deserialize_tuple_typing(full_argname)
         if toptype == "Iterator":
-            return collections.abc.Iterator[type_from_argname(full_argname)]
+            return Iterator[type_from_argname(full_argname)]
         if toptype == 'Dict':
             args = full_argname.split(', ')
             key_type = type_from_argname(args[0])

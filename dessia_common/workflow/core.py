@@ -574,7 +574,7 @@ class Workflow(Block):
         """
         Recompute the object from a dict
         """
-        global_dict = update_pointers_data(global_dict, pointers_memo)
+        global_dict = update_pointers_data(global_dict=global_dict, current_dict=dict_, pointers_memo=pointers_memo)
 
         blocks = [deserialize(serialized_element=d, global_dict=global_dict, pointers_memo=pointers_memo)
                   for d in dict_["blocks"]]
@@ -1439,8 +1439,8 @@ class WorkflowState(DessiaObject):
         values = {}
         if 'values' in dict_:
             for i, value in dict_['values'].items():
-                values[workflow.variables[int(i)]] = deserialize(value, global_dict=global_dict, pointers_memo=pointers_memo,
-                                                                 path=f'{path}/values/{i}')
+                values[workflow.variables[int(i)]] = deserialize(value, global_dict=global_dict,
+                                                                 pointers_memo=pointers_memo, path=f'{path}/values/{i}')
         # elif 'variable_values' in dict_:
         #     for i, value in dict_['variable_values'].items():
         #         values[workflow.variables[int(i)]] = deserialize(value, global_dict=dict_,
