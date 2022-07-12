@@ -287,8 +287,11 @@ class ClusterResult(dc.DessiaObject):
 # Here because of cyclic import if in core.py
 class CategorizedList(dc.HeterogeneousList):
     def __init__(self, heterogeneous_list: dc.HeterogeneousList, cluster_result: ClusterResult):
-        for attribute in heterogeneous_list.__dict__:
-            setattr(self, attribute, getattr(heterogeneous_list, attribute))
+        # for attribute in heterogeneous_list.__dict__:
+        #     setattr(self, attribute, getattr(heterogeneous_list, attribute))
+        dc.HeterogeneousList.__init__(self, dessia_objects=heterogeneous_list,
+                                      use_to_vector=heterogeneous_list.use_to_vector,
+                                      name=heterogeneous_list.name)
         self.name += "_clustered"
         self.labels = cluster_result.labels
         self.n_clusters = cluster_result.n_clusters
