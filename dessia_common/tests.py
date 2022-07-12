@@ -5,7 +5,7 @@ Test module for dessia_common
 
 """
 from time import sleep
-from typing import List
+from typing import List, Tuple
 import random
 import numpy as npy
 from dessia_common import DessiaObject
@@ -241,8 +241,8 @@ class ClusTester_d1(DessiaObject):
 
 
     @classmethod
-    def create_dataset(cls, nb_clusters: float = 10, nb_points: int = 2500,
-                       mean_borns: [float, float] = [-50, 50], std_borns: [float, float] = [-5, 5]):
+    def create_dataset(cls, nb_clusters: float = 10., nb_points: int = 2500,
+                       mean_borns: Tuple(float, float) = None, std_borns: Tuple(float, float) = None):
         means_list = []
         std_list = []
         data_list = []
