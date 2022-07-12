@@ -38,10 +38,10 @@ aggclustest = cluster.ClusterResult.from_agglomerative_clustering(big_clustester
 kmeanstest = cluster.ClusterResult.from_kmeans(small_clustesters_heterogeneous, n_clusters=10, scaling=False)
 
 # Build sublists from clustering
-clustered_cars_without = cluster.CategorizedList(all_cars_without_features, dbtest_without)
-clustered_cars_with = cluster.CategorizedList(all_cars_with_features, dbtest_with)
-aggclustest_clustered = cluster.CategorizedList(big_clustesters_heterogeneous, aggclustest)
-kmeanstest_clustered = cluster.CategorizedList(small_clustesters_heterogeneous, kmeanstest)
+clustered_cars_without = cluster.CategorizedList(all_cars_without_features.dessia_objects, dbtest_without.labels)
+clustered_cars_with = cluster.CategorizedList(all_cars_with_features.dessia_objects, dbtest_with.labels)
+aggclustest_clustered = cluster.CategorizedList(big_clustesters_heterogeneous.dessia_objects, aggclustest.labels)
+kmeanstest_clustered = cluster.CategorizedList(small_clustesters_heterogeneous.dessia_objects, kmeanstest.labels)
 
 # Test ClusterResults instances on platform
 dbtest_without._check_platform()

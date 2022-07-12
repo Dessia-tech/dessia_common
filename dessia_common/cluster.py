@@ -238,6 +238,10 @@ class CategorizedList(dc.HeterogeneousList):
             self.name += "unnamed_CategorizedList"
         self.labels = labels
 
+    @property
+    def n_clusters(self):
+        return max(self.labels) + 1
+
     def clustered_sublists(self):
         sublists = []
         label_tags = sorted(list(map(str, set(self.labels).difference({-1}))))
@@ -279,8 +283,7 @@ class CategorizedList(dc.HeterogeneousList):
     def build_datasets(self):
         dataset_list = []
         tooltip_list = []
-        nb_dataset = (self.n_clusters if -
-                      1 not in self.labels else self.n_clusters + 1)
+        nb_dataset = (self.n_clusters if -1 not in self.labels else self.n_clusters + 1)
 
         for i_label in range(nb_dataset):
             dataset_list.append([])
