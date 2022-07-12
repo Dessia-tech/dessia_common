@@ -44,8 +44,6 @@ class CategorizedList(dc.HeterogeneousList):
 
     def __init__(self, dessia_objects: List[dc.DessiaObject], labels: List[int], name: str = ''):
         dc.HeterogeneousList.__init__(self, dessia_objects=dessia_objects, name=name)
-        if name == '':
-            self.name += "_unnamed_CategorizedList"
         self.labels = labels
 
     @property

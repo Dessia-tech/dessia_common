@@ -5,12 +5,10 @@ Test module for dessia_common
 
 """
 from time import sleep
-import inspect
 from typing import List
 import random
 import numpy as npy
 from dessia_common import DessiaObject
-from dessia_common.core import get_attribute_names
 import dessia_common.typings as dct
 import dessia_common.files as dcf
 
@@ -244,7 +242,7 @@ class ClusTester_d1(DessiaObject):
 
     @classmethod
     def create_dataset(cls, nb_clusters: float = 10, nb_points: int = 2500,
-                       mean_borns: List[float] = [-50, 50], std_borns: List[float] = [-5, 5]):
+                       mean_borns: [float, float] = [-50, 50], std_borns: [float, float] = [-5, 5]):
         means_list = []
         std_list = []
         data_list = []

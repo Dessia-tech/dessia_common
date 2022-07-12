@@ -24,7 +24,6 @@ from importlib import import_module
 from ast import literal_eval
 
 import dessia_common.errors
-import dessia_common.typings as dct
 from dessia_common.utils.diff import data_eq, diff, dict_hash, list_hash
 from dessia_common.utils.serialization import dict_to_object, serialize_dict_with_pointers,\
     serialize_dict, deserialize_argument, serialize
