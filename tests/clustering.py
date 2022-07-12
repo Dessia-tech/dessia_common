@@ -31,23 +31,23 @@ big_clustesters_heterogeneous = HeterogeneousList(
     tests.ClusTester_d7.create_dataset(nb_clusters = 10, nb_points = 500, mean_borns = mean_borns, std_borns = std_borns) +
     tests.ClusTester_d8.create_dataset(nb_clusters = 10, nb_points = 500, mean_borns = mean_borns, std_borns = std_borns))
 
-# Generate ClusterResults from HeterogeneousLists
-dbtest_without = cluster.ClusterResult.from_dbscan(all_cars_without_features, eps=50)
-dbtest_with = cluster.ClusterResult.from_dbscan(all_cars_with_features, eps=50)
-aggclustest = cluster.ClusterResult.from_agglomerative_clustering(big_clustesters_heterogeneous, n_clusters=10)
-kmeanstest = cluster.ClusterResult.from_kmeans(small_clustesters_heterogeneous, n_clusters=10, scaling=False)
+# # Generate ClusterResults from HeterogeneousLists
+# dbtest_without = cluster.ClusterResult.from_dbscan(all_cars_without_features, eps=50)
+# dbtest_with = cluster.ClusterResult.from_dbscan(all_cars_with_features, eps=50)
+# aggclustest = cluster.ClusterResult.from_agglomerative_clustering(big_clustesters_heterogeneous, n_clusters=10)
+# kmeanstest = cluster.ClusterResult.from_kmeans(small_clustesters_heterogeneous, n_clusters=10, scaling=False)
 
 # Build sublists from clustering
-clustered_cars_without = cluster.CategorizedList(all_cars_without_features.dessia_objects, dbtest_without.labels)
-clustered_cars_with = cluster.CategorizedList(all_cars_with_features.dessia_objects, dbtest_with.labels)
-aggclustest_clustered = cluster.CategorizedList(big_clustesters_heterogeneous.dessia_objects, aggclustest.labels)
-kmeanstest_clustered = cluster.CategorizedList(small_clustesters_heterogeneous.dessia_objects, kmeanstest.labels)
+clustered_cars_without = cluster.CategorizedList.from_dbscan(all_cars_without_features, eps=50)
+clustered_cars_with = cluster.CategorizedList.from_dbscan(all_cars_with_features, eps=50)
+aggclustest_clustered = cluster.CategorizedList.from_agglomerative_clustering(big_clustesters_heterogeneous, n_clusters=10)
+kmeanstest_clustered = cluster.CategorizedList.from_kmeans(small_clustesters_heterogeneous, n_clusters=10, scaling=False)
 
 # Test ClusterResults instances on platform
-dbtest_without._check_platform()
-dbtest_with._check_platform()
-aggclustest._check_platform()
-kmeanstest._check_platform()
+clustered_cars_without._check_platform()
+clustered_cars_with._check_platform()
+aggclustest_clustered._check_platform()
+kmeanstest_clustered._check_platform()
 
 # Test plots outside platform
 clustered_cars_without.plot()
