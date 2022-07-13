@@ -7,6 +7,7 @@ scripts = ['displays.py',
            'models_test.py',
            'files.py',
            'vectored_objects.py',
+           'moving_object.py',
            # Workflows
            'workflow/blocks.py',
            'workflow/workflow_with_models.py',
