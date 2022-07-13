@@ -46,7 +46,7 @@ from dessia_common.vectored_objects import Catalog
 from dessia_common.files import BinaryFile, StringFile
 
 
-class StandaloneSubobject(MovingObject):
+class StandaloneSubobject(PhysicalObject):
     _standalone_in_db = True
     _generic_eq = True
 
