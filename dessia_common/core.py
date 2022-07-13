@@ -1304,7 +1304,8 @@ def get_attribute_names(object_class):
                   and not attribute[0].endswith('__')
                   and isinstance(attribute[1], (float, int, complex, bool))]
     subclass_numeric_attributes = [name for name, param in inspect.signature(object_class.__init__).parameters.items()
-                                   if any(item in inspect.getmro(param.annotation) for item in [float, int, bool, complex])]
+                                   if any(item in inspect.getmro(param.annotation)
+                                          for item in [float, int, bool, complex])]
     attributes += [attribute for attribute in subclass_numeric_attributes
                    if attribute not in _FORBIDDEN_ARGNAMES]
     return attributes

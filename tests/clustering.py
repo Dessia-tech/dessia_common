@@ -34,8 +34,10 @@ big_clustesters_heterogeneous = HeterogeneousList(
 # Build CategorizedLists
 clustered_cars_without = cluster.CategorizedList.from_dbscan(all_cars_without_features, eps=40)
 clustered_cars_with = cluster.CategorizedList.from_dbscan(all_cars_with_features, eps=40)
-aggclustest_clustered = cluster.CategorizedList.from_agglomerative_clustering(big_clustesters_heterogeneous, n_clusters=10)
-kmeanstest_clustered = cluster.CategorizedList.from_kmeans(small_clustesters_heterogeneous, n_clusters=10, scaling=False)
+aggclustest_clustered = cluster.CategorizedList.from_agglomerative_clustering(
+    big_clustesters_heterogeneous, n_clusters=10)
+kmeanstest_clustered = cluster.CategorizedList.from_kmeans(
+    small_clustesters_heterogeneous, n_clusters=10, scaling=False)
 
 # Test ClusterResults instances on platform
 clustered_cars_without._check_platform()
@@ -95,8 +97,9 @@ pipe_worflow = [wf.Pipe(block_data.outputs[0], block_heterogeneous_list.inputs[0
                 wf.Pipe(block_heterogeneous_list.outputs[0], block_cluster.inputs[0])]
 workflow = wf.Workflow(block_workflow, pipe_worflow, block_cluster.outputs[0])
 
-workflow_run = workflow.run({workflow.index(block_data.inputs[0]): pkg_resources.resource_stream('dessia_common', 'models/data/cars.csv'),
-                             workflow.index(block_cluster.inputs[1]): 40})
+workflow_run = workflow.run({
+    workflow.index(block_data.inputs[0]): pkg_resources.resource_stream('dessia_common', 'models/data/cars.csv'),
+    workflow.index(block_cluster.inputs[1]): 40})
 
 # Workflow tests
 workflow._check_platform()
@@ -133,8 +136,9 @@ pipe_worflow = [wf.Pipe(block_data.outputs[0], block_heterogeneous_list.inputs[0
                 wf.Pipe(block_heterogeneous_list.outputs[0], block_cluster.inputs[0])]
 workflow = wf.Workflow(block_workflow, pipe_worflow, block_cluster.outputs[0])
 
-workflow_run = workflow.run({workflow.index(block_data.inputs[0]): pkg_resources.resource_stream('dessia_common', 'models/data/cars.csv'),
-                             workflow.index(block_cluster.inputs[1]): 40})
+workflow_run = workflow.run({
+    workflow.index(block_data.inputs[0]): pkg_resources.resource_stream('dessia_common', 'models/data/cars.csv'),
+    workflow.index(block_cluster.inputs[1]): 40})
 
 # Workflow tests
 workflow._check_platform()
@@ -174,7 +178,8 @@ block_heterogeneous_list = wf.InstantiateModel(model_class=HeterogeneousList, na
 categorized_list_method = wf.MethodType(class_=cluster.CategorizedList, name='from_dbscan')
 block_cluster = wf.ClassMethod(method_type=categorized_list_method, name='labelling elements of list')
 
-block_workflow = [block_data_d5, block_data_d4, block_data_d3, block_concatenate, block_heterogeneous_list, block_cluster]
+block_workflow = [block_data_d5, block_data_d4, block_data_d3,
+                  block_concatenate, block_heterogeneous_list, block_cluster]
 
 pipe_worflow = [wf.Pipe(block_data_d5.outputs[0], block_concatenate.inputs[0]),
                 wf.Pipe(block_data_d4.outputs[0], block_concatenate.inputs[1]),
@@ -185,13 +190,16 @@ pipe_worflow = [wf.Pipe(block_data_d5.outputs[0], block_concatenate.inputs[0]),
 workflow = wf.Workflow(block_workflow, pipe_worflow, block_cluster.outputs[0])
 
 workflow_run = workflow.run({workflow.index(block_data_d5.inputs[0]): 10, workflow.index(block_data_d5.inputs[1]): 500,
-                             workflow.index(block_data_d5.inputs[2]): mean_borns, workflow.index(block_data_d5.inputs[3]): std_borns,
+                             workflow.index(block_data_d5.inputs[2]): mean_borns,
+                             workflow.index(block_data_d5.inputs[3]): std_borns,
 
                              workflow.index(block_data_d4.inputs[0]): 10, workflow.index(block_data_d4.inputs[1]): 500,
-                             workflow.index(block_data_d4.inputs[2]): mean_borns, workflow.index(block_data_d4.inputs[3]): std_borns,
+                             workflow.index(block_data_d4.inputs[2]): mean_borns,
+                             workflow.index(block_data_d4.inputs[3]): std_borns,
 
                              workflow.index(block_data_d3.inputs[0]): 10, workflow.index(block_data_d3.inputs[1]): 500,
-                             workflow.index(block_data_d3.inputs[2]): mean_borns, workflow.index(block_data_d3.inputs[3]): std_borns,
+                             workflow.index(block_data_d3.inputs[2]): mean_borns,
+                             workflow.index(block_data_d3.inputs[3]): std_borns,
 
                              workflow.index(block_cluster.inputs[1]): 40})
 

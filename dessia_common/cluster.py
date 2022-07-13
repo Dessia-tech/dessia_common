@@ -68,7 +68,8 @@ class CategorizedList(dc.HeterogeneousList):
 
         for i_label in range(nb_dataset):
             dataset_list.append([])
-            tooltip_list.append(plot_data.Tooltip(attributes=self.common_attributes + ["Cluster Label"]))
+            tooltip_list.append(plot_data.Tooltip(
+                attributes=self.common_attributes + ["Cluster Label"]))
 
         for idx, label in enumerate(self.labels):
             dataset_row = {"Cluster Label": (
@@ -104,6 +105,7 @@ class CategorizedList(dc.HeterogeneousList):
     def from_agglomerative_clustering(cls, data: dc.HeterogeneousList, n_clusters: int = 2,
                                       affinity: str = 'euclidean', linkage: str = 'ward',
                                       distance_threshold: float = None, scaling: bool = False):
+
         """
         Internet doc
         ----------
@@ -174,6 +176,7 @@ class CategorizedList(dc.HeterogeneousList):
     @classmethod
     def from_kmeans(cls, data: dc.HeterogeneousList, n_clusters: int = 2,
                     n_init: int = 10, tol: float = 1e-4, scaling: bool = False):
+
         """
         Internet doc
         ----------
@@ -219,6 +222,7 @@ class CategorizedList(dc.HeterogeneousList):
     @classmethod
     def from_dbscan(cls, data: dc.HeterogeneousList, eps: float = 0.5, min_samples: int = 5,
                     mink_power: float = 2, leaf_size: int = 30, scaling: bool = False):
+
         """
         Internet doc
         ----------
@@ -236,22 +240,23 @@ class CategorizedList(dc.HeterogeneousList):
         :param data: The future clustered data.
         :type data: List[dc.DessiaObject]
 
-        :param eps: The maximum distance between two samples for one to be considered as in the neighborhood of the other.
-        This is not a maximum bound on the distances of points within a cluster.
+        :param eps: The maximum distance between two samples for one to be considered as in the neighborhood
+        of the other. This is not a maximum bound on the distances of points within a cluster.
         This is the most important DBSCAN parameter to choose appropriately for your data
         set and distance function, defaults to 0.5
         :type eps: float, optional
 
-        :param min_samples: The number of samples (or total weight) in a neighborhood for a point to be considered as a core point.
-        This includes the point itself, defaults to 5
+        :param min_samples: The number of samples (or total weight) in a neighborhood for a point to be considered as
+        a core point. This includes the point itself, defaults to 5
         :type min_samples: int, optional
 
         :param mink_power: The power of the Minkowski metric to be used to calculate distance between points.
         If None, then mink_power=2 (equivalent to the Euclidean distance), defaults to 2
         :type mink_power: float, optional
 
-        :param leaf_size: Leaf size passed to BallTree or cKDTree. This can affect the speed of the construction and query,
-        as well as the memory required to store the tree. The optimal value depends on the nature of the problem, defaults to 30
+        :param leaf_size: Leaf size passed to BallTree or cKDTree. This can affect the speed of the construction
+        and query, as well as the memory required to store the tree. The optimal value depends on the nature of
+        the problem, defaults to 30
         :type leaf_size: int, optional
 
         :param scaling: Whether to scale the data or not before clustering.
