@@ -7,6 +7,8 @@ scripts = ['displays.py',
            'models_test.py',
            'files.py',
            'vectored_objects.py',
+           'clustering.py',
+           'heterogeneous_list.py',
            # Workflows
            'workflow/blocks.py',
            'workflow/workflow_with_models.py',
@@ -23,9 +25,7 @@ scripts = ['displays.py',
            'type_matching.py',
            # Unit tests after that
            'unit_tests.py',
-           'bson_valid.py',
-           'clustering.py',
-           'heterogeneous_list.py'
+           'bson_valid.py'
            ]
 
 for script_name in scripts:
