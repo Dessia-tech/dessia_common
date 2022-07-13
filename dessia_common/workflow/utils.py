@@ -42,7 +42,7 @@ class ToScriptElement:
         for c in self.imports:
             module = '.'.join(c.split('.')[:-1])
             class_ = c.split('.')[-1]
-            if imports_dict.get(module) is None:
+            if module not in imports_dict :
                 imports_dict[module] = [class_]
             else:
                 if class_ not in imports_dict[module]:

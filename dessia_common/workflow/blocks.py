@@ -115,7 +115,7 @@ class Display(Block):
 
     def _to_script(self) -> ToScriptElement:
         input_variables = [f"Variable(memorize={input.memorize}, name='{input.name}')" for input in self.inputs]
-        inputs = '[' + ",".join(input_variables) + ']'
+        inputs = '[' + ", ".join(input_variables) + ']'
         script = f"Display(inputs={inputs}, order={self.order}, name='{self.name}')"
 
         imports = [
