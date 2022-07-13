@@ -155,14 +155,14 @@ deserialized_object = workflow.dict_to_object(decoded_json)
 # =============================================================================
 # TESTS IN WORKFLOWS: CLUSTESTERS SMALL DATASET
 # =============================================================================
-data_method = wf.MethodType(class_=tests.ClusTester_d5, name='create_dataset')
-block_data_d5 = wf.ClassMethod(method_type=data_method, name='data d5')
+data_method_5 = wf.MethodType(class_=tests.ClusTester_d5, name='create_dataset')
+block_data_d5 = wf.ClassMethod(method_type=data_method_5, name='data d5')
 
-data_method = wf.MethodType(class_=tests.ClusTester_d4, name='create_dataset')
-block_data_d4 = wf.ClassMethod(method_type=data_method, name='data d4')
+data_method_4 = wf.MethodType(class_=tests.ClusTester_d4, name='create_dataset')
+block_data_d4 = wf.ClassMethod(method_type=data_method_4, name='data d4')
 
-data_method = wf.MethodType(class_=tests.ClusTester_d3, name='create_dataset')
-block_data_d3 = wf.ClassMethod(method_type=data_method, name='data d3')
+data_method_3 = wf.MethodType(class_=tests.ClusTester_d3, name='create_dataset')
+block_data_d3 = wf.ClassMethod(method_type=data_method_3, name='data d3')
 
 block_concatenate = wf.Concatenate(3)
 

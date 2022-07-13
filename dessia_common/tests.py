@@ -241,7 +241,7 @@ class ClusTester_d1(DessiaObject):
 
 
     @classmethod
-    def create_dataset(cls, nb_clusters: int = 10., nb_points: int = 2500,
+    def create_dataset(cls, nb_clusters: int = 10, nb_points: int = 2500,
                        mean_borns: Tuple[float, float] = (-50., 50), std_borns: Tuple[float, float] = (-2., 2.)):
         means_list = []
         std_list = []
@@ -269,18 +269,18 @@ class ClusTester_d1(DessiaObject):
             cluster_sizes.append(points_in_cluster)
             current_nb_points -= points_in_cluster
 
-        cluster_sizes.append(nb_points - npy.sum(cluster_sizes))
+        cluster_sizes.append(int(nb_points - npy.sum(cluster_sizes)))
         return cluster_sizes
 
-    @staticmethod
-    def plot(x_label: str, y_label: str, clustester_list: List[List[float]], **kwargs):
-        x_coords = [getattr(clustester, x_label)
-                    for clustester in clustester_list]
-        y_coords = [getattr(clustester, y_label)
-                    for clustester in clustester_list]
-        import matplotlib.pyplot as plt
-        plt.plot(x_coords, y_coords, **kwargs)
-        return
+    # @staticmethod
+    # def plot(x_label: str, y_label: str, clustester_list: List[List[float]], **kwargs):
+    #     x_coords = [getattr(clustester, x_label)
+    #                 for clustester in clustester_list]
+    #     y_coords = [getattr(clustester, y_label)
+    #                 for clustester in clustester_list]
+    #     import matplotlib.pyplot as plt
+    #     plt.plot(x_coords, y_coords, **kwargs)
+    #     return
 
 
 class ClusTester_d2(ClusTester_d1):
