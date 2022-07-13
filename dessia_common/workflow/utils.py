@@ -13,11 +13,6 @@ class ToScriptElement:
     """
     Class meant to improve to_script readability
     """
-    before_declaration: str = None
-    declaration: str = None
-    imports_as_is: List[str] = None
-    imports: List[str] = None
-
     def __init__(self, declaration: str, before_declaration: str = None,
                  imports: List[str] = None, imports_as_is: List[str] = None):
         self.before_declaration = before_declaration
