@@ -9,7 +9,7 @@ Created on Wed Sep 29 14:35:47 2021
 import json
 
 MIN_MODULE_COVERAGE = 51.
-MIN_GLOBAL_COVERAGE = 75.3
+MIN_GLOBAL_COVERAGE = 78.4
 RATCHET_COVERAGE = 3.
 
 untracked_modules = ["dessia_common/templates.py",
