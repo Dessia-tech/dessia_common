@@ -3,13 +3,24 @@ import dessia_common.typings as dct
 import dessia_common.workflow as wf
 import dessia_common.tests as dctests
 
-import tests.workflow.workflow_with_models as model_test
 from dessia_common import DessiaFilter
 
-model_test.demo_workflow.to_script()
+
+instanciate_optimizer = wf.InstantiateModel(model_class=dctests.Optimizer, name='Instantiate Optimizer')
+optimization = wf.ModelMethod(dct.MethodType(dctests.Optimizer, 'optimize'), name='Optimization')
+model_fetcher = wf.ModelAttribute(attribute_name='model_to_optimize', name='Model Fetcher')
+optimization_blocks = [instanciate_optimizer, optimization, model_fetcher]
+
+pipe1_opt = wf.Pipe(input_variable=instanciate_optimizer.outputs[0], output_variable=optimization.inputs[0])
+pipe2_opt = wf.Pipe(input_variable=optimization.outputs[1], output_variable=model_fetcher.inputs[0])
+optimization_pipes = [pipe1_opt, pipe2_opt]
+optimization_workflow = wf.Workflow(blocks=optimization_blocks, pipes=optimization_pipes,
+                                    output=model_fetcher.outputs[0], name='Optimization Workflow')
+optimization_workflow_block = wf.WorkflowBlock(workflow=optimization_workflow, name='Workflow Block')
+
 
 test_blocks = [
-    wf.ForEach(model_test.optimization_workflow_block, 0),
+    wf.ForEach(optimization_workflow_block, 0),
     wf.Archive(),
     wf.ClassMethod(
         method_type=dct.ClassMethodType(dctests.Car, 'from_csv'),
