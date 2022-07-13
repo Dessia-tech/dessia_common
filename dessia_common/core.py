@@ -803,7 +803,10 @@ class HeterogeneousList(DessiaObject):
 
 
     def common_attributes(self):
-        all_class = list(set(dessia_object.__class__ for dessia_object in self.dessia_objects))
+        try:
+            all_class = list(set(dessia_object.__class__ for dessia_object in self.dessia_objects))
+        except:
+            a=1
         common_attributes = set(all_class[0].vector_features())
         for klass in all_class[1:]:
             common_attributes = common_attributes.intersection(set(klass.vector_features()))

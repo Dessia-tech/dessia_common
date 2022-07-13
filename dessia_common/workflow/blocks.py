@@ -368,7 +368,10 @@ class Concatenate(Block):
         return cls(dict_['number_arguments'], dict_['name'])
 
     def evaluate(self, values):
-        return sum(values[var] for var in self.inputs)
+        concatenated_list = []
+        for var in self.inputs:
+            concatenated_list.extend(values[var])
+        return [concatenated_list]
 
 
 class WorkflowBlock(Block):

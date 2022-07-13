@@ -31,69 +31,159 @@ big_clustesters_heterogeneous = HeterogeneousList(
     tests.ClusTester_d7.create_dataset(nb_clusters = 10, nb_points = 500, mean_borns = mean_borns, std_borns = std_borns) +
     tests.ClusTester_d8.create_dataset(nb_clusters = 10, nb_points = 500, mean_borns = mean_borns, std_borns = std_borns))
 
-# # Generate ClusterResults from HeterogeneousLists
-# dbtest_without = cluster.ClusterResult.from_dbscan(all_cars_without_features, eps=50)
-# dbtest_with = cluster.ClusterResult.from_dbscan(all_cars_with_features, eps=50)
-# aggclustest = cluster.ClusterResult.from_agglomerative_clustering(big_clustesters_heterogeneous, n_clusters=10)
-# kmeanstest = cluster.ClusterResult.from_kmeans(small_clustesters_heterogeneous, n_clusters=10, scaling=False)
-
-# Build sublists from clustering
-clustered_cars_without = cluster.CategorizedList.from_dbscan(all_cars_without_features, eps=50)
-clustered_cars_with = cluster.CategorizedList.from_dbscan(all_cars_with_features, eps=50)
+# Build CategorizedLists
+clustered_cars_without = cluster.CategorizedList.from_dbscan(all_cars_without_features, eps=40)
+clustered_cars_with = cluster.CategorizedList.from_dbscan(all_cars_with_features, eps=40)
 aggclustest_clustered = cluster.CategorizedList.from_agglomerative_clustering(big_clustesters_heterogeneous, n_clusters=10)
 kmeanstest_clustered = cluster.CategorizedList.from_kmeans(small_clustesters_heterogeneous, n_clusters=10, scaling=False)
 
 # Test ClusterResults instances on platform
-clustered_cars_without._check_platform()
-clustered_cars_with._check_platform()
-aggclustest_clustered._check_platform()
-kmeanstest_clustered._check_platform()
+# clustered_cars_without._check_platform()
+# clustered_cars_with._check_platform()
+# aggclustest_clustered._check_platform()
+# kmeanstest_clustered._check_platform()
 
 # Test plots outside platform
-clustered_cars_without.plot()
-clustered_cars_with.plot()
-aggclustest_clustered.plot()
-kmeanstest_clustered.plot()
+# clustered_cars_without.plot()
+# clustered_cars_with.plot()
+# aggclustest_clustered.plot()
+# kmeanstest_clustered.plot()
 
 
 # =============================================================================
-# TO CHANGE IN VERY SOON COMMITS
+# JSON TESTS
 # =============================================================================
-# dbtest.check_dimensionality()
-# aggclustest.check_dimensionality()
-# kmeanstest.check_dimensionality()
+dict_cars_without = clustered_cars_without.to_dict(use_pointers=True)
+dict_cars_with = clustered_cars_with.to_dict(use_pointers=True)
+dict_aggclustest = aggclustest_clustered.to_dict(use_pointers=True)
+dict_kmeanstest = kmeanstest_clustered.to_dict(use_pointers=True)
 
-# dict_ = dbtest.to_dict(use_pointers=True)
+# Cars without features
+json_dict = json.dumps(dict_cars_without)
+decoded_json = json.loads(json_dict)
+deserialized_object = clustered_cars_without.dict_to_object(decoded_json)
 
-# json_dict = json.dumps(dict_)
-# decoded_json = json.loads(json_dict)
-# deserialized_object = dbtest.dict_to_object(decoded_json)
+# Cars with features
+json_dict = json.dumps(dict_cars_with)
+decoded_json = json.loads(json_dict)
+deserialized_object = clustered_cars_with.dict_to_object(decoded_json)
 
-# dbtest._check_platform()
-# aggclustest._check_platform()
-# kmeanstest._check_platform()
+# Small dataset
+json_dict = json.dumps(dict_aggclustest)
+decoded_json = json.loads(json_dict)
+deserialized_object = aggclustest_clustered.dict_to_object(decoded_json)
 
-# data_method = wf.MethodType(class_=tests.Car, name='from_csv')
-# block_data = wf.ClassMethod(method_type=data_method, name='data load')
+# Large dataset
+json_dict = json.dumps(dict_kmeanstest)
+decoded_json = json.loads(json_dict)
+deserialized_object = kmeanstest_clustered.dict_to_object(decoded_json)
 
-# cluster_method = wf.MethodType(class_=cluster.ClusterResult, name='from_agglomerative_clustering')
-# block_cluster = wf.ClassMethod(method_type=cluster_method, name='clustering')
 
-# display_cluster = wf.Display(name='Display Cluster')
+# =============================================================================
+# TESTS IN WORKFLOWS: CARS WITHOUT FEATURES
+# =============================================================================
+data_method = wf.MethodType(class_=tests.Car, name='from_csv')
+block_data = wf.ClassMethod(method_type=data_method, name='data load')
 
-# block_workflow = [block_cluster, display_cluster]
-# pipe_worflow = [wf.Pipe(block_cluster.outputs[0], display_cluster.inputs[0])]
-# workflow = wf.Workflow(block_workflow, pipe_worflow, block_cluster.outputs[0])
+block_heterogeneous_list = wf.InstantiateModel(model_class=HeterogeneousList, name='heterogeneous list of data')
 
-# workflow_run = workflow.run({workflow.index(block_cluster.inputs[0]): all_cars})
-# cresult = workflow_run.output_value._display_from_selector('plot_data')
+categorized_list_method = wf.MethodType(class_=cluster.CategorizedList, name='from_dbscan')
+block_cluster = wf.ClassMethod(method_type=categorized_list_method, name='labelling elements of list')
 
-# # ff=workflow_run.output_value.display_settings()[1]
-# # ff.selector
+block_workflow = [block_data, block_heterogeneous_list, block_cluster]
+pipe_worflow = [wf.Pipe(block_data.outputs[0], block_heterogeneous_list.inputs[0]),
+                wf.Pipe(block_heterogeneous_list.outputs[0], block_cluster.inputs[0])]
+workflow = wf.Workflow(block_workflow, pipe_worflow, block_cluster.outputs[0])
 
-# workflow.plot()
-# workflow.display_settings()
-# workflow_run.output_value.plot()
+workflow_run = workflow.run({workflow.index(block_data.inputs[0]): pkg_resources.resource_stream('dessia_common', 'models/data/cars.csv'),
+                              workflow.index(block_cluster.inputs[1]): 40})
+
+ff = workflow_run.output_value.display_settings()[1]
+ff.selector
+
+workflow._check_platform()
+workflow.plot()
+workflow.display_settings()
+workflow_run.output_value.plot()
+
+
+# =============================================================================
+# TESTS IN WORKFLOWS: CARS WITH FEATURES
+# =============================================================================
+data_method = wf.MethodType(class_=tests.CarWithFeatures, name='from_csv')
+block_data = wf.ClassMethod(method_type=data_method, name='data load')
+
+block_heterogeneous_list = wf.InstantiateModel(model_class=HeterogeneousList, name='heterogeneous list of data')
+
+categorized_list_method = wf.MethodType(class_=cluster.CategorizedList, name='from_dbscan')
+block_cluster = wf.ClassMethod(method_type=categorized_list_method, name='labelling elements of list')
+
+block_workflow = [block_data, block_heterogeneous_list, block_cluster]
+pipe_worflow = [wf.Pipe(block_data.outputs[0], block_heterogeneous_list.inputs[0]),
+                wf.Pipe(block_heterogeneous_list.outputs[0], block_cluster.inputs[0])]
+workflow = wf.Workflow(block_workflow, pipe_worflow, block_cluster.outputs[0])
+
+workflow_run = workflow.run({workflow.index(block_data.inputs[0]): pkg_resources.resource_stream('dessia_common', 'models/data/cars.csv'),
+                              workflow.index(block_cluster.inputs[1]): 40})
+
+ff = workflow_run.output_value.display_settings()[1]
+ff.selector
+
+workflow._check_platform()
+workflow.plot()
+workflow.display_settings()
+workflow_run.output_value.plot()
+
+
+# =============================================================================
+# TESTS IN WORKFLOWS: CLUSTESTERS SMALL DATASET
+# =============================================================================
+data_method = wf.MethodType(class_=tests.ClusTester_d5, name='create_dataset')
+block_data_d5 = wf.ClassMethod(method_type=data_method, name='data d5')
+
+data_method = wf.MethodType(class_=tests.ClusTester_d4, name='create_dataset')
+block_data_d4 = wf.ClassMethod(method_type=data_method, name='data d4')
+
+data_method = wf.MethodType(class_=tests.ClusTester_d3, name='create_dataset')
+block_data_d3 = wf.ClassMethod(method_type=data_method, name='data d3')
+
+block_concatenate = wf.Concatenate(3)
+
+block_heterogeneous_list = wf.InstantiateModel(model_class=HeterogeneousList, name='heterogeneous list of data')
+
+categorized_list_method = wf.MethodType(class_=cluster.CategorizedList, name='from_dbscan')
+block_cluster = wf.ClassMethod(method_type=categorized_list_method, name='labelling elements of list')
+
+block_workflow = [block_data_d5, block_data_d4, block_data_d3, block_concatenate, block_heterogeneous_list, block_cluster]
+
+pipe_worflow = [wf.Pipe(block_data_d5.outputs[0], block_concatenate.inputs[0]),
+                wf.Pipe(block_data_d4.outputs[0], block_concatenate.inputs[1]),
+                wf.Pipe(block_data_d3.outputs[0], block_concatenate.inputs[2]),
+                wf.Pipe(block_concatenate.outputs[0], block_heterogeneous_list.inputs[0]),
+                wf.Pipe(block_heterogeneous_list.outputs[0], block_cluster.inputs[0])]
+
+workflow = wf.Workflow(block_workflow, pipe_worflow, block_cluster.outputs[0])
+
+workflow_run = workflow.run({workflow.index(block_data_d5.inputs[0]): 10, workflow.index(block_data_d5.inputs[1]): 500,
+                             workflow.index(block_data_d5.inputs[2]): mean_borns, workflow.index(block_data_d5.inputs[3]): std_borns,
+
+                             workflow.index(block_data_d4.inputs[0]): 10, workflow.index(block_data_d4.inputs[1]): 500,
+                             workflow.index(block_data_d4.inputs[2]): mean_borns, workflow.index(block_data_d4.inputs[3]): std_borns,
+
+                             workflow.index(block_data_d3.inputs[0]): 10, workflow.index(block_data_d3.inputs[1]): 500,
+                             workflow.index(block_data_d3.inputs[2]): mean_borns, workflow.index(block_data_d3.inputs[3]): std_borns,
+
+                             workflow.index(block_data_d4.inputs[1]): 40,
+                             workflow.index(block_data_d3.inputs[1]): 40})
+
+ff = workflow_run.output_value.display_settings()[1]
+ff.selector
+
+workflow._check_platform()
+workflow.plot()
+workflow.display_settings()
+workflow_run.output_value.plot()
+
 
 # gg = workflow_run._display_from_selector('plot_data')
 # json.dumps(gg.to_dict())
