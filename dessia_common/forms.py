@@ -38,7 +38,7 @@ try:
 except ImportError:
     pass
 
-from dessia_common import DessiaObject, PhysicalObject
+from dessia_common import DessiaObject, PhysicalObject, MovingObject
 from dessia_common.typings import InstanceOf, Distance
 from dessia_common.vectored_objects import Catalog
 
@@ -46,7 +46,7 @@ from dessia_common.vectored_objects import Catalog
 from dessia_common.files import BinaryFile, StringFile
 
 
-class StandaloneSubobject(PhysicalObject):
+class StandaloneSubobject(MovingObject):
     _standalone_in_db = True
     _generic_eq = True
 
@@ -471,6 +471,39 @@ class StandaloneObjectWithDefaultValues(StandaloneObject):
 
 
 DEF_SOWDV = StandaloneObjectWithDefaultValues()
+
+
+class MovingStandaloneObject(MovingObject):
+    _standalone_in_db = True
+
+    def __init__(self, origin: float, name: str = ""):
+        self.origin = origin
+        MovingObject.__init__(self, name=name)
+
+    @classmethod
+    def generate(cls, seed: int):
+        return cls(origin=1.3*seed, name=f"moving_{seed}")
+
+    def contour(self):
+
+        points = [vm.Point2D(self.origin, self.origin), vm.Point2D(self.origin, self.origin + 1),
+                  vm.Point2D(self.origin + 1, self.origin + 1), vm.Point2D(self.origin + 1, 0)]
+
+        crls = p2d.ClosedRoundedLineSegments2D(points=points, radius={})
+        return crls
+
+    def volmdlr_primitives(self):
+        contour = self.contour()
+        volume = p3d.ExtrudedProfile(plane_origin=vm.O3D, x=vm.X3D, y=vm.Z3D, outer_contour2d=contour,
+                                     inner_contours2d=[], extrusion_vector=vm.Y3D)
+        return [volume]
+
+    def volmdlr_primitives_step_frames(self):
+        frame1 = vm.Frame3D(vm.O3D.copy(), vm.X3D.copy(), vm.Y3D.copy(), vm.Z3D.copy())
+        frame2 = frame1.rotation(center=vm.O3D, axis=vm.Y3D, angle=0.7)
+        frame3 = frame2.translation(offset=vm.Y3D)
+        frame4 = frame3.rotation(center=vm.O3D, axis=vm.Y3D, angle=0.7)
+        return [[frame1], [frame2], [frame3], [frame4]]
 
 
 class Generator(DessiaObject):
