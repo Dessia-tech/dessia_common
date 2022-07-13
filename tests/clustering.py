@@ -15,21 +15,25 @@ all_cars_without_features = HeterogeneousList(tests.Car.from_csv(csv_cars))
 csv_cars = pkg_resources.resource_stream('dessia_common', 'models/data/cars.csv')
 all_cars_with_features = HeterogeneousList(tests.CarWithFeatures.from_csv(csv_cars))
 
-# Auto-generated heterogeneous small dataset with nb_clusters clusters of points in nb_dims dimensions
+# Tests clusTesters
 mean_borns = (-50, 50)
 std_borns = (-2, 2)
-small_clustesters_heterogeneous = HeterogeneousList(
-    tests.ClusTesterD5.create_dataset(nb_clusters=10, nb_points=250, mean_borns=mean_borns, std_borns=std_borns) +
-    tests.ClusTesterD4.create_dataset(nb_clusters=10, nb_points=250, mean_borns=mean_borns, std_borns=std_borns) +
-    tests.ClusTesterD3.create_dataset(nb_clusters=10, nb_points=250, mean_borns=mean_borns, std_borns=std_borns))
+test1 = tests.ClusTesterD1.create_dataset(nb_clusters=10, nb_points=250, mean_borns=mean_borns, std_borns=std_borns)
+test2 = tests.ClusTesterD2.create_dataset(nb_clusters=10, nb_points=250, mean_borns=mean_borns, std_borns=std_borns)
+test3 = tests.ClusTesterD3.create_dataset(nb_clusters=10, nb_points=250, mean_borns=mean_borns, std_borns=std_borns)
+test4 = tests.ClusTesterD4.create_dataset(nb_clusters=10, nb_points=250, mean_borns=mean_borns, std_borns=std_borns)
+test5 = tests.ClusTesterD5.create_dataset(nb_clusters=10, nb_points=250, mean_borns=mean_borns, std_borns=std_borns)
+test6 = tests.ClusTesterD6.create_dataset(nb_clusters=10, nb_points=250, mean_borns=mean_borns, std_borns=std_borns)
+test7 = tests.ClusTesterD7.create_dataset(nb_clusters=10, nb_points=500, mean_borns=mean_borns, std_borns=std_borns)
+test8 = tests.ClusTesterD8.create_dataset(nb_clusters=10, nb_points=500, mean_borns=mean_borns, std_borns=std_borns)
+test9 = tests.ClusTesterD9.create_dataset(nb_clusters=10, nb_points=500, mean_borns=mean_borns, std_borns=std_borns)
+test10 = tests.ClusTesterD10.create_dataset(nb_clusters=10, nb_points=250, mean_borns=mean_borns, std_borns=std_borns)
+
+# Auto-generated heterogeneous small dataset with nb_clusters clusters of points in nb_dims dimensions
+small_clustesters_heterogeneous = HeterogeneousList(test5 + test4 + test3)
 
 # Auto-generated heterogeneous large dataset with nb_clusters clusters of points in nb_dims dimensions
-mean_borns = (-50, 50)
-std_borns = (-2, 2)
-big_clustesters_heterogeneous = HeterogeneousList(
-    tests.ClusTesterD9.create_dataset(nb_clusters=10, nb_points=500, mean_borns=mean_borns, std_borns=std_borns) +
-    tests.ClusTesterD7.create_dataset(nb_clusters=10, nb_points=500, mean_borns=mean_borns, std_borns=std_borns) +
-    tests.ClusTesterD8.create_dataset(nb_clusters=10, nb_points=500, mean_borns=mean_borns, std_borns=std_borns))
+big_clustesters_heterogeneous = HeterogeneousList(test9 + test7 + test8)
 
 # Build CategorizedLists
 clustered_cars_without = cluster.CategorizedList.from_dbscan(all_cars_without_features, eps=40)

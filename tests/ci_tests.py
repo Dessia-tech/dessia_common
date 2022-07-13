@@ -24,6 +24,8 @@ scripts = ['displays.py',
            # Unit tests after that
            'unit_tests.py',
            'bson_valid.py',
+           'clustering.py',
+           'heterogeneous_list.py'
            ]
 
 for script_name in scripts:
