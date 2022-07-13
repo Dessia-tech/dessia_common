@@ -12,33 +12,6 @@ from plot_data.core import Dataset
 import dessia_common.core as dc
 
 
-# class ClusterResult(dc.DessiaObject):
-#     _standalone_in_db = True
-#     _allowed_methods = ['from_agglomerative_clustering',
-#                         'from_kmeans', 'from_dbscan']
-
-#     def __init__(self, data: dc.HeterogeneousList = None, labels: List[int] = None, name: str = ''):
-#         """
-#         Cluster object to instantiate and compute clusters on data.
-
-#         :param data: The future clustered data, defaults to None
-#         :type data: List[dc.DessiaObject], optional
-
-#         :param labels: The list of data labels, ordered the same as data, defaults to None
-#         :type labels: List[int], optional
-
-#         :param name: The name of ClusterResult object, defaults to ''
-#         :type name: str, optional
-
-#         """
-#         dc.DessiaObject.__init__(self, name=name)
-#         self.data = data
-#         self.labels = labels
-
-
-
-
-# Here because of cyclic import if in core.py
 class CategorizedList(dc.HeterogeneousList):
     _allowed_methods = ['from_agglomerative_clustering', 'from_kmeans', 'from_dbscan']
 
@@ -127,7 +100,6 @@ class CategorizedList(dc.HeterogeneousList):
                                                   tooltip=tooltip_list[idx])
         return dataset_list
 
-
     @classmethod
     def from_agglomerative_clustering(cls, data: dc.HeterogeneousList, n_clusters: int = 2,
                                       affinity: str = 'euclidean', linkage: str = 'ward',
@@ -194,8 +166,8 @@ class CategorizedList(dc.HeterogeneousList):
         :rtype: ClusterResult
 
         """
-        skl_cluster = cluster.AgglomerativeClustering(n_clusters=n_clusters, affinity=affinity,
-                                                      distance_threshold=distance_threshold, linkage=linkage)
+        skl_cluster = cluster.AgglomerativeClustering(
+            n_clusters=n_clusters, affinity=affinity, distance_threshold=distance_threshold, linkage=linkage)
         skl_cluster = cls.fit_cluster(skl_cluster, data.matrix, scaling)
         return cls(data.dessia_objects, skl_cluster.labels_.tolist())
 
@@ -313,8 +285,6 @@ class CategorizedList(dc.HeterogeneousList):
     def scale_data(data_matrix: List[List[float]]):
         scaled_matrix = preprocessing.StandardScaler().fit_transform(data_matrix)
         return list([list(map(float, row)) for row in scaled_matrix])
-
-
 
 
 # Function to implement, to find a good eps parameter for dbscan

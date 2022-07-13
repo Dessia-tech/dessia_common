@@ -795,25 +795,21 @@ class MovingObject(PhysicalObject):
 
 class HeterogeneousList(DessiaObject):
     _standalone_in_db = True
+
     def __init__(self, dessia_objects: List[DessiaObject] = None, name: str = ''):
         DessiaObject.__init__(self, name=name)
         self.dessia_objects = dessia_objects
         self.common_attributes = self.common_attributes()
         self.matrix = self.matrix()
 
-
     def common_attributes(self):
-        try:
-            all_class = list(set(dessia_object.__class__ for dessia_object in self.dessia_objects))
-        except:
-            a=1
+        all_class = list(set(dessia_object.__class__ for dessia_object in self.dessia_objects))
         common_attributes = set(all_class[0].vector_features())
         for klass in all_class[1:]:
             common_attributes = common_attributes.intersection(set(klass.vector_features()))
 
         # attributes' order kept this way, not with set or sorted(set)
         return list(attr for attr in get_attribute_names(all_class[0]) if attr in common_attributes)
-
 
     def matrix(self):
         matrix = []
@@ -822,7 +818,6 @@ class HeterogeneousList(DessiaObject):
             matrix.append(list(col for attr, col in zip(self.common_attributes, temp_row)
                                if attr in dessia_object.vector_features()))
         return matrix
-
 
     def singular_values(self):
         _, singular_values, _ = npy.linalg.svd(npy.array(self.matrix), full_matrices=False)
@@ -833,7 +828,6 @@ class HeterogeneousList(DessiaObject):
             singular_points.append({'Index of reduced basis vector': idx + 1,
                                     'Singular value': value})
         return normed_singular_values, singular_points
-
 
     def plot_data(self, **kwargs):
         import plot_data
@@ -863,7 +857,6 @@ class HeterogeneousList(DessiaObject):
         scatter_matrix = plot_data.MultiplePlots(plots=subplots, elements=data_list, initial_view_on=True)
         return [dimensionality_plot, scatter_matrix]
 
-
     def plot_dimensionality(self):
         import plot_data
         _, singular_points = self.singular_values()
@@ -878,13 +871,12 @@ class HeterogeneousList(DessiaObject):
                                            shape='circle')
 
         dimensionality_plot = plot_data.Scatter(elements=singular_points,
-                                                 x_variable='Index of reduced basis vector',
-                                                 y_variable='Singular value',
-                                                 log_scale_y=True,
-                                                 axis=axis,
-                                                 point_style=point_style)
+                                                x_variable='Index of reduced basis vector',
+                                                y_variable='Singular value',
+                                                log_scale_y=True,
+                                                axis=axis,
+                                                point_style=point_style)
         return dimensionality_plot
-
 
     def to_markdown(self):
         """
@@ -893,17 +885,17 @@ class HeterogeneousList(DessiaObject):
         return templates.heterogeneouslist_markdown_template.substitute(name=self.name, class_=self.__class__.__name__)
 
 
-class HomogeneousList(HeterogeneousList):
+# class HomogeneousList(HeterogeneousList):
 
-    def __init__(self, dessia_objects: List[DessiaObject] = None, name: str = ''):
-        HeterogeneousList.__init__(
-            self, dessia_objects=dessia_objects, name=name)
+#     def __init__(self, dessia_objects: List[DessiaObject] = None, name: str = ''):
+#         HeterogeneousList.__init__(
+#             self, dessia_objects=dessia_objects, name=name)
 
-    def matrix(self):
-        matrix = []
-        for dessia_object in self.dessia_objects:
-            matrix.append(dessia_object.to_vector())
-        return matrix
+#     def matrix(self):
+#         matrix = []
+#         for dessia_object in self.dessia_objects:
+#             matrix.append(dessia_object.to_vector())
+#         return matrix
 
 
 # class Catalog(DessiaObject):

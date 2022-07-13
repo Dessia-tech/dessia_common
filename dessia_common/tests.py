@@ -209,6 +209,7 @@ class Car(DessiaObject):
 
 class CarWithFeatures(Car):
     _vector_features = ['mpg', 'displacement', 'horsepower', 'acceleration', 'weight']
+
     def __init__(self, name: str, mpg: float, cylinders: int,
                  displacement: dct.Distance, horsepower: float,
                  weight: dct.Mass, acceleration: dct.Time, model: int,
@@ -234,11 +235,9 @@ class ClusTester_d1(DessiaObject):
         DessiaObject.__init__(self, name=name)
         self.p1 = p1
 
-
     @classmethod
     def vector_features(cls):
         return cls._vector_features
-
 
     @classmethod
     def create_dataset(cls, nb_clusters: int = 10, nb_points: int = 2500,
@@ -258,7 +257,6 @@ class ClusTester_d1(DessiaObject):
 
         return data_list
 
-
     @staticmethod
     def set_cluster_sizes(nb_points: int, nb_clusters: int):
         current_nb_points = nb_points
@@ -272,44 +270,50 @@ class ClusTester_d1(DessiaObject):
         cluster_sizes.append(int(nb_points - npy.sum(cluster_sizes)))
         return cluster_sizes
 
-    # @staticmethod
-    # def plot(x_label: str, y_label: str, clustester_list: List[List[float]], **kwargs):
-    #     x_coords = [getattr(clustester, x_label)
-    #                 for clustester in clustester_list]
-    #     y_coords = [getattr(clustester, y_label)
-    #                 for clustester in clustester_list]
-    #     import matplotlib.pyplot as plt
-    #     plt.plot(x_coords, y_coords, **kwargs)
-    #     return
+    @staticmethod
+    def mpl_plot(x_label: str, y_label: str, clustester_list: List[List[float]], **kwargs):
+        x_coords = [getattr(clustester, x_label) for clustester in clustester_list]
+        y_coords = [getattr(clustester, y_label) for clustester in clustester_list]
+        import matplotlib.pyplot as plt
+        plt.plot(x_coords, y_coords, **kwargs)
+        return
 
 
 class ClusTester_d2(ClusTester_d1):
     _nb_dims = 2
     _vector_features = [f'p{i+1}' for i in range(2)]
+
     def __init__(self, p1: float, p2: float, name: str = ''):
         ClusTester_d1.__init__(self, p1, name=name)
         self.p2 = p2
 
+
 class ClusTester_d3(ClusTester_d2):
     _nb_dims = 3
     _vector_features = [f'p{i+1}' for i in range(3)]
+
     def __init__(self, p1: float, p2: float, p3: float, name: str = ''):
         ClusTester_d2.__init__(self, p1, p2, name=name)
         self.p3 = p3
 
+
 class ClusTester_d4(ClusTester_d3):
     _nb_dims = 4
     _vector_features = [f'p{i+1}' for i in range(4)]
+
     def __init__(self, p1: float, p2: float, p3: float, p4: float, name: str = ''):
         ClusTester_d3.__init__(self, p1, p2, p3, name=name)
         self.p4 = p4
 
+
 class ClusTester_d5(ClusTester_d4):
     _nb_dims = 5
     _vector_features = [f'p{i+1}' for i in range(5)]
+
     def __init__(self, p1: float, p2: float, p3: float, p4: float, p5: float, name: str = ''):
         ClusTester_d4.__init__(self, p1, p2, p3, p4, name=name)
         self.p5 = p5
+
 
 class ClusTester_d6(ClusTester_d5):
     _nb_dims = 6
@@ -319,6 +323,7 @@ class ClusTester_d6(ClusTester_d5):
         ClusTester_d5.__init__(self, p1, p2, p3, p4, p5, name=name)
         self.p6 = p6
 
+
 class ClusTester_d7(ClusTester_d6):
     _nb_dims = 7
     _vector_features = [f'p{i+1}' for i in range(7)]
@@ -326,6 +331,7 @@ class ClusTester_d7(ClusTester_d6):
                  p6: float, p7: float, name: str = ''):
         ClusTester_d6.__init__(self, p1, p2, p3, p4, p5, p6, name=name)
         self.p7 = p7
+
 
 class ClusTester_d8(ClusTester_d7):
     _nb_dims = 8
@@ -335,6 +341,7 @@ class ClusTester_d8(ClusTester_d7):
         ClusTester_d7.__init__(self, p1, p2, p3, p4, p5, p6, p7, name=name)
         self.p8 = p8
 
+
 class ClusTester_d9(ClusTester_d8):
     _nb_dims = 9
     _vector_features = [f'p{i+1}' for i in range(9)]
@@ -343,9 +350,11 @@ class ClusTester_d9(ClusTester_d8):
         ClusTester_d8.__init__(self, p1, p2, p3, p4, p5, p6, p7, p8, name=name)
         self.p9 = p9
 
+
 class ClusTester_d10(ClusTester_d9):
     _nb_dims = 10
     _vector_features = [f'p{i+1}' for i in range(10)]
+
     def __init__(self, p1: float, p2: float, p3: float, p4: float, p5: float,
                  p6: float, p7: float, p8: float, p9: float, p10: float, name: str = ''):
         ClusTester_d9.__init__(self, p1, p2, p3, p4, p5, p6, p7, p8, p9, name=name)

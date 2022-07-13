@@ -4,7 +4,7 @@ Cluster.py package testing.
 import json
 import pkg_resources
 from dessia_common import tests, cluster
-from dessia_common.core import HeterogeneousList, DessiaObject
+from dessia_common.core import HeterogeneousList
 import dessia_common.workflow as wf
 
 # Standard cars homogeneous dataset from the Internet
@@ -19,17 +19,17 @@ all_cars_with_features = HeterogeneousList(tests.CarWithFeatures.from_csv(csv_ca
 mean_borns = (-50, 50)
 std_borns = (-2, 2)
 small_clustesters_heterogeneous = HeterogeneousList(
-    tests.ClusTester_d5.create_dataset(nb_clusters = 10, nb_points = 250, mean_borns = mean_borns, std_borns = std_borns) +
-    tests.ClusTester_d4.create_dataset(nb_clusters = 10, nb_points = 250, mean_borns = mean_borns, std_borns = std_borns) +
-    tests.ClusTester_d3.create_dataset(nb_clusters = 10, nb_points = 250, mean_borns = mean_borns, std_borns = std_borns))
+    tests.ClusTester_d5.create_dataset(nb_clusters=10, nb_points=250, mean_borns=mean_borns, std_borns=std_borns) +
+    tests.ClusTester_d4.create_dataset(nb_clusters=10, nb_points=250, mean_borns=mean_borns, std_borns=std_borns) +
+    tests.ClusTester_d3.create_dataset(nb_clusters=10, nb_points=250, mean_borns=mean_borns, std_borns=std_borns))
 
 # Auto-generated heterogeneous large dataset with nb_clusters clusters of points in nb_dims dimensions
 mean_borns = (-50, 50)
 std_borns = (-2, 2)
 big_clustesters_heterogeneous = HeterogeneousList(
-    tests.ClusTester_d9.create_dataset(nb_clusters = 10, nb_points = 500, mean_borns = mean_borns, std_borns = std_borns) +
-    tests.ClusTester_d7.create_dataset(nb_clusters = 10, nb_points = 500, mean_borns = mean_borns, std_borns = std_borns) +
-    tests.ClusTester_d8.create_dataset(nb_clusters = 10, nb_points = 500, mean_borns = mean_borns, std_borns = std_borns))
+    tests.ClusTester_d9.create_dataset(nb_clusters=10, nb_points=500, mean_borns=mean_borns, std_borns=std_borns) +
+    tests.ClusTester_d7.create_dataset(nb_clusters=10, nb_points=500, mean_borns=mean_borns, std_borns=std_borns) +
+    tests.ClusTester_d8.create_dataset(nb_clusters=10, nb_points=500, mean_borns=mean_borns, std_borns=std_borns))
 
 # Build CategorizedLists
 clustered_cars_without = cluster.CategorizedList.from_dbscan(all_cars_without_features, eps=40)
@@ -38,16 +38,16 @@ aggclustest_clustered = cluster.CategorizedList.from_agglomerative_clustering(bi
 kmeanstest_clustered = cluster.CategorizedList.from_kmeans(small_clustesters_heterogeneous, n_clusters=10, scaling=False)
 
 # Test ClusterResults instances on platform
-# clustered_cars_without._check_platform()
-# clustered_cars_with._check_platform()
-# aggclustest_clustered._check_platform()
-# kmeanstest_clustered._check_platform()
+clustered_cars_without._check_platform()
+clustered_cars_with._check_platform()
+aggclustest_clustered._check_platform()
+kmeanstest_clustered._check_platform()
 
 # Test plots outside platform
-# clustered_cars_without.plot()
-# clustered_cars_with.plot()
-# aggclustest_clustered.plot()
-# kmeanstest_clustered.plot()
+clustered_cars_without.plot()
+clustered_cars_with.plot()
+aggclustest_clustered.plot()
+kmeanstest_clustered.plot()
 
 
 # =============================================================================
@@ -96,12 +96,13 @@ pipe_worflow = [wf.Pipe(block_data.outputs[0], block_heterogeneous_list.inputs[0
 workflow = wf.Workflow(block_workflow, pipe_worflow, block_cluster.outputs[0])
 
 workflow_run = workflow.run({workflow.index(block_data.inputs[0]): pkg_resources.resource_stream('dessia_common', 'models/data/cars.csv'),
-                              workflow.index(block_cluster.inputs[1]): 40})
+                             workflow.index(block_cluster.inputs[1]): 40})
 
-# workflow._check_platform()
-# workflow.plot()
-# workflow.display_settings()
-# workflow_run.output_value.plot()
+# Workflow tests
+workflow._check_platform()
+workflow.plot()
+workflow.display_settings()
+workflow_run.output_value.plot()
 
 # JSON TESTS
 dict_workflow = workflow.to_dict(use_pointers=True)
@@ -109,6 +110,7 @@ json_dict = json.dumps(dict_workflow)
 decoded_json = json.loads(json_dict)
 deserialized_object = workflow.dict_to_object(decoded_json)
 
+# Workflow_run tests: do not run on local but run on platform
 # dict_workflow_run = workflow_run.to_dict(use_pointers=True)
 # json_dict = json.dumps(dict_workflow_run)
 # decoded_json = json.loads(json_dict)
@@ -132,13 +134,13 @@ pipe_worflow = [wf.Pipe(block_data.outputs[0], block_heterogeneous_list.inputs[0
 workflow = wf.Workflow(block_workflow, pipe_worflow, block_cluster.outputs[0])
 
 workflow_run = workflow.run({workflow.index(block_data.inputs[0]): pkg_resources.resource_stream('dessia_common', 'models/data/cars.csv'),
-                              workflow.index(block_cluster.inputs[1]): 40})
+                             workflow.index(block_cluster.inputs[1]): 40})
 
-
-# workflow._check_platform()
-# workflow.plot()
-# workflow.display_settings()
-# workflow_run.output_value.plot()
+# Workflow tests
+workflow._check_platform()
+workflow.plot()
+workflow.display_settings()
+workflow_run.output_value.plot()
 
 # JSON TESTS
 dict_workflow = workflow.to_dict(use_pointers=True)
@@ -146,6 +148,7 @@ json_dict = json.dumps(dict_workflow)
 decoded_json = json.loads(json_dict)
 deserialized_object = workflow.dict_to_object(decoded_json)
 
+# Workflow_run tests: do not run on local but run on platform
 # dict_workflow_run = workflow_run.to_dict(use_pointers=True)
 # json_dict = json.dumps(dict_workflow_run)
 # decoded_json = json.loads(json_dict)
@@ -192,12 +195,11 @@ workflow_run = workflow.run({workflow.index(block_data_d5.inputs[0]): 10, workfl
 
                              workflow.index(block_cluster.inputs[1]): 40})
 
-
-
-# workflow._check_platform()
-# workflow.plot()
-# workflow.display_settings()
-# workflow_run.output_value.plot()
+# Workflow tests
+workflow._check_platform()
+workflow.plot()
+workflow.display_settings()
+workflow_run.output_value.plot()
 
 # JSON TESTS
 dict_workflow = workflow.to_dict(use_pointers=True)
@@ -205,11 +207,13 @@ json_dict = json.dumps(dict_workflow)
 decoded_json = json.loads(json_dict)
 deserialized_object = workflow.dict_to_object(decoded_json)
 
+# Workflow_run tests: do not run on local but run on platform
 dict_workflow_run = workflow_run.to_dict(use_pointers=True)
 json_dict = json.dumps(dict_workflow_run)
 decoded_json = json.loads(json_dict)
 deserialized_object = workflow_run.dict_to_object(decoded_json)
 
+# Debug of block display, kept for now, will be removed soon
 # gg = workflow_run._display_from_selector('plot_data')
 # json.dumps(workflow_run.to_dict())
 # workflow_run._displays
