@@ -19,17 +19,17 @@ all_cars_with_features = HeterogeneousList(tests.CarWithFeatures.from_csv(csv_ca
 mean_borns = (-50, 50)
 std_borns = (-2, 2)
 small_clustesters_heterogeneous = HeterogeneousList(
-    tests.ClusTester_d5.create_dataset(nb_clusters=10, nb_points=250, mean_borns=mean_borns, std_borns=std_borns) +
-    tests.ClusTester_d4.create_dataset(nb_clusters=10, nb_points=250, mean_borns=mean_borns, std_borns=std_borns) +
-    tests.ClusTester_d3.create_dataset(nb_clusters=10, nb_points=250, mean_borns=mean_borns, std_borns=std_borns))
+    tests.ClusTesterD5.create_dataset(nb_clusters=10, nb_points=250, mean_borns=mean_borns, std_borns=std_borns) +
+    tests.ClusTesterD4.create_dataset(nb_clusters=10, nb_points=250, mean_borns=mean_borns, std_borns=std_borns) +
+    tests.ClusTesterD3.create_dataset(nb_clusters=10, nb_points=250, mean_borns=mean_borns, std_borns=std_borns))
 
 # Auto-generated heterogeneous large dataset with nb_clusters clusters of points in nb_dims dimensions
 mean_borns = (-50, 50)
 std_borns = (-2, 2)
 big_clustesters_heterogeneous = HeterogeneousList(
-    tests.ClusTester_d9.create_dataset(nb_clusters=10, nb_points=500, mean_borns=mean_borns, std_borns=std_borns) +
-    tests.ClusTester_d7.create_dataset(nb_clusters=10, nb_points=500, mean_borns=mean_borns, std_borns=std_borns) +
-    tests.ClusTester_d8.create_dataset(nb_clusters=10, nb_points=500, mean_borns=mean_borns, std_borns=std_borns))
+    tests.ClusTesterD9.create_dataset(nb_clusters=10, nb_points=500, mean_borns=mean_borns, std_borns=std_borns) +
+    tests.ClusTesterD7.create_dataset(nb_clusters=10, nb_points=500, mean_borns=mean_borns, std_borns=std_borns) +
+    tests.ClusTesterD8.create_dataset(nb_clusters=10, nb_points=500, mean_borns=mean_borns, std_borns=std_borns))
 
 # Build CategorizedLists
 clustered_cars_without = cluster.CategorizedList.from_dbscan(all_cars_without_features, eps=40)
@@ -37,7 +37,7 @@ clustered_cars_with = cluster.CategorizedList.from_dbscan(all_cars_with_features
 aggclustest_clustered = cluster.CategorizedList.from_agglomerative_clustering(
     big_clustesters_heterogeneous, n_clusters=10)
 kmeanstest_clustered = cluster.CategorizedList.from_kmeans(
-    small_clustesters_heterogeneous, n_clusters=10, scaling=False)
+    small_clustesters_heterogeneous, n_clusters=10, scaling=True)
 
 # Test ClusterResults instances on platform
 clustered_cars_without._check_platform()
@@ -162,13 +162,13 @@ deserialized_object = workflow.dict_to_object(decoded_json)
 # =============================================================================
 # TESTS IN WORKFLOWS: CLUSTESTERS SMALL DATASET
 # =============================================================================
-data_method_5 = wf.MethodType(class_=tests.ClusTester_d5, name='create_dataset')
+data_method_5 = wf.MethodType(class_=tests.ClusTesterD5, name='create_dataset')
 block_data_d5 = wf.ClassMethod(method_type=data_method_5, name='data d5')
 
-data_method_4 = wf.MethodType(class_=tests.ClusTester_d4, name='create_dataset')
+data_method_4 = wf.MethodType(class_=tests.ClusTesterD4, name='create_dataset')
 block_data_d4 = wf.ClassMethod(method_type=data_method_4, name='data d4')
 
-data_method_3 = wf.MethodType(class_=tests.ClusTester_d3, name='create_dataset')
+data_method_3 = wf.MethodType(class_=tests.ClusTesterD3, name='create_dataset')
 block_data_d3 = wf.ClassMethod(method_type=data_method_3, name='data d3')
 
 block_concatenate = wf.Concatenate(3)

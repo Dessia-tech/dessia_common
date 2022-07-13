@@ -9,8 +9,8 @@ import time
 import sys
 import warnings
 import math
-import numpy as npy
 import random
+
 from functools import reduce
 import collections
 from copy import deepcopy, copy
@@ -22,6 +22,8 @@ import traceback as tb
 
 from importlib import import_module
 from ast import literal_eval
+
+import numpy as npy
 
 import dessia_common.errors
 from dessia_common.utils.diff import data_eq, diff, dict_hash, list_hash
@@ -196,7 +198,7 @@ class DessiaObject:
         """
         A base dict for to_dict: put name, object class and version in a dict
         """
-        package_name = self.__module__.split('.')[0]
+        package_name = self.__module__.split('.', maxsplit=1)[0]
         if package_name in sys.modules:
             package = sys.modules[package_name]
             if hasattr(package, '__version__'):
@@ -366,16 +368,13 @@ class DessiaObject:
         else:
             allowed_methods = class_._allowed_methods
 
-        valid_method_names = [m for m in dir(class_)
-                              if not m.startswith('_')
-                              and m in allowed_methods]
+        valid_method_names = [m for m in dir(class_) if not m.startswith('_') and m in allowed_methods]
 
         for method_name in valid_method_names:
             method = getattr(class_, method_name)
 
             if not isinstance(method, property):
-                required_args, default_args = inspect_arguments(
-                    method=method, merge=False)
+                required_args, default_args = inspect_arguments(method=method, merge=False)
                 annotations = get_type_hints(method)
                 if annotations:
                     jsonschemas[method_name] = deepcopy(JSONSCHEMA_HEADER)
@@ -386,22 +385,15 @@ class DessiaObject:
                         argname = annotation[0]
                         if argname not in _FORBIDDEN_ARGNAMES:
                             if argname in required_args:
-                                jsonschemas[method_name]['required'].append(
-                                    str(i))
-                            jsonschema_element = \
-                                jsonschema_from_annotation(
-                                    annotation, {}, i)[argname]
+                                jsonschemas[method_name]['required'].append(str(i))
+                            jsonschema_element = jsonschema_from_annotation(annotation, {}, i)[argname]
 
-                            jsonschemas[method_name]['properties'][str(
-                                i)] = jsonschema_element
+                            jsonschemas[method_name]['properties'][str(i)] = jsonschema_element
                             if argname in default_args:
-                                default = set_default_value(
-                                    jsonschemas[method_name]['properties'],
-                                    str(i),
-                                    default_args[argname]
-                                )
-                                jsonschemas[method_name]['properties'].update(
-                                    default)
+                                default = set_default_value(jsonschemas[method_name]['properties'],
+                                                            str(i),
+                                                            default_args[argname])
+                                jsonschemas[method_name]['properties'].update(default)
         return jsonschemas
 
     def method_dict(self, method_name=None, method_jsonschema=None):
@@ -511,7 +503,7 @@ class DessiaObject:
                 dict_[arg] = deepcopy_value(getattr(self, arg), memo=memo)
         return self.__class__(**dict_)
 
-    def plot_data(self):
+    def plot_data(self): # TODO: Should it have a **kwargs argument ?
         return []
 
     def plot(self, **kwargs):
@@ -520,7 +512,7 @@ class DessiaObject:
         """
         if hasattr(self, 'plot_data'):
             import plot_data
-            for data in self.plot_data(**kwargs):
+            for data in self.plot_data(**kwargs): #TODO solve inconsistence with the plot_data method just above
                 plot_data.plot_canvas(plot_data_object=data,
                                       canvas_id='canvas',
                                       width=1400, height=900,
@@ -802,10 +794,10 @@ class HeterogeneousList(DessiaObject):
     def __init__(self, dessia_objects: List[DessiaObject] = None, name: str = ''):
         DessiaObject.__init__(self, name=name)
         self.dessia_objects = dessia_objects
-        self.common_attributes = self.common_attributes()
-        self.matrix = self.matrix()
+        self.common_attributes = self._common_attributes()
+        self.matrix = self._matrix()
 
-    def common_attributes(self):
+    def _common_attributes(self):
         all_class = list(set(dessia_object.__class__ for dessia_object in self.dessia_objects))
         common_attributes = set(all_class[0].vector_features())
         for klass in all_class[1:]:
@@ -814,7 +806,7 @@ class HeterogeneousList(DessiaObject):
         # attributes' order kept this way, not with set or sorted(set)
         return list(attr for attr in get_attribute_names(all_class[0]) if attr in common_attributes)
 
-    def matrix(self):
+    def _matrix(self):
         matrix = []
         for dessia_object in self.dessia_objects:
             temp_row = dessia_object.to_vector()
@@ -832,7 +824,7 @@ class HeterogeneousList(DessiaObject):
                                     'Singular value': value})
         return normed_singular_values, singular_points
 
-    def plot_data(self, **kwargs):
+    def plot_data(self):
         import plot_data
         # Plot a correlation matrix : To develop
         # correlation_matrix = []
@@ -842,15 +834,14 @@ class HeterogeneousList(DessiaObject):
 
         # Scattermatrix
         data_list = []
-        for row, data in enumerate(self.dessia_objects):
+        for row in range(len(self.dessia_objects)):
             data_list.append({attr: self.matrix[row][col] for col, attr in enumerate(self.common_attributes)})
 
         subplots = []
-        for line_num, line_attr in enumerate(data_list[0]):
-            for col_num, col_attr in enumerate(data_list[0]):
+        for line_attr in data_list[0]:
+            for col_attr in data_list[0]:
                 if line_attr == col_attr:
-                    subplots.append(plot_data.Histogram(
-                        x_variable=line_attr, elements=data_list))
+                    subplots.append(plot_data.Histogram(x_variable=line_attr, elements=data_list))
                 else:
                     subplots.append(plot_data.Scatter(x_variable=line_attr,
                                                       y_variable=col_attr,
@@ -1302,7 +1293,7 @@ def split_argspecs(argspecs) -> Tuple[int, int]:
 
 
 def get_attribute_names(object_class):
-    attributes = [attribute[0] for attribute in inspect.getmembers(object_class, lambda x:not(inspect.isroutine(x)))
+    attributes = [attribute[0] for attribute in inspect.getmembers(object_class, lambda x:not inspect.isroutine(x))
                   if not attribute[0].startswith('__')
                   and not attribute[0].endswith('__')
                   and isinstance(attribute[1], (float, int, complex, bool))]

@@ -10,6 +10,7 @@ import inspect
 import collections
 from ast import literal_eval
 from typing import get_origin, get_args, Union, Any, BinaryIO, TextIO
+from numpy import int64, float64
 import networkx as nx
 import dessia_common as dc
 import dessia_common.errors as dc_err
@@ -58,9 +59,9 @@ def serialize(value):
         serialized_value = serialize_sequence(value)
     elif isinstance(value, (BinaryFile, StringFile)):
         serialized_value = value
-    elif isinstance(value, npy.int64):
+    elif isinstance(value, int64):
         serialized_value = int(value)
-    elif isinstance(value, npy.float64):
+    elif isinstance(value, float64):
         serialized_value = float(value)
     elif isinstance(value, type) or dcty.is_typing(value):
         return dcty.serialize_typing(value)
@@ -97,7 +98,7 @@ def serialize_with_pointers(value, memo=None, path='#'):
         serialized, memo = serialize_sequence_with_pointers(value, memo, path)
     elif isinstance(value, (BinaryFile, StringFile)):
         serialized = value
-    elif isinstance(value, (npy.int64, npy.float64)):
+    elif isinstance(value, (int64, float64)):
         serialized = serialize(value)
     else:
         if not dcty.is_jsonable(value):

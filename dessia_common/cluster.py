@@ -53,23 +53,19 @@ class CategorizedList(dc.HeterogeneousList):
 
     def build_multiplot(self, datasets_list: List[Dataset]):
         list_scatters = []
-        for x_num in range(len(self.common_attributes)):
-            for y_num in range(len(self.common_attributes)):
-                list_scatters.append(plot_data.Graph2D(x_variable=self.common_attributes[x_num],
-                                                       y_variable=self.common_attributes[y_num],
-                                                       graphs=datasets_list))
-        return plot_data.MultiplePlots(plots=list_scatters, elements=datasets_list,
-                                       initial_view_on=True)
+        for x_attr in self.common_attributes:
+            for y_attr in self.common_attributes:
+                list_scatters.append(plot_data.Graph2D(x_variable=x_attr, y_variable=y_attr, graphs=datasets_list))
+        return plot_data.MultiplePlots(plots=list_scatters, elements=datasets_list, initial_view_on=True)
 
     def build_datasets(self):
         dataset_list = []
         tooltip_list = []
-        nb_dataset = (self.n_clusters if -1 not in self.labels else self.n_clusters + 1)
+        nb_dataset = (self.n_clusters + 1 if -1 in self.labels else self.n_clusters)
 
-        for i_label in range(nb_dataset):
+        for _ in range(nb_dataset):
             dataset_list.append([])
-            tooltip_list.append(plot_data.Tooltip(
-                attributes=self.common_attributes + ["Cluster Label"]))
+            tooltip_list.append(plot_data.Tooltip(attributes=self.common_attributes + ["Cluster Label"]))
 
         for idx, label in enumerate(self.labels):
             dataset_row = {"Cluster Label": (
@@ -91,10 +87,9 @@ class CategorizedList(dc.HeterogeneousList):
             if idx == self.n_clusters:
                 color = plot_data.colors.Color(0, 0, 0)
             else:
-                color = plot_data.colors.Color(
-                    cmp_f[idx][0], cmp_f[idx][1], cmp_f[idx][2])
-            point_style = plot_data.PointStyle(
-                color_fill=color, color_stroke=color, size=1)
+                color = plot_data.colors.Color(cmp_f[idx][0], cmp_f[idx][1], cmp_f[idx][2])
+
+            point_style = plot_data.PointStyle(color_fill=color, color_stroke=color, size=1)
             dataset_list[idx] = plot_data.Dataset(elements=dataset_list[idx],
                                                   edge_style=edge_style,
                                                   point_style=point_style,
@@ -214,8 +209,7 @@ class CategorizedList(dc.HeterogeneousList):
         :rtype: ClusterResult
 
         """
-        skl_cluster = cluster.KMeans(
-            n_clusters=n_clusters, n_init=n_init, tol=tol)
+        skl_cluster = cluster.KMeans(n_clusters=n_clusters, n_init=n_init, tol=tol)
         skl_cluster = cls.fit_cluster(skl_cluster, data.matrix, scaling)
         return cls(data.dessia_objects, skl_cluster.labels_.tolist())
 
@@ -272,8 +266,7 @@ class CategorizedList(dc.HeterogeneousList):
             Then -1 labelled values are now at 0 and must not be considered as clustered values when using DBSCAN.
 
         """
-        skl_cluster = cluster.DBSCAN(
-            eps=eps, min_samples=min_samples, p=mink_power, leaf_size=leaf_size)
+        skl_cluster = cluster.DBSCAN(eps=eps, min_samples=min_samples, p=mink_power, leaf_size=leaf_size)
         skl_cluster = cls.fit_cluster(skl_cluster, data.matrix, scaling)
         return cls(data.dessia_objects, skl_cluster.labels_.tolist())
 
@@ -289,7 +282,7 @@ class CategorizedList(dc.HeterogeneousList):
     @staticmethod
     def scale_data(data_matrix: List[List[float]]):
         scaled_matrix = preprocessing.StandardScaler().fit_transform(data_matrix)
-        return list([list(map(float, row)) for row in scaled_matrix])
+        return [list(map(float, row.tolist())) for row in scaled_matrix]
 
 
 # Function to implement, to find a good eps parameter for dbscan

@@ -190,18 +190,18 @@ class Car(DessiaObject):
         array = npy.genfromtxt(
             file, dtype=None, delimiter=',', names=True, encoding=None)
         cars = []
-        for i, line in enumerate(array):
-            if end is not None and i >= end:
+        for idx_line, line in enumerate(array):
+            if end is not None and idx_line >= end:
                 break
             if not remove_duplicates or (remove_duplicates and line.tolist() not in cars):
                 attr_list = list(line)
                 attr_list[3] /= 1000
 
-                for i in range(len(attr_list)):
-                    if isinstance(attr_list[i], npy.int64):
-                        attr_list[i] = int(attr_list[i])
-                    elif isinstance(attr_list[i], npy.float64):
-                        attr_list[i] = float(attr_list[i])
+                for idx_attr, attr in enumerate(attr_list):
+                    if isinstance(attr, npy.int64):
+                        attr_list[idx_attr] = int(attr)
+                    elif isinstance(attr, npy.float64):
+                        attr_list[idx_attr] = float(attr)
 
                 cars.append(cls(*attr_list))
         return cars
@@ -222,18 +222,18 @@ class CarWithFeatures(Car):
         return cls._vector_features
 
 
-class ClusTester_d1(DessiaObject):
+class ClusTesterD1(DessiaObject):
     """
     Creates a dataset from a number of clusters and dimensions
     """
     _standalone_in_db = True
     _non_data_hash_attributes = ['name']
     _nb_dims = 1
-    _vector_features = [f'p{i+1}' for i in range(_nb_dims)]
+    _vector_features = [f'p_{i+1}' for i in range(_nb_dims)]
 
-    def __init__(self, p1: float, name: str = ''):
+    def __init__(self, p_1: float, name: str = ''):
         DessiaObject.__init__(self, name=name)
-        self.p1 = p1
+        self.p_1 = p_1
 
     @classmethod
     def vector_features(cls):
@@ -250,10 +250,9 @@ class ClusTester_d1(DessiaObject):
         for cluster_size in cluster_sizes:
             means_list = [random.uniform(*mean_borns) for i in range(cls._nb_dims)]
             std_list = [random.uniform(*std_borns) for i in range(cls._nb_dims)]
-            for idx_point in range(cluster_size):
-                new_data = cls(
-                    *[random.normalvariate(means_list[dim], std_list[dim]) for dim in range(cls._nb_dims)])
-                data_list.append(new_data)
+            for _ in range(cluster_size):
+                data_list.append(
+                    cls(*[random.normalvariate(means_list[dim], std_list[dim]) for dim in range(cls._nb_dims)]))
 
         return data_list
 
@@ -261,7 +260,7 @@ class ClusTester_d1(DessiaObject):
     def set_cluster_sizes(nb_points: int, nb_clusters: int):
         current_nb_points = nb_points
         cluster_sizes = []
-        for i in range(nb_clusters - 1):
+        for _ in range(nb_clusters - 1):
             points_in_cluster = random.randint(int(current_nb_points / nb_clusters / 2),
                                                int(current_nb_points / nb_clusters * 2))
             cluster_sizes.append(points_in_cluster)
@@ -271,91 +270,126 @@ class ClusTester_d1(DessiaObject):
         return cluster_sizes
 
     @staticmethod
-    def mpl_plot(x_label: str, y_label: str, clustester_list: List[List[float]], **kwargs):
+    def python_plot(x_label: str, y_label: str, clustester_list: List[List[float]], **kwargs):
         x_coords = [getattr(clustester, x_label) for clustester in clustester_list]
         y_coords = [getattr(clustester, y_label) for clustester in clustester_list]
         import matplotlib.pyplot as plt
         plt.plot(x_coords, y_coords, **kwargs)
-        return
 
 
-class ClusTester_d2(ClusTester_d1):
+class ClusTesterD2(ClusTesterD1):
     _nb_dims = 2
-    _vector_features = [f'p{i+1}' for i in range(2)]
+    _vector_features = [f'p_{i+1}' for i in range(2)]
 
-    def __init__(self, p1: float, p2: float, name: str = ''):
-        ClusTester_d1.__init__(self, p1, name=name)
-        self.p2 = p2
+    def __init__(self, p_1: float, p_2: float, name: str = ''):
+        ClusTesterD1.__init__(self, p_1, name=name)
+        self.p_2 = p_2
 
 
-class ClusTester_d3(ClusTester_d2):
+class ClusTesterD3(ClusTesterD1):
     _nb_dims = 3
-    _vector_features = [f'p{i+1}' for i in range(3)]
+    _vector_features = [f'p_{i+1}' for i in range(3)]
 
-    def __init__(self, p1: float, p2: float, p3: float, name: str = ''):
-        ClusTester_d2.__init__(self, p1, p2, name=name)
-        self.p3 = p3
+    def __init__(self, p_1: float, p_2: float, p_3: float, name: str = ''):
+        ClusTesterD1.__init__(self, p_1, name=name)
+        self.p_2 = p_2
+        self.p_3 = p_3
 
 
-class ClusTester_d4(ClusTester_d3):
+class ClusTesterD4(ClusTesterD1):
     _nb_dims = 4
-    _vector_features = [f'p{i+1}' for i in range(4)]
+    _vector_features = [f'p_{i+1}' for i in range(4)]
 
-    def __init__(self, p1: float, p2: float, p3: float, p4: float, name: str = ''):
-        ClusTester_d3.__init__(self, p1, p2, p3, name=name)
-        self.p4 = p4
+    def __init__(self, p_1: float, p_2: float, p_3: float, p_4: float, name: str = ''):
+        ClusTesterD1.__init__(self, p_1, name=name)
+        self.p_2 = p_2
+        self.p_3 = p_3
+        self.p_4 = p_4
 
 
-class ClusTester_d5(ClusTester_d4):
+class ClusTesterD5(ClusTesterD1):
     _nb_dims = 5
-    _vector_features = [f'p{i+1}' for i in range(5)]
+    _vector_features = [f'p_{i+1}' for i in range(5)]
 
-    def __init__(self, p1: float, p2: float, p3: float, p4: float, p5: float, name: str = ''):
-        ClusTester_d4.__init__(self, p1, p2, p3, p4, name=name)
-        self.p5 = p5
+    def __init__(self, p_1: float, p_2: float, p_3: float, p_4: float, p_5: float, name: str = ''):
+        ClusTesterD1.__init__(self, p_1, name=name)
+        self.p_2 = p_2
+        self.p_3 = p_3
+        self.p_4 = p_4
+        self.p_5 = p_5
 
 
-class ClusTester_d6(ClusTester_d5):
+class ClusTesterD6(ClusTesterD1):
     _nb_dims = 6
-    _vector_features = [f'p{i+1}' for i in range(6)]
-    def __init__(self, p1: float, p2: float, p3: float, p4: float, p5: float,
-                 p6: float, name: str = ''):
-        ClusTester_d5.__init__(self, p1, p2, p3, p4, p5, name=name)
-        self.p6 = p6
+    _vector_features = [f'p_{i+1}' for i in range(6)]
+    def __init__(self, p_1: float, p_2: float, p_3: float, p_4: float, p_5: float,
+                 p_6: float, name: str = ''):
+        ClusTesterD1.__init__(self, p_1, name=name)
+        self.p_2 = p_2
+        self.p_3 = p_3
+        self.p_4 = p_4
+        self.p_5 = p_5
+        self.p_6 = p_6
 
 
-class ClusTester_d7(ClusTester_d6):
+class ClusTesterD7(ClusTesterD1):
     _nb_dims = 7
-    _vector_features = [f'p{i+1}' for i in range(7)]
-    def __init__(self, p1: float, p2: float, p3: float, p4: float, p5: float,
-                 p6: float, p7: float, name: str = ''):
-        ClusTester_d6.__init__(self, p1, p2, p3, p4, p5, p6, name=name)
-        self.p7 = p7
+    _vector_features = [f'p_{i+1}' for i in range(7)]
+    def __init__(self, p_1: float, p_2: float, p_3: float, p_4: float, p_5: float,
+                 p_6: float, p_7: float, name: str = ''):
+        ClusTesterD1.__init__(self, p_1, name=name)
+        self.p_2 = p_2
+        self.p_3 = p_3
+        self.p_4 = p_4
+        self.p_5 = p_5
+        self.p_6 = p_6
+        self.p_7 = p_7
 
 
-class ClusTester_d8(ClusTester_d7):
+class ClusTesterD8(ClusTesterD1):
     _nb_dims = 8
-    _vector_features = [f'p{i+1}' for i in range(8)]
-    def __init__(self, p1: float, p2: float, p3: float, p4: float, p5: float,
-                 p6: float, p7: float, p8: float, name: str = ''):
-        ClusTester_d7.__init__(self, p1, p2, p3, p4, p5, p6, p7, name=name)
-        self.p8 = p8
+    _vector_features = [f'p_{i+1}' for i in range(8)]
+    def __init__(self, p_1: float, p_2: float, p_3: float, p_4: float, p_5: float,
+                 p_6: float, p_7: float, p_8: float, name: str = ''):
+        ClusTesterD1.__init__(self, p_1, name=name)
+        self.p_2 = p_2
+        self.p_3 = p_3
+        self.p_4 = p_4
+        self.p_5 = p_5
+        self.p_6 = p_6
+        self.p_7 = p_7
+        self.p_8 = p_8
 
 
-class ClusTester_d9(ClusTester_d8):
+class ClusTesterD9(ClusTesterD1):
     _nb_dims = 9
-    _vector_features = [f'p{i+1}' for i in range(9)]
-    def __init__(self, p1: float, p2: float, p3: float, p4: float, p5: float,
-                 p6: float, p7: float, p8: float, p9: float, name: str = ''):
-        ClusTester_d8.__init__(self, p1, p2, p3, p4, p5, p6, p7, p8, name=name)
-        self.p9 = p9
+    _vector_features = [f'p_{i+1}' for i in range(9)]
+    def __init__(self, p_1: float, p_2: float, p_3: float, p_4: float, p_5: float,
+                 p_6: float, p_7: float, p_8: float, p_9: float, name: str = ''):
+        ClusTesterD1.__init__(self, p_1, name=name)
+        self.p_2 = p_2
+        self.p_3 = p_3
+        self.p_4 = p_4
+        self.p_5 = p_5
+        self.p_6 = p_6
+        self.p_7 = p_7
+        self.p_8 = p_8
+        self.p_9 = p_9
 
 
-class ClusTester_d10(ClusTester_d9):
+class ClusTesterD10(ClusTesterD1):
     _nb_dims = 10
-    _vector_features = [f'p{i+1}' for i in range(10)]
+    _vector_features = [f'p_{i+1}' for i in range(10)]
 
-    def __init__(self, p1: float, p2: float, p3: float, p4: float, p5: float,
-                 p6: float, p7: float, p8: float, p9: float, p10: float, name: str = ''):
-        ClusTester_d9.__init__(self, p1, p2, p3, p4, p5, p6, p7, p8, p9, name=name)
-        self.p10 = p10
+    def __init__(self, p_1: float, p_2: float, p_3: float, p_4: float, p_5: float,
+                 p_6: float, p_7: float, p_8: float, p_9: float, p_10: float, name: str = ''):
+        ClusTesterD1.__init__(self, p_1, name=name)
+        self.p_2 = p_2
+        self.p_3 = p_3
+        self.p_4 = p_4
+        self.p_5 = p_5
+        self.p_6 = p_6
+        self.p_7 = p_7
+        self.p_8 = p_8
+        self.p_9 = p_9
+        self.p_10 = p_10

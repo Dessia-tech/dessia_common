@@ -14,9 +14,9 @@ csv_cars = pkg_resources.resource_stream('dessia_common', 'models/data/cars.csv'
 all_cars_with_features = HeterogeneousList(tests.CarWithFeatures.from_csv(csv_cars))
 
 # Auto-generated heterogeneous dataset with nb_clusters clusters of points in nb_dims dimensions
-clustesters_heterogeneous = HeterogeneousList(tests.ClusTester_d9.create_dataset(nb_clusters=10, nb_points=500) +
-                                              tests.ClusTester_d7.create_dataset(nb_clusters=10, nb_points=500) +
-                                              tests.ClusTester_d8.create_dataset(nb_clusters=10, nb_points=500))
+clustesters_heterogeneous = HeterogeneousList(tests.ClusTesterD9.create_dataset(nb_clusters=10, nb_points=500) +
+                                              tests.ClusTesterD7.create_dataset(nb_clusters=10, nb_points=500) +
+                                              tests.ClusTesterD8.create_dataset(nb_clusters=10, nb_points=500))
 
 # Test on auto-generated attributes
 car_matrix_with = all_cars_with_features.matrix
