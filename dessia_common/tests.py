@@ -241,7 +241,7 @@ class ClusTester_d1(DessiaObject):
 
 
     @classmethod
-    def create_dataset(cls, nb_clusters: float = 10., nb_points: int = 2500,
+    def create_dataset(cls, nb_clusters: int = 10., nb_points: int = 2500,
                        mean_borns: Tuple[float, float] = (-50., 50), std_borns: Tuple[float, float] = (-2., 2.)):
         means_list = []
         std_list = []
