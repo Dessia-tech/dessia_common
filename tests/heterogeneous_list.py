@@ -45,3 +45,10 @@ clustesters_heterogeneous.plot()
 all_cars_with_features._check_platform()
 all_cars_without_features._check_platform()
 clustesters_heterogeneous._check_platform()
+
+# Filters on HeterogeneousLists
+idx_slice = all_cars_with_features[0:]
+idx_slice = all_cars_with_features[:10]
+idx_slice = all_cars_with_features[0:10]
+idx_int = idx_slice[2]
+idx_bool = idx_slice[[False,True,False,True,False,False,True,True,False,True]]

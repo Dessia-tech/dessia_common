@@ -797,6 +797,16 @@ class HeterogeneousList(DessiaObject):
         self.common_attributes = self._common_attributes()
         self.matrix = self._matrix()
 
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            return HeterogeneousList([self.dessia_objects.__getitem__(key)], name=self.name + f"_{key}th")
+        if isinstance(key, slice):
+            return HeterogeneousList(self.dessia_objects.__getitem__(key), name=self.name + f"_{key.start}_{key.stop}")
+        if all(isinstance(item, bool) for item in key):
+            return HeterogeneousList(npy.array(self.dessia_objects).__getitem__(key).tolist(), name=self.name + "_bool")
+        raise NotImplementedError(f"key of type {type(key)} with {type(key[0])} elements not implemented for " +
+                                  "indexing HeterogeneousLists")
+
     def _common_attributes(self):
         all_class = list(set(dessia_object.__class__ for dessia_object in self.dessia_objects))
         common_attributes = set(all_class[0].vector_features())
