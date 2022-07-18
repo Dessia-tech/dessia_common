@@ -26,7 +26,7 @@ MAX_ERROR_BY_TYPE = {
                      'no-member': 1,
                      'too-many-locals': 14,
                      'wrong-import-order': 7,
-                     'too-many-branches': 10,
+                     'too-many-branches': 9,
                      'unused-import': 1,
                      'unused-argument': 5,
                      'cyclic-import': 10,
