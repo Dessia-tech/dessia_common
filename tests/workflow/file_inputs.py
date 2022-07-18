@@ -13,10 +13,11 @@ assert workflow_._method_jsonschemas == {
         'definitions': {},
         '$schema': 'http://json-schema.org/draft-07/schema#',
         'type': 'object',
-        'required': ['0'], 'properties': {
+        'required': ['0'],
+        'properties': {
             '0': {
                 'title': 'Class Method - stream', 'editable': True, 'order': 1, 'description': '',
-                'python_typing': 'StringFile', 'type': 'text', 'is_file': True
+                'python_typing': 'dessia_common.files.StringFile', 'type': 'text', 'is_file': True
             },
             '2': {
                 'type': 'string', 'title': 'WorkflowRun Name', 'editable': True, 'order': 0,
@@ -32,10 +33,11 @@ assert workflow_._method_jsonschemas == {
         'definitions': {},
         '$schema': 'http://json-schema.org/draft-07/schema#',
         'type': 'object',
-        'required': [], 'properties': {
+        'required': [],
+        'properties': {
             '0': {
                 'title': 'Class Method - stream', 'editable': True, 'order': 1, 'description': '',
-                'python_typing': 'StringFile', 'type': 'text', 'is_file': True
+                'python_typing': 'dessia_common.files.StringFile', 'type': 'text', 'is_file': True
             },
             '2': {
                 'type': 'string', 'title': 'WorkflowRun Name', 'editable': True, 'order': 0,

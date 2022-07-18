@@ -102,9 +102,7 @@ def is_typing(object_: Any):
 def serialize_typing(typing_):
     if is_typing(typing_):
         return serialize_typing_types(typing_)
-    if typing_ in [StringFile, BinaryFile, MethodType, ClassMethodType]:
-        return typing_.__name__
-    if isinstance(typing_, type):
+    if typing_ in [StringFile, BinaryFile, MethodType, ClassMethodType] or isinstance(typing_, type):
         return full_classname(typing_, compute_for='class')
     return str(typing_)
 
@@ -177,10 +175,10 @@ def deserialize_typing(serialized_typing):
         if serialized_typing in SERIALIZED_BUILTINS:
             return deserialize_builtin_typing(serialized_typing)
 
-        if serialized_typing in ["StringFile", "BinaryFile"]:
+        if serialized_typing in ["dessia_common.files.StringFile", "dessia_common.files.BinaryFile"]:
             return deserialize_file_typing(serialized_typing)
 
-        if serialized_typing in ["MethodType", "ClassMethodType"]:
+        if serialized_typing in ["dessia_common.typings.MethodType", "dessia_common.typings.ClassMethodType"]:
             return deserialize_method_typing(serialized_typing)
 
         if serialized_typing == "Type":
