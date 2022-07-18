@@ -27,7 +27,7 @@ assert workflow_._method_jsonschemas == {
         },
         'classes': ['dessia_common.workflow.Workflow'],
         'method': True,
-        'python_typing': 'MethodType'
+        'python_typing': 'dessia_common.typings.MethodType'
     },
     'start_run': {
         'definitions': {},
@@ -47,7 +47,7 @@ assert workflow_._method_jsonschemas == {
         },
         'classes': ['dessia_common.workflow.Workflow'],
         'method': True,
-        'python_typing': 'MethodType'
+        'python_typing': 'dessia_common.typings.MethodType'
     }
 }
 
