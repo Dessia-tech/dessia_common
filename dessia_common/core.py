@@ -878,6 +878,9 @@ class HeterogeneousList(DessiaObject):
         """
         return templates.heterogeneouslist_markdown_template.substitute(name=self.name, class_=self.__class__.__name__)
 
+    def pareto_front(self):
+        return
+
 
 # class HomogeneousList(HeterogeneousList):
 
