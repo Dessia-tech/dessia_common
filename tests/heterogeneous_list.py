@@ -2,6 +2,9 @@
 Tests for dessia_common.HeterogeneousList class (loadings, check_platform and plots)
 """
 import pkg_resources
+import random
+import matplotlib.pyplot as plt
+import numpy as npy
 from dessia_common import tests
 from dessia_common.core import HeterogeneousList
 
@@ -41,7 +44,32 @@ all_cars_with_features.plot()
 all_cars_without_features.plot()
 clustesters_heterogeneous.plot()
 
-# # Check platform for datasets
+# Check platform for datasets
 all_cars_with_features._check_platform()
 all_cars_without_features._check_platform()
 clustesters_heterogeneous._check_platform()
+
+
+# =============================================================================
+# TEST PARETO FRONT
+# =============================================================================
+
+# Uniform
+coord_1 = [random.uniform(0, 10) for i in range(1000)]
+coord_2 = [random.uniform(0, 10) for i in range(1000)]
+costs = npy.array([coord_1, coord_2]).T
+
+pareto_frontiers = HeterogeneousList.pareto_frontiers(costs)
+
+# Gaussan
+coord_1 = [random.gauss(5, 1) for i in range(1000)]
+coord_2 = [random.gauss(5, 1) for i in range(1000)]
+costs = npy.array([coord_1, coord_2]).T
+
+pareto_frontiers = HeterogeneousList.pareto_frontiers(costs)
+
+# Cars
+costs = npy.array([[row[4], row[1]] for row in all_cars_with_features.matrix])
+pareto_frontiers = HeterogeneousList.pareto_frontiers(costs)
+
+

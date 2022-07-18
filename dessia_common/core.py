@@ -878,9 +878,59 @@ class HeterogeneousList(DessiaObject):
         """
         return templates.heterogeneouslist_markdown_template.substitute(name=self.name, class_=self.__class__.__name__)
 
-    def pareto_front(self):
-        return
+    @staticmethod
+    def pareto_front(costs, tol):
+        """
+        Find the pareto-efficient points
+        :return: A (n_points, ) boolean array, indicating whether each point
+                 is Pareto efficient
+        """
+        is_efficient = npy.ones(costs.shape[0], dtype=bool)
+        for index, cost in enumerate(costs):
+            if is_efficient[index]:
+                # Keep any point with a lower cost
+                is_efficient[is_efficient] = npy.any(costs[is_efficient] < cost + tol, axis=1)
+                # And keep self
+                is_efficient[index] = True
+        return is_efficient
 
+    @staticmethod
+    def pareto_frontiers(costs):
+        # Experimental
+        import matplotlib.pyplot as plt
+        tol = 0
+        pareto_points = costs[HeterogeneousList.pareto_front(costs, tol), :]
+        pareto_frontiers = []
+
+        plt.figure()
+        plt.plot(costs[:, 0], costs[:, 1], linestyle ='None', marker='o', color = 'b')
+        plt.plot(pareto_points[:, 0], pareto_points[:, 1], linestyle ='None', marker='o', color = 'r')
+        plt.show()
+
+        super_mini = npy.min(costs, axis = 0)
+
+        for x_dim in range(pareto_points.shape[1]):
+            pareto_frontiers = []
+            for y_dim in range(pareto_points.shape[1]):
+                if x_dim != y_dim:
+                    minidx = npy.argmin(pareto_points[:, y_dim])
+                    X = pareto_points[minidx, x_dim]
+                    Y = pareto_points[minidx, y_dim]
+
+                    dir_coeffs = (Y - pareto_points[:, y_dim]) / (X - pareto_points[:, x_dim])
+                    dir_coeffs[X == pareto_points[:, x_dim]] = npy.max(dir_coeffs[X != pareto_points[:, x_dim]])
+                    offsets = Y - dir_coeffs * X
+                    approx_super_mini = dir_coeffs * super_mini[x_dim] + offsets
+                    chosen_line = npy.argmin(npy.absolute(approx_super_mini-super_mini[y_dim]))
+
+                    vector = npy.array([[super_mini[x_dim], npy.max(costs[ :, x_dim])],
+                                        [approx_super_mini[chosen_line], npy.max(costs[ :, x_dim])*dir_coeffs[chosen_line] + offsets[chosen_line]]]).T
+                    pareto_frontiers.append(vector)
+                    plt.plot(vector[:, x_dim], vector[:, y_dim], color = 'g')
+
+        plt.plot(super_mini[0], super_mini[1], linestyle ='None', marker='o', color = 'k')
+
+        return vector
 
 # class HomogeneousList(HeterogeneousList):
 
