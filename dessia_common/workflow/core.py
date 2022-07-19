@@ -1043,8 +1043,6 @@ class Workflow(Block):
         if verbose:
             print(log_line)
 
-        state.output_value = state.values[self.outputs[0]]
-
         if not name:
             timestamp = start_timestamp.strftime("%m-%d (%H:%M)")
             name = f"{self.name} @ [{timestamp}]"
@@ -1240,11 +1238,7 @@ class WorkflowState(DessiaObject):
         self.workflow = workflow
         if input_values is None:
             input_values = {}
-
         self.input_values = input_values
-        for input_index, value in input_values:
-            input_ = self.workflow.inputs[input_index]
-            self._activate_input(input_=input_, value=value)
 
         if activated_items is None:
             activated_items = {p: False for p in workflow.pipes}
@@ -1616,9 +1610,8 @@ class WorkflowState(DessiaObject):
 
     def _activate_variable(self, variable: Variable, value):
         outgoing_pipes = self.workflow.variable_output_pipes(variable)
-        if not outgoing_pipes:
-            if self.workflow.output == variable:
-                self.output_value = value
+        if self.workflow.output == variable:
+            self.output_value = value
         for outgoing_pipe in outgoing_pipes:
             self._activate_pipe(pipe=outgoing_pipe, value=value)
         self.activated_items[variable] = True
@@ -1689,23 +1682,23 @@ class WorkflowState(DessiaObject):
                 print(log_line)
 
         local_values = {}
-        incoming_pipes = self.workflow.block_input_pipes(block)
-        for i, incoming_pipe in enumerate(incoming_pipes):
-            variable = block.inputs[i]
-            self._activate_variable(variable)
+        for input_ in block.inputs:
+            incoming_pipe = self.workflow.variable_input_pipe(input_)
             if incoming_pipe is None:
                 # Input isn't connect, it's a workflow input
-                input_index = self.workflow.input_index(variable)
-                local_values[i] = self.input_values[input_index]
+                input_index = self.workflow.input_index(input_)
+                value = self.input_values[input_index]
             else:
-                local_values[i] = self.values[incoming_pipe]
+                value = self.values[incoming_pipe]
+            self._activate_variable(variable=input_, value=value)
+            local_values[input_] = value
 
         output_values = block.evaluate(local_values)
+        self._activate_block(block=block, output_values=output_values)
+
         # Updating progress
         if progress_callback is not None:
             progress_callback(self.progress)
-
-        self._activate_block(block=block, output_values=output_values)
 
     def activate_inputs(self, check_all_inputs=False):
         """
