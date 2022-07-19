@@ -72,25 +72,19 @@ class DessiaObject:
     Gathers generic methods and attributes
 
     :cvar bool _standalone_in_db:
-        Indicates wether class objects should be independant
-        in database or not.
+        Indicates wether class objects should be independant in database or not.
         If False, object will only exist inside its parent.
     :cvar bool _eq_is_data_eq:
-        Indicates which type of equality check is used:
-        strict equality or equality based on data. If False, Python's
-        object __eq__ method is used (ie. strict),
-        else, user custom data_eq is used (ie. data)
+        Indicates which type of equality check is used: strict equality or equality based on data.
+        If False, Python's object __eq__ method is used (ie. strict), else, user custom data_eq is used (ie. data)
     :cvar List[str] _non_serializable_attributes:
-        [Advanced] List of instance attributes that should not
-        be part of serialization with to_dict method. These will not
-        be displayed in platform object tree, for instance.
+        [Advanced] List of instance attributes that should not be part of serialization with to_dict method.
+        These will not be displayed in platform object tree, for instance.
     :cvar List[str] _non_data_eq_attributes:
-        [Advanced] List of instance attributes that should not
-        be part of equality check with data__eq__ method
+        [Advanced] List of instance attributes that should not be part of equality check with data__eq__ method
         (if _eq_is_data_eq is True).
     :cvar List[str] _non_data_hash_attributes:
-        [Advanced] List of instance attributes that should not
-        be part of hash computation with data__hash__ method
+        [Advanced] List of instance attributes that should not be part of hash computation with data__hash__ method
         (if _eq_is_data_eq is True).
     :cvar List[str] _ordered_attributes:
         Documentation not available yet.
@@ -99,8 +93,7 @@ class DessiaObject:
     :cvar List[str] _init_variables:
         Documentation not available yet.
     :cvar List[str] _export_formats:
-        List of all available export formats. Class must define a
-        export_[format] for each format in _export_formats
+        List of all available export formats. Class must define a export_[format] for each format in _export_formats
     :cvar List[str] _allowed_methods:
         List of all methods that are runnable from platform.
     :cvar List[str] _whitelist_attributes:
@@ -127,8 +120,7 @@ class DessiaObject:
 
     def __init__(self, name: str = '', **kwargs):
         """
-        Generic init of DessiA Object. Only store name in self. To be overload
-        and call in specific class init
+        Generic init of DessiA Object. Only store name in self. To be overload and call in specific class init
         """
         self.name = name
         for property_name, property_value in kwargs.items():
@@ -144,9 +136,8 @@ class DessiaObject:
 
     def __eq__(self, other_object):
         """
-        Generic equality of two objects. behavior can be controled by class
-        attribute _eq_is_data_eq to tell if we must use python equality (based on memory addresses)
-        (_eq_is_data_eq = False) or a data equality (True)
+        Generic equality of two objects. behavior can be controled by class attribute _eq_is_data_eq to tell
+        if we must use python equality (based on memory addresses) (_eq_is_data_eq = False) or a data equality (True)
         """
         if self._eq_is_data_eq:
             if self.__class__.__name__ != other_object.__class__.__name__:
@@ -161,9 +152,7 @@ class DessiaObject:
 
     def _data_hash(self):
         hash_ = 0
-        forbidden_keys = (self._non_data_eq_attributes
-                          + self._non_data_hash_attributes
-                          + ['package_version', 'name'])
+        forbidden_keys = (self._non_data_eq_attributes + self._non_data_hash_attributes + ['package_version', 'name'])
         for key, value in self._serializable_dict().items():
             if key not in forbidden_keys:
                 if is_sequence(value):
@@ -221,8 +210,7 @@ class DessiaObject:
         """
 
         dict_ = {k: v for k, v in self.__dict__.items()
-                 if k not in self._non_serializable_attributes
-                 and not k.startswith('_')}
+                 if k not in self._non_serializable_attributes and not k.startswith('_')}
         return dict_
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#') -> JsonSerializable:
@@ -236,33 +224,27 @@ class DessiaObject:
         serialized_dict = self.base_dict()
         dict_ = self._serializable_dict()
         if use_pointers:
-            serialized_dict.update(
-                serialize_dict_with_pointers(dict_, memo, path)[0])
+            serialized_dict.update(serialize_dict_with_pointers(dict_, memo, path)[0])
         else:
             serialized_dict.update(serialize_dict(dict_))
 
         return serialized_dict
 
     @classmethod
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'DessiaObject':
+    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
+                       pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'DessiaObject':
         """
         Generic dict_to_object method
         """
 
         if cls is not DessiaObject:
-            obj = dict_to_object(dict_=dict_, class_=cls,
-                                 force_generic=force_generic,
-                                 global_dict=global_dict,
-                                 pointers_memo=pointers_memo,
-                                 path=path)
+            obj = dict_to_object(dict_=dict_, class_=cls, force_generic=force_generic, global_dict=global_dict,
+                                 pointers_memo=pointers_memo, path=path)
             return obj
 
         if 'object_class' in dict_:
-            obj = dict_to_object(dict_=dict_, force_generic=force_generic,
-                                 global_dict=global_dict,
-                                 pointers_memo=pointers_memo,
-                                 path=path)
+            obj = dict_to_object(dict_=dict_, force_generic=force_generic, global_dict=global_dict,
+                                 pointers_memo=pointers_memo, path=path)
             return obj
 
         raise NotImplementedError('No object_class in dict')
@@ -271,7 +253,7 @@ class DessiaObject:
     def base_jsonschema(cls):
         jsonschema = deepcopy(JSONSCHEMA_HEADER)
         jsonschema['properties']['name'] = {
-            'type': 'string',
+            "type": 'string',
             "title": "Object Name",
             "description": "Object name",
             "editable": True,
@@ -306,8 +288,7 @@ class DessiaObject:
         # Parse docstring
         try:
             docstring = cls.__doc__
-            parsed_docstring = parse_docstring(
-                docstring=docstring, annotations=annotations)
+            parsed_docstring = parse_docstring(docstring=docstring, annotations=annotations)
         except Exception:
             parsed_docstring = FAILED_DOCSTRING_PARSING
         parsed_attributes = parsed_docstring['attributes']
@@ -315,8 +296,7 @@ class DessiaObject:
         # Initialize jsonschema
         _jsonschema = deepcopy(JSONSCHEMA_HEADER)
 
-        required_arguments, default_arguments = inspect_arguments(method=init,
-                                                                  merge=False)
+        required_arguments, default_arguments = inspect_arguments(method=init, merge=False)
         _jsonschema['required'] = required_arguments
         _jsonschema['standalone_in_db'] = cls._standalone_in_db
         _jsonschema['description'] = parsed_docstring['description']
@@ -339,15 +319,12 @@ class DessiaObject:
                 editable = name not in cls._non_editable_attributes
                 annotation_type = type_from_annotation(annotation[1], cls)
                 annotation = (name, annotation_type)
-                jss_elt = jsonschema_from_annotation(
-                    annotation=annotation, jsonschema_element={}, order=order,
-                    editable=editable, title=title, parsed_attributes=parsed_attributes
-                )
+                jss_elt = jsonschema_from_annotation(annotation=annotation, jsonschema_element={}, order=order,
+                                                     editable=editable, title=title,
+                                                     parsed_attributes=parsed_attributes)
                 _jsonschema['properties'].update(jss_elt)
                 if name in default_arguments:
-                    default = set_default_value(_jsonschema['properties'],
-                                                name,
-                                                default_arguments[name])
+                    default = set_default_value(_jsonschema['properties'], name, default_arguments[name])
                     _jsonschema['properties'].update(default)
 
         _jsonschema['classes'] = [cls.__module__ + '.' + cls.__name__]
@@ -518,8 +495,7 @@ class DessiaObject:
                                       width=1400, height=900,
                                       debug_mode=False)
         else:
-            msg = 'Class {} does not implement a plot_data method' \
-                  ' to define what to plot'
+            msg = 'Class {} does not implement a plot_data method to define what to plot'
             raise NotImplementedError(msg.format(self.__class__.__name__))
 
     def mpl_plot(self, **kwargs):
@@ -538,8 +514,7 @@ class DessiaObject:
                     ax = data.mpl_plot()
                     axs.append(ax)
         else:
-            msg = 'Class {} does not implement a plot_data method' \
-                  'to define what to plot'
+            msg = 'Class {} does not implement a plot_data method to define what to plot'
             raise NotImplementedError(msg.format(self.__class__.__name__))
 
         return axs
@@ -561,8 +536,7 @@ class DessiaObject:
         display_setting = self._display_settings_from_selector(selector)
         track = ''
         try:
-            data = attrmethod_getter(self, display_setting.method)(
-                **display_setting.arguments)
+            data = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
         except:
             data = None
             track = tb.format_exc()
@@ -575,8 +549,7 @@ class DessiaObject:
         for display_setting in self.display_settings():
             if display_setting.selector == selector:
                 return display_setting
-        raise ValueError(
-            f"No such selector '{selector}' in display of class '{self.__class__.__name__}'")
+        raise ValueError(f"No such selector '{selector}' in display of class '{self.__class__.__name__}'")
 
     def _displays(self, **kwargs) -> List[JsonSerializable]:
         """
@@ -586,8 +559,7 @@ class DessiaObject:
 
         displays = []
         for display_setting in self.display_settings():
-            display_ = self._display_from_selector(
-                display_setting.selector, reference_path=reference_path)
+            display_ = self._display_from_selector(display_setting.selector, reference_path=reference_path)
             displays.append(display_.to_dict())
         return displays
 
@@ -620,8 +592,7 @@ class DessiaObject:
             display_time = time.time()
             self._display_from_selector(display_setting.selector)
             display_time = time.time() - display_time
-            print(
-                f'Generation of display {display_setting.selector} in: {round(display_time, 6)} seconds')
+            print(f'Generation of display {display_setting.selector} in: {round(display_time, 6)} seconds')
 
     def _check_platform(self):
         """
@@ -642,8 +613,7 @@ class DessiaObject:
         copied_object = self.copy()
         if not copied_object._data_eq(self):
             print('data diff: ', self._data_diff(copied_object))
-            raise dessia_common.errors.CopyError('Object is not equal to itself'
-                                                 ' after copy')
+            raise dessia_common.errors.CopyError('Object is not equal to itself after copy')
 
         valid, hint = is_bson_valid(stringify_dict_keys(dict_))
         if not valid:
@@ -754,14 +724,10 @@ class PhysicalObject(DessiaObject):
         Show the 3D volmdlr of an object by calling volmdlr_volume_model method
         and plot in in browser
         """
-        self.volmdlr_volume_model(**kwargs).babylonjs(use_cdn=use_cdn,
-                                                      debug=debug)
+        self.volmdlr_volume_model(**kwargs).babylonjs(use_cdn=use_cdn, debug=debug)
 
-    def save_babylonjs_to_file(self, filename: str = None, use_cdn: bool = True,
-                               debug: bool = False, **kwargs):
-        self.volmdlr_volume_model(**kwargs).save_babylonjs_to_file(filename=filename,
-                                                                   use_cdn=use_cdn,
-                                                                   debug=debug)
+    def save_babylonjs_to_file(self, filename: str = None, use_cdn: bool = True, debug: bool = False, **kwargs):
+        self.volmdlr_volume_model(**kwargs).save_babylonjs_to_file(filename=filename, use_cdn=use_cdn, debug=debug)
 
     def _export_formats(self):
         formats = DessiaObject._export_formats(self)
@@ -777,8 +743,7 @@ class MovingObject(PhysicalObject):
         """
         Return a list of volmdlr primitives to build up volume model
         """
-        raise NotImplementedError(
-            'Object inheriting MovingObject should implement volmdlr_primitives_step_frames')
+        raise NotImplementedError('Object inheriting MovingObject should implement volmdlr_primitives_step_frames')
 
     def volmdlr_volume_model(self, **kwargs):
         import volmdlr as vm  # !!! Avoid circular imports, is this OK ?
@@ -820,8 +785,7 @@ class HeterogeneousList(DessiaObject):
 
         singular_points = []
         for idx, value in enumerate(normed_singular_values):
-            singular_points.append({'Index of reduced basis vector': idx + 1,
-                                    'Singular value': value})
+            singular_points.append({'Index of reduced basis vector': idx + 1, 'Singular value': value})
         return normed_singular_values, singular_points
 
     def plot_data(self):
@@ -919,19 +883,16 @@ class Parameter(DessiaObject):
         return math.isclose(value1, value2, abs_tol=tol)
 
     def normalize(self, value):
-        normalized_value = (value - self.lower_bound) / \
-            (self.upper_bound - self.lower_bound)
+        normalized_value = (value - self.lower_bound) / (self.upper_bound - self.lower_bound)
         return normalized_value
 
     def original_value(self, normalized_value):
-        value = normalized_value * \
-            (self.upper_bound - self.lower_bound) + self.lower_bound
+        value = normalized_value * (self.upper_bound - self.lower_bound) + self.lower_bound
         return value
 
     def optimizer_bounds(self):
         if self.periodicity is not None:
-            return (self.lower_bound - 0.5 * self.periodicity,
-                    self.upper_bound + 0.5 * self.periodicity)
+            return (self.lower_bound - 0.5 * self.periodicity, self.upper_bound + 0.5 * self.periodicity)
         return None
 
 
@@ -943,8 +904,7 @@ class ParameterSet(DessiaObject):
 
     @property
     def parameters(self):
-        parameters = [Parameter(min(v), max(v), name=k)
-                      for k, v in self.values.items()]
+        parameters = [Parameter(min(v), max(v), name=k) for k, v in self.values.items()]
         return parameters
 
     @property
@@ -954,8 +914,7 @@ class ParameterSet(DessiaObject):
 
 
 class DessiaFilter(DessiaObject):
-    def __init__(self, attribute: str, operator: str,
-                 bound: float, name: str = ''):
+    def __init__(self, attribute: str, operator: str, bound: float, name: str = ''):
         self.attribute = attribute
         self.operator = operator
         self.bound = bound
@@ -1082,14 +1041,11 @@ def dict_merge(old_dct, merge_dct, add_keys=True, extend_lists=True):
     """
     dct = deepcopy(old_dct)
     if not add_keys:
-        merge_dct = {k: merge_dct[k]
-                     for k in set(dct).intersection(set(merge_dct))}
+        merge_dct = {k: merge_dct[k] for k in set(dct).intersection(set(merge_dct))}
 
     for key, value in merge_dct.items():
-        if isinstance(dct.get(key), dict)\
-                and isinstance(value, collections.Mapping):
-            dct[key] = dict_merge(dct[key], merge_dct[key],
-                                  add_keys=add_keys, extend_lists=extend_lists)
+        if isinstance(dct.get(key), dict) and isinstance(value, collections.Mapping):
+            dct[key] = dict_merge(dct[key], merge_dct[key], add_keys=add_keys, extend_lists=extend_lists)
         elif isinstance(dct.get(key), list) and extend_lists:
             dct[key].extend(value)
         else:
@@ -1119,13 +1075,10 @@ def getdeepattr(obj, attr):
 
 def enhanced_deep_attr(obj, sequence):
     """
-    Get deep attribute where Objects, Dicts and Lists
-    can be found in recursion.
+    Get deep attribute where Objects, Dicts and Lists can be found in recursion.
 
-    :param obj: Parent object in which recursively find attribute
-                represented by sequence
-    :param sequence: List of strings and integers that represents
-                     path to deep attribute.
+    :param obj: Parent object in which recursively find attribute represented by sequence
+    :param sequence: List of strings and integers that represents path to deep attribute.
     :return: Value of deep attribute
     """
     if isinstance(sequence, str):
@@ -1208,8 +1161,7 @@ def deepattr_to_sequence(deepattr: str):
 
 
 def sequence_to_deepattr(sequence):
-    healed_sequence = [str(attr) if isinstance(attr, int) else attr
-                       for attr in sequence]
+    healed_sequence = [str(attr) if isinstance(attr, int) else attr for attr in sequence]
     return '/'.join(healed_sequence)
 
 
@@ -1239,8 +1191,7 @@ def type_from_annotation(type_, module):
     """
     if isinstance(type_, str):
         # Evaluating types
-        type_ = TYPES_FROM_STRING.get(
-            type_, default=getattr(import_module(module), type_))
+        type_ = TYPES_FROM_STRING.get(type_, default=getattr(import_module(module), type_))
     return type_
 
 
@@ -1271,8 +1222,7 @@ def inspect_arguments(method, merge=False):
     for iargument, argument in enumerate(argspecs.args[1:]):
         if argument not in _FORBIDDEN_ARGNAMES:
             if iargument >= nargs - ndefault_args:
-                default_value = argspecs.defaults[ndefault_args -
-                                                  nargs + iargument]
+                default_value = argspecs.defaults[ndefault_args - nargs + iargument]
                 if merge:
                     arguments.append((argument, default_value))
                 else:
