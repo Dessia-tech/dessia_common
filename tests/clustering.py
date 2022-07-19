@@ -3,8 +3,9 @@ Cluster.py package testing.
 """
 import json
 import pkg_resources
-from dessia_common import tests, cluster
+from dessia_common import tests
 from dessia_common.core import HeterogeneousList
+from dessia_common.cluster import CategorizedList
 import dessia_common.workflow as wf
 
 # Standard cars homogeneous dataset from the Internet
@@ -36,12 +37,10 @@ small_RandDatas_heterogeneous = HeterogeneousList(test5 + test4 + test3)
 big_RandDatas_heterogeneous = HeterogeneousList(test9 + test7 + test8)
 
 # Build CategorizedLists
-clustered_cars_without = cluster.CategorizedList.from_dbscan(all_cars_without_features, eps=40)
-clustered_cars_with = cluster.CategorizedList.from_dbscan(all_cars_with_features, eps=40)
-aggclustest_clustered = cluster.CategorizedList.from_agglomerative_clustering(
-    big_RandDatas_heterogeneous, n_clusters=10)
-kmeanstest_clustered = cluster.CategorizedList.from_kmeans(
-    small_RandDatas_heterogeneous, n_clusters=10, scaling=True)
+clustered_cars_without = CategorizedList.from_dbscan(all_cars_without_features, eps=40)
+clustered_cars_with = CategorizedList.from_dbscan(all_cars_with_features, eps=40)
+aggclustest_clustered = CategorizedList.from_agglomerative_clustering(big_RandDatas_heterogeneous, n_clusters=10)
+kmeanstest_clustered = CategorizedList.from_kmeans(small_RandDatas_heterogeneous, n_clusters=10, scaling=True)
 
 # Test ClusterResults instances on platform
 clustered_cars_without._check_platform()
@@ -93,7 +92,7 @@ block_data = wf.ClassMethod(method_type=data_method, name='data load')
 
 block_heterogeneous_list = wf.InstantiateModel(model_class=HeterogeneousList, name='heterogeneous list of data')
 
-categorized_list_method = wf.MethodType(class_=cluster.CategorizedList, name='from_dbscan')
+categorized_list_method = wf.MethodType(class_=CategorizedList, name='from_dbscan')
 block_cluster = wf.ClassMethod(method_type=categorized_list_method, name='labelling elements of list')
 
 block_workflow = [block_data, block_heterogeneous_list, block_cluster]
@@ -132,7 +131,7 @@ block_data = wf.ClassMethod(method_type=data_method, name='data load')
 
 block_heterogeneous_list = wf.InstantiateModel(model_class=HeterogeneousList, name='heterogeneous list of data')
 
-categorized_list_method = wf.MethodType(class_=cluster.CategorizedList, name='from_dbscan')
+categorized_list_method = wf.MethodType(class_=CategorizedList, name='from_dbscan')
 block_cluster = wf.ClassMethod(method_type=categorized_list_method, name='labelling elements of list')
 
 block_workflow = [block_data, block_heterogeneous_list, block_cluster]
@@ -179,7 +178,7 @@ block_concatenate = wf.Concatenate(3)
 
 block_heterogeneous_list = wf.InstantiateModel(model_class=HeterogeneousList, name='heterogeneous list of data')
 
-categorized_list_method = wf.MethodType(class_=cluster.CategorizedList, name='from_dbscan')
+categorized_list_method = wf.MethodType(class_=CategorizedList, name='from_dbscan')
 block_cluster = wf.ClassMethod(method_type=categorized_list_method, name='labelling elements of list')
 
 block_workflow = [block_data_d5, block_data_d4, block_data_d3,
