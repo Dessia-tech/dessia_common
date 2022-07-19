@@ -1293,7 +1293,7 @@ class WorkflowState(DessiaObject):
         workflow = hash(self.workflow)
         output = choose_hash(self.output_value)
         input_values = sum(i * choose_hash(v) for (i, v) in self.input_values.items())
-        values = sum(len(k.name) * choose_hash(v) for (k, v) in self.values.items())
+        values = len(self.values) * 7
         return (progress + workflow + output + input_values + values) % 1000000000
 
     def _data_eq(self, other_object: 'WorkflowState'):
@@ -1319,15 +1319,15 @@ class WorkflowState(DessiaObject):
                     # Check variables progress state
                     return False
 
-                if self.activated_items[variable] and variable in self.values:
-                    if self.values[variable] != other_object.values[other_variable]:
-                        # Check variable values for evaluated ones
-                        return False
-
         for pipe, other_pipe in zip(self.workflow.pipes, other_object.workflow.pipes):
             if self.activated_items[pipe] != other_object.activated_items[other_pipe]:
                 # Check pipe progress state
                 return False
+
+            if self.activated_items[pipe] and pipe in self.values:
+                if self.values[pipe] != other_object.values[other_pipe]:
+                    # Check variable values for evaluated ones
+                    return False
         return True
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#'):
