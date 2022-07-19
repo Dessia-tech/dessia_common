@@ -1554,8 +1554,8 @@ class WorkflowState(DessiaObject):
         block = self.workflow.blocks[block_index]
 
         self.activate_inputs()
-        for pipe in self._activable_pipes():
-            self._evaluate_pipe(pipe)
+        # for pipe in self._activable_pipes():
+        #     self._evaluate_pipe(pipe)
 
         if block in self._activable_blocks():
             self._evaluate_block(block)
@@ -1568,8 +1568,8 @@ class WorkflowState(DessiaObject):
         Evaluate a block
         """
         self.activate_inputs()
-        for pipe in self._activable_pipes():
-            self._evaluate_pipe(pipe)
+        # for pipe in self._activable_pipes():
+        #     self._evaluate_pipe(pipe)
 
         blocks = self._activable_blocks()
         if blocks:
@@ -1590,9 +1590,9 @@ class WorkflowState(DessiaObject):
         while something_activated:  # and (self.progress < 1 or export)
             something_activated = False
 
-            for pipe in self._activable_pipes():
-                self._evaluate_pipe(pipe)
-                something_activated = True
+            # for pipe in self._activable_pipes():
+            #     self._evaluate_pipe(pipe)
+            #     something_activated = True
 
             for block in self._activable_blocks():
                 evaluated_blocks.append(block)
@@ -1643,13 +1643,13 @@ class WorkflowState(DessiaObject):
                 pipes.append(pipe)
         return pipes
 
-    def _activate_activable_pipes(self):
-        """
-        Activates current acitvable pipes
-        """
-        activable_pipes = self._activable_pipes()
-        for pipe in activable_pipes:
-            self._evaluate_pipe(pipe)
+    # def _activate_activable_pipes(self):
+    #     """
+    #     Activates current acitvable pipes
+    #     """
+        # activable_pipes = self._activable_pipes()
+        # for pipe in activable_pipes:
+        #     self._evaluate_pipe(pipe)
 
     def _activable_blocks(self):
         """
@@ -1670,13 +1670,13 @@ class WorkflowState(DessiaObject):
                 return False
         return True
 
-    def _evaluate_pipe(self, pipe):
-        """
-        Propagate data between the two variables linked by the pipe, and store it into the object
-        """
-        self.activated_items[pipe] = True
-        self.values[pipe.output_variable] = self.values[pipe.input_variable]
-        self.activated_items[pipe.output_variable] = True
+    # def _evaluate_pipe(self, pipe):
+    #     """
+    #     Propagate data between the two variables linked by the pipe, and store it into the object
+    #     """
+    #     self.activated_items[pipe] = True
+    #     self.values[pipe.output_variable] = self.values[pipe.input_variable]
+    #     self.activated_items[pipe.output_variable] = True
 
     def _evaluate_block(self, block, progress_callback=lambda x: x, verbose=False):
         """
