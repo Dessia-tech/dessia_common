@@ -1240,7 +1240,11 @@ class WorkflowState(DessiaObject):
         self.workflow = workflow
         if input_values is None:
             input_values = {}
+
         self.input_values = input_values
+        for input_index, value in input_values:
+            input_ = self.workflow.inputs[input_index]
+            self._activate_input(input_=input_, value=value)
 
         if activated_items is None:
             activated_items = {p: False for p in workflow.pipes}
@@ -1494,9 +1498,9 @@ class WorkflowState(DessiaObject):
     def add_input_value(self, input_index: int, value):
         """
         Add a value for given input
-        """  # TODO: Type checking?
-        self.input_values[input_index] = value
-        self.activate_inputs()
+        """
+        input_ = self.workflow.inputs[input_index]
+        self._activate_input(input_=input_, value=value)
 
     def add_several_input_values(self, indices: List[int], values):
         """
@@ -1598,15 +1602,22 @@ class WorkflowState(DessiaObject):
                 something_activated = True
         return evaluated_blocks
 
-    def _activate_pipe(self, pipe, value):
+    def _activate_pipe(self, pipe: Pipe, value):
         self.values[pipe] = value
         self.activated_items[pipe] = True
 
-    def _activate_block(self, block):
+    def _activate_block(self, block: Block):
         self.activated_items[block] = True
 
-    def _activate_variable(self, variable):
+    def _activate_variable(self, variable: Variable):
         self.activated_items[variable] = True
+
+    def _activate_input(self, input_: Variable, value):
+        # Type checking
+        value_type_check(value, input_.type_)
+        input_index = self.workflow.input_index(input_)
+        self.input_values[input_index] = value
+        self._activate_variable(input_)
 
     def _activable_pipes(self):
         """
@@ -1670,8 +1681,8 @@ class WorkflowState(DessiaObject):
             self._activate_variable(variable)
             if incoming_pipe is None:
                 # Input isn't connect, it's a workflow input
-                global_index = self.workflow.input_index(variable)
-                local_values[i] = self.input_values[global_index]
+                input_index = self.workflow.input_index(variable)
+                local_values[i] = self.input_values[input_index]
             else:
                 local_values[i] = self.values[incoming_pipe]
 
@@ -1699,25 +1710,14 @@ class WorkflowState(DessiaObject):
         """
         Returns if all inputs are activated
         """
-        # Imposed variables values activation
-        for variable, value in self.workflow.imposed_variable_values.items():
-            # Type checking
-            value_type_check(value, variable.type_)
-            self.values[variable] = value
-            self.activated_items[variable] = True
-
         # Input activation
         for index, variable in enumerate(self.workflow.inputs):
             if index in self.input_values:
-                value = self.input_values[index]
-                self.values[variable] = value
-                self.activated_items[variable] = True
+                self._activate_input(input_=variable, value=self.input_values[index])
             elif variable in self.workflow.imposed_variable_values:
-                self.values[variable] = self.workflow.imposed_variable_values[variable]
-                self.activated_items[variable] = True
+                self._activate_input(input_=variable, value=self.workflow.imposed_variable_values[variable])
             elif hasattr(variable, 'default_value'):
-                self.values[variable] = variable.default_value
-                self.activated_items[variable] = True
+                self._activate_input(input_=variable, value=variable.default_value)
             elif check_all_inputs:
                 msg = f"Value {variable.name} of index {index} in inputs has no value"
                 if isinstance(variable, TypedVariable):
