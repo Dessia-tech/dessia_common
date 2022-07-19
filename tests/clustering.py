@@ -7,6 +7,7 @@ from dessia_common import tests, cluster
 from dessia_common.core import HeterogeneousList
 import dessia_common.workflow as wf
 
+# TODO : Replace all that by models.tests elements
 # Standard cars homogeneous dataset from the Internet
 csv_cars = pkg_resources.resource_stream('dessia_common', 'models/data/cars.csv')
 # When attribute _features is not specified in class Car

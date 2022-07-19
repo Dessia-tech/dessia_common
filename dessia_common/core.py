@@ -797,15 +797,57 @@ class HeterogeneousList(DessiaObject):
         self.common_attributes = self._common_attributes()
         self.matrix = self._matrix()
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: Any):
         if isinstance(key, int):
-            return HeterogeneousList([self.dessia_objects.__getitem__(key)], name=self.name + f"_{key}th")
+            return self.pick_from_int(key)
         if isinstance(key, slice):
-            return HeterogeneousList(self.dessia_objects.__getitem__(key), name=self.name + f"_{key.start}_{key.stop}")
-        if all(isinstance(item, bool) for item in key):
-            return HeterogeneousList(npy.array(self.dessia_objects).__getitem__(key).tolist(), name=self.name + "_bool")
+            return self.pick_from_slice(key)
+        if isinstance(key, list):
+            if all(isinstance(item, int) for item in key) and len(key) == len(self):
+                return self.pick_from_list(key)
         raise NotImplementedError(f"key of type {type(key)} with {type(key[0])} elements not implemented for " +
                                   "indexing HeterogeneousLists")
+
+    def pick_from_int(self, idx: int):
+        return self.dessia_objects.__getitem__(idx)
+
+    def pick_from_slice(self, key: slice):
+        return HeterogeneousList(self.dessia_objects.__getitem__(key), name=self.name +
+                                 f"_{key.start if key.start is not None else 0}_{key.stop}")
+
+    def pick_from_list(self, key: List[int]):
+        return HeterogeneousList(npy.array(self.dessia_objects).__getitem__(key).tolist(), name=self.name + "_bool")
+
+    def __str__(self):
+        offset_space = 10
+        print_lim = 15
+        string = ""
+        for attr in self.common_attributes:
+            space = offset_space - int(len(attr)/2)
+            string += "|" + " "*space + f"{attr}" + " "*space + "|"
+        string += "\n" + "-"*len(string)
+        for dessia_object in self.dessia_objects[:print_lim]:
+            string += "\n"
+            for attr in self.common_attributes:
+                space = 2*offset_space - len(str(getattr(dessia_object, attr)))
+                string += "|" + " "*(space + len(attr)%2 - 2) + f"{getattr(dessia_object, attr)}" + "  |"
+
+        prefix = (f"{self.__class__.__name__} {self.name if self.name != '' else hex(id(self))}: " +
+                  f"{len(self.dessia_objects)} samples, {len(self.common_attributes)} features\n")
+        return prefix + string + "\n"
+
+    def __len__(self):
+        return len(self.dessia_objects)
+
+    def sort(self, key: Any, ascend: bool = True):
+        if isinstance(key, int):
+            sort_indexes = npy.argsort([row[key] for row in self.matrix])
+        elif isinstance(key, str):
+            sort_indexes = npy.argsort([getattr(dessia_object, key) for dessia_object in self.dessia_objects])
+
+        self.dessia_objects = [self.dessia_objects[idx] for idx in (sort_indexes if ascend else sort_indexes[::-1])]
+        self.matrix = [self.matrix[idx] for idx in (sort_indexes if ascend else sort_indexes[::-1])]
+
 
     def _common_attributes(self):
         all_class = list(set(dessia_object.__class__ for dessia_object in self.dessia_objects))
@@ -820,7 +862,8 @@ class HeterogeneousList(DessiaObject):
         matrix = []
         for dessia_object in self.dessia_objects:
             temp_row = dessia_object.to_vector()
-            matrix.append(list(col for attr, col in zip(self.common_attributes, temp_row)
+            vector_features = dessia_object.vector_features()
+            matrix.append(list(temp_row[vector_features.index(attr)] for attr in self.common_attributes
                                if attr in dessia_object.vector_features()))
         return matrix
 

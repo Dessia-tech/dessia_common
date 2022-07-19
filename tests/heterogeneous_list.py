@@ -1,6 +1,7 @@
 """
 Tests for dessia_common.HeterogeneousList class (loadings, check_platform and plots)
 """
+import random
 import pkg_resources
 from dessia_common import tests
 from dessia_common.core import HeterogeneousList
@@ -22,33 +23,48 @@ clustesters_heterogeneous = HeterogeneousList(tests.ClusTesterD9.create_dataset(
 car_matrix_with = all_cars_with_features.matrix
 car_matrix_without = all_cars_without_features.matrix
 heter_matrix = clustesters_heterogeneous.matrix
-print("car_matrix_with : \n",
-      "    - n_rows", len(car_matrix_with), "\n",
-      "    - n_cols", len(car_matrix_with[0]), "\n",
-      "    - common_attributes", all_cars_with_features.common_attributes, "\n")
-print("car_matrix_without : \n",
-      "    - n_rows", len(car_matrix_without), "\n",
-      "    - n_cols", len(car_matrix_without[0]), "\n",
-      "    - common_attributes", all_cars_without_features.common_attributes, "\n")
-print("clustesters_heterogeneous : \n",
-      "    - n_rows", len(heter_matrix), "\n",
-      "    - n_cols", len(heter_matrix[0]), "\n",
-      "    - common_attributes", clustesters_heterogeneous.common_attributes, "\n")
+
+# Test on matrices
+idx = random.randint(0, len(all_cars_with_features) - 1)
+assert(all(item in all_cars_with_features.matrix[idx]
+           for item in [getattr(all_cars_with_features.dessia_objects[idx], attr)
+                        for attr in all_cars_with_features.common_attributes]))
+
+idx = random.randint(0, len(all_cars_without_features) - 1)
+assert(all(item in all_cars_without_features.matrix[idx]
+           for item in [getattr(all_cars_without_features.dessia_objects[idx], attr)
+                        for attr in all_cars_without_features.common_attributes]))
+
+idx = random.randint(0, len(clustesters_heterogeneous) - 1)
+assert(all(item in clustesters_heterogeneous.matrix[idx]
+           for item in [getattr(clustesters_heterogeneous.dessia_objects[idx], attr)
+                        for attr in clustesters_heterogeneous.common_attributes]))
+
 
 
 # Tests for plot_data
-all_cars_with_features.plot()
-all_cars_without_features.plot()
-clustesters_heterogeneous.plot()
+# all_cars_with_features.plot()
+# all_cars_without_features.plot()
+# clustesters_heterogeneous.plot()
 
-# # Check platform for datasets
-all_cars_with_features._check_platform()
-all_cars_without_features._check_platform()
-clustesters_heterogeneous._check_platform()
+# # # Check platform for datasets
+# all_cars_with_features._check_platform()
+# all_cars_without_features._check_platform()
+# clustesters_heterogeneous._check_platform()
 
-# Filters on HeterogeneousLists
-idx_slice = all_cars_with_features[0:]
-idx_slice = all_cars_with_features[:10]
-idx_slice = all_cars_with_features[0:10]
-idx_int = idx_slice[2]
-idx_bool = idx_slice[[False,True,False,True,False,False,True,True,False,True]]
+# Check for sorts
+print(all_cars_with_features)
+print(all_cars_with_features[0:10])
+print(all_cars_with_features[2])
+print(all_cars_with_features[:10])
+all_cars_with_features.sort('weight', ascend=False)
+print(all_cars_with_features[:10])
+all_cars_without_features.sort(0)
+print(f"sort name : {all_cars_without_features.common_attributes[0]}")
+print(all_cars_without_features[:10])
+
+# Filters
+print("Filters tests")
+# print(all_cars_with_features[ all_cars_with_features.tolist(attr) == 70 ])
+
+
