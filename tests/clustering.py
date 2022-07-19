@@ -4,37 +4,22 @@ Cluster.py package testing.
 import json
 import pkg_resources
 from dessia_common import tests
+from dessia_common.models import all_cars_no_feat, all_cars_wi_feat, rand_data_small, rand_data_large
 from dessia_common.core import HeterogeneousList
 from dessia_common.cluster import CategorizedList
 import dessia_common.workflow as wf
 
-# Standard cars homogeneous dataset from the Internet
-csv_cars = pkg_resources.resource_stream('dessia_common', 'models/data/cars.csv')
 # When attribute _features is not specified in class Car
-all_cars_without_features = HeterogeneousList(tests.Car.from_csv(csv_cars))
-# When attribute _features is specified in class CarWithFeatures
-csv_cars = pkg_resources.resource_stream('dessia_common', 'models/data/cars.csv')
-all_cars_with_features = HeterogeneousList(tests.CarWithFeatures.from_csv(csv_cars))
+all_cars_without_features = HeterogeneousList(all_cars_no_feat)
 
-# Tests RandDatas
-mean_borns = (-50, 50)
-std_borns = (-2, 2)
-test1 = tests.RandDataD1.create_dataset(nb_clusters=10, nb_points=250, mean_borns=mean_borns, std_borns=std_borns)
-test2 = tests.RandDataD2.create_dataset(nb_clusters=10, nb_points=250, mean_borns=mean_borns, std_borns=std_borns)
-test3 = tests.RandDataD3.create_dataset(nb_clusters=10, nb_points=250, mean_borns=mean_borns, std_borns=std_borns)
-test4 = tests.RandDataD4.create_dataset(nb_clusters=10, nb_points=250, mean_borns=mean_borns, std_borns=std_borns)
-test5 = tests.RandDataD5.create_dataset(nb_clusters=10, nb_points=250, mean_borns=mean_borns, std_borns=std_borns)
-test6 = tests.RandDataD6.create_dataset(nb_clusters=10, nb_points=250, mean_borns=mean_borns, std_borns=std_borns)
-test7 = tests.RandDataD7.create_dataset(nb_clusters=10, nb_points=500, mean_borns=mean_borns, std_borns=std_borns)
-test8 = tests.RandDataD8.create_dataset(nb_clusters=10, nb_points=500, mean_borns=mean_borns, std_borns=std_borns)
-test9 = tests.RandDataD9.create_dataset(nb_clusters=10, nb_points=500, mean_borns=mean_borns, std_borns=std_borns)
-test10 = tests.RandDataD10.create_dataset(nb_clusters=10, nb_points=250, mean_borns=mean_borns, std_borns=std_borns)
+# When attribute _features is specified in class CarWithFeatures
+all_cars_with_features = HeterogeneousList(all_cars_wi_feat)
 
 # Auto-generated heterogeneous small dataset with nb_clusters clusters of points in nb_dims dimensions
-small_RandDatas_heterogeneous = HeterogeneousList(test5 + test4 + test3)
+small_RandDatas_heterogeneous = HeterogeneousList(rand_data_small)
 
 # Auto-generated heterogeneous large dataset with nb_clusters clusters of points in nb_dims dimensions
-big_RandDatas_heterogeneous = HeterogeneousList(test9 + test7 + test8)
+big_RandDatas_heterogeneous = HeterogeneousList(rand_data_large)
 
 # Build CategorizedLists
 clustered_cars_without = CategorizedList.from_dbscan(all_cars_without_features, eps=40)
@@ -163,8 +148,11 @@ deserialized_object = workflow.dict_to_object(decoded_json)
 
 
 # =============================================================================
-# TESTS IN WORKFLOWS: RandDataS SMALL DATASET
+# TESTS IN WORKFLOWS: RANDDATA SMALL DATASET
 # =============================================================================
+mean_borns = (-50, 50)
+std_borns = (-2, 2)
+
 data_method_5 = wf.MethodType(class_=tests.RandDataD5, name='create_dataset')
 block_data_d5 = wf.ClassMethod(method_type=data_method_5, name='data d5')
 
