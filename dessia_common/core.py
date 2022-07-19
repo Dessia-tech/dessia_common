@@ -812,11 +812,11 @@ class HeterogeneousList(DessiaObject):
         return self.dessia_objects.__getitem__(idx)
 
     def pick_from_slice(self, key: slice):
-        return HeterogeneousList(self.dessia_objects.__getitem__(key), name=self.name +
-                                 f"_{key.start if key.start is not None else 0}_{key.stop}")
+        return HeterogeneousList(self.dessia_objects.__getitem__(key), name=self.name) # +
+                                 #f"_{key.start if key.start is not None else 0}_{key.stop}")
 
     def pick_from_list(self, key: List[int]):
-        return HeterogeneousList(npy.array(self.dessia_objects).__getitem__(key).tolist(), name=self.name + "_bool")
+        return HeterogeneousList(npy.array(self.dessia_objects).__getitem__(key).tolist(), name=self.name) # + "_list")
 
     def __str__(self):
         offset_space = 10
@@ -824,7 +824,7 @@ class HeterogeneousList(DessiaObject):
         string = ""
         for attr in self.common_attributes:
             space = offset_space - int(len(attr)/2)
-            string += "|" + " "*space + f"{attr}" + " "*space + "|"
+            string += "|" + " "*space + f"{attr.capitalize()}" + " "*space + "|"
         string += "\n" + "-"*len(string)
         for dessia_object in self.dessia_objects[:print_lim]:
             string += "\n"
@@ -838,16 +838,6 @@ class HeterogeneousList(DessiaObject):
 
     def __len__(self):
         return len(self.dessia_objects)
-
-    def sort(self, key: Any, ascend: bool = True):
-        if isinstance(key, int):
-            sort_indexes = npy.argsort([row[key] for row in self.matrix])
-        elif isinstance(key, str):
-            sort_indexes = npy.argsort([getattr(dessia_object, key) for dessia_object in self.dessia_objects])
-
-        self.dessia_objects = [self.dessia_objects[idx] for idx in (sort_indexes if ascend else sort_indexes[::-1])]
-        self.matrix = [self.matrix[idx] for idx in (sort_indexes if ascend else sort_indexes[::-1])]
-
 
     def _common_attributes(self):
         all_class = list(set(dessia_object.__class__ for dessia_object in self.dessia_objects))
@@ -866,6 +856,15 @@ class HeterogeneousList(DessiaObject):
             matrix.append(list(temp_row[vector_features.index(attr)] for attr in self.common_attributes
                                if attr in dessia_object.vector_features()))
         return matrix
+
+    def sort(self, key: Any, ascend: bool = True):
+        if isinstance(key, int):
+            sort_indexes = npy.argsort([row[key] for row in self.matrix])
+        elif isinstance(key, str):
+            sort_indexes = npy.argsort([getattr(dessia_object, key) for dessia_object in self.dessia_objects])
+
+        self.dessia_objects = [self.dessia_objects[idx] for idx in (sort_indexes if ascend else sort_indexes[::-1])]
+        self.matrix = [self.matrix[idx] for idx in (sort_indexes if ascend else sort_indexes[::-1])]
 
     def singular_values(self):
         _, singular_values, _ = npy.linalg.svd(npy.array(self.matrix), full_matrices=False)
