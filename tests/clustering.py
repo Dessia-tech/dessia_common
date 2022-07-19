@@ -15,33 +15,33 @@ all_cars_without_features = HeterogeneousList(tests.Car.from_csv(csv_cars))
 csv_cars = pkg_resources.resource_stream('dessia_common', 'models/data/cars.csv')
 all_cars_with_features = HeterogeneousList(tests.CarWithFeatures.from_csv(csv_cars))
 
-# Tests clusTesters
+# Tests RandDatas
 mean_borns = (-50, 50)
 std_borns = (-2, 2)
-test1 = tests.ClusTesterD1.create_dataset(nb_clusters=10, nb_points=250, mean_borns=mean_borns, std_borns=std_borns)
-test2 = tests.ClusTesterD2.create_dataset(nb_clusters=10, nb_points=250, mean_borns=mean_borns, std_borns=std_borns)
-test3 = tests.ClusTesterD3.create_dataset(nb_clusters=10, nb_points=250, mean_borns=mean_borns, std_borns=std_borns)
-test4 = tests.ClusTesterD4.create_dataset(nb_clusters=10, nb_points=250, mean_borns=mean_borns, std_borns=std_borns)
-test5 = tests.ClusTesterD5.create_dataset(nb_clusters=10, nb_points=250, mean_borns=mean_borns, std_borns=std_borns)
-test6 = tests.ClusTesterD6.create_dataset(nb_clusters=10, nb_points=250, mean_borns=mean_borns, std_borns=std_borns)
-test7 = tests.ClusTesterD7.create_dataset(nb_clusters=10, nb_points=500, mean_borns=mean_borns, std_borns=std_borns)
-test8 = tests.ClusTesterD8.create_dataset(nb_clusters=10, nb_points=500, mean_borns=mean_borns, std_borns=std_borns)
-test9 = tests.ClusTesterD9.create_dataset(nb_clusters=10, nb_points=500, mean_borns=mean_borns, std_borns=std_borns)
-test10 = tests.ClusTesterD10.create_dataset(nb_clusters=10, nb_points=250, mean_borns=mean_borns, std_borns=std_borns)
+test1 = tests.RandDataD1.create_dataset(nb_clusters=10, nb_points=250, mean_borns=mean_borns, std_borns=std_borns)
+test2 = tests.RandDataD2.create_dataset(nb_clusters=10, nb_points=250, mean_borns=mean_borns, std_borns=std_borns)
+test3 = tests.RandDataD3.create_dataset(nb_clusters=10, nb_points=250, mean_borns=mean_borns, std_borns=std_borns)
+test4 = tests.RandDataD4.create_dataset(nb_clusters=10, nb_points=250, mean_borns=mean_borns, std_borns=std_borns)
+test5 = tests.RandDataD5.create_dataset(nb_clusters=10, nb_points=250, mean_borns=mean_borns, std_borns=std_borns)
+test6 = tests.RandDataD6.create_dataset(nb_clusters=10, nb_points=250, mean_borns=mean_borns, std_borns=std_borns)
+test7 = tests.RandDataD7.create_dataset(nb_clusters=10, nb_points=500, mean_borns=mean_borns, std_borns=std_borns)
+test8 = tests.RandDataD8.create_dataset(nb_clusters=10, nb_points=500, mean_borns=mean_borns, std_borns=std_borns)
+test9 = tests.RandDataD9.create_dataset(nb_clusters=10, nb_points=500, mean_borns=mean_borns, std_borns=std_borns)
+test10 = tests.RandDataD10.create_dataset(nb_clusters=10, nb_points=250, mean_borns=mean_borns, std_borns=std_borns)
 
 # Auto-generated heterogeneous small dataset with nb_clusters clusters of points in nb_dims dimensions
-small_clustesters_heterogeneous = HeterogeneousList(test5 + test4 + test3)
+small_RandDatas_heterogeneous = HeterogeneousList(test5 + test4 + test3)
 
 # Auto-generated heterogeneous large dataset with nb_clusters clusters of points in nb_dims dimensions
-big_clustesters_heterogeneous = HeterogeneousList(test9 + test7 + test8)
+big_RandDatas_heterogeneous = HeterogeneousList(test9 + test7 + test8)
 
 # Build CategorizedLists
 clustered_cars_without = cluster.CategorizedList.from_dbscan(all_cars_without_features, eps=40)
 clustered_cars_with = cluster.CategorizedList.from_dbscan(all_cars_with_features, eps=40)
 aggclustest_clustered = cluster.CategorizedList.from_agglomerative_clustering(
-    big_clustesters_heterogeneous, n_clusters=10)
+    big_RandDatas_heterogeneous, n_clusters=10)
 kmeanstest_clustered = cluster.CategorizedList.from_kmeans(
-    small_clustesters_heterogeneous, n_clusters=10, scaling=True)
+    small_RandDatas_heterogeneous, n_clusters=10, scaling=True)
 
 # Test ClusterResults instances on platform
 clustered_cars_without._check_platform()
@@ -164,15 +164,15 @@ deserialized_object = workflow.dict_to_object(decoded_json)
 
 
 # =============================================================================
-# TESTS IN WORKFLOWS: CLUSTESTERS SMALL DATASET
+# TESTS IN WORKFLOWS: RandDataS SMALL DATASET
 # =============================================================================
-data_method_5 = wf.MethodType(class_=tests.ClusTesterD5, name='create_dataset')
+data_method_5 = wf.MethodType(class_=tests.RandDataD5, name='create_dataset')
 block_data_d5 = wf.ClassMethod(method_type=data_method_5, name='data d5')
 
-data_method_4 = wf.MethodType(class_=tests.ClusTesterD4, name='create_dataset')
+data_method_4 = wf.MethodType(class_=tests.RandDataD4, name='create_dataset')
 block_data_d4 = wf.ClassMethod(method_type=data_method_4, name='data d4')
 
-data_method_3 = wf.MethodType(class_=tests.ClusTesterD3, name='create_dataset')
+data_method_3 = wf.MethodType(class_=tests.RandDataD3, name='create_dataset')
 block_data_d3 = wf.ClassMethod(method_type=data_method_3, name='data d3')
 
 block_concatenate = wf.Concatenate(3)
