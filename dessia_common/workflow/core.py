@@ -207,34 +207,11 @@ class Pipe(DessiaObject):
     """
     :param input_variable: The input varaible of the pipe correspond to the \
     start of the arrow, its tail.
-    :type input_variable: TypedVariable
+    :type input_variable: Variable
     :param output_variable: The output variable of the pipe correpond to the \
     end of the arrow, its hat.
-    :type output_variable: TypedVariable
+    :type output_variable: Variable
     """
-    _jsonschema = {
-        "definitions": {}, "$schema": "http://json-schema.org/draft-07/schema#", "type": "object",
-        "title": "Pipe", "python_typing": 'dessia_common.workflow.Pipe', "standalone_in_db": False,
-        "classes": ["dessia_common.workflow.core.Pipe"], "required": ["input_variable", "output_variable"],
-        "properties": {
-            "input_variable": {
-                "type": "object", "editable": True, "order": 0,
-                "python_typing": "List[dessia_common.workflow.Variable]",
-                "classes": ["dessia_common.workflow.Variable", "dessia_common.workflow.TypedVariable",
-                            "dessia_common.workflow.VariableWithDefaultValue",
-                            "dessia_common.workflow.TypedVariableWithDefaultValue"]
-            },
-            "output_variable": {
-                "type": "object", "editable": True, "order": 1,
-                "python_typing": "List[dessia_common.workflow.Variable]",
-                "classes": ["dessia_common.workflow.Variable", "dessia_common.workflow.TypedVariable",
-                            "dessia_common.workflow.VariableWithDefaultValue",
-                            "dessia_common.workflow.TypedVariableWithDefaultValue"],
-            },
-            "name": {'type': 'string', 'title': 'Name', 'editable': True,
-                     'order': 2, 'default_value': '', 'python_typing': 'builtins.str'}
-        }
-    }
     _eq_is_data_eq = False
 
     def __init__(self, input_variable: Variable, output_variable: Variable, name: str = ''):
@@ -742,6 +719,25 @@ class Workflow(Block):
         Returns block that are not upstream for output
         """
         return [b for b in self.blocks if b not in self.runtime_blocks]
+
+    def pipe_from_variable_indices(self, upstream_indices: Union[int, Tuple[int, int, int]],
+                                   downstream_indices: Union[int, Tuple[int, int, int]]) -> Pipe:
+        """
+        Gets a pipe from the global indices of its attached variables
+        """
+        for pipe in self.pipes:
+            if self.variable_indices(pipe.input_variable) == upstream_indices \
+                    and self.variable_indices(pipe.output_variable) == downstream_indices:
+                return pipe
+        msg = f"No pipe has {upstream_indices} as upstream variable and {downstream_indices} as downstream variable"
+        raise ValueError(msg)
+
+    def pipe_variable_indices(self, pipe: Pipe) -> Tuple[Union[int, Tuple[int, int, int]],
+                                                         Union[int, Tuple[int, int, int]]]:
+        """
+        Returns the global indices of a pipe's attached variables
+        """
+        return self.variable_indices(pipe.input_variable), self.variable_indices(pipe.output_variable)
 
     def variable_input_pipe(self, variable: Variable) -> Optional[Pipe]:
         """
@@ -1269,10 +1265,10 @@ class WorkflowState(DessiaObject):
         workflow = self.workflow.copy(deep=True, memo=memo)
         input_values = deepcopy_value(value=self.input_values, memo=memo)
         values = {}
-        for variable, value in self.values.items():
-            variable_indices = self.workflow.variable_indices(variable)
-            copied_variable = workflow.variable_from_index(variable_indices)
-            values[copied_variable] = deepcopy_value(value=value, memo=memo)
+        for pipe, value in self.values.items():
+            variable_indices = self.workflow.pipe_variable_indices(pipe)
+            copied_pipe = workflow.pipe_from_variable_indices(*variable_indices)
+            values[copied_pipe] = value
 
         activated_items = {}
         for item, value in self.activated_items.items():
