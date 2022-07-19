@@ -76,3 +76,17 @@ demo_workflow_json = json.dumps(demo_workflow_dict)
 dict_from_json = json.loads(demo_workflow_json)
 deserialized_demo_workflow = wf.Workflow.dict_to_object(dict_from_json)
 assert demo_workflow == deserialized_demo_workflow
+
+# Worflow State
+demo_workflow_state = demo_workflow.start_run({})
+demo_workflow_state.add_input_value(0, 5)
+demo_workflow_state.evaluate_next_block()
+
+assert len(demo_workflow_state.values) == 1
+
+copy_workflow_state = demo_workflow_state.copy()
+
+assert copy_workflow_state == demo_workflow_state
+
+demo_workflow_state._check_platform()
+
