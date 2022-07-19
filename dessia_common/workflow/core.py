@@ -743,6 +743,22 @@ class Workflow(Block):
         """
         return [b for b in self.blocks if b not in self.runtime_blocks]
 
+    def variable_input_pipes(self, variable: Variable) -> Optional[Pipe]:
+        """
+        Gets the incoming pipe for a variable. If variable is not connected, returns None
+        """
+        incoming_pipes = [p for p in self.pipes if p.output_variable == variable]
+        if incoming_pipes:  # Inputs can only be connected to one pipe
+            incoming_pipe = incoming_pipes[0]
+            return incoming_pipe
+        return None
+
+    def block_input_pipes(self, block: Block) -> List[Pipe]:
+        """
+        Gets incoming pipes for every block variable.
+        """
+        return [self.variable_input_pipes(i) for i in block.inputs]
+
     def upstream_blocks(self, block: Block) -> List[Block]:
         """
         Returns a list of given block upstream blocks
@@ -778,9 +794,8 @@ class Workflow(Block):
 
         :param variable: Variable to search an upstream for
         """
-        incoming_pipes = [p for p in self.pipes if p.output_variable == variable]
-        if incoming_pipes:  # Inputs can only be connected to one pipe
-            incoming_pipe = incoming_pipes[0]
+        incoming_pipe = self.variable_input_pipes(variable)
+        if incoming_pipe:
             return incoming_pipe.input_variable
         return None
 
@@ -1406,8 +1421,7 @@ class WorkflowState(DessiaObject):
 
         # Output value: priority for reference before values
         if self.output_value is not None:
-            serialized_output_value, memo = serialize_with_pointers(self.output_value, memo=memo,
-                                                                    path='#/output_value')
+            serialized_output_value, memo = serialize_with_pointers(self.output_value, memo=memo, path='#/output_value')
             dict_['output_value'] = serialized_output_value
 
         dict_['evaluated_blocks_indices'] = [i for i, b in enumerate(self.workflow.blocks)
@@ -1450,14 +1464,11 @@ class WorkflowState(DessiaObject):
         #                                                          path=f'{path}/variable_values/{i}')
 
         input_values = {int(i): deserialize(v, global_dict=global_dict, pointers_memo=pointers_memo,
-                                            path=f"{path}/input_values/{i}")
-                        for i, v in dict_['input_values'].items()}
+                                            path=f"{path}/input_values/{i}") for i, v in dict_['input_values'].items()}
 
-        activated_items = {b: i in dict_['evaluated_blocks_indices']
-                           for i, b in enumerate(workflow.blocks)}
+        activated_items = {b: i in dict_['evaluated_blocks_indices'] for i, b in enumerate(workflow.blocks)}
 
-        activated_items.update({p: i in dict_['evaluated_pipes_indices']
-                                for i, p in enumerate(workflow.pipes)})
+        activated_items.update({p: i in dict_['evaluated_pipes_indices'] for i, p in enumerate(workflow.pipes)})
 
         var_indices = []
         for variable_indices in dict_['evaluated_variables_indices']:
@@ -1465,8 +1476,7 @@ class WorkflowState(DessiaObject):
                 var_indices.append(tuple(variable_indices))  # json serialisation loses tuples
             else:
                 var_indices.append(variable_indices)
-        activated_items.update({v: workflow.variable_indices(v) in var_indices
-                                for v in workflow.variables})
+        activated_items.update({v: workflow.variable_indices(v) in var_indices for v in workflow.variables})
 
         return cls(workflow=workflow, input_values=input_values, activated_items=activated_items,
                    values=values, start_time=dict_['start_time'], end_time=dict_['end_time'],
