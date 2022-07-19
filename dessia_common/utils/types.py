@@ -228,17 +228,17 @@ def deserialize_tuple_typing(full_argname):
 
 
 def deserialize_file_typing(serialized_typing):
-    if serialized_typing == "StringFile":
+    if serialized_typing == "dessia_common.files.StringFile":
         return StringFile
-    if serialized_typing == "BinaryFile":
+    if serialized_typing == "dessia_common.files.BinaryFile":
         return BinaryFile
     raise NotImplementedError(f"File typing {serialized_typing} deserialization is not implemented")
 
 
 def deserialize_method_typing(serialized_typing):
-    if serialized_typing == "MethodType":
+    if serialized_typing == "dessia_common.typings.MethodType":
         return MethodType
-    if serialized_typing == "ClassMethodType":
+    if serialized_typing == "dessia_common.typings.ClassMethodType":
         return ClassMethodType
     raise NotImplementedError(f"Method typing {serialized_typing} deserialization is not implemented")
 
