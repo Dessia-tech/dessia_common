@@ -743,7 +743,7 @@ class Workflow(Block):
         """
         return [b for b in self.blocks if b not in self.runtime_blocks]
 
-    def variable_input_pipes(self, variable: Variable) -> Optional[Pipe]:
+    def variable_input_pipe(self, variable: Variable) -> Optional[Pipe]:
         """
         Gets the incoming pipe for a variable. If variable is not connected, returns None
         """
@@ -753,11 +753,20 @@ class Workflow(Block):
             return incoming_pipe
         return None
 
-    def block_input_pipes(self, block: Block) -> List[Pipe]:
+    def variable_output_pipes(self, variable: Variable) -> List[Optional[Pipe]]:
+        return [p for p in self.pipes if p.input_variable == variable]
+
+    def block_input_pipes(self, block: Block) -> List[Optional[Pipe]]:
         """
         Gets incoming pipes for every block variable.
         """
-        return [self.variable_input_pipes(i) for i in block.inputs]
+        return [self.variable_input_pipe(i) for i in block.inputs]
+
+    def block_output_pipes(self, block: Block) -> Dict[Variable, List[Pipe]]:
+        """
+        Returns all block outgoing pipes
+        """
+        return {o: self.variable_output_pipes(o) for o in block.outputs}
 
     def upstream_blocks(self, block: Block) -> List[Block]:
         """
@@ -794,7 +803,7 @@ class Workflow(Block):
 
         :param variable: Variable to search an upstream for
         """
-        incoming_pipe = self.variable_input_pipes(variable)
+        incoming_pipe = self.variable_input_pipe(variable)
         if incoming_pipe:
             return incoming_pipe.input_variable
         return None
@@ -1589,6 +1598,16 @@ class WorkflowState(DessiaObject):
                 something_activated = True
         return evaluated_blocks
 
+    def _activate_pipe(self, pipe, value):
+        self.values[pipe] = value
+        self.activated_items[pipe] = True
+
+    def _activate_block(self, block):
+        self.activated_items[block] = True
+
+    def _activate_variable(self, variable):
+        self.activated_items[variable] = True
+
     def _activable_pipes(self):
         """
         Returns all current activable pipes
@@ -1644,7 +1663,19 @@ class WorkflowState(DessiaObject):
             if verbose:
                 print(log_line)
 
-        output_values = block.evaluate({i: self.values[i] for i in block.inputs})
+        local_values = {}
+        incoming_pipes = self.workflow.block_input_pipes(block)
+        for i, incoming_pipe in enumerate(incoming_pipes):
+            variable = block.inputs[i]
+            self._activate_variable(variable)
+            if incoming_pipe is None:
+                # Input isn't connect, it's a workflow input
+                global_index = self.workflow.input_index(variable)
+                local_values[i] = self.input_values[global_index]
+            else:
+                local_values[i] = self.values[incoming_pipe]
+
+        output_values = block.evaluate(local_values)
         # Updating progress
         if progress_callback is not None:
             progress_callback(self.progress)
@@ -1652,10 +1683,17 @@ class WorkflowState(DessiaObject):
         # Unpacking result of evaluation
         output_items = zip(block.outputs, output_values)
         for output, output_value in output_items:
-            self.values[output] = output_value
-            self.activated_items[output] = True
-
-        self.activated_items[block] = True
+            self._activate_variable(output)
+            outgoing_pipes = self.workflow.variable_output_pipes(output)
+            if not outgoing_pipes:
+                if self.workflow.output == output:
+                    self.output_value = output_value
+                else:
+                    # Dead end
+                    pass
+            for outgoing_pipe in outgoing_pipes:
+                self._activate_pipe(pipe=outgoing_pipe, value=output_value)
+        self._activate_block(block)
 
     def activate_inputs(self, check_all_inputs=False):
         """
