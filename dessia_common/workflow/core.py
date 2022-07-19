@@ -1605,11 +1605,22 @@ class WorkflowState(DessiaObject):
     def _activate_pipe(self, pipe: Pipe, value):
         self.values[pipe] = value
         self.activated_items[pipe] = True
+        self._activate_variable(variable=pipe.output_variable, value=value)
 
-    def _activate_block(self, block: Block):
+    def _activate_block(self, block: Block, output_values):
+        # Unpacking result of evaluation
+        output_items = zip(block.outputs, output_values)
+        for output, output_value in output_items:
+            self._activate_variable(variable=output, value=output_value)
         self.activated_items[block] = True
 
-    def _activate_variable(self, variable: Variable):
+    def _activate_variable(self, variable: Variable, value):
+        outgoing_pipes = self.workflow.variable_output_pipes(variable)
+        if not outgoing_pipes:
+            if self.workflow.output == variable:
+                self.output_value = value
+        for outgoing_pipe in outgoing_pipes:
+            self._activate_pipe(pipe=outgoing_pipe, value=value)
         self.activated_items[variable] = True
 
     def _activate_input(self, input_: Variable, value):
@@ -1617,7 +1628,10 @@ class WorkflowState(DessiaObject):
         value_type_check(value, input_.type_)
         input_index = self.workflow.input_index(input_)
         self.input_values[input_index] = value
-        self._activate_variable(input_)
+        self._activate_variable(variable=input_, value=value)
+        downstream_pipes = self.workflow.variable_output_pipes(input_)
+        for pipe in downstream_pipes:
+            self._activate_pipe(pipe=pipe, value=value)
 
     def _activable_pipes(self):
         """
@@ -1691,20 +1705,7 @@ class WorkflowState(DessiaObject):
         if progress_callback is not None:
             progress_callback(self.progress)
 
-        # Unpacking result of evaluation
-        output_items = zip(block.outputs, output_values)
-        for output, output_value in output_items:
-            self._activate_variable(output)
-            outgoing_pipes = self.workflow.variable_output_pipes(output)
-            if not outgoing_pipes:
-                if self.workflow.output == output:
-                    self.output_value = output_value
-                else:
-                    # Dead end
-                    pass
-            for outgoing_pipe in outgoing_pipes:
-                self._activate_pipe(pipe=outgoing_pipe, value=output_value)
-        self._activate_block(block)
+        self._activate_block(block=block, output_values=output_values)
 
     def activate_inputs(self, check_all_inputs=False):
         """
