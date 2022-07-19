@@ -520,10 +520,8 @@ class Workflow(Block):
         dict_ = Block.to_dict(self)
         dict_['object_class'] = 'dessia_common.workflow.core.Workflow'  # TO force migrating from dessia_common.workflow
         blocks = [b.to_dict() for b in self.blocks]
-        pipes = []
-        for pipe in self.pipes:
-            pipes.append((self.variable_indices(pipe.input_variable),
-                          self.variable_indices(pipe.output_variable)))
+
+        pipes = [self.pipe_variable_indices(p) for p in self.pipes]
 
         dict_.update({'blocks': blocks, 'pipes': pipes, 'output': self.variable_indices(self.outputs[0]),
                       'nonblock_variables': [v.to_dict() for v in self.nonblock_variables],
@@ -1353,8 +1351,8 @@ class WorkflowState(DessiaObject):
         input_values = {}
         for input_, value in self.input_values.items():
             if use_pointers:
-                serialized_v, memo = serialize_with_pointers(value=value, memo=memo,
-                                                             path=f"{path}/input_values/{input_}")
+                path = f"{path}/input_values/{input_}"
+                serialized_v, memo = serialize_with_pointers(value=value, memo=memo, path=path)
             else:
                 serialized_v = serialize(value)
             input_values[str(input_)] = serialized_v
@@ -1364,8 +1362,8 @@ class WorkflowState(DessiaObject):
         # Output value: priority for reference before values
         if self.output_value is not None:
             if use_pointers:
-                serialized_output_value, memo = serialize_with_pointers(self.output_value, memo=memo,
-                                                                        path=f'{path}/output_value')
+                path = f'{path}/output_value'
+                serialized_output_value, memo = serialize_with_pointers(self.output_value, memo=memo, path=path)
             else:
                 serialized_output_value = serialize(self.output_value)
 
@@ -1373,16 +1371,15 @@ class WorkflowState(DessiaObject):
                           'output_value_type': recursive_type(self.output_value)})
 
         # Values
-        if use_pointers:
-            values = {}
-            for variable, value in self.values.items():
-                variable_index = self.workflow.variable_index(variable)
-                serialized_value, memo = serialize_with_pointers(value=value, memo=memo,
-                                                                 path=f"{path}/values/{variable_index}")
-                values[str(variable_index)] = serialized_value
-        else:
-            values = {str(self.workflow.variable_index(i)): serialize(v) for i, v in self.values.items()}
-
+        values = {}
+        for pipe, value in self.values.items():
+            pipe_index = self.workflow.pipes.index(pipe)
+            if use_pointers:
+                path = f"{path}/values/{pipe_index}"
+                serialized_value, memo = serialize_with_pointers(value=value, memo=memo, path=path)
+                values[str(pipe_index)] = serialized_value
+            else:
+                values[str(pipe_index)] = serialize(value)
         dict_['values'] = values
 
         # In the future comment these below and rely only on activated items
@@ -1458,8 +1455,8 @@ class WorkflowState(DessiaObject):
         values = {}
         if 'values' in dict_:
             for i, value in dict_['values'].items():
-                values[workflow.variables[int(i)]] = deserialize(value, global_dict=global_dict,
-                                                                 pointers_memo=pointers_memo, path=f'{path}/values/{i}')
+                values[workflow.pipes[int(i)]] = deserialize(value, global_dict=global_dict,
+                                                             pointers_memo=pointers_memo, path=f'{path}/values/{i}')
         # elif 'variable_values' in dict_:
         #     for i, value in dict_['variable_values'].items():
         #         values[workflow.variables[int(i)]] = deserialize(value, global_dict=dict_,
