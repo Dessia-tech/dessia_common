@@ -756,17 +756,17 @@ class Workflow(Block):
     def variable_output_pipes(self, variable: Variable) -> List[Optional[Pipe]]:
         return [p for p in self.pipes if p.input_variable == variable]
 
-    def block_input_pipes(self, block: Block) -> List[Optional[Pipe]]:
-        """
-        Gets incoming pipes for every block variable.
-        """
-        return [self.variable_input_pipe(i) for i in block.inputs]
+    # def block_input_pipes(self, block: Block) -> List[Optional[Pipe]]:
+    #     """
+    #     Gets incoming pipes for every block variable.
+    #     """
+    #     return [self.variable_input_pipe(i) for i in block.inputs]
 
-    def block_output_pipes(self, block: Block) -> Dict[Variable, List[Pipe]]:
-        """
-        Returns all block outgoing pipes
-        """
-        return {o: self.variable_output_pipes(o) for o in block.outputs}
+    # def block_output_pipes(self, block: Block) -> Dict[Variable, List[Pipe]]:
+    #     """
+    #     Returns all block outgoing pipes
+    #     """
+    #     return {o: self.variable_output_pipes(o) for o in block.outputs}
 
     def upstream_blocks(self, block: Block) -> List[Block]:
         """
