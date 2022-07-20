@@ -28,7 +28,7 @@ from dessia_common.utils.docstrings import FAILED_ATTRIBUTE_PARSING, EMPTY_PARSE
 from dessia_common.utils.diff import choose_hash
 from dessia_common.typings import JsonSerializable, MethodType
 from dessia_common.displays import DisplayObject
-from dessia_common.breakdown import attrmethod_getter
+from dessia_common.breakdown import attrmethod_getter, ExtractionError
 
 
 class Variable(DessiaObject):
@@ -1016,9 +1016,6 @@ class Workflow(Block):
 
         state.output_value = state.values[self.outputs[0]]
 
-        name_index = str(len(self.inputs) + 1)
-        if name is None and name_index in input_values:
-            name = input_values[name_index]
         if not name:
             timestamp = start_timestamp.strftime("%m-%d (%H:%M)")
             name = f"{self.name} @ [{timestamp}]"
@@ -1138,10 +1135,10 @@ class Workflow(Block):
         classes = []
 
         script_blocks = ''
-        for ib, block in enumerate(self.blocks):
+        for idxb, block in enumerate(self.blocks):
             block_script, classes_block = block.to_script()
             classes.extend(classes_block)
-            script_blocks += f'block_{ib} = {block_script}\n'
+            script_blocks += f'block_{idxb} = {block_script}\n'
 
         script = ('import dessia_common.workflow as dcw\n'
                   + 'import dessia_common.workflow.blocks as dcw_blocks\n'
@@ -1152,9 +1149,9 @@ class Workflow(Block):
             script += f'import {module}\n'
         script += '\n'
         script += script_blocks
-        script += 'blocks = [{}]\n'.format(', '.join(['block_' + str(i) for i in range(len(self.blocks))]))
+        script += f"blocks = [{', '.join(['block_' + str(i) for i in range(len(self.blocks))])}]\n"
 
-        for ip, pipe in enumerate(self.pipes):
+        for idxp, pipe in enumerate(self.pipes):
             input_index = self.variable_indices(pipe.input_variable)
             if isinstance(input_index, int):
                 script += pipe.input_variable.to_script(variable_index=variable_index) + '\n'
@@ -1170,7 +1167,7 @@ class Workflow(Block):
                 variable_index += 1
             else:
                 output_name = f"block_{output_index[0]}.inputs[{output_index[2]}]" + '\n'
-            script += pipe.to_script(pipe_index=ip, input_name=input_name, output_name=output_name) + '\n'
+            script += pipe.to_script(pipe_index=idxp, input_name=input_name, output_name=output_name) + '\n'
 
         script += f"pipes = [{', '.join(['pipe_' + str(i) for i in range(len(self.pipes))])}]\n"
 
@@ -1445,8 +1442,7 @@ class WorkflowState(DessiaObject):
         values = {}
         if 'values' in dict_:
             for i, value in dict_['values'].items():
-                values[workflow.variables[int(i)]] = deserialize(value, global_dict=dict_,
-                                                                 pointers_memo=pointers_memo,
+                values[workflow.variables[int(i)]] = deserialize(value, global_dict=dict_, pointers_memo=pointers_memo,
                                                                  path=f'{path}/values/{i}')
         # elif 'variable_values' in dict_:
         #     for i, value in dict_['variable_values'].items():
@@ -1458,10 +1454,10 @@ class WorkflowState(DessiaObject):
                                             path=f"{path}/input_values/{i}")
                         for i, v in dict_['input_values'].items()}
 
-        activated_items = {b: (True if i in dict_['evaluated_blocks_indices'] else False)
+        activated_items = {b: i in dict_['evaluated_blocks_indices']
                            for i, b in enumerate(workflow.blocks)}
 
-        activated_items.update({p: (True if i in dict_['evaluated_pipes_indices'] else False)
+        activated_items.update({p: i in dict_['evaluated_pipes_indices']
                                 for i, p in enumerate(workflow.pipes)})
 
         var_indices = []
@@ -1470,7 +1466,7 @@ class WorkflowState(DessiaObject):
                 var_indices.append(tuple(variable_indices))  # json serialisation loses tuples
             else:
                 var_indices.append(variable_indices)
-        activated_items.update({v: (True if workflow.variable_indices(v) in var_indices else False)
+        activated_items.update({v: workflow.variable_indices(v) in var_indices
                                 for v in workflow.variables})
 
         return cls(workflow=workflow, input_values=input_values, activated_items=activated_items,
@@ -1686,7 +1682,7 @@ class WorkflowState(DessiaObject):
         If state is complete, returns a WorkflowRun
         """
         if self.progress == 1:
-            values = {v: self.values[v] for v in self.workflow.variables if v.memorize and v in self.values}
+            values = {v: self.values[v] for v in self.workflow.variables if v in self.values}
             return WorkflowRun(workflow=self.workflow, input_values=self.input_values, output_value=self.output_value,
                                values=values, activated_items=self.activated_items, start_time=self.start_time,
                                end_time=self.end_time, log=self.log, name=name)
@@ -1779,7 +1775,7 @@ class WorkflowRun(WorkflowState):
         dict_['object_class'] = 'dessia_common.workflow.core.WorkflowRun'
 
         # TODO REMOVING THIS TEMPORARLY TO PREVENT DISPLAYS TO BE LOST WITH POINTERS
-        # VARIABLE_VALUES ARE NOT SET BACK IN DICT_TO_OBJECT
+        #  VARIABLE_VALUES ARE NOT SET BACK IN DICT_TO_OBJECT
         # if use_pointers:
         #     variable_values = {}
         #     for key, value in self.variable_values.items():
@@ -1818,6 +1814,23 @@ class WorkflowRun(WorkflowState):
             display_settings.extend(output_display_settings)
 
         return display_settings
+
+    def _get_from_path(self, path: str):
+        """
+        Extracts subobject at given path. Tries the generic function, then applies specific cases if it fails.
+        Returns found object
+        """
+        try:
+            return DessiaObject._get_from_path(self, path)
+        except ExtractionError:
+            segments = path.split("/")
+            first_segment = segments[1]
+            if first_segment == "values" and len(segments) == 3:
+                varindex = int(segments[2])
+                variable = self.workflow.variables[varindex]
+                upstream = self.workflow.get_upstream_nbv(variable)
+                return self.values[upstream]
+        raise NotImplementedError(f"WorkflowRun : Specific object from path method is not defined for path '{path}'")
 
     def _display_from_selector(self, selector: str, **kwargs) -> DisplayObject:
         """

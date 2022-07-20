@@ -1,3 +1,7 @@
+"""
+forms_workflow tools
+
+"""
 from dessia_common.workflow import TypedVariable, TypedVariableWithDefaultValue, Pipe, Workflow, WorkflowBlock
 from dessia_common.workflow.blocks import InstantiateModel, ModelMethod, ModelAttribute, ForEach,\
     MultiPlot, Unpacker, Display
@@ -53,6 +57,7 @@ pipe_disp = Pipe(input_variable=unpacker.outputs[0], output_variable=display_.in
 
 blocks = [instanciate_generator, generator_generate, attribute_selection, parallel_optimization, display_]
 pipes = [pipe_int_1, pipe_name_1, pipe_name_2, pipe_gene, pipe_attr, pipe_opti, pipe_disp]
+
 blocks = [instanciate_generator, generator_generate, attribute_selection,
           parallel_optimization, multiplot, unpacker, display_]
 pipes = [pipe_int_1, pipe_name_1, pipe_name_2, pipe_gene, pipe_attr, pipe_opti, pipe_mult, pipe_unpack, pipe_disp]

@@ -1,3 +1,7 @@
+"""
+Vectored_workflow tools
+
+"""
 import pkg_resources
 from dessia_common.typings import ClassMethodType
 from dessia_common.vectored_objects import Catalog, ParetoSettings

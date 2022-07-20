@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
+Test module for dessia_common
 
 """
 from time import sleep
 from typing import List
+from io import StringIO
+import numpy as npy
 from dessia_common import DessiaObject
 import dessia_common.typings as dct
 
@@ -33,10 +36,10 @@ class Generator(DessiaObject):
     _standalone_in_db = True
     _allowed_methods = ['long_generation']
 
-    def __init__(self, parameter: int, nb_solutions: int = 25, name: str = ''):
+    def __init__(self, parameter: int, nb_solutions: int = 25, models: List[Model] = None, name: str = ''):
         self.parameter = parameter
         self.nb_solutions = nb_solutions
-        self.models = None
+        self.models = models
 
         DessiaObject.__init__(self, name=name)
 
@@ -147,3 +150,52 @@ class SystemSimulationList(DessiaObject):
                  name: str = ''):
         self.simulations = simulations
         DessiaObject.__init__(self, name=name)
+
+
+class Car(DessiaObject):
+    """
+    Defines a car
+    """
+    _standalone_in_db = True
+    _export_features = ['mpg', 'cylinders', 'displacement', 'horsepower',
+                        'weight', 'acceleration', 'model']
+
+    def __init__(self, name: str, mpg: float, cylinders: float,
+                 displacement: dct.Distance, horsepower: float,
+                 weight: dct.Mass, acceleration: dct.Time, model: float,
+                 origin: str):
+        DessiaObject.__init__(self, name=name)
+
+        self.mpg = mpg
+        self.cylinders = cylinders
+        self.displacement = displacement
+        self.horsepower = horsepower
+        self.weight = weight
+        self.acceleration = acceleration
+        self.model = model
+        self.origin = origin
+
+    def to_vector(self):
+        list_formated_car = []
+        for feature in self._export_features:
+            list_formated_car.append(getattr(self, feature.lower()))
+
+        return list_formated_car
+
+    @classmethod
+    def from_csv(cls, file: StringIO, end: int = None, remove_duplicates: bool = False):
+        """
+        Generates Cars from given .csv file.
+        """
+        array = npy.genfromtxt(file, dtype=None, delimiter=',', names=True, encoding=None)
+        variables = list(array.dtype.fields.keys())
+        cars = []
+        for i, line in enumerate(array):
+            if end is not None and i >= end:
+                break
+            if not remove_duplicates or (remove_duplicates and line.tolist() not in cars):
+                attr_list = list(line)
+                attr_list[3] /= 1000
+                cars.append(cls(*attr_list))
+
+        return cars, variables

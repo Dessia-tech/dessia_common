@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
+dessia_common
 
 """
 
@@ -34,7 +35,7 @@ from dessia_common.exports import XLSXWriter
 from dessia_common.typings import JsonSerializable
 from dessia_common import templates
 from dessia_common.displays import DisplayObject, DisplaySetting
-from dessia_common.breakdown import attrmethod_getter
+from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
 
 
 _FORBIDDEN_ARGNAMES = ['self', 'cls', 'progress_callback', 'return']
@@ -179,6 +180,9 @@ class DessiaObject:
         """
         # return diff(self, other_object)
         return diff(self, other_object)
+
+    def _get_from_path(self, path: str):
+        return get_in_object_from_path(self, path)
 
     @property
     def full_classname(self):
@@ -335,7 +339,7 @@ class DessiaObject:
                     editable=editable, title=title, parsed_attributes=parsed_attributes
                 )
                 _jsonschema['properties'].update(jss_elt)
-                if name in default_arguments.keys():
+                if name in default_arguments:
                     default = set_default_value(_jsonschema['properties'],
                                                 name,
                                                 default_arguments[name])
@@ -383,7 +387,7 @@ class DessiaObject:
                                 jsonschema_from_annotation(annotation, {}, i)[argname]
 
                             jsonschemas[method_name]['properties'][str(i)] = jsonschema_element
-                            if argname in default_args.keys():
+                            if argname in default_args:
                                 default = set_default_value(
                                     jsonschemas[method_name]['properties'],
                                     str(i),

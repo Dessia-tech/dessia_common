@@ -30,7 +30,3 @@ to_continue_ws.continue_run()
 continued_ws = to_continue_ws.copy()
 print(continued_ws == to_continue_ws)
 assert continued_ws == to_continue_ws
-
-
-
-
