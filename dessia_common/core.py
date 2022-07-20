@@ -774,8 +774,7 @@ class HeterogeneousList(DessiaObject):
         for dessia_object in self.dessia_objects:
             temp_row = dessia_object.to_vector()
             vector_features = dessia_object.vector_features()
-            matrix.append(list(temp_row[vector_features.index(attr)] for attr in self.common_attributes
-                               if attr in dessia_object.vector_features())) # TODO check if IF is useful
+            matrix.append(list(temp_row[vector_features.index(attr)] for attr in self.common_attributes))
         return matrix
 
     def singular_values(self):
