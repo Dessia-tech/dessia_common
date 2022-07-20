@@ -35,8 +35,13 @@ class CategorizedList(dc.HeterogeneousList):
         for i, label in enumerate(self.labels):
             sublists[label].append(self.dessia_objects[i])
 
-        return [dc.HeterogeneousList(dessia_objects=sublist, name=self.name + f"_{label_tag}")
-                for label_tag, sublist in zip(label_tags, sublists)]
+        new_dessia_objects = [dc.HeterogeneousList(dessia_objects=sublist, name=self.name + f"_{label_tag}")
+                              for label_tag, sublist in zip(label_tags, sublists)]
+
+        return CategorizedList(new_dessia_objects,
+                               list(set(self.labels).difference({-1})) + ([-1] if -1 in self.labels else []),
+                               name=self.name + "_split")
+
 
     def plot_data(self):
         # Plot a correlation matrix when plot_data.heatmap will be improved

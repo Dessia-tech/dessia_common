@@ -747,10 +747,8 @@ class MovingObject(PhysicalObject):
 
     def volmdlr_volume_model(self, **kwargs):
         import volmdlr as vm  # !!! Avoid circular imports, is this OK ?
-        return vm.core.MovingVolumeModel(
-            self.volmdlr_primitives(**kwargs),
-            self.volmdlr_primitives_step_frames(**kwargs)
-        )
+        return vm.core.MovingVolumeModel(self.volmdlr_primitives(**kwargs),
+                                         self.volmdlr_primitives_step_frames(**kwargs))
 
 
 class HeterogeneousList(DessiaObject):
@@ -777,7 +775,7 @@ class HeterogeneousList(DessiaObject):
             temp_row = dessia_object.to_vector()
             vector_features = dessia_object.vector_features()
             matrix.append(list(temp_row[vector_features.index(attr)] for attr in self.common_attributes
-                               if attr in dessia_object.vector_features())) # TODO check if if is useful
+                               if attr in dessia_object.vector_features())) # TODO check if IF is useful
         return matrix
 
     def singular_values(self):
@@ -1248,7 +1246,9 @@ def get_attribute_names(object_class):
                   if not attribute[0].startswith('__')
                   and not attribute[0].endswith('__')
                   and isinstance(attribute[1], (float, int, complex, bool))]
-    subclass_numeric_attributes = [name for name, param in inspect.signature(object_class.__init__).parameters.items()
+    subclass_attributes = {name: param for name, param in inspect.signature(object_class.__init__).parameters.items()
+                           if type in inspect.getmro(param.annotation.__class__)}
+    subclass_numeric_attributes = [name for name, param in subclass_attributes.items()
                                    if any(item in inspect.getmro(param.annotation)
                                           for item in [float, int, bool, complex])]
     attributes += [attribute for attribute in subclass_numeric_attributes

@@ -27,6 +27,12 @@ clustered_cars_with = CategorizedList.from_dbscan(all_cars_with_features, eps=40
 aggclustest_clustered = CategorizedList.from_agglomerative_clustering(big_RandDatas_heterogeneous, n_clusters=10)
 kmeanstest_clustered = CategorizedList.from_kmeans(small_RandDatas_heterogeneous, n_clusters=10, scaling=True)
 
+# Split lists into labelled lists
+split_cars_without = clustered_cars_without.clustered_sublists()
+split_cars_with = clustered_cars_with.clustered_sublists()
+aggclustest_split = aggclustest_clustered.clustered_sublists()
+kmeanstest_split = kmeanstest_clustered.clustered_sublists()
+
 # Test ClusterResults instances on platform
 clustered_cars_without._check_platform()
 clustered_cars_with._check_platform()
@@ -192,7 +198,7 @@ workflow_run = workflow.run({workflow.index(block_data_d5.inputs[0]): 10, workfl
                              workflow.index(block_data_d3.inputs[2]): mean_borns,
                              workflow.index(block_data_d3.inputs[3]): std_borns,
 
-                             workflow.index(block_cluster.inputs[1]): 40})
+                             workflow.index(block_cluster.inputs[1]): 5})
 
 # Workflow tests
 workflow._check_platform()
