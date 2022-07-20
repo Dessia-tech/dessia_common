@@ -85,7 +85,7 @@ class Optimizer(DessiaObject):
 class Component(DessiaObject):
     _standalone_in_db = True
 
-    def __init__(self, efficiency, name: str = ''):
+    def __init__(self, efficiency: float, name: str = ''):
         self.efficiency = efficiency
         DessiaObject.__init__(self, name=name)
 
