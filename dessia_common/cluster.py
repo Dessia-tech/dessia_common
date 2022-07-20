@@ -25,14 +25,14 @@ class CategorizedList(dc.HeterogeneousList):
     def clustered_sublists(self):
         sublists = []
         label_tags = sorted(list(map(str, set(self.labels).difference({-1}))))
-        for i in range(max(self.labels) + 1):
+        for _ in range(max(self.labels) + 1):
             sublists.append([])
         if -1 in self.labels:
             sublists.append([])
             label_tags.append("outliers")
 
-        for i, label in enumerate(self.labels):
-            sublists[label].append(self.dessia_objects[i])
+        for idx, label in enumerate(self.labels):
+            sublists[label].append(self.dessia_objects[idx])
 
         new_dessia_objects = [dc.HeterogeneousList(dessia_objects=sublist, name=self.name + f"_{label_tag}")
                               for label_tag, sublist in zip(label_tags, sublists)]
@@ -57,13 +57,13 @@ class CategorizedList(dc.HeterogeneousList):
         point_families = []
         for i_cluster in range(self.n_clusters):
             color = plot_data.colors.Color(colormap[i_cluster][0], colormap[i_cluster][1], colormap[i_cluster][2])
-            points_index = npy.where(npy.array(self.labels, dtype = int) == i_cluster)
-            point_families.append(plot_data.core.PointFamily(color, list(map(int, points_index[0].tolist()))))
+            points_index = list(map(int, npy.where(npy.array(self.labels) == i_cluster)[0].tolist()))
+            point_families.append(plot_data.core.PointFamily(color, points_index))
 
         if -1 in self.labels:
             color = plot_data.colors.LIGHTGREY
-            points_index = npy.where(npy.array(self.labels) == -1)
-            point_families.append(plot_data.core.PointFamily(color, list(map(int, points_index[0].tolist()))))
+            points_index =  list(map(int, npy.where(npy.array(self.labels) == -1)[0].tolist()))
+            point_families.append(plot_data.core.PointFamily(color, points_index))
         return point_families
 
 
