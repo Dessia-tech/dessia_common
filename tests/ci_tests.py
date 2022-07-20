@@ -17,6 +17,7 @@ scripts = ['displays.py',
            'workflow/forms_simulation.py',
            'workflow/workflow_state_equalities.py',
            'workflow/workflow_diverge_converge.py',
+           'workflow/workflow_clustering.py',
            # breakdown
            'breakdown.py',
            # Utils
@@ -26,7 +27,8 @@ scripts = ['displays.py',
            'type_matching.py',
            # Unit tests after that
            'unit_tests.py',
-           'bson_valid.py'
+           'bson_valid.py',
+           'utils/types.py',
            ]
 
 for script_name in scripts:
