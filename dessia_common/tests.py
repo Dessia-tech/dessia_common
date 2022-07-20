@@ -254,9 +254,9 @@ class RandDataD1(DessiaObject):
         return cluster_sizes
 
     @staticmethod
-    def python_plot(x_label: str, y_label: str, RandData_list: List[List[float]], **kwargs):
-        x_coords = [getattr(RandData, x_label) for RandData in RandData_list]
-        y_coords = [getattr(RandData, y_label) for RandData in RandData_list]
+    def python_plot(x_label: str, y_label: str, rand_data_list: List[List[float]], **kwargs):
+        x_coords = [getattr(RandData, x_label) for RandData in rand_data_list]
+        y_coords = [getattr(RandData, y_label) for RandData in rand_data_list]
         import matplotlib.pyplot as plt
         plt.plot(x_coords, y_coords, **kwargs)
 

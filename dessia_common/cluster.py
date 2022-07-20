@@ -7,8 +7,6 @@ import numpy as npy
 from sklearn import cluster, preprocessing
 import matplotlib.pyplot as plt
 
-from typing import Dict, Any
-
 import plot_data
 import dessia_common.core as dc
 
@@ -43,26 +41,18 @@ class CategorizedList(dc.HeterogeneousList):
                                list(set(self.labels).difference({-1})) + ([-1] if -1 in self.labels else []),
                                name=self.name + "_split")
 
+    def _tooltip_attributes(self):
+        return self.common_attributes + ["Cluster Label"]
 
-    def plot_data(self):
-        # Plot a correlation matrix when plot_data.heatmap will be improved
-        # correlation_matrix = []
-
-        # Dimensionality plot
-        dimensionality_plot = self.plot_dimensionality()
-
-        # Scattermatrix
-        scatter_matrix = self.build_multiplot(axis=dimensionality_plot.axis,
-                                              point_style=dimensionality_plot.point_style)
-
-        return [dimensionality_plot, scatter_matrix]
-
-    def build_multiplot(self, **kwargs: Dict[str, Any]):
-        data_list = []
+    def _plot_data_list(self):
+        _plot_data_list = []
         for row, label in enumerate(self.labels):
-            data_list.append({attr: self.matrix[row][col] for col, attr in enumerate(self.common_attributes)})
-            data_list[-1]["Cluster Label"] = label #(label if label != -1 else "Excluded")
+            _plot_data_list.append({attr: self.matrix[row][col] for col, attr in enumerate(self.common_attributes)})
+            _plot_data_list[-1]["Cluster Label"] = label #(label if label != -1 else "Excluded")
+        return _plot_data_list
 
+
+    def _point_families(self):
         colormap = plt.cm.get_cmap('hsv', self.n_clusters + 1)(range(self.n_clusters + 1))
         point_families = []
         for i_cluster in range(self.n_clusters):
@@ -74,24 +64,7 @@ class CategorizedList(dc.HeterogeneousList):
             color = plot_data.colors.LIGHTGREY
             points_index = npy.where(npy.array(self.labels) == -1)
             point_families.append(plot_data.core.PointFamily(color, list(map(int, points_index[0].tolist()))))
-
-        subplots = []
-        for line_attr in self.common_attributes:
-            for col_attr in self.common_attributes:
-                if line_attr == col_attr:
-                    subplots.append(plot_data.Histogram(x_variable=line_attr, elements=data_list))
-                else:
-                    subplots.append(plot_data.Scatter(x_variable=line_attr,
-                                                      y_variable=col_attr,
-                                                      elements=data_list,
-                                                      tooltip=plot_data.Tooltip(attributes=self.common_attributes + ["Cluster Label"]),
-                                                      **kwargs))
-
-        scatter_matrix = plot_data.MultiplePlots(plots=subplots,
-                                                 elements=data_list,
-                                                 point_families=point_families,
-                                                 initial_view_on=True)
-        return scatter_matrix
+        return point_families
 
 
     @classmethod

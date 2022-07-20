@@ -795,35 +795,46 @@ class HeterogeneousList(DessiaObject):
         dimensionality_plot = self.plot_dimensionality()
 
         # Scattermatrix
-        scatter_matrix = self.build_multiplot(point_color=dimensionality_plot.point_style.color_fill,
-                                              axis=dimensionality_plot.axis)
+        scatter_matrix = self._build_multiplot(self._plot_data_list(),
+                                               self._tooltip_attributes(),
+                                               axis=dimensionality_plot.axis,
+                                               point_style=dimensionality_plot.point_style)
 
         return [dimensionality_plot, scatter_matrix]
 
-    def build_multiplot(self, point_color: Any, **kwargs): # Can't give a type because plot_data imported locally
+    def _build_multiplot(self, data_list: Dict[str, float], tooltip: List[str], **kwargs: Dict[str, Any]):
         import plot_data
-        data_list = []
-        for row in range(len(self.dessia_objects)):
-            data_list.append({attr: self.matrix[row][col] for col, attr in enumerate(self.common_attributes)})
-
         subplots = []
-        for line_attr in data_list[0]:
-            for col_attr in data_list[0]:
+        for line_attr in self.common_attributes:
+            for col_attr in self.common_attributes:
                 if line_attr == col_attr:
                     subplots.append(plot_data.Histogram(x_variable=line_attr, elements=data_list))
                 else:
                     subplots.append(plot_data.Scatter(x_variable=line_attr,
                                                       y_variable=col_attr,
                                                       elements=data_list,
+                                                      tooltip=plot_data.Tooltip(tooltip),
                                                       **kwargs))
-
-        point_families = [plot_data.core.PointFamily(point_color, list(range(len(self.dessia_objects))))]
 
         scatter_matrix = plot_data.MultiplePlots(plots=subplots,
                                                  elements=data_list,
-                                                 point_families=point_families,
+                                                 point_families=self._point_families(),
                                                  initial_view_on=True)
         return scatter_matrix
+
+    def _tooltip_attributes(self):
+        return self.common_attributes
+
+    def _plot_data_list(self):
+        _plot_data_list = []
+        for row, _ in enumerate(self.dessia_objects):
+            _plot_data_list.append({attr: self.matrix[row][col] for col, attr in enumerate(self.common_attributes)})
+        return _plot_data_list
+
+    def _point_families(self):
+        from plot_data.colors import BLUE
+        from plot_data.core import PointFamily
+        return [PointFamily(BLUE, list(range(len(self.dessia_objects))))]
 
 
     def plot_dimensionality(self):
@@ -847,7 +858,7 @@ class HeterogeneousList(DessiaObject):
                                                 point_style=point_style)
         return dimensionality_plot
 
-    def to_markdown(self):
+    def to_markdown(self): # TODO: Custom this markdown
         """
         Render a markdown of the object output type: string
         """
