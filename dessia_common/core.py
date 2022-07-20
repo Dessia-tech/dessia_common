@@ -883,8 +883,7 @@ class HeterogeneousList(DessiaObject):
     def _point_families(self):
         from plot_data.colors import BLUE
         from plot_data.core import PointFamily
-        return [PointFamily(BLUE, list(range(len(self.dessia_objects))))]
-
+        return [PointFamily(BLUE, list(range(self.__len__())))]
 
     def plot_dimensionality(self):
         import plot_data

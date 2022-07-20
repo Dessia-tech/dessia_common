@@ -41,9 +41,9 @@ assert(all(item in RandData_heterogeneous.matrix[idx]
                         for attr in RandData_heterogeneous.common_attributes]))
 
 # Tests for plot_data
-# all_cars_with_features.plot()
-# all_cars_without_features.plot()
-# RandData_heterogeneous.plot()
+all_cars_with_features.plot()
+all_cars_without_features.plot()
+RandData_heterogeneous.plot()
 
 # # # Check platform for datasets
 # all_cars_with_features._check_platform()
