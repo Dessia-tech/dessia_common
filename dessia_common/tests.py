@@ -200,6 +200,16 @@ class Car(DessiaObject):
 
         return cars, variables
 
+class OtherComponent(DessiaObject):
+    _standalone_in_db = True
+
+    def __init__(self, efficiency: float, name: str = ''):
+        self.efficiency = efficiency
+        DessiaObject.__init__(self, name=name)
+
+    def power_simulation(self, power_value: dct.Power):
+        return power_value * self.efficiency
+
 class SystemPerso(DessiaObject):
     _standalone_in_db = True
     _dessia_methods = ['solve']
@@ -207,6 +217,20 @@ class SystemPerso(DessiaObject):
     def __init__(self, components: List[Component],
                  name: str = ''):
         self.components = components
+        DessiaObject.__init__(self, name=name)
+
+    def solve(self)->int:
+        return len(self.components)
+
+class SystemPerso2(DessiaObject):
+    _standalone_in_db = True
+    _dessia_methods = ['solve']
+
+    def __init__(self, components: List[Component],
+                 other_components: List[OtherComponent],
+                 name: str = ''):
+        self.components = components
+        self.other_components = other_components
         DessiaObject.__init__(self, name=name)
 
     def solve(self)->int:
