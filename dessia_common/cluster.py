@@ -3,12 +3,13 @@ Library for building clusters on data.
 """
 from typing import List
 
+import numpy as npy
 from sklearn import cluster, preprocessing
-
 import matplotlib.pyplot as plt
 
+from typing import Dict, Any
+
 import plot_data
-from plot_data.core import Dataset
 import dessia_common.core as dc
 
 
@@ -51,55 +52,47 @@ class CategorizedList(dc.HeterogeneousList):
         dimensionality_plot = self.plot_dimensionality()
 
         # Scattermatrix
-        datasets_list = self.build_datasets()
-        scatter_matrix = self.build_multiplot(datasets_list)
+        scatter_matrix = self.build_multiplot(axis=dimensionality_plot.axis,
+                                              point_style=dimensionality_plot.point_style)
 
         return [dimensionality_plot, scatter_matrix]
 
-    def build_multiplot(self, datasets_list: List[Dataset]):
-        list_scatters = []
-        for x_attr in self.common_attributes:
-            for y_attr in self.common_attributes:
-                list_scatters.append(plot_data.Graph2D(x_variable=x_attr, y_variable=y_attr, graphs=datasets_list))
-        return plot_data.MultiplePlots(plots=list_scatters, elements=datasets_list, initial_view_on=True)
+    def build_multiplot(self, **kwargs: Dict[str, Any]):
+        data_list = []
+        for row, label in enumerate(self.labels):
+            data_list.append({attr: self.matrix[row][col] for col, attr in enumerate(self.common_attributes)})
+            data_list[-1]["Cluster Label"] = label #(label if label != -1 else "Excluded")
 
-    def build_datasets(self):
-        dataset_list = []
-        tooltip_list = []
-        nb_dataset = (self.n_clusters + 1 if -1 in self.labels else self.n_clusters)
+        colormap = plt.cm.get_cmap('hsv', self.n_clusters + 1)(range(self.n_clusters + 1))
+        point_families = []
+        for i_cluster in range(self.n_clusters):
+            color = plot_data.colors.Color(colormap[i_cluster][0], colormap[i_cluster][1], colormap[i_cluster][2])
+            points_index = npy.where(npy.array(self.labels, dtype = int) == i_cluster)
+            point_families.append(plot_data.core.PointFamily(color, list(map(int, points_index[0].tolist()))))
 
-        for _ in range(nb_dataset):
-            dataset_list.append([])
-            tooltip_list.append(plot_data.Tooltip(attributes=self.common_attributes + ["Cluster Label"]))
+        if -1 in self.labels:
+            color = plot_data.colors.LIGHTGREY
+            points_index = npy.where(npy.array(self.labels) == -1)
+            point_families.append(plot_data.core.PointFamily(color, list(map(int, points_index[0].tolist()))))
 
-        for idx, label in enumerate(self.labels):
-            dataset_row = {"Cluster Label": (
-                label if label != -1 else "Excluded")}
+        subplots = []
+        for line_attr in self.common_attributes:
+            for col_attr in self.common_attributes:
+                if line_attr == col_attr:
+                    subplots.append(plot_data.Histogram(x_variable=line_attr, elements=data_list))
+                else:
+                    subplots.append(plot_data.Scatter(x_variable=line_attr,
+                                                      y_variable=col_attr,
+                                                      elements=data_list,
+                                                      tooltip=plot_data.Tooltip(attributes=self.common_attributes + ["Cluster Label"]),
+                                                      **kwargs))
 
-            if hasattr(self.dessia_objects[idx], self.common_attributes[0]):
-                for attribute in self.common_attributes:
-                    dataset_row[attribute] = getattr(self.dessia_objects[idx], attribute)
-            else:
-                for col in range(len(self.matrix[0])):
-                    dataset_row[f'p{col+1}'] = self.matrix[idx][col]
+        scatter_matrix = plot_data.MultiplePlots(plots=subplots,
+                                                 elements=data_list,
+                                                 point_families=point_families,
+                                                 initial_view_on=True)
+        return scatter_matrix
 
-            dataset_list[label].append(dataset_row)
-
-        cmp_f = plt.cm.get_cmap(
-            'hsv', self.n_clusters + 1)(range(self.n_clusters + 1))
-        edge_style = plot_data.EdgeStyle(line_width=0.0001)
-        for idx in range(nb_dataset):
-            if idx == self.n_clusters:
-                color = plot_data.colors.Color(0, 0, 0)
-            else:
-                color = plot_data.colors.Color(cmp_f[idx][0], cmp_f[idx][1], cmp_f[idx][2])
-
-            point_style = plot_data.PointStyle(color_fill=color, color_stroke=color, size=1)
-            dataset_list[idx] = plot_data.Dataset(elements=dataset_list[idx],
-                                                  edge_style=edge_style,
-                                                  point_style=point_style,
-                                                  tooltip=tooltip_list[idx])
-        return dataset_list
 
     @classmethod
     def from_agglomerative_clustering(cls, data: dc.HeterogeneousList, n_clusters: int = 2,

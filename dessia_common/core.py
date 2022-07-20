@@ -788,7 +788,6 @@ class HeterogeneousList(DessiaObject):
         return normed_singular_values, singular_points
 
     def plot_data(self):
-        import plot_data
         # Plot a correlation matrix : To develop
         # correlation_matrix = []
 
@@ -796,6 +795,13 @@ class HeterogeneousList(DessiaObject):
         dimensionality_plot = self.plot_dimensionality()
 
         # Scattermatrix
+        scatter_matrix = self.build_multiplot(point_color=dimensionality_plot.point_style.color_fill,
+                                              axis=dimensionality_plot.axis)
+
+        return [dimensionality_plot, scatter_matrix]
+
+    def build_multiplot(self, point_color: Any, **kwargs): # Can't give a type because plot_data imported locally
+        import plot_data
         data_list = []
         for row in range(len(self.dessia_objects)):
             data_list.append({attr: self.matrix[row][col] for col, attr in enumerate(self.common_attributes)})
@@ -809,10 +815,16 @@ class HeterogeneousList(DessiaObject):
                     subplots.append(plot_data.Scatter(x_variable=line_attr,
                                                       y_variable=col_attr,
                                                       elements=data_list,
-                                                      axis=dimensionality_plot.axis,
-                                                      point_style=dimensionality_plot.point_style))
-        scatter_matrix = plot_data.MultiplePlots(plots=subplots, elements=data_list, initial_view_on=True)
-        return [dimensionality_plot, scatter_matrix]
+                                                      **kwargs))
+
+        point_families = [plot_data.core.PointFamily(point_color, list(range(len(self.dessia_objects))))]
+
+        scatter_matrix = plot_data.MultiplePlots(plots=subplots,
+                                                 elements=data_list,
+                                                 point_families=point_families,
+                                                 initial_view_on=True)
+        return scatter_matrix
+
 
     def plot_dimensionality(self):
         import plot_data
