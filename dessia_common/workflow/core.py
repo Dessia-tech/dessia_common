@@ -20,8 +20,7 @@ from dessia_common.templates import workflow_template
 from dessia_common import DessiaObject, is_sequence, JSONSCHEMA_HEADER, jsonschema_from_annotation,\
     deserialize_argument, set_default_value, prettyname, serialize_dict, DisplaySetting
 
-from dessia_common.utils.serialization import dict_to_object, deserialize, serialize_with_pointers, serialize,\
-                                              dereference_jsonpointers
+from dessia_common.utils.serialization import deserialize, serialize_with_pointers, serialize, update_pointers_data
 from dessia_common.utils.types import serialize_typing, deserialize_typing, recursive_type, typematch
 from dessia_common.utils.copy import deepcopy_value
 from dessia_common.utils.docstrings import FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE
@@ -575,9 +574,15 @@ class Workflow(Block):
         """
         Recompute the object from a dict
         """
-        blocks = [DessiaObject.dict_to_object(d) for d in dict_['blocks']]
+        global_dict, pointers_memo = update_pointers_data(global_dict=global_dict, current_dict=dict_,
+                                                          pointers_memo=pointers_memo)
+
+        blocks = [deserialize(serialized_element=d, global_dict=global_dict, pointers_memo=pointers_memo)
+                  for d in dict_["blocks"]]
         if 'nonblock_variables' in dict_:
-            nonblock_variables = [dict_to_object(d) for d in dict_['nonblock_variables']]
+            nonblock_variables = [deserialize(serialized_element=d, global_dict=global_dict,
+                                              pointers_memo=pointers_memo)
+                                  for d in dict_['nonblock_variables']]
         else:
             nonblock_variables = []
 
@@ -1421,20 +1426,14 @@ class WorkflowState(DessiaObject):
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'WorkflowState':
 
-        # This is copy pasted from generic dict to object, because it is difficult to do a decorator
-        # for both classmethod and function
-        if pointers_memo is None:
-            pointers_memo = {}
-
-        if global_dict is None:
-            global_dict = dict_
-            pointers_memo.update(dereference_jsonpointers(dict_))
+        global_dict, pointers_memo = update_pointers_data(global_dict=global_dict, current_dict=dict_,
+                                                          pointers_memo=pointers_memo)
 
         workflow = Workflow.dict_to_object(dict_['workflow'])
         if 'output_value' in dict_:  # and 'output_value_type' in dict_:
             # type_ = dict_['output_value_type']
             value = dict_['output_value']
-            output_value = deserialize(value, global_dict=dict_,
+            output_value = deserialize(value, global_dict=global_dict,
                                        pointers_memo=pointers_memo, path=f'{path}/output_value')
         else:
             output_value = None
@@ -1442,15 +1441,15 @@ class WorkflowState(DessiaObject):
         values = {}
         if 'values' in dict_:
             for i, value in dict_['values'].items():
-                values[workflow.variables[int(i)]] = deserialize(value, global_dict=dict_, pointers_memo=pointers_memo,
-                                                                 path=f'{path}/values/{i}')
+                values[workflow.variables[int(i)]] = deserialize(value, global_dict=global_dict,
+                                                                 pointers_memo=pointers_memo, path=f'{path}/values/{i}')
         # elif 'variable_values' in dict_:
         #     for i, value in dict_['variable_values'].items():
         #         values[workflow.variables[int(i)]] = deserialize(value, global_dict=dict_,
         #                                                          pointers_memo=pointers_memo,
         #                                                          path=f'{path}/variable_values/{i}')
 
-        input_values = {int(i): deserialize(v, global_dict=dict_, pointers_memo=pointers_memo,
+        input_values = {int(i): deserialize(v, global_dict=global_dict, pointers_memo=pointers_memo,
                                             path=f"{path}/input_values/{i}")
                         for i, v in dict_['input_values'].items()}
 

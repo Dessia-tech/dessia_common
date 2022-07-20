@@ -27,7 +27,8 @@ scripts = ['displays.py',
            'type_matching.py',
            # Unit tests after that
            'unit_tests.py',
-           'bson_valid.py'
+           'bson_valid.py',
+           'utils/types.py',
            ]
 
 for script_name in scripts:
