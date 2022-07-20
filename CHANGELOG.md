@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## v0.9.0 [7/20/2022]
+
+### Added
+- Clustering classes
+
 ### Fixed
 
 - Prevent foreach name from being it's iter_input name
