@@ -507,8 +507,7 @@ class DessiaObject:
             try:
                 plot_datas = self.plot_data(**kwargs)
             except TypeError as error:
-                raise TypeError(
-                    f'{self.__class__.__name__}.{error}') from error
+                raise TypeError(f'{self.__class__.__name__}.{error}') from error
             for data in plot_datas:
                 if hasattr(data, 'mpl_plot'):
                     ax = data.mpl_plot()
@@ -825,10 +824,10 @@ class HeterogeneousList(DessiaObject):
         return self.common_attributes
 
     def _plot_data_list(self):
-        _plot_data_list = []
+        plot_data_list = []
         for row, _ in enumerate(self.dessia_objects):
-            _plot_data_list.append({attr: self.matrix[row][col] for col, attr in enumerate(self.common_attributes)})
-        return _plot_data_list
+            plot_data_list.append({attr: self.matrix[row][col] for col, attr in enumerate(self.common_attributes)})
+        return plot_data_list
 
     def _point_families(self):
         from plot_data.colors import BLUE
