@@ -45,10 +45,8 @@ class Generator(DessiaObject):
         DessiaObject.__init__(self, name=name)
 
     def generate(self) -> None:
-        submodels = [Submodel(self.parameter * i)
-                     for i in range(self.nb_solutions)]
-        self.models = [Model(self.parameter + i, submodels[i])
-                       for i in range(self.nb_solutions)]
+        submodels = [Submodel(self.parameter * i) for i in range(self.nb_solutions)]
+        self.models = [Model(self.parameter + i, submodels[i]) for i in range(self.nb_solutions)]
 
     def long_generation(self, progress_callback=lambda x: None) -> List[Model]:
         """
@@ -57,10 +55,8 @@ class Generator(DessiaObject):
             * progress update
             * long computation
         """
-        submodels = [Submodel(self.parameter * i)
-                     for i in range(self.nb_solutions)]
-        models = [Model(self.parameter + i, submodels[i])
-                  for i in range(self.nb_solutions)]
+        submodels = [Submodel(self.parameter * i) for i in range(self.nb_solutions)]
+        models = [Model(self.parameter + i, submodels[i]) for i in range(self.nb_solutions)]
         # Delay to simulate long generateion
         print('Beginning a long generation...')
         for i in range(500):
@@ -96,8 +92,7 @@ class Component(DessiaObject):
 
 
 class ComponentConnection(DessiaObject):
-    def __init__(self, input_component: Component,
-                 output_component: Component, name: str = ''):
+    def __init__(self, input_component: Component, output_component: Component, name: str = ''):
         self.input_component = input_component
         self.output_component = output_component
         DessiaObject.__init__(self, name=name)
@@ -106,8 +101,7 @@ class ComponentConnection(DessiaObject):
 class SystemUsage(DessiaObject):
     _standalone_in_db = True
 
-    def __init__(self, time: List[dct.Time], power: List[dct.Power],
-                 name: str = ''):
+    def __init__(self, time: List[dct.Time], power: List[dct.Power], name: str = ''):
         self.time = time
         self.power = power
         DessiaObject.__init__(self, name=name)
@@ -117,9 +111,7 @@ class System(DessiaObject):
     _standalone_in_db = True
     _dessia_methods = ['power_simulation']
 
-    def __init__(self, components: List[Component],
-                 component_connections: List[ComponentConnection],
-                 name: str = ''):
+    def __init__(self, components: List[Component], component_connections: List[ComponentConnection], name: str = ''):
         self.components = components
         self.component_connections = component_connections
         DessiaObject.__init__(self, name=name)
@@ -137,8 +129,7 @@ class System(DessiaObject):
 class SystemSimulationResult(DessiaObject):
     _standalone_in_db = True
 
-    def __init__(self, system: System, system_usage: SystemUsage,
-                 output_power: List[dct.Power], name: str = ''):
+    def __init__(self, system: System, system_usage: SystemUsage, output_power: List[dct.Power], name: str = ''):
         self.system = system
         self.system_usage = system_usage
         self.output_power = output_power
@@ -148,8 +139,7 @@ class SystemSimulationResult(DessiaObject):
 class SystemSimulationList(DessiaObject):
     _standalone_in_db = True
 
-    def __init__(self, simulations: List[SystemSimulationResult],
-                 name: str = ''):
+    def __init__(self, simulations: List[SystemSimulationResult], name: str = ''):
         self.simulations = simulations
         DessiaObject.__init__(self, name=name)
 
@@ -161,10 +151,8 @@ class Car(DessiaObject):
     _standalone_in_db = True
     _non_data_hash_attributes = ['name']
 
-    def __init__(self, name: str, mpg: float, cylinders: int,
-                 displacement: dct.Distance, horsepower: float,
-                 weight: dct.Mass, acceleration: dct.Time, model: int,
-                 origin: str):
+    def __init__(self, name: str, mpg: float, cylinders: int, displacement: dct.Distance, horsepower: float,
+                 weight: dct.Mass, acceleration: dct.Time, model: int, origin: str):
         DessiaObject.__init__(self, name=name)
 
         self.mpg = mpg
@@ -187,8 +175,7 @@ class Car(DessiaObject):
         """
         Generates Cars from given .csv file.
         """
-        array = npy.genfromtxt(
-            file, dtype=None, delimiter=',', names=True, encoding=None)
+        array = npy.genfromtxt(file, dtype=None, delimiter=',', names=True, encoding=None)
         cars = []
         for idx_line, line in enumerate(array):
             if end is not None and idx_line >= end:
@@ -210,19 +197,16 @@ class Car(DessiaObject):
 class CarWithFeatures(Car):
     _vector_features = ['mpg', 'displacement', 'horsepower', 'acceleration', 'weight']
 
-    def __init__(self, name: str, mpg: float, cylinders: int,
-                 displacement: dct.Distance, horsepower: float,
-                 weight: dct.Mass, acceleration: dct.Time, model: int,
-                 origin: str):
-        Car.__init__(self, name, mpg, cylinders, displacement, horsepower,
-                     weight, acceleration, model, origin)
+    def __init__(self, name: str, mpg: float, cylinders: int, displacement: dct.Distance, horsepower: float,
+                 weight: dct.Mass, acceleration: dct.Time, model: int, origin: str):
+        Car.__init__(self, name, mpg, cylinders, displacement, horsepower, weight, acceleration, model, origin)
 
     @classmethod
     def vector_features(cls):
         return cls._vector_features
 
 
-class ClusTesterD1(DessiaObject):
+class RandDataD1(DessiaObject):
     """
     Creates a dataset from a number of clusters and dimensions
     """
@@ -240,8 +224,8 @@ class ClusTesterD1(DessiaObject):
         return cls._vector_features
 
     @classmethod
-    def create_dataset(cls, nb_clusters: int = 10, nb_points: int = 2500,
-                       mean_borns: Tuple[float, float] = (-50., 50), std_borns: Tuple[float, float] = (-2., 2.)):
+    def create_dataset(cls, nb_clusters: int = 10, nb_points: int = 2500, mean_borns: Tuple[float, float] = (-50., 50),
+                       std_borns: Tuple[float, float] = (-2., 2.)):
         means_list = []
         std_list = []
         data_list = []
@@ -270,61 +254,60 @@ class ClusTesterD1(DessiaObject):
         return cluster_sizes
 
     @staticmethod
-    def python_plot(x_label: str, y_label: str, clustester_list: List[List[float]], **kwargs):
-        x_coords = [getattr(clustester, x_label) for clustester in clustester_list]
-        y_coords = [getattr(clustester, y_label) for clustester in clustester_list]
+    def python_plot(x_label: str, y_label: str, rand_data_list: List[List[float]], **kwargs):
+        x_coords = [getattr(RandData, x_label) for RandData in rand_data_list]
+        y_coords = [getattr(RandData, y_label) for RandData in rand_data_list]
         import matplotlib.pyplot as plt
         plt.plot(x_coords, y_coords, **kwargs)
 
 
-class ClusTesterD2(ClusTesterD1):
+class RandDataD2(RandDataD1):
     _nb_dims = 2
     _vector_features = [f'p_{i+1}' for i in range(2)]
 
     def __init__(self, p_1: float, p_2: float, name: str = ''):
-        ClusTesterD1.__init__(self, p_1, name=name)
+        RandDataD1.__init__(self, p_1, name=name)
         self.p_2 = p_2
 
 
-class ClusTesterD3(ClusTesterD1):
+class RandDataD3(RandDataD1):
     _nb_dims = 3
     _vector_features = [f'p_{i+1}' for i in range(3)]
 
     def __init__(self, p_1: float, p_2: float, p_3: float, name: str = ''):
-        ClusTesterD1.__init__(self, p_1, name=name)
+        RandDataD1.__init__(self, p_1, name=name)
         self.p_2 = p_2
         self.p_3 = p_3
 
 
-class ClusTesterD4(ClusTesterD1):
+class RandDataD4(RandDataD1):
     _nb_dims = 4
     _vector_features = [f'p_{i+1}' for i in range(4)]
 
     def __init__(self, p_1: float, p_2: float, p_3: float, p_4: float, name: str = ''):
-        ClusTesterD1.__init__(self, p_1, name=name)
+        RandDataD1.__init__(self, p_1, name=name)
         self.p_2 = p_2
         self.p_3 = p_3
         self.p_4 = p_4
 
 
-class ClusTesterD5(ClusTesterD1):
+class RandDataD5(RandDataD1):
     _nb_dims = 5
     _vector_features = [f'p_{i+1}' for i in range(5)]
 
     def __init__(self, p_1: float, p_2: float, p_3: float, p_4: float, p_5: float, name: str = ''):
-        ClusTesterD1.__init__(self, p_1, name=name)
+        RandDataD1.__init__(self, p_1, name=name)
         self.p_2 = p_2
         self.p_3 = p_3
         self.p_4 = p_4
         self.p_5 = p_5
 
 
-class ClusTesterD6(ClusTesterD1):
+class RandDataD6(RandDataD1):
     _nb_dims = 6
     _vector_features = [f'p_{i+1}' for i in range(6)]
-    def __init__(self, p_1: float, p_2: float, p_3: float, p_4: float, p_5: float,
-                 p_6: float, name: str = ''):
-        ClusTesterD1.__init__(self, p_1, name=name)
+    def __init__(self, p_1: float, p_2: float, p_3: float, p_4: float, p_5: float, p_6: float, name: str = ''):
+        RandDataD1.__init__(self, p_1, name=name)
         self.p_2 = p_2
         self.p_3 = p_3
         self.p_4 = p_4
@@ -332,12 +315,12 @@ class ClusTesterD6(ClusTesterD1):
         self.p_6 = p_6
 
 
-class ClusTesterD7(ClusTesterD1):
+class RandDataD7(RandDataD1):
     _nb_dims = 7
     _vector_features = [f'p_{i+1}' for i in range(7)]
-    def __init__(self, p_1: float, p_2: float, p_3: float, p_4: float, p_5: float,
-                 p_6: float, p_7: float, name: str = ''):
-        ClusTesterD1.__init__(self, p_1, name=name)
+    def __init__(self, p_1: float, p_2: float, p_3: float, p_4: float, p_5: float, p_6: float, p_7: float,
+                 name: str = ''):
+        RandDataD1.__init__(self, p_1, name=name)
         self.p_2 = p_2
         self.p_3 = p_3
         self.p_4 = p_4
@@ -346,12 +329,12 @@ class ClusTesterD7(ClusTesterD1):
         self.p_7 = p_7
 
 
-class ClusTesterD8(ClusTesterD1):
+class RandDataD8(RandDataD1):
     _nb_dims = 8
     _vector_features = [f'p_{i+1}' for i in range(8)]
-    def __init__(self, p_1: float, p_2: float, p_3: float, p_4: float, p_5: float,
-                 p_6: float, p_7: float, p_8: float, name: str = ''):
-        ClusTesterD1.__init__(self, p_1, name=name)
+    def __init__(self, p_1: float, p_2: float, p_3: float, p_4: float, p_5: float, p_6: float, p_7: float, p_8: float,
+                 name: str = ''):
+        RandDataD1.__init__(self, p_1, name=name)
         self.p_2 = p_2
         self.p_3 = p_3
         self.p_4 = p_4
@@ -361,12 +344,12 @@ class ClusTesterD8(ClusTesterD1):
         self.p_8 = p_8
 
 
-class ClusTesterD9(ClusTesterD1):
+class RandDataD9(RandDataD1):
     _nb_dims = 9
     _vector_features = [f'p_{i+1}' for i in range(9)]
-    def __init__(self, p_1: float, p_2: float, p_3: float, p_4: float, p_5: float,
-                 p_6: float, p_7: float, p_8: float, p_9: float, name: str = ''):
-        ClusTesterD1.__init__(self, p_1, name=name)
+    def __init__(self, p_1: float, p_2: float, p_3: float, p_4: float, p_5: float, p_6: float, p_7: float, p_8: float,
+                 p_9: float, name: str = ''):
+        RandDataD1.__init__(self, p_1, name=name)
         self.p_2 = p_2
         self.p_3 = p_3
         self.p_4 = p_4
@@ -377,13 +360,13 @@ class ClusTesterD9(ClusTesterD1):
         self.p_9 = p_9
 
 
-class ClusTesterD10(ClusTesterD1):
+class RandDataD10(RandDataD1):
     _nb_dims = 10
     _vector_features = [f'p_{i+1}' for i in range(10)]
 
-    def __init__(self, p_1: float, p_2: float, p_3: float, p_4: float, p_5: float,
-                 p_6: float, p_7: float, p_8: float, p_9: float, p_10: float, name: str = ''):
-        ClusTesterD1.__init__(self, p_1, name=name)
+    def __init__(self, p_1: float, p_2: float, p_3: float, p_4: float, p_5: float, p_6: float, p_7: float, p_8: float,
+                 p_9: float, p_10: float, name: str = ''):
+        RandDataD1.__init__(self, p_1, name=name)
         self.p_2 = p_2
         self.p_3 = p_3
         self.p_4 = p_4

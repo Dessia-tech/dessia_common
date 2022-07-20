@@ -8,7 +8,7 @@ import pkg_resources
 
 from dessia_common.vectored_objects import Catalog, ParetoSettings, Objective, ObjectiveSettings
 from dessia_common import DessiaFilter
-from dessia_common.tests import Car
+from dessia_common.tests import Car, CarWithFeatures
 
 choice_args = ['MPG', 'Cylinders', 'Displacement', 'Horsepower', 'Weight', 'Acceleration', 'Model']  # Ordered
 
@@ -35,6 +35,6 @@ objective = Objective({}, {}, objective_settings)
 filtered_catalog = catalog.filter_(filters)
 merged_catalog = Catalog.concatenate(catalogs=[catalog, filtered_catalog])
 
-#
-csv_cars = pkg_resources.resource_stream('dessia_common', 'models/data/cars.csv')
-all_cars = Car.from_csv(csv_cars)
+# Used models
+all_cars_no_feat = Car.from_csv(pkg_resources.resource_stream('dessia_common', 'models/data/cars.csv'))
+all_cars_wi_feat = CarWithFeatures.from_csv(pkg_resources.resource_stream('dessia_common', 'models/data/cars.csv'))
