@@ -758,7 +758,7 @@ class HeterogeneousList(DessiaObject):
         DessiaObject.__init__(self, name=name)
         self.dessia_objects = dessia_objects
         self.common_attributes = self._common_attributes()
-        self.matrix = self._matrix()
+        self._matrix = None
 
     def __getitem__(self, key: Any):
         if isinstance(key, int):
@@ -823,13 +823,16 @@ class HeterogeneousList(DessiaObject):
         # attributes' order kept this way, not with set or sorted(set)
         return list(attr for attr in get_attribute_names(all_class[0]) if attr in common_attributes)
 
-    def _matrix(self):
-        matrix = []
-        for dessia_object in self.dessia_objects:
-            temp_row = dessia_object.to_vector()
-            vector_features = dessia_object.vector_features()
-            matrix.append(list(temp_row[vector_features.index(attr)] for attr in self.common_attributes))
-        return matrix
+    @property
+    def matrix(self):
+        if self._matrix is None:
+            matrix = []
+            for dessia_object in self.dessia_objects:
+                temp_row = dessia_object.to_vector()
+                vector_features = dessia_object.vector_features()
+                matrix.append(list(temp_row[vector_features.index(attr)] for attr in self.common_attributes))
+            self._matrix = matrix
+        return self._matrix
 
     def sort(self, key: Any, ascend: bool = True):
         if isinstance(key, int):
