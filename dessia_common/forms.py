@@ -166,7 +166,7 @@ DEF_EES = EnhancedEmbeddedSubobject.generate(3)
 UnionArg = Union[EmbeddedSubobject, EnhancedEmbeddedSubobject]
 
 
-class StandaloneObject(PhysicalObject):
+class StandaloneObject(MovingObject):
     """
     Dev Object for testing purpose
 
@@ -206,7 +206,7 @@ class StandaloneObject(PhysicalObject):
         self.subclass_arg = subclass_arg
         self.array_arg = array_arg
 
-        PhysicalObject.__init__(self, name=name)
+        MovingObject.__init__(self, name=name)
 
     @classmethod
     def generate(cls, seed: int, name: str = 'Standalone Object Demo') -> 'StandaloneObject':
@@ -278,7 +278,26 @@ class StandaloneObject(PhysicalObject):
         return self.standalone_subobject
 
     def volmdlr_primitives(self):
-        return self.standalone_subobject.voldmlr_primitives()
+        cube = self.standalone_subobject.voldmlr_primitives()[0]
+        if self.intarg <= 0:
+            radius = 0.5
+        else:
+            radius = self.intarg
+        offset = self.standalone_subobject.floatarg
+        origin = vm.Point3D(offset + .5, offset + .5, radius + .5)
+        sphere = p3d.Sphere(center=origin, radius=radius)
+        return [cube, sphere]
+
+    def volmdlr_primitives_step_frames(self):
+        frame0 = vm.Frame3D(vm.O3D.copy(), vm.X3D.copy(), vm.Y3D.copy(), vm.Z3D.copy())
+        frame11 = frame0.rotation(center=vm.O3D, axis=vm.Y3D, angle=0.7)
+        frame21 = frame11.translation(offset=vm.Y3D)
+        frame31 = frame21.rotation(center=vm.O3D, axis=vm.Y3D, angle=0.7)
+
+        frame12 = frame0.translation(offset=vm.X3D)
+        frame22 = frame0.translation(offset=vm.Y3D)
+        frame32 = frame0.translation(offset=vm.Z3D)
+        return [[frame0, frame0], [frame11, frame12], [frame21, frame22], [frame31, frame32]]
 
     def plot_data(self):
         attributes = ['cx', 'cy']
