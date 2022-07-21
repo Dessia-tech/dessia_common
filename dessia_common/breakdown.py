@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
+Code for breakdowns
 
 """
 
@@ -39,10 +40,10 @@ def extract_segment_from_object(object_, segment:str):
     if is_sequence(object_):
         try:
             return object_[int(segment)]
-        except ValueError:
+        except ValueError as err:
             message_error = (f'Cannot extract segment {segment} from object {{str(object_)[:500]}}:'
                              + 'segment is not a sequence index')
-            raise ExtractionError(message_error)
+            raise ExtractionError(message_error) from err
 
     if isinstance(object_, dict):
         if segment in object_:
@@ -90,10 +91,11 @@ def get_in_object_from_path(object_, path, evaluate_pointers=True):
                     raise RecursionError(err_msg) from err
             
         try:
-            element = extract_segment_from_object(element, segment)
-        except ExtractionError:
+            element = extract_from_object(element, segment)
+        except ExtractionError as err:
+
             err_msg = f'Cannot get segment {segment} from path {path} in element {str(element)[:500]}'
-            raise ExtractionError(err_msg)
+            raise ExtractionError(err_msg) from err
 
     return element
 
@@ -120,18 +122,18 @@ def breakdown(obj, path=''):
     if obj is None:
         return bd_dict
 
-    if (isinstance(obj, str) or isinstance(obj, float) or isinstance(obj, int)):
+    if isinstance(obj, (str, float, int)):
         return bd_dict
 
     if isinstance(obj, npy.ndarray):
         return bd_dict
 
-    if isinstance(obj, list) or isinstance(obj, tuple) or isinstance(obj, set):
+    if isinstance(obj, (list, tuple, set)):
         if path:
             path += '.'
 
         for i, element in enumerate(obj):
-            path2 = path + '{}'.format(i)
+            path2 = f'{path}{i}'
             bd_dict = merge_breakdown_dicts(bd_dict, breakdown(element, path2))
     elif isinstance(obj, dict):
         if path:
@@ -177,16 +179,13 @@ def object_breakdown(obj, path=''):
 
     for k, value in obj_dict.items():
         # dict after lists
-        if not (isinstance(value, dict)
-                or isinstance(value, list)
-                or isinstance(value, tuple)
-                ):  # Should be object or builtins
+        if not isinstance(value, (dict, list, tuple)):  # Should be object or builtins
             dict2 = breakdown(value, path=path + k)
             bd_dict = merge_breakdown_dicts(bd_dict, dict2)
 
     for k, value in obj_dict.items():
         # First lists and tuples
-        if isinstance(value, list) or isinstance(value, tuple):
+        if isinstance(value, (list, tuple)):
             dict2 = breakdown(value, path=path + k)
             bd_dict = merge_breakdown_dicts(bd_dict, dict2)
 

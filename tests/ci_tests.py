@@ -1,12 +1,13 @@
 
 import os
 
-# for some akward reason, put scripts before unittests tests  
+# for some akward reason, put scripts before unittests tests
 scripts = ['displays.py',
            'generation.py',
            'models_test.py',
            'files.py',
            'vectored_objects.py',
+           'moving_object.py',
            # Workflows
            'workflow/blocks.py',
            'workflow/workflow_with_models.py',
@@ -24,6 +25,7 @@ scripts = ['displays.py',
            # Unit tests after that
            'unit_tests.py',
            'bson_valid.py',
+           'utils/types.py',
            ]
 
 for script_name in scripts:

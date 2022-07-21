@@ -55,7 +55,7 @@ input_values = {0: 5}
 demo_workflow_run = demo_workflow.run(input_values=input_values, verbose=True)
 
 # Assert to_dict, dict_to_object, hashes, eqs
-dict_ = demo_workflow_run.to_dict(use_pointers=False)
+dict_ = demo_workflow_run.to_dict()
 demo_workflow_run2 = wf.WorkflowRun.dict_to_object(dict_=dict_)
 
 assert hash(demo_workflow_run) == hash(demo_workflow_run2)

@@ -1,4 +1,7 @@
+"""
+generation for dessia_common
 
+"""
 from typing import List
 import dectree as dt
 import dessia_common.core as dc

@@ -1,6 +1,9 @@
+"""
+Optimization package for dessia_common
 
-import cma
+"""
 from typing import List
+import cma
 import numpy as npy
 import scipy.optimize
 import dessia_common.core as dc
@@ -138,16 +141,16 @@ class InstantiatingModelOptimizer(Optimizer):
         x0 = npy.random.random(self.number_parameters)
 
         bounds = self.cma_bounds()
-        xra, fx = cma.fmin(self.objective_from_dimensionless_vector,
-                           x0, 0.6, options={'bounds': bounds,
-                                             'tolfun': 1e-3,
-                                             'maxiter': 250,
-                                             'verbose': 0,
-                                             'ftarget': 0.2})[0:2]
+        xra, fx_opt = cma.fmin(self.objective_from_dimensionless_vector,
+                               x0, 0.6, options={'bounds': bounds,
+                                                 'tolfun': 1e-3,
+                                                 'maxiter': 250,
+                                                 'verbose': 0,
+                                                 'ftarget': 0.2})[0:2]
 
         attributes_values = self.vector_to_attributes_values(
             self.dimensionless_vector_to_vector(xra))
 
         model = self.instantiate_model(attributes_values)
 
-        return model, fx
+        return model, fx_opt

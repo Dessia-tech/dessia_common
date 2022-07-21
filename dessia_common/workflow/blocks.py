@@ -13,8 +13,8 @@ import io
 from typing import List, Type, Any, Dict, get_type_hints
 
 import itertools
-from dessia_common import DessiaObject, DisplayObject, DessiaFilter, is_bounded, enhanced_deep_attr, split_argspecs,\
-    type_from_annotation
+from dessia_common import DessiaObject, DessiaFilter, is_bounded, enhanced_deep_attr,\
+    split_argspecs, type_from_annotation
 from dessia_common.utils.types import get_python_class_from_class_name, full_classname
 from dessia_common.utils.docstrings import parse_docstring, EMPTY_PARSED_ATTRIBUTE
 from dessia_common.errors import UntypedArgumentError
@@ -34,16 +34,16 @@ def set_inputs_from_function(method, inputs=None):
     args_specs = inspect.getfullargspec(method)
     nargs, ndefault_args = split_argspecs(args_specs)
 
-    for iarg, argument in enumerate(args_specs.args[1:]):
-        if argument not in ['self', 'progress_callback']:
+    for iarg, argument in enumerate(args_specs.args):
+        if argument not in ['self', 'cls', 'progress_callback']:
             try:
                 annotations = get_type_hints(method)
                 type_ = type_from_annotation(annotations[argument], module=method.__module__)
             except KeyError as error:
                 raise UntypedArgumentError(f"Argument {argument} of method/function {method.__name__} has no typing")\
                     from error
-            if iarg >= nargs - ndefault_args:
-                default = args_specs.defaults[ndefault_args - nargs + iarg]
+            if iarg > nargs - ndefault_args:
+                default = args_specs.defaults[ndefault_args - nargs + iarg - 1]
                 input_ = TypedVariableWithDefaultValue(type_=type_, default_value=default, name=argument)
                 inputs.append(input_)
             else:
@@ -86,6 +86,17 @@ class Display(Block):
         displays = object_._displays(**kwargs)
         return displays
 
+    def _display_settings(self, block_index: int, local_values: Dict[Variable, Any]) -> List[DisplaySetting]:
+        object_ = local_values[self.inputs[self._displayable_input]]
+        display_settings = []
+        for i, display_setting in enumerate(object_.display_settings()):
+            display_setting.selector = f"display_{block_index}_{i}"
+            display_setting.method = "block_display"
+            display_setting.arguments = {"block_index": block_index, "display_index": i}
+            display_setting.serialize_data = True
+            display_settings.append(display_setting)
+        return display_settings
+
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
         dict_ = Block.to_dict(self)
         dict_['order'] = self.order
@@ -98,7 +109,7 @@ class Display(Block):
         return cls(order=dict_['order'], name=dict_['name'])
 
     @staticmethod
-    def evaluate(self):
+    def evaluate(_):
         return []
 
 
@@ -165,6 +176,10 @@ class InstantiateModel(Block):
 
 
 class ClassMethod(Block):
+    """
+    Handles static method as well
+    """
+
     def __init__(self, method_type: ClassMethodType[Type], name: str = ''):
         self.method_type = method_type
         inputs = []
@@ -421,8 +436,8 @@ class ForEach(Block):
         inputs = []
         for i, workflow_input in enumerate(self.workflow_block.inputs):
             if i == iter_input_index:
-                name = 'Iterable input: ' + workflow_input.name
-                inputs.append(Variable(name=name))
+                variable_name = 'Iterable input: ' + workflow_input.name
+                inputs.append(Variable(name=variable_name))
             else:
                 input_ = workflow_input.copy()
                 input_.name = 'binding ' + input_.name
@@ -648,12 +663,11 @@ class MultiPlot(Display):
                                             coords=[(0, 0), (0, 300)], name='Results plot')
         return [multiplot.to_dict()]
 
-    @staticmethod
-    def _display_settings(block_index: int) -> DisplaySetting:
+    def _display_settings(self, block_index: int, local_values: Dict[Variable, Any] = None) -> List[DisplaySetting]:
         display_settings = DisplaySetting(selector="display_" + str(block_index), type_="plot_data",
-                                          method="block_display", arguments={'block_index': block_index},
-                                          serialize_data=True)
-        return display_settings
+                                          method="block_display", serialize_data=True,
+                                          arguments={'block_index': block_index, "display_index": 0})
+        return [display_settings]
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
         dict_ = Block.to_dict(self)

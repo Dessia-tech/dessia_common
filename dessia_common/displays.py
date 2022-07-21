@@ -1,3 +1,7 @@
+"""
+displays for dessia_common
+
+"""
 import webbrowser
 import os
 import tempfile
@@ -31,12 +35,13 @@ class DisplaySetting:
         return {'selector': self.selector, 'type': self.type, 'method': self.method,
                 'serialize_data': self.serialize_data, 'arguments': self.arguments}
 
-    def compose(self, attribute):
+    def compose(self, attribute: str, serialize_data: bool = False):
         """
         In case of a parent getting the display settings of a children this methods allow to inject the attribute name
         to method name
         """
-        return DisplaySetting(self.selector, self.type, f'{attribute}.{self.method}', self.arguments)
+        return DisplaySetting(selector=self.selector, type_=self.type, method=f'{attribute}.{self.method}',
+                              arguments=self.arguments, serialize_data=serialize_data)
 
 
 class DisplayObject:

@@ -18,11 +18,12 @@ from parameterized import parameterized_class
     (standalone_object, ),
 ])
 class TestSerialization(unittest.TestCase):
-    
+
     def test_serialization(self):
         d = self.value.to_dict()
         obj = dessia_common.DessiaObject.dict_to_object(d)
         assert obj == self.value
+
 
 if __name__ == '__main__':
     unittest.main()
