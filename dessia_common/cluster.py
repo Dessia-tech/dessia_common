@@ -185,8 +185,8 @@ class CategorizedList(dc.HeterogeneousList):
         return cls(data.dessia_objects, skl_cluster.labels_.tolist())
 
     @classmethod
-    def from_dbscan(cls, data: dc.HeterogeneousList, eps: float = 0.5, min_samples: int = 5,
-                    mink_power: float = 2, leaf_size: int = 30, scaling: bool = False):
+    def from_dbscan(cls, data: dc.HeterogeneousList, eps: float = 0.5, min_samples: int = 5, mink_power: float = 2,
+                    leaf_size: int = 30, metric: str = "euclidean", scaling: bool = False):
 
         """
         Internet doc
@@ -223,6 +223,13 @@ class CategorizedList(dc.HeterogeneousList):
         and query, as well as the memory required to store the tree. The optimal value depends on the nature of
         the problem, defaults to 30
         :type leaf_size: int, optional
+
+        :param metric: The metric to use when calculating distance between instances in a feature array.
+        If metric is a string or callable, it must be one of the options allowed by sklearn.metrics.pairwise_distances
+        for its metric parameter. If metric is “precomputed”, X is assumed to be a distance matrix and must be square.
+        X may be a sparse graph, in which case only “nonzero” elements may be considered neighbors for DBSCAN.
+        :type metric: str, or callable, default=’euclidean’
+
 
         :param scaling: Whether to scale the data or not before clustering.
         Formula is scaled_x = ( x - mean ) / standard_deviation, default to False
