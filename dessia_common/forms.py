@@ -206,7 +206,7 @@ class StandaloneObject(MovingObject):
         self.subclass_arg = subclass_arg
         self.array_arg = array_arg
 
-        PhysicalObject.__init__(self, name=name)
+        MovingObject.__init__(self, name=name)
 
     @classmethod
     def generate(cls, seed: int, name: str = 'Standalone Object Demo') -> 'StandaloneObject':
@@ -279,7 +279,10 @@ class StandaloneObject(MovingObject):
 
     def volmdlr_primitives(self):
         cube = self.standalone_subobject.voldmlr_primitives()[0]
-        radius = self.intarg
+        if self.intarg <= 0:
+            radius = 0.5
+        else:
+            radius = self.intarg
         offset = self.standalone_subobject.floatarg
         origin = vm.Point3D(offset + .5, offset + .5, radius + .5)
         sphere = p3d.Sphere(center=origin, radius=radius)
