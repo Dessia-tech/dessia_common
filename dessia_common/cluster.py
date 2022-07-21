@@ -14,13 +14,17 @@ import dessia_common.core as dc
 class CategorizedList(dc.HeterogeneousList):
     _allowed_methods = ['from_agglomerative_clustering', 'from_kmeans', 'from_dbscan']
 
-    def __init__(self, dessia_objects: List[dc.DessiaObject], labels: List[int], name: str = ''):
+    def __init__(self, dessia_objects: List[dc.DessiaObject], labels: List[int],
+                 name: str = ''):
         dc.HeterogeneousList.__init__(self, dessia_objects=dessia_objects, name=name)
         self.labels = labels
+        self._n_clusters = None
 
     @property
     def n_clusters(self):
-        return max(self.labels) + 1
+        if self._n_clusters is None:
+            self._n_clusters = max(self.labels) + 1
+        return self._n_clusters
 
     def clustered_sublists(self):
         sublists = []
@@ -48,7 +52,8 @@ class CategorizedList(dc.HeterogeneousList):
         _plot_data_list = []
         for row, label in enumerate(self.labels):
             _plot_data_list.append({attr: self.matrix[row][col] for col, attr in enumerate(self.common_attributes)})
-            _plot_data_list[-1]["Cluster Label"] = label #(label if label != -1 else "Excluded")
+            _plot_data_list[-1]["Cluster Label"] = label
+            # (label if label != -1 else "Excluded") plot_data "Excluded" -> NaN
         return _plot_data_list
 
 
