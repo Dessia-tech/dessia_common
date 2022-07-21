@@ -10,6 +10,7 @@ import sys
 import warnings
 import math
 import random
+import itertools
 
 from functools import reduce
 import collections
@@ -765,10 +766,13 @@ class HeterogeneousList(DessiaObject):
         if isinstance(key, slice):
             return self.pick_from_slice(key)
         if isinstance(key, list):
-            if all(isinstance(item, int) for item in key) and len(key) == len(self):
-                return self.pick_from_list(key)
-            raise ValueError(f"Cannot index {self.__class__.__name__} object of len {len(self)} with an " +
-                             f"list of index of len {len(key)}")
+            if isinstance(key[0], bool): # all(isinstance(item, bool)) slower but exhaustif
+                if len(key) == len(self):
+                    return self.pick_from_boolist(key)
+                raise ValueError(f"Cannot index {self.__class__.__name__} object of len {len(self)} with a " +
+                                 f"list of boolean of len {len(key)}")
+            if isinstance(key[0], int): # all(isinstance(item, int) slower but exhaustif
+                return self.pick_from_boolist(self._idxlist_to_boolist(key))
 
         raise NotImplementedError(f"key of type {type(key)} with {type(key[0])} elements not implemented for " +
                                   "indexing HeterogeneousLists")
@@ -780,8 +784,14 @@ class HeterogeneousList(DessiaObject):
         return HeterogeneousList(self.dessia_objects.__getitem__(key), name=self.name) # +
                                  #f"_{key.start if key.start is not None else 0}_{key.stop}")
 
-    def pick_from_list(self, key: List[int]):
-        return HeterogeneousList(npy.array(self.dessia_objects).__getitem__(key).tolist(), name=self.name) # + "_list")
+    def _idxlist_to_boolist(self, key: List[int]):
+        boolist = [False]*len(self)
+        for idx in key: boolist[idx] = True
+        return boolist
+
+    def pick_from_boolist(self, key: List[bool]):
+        # Really really faster than npy.array(self.dessia_objects).__getitem__(key).tolist()
+        return HeterogeneousList(list(itertools.compress(self.dessia_objects, key)), name=self.name) # + "_list")
 
     def __str__(self):
         offset_space = 10

@@ -63,7 +63,12 @@ print(all_cars_without_features[:10])
 
 # Filters
 print("Filters tests")
-all_cars_without_features[[True, False, True]]
+try:
+    all_cars_without_features[[True, False, True]]
+except Exception as e:
+    print(e)
+
+print(all_cars_without_features[:3][[True, False, True]])
 # print(all_cars_with_features[ all_cars_with_features.tolist(attr) == 70 ])
 
 
