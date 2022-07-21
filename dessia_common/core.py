@@ -767,6 +767,9 @@ class HeterogeneousList(DessiaObject):
         if isinstance(key, list):
             if all(isinstance(item, int) for item in key) and len(key) == len(self):
                 return self.pick_from_list(key)
+            raise ValueError(f"Cannot index {self.__class__.__name__} object of len {len(self)} with an " +
+                             f"list of index of len {len(key)}")
+
         raise NotImplementedError(f"key of type {type(key)} with {type(key[0])} elements not implemented for " +
                                   "indexing HeterogeneousLists")
 
