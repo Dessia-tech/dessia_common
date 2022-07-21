@@ -673,7 +673,13 @@ class Workflow(Block):
         raise NotImplementedError(f"Method {method} not in Workflow allowed methods")
 
     def method_dict(self, method_name: str = None, method_jsonschema: Any = None):
-        return {}
+        dict = {}
+        for id, property in method_jsonschema['properties'].items():
+            if 'default_value' in property :
+                dict[id] = property['default_value']
+            else :
+                dict[id] = None
+        return dict
 
     def variable_from_index(self, index: Union[int, Tuple[int, int, int]]):
         """
