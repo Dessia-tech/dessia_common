@@ -244,7 +244,7 @@ class CategorizedList(dc.HeterogeneousList):
             Then -1 labelled values are now at 0 and must not be considered as clustered values when using DBSCAN.
 
         """
-        skl_cluster = cluster.DBSCAN(eps=eps, min_samples=min_samples, p=mink_power, leaf_size=leaf_size)
+        skl_cluster = cluster.DBSCAN(eps=eps, min_samples=min_samples, p=mink_power, leaf_size=leaf_size, metric=metric)
         skl_cluster = cls.fit_cluster(skl_cluster, data.matrix, scaling)
         return cls(data.dessia_objects, skl_cluster.labels_.tolist())
 
