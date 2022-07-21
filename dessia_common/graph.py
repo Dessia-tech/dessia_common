@@ -67,3 +67,23 @@ def explore_tree_from_leaves(graph: nx.DiGraph):
         if not found_node:
             raise ValueError('Can not find a node')
     return exploration_order
+
+
+def extract_region(networkx_graph: nx.Graph, nodes, distance: int = 5):
+    """
+    Extract all nodes that are at distance from node
+    """
+
+    region_nodes = nodes[:]
+    for node in nodes:
+        if node not in networkx_graph:
+            raise ValueError(f'node {node} is not in graph')
+        succs = list(nx.dfs_successors(networkx_graph, source=node, depth_limit=distance))
+        preds = list(nx.dfs_predecessors(networkx_graph, source=node, depth_limit=distance))
+        ancs = list(nx.ancestors(networkx_graph, source=node))
+        print(f'found {len(succs)} successors and {len(preds)} predecesors {len(ancs)} ancestors')
+        region_nodes.extend(succs)
+        region_nodes.extend(preds)
+        region_nodes.extend(ancs)
+
+    return networkx_graph.subgraph(region_nodes)

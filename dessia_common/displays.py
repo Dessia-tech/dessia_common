@@ -2,6 +2,8 @@ import webbrowser
 import os
 import tempfile
 import inspect
+import json
+
 
 from typing import Union
 from networkx import DiGraph, Graph, kamada_kawai_layout
@@ -90,6 +92,9 @@ def networkx_to_visjs_data(networkx_graph: Graph):
                 node_data['label'] = str(node)
             else:
                 node_data['label'] = ''
+            node_data['title'] = node_data['label']
+            if len(node_data['label']) > 10:
+                node_data['label'] = '[ ]'
         elif 'name' in node_dict and 'label' not in node_dict:
             node_data['label'] = node_dict['name']
         else:
@@ -111,12 +116,20 @@ def networkx_to_visjs_data(networkx_graph: Graph):
     for edge in networkx_graph.edges:
         index1 = list_nodes.index(edge[0])
         index2 = list_nodes.index(edge[1])
+        edge_nx_data = networkx_graph.get_edge_data(*edge)
+
         edge_data = {'from': index1,
                      'to': index2,
                      'font': {'align': 'middle'}}
 
         if is_digraph:
-            edge_data['arrows'] = 'to'
+            if 'head_type' in edge_nx_data:
+                edge_data['arrows'] = {'to': {'enabled': True, 'type': edge_nx_data['head_type']}}
+            else:
+                edge_data['arrows'] = 'to'
+
+        if 'color' in edge_nx_data:
+            edge_data['color'] = {'color': edge_nx_data['color']}
 
         visjs_data['edges'].append(edge_data)
 
@@ -128,7 +141,9 @@ def draw_networkx_graph(networkx_graph: Graph):
     Draw a networkx graph in a browser using VisJS library
     """
     visjs_data = networkx_to_visjs_data(networkx_graph)
-    content = visjs_template.substitute(**visjs_data)
+    content = visjs_template.substitute(nodes=json.dumps(visjs_data['nodes']),
+                                        edges=json.dumps(visjs_data['edges']),
+                                        name=visjs_data['name'])
     with tempfile.NamedTemporaryFile(suffix=".html",
                                      delete=False) as file:
         file.write(bytes(content, 'utf8'))
@@ -137,3 +152,4 @@ def draw_networkx_graph(networkx_graph: Graph):
     #     file.write(s.encode('utf-8'))
     webbrowser.open('file://' + os.path.realpath(file.name))
     return file.name
+
