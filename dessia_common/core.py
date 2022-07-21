@@ -8,6 +8,7 @@ dessia_common
 import time
 import sys
 import warnings
+import operator
 import math
 import random
 import itertools
@@ -757,8 +758,14 @@ class HeterogeneousList(DessiaObject):
     def __init__(self, dessia_objects: List[DessiaObject] = None, name: str = ''):
         DessiaObject.__init__(self, name=name)
         self.dessia_objects = dessia_objects
-        self.common_attributes = self._common_attributes()
+        self._common_attributes = None
         self._matrix = None
+
+    def _procreate(self):
+        new_hlist = HeterogeneousList()
+        new_hlist._common_attributes = self.common_attributes
+        new_hlist.name = self.name
+        return new_hlist
 
     def __getitem__(self, key: Any):
         if isinstance(key, int):
@@ -777,12 +784,24 @@ class HeterogeneousList(DessiaObject):
         raise NotImplementedError(f"key of type {type(key)} with {type(key[0])} elements not implemented for " +
                                   "indexing HeterogeneousLists")
 
+    def __add__(self, b: 'HeterogeneousList'):
+        if self.dessia_objects is None and b.dessia_objects is None:
+            return self._procreate()
+        if self.dessia_objects is None:
+            return HeterogeneousList(b.dessia_objects)
+        if b.dessia_objects is None:
+            return HeterogeneousList(self.dessia_objects)
+        return HeterogeneousList(self.dessia_objects + b.dessia_objects)
+
     def pick_from_int(self, idx: int):
         return self.dessia_objects.__getitem__(idx)
 
     def pick_from_slice(self, key: slice):
-        return HeterogeneousList(self.dessia_objects.__getitem__(key), name=self.name) # +
-                                 #f"_{key.start if key.start is not None else 0}_{key.stop}")
+        new_hlist = self._procreate()
+        new_hlist.dessia_objects = self.dessia_objects.__getitem__(key)
+        new_hlist._matrix = self.matrix.__getitem__(key)
+        # new_hlist.name += f"_{key.start if key.start is not None else 0}_{key.stop}")
+        return new_hlist
 
     def _idxlist_to_boolist(self, key: List[int]):
         boolist = [False]*len(self)
@@ -791,7 +810,11 @@ class HeterogeneousList(DessiaObject):
 
     def pick_from_boolist(self, key: List[bool]):
         # Really really faster than npy.array(self.dessia_objects).__getitem__(key).tolist()
-        return HeterogeneousList(list(itertools.compress(self.dessia_objects, key)), name=self.name) # + "_list")
+        new_hlist = self._procreate()
+        new_hlist.dessia_objects = list(itertools.compress(self.dessia_objects, key))
+        new_hlist._matrix = list(itertools.compress(self.matrix, key))
+        # new_hlist.name += "_list")
+        return new_hlist
 
     def __str__(self):
         offset_space = 10
@@ -814,14 +837,18 @@ class HeterogeneousList(DessiaObject):
     def __len__(self):
         return len(self.dessia_objects)
 
-    def _common_attributes(self):
-        all_class = list(set(dessia_object.__class__ for dessia_object in self.dessia_objects))
-        common_attributes = set(all_class[0].vector_features())
-        for klass in all_class[1:]:
-            common_attributes = common_attributes.intersection(set(klass.vector_features()))
+    @property
+    def common_attributes(self):
+        if self._common_attributes is None:
+            all_class = list(set(dessia_object.__class__ for dessia_object in self.dessia_objects))
+            common_attributes = set(all_class[0].vector_features())
+            for klass in all_class[1:]:
+                common_attributes = common_attributes.intersection(set(klass.vector_features()))
 
-        # attributes' order kept this way, not with set or sorted(set)
-        return list(attr for attr in get_attribute_names(all_class[0]) if attr in common_attributes)
+            # attributes' order kept this way, not with set or sorted(set)
+            self._common_attributes = list(attr for attr in get_attribute_names(all_class[0])
+                                           if attr in common_attributes)
+        return self._common_attributes
 
     @property
     def matrix(self):
@@ -841,7 +868,7 @@ class HeterogeneousList(DessiaObject):
             sort_indexes = npy.argsort([getattr(dessia_object, key) for dessia_object in self.dessia_objects])
 
         self.dessia_objects = [self.dessia_objects[idx] for idx in (sort_indexes if ascend else sort_indexes[::-1])]
-        self.matrix = [self.matrix[idx] for idx in (sort_indexes if ascend else sort_indexes[::-1])]
+        self._matrix = [self.matrix[idx] for idx in (sort_indexes if ascend else sort_indexes[::-1])]
 
     def singular_values(self):
         _, singular_values, _ = npy.linalg.svd(npy.array(self.matrix), full_matrices=False)
@@ -1004,7 +1031,6 @@ class DessiaFilter(DessiaObject):
         self.attribute = attribute
         self.operator = operator
         self.bound = bound
-
         DessiaObject.__init__(self, name=name)
 
     def __hash__(self):
@@ -1018,6 +1044,61 @@ class DessiaFilter(DessiaObject):
         same_op = self.operator == other.operator
         same_bound = self.bound == other.bound
         return same_attr and same_op and same_bound
+
+    def _operator(self):
+        real_operator = {'>': operator.gt, '<': operator.lt, '>=': operator.ge, '<=': operator.le,'==': operator.eq,
+                         '!=': operator.ne, 'gt': operator.gt, 'lt': operator.lt, 'ge': operator.ge,'le': operator.le,
+                         'eq': operator.eq, 'ne': operator.ne, 'gte': operator.ge,'lte': operator.le}
+        return real_operator[self.operator]
+
+    def to_lambda(self, dessia_objects_list: List[DessiaObject]):
+        return lambda x: self._operator()(getattr(dessia_objects_list[x], self.attribute), self.bound)
+
+    def apply(self, hlist: HeterogeneousList):
+        dessia_objects = [dessia_object for dessia_object in hlist.dessia_objects]
+        indexes = list(filter(self.to_lambda(dessia_objects), range(len(dessia_objects))))
+        return HeterogeneousList([dessia_objects[idx] for idx in indexes])
+
+
+class FiltersList(HeterogeneousList):
+    def __init__(self, dessia_objects: List[DessiaFilter] = None, logical: str = "and", name: str = ''):
+        DessiaObject.__init__(self, name=name)
+        self.dessia_objects = dessia_objects
+        self.logical = logical
+        self._common_attributes = ["attribute", "operator", "bound"]
+        self._matrix = None
+
+    def apply(self, hlist: HeterogeneousList):
+        if self.logical == "and":
+            return self._and_apply(hlist)
+        if self.logical == "or":
+            return self._or_apply(hlist)
+        if self.logical == "xor":
+            return self._xor_apply(hlist)
+
+    def _and_apply(self, hlist: HeterogeneousList):
+        new_hlist = self.dessia_objects[0].apply(hlist)
+        for dessia_filter in self.dessia_objects[1:]:
+            new_hlist = dessia_filter.apply(new_hlist)
+        return new_hlist
+
+    def _or_apply(self, hlist: HeterogeneousList):
+        new_hlist = hlist._procreate()
+        for dessia_filter in self.dessia_objects:
+            new_hlist += dessia_filter.apply(hlist)
+        return HeterogeneousList(list(set(new_hlist.dessia_objects)))
+
+    def _xor_apply(self, hlist: HeterogeneousList):
+        new_hlist = hlist._procreate()
+        for applied_dessia_filter in self.dessia_objects:
+            temp_list = applied_dessia_filter.apply(hlist)
+            for nonapplied_dessia_filter in self.dessia_objects:
+                if applied_dessia_filter == nonapplied_dessia_filter:
+                    continue
+                for excluded in nonapplied_dessia_filter.apply(temp_list): temp_list.dessia_objects.remove(excluded)
+            new_hlist += HeterogeneousList(temp_list.dessia_objects)
+        return new_hlist
+
 
 
 # class Evolution(DessiaObject):
