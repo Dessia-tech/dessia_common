@@ -1093,14 +1093,13 @@ class FiltersList(HeterogeneousList):
     def __init__(self, dessia_objects: List[DessiaFilter] = None, logical: str = 'and', name: str = ''):
         DessiaObject.__init__(self, name=name)
         self.dessia_objects = dessia_objects
-        self.logical = "and" #logical
+        self.logical = logical
         self._common_attributes = ["attribute", "operator", "bound"]
         self._matrix = None
 
     @classmethod
-    def from_filters_list(cls, filters_list: List[DessiaFilter], name: str = ''): #, logical_operator: str = 'and', name: str = ''):
-        # return cls(dessia_objects=filters_list, logical=logical_operator, name=name)
-        return cls(dessia_objects=filters_list, name=name)
+    def from_filters_list(cls, filters_list: List[DessiaFilter], logical_operator: str = 'and', name: str = ''):
+        return cls(dessia_objects=filters_list, logical=logical_operator, name=name)
 
     def apply(self, hlist: HeterogeneousList):
         if self.logical == "and":
