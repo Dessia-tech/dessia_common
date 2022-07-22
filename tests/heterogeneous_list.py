@@ -93,6 +93,32 @@ print(filters_list)
 print(new_filter_1.apply(all_cars_without_features))
 gg=filters_list.apply(all_cars_without_features)
 print("xor", gg)
+print(HeterogeneousList())
+
+empty_list = HeterogeneousList()
+empty_list[0]
+empty_list[:]
+empty_list[[False, True]]
+empty_list + empty_list
+empty_list + gg
+gg + empty_list
+len(empty_list)
+empty_list.matrix
+empty_list.common_attributes
+try:
+    empty_list.plot_data()
+except Exception as e:
+    print(e)
+try:
+    empty_list.singular_values()
+except Exception as e:
+    print(e)
+empty_list.sort(0)
+empty_list.sort("weight")
+
+
+
+
 
 # print(all_cars_with_features[ all_cars_with_features.tolist(attr) == 70 ])
 
