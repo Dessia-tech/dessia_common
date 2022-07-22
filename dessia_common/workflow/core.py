@@ -25,9 +25,11 @@ from dessia_common.utils.types import serialize_typing, deserialize_typing, recu
 from dessia_common.utils.copy import deepcopy_value
 from dessia_common.utils.docstrings import FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE
 from dessia_common.utils.diff import choose_hash
+
 from dessia_common.typings import JsonSerializable, MethodType
 from dessia_common.displays import DisplayObject
 from dessia_common.breakdown import attrmethod_getter, ExtractionError
+from dessia_common.errors import SerializationError
 
 
 class Variable(DessiaObject):
@@ -1359,9 +1361,13 @@ class WorkflowState(DessiaObject):
             values = {}
             for variable, value in self.values.items():
                 variable_index = self.workflow.variable_index(variable)
-                serialized_value, memo = serialize_with_pointers(value=value, memo=memo,
-                                                                 path=f"{path}/values/{variable_index}")
-                values[str(variable_index)] = serialized_value
+                try:
+                    serialized_value, memo = serialize_with_pointers(value=value, memo=memo,
+                                                                     path=f"{path}/values/{variable_index}")
+                    values[str(variable_index)] = serialized_value
+                except SerializationError:
+                    warnings.warn(f"unable to serialize {value}, dropping it from workflow state/run values",
+                                  SerializationError)
         else:
             values = {str(self.workflow.variable_index(i)): serialize(v) for i, v in self.values.items()}
 
@@ -1800,7 +1806,7 @@ class WorkflowRun(WorkflowState):
         for block in sorted_d_blocks:
             block_index = self.workflow.blocks.index(block)
             local_values = {}
-            for i, input_ in enumerate(block.inputs):
+            for input_ in block.inputs:
                 input_adress = self.workflow.variable_indices(input_)
                 local_values[input_] = self.variable_values[input_adress]
             settings = block._display_settings(block_index, local_values)  # Code intel is not working properly here

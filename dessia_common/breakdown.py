@@ -91,7 +91,7 @@ def get_in_object_from_path(object_, path, evaluate_pointers=True):
                     raise RecursionError(err_msg) from err
             
         try:
-            element = extract_from_object(element, segment)
+            element = extract_segment_from_object(element, segment)
         except ExtractionError as err:
 
             err_msg = f'Cannot get segment {segment} from path {path} in element {str(element)[:500]}'
