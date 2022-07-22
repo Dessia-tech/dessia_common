@@ -93,8 +93,9 @@ print(filters_list)
 print(new_filter_1.apply(all_cars_without_features))
 gg=filters_list.apply(all_cars_without_features)
 print("xor", gg)
-print(HeterogeneousList())
 
+# Tests for empty HeterogeneousList
+print(HeterogeneousList())
 empty_list = HeterogeneousList()
 empty_list[0]
 empty_list[:]

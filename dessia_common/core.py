@@ -850,6 +850,18 @@ class HeterogeneousList(DessiaObject):
             return 0
         return len(self.dessia_objects)
 
+    def sort(self, key: Any, ascend: bool = True):
+        if self.dessia_objects is None:
+            return
+        if isinstance(key, int):
+            sort_indexes = npy.argsort([row[key] for row in self.matrix])
+        elif isinstance(key, str):
+            sort_indexes = npy.argsort([getattr(dessia_object, key) for dessia_object in self.dessia_objects])
+
+        self.dessia_objects = [self.dessia_objects[idx] for idx in (sort_indexes if ascend else sort_indexes[::-1])]
+        self._matrix = [self.matrix[idx] for idx in (sort_indexes if ascend else sort_indexes[::-1])]
+
+
     @property
     def common_attributes(self):
         if self.dessia_objects is None:
@@ -877,17 +889,6 @@ class HeterogeneousList(DessiaObject):
                 matrix.append(list(temp_row[vector_features.index(attr)] for attr in self.common_attributes))
             self._matrix = matrix
         return self._matrix
-
-    def sort(self, key: Any, ascend: bool = True):
-        if self.dessia_objects is None:
-            return
-        if isinstance(key, int):
-            sort_indexes = npy.argsort([row[key] for row in self.matrix])
-        elif isinstance(key, str):
-            sort_indexes = npy.argsort([getattr(dessia_object, key) for dessia_object in self.dessia_objects])
-
-        self.dessia_objects = [self.dessia_objects[idx] for idx in (sort_indexes if ascend else sort_indexes[::-1])]
-        self._matrix = [self.matrix[idx] for idx in (sort_indexes if ascend else sort_indexes[::-1])]
 
     def singular_values(self):
         _, singular_values, _ = npy.linalg.svd(npy.array(self.matrix), full_matrices=False)
