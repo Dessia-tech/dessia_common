@@ -173,6 +173,11 @@ json_dict = json.dumps(dict_workflow)
 decoded_json = json.loads(json_dict)
 deserialized_object = workflow.dict_to_object(decoded_json)
 
+dict_workflow_run = workflow_run.to_dict(use_pointers=True)
+json_dict = json.dumps(dict_workflow_run)
+decoded_json = json.loads(json_dict)
+deserialized_object = workflow_run.dict_to_object(decoded_json)
+
 # print(all_cars_with_features[ all_cars_with_features.tolist(attr) == 70 ])
 
 
