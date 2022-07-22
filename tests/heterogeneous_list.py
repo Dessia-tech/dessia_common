@@ -45,10 +45,10 @@ assert(all(item in RandData_heterogeneous.matrix[idx]
 # all_cars_without_features.plot()
 # RandData_heterogeneous.plot()
 
-# # # Check platform for datasets
-# all_cars_with_features._check_platform()
-# all_cars_without_features._check_platform()
-# RandData_heterogeneous._check_platform()
+# Check platform for datasets
+all_cars_with_features._check_platform()
+all_cars_without_features._check_platform()
+RandData_heterogeneous._check_platform()
 
 # Check for sorts
 print(all_cars_with_features)
@@ -129,7 +129,49 @@ empty_list.sort("weight")
 
 
 
+# =============================================================================
+# CARS WITH FEATURES
+# =============================================================================
+import json
+from dessia_common import tests
+import dessia_common.workflow as wf
 
+data_method = wf.MethodType(class_=tests.CarWithFeatures, name='from_csv')
+block_data = wf.ClassMethod(method_type=data_method, name='data load')
+
+block_heterogeneous_list = wf.InstantiateModel(model_class=HeterogeneousList, name='heterogeneous list of data')
+
+filters_list = [DessiaFilter('weight', "<=", 2000), DessiaFilter('mpg', ">=", 30)]
+
+filter_method = wf.MethodType(class_=FiltersList, name='from_filters_list')
+block_list_filters = wf.ClassMethod(method_type=filter_method, name='create filters list')
+
+apply_method = wf.MethodType(class_=FiltersList, name='apply')
+block_apply = wf.ModelMethod(method_type=apply_method, name='apply filter')
+
+block_workflow = [block_data, block_heterogeneous_list, block_list_filters, block_apply]
+pipe_worflow = [wf.Pipe(block_data.outputs[0], block_heterogeneous_list.inputs[0]),
+                wf.Pipe(block_list_filters.outputs[0], block_apply.inputs[0]),
+                wf.Pipe(block_heterogeneous_list.outputs[0], block_apply.inputs[1]),
+                ]
+workflow = wf.Workflow(block_workflow, pipe_worflow, block_apply.outputs[0])
+
+workflow_run = workflow.run({
+    workflow.index(block_data.inputs[0]): pkg_resources.resource_stream('dessia_common', 'models/data/cars.csv'),
+    workflow.index(block_list_filters.inputs[0]): filters_list,
+    workflow.index(block_list_filters.inputs[1]): "or"})
+
+# Workflow tests
+workflow._check_platform()
+workflow.plot()
+workflow.display_settings()
+workflow_run.output_value.plot()
+
+# JSON TESTS
+dict_workflow = workflow.to_dict(use_pointers=True)
+json_dict = json.dumps(dict_workflow)
+decoded_json = json.loads(json_dict)
+deserialized_object = workflow.dict_to_object(decoded_json)
 
 # print(all_cars_with_features[ all_cars_with_features.tolist(attr) == 70 ])
 

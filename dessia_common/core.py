@@ -1056,7 +1056,6 @@ class ParameterSet(DessiaObject):
 
 
 class DessiaFilter(DessiaObject):
-    _standalone_in_db = True
     def __init__(self, attribute: str, operator: str, bound: float, name: str = ''):
         self.attribute = attribute
         self.operator = operator
@@ -1097,6 +1096,10 @@ class FiltersList(HeterogeneousList):
         self.logical = logical
         self._common_attributes = ["attribute", "operator", "bound"]
         self._matrix = None
+
+    @classmethod
+    def from_filters_list(cls, filters_list: List[DessiaFilter], logical_operator: str = 'and', name: str = ''):
+        return cls(dessia_objects=filters_list, logical=logical_operator, name=name)
 
     def apply(self, hlist: HeterogeneousList):
         if self.logical == "and":
