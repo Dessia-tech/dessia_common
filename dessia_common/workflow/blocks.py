@@ -13,8 +13,8 @@ import io
 from typing import List, Type, Any, Dict, get_type_hints
 
 import itertools
-from dessia_common.core import DessiaObject, DisplayObject, HeterogeneousList, DessiaFilter, is_bounded,\
-    enhanced_deep_attr, split_argspecs, type_from_annotation
+from dessia_common.core import HeterogeneousList, DessiaFilter, is_bounded, enhanced_deep_attr, split_argspecs,\
+    type_from_annotation
 from dessia_common.utils.types import get_python_class_from_class_name, full_classname
 from dessia_common.utils.docstrings import parse_docstring, EMPTY_PARSED_ATTRIBUTE
 from dessia_common.errors import UntypedArgumentError
