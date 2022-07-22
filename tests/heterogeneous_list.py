@@ -69,30 +69,40 @@ except Exception as e:
     print(e)
 
 print(all_cars_without_features[:3][[True, False, True]])
+
+# Filters creation
 new_filter_1 = DessiaFilter('weight', 'le', 2000)
-new_filter_2 = DessiaFilter('mpg', 'ge', 30.)
-filters_list = FiltersList([new_filter_1, new_filter_2], "or")
+new_filter_2 = DessiaFilter('mpg', 'ge', 100.)
+new_filter_3 = DessiaFilter('mpg', 'ge', 30.)
+filters_list = FiltersList([new_filter_1, new_filter_2, new_filter_3], "or")
 print(filters_list)
+
+# Or testing
 print(new_filter_1.apply(all_cars_without_features))
+print(new_filter_2.apply(all_cars_without_features))
 gg=filters_list.apply(all_cars_without_features)
 print("or", gg[::int(len(gg)/30)])
 
-
-new_filter_1 = DessiaFilter('weight', 'le', 2000)
-new_filter_2 = DessiaFilter('mpg', 'ge', 35.)
-filters_list = FiltersList([new_filter_1, new_filter_2], "and")
-print(filters_list)
-print(new_filter_1.apply(all_cars_without_features))
+# And with non empty result
+filters_list = FiltersList([new_filter_1, new_filter_3], "and")
 gg=filters_list.apply(all_cars_without_features)
-print("and", gg)
+print("and non empty", gg)
 
+# And with empty result
+filters_list = FiltersList([new_filter_1, new_filter_2], "and")
+gg=filters_list.apply(all_cars_without_features)
+print("and empty", gg)
+
+# Xor
 new_filter_1 = DessiaFilter('weight', 'le', 1700)
-new_filter_2 = DessiaFilter('mpg', 'ge', 40.)
-filters_list = FiltersList([new_filter_1, new_filter_2], "xor")
+new_filter_3 = DessiaFilter('mpg', 'ge', 40.)
+filters_list = FiltersList([new_filter_1, new_filter_2, new_filter_3], "xor")
 print(filters_list)
-print(new_filter_1.apply(all_cars_without_features))
 gg=filters_list.apply(all_cars_without_features)
 print("xor", gg)
+
+print(gg.get_column_values(3))
+print(gg.get_attribute_values("displacement"))
 
 # Tests for empty HeterogeneousList
 print(HeterogeneousList())
