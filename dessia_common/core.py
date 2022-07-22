@@ -1056,6 +1056,7 @@ class ParameterSet(DessiaObject):
 
 
 class DessiaFilter(DessiaObject):
+    _standalone_in_db = True
     def __init__(self, attribute: str, operator: str, bound: float, name: str = ''):
         self.attribute = attribute
         self.operator = operator
