@@ -277,16 +277,19 @@ class StandaloneObject(MovingObject):
         self.standalone_subobject.floatarg += value
         return self.standalone_subobject
 
+    def contour(self):
+        points = [vm.Point2D(self.intarg, self.intarg), vm.Point2D(self.intarg, self.intarg + 1),
+                  vm.Point2D(self.intarg + 1, self.intarg + 1), vm.Point2D(self.intarg + 1, 0)]
+
+        crls = p2d.ClosedRoundedLineSegments2D(points=points, radius={})
+        return crls
+
     def volmdlr_primitives(self):
-        cube = self.standalone_subobject.voldmlr_primitives()[0]
-        if self.intarg <= 0:
-            radius = 0.5
-        else:
-            radius = self.intarg
-        offset = self.standalone_subobject.floatarg
-        origin = vm.Point3D(offset + .5, offset + .5, radius + .5)
-        sphere = p3d.Sphere(center=origin, radius=radius)
-        return [cube, sphere]
+        subcube = self.standalone_subobject.voldmlr_primitives()[0]
+        contour = self.contour()
+        cube = p3d.ExtrudedProfile(plane_origin=vm.Point3D(0, 1, -1), x=vm.X3D, y=vm.Z3D,
+                                   outer_contour2d=contour, inner_contours2d=[], extrusion_vector=vm.Y3D)
+        return [subcube, cube]
 
     def volmdlr_primitives_step_frames(self):
         frame0 = vm.Frame3D(vm.O3D.copy(), vm.X3D.copy(), vm.Y3D.copy(), vm.Z3D.copy())
@@ -294,9 +297,9 @@ class StandaloneObject(MovingObject):
         frame21 = frame11.translation(offset=vm.Y3D)
         frame31 = frame21.rotation(center=vm.O3D, axis=vm.Y3D, angle=0.7)
 
-        frame12 = frame0.translation(offset=vm.X3D)
-        frame22 = frame0.translation(offset=vm.Y3D)
-        frame32 = frame0.translation(offset=vm.Z3D)
+        frame12 = frame0.translation(offset=vm.Z3D)
+        frame22 = frame12.translation(offset=vm.X3D)
+        frame32 = frame22.translation(offset=vm.X3D)
         return [[frame0, frame0], [frame11, frame12], [frame21, frame22], [frame31, frame32]]
 
     def plot_data(self):
@@ -504,7 +507,6 @@ class MovingStandaloneObject(MovingObject):
         return cls(origin=1.3*seed, name=f"moving_{seed}")
 
     def contour(self):
-
         points = [vm.Point2D(self.origin, self.origin), vm.Point2D(self.origin, self.origin + 1),
                   vm.Point2D(self.origin + 1, self.origin + 1), vm.Point2D(self.origin + 1, 0)]
 
