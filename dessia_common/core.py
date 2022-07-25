@@ -842,9 +842,9 @@ class DessiaFilter(DessiaObject):
 
 class FiltersList(DessiaObject):
     def __init__(self, filters: List[DessiaFilter] = None, logical_operand: str = 'and', name: str = ''):
-        DessiaObject.__init__(self, name=name)
         self.filters = filters
         self.logical_operand = logical_operand
+        DessiaObject.__init__(self, name=name)
 
     @classmethod
     def from_filters_list(cls, filters_list: List[DessiaFilter], logical_operand: str = 'and', name: str = ''):
@@ -898,10 +898,10 @@ class HeterogeneousList(DessiaObject):
     _standalone_in_db = True
 
     def __init__(self, dessia_objects: List[DessiaObject] = None, name: str = ''):
-        DessiaObject.__init__(self, name=name)
         self.dessia_objects = dessia_objects
         self._common_attributes = None
         self._matrix = None
+        DessiaObject.__init__(self, name=name)
 
     def _procreate(self):
         new_hlist = HeterogeneousList()
