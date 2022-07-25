@@ -1825,11 +1825,14 @@ class WorkflowRun(WorkflowState):
         except ExtractionError:
             segments = path.split("/")
             first_segment = segments[1]
-            if first_segment == "values" and len(segments) == 3:
+            if first_segment == "values" and len(segments) >= 3:
                 varindex = int(segments[2])
                 variable = self.workflow.variables[varindex]
                 upstream = self.workflow.get_upstream_nbv(variable)
-                return self.values[upstream]
+                value = self.values[upstream]
+                if len(segments) > 3:
+                    return DessiaObject._get_from_path(value, f"#/{'/'.join(segments[3:])}")
+                return value
         raise NotImplementedError(f"WorkflowRun : Specific object from path method is not defined for path '{path}'")
 
     def _display_from_selector(self, selector: str, **kwargs) -> DisplayObject:
