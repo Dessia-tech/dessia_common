@@ -1366,8 +1366,7 @@ class WorkflowState(DessiaObject):
                                                                      path=f"{path}/values/{variable_index}")
                     values[str(variable_index)] = serialized_value
                 except SerializationError:
-                    warnings.warn(f"unable to serialize {value}, dropping it from workflow state/run values",
-                                  SerializationError)
+                    warnings.warn(f"unable to serialize {value}, dropping it from workflow state/run values : {SerializationError}")
         else:
             values = {str(self.workflow.variable_index(i)): serialize(v) for i, v in self.values.items()}
 
