@@ -46,9 +46,9 @@ assert(all(item in RandData_heterogeneous.matrix[idx]
 # RandData_heterogeneous.plot()
 
 # Check platform for datasets
-all_cars_with_features._check_platform()
-all_cars_without_features._check_platform()
-RandData_heterogeneous._check_platform()
+# all_cars_with_features._check_platform()
+# all_cars_without_features._check_platform()
+# RandData_heterogeneous._check_platform()
 
 # Check for sorts
 print(all_cars_with_features)
@@ -74,34 +74,32 @@ print(all_cars_without_features[:3][[True, False, True]])
 new_filter_1 = DessiaFilter('weight', 'le', 2000)
 new_filter_2 = DessiaFilter('mpg', 'ge', 100.)
 new_filter_3 = DessiaFilter('mpg', 'ge', 30.)
-filters_list = FiltersList([new_filter_1, new_filter_2, new_filter_3], "or")
-print(filters_list)
+filters_list = [new_filter_1, new_filter_2, new_filter_3]
 
 # Or testing
-print(new_filter_1.apply(all_cars_without_features))
-print(new_filter_2.apply(all_cars_without_features))
-gg=filters_list.apply(all_cars_without_features)
+print(all_cars_without_features.filtering([new_filter_1]))
+print(all_cars_without_features.filtering([new_filter_2]))
+gg=all_cars_without_features.filtering(filters_list, "or")
 print("or", gg[::int(len(gg)/30)])
 
 # And with non empty result
-filters_list = FiltersList([new_filter_1, new_filter_3], "and")
-gg=filters_list.apply(all_cars_without_features)
+filters_list = [new_filter_1, new_filter_3]
+gg=all_cars_without_features.filtering(filters_list, "and")
 print("and non empty", gg)
 
 # And with empty result
-filters_list = FiltersList([new_filter_1, new_filter_2], "and")
-gg=filters_list.apply(all_cars_without_features)
+filters_list = [new_filter_1, new_filter_2]
+gg=all_cars_without_features.filtering(filters_list, "and")
 print("and empty", gg)
 
 # Xor
 new_filter_1 = DessiaFilter('weight', 'le', 1700)
 new_filter_3 = DessiaFilter('mpg', 'ge', 40.)
-filters_list = FiltersList([new_filter_1, new_filter_2, new_filter_3], "xor")
-print(filters_list)
-gg=filters_list.apply(all_cars_without_features)
+filters_list = [new_filter_1, new_filter_2, new_filter_3]
+gg=all_cars_without_features.filtering(filters_list, "xor")
 print("xor", gg)
 
-print(gg.get_column_values(3))
+print(gg.get_column_values(1))
 print(gg.get_attribute_values("displacement"))
 
 # Tests for empty HeterogeneousList
@@ -141,25 +139,31 @@ block_data = wf.ClassMethod(method_type=data_method, name='data load')
 
 block_heterogeneous_list = wf.InstantiateModel(model_class=HeterogeneousList, name='heterogeneous list of data')
 
-filters_list = [DessiaFilter('weight', "<=", 2000), DessiaFilter('mpg', ">=", 30)]
+filters_list = [DessiaFilter('weight', "<=", 1800), DessiaFilter('mpg', ">=", 40)]
 
-filter_method = wf.MethodType(class_=FiltersList, name='from_filters_list')
-block_list_filters = wf.ClassMethod(method_type=filter_method, name='create filters list')
+# filter_method = wf.MethodType(class_=FiltersList, name='from_filters_list')
+# block_list_filters = wf.ClassMethod(method_type=filter_method, name='create filters list')
 
-apply_method = wf.MethodType(class_=FiltersList, name='apply')
+apply_method = wf.MethodType(class_=HeterogeneousList, name='filtering')
 block_apply = wf.ModelMethod(method_type=apply_method, name='apply filter')
 
-block_workflow = [block_data, block_heterogeneous_list, block_list_filters, block_apply]
+# block_filter = wf.Filter(filters=filters_list)
+
+block_workflow = [block_data, block_heterogeneous_list, block_apply] #block_list_filters, block_apply]
 pipe_worflow = [wf.Pipe(block_data.outputs[0], block_heterogeneous_list.inputs[0]),
-                wf.Pipe(block_list_filters.outputs[0], block_apply.inputs[0]),
-                wf.Pipe(block_heterogeneous_list.outputs[0], block_apply.inputs[1]),
+                # wf.Pipe(block_list_filters.outputs[0], block_apply.inputs[0]),
+                # wf.Pipe(block_heterogeneous_list.outputs[0], block_apply.inputs[1]),
+                wf.Pipe(block_heterogeneous_list.outputs[0], block_apply.inputs[0])
                 ]
 workflow = wf.Workflow(block_workflow, pipe_worflow, block_apply.outputs[0])
 
 workflow_run = workflow.run({
     workflow.index(block_data.inputs[0]): pkg_resources.resource_stream('dessia_common', 'models/data/cars.csv'),
-    workflow.index(block_list_filters.inputs[0]): filters_list,
-    workflow.index(block_list_filters.inputs[1]): "or"})
+    workflow.index(block_apply.inputs[1]): filters_list,
+    workflow.index(block_apply.inputs[2]): "or"})
+
+# workflow_run = workflow.run({
+#     workflow.index(block_data.inputs[0]): pkg_resources.resource_stream('dessia_common', 'models/data/cars.csv')})
 
 # Workflow tests
 workflow._check_platform()

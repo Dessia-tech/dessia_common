@@ -13,8 +13,8 @@ import io
 from typing import List, Type, Any, Dict, get_type_hints
 
 import itertools
-from dessia_common.core import HeterogeneousList, DessiaFilter, is_bounded, enhanced_deep_attr, split_argspecs,\
-    type_from_annotation
+from dessia_common.core import DessiaObject, HeterogeneousList, DessiaFilter, FiltersList, is_bounded,\
+    enhanced_deep_attr, split_argspecs, type_from_annotation
 from dessia_common.utils.types import get_python_class_from_class_name, full_classname
 from dessia_common.utils.docstrings import parse_docstring, EMPTY_PARSED_ATTRIBUTE
 from dessia_common.errors import UntypedArgumentError
@@ -628,8 +628,9 @@ class Filter(Block):
     :type name: str
     """
 
-    def __init__(self, filters: List[DessiaFilter], name: str = ''):
+    def __init__(self, filters: List[DessiaFilter], logical_operand: str = "and", name: str = ''):
         self.filters = filters
+        self.logical_operand = logical_operand
         inputs = [Variable(name='input_list')]
         outputs = [Variable(name='output_list')]
         Block.__init__(self, inputs, outputs, name=name)
@@ -653,6 +654,9 @@ class Filter(Block):
         return cls([DessiaFilter.dict_to_object(d) for d in dict_['filters']], dict_['name'])
 
     def evaluate(self, values):
+        return [FiltersList(self.filters, self.logical_operand).apply(values)]
+
+    def evaluate_old(self, values):
         ouput_values = []
         for object_ in values[self.inputs[0]]:
             bounded = True
