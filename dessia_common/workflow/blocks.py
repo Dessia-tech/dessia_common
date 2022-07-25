@@ -654,21 +654,21 @@ class Filter(Block):
         return cls([DessiaFilter.dict_to_object(d) for d in dict_['filters']], dict_['name'])
 
     def evaluate(self, values):
-        return [FiltersList(self.filters, self.logical_operand).apply(values)]
+        return [FiltersList(self.filters, self.logical_operand).apply(values[self.inputs[0]])]
 
-    def evaluate_old(self, values):
-        ouput_values = []
-        for object_ in values[self.inputs[0]]:
-            bounded = True
-            i = 0
-            while bounded and i < len(self.filters):
-                filter_ = self.filters[i]
-                value = enhanced_deep_attr(object_, filter_.attribute)
-                bounded = is_bounded(filter_, value)
-                i += 1
-            if bounded:
-                ouput_values.append(object_)
-        return [ouput_values]
+    # def evaluate_old(self, values):
+    #     ouput_values = []
+    #     for object_ in values[self.inputs[0]]:
+    #         bounded = True
+    #         i = 0
+    #         while bounded and i < len(self.filters):
+    #             filter_ = self.filters[i]
+    #             value = enhanced_deep_attr(object_, filter_.attribute)
+    #             bounded = is_bounded(filter_, value)
+    #             i += 1
+    #         if bounded:
+    #             ouput_values.append(object_)
+    #     return [ouput_values]
 
 
 class MultiPlot(Display):

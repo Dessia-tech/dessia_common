@@ -837,8 +837,11 @@ class DessiaFilter(DessiaObject):
         return lambda x: self._operator()(getattr(dessia_objects_list[x], self.attribute), self.bound)
 
     def apply(self, values: List[DessiaObject]):
-        indexes = list(filter(self._to_lambda(values), range(len(values))))
-        return [values[idx] for idx in indexes]
+        try:
+            indexes = list(filter(self._to_lambda(values), range(len(values))))
+            return [values[idx] for idx in indexes]
+        except:
+            a=1
 
 class FiltersList(DessiaObject):
     def __init__(self, filters: List[DessiaFilter] = None, logical_operand: str = 'and', name: str = ''):
@@ -1145,8 +1148,6 @@ class HeterogeneousList(DessiaObject):
 #         for dessia_object in self.dessia_objects:
 #             matrix.append(dessia_object.to_vector())
 #         return matrix
-
-
 
 
 # class Evolution(DessiaObject):
