@@ -90,3 +90,13 @@ assert copy_workflow_state == demo_workflow_state
 
 demo_workflow_state._check_platform()
 
+# Test WR _get_from_path specific method
+try:
+    demo_workflow_run._get_from_path("#/values/8/0")
+except AttributeError:
+    pass
+
+assert isinstance(demo_workflow_run._get_from_path("#/values/8"), dctests.Generator)
+
+assert len(demo_workflow_run._get_from_path("#/values/9")) == 25
+assert isinstance(demo_workflow_run._get_from_path("#/values/9/0"), dctests.Model)
