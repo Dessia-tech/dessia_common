@@ -20,8 +20,7 @@ from dessia_common.templates import workflow_template
 from dessia_common import DessiaObject, is_sequence, JSONSCHEMA_HEADER, jsonschema_from_annotation,\
     deserialize_argument, set_default_value, prettyname, serialize_dict, DisplaySetting
 
-from dessia_common.utils.serialization import dict_to_object, deserialize, serialize_with_pointers, serialize,\
-                                              dereference_jsonpointers
+from dessia_common.utils.serialization import deserialize, serialize_with_pointers, serialize, update_pointers_data
 from dessia_common.utils.types import serialize_typing, deserialize_typing, recursive_type, typematch
 from dessia_common.utils.copy import deepcopy_value
 from dessia_common.utils.docstrings import FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE
@@ -575,9 +574,15 @@ class Workflow(Block):
         """
         Recompute the object from a dict
         """
-        blocks = [DessiaObject.dict_to_object(d) for d in dict_['blocks']]
+        global_dict, pointers_memo = update_pointers_data(global_dict=global_dict, current_dict=dict_,
+                                                          pointers_memo=pointers_memo)
+
+        blocks = [deserialize(serialized_element=d, global_dict=global_dict, pointers_memo=pointers_memo)
+                  for d in dict_["blocks"]]
         if 'nonblock_variables' in dict_:
-            nonblock_variables = [dict_to_object(d) for d in dict_['nonblock_variables']]
+            nonblock_variables = [deserialize(serialized_element=d, global_dict=global_dict,
+                                              pointers_memo=pointers_memo)
+                                  for d in dict_['nonblock_variables']]
         else:
             nonblock_variables = []
 
@@ -1421,20 +1426,14 @@ class WorkflowState(DessiaObject):
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'WorkflowState':
 
-        # This is copy pasted from generic dict to object, because it is difficult to do a decorator
-        # for both classmethod and function
-        if pointers_memo is None:
-            pointers_memo = {}
-
-        if global_dict is None:
-            global_dict = dict_
-            pointers_memo.update(dereference_jsonpointers(dict_))
+        global_dict, pointers_memo = update_pointers_data(global_dict=global_dict, current_dict=dict_,
+                                                          pointers_memo=pointers_memo)
 
         workflow = Workflow.dict_to_object(dict_['workflow'])
         if 'output_value' in dict_:  # and 'output_value_type' in dict_:
             # type_ = dict_['output_value_type']
             value = dict_['output_value']
-            output_value = deserialize(value, global_dict=dict_,
+            output_value = deserialize(value, global_dict=global_dict,
                                        pointers_memo=pointers_memo, path=f'{path}/output_value')
         else:
             output_value = None
@@ -1442,16 +1441,15 @@ class WorkflowState(DessiaObject):
         values = {}
         if 'values' in dict_:
             for i, value in dict_['values'].items():
-                values[workflow.variables[int(i)]] = deserialize(value, global_dict=dict_,
-                                                                 pointers_memo=pointers_memo,
-                                                                 path=f'{path}/values/{i}')
+                values[workflow.variables[int(i)]] = deserialize(value, global_dict=global_dict,
+                                                                 pointers_memo=pointers_memo, path=f'{path}/values/{i}')
         # elif 'variable_values' in dict_:
         #     for i, value in dict_['variable_values'].items():
         #         values[workflow.variables[int(i)]] = deserialize(value, global_dict=dict_,
         #                                                          pointers_memo=pointers_memo,
         #                                                          path=f'{path}/variable_values/{i}')
 
-        input_values = {int(i): deserialize(v, global_dict=dict_, pointers_memo=pointers_memo,
+        input_values = {int(i): deserialize(v, global_dict=global_dict, pointers_memo=pointers_memo,
                                             path=f"{path}/input_values/{i}")
                         for i, v in dict_['input_values'].items()}
 
@@ -1683,7 +1681,7 @@ class WorkflowState(DessiaObject):
         If state is complete, returns a WorkflowRun
         """
         if self.progress == 1:
-            values = {v: self.values[v] for v in self.workflow.variables if v.memorize and v in self.values}
+            values = {v: self.values[v] for v in self.workflow.variables if v in self.values}
             return WorkflowRun(workflow=self.workflow, input_values=self.input_values, output_value=self.output_value,
                                values=values, activated_items=self.activated_items, start_time=self.start_time,
                                end_time=self.end_time, log=self.log, name=name)
@@ -1776,7 +1774,7 @@ class WorkflowRun(WorkflowState):
         dict_['object_class'] = 'dessia_common.workflow.core.WorkflowRun'
 
         # TODO REMOVING THIS TEMPORARLY TO PREVENT DISPLAYS TO BE LOST WITH POINTERS
-        # VARIABLE_VALUES ARE NOT SET BACK IN DICT_TO_OBJECT
+        #  VARIABLE_VALUES ARE NOT SET BACK IN DICT_TO_OBJECT
         # if use_pointers:
         #     variable_values = {}
         #     for key, value in self.variable_values.items():
@@ -1797,16 +1795,21 @@ class WorkflowRun(WorkflowState):
 
         # Find & order displayable blocks
         d_blocks = [b for b in self.workflow.blocks if hasattr(b, 'display_') and hasattr(b, "_display_settings")]
-        # Change last line to isinstance ?
+        # Change last line to isinstance ? Not possible because of circular imports ?
         sorted_d_blocks = sorted(d_blocks, key=lambda b: b.order)
         for block in sorted_d_blocks:
             block_index = self.workflow.blocks.index(block)
-            settings = block._display_settings(block_index)  # Code intel is not working properly here
+            local_values = {}
+            for i, input_ in enumerate(block.inputs):
+                input_adress = self.workflow.variable_indices(input_)
+                local_values[input_] = self.variable_values[input_adress]
+            settings = block._display_settings(block_index, local_values)  # Code intel is not working properly here
             if settings is not None:
-                display_settings.append(settings)
+                display_settings.extend(settings)
 
         if isinstance(self.output_value, DessiaObject):
-            output_display_settings = [ds.compose('output_value') for ds in self.output_value.display_settings()]
+            output_display_settings = [ds.compose(attribute='output_value', serialize_data=True)
+                                       for ds in self.output_value.display_settings()]
             display_settings.extend(output_display_settings)
 
         return display_settings
@@ -1821,10 +1824,14 @@ class WorkflowRun(WorkflowState):
         except ExtractionError:
             segments = path.split("/")
             first_segment = segments[1]
-            if first_segment == "values" and len(segments) == 3:
+            if first_segment == "values" and len(segments) >= 3:
                 varindex = int(segments[2])
-                variable = self.workflow.variable_from_index(varindex)
-                return self.values[variable]
+                variable = self.workflow.variables[varindex]
+                upstream = self.workflow.get_upstream_nbv(variable)
+                value = self.values[upstream]
+                if len(segments) > 3:
+                    return DessiaObject._get_from_path(value, f"#/{'/'.join(segments[3:])}")
+                return value
         raise NotImplementedError(f"WorkflowRun : Specific object from path method is not defined for path '{path}'")
 
     def _display_from_selector(self, selector: str, **kwargs) -> DisplayObject:
@@ -1835,9 +1842,9 @@ class WorkflowRun(WorkflowState):
         #  WE SHOULD IMPLEMENT A WAY TO GET RID OF REFERENCE PATH WITH URLS
         track = ""
         if "reference_path" in kwargs:
-            reference_path = kwargs["reference_path"]
+            refpath = kwargs["reference_path"]
         else:
-            reference_path = ""
+            refpath = ""
         if selector in ["documentation", "workflow"]:
             return self.workflow._display_from_selector(selector)
 
@@ -1849,10 +1856,11 @@ class WorkflowRun(WorkflowState):
         try:
             if display_setting.method == "block_display":
                 # Specific hotfix : we propagate reference_path through block_display method
-                data, reference_path = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
+                display_object, refpath = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
+                data = display_object["data"]
             else:
-                # But not when calling result objects display methods. We end up here using Block Display because
-                # it is very poor and cannot know which type of display its value will implement
+                # But not when calling result objects display methods.
+                # We end up here when evaluating output value display
                 data = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
         except:
             data = None
@@ -1860,9 +1868,9 @@ class WorkflowRun(WorkflowState):
 
         if display_setting.serialize_data:
             data = serialize(data)
-        return DisplayObject(type_=display_setting.type, data=data, reference_path=reference_path, traceback=track)
+        return DisplayObject(type_=display_setting.type, data=data, reference_path=refpath, traceback=track)
 
-    def block_display(self, block_index: int):
+    def block_display(self, block_index: int, display_index: int):
         """
         Computes the display of associated block to use integrate it in the workflow run displays
         """
@@ -1879,7 +1887,7 @@ class WorkflowRun(WorkflowState):
             if i == block._displayable_input:
                 reference_path = f'variable_values/{input_adress}'
         display_ = block.display_(local_values=local_values, reference_path=reference_path)
-        return display_, reference_path
+        return display_[display_index], reference_path
 
     def dict_to_arguments(self, dict_: JsonSerializable, method: str):
         if method in self._allowed_methods:

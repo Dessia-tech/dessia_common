@@ -13,7 +13,7 @@ import io
 from typing import List, Type, Any, Dict, get_type_hints
 
 import itertools
-from dessia_common import DessiaObject, DisplayObject, DessiaFilter, is_bounded, enhanced_deep_attr, split_argspecs,\
+from dessia_common import DessiaFilter, is_bounded, enhanced_deep_attr, split_argspecs,\
     type_from_annotation
 from dessia_common.utils.types import get_python_class_from_class_name, full_classname
 from dessia_common.utils.docstrings import parse_docstring, EMPTY_PARSED_ATTRIBUTE
@@ -85,6 +85,17 @@ class Display(Block):
         object_ = local_values[self.inputs[self._displayable_input]]
         displays = object_._displays(**kwargs)
         return displays
+
+    def _display_settings(self, block_index: int, local_values: Dict[Variable, Any]) -> List[DisplaySetting]:
+        object_ = local_values[self.inputs[self._displayable_input]]
+        display_settings = []
+        for i, display_setting in enumerate(object_.display_settings()):
+            display_setting.selector = f"display_{block_index}_{i}"
+            display_setting.method = "block_display"
+            display_setting.arguments = {"block_index": block_index, "display_index": i}
+            display_setting.serialize_data = True
+            display_settings.append(display_setting)
+        return display_settings
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
         dict_ = Block.to_dict(self)
@@ -536,8 +547,8 @@ class Product(Block):
         return Block.equivalent(self, other) and self.number_list == other.number_list
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
-        dict_ = DessiaObject.base_dict(self)
-        dict_.update({'number_list': self.number_list})
+        dict_ = Block.to_dict(self)
+        dict_['number_list'] = self.number_list
         return dict_
 
     @classmethod
@@ -652,12 +663,11 @@ class MultiPlot(Display):
                                             coords=[(0, 0), (0, 300)], name='Results plot')
         return [multiplot.to_dict()]
 
-    @staticmethod
-    def _display_settings(block_index: int) -> DisplaySetting:
+    def _display_settings(self, block_index: int, local_values: Dict[Variable, Any] = None) -> List[DisplaySetting]:
         display_settings = DisplaySetting(selector="display_" + str(block_index), type_="plot_data",
-                                          method="block_display", arguments={'block_index': block_index},
-                                          serialize_data=True)
-        return display_settings
+                                          method="block_display", serialize_data=True,
+                                          arguments={'block_index': block_index, "display_index": 0})
+        return [display_settings]
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
         dict_ = Block.to_dict(self)
