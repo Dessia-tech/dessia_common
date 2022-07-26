@@ -10,9 +10,7 @@ import dessia_common.workflow as wf
 from dessia_common.files import StringFile
 
 csv_cars = pkg_resources.resource_stream('dessia_common', 'models/data/cars.csv')
-with open(csv_cars.name, 'r', encoding='utf-8') as stream:
-    string_file = StringFile("test_cars")
-    string_file.write(stream.read())
+stream_file = StringFile.from_stream(csv_cars)
 
 # =============================================================================
 # CARS WITHOUT FEATURES
@@ -31,7 +29,7 @@ pipe_worflow = [wf.Pipe(block_data.outputs[0], block_heterogeneous_list.inputs[0
 workflow = wf.Workflow(block_workflow, pipe_worflow, block_cluster.outputs[0])
 
 workflow_run = workflow.run({
-    workflow.index(block_data.inputs[0]): string_file,
+    workflow.index(block_data.inputs[0]): stream_file,
     workflow.index(block_cluster.inputs[1]): 40})
 
 # Workflow tests
@@ -69,7 +67,7 @@ pipe_worflow = [wf.Pipe(block_data.outputs[0], block_heterogeneous_list.inputs[0
 workflow = wf.Workflow(block_workflow, pipe_worflow, block_cluster.outputs[0])
 
 workflow_run = workflow.run({
-    workflow.index(block_data.inputs[0]): string_file,
+    workflow.index(block_data.inputs[0]): stream_file,
     workflow.index(block_cluster.inputs[1]): 40})
 
 # Workflow tests

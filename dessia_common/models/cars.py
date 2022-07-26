@@ -18,12 +18,9 @@ coefficients = {'Cylinders': 0, 'MPG': -0.70, 'Displacement': 0,
 pareto_settings = ParetoSettings(minimized_attributes=minimized_attributes, enabled=True)
 
 csv_cars = pkg_resources.resource_stream('dessia_common', 'models/data/cars.csv')
-print(type(csv_cars), csv_cars)
-print(csv_cars.name)
-with open(csv_cars.name, 'r', encoding='utf-8') as stream:
-    string_file = StringFile("test_cars")
-    string_file.write(stream.read())
+stream = StringFile.from_stream(csv_cars)
 
+csv_cars.seek(0)
 catalog = Catalog.from_csv(csv_cars)
 catalog.name = 'Cars dataset'
 catalog.pareto_settings = pareto_settings
@@ -38,5 +35,5 @@ filtered_catalog = catalog.filter_(filters)
 merged_catalog = Catalog.concatenate(catalogs=[catalog, filtered_catalog])
 
 # Used models
-all_cars_no_feat = Car.from_csv(string_file)
-all_cars_wi_feat = CarWithFeatures.from_csv(string_file)
+all_cars_no_feat = Car.from_csv(stream)
+all_cars_wi_feat = CarWithFeatures.from_csv(stream)
