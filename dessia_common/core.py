@@ -863,7 +863,7 @@ class HeterogeneousList(DessiaObject):
         """
         Render a markdown of the object output type: string
         """
-        return templates.heterogeneouslist_markdown_template.substitute(name=self.name, class_=self.__class__.__name__) + str(self.matrix[0][0])
+        return templates.heterogeneouslist_markdown_template.substitute(name=self.name, class_=self.__class__.__name__)
 
 
 # class HomogeneousList(HeterogeneousList):
