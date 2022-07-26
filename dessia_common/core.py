@@ -1024,7 +1024,9 @@ class HeterogeneousList(DessiaObject):
 
     def filtering(self, filters: List[DessiaFilter], logical_operand: str = "and"):
         filters_list = FiltersList(filters, logical_operand)
-        return self.__class__(filters_list.apply(self.dessia_objects))
+        filtered_hlist = self.__class__(filters_list.apply(self.dessia_objects))
+        filtered_hlist.matrix
+        return filtered_hlist
 
     def singular_values(self):
         _, singular_values, _ = npy.linalg.svd(npy.array(self.matrix), full_matrices=False)
