@@ -34,9 +34,9 @@ workflow_run = workflow.run({
     workflow.index(block_apply.inputs[2]): "or"})
 
 # Workflow tests
-workflow._check_platform()
-workflow.plot()
-workflow.display_settings()
+# workflow._check_platform()
+# workflow.plot()
+# workflow.display_settings()
 workflow_run.output_value.plot()
 
 # JSON TESTS

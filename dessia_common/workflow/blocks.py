@@ -654,7 +654,7 @@ class Filter(Block):
         return cls([DessiaFilter.dict_to_object(d) for d in dict_['filters']], dict_['name'])
 
     def evaluate(self, values):
-        return [FiltersList(self.filters, self.logical_operand).apply(values[self.inputs[0]])]
+        return [FiltersList(self.filters, self.logical_operand).apply(values[self.inputs[0]]), FiltersList(self.filters, self.logical_operand).apply(values[self.inputs[0]])]
 
     # def evaluate_old(self, values):
     #     ouput_values = []

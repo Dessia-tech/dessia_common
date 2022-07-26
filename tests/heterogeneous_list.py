@@ -33,6 +33,12 @@ assert(all(item in RandData_heterogeneous.matrix[idx]
             for item in [getattr(RandData_heterogeneous.dessia_objects[idx], attr)
                         for attr in RandData_heterogeneous.common_attributes]))
 
+idx = random.randint(0, len(RandData_heterogeneous) - 3)
+all_cars_without_features.extend(RandData_heterogeneous[idx:idx+2])
+assert(all(item in all_cars_without_features
+           for item in HeterogeneousList(all_cars_without_features+RandData_heterogeneous[idx:idx+2])))
+all_cars_without_features = HeterogeneousList(all_cars_no_feat)
+
 # Tests for plot_data
 # all_cars_with_features.plot()
 # all_cars_without_features.plot()

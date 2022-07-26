@@ -930,7 +930,8 @@ class HeterogeneousList(DessiaObject):
 
     def __add__(self, b: 'HeterogeneousList'):
         sum_hlist = self.__class__(self.dessia_objects + b.dessia_objects)
-        if all(attr in b.common_attributes for attr in self.common_attributes):
+        if all(attr in b.common_attributes for attr in self.common_attributes) and all(attr in self.common_attributes for attr in b):
+            sum_hlist._common_attributes = self.common_attributes
             sum_hlist._matrix = self.matrix + b.matrix
         return sum_hlist
 
@@ -1064,7 +1065,7 @@ class HeterogeneousList(DessiaObject):
                                                       **kwargs))
         scatter_matrix = plot_data.MultiplePlots(plots=subplots,
                                                  elements=data_list,
-                                                 # point_families=self._point_families(),
+                                                 point_families=self._point_families(),
                                                  initial_view_on=True)
         return scatter_matrix
 
