@@ -28,6 +28,7 @@ from dessia_common.utils.diff import choose_hash
 from dessia_common.typings import JsonSerializable, MethodType
 from dessia_common.displays import DisplayObject
 from dessia_common.breakdown import attrmethod_getter, ExtractionError
+from dessia_common.utils.jsonschema import chose_default
 
 
 class Variable(DessiaObject):
@@ -672,14 +673,32 @@ class Workflow(Block):
             return arguments
         raise NotImplementedError(f"Method {method} not in Workflow allowed methods")
 
-    def method_dict(self, method_name: str = None, method_jsonschema: Any = None):
+    def get_input_default_value(self, input_: Variable, variable_schema : Dict) -> Any:
+        if input_ in self.imposed_variable_values:
+            return self.imposed_variable_values[input_]
+        if isinstance(input_, TypedVariableWithDefaultValue) :
+            return input_.default_value
+        return chose_default(variable_schema)
+
+    def _run_dict(self) -> Dict:
         dict_ = {}
-        for id_, property_ in method_jsonschema['properties'].items():
-            if 'default_value' in property_ :
-                dict_[id_] = property_['default_value']
-            else :
-                dict_[id_] = None
+        for input_index, input_ in enumerate(self.inputs):
+            variable_schema = self._method_jsonschemas['run']['properties'][input_index.__str__()]
+            dict_[input_index] = self.get_input_default_value(input_, variable_schema)
+            print(dict_[input_index])
         return dict_
+
+    def _start_run_dict(self) -> Dict:
+        raise NotImplementedError("start_run method_dict is not implemented yet")
+
+
+    def method_dict(self, method_name: str = None, method_jsonschema: Any = None) -> Dict:
+        if method_name == 'run':
+            return self._run_dict()
+        if method_name == 'start_run':
+            return self._start_run_dict()
+        raise WorkflowError(f"Calling method_dict with unknown method_name {method_name}")
+
 
     def variable_from_index(self, index: Union[int, Tuple[int, int, int]]):
         """
