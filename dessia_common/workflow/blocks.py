@@ -457,13 +457,13 @@ class WorkflowBlock(Block):
         return docstring
 
     def _to_script(self) -> ToScriptElement:
-        PREFIX = 'sub_'
-        workflow_script = self.workflow._to_script(PREFIX)
+        prefix = 'sub_'
+        workflow_script = self.workflow._to_script(prefix)
         script_workflow = f"\n# --- Subworkflow --- \n" \
             f"{workflow_script.declaration}" \
             f"# --- End Subworkflow --- \n"
 
-        script = f"WorkflowBlock(workflow={PREFIX}workflow, name='{self.name}')"
+        script = f"WorkflowBlock(workflow={prefix}workflow, name='{self.name}')"
 
         imports = workflow_script.imports + [self.full_classname]
         return ToScriptElement(declaration=script, before_declaration=script_workflow, imports=imports)
