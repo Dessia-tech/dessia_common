@@ -86,7 +86,7 @@ script_value = "from dessia_common.tests import Optimizer, Car" \
                "\nblock_10 = Flatten(name='flatten_name')" \
                "\nblock_11 = Filter(filters=[DessiaFilter(attribute='attributeFilter', operator='operatorFilter', bound=3.1415, name='')], name='')" \
                "\nblock_12 = Unpacker(indices=[1, 3], name='unpacker_name')" \
-               "\nblock_13 = Display(inputs=[Variable(memorize=True, name='Model to Display')], order=0, name='')" \
+               "\nblock_13 = Display(inputs=None, order=0, name='')" \
                "\nblock_14 = MultiPlot(attributes=['multiplot0', 'multiplot1'], order=0, name='')" \
                "\nblock_15 = Product(number_list=4, name='product_name')" \
                "\nblock_16 = Export(method_type=MethodType(dessia_common.tests.Car, 'to_vector'), name='Export', export_name='export_name')" \
