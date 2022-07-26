@@ -2,22 +2,15 @@
 Tests for dessia_common.HeterogeneousList class (loadings, check_platform and plots)
 """
 import random
-import pkg_resources
-from dessia_common import tests
+from dessia_common.models import all_cars_no_feat, all_cars_wi_feat, rand_data_large
 from dessia_common.core import HeterogeneousList, DessiaFilter
 
-# Standard cars homogeneous dataset from the Internet
-csv_cars = pkg_resources.resource_stream('dessia_common', 'models/data/cars.csv')
 # When attribute _features is not specified in class Car
-all_cars_without_features = HeterogeneousList(tests.Car.from_csv(csv_cars))
+all_cars_without_features = HeterogeneousList(all_cars_no_feat)
 # When attribute _features is specified in class CarWithFeatures
-csv_cars = pkg_resources.resource_stream('dessia_common', 'models/data/cars.csv')
-all_cars_with_features = HeterogeneousList(tests.CarWithFeatures.from_csv(csv_cars))
-
+all_cars_with_features = HeterogeneousList(all_cars_wi_feat)
 # Auto-generated heterogeneous dataset with nb_clusters clusters of points in nb_dims dimensions
-RandData_heterogeneous = HeterogeneousList(tests.RandDataD9.create_dataset(nb_clusters=10, nb_points=500) +
-                                              tests.RandDataD7.create_dataset(nb_clusters=10, nb_points=500) +
-                                              tests.RandDataD8.create_dataset(nb_clusters=10, nb_points=500))
+RandData_heterogeneous = HeterogeneousList(rand_data_large)
 
 # Test on auto-generated attributes
 car_matrix_with = all_cars_with_features.matrix

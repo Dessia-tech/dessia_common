@@ -8,13 +8,10 @@ from dessia_common.cluster import CategorizedList
 
 # When attribute _features is not specified in class Car
 all_cars_without_features = HeterogeneousList(all_cars_no_feat)
-
 # When attribute _features is specified in class CarWithFeatures
 all_cars_with_features = HeterogeneousList(all_cars_wi_feat)
-
 # Auto-generated heterogeneous small dataset with nb_clusters clusters of points in nb_dims dimensions
 small_RandDatas_heterogeneous = HeterogeneousList(rand_data_small)
-
 # Auto-generated heterogeneous large dataset with nb_clusters clusters of points in nb_dims dimensions
 big_RandDatas_heterogeneous = HeterogeneousList(rand_data_large)
 
