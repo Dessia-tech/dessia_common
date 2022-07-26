@@ -18,6 +18,8 @@ coefficients = {'Cylinders': 0, 'MPG': -0.70, 'Displacement': 0,
 pareto_settings = ParetoSettings(minimized_attributes=minimized_attributes, enabled=True)
 
 csv_cars = pkg_resources.resource_stream('dessia_common', 'models/data/cars.csv')
+print(type(csv_cars), csv_cars)
+print(csv_cars.name)
 with open(csv_cars.name, 'r', encoding='utf-8') as stream:
     string_file = StringFile("test_cars")
     string_file.write(stream.read())
