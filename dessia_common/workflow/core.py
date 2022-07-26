@@ -673,19 +673,20 @@ class Workflow(Block):
             return arguments
         raise NotImplementedError(f"Method {method} not in Workflow allowed methods")
 
-    def get_input_default_value(self, input_: Variable, variable_schema : Dict) -> Any:
+    def get_input_default_value(self, input_index : int) -> Any:
+        input_ = self.inputs[input_index]
         if input_ in self.imposed_variable_values:
             return self.imposed_variable_values[input_]
         if isinstance(input_, TypedVariableWithDefaultValue) :
             return input_.default_value
+
+        variable_schema = self._method_jsonschemas['run']['properties'][input_index.__str__()]
         return chose_default(variable_schema)
 
     def _run_dict(self) -> Dict:
         dict_ = {}
-        for input_index, input_ in enumerate(self.inputs):
-            variable_schema = self._method_jsonschemas['run']['properties'][input_index.__str__()]
-            dict_[input_index] = self.get_input_default_value(input_, variable_schema)
-            print(dict_[input_index])
+        for input_index in range(len(self.inputs)):
+            dict_[input_index] = self.get_input_default_value(input_index)
         return dict_
 
     def _start_run_dict(self) -> Dict:
@@ -1711,6 +1712,15 @@ class WorkflowState(DessiaObject):
                                values=values, activated_items=self.activated_items, start_time=self.start_time,
                                end_time=self.end_time, log=self.log, name=name)
         raise ValueError('Workflow not completed')
+
+    def method_dict(self, method_name=None, method_jsonschema=None):
+        dict = {}
+        for input_index in range(len(self.workflow.inputs)):
+            if input_index in self.input_values:
+                dict[input_index] = self.input_values[input_index]
+            else:
+                dict[input_index] = self.workflow.get_input_default_value(input_index)
+        return dict
 
     def _export_formats(self):
         """
