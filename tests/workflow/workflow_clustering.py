@@ -151,7 +151,7 @@ json_dict = json.dumps(dict_workflow_run)
 decoded_json = json.loads(json_dict)
 deserialized_object = workflow_run.dict_to_object(decoded_json)
 
-# Debug of block display, kept for now, will be removed soon
-gg = workflow_run._display_from_selector('plot_data')
-json.dumps(workflow_run.to_dict())
-workflow_run._displays
+# # Debug of block display, kept for now, will be removed soon
+# gg = workflow_run._display_from_selector('plot_data')
+# json.dumps(workflow_run.to_dict())
+# workflow_run._displays
