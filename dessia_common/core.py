@@ -1064,7 +1064,7 @@ class HeterogeneousList(DessiaObject):
                                                       **kwargs))
         scatter_matrix = plot_data.MultiplePlots(plots=subplots,
                                                  elements=data_list,
-                                                 point_families=self._point_families(),
+                                                 # point_families=self._point_families(),
                                                  initial_view_on=True)
         return scatter_matrix
 
