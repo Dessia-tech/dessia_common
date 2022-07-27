@@ -28,7 +28,7 @@ from dessia_common.utils.diff import choose_hash
 from dessia_common.typings import JsonSerializable, MethodType
 from dessia_common.displays import DisplayObject
 from dessia_common.breakdown import attrmethod_getter, ExtractionError
-from dessia_common.utils.jsonschema import chose_default
+from dessia_common.utils.jsonschema import chose_default, default_dict
 
 
 class Variable(DessiaObject):
@@ -673,20 +673,17 @@ class Workflow(Block):
             return arguments
         raise NotImplementedError(f"Method {method} not in Workflow allowed methods")
 
-    def get_input_default_value(self, input_index : int) -> Any:
-        input_ = self.inputs[input_index]
-        if input_ in self.imposed_variable_values:
-            return self.imposed_variable_values[input_]
-        if isinstance(input_, TypedVariableWithDefaultValue) :
-            return input_.default_value
-
-        variable_schema = self._method_jsonschemas['run']['properties'][input_index.__str__()]
-        return chose_default(variable_schema)
 
     def _run_dict(self) -> Dict:
         dict_ = {}
-        for input_index in range(len(self.inputs)):
-            dict_[input_index] = self.get_input_default_value(input_index)
+        for input_index, input_ in enumerate(self.inputs):
+            if input_ in self.imposed_variable_values:
+                dict_[input_index] = self.imposed_variable_values[input_]
+            elif isinstance(input_, TypedVariableWithDefaultValue):
+                dict_[input_index] = input_.default_value
+            # else:
+            #     variable_schema = self._method_jsonschemas['run']['properties'][input_index.__str__()]
+            #     dict_[input_global_index] = chose_default(variable_schema)
         return dict_
 
     def _start_run_dict(self) -> Dict:
@@ -1714,13 +1711,24 @@ class WorkflowState(DessiaObject):
         raise ValueError('Workflow not completed')
 
     def method_dict(self, method_name=None, method_jsonschema=None):
-        dict = {}
-        for input_index in range(len(self.workflow.inputs)):
-            if input_index in self.input_values:
-                dict[input_index] = self.input_values[input_index]
-            else:
-                dict[input_index] = self.workflow.get_input_default_value(input_index)
-        return dict
+        #     def get_input_default_value(self, input_index : int) -> Any:
+        # input_ = self.inputs[input_index]
+        # if input_ in self.imposed_variable_values:
+        #     return self.imposed_variable_values[input_]
+        # if isinstance(input_, TypedVariableWithDefaultValue) :
+        #     return input_.default_value
+        #
+        # variable_schema = self._method_jsonschemas['run']['properties'][input_index.__str__()]
+        # return chose_default(variable_schema)
+
+        # dict = {}
+        # for input_index in range(len(self.workflow.inputs)):
+        #     if input_index in self.input_values:
+        #         dict[input_index] = self.input_values[input_index]
+        #     else:
+        #         dict[input_index] = self.workflow.get_input_default_value(input_index)
+        # return dict
+        raise NotImplementedError("Method commented for debug purpose")
 
     def _export_formats(self):
         """
