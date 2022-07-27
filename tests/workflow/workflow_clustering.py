@@ -6,8 +6,8 @@ import pkg_resources
 from dessia_common import tests
 from dessia_common.core import HeterogeneousList
 from dessia_common.cluster import CategorizedList
-import dessia_common.workflow as wf
 from dessia_common.files import StringFile
+import dessia_common.workflow as wf
 
 csv_cars = pkg_resources.resource_stream('dessia_common', 'models/data/cars.csv')
 stream_file = StringFile.from_stream(csv_cars)

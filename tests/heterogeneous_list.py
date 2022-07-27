@@ -1,6 +1,7 @@
 """
 Tests for dessia_common.HeterogeneousList class (loadings, check_platform and plots)
 """
+import time
 import random
 from dessia_common.models import all_cars_no_feat, all_cars_wi_feat, rand_data_large
 from dessia_common.core import HeterogeneousList, DessiaFilter
@@ -36,7 +37,7 @@ assert(all(item in RandData_heterogeneous.matrix[idx]
 idx = random.randint(0, len(RandData_heterogeneous) - 3)
 all_cars_without_features.extend(RandData_heterogeneous[idx:idx+2])
 assert(all(item in all_cars_without_features
-           for item in HeterogeneousList(all_cars_without_features+RandData_heterogeneous[idx:idx+2])))
+            for item in HeterogeneousList(all_cars_without_features+RandData_heterogeneous[idx:idx+2])))
 all_cars_without_features = HeterogeneousList(all_cars_no_feat)
 
 # Tests for plot_data
@@ -49,25 +50,22 @@ all_cars_without_features = HeterogeneousList(all_cars_no_feat)
 # all_cars_without_features._check_platform()
 # RandData_heterogeneous._check_platform()
 
-# Check for sorts
+# Check for __getitem__, __str__ and sorts
 print(all_cars_with_features)
-print(all_cars_with_features[0:10])
 print(all_cars_with_features[2])
-print(all_cars_with_features[:10])
 all_cars_with_features.sort('weight', ascend=False)
 print(all_cars_with_features[:10])
 all_cars_without_features.sort(0)
 print(f"sort name : {all_cars_without_features.common_attributes[0]}")
 print(all_cars_without_features[:10])
-
-# Filters
-print("Filters tests")
 try:
     all_cars_without_features[[True, False, True]]
 except Exception as e:
     print(e)
-
 print(all_cars_without_features[:3][[True, False, True]])
+
+# Tests for Filters
+print("Filters tests")
 
 # Filters creation
 new_filter_1 = DessiaFilter('weight', 'le', 2000)
@@ -77,29 +75,31 @@ filters_list = [new_filter_1, new_filter_2, new_filter_3]
 
 # Or testing
 print(all_cars_without_features.filtering([new_filter_1]))
-print(all_cars_without_features.filtering([new_filter_2]))
-gg=all_cars_without_features.filtering(filters_list, "or")
-print("or", gg[::int(len(gg)/30)])
+heavy_list = HeterogeneousList(all_cars_without_features.dessia_objects*100)
+t = time.time()
+for _ in range(1):
+    heavy_list = heavy_list.filtering(filters_list*20, "or")
+print("OR", f"{len(filters_list*20)} filters computed on HetererogeneousList of length {len(heavy_list)} " +
+      f"in {time.time()-t} sec")
+print(heavy_list)
 
 # And with non empty result
 filters_list = [new_filter_1, new_filter_3]
-gg=all_cars_without_features.filtering(filters_list, "and")
-print("and non empty", gg)
+print("AND NON EMPTY", all_cars_without_features.filtering(filters_list, "and"))
 
 # And with empty result
 filters_list = [new_filter_1, new_filter_2]
-gg=all_cars_without_features.filtering(filters_list, "and")
-print("and empty", gg)
+print("AND EMPTY", all_cars_without_features.filtering(filters_list, "and"))
 
 # Xor
 new_filter_1 = DessiaFilter('weight', 'le', 1700)
 new_filter_3 = DessiaFilter('mpg', 'ge', 40.)
 filters_list = [new_filter_1, new_filter_2, new_filter_3]
-gg=all_cars_without_features.filtering(filters_list, "xor")
-print("xor", gg)
+print("XOR", all_cars_without_features.filtering(filters_list, "xor"))
 
-print(gg.get_column_values(1))
-print(gg.get_attribute_values("displacement"))
+# get_columns and get_attr
+print(all_cars_without_features.get_column_values(0)[:15])
+print(all_cars_without_features.get_attribute_values("weight")[:15])
 
 # Tests for empty HeterogeneousList
 print(HeterogeneousList())
@@ -108,8 +108,8 @@ empty_list[0]
 empty_list[:]
 empty_list[[False, True]]
 empty_list + empty_list
-empty_list + gg
-gg + empty_list
+empty_list + all_cars_without_features
+all_cars_without_features + empty_list
 len(empty_list)
 empty_list.matrix
 empty_list.common_attributes

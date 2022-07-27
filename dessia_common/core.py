@@ -809,6 +809,10 @@ class ParameterSet(DessiaObject):
 
 
 class DessiaFilter(DessiaObject):
+    _REAL_OPERATORS = {'>': operator.gt, '<': operator.lt, '>=': operator.ge, '<=': operator.le,'==': operator.eq,
+                       '!=': operator.ne, 'gt': operator.gt, 'lt': operator.lt, 'ge': operator.ge,'le': operator.le,
+                       'eq': operator.eq, 'ne': operator.ne, 'gte': operator.ge,'lte': operator.le}
+
     def __init__(self, attribute: str, operator: str, bound: float, name: str = ''):
         self.attribute = attribute
         self.operator = operator
@@ -828,19 +832,24 @@ class DessiaFilter(DessiaObject):
         return same_attr and same_op and same_bound
 
     def _operator(self):
-        real_operator = {'>': operator.gt, '<': operator.lt, '>=': operator.ge, '<=': operator.le,'==': operator.eq,
-                         '!=': operator.ne, 'gt': operator.gt, 'lt': operator.lt, 'ge': operator.ge,'le': operator.le,
-                         'eq': operator.eq, 'ne': operator.ne, 'gte': operator.ge,'lte': operator.le}
-        return real_operator[self.operator]
+        return self._REAL_OPERATORS[self.operator]
 
-    def _to_lambda(self, dessia_objects_list: List[DessiaObject]):
-        return lambda x: self._operator()(getattr(dessia_objects_list[x], self.attribute), self.bound)
+    # TODO: 25 sec to run for len 400 000, 5 columns, repeated 100 times, with a 3 filters FiltersList
+    # Chronophage operation is self._to_lambda(values)(values)
+    def _to_lambda(self, values: List[DessiaObject]):
+        return lambda x: (self._operator()(getattr(value, self.attribute), self.bound) for value in values)
 
-    def apply_only_index(self, values: List[DessiaObject]):
-        return list(filter(self._to_lambda(values), range(len(values))))
+    def get_boolean_index(self, values: List[DessiaObject]):
+        return list(self._to_lambda(values)(values))
 
-    def apply(self, values: List[DessiaObject]):
-        return [values[idx] for idx in self.apply_only_index(values)]
+    @staticmethod
+    def booleanlist_to_indexlist(boolean_list: List[int], target_len: int): # TODO: Should it exist ?
+        return list(itertools.compress(boolean_list, range(target_len)))
+
+    @staticmethod
+    def apply(values: List[DessiaObject], booleans_list: List[List[bool]]):
+        return list(itertools.compress(values, booleans_list))
+
 
 class FiltersList(DessiaObject):
     def __init__(self, filters: List[DessiaFilter] = None, logical_operand: str = 'and', name: str = ''):
@@ -852,42 +861,24 @@ class FiltersList(DessiaObject):
     def from_filters_list(cls, filters_list: List[DessiaFilter], logical_operand: str = 'and', name: str = ''):
         return cls(filters=filters_list, logical_operand=logical_operand, name=name)
 
-    def apply(self, dobject_list: List[DessiaObject]): # TODO manage index style to avoid recompute matrix on HLIST
-        if self.logical_operand == "and":
-            return self._and_apply(dobject_list)
-        if self.logical_operand == "or":
-            return self._or_apply(dobject_list)
-        if self.logical_operand == "xor":
-            return self._xor_apply(dobject_list)
+    @staticmethod
+    def combine_booleans_lists(booleans_lists: List[List[bool]], logical_operand: str = "and"):
+        if logical_operand == "and":
+            return [all(booleans_tuple) for booleans_tuple in zip(*booleans_lists)]
+        if logical_operand == "or":
+            return [any(booleans_tuple) for booleans_tuple in zip(*booleans_lists)]
+        if logical_operand == "xor":
+            return [True if sum(booleans_tuple) == 1 else False for booleans_tuple in zip(*booleans_lists)]
 
-    def _and_apply(self, dobject_list: List[DessiaObject]):
-        new_list = self.filters[0].apply(dobject_list)
-        for filter_ in self.filters[1:]:
-            new_list = filter_.apply(new_list)
-        return new_list
-
-    def _or_apply(self, dobject_list: List[DessiaObject]):
-        new_list = []
+    def get_boolean_index(self, dobject_list: List[DessiaObject]):
+        booleans_lists = []
         for filter_ in self.filters:
-            new_list += filter_.apply(dobject_list)
-        return list(set(new_list))
+            booleans_lists.append(filter_.get_boolean_index(dobject_list))
+        return self.__class__.combine_booleans_lists(booleans_lists, self.logical_operand)
 
-    def _xor_apply(self, dobject_list: List[DessiaObject]):
-        new_list = []
-        for applied_filter_ in self.filters:
-            temp_list = applied_filter_.apply(dobject_list)
-            if len(temp_list) == 0:
-                continue
-            for nonapplied_filter_ in self.filters:
-                if applied_filter_ == nonapplied_filter_:
-                    continue
-                excluded_list = nonapplied_filter_.apply(temp_list)
-                if len(excluded_list) == 0:
-                    continue
-                for excluded in excluded_list:
-                    temp_list.remove(excluded)
-            new_list += temp_list
-        return list(set(new_list))
+    @staticmethod
+    def apply(values: List[DessiaObject], booleans_list: List[List[bool]]):
+        return DessiaFilter.apply(values, booleans_list)
 
 
 class HeterogeneousList(DessiaObject):
@@ -917,20 +908,21 @@ class HeterogeneousList(DessiaObject):
         if isinstance(key, list):
             if len(key) == 0:
                 return self.__class__()
-            if all(isinstance(item, bool) for item in key):
+            if isinstance(key[0], bool):
                 if len(key) == len(self):
                     return self.pick_from_boolist(key)
                 raise ValueError(f"Cannot index {self.__class__.__name__} object of len {len(self)} with a " +
                                  f"list of boolean of len {len(key)}")
-            if all(isinstance(item, int) for item in key):
-                return self.pick_from_boolist(self._idxlist_to_boolist(key))
+            if isinstance(key[0], int):
+                return self.pick_from_boolist(self.indexlist_to_booleanlist(key))
 
         raise NotImplementedError(f"key of type {type(key)} with {type(key[0])} elements not implemented for " +
                                   "indexing HeterogeneousLists")
 
     def __add__(self, b: 'HeterogeneousList'):
         sum_hlist = self.__class__(self.dessia_objects + b.dessia_objects)
-        if all(attr in b.common_attributes for attr in self.common_attributes) and all(attr in self.common_attributes for attr in b):
+        if all(attr in b.common_attributes for attr in self.common_attributes) and \
+            all(attr in self.common_attributes for attr in b):
             sum_hlist._common_attributes = self.common_attributes
             sum_hlist._matrix = self.matrix + b.matrix
         return sum_hlist
@@ -944,20 +936,21 @@ class HeterogeneousList(DessiaObject):
     def pick_from_slice(self, key: slice):
         new_hlist = self._procreate()
         new_hlist.dessia_objects = self.dessia_objects.__getitem__(key)
-        new_hlist._matrix = self.matrix.__getitem__(key)
+        if self._matrix is not None:
+            new_hlist._matrix = self.matrix.__getitem__(key)
         # new_hlist.name += f"_{key.start if key.start is not None else 0}_{key.stop}")
         return new_hlist
 
-    def _idxlist_to_boolist(self, key: List[int]):
-        boolist = [False]*len(self)
-        for idx in key: boolist[idx] = True
-        return boolist
+    def indexlist_to_booleanlist(self, index_list: List[int]):
+        boolean_list = [False]*len(self)
+        for idx in index_list: boolean_list[idx] = True
+        return boolean_list
 
     def pick_from_boolist(self, key: List[bool]):
-        # Really really faster than npy.array(self.dessia_objects).__getitem__(key).tolist()
         new_hlist = self._procreate()
-        new_hlist.dessia_objects = list(itertools.compress(self.dessia_objects, key))
-        new_hlist._matrix = list(itertools.compress(self.matrix, key))
+        new_hlist.dessia_objects = DessiaFilter.apply(self.dessia_objects, key)
+        if self._matrix is not None:
+            new_hlist._matrix = DessiaFilter.apply(self.matrix, key)
         # new_hlist.name += "_list")
         return new_hlist
 
@@ -982,7 +975,7 @@ class HeterogeneousList(DessiaObject):
     def __len__(self):
         return len(self.dessia_objects)
 
-    def sort(self, key: Any, ascend: bool = True):
+    def sort(self, key: Any, ascend: bool = True): # TODO : Replace numpy with faster algorithms
         if isinstance(key, int):
             sort_indexes = npy.argsort([row[key] for row in self.matrix])
         elif isinstance(key, str):
@@ -1024,9 +1017,8 @@ class HeterogeneousList(DessiaObject):
 
     def filtering(self, filters: List[DessiaFilter], logical_operand: str = "and"):
         filters_list = FiltersList(filters, logical_operand)
-        filtered_hlist = self.__class__(filters_list.apply(self.dessia_objects))
-        filtered_hlist.matrix
-        return filtered_hlist
+        booleans_index = filters_list.get_boolean_index(self.dessia_objects)
+        return self.__getitem__(booleans_index)
 
     def singular_values(self):
         _, singular_values, _ = npy.linalg.svd(npy.array(self.matrix), full_matrices=False)
