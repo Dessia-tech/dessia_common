@@ -1,18 +1,20 @@
 """
 Cluster.py package testing for workflows
 """
-import os
 import json
+import pkg_resources
 from dessia_common import tests
 from dessia_common.core import HeterogeneousList
 from dessia_common.cluster import CategorizedList
 import dessia_common.workflow as wf
+from dessia_common.files import StringFile
+
+csv_cars = pkg_resources.resource_stream('dessia_common', 'models/data/cars.csv')
+stream_file = StringFile.from_stream(csv_cars)
 
 # =============================================================================
 # CARS WITHOUT FEATURES
 # =============================================================================
-file_path = '/'.join(os.getcwd().split('/')[:-2]) + '/dessia_common/models/data/cars.csv'
-
 data_method = wf.MethodType(class_=tests.Car, name='from_csv')
 block_data = wf.ClassMethod(method_type=data_method, name='data load')
 
@@ -27,7 +29,7 @@ pipe_worflow = [wf.Pipe(block_data.outputs[0], block_heterogeneous_list.inputs[0
 workflow = wf.Workflow(block_workflow, pipe_worflow, block_cluster.outputs[0])
 
 workflow_run = workflow.run({
-    workflow.index(block_data.inputs[0]): file_path,
+    workflow.index(block_data.inputs[0]): stream_file,
     workflow.index(block_cluster.inputs[1]): 40})
 
 # Workflow tests
@@ -43,10 +45,10 @@ decoded_json = json.loads(json_dict)
 deserialized_object = workflow.dict_to_object(decoded_json)
 
 # JSON Workflow_run tests
-dict_workflow_run = workflow_run.to_dict(use_pointers=True)
-json_dict = json.dumps(dict_workflow_run)
-decoded_json = json.loads(json_dict)
-deserialized_object = workflow_run.dict_to_object(decoded_json)
+# dict_workflow_run = workflow_run.to_dict(use_pointers=True)
+# json_dict = json.dumps(dict_workflow_run)
+# decoded_json = json.loads(json_dict)
+# deserialized_object = workflow_run.dict_to_object(decoded_json)
 
 # =============================================================================
 # CARS WITH FEATURES
@@ -65,7 +67,7 @@ pipe_worflow = [wf.Pipe(block_data.outputs[0], block_heterogeneous_list.inputs[0
 workflow = wf.Workflow(block_workflow, pipe_worflow, block_cluster.outputs[0])
 
 workflow_run = workflow.run({
-    workflow.index(block_data.inputs[0]): file_path,
+    workflow.index(block_data.inputs[0]): stream_file,
     workflow.index(block_cluster.inputs[1]): 40})
 
 # Workflow tests
@@ -81,10 +83,10 @@ decoded_json = json.loads(json_dict)
 deserialized_object = workflow.dict_to_object(decoded_json)
 
 # JSON Workflow_run tests
-dict_workflow_run = workflow_run.to_dict(use_pointers=True)
-json_dict = json.dumps(dict_workflow_run)
-decoded_json = json.loads(json_dict)
-deserialized_object = workflow_run.dict_to_object(decoded_json)
+# dict_workflow_run = workflow_run.to_dict(use_pointers=True)
+# json_dict = json.dumps(dict_workflow_run)
+# decoded_json = json.loads(json_dict)
+# deserialized_object = workflow_run.dict_to_object(decoded_json)
 
 # =============================================================================
 # RANDDATA SMALL DATASET AND BLOC CONCATENATE
@@ -146,12 +148,12 @@ decoded_json = json.loads(json_dict)
 deserialized_object = workflow.dict_to_object(decoded_json)
 
 # JSON Workflow_run tests
-dict_workflow_run = workflow_run.to_dict(use_pointers=True)
-json_dict = json.dumps(dict_workflow_run)
-decoded_json = json.loads(json_dict)
-deserialized_object = workflow_run.dict_to_object(decoded_json)
+# dict_workflow_run = workflow_run.to_dict(use_pointers=True)
+# json_dict = json.dumps(dict_workflow_run)
+# decoded_json = json.loads(json_dict)
+# deserialized_object = workflow_run.dict_to_object(decoded_json)
 
-# Debug of block display, kept for now, will be removed soon
-gg = workflow_run._display_from_selector('plot_data')
-json.dumps(workflow_run.to_dict())
-workflow_run._displays
+# # Debug of block display, kept for now, will be removed soon
+# gg = workflow_run._display_from_selector('plot_data')
+# json.dumps(workflow_run.to_dict())
+# workflow_run._displays
