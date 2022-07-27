@@ -27,23 +27,19 @@ def assert_str(case: str) -> str:
            f"-- Expected : {expected_dict}"
 
 
-print(optimization_workflow.jsonschema())
 # ----- Tests -----
 expected_dict = {
     1: "",
     2: 3
 }
-print("Basic test")
 assert optimization_workflow.method_dict(method_name='run') == expected_dict, \
     assert_str('Basic method_dict')
 
-print("IVV on optional")
 optimization_workflow.imposed_variable_values[instantiate.inputs[1]] = "custom_name"
 expected_dict[1] = "custom_name"
 assert optimization_workflow.method_dict(method_name='run') == expected_dict, \
     assert_str('imposed_variable_value on optional variable')
 
-print("IVV on required")
 SO = StandaloneObject.generate(1)
 optimization_workflow.imposed_variable_values[instantiate.inputs[0]] = SO
 expected_dict[0] = SO

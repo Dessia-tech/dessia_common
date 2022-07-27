@@ -28,7 +28,6 @@ from dessia_common.utils.diff import choose_hash
 from dessia_common.typings import JsonSerializable, MethodType
 from dessia_common.displays import DisplayObject
 from dessia_common.breakdown import attrmethod_getter, ExtractionError
-from dessia_common.utils.jsonschema import chose_default, default_dict
 
 
 class Variable(DessiaObject):
