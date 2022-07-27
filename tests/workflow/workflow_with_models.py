@@ -76,3 +76,14 @@ demo_workflow_json = json.dumps(demo_workflow_dict)
 dict_from_json = json.loads(demo_workflow_json)
 deserialized_demo_workflow = wf.Workflow.dict_to_object(dict_from_json)
 assert demo_workflow == deserialized_demo_workflow
+
+# Test WR _get_from_path specific method
+try:
+    demo_workflow_run._get_from_path("#/values/8/0")
+except AttributeError:
+    pass
+
+assert isinstance(demo_workflow_run._get_from_path("#/values/8"), dctests.Generator)
+
+assert len(demo_workflow_run._get_from_path("#/values/9")) == 25
+assert isinstance(demo_workflow_run._get_from_path("#/values/9/0"), dctests.Model)

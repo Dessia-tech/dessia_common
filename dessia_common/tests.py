@@ -175,13 +175,13 @@ class Car(DessiaObject):
         """
         Generates Cars from given .csv file.
         """
-        array = npy.genfromtxt(file, dtype=None, delimiter=',', names=True, encoding=None)
+        array = [row.split(',') for row in file.getvalue().split('\n')][1:-1]
         cars = []
         for idx_line, line in enumerate(array):
             if end is not None and idx_line >= end:
                 break
             if not remove_duplicates or (remove_duplicates and line.tolist() not in cars):
-                attr_list = list(line)
+                attr_list = [float(attr) if attr.replace('.', '').isnumeric() else attr for attr in line]
                 attr_list[3] /= 1000
 
                 for idx_attr, attr in enumerate(attr_list):
@@ -189,7 +189,6 @@ class Car(DessiaObject):
                         attr_list[idx_attr] = int(attr)
                     elif isinstance(attr, npy.float64):
                         attr_list[idx_attr] = float(attr)
-
                 cars.append(cls(*attr_list))
         return cars
 
