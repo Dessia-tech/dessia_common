@@ -7,10 +7,7 @@ import numpy as npy
 from sklearn import cluster, preprocessing
 import matplotlib.pyplot as plt
 
-try:
-    import plot_data
-except ImportError:
-    pass
+import plot_data
 import dessia_common.core as dc
 
 
