@@ -2,6 +2,7 @@
 Tests for dessia_common.HeterogeneousList class (loadings, check_platform and plots)
 """
 import time
+import itertools
 import random
 from dessia_common.models import all_cars_no_feat, all_cars_wi_feat, rand_data_large
 from dessia_common.core import HeterogeneousList, DessiaFilter
@@ -12,11 +13,6 @@ all_cars_without_features = HeterogeneousList(all_cars_no_feat)
 all_cars_with_features = HeterogeneousList(all_cars_wi_feat)
 # Auto-generated heterogeneous dataset with nb_clusters clusters of points in nb_dims dimensions
 RandData_heterogeneous = HeterogeneousList(rand_data_large)
-
-# Test on auto-generated attributes
-car_matrix_with = all_cars_with_features.matrix
-car_matrix_without = all_cars_without_features.matrix
-heter_matrix = RandData_heterogeneous.matrix
 
 # Test on matrices
 idx = random.randint(0, len(all_cars_with_features) - 1)
@@ -50,31 +46,35 @@ all_cars_without_features = HeterogeneousList(all_cars_no_feat)
 # all_cars_without_features._check_platform()
 # RandData_heterogeneous._check_platform()
 
-# Check for __getitem__, __str__ and sorts
+# Check for __getitem__ and __str__
 print(all_cars_with_features)
-print(all_cars_with_features[2])
-all_cars_with_features.sort('weight', ascend=False)
-print(all_cars_with_features[:10])
-all_cars_without_features.sort(0)
-print(f"sort name : {all_cars_without_features.common_attributes[0]}")
-print(all_cars_without_features[:10])
+
+assert(all_cars_with_features[2] == all_cars_with_features.dessia_objects[2])
+assert(all_cars_with_features[:10] == HeterogeneousList(all_cars_wi_feat[:10]))
+
 try:
     all_cars_without_features[[True, False, True]]
+    raise ValueError("boolean indexes of len 3 should not be able to index HeterogeneousLists of len 406")
 except Exception as e:
-    print(e)
-print(all_cars_without_features[:3][[True, False, True]])
+    assert(e.args[0] == "Cannot index HeterogeneousList object of len 406 with a list of boolean of len 3")
 
-# Tests for Filters
-print("Filters tests")
+assert(all_cars_without_features[:3][[True, False, True]] ==
+       HeterogeneousList([all_cars_without_features[0], all_cars_without_features[2]]))
 
 # Filters creation
-new_filter_1 = DessiaFilter('weight', 'le', 2000)
-new_filter_2 = DessiaFilter('mpg', 'ge', 100.)
-new_filter_3 = DessiaFilter('mpg', 'ge', 30.)
+weight_val = 2000.
+mpg_big_val = 100.
+mpg_low_val = 30.
+new_filter_1 = DessiaFilter('weight', 'le', weight_val)
+new_filter_2 = DessiaFilter('mpg', 'ge', mpg_big_val)
+new_filter_3 = DessiaFilter('mpg', 'ge', mpg_low_val)
 filters_list = [new_filter_1, new_filter_2, new_filter_3]
 
 # Or testing
-print(all_cars_without_features.filtering([new_filter_1]))
+filter_1_fun = lambda x: ((getattr(value, 'weight') <= weight_val) for value in all_cars_no_feat)
+assert(all(item in all_cars_without_features.filtering([new_filter_1])
+           for item in list(itertools.compress(all_cars_no_feat, filter_1_fun(all_cars_no_feat)))))
+
 heavy_list = HeterogeneousList(all_cars_without_features.dessia_objects*100)
 t = time.time()
 for _ in range(1):
@@ -89,7 +89,7 @@ print("AND NON EMPTY", all_cars_without_features.filtering(filters_list, "and"))
 
 # And with empty result
 filters_list = [new_filter_1, new_filter_2]
-print("AND EMPTY", all_cars_without_features.filtering(filters_list, "and"))
+assert(all_cars_without_features.filtering(filters_list, "and") == HeterogeneousList())
 
 # Xor
 new_filter_1 = DessiaFilter('weight', 'le', 1700)
@@ -115,12 +115,24 @@ empty_list.matrix
 empty_list.common_attributes
 try:
     empty_list.plot_data()
+    raise ValueError("plot_data should not work on empty HeterogeneousLists")
 except Exception as e:
-    print(e)
+    assert(e.__class__.__name__ == "LinAlgError")
 try:
     empty_list.singular_values()
+    raise ValueError("singular_values should not work on empty HeterogeneousLists")
 except Exception as e:
-    print(e)
+    assert(e.__class__.__name__ == "LinAlgError")
+
+
+# Tests sort
 empty_list.sort(0)
 empty_list.sort("weight")
+
+all_cars_with_features.sort('weight', ascend=False)
+assert(all_cars_with_features[0].weight == max(all_cars_with_features.get_attribute_values('weight')))
+
+all_cars_without_features.sort(2)
+assert(all_cars_without_features.common_attributes[2] == "displacement")
+assert(all_cars_without_features[0].displacement == min(all_cars_without_features.get_column_values(2)))
 

@@ -834,8 +834,7 @@ class DessiaFilter(DessiaObject):
     def _operator(self):
         return self._REAL_OPERATORS[self.operator]
 
-    # TODO: 25 sec to run for len 400 000, 5 columns, repeated 100 times, with a 3 filters FiltersList
-    # Chronophage operation is self._to_lambda(values)(values)
+    # TODO: Chronophage operation is self._to_lambda(values)(values)
     def _to_lambda(self, values: List[DessiaObject]):
         return lambda x: (self._operator()(getattr(value, self.attribute), self.bound) for value in values)
 
@@ -981,7 +980,8 @@ class HeterogeneousList(DessiaObject):
         elif isinstance(key, str):
             sort_indexes = npy.argsort([getattr(dessia_object, key) for dessia_object in self.dessia_objects])
         self.dessia_objects = [self.dessia_objects[idx] for idx in (sort_indexes if ascend else sort_indexes[::-1])]
-        self._matrix = [self.matrix[idx] for idx in (sort_indexes if ascend else sort_indexes[::-1])]
+        if self._matrix is not None:
+            self._matrix = [self._matrix[idx] for idx in (sort_indexes if ascend else sort_indexes[::-1])]
 
     def get_attribute_values(self, attribute: str):
         return [getattr(dessia_object, attribute) for dessia_object in self.dessia_objects]
