@@ -620,7 +620,7 @@ class Filter(Block):
     :param filters: A list of dictionaries, each corresponding to a value to filter.
                     The dictionary should be as follows :
                     *{'attribute' : Name of attribute to filter (str),
-                      'operator' : choose between gt, lt, get, let (standing for greater than, lower than,
+                      'comparison_operator' : choose between gt, lt, get, let (standing for greater than, lower than,
                                                                     geater or equal than, lower or equal than) (str),
                       'bound' :  the value (float)}*
     :type filters: list[DessiaFilter]
@@ -628,9 +628,9 @@ class Filter(Block):
     :type name: str
     """
 
-    def __init__(self, filters: List[DessiaFilter], logical_operand: str = "and", name: str = ''):
+    def __init__(self, filters: List[DessiaFilter], logical_operator: str = "and", name: str = ''):
         self.filters = filters
-        self.logical_operand = logical_operand
+        self.logical_operator = logical_operator
         inputs = [Variable(name='input_list')]
         outputs = [Variable(name='output_list')]
         Block.__init__(self, inputs, outputs, name=name)
@@ -654,7 +654,7 @@ class Filter(Block):
         return cls([DessiaFilter.dict_to_object(d) for d in dict_['filters']], dict_['name'])
 
     def evaluate(self, values):
-        filters_list = FiltersList(self.filters, self.logical_operand)
+        filters_list = FiltersList(self.filters, self.logical_operator)
         boolean_index = filters_list.get_boolean_index(values[self.inputs[0]])
         return [filters_list.apply(values[self.inputs[0]], boolean_index)]
 

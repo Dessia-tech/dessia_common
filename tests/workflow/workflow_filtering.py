@@ -64,7 +64,7 @@ block_data = wf.ClassMethod(method_type=data_method, name='data load')
 
 filters_list = [DessiaFilter('weight', "<=", 1700), DessiaFilter('mpg', ">=", 40)]
 
-block_filter = wf.Filter(filters=filters_list, logical_operand="or")
+block_filter = wf.Filter(filters=filters_list, logical_operator="or")
 
 block_workflow = [block_data, block_filter]
 pipe_worflow = [wf.Pipe(block_data.outputs[0], block_filter.inputs[0])]

@@ -32,8 +32,8 @@ parallel_optimization = wf.ForEach(workflow_block=optimization_workflow_block, i
 unpacker = wf.Unpacker(indices=[0, 3, -1], name='Unpacker')
 sequence = wf.Sequence(number_arguments=2, name='Sequence')
 
-filters = [DessiaFilter(attribute='value', operator='gt', bound=0),
-           DessiaFilter(attribute='submodel/subvalue', operator='lt', bound=2000)]
+filters = [DessiaFilter(attribute='value', comparison_operator='gt', bound=0),
+           DessiaFilter(attribute='submodel/subvalue', comparison_operator='lt', bound=2000)]
 
 filter_sort = wf.Filter(filters=filters, name='Filters')
 

@@ -813,30 +813,30 @@ class DessiaFilter(DessiaObject):
                        '!=': operator.ne, 'gt': operator.gt, 'lt': operator.lt, 'ge': operator.ge,'le': operator.le,
                        'eq': operator.eq, 'ne': operator.ne, 'gte': operator.ge,'lte': operator.le}
 
-    def __init__(self, attribute: str, operator: str, bound: float, name: str = ''):
+    def __init__(self, attribute: str, comparison_operator: str, bound: float, name: str = ''):
         self.attribute = attribute
-        self.operator = operator
+        self.comparison_operator = comparison_operator
         self.bound = bound
         DessiaObject.__init__(self, name=name)
 
     def __hash__(self):
         hash_ = len(self.attribute)
-        hash_ += hash(self.operator)
+        hash_ += hash(self.comparison_operator)
         hash_ += hash(self.bound)
         return int(hash_)
 
     def __eq__(self, other: 'DessiaFilter'):
         same_attr = self.attribute == other.attribute
-        same_op = self.operator == other.operator
+        same_op = self.comparison_operator == other.comparison_operator
         same_bound = self.bound == other.bound
         return same_attr and same_op and same_bound
 
-    def _operator(self):
-        return self._REAL_OPERATORS[self.operator]
+    def _comparison_operator(self):
+        return self._REAL_OPERATORS[self.comparison_operator]
 
     # TODO: Chronophage operation is self._to_lambda(values)(values)
     def _to_lambda(self, values: List[DessiaObject]):
-        return lambda x: (self._operator()(getattr(value, self.attribute), self.bound) for value in values)
+        return lambda x: (self._comparison_operator()(getattr(value, self.attribute), self.bound) for value in values)
 
     def get_boolean_index(self, values: List[DessiaObject]):
         return list(self._to_lambda(values)(values))
@@ -851,29 +851,30 @@ class DessiaFilter(DessiaObject):
 
 
 class FiltersList(DessiaObject):
-    def __init__(self, filters: List[DessiaFilter] = None, logical_operand: str = 'and', name: str = ''):
+    def __init__(self, filters: List[DessiaFilter] = None, logical_operator: str = 'and', name: str = ''):
         self.filters = filters
-        self.logical_operand = logical_operand
+        self.logical_operator = logical_operator
         DessiaObject.__init__(self, name=name)
 
     @classmethod
-    def from_filters_list(cls, filters_list: List[DessiaFilter], logical_operand: str = 'and', name: str = ''):
-        return cls(filters=filters_list, logical_operand=logical_operand, name=name)
+    def from_filters_list(cls, filters_list: List[DessiaFilter], logical_operator: str = 'and', name: str = ''):
+        return cls(filters=filters_list, logical_operator=logical_operator, name=name)
 
     @staticmethod
-    def combine_booleans_lists(booleans_lists: List[List[bool]], logical_operand: str = "and"):
-        if logical_operand == "and":
+    def combine_booleans_lists(booleans_lists: List[List[bool]], logical_operator: str = "and"):
+        if logical_operator == "and":
             return [all(booleans_tuple) for booleans_tuple in zip(*booleans_lists)]
-        if logical_operand == "or":
+        if logical_operator == "or":
             return [any(booleans_tuple) for booleans_tuple in zip(*booleans_lists)]
-        if logical_operand == "xor":
+        if logical_operator == "xor":
             return [True if sum(booleans_tuple) == 1 else False for booleans_tuple in zip(*booleans_lists)]
+        raise NotImplementedError(f"'{logical_operator}' str for 'logical_operator' attribute is not a use case")
 
     def get_boolean_index(self, dobject_list: List[DessiaObject]):
         booleans_lists = []
         for filter_ in self.filters:
             booleans_lists.append(filter_.get_boolean_index(dobject_list))
-        return self.__class__.combine_booleans_lists(booleans_lists, self.logical_operand)
+        return self.__class__.combine_booleans_lists(booleans_lists, self.logical_operator)
 
     @staticmethod
     def apply(values: List[DessiaObject], booleans_list: List[List[bool]]):
@@ -923,26 +924,28 @@ class HeterogeneousList(DessiaObject):
         if all(attr in b.common_attributes for attr in self.common_attributes) and \
             all(attr in self.common_attributes for attr in b):
             sum_hlist._common_attributes = self.common_attributes
-            sum_hlist._matrix = self.matrix + b.matrix
+            if self._matrix is not None and b._matrix is not None:
+                sum_hlist._matrix += self._matrix + b._matrix
         return sum_hlist
 
-    def extend(self, b):
-        self.__dict__.update(self.__add__(b).__dict__)
+    def extend(self, b: 'HeterogeneousList'):
+        self.__dict__.update((self + b).__dict__)
 
     def pick_from_int(self, idx: int):
-        return self.dessia_objects.__getitem__(idx)
+        return self.dessia_objects[idx]
 
     def pick_from_slice(self, key: slice):
         new_hlist = self._procreate()
-        new_hlist.dessia_objects = self.dessia_objects.__getitem__(key)
+        new_hlist.dessia_objects = self.dessia_objects[key]
         if self._matrix is not None:
-            new_hlist._matrix = self.matrix.__getitem__(key)
+            new_hlist._matrix = self.matrix[key]
         # new_hlist.name += f"_{key.start if key.start is not None else 0}_{key.stop}")
         return new_hlist
 
     def indexlist_to_booleanlist(self, index_list: List[int]):
-        boolean_list = [False]*self.__len__()
-        for idx in index_list: boolean_list[idx] = True
+        boolean_list = [False]*len(self)
+        for idx in index_list:
+            boolean_list[idx] = True
         return boolean_list
 
     def pick_from_boolist(self, key: List[bool]):
@@ -1017,10 +1020,10 @@ class HeterogeneousList(DessiaObject):
             self._matrix = matrix
         return self._matrix
 
-    def filtering(self, filters: List[DessiaFilter], logical_operand: str = "and"):
-        filters_list = FiltersList(filters, logical_operand)
+    def filtering(self, filters: List[DessiaFilter], logical_operator: str = "and"):
+        filters_list = FiltersList(filters, logical_operator)
         booleans_index = filters_list.get_boolean_index(self.dessia_objects)
-        return self.__getitem__(booleans_index)
+        return self[booleans_index]
 
     def singular_values(self):
         _, singular_values, _ = npy.linalg.svd(npy.array(self.matrix), full_matrices=False)
@@ -1353,20 +1356,20 @@ def sequence_to_deepattr(sequence):
 
 def is_bounded(filter_: DessiaFilter, value: float):
     bounded = True
-    operator = filter_.operator
+    comparison_operator = filter_.comparison_operator
     bound = filter_.bound
 
-    if operator == 'lte' and value > bound:
+    if comparison_operator == 'lte' and value > bound:
         bounded = False
-    if operator == 'gte' and value < bound:
-        bounded = False
-
-    if operator == 'lt' and value >= bound:
-        bounded = False
-    if operator == 'gt' and value <= bound:
+    if comparison_operator == 'gte' and value < bound:
         bounded = False
 
-    if operator == 'eq' and value != bound:
+    if comparison_operator == 'lt' and value >= bound:
+        bounded = False
+    if comparison_operator == 'gt' and value <= bound:
+        bounded = False
+
+    if comparison_operator == 'eq' and value != bound:
         bounded = False
     return bounded
 

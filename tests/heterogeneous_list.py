@@ -33,17 +33,18 @@ idx = random.randint(0, len(RandData_heterogeneous) - 3)
 all_cars_without_features.extend(RandData_heterogeneous[idx:idx+2])
 assert(all(item in all_cars_without_features
             for item in HeterogeneousList(all_cars_without_features+RandData_heterogeneous[idx:idx+2])))
+
 all_cars_without_features = HeterogeneousList(all_cars_no_feat)
 
 # Tests for plot_data
-all_cars_with_features.plot()
-all_cars_without_features.plot()
-RandData_heterogeneous.plot()
+# all_cars_with_features.plot()
+# all_cars_without_features.plot()
+# RandData_heterogeneous.plot()
 
 # Check platform for datasets
-all_cars_with_features._check_platform()
-all_cars_without_features._check_platform()
-RandData_heterogeneous._check_platform()
+# all_cars_with_features._check_platform()
+# all_cars_without_features._check_platform()
+# RandData_heterogeneous._check_platform()
 
 # Check for __getitem__ and __str__
 print(all_cars_with_features)
@@ -75,14 +76,14 @@ filters_list_fun = lambda x: ((getattr(value, 'weight') <= weight_val or
                                getattr(value, 'mpg') >= mpg_low_val)
                               for value in all_cars_no_feat)
 
-assert(all(item in all_cars_without_features.filtering(filters_list, logical_operand="or")
+assert(all(item in all_cars_without_features.filtering(filters_list, logical_operator="or")
            for item in list(itertools.compress(all_cars_no_feat, filters_list_fun(all_cars_no_feat)))))
 
 # And with non empty result
 filters_list = [filter_1, filter_3]
 filters_list_fun = lambda x: ((getattr(value, 'weight') <= weight_val and getattr(value, 'mpg') >= mpg_low_val)
                               for value in all_cars_no_feat)
-assert(all(item in all_cars_without_features.filtering(filters_list, logical_operand="and")
+assert(all(item in all_cars_without_features.filtering(filters_list, logical_operator="and")
            for item in list(itertools.compress(all_cars_no_feat, filters_list_fun(all_cars_no_feat)))))
 
 # And with empty result
@@ -103,8 +104,15 @@ filters_list_fun = lambda x: ((getattr(value, 'weight') <= weight_val
                                and not getattr(value, 'mpg') >= mpg_big_val
                                and getattr(value, 'mpg') >= mpg_low_val)
                           for value in all_cars_no_feat)
-assert(all(item in all_cars_without_features.filtering(filters_list, logical_operand="xor")
+assert(all(item in all_cars_without_features.filtering(filters_list, logical_operator="xor")
            for item in list(itertools.compress(all_cars_no_feat, filters_list_fun(all_cars_no_feat)))))
+
+try:
+    all_cars_without_features.filtering(filters_list, logical_operator="blurps")
+    raise ValueError("'blurps' should not work for logical_operator attribute in FiltersList")
+except Exception as e:
+    assert(e.args[0] == "'blurps' str for 'logical_operator' attribute is not a use case")
+
 
 # Tests for empty HeterogeneousList
 empty_list = HeterogeneousList()
