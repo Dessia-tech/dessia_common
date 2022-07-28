@@ -908,9 +908,9 @@ class HeterogeneousList(DessiaObject):
             if len(key) == 0:
                 return self.__class__()
             if isinstance(key[0], bool):
-                if len(key) == len(self):
+                if len(key) == self.__len__():
                     return self.pick_from_boolist(key)
-                raise ValueError(f"Cannot index {self.__class__.__name__} object of len {len(self)} with a " +
+                raise ValueError(f"Cannot index {self.__class__.__name__} object of len {self.__len__()} with a " +
                                  f"list of boolean of len {len(key)}")
             if isinstance(key[0], int):
                 return self.pick_from_boolist(self.indexlist_to_booleanlist(key))
@@ -941,7 +941,7 @@ class HeterogeneousList(DessiaObject):
         return new_hlist
 
     def indexlist_to_booleanlist(self, index_list: List[int]):
-        boolean_list = [False]*len(self)
+        boolean_list = [False]*self.__len__()
         for idx in index_list: boolean_list[idx] = True
         return boolean_list
 
@@ -956,6 +956,10 @@ class HeterogeneousList(DessiaObject):
     def __str__(self):
         offset_space = 10
         print_lim = 15
+        prefix = f"{self.__class__.__name__} {self.name if self.name != '' else hex(id(self))}: "
+        prefix += f"{len(self.dessia_objects)} samples, {len(self.common_attributes)} features"
+        if self.__len__() == 0:
+            return prefix
         string = ""
         for attr in self.common_attributes:
             space = offset_space - int(len(attr)/2)
@@ -966,22 +970,20 @@ class HeterogeneousList(DessiaObject):
             for attr in self.common_attributes:
                 space = 2*offset_space - len(str(getattr(dessia_object, attr)))
                 string += "|" + " "*(space + len(attr)%2 - 2) + f"{getattr(dessia_object, attr)}" + "  |"
-
-        prefix = f"{self.__class__.__name__} {self.name if self.name != '' else hex(id(self))}: "
-        prefix += f"{len(self.dessia_objects)} samples, {len(self.common_attributes)} features\n"
-        return prefix + string + "\n"
+        return prefix + "\n" + string + "\n"
 
     def __len__(self):
         return len(self.dessia_objects)
 
     def sort(self, key: Any, ascend: bool = True): # TODO : Replace numpy with faster algorithms
-        if isinstance(key, int):
-            sort_indexes = npy.argsort([row[key] for row in self.matrix])
-        elif isinstance(key, str):
-            sort_indexes = npy.argsort([getattr(dessia_object, key) for dessia_object in self.dessia_objects])
-        self.dessia_objects = [self.dessia_objects[idx] for idx in (sort_indexes if ascend else sort_indexes[::-1])]
-        if self._matrix is not None:
-            self._matrix = [self._matrix[idx] for idx in (sort_indexes if ascend else sort_indexes[::-1])]
+        if self.__len__() != 0:
+            if isinstance(key, int):
+                sort_indexes = npy.argsort([row[key] for row in self.matrix])
+            elif isinstance(key, str):
+                sort_indexes = npy.argsort([getattr(dessia_object, key) for dessia_object in self.dessia_objects])
+            self.dessia_objects = [self.dessia_objects[idx] for idx in (sort_indexes if ascend else sort_indexes[::-1])]
+            if self._matrix is not None:
+                self._matrix = [self._matrix[idx] for idx in (sort_indexes if ascend else sort_indexes[::-1])]
 
     def get_attribute_values(self, attribute: str):
         return [getattr(dessia_object, attribute) for dessia_object in self.dessia_objects]
@@ -1075,7 +1077,7 @@ class HeterogeneousList(DessiaObject):
     def _point_families(self):
         from plot_data.colors import BLUE
         from plot_data.core import PointFamily
-        return [PointFamily(BLUE, list(range(len(self))))]
+        return [PointFamily(BLUE, list(range(self.__len__())))]
 
     def plot_dimensionality(self):
         import plot_data
