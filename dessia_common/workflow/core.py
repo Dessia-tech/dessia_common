@@ -29,6 +29,8 @@ from dessia_common.typings import JsonSerializable, MethodType
 from dessia_common.displays import DisplayObject
 from dessia_common.breakdown import attrmethod_getter, ExtractionError
 
+from dessia_common.workflow.utils import ToScriptElement
+
 
 class Variable(DessiaObject):
     _standalone_in_db = False
@@ -75,10 +77,17 @@ class TypedVariable(Variable):
     def copy(self, deep: bool = False, memo=None):
         return TypedVariable(type_=self.type_, memorize=self.memorize, name=self.name)
 
-    def to_script(self, variable_index: int):
-        script = f"variable_{variable_index} = TypedVariable(type={serialize_typing(self.type_)}, "
+    def _to_script(self) -> ToScriptElement:
+        script = f"TypedVariable(type_={serialize_typing(self.type_)}, "
         script += f"memorize={self.memorize}, name='{self.name}')\n"
-        return script
+
+        imports = [self.full_classname]
+        imports_as_is = None
+        if "builtins" in serialize_typing(self.type_):
+            imports_as_is = ["builtins"]
+        else:
+            imports.append(serialize_typing(self.type_))
+        return ToScriptElement(declaration=script, imports=imports, imports_as_is=imports_as_is)
 
 
 class VariableWithDefaultValue(Variable):
@@ -247,14 +256,6 @@ class Pipe(DessiaObject):
         transform the pipe into a dict
         """
         return {'input_variable': self.input_variable, 'output_variable': self.output_variable}
-
-    @staticmethod
-    def to_script(pipe_index: int, input_name: str, output_name: str):
-        """
-        Transform the pipe into a little chunk of code
-        """
-        script = f"pipe_{pipe_index} = dcw.Pipe({input_name}, {output_name})"
-        return script
 
 
 class WorkflowError(Exception):
@@ -483,7 +484,10 @@ class Workflow(Block):
         parsed_attributes = {}
         for i, input_ in enumerate(self.inputs):
             current_dict = {}
-            annotation = (str(i), input_.type_)
+            if isinstance(input_, TypedVariable) or isinstance(input_, TypedVariableWithDefaultValue):
+                annotation = (str(i), input_.type_)
+            else:
+                annotation = (str(i), Any)
             if input_ in self.nonblock_variables:
                 title = input_.name
                 parsed_attributes = None
@@ -1132,56 +1136,93 @@ class Workflow(Block):
         fraction_sum = sum(package_mix.values())
         return {pn: f / fraction_sum for pn, f in package_mix.items()}
 
+    def _to_script(self, prefix: str = '') -> ToScriptElement:
+        """
+        Computes elements for a to_script interpretation
+        :returns: ToSriptElement
+        """
+        workflow_output_index = self.variable_indices(self.output)
+        if workflow_output_index is None:
+            raise ValueError("A workflow output must be set")
+
+          # --- Blocks ---
+        script_blocks = ""
+        imports = []
+        imports_as_is = []
+        for ib, block in enumerate(self.blocks):
+            block_script = block._to_script()
+            imports.extend(block_script.imports)
+            if block_script.before_declaration is not None:
+                script_blocks += f"{block_script.before_declaration}\n"
+            script_blocks += f'{prefix}block_{ib} = {block_script.declaration}\n'
+
+        script_blocks += prefix + 'blocks = [{}]\n'\
+            .format(', '.join([prefix + 'block_' + str(i) for i in range(len(self.blocks))]))
+
+        # --- Pipes ---
+        script_pipes = ""
+        variable_index = 0
+        for ip, pipe in enumerate(self.pipes):
+            input_index = self.variable_indices(pipe.input_variable)
+            if isinstance(input_index, int):  # NBV handling
+                input_name = f'{prefix}variable_{variable_index}'
+                input_script_elements = pipe.input_variable._to_script()
+                imports.extend(input_script_elements.imports)
+                imports_as_is.extend((input_script_elements.imports_as_is))
+                script_pipes += f'{input_name } = {input_script_elements.declaration}'
+                variable_index += 1
+            else:
+                input_name = f"{prefix}block_{input_index[0]}.outputs[{input_index[2]}]"
+
+            output_index = self.variable_indices(pipe.output_variable)
+            if isinstance(output_index, int):  # NBV handling
+                output_name = f'{prefix}variable_{variable_index}'
+                output_script_elements = pipe.output_variable._to_script()
+                imports.extend(output_script_elements.imports)
+                imports_as_is.extend(output_script_elements.imports_as_is)
+                script_pipes += f'{output_name } = {output_script_elements.declaration}'
+                variable_index += 1
+            else:
+                output_name = f"{prefix}block_{output_index[0]}.inputs[{output_index[2]}]"
+            script_pipes += f"{prefix}pipe_{ip} = Pipe({input_name}, {output_name})\n"
+        script_pipes += f"{prefix}pipes = [{', '.join([prefix + 'pipe_' + str(i) for i in range(len(self.pipes))])}]\n"
+
+        # --- Building script ---
+        output_name = f"{prefix}block_{workflow_output_index[0]}.outputs[{workflow_output_index[2]}]"
+
+        full_script = f"{script_blocks}\n" \
+                      f"{script_pipes}\n" \
+                      f"{prefix}workflow = " \
+                      f"Workflow({prefix}blocks, {prefix}pipes, output={output_name}, name='{self.name}')\n"
+
+        for k, v in self.imposed_variable_values.items():
+            variable_indice = self.variable_indices(k)
+            if isinstance(variable_indice, int):
+                variable_str = variable_indice
+            else:
+                [block_index, _, variable_index] = variable_indice
+                variable_str = f"{prefix}blocks[{block_index}].inputs[{variable_index}]"
+            full_script += f"{prefix}workflow.imposed_variable_values[{variable_str}] = {v}\n"
+
+        return ToScriptElement(declaration=full_script, imports=imports, imports_as_is=imports_as_is)
+
     def to_script(self) -> str:
         """
         Computes a script representing the workflow.
         """
-        variable_index = 0
-        classes = []
-
-        script_blocks = ''
-        for idxb, block in enumerate(self.blocks):
-            block_script, classes_block = block.to_script()
-            classes.extend(classes_block)
-            script_blocks += f'block_{idxb} = {block_script}\n'
-
-        script = ('import dessia_common.workflow as dcw\n'
-                  + 'import dessia_common.workflow.blocks as dcw_blocks\n'
-                  + 'import dessia_common.typings as dct\n\n')
-
-        modules = {'.'.join(c.split('.')[:-1]) for c in classes}
-        for module in modules:
-            script += f'import {module}\n'
-        script += '\n'
-        script += script_blocks
-        script += f"blocks = [{', '.join(['block_' + str(i) for i in range(len(self.blocks))])}]\n"
-
-        for idxp, pipe in enumerate(self.pipes):
-            input_index = self.variable_indices(pipe.input_variable)
-            if isinstance(input_index, int):
-                script += pipe.input_variable.to_script(variable_index=variable_index) + '\n'
-                input_name = f'variable_{variable_index}'
-                variable_index += 1
-            else:
-                input_name = f"block_{input_index[0]}.outputs[{input_index[2]}]" + '\n'
-
-            output_index = self.variable_indices(pipe.output_variable)
-            if isinstance(output_index, int):
-                script += pipe.output_variable.to_script(variable_index=variable_index) + '\n'
-                output_name = f'variable_{variable_index}'
-                variable_index += 1
-            else:
-                output_name = f"block_{output_index[0]}.inputs[{output_index[2]}]" + '\n'
-            script += pipe.to_script(pipe_index=idxp, input_name=input_name, output_name=output_name) + '\n'
-
-        script += f"pipes = [{', '.join(['pipe_' + str(i) for i in range(len(self.pipes))])}]\n"
-
         workflow_output_index = self.variable_indices(self.output)
         if workflow_output_index is None:
             raise ValueError("A workflow output must be set")
-        output_name = f"block_{workflow_output_index[0]}.outputs[{workflow_output_index[2]}]"
-        script += f"workflow = dcw.Workflow(blocks, pipes, output={output_name},name='{self.name}')\n"
-        return script
+
+        self_script = self._to_script()
+        self_script.imports.append(self.full_classname)
+        if len(self.pipes) > 0:
+            self_script.imports.append(self.pipes[0].full_classname)
+
+        script_imports = self_script.imports_to_str()
+
+        return f"{script_imports}\n" \
+               f"{self_script.declaration}"
 
     def save_script_to_stream(self, stream: io.StringIO):
         """
