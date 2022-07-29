@@ -580,7 +580,7 @@ class Workflow(Block):
         """
         global_dict, pointers_memo = update_pointers_data(global_dict=global_dict, current_dict=dict_,
                                                           pointers_memo=pointers_memo)
-        print("toto", dict_)
+
         blocks = [deserialize(serialized_element=d, global_dict=global_dict, pointers_memo=pointers_memo)
                   for d in dict_["blocks"]]
         if 'nonblock_variables' in dict_:
