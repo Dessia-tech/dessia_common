@@ -866,27 +866,27 @@ class HeterogeneousList(DessiaObject):
         return templates.heterogeneouslist_markdown_template.substitute(name=self.name, class_=self.__class__.__name__)
 
     @staticmethod
-    def pareto_front(costs, tol):
+    def pareto_points(costs, tol):
         """
         Find the pareto-efficient points
         :return: A (n_points, ) boolean array, indicating whether each point
                  is Pareto efficient
         """
         is_efficient = npy.ones(costs.shape[0], dtype=bool)
-        for index, cost in enumerate(costs):
+        scaled_costs = (costs - npy.mean(costs, axis = 0)) / npy.std(costs, axis = 0)
+        for index, cost in enumerate(scaled_costs):
             if is_efficient[index]:
                 # Keep any point with a lower cost
-                is_efficient[is_efficient] = npy.any(costs[is_efficient] < cost + tol, axis=1)
+                is_efficient[is_efficient] = npy.any(scaled_costs[is_efficient] < cost + tol, axis=1)
                 # And keep self
                 is_efficient[index] = True
-        return is_efficient
+        return costs[is_efficient, :].tolist()
 
     @staticmethod
-    def pareto_frontiers(costs):
+    def pareto_frontiers(costs, tol: float = 0.):
         # Experimental
         import matplotlib.pyplot as plt
-        tol = 0
-        pareto_points = costs[HeterogeneousList.pareto_front(costs, tol), :]
+        pareto_points = npy.array(HeterogeneousList.pareto_points(costs, tol))
         pareto_frontiers = []
 
         plt.figure()
@@ -904,8 +904,10 @@ class HeterogeneousList(DessiaObject):
                     X = pareto_points[minidx, x_dim]
                     Y = pareto_points[minidx, y_dim]
 
-                    dir_coeffs = (Y - pareto_points[:, y_dim]) / (X - pareto_points[:, x_dim])
-                    dir_coeffs[X == pareto_points[:, x_dim]] = npy.max(dir_coeffs[X != pareto_points[:, x_dim]])
+                    new_pareto = pareto_points[X - pareto_points[:, x_dim] != 0., :]
+                    dir_coeffs = (Y - new_pareto[:, y_dim]) / (X - new_pareto[:, x_dim])
+
+                    dir_coeffs[X == new_pareto[:, x_dim]] = npy.max(dir_coeffs[X != new_pareto[:, x_dim]])
                     offsets = Y - dir_coeffs * X
                     approx_super_mini = dir_coeffs * super_mini[x_dim] + offsets
                     chosen_line = npy.argmin(npy.absolute(approx_super_mini-super_mini[y_dim]))
