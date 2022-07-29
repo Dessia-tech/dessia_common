@@ -655,8 +655,7 @@ class Filter(Block):
 
     def evaluate(self, values):
         filters_list = FiltersList(self.filters, self.logical_operator)
-        boolean_index = filters_list.get_boolean_index(values[self.inputs[0]])
-        return [filters_list.apply(values[self.inputs[0]], boolean_index)]
+        return [filters_list.apply(values[self.inputs[0]])]
 
     # def evaluate_old(self, values):
     #     ouput_values = []

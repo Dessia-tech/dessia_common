@@ -78,8 +78,8 @@ workflow_run = workflow.run({workflow.index(block_data.inputs[0]): stream_file})
 workflow._check_platform()
 workflow.plot()
 workflow.display_settings()
-boolean_index = FiltersList(filters_list, "or").get_boolean_index(cars)
-assert(workflow_run.output_value == FiltersList.apply(cars, boolean_index))
+boolean_index = FiltersList(filters_list, "or").get_booleans_index(cars)
+assert(workflow_run.output_value == FiltersList(filters_list, logical_operator="or").apply(cars))
 
 # JSON TESTS
 dict_workflow = workflow.to_dict(use_pointers=True)

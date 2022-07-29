@@ -836,14 +836,15 @@ class DessiaFilter(DessiaObject):
 
     # TODO: Chronophage operation is self._to_lambda(values)(values)
     def _to_lambda(self, values: List[DessiaObject]):
-        return lambda x: (self._comparison_operator()(getattr(value, self.attribute), self.bound) for value in values)
+        return lambda x: (self._comparison_operator()(enhanced_deep_attr(value, self.attribute), self.bound)
+                          for value in values)
 
-    def get_boolean_index(self, values: List[DessiaObject]):
+    def get_booleans_index(self, values: List[DessiaObject]):
         return list(self._to_lambda(values)(values))
 
     @staticmethod
-    def booleanlist_to_indexlist(boolean_list: List[int], target_len: int): # TODO: Should it exist ?
-        return list(itertools.compress(boolean_list, range(target_len)))
+    def booleanlist_to_indexlist(booleans_list: List[int], target_len: int): # TODO: Should it exist ?
+        return list(itertools.compress(booleans_list, range(target_len)))
 
     @staticmethod
     def apply(values: List[DessiaObject], booleans_list: List[List[bool]]):
@@ -870,15 +871,15 @@ class FiltersList(DessiaObject):
             return [True if sum(booleans_tuple) == 1 else False for booleans_tuple in zip(*booleans_lists)]
         raise NotImplementedError(f"'{logical_operator}' str for 'logical_operator' attribute is not a use case")
 
-    def get_boolean_index(self, dobject_list: List[DessiaObject]):
-        booleans_lists = []
+    def get_booleans_index(self, dobject_list: List[DessiaObject]):
+        booleans_index = []
         for filter_ in self.filters:
-            booleans_lists.append(filter_.get_boolean_index(dobject_list))
-        return self.__class__.combine_booleans_lists(booleans_lists, self.logical_operator)
+            booleans_index.append(filter_.get_booleans_index(dobject_list))
+        return self.__class__.combine_booleans_lists(booleans_index, self.logical_operator)
 
-    @staticmethod
-    def apply(values: List[DessiaObject], booleans_list: List[List[bool]]):
-        return DessiaFilter.apply(values, booleans_list)
+    def apply(self, dobject_list: List[DessiaObject]):
+        booleans_index = self.get_booleans_index(dobject_list)
+        return DessiaFilter.apply(dobject_list, booleans_index)
 
 
 class HeterogeneousList(DessiaObject):
@@ -1022,7 +1023,7 @@ class HeterogeneousList(DessiaObject):
 
     def filtering(self, filters: List[DessiaFilter], logical_operator: str = "and"):
         filters_list = FiltersList(filters, logical_operator)
-        booleans_index = filters_list.get_boolean_index(self.dessia_objects)
+        booleans_index = filters_list.get_booleans_index(self.dessia_objects)
         return self[booleans_index]
 
     def singular_values(self):
