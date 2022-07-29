@@ -884,6 +884,7 @@ class DessiaFilter(DessiaObject):
 
         Examples
         --------
+        >>> from dessia_common.core import DessiaFilter
         >>> from dessia_common.models import all_cars_no_feat
         >>> values = all_cars_no_feat[:5]
         >>> filter_ = DessiaFilter('weight', '<=', 3500.)
@@ -906,6 +907,7 @@ class DessiaFilter(DessiaObject):
 
         Examples
         --------
+        >>> from dessia_common.core import DessiaFilter
         >>> from dessia_common.models import all_cars_no_feat
         >>> values = all_cars_no_feat[:5]
         >>> filter_ = DessiaFilter('weight', '<=', 3500.)
@@ -932,6 +934,7 @@ class DessiaFilter(DessiaObject):
 
         Examples
         --------
+        >>> from dessia_common.core import DessiaFilter
         >>> from dessia_common.models import all_cars_no_feat
         >>> values = all_cars_no_feat[:5]
         >>> filter_ = DessiaFilter('weight', '<=', 3500.)
