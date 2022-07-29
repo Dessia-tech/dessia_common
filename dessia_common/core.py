@@ -852,6 +852,8 @@ class DessiaFilter(DessiaObject):
 
 
 class FiltersList(DessiaObject):
+    _standalone_in_db = True
+
     def __init__(self, filters: List[DessiaFilter] = None, logical_operator: str = 'and', name: str = ''):
         self.filters = filters
         self.logical_operator = logical_operator
