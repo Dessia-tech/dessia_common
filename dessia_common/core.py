@@ -809,6 +809,11 @@ class ParameterSet(DessiaObject):
 
 
 class DessiaFilter(DessiaObject):
+    """
+    Base class for filters.
+    Gathers generic methods and attributes
+    """
+
     _REAL_OPERATORS = {'>': operator.gt, '<': operator.lt, '>=': operator.ge, '<=': operator.le,'==': operator.eq,
                        '!=': operator.ne, 'gt': operator.gt, 'lt': operator.lt, 'ge': operator.ge,'le': operator.le,
                        'eq': operator.eq, 'ne': operator.ne, 'gte': operator.ge,'lte': operator.le}
@@ -852,6 +857,10 @@ class DessiaFilter(DessiaObject):
 
 
 class FiltersList(DessiaObject):
+    """
+    Base class for Dessia's platform compatible objects.
+    Gathers generic methods and attributes
+    """
     _standalone_in_db = True
 
     def __init__(self, filters: List[DessiaFilter] = None, logical_operator: str = 'and', name: str = ''):
