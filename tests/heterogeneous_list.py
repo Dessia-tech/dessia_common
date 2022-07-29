@@ -37,14 +37,14 @@ assert(all(item in all_cars_without_features
 all_cars_without_features = HeterogeneousList(all_cars_no_feat)
 
 # Tests for plot_data
-# all_cars_with_features.plot()
-# all_cars_without_features.plot()
-# RandData_heterogeneous.plot()
+all_cars_with_features.plot()
+all_cars_without_features.plot()
+RandData_heterogeneous.plot()
 
 # Check platform for datasets
-# all_cars_with_features._check_platform()
-# all_cars_without_features._check_platform()
-# RandData_heterogeneous._check_platform()
+all_cars_with_features._check_platform()
+all_cars_without_features._check_platform()
+RandData_heterogeneous._check_platform()
 
 # Check for __getitem__ and __str__
 print(all_cars_with_features)
