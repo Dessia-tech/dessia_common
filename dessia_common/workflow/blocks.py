@@ -745,7 +745,8 @@ class Filter(Block):
 
     def _to_script(self) -> ToScriptElement:
         filter_variables = [f"DessiaFilter("
-                            f"attribute='{f.attribute}', operator='{f.operator}', bound={f.bound}, name='{f.name}'"
+                            f"attribute='{f.attribute}', comparison_operator='{f.comparison_operator}', "
+                            f"bound={f.bound}, name='{f.name}'"
                             f")" for f in self.filters]
         filters = '[' + ",".join(filter_variables) + ']'
         script = f"Filter(filters={filters}, name='{self.name}')"
