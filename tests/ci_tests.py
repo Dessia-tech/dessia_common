@@ -16,6 +16,7 @@ scripts = ['displays.py',
            'workflow/workflow_state_equalities.py',
            'workflow/workflow_diverge_converge.py',
            'workflow/workflow_method_dict.py',
+           'workflow/various_tests.py',
            # breakdown
            'breakdown.py',
            # Utils

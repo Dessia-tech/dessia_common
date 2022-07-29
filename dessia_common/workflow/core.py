@@ -372,6 +372,14 @@ class Workflow(Block):
         if output is not None:
             output.memorize = True
 
+            found_output = False
+            i = 0
+            while (not found_output and i < len(self.blocks)):
+                found_output = output in self.blocks[i].outputs
+                i+= 1
+            if not found_output:
+                raise WorkflowError("workflow's output is not in any block's outputs")
+
         Block.__init__(self, input_variables, [output], name=name)
         self.output = self.outputs[0]
 
