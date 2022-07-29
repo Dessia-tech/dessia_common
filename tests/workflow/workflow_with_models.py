@@ -3,6 +3,7 @@
 """
 A simple workflow composed of functions
 """
+
 import dessia_common.typings as dct
 import dessia_common.workflow as wf
 from dessia_common import DessiaFilter

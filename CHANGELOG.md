@@ -27,7 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Clustering classes
 
 ### Fixed
-
+- Implement to_script method for workflow class
 - Prevent foreach name from being it's iter_input name
 - Temporarly remove workflow-state from workflow run display settings
 
