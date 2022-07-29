@@ -482,7 +482,7 @@ class DessiaObject:
                 dict_[arg] = deepcopy_value(getattr(self, arg), memo=memo)
         return self.__class__(**dict_)
 
-    def plot_data(self): # TODO: Should it have a **kwargs argument ?
+    def plot_data(self):  # TODO: Should it have a **kwargs argument ?
         return []
 
     def plot(self, **kwargs):
@@ -491,7 +491,7 @@ class DessiaObject:
         """
         if hasattr(self, 'plot_data'):
             import plot_data
-            for data in self.plot_data(**kwargs): #TODO solve inconsistence with the plot_data method just above
+            for data in self.plot_data(**kwargs):  # TODO solve inconsistence with the plot_data method just above
                 plot_data.plot_canvas(plot_data_object=data,
                                       canvas_id='canvas',
                                       width=1400, height=900,
@@ -811,22 +811,27 @@ class ParameterSet(DessiaObject):
 class DessiaFilter(DessiaObject):
     """
     Base class for filters working on lists of DessiaObjects (List[DessiaObject]).
-    A fitler is defined as an attribute name of a DessiaObject (e.g. 'mass'), a comparison operator (e.g. '>=' or 'le')
-    and a float value (e.g. 15.).
-    Its application on a list of DessiaObjects is the list of all contained DessiaObjects that satisfy the condition
-    imposed by the current DessiaFilter.
-    :cvar Dict[str, operator] _REAL_OPERATORS: dict of operators to build comparison function:
-        - greater than: '>=', 'gte', 'ge' ;
-        - greater: '>', 'gt' ;
-        - lower than: '<=', 'lte', 'le' ;
-        - lower: '<', 'lt' ;
-        - equal: '==', 'eq' ;
-        - different: '!=', 'ne'
+    :param attribute: Attribute name concerned by the DessiaFilter
+    :type attribute: str
+    :param comparison_operator: Comparison operator
+    :type comparison_operator: str
+    :param bound: The bound value to compare 'attribute' of DessiaObjects of a list with 'comparison_operator'
+    :type bound: float
+    :param name: Name of filter, defaults to ''
+    :type name: str, optional
+
+    :Comparison operators:
+        * greater than: >=, gte, ge
+        * greater: >, gt
+        * lower than: <=, lte, le
+        * lower: <, lt
+        * equal: ==, eq
+        * different: !=, ne
     """
 
-    _REAL_OPERATORS = {'>': operator.gt, '<': operator.lt, '>=': operator.ge, '<=': operator.le,'==': operator.eq,
-                       '!=': operator.ne, 'gt': operator.gt, 'lt': operator.lt, 'ge': operator.ge,'le': operator.le,
-                       'eq': operator.eq, 'ne': operator.ne, 'gte': operator.ge,'lte': operator.le}
+    _REAL_OPERATORS = {'>': operator.gt, '<': operator.lt, '>=': operator.ge, '<=': operator.le, '==': operator.eq,
+                       '!=': operator.ne, 'gt': operator.gt, 'lt': operator.lt, 'ge': operator.ge, 'le': operator.le,
+                       'eq': operator.eq, 'ne': operator.ne, 'gte': operator.ge, 'lte': operator.le}
 
     def __init__(self, attribute: str, comparison_operator: str, bound: float, name: str = ''):
         """
@@ -868,10 +873,40 @@ class DessiaFilter(DessiaObject):
                           for value in values)
 
     def get_booleans_index(self, values: List[DessiaObject]):
+        """
+        Get the boolean indexing of a filtered list
+
+        :param values: List of DessiaObjects to filter
+        :type values: List[DessiaObject]
+
+        :return: list of length *len(values)* where elements are **True** if kept by the filter, otherwise **False**.
+        :rtype: List[bool]
+
+        Examples
+        --------
+        >>> from dessia_common.models import all_cars_no_feat
+        >>> values = all_cars_no_feat[:5]
+        >>> filter_ = DessiaFilter('weight', '<=', 3500.)
+        >>> filter_.get_booleans_index(values)
+        [False, False, True, True, True]
+        """
+
         return list(self._to_lambda(values)(values))
 
     @staticmethod
     def booleanlist_to_indexlist(booleans_list: List[int], target_len: int): # TODO: Should it exist ?
+        """
+        Transform a boolean list to index list
+
+        :param booleans_list: list of length *len(values)* where elements are **True** if kept, otherwise **False**.
+        :type booleans_list: List[int]
+
+        :param target_len: DESCRIPTION
+        :type target_len: int
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
         return list(itertools.compress(booleans_list, range(target_len)))
 
     @staticmethod
@@ -957,7 +992,7 @@ class HeterogeneousList(DessiaObject):
     def __add__(self, b: 'HeterogeneousList'):
         sum_hlist = self.__class__(self.dessia_objects + b.dessia_objects)
         if all(attr in b.common_attributes for attr in self.common_attributes) and \
-            all(attr in self.common_attributes for attr in b):
+                all(attr in self.common_attributes for attr in b):
             sum_hlist._common_attributes = self.common_attributes
             if self._matrix is not None and b._matrix is not None:
                 sum_hlist._matrix += self._matrix + b._matrix
@@ -1007,13 +1042,13 @@ class HeterogeneousList(DessiaObject):
             string += "\n"
             for attr in self.common_attributes:
                 space = 2*offset_space - len(str(getattr(dessia_object, attr)))
-                string += "|" + " "*(space + len(attr)%2 - 2) + f"{getattr(dessia_object, attr)}" + "  |"
+                string += "|" + " "*(space + len(attr) % 2 - 2) + f"{getattr(dessia_object, attr)}" + "  |"
         return prefix + "\n" + string + "\n"
 
     def __len__(self):
         return len(self.dessia_objects)
 
-    def sort(self, key: Any, ascend: bool = True): # TODO : Replace numpy with faster algorithms
+    def sort(self, key: Any, ascend: bool = True):  # TODO : Replace numpy with faster algorithms
         if self.__len__() != 0:
             if isinstance(key, int):
                 sort_indexes = npy.argsort([row[key] for row in self.matrix])
@@ -1138,7 +1173,7 @@ class HeterogeneousList(DessiaObject):
                                                 point_style=point_style)
         return dimensionality_plot
 
-    def to_markdown(self): # TODO: Custom this markdown
+    def to_markdown(self):  # TODO: Custom this markdown
         """
         Render a markdown of the object output type: string
         """
@@ -1152,7 +1187,7 @@ class HeterogeneousList(DessiaObject):
                  is Pareto efficient
         """
         is_efficient = npy.ones(costs.shape[0], dtype=bool)
-        scaled_costs = (costs - npy.mean(costs, axis = 0)) / npy.std(costs, axis = 0)
+        scaled_costs = (costs - npy.mean(costs, axis=0)) / npy.std(costs, axis=0)
         for index, cost in enumerate(scaled_costs):
             if is_efficient[index]:
                 # Keep any point with a lower cost
@@ -1169,11 +1204,11 @@ class HeterogeneousList(DessiaObject):
         pareto_frontiers = []
 
         plt.figure()
-        plt.plot(costs[:, 0], costs[:, 1], linestyle ='None', marker='o', color = 'b')
-        plt.plot(pareto_points[:, 0], pareto_points[:, 1], linestyle ='None', marker='o', color = 'r')
+        plt.plot(costs[:, 0], costs[:, 1], linestyle='None', marker='o', color='b')
+        plt.plot(pareto_points[:, 0], pareto_points[:, 1], linestyle='None', marker='o', color='r')
         plt.show()
 
-        super_mini = npy.min(costs, axis = 0)
+        super_mini = npy.min(costs, axis=0)
 
         for x_dim in range(pareto_points.shape[1]):
             pareto_frontiers = []
@@ -1191,12 +1226,12 @@ class HeterogeneousList(DessiaObject):
                     approx_super_mini = dir_coeffs * super_mini[x_dim] + offsets
                     chosen_line = npy.argmin(npy.absolute(approx_super_mini-super_mini[y_dim]))
 
-                    vector = npy.array([[super_mini[x_dim], npy.max(costs[ :, x_dim])],
-                                        [approx_super_mini[chosen_line], npy.max(costs[ :, x_dim])*dir_coeffs[chosen_line] + offsets[chosen_line]]]).T
+                    vector = npy.array([[super_mini[x_dim], npy.max(costs[:, x_dim])],
+                                        [approx_super_mini[chosen_line], npy.max(costs[:, x_dim])*dir_coeffs[chosen_line] + offsets[chosen_line]]]).T
                     pareto_frontiers.append(vector)
-                    plt.plot(vector[:, x_dim], vector[:, y_dim], color = 'g')
+                    plt.plot(vector[:, x_dim], vector[:, y_dim], color='g')
 
-        plt.plot(super_mini[0], super_mini[1], linestyle ='None', marker='o', color = 'k')
+        plt.plot(super_mini[0], super_mini[1], linestyle='None', marker='o', color='k')
 
         return vector
 
