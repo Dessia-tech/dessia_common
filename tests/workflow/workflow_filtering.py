@@ -4,12 +4,13 @@ Tests for workflow.filter and HeterogeneousList.filtering
 import json
 import pkg_resources
 from dessia_common import tests
-from dessia_common.core import HeterogeneousList, DessiaFilter
+from dessia_common.core import HeterogeneousList, DessiaFilter, FiltersList
 from dessia_common.files import StringFile
 import dessia_common.workflow as wf
 
 csv_cars = pkg_resources.resource_stream('dessia_common', 'models/data/cars.csv')
 stream_file = StringFile.from_stream(csv_cars)
+cars = tests.CarWithFeatures.from_csv(stream_file)
 
 # =============================================================================
 # HETEROGENEOUSLIST.FILTERING
@@ -41,7 +42,7 @@ workflow._check_platform()
 workflow.plot()
 workflow.display_settings()
 workflow_run.output_value.plot()
-print(workflow_run.output_value)
+assert(workflow_run.output_value == HeterogeneousList(cars).filtering(filters_list, "or"))
 
 # JSON TESTS
 dict_workflow = workflow.to_dict(use_pointers=True)
@@ -73,12 +74,12 @@ workflow = wf.Workflow(block_workflow, pipe_worflow, block_filter.outputs[0])
 
 workflow_run = workflow.run({workflow.index(block_data.inputs[0]): stream_file})
 
-
 # Workflow tests
 workflow._check_platform()
 workflow.plot()
 workflow.display_settings()
-print(HeterogeneousList(workflow_run.output_value))
+boolean_index = FiltersList(filters_list, "or").get_boolean_index(cars)
+assert(workflow_run.output_value == FiltersList.apply(cars, boolean_index))
 
 # JSON TESTS
 dict_workflow = workflow.to_dict(use_pointers=True)
