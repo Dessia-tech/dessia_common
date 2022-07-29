@@ -27,3 +27,20 @@ It then enables to have:
 .. autoclass:: dessia_common.PhysicalObject
    :members:
 
+Dessia Filter
+===============
+
+A Dessia Fitler is defined as an attribute name of a DessiaObject (e.g. 'mass'), a comparison operator (e.g. '>=' or 'le')
+and a float value (e.g. 15.).
+Its application on a list of DessiaObjects is the list of all contained DessiaObjects that satisfy the condition imposed by the current DessiaFilter.
+Comparison operator can be one of:
+- greater than: '>=', 'gte', 'ge' ;
+- greater: '>', 'gt' ;
+- lower than: '<=', 'lte', 'le' ;
+- lower: '<', 'lt' ;
+- equal: '==', 'eq' ;
+- different: '!=', 'ne'
+
+.. autoclass:: dessia_common.DessiaFilter
+   :members:
+

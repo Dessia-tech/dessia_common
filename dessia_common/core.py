@@ -810,8 +810,18 @@ class ParameterSet(DessiaObject):
 
 class DessiaFilter(DessiaObject):
     """
-    Base class for filters.
-    Gathers generic methods and attributes
+    Base class for filters working on lists of DessiaObjects (List[DessiaObject]).
+    A fitler is defined as an attribute name of a DessiaObject (e.g. 'mass'), a comparison operator (e.g. '>=' or 'le')
+    and a float value (e.g. 15.).
+    Its application on a list of DessiaObjects is the list of all contained DessiaObjects that satisfy the condition
+    imposed by the current DessiaFilter.
+    :cvar Dict[str, operator] _REAL_OPERATORS: dict of operators to build comparison function:
+        - greater than: '>=', 'gte', 'ge' ;
+        - greater: '>', 'gt' ;
+        - lower than: '<=', 'lte', 'le' ;
+        - lower: '<', 'lt' ;
+        - equal: '==', 'eq' ;
+        - different: '!=', 'ne'
     """
 
     _REAL_OPERATORS = {'>': operator.gt, '<': operator.lt, '>=': operator.ge, '<=': operator.le,'==': operator.eq,
@@ -819,6 +829,19 @@ class DessiaFilter(DessiaObject):
                        'eq': operator.eq, 'ne': operator.ne, 'gte': operator.ge,'lte': operator.le}
 
     def __init__(self, attribute: str, comparison_operator: str, bound: float, name: str = ''):
+        """
+        Instantiates a DessiaFilter as you would write it
+        :param attribute: Attribute name concerned by the DessiaFilter
+        :type attribute: str
+        :param comparison_operator: Comparison operator
+        (possible choices: '>', '>=', '<', '<=', '==', '!=', 'gt', 'lt', 'ge', 'le', 'eq', 'ne', 'gte', 'lte')
+        :type comparison_operator: str
+        :param bound: The bound value to compare 'attribute' of DessiaObjects of a list with 'comparison_operator'
+        :type bound: float
+        :param name: Name of filter, defaults to ''
+        :type name: str, optional
+        """
+
         self.attribute = attribute
         self.comparison_operator = comparison_operator
         self.bound = bound
