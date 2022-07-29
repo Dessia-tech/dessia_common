@@ -843,8 +843,8 @@ class DessiaFilter(DessiaObject):
         return list(self._to_lambda(values)(values))
 
     @staticmethod
-    def booleanlist_to_indexlist(booleans_list: List[int], target_len: int): # TODO: Should it exist ?
-        return list(itertools.compress(booleans_list, range(target_len)))
+    def booleanlist_to_indexlist(booleans_list: List[int]): # TODO: Should it exist ?
+        return list(itertools.compress(booleans_list, range(len(booleans_list))))
 
     @staticmethod
     def apply(values: List[DessiaObject], booleans_list: List[List[bool]]):
