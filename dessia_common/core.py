@@ -894,23 +894,52 @@ class DessiaFilter(DessiaObject):
         return list(self._to_lambda(values)(values))
 
     @staticmethod
-    def booleanlist_to_indexlist(booleans_list: List[int], target_len: int): # TODO: Should it exist ?
+    def booleanlist_to_indexlist(booleans_list: List[int]): # TODO: Should it exist ?
         """
-        Transform a boolean list to index list
+        Transform a boolean list to an index list
 
         :param booleans_list: list of length *len(values)* where elements are **True** if kept, otherwise **False**.
         :type booleans_list: List[int]
 
-        :param target_len: DESCRIPTION
-        :type target_len: int
-        :return: DESCRIPTION
-        :rtype: TYPE
+        :return: list of kept indexes
+        :rtype: List[int]
 
+        Examples
+        --------
+        >>> from dessia_common.models import all_cars_no_feat
+        >>> values = all_cars_no_feat[:5]
+        >>> filter_ = DessiaFilter('weight', '<=', 3500.)
+        >>> booleans_list = filter_.get_booleans_index(values)
+        [False, False, True, True, True]
+        >>> DessiaFilter.booleanlist_to_indexlist(booleans_list)
+        [2, 3, 4]
         """
-        return list(itertools.compress(booleans_list, range(target_len)))
+        return list(itertools.compress(range(len(booleans_list)), booleans_list))
 
     @staticmethod
     def apply(values: List[DessiaObject], booleans_list: List[List[bool]]):
+        """
+        Apply a Dessia Filter on a list of DessiaObjects
+
+        :param values: List of DessiaObjects to filter
+        :type values: List[DessiaObject]
+
+        :param booleans_list: list of length *len(values)* where elements are **True** if kept, otherwise **False**.
+        :type booleans_list: List[List[bool]]
+
+        :return: List of filtered values
+        :rtype: List[DessiaObject]
+
+        Examples
+        --------
+        >>> from dessia_common.models import all_cars_no_feat
+        >>> values = all_cars_no_feat[:5]
+        >>> filter_ = DessiaFilter('weight', '<=', 3500.)
+        >>> booleans_list = filter_.get_booleans_index(values)
+        [False, False, True, True, True]
+        >>> for car in DessiaFilter.apply(values, booleans_list): print(car.weight)
+        3436.0, 3433.0, 3449.0
+        """
         return list(itertools.compress(values, booleans_list))
 
 
