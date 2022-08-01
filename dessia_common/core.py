@@ -955,7 +955,7 @@ class FiltersList(DessiaObject):
     :param filters: List of DessiaFilters to combine
     :type filters: List[DessiaFilter]
 
-    :param logical_operator: Logical operator to combine filters ("or", "and" or "xor")
+    :param logical_operator: Logical operator to combine filters
     :type logical_operator: str
 
     :param name: Name of FiltersList, defaults to ''
