@@ -10,6 +10,7 @@ import sys
 import warnings
 import math
 import random
+import itertools
 
 from functools import reduce
 import collections
@@ -865,7 +866,8 @@ class HeterogeneousList(DessiaObject):
         """
         return templates.heterogeneouslist_markdown_template.substitute(name=self.name, class_=self.__class__.__name__)
 
-    def pareto_points(self, costs, tol):
+    @staticmethod
+    def _pareto_indexes(costs, tol):
         """
         Find the pareto-efficient points
         :return: A (n_points, ) boolean array, indicating whether each point
@@ -879,31 +881,41 @@ class HeterogeneousList(DessiaObject):
                 is_efficient[is_efficient] = npy.any(scaled_costs[is_efficient] < cost + tol, axis=1)
                 # And keep self
                 is_efficient[index] = True
-        return self[is_efficient]
+        return is_efficient
+
+    def pareto_points(self, costs, tol):
+        """
+        Find the pareto-efficient points
+        :return: A (n_points, ) boolean array, indicating whether each point
+                 is Pareto efficient
+        """
+        return HeterogeneousList(list(itertools.compress(self.dessia_objects,
+                                                         self.__class__._pareto_indexes(costs, tol))))
 
     @staticmethod
     def pareto_frontiers(costs, tol: float = 0.):
         # Experimental
         import matplotlib.pyplot as plt
-        pareto_points = npy.array(HeterogeneousList.pareto_points(costs, tol))
+        pareto_points = HeterogeneousList._pareto_indexes(costs, tol)
+        pareto_costs = npy.array(list(itertools.compress(costs.tolist(), pareto_points)))
         pareto_frontiers = []
 
         plt.figure()
         plt.plot(costs[:, 0], costs[:, 1], linestyle ='None', marker='o', color = 'b')
-        plt.plot(pareto_points[:, 0], pareto_points[:, 1], linestyle ='None', marker='o', color = 'r')
+        plt.plot(pareto_costs[:, 0], pareto_costs[:, 1], linestyle ='None', marker='o', color = 'r')
         plt.show()
 
         super_mini = npy.min(costs, axis = 0)
 
-        for x_dim in range(pareto_points.shape[1]):
+        for x_dim in range(pareto_costs.shape[1]):
             pareto_frontiers = []
-            for y_dim in range(pareto_points.shape[1]):
+            for y_dim in range(pareto_costs.shape[1]):
                 if x_dim != y_dim:
-                    minidx = npy.argmin(pareto_points[:, y_dim])
-                    X = pareto_points[minidx, x_dim]
-                    Y = pareto_points[minidx, y_dim]
+                    minidx = npy.argmin(pareto_costs[:, y_dim])
+                    X = pareto_costs[minidx, x_dim]
+                    Y = pareto_costs[minidx, y_dim]
 
-                    new_pareto = pareto_points[X - pareto_points[:, x_dim] != 0., :]
+                    new_pareto = pareto_costs[X - pareto_costs[:, x_dim] != 0., :]
                     dir_coeffs = (Y - new_pareto[:, y_dim]) / (X - new_pareto[:, x_dim])
 
                     dir_coeffs[X == new_pareto[:, x_dim]] = npy.max(dir_coeffs[X != new_pareto[:, x_dim]])
