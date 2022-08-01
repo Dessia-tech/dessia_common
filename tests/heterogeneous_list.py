@@ -37,7 +37,7 @@ assert(all(item in all_cars_without_features
 all_cars_without_features = HeterogeneousList(all_cars_no_feat)
 
 # Tests for plot_data
-# all_cars_with_features.plot()
+all_cars_with_features.plot()
 # all_cars_without_features.plot()
 # RandData_heterogeneous.plot()
 

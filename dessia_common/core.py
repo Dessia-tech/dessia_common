@@ -1393,6 +1393,21 @@ class HeterogeneousList(DessiaObject):
 
         :return: The filtered HeterogeneousList
         :rtype: HeterogeneousList
+
+        Examples
+        --------
+        >>> from dessia_common.core import HeterogeneousList, DessiaFilter
+        >>> from dessia_common.models import all_cars_wi_feat
+        >>> filters = [DessiaFilter('weight', '<=', 1650.), DessiaFilter('mpg', '>=', 45.)]
+        >>> example_list = HeterogeneousList(all_cars_wi_feat, name="example")
+        >>> filtered_list = example_list.filtering(filters, "xor")
+        >>> print(filtered_list)
+        HeterogeneousList example: 3 samples, 5 features
+        |         Mpg         |    Displacement    |     Horsepower     |       Weight       |    Acceleration    |
+        -----------------------------------------------------------------------------------------------------------
+        |               35.0  |             0.072  |              69.0  |            1613.0  |              18.0  |
+        |               31.0  |             0.076  |              52.0  |            1649.0  |              16.5  |
+        |               46.6  |             0.086  |              65.0  |            2110.0  |              17.9  |
         """
         filters_list = FiltersList(filters, logical_operator)
         booleans_index = filters_list.get_booleans_index(self.dessia_objects)
@@ -1431,11 +1446,20 @@ class HeterogeneousList(DessiaObject):
         return normalized_singular_values, singular_points
 
     def plot_data(self):
+        """
+        Plot data method.
+
+        Plot a standard scatter matrix of all attributes in common_attributes and a dimensionality plot.
+
+        .. figure:: images/dimensionality_plot_hlist.png
+        .. figure:: images/scatter_matrix_docstring_hlist.png
+
+        """
         # Plot a correlation matrix : To develop
         # correlation_matrix = []
 
         # Dimensionality plot
-        dimensionality_plot = self.plot_dimensionality()
+        dimensionality_plot = self._plot_dimensionality()
 
         # Scattermatrix
         scatter_matrix = self._build_multiplot(self._plot_data_list(),
@@ -1478,7 +1502,7 @@ class HeterogeneousList(DessiaObject):
         from plot_data.core import PointFamily
         return [PointFamily(BLUE, list(range(self.__len__())))]
 
-    def plot_dimensionality(self):
+    def _plot_dimensionality(self):
         import plot_data
         _, singular_points = self.singular_values()
 
@@ -1508,10 +1532,19 @@ class HeterogeneousList(DessiaObject):
     def pareto_points(self, costs, tol):
         """
         Find the pareto-efficient points
-        :return: A (n_points, ) boolean array, indicating whether each point is Pareto efficient
+
+        :param costs: costs on which the pareto points are computed
+        :type costs: *List[List[float]]*, *n_samples x n_features*
+
+        :param tol: tolerance for selecting more or less points in pareto points. Must be positive and near 0 (e.g. 0.1)
+        :type tol: float
+
+        :return: a HeterogeneousList containing the selected points
+        :rtype: HeterogeneousList
         """
-        is_efficient = npy.ones(costs.shape[0], dtype=bool)
-        scaled_costs = (costs - npy.mean(costs, axis=0)) / npy.std(costs, axis=0)
+        array_costs = npy.array(costs)
+        is_efficient = npy.ones(array_costs.shape[0], dtype=bool)
+        scaled_costs = (array_costs - npy.mean(array_costs, axis=0)) / npy.std(array_costs, axis=0)
         for index, cost in enumerate(scaled_costs):
             if is_efficient[index]:
                 # Keep any point with a lower cost
