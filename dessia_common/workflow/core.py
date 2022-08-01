@@ -1838,8 +1838,6 @@ class WorkflowRun(WorkflowState):
         """
         display_settings = self.workflow.display_settings()
 
-        # display_settings.append(DisplaySetting('workflow-state', 'workflow_state', 'state_display', None))
-
         # Find & order displayable blocks
         d_blocks = [b for b in self.workflow.blocks if hasattr(b, 'display_') and hasattr(b, "_display_settings")]
         # Change last line to isinstance ? Not possible because of circular imports ?
@@ -1872,10 +1870,9 @@ class WorkflowRun(WorkflowState):
             segments = path.split("/")
             first_segment = segments[1]
             if first_segment == "values" and len(segments) >= 3:
-                varindex = int(segments[2])
-                variable = self.workflow.variables[varindex]
-                upstream = self.workflow.get_upstream_nbv(variable)
-                value = self.values[upstream]
+                pipe_index = int(segments[2])
+                pipe = self.workflow.pipes[pipe_index]
+                value = self.values[pipe]
                 if len(segments) > 3:
                     return DessiaObject._get_from_path(value, f"#/{'/'.join(segments[3:])}")
                 return value
