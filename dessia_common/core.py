@@ -865,8 +865,7 @@ class HeterogeneousList(DessiaObject):
         """
         return templates.heterogeneouslist_markdown_template.substitute(name=self.name, class_=self.__class__.__name__)
 
-    @staticmethod
-    def pareto_points(costs, tol):
+    def pareto_points(self, costs, tol):
         """
         Find the pareto-efficient points
         :return: A (n_points, ) boolean array, indicating whether each point
@@ -880,7 +879,7 @@ class HeterogeneousList(DessiaObject):
                 is_efficient[is_efficient] = npy.any(scaled_costs[is_efficient] < cost + tol, axis=1)
                 # And keep self
                 is_efficient[index] = True
-        return costs[is_efficient, :].tolist()
+        return self[is_efficient]
 
     @staticmethod
     def pareto_frontiers(costs, tol: float = 0.):
