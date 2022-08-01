@@ -96,6 +96,10 @@ def is_typing(object_: Any):
     has_module = hasattr(object_, '__module__')
     has_origin = hasattr(object_, '__origin__')
     has_args = hasattr(object_, '__args__')
+    print(f"has_module : {has_module}\n"
+          f"has_origin : {has_origin}\n"
+          f"has_args : {has_args}\n"
+          f"Object_ : {object_}")
     return has_module and has_origin and has_args
 
 
