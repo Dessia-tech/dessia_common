@@ -1089,7 +1089,7 @@ class HeterogeneousList(DessiaObject):
 
         return [scatter_matrix, dimensionality_plot]
 
-    def _build_multiplot(self, data_list: Dict[str, float], tooltip: List[str], **kwargs: Dict[str, Any]):
+    def _build_multiplot(self, data_list: List[Dict[str, float]], tooltip: List[str], **kwargs: Dict[str, Any]):
         import plot_data
         subplots = []
         for line_attr in self.common_attributes:
