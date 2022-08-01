@@ -878,13 +878,13 @@ class FiltersList(DessiaObject):
         len_attr = max(map(len, [filter_.attribute for filter_ in self.filters]))
         len_numb = max(map(len, [str(filter_.bound) for filter_ in self.filters]))
         prefix = f"{self.__class__.__name__} {self.name if self.name != '' else hex(id(self))}: "
-        prefix += f"{len(self)} filters"
+        prefix += f"{len(self)} filters combined with '" + self.logical_operator + "' operator :\n"
         string = ""
         for filter_ in self.filters[:print_lim]:
-            string += " "*5 + "- "
+            string += " "*3 + "- "
             string += filter_.__str__(len_attr + 2, len_numb + 2)
             string += "\n"
-        return prefix + "\n" + string
+        return prefix + string
 
     @classmethod
     def from_filters_list(cls, filters_list: List[DessiaFilter], logical_operator: str = 'and', name: str = ''):
