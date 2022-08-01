@@ -4,7 +4,7 @@ Tests for dessia_common.HeterogeneousList class (loadings, check_platform and pl
 import itertools
 import random
 from dessia_common.models import all_cars_no_feat, all_cars_wi_feat, rand_data_large
-from dessia_common.core import HeterogeneousList, DessiaFilter
+from dessia_common.core import HeterogeneousList, DessiaFilter, FiltersList
 
 # When attribute _features is not specified in class Car
 all_cars_without_features = HeterogeneousList(all_cars_no_feat)
@@ -37,14 +37,14 @@ assert(all(item in all_cars_without_features
 all_cars_without_features = HeterogeneousList(all_cars_no_feat)
 
 # Tests for plot_data
-all_cars_with_features.plot()
-all_cars_without_features.plot()
-RandData_heterogeneous.plot()
+# all_cars_with_features.plot()
+# all_cars_without_features.plot()
+# RandData_heterogeneous.plot()
 
-# Check platform for datasets
-all_cars_with_features._check_platform()
-all_cars_without_features._check_platform()
-RandData_heterogeneous._check_platform()
+# # Check platform for datasets
+# all_cars_with_features._check_platform()
+# all_cars_without_features._check_platform()
+# RandData_heterogeneous._check_platform()
 
 # Check for __getitem__ and __str__
 print(all_cars_with_features)
@@ -69,6 +69,7 @@ filter_1 = DessiaFilter('weight', 'le', weight_val)
 filter_2 = DessiaFilter('mpg', 'ge', mpg_big_val)
 filter_3 = DessiaFilter('mpg', 'ge', mpg_low_val)
 filters_list = [filter_1, filter_3]
+print(FiltersList(filters_list, logical_operator="or"))
 
 # Or testing
 filters_list_fun = lambda x: ((getattr(value, 'weight') <= weight_val or
