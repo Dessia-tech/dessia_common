@@ -103,13 +103,13 @@ assert deserialized_typing == test_typing
 
 test_typing = MethodType
 serialized_typing = serialize_typing(test_typing)
-assert serialized_typing == 'MethodType'
+assert serialized_typing == 'dessia_common.typings.MethodType'
 deserialized_typing = deserialize_typing(serialized_typing)
 assert deserialized_typing == test_typing
 
 test_typing = ClassMethodType
 serialized_typing = serialize_typing(test_typing)
-assert serialized_typing == 'ClassMethodType'
+assert serialized_typing == 'dessia_common.typings.ClassMethodType'
 deserialized_typing = deserialize_typing(serialized_typing)
 assert deserialized_typing == test_typing
 
@@ -122,13 +122,13 @@ assert deserialized_typing == test_typing
 # Files
 test_typing = StringFile
 serialized_typing = serialize_typing(test_typing)
-assert serialized_typing == 'StringFile'
+assert serialized_typing == 'dessia_common.files.StringFile'
 deserialized_typing = deserialize_typing(serialized_typing)
 assert deserialized_typing == test_typing
 
 test_typing = BinaryFile
 serialized_typing = serialize_typing(test_typing)
-assert serialized_typing == 'BinaryFile'
+assert serialized_typing == 'dessia_common.files.BinaryFile'
 deserialized_typing = deserialize_typing(serialized_typing)
 assert deserialized_typing == test_typing
 
