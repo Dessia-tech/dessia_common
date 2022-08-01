@@ -819,6 +819,17 @@ class DessiaFilter(DessiaObject):
         self.bound = bound
         DessiaObject.__init__(self, name=name)
 
+    def __str__(self, offset_attr: int=10, offset_boun: int=0):
+        offset_oper = 0
+        if offset_boun == 0:
+            offset_boun = len(str(self.bound)) + 2
+        string_operator = {'>':'>','<':'<','>=':'>=','<=':'<=','==':'==','!=':'!=','gt':'>','lt':'<','ge':'>=',
+                           'le':'<=','eq':'==','ne':'!=','gte':'>=','lte':'<='}
+        printed_operator = string_operator[self.comparison_operator]
+        return (self.attribute + " "*(offset_attr - len(self.attribute)) +
+                printed_operator + " "*(offset_oper - len(printed_operator)) +
+                " "*(offset_boun - len(str(self.bound))) +str(self.bound))
+
     def __hash__(self):
         hash_ = len(self.attribute)
         hash_ += hash(self.comparison_operator)
@@ -854,10 +865,26 @@ class DessiaFilter(DessiaObject):
 class FiltersList(DessiaObject):
     _standalone_in_db = True
 
-    def __init__(self, filters: List[DessiaFilter] = None, logical_operator: str = 'and', name: str = ''):
+    def __init__(self, filters: List[DessiaFilter], logical_operator: str = 'and', name: str = ''):
         self.filters = filters
         self.logical_operator = logical_operator
         DessiaObject.__init__(self, name=name)
+
+    def __len__(self):
+        return len(self.filters)
+
+    def __str__(self):
+        print_lim = 15
+        len_attr = max(map(len, [filter_.attribute for filter_ in self.filters]))
+        len_numb = max(map(len, [str(filter_.bound) for filter_ in self.filters]))
+        prefix = f"{self.__class__.__name__} {self.name if self.name != '' else hex(id(self))}: "
+        prefix += f"{len(self)} filters"
+        string = ""
+        for filter_ in self.filters[:print_lim]:
+            string += " "*5 + "- "
+            string += filter_.__str__(len_attr + 2, len_numb + 2)
+            string += "\n"
+        return prefix + "\n" + string
 
     @classmethod
     def from_filters_list(cls, filters_list: List[DessiaFilter], logical_operator: str = 'and', name: str = ''):
@@ -962,20 +989,30 @@ class HeterogeneousList(DessiaObject):
     def __str__(self):
         offset_space = 10
         print_lim = 15
+        titles_list = self.common_attributes
         prefix = f"{self.__class__.__name__} {self.name if self.name != '' else hex(id(self))}: "
         prefix += f"{len(self.dessia_objects)} samples, {len(self.common_attributes)} features"
         if self.__len__() == 0:
             return prefix
+
         string = ""
-        for attr in self.common_attributes:
+        for idx, attr in enumerate(titles_list):
+            end_bar = ""
+            if idx == len(titles_list) - 1:
+                end_bar = "|"
             space = offset_space - int(len(attr)/2)
-            string += "|" + " "*space + f"{attr.capitalize()}" + " "*space + "|"
+            string += "|"+ " "*space + f"{attr.capitalize()}" + " "*space + end_bar
+
         string += "\n" + "-"*len(string)
         for dessia_object in self.dessia_objects[:print_lim]:
             string += "\n"
-            for attr in self.common_attributes:
+            for idx, attr in enumerate(self.common_attributes):
+                end_bar = ""
+                if idx == len(titles_list) - 1:
+                    end_bar = "|"
                 space = 2*offset_space - len(str(getattr(dessia_object, attr)))
-                string += "|" + " "*(space + len(attr)%2 - 2) + f"{getattr(dessia_object, attr)}" + "  |"
+                string += "|" + " "*(space + len(attr)%2 - 2) + f"{getattr(dessia_object, attr)}" + "  " + end_bar
+
         return prefix + "\n" + string + "\n"
 
     def __len__(self):
