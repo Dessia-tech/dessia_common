@@ -1008,6 +1008,10 @@ class FiltersList(DessiaObject):
         >>> from dessia_common.core import DessiaFilter, FiltersList
         >>> filters = [DessiaFilter('weight', '<=', 3500.), DessiaFilter('mpg', '<=', 40.)]
         >>> filters_list = FiltersList(filters, logical_operator="or", name="example")
+        >>> print(filters_list)
+        FiltersList example: 2 filters combined with 'or' operator :
+           - weight  <=  3500.0
+           - mpg     <=    40.0
         """
         return cls(filters=filters, logical_operator=logical_operator, name=name)
 
@@ -1027,6 +1031,12 @@ class FiltersList(DessiaObject):
         :return: Booleans index of the filtered data
         :rtype: List[bool]
 
+        Examples
+        --------
+        >>> from dessia_common.core import FiltersList
+        >>> booleans_lists = [[True, True, False, False], [False, True, True, False]]
+        >>> FiltersList.combine_booleans_lists(booleans_lists, logical_operator="xor")
+        [True, False, True, False]
         """
         if logical_operator == "and":
             return [all(booleans_tuple) for booleans_tuple in zip(*booleans_lists)]
@@ -1036,18 +1046,111 @@ class FiltersList(DessiaObject):
             return [True if sum(booleans_tuple) == 1 else False for booleans_tuple in zip(*booleans_lists)]
         raise NotImplementedError(f"'{logical_operator}' str for 'logical_operator' attribute is not a use case")
 
-    def get_booleans_index(self, dobject_list: List[DessiaObject]):
+    def get_booleans_index(self, dobjects_list: List[DessiaObject]):
+        """
+        Compute all the filters of *self*.filters on dobjects_list and returns a booleans index of dobjects_list
+
+        :param dobject_list: List of data to filter
+        :type dobject_list: List[DessiaObject]
+
+        :return: A booleans index of dobjects_list of the list of data to filter (dobjects_list)
+        :rtype: List[bool]
+
+        Examples
+        --------
+        >>> from dessia_common.core import FiltersList
+        >>> from dessia_common.models import all_cars_no_feat
+        >>> dobjects_list = all_cars_no_feat[:5]
+        >>> filters = [DessiaFilter('weight', '<=', 4000.), DessiaFilter('mpg', '>=', 30.)]
+        >>> filters_list = FiltersList(filters, logical_operator="xor", name="example")
+        >>> filters_list.get_booleans_index(dobjects_list)
+        [True, True, True, True, True]
+        """
         booleans_index = []
         for filter_ in self.filters:
-            booleans_index.append(filter_.get_booleans_index(dobject_list))
+            booleans_index.append(filter_.get_booleans_index(dobjects_list))
         return self.__class__.combine_booleans_lists(booleans_index, self.logical_operator)
 
-    def apply(self, dobject_list: List[DessiaObject]):
-        booleans_index = self.get_booleans_index(dobject_list)
-        return DessiaFilter.apply(dobject_list, booleans_index)
+    def apply(self, dobjects_list: List[DessiaObject]):
+        """
+        Apply a FiltersList on a list of DessiaObjects
+
+        :param dobjects_list: List of DessiaObjects to filter
+        :type dobjects_list: List[DessiaObject]
+
+        :return: List of filtered values
+        :rtype: List[DessiaObject]
+
+        Examples
+        --------
+        >>> from dessia_common.core import HeterogeneousList, FiltersList
+        >>> from dessia_common.models import all_cars_wi_feat
+        >>> filters = [DessiaFilter('weight', '<=', 1650.), DessiaFilter('mpg', '>=', 45.)]
+        >>> filters_list = FiltersList(filters, logical_operator="xor", name="example")
+        >>> filtered_cars = filters_list.apply(all_cars_wi_feat)
+        >>> print(HeterogeneousList(filtered_cars, name="example"))
+        HeterogeneousList example: 3 samples, 5 features
+        |         Mpg         |    Displacement    |     Horsepower     |       Weight       |    Acceleration    |
+        -----------------------------------------------------------------------------------------------------------
+        |               35.0  |             0.072  |              69.0  |            1613.0  |              18.0  |
+        |               31.0  |             0.076  |              52.0  |            1649.0  |              16.5  |
+        |               46.6  |             0.086  |              65.0  |            2110.0  |              17.9  |
+        """
+        booleans_index = self.get_booleans_index(dobjects_list)
+        return DessiaFilter.apply(dobjects_list, booleans_index)
 
 
 class HeterogeneousList(DessiaObject):
+    """
+    Base object for handling a list of DessiaObjects.
+
+    :param dessia_objects: List of DessiaObjects to store in HeterogeneousList, defaults to None
+    :type dessia_objects: List[DessiaObject], optional
+
+    :param name: Name of HeterogeneousList, defaults to ''
+    :type name: str, optional
+
+    :Properties:
+        * **common_attributes:** (*List[str]*) Common attributes of DessiaObjects contained in the current \
+*HeterogeneousList*
+        * **matrix:** (*List[List[float]], n_samples x n_features*) Matrix of data computed by calling the to_vector \
+method of all dessia_objects
+
+    **Built-in methods**:
+        * __str__
+            >>> from dessia_common.core import HeterogeneousList
+            >>> from dessia_common.models import all_cars_wi_feat
+            >>> print(HeterogeneousList(all_cars_wi_feat[:3], name='printed'))
+            HeterogeneousList printed: 3 samples, 5 features
+            |         Mpg         |    Displacement    |     Horsepower     |       Weight       |    Acceleration    |
+            -----------------------------------------------------------------------------------------------------------
+            |               18.0  |             0.307  |             130.0  |            3504.0  |              12.0  |
+            |               15.0  |              0.35  |             165.0  |            3693.0  |              11.5  |
+            |               18.0  |             0.318  |             150.0  |            3436.0  |              11.0  |
+
+        * __len__
+            >>> len(HeterogeneousList(all_cars_wi_feat))
+            returns len(all_cars_wi_feat)
+
+        * __get_item__
+            >>> HeterogeneousList(all_cars_wi_feat)[0]
+            returns <dessia_common.tests.CarWithFeatures object at 'memory_address'>
+            >>> HeterogeneousList(all_cars_wi_feat)[0:2]
+            returns HeterogeneousList(all_cars_wi_feat[0:2])
+            >>> HeterogeneousList(all_cars_wi_feat)[[0,5,6]]
+            returns HeterogeneousList([all_cars_wi_feat[idx] for idx in [0,5,6]])
+            >>> booleans_list = [True, False,..., True] of length len(all_cars_wi_feat)
+            >>> HeterogeneousList(all_cars_wi_feat)[booleans_list]
+            returns HeterogeneousList([car for car, boolean in zip(all_cars_wi_feat, booleans_list) if boolean])
+
+        * __add__
+            >>> HeterogeneousList(all_cars_wi_feat) + HeterogeneousList(all_cars_wi_feat)
+            HeterogeneousList(all_cars_wi_feat + all_cars_wi_feat)
+            >>> HeterogeneousList(all_cars_wi_feat) + HeterogeneousList()
+            HeterogeneousList(all_cars_wi_feat)
+            >>> HeterogeneousList(all_cars_wi_feat).extend(HeterogeneousList(all_cars_wi_feat))
+            HeterogeneousList(all_cars_wi_feat + all_cars_wi_feat)
+    """
     _standalone_in_db = True
 
     def __init__(self, dessia_objects: List[DessiaObject] = None, name: str = ''):
@@ -1068,19 +1171,19 @@ class HeterogeneousList(DessiaObject):
         if len(self.dessia_objects) == 0:
             return []
         if isinstance(key, int):
-            return self.pick_from_int(key)
+            return self._pick_from_int(key)
         if isinstance(key, slice):
-            return self.pick_from_slice(key)
+            return self._pick_from_slice(key)
         if isinstance(key, list):
             if len(key) == 0:
                 return self.__class__()
             if isinstance(key[0], bool):
                 if len(key) == self.__len__():
-                    return self.pick_from_boolist(key)
+                    return self._pick_from_boolist(key)
                 raise ValueError(f"Cannot index {self.__class__.__name__} object of len {self.__len__()} with a " +
                                  f"list of boolean of len {len(key)}")
             if isinstance(key[0], int):
-                return self.pick_from_boolist(self.indexlist_to_booleanlist(key))
+                return self._pick_from_boolist(self._indexlist_to_booleanlist(key))
 
         raise NotImplementedError(f"key of type {type(key)} with {type(key[0])} elements not implemented for " +
                                   "indexing HeterogeneousLists")
@@ -1095,12 +1198,25 @@ class HeterogeneousList(DessiaObject):
         return sum_hlist
 
     def extend(self, b: 'HeterogeneousList'):
+        """
+        Update a HeterogeneousList by adding b values to it
+
+        :param b: HeterogeneousList to add to the current HeterogeneousList
+        :type b: HeterogeneousList
+
+        :return: None
+
+        >>> from dessia_common.core import HeterogeneousList
+        >>> from dessia_common.models import all_cars_wi_feat
+        >>> HeterogeneousList(all_cars_wi_feat).extend(HeterogeneousList(all_cars_wi_feat))
+        HeterogeneousList(all_cars_wi_feat + all_cars_wi_feat)
+        """
         self.__dict__.update((self + b).__dict__)
 
-    def pick_from_int(self, idx: int):
+    def _pick_from_int(self, idx: int):
         return self.dessia_objects[idx]
 
-    def pick_from_slice(self, key: slice):
+    def _pick_from_slice(self, key: slice):
         new_hlist = self._procreate()
         new_hlist.dessia_objects = self.dessia_objects[key]
         if self._matrix is not None:
@@ -1108,13 +1224,13 @@ class HeterogeneousList(DessiaObject):
         # new_hlist.name += f"_{key.start if key.start is not None else 0}_{key.stop}")
         return new_hlist
 
-    def indexlist_to_booleanlist(self, index_list: List[int]):
+    def _indexlist_to_booleanlist(self, index_list: List[int]):
         boolean_list = [False]*len(self)
         for idx in index_list:
             boolean_list[idx] = True
         return boolean_list
 
-    def pick_from_boolist(self, key: List[bool]):
+    def _pick_from_boolist(self, key: List[bool]):
         new_hlist = self._procreate()
         new_hlist.dessia_objects = DessiaFilter.apply(self.dessia_objects, key)
         if self._matrix is not None:
