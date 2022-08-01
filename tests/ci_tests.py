@@ -2,6 +2,8 @@
 import os
 
 # for some akward reason, put scripts before unittests tests
+import unittest
+
 scripts = ['displays.py',
            'generation.py',
            'models_test.py',
@@ -32,3 +34,7 @@ scripts = ['displays.py',
 for script_name in scripts:
     print('\n## Executing script {}'.format(script_name))
     exec(open(script_name).read())
+
+
+if __name__ == '__main__':
+    unittest.main()
