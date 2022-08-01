@@ -1280,7 +1280,7 @@ class HeterogeneousList(DessiaObject):
         :type attribute: str
 
         :return: A list of all values of the specified attribute of dessia_objects
-        :rtype: List[float]
+        :rtype: List[Any]
 
         Examples
         --------
@@ -1381,18 +1381,54 @@ class HeterogeneousList(DessiaObject):
         return self._matrix
 
     def filtering(self, filters: List[DessiaFilter], logical_operator: str = "and"):
+        """
+        Filter a HeterogeneousList given a list of DessiaFilters.
+        Method filtering first compute a FiltersList then apply it to the current HeterogeneousList.
+
+        :param filters: List of filters to apply on current HeterogeneousList
+        :type filters: List[DessiaFilter]
+
+        :param logical_operator: Logical operator to combine filters ("or", "and" or "xor"), defaults to 'and'
+        :type logical_operator: str, optional
+
+        :return: The filtered HeterogeneousList
+        :rtype: HeterogeneousList
+        """
         filters_list = FiltersList(filters, logical_operator)
         booleans_index = filters_list.get_booleans_index(self.dessia_objects)
         return self[booleans_index]
 
     def singular_values(self):
+        """
+        Computes the Singular Values Decomposition (SVD) of self.matrix.
+        SVD factorizes self.matrix into two unitary matrices *U* and *Vh*, and a 1-D array *s* of singular values \
+            (real, non-negative) such that ``a = U @ S @ Vh``, where S is diagonal such as *s1 > s2 >...> sn*.
+
+        SVD gives indications on the dimensionality of a given matrix thanks to the normalized singular values: they \
+            are stored in descending order and their sum is equal to 1. Thus, one can set a threshold value, e.g. \
+                *0.95*, and keep only the *r* first normalized singular values which sum is greater than the threshold.
+
+        *r* is the rank of the matrix and gives a good indication on the real dimensionality of the data contained in \
+            the current HeterogeneousList. *r* is often much smaller than the current dimension of the studied data.
+        This indicates that the used features can be combined into less new features, which do not necessarily \
+            make sense for engineers.
+
+        More informations: https://en.wikipedia.org/wiki/Singular_value_decomposition
+
+        :return:
+            **normalized_singular_values**: list of normalized singular values
+            **singular_points**: list of points to plot in dimensionality plot. Does not add any information.
+        :rtype: Tuple[List[float], List[Dict[str, float]]]
+
+        """
+
         _, singular_values, _ = npy.linalg.svd(npy.array(self.matrix), full_matrices=False)
-        normed_singular_values = singular_values / npy.sum(singular_values)
+        normalized_singular_values = singular_values / npy.sum(singular_values)
 
         singular_points = []
-        for idx, value in enumerate(normed_singular_values):
+        for idx, value in enumerate(normalized_singular_values):
             singular_points.append({'Index of reduced basis vector': idx + 1, 'Singular value': value})
-        return normed_singular_values, singular_points
+        return normalized_singular_values, singular_points
 
     def plot_data(self):
         # Plot a correlation matrix : To develop
