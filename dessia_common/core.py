@@ -1112,9 +1112,9 @@ class HeterogeneousList(DessiaObject):
 
     :Properties:
         * **common_attributes:** (*List[str]*) Common attributes of DessiaObjects contained in the current \
-*HeterogeneousList*
+            *HeterogeneousList*
         * **matrix:** (*List[List[float]], n_samples x n_features*) Matrix of data computed by calling the to_vector \
-method of all dessia_objects
+            method of all dessia_objects
 
     **Built-in methods**:
         * __str__
@@ -1270,7 +1270,45 @@ method of all dessia_objects
     def __len__(self):
         return len(self.dessia_objects)
 
+    def get_attribute_values(self, attribute: str):
+        return [getattr(dessia_object, attribute) for dessia_object in self.dessia_objects]
+
+    def get_column_values(self, index: int):
+        return [row[index] for row in self.matrix]
+
     def sort(self, key: Any, ascend: bool = True):  # TODO : Replace numpy with faster algorithms
+        """
+        Sort the current HeterogeneousList along the given key.
+
+        :param key: The parameter on which to sort the HeterogeneousList. Can be an attribute or its index in \
+            common_attributes
+        :type key: int or str
+
+        :param ascend: Whether to sort the HeterogeneousList in ascending (**True**) or descending (**False**) order
+        :type key: bool
+
+        :return: None
+
+        >>> from dessia_common.core import HeterogeneousList
+        >>> from dessia_common.models import all_cars_wi_feat
+        >>> example_list = HeterogeneousList(all_cars_wi_feat[:3], "sort_example")
+        >>> example_list.sort("mpg", False)
+        >>> print(example_list)
+        HeterogeneousList sort_example: 3 samples, 5 features
+        |         Mpg         |    Displacement    |     Horsepower     |       Weight       |    Acceleration    |
+        -----------------------------------------------------------------------------------------------------------
+        |               18.0  |             0.318  |             150.0  |            3436.0  |              11.0  |
+        |               18.0  |             0.307  |             130.0  |            3504.0  |              12.0  |
+        |               15.0  |              0.35  |             165.0  |            3693.0  |              11.5  |
+        >>> example_list.sort(2, True)
+        >>> print(example_list)
+        HeterogeneousList sort_example: 3 samples, 5 features
+        |         Mpg         |    Displacement    |     Horsepower     |       Weight       |    Acceleration    |
+        -----------------------------------------------------------------------------------------------------------
+        |               18.0  |             0.307  |             130.0  |            3504.0  |              12.0  |
+        |               18.0  |             0.318  |             150.0  |            3436.0  |              11.0  |
+        |               15.0  |              0.35  |             165.0  |            3693.0  |              11.5  |
+        """
         if self.__len__() != 0:
             if isinstance(key, int):
                 sort_indexes = npy.argsort([row[key] for row in self.matrix])
@@ -1279,12 +1317,6 @@ method of all dessia_objects
             self.dessia_objects = [self.dessia_objects[idx] for idx in (sort_indexes if ascend else sort_indexes[::-1])]
             if self._matrix is not None:
                 self._matrix = [self._matrix[idx] for idx in (sort_indexes if ascend else sort_indexes[::-1])]
-
-    def get_attribute_values(self, attribute: str):
-        return [getattr(dessia_object, attribute) for dessia_object in self.dessia_objects]
-
-    def get_column_values(self, index: int):
-        return [row[index] for row in self.matrix]
 
     @property
     def common_attributes(self):
