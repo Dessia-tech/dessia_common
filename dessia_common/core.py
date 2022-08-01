@@ -1206,6 +1206,8 @@ class HeterogeneousList(DessiaObject):
 
         :return: None
 
+        Examples
+        --------
         >>> from dessia_common.core import HeterogeneousList
         >>> from dessia_common.models import all_cars_wi_feat
         >>> HeterogeneousList(all_cars_wi_feat).extend(HeterogeneousList(all_cars_wi_feat))
@@ -1271,9 +1273,41 @@ class HeterogeneousList(DessiaObject):
         return len(self.dessia_objects)
 
     def get_attribute_values(self, attribute: str):
+        """
+        Get a list of all values of dessia_objects of an attribute given by name
+
+        :param attribute: Attribute to get all values
+        :type attribute: str
+
+        :return: A list of all values of the specified attribute of dessia_objects
+        :rtype: List[float]
+
+        Examples
+        --------
+        >>> from dessia_common.core import HeterogeneousList
+        >>> from dessia_common.models import all_cars_wi_feat
+        >>> HeterogeneousList(all_cars_wi_feat[:10]).get_attribute_values("weight")
+        [3504.0, 3693.0, 3436.0, 3433.0, 3449.0, 4341.0, 4354.0, 4312.0, 4425.0, 3850.0]
+        """
         return [getattr(dessia_object, attribute) for dessia_object in self.dessia_objects]
 
     def get_column_values(self, index: int):
+        """
+        Get a list of all values of dessia_objects for an attribute given by its index common_attributes
+
+        :param index: Index in common_attributes to get all values of dessia_objects
+        :type index: int
+
+        :return: A list of all values of the specified attribute of dessia_objects
+        :rtype: List[float]
+
+        Examples
+        --------
+        >>> from dessia_common.core import HeterogeneousList
+        >>> from dessia_common.models import all_cars_wi_feat
+        >>> HeterogeneousList(all_cars_wi_feat[:10]).get_column_values(2)
+        [130.0, 165.0, 150.0, 150.0, 140.0, 198.0, 220.0, 215.0, 225.0, 190.0]
+        """
         return [row[index] for row in self.matrix]
 
     def sort(self, key: Any, ascend: bool = True):  # TODO : Replace numpy with faster algorithms
@@ -1289,6 +1323,8 @@ class HeterogeneousList(DessiaObject):
 
         :return: None
 
+        Examples
+        --------
         >>> from dessia_common.core import HeterogeneousList
         >>> from dessia_common.models import all_cars_wi_feat
         >>> example_list = HeterogeneousList(all_cars_wi_feat[:3], "sort_example")
@@ -1311,9 +1347,9 @@ class HeterogeneousList(DessiaObject):
         """
         if self.__len__() != 0:
             if isinstance(key, int):
-                sort_indexes = npy.argsort([row[key] for row in self.matrix])
+                sort_indexes = npy.argsort(self.get_column_values(key))
             elif isinstance(key, str):
-                sort_indexes = npy.argsort([getattr(dessia_object, key) for dessia_object in self.dessia_objects])
+                sort_indexes = npy.argsort(self.get_attribute_values(key))
             self.dessia_objects = [self.dessia_objects[idx] for idx in (sort_indexes if ascend else sort_indexes[::-1])]
             if self._matrix is not None:
                 self._matrix = [self._matrix[idx] for idx in (sort_indexes if ascend else sort_indexes[::-1])]
@@ -1437,8 +1473,7 @@ class HeterogeneousList(DessiaObject):
     def pareto_points(costs, tol):
         """
         Find the pareto-efficient points
-        :return: A (n_points, ) boolean array, indicating whether each point
-                 is Pareto efficient
+        :return: A (n_points, ) boolean array, indicating whether each point is Pareto efficient
         """
         is_efficient = npy.ones(costs.shape[0], dtype=bool)
         scaled_costs = (costs - npy.mean(costs, axis=0)) / npy.std(costs, axis=0)
