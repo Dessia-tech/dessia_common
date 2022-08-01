@@ -34,14 +34,14 @@ Dessia Filter
 A Dessia Fitler is defined as an attribute name of a DessiaObject, a comparison operator and a float value.
 Its application on a list of DessiaObjects is the list of all contained DessiaObjects that satisfy the condition imposed by the current DessiaFilter.
 
-Comparison operator can be one str of:
- * greater than: >=, gte, ge
- * greater: >, gt
- * lower than: <=, lte, le
- * lower: <, lt
- * equal: ==, eq
- * different: !=, ne
-
 .. autoclass:: dessia_common.DessiaFilter
    :members:
 
+Filters List
+===============
+
+A Filters List allows to combine several filter to apply them all in a once with a logical operator.
+Its application on a list of DessiaObjects is the list of all contained DessiaObjects that satisfy the conditions imposed by all DessiaFilters combined with "and", "or" or "xor".
+
+.. autoclass:: dessia_common.FiltersList
+   :members:

@@ -811,12 +811,16 @@ class ParameterSet(DessiaObject):
 class DessiaFilter(DessiaObject):
     """
     Base class for filters working on lists of DessiaObjects (List[DessiaObject]).
-    :param attribute: Attribute name concerned by the DessiaFilter
+
+    :param attribute: Name of attribute on which to filter
     :type attribute: str
+
     :param comparison_operator: Comparison operator
     :type comparison_operator: str
+
     :param bound: The bound value to compare 'attribute' of DessiaObjects of a list with 'comparison_operator'
     :type bound: float
+
     :param name: Name of filter, defaults to ''
     :type name: str, optional
 
@@ -834,19 +838,6 @@ class DessiaFilter(DessiaObject):
                        'eq': operator.eq, 'ne': operator.ne, 'gte': operator.ge, 'lte': operator.le}
 
     def __init__(self, attribute: str, comparison_operator: str, bound: float, name: str = ''):
-        """
-        Instantiates a DessiaFilter as you would write it
-        :param attribute: Attribute name concerned by the DessiaFilter
-        :type attribute: str
-        :param comparison_operator: Comparison operator
-        (possible choices: '>', '>=', '<', '<=', '==', '!=', 'gt', 'lt', 'ge', 'le', 'eq', 'ne', 'gte', 'lte')
-        :type comparison_operator: str
-        :param bound: The bound value to compare 'attribute' of DessiaObjects of a list with 'comparison_operator'
-        :type bound: float
-        :param name: Name of filter, defaults to ''
-        :type name: str, optional
-        """
-
         self.attribute = attribute
         self.comparison_operator = comparison_operator
         self.bound = bound
@@ -948,22 +939,68 @@ class DessiaFilter(DessiaObject):
 
 class FiltersList(DessiaObject):
     """
-    Base class for Dessia's platform compatible objects.
-    Gathers generic methods and attributes
+    Combine several filters stored as a list of DessiaFilters with a logical operator.
+
+    :param filters: List of DessiaFilters to combine
+    :type filters: List[DessiaFilter]
+
+    :param logical_operator: Logical operator to combine filters ("or", "and" or "xor")
+    :type logical_operator: str
+
+    :param name: Name of FiltersList, defaults to ''
+    :type name: str, optional
+
+    :Logical operators: "and", "or", "xor"
     """
     _standalone_in_db = True
 
-    def __init__(self, filters: List[DessiaFilter] = None, logical_operator: str = 'and', name: str = ''):
+    def __init__(self, filters: List[DessiaFilter], logical_operator: str = 'and', name: str = ''):
         self.filters = filters
         self.logical_operator = logical_operator
         DessiaObject.__init__(self, name=name)
 
     @classmethod
-    def from_filters_list(cls, filters_list: List[DessiaFilter], logical_operator: str = 'and', name: str = ''):
-        return cls(filters=filters_list, logical_operator=logical_operator, name=name)
+    def from_filters_list(cls, filters: List[DessiaFilter], logical_operator: str = 'and', name: str = ''):
+        """
+        Compute a FilersList from a pre-built list of DessiaFilter
+
+        :param filters: List of DessiaFilters to combine
+        :type filters: List[DessiaFilter]
+
+        :param logical_operator: Logical operator to combine filters ("or", "and" or "xor"), defaults to 'and'
+        :type logical_operator: str, optional
+
+        :param name: Name of FiltersList, defaults to ''
+        :type name: str, optional
+
+        :return: A new instantiated list of DessiaFilter
+        :rtype: FiltersList
+
+        Examples
+        --------
+        >>> from dessia_common.core import DessiaFilter, FiltersList
+        >>> filters = [DessiaFilter('weight', '<=', 3500.), DessiaFilter('mpg', '<=', 40.)]
+        >>> filters_list = FiltersList(filters, logical_operator="or", name="example")
+        """
+        return cls(filters=filters, logical_operator=logical_operator, name=name)
 
     @staticmethod
     def combine_booleans_lists(booleans_lists: List[List[bool]], logical_operator: str = "and"):
+        """
+        Combine a list of *n* booleans indexes with the logical operator into a simple booleans index.
+
+        :param booleans_lists: List of *n* booleans indexes
+        :type booleans_lists: List[List[bool]]
+
+        :param logical_operator: Logical operator to combine filters ("or", "and" or "xor"), defaults to 'and'
+        :type logical_operator: str, optional
+
+        :raises NotImplementedError: If logical_operator is not one of "and", "or", "xor", raises an error
+
+        :return: Booleans index of the filtered data
+        :rtype: List[bool]
+
+        """
         if logical_operator == "and":
             return [all(booleans_tuple) for booleans_tuple in zip(*booleans_lists)]
         if logical_operator == "or":
