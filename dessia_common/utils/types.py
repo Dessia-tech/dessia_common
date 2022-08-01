@@ -100,10 +100,14 @@ def is_typing(object_: Any):
 
 
 def serialize_typing(typing_):
+    print(typing_)
     if is_typing(typing_):
+        print("is typing")
         return serialize_typing_types(typing_)
     if typing_ in [StringFile, BinaryFile, MethodType, ClassMethodType] or isinstance(typing_, type):
+        print("return full_classname")
         return full_classname(typing_, compute_for='class')
+    print("return str(typing)")
     return str(typing_)
 
 
