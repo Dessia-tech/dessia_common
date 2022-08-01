@@ -11,6 +11,7 @@ scripts = ['displays.py',
            # Workflows
            'workflow/blocks.py',
            'workflow/workflow_with_models.py',
+           'workflow/to_script.py',
            'workflow/power_simulation.py',
            'workflow/forms_simulation.py',
            'workflow/workflow_state_equalities.py',
