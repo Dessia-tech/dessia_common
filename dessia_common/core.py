@@ -1018,21 +1018,21 @@ class HeterogeneousList(DessiaObject):
     def __len__(self):
         return len(self.dessia_objects)
 
-    def sort(self, key: Any, ascend: bool = True): # TODO : Replace numpy with faster algorithms
-        if self.__len__() != 0:
-            if isinstance(key, int):
-                sort_indexes = npy.argsort([row[key] for row in self.matrix])
-            elif isinstance(key, str):
-                sort_indexes = npy.argsort([getattr(dessia_object, key) for dessia_object in self.dessia_objects])
-            self.dessia_objects = [self.dessia_objects[idx] for idx in (sort_indexes if ascend else sort_indexes[::-1])]
-            if self._matrix is not None:
-                self._matrix = [self._matrix[idx] for idx in (sort_indexes if ascend else sort_indexes[::-1])]
-
     def get_attribute_values(self, attribute: str):
         return [getattr(dessia_object, attribute) for dessia_object in self.dessia_objects]
 
     def get_column_values(self, index: int):
         return [row[index] for row in self.matrix]
+
+    def sort(self, key: Any, ascend: bool = True): # TODO : Replace numpy with faster algorithms
+        if self.__len__() != 0:
+            if isinstance(key, int):
+                sort_indexes = npy.argsort(self.get_column_values(key))
+            elif isinstance(key, str):
+                sort_indexes = npy.argsort(self.get_attribute_values(key))
+            self.dessia_objects = [self.dessia_objects[idx] for idx in (sort_indexes if ascend else sort_indexes[::-1])]
+            if self._matrix is not None:
+                self._matrix = [self._matrix[idx] for idx in (sort_indexes if ascend else sort_indexes[::-1])]
 
     @property
     def common_attributes(self):
