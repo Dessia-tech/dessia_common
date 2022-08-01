@@ -1533,8 +1533,8 @@ class HeterogeneousList(DessiaObject):
     def _pareto_indexes(costs, tol):
         """
         Find the pareto-efficient points
-        :return: A (n_points, ) boolean array, indicating whether each point
-                 is Pareto efficient
+
+        :return: A (n_points, ) boolean list, indicating whether each point is Pareto efficient
         """
         array_costs = npy.array(costs)
         is_efficient = npy.ones(array_costs.shape[0], dtype=bool)
