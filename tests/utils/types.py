@@ -54,7 +54,7 @@ class TestTypingSerializationValid(unittest.TestCase):
         # Types
         test_typing = Type[StandaloneObject]
         serialized_typing = serialize_typing(test_typing)
-        assert serialized_typing == 'Type'
+        assert serialized_typing == 'typing.Type'
         deserialized_typing = deserialize_typing(serialized_typing)
         assert not deserialized_typing == test_typing
 
