@@ -812,17 +812,25 @@ class DessiaFilter(DessiaObject):
     """
     Base class for filters working on lists of DessiaObjects (List[DessiaObject]).
 
-    :param attribute: Name of attribute on which to filter
+    :param attribute:
+        --------
+        Name of attribute on which to filter
     :type attribute: str
 
-    :param comparison_operator: Comparison operator
+    :param comparison_operator:
+        --------
+        Comparison operator
     :type comparison_operator: str
 
-    :param bound: The bound value to compare 'attribute' of DessiaObjects of a list with 'comparison_operator'
+    :param bound:
+        --------
+        The bound value to compare `'attribute'` of DessiaObjects of a list with `'comparison_operator'`
     :type bound: float
 
-    :param name: Name of filter, defaults to ''
-    :type name: str, optional
+    :param name:
+        --------
+        Name of filter
+    :type name: `str`, `optional`, defaults to `''`
 
     :Comparison operators:
         * greater than: >=, gte, ge
@@ -878,11 +886,12 @@ class DessiaFilter(DessiaObject):
         """
         Get the boolean indexing of a filtered list
 
-        :param values: List of DessiaObjects to filter
+        :param values:
+            List of DessiaObjects to filter
         :type values: List[DessiaObject]
 
-        :return: list of length *len(values)* where elements are **True** if kept by the filter, otherwise **False**.
-        :rtype: List[bool]
+        :return: `list of length `len(values)` where elements are `True` if kept by the filter, otherwise `False`.
+        :rtype: `List[bool]`
 
         Examples
         --------
@@ -901,7 +910,8 @@ class DessiaFilter(DessiaObject):
         """
         Transform a boolean list to an index list
 
-        :param booleans_list: list of length *len(values)* where elements are **True** if kept, otherwise **False**.
+        :param booleans_list:
+            list of length `len(values)` where elements are `True` if kept, otherwise `False`.
         :type booleans_list: List[int]
 
         :return: list of kept indexes
@@ -925,10 +935,14 @@ class DessiaFilter(DessiaObject):
         """
         Apply a Dessia Filter on a list of DessiaObjects
 
-        :param values: List of DessiaObjects to filter
+        :param values:
+            --------
+            List of DessiaObjects to filter
         :type values: List[DessiaObject]
 
-        :param booleans_list: list of length *len(values)* where elements are **True** if kept, otherwise **False**.
+        :param booleans_list:
+            --------
+            list of length `len(values)` where elements are `True` if kept, otherwise `False`.
         :type booleans_list: List[List[bool]]
 
         :return: List of filtered values
@@ -952,16 +966,22 @@ class FiltersList(DessiaObject):
     """
     Combine several filters stored as a list of DessiaFilters with a logical operator.
 
-    :param filters: List of DessiaFilters to combine
+    :param filters:
+        --------
+        List of DessiaFilters to combine
     :type filters: List[DessiaFilter]
 
-    :param logical_operator: Logical operator to combine filters
+    :param logical_operator:
+        --------
+        Logical operator to combine filters
     :type logical_operator: str
 
-    :param name: Name of FiltersList, defaults to ''
-    :type name: str, optional
+    :param name:
+        ---------
+        Name of FiltersList
+    :type name: `str`, `optional`, defaults to `''`
 
-    :Logical operators: "and", "or", "xor"
+    :Logical operators: `'and'`, `'or'`, `'xor'`
     """
     _standalone_in_db = True
 
@@ -991,14 +1011,20 @@ class FiltersList(DessiaObject):
         """
         Compute a FilersList from a pre-built list of DessiaFilter
 
-        :param filters: List of DessiaFilters to combine
+        :param filters:
+            --------
+            List of DessiaFilters to combine
         :type filters: List[DessiaFilter]
 
-        :param logical_operator: Logical operator to combine filters ("or", "and" or "xor"), defaults to 'and'
-        :type logical_operator: str, optional
+        :param logical_operator:
+            --------
+            Logical operator to combine filters (`'and'`, `'or'` or `'xor'`)
+        :type logical_operator: `str`, `optional`, defaults to `'and'`
 
-        :param name: Name of FiltersList, defaults to ''
-        :type name: str, optional
+        :param name:
+            --------
+            Name of FiltersList
+        :type name: `str`, `optional`, defaults to `''`
 
         :return: A new instantiated list of DessiaFilter
         :rtype: FiltersList
@@ -1018,15 +1044,19 @@ class FiltersList(DessiaObject):
     @staticmethod
     def combine_booleans_lists(booleans_lists: List[List[bool]], logical_operator: str = "and"):
         """
-        Combine a list of *n* booleans indexes with the logical operator into a simple booleans index.
+        Combine a list of `n` booleans indexes with the logical operator into a simple booleans index.
 
-        :param booleans_lists: List of *n* booleans indexes
+        :param booleans_lists:
+            --------
+            List of `n` booleans indexes
         :type booleans_lists: List[List[bool]]
 
-        :param logical_operator: Logical operator to combine filters ("or", "and" or "xor"), defaults to 'and'
-        :type logical_operator: str, optional
+        :param logical_operator:
+            --------
+            Logical operator to combine filters (`'or'`, `'and'` or `'xor'`)
+        :type logical_operator: `str`, `optional`, defaults to 'and'
 
-        :raises NotImplementedError: If logical_operator is not one of "and", "or", "xor", raises an error
+        :raises NotImplementedError: If logical_operator is not one of `'and'`, `'or'`, `'xor'`, raises an error
 
         :return: Booleans index of the filtered data
         :rtype: List[bool]
@@ -1048,12 +1078,12 @@ class FiltersList(DessiaObject):
 
     def get_booleans_index(self, dobjects_list: List[DessiaObject]):
         """
-        Compute all the filters of *self*.filters on dobjects_list and returns a booleans index of dobjects_list
+        Compute all the filters of `self.filters` on `dobjects_list` and returns a booleans index of `dobjects_list`
 
         :param dobject_list: List of data to filter
         :type dobject_list: List[DessiaObject]
 
-        :return: A booleans index of dobjects_list of the list of data to filter (dobjects_list)
+        :return: A `booleans index` of `dobjects_list` of the list of data to filter (`dobjects_list`)
         :rtype: List[bool]
 
         Examples
@@ -1104,17 +1134,24 @@ class HeterogeneousList(DessiaObject):
     """
     Base object for handling a list of DessiaObjects.
 
-    :param dessia_objects: List of DessiaObjects to store in HeterogeneousList, defaults to None
-    :type dessia_objects: List[DessiaObject], optional
+    :param dessia_objects:
+        --------
+        List of DessiaObjects to store in HeterogeneousList
+    :type dessia_objects: `List[DessiaObject]`, `optional`, defaults to `None`
 
-    :param name: Name of HeterogeneousList, defaults to ''
-    :type name: str, optional
+    :param name:
+        --------
+        Name of HeterogeneousList
+    :type name: `str`, `optional`, defaults to `''`
 
     :Properties:
-        * **common_attributes:** (*List[str]*) Common attributes of DessiaObjects contained in the current \
-            *HeterogeneousList*
-        * **matrix:** (*List[List[float]], n_samples x n_features*) Matrix of data computed by calling the to_vector \
-            method of all dessia_objects
+        * **common_attributes:** (`List[str]`)
+            --------
+            Common attributes of DessiaObjects contained in the current `HeterogeneousList`
+
+        * **matrix:** (`List[List[float]]`, `n_samples x n_features`)
+            --------
+            Matrix of data computed by calling the `to_vector` method of all `dessia_objects`
 
     **Built-in methods**:
         * __init__
@@ -1170,7 +1207,7 @@ class HeterogeneousList(DessiaObject):
         new_hlist._common_attributes = self._common_attributes
         new_hlist.name = self.name
         for attr in self.__dict__:
-            if not isinstance(attr, (list, dict, tuple)):
+            if not isinstance(getattr(self, attr), (list, dict, tuple)):
                 setattr(new_hlist, attr, getattr(self, attr))
         return new_hlist
 
@@ -1227,7 +1264,7 @@ class HeterogeneousList(DessiaObject):
     def _pick_from_slice(self, key: slice):
         new_hlist = self._procreate()
         for attr in self.__dict__:
-            if hasattr(getattr(self, attr), "__getitem__") and attr not in ["_common_attributes"]:
+            if isinstance(getattr(self, attr), (list, dict, tuple)) and attr not in ["name", "_common_attributes"]:
                 setattr(new_hlist, attr, getattr(self, attr)[key])
         # new_hlist.name += f"_{key.start if key.start is not None else 0}_{key.stop}")
         return new_hlist
@@ -1241,7 +1278,7 @@ class HeterogeneousList(DessiaObject):
     def _pick_from_boolist(self, key: List[bool]):
         new_hlist = self._procreate()
         for attr in self.__dict__:
-            if hasattr(getattr(self, attr), "__getitem__") and attr not in ["_common_attributes"]:
+            if isinstance(getattr(self, attr), (list, dict, tuple)) and attr not in ["name", "_common_attributes"]:
                 setattr(new_hlist, attr, DessiaFilter.apply(getattr(self, attr), key))
         # new_hlist.name += "_list")
         return new_hlist
@@ -1332,12 +1369,16 @@ class HeterogeneousList(DessiaObject):
         """
         Sort the current HeterogeneousList along the given key.
 
-        :param key: The parameter on which to sort the HeterogeneousList. Can be an attribute or its index in \
-            common_attributes
-        :type key: int or str
+        :param key:
+            --------
+            The parameter on which to sort the HeterogeneousList. Can be an attribute or its index in \
+                `common_attributes`
+        :type key: `int` or `str`
 
-        :param ascend: Whether to sort the HeterogeneousList in ascending (**True**) or descending (**False**) order
-        :type key: bool
+        :param ascend:
+            --------
+            Whether to sort the HeterogeneousList in ascending (`True`) or descending (`False`) order
+        :type key: `bool`, defaults to `True`
 
         :return: None
 
@@ -1407,11 +1448,15 @@ class HeterogeneousList(DessiaObject):
         Filter a HeterogeneousList given a list of DessiaFilters.
         Method filtering first compute a FiltersList then apply it to the current HeterogeneousList.
 
-        :param filters: List of filters to apply on current HeterogeneousList
+        :param filters:
+            ---------
+            List of filters to apply on current HeterogeneousList
         :type filters: List[DessiaFilter]
 
-        :param logical_operator: Logical operator to combine filters ("or", "and" or "xor"), defaults to 'and'
-        :type logical_operator: str, optional
+        :param logical_operator:
+            ---------
+            Logical operator to combine filters (`'or'`, `'and'` or `'xor'`)
+        :type logical_operator: `str`, `optional`, defaults to `'and'`
 
         :return: The filtered HeterogeneousList
         :rtype: HeterogeneousList
@@ -1438,15 +1483,15 @@ class HeterogeneousList(DessiaObject):
     def singular_values(self):
         """
         Computes the Singular Values Decomposition (SVD) of self.matrix.
-        SVD factorizes self.matrix into two unitary matrices *U* and *Vh*, and a 1-D array *s* of singular values \
-            (real, non-negative) such that ``a = U @ S @ Vh``, where S is diagonal such as *s1 > s2 >...> sn*.
+        SVD factorizes self.matrix into two unitary matrices `U` and `Vh`, and a 1-D array `s` of singular values \
+            (real, non-negative) such that ``a = U @ S @ Vh``, where S is diagonal such as `s1 > s2 >...> sn`.
 
         SVD gives indications on the dimensionality of a given matrix thanks to the normalized singular values: they \
             are stored in descending order and their sum is equal to 1. Thus, one can set a threshold value, e.g. \
-                *0.95*, and keep only the *r* first normalized singular values which sum is greater than the threshold.
+                `0.95`, and keep only the `r` first normalized singular values which sum is greater than the threshold.
 
-        *r* is the rank of the matrix and gives a good indication on the real dimensionality of the data contained in \
-            the current HeterogeneousList. *r* is often much smaller than the current dimension of the studied data.
+        `r` is the rank of the matrix and gives a good indication on the real dimensionality of the data contained in \
+            the current HeterogeneousList. `r` is often much smaller than the current dimension of the studied data.
         This indicates that the used features can be combined into less new features, which do not necessarily \
             make sense for engineers.
 
@@ -1573,11 +1618,15 @@ class HeterogeneousList(DessiaObject):
         """
         Find the pareto-efficient points
 
-        :param costs: costs on which the pareto points are computed
-        :type costs: *List[List[float]]*, *n_samples x n_features*
+        :param costs:
+            -----------
+            costs on which the pareto points are computed
+        :type costs: `List[List[float]]`, `n_samples x n_features`
 
-        :param tol: tolerance for selecting more or less points in pareto points. Must be positive and near 0 (e.g. 0.1)
-        :type tol: float
+        :param tol:
+            -----------
+            tolerance for selecting more or less points in pareto points. Must be positive and near `0` (e.g. `0.1`)
+        :type tol: `float`
 
         :return: a HeterogeneousList containing the selected points
         :rtype: HeterogeneousList

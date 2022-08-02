@@ -17,25 +17,35 @@ class CategorizedList(dc.HeterogeneousList):
     """
     Base object for handling a categorized (clustered) list of DessiaObjects.
 
-    **CategorizedList should be instantiated with** ``from_...`` **methods.**
+    **CategorizedList should be instantiated with** `from_...` **methods.**
 
-    **Do not use** ``__init__`` **to instantiate a CategorizedList.**
+    **Do not use** `__init__` **to instantiate a CategorizedList.**
 
-    :param dessia_objects: List of DessiaObjects to store in CategorizedList, defaults to None
-    :type dessia_objects: List[DessiaObject], optional
+    :param dessia_objects:
+        --------
+        List of DessiaObjects to store in CategorizedList
+    :type dessia_objects: `List[DessiaObject]`, `optional`, defaults to `None`
 
-    :param labels: Labels of DessiaObjects' cluster stored in CategorizedList, defaults to None
-    :type dessia_objects: List[int], optional
+    :param labels:
+        --------
+        Labels of DessiaObjects' cluster stored in CategorizedList
+    :type labels: `List[int]`, `optional`, defaults to `None`
 
-    :param name: Name of CategorizedList, defaults to ''
-    :type name: str, optional
+    :param name:
+        --------
+        Name of CategorizedList
+    :type name: `str`, `optional`, defaults to `""`
 
     :Properties:
-        * **common_attributes:** (*List[str]*) Common attributes of DessiaObjects contained in the current \
-            *CategorizedList*
-        * **matrix:** (*List[List[float]], n_samples x n_features*) Matrix of data computed by calling the to_vector \
-            method of all dessia_objects
-        * **n_cluster:** (*int*) Number of clusters in dessia_objects
+        * **common_attributes:** (`List[str]`)
+            --------
+            Common attributes of DessiaObjects contained in the current `CategorizedList`
+        * **matrix:** (`List[List[float]]`, `n_samples x n_features`)
+            --------
+            Matrix of data computed by calling the to_vector method of all dessia_objects
+        * **n_cluster:** (`int`)
+            --------
+            Number of clusters in dessia_objects
 
     **Built-in methods**: See :func:`~dessia_common.core.HeterogeneousList`
     """
@@ -115,17 +125,23 @@ class CategorizedList(dc.HeterogeneousList):
         >>> from dessia_common.core import HeterogeneousList
         >>> from dessia_common.models import all_cars_wi_feat
         >>> hlist = HeterogeneousList(all_cars_wi_feat, name="cars")
-        >>> clist = CategorizedList.from_agglomerative_clustering(hlist, n_clusters=10)
+        >>> clist = CategorizedList.from_agglomerative_clustering(hlist, n_clusters=10, name="ex")
         >>> split_clist = clist.clustered_sublists()
         >>> print(split_clist[:3])
-        HeterogeneousList _0: 3 samples, 5 features
-        |         Mpg         |    Displacement    |     Horsepower     |       Weight       |    Acceleration    |
-        -----------------------------------------------------------------------------------------------------------
-        |               24.0  |             0.113  |              95.0  |            2372.0  |              15.0  |
-        |               27.0  |             0.097  |              88.0  |            2130.0  |              14.5  |
-        |               24.0  |             0.107  |              90.0  |            2430.0  |              14.5  |
+        CategorizedList ex_split: 3 samples, 2 features, 3 clusters
+        |   n°   |   Name   |   Common_attributes   |
+        ---------------------------------------------
+        |      0 |     ex_0 |['mpg', 'displacemen...|
+        |      1 |     ex_1 |['mpg', 'displacemen...|
+        |      2 |     ex_2 |['mpg', 'displacemen...|
+        >>> print(split_clist[3][:3])
+        HeterogeneousList ex_3: 3 samples, 5 features
+        |   Mpg   |   Displacement   |   Horsepower   |   Weight   |   Acceleration   |
+        -------------------------------------------------------------------------------
+        |    21.0 |              0.2 |           85.0 |     2587.0 |             16.0 |
+        |    25.0 |             0.11 |           87.0 |     2672.0 |             17.5 |
+        |    21.0 |            0.199 |           90.0 |     2648.0 |             15.0 |
         """
-
         sublists = []
         label_tags = sorted(list(map(str, set(self.labels).difference({-1}))))
         for _ in range(max(self.labels) + 1):
@@ -174,7 +190,7 @@ class CategorizedList(dc.HeterogeneousList):
     @classmethod
     def from_agglomerative_clustering(cls, data: dc.HeterogeneousList, n_clusters: int = 2,
                                       affinity: str = 'euclidean', linkage: str = 'ward',
-                                      distance_threshold: float = None, scaling: bool = False):
+                                      distance_threshold: float = None, scaling: bool = False, name: str =""):
 
         """
         Hierarchical clustering is a general family of clustering algorithms that
@@ -201,154 +217,177 @@ class CategorizedList(dc.HeterogeneousList):
         See more : https://scikit-learn.org/stable/modules/clustering.html#hierarchical-clustering
 
         :param data: The future clustered data.
-        :type data: List[dc.DessiaObject]
+        :type data: List[DessiaObject]
 
-        :param n_clusters: number of wished clusters, defaults to 2,
-            Must be None if distance_threshold is not None
-        :type n_clusters: int, optional
+        :param n_clusters:
+            -------
+            Number of wished clusters.
 
-        :param affinity: metric used to compute the linkage, defaults to 'euclidean'.
-            Can be one of [“euclidean”, “l1”, “l2”, “manhattan”, “cosine”, or “precomputed”].
-            If linkage is “ward”, only “euclidean” is accepted.
-            If “precomputed”, a distance matrix (instead of a similarity matrix)
-            is needed as input for the fit method.
-        :type affinity: str, optional
+            Must be `None` if `distance_threshold` is not `None`
+        :type n_clusters: `int`, `optional`, defaults to `2`
 
-        :param linkage: Which linkage criterion to use, defaults to 'ward'
-            Can be one of [‘ward’, ‘complete’, ‘average’, ‘single’]
-            The linkage criterion determines which distance to use between sets of observation.
-            The algorithm will merge the pairs of cluster that minimize this criterion.
-                - ‘ward’ minimizes the variance of the clusters being merged.
-                - ‘average’ uses the average of the distances of each observation of the two sets.
-                - ‘complete’ or ‘maximum’ linkage uses the maximum distances between all observations of the two sets.
-                - ‘single’ uses the minimum of the distances between all observations of the two sets.
-        :type linkage: str, optional
+        :param affinity:
+            -------
+            Metric used to compute the linkage.
+            Can be one of `['euclidean', 'l1', 'l2', 'manhattan', 'cosine', or 'precomputed']`.
 
-        :param distance_threshold: The linkage distance above which clusters will not be merged, defaults to None
-            If not None, n_clusters must be None.
-        :type distance_threshold: float, optional
+            If linkage is `'ward'`, only `'euclidean'` is accepted.
 
-        :param scaling: Whether to scale the data or not before clustering.
-        Formula is scaled_x = ( x - mean ) / standard_deviation, default to False
-        :type scaling: bool, optional
+            If `'precomputed'`, a distance matrix (instead of a similarity matrix) is needed as input for the \
+                fit method.
+        :type affinity: `str`, `optional`, defaults to `'euclidean'`
 
-        :return: a ClusterResult object that knows the data and their labels
-        :rtype: ClusterResult
+        :param linkage:
+            --------
+            |  Which linkage criterion to use. Can be one of `[‘ward’, ‘complete’, ‘average’, ‘single’]`
+            |  The linkage criterion determines which distance to use between sets of observation.
+            |  The algorithm will merge the pairs of cluster that minimize this criterion.
+            |     - `'ward'` minimizes the variance of the clusters being merged.
+            |     - `'average`' uses the average of the distances of each observation of the two sets.
+            |     - `'complete`' or `'maximum`' linkage uses the maximum distances between all observations of the two \
+                sets.
+            |     - `'single`' uses the minimum of the distances between all observations of the two sets.
+        :type linkage: `str`, `optional`, defaults to `'ward'`
 
+        :param distance_threshold:
+            --------
+            The linkage distance above which clusters will not be merged.
+            If not `None`, `n_clusters` must be `None`.
+        :type distance_threshold: `float`, `optional`, defaults to `None`
+
+        :param scaling:
+            --------
+            Whether to scale the data or not before clustering.
+
+            Formula is `scaled_x = ( x - mean )/standard_deviation`
+        :type scaling: `bool`, `optional`, default to `False`
+
+        :return: a CategorizedList that knows the data and their labels
+        :rtype: CategorizedListt
         """
         skl_cluster = cluster.AgglomerativeClustering(
             n_clusters=n_clusters, affinity=affinity, distance_threshold=distance_threshold, linkage=linkage)
         skl_cluster = cls.fit_cluster(skl_cluster, data.matrix, scaling)
-        return cls(data.dessia_objects, skl_cluster.labels_.tolist())
+        return cls(data.dessia_objects, skl_cluster.labels_.tolist(), name=name)
 
     @classmethod
     def from_kmeans(cls, data: dc.HeterogeneousList, n_clusters: int = 2,
-                    n_init: int = 10, tol: float = 1e-4, scaling: bool = False):
+                    n_init: int = 10, tol: float = 1e-4, scaling: bool = False, name: str =""):
 
         """
-        Internet doc
-        ----------
-            The KMeans algorithm clusters data by trying to separate samples in n groups of equal variance,
-            minimizing a criterion known as the inertia or within-cluster sum-of-squares (see below).
-            This algorithm requires the number of clusters to be specified. It scales well to large number
-            of samples and has been used across a large range of application areas in many different fields.
-            The k-means algorithm divides a set of samples into disjoint clusters , each described by the mean
-            of the samples in the cluster. The means are commonly called the cluster “centroids”; note that
-            they are not, in general, points from, although they live in the same space.
-            The K-means algorithm aims to choose centroids that minimise the inertia, or within-cluster
-            sum-of-squares criterion.
+        The KMeans algorithm clusters data by trying to separate samples in n groups of equal variance,
+        minimizing a criterion known as the inertia or within-cluster sum-of-squares (see below).
+        This algorithm requires the number of clusters to be specified. It scales well to large number
+        of samples and has been used across a large range of application areas in many different fields.
+        The k-means algorithm divides a set of samples into disjoint clusters , each described by the mean
+        of the samples in the cluster. The means are commonly called the cluster “centroids”; note that
+        they are not, in general, points from, although they live in the same space.
+        The K-means algorithm aims to choose centroids that minimise the inertia, or within-cluster
+        sum-of-squares criterion.
 
-            See more : https://scikit-learn.org/stable/modules/clustering.html#k-means
+        See more : https://scikit-learn.org/stable/modules/clustering.html#k-means
 
         :param data: The future clustered data.
-        :type data: List[dc.DessiaObject]
+        :type data: List[DessiaObject]
 
-        :param n_clusters: number of wished clusters, defaults to 2
-        :type n_clusters: int, optional
+        :param n_clusters:
+            --------
+            Number of wished clusters
+        :type n_clusters: `int`, `optional`, defaults to `2`
 
-        :param n_init: Number of time the k-means algorithm will be run with different centroid seeds, defaults to 10
+        :param n_init:
+            --------
+            Number of time the k-means algorithm will be run with different centroid seeds.
             The final results will be the best output of n_init consecutive runs in terms of inertia.
-        :type n_init: int, optional
+        :type n_init: `int`, `optional`, defaults to `10`
 
-        :param tol: Relative tolerance with regards to Frobenius norm of the difference in the cluster centers
-            of two consecutive iterations to declare convergence., defaults to 1e-4
-        :type tol: float, optional
+        :param tol:
+            --------
+            Relative tolerance with regards to Frobenius norm of the difference in the cluster centers of two \
+                consecutive iterations to declare convergence.
+        :type tol: `float`, `optional`, defaults to `1e-4`
 
-        :param scaling: Whether to scale the data or not before clustering.
-        Formula is scaled_x = ( x - mean ) / standard_deviation, default to False
-        :type scaling: bool, optional
+        :param scaling:
+            --------
+            Whether to scale the data or not before clustering.
 
-        :return: a ClusterResult object that knows the data and their labels
-        :rtype: ClusterResult
+            Formula is `scaled_x = ( x - mean )/standard_deviation`
+        :type scaling: `bool`, `optional`, default to `False`
 
+        :return: a CategorizedList that knows the data and their labels
+        :rtype: CategorizedList
         """
         skl_cluster = cluster.KMeans(n_clusters=n_clusters, n_init=n_init, tol=tol)
         skl_cluster = cls.fit_cluster(skl_cluster, data.matrix, scaling)
-        return cls(data.dessia_objects, skl_cluster.labels_.tolist())
+        return cls(data.dessia_objects, skl_cluster.labels_.tolist(), name=name)
 
     @classmethod
     def from_dbscan(cls, data: dc.HeterogeneousList, eps: float = 0.5, min_samples: int = 5, mink_power: float = 2,
-                    leaf_size: int = 30, metric: str = "euclidean", scaling: bool = False):
+                    leaf_size: int = 30, metric: str = "euclidean", scaling: bool = False, name: str =""):
 
         """
-        Internet doc
-        ----------
-            The DBSCAN algorithm views clusters as areas of high density separated by areas of low density.
-            Due to this rather generic view, clusters found by DBSCAN can be any shape, as opposed to k-means
-            which assumes that clusters are convex shaped. The central component to the DBSCAN is the concept
-            of core samples, which are samples that are in areas of high density. A cluster is therefore a set
-            of core samples, each close to each other (measured by some distance measure) and a set of non-core
-            samples that are close to a core sample (but are not themselves core samples).
-            There are two parameters to the algorithm, min_samples and eps, which define formally what we mean
-            when we say dense. Higher min_samples or lower eps indicate higher density necessary to form a cluster.
+        The DBSCAN algorithm views clusters as areas of high density separated by areas of low density.
+        Due to this rather generic view, clusters found by DBSCAN can be any shape, as opposed to k-means
+        which assumes that clusters are convex shaped. The central component to the DBSCAN is the concept
+        of core samples, which are samples that are in areas of high density. A cluster is therefore a set
+        of core samples, each close to each other (measured by some distance measure) and a set of non-core
+        samples that are close to a core sample (but are not themselves core samples).
+        There are two parameters to the algorithm, min_samples and eps, which define formally what we mean
+        when we say dense. Higher min_samples or lower eps indicate higher density necessary to form a cluster.
 
-            See more : https://scikit-learn.org/stable/modules/clustering.html#dbscan
+        See more : https://scikit-learn.org/stable/modules/clustering.html#dbscan
 
         :param data: The future clustered data.
-        :type data: List[dc.DessiaObject]
+        :type data: List[DessiaObject]
 
-        :param eps: The maximum distance between two samples for one to be considered as in the neighborhood
-        of the other. This is not a maximum bound on the distances of points within a cluster.
-        This is the most important DBSCAN parameter to choose appropriately for your data
-        set and distance function, defaults to 0.5
-        :type eps: float, optional
+        :param eps:
+            --------
+            The maximum distance between two samples for one to be considered as in the neighborhood \
+            of the other. This is not a maximum bound on the distances of points within a cluster. This is the most \
+            important DBSCAN parameter to choose appropriately for your data set and distance function
+        :type eps: `float`, `optional`, defaults to `0.5`
 
-        :param min_samples: The number of samples (or total weight) in a neighborhood for a point to be considered as
-        a core point. This includes the point itself, defaults to 5
-        :type min_samples: int, optional
+        :param min_samples:
+            --------
+            The number of samples (or total weight) in a neighborhood for a point to be considered as \
+            a core point. This includes the point itself
+        :type min_samples: `int`, `optional`, defaults to 5
 
-        :param mink_power: The power of the Minkowski metric to be used to calculate distance between points.
-        If None, then mink_power=2 (equivalent to the Euclidean distance), defaults to 2
-        :type mink_power: float, optional
+        :param mink_power:
+            --------
+            The power of the Minkowski metric to be used to calculate distance between points. \
+            If `None`, then `mink_power=2` (equivalent to the Euclidean distance)
+        :type mink_power: `float`, `optional`, defaults to `2`
 
-        :param leaf_size: Leaf size passed to BallTree or cKDTree. This can affect the speed of the construction
-        and query, as well as the memory required to store the tree. The optimal value depends on the nature of
-        the problem, defaults to 30
-        :type leaf_size: int, optional
+        :param leaf_size:
+            --------
+            Leaf size passed to BallTree or cKDTree. This can affect the speed of the construction and \
+            query, as well as the memory required to store the tree. The optimal value depends on the nature of the \
+            problem
+        :type leaf_size: `int`, `optional`, defaults to `30`
 
-        :param metric: The metric to use when calculating distance between instances in a feature array.
-        If metric is a string or callable, it must be one of the options allowed by sklearn.metrics.pairwise_distances
-        for its metric parameter. If metric is “precomputed”, X is assumed to be a distance matrix and must be square.
-        X may be a sparse graph, in which case only “nonzero” elements may be considered neighbors for DBSCAN.
-        :type metric: str, or callable, default=’euclidean’
+        :param metric:
+            --------
+            The metric to use when calculating distance between instances in a feature array. If metric is \
+            a string or callable, it must be one of the options allowed by sklearn.metrics.pairwise_distances for its \
+            metric parameter. If metric is `'precomputed'`, X is assumed to be a distance matrix and must be square. \
+            X may be a sparse graph, in which case only `'nonzero'` elements may be considered neighbors for DBSCAN.
+        :type metric: `str`, or `callable`, default to `’euclidean’`
 
 
-        :param scaling: Whether to scale the data or not before clustering.
-        Formula is scaled_x = ( x - mean ) / standard_deviation, default to False
-        :type scaling: bool, optional
+        :param scaling:
+            --------
+            Whether to scale the data or not before clustering.
 
-        :return: a ClusterResult object that knows the data and their labels
-        :rtype: ClusterResult
+            Formula is `scaled_x = ( x - mean )/standard_deviation`
+        :type scaling: `bool`, `optional`, default to `False`
 
-        !! WARNING !!
-        ----------
-            All labels are summed with 1 in order to improve the code simplicity and ease to use.
-            Then -1 labelled values are now at 0 and must not be considered as clustered values when using DBSCAN.
-
+        :return: a CategorizedList that knows the data and their labels
+        :rtype: CategorizedList
         """
         skl_cluster = cluster.DBSCAN(eps=eps, min_samples=min_samples, p=mink_power, leaf_size=leaf_size, metric=metric)
         skl_cluster = cls.fit_cluster(skl_cluster, data.matrix, scaling)
-        return cls(data.dessia_objects, skl_cluster.labels_.tolist())
+        return cls(data.dessia_objects, skl_cluster.labels_.tolist(), name=name)
 
     @staticmethod
     def fit_cluster(skl_cluster: cluster, matrix: List[List[float]], scaling: bool):
