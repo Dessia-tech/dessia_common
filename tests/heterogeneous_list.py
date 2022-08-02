@@ -34,7 +34,7 @@ all_cars_with_features.plot()
 all_cars_without_features.plot()
 RandData_heterogeneous.plot()
 
-# # Check platform for datasets
+# Check platform for datasets
 all_cars_with_features._check_platform()
 all_cars_without_features._check_platform()
 RandData_heterogeneous._check_platform()
