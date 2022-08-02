@@ -913,6 +913,7 @@ class FiltersList(DessiaObject):
 
 class HeterogeneousList(DessiaObject):
     _standalone_in_db = True
+    _vector_features = ["name", "common_attributes"]
 
     def __init__(self, dessia_objects: List[DessiaObject] = None, name: str = ''):
         if dessia_objects is None:
@@ -924,8 +925,11 @@ class HeterogeneousList(DessiaObject):
 
     def _procreate(self):
         new_hlist = self.__class__()
-        new_hlist._common_attributes = self.common_attributes
+        new_hlist._common_attributes = self._common_attributes
         new_hlist.name = self.name
+        for attr in self.__dict__:
+            if not isinstance(attr, (list, dict, tuple)):
+                setattr(new_hlist, attr, getattr(self, attr))
         return new_hlist
 
     def __getitem__(self, key: Any):
@@ -950,12 +954,17 @@ class HeterogeneousList(DessiaObject):
                                   "indexing HeterogeneousLists")
 
     def __add__(self, b: 'HeterogeneousList'):
-        sum_hlist = self.__class__(self.dessia_objects + b.dessia_objects)
-        if all(attr in b.common_attributes for attr in self.common_attributes) and \
-            all(attr in self.common_attributes for attr in b):
-            sum_hlist._common_attributes = self.common_attributes
-            if self._matrix is not None and b._matrix is not None:
-                sum_hlist._matrix += self._matrix + b._matrix
+        sum_hlist = self._procreate()
+        sum_hlist.dessia_objects = self.dessia_objects + b.dessia_objects
+        for attr in self.__dict__:
+            if attr in b.__dict__ and isinstance(getattr(self, attr), (list, dict, tuple)) and \
+                None not in [getattr(self, attr), getattr(b, attr)]:
+                setattr(sum_hlist, attr, getattr(self, attr) + getattr(b, attr))
+        # if all(attr in b.common_attributes for attr in self.common_attributes) and \
+        #     all(attr in self.common_attributes for attr in b):
+        #     sum_hlist._common_attributes = self.common_attributes
+        #     if self._matrix is not None and b._matrix is not None:
+        #         sum_hlist._matrix += self._matrix + b._matrix
         return sum_hlist
 
     def extend(self, b: 'HeterogeneousList'):
@@ -966,9 +975,12 @@ class HeterogeneousList(DessiaObject):
 
     def pick_from_slice(self, key: slice):
         new_hlist = self._procreate()
-        new_hlist.dessia_objects = self.dessia_objects[key]
-        if self._matrix is not None:
-            new_hlist._matrix = self.matrix[key]
+        # new_hlist.dessia_objects = self.dessia_objects[key]
+        for attr in self.__dict__:
+            if hasattr(getattr(self, attr), "__getitem__") and attr not in ["_common_attributes"]:
+                setattr(new_hlist, attr, getattr(self, attr)[key])
+        # if self._matrix is not None:
+        #     new_hlist._matrix = self.matrix[key]
         # new_hlist.name += f"_{key.start if key.start is not None else 0}_{key.stop}")
         return new_hlist
 
@@ -980,38 +992,50 @@ class HeterogeneousList(DessiaObject):
 
     def pick_from_boolist(self, key: List[bool]):
         new_hlist = self._procreate()
-        new_hlist.dessia_objects = DessiaFilter.apply(self.dessia_objects, key)
-        if self._matrix is not None:
-            new_hlist._matrix = DessiaFilter.apply(self.matrix, key)
+        for attr in self.__dict__:
+            if hasattr(getattr(self, attr), "__getitem__") and attr not in ["_common_attributes"]:
+                setattr(new_hlist, attr, DessiaFilter.apply(getattr(self, attr), key))
         # new_hlist.name += "_list")
         return new_hlist
 
     def __str__(self):
-        offset_space = 10
         print_lim = 15
-        titles_list = self.common_attributes
+        attr_name_len = []
+        attr_space = []
         prefix = f"{self.__class__.__name__} {self.name if self.name != '' else hex(id(self))}: "
         prefix += f"{len(self.dessia_objects)} samples, {len(self.common_attributes)} features"
+
         if self.__len__() == 0:
             return prefix
-
         string = ""
-        for idx, attr in enumerate(titles_list):
+        for idx, attr in enumerate(self.common_attributes):
             end_bar = ""
-            if idx == len(titles_list) - 1:
+            if idx == len(self.common_attributes) - 1:
                 end_bar = "|"
-            space = offset_space - int(len(attr)/2)
-            string += "|" + " "*space + f"{attr.capitalize()}" + " "*space + end_bar
+            # attribute
+            attr_space.append(len(attr) + 6) #offset_space - int(len(attr)/2)
+            name_attr = " "*3 + f"{attr.capitalize()}" + " "*3
+            attr_name_len.append(len(name_attr))
+            string += "|" + name_attr + end_bar
 
         string += "\n" + "-"*len(string)
         for dessia_object in self.dessia_objects[:print_lim]:
             string += "\n"
+
             for idx, attr in enumerate(self.common_attributes):
                 end_bar = ""
-                if idx == len(titles_list) - 1:
+                if idx == len(self.common_attributes) - 1:
                     end_bar = "|"
-                space = 2*offset_space - len(str(getattr(dessia_object, attr)))
-                string += "|" + " "*(space + len(attr)%2 - 2) + f"{getattr(dessia_object, attr)}" + "  " + end_bar
+
+                # attribute
+                string += "|" + " "*(attr_space[idx] - len(str(getattr(dessia_object, attr))) - 1)
+                string += f"{getattr(dessia_object, attr)}"[:attr_name_len[idx] - 3]
+                if len(str(getattr(dessia_object, attr))) > attr_name_len[idx] - 3:
+                    string += "..."
+                else:
+                    string += " "
+
+                string += end_bar
 
         return prefix + "\n" + string + "\n"
 
@@ -1040,6 +1064,10 @@ class HeterogeneousList(DessiaObject):
             if len(self.dessia_objects) == 0:
                 return []
             all_class = list(set(dessia_object.__class__ for dessia_object in self.dessia_objects))
+
+            if len(all_class) == 1 and isinstance(self.dessia_objects[0], HeterogeneousList):
+                return self.vector_features()
+
             common_attributes = set(all_class[0].vector_features())
             for klass in all_class[1:]:
                 common_attributes = common_attributes.intersection(set(klass.vector_features()))

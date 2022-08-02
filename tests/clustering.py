@@ -27,48 +27,54 @@ clustered_cars_without.labels[1] = -1
 clustered_cars_without.labels[2] = 999999
 print(clustered_cars_without)
 
-# Split lists into labelled lists
-split_cars_without = clustered_cars_without.clustered_sublists()
-split_cars_with = clustered_cars_with.clustered_sublists()
-aggclustest_split = aggclustest_clustered.clustered_sublists()
-kmeanstest_split = kmeanstest_clustered.clustered_sublists()
+hlist = HeterogeneousList(all_cars_wi_feat, name="cars")
+clist = CategorizedList.from_agglomerative_clustering(hlist, n_clusters=10)
+split_clist = clist.clustered_sublists()
+split_clist[0].name = "15g6e4rg84reh56rt4h56j458hrt56gb41rth674r68jr6"
+print(split_clist)
 
-# Test ClusterResults instances on platform
-clustered_cars_without._check_platform()
-clustered_cars_with._check_platform()
-aggclustest_clustered._check_platform()
-kmeanstest_clustered._check_platform()
+# # Split lists into labelled lists
+# split_cars_without = clustered_cars_without.clustered_sublists()
+# split_cars_with = clustered_cars_with.clustered_sublists()
+# aggclustest_split = aggclustest_clustered.clustered_sublists()
+# kmeanstest_split = kmeanstest_clustered.clustered_sublists()
 
-# Test plots outside platform
-clustered_cars_without.plot()
-clustered_cars_with.plot()
-aggclustest_clustered.plot()
-kmeanstest_clustered.plot()
+# # Test ClusterResults instances on platform
+# clustered_cars_without._check_platform()
+# clustered_cars_with._check_platform()
+# aggclustest_clustered._check_platform()
+# kmeanstest_clustered._check_platform()
 
-# =============================================================================
-# JSON TESTS
-# =============================================================================
-dict_cars_without = clustered_cars_without.to_dict(use_pointers=True)
-dict_cars_with = clustered_cars_with.to_dict(use_pointers=True)
-dict_aggclustest = aggclustest_clustered.to_dict(use_pointers=True)
-dict_kmeanstest = kmeanstest_clustered.to_dict(use_pointers=True)
+# # Test plots outside platform
+# clustered_cars_without.plot()
+# clustered_cars_with.plot()
+# aggclustest_clustered.plot()
+# kmeanstest_clustered.plot()
 
-# Cars without features
-json_dict = json.dumps(dict_cars_without)
-decoded_json = json.loads(json_dict)
-deserialized_object = clustered_cars_without.dict_to_object(decoded_json)
+# # =============================================================================
+# # JSON TESTS
+# # =============================================================================
+# dict_cars_without = clustered_cars_without.to_dict(use_pointers=True)
+# dict_cars_with = clustered_cars_with.to_dict(use_pointers=True)
+# dict_aggclustest = aggclustest_clustered.to_dict(use_pointers=True)
+# dict_kmeanstest = kmeanstest_clustered.to_dict(use_pointers=True)
 
-# Cars with features
-json_dict = json.dumps(dict_cars_with)
-decoded_json = json.loads(json_dict)
-deserialized_object = clustered_cars_with.dict_to_object(decoded_json)
+# # Cars without features
+# json_dict = json.dumps(dict_cars_without)
+# decoded_json = json.loads(json_dict)
+# deserialized_object = clustered_cars_without.dict_to_object(decoded_json)
 
-# Small dataset
-json_dict = json.dumps(dict_aggclustest)
-decoded_json = json.loads(json_dict)
-deserialized_object = aggclustest_clustered.dict_to_object(decoded_json)
+# # Cars with features
+# json_dict = json.dumps(dict_cars_with)
+# decoded_json = json.loads(json_dict)
+# deserialized_object = clustered_cars_with.dict_to_object(decoded_json)
 
-# Large dataset
-json_dict = json.dumps(dict_kmeanstest)
-decoded_json = json.loads(json_dict)
-deserialized_object = kmeanstest_clustered.dict_to_object(decoded_json)
+# # Small dataset
+# json_dict = json.dumps(dict_aggclustest)
+# decoded_json = json.loads(json_dict)
+# deserialized_object = aggclustest_clustered.dict_to_object(decoded_json)
+
+# # Large dataset
+# json_dict = json.dumps(dict_kmeanstest)
+# decoded_json = json.loads(json_dict)
+# deserialized_object = kmeanstest_clustered.dict_to_object(decoded_json)

@@ -31,24 +31,27 @@ class CategorizedList(dc.HeterogeneousList):
         return self._n_clusters
 
     def __str__(self):
-        offset_space = 10
         label_space = 4
         print_lim = 15
-        titles_list = self.common_attributes
+        attr_name_len = []
+        attr_space = []
         prefix = f"{self.__class__.__name__} {self.name if self.name != '' else hex(id(self))}: "
         prefix += (f"{len(self.dessia_objects)} samples, {len(self.common_attributes)} features, {self.n_clusters} " +
                    "clusters")
+
         if self.__len__() == 0:
             return prefix
         # label
         string = "|" + " "*(label_space - 1) + "n°" + " "*(label_space - 1)
-        for idx, attr in enumerate(titles_list):
+        for idx, attr in enumerate(self.common_attributes):
             end_bar = ""
-            if idx == len(titles_list) - 1:
+            if idx == len(self.common_attributes) - 1:
                 end_bar = "|"
             # attribute
-            space = offset_space - int(len(attr)/2)
-            string += "|" + " "*space + f"{attr.capitalize()}" + " "*space + end_bar
+            attr_space.append(len(attr) + 6) #offset_space - int(len(attr)/2)
+            name_attr = " "*3 + f"{attr.capitalize()}" + " "*3
+            attr_name_len.append(len(name_attr))
+            string += "|" + name_attr + end_bar
 
         string += "\n" + "-"*len(string)
         for label, dessia_object in zip(self.labels, self.dessia_objects[:print_lim]):
@@ -59,12 +62,18 @@ class CategorizedList(dc.HeterogeneousList):
 
             for idx, attr in enumerate(self.common_attributes):
                 end_bar = ""
-                if idx == len(titles_list) - 1:
+                if idx == len(self.common_attributes) - 1:
                     end_bar = "|"
 
                 # attribute
-                space = 2*offset_space - len(str(getattr(dessia_object, attr)))
-                string += "|" + " "*(space + len(attr)%2 - 2) + f"{getattr(dessia_object, attr)}" + "  " + end_bar
+                string += "|" + " "*(attr_space[idx] - len(str(getattr(dessia_object, attr))) - 1)
+                string += f"{getattr(dessia_object, attr)}"[:attr_name_len[idx] - 3]
+                if len(str(getattr(dessia_object, attr))) > attr_name_len[idx] - 3:
+                    string += "..."
+                else:
+                    string += " "
+
+                string += end_bar
 
         return prefix + "\n" + string + "\n"
 
