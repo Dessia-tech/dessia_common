@@ -1437,9 +1437,9 @@ class HeterogeneousList(DessiaObject):
 
         """
 
-        _, singular_values, _ = npy.linalg.svd(npy.array(self.matrix), full_matrices=False)
+        _, singular_values, _ = npy.linalg.svd(npy.array(self.matrix) - npy.mean(self.matrix, axis = 0),
+                                               full_matrices=False)
         normalized_singular_values = singular_values / npy.sum(singular_values)
-
         singular_points = []
         for idx, value in enumerate(normalized_singular_values):
             singular_points.append({'Index of reduced basis vector': idx + 1, 'Singular value': value})
