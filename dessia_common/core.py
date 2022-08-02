@@ -1258,7 +1258,7 @@ class HeterogeneousList(DessiaObject):
             if idx == len(titles_list) - 1:
                 end_bar = "|"
             space = offset_space - int(len(attr)/2)
-            string += "|"+ " "*space + f"{attr.capitalize()}" + " "*space + end_bar
+            string += "|" + " "*space + f"{attr.capitalize()}" + " "*space + end_bar
 
         string += "\n" + "-"*len(string)
         for dessia_object in self.dessia_objects[:print_lim]:

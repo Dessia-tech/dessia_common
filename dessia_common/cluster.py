@@ -55,6 +55,44 @@ class CategorizedList(dc.HeterogeneousList):
             self._n_clusters = max(self.labels) + 1
         return self._n_clusters
 
+    def __str__(self):
+        offset_space = 10
+        label_space = 4
+        print_lim = 15
+        titles_list = self.common_attributes
+        prefix = f"{self.__class__.__name__} {self.name if self.name != '' else hex(id(self))}: "
+        prefix += (f"{len(self.dessia_objects)} samples, {len(self.common_attributes)} features, {self.n_clusters} " +
+                   "clusters")
+        if self.__len__() == 0:
+            return prefix
+        # label
+        string = "|" + " "*(label_space - 1) + "n°" + " "*(label_space - 1)
+        for idx, attr in enumerate(titles_list):
+            end_bar = ""
+            if idx == len(titles_list) - 1:
+                end_bar = "|"
+            # attribute
+            space = offset_space - int(len(attr)/2)
+            string += "|" + " "*space + f"{attr.capitalize()}" + " "*space + end_bar
+
+        string += "\n" + "-"*len(string)
+        for label, dessia_object in zip(self.labels, self.dessia_objects[:print_lim]):
+            string += "\n"
+            # label
+            space = 2*label_space - 1 - len(str(label))
+            string += "|" + " "*space + f"{label}" + " "
+
+            for idx, attr in enumerate(self.common_attributes):
+                end_bar = ""
+                if idx == len(titles_list) - 1:
+                    end_bar = "|"
+
+                # attribute
+                space = 2*offset_space - len(str(getattr(dessia_object, attr)))
+                string += "|" + " "*(space + len(attr)%2 - 2) + f"{getattr(dessia_object, attr)}" + "  " + end_bar
+
+        return prefix + "\n" + string + "\n"
+
     def clustered_sublists(self):
         """
         Split a CategorizedList of labelled DessiaObjects into a CategorizedList of labelled HeterogeneousLists.
