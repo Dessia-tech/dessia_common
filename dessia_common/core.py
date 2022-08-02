@@ -1232,15 +1232,16 @@ class HeterogeneousList(DessiaObject):
         raise NotImplementedError(f"key of type {type(key)} with {type(key[0])} elements not implemented for " +
                                   "indexing HeterogeneousLists")
 
-    def __add__(self, b: 'HeterogeneousList'):
+    def __add__(self, other: 'HeterogeneousList'):
         sum_hlist = self._procreate()
+        sum_hlist.dessia_objects = self.dessia_objects + other.dessia_objects
         for attr in self.__dict__:
-            if attr in b.__dict__ and isinstance(getattr(self, attr), (list, dict, tuple)) and \
-                None not in [getattr(self, attr), getattr(b, attr)] and attr not in ['name', '_common_attributes']:
-                setattr(sum_hlist, attr, getattr(self, attr) + getattr(b, attr))
+            if attr in other.__dict__ and isinstance(getattr(self, attr), (list, dict, tuple)) and \
+                None not in [getattr(self, attr), getattr(other, attr)]:
+                setattr(sum_hlist, attr, getattr(self, attr) + getattr(other, attr))
         return sum_hlist
 
-    def extend(self, b: 'HeterogeneousList'):
+    def extend(self, other: 'HeterogeneousList'):
         """
         Update a HeterogeneousList by adding b values to it
 
@@ -1256,7 +1257,7 @@ class HeterogeneousList(DessiaObject):
         >>> HeterogeneousList(all_cars_wi_feat).extend(HeterogeneousList(all_cars_wi_feat))
         HeterogeneousList(all_cars_wi_feat + all_cars_wi_feat)
         """
-        self.__dict__.update((self + b).__dict__)
+        self.__dict__.update((self + other).__dict__)
 
     def _pick_from_int(self, idx: int):
         return self.dessia_objects[idx]
