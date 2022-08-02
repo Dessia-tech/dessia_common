@@ -132,7 +132,7 @@ def serialize_typing_types(typing_):
     if origin is ClassMethodType:
         return f'ClassMethodType[{type_fullname(args[0])}]'
     if origin is type:
-        return "Type"
+        return "typing.Type"
     raise NotImplementedError(f"Serialization of typing {typing_} is not implemented")
 
 
