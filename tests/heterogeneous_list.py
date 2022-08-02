@@ -37,14 +37,14 @@ assert(all(item in all_cars_without_features
 all_cars_without_features = HeterogeneousList(all_cars_no_feat)
 
 # Tests for plot_data
-# all_cars_with_features.plot()
-# all_cars_without_features.plot()
-# RandData_heterogeneous.plot()
+all_cars_with_features.plot()
+all_cars_without_features.plot()
+RandData_heterogeneous.plot()
 
-# # Check platform for datasets
-# all_cars_with_features._check_platform()
-# all_cars_without_features._check_platform()
-# RandData_heterogeneous._check_platform()
+# Check platform for datasets
+all_cars_with_features._check_platform()
+all_cars_without_features._check_platform()
+RandData_heterogeneous._check_platform()
 
 # Check for __getitem__ and __str__
 print(all_cars_with_features)
@@ -150,4 +150,3 @@ assert(all_cars_with_features[0].weight == max(all_cars_with_features.get_attrib
 all_cars_without_features.sort(2)
 assert(all_cars_without_features.common_attributes[2] == "displacement")
 assert(all_cars_without_features[0].displacement == min(all_cars_without_features.get_column_values(2)))
-
