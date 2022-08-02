@@ -48,7 +48,7 @@ class CategorizedList(dc.HeterogeneousList):
             if idx == len(self.common_attributes) - 1:
                 end_bar = "|"
             # attribute
-            attr_space.append(len(attr) + 6) #offset_space - int(len(attr)/2)
+            attr_space.append(len(attr) + 6)
             name_attr = " "*3 + f"{attr.capitalize()}" + " "*3
             attr_name_len.append(len(name_attr))
             string += "|" + name_attr + end_bar

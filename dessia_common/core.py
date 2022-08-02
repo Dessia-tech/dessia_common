@@ -960,11 +960,6 @@ class HeterogeneousList(DessiaObject):
             if attr in b.__dict__ and isinstance(getattr(self, attr), (list, dict, tuple)) and \
                 None not in [getattr(self, attr), getattr(b, attr)]:
                 setattr(sum_hlist, attr, getattr(self, attr) + getattr(b, attr))
-        # if all(attr in b.common_attributes for attr in self.common_attributes) and \
-        #     all(attr in self.common_attributes for attr in b):
-        #     sum_hlist._common_attributes = self.common_attributes
-        #     if self._matrix is not None and b._matrix is not None:
-        #         sum_hlist._matrix += self._matrix + b._matrix
         return sum_hlist
 
     def extend(self, b: 'HeterogeneousList'):
@@ -975,12 +970,9 @@ class HeterogeneousList(DessiaObject):
 
     def pick_from_slice(self, key: slice):
         new_hlist = self._procreate()
-        # new_hlist.dessia_objects = self.dessia_objects[key]
         for attr in self.__dict__:
             if hasattr(getattr(self, attr), "__getitem__") and attr not in ["_common_attributes"]:
                 setattr(new_hlist, attr, getattr(self, attr)[key])
-        # if self._matrix is not None:
-        #     new_hlist._matrix = self.matrix[key]
         # new_hlist.name += f"_{key.start if key.start is not None else 0}_{key.stop}")
         return new_hlist
 
@@ -1013,7 +1005,7 @@ class HeterogeneousList(DessiaObject):
             if idx == len(self.common_attributes) - 1:
                 end_bar = "|"
             # attribute
-            attr_space.append(len(attr) + 6) #offset_space - int(len(attr)/2)
+            attr_space.append(len(attr) + 6)
             name_attr = " "*3 + f"{attr.capitalize()}" + " "*3
             attr_name_len.append(len(name_attr))
             string += "|" + name_attr + end_bar
