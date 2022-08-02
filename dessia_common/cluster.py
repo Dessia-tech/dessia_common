@@ -108,9 +108,7 @@ class CategorizedList(dc.HeterogeneousList):
         >>> hlist = HeterogeneousList(all_cars_wi_feat, name="cars")
         >>> clist = CategorizedList.from_agglomerative_clustering(hlist, n_clusters=10)
         >>> split_clist = clist.clustered_sublists()
-        >>> print(split_clist.labels[0])
-        0
-        >>> print(split_clist[0][:3])
+        >>> print(split_clist[:3])
         HeterogeneousList _0: 3 samples, 5 features
         |         Mpg         |    Displacement    |     Horsepower     |       Weight       |    Acceleration    |
         -----------------------------------------------------------------------------------------------------------
