@@ -1117,9 +1117,12 @@ class HeterogeneousList(DessiaObject):
             method of all dessia_objects
 
     **Built-in methods**:
-        * __str__
+        * __init__
             >>> from dessia_common.core import HeterogeneousList
             >>> from dessia_common.models import all_cars_wi_feat
+            >>> hlist = HeterogeneousList(all_cars_wi_feat, name="init")
+
+        * __str__
             >>> print(HeterogeneousList(all_cars_wi_feat[:3], name='printed'))
             HeterogeneousList printed: 3 samples, 5 features
             |         Mpg         |    Displacement    |     Horsepower     |       Weight       |    Acceleration    |

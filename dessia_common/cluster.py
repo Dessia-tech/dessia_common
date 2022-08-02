@@ -14,6 +14,31 @@ except ImportError:
 import dessia_common.core as dc
 
 class CategorizedList(dc.HeterogeneousList):
+    """
+    Base object for handling a categorized (clustered) list of DessiaObjects.
+
+    **CategorizedList should be instantiated with** ``from_...`` **methods.**
+
+    **Do not use** ``__init__`` **to instantiate a CategorizedList.**
+
+    :param dessia_objects: List of DessiaObjects to store in CategorizedList, defaults to None
+    :type dessia_objects: List[DessiaObject], optional
+
+    :param labels: Labels of DessiaObjects' cluster stored in CategorizedList, defaults to None
+    :type dessia_objects: List[int], optional
+
+    :param name: Name of CategorizedList, defaults to ''
+    :type name: str, optional
+
+    :Properties:
+        * **common_attributes:** (*List[str]*) Common attributes of DessiaObjects contained in the current \
+            *CategorizedList*
+        * **matrix:** (*List[List[float]], n_samples x n_features*) Matrix of data computed by calling the to_vector \
+            method of all dessia_objects
+        * **n_cluster:** (*int*) Number of clusters in dessia_objects
+
+    **Built-in methods**: See :func:`~dessia_common.core.HeterogeneousList`
+    """
     _allowed_methods = ['from_agglomerative_clustering', 'from_kmeans', 'from_dbscan']
 
 
@@ -31,6 +56,31 @@ class CategorizedList(dc.HeterogeneousList):
         return self._n_clusters
 
     def clustered_sublists(self):
+        """
+        Split a CategorizedList of labelled DessiaObjects into a CategorizedList of labelled HeterogeneousLists.
+
+        :return: A CategorizedList of length n_cluster that store each cluster in a HeterogeneousList. Labels are \
+            the labels of each cluster, i.e. stored HeterogeneousList
+        :rtype: CategorizedList[HeterogeneousList]
+
+        Examples
+        --------
+        >>> from dessia_common.core import HeterogeneousList
+        >>> from dessia_common.models import all_cars_wi_feat
+        >>> hlist = HeterogeneousList(all_cars_wi_feat, name="cars")
+        >>> clist = CategorizedList.from_agglomerative_clustering(hlist, n_clusters=10)
+        >>> split_clist = clist.clustered_sublists()
+        >>> print(split_clist.labels[0])
+        0
+        >>> print(split_clist[0][:3])
+        HeterogeneousList _0: 3 samples, 5 features
+        |         Mpg         |    Displacement    |     Horsepower     |       Weight       |    Acceleration    |
+        -----------------------------------------------------------------------------------------------------------
+        |               24.0  |             0.113  |              95.0  |            2372.0  |              15.0  |
+        |               27.0  |             0.097  |              88.0  |            2130.0  |              14.5  |
+        |               24.0  |             0.107  |              90.0  |            2430.0  |              14.5  |
+        """
+
         sublists = []
         label_tags = sorted(list(map(str, set(self.labels).difference({-1}))))
         for _ in range(max(self.labels) + 1):
@@ -82,30 +132,28 @@ class CategorizedList(dc.HeterogeneousList):
                                       distance_threshold: float = None, scaling: bool = False):
 
         """
-        Internet doc
-        ----------
-            Hierarchical clustering is a general family of clustering algorithms that
-            build nested clusters by merging or splitting them successively.
-            This hierarchy of clusters is represented as a tree (or dendrogram).
-            The root of the tree is the unique cluster that gathers all the samples,
-            the leaves being the clusters with only one sample. See the Wikipedia page
-            for more details.
+        Hierarchical clustering is a general family of clustering algorithms that
+        build nested clusters by merging or splitting them successively.
+        This hierarchy of clusters is represented as a tree (or dendrogram).
+        The root of the tree is the unique cluster that gathers all the samples,
+        the leaves being the clusters with only one sample. See the Wikipedia page
+        for more details.
 
-            The AgglomerativeClustering object performs a hierarchical clustering using
-            a bottom up approach: each observation starts in its own cluster, and clusters
-            are successively merged together. The linkage criteria determines the metric
-            used for the merge strategy: Ward minimizes the sum of squared differences within all clusters.
+        The AgglomerativeClustering object performs a hierarchical clustering using
+        a bottom up approach: each observation starts in its own cluster, and clusters
+        are successively merged together. The linkage criteria determines the metric
+        used for the merge strategy: Ward minimizes the sum of squared differences within all clusters.
 
-            It is a variance-minimizing approach and in this sense is similar to the
-            k-means objective function but tackled with an agglomerative hierarchical approach.
-            Maximum or complete linkage minimizes the maximum distance between observations of pairs of clusters.
-            Average linkage minimizes the average of the distances between all observations of pairs of clusters.
-            Single linkage minimizes the distance between the closest observations of pairs of clusters.
-            AgglomerativeClustering can also scale to large number of samples when it is used
-            jointly with a connectivity matrix, but is computationally expensive when no connectivity
-            constraints are added between samples: it considers at each step all the possible merges.
+        It is a variance-minimizing approach and in this sense is similar to the
+        k-means objective function but tackled with an agglomerative hierarchical approach.
+        Maximum or complete linkage minimizes the maximum distance between observations of pairs of clusters.
+        Average linkage minimizes the average of the distances between all observations of pairs of clusters.
+        Single linkage minimizes the distance between the closest observations of pairs of clusters.
+        AgglomerativeClustering can also scale to large number of samples when it is used
+        jointly with a connectivity matrix, but is computationally expensive when no connectivity
+        constraints are added between samples: it considers at each step all the possible merges.
 
-            See more : https://scikit-learn.org/stable/modules/clustering.html#hierarchical-clustering
+        See more : https://scikit-learn.org/stable/modules/clustering.html#hierarchical-clustering
 
         :param data: The future clustered data.
         :type data: List[dc.DessiaObject]
