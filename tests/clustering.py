@@ -27,6 +27,12 @@ clustered_cars_without.labels[1] = -1
 clustered_cars_without.labels[2] = 999999
 print(clustered_cars_without)
 
+hlist = HeterogeneousList(all_cars_wi_feat, name="cars")
+clist = CategorizedList.from_agglomerative_clustering(hlist, n_clusters=10)
+split_clist = clist.clustered_sublists()
+split_clist[0].name = "15g6e4rg84reh56rt4h56j458hrt56gb41rth674r68jr6"
+print(split_clist)
+
 # Split lists into labelled lists
 split_cars_without = clustered_cars_without.clustered_sublists()
 split_cars_with = clustered_cars_with.clustered_sublists()
