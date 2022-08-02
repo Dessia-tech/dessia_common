@@ -781,7 +781,8 @@ class HeterogeneousList(DessiaObject):
         return self._matrix
 
     def singular_values(self):
-        _, singular_values, _ = npy.linalg.svd(npy.array(self.matrix), full_matrices=False)
+        _, singular_values, _ = npy.linalg.svd(npy.array(self.matrix) - npy.mean(self.matrix, axis = 0),
+                                               full_matrices=False)
         normed_singular_values = singular_values / npy.sum(singular_values)
 
         singular_points = []
