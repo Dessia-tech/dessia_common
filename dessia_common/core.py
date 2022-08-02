@@ -928,7 +928,7 @@ class HeterogeneousList(DessiaObject):
         new_hlist._common_attributes = self._common_attributes
         new_hlist.name = self.name
         for attr in self.__dict__:
-            if not isinstance(attr, (list, dict, tuple)):
+            if not isinstance(getattr(self, attr), (list, dict, tuple)):
                 setattr(new_hlist, attr, getattr(self, attr))
         return new_hlist
 
@@ -971,7 +971,7 @@ class HeterogeneousList(DessiaObject):
     def pick_from_slice(self, key: slice):
         new_hlist = self._procreate()
         for attr in self.__dict__:
-            if hasattr(getattr(self, attr), "__getitem__") and attr not in ["_common_attributes"]:
+            if isinstance(getattr(self, attr), (list, dict, tuple)) and attr not in ["name", "_common_attributes"]:
                 setattr(new_hlist, attr, getattr(self, attr)[key])
         # new_hlist.name += f"_{key.start if key.start is not None else 0}_{key.stop}")
         return new_hlist
@@ -985,7 +985,7 @@ class HeterogeneousList(DessiaObject):
     def pick_from_boolist(self, key: List[bool]):
         new_hlist = self._procreate()
         for attr in self.__dict__:
-            if hasattr(getattr(self, attr), "__getitem__") and attr not in ["_common_attributes"]:
+            if isinstance(getattr(self, attr), (list, dict, tuple)) and attr not in ["name", "_common_attributes"]:
                 setattr(new_hlist, attr, DessiaFilter.apply(getattr(self, attr), key))
         # new_hlist.name += "_list")
         return new_hlist

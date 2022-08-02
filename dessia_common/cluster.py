@@ -103,7 +103,7 @@ class CategorizedList(dc.HeterogeneousList):
     @classmethod
     def from_agglomerative_clustering(cls, data: dc.HeterogeneousList, n_clusters: int = 2,
                                       affinity: str = 'euclidean', linkage: str = 'ward',
-                                      distance_threshold: float = None, scaling: bool = False):
+                                      distance_threshold: float = None, scaling: bool = False, name: str =""):
 
         """
         Internet doc
@@ -170,11 +170,11 @@ class CategorizedList(dc.HeterogeneousList):
         skl_cluster = cluster.AgglomerativeClustering(
             n_clusters=n_clusters, affinity=affinity, distance_threshold=distance_threshold, linkage=linkage)
         skl_cluster = cls.fit_cluster(skl_cluster, data.matrix, scaling)
-        return cls(data.dessia_objects, skl_cluster.labels_.tolist())
+        return cls(data.dessia_objects, skl_cluster.labels_.tolist(), name=name)
 
     @classmethod
-    def from_kmeans(cls, data: dc.HeterogeneousList, n_clusters: int = 2,
-                    n_init: int = 10, tol: float = 1e-4, scaling: bool = False):
+    def from_kmeans(cls, data: dc.HeterogeneousList, n_clusters: int = 2, n_init: int = 10, tol: float = 1e-4,
+                    scaling: bool = False, name: str =""):
 
         """
         Internet doc
@@ -215,11 +215,11 @@ class CategorizedList(dc.HeterogeneousList):
         """
         skl_cluster = cluster.KMeans(n_clusters=n_clusters, n_init=n_init, tol=tol)
         skl_cluster = cls.fit_cluster(skl_cluster, data.matrix, scaling)
-        return cls(data.dessia_objects, skl_cluster.labels_.tolist())
+        return cls(data.dessia_objects, skl_cluster.labels_.tolist(), name=name)
 
     @classmethod
     def from_dbscan(cls, data: dc.HeterogeneousList, eps: float = 0.5, min_samples: int = 5, mink_power: float = 2,
-                    leaf_size: int = 30, metric: str = "euclidean", scaling: bool = False):
+                    leaf_size: int = 30, metric: str = "euclidean", scaling: bool = False, name: str =""):
 
         """
         Internet doc
@@ -279,7 +279,7 @@ class CategorizedList(dc.HeterogeneousList):
         """
         skl_cluster = cluster.DBSCAN(eps=eps, min_samples=min_samples, p=mink_power, leaf_size=leaf_size, metric=metric)
         skl_cluster = cls.fit_cluster(skl_cluster, data.matrix, scaling)
-        return cls(data.dessia_objects, skl_cluster.labels_.tolist())
+        return cls(data.dessia_objects, skl_cluster.labels_.tolist(), name=name)
 
     @staticmethod
     def fit_cluster(skl_cluster: cluster, matrix: List[List[float]], scaling: bool):
