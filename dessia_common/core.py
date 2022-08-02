@@ -953,17 +953,17 @@ class HeterogeneousList(DessiaObject):
         raise NotImplementedError(f"key of type {type(key)} with {type(key[0])} elements not implemented for " +
                                   "indexing HeterogeneousLists")
 
-    def __add__(self, b: 'HeterogeneousList'):
+    def __add__(self, other: 'HeterogeneousList'):
         sum_hlist = self._procreate()
-        sum_hlist.dessia_objects = self.dessia_objects + b.dessia_objects
+        sum_hlist.dessia_objects = self.dessia_objects + other.dessia_objects
         for attr in self.__dict__:
-            if attr in b.__dict__ and isinstance(getattr(self, attr), (list, dict, tuple)) and \
-                None not in [getattr(self, attr), getattr(b, attr)]:
-                setattr(sum_hlist, attr, getattr(self, attr) + getattr(b, attr))
+            if attr in other.__dict__ and isinstance(getattr(self, attr), (list, dict, tuple)) and \
+                None not in [getattr(self, attr), getattr(other, attr)]:
+                setattr(sum_hlist, attr, getattr(self, attr) + getattr(other, attr))
         return sum_hlist
 
-    def extend(self, b: 'HeterogeneousList'):
-        self.__dict__.update((self + b).__dict__)
+    def extend(self, other: 'HeterogeneousList'):
+        self.__dict__.update((self + other).__dict__)
 
     def pick_from_int(self, idx: int):
         return self.dessia_objects[idx]
