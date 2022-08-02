@@ -73,42 +73,19 @@ class CategorizedList(dc.HeterogeneousList):
         prefix = f"{self.__class__.__name__} {self.name if self.name != '' else hex(id(self))}: "
         prefix += (f"{len(self.dessia_objects)} samples, {len(self.common_attributes)} features, {self.n_clusters} " +
                    "clusters")
-
         if self.__len__() == 0:
             return prefix
-        # label
+
         string = "|" + " "*(label_space - 1) + "n°" + " "*(label_space - 1)
-        for idx, attr in enumerate(self.common_attributes):
-            end_bar = ""
-            if idx == len(self.common_attributes) - 1:
-                end_bar = "|"
-            # attribute
-            attr_space.append(len(attr) + 6)
-            name_attr = " "*3 + f"{attr.capitalize()}" + " "*3
-            attr_name_len.append(len(name_attr))
-            string += "|" + name_attr + end_bar
+        string += self._print_titles(attr_space, attr_name_len)
 
         string += "\n" + "-"*len(string)
         for label, dessia_object in zip(self.labels, self.dessia_objects[:print_lim]):
             string += "\n"
-            # label
             space = 2*label_space - 1 - len(str(label))
             string += "|" + " "*space + f"{label}" + " "
 
-            for idx, attr in enumerate(self.common_attributes):
-                end_bar = ""
-                if idx == len(self.common_attributes) - 1:
-                    end_bar = "|"
-
-                # attribute
-                string += "|" + " "*(attr_space[idx] - len(str(getattr(dessia_object, attr))) - 1)
-                string += f"{getattr(dessia_object, attr)}"[:attr_name_len[idx] - 3]
-                if len(str(getattr(dessia_object, attr))) > attr_name_len[idx] - 3:
-                    string += "..."
-                else:
-                    string += " "
-
-                string += end_bar
+            string += self._print_objects(dessia_object, attr_space, attr_name_len)
 
         return prefix + "\n" + string + "\n"
 
@@ -271,9 +248,8 @@ class CategorizedList(dc.HeterogeneousList):
         return cls(data.dessia_objects, skl_cluster.labels_.tolist(), name=name)
 
     @classmethod
-    def from_kmeans(cls, data: dc.HeterogeneousList, n_clusters: int = 2,
-                    n_init: int = 10, tol: float = 1e-4, scaling: bool = False, name: str =""):
-
+    def from_kmeans(cls, data: dc.HeterogeneousList, n_clusters: int = 2, n_init: int = 10, tol: float = 1e-4,
+                    scaling: bool = False, name: str =""):
         """
         The KMeans algorithm clusters data by trying to separate samples in n groups of equal variance,
         minimizing a criterion known as the inertia or within-cluster sum-of-squares (see below).
