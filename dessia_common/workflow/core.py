@@ -21,7 +21,7 @@ from dessia_common import DessiaObject, is_sequence, JSONSCHEMA_HEADER, jsonsche
     deserialize_argument, set_default_value, prettyname, serialize_dict, DisplaySetting
 
 from dessia_common.utils.serialization import deserialize, serialize_with_pointers, serialize, update_pointers_data
-from dessia_common.utils.types import serialize_typing, deserialize_typing, recursive_type, typematch
+from dessia_common.utils.types import serialize_typing, deserialize_typing, recursive_type, typematch, is_serializable
 from dessia_common.utils.copy import deepcopy_value
 from dessia_common.utils.docstrings import FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE
 from dessia_common.utils.diff import choose_hash
@@ -1470,7 +1470,8 @@ class WorkflowState(DessiaObject):
         global_dict, pointers_memo = update_pointers_data(global_dict=global_dict, current_dict=dict_,
                                                           pointers_memo=pointers_memo)
 
-        workflow = Workflow.dict_to_object(dict_['workflow'])
+        workflow = Workflow.dict_to_object(dict_=dict_['workflow'], global_dict=global_dict,
+                                           pointers_memo=pointers_memo, path=f"{path}/workflow")
         if 'output_value' in dict_:  # and 'output_value_type' in dict_:
             # type_ = dict_['output_value_type']
             value = dict_['output_value']
@@ -1799,9 +1800,13 @@ class WorkflowRun(WorkflowState):
             end_time = time.time()
         self.end_time = end_time
         self.execution_time = end_time - start_time
-        self.variable_values = {workflow.variable_indices(k): v for k, v in values.items() if k.memorize}
-        WorkflowState.__init__(self, workflow=workflow, input_values=input_values, activated_items=activated_items,
-                               values=values, start_time=start_time, output_value=output_value, log=log, name=name)
+        self.variable_values = {workflow.variable_indices(k): v for k, v in values.items()
+                                if k.memorize and is_serializable(v)}
+        filtered_values = {k: v for k, v in values.items() if is_serializable(v)}
+        filtered_input_values = {k: v for k, v in input_values.items() if is_serializable(v)}
+        WorkflowState.__init__(self, workflow=workflow, input_values=filtered_input_values,
+                               activated_items=activated_items, values=filtered_values, start_time=start_time,
+                               output_value=output_value, log=log, name=name)
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#'):
         """
