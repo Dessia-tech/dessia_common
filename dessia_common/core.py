@@ -25,6 +25,7 @@ from importlib import import_module
 from ast import literal_eval
 
 import numpy as npy
+from sklearn import preprocessing
 
 import dessia_common.errors
 from dessia_common.utils.diff import data_eq, diff, dict_hash, list_hash
@@ -781,14 +782,20 @@ class HeterogeneousList(DessiaObject):
         return self._matrix
 
     def singular_values(self):
-        _, singular_values, _ = npy.linalg.svd(npy.array(self.matrix) - npy.mean(self.matrix, axis = 0),
-                                               full_matrices=False)
+        scaled_data = HeterogeneousList.scale_data(npy.array(self.matrix) - npy.mean(self.matrix, axis = 0))
+        _, singular_values, _ = npy.linalg.svd(npy.array(scaled_data).T, full_matrices=False)
         normed_singular_values = singular_values / npy.sum(singular_values)
 
         singular_points = []
         for idx, value in enumerate(normed_singular_values):
             singular_points.append({'Index of reduced basis vector': idx + 1, 'Singular value': value})
         return normed_singular_values, singular_points
+
+    @staticmethod
+    def scale_data(data_matrix: List[List[float]]):
+        scaled_matrix = preprocessing.StandardScaler().fit_transform(data_matrix)
+        return [list(map(float, row.tolist())) for row in scaled_matrix]
+
 
     def plot_data(self):
         # Plot a correlation matrix : To develop
