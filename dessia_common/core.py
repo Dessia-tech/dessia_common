@@ -896,26 +896,26 @@ class HeterogeneousList(DessiaObject):
         Find the pareto-efficient points
         :return: A HeterogeneousList of pareto_points
         """
+
         return HeterogeneousList(list(itertools.compress(self.dessia_objects,
                                                          self.__class__.pareto_indexes(costs, tol))))
+
 
     @staticmethod
     def pareto_frontiers(costs, tol: float = 0.):
         # Experimental
         import matplotlib.pyplot as plt
-        pareto_costs = npy.array(list(itertools.compress(costs.tolist(),
-                                                         HeterogeneousList.pareto_indexes(costs, tol))))
-        pareto_frontiers = []
+        pareto_indexes = HeterogeneousList.pareto_indexes(costs, tol)
+        pareto_costs = npy.array(list(itertools.compress(costs.tolist(), pareto_indexes)))
 
         plt.figure()
         plt.plot(costs[:, 0], costs[:, 1], linestyle ='None', marker='o', color = 'b')
         plt.plot(pareto_costs[:, 0], pareto_costs[:, 1], linestyle ='None', marker='o', color = 'r')
         plt.show()
 
-        super_mini = npy.min(costs, axis = 0)
-
+        super_mini = npy.min(costs, axis=0)
+        pareto_frontiers = []
         for x_dim in range(pareto_costs.shape[1]):
-            pareto_frontiers = []
             for y_dim in range(pareto_costs.shape[1]):
                 if x_dim != y_dim:
                     frontier_2d = HeterogeneousList.pareto_frontier_2d(x_dim, y_dim, pareto_costs,
@@ -947,25 +947,6 @@ class HeterogeneousList(DessiaObject):
                                   dir_coeffs[chosen_line] + offsets[chosen_line]]]).T
 
         return frontier_2d
-
-# class HomogeneousList(HeterogeneousList):
-
-#     def __init__(self, dessia_objects: List[DessiaObject] = None, name: str = ''):
-#         HeterogeneousList.__init__(
-#             self, dessia_objects=dessia_objects, name=name)
-
-#     def matrix(self):
-#         matrix = []
-#         for dessia_object in self.dessia_objects:
-#             matrix.append(dessia_object.to_vector())
-#         return matrix
-
-
-# class Catalog(DessiaObject):
-#     def __init__(self, objects: List[DessiaObject], name: str = ''):
-#         self.objects = objects
-#         DessiaObject.__init__(self, name=name)
-
 
 class Parameter(DessiaObject):
     def __init__(self, lower_bound, upper_bound, periodicity=None, name=''):
@@ -1037,90 +1018,6 @@ class DessiaFilter(DessiaObject):
         same_op = self.operator == other.operator
         same_bound = self.bound == other.bound
         return same_attr and same_op and same_bound
-
-
-# class Evolution(DessiaObject):
-#     """
-#     Defines a generic evolution
-
-#     :param evolution: float list
-#     :type evolution: list
-#     """
-#     _non_data_eq_attributes = ['name']
-#     _non_data_hash_attributes = ['name']
-#     _generic_eq = True
-
-#     def __init__(self, evolution: List[float] = None, name: str = ''):
-#         if evolution is None:
-#             evolution = []
-#         self.evolution = evolution
-
-#         DessiaObject.__init__(self, name=name)
-
-#     def _displays(self):
-#         displays = [{'angular_component': 'app-evolution1d',
-#                      'table_show': False,
-#                      'evolution': [self.evolution],
-#                      'label_y': ['evolution']}]
-#         return displays
-
-#     def update(self, evolution):
-#         """
-#         Update the evolution list
-#         """
-#         self.evolution = evolution
-
-
-# class CombinationEvolution(DessiaObject):
-#     _non_data_eq_attributes = ['name']
-#     _non_data_hash_attributes = ['name']
-#     _generic_eq = True
-
-#     def __init__(self, evolution1: List[Evolution],
-#                  evolution2: List[Evolution], title1: str = 'x',
-#                  title2: str = 'y', name: str = ''):
-
-#         self.evolution1 = evolution1
-#         self.evolution2 = evolution2
-
-#         self.x_, self.y_ = self.genere_xy()
-
-#         self.title1 = title1
-#         self.title2 = title2
-
-#         DessiaObject.__init__(self, name=name)
-
-#     def _displays(self):
-#         displays = [{
-#             'angular_component': 'app-evolution2d-combination-evolution',
-#             'table_show': False,
-#             'evolution_x': [self.x_], 'label_x': ['title1'],
-#             'evolution_y': [self.y_], 'label_y': ['title2']
-#         }]
-#         return displays
-
-#     def update(self, evol1, evol2):
-#         """
-#         Update the CombinationEvolution object
-
-#         :param evol1: list
-#         :param evol2: list
-#         """
-#         for evolution, ev1 in zip(self.evolution1, evol1):
-#             evolution.update(ev1)
-#         for evolution, ev2 in zip(self.evolution2, evol2):
-#             evolution.update(ev2)
-#         self.x_, self.y_ = self.genere_xy()
-
-#     def genere_xy(self):
-#         x, y = [], []
-#         for evol in self.evolution1:
-#             x = x + evol.evolution
-#         for evol in self.evolution2:
-#             y = y + evol.evolution
-#         return x, y
-
-
 def dict_merge(old_dct, merge_dct, add_keys=True, extend_lists=True):
     """ Recursive dict merge. Inspired by :meth:``dict.update()``, instead of
     updating only top-level keys, dict_merge recurses down into dicts nested
