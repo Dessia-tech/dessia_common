@@ -97,10 +97,10 @@ def get_version():
     branch = get_branch()
     if branch and branch != 'master':
         branch = re.sub('[^A-Za-z0-9]+', '', branch)
-        if '+' in version:
-            version += f'{branch}'
-        else:
-            version += f'+{branch}'
+        # if '+' in version:
+        #     version += f'{branch}'
+        # else:
+        #     version += f'+{branch}'
     return version
 
 
