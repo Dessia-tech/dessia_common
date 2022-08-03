@@ -2,6 +2,8 @@ from dessia_common.forms import Optimizer, StandaloneObject
 from dessia_common.typings import MethodType
 from dessia_common.workflow import InstantiateModel, ModelMethod, ModelAttribute, Pipe, Workflow
 
+import unittest
+from parameterized import parameterized
 
 # ----- Workflow declaration -----
 instantiate = InstantiateModel(model_class=Optimizer, name='Instantiate Optimizer')
@@ -18,30 +20,20 @@ pipes = [
 
 optimization_workflow = Workflow(blocks=blocks, pipes=pipes, output=model_fetcher.outputs[0], name="DC- Opti workflow")
 
+optimization_workflow2 = optimization_workflow.copy()
+optimization_workflow2.imposed_variable_values[optimization_workflow2.blocks[0].inputs[1]] = "custom_name"
 
-# ----- Utils -----
-def assert_str(case: str) -> str:
-    return f"\n" \
-           f"-- Failure : {case}\n" \
-           f"-- Got : {optimization_workflow.method_dict(method_name='run')}\n" \
-           f"-- Expected : {expected_dict}"
+generated_standalone_object = StandaloneObject.generate(1)
+optimization_workflow3 = optimization_workflow2.copy()
+optimization_workflow3.imposed_variable_values[optimization_workflow3.blocks[0].inputs[0]] = generated_standalone_object
 
 
-# ----- Tests -----
-expected_dict = {
-    1: "",
-    2: 3
-}
-assert optimization_workflow.method_dict(method_name='run') == expected_dict, \
-    assert_str('Basic method_dict')
+class TestMethodDict(unittest.TestCase):
 
-optimization_workflow.imposed_variable_values[instantiate.inputs[1]] = "custom_name"
-expected_dict[1] = "custom_name"
-assert optimization_workflow.method_dict(method_name='run') == expected_dict, \
-    assert_str('imposed_variable_value on optional variable')
-
-SO = StandaloneObject.generate(1)
-optimization_workflow.imposed_variable_values[instantiate.inputs[0]] = SO
-expected_dict[0] = SO
-assert optimization_workflow.method_dict(method_name='run') == expected_dict, \
-    assert_str("imposed_variable_value on required variable")
+    @parameterized.expand([
+        (optimization_workflow, {1: "", 2: 3}),
+        (optimization_workflow2, {1: "custom_name", 2: 3}),
+        (optimization_workflow3, {0: generated_standalone_object, 1: "custom_name", 2: 3})
+    ])
+    def test_method_dict_is_valid(self, workflow, expected_dict):
+        self.assertEqual(workflow.method_dict(method_name='run'), expected_dict)
