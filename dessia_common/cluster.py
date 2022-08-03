@@ -4,7 +4,7 @@ Library for building clusters on data.
 from typing import List
 
 import numpy as npy
-from sklearn import cluster, preprocessing
+from sklearn import cluster
 import matplotlib.pyplot as plt
 
 try:
@@ -263,12 +263,6 @@ class CategorizedList(dc.HeterogeneousList):
             scaled_matrix = matrix
         skl_cluster.fit(scaled_matrix)
         return skl_cluster
-
-    @staticmethod
-    def scale_data(data_matrix: List[List[float]]):
-        scaled_matrix = preprocessing.StandardScaler().fit_transform(data_matrix)
-        return [list(map(float, row.tolist())) for row in scaled_matrix]
-
 
 # Function to implement, to find a good eps parameter for dbscan
 # def nearestneighbors(self):
