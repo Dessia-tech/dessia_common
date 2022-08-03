@@ -19,8 +19,8 @@ UNWATCHED_ERRORS = ['fixme', 'trailing-whitespace', 'import-error']
 
 MAX_ERROR_BY_TYPE = {
                      'protected-access': 37,
-                     'invalid-name': 7,
-                     'consider-using-f-string': 9,
+                     'invalid-name': 4,
+                     'consider-using-f-string': 1,
                      'no-else-return': 0,
                      'arguments-differ': 2,
                      'no-member': 1,
@@ -39,9 +39,9 @@ MAX_ERROR_BY_TYPE = {
                      'too-few-public-methods': 5,
                      'unnecessary-comprehension': 5,
                      'no-value-for-parameter': 2,
-                     'too-many-return-statements': 9,
+                     'too-many-return-statements': 10,
                      'raise-missing-from': 0,
-                     'consider-merging-isinstance': 6,
+                     'consider-merging-isinstance': 1,
                      'abstract-method': 6,
                      'import-outside-toplevel': 12, # TODO : will reduced in a future work (when tests are ready)
                      'too-many-instance-attributes': 7,
