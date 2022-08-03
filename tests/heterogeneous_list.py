@@ -36,15 +36,15 @@ assert(all(item in all_cars_without_features
 
 all_cars_without_features = HeterogeneousList(all_cars_no_feat)
 
-# # Tests for plot_data
-# all_cars_with_features.plot()
-# all_cars_without_features.plot()
-# RandData_heterogeneous.plot()
+# Tests for plot_data
+all_cars_with_features.plot()
+all_cars_without_features.plot()
+RandData_heterogeneous.plot()
 
-# # Check platform for datasets
-# all_cars_with_features._check_platform()
-# all_cars_without_features._check_platform()
-# RandData_heterogeneous._check_platform()
+# Check platform for datasets
+all_cars_with_features._check_platform()
+all_cars_without_features._check_platform()
+RandData_heterogeneous._check_platform()
 
 # Check for __getitem__ and __str__
 print(all_cars_with_features)
@@ -136,12 +136,12 @@ try:
     empty_list.plot_data()
     raise ValueError("plot_data should not work on empty HeterogeneousLists")
 except Exception as e:
-    assert(e.__class__.__name__ == "LinAlgError")
+    assert(e.__class__.__name__ == "ValueError")
 try:
     empty_list.singular_values()
     raise ValueError("singular_values should not work on empty HeterogeneousLists")
 except Exception as e:
-    assert(e.__class__.__name__ == "LinAlgError")
+    assert(e.__class__.__name__ == "ValueError")
 
 # Tests sort
 all_cars_with_features.sort('weight', ascend=False)
