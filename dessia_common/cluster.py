@@ -32,14 +32,14 @@ class CategorizedList(dc.HeterogeneousList):
             self._n_clusters = len(unic_labels)
         return self._n_clusters
 
-    def pick_from_slice(self, key: slice):
-        new_hlist = dc.HeterogeneousList.pick_from_slice(self, key)
+    def _pick_from_slice(self, key: slice):
+        new_hlist = dc.HeterogeneousList._pick_from_slice(self, key)
         new_hlist.labels = self.labels[key]
         # new_hlist.name += f"_{key.start if key.start is not None else 0}_{key.stop}")
         return new_hlist
 
-    def pick_from_boolist(self, key: List[bool]):
-        new_hlist = dc.HeterogeneousList.pick_from_boolist(self, key)
+    def _pick_from_boolist(self, key: List[bool]):
+        new_hlist = dc.HeterogeneousList._pick_from_boolist(self, key)
         new_hlist.labels = dc.DessiaFilter.apply(self.labels, key)
         # new_hlist.name += "_list")
         return new_hlist
