@@ -1616,7 +1616,7 @@ class HeterogeneousList(DessiaObject):
         return templates.heterogeneouslist_markdown_template.substitute(name=self.name, class_=self.__class__.__name__)
 
     @staticmethod
-    def _pareto_indexes(costs, tol):
+    def pareto_indexes(costs, tol):
         """
         Find the pareto-efficient points
 
@@ -1653,11 +1653,11 @@ class HeterogeneousList(DessiaObject):
         return self[self.__class__._pareto_indexes(costs, tol)]
 
     @staticmethod
-    def pareto_frontiers(costs, tol: float = 0.):
+    def pareto_frontiers_nd(costs, tol: float = 0.):
         # Experimental
         import matplotlib.pyplot as plt
-        pareto_points = HeterogeneousList._pareto_indexes(costs, tol)
-        pareto_costs = npy.array(list(itertools.compress(costs.tolist(), pareto_points)))
+        pareto_costs = npy.array(list(itertools.compress(costs.tolist(),
+                                                         HeterogeneousList.pareto_indexes(costs, tol))))
         pareto_frontiers = []
 
         plt.figure()
@@ -1671,26 +1671,33 @@ class HeterogeneousList(DessiaObject):
             pareto_frontiers = []
             for y_dim in range(pareto_costs.shape[1]):
                 if x_dim != y_dim:
-                    minidx = npy.argmin(pareto_costs[:, y_dim])
-                    X = pareto_costs[minidx, x_dim]
-                    Y = pareto_costs[minidx, y_dim]
+                    frontier_2d = HeterogeneousList.pareto_frontier_2d(x_dim, y_dim, npy.max(costs[ :, x_dim]),
+                                                                       pareto_costs, super_mini)
+                    pareto_frontiers.append(frontier_2d)
+                    plt.plot(frontier_2d[:, x_dim], frontier_2d[:, y_dim], color = 'g')
 
-                    new_pareto = pareto_costs[X - pareto_costs[:, x_dim] != 0., :]
-                    dir_coeffs = (Y - new_pareto[:, y_dim]) / (X - new_pareto[:, x_dim])
+        plt.plot(super_mini[0], super_mini[1], linestyle ='None', marker='o', color = 'k')
+        return pareto_frontiers
 
-                    dir_coeffs[X == new_pareto[:, x_dim]] = npy.max(dir_coeffs[X != new_pareto[:, x_dim]])
-                    offsets = Y - dir_coeffs * X
-                    approx_super_mini = dir_coeffs * super_mini[x_dim] + offsets
-                    chosen_line = npy.argmin(npy.absolute(approx_super_mini-super_mini[y_dim]))
+    @staticmethod
+    def pareto_frontier_2d(x_dim, y_dim, pareto_costs, max_x_dim, super_mini):
+        # Experimental
+        minidx = npy.argmin(pareto_costs[:, y_dim])
+        x_coord = pareto_costs[minidx, x_dim]
+        y_coord = pareto_costs[minidx, y_dim]
 
-                    vector = npy.array([[super_mini[x_dim], npy.max(costs[:, x_dim])],
-                                        [approx_super_mini[chosen_line], npy.max(costs[:, x_dim])*dir_coeffs[chosen_line] + offsets[chosen_line]]]).T
-                    pareto_frontiers.append(vector)
-                    plt.plot(vector[:, x_dim], vector[:, y_dim], color='g')
+        new_pareto = pareto_costs[x_coord - pareto_costs[:, x_dim] != 0., :]
 
-        plt.plot(super_mini[0], super_mini[1], linestyle='None', marker='o', color='k')
+        dir_coeffs = (y_coord - new_pareto[:, y_dim]) / (x_coord - new_pareto[:, x_dim])
+        dir_coeffs[x_coord == new_pareto[:, x_dim]] = npy.max(dir_coeffs[x_coord != new_pareto[:, x_dim]])
 
-        return vector
+        offsets = y_coord - dir_coeffs * x_coord
+        approx_super_mini = dir_coeffs * super_mini[x_dim] + offsets
+        chosen_line = npy.argmin(npy.absolute(approx_super_mini - super_mini[y_dim]))
+
+        frontier_2d = npy.array([[super_mini[x_dim], max_x_dim], [approx_super_mini[chosen_line], max_x_dim * \
+                                  dir_coeffs[chosen_line] + offsets[chosen_line]]]).T
+        return frontier_2d
 
 # class HomogeneousList(HeterogeneousList):
 
