@@ -8,6 +8,7 @@ from time import sleep
 from typing import List, Tuple
 import random
 import numpy as npy
+import matplotlib.pyplot as plt
 from dessia_common import DessiaObject
 import dessia_common.typings as dct
 import dessia_common.files as dcf
@@ -256,7 +257,6 @@ class RandDataD1(DessiaObject):
     def python_plot(x_label: str, y_label: str, rand_data_list: List[List[float]], **kwargs):
         x_coords = [getattr(RandData, x_label) for RandData in rand_data_list]
         y_coords = [getattr(RandData, y_label) for RandData in rand_data_list]
-        import matplotlib.pyplot as plt
         plt.plot(x_coords, y_coords, **kwargs)
 
 
