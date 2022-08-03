@@ -955,6 +955,8 @@ class HeterogeneousList(DessiaObject):
                                   "indexing HeterogeneousLists")
 
     def __add__(self, other: 'HeterogeneousList'):
+        if self.__class__ != other.__class__:
+            raise TypeError(f"Cannot add class {other.__class__} to class {self.__class__}")
         sum_hlist = self._procreate()
         sum_hlist.dessia_objects = self.dessia_objects + other.dessia_objects
         for attr in self.__dict__:
