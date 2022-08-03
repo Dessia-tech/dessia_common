@@ -926,19 +926,9 @@ class HeterogeneousList(DessiaObject):
 
     def _procreate(self):
         new_hlist = self.__class__()
-        for attr in self.__dict__:
-            if not isinstance(getattr(self, attr), (list, dict, tuple)):
-                setattr(new_hlist, attr, getattr(self, attr))
-            else:
-                if len(getattr(self, attr)) != len(self):
-                    setattr(new_hlist, attr, getattr(self, attr))
+        new_hlist.name = self.name
+        new_hlist._common_attributes = self._common_attributes
         return new_hlist
-
-    def _is_added_list_attr(self, attr):
-        if isinstance(getattr(self, attr), (list, dict, tuple)):
-            if len(getattr(self, attr)) == len(self):
-                return True
-        return False
 
     def __getitem__(self, key: Any):
         if len(self.dessia_objects) == 0:
@@ -965,17 +955,10 @@ class HeterogeneousList(DessiaObject):
         if self.__class__ != other.__class__:
             raise TypeError(f"Cannot add class {other.__class__} to class {self.__class__}")
         sum_hlist = self._procreate()
-        # sum_hlist.dessia_objects = self.dessia_objects + other.dessia_objects
-        for attr in self.__dict__:
-            if self._is_added_list_attr(attr) and other._is_added_list_attr(attr):
-                to_sum_self = getattr(self, attr)
-                to_sum_other = getattr(other, attr)
-                if to_sum_self is None:
-                    to_sum_self = []
-                if to_sum_other is None:
-                    to_sum_other = []
-                setattr(sum_hlist, attr, to_sum_self + to_sum_other)
-
+        sum_hlist.dessia_objects = self.dessia_objects + other.dessia_objects
+        if all(item in self.common_attributes for item in other.common_attributes):
+            if self._matrix is not None and other._matrix is not None:
+                sum_hlist._matrix = self._matrix + other._matrix
         return sum_hlist
 
     def extend(self, other: 'HeterogeneousList'):
@@ -986,9 +969,9 @@ class HeterogeneousList(DessiaObject):
 
     def pick_from_slice(self, key: slice):
         new_hlist = self._procreate()
-        for attr in self.__dict__:
-            if self._is_added_list_attr(attr):
-                setattr(new_hlist, attr, getattr(self, attr)[key])
+        new_hlist.dessia_objects = self.dessia_objects[key]
+        if self._matrix is not None:
+            new_hlist._matrix = self._matrix[key]
         # new_hlist.name += f"_{key.start if key.start is not None else 0}_{key.stop}")
         return new_hlist
 
@@ -1000,9 +983,9 @@ class HeterogeneousList(DessiaObject):
 
     def pick_from_boolist(self, key: List[bool]):
         new_hlist = self._procreate()
-        for attr in self.__dict__:
-            if self._is_added_list_attr(attr):
-                setattr(new_hlist, attr, DessiaFilter.apply(getattr(self, attr), key))
+        new_hlist.dessia_objects = DessiaFilter.apply(self.dessia_objects, key)
+        if self._matrix is not None:
+            new_hlist._matrix = DessiaFilter.apply(self._matrix, key)
         # new_hlist.name += "_list")
         return new_hlist
 
