@@ -21,6 +21,12 @@ clustered_cars_with = CategorizedList.from_dbscan(all_cars_with_features, eps=40
 aggclustest_clustered = CategorizedList.from_agglomerative_clustering(big_RandDatas_heterogeneous, n_clusters=10)
 kmeanstest_clustered = CategorizedList.from_kmeans(small_RandDatas_heterogeneous, n_clusters=10, scaling=True)
 
+# Split lists into labelled lists
+split_cars_without = clustered_cars_without.clustered_sublists()
+split_cars_with = clustered_cars_with.clustered_sublists()
+aggclustest_split = aggclustest_clustered.clustered_sublists()
+kmeanstest_split = kmeanstest_clustered.clustered_sublists()
+
 # Test print
 clustered_cars_without.labels[0] = 15000
 clustered_cars_without.labels[1] = -1
@@ -33,48 +39,42 @@ split_clist = clist.clustered_sublists()
 split_clist[0].name = "15g6e4rg84reh56rt4h56j458hrt56gb41rth674r68jr6"
 print(split_clist)
 
-# # Split lists into labelled lists
-# split_cars_without = clustered_cars_without.clustered_sublists()
-# split_cars_with = clustered_cars_with.clustered_sublists()
-# aggclustest_split = aggclustest_clustered.clustered_sublists()
-# kmeanstest_split = kmeanstest_clustered.clustered_sublists()
+# Test ClusterResults instances on platform
+clustered_cars_without._check_platform()
+clustered_cars_with._check_platform()
+aggclustest_clustered._check_platform()
+kmeanstest_clustered._check_platform()
 
-# # Test ClusterResults instances on platform
-# clustered_cars_without._check_platform()
-# clustered_cars_with._check_platform()
-# aggclustest_clustered._check_platform()
-# kmeanstest_clustered._check_platform()
+# Test plots outside platform
+clustered_cars_without.plot_data()
+clustered_cars_with.plot()
+aggclustest_clustered.plot()
+kmeanstest_clustered.plot()
 
-# # Test plots outside platform
-# clustered_cars_without.plot()
-# clustered_cars_with.plot()
-# aggclustest_clustered.plot()
-# kmeanstest_clustered.plot()
+# =============================================================================
+# JSON TESTS
+# =============================================================================
+dict_cars_without = clustered_cars_without.to_dict(use_pointers=True)
+dict_cars_with = clustered_cars_with.to_dict(use_pointers=True)
+dict_aggclustest = aggclustest_clustered.to_dict(use_pointers=True)
+dict_kmeanstest = kmeanstest_clustered.to_dict(use_pointers=True)
 
-# # =============================================================================
-# # JSON TESTS
-# # =============================================================================
-# dict_cars_without = clustered_cars_without.to_dict(use_pointers=True)
-# dict_cars_with = clustered_cars_with.to_dict(use_pointers=True)
-# dict_aggclustest = aggclustest_clustered.to_dict(use_pointers=True)
-# dict_kmeanstest = kmeanstest_clustered.to_dict(use_pointers=True)
+# Cars without features
+json_dict = json.dumps(dict_cars_without)
+decoded_json = json.loads(json_dict)
+deserialized_object = clustered_cars_without.dict_to_object(decoded_json)
 
-# # Cars without features
-# json_dict = json.dumps(dict_cars_without)
-# decoded_json = json.loads(json_dict)
-# deserialized_object = clustered_cars_without.dict_to_object(decoded_json)
+# Cars with features
+json_dict = json.dumps(dict_cars_with)
+decoded_json = json.loads(json_dict)
+deserialized_object = clustered_cars_with.dict_to_object(decoded_json)
 
-# # Cars with features
-# json_dict = json.dumps(dict_cars_with)
-# decoded_json = json.loads(json_dict)
-# deserialized_object = clustered_cars_with.dict_to_object(decoded_json)
+# Small dataset
+json_dict = json.dumps(dict_aggclustest)
+decoded_json = json.loads(json_dict)
+deserialized_object = aggclustest_clustered.dict_to_object(decoded_json)
 
-# # Small dataset
-# json_dict = json.dumps(dict_aggclustest)
-# decoded_json = json.loads(json_dict)
-# deserialized_object = aggclustest_clustered.dict_to_object(decoded_json)
-
-# # Large dataset
-# json_dict = json.dumps(dict_kmeanstest)
-# decoded_json = json.loads(json_dict)
-# deserialized_object = kmeanstest_clustered.dict_to_object(decoded_json)
+# Large dataset
+json_dict = json.dumps(dict_kmeanstest)
+decoded_json = json.loads(json_dict)
+deserialized_object = kmeanstest_clustered.dict_to_object(decoded_json)

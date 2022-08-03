@@ -27,7 +27,9 @@ class CategorizedList(dc.HeterogeneousList):
     @property
     def n_clusters(self):
         if self._n_clusters is None:
-            self._n_clusters = max(self.labels) + 1
+            unic_labels = set(self.labels)
+            unic_labels.discard(-1)
+            self._n_clusters = len(unic_labels)
         return self._n_clusters
 
     def __str__(self):
