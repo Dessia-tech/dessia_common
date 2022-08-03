@@ -21,6 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Performance
 - DessiaFilters and FiltersList: A priori optimized access to elements so it is really faster than before
 
+### Fixed
+- Excel Export now used proper length of the cell value
+
 ## v0.9.0 [7/20/2022]
 
 ### Added
