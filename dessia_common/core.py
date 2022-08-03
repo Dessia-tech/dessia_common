@@ -931,15 +931,15 @@ class HeterogeneousList(DessiaObject):
     def pareto_frontier_2d(x_dim, y_dim, pareto_costs, max_x_dim, super_mini):
         # Experimental
         minidx = npy.argmin(pareto_costs[:, y_dim])
-        X = pareto_costs[minidx, x_dim]
-        Y = pareto_costs[minidx, y_dim]
+        x_coord = pareto_costs[minidx, x_dim]
+        y_coord = pareto_costs[minidx, y_dim]
 
-        new_pareto = pareto_costs[X - pareto_costs[:, x_dim] != 0., :]
+        new_pareto = pareto_costs[x_coord - pareto_costs[:, x_dim] != 0., :]
 
-        dir_coeffs = (Y - new_pareto[:, y_dim]) / (X - new_pareto[:, x_dim])
-        dir_coeffs[X == new_pareto[:, x_dim]] = npy.max(dir_coeffs[X != new_pareto[:, x_dim]])
+        dir_coeffs = (y_coord - new_pareto[:, y_dim]) / (x_coord - new_pareto[:, x_dim])
+        dir_coeffs[x_coord == new_pareto[:, x_dim]] = npy.max(dir_coeffs[x_coord != new_pareto[:, x_dim]])
 
-        offsets = Y - dir_coeffs * X
+        offsets = y_coord - dir_coeffs * x_coord
         approx_super_mini = dir_coeffs * super_mini[x_dim] + offsets
         chosen_line = npy.argmin(npy.absolute(approx_super_mini - super_mini[y_dim]))
 
