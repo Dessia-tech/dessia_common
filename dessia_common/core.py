@@ -900,7 +900,7 @@ class HeterogeneousList(DessiaObject):
                                                          self.__class__.pareto_indexes(costs, tol))))
 
     @staticmethod
-    def pareto_frontiers_nd(costs, tol: float = 0.):
+    def pareto_frontiers(costs, tol: float = 0.):
         # Experimental
         import matplotlib.pyplot as plt
         pareto_costs = npy.array(list(itertools.compress(costs.tolist(),
@@ -918,8 +918,8 @@ class HeterogeneousList(DessiaObject):
             pareto_frontiers = []
             for y_dim in range(pareto_costs.shape[1]):
                 if x_dim != y_dim:
-                    frontier_2d = HeterogeneousList.pareto_frontier_2d(x_dim, y_dim, npy.max(costs[ :, x_dim]),
-                                                                       pareto_costs, super_mini)
+                    frontier_2d = HeterogeneousList.pareto_frontier_2d(x_dim, y_dim, pareto_costs,
+                                                                       npy.max(costs[ :, x_dim]), super_mini)
                     pareto_frontiers.append(frontier_2d)
                     plt.plot(frontier_2d[:, x_dim], frontier_2d[:, y_dim], color = 'g')
 
