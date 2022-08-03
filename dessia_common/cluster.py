@@ -284,7 +284,7 @@ class CategorizedList(dc.HeterogeneousList):
     @staticmethod
     def fit_cluster(skl_cluster: cluster, matrix: List[List[float]], scaling: bool):
         if scaling:
-            scaled_matrix = CategorizedList.scale_data(matrix)
+            scaled_matrix = dc.HeterogeneousList.scale_data(matrix)
         else:
             scaled_matrix = matrix
         skl_cluster.fit(scaled_matrix)
