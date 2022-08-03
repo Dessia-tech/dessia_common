@@ -44,8 +44,6 @@ json_dict = json.dumps(dict_workflow)
 decoded_json = json.loads(json_dict)
 deserialized_object = workflow.dict_to_object(decoded_json)
 
-
-
 # JSON Workflow_run tests
 # dict_workflow_run = workflow_run.to_dict(use_pointers=True)
 # json_dict = json.dumps(dict_workflow_run)

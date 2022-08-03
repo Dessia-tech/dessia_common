@@ -27,18 +27,6 @@ split_cars_with = clustered_cars_with.clustered_sublists()
 aggclustest_split = aggclustest_clustered.clustered_sublists()
 kmeanstest_split = kmeanstest_clustered.clustered_sublists()
 
-# Test ClusterResults instances on platform
-clustered_cars_without._check_platform()
-clustered_cars_with._check_platform()
-aggclustest_clustered._check_platform()
-kmeanstest_clustered._check_platform()
-
-# Test plots outside platform
-clustered_cars_without.plot()
-clustered_cars_with.plot()
-aggclustest_clustered.plot()
-kmeanstest_clustered.plot()
-
 # Test print
 clustered_cars_without.labels[0] = 15000
 clustered_cars_without.labels[1] = -1
@@ -50,6 +38,18 @@ clist = CategorizedList.from_agglomerative_clustering(hlist, n_clusters=10, name
 split_clist = clist.clustered_sublists()
 split_clist[0].name = "15g6e4rg84reh56rt4h56j458hrt56gb41rth674r68jr6"
 print(split_clist)
+
+# Test ClusterResults instances on platform
+clustered_cars_without._check_platform()
+clustered_cars_with._check_platform()
+aggclustest_clustered._check_platform()
+kmeanstest_clustered._check_platform()
+
+# Test plots outside platform
+clustered_cars_without.plot_data()
+clustered_cars_with.plot()
+aggclustest_clustered.plot()
+kmeanstest_clustered.plot()
 
 # =============================================================================
 # JSON TESTS
