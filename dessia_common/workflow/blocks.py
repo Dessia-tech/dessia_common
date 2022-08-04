@@ -418,7 +418,11 @@ class Concatenate(Block):
         return cls(dict_['number_arguments'], dict_['name'])
 
     def evaluate(self, values: Dict[Variable, Any]):
-        first_value = list(values.values())[0]
+        types_set = set(type(value) for value in values)
+        if len(types_set) != 1:
+            raise TypeError("Block Concatenate only defined for operands of the same type.")
+
+        first_value = values[self.inputs[0]]
         if isinstance(first_value, list):
             concatenated_values = []
             for var in self.inputs:
@@ -435,7 +439,6 @@ class Concatenate(Block):
             for var in self.inputs:
                 dessia_objects.extend(values[var].dessia_objects)
                 name += values[var].name + ("_" if values[var].name != "" else "")
-
             concatenated_values = HeterogeneousList(dessia_objects, name)
 
         return [concatenated_values]
