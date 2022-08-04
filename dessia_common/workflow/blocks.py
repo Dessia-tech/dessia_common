@@ -708,9 +708,7 @@ class Filter(Block):
         return cls([DessiaFilter.dict_to_object(d) for d in dict_['filters']], dict_['logical_operator'], dict_['name'])
 
     def evaluate(self, values):
-        print(values)
         filters_list = FiltersList(self.filters, self.logical_operator)
-        print(filters_list.apply(values[self.inputs[0]]))
         return [filters_list.apply(values[self.inputs[0]])]
 
     def _to_script(self) -> ToScriptElement:

@@ -1118,10 +1118,18 @@ class HeterogeneousList(DessiaObject):
         dimensionality_plot = self.plot_dimensionality()
 
         # Scattermatrix
-        scatter_matrix = self._build_multiplot(self._plot_data_list(),
-                                               self._tooltip_attributes(),
-                                               axis=dimensionality_plot.axis,
-                                               point_style=dimensionality_plot.point_style)
+        try:
+            scatter_matrix = self._build_multiplot(self._plot_data_list(),
+                                                   self._tooltip_attributes(),
+                                                   axis=dimensionality_plot.axis,
+                                                   point_style=dimensionality_plot.point_style)
+        except:
+            raise ValueError(f"{self._plot_data_list()},\n{self._tooltip_attributes()}")
+
+        try:
+            a
+        except:
+            raise ValueError(f"{scatter_matrix}")
 
         return [scatter_matrix, dimensionality_plot]
 
