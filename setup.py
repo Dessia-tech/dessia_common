@@ -94,13 +94,13 @@ def get_version():
         with open(join(d, "PKG-INFO")) as f:
             version = version_re.search(f.read()).group(1)
 
-    branch = get_branch()
-    if branch and branch != 'master':
-        branch = re.sub('[^A-Za-z0-9]+', '', branch)
-        if '+' in version:
-            version += f'{branch}'
-        else:
-            version += f'+{branch}'
+    # branch = get_branch()
+    # if branch and branch != 'master':
+    #     branch = re.sub('[^A-Za-z0-9]+', '', branch)
+    #     if '+' in version:
+    #         version += f'{branch}'
+    #     else:
+    #         version += f'+{branch}'
     return version
 
 
