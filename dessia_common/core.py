@@ -1123,7 +1123,6 @@ class HeterogeneousList(DessiaObject):
                                                self._tooltip_attributes(),
                                                axis=dimensionality_plot.axis,
                                                point_style=dimensionality_plot.point_style)
-
         return [scatter_matrix, dimensionality_plot]
 
     def _build_multiplot(self, data_list: List[Dict[str, float]], tooltip: List[str], **kwargs: Dict[str, Any]):
@@ -1132,17 +1131,24 @@ class HeterogeneousList(DessiaObject):
         for line_attr in self.common_attributes:
             for col_attr in self.common_attributes:
                 if line_attr == col_attr:
-                    subplots.append(plot_data.Histogram(x_variable=line_attr, elements=data_list))
+                    unic_values = set((getattr(dobject, line_attr) for dobject in self.dessia_objects))
+                    if len(unic_values) == 1:
+                        subplots.append(plot_data.Scatter(x_variable=line_attr,
+                                                          y_variable=col_attr,
+                                                          elements=data_list))
+                    else:
+                        subplots.append(plot_data.Histogram(x_variable=line_attr, elements=data_list))
                 else:
                     subplots.append(plot_data.Scatter(x_variable=line_attr,
                                                       y_variable=col_attr,
                                                       elements=data_list,
                                                       tooltip=plot_data.Tooltip(tooltip),
                                                       **kwargs))
+
         scatter_matrix = plot_data.MultiplePlots(plots=subplots,
-                                                 elements=data_list,
-                                                 point_families=self._point_families(),
-                                                 initial_view_on=True)
+                                                  elements=data_list,
+                                                  point_families=self._point_families(),
+                                                  initial_view_on=True)
         return scatter_matrix
 
     def _tooltip_attributes(self):
