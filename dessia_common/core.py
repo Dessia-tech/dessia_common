@@ -927,8 +927,8 @@ class HeterogeneousList(DessiaObject):
     def _procreate(self):
         new_hlist = self.__class__()
         new_hlist.name = self.name
-        new_hlist._common_attributes = self.common_attributes
-        new_hlist._matrix = self.matrix
+        new_hlist._common_attributes = self._common_attributes
+        new_hlist._matrix = self._matrix
         return new_hlist
 
     def __getitem__(self, key: Any):
