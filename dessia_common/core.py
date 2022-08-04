@@ -892,12 +892,12 @@ class FiltersList(DessiaObject):
         return cls(filters=filters_list, logical_operator=logical_operator, name=name)
 
     @staticmethod
-    def combine_booleans_lists(booleans_lists: List[List[bool]], logical_operator: str = "and"):
-        if logical_operator == "and":
+    def combine_booleans_lists(booleans_lists: List[List[bool]], logical_operator: str = 'and'):
+        if logical_operator == 'and':
             return [all(booleans_tuple) for booleans_tuple in zip(*booleans_lists)]
-        if logical_operator == "or":
+        if logical_operator == 'or':
             return [any(booleans_tuple) for booleans_tuple in zip(*booleans_lists)]
-        if logical_operator == "xor":
+        if logical_operator == 'xor':
             return [True if sum(booleans_tuple) == 1 else False for booleans_tuple in zip(*booleans_lists)]
         raise NotImplementedError(f"'{logical_operator}' str for 'logical_operator' attribute is not a use case")
 
