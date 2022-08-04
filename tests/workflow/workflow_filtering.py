@@ -67,10 +67,13 @@ filters_list = [DessiaFilter('weight', "<=", 1700), DessiaFilter('mpg', ">=", 40
 
 block_filter = wf.Filter(filters=filters_list, logical_operator="or")
 
-block_workflow = [block_data, block_filter]
-pipe_worflow = [wf.Pipe(block_data.outputs[0], block_filter.inputs[0])]
+block_heterogeneous_list = wf.InstantiateModel(model_class=HeterogeneousList, name='heterogeneous list of data')
 
-workflow = wf.Workflow(block_workflow, pipe_worflow, block_filter.outputs[0])
+block_workflow = [block_data, block_filter, block_heterogeneous_list]
+pipe_worflow = [wf.Pipe(block_data.outputs[0], block_filter.inputs[0]),
+                wf.Pipe(block_filter.outputs[0], block_heterogeneous_list.inputs[0])]
+
+workflow = wf.Workflow(block_workflow, pipe_worflow, block_heterogeneous_list.outputs[0])
 
 workflow_run = workflow.run({workflow.index(block_data.inputs[0]): stream_file})
 
@@ -78,6 +81,7 @@ workflow_run = workflow.run({workflow.index(block_data.inputs[0]): stream_file})
 workflow._check_platform()
 workflow.plot()
 workflow.display_settings()
+workflow_run.output_value.plot()
 boolean_index = FiltersList(filters_list, "or").get_booleans_index(cars)
 assert(workflow_run.output_value == FiltersList(filters_list, logical_operator="or").apply(cars))
 

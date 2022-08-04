@@ -21,13 +21,10 @@ def concatenate(*values):
             concatenated_values = dict(concatenated_values, **value)
 
     if isinstance(first_value, dc.HeterogeneousList): # TODO merge with list case when extend is developed in HList
-        # dessia_objects = []
-        concatenated_values = dc.HeterogeneousList()
-        concatenated_values.name = 'test_concat'
+        dessia_objects = []
+        name = 'test_concat'
         for value in values:
-            concatenated_values += value
-        # for value in values:
-        #     dessia_objects.extend(value.dessia_objects)
-        #     name += value.name + ("_" if value.name != "" else "")
-        # concatenated_values = dc.HeterogeneousList(dessia_objects, name)
+            dessia_objects.extend(value.dessia_objects)
+            name += value.name + ("_" if value.name != "" else "")
+        concatenated_values = dc.HeterogeneousList(dessia_objects, name)
     return concatenated_values
