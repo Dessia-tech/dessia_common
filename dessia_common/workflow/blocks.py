@@ -13,13 +13,14 @@ import io
 from typing import List, Type, Any, Dict, get_type_hints
 
 import itertools
-from dessia_common.core import HeterogeneousList, DessiaFilter, FiltersList, is_bounded,\
-    enhanced_deep_attr, split_argspecs, type_from_annotation
+
+from dessia_common.core import DessiaFilter, FiltersList, enhanced_deep_attr, split_argspecs, type_from_annotation
 from dessia_common.utils.types import get_python_class_from_class_name, full_classname
 from dessia_common.utils.docstrings import parse_docstring, EMPTY_PARSED_ATTRIBUTE
 from dessia_common.errors import UntypedArgumentError
 from dessia_common.typings import JsonSerializable, MethodType, ClassMethodType
 from dessia_common.files import StringFile, BinaryFile
+from dessia_common.helpers import concatenate
 
 from dessia_common.workflow.core import Block, Variable, TypedVariable, TypedVariableWithDefaultValue,\
     set_block_variable_names_from_dict, Workflow, DisplaySetting
@@ -418,30 +419,7 @@ class Concatenate(Block):
         return cls(dict_['number_arguments'], dict_['name'])
 
     def evaluate(self, values: Dict[Variable, Any]):
-        types_set = set(type(value) for value in values)
-        if len(types_set) != 1:
-            raise TypeError("Block Concatenate only defined for operands of the same type.")
-
-        first_value = values[self.inputs[0]]
-        if isinstance(first_value, list):
-            concatenated_values = []
-            for var in self.inputs:
-                concatenated_values.extend(values[var])
-
-        if isinstance(first_value, dict): # TODO manage same key behavior, maybe dict is not a good use case
-            concatenated_values = values[self.inputs[0]]
-            for var in self.inputs[1:]:
-                concatenated_values = dict(concatenated_values, **values[var])
-
-        if isinstance(first_value, HeterogeneousList): # TODO merge with list case when extend is developed in HList
-            dessia_objects = []
-            name = ''
-            for var in self.inputs:
-                dessia_objects.extend(values[var].dessia_objects)
-                name += values[var].name + ("_" if values[var].name != "" else "")
-            concatenated_values = HeterogeneousList(dessia_objects, name)
-
-        return [concatenated_values]
+        return [concatenate(values)]
 
 
 class WorkflowBlock(Block):
