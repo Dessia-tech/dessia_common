@@ -121,6 +121,7 @@ class DessiaObject:
     _init_variables = None
     _allowed_methods = []
     _whitelist_attributes = []
+    _to_dict_res = None
 
     def __init__(self, name: str = '', **kwargs):
         """
@@ -226,6 +227,8 @@ class DessiaObject:
         """
         Generic to_dict method
         """
+        if self._to_dict_res is not None:
+            return self._to_dict_res
         if memo is None:
             memo = {}
 
