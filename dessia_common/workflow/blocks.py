@@ -711,20 +711,6 @@ class Filter(Block):
         filters_list = FiltersList(self.filters, self.logical_operator)
         return [filters_list.apply(values[self.inputs[0]])]
 
-    # def evaluate_old(self, values):
-    #     ouput_values = []
-    #     for object_ in values[self.inputs[0]]:
-    #         bounded = True
-    #         i = 0
-    #         while bounded and i < len(self.filters):
-    #             filter_ = self.filters[i]
-    #             value = enhanced_deep_attr(object_, filter_.attribute)
-    #             bounded = is_bounded(filter_, value)
-    #             i += 1
-    #         if bounded:
-    #             ouput_values.append(object_)
-    #     return [ouput_values]
-
     def _to_script(self) -> ToScriptElement:
         filter_variables = [f"DessiaFilter("
                             f"attribute='{f.attribute}', comparison_operator='{f.comparison_operator}', "
