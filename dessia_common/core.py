@@ -752,6 +752,7 @@ class MovingObject(PhysicalObject):
         return vm.core.MovingVolumeModel(self.volmdlr_primitives(**kwargs),
                                          self.volmdlr_primitives_step_frames(**kwargs))
 
+
 class Parameter(DessiaObject):
     def __init__(self, lower_bound, upper_bound, periodicity=None, name=''):
         DessiaObject.__init__(self, name=name)
@@ -846,16 +847,16 @@ class DessiaFilter(DessiaObject):
         self.bound = bound
         DessiaObject.__init__(self, name=name)
 
-    def __str__(self, offset_attr: int=10, offset_boun: int=0):
+    def __str__(self, offset_attr: int = 10, offset_boun: int = 0):
         offset_oper = 0
         if offset_boun == 0:
             offset_boun = len(str(self.bound)) + 2
-        string_operator = {'>':'>','<':'<','>=':'>=','<=':'<=','==':'==','!=':'!=','gt':'>','lt':'<','ge':'>=',
-                           'le':'<=','eq':'==','ne':'!=','gte':'>=','lte':'<='}
+        string_operator = {'>': '>', '<': '<', '>=': '>=', '<=': '<=', '==': '==', '!=': '!=', 'gt': '>', 'lt': '<', 'ge': '>=',
+                           'le': '<=', 'eq': '==', 'ne': '!=', 'gte': '>=', 'lte': '<='}
         printed_operator = string_operator[self.comparison_operator]
         return (self.attribute + " "*(offset_attr - len(self.attribute)) +
                 printed_operator + " "*(offset_oper - len(printed_operator)) +
-                " "*(offset_boun - len(str(self.bound))) +str(self.bound))
+                " "*(offset_boun - len(str(self.bound))) + str(self.bound))
 
     def __hash__(self):
         hash_ = len(self.attribute)
@@ -901,7 +902,7 @@ class DessiaFilter(DessiaObject):
         return list(self._to_lambda(values)(values))
 
     @staticmethod
-    def booleanlist_to_indexlist(booleans_list: List[int]): # TODO: Should it exist ?
+    def booleanlist_to_indexlist(booleans_list: List[int]):  # TODO: Should it exist ?
         """
         Transform a boolean list to an index list
 
@@ -1216,17 +1217,17 @@ class HeterogeneousList(DessiaObject):
             if isinstance(key[0], bool):
                 if len(key) == self.__len__():
                     return self._pick_from_boolist(key)
-                raise ValueError(f"Cannot index {self.__class__.__name__} object of len {self.__len__()} with a " +
+                raise ValueError(f"Cannot index {self.__class__.__name__} object of len {self.__len__()} with a "
                                  f"list of boolean of len {len(key)}")
             if isinstance(key[0], int):
                 return self._pick_from_boolist(self._indexlist_to_booleanlist(key))
 
-        raise NotImplementedError(f"key of type {type(key)} with {type(key[0])} elements not implemented for " +
-                                  "indexing HeterogeneousLists")
+        raise NotImplementedError(f"key of type {type(key)} with {type(key[0])} elements not implemented for "
+                                  f"indexing HeterogeneousLists")
 
     def __add__(self, other: 'HeterogeneousList'):
         if self.__class__ != HeterogeneousList or other.__class__ != HeterogeneousList:
-            raise TypeError("Addition only defined for HeterogeneousList. A specific __add__ method is required for " +
+            raise TypeError("Addition only defined for HeterogeneousList. A specific __add__ method is required for "
                             f"{self.__class__}")
         sum_hlist = self._procreate()
         sum_hlist.dessia_objects = self.dessia_objects + other.dessia_objects
@@ -1295,7 +1296,6 @@ class HeterogeneousList(DessiaObject):
         for dessia_object in self.dessia_objects[:print_lim]:
             string += "\n"
             string += self._print_objects(dessia_object, attr_space, attr_name_len)
-
         return prefix + "\n" + string + "\n"
 
     def _print_titles(self, attr_space: int, attr_name_len: int):
@@ -1507,7 +1507,7 @@ class HeterogeneousList(DessiaObject):
         :rtype: Tuple[List[float], List[Dict[str, float]]]
 
         """
-        scaled_data = HeterogeneousList.scale_data(npy.array(self.matrix) - npy.mean(self.matrix, axis = 0))
+        scaled_data = HeterogeneousList.scale_data(npy.array(self.matrix) - npy.mean(self.matrix, axis=0))
         _, singular_values, _ = npy.linalg.svd(npy.array(scaled_data).T, full_matrices=False)
         normalized_singular_values = singular_values / npy.sum(singular_values)
 
@@ -1520,7 +1520,6 @@ class HeterogeneousList(DessiaObject):
     def scale_data(data_matrix: List[List[float]]):
         scaled_matrix = preprocessing.StandardScaler().fit_transform(data_matrix)
         return [list(map(float, row.tolist())) for row in scaled_matrix]
-
 
     def plot_data(self):
         """
@@ -1651,8 +1650,8 @@ class HeterogeneousList(DessiaObject):
         pareto_costs = npy.array(list(itertools.compress(costs.tolist(), pareto_indexes)))
 
         plt.figure()
-        plt.plot(costs[:, 0], costs[:, 1], linestyle ='None', marker='o', color = 'b')
-        plt.plot(pareto_costs[:, 0], pareto_costs[:, 1], linestyle ='None', marker='o', color = 'r')
+        plt.plot(costs[:, 0], costs[:, 1], linestyle='None', marker='o', color='b')
+        plt.plot(pareto_costs[:, 0], pareto_costs[:, 1], linestyle='None', marker='o', color='r')
         plt.show()
 
         super_mini = npy.min(costs, axis=0)
@@ -1661,11 +1660,11 @@ class HeterogeneousList(DessiaObject):
             for y_dim in range(pareto_costs.shape[1]):
                 if x_dim != y_dim:
                     frontier_2d = HeterogeneousList.pareto_frontier_2d(x_dim, y_dim, pareto_costs,
-                                                                       npy.max(costs[ :, x_dim]), super_mini)
+                                                                       npy.max(costs[:, x_dim]), super_mini)
                     pareto_frontiers.append(frontier_2d)
-                    plt.plot(frontier_2d[:, x_dim], frontier_2d[:, y_dim], color = 'g')
+                    plt.plot(frontier_2d[:, x_dim], frontier_2d[:, y_dim], color='g')
 
-        plt.plot(super_mini[0], super_mini[1], linestyle ='None', marker='o', color = 'k')
+        plt.plot(super_mini[0], super_mini[1], linestyle='None', marker='o', color='k')
         return pareto_frontiers
 
     @staticmethod
@@ -1684,8 +1683,8 @@ class HeterogeneousList(DessiaObject):
         approx_super_mini = dir_coeffs * super_mini[x_dim] + offsets
         chosen_line = npy.argmin(npy.absolute(approx_super_mini - super_mini[y_dim]))
 
-        frontier_2d = npy.array([[super_mini[x_dim], max_x_dim], [approx_super_mini[chosen_line], max_x_dim * \
-                                  dir_coeffs[chosen_line] + offsets[chosen_line]]]).T
+        frontier_2d = npy.array([[super_mini[x_dim], max_x_dim], [approx_super_mini[chosen_line], max_x_dim *
+                                                                  dir_coeffs[chosen_line] + offsets[chosen_line]]]).T
         return frontier_2d
 
 
