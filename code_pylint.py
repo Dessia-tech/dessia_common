@@ -13,23 +13,23 @@ import sys
 from pylint import __version__
 from pylint.lint import Run
 
-MIN_NOTE = 9.17
+MIN_NOTE = 9.660852713178295
 
 UNWATCHED_ERRORS = ['fixme', 'trailing-whitespace', 'import-error']
 
 MAX_ERROR_BY_TYPE = {
                      'protected-access': 36,
-                     'invalid-name': 7,
-                     'consider-using-f-string': 9,
+                     'invalid-name': 4,
+                     'consider-using-f-string': 1,
                      'no-else-return': 0,
                      'arguments-differ': 2,
                      'no-member': 1,
                      'too-many-locals': 14,
                      'wrong-import-order': 7,
-                     'too-many-branches': 9,
+                     'too-many-branches': 10,
                      'unused-import': 1,
                      'unused-argument': 5,
-                     'cyclic-import': 10,
+                     'cyclic-import': 8,
                      'no-self-use': 6,
                      'unused-variable': 1,
                      'trailing-whitespace': 11,
@@ -41,7 +41,7 @@ MAX_ERROR_BY_TYPE = {
                      'no-value-for-parameter': 2,
                      'too-many-return-statements': 9,
                      'raise-missing-from': 0,
-                     'consider-merging-isinstance': 6,
+                     'consider-merging-isinstance': 1,
                      'abstract-method': 6,
                      'import-outside-toplevel': 7,
                      'too-many-instance-attributes': 5,
@@ -74,7 +74,7 @@ MAX_ERROR_BY_TYPE = {
                      'function-redefined': 0,
                      'inconsistent-return-statements': 0,
                      'unexpected-special-method-signature': 0,
-                     'too-many-lines': 0,
+                     'too-many-lines': 1,
                      'bare-except': 2,
                      'unspecified-encoding': 0,
                      'no-else-raise': 0,

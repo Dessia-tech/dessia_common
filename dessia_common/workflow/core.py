@@ -375,7 +375,7 @@ class Workflow(Block):
 
             found_output = False
             i = 0
-            while (not found_output and i < len(self.blocks)):
+            while not found_output and i < len(self.blocks):
                 found_output = output in self.blocks[i].outputs
                 i += 1
             if not found_output:
@@ -391,26 +391,22 @@ class Workflow(Block):
         block_hash = int(sum(b.equivalent_hash() for b in self.blocks) % 10e5)
         return (base_hash + block_hash) % 1000000000
 
-    def _data_eq(self, other_wf) -> bool:
-        if not isinstance(other_wf, Workflow):
-            return False
-
-        if hash(self) != hash(other_wf) or not Block.equivalent(self, other_wf):
+    def _data_eq(self, other_object) -> bool:
+        if hash(self) != hash(other_object) or not Block.equivalent(self, other_object):
             return False
 
         # TODO: temp , reuse graph to handle block order!!!!
-        for block1, block2 in zip(self.blocks, other_wf.blocks):
+        for block1, block2 in zip(self.blocks, other_object.blocks):
             if not block1.equivalent(block2):
-                print("individual block non equivalnent")
                 return False
 
-        if not self._equivalent_pipes(other_wf):
+        if not self._equivalent_pipes(other_object):
             return False
 
-        if not self._equivalent_imposed_variables_values(other_wf):
+        if not self._equivalent_imposed_variables_values(other_object):
             return False
 
-        if not set(self.nonblock_variables) == set(other_wf.nonblock_variables):
+        if not set(self.nonblock_variables) == set(other_object.nonblock_variables):
             return False
 
         return True
