@@ -83,7 +83,7 @@ workflow.plot()
 workflow.display_settings()
 workflow_run.output_value.plot()
 boolean_index = FiltersList(filters_list, "or").get_booleans_index(cars)
-assert(workflow_run.output_value == FiltersList(filters_list, logical_operator="or").apply(cars))
+assert(workflow_run.output_value.dessia_objects == FiltersList(filters_list, logical_operator="or").apply(cars))
 
 # JSON TESTS
 dict_workflow = workflow.to_dict(use_pointers=True)
