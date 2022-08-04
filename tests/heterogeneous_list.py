@@ -28,7 +28,6 @@ print("RandData_heterogeneous : \n",
       "    - n_cols", len(heter_matrix[0]), "\n",
       "    - common_attributes", RandData_heterogeneous.common_attributes, "\n")
 
-
 # Tests for plot_data
 all_cars_with_features.plot()
 all_cars_without_features.plot()
