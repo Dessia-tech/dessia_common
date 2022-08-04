@@ -6,6 +6,7 @@ import dessia_common as dc
 
 def concatenate(*values):
     types_set = set(type(value) for value in values)
+    print('HEEEEERRRRRREEEEEE', types_set)
     if len(types_set) != 1:
         raise TypeError("Block Concatenate only defined for operands of the same type.")
 

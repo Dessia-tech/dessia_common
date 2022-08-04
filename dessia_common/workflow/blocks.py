@@ -719,10 +719,7 @@ class Filter(Block):
         filters = '[' + ",".join(filter_variables) + ']'
         script = f"Filter(filters={filters}, logical_operator='{self.logical_operator}', name='{self.name}')"
 
-        imports = [
-            DessiaFilter("", "", 0).full_classname,
-            self.full_classname
-        ]
+        imports = [DessiaFilter("", "", 0).full_classname, self.full_classname]
         return ToScriptElement(declaration=script, imports=imports)
 
 
