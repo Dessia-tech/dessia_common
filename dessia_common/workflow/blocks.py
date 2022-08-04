@@ -698,13 +698,14 @@ class Filter(Block):
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
         dict_ = Block.to_dict(self)
         dict_.update({'filters': [f.to_dict() for f in self.filters]})
+        dict_.update({'logical_operator': self.logical_operator})
         return dict_
 
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
                        pointers_memo: Dict[str, Any] = None, path: str = '#'):
-        return cls([DessiaFilter.dict_to_object(d) for d in dict_['filters']], dict_['name'])
+        return cls([DessiaFilter.dict_to_object(d) for d in dict_['filters']], dict_['logical_operator'], dict_['name'])
 
     def evaluate(self, values):
         filters_list = FiltersList(self.filters, self.logical_operator)
