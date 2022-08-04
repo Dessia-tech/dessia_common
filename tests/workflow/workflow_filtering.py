@@ -7,7 +7,7 @@ from dessia_common import tests
 from dessia_common.core import HeterogeneousList, DessiaFilter, FiltersList
 from dessia_common.files import StringFile
 import dessia_common.workflow as wf
-a
+
 csv_cars = pkg_resources.resource_stream('dessia_common', 'models/data/cars.csv')
 stream_file = StringFile.from_stream(csv_cars)
 cars = tests.CarWithFeatures.from_csv(stream_file)
