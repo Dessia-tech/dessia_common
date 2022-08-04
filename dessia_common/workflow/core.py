@@ -17,7 +17,7 @@ import warnings
 import traceback as tb
 import networkx as nx
 from dessia_common.templates import workflow_template
-from dessia_common import DessiaObject, is_sequence, JSONSCHEMA_HEADER, jsonschema_from_annotation,\
+from dessia_common import DessiaObject, is_sequence, JSONSCHEMA_HEADER, jsonschema_from_annotation, \
     deserialize_argument, set_default_value, prettyname, serialize_dict, DisplaySetting
 
 from dessia_common.utils.serialization import deserialize, serialize_with_pointers, serialize, update_pointers_data
@@ -377,7 +377,7 @@ class Workflow(Block):
             i = 0
             while (not found_output and i < len(self.blocks)):
                 found_output = output in self.blocks[i].outputs
-                i+= 1
+                i += 1
             if not found_output:
                 raise WorkflowError("workflow's output is not in any block's outputs")
 
@@ -391,26 +391,62 @@ class Workflow(Block):
         block_hash = int(sum(b.equivalent_hash() for b in self.blocks) % 10e5)
         return (base_hash + block_hash) % 1000000000
 
-    def _data_eq(self, other_object):  # TODO: implement imposed_variable_values in equality
-        if hash(self) != hash(other_object) or not Block.equivalent(self, other_object):
+    def _data_eq(self, other_wf) -> bool:
+        if not isinstance(other_wf, Workflow):
             return False
-        # TODO: temp , reuse graph!!!!
-        for block1, block2 in zip(self.blocks, other_object.blocks):
+
+        if hash(self) != hash(other_wf) or not Block.equivalent(self, other_wf):
+            return False
+
+        # TODO: temp , reuse graph to handle block order!!!!
+        for block1, block2 in zip(self.blocks, other_wf.blocks):
             if not block1.equivalent(block2):
+                print("individual block non equivalnent")
                 return False
 
-        if len(self.imposed_variable_values) != len(other_object.imposed_variable_values):
+        if not self._equivalent_pipes(other_wf):
             return False
-        for imposed_key1, imposed_key2 in zip(self.imposed_variable_values.keys(),
-                                              other_object.imposed_variable_values.keys()):
-            if hash(imposed_key1) != hash(imposed_key2):
-                return False
-            imposed_value1 = self.imposed_variable_values[imposed_key1]
-            imposed_value2 = other_object.imposed_variable_values[imposed_key2]
-            if hash(imposed_value1) != hash(imposed_value2):
-                return False
+
+        if not self._equivalent_imposed_variables_values(other_wf):
+            return False
+
+        if not set(self.nonblock_variables) == set(other_wf.nonblock_variables):
+            return False
 
         return True
+
+    def _equivalent_pipes(self, other_wf) -> bool:
+        if len(self.pipes) != len(other_wf.pipes):
+            # useless as workflows' hashes should be different. But is hash good enough ?
+            return False
+
+        pipes_1 = []
+        pipes_2 = []
+        for pipe1, pipe2 in zip(self.pipes, other_wf.pipes):
+            input_index1 = self.variable_index(pipe1.input_variable)
+            output_index1 = self.variable_index(pipe1.output_variable)
+            pipes_1.append((input_index1, output_index1))
+
+            input_index2 = other_wf.variable_index(pipe2.input_variable)
+            output_index2 = other_wf.variable_index(pipe2.output_variable)
+            pipes_2.append((input_index2, output_index2))
+        return set(pipes_1) == set(pipes_2)
+
+    def _equivalent_imposed_variables_values(self, other_wf) -> bool:
+        if len(self.imposed_variable_values) != len(other_wf.imposed_variable_values):
+            # mandatory as imposed_variable_values are not handled by hash method
+            return False
+
+        ivvs_1 = []
+        ivvs_2 = []
+        for imposed_key1, imposed_key2 in zip(self.imposed_variable_values.keys(),
+                                              other_wf.imposed_variable_values.keys()):
+            variable_index_1 = self.variable_index(imposed_key1)
+            ivvs_1.append((variable_index_1, self.imposed_variable_values[imposed_key1]))
+
+            variable_index_2 = other_wf.variable_index(imposed_key2)
+            ivvs_2.append((variable_index_2, other_wf.imposed_variable_values[imposed_key2]))
+        return set(ivvs_1) == set(ivvs_2)
 
     def __deepcopy__(self, memo=None):
         """
@@ -684,7 +720,6 @@ class Workflow(Block):
             return arguments
         raise NotImplementedError(f"Method {method} not in Workflow allowed methods")
 
-
     def _run_dict(self) -> Dict:
         dict_ = {}
         for input_index, input_ in enumerate(self.inputs):
@@ -700,14 +735,12 @@ class Workflow(Block):
     def _start_run_dict(self) -> Dict:
         raise NotImplementedError("start_run method_dict is not implemented yet")
 
-
     def method_dict(self, method_name: str = None, method_jsonschema: Any = None) -> Dict:
         if method_name == 'run':
             return self._run_dict()
         if method_name == 'start_run':
             return self._start_run_dict()
         raise WorkflowError(f"Calling method_dict with unknown method_name {method_name}")
-
 
     def variable_from_index(self, index: Union[int, Tuple[int, int, int]]):
         """
@@ -1175,7 +1208,7 @@ class Workflow(Block):
         if workflow_output_index is None:
             raise ValueError("A workflow output must be set")
 
-          # --- Blocks ---
+        # --- Blocks ---
         script_blocks = ""
         imports = []
         imports_as_is = []
@@ -1186,7 +1219,7 @@ class Workflow(Block):
                 script_blocks += f"{block_script.before_declaration}\n"
             script_blocks += f'{prefix}block_{ib} = {block_script.declaration}\n'
 
-        script_blocks += prefix + 'blocks = [{}]\n'\
+        script_blocks += prefix + 'blocks = [{}]\n' \
             .format(', '.join([prefix + 'block_' + str(i) for i in range(len(self.blocks))]))
 
         # --- Pipes ---
@@ -1199,7 +1232,7 @@ class Workflow(Block):
                 input_script_elements = pipe.input_variable._to_script()
                 imports.extend(input_script_elements.imports)
                 imports_as_is.extend((input_script_elements.imports_as_is))
-                script_pipes += f'{input_name } = {input_script_elements.declaration}'
+                script_pipes += f'{input_name} = {input_script_elements.declaration}'
                 variable_index += 1
             else:
                 input_name = f"{prefix}block_{input_index[0]}.outputs[{input_index[2]}]"
@@ -1210,7 +1243,7 @@ class Workflow(Block):
                 output_script_elements = pipe.output_variable._to_script()
                 imports.extend(output_script_elements.imports)
                 imports_as_is.extend(output_script_elements.imports_as_is)
-                script_pipes += f'{output_name } = {output_script_elements.declaration}'
+                script_pipes += f'{output_name} = {output_script_elements.declaration}'
                 variable_index += 1
             else:
                 output_name = f"{prefix}block_{output_index[0]}.inputs[{output_index[2]}]"

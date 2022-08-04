@@ -2,8 +2,8 @@ import unittest
 
 from parameterized import parameterized
 from dessia_common.forms import StandaloneObjectWithDefaultValues, StandaloneObject
-from dessia_common.workflow import InstantiateModel, Workflow, WorkflowError, Pipe
-
+from dessia_common.typings import MethodType
+from dessia_common.workflow import InstantiateModel, Workflow, WorkflowError, Pipe, ModelMethod
 
 block_0 = InstantiateModel(model_class=StandaloneObjectWithDefaultValues, name='Instantiate SOWDV')
 block_1 = ModelMethod(
@@ -52,19 +52,17 @@ class WorkflowDataEq(unittest.TestCase):
 
     def test_output(self):
         wf1 = Workflow(blocks=[block_0, block_1], pipes=[], output=block_1.outputs[0])
-        wf2 = Workflow(blocks=[block_0, block_1], pipes=[], output=block_1.outputs[1]),
+        wf2 = Workflow(blocks=[block_0, block_1], pipes=[], output=block_1.outputs[1])
         self.assertFalse(wf1._data_eq(wf2))
-
 
     def test_blocks(self):
         wf1 = Workflow(blocks=[block_0], pipes=[], output=block_0.outputs[0])
-        wf2 = Workflow(blocks=[block_0, block_1], pipes=[], output=block_0.outputs[0]),
+        wf2 = Workflow(blocks=[block_0, block_1], pipes=[], output=block_0.outputs[0])
         self.assertFalse(wf1._data_eq(wf2))
 
         wf1 = Workflow(blocks=[block_0, block_0], pipes=[], output=block_0.outputs[0])
-        wf2 = Workflow(blocks=[block_0, block_1], pipes=[], output=block_0.outputs[0]),
+        wf2 = Workflow(blocks=[block_0, block_1], pipes=[], output=block_0.outputs[0])
         self.assertFalse(wf1._data_eq(wf2))
-
 
     # # NOT IMPLEMENTED YET
     # def test_block_order(self):
@@ -72,31 +70,28 @@ class WorkflowDataEq(unittest.TestCase):
     #     workflow2 = Workflow(blocks=[block_1, block_0],pipes=[],output=instantiate.outputs[0])
     #     self.assertTrue(workflow1._data_eq(workflow2), expected_value)
 
-
     def test_pipes(self):
         pipe_0 = Pipe(block_0.outputs[0], block_1.inputs[0])
         pipe_1 = Pipe(block_0.outputs[0], block_1.inputs[1])
 
         wf1 = Workflow(blocks=[block_0, block_1], pipes=[pipe_0], output=block_0.outputs[0])
-        wf2 = Workflow(blocks=[block_0, block_1], pipes=[pipe_0], output=block_0.outputs[0]),
+        wf2 = Workflow(blocks=[block_0, block_1], pipes=[pipe_0], output=block_0.outputs[0])
         self.assertTrue(wf1._data_eq(wf2))
 
         wf1 = Workflow(blocks=[block_0, block_1], pipes=[], output=block_0.outputs[0])
-        wf2 = Workflow(blocks=[block_0, block_1], pipes=[pipe_0], output=block_0.outputs[0]),
+        wf2 = Workflow(blocks=[block_0, block_1], pipes=[pipe_0], output=block_0.outputs[0])
         self.assertFalse(wf1._data_eq(wf2))
 
         wf1 = Workflow(blocks=[block_0, block_1], pipes=[pipe_0], output=block_0.outputs[0])
-        wf2 = Workflow(blocks=[block_0, block_1], pipes=[pipe_1], output=block_0.outputs[0]),
+        wf2 = Workflow(blocks=[block_0, block_1], pipes=[pipe_1], output=block_0.outputs[0])
         self.assertFalse(wf1._data_eq(wf2))
-
 
     def test_pipe_order(self):
         pipe_0 = Pipe(block_0.outputs[0], block_1.inputs[0])
         pipe_1 = Pipe(block_0.outputs[0], block_1.inputs[1])
-        wf1 = Workflow(blocks=[block_0, block_1],pipes=[pipe_0, pipe_1],output=block_1.outputs[0])
-        wf2 = Workflow(blocks=[block_0, block_1],pipes=[pipe_1, pipe_0],output=block_1.outputs[0])
+        wf1 = Workflow(blocks=[block_0, block_1], pipes=[pipe_0, pipe_1], output=block_1.outputs[0])
+        wf2 = Workflow(blocks=[block_0, block_1], pipes=[pipe_1, pipe_0], output=block_1.outputs[0])
         self.assertTrue(wf1._data_eq(wf2))
-
 
     def test_imposed_variable_values(self):
         wf1 = Workflow(blocks=[block_0, block_1], pipes=[], output=block_0.outputs[0])
@@ -111,13 +106,23 @@ class WorkflowDataEq(unittest.TestCase):
         wf2.imposed_variable_values[block_0.inputs[5]] = 42
         self.assertTrue(wf1._data_eq(wf2))
 
+    def test_imposed_variable_value_order(self):
+        wf1 = Workflow(blocks=[block_0, block_1], pipes=[], output=block_0.outputs[0])
+        wf2 = Workflow(blocks=[block_0, block_1], pipes=[], output=block_0.outputs[0])
+
+        wf1.imposed_variable_values[block_0.inputs[5]] = 42
+        wf1.imposed_variable_values[block_0.inputs[6]] = "my_test"
+
+        wf2.imposed_variable_values[block_0.inputs[6]] = "my_test"
+        wf2.imposed_variable_values[block_0.inputs[5]] = 42
+        self.assertTrue(wf1._data_eq(wf2))
 
     @parameterized.expand([
         (Pipe(block_0.outputs[0], block_1.inputs[1]), Pipe(3.4, block_1.inputs[1]), False),
         (Pipe(2.7, block_1.inputs[1]), Pipe(3.4, block_1.inputs[1]), False),
         (Pipe(3.4, block_1.inputs[1]), Pipe(3.4, block_1.inputs[1]), True),
     ])
-    def test_non_block_variables(self, pipe1, pipe2 : Pipe, expected_value : bool):
+    def test_non_block_variables(self, pipe1, pipe2: Pipe, expected_value: bool):
         blocks = [block_0, block_1]
         output = block_0.outputs[0]
 
