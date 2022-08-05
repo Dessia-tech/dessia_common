@@ -421,6 +421,10 @@ class Concatenate(Block):
     def evaluate(self, values: Dict[Variable, Any]):
         return [concatenate(values)]
 
+    def _to_script(self) -> ToScriptElement:
+        script = f"Sequence(number_arguments={len(self.inputs)}, name='{self.name}')"
+        return ToScriptElement(declaration=script, imports=[self.full_classname])
+
 
 class WorkflowBlock(Block):
     """
