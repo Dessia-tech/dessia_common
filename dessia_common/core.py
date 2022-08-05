@@ -1092,7 +1092,10 @@ class HeterogeneousList(DessiaObject):
 
     def filtering(self, filters: FiltersList):
         booleans_index = filters.get_booleans_index(self.dessia_objects)
-        return self[booleans_index]
+        return self.pick_from_boolist(booleans_index)
+
+    # def _get_booleans_from_filters(self, filters: FiltersList):
+    #     return filters.get_booleans_index(self.dessia_objects)
 
     # def filtering(self, filters: List[DessiaFilter], logical_operator: str = "and"):
     #     filters_list = FiltersList(filters, logical_operator)

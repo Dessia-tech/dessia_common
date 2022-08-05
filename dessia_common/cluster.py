@@ -32,14 +32,14 @@ class CategorizedList(dc.HeterogeneousList):
             self._n_clusters = len(unic_labels)
         return self._n_clusters
 
-    def _pick_from_slice(self, key: slice):
-        new_hlist = dc.HeterogeneousList._pick_from_slice(self, key)
+    def pick_from_slice(self, key: slice):
+        new_hlist = dc.HeterogeneousList.pick_from_slice(self, key)
         new_hlist.labels = self.labels[key]
         # new_hlist.name += f"_{key.start if key.start is not None else 0}_{key.stop}")
         return new_hlist
 
-    def _pick_from_boolist(self, key: List[bool]):
-        new_hlist = dc.HeterogeneousList._pick_from_boolist(self, key)
+    def pick_from_boolist(self, key: List[bool]):
+        new_hlist = dc.HeterogeneousList.pick_from_boolist(self, key)
         new_hlist.labels = dc.DessiaFilter.apply(self.labels, key)
         # new_hlist.name += "_list")
         return new_hlist
@@ -71,7 +71,7 @@ class CategorizedList(dc.HeterogeneousList):
     def clustered_sublists(self):
         sublists = []
         label_tags = sorted(list(map(str, set(self.labels).difference({-1}))))
-        for _ in range(max(self.labels) + 1):
+        for _ in range(self.n_clusters):
             sublists.append([])
         if -1 in self.labels:
             sublists.append([])
@@ -113,6 +113,10 @@ class CategorizedList(dc.HeterogeneousList):
             point_families.append(plot_data.core.PointFamily(color, points_index))
         return point_families
 
+    # def filtering(self, filters: dc.FiltersList):
+    #     booleans_index = dc.HeterogeneousList._get_booleans_from_filters(filters)
+    #     new_clist = self[booleans_index]
+    #     return self[booleans_index]
 
     @classmethod
     def from_agglomerative_clustering(cls, data: dc.HeterogeneousList, n_clusters: int = 2,
