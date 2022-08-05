@@ -419,10 +419,11 @@ class Concatenate(Block):
         return cls(dict_['number_arguments'], dict_['name'])
 
     def evaluate(self, values: Dict[Variable, Any]):
-        return [concatenate(values)]
+        list_values = list(values.values())
+        return [concatenate(list_values)]
 
     def _to_script(self) -> ToScriptElement:
-        script = f"Sequence(number_arguments={len(self.inputs)}, name='{self.name}')"
+        script = f"Concatenate(number_arguments={len(self.inputs)}, name='{self.name}')"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
 
