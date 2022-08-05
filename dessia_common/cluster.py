@@ -71,6 +71,7 @@ class CategorizedList(dc.HeterogeneousList):
     def clustered_sublists(self):
         sublists = []
         label_tags = sorted(list(map(str, set(self.labels).difference({-1}))))
+        unic_labels = list(set(self.labels))
         for _ in range(self.n_clusters):
             sublists.append([])
         if -1 in self.labels:
@@ -78,7 +79,7 @@ class CategorizedList(dc.HeterogeneousList):
             label_tags.append("outliers")
 
         for idx, label in enumerate(self.labels):
-            sublists[label].append(self.dessia_objects[idx])
+            sublists[unic_labels.index(label)].append(self.dessia_objects[idx])
 
         new_dessia_objects = [dc.HeterogeneousList(dessia_objects=sublist, name=self.name + f"_{label_tag}")
                               for label_tag, sublist in zip(label_tags, sublists)]
