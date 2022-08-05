@@ -333,10 +333,10 @@ class ModelMethod(Block):
 
     def evaluate(self, values):
         args = {arg_name: values[var] for arg_name, var in zip(self.argument_names, self.inputs[1:]) if var in values}
-        print('values', values)
-        print('\n input[0]', self.inputs[0])
-        print('\n args', args)
-        print('\n values[self.inputs[0]]', values[self.inputs[0]])
+        print('values = ', values)
+        print('\n input[0] = ', self.inputs[0])
+        print('\n args = ', args)
+        print('\n values[self.inputs[0]] = ', values[self.inputs[0]])
         return [getattr(values[self.inputs[0]], self.method_type.name)(**args), values[self.inputs[0]]]
 
     def package_mix(self):
