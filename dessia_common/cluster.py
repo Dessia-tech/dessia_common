@@ -114,11 +114,6 @@ class CategorizedList(dc.HeterogeneousList):
             point_families.append(plot_data.core.PointFamily(color, points_index))
         return point_families
 
-    # def filtering(self, filters: dc.FiltersList):
-    #     booleans_index = dc.HeterogeneousList._get_booleans_from_filters(filters)
-    #     new_clist = self[booleans_index]
-    #     return self[booleans_index]
-
     @classmethod
     def from_agglomerative_clustering(cls, data: dc.HeterogeneousList, n_clusters: int = 2,
                                       affinity: str = 'euclidean', linkage: str = 'ward',
