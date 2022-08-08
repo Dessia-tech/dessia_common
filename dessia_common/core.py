@@ -1064,11 +1064,11 @@ class FiltersList(DessiaObject):
         >>> FiltersList.combine_booleans_lists(booleans_lists, logical_operator="xor")
         [True, False, True, False]
         """
-        if logical_operator == "and":
+        if logical_operator == 'and':
             return [all(booleans_tuple) for booleans_tuple in zip(*booleans_lists)]
-        if logical_operator == "or":
+        if logical_operator == 'or':
             return [any(booleans_tuple) for booleans_tuple in zip(*booleans_lists)]
-        if logical_operator == "xor":
+        if logical_operator == 'xor':
             return [True if sum(booleans_tuple) == 1 else False for booleans_tuple in zip(*booleans_lists)]
         raise NotImplementedError(f"'{logical_operator}' str for 'logical_operator' attribute is not a use case")
 
@@ -1201,26 +1201,27 @@ class HeterogeneousList(DessiaObject):
     def _procreate(self):
         new_hlist = self.__class__()
         new_hlist.name = self.name
-        new_hlist._common_attributes = self._common_attributes
+        new_hlist._common_attributes = deepcopy(self._common_attributes)
+        new_hlist._matrix = deepcopy(self._matrix)
         return new_hlist
 
     def __getitem__(self, key: Any):
         if len(self.dessia_objects) == 0:
             return []
         if isinstance(key, int):
-            return self._pick_from_int(key)
+            return self.pick_from_int(key)
         if isinstance(key, slice):
-            return self._pick_from_slice(key)
+            return self.pick_from_slice(key)
         if isinstance(key, list):
             if len(key) == 0:
                 return self.__class__()
             if isinstance(key[0], bool):
                 if len(key) == self.__len__():
-                    return self._pick_from_boolist(key)
+                    return self.pick_from_boolist(key)
                 raise ValueError(f"Cannot index {self.__class__.__name__} object of len {self.__len__()} with a "
                                  f"list of boolean of len {len(key)}")
             if isinstance(key[0], int):
-                return self._pick_from_boolist(self._indexlist_to_booleanlist(key))
+                return self.pick_from_boolist(self._indexlist_to_booleanlist(key))
 
         raise NotImplementedError(f"key of type {type(key)} with {type(key[0])} elements not implemented for "
                                   f"indexing HeterogeneousLists")
@@ -1254,10 +1255,10 @@ class HeterogeneousList(DessiaObject):
         """
         self.__dict__.update((self + other).__dict__)
 
-    def _pick_from_int(self, idx: int):
+    def pick_from_int(self, idx: int):
         return self.dessia_objects[idx]
 
-    def _pick_from_slice(self, key: slice):
+    def pick_from_slice(self, key: slice):
         new_hlist = self._procreate()
         new_hlist.dessia_objects = self.dessia_objects[key]
         if self._matrix is not None:
@@ -1271,7 +1272,7 @@ class HeterogeneousList(DessiaObject):
             boolean_list[idx] = True
         return boolean_list
 
-    def _pick_from_boolist(self, key: List[bool]):
+    def pick_from_boolist(self, key: List[bool]):
         new_hlist = self._procreate()
         new_hlist.dessia_objects = DessiaFilter.apply(self.dessia_objects, key)
         if self._matrix is not None:
@@ -1447,20 +1448,14 @@ class HeterogeneousList(DessiaObject):
             self._matrix = matrix
         return self._matrix
 
-    def filtering(self, filters: List[DessiaFilter], logical_operator: str = "and"):
+    def filtering(self, filters: FiltersList, logical_operator: str = "and"):
         """
-        Filter a HeterogeneousList given a list of DessiaFilters.
-        Method filtering first compute a FiltersList then apply it to the current HeterogeneousList.
+        Filter a HeterogeneousList given a FiltersList.
+        Method filtering apply a FiltersList to the current HeterogeneousList.
 
         :param filters:
-            ---------
-            List of filters to apply on current HeterogeneousList
-        :type filters: List[DessiaFilter]
-
-        :param logical_operator:
-            ---------
-            Logical operator to combine filters (`'or'`, `'and'` or `'xor'`)
-        :type logical_operator: `str`, `optional`, defaults to `'and'`
+            FiltersList to apply on current HeterogeneousList
+        :type filters: FiltersList
 
         :return: The filtered HeterogeneousList
         :rtype: HeterogeneousList
@@ -1470,8 +1465,9 @@ class HeterogeneousList(DessiaObject):
         >>> from dessia_common.core import HeterogeneousList, DessiaFilter
         >>> from dessia_common.models import all_cars_wi_feat
         >>> filters = [DessiaFilter('weight', '<=', 1650.), DessiaFilter('mpg', '>=', 45.)]
+        >>> filters_list = FiltersList(filters, "xor")
         >>> example_list = HeterogeneousList(all_cars_wi_feat, name="example")
-        >>> filtered_list = example_list.filtering(filters, "xor")
+        >>> filtered_list = example_list.filtering(filters_list)
         >>> print(filtered_list)
         HeterogeneousList example: 3 samples, 5 features
         |         Mpg         |    Displacement    |     Horsepower     |       Weight       |    Acceleration    |
@@ -1480,9 +1476,8 @@ class HeterogeneousList(DessiaObject):
         |               31.0  |             0.076  |              52.0  |            1649.0  |              16.5  |
         |               46.6  |             0.086  |              65.0  |            2110.0  |              17.9  |
         """
-        filters_list = FiltersList(filters, logical_operator)
-        booleans_index = filters_list.get_booleans_index(self.dessia_objects)
-        return self[booleans_index]
+        booleans_index = filters.get_booleans_index(self.dessia_objects)
+        return self.pick_from_boolist(booleans_index)
 
     def singular_values(self):
         """
@@ -1542,7 +1537,6 @@ class HeterogeneousList(DessiaObject):
                                                self._tooltip_attributes(),
                                                axis=dimensionality_plot.axis,
                                                point_style=dimensionality_plot.point_style)
-
         return [scatter_matrix, dimensionality_plot]
 
     def _build_multiplot(self, data_list: List[Dict[str, float]], tooltip: List[str], **kwargs: Dict[str, Any]):
@@ -1551,17 +1545,24 @@ class HeterogeneousList(DessiaObject):
         for line_attr in self.common_attributes:
             for col_attr in self.common_attributes:
                 if line_attr == col_attr:
-                    subplots.append(plot_data.Histogram(x_variable=line_attr, elements=data_list))
+                    unic_values = set((getattr(dobject, line_attr) for dobject in self.dessia_objects))
+                    if len(unic_values) == 1:
+                        subplots.append(plot_data.Scatter(x_variable=line_attr,
+                                                          y_variable=col_attr,
+                                                          elements=data_list))
+                    else:
+                        subplots.append(plot_data.Histogram(x_variable=line_attr, elements=data_list))
                 else:
                     subplots.append(plot_data.Scatter(x_variable=line_attr,
                                                       y_variable=col_attr,
                                                       elements=data_list,
                                                       tooltip=plot_data.Tooltip(tooltip),
                                                       **kwargs))
+
         scatter_matrix = plot_data.MultiplePlots(plots=subplots,
-                                                 elements=data_list,
-                                                 point_families=self._point_families(),
-                                                 initial_view_on=True)
+                                                  elements=data_list,
+                                                  point_families=self._point_families(),
+                                                  initial_view_on=True)
         return scatter_matrix
 
     def _tooltip_attributes(self):

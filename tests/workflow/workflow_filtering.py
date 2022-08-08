@@ -1,95 +1,142 @@
 """
-Tests for workflow.filter and HeterogeneousList.filtering
+Tests on filtering methods with block filter and HeterogeneousList.filtering
 """
 import json
 import pkg_resources
-from dessia_common import tests
-from dessia_common.core import HeterogeneousList, DessiaFilter, FiltersList
 from dessia_common.files import StringFile
-import dessia_common.workflow as wf
+from dessia_common.typings import ClassMethodType, MethodType
+from dessia_common.tests import Car
+from dessia_common.workflow.blocks import ClassMethod, InstantiateModel, Filter, ModelMethod
+from dessia_common.core import HeterogeneousList, DessiaFilter, FiltersList
+from dessia_common.workflow.core import Workflow, Pipe
 
+# Import data
 csv_cars = pkg_resources.resource_stream('dessia_common', 'models/data/cars.csv')
 stream_file = StringFile.from_stream(csv_cars)
-cars = tests.CarWithFeatures.from_csv(stream_file)
 
-# =============================================================================
-# HETEROGENEOUSLIST.FILTERING
-# =============================================================================
-data_method = wf.MethodType(class_=tests.CarWithFeatures, name='from_csv')
-block_data = wf.ClassMethod(method_type=data_method, name='data load')
+# =============================================================================================================
+# Filters Workflow (available here https://testanguy.dessia.ovh/workflows/62f0d264fe92095c4b4e4930)
+# =============================================================================================================
 
-block_heterogeneous_list = wf.InstantiateModel(model_class=HeterogeneousList, name='heterogeneous list of data')
+block_0 = ClassMethod(method_type=ClassMethodType(Car, 'from_csv'), name='CSV Cars')
+block_1 = InstantiateModel(model_class=HeterogeneousList, name='HList Cars')
+block_2 = ModelMethod(method_type=MethodType(HeterogeneousList, 'filtering'), name='Filters HList')
+block_3 = ClassMethod(method_type=ClassMethodType(FiltersList, 'from_filters_list'), name='Filters Hlist')
+block_4 = Filter(filters=[DessiaFilter(attribute='weight', comparison_operator='<=', bound=4000, name='weight'),
+                          DessiaFilter(attribute='mpg', comparison_operator='>=', bound=25, name='mpg')],
+                 logical_operator='xor', name='Filters on W or MPG')
+blocks = [block_0, block_1, block_2, block_3, block_4]
 
-filters_list = [DessiaFilter('weight', "<=", 1700), DessiaFilter('mpg', ">=", 40)]
+pipe_0 = Pipe(block_1.outputs[0], block_2.inputs[0])
+pipe_1 = Pipe(block_3.outputs[0], block_2.inputs[1])
+pipe_2 = Pipe(block_0.outputs[0], block_4.inputs[0])
+pipe_3 = Pipe(block_4.outputs[0], block_1.inputs[0])
+pipes = [pipe_0, pipe_1, pipe_2, pipe_3]
 
-apply_method = wf.MethodType(class_=HeterogeneousList, name='filtering')
-block_apply = wf.ModelMethod(method_type=apply_method, name='apply filter')
+workflow = Workflow(blocks, pipes, output=block_2.outputs[0], name='Filters demo')
 
-block_workflow = [block_data, block_heterogeneous_list, block_apply]
-pipe_worflow = [wf.Pipe(block_data.outputs[0], block_heterogeneous_list.inputs[0]),
-                wf.Pipe(block_heterogeneous_list.outputs[0], block_apply.inputs[0])
-                ]
-workflow = wf.Workflow(block_workflow, pipe_worflow, block_apply.outputs[0])
-
+# Workflow run
+filters = [DessiaFilter('cylinders', ">", 4), DessiaFilter('displacement', ">", 0.25)]
 workflow_run = workflow.run({
-    workflow.index(block_data.inputs[0]): stream_file,
-    workflow.index(block_apply.inputs[1]): filters_list,
-    workflow.index(block_apply.inputs[2]): "or"})
-
+    workflow.index(block_0.inputs[0]): stream_file,
+    workflow.index(block_3.inputs[0]): filters,
+    workflow.index(block_3.inputs[1]): 'and'})
 
 # Workflow tests
 workflow._check_platform()
 workflow.plot()
-workflow.display_settings()
 workflow_run.output_value.plot()
-assert(workflow_run.output_value == HeterogeneousList(cars).filtering(filters_list, "or"))
 
 # JSON TESTS
-dict_workflow = workflow.to_dict(use_pointers=True)
-json_dict = json.dumps(dict_workflow)
-decoded_json = json.loads(json_dict)
-deserialized_object = workflow.dict_to_object(decoded_json)
+output_dict = workflow_run.output_value[[0, 3, 9, 11, 25, 44]].to_dict(use_pointers=True)
+output_json = json.dumps(output_dict)
+output_json_to_dict = json.loads(output_json)
+output_jsondict_to_object = HeterogeneousList.dict_to_object(output_json_to_dict)
 
-# JSON Workflow_run tests
-# dict_workflow_run = workflow_run.to_dict(use_pointers=True)
-# json_dict = json.dumps(dict_workflow_run)
-# decoded_json = json.loads(json_dict)
-# deserialized_object = workflow_run.dict_to_object(decoded_json)
+reference_output = {
+  "name": "",
+  "object_class": "dessia_common.core.HeterogeneousList",
+  "package_version": "0.9.2.dev320+gecd4609",
+  "dessia_objects": [
+    {
+      "name": "Chevrolet Chevelle Malibu",
+      "object_class": "dessia_common.tests.Car",
+      "package_version": "0.9.2.dev320+gecd4609",
+      "mpg": 18.0,
+      "cylinders": 8.0,
+      "displacement": 0.307,
+      "horsepower": 130.0,
+      "weight": 3504.0,
+      "acceleration": 12.0,
+      "model": 70.0,
+      "origin": "US\r"
+    },
+    {
+      "name": "AMC Rebel SST",
+      "object_class": "dessia_common.tests.Car",
+      "package_version": "0.9.2.dev320+gecd4609",
+      "mpg": 16.0,
+      "cylinders": 8.0,
+      "displacement": 0.304,
+      "horsepower": 150.0,
+      "weight": 3433.0,
+      "acceleration": 12.0,
+      "model": 70.0,
+      "origin": "US\r"
+    },
+    {
+      "name": "Ford Mustang Boss 302",
+      "object_class": "dessia_common.tests.Car",
+      "package_version": "0.9.2.dev320+gecd4609",
+      "mpg": 0.0,
+      "cylinders": 8.0,
+      "displacement": 0.302,
+      "horsepower": 140.0,
+      "weight": 3353.0,
+      "acceleration": 8.0,
+      "model": 70.0,
+      "origin": "US\r"
+    },
+    {
+      "name": "Buick Estate Wagon (sw)",
+      "object_class": "dessia_common.tests.Car",
+      "package_version": "0.9.2.dev320+gecd4609",
+      "mpg": 14.0,
+      "cylinders": 8.0,
+      "displacement": 0.455,
+      "horsepower": 225.0,
+      "weight": 3086.0,
+      "acceleration": 10.0,
+      "model": 70.0,
+      "origin": "US\r"
+    },
+    {
+      "name": "AMC Matador",
+      "object_class": "dessia_common.tests.Car",
+      "package_version": "0.9.2.dev320+gecd4609",
+      "mpg": 15.5,
+      "cylinders": 8.0,
+      "displacement": 0.304,
+      "horsepower": 120.0,
+      "weight": 3962.0,
+      "acceleration": 13.9,
+      "model": 76.0,
+      "origin": "US\r"
+    },
+    {
+      "name": "Oldsmobile Cutlass Salon Brougham",
+      "object_class": "dessia_common.tests.Car",
+      "package_version": "0.9.2.dev320+gecd4609",
+      "mpg": 23.9,
+      "cylinders": 8.0,
+      "displacement": 0.26,
+      "horsepower": 90.0,
+      "weight": 3420.0,
+      "acceleration": 22.2,
+      "model": 79.0,
+      "origin": "US\r"
+    }]
+}
 
-# =============================================================================
-# BLOCK FILTER
-# =============================================================================
-
-data_method = wf.MethodType(class_=tests.CarWithFeatures, name='from_csv')
-block_data = wf.ClassMethod(method_type=data_method, name='data load')
-
-filters_list = [DessiaFilter('weight', "<=", 1700), DessiaFilter('mpg', ">=", 40)]
-
-block_filter = wf.Filter(filters=filters_list, logical_operator="or")
-
-block_workflow = [block_data, block_filter]
-pipe_worflow = [wf.Pipe(block_data.outputs[0], block_filter.inputs[0])]
-
-workflow = wf.Workflow(block_workflow, pipe_worflow, block_filter.outputs[0])
-
-workflow_run = workflow.run({workflow.index(block_data.inputs[0]): stream_file})
-
-# Workflow tests
-workflow._check_platform()
-workflow.plot()
-workflow.display_settings()
-boolean_index = FiltersList(filters_list, "or").get_booleans_index(cars)
-assert(workflow_run.output_value == FiltersList(filters_list, logical_operator="or").apply(cars))
-
-# JSON TESTS
-dict_workflow = workflow.to_dict(use_pointers=True)
-json_dict = json.dumps(dict_workflow)
-decoded_json = json.loads(json_dict)
-deserialized_object = workflow.dict_to_object(decoded_json)
-
-# JSON Workflow_run tests
-# dict_workflow_run = workflow_run.to_dict(use_pointers=True)
-# json_dict = json.dumps(dict_workflow_run)
-# decoded_json = json.loads(json_dict)
-# deserialized_object = workflow_run.dict_to_object(decoded_json)
-
+# Test
+assert(output_jsondict_to_object == HeterogeneousList.dict_to_object(reference_output))
