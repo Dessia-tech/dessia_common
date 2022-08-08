@@ -19,7 +19,7 @@ from dessia_common.utils.docstrings import parse_docstring, EMPTY_PARSED_ATTRIBU
 from dessia_common.errors import UntypedArgumentError
 from dessia_common.typings import JsonSerializable, MethodType, ClassMethodType
 from dessia_common.files import StringFile, BinaryFile
-from dessia_common.helpers import concatenate
+from dessia_common.utils.helpers import concatenate
 
 from dessia_common.workflow.core import Block, Variable, TypedVariable, TypedVariableWithDefaultValue,\
     set_block_variable_names_from_dict, Workflow, DisplaySetting
