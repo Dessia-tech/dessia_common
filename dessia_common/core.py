@@ -1607,7 +1607,7 @@ class HeterogeneousList(DessiaObject):
         return templates.heterogeneouslist_markdown_template.substitute(name=self.name, class_=self.__class__.__name__)
 
     @staticmethod
-    def pareto_indexes(costs, tol):
+    def pareto_indexes(costs: List[float], tol: float = 0.):
         """
         Find the pareto-efficient points
 
@@ -1624,7 +1624,7 @@ class HeterogeneousList(DessiaObject):
                 is_efficient[index] = True
         return is_efficient.tolist()
 
-    def pareto_points(self, costs, tol):
+    def pareto_points(self, costs: List[float], tol: float = 0.):
         """
         Find the pareto-efficient points
 
@@ -1644,7 +1644,7 @@ class HeterogeneousList(DessiaObject):
         return self[self.__class__.pareto_indexes(costs, tol)]
 
     @staticmethod
-    def pareto_frontiers(costs, tol: float = 0.):
+    def pareto_frontiers(costs: List[float], tol: float = 0.):
         # Experimental
         import matplotlib.pyplot as plt
         pareto_indexes = HeterogeneousList.pareto_indexes(costs, tol)
@@ -1669,7 +1669,8 @@ class HeterogeneousList(DessiaObject):
         return pareto_frontiers
 
     @staticmethod
-    def pareto_frontier_2d(x_dim, y_dim, pareto_costs, max_x_dim, super_mini):
+    def pareto_frontier_2d(x_dim: int, y_dim: int, pareto_costs: List[List[float]], max_x_dim: float,
+                           super_mini: List[float]):
         # Experimental
         minidx = npy.argmin(pareto_costs[:, y_dim])
         x_coord = pareto_costs[minidx, x_dim]
