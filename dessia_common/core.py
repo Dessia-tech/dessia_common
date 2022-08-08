@@ -1607,7 +1607,13 @@ class HeterogeneousList(DessiaObject):
         return templates.heterogeneouslist_markdown_template.substitute(name=self.name, class_=self.__class__.__name__)
 
     @staticmethod
-    def pareto_indexes(costs: List[float], tol: float = 0.):
+    def check_costs(len_data: int, costs: List[List[float]]):
+        if len(costs) != len_data:
+            return list(map(list,zip(*costs)))
+        return costs
+
+    @staticmethod
+    def pareto_indexes(costs: List[List[float]], tol: float = 0.):
         """
         Find the pareto-efficient points
 
@@ -1616,6 +1622,7 @@ class HeterogeneousList(DessiaObject):
         array_costs = npy.array(costs)
         is_efficient = npy.ones(array_costs.shape[0], dtype=bool)
         scaled_costs = (array_costs - npy.mean(array_costs, axis=0)) / npy.std(array_costs, axis=0)
+
         for index, cost in enumerate(scaled_costs):
             if is_efficient[index]:
                 # Keep any point with a lower cost
@@ -1624,7 +1631,7 @@ class HeterogeneousList(DessiaObject):
                 is_efficient[index] = True
         return is_efficient.tolist()
 
-    def pareto_points(self, costs: List[float], tol: float = 0.):
+    def pareto_points(self, costs: List[List[float]], tol: float = 0.):
         """
         Find the pareto-efficient points
 
@@ -1641,18 +1648,21 @@ class HeterogeneousList(DessiaObject):
         :return: a HeterogeneousList containing the selected points
         :rtype: HeterogeneousList
         """
+        costs = HeterogeneousList.check_costs(len(self.dessia_objects), costs)
         return self[self.__class__.pareto_indexes(costs, tol)]
 
     @staticmethod
-    def pareto_frontiers(costs: List[float], tol: float = 0.):
+    def pareto_frontiers(len_data: int, costs: List[List[float]], tol: float = 0.):
         # Experimental
         import matplotlib.pyplot as plt
+        costs = HeterogeneousList.check_costs(len_data, costs)
         pareto_indexes = HeterogeneousList.pareto_indexes(costs, tol)
-        pareto_costs = npy.array(list(itertools.compress(costs.tolist(), pareto_indexes)))
+        pareto_costs = npy.array(list(itertools.compress(costs, pareto_indexes)))
 
+        array_costs = npy.array(costs)
         plt.figure()
-        plt.plot(costs[:, 0], costs[:, 1], linestyle='None', marker='o', color='b')
-        plt.plot(pareto_costs[:, 0], pareto_costs[:, 1], linestyle='None', marker='o', color='r')
+        plt.plot(array_costs[:, 0], array_costs[:, 1], linestyle ='None', marker='o', color = 'b')
+        plt.plot(pareto_costs[:, 0], pareto_costs[:, 1], linestyle ='None', marker='o', color = 'r')
         plt.show()
 
         super_mini = npy.min(costs, axis=0)
@@ -1661,7 +1671,7 @@ class HeterogeneousList(DessiaObject):
             for y_dim in range(pareto_costs.shape[1]):
                 if x_dim != y_dim:
                     frontier_2d = HeterogeneousList.pareto_frontier_2d(x_dim, y_dim, pareto_costs,
-                                                                       npy.max(costs[:, x_dim]), super_mini)
+                                                                       npy.max(array_costs[ :, x_dim]), super_mini)
                     pareto_frontiers.append(frontier_2d)
                     plt.plot(frontier_2d[:, x_dim], frontier_2d[:, y_dim], color='g')
 
