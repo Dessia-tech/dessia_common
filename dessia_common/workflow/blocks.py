@@ -13,16 +13,17 @@ import io
 from typing import List, Type, Any, Dict, get_type_hints
 
 import itertools
-from dessia_common import DessiaFilter, is_bounded, enhanced_deep_attr, split_argspecs,\
-    type_from_annotation
+from dessia_common.core import DessiaFilter, is_bounded, enhanced_deep_attr, split_argspecs, type_from_annotation
 from dessia_common.utils.types import get_python_class_from_class_name, full_classname
 from dessia_common.utils.docstrings import parse_docstring, EMPTY_PARSED_ATTRIBUTE
 from dessia_common.errors import UntypedArgumentError
 from dessia_common.typings import JsonSerializable, MethodType, ClassMethodType
 from dessia_common.files import StringFile, BinaryFile
+from dessia_common.utils.helpers import concatenate
 
 from dessia_common.workflow.core import Block, Variable, TypedVariable, TypedVariableWithDefaultValue,\
     set_block_variable_names_from_dict, Workflow, DisplaySetting
+from dessia_common.workflow.utils import ToScriptElement
 
 
 def set_inputs_from_function(method, inputs=None):
@@ -112,6 +113,16 @@ class Display(Block):
     def evaluate(_):
         return []
 
+    def _to_script(self) -> ToScriptElement:
+        script = f"Display(inputs=None, order={self.order}, name='{self.name}')"
+
+        imports = [
+            self.full_classname,
+            Variable().full_classname
+        ]
+
+        return ToScriptElement(declaration=script, imports=imports)
+
 
 class InstantiateModel(Block):
     """
@@ -169,10 +180,15 @@ class InstantiateModel(Block):
                            else EMPTY_PARSED_ATTRIBUTE for i in self.inputs}
         return block_docstring
 
-    def to_script(self):
-        script = "dcw_blocks.InstantiateModel("
-        script += f"{full_classname(object_=self.model_class, compute_for='class')}, name='{self.name}')"
-        return script, [full_classname(object_=self.model_class, compute_for='class')]
+    def _to_script(self) -> ToScriptElement:
+        script = f"InstantiateModel(model_class=" \
+                 f"{self.model_class.__name__}, name='{self.name}')"
+
+        imports = [
+            full_classname(object_=self.model_class, compute_for='class'),
+            self.full_classname
+        ]
+        return ToScriptElement(declaration=script, imports=imports)
 
 
 class ClassMethod(Block):
@@ -239,6 +255,19 @@ class ClassMethod(Block):
         block_docstring = {i: parsed_attributes[i.name] if i.name in parsed_attributes
                            else EMPTY_PARSED_ATTRIBUTE for i in self.inputs}
         return block_docstring
+
+    def _to_script(self) -> ToScriptElement:
+        script = f"ClassMethod(method_type=ClassMethodType(" \
+                 f"{self.method_type.class_.__name__}, '{self.method_type.name}')" \
+                 f", name='{self.name}')"
+
+        imports = [
+            full_classname(object_=self.method_type, compute_for='instance'),
+            full_classname(object_=self.method_type.class_, compute_for='class'),
+            self.full_classname
+        ]
+
+        return ToScriptElement(declaration=script, imports=imports)
 
 
 class ModelMethod(Block):
@@ -319,11 +348,17 @@ class ModelMethod(Block):
                            else EMPTY_PARSED_ATTRIBUTE for i in self.inputs}
         return block_docstring
 
-    def to_script(self):
-        script = "dcw_blocks.ModelMethod(method_type=dct.MethodType("
-        script += f"{full_classname(object_=self.method_type.class_, compute_for='class')}, '{self.method_type.name}')"
-        script += f", name='{self.name}')"
-        return script, [full_classname(object_=self.method_type.class_, compute_for='class')]
+    def _to_script(self) -> ToScriptElement:
+        script = f"ModelMethod(method_type=MethodType(" \
+                 f"{self.method_type.class_.__name__}, '{self.method_type.name}')" \
+                 f", name='{self.name}')"
+
+        imports = [
+            full_classname(object_=self.method_type, compute_for='instance'),
+            full_classname(object_=self.method_type.class_, compute_for='class'),
+            self.full_classname
+        ]
+        return ToScriptElement(declaration=script, imports=imports)
 
 
 class Sequence(Block):
@@ -352,6 +387,39 @@ class Sequence(Block):
 
     def evaluate(self, values):
         return [[values[var] for var in self.inputs]]
+
+    def _to_script(self) -> ToScriptElement:
+        script = f"Sequence(number_arguments={len(self.inputs)}, name='{self.name}')"
+        return ToScriptElement(declaration=script, imports=[self.full_classname])
+
+
+class Concatenate(Block):
+    def __init__(self, number_arguments: int, name: str = ''):
+        self.number_arguments = number_arguments
+        inputs = [Variable(name=f"Sequence element {i}") for i in range(self.number_arguments)]
+        outputs = [TypedVariable(type_=list, name='sequence')]
+        Block.__init__(self, inputs, outputs, name=name)
+
+    def equivalent_hash(self):
+        return self.number_arguments
+
+    def equivalent(self, other):
+        return Block.equivalent(self, other) and self.number_arguments == other.number_arguments
+
+    def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
+        dict_ = Block.to_dict(self)
+        dict_['number_arguments'] = self.number_arguments
+        return dict_
+
+    @classmethod
+    @set_block_variable_names_from_dict
+    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
+        return cls(dict_['number_arguments'], dict_['name'])
+
+    def evaluate(self, values: Dict[Variable, Any]):
+        list_values = list(values.values())
+        return [concatenate(list_values)]
 
 
 class WorkflowBlock(Block):
@@ -416,6 +484,18 @@ class WorkflowBlock(Block):
                 if block_docstring and input_ in block_docstring:
                     docstring[input_] = block_docstring[input_]
         return docstring
+
+    def _to_script(self) -> ToScriptElement:
+        prefix = 'sub_'
+        workflow_script = self.workflow._to_script(prefix)
+        script_workflow = f"\n# --- Subworkflow --- \n" \
+            f"{workflow_script.declaration}" \
+            f"# --- End Subworkflow --- \n"
+
+        script = f"WorkflowBlock(workflow={prefix}workflow, name='{self.name}')"
+
+        imports = workflow_script.imports + [self.full_classname]
+        return ToScriptElement(declaration=script, before_declaration=script_workflow, imports=imports)
 
 
 class ForEach(Block):
@@ -485,6 +565,15 @@ class ForEach(Block):
             block_docstring[input_] = wb_docstring[workflow_input]
         return block_docstring
 
+    def _to_script(self) -> ToScriptElement:
+        wfblock_script_elements = self.workflow_block._to_script()
+        wfblock_script = f"{wfblock_script_elements.before_declaration}\n" \
+                         f"wfblock = {wfblock_script_elements.declaration}"
+        foreach_script = f"ForEach(workflow_block=wfblock, iter_input_index={self.iter_input_index})"
+
+        imports = wfblock_script_elements.imports + [self.full_classname]
+        return ToScriptElement(declaration=foreach_script, before_declaration=wfblock_script, imports=imports)
+
 
 class Unpacker(Block):
     def __init__(self, indices: List[int], name: str = ''):
@@ -511,6 +600,10 @@ class Unpacker(Block):
     def evaluate(self, values):
         return [values[self.inputs[0]][i] for i in self.indices]
 
+    def _to_script(self) -> ToScriptElement:
+        script = f"Unpacker(indices={self.indices}, name='{self.name}')"
+        return ToScriptElement(declaration=script, imports=[self.full_classname])
+
 
 class Flatten(Block):
     def __init__(self, name: str = ''):
@@ -531,6 +624,10 @@ class Flatten(Block):
         for value in values[self.inputs[0]]:
             output.extend(value)
         return [output]
+
+    def _to_script(self) -> ToScriptElement:
+        script = f"Flatten(name='{self.name}')"
+        return ToScriptElement(declaration=script, imports=[self.full_classname])
 
 
 class Product(Block):
@@ -565,6 +662,10 @@ class Product(Block):
         list_product = [values[var] for var in self.inputs]
         output_value = list(itertools.product(*list_product))
         return [output_value]
+
+    def _to_script(self) -> ToScriptElement:
+        script = f"Product(number_list={self.number_list}, name='{self.name}')"
+        return ToScriptElement(declaration=script, imports=[self.full_classname])
 
 
 class Filter(Block):
@@ -617,6 +718,19 @@ class Filter(Block):
             if bounded:
                 ouput_values.append(object_)
         return [ouput_values]
+
+    def _to_script(self) -> ToScriptElement:
+        filter_variables = [f"DessiaFilter("
+                            f"attribute='{f.attribute}', operator='{f.operator}', bound={f.bound}, name='{f.name}'"
+                            f")" for f in self.filters]
+        filters = '[' + ",".join(filter_variables) + ']'
+        script = f"Filter(filters={filters}, name='{self.name}')"
+
+        imports = [
+            DessiaFilter("", "", 0).full_classname,
+            self.full_classname
+        ]
+        return ToScriptElement(declaration=script, imports=imports)
 
 
 class MultiPlot(Display):
@@ -684,6 +798,11 @@ class MultiPlot(Display):
     def evaluate(_):
         return []
 
+    def _to_script(self) -> ToScriptElement:
+        # attributes: List[str], order: int = 0, name: str = ''):
+        script = f"MultiPlot(attributes={self.attributes}, order={self.order}, name='{self.name}')"
+        return ToScriptElement(declaration=script, imports=[self.full_classname])
+
 
 class ModelAttribute(Block):
     """
@@ -719,9 +838,9 @@ class ModelAttribute(Block):
     def evaluate(self, values):
         return [enhanced_deep_attr(values[self.inputs[0]], self.attribute_name)]
 
-    def to_script(self):
-        script = f"dcw_blocks.ModelAttribute('{self.attribute_name}', name='{self.name}')"
-        return script, []
+    def _to_script(self) -> ToScriptElement:
+        script = f"ModelAttribute(attribute_name='{self.attribute_name}', name='{self.name}')"
+        return ToScriptElement(declaration=script, imports=[self.full_classname])
 
 
 class SetModelAttribute(Block):
@@ -760,9 +879,9 @@ class SetModelAttribute(Block):
         setattr(model, self.attribute_name, values[self.inputs[1]])
         return [model]
 
-    def to_script(self):
-        script = f"dcw_blocks.SetModelAttribute('{self.attribute_name}', name='{self.name}')"
-        return script, []
+    def _to_script(self) -> ToScriptElement:
+        script = f"SetModelAttribute(attribute_name='{self.attribute_name}', name='{self.name}')"
+        return ToScriptElement(declaration=script, imports=[self.full_classname])
 
 
 class Sum(Block):
@@ -792,6 +911,10 @@ class Sum(Block):
     def evaluate(values):
         return [sum(values)]
 
+    def _to_script(self) -> ToScriptElement:
+        script = f"Sum(number_elements={self.number_elements}, name='{self.name}')"
+        return ToScriptElement(declaration=script, imports=[self.full_classname])
+
 
 class Substraction(Block):
     def __init__(self, name: str = ''):
@@ -799,6 +922,10 @@ class Substraction(Block):
 
     def evaluate(self, values):
         return [values[self.inputs[0]] - values[self.inputs[1]]]
+
+    def _to_script(self) -> ToScriptElement:
+        script = f"Substraction(name='{self.name}')"
+        return ToScriptElement(declaration=script, imports=[self.full_classname])
 
 
 class Export(Block):
@@ -827,6 +954,19 @@ class Export(Block):
     def _export_format(self, block_index: int):
         args = {"block_index": block_index}
         return {"extension": self.extension, "method_name": "export", "text": self.text, "args": args}
+
+    def _to_script(self) -> ToScriptElement:
+        script = f"Export(method_type=MethodType(" \
+                 f"{full_classname(object_=self.method_type.class_, compute_for='class')}, '{self.method_type.name}')" \
+                 f", name='{self.name}'" \
+                 f", export_name='{self.export_name}')"
+
+        imports = [
+            self.full_classname,
+            full_classname(object_=self.method_type, compute_for='instance'),
+            full_classname(object_=self.method_type.class_, compute_for='class'),
+        ]
+        return ToScriptElement(declaration=script, imports=imports)
 
 
 class ExportJson(Export):
@@ -913,3 +1053,7 @@ class Archive(Block):
     @staticmethod
     def _export_format(block_index: int):
         return {"extension": "zip", "method_name": "export", "text": False, "args": {"block_index": block_index}}
+
+    def _to_script(self) -> ToScriptElement:
+        script = f"Archive(number_exports={self.number_exports}, name='{self.name}')"
+        return ToScriptElement(declaration=script, imports=[self.full_classname])
