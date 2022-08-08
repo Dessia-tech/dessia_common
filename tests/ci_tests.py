@@ -33,6 +33,7 @@ scripts = ['displays.py',
            'unit_tests.py',
            'bson_valid.py',
            'utils/types.py',
+           'utils/helpers.py'
            ]
 
 for script_name in scripts:
