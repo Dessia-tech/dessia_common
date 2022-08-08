@@ -13,13 +13,13 @@ import io
 from typing import List, Type, Any, Dict, get_type_hints
 
 import itertools
-from dessia_common import DessiaFilter, is_bounded, enhanced_deep_attr, split_argspecs,\
-    type_from_annotation
+from dessia_common.core import DessiaFilter, is_bounded, enhanced_deep_attr, split_argspecs, type_from_annotation
 from dessia_common.utils.types import get_python_class_from_class_name, full_classname
 from dessia_common.utils.docstrings import parse_docstring, EMPTY_PARSED_ATTRIBUTE
 from dessia_common.errors import UntypedArgumentError
 from dessia_common.typings import JsonSerializable, MethodType, ClassMethodType
 from dessia_common.files import StringFile, BinaryFile
+from dessia_common.utils.helpers import concatenate
 
 from dessia_common.workflow.core import Block, Variable, TypedVariable, TypedVariableWithDefaultValue,\
     set_block_variable_names_from_dict, Workflow, DisplaySetting
@@ -391,6 +391,35 @@ class Sequence(Block):
     def _to_script(self) -> ToScriptElement:
         script = f"Sequence(number_arguments={len(self.inputs)}, name='{self.name}')"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
+
+
+class Concatenate(Block):
+    def __init__(self, number_arguments: int, name: str = ''):
+        self.number_arguments = number_arguments
+        inputs = [Variable(name=f"Sequence element {i}") for i in range(self.number_arguments)]
+        outputs = [TypedVariable(type_=list, name='sequence')]
+        Block.__init__(self, inputs, outputs, name=name)
+
+    def equivalent_hash(self):
+        return self.number_arguments
+
+    def equivalent(self, other):
+        return Block.equivalent(self, other) and self.number_arguments == other.number_arguments
+
+    def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
+        dict_ = Block.to_dict(self)
+        dict_['number_arguments'] = self.number_arguments
+        return dict_
+
+    @classmethod
+    @set_block_variable_names_from_dict
+    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
+        return cls(dict_['number_arguments'], dict_['name'])
+
+    def evaluate(self, values: Dict[Variable, Any]):
+        list_values = list(values.values())
+        return [concatenate(list_values)]
 
 
 class WorkflowBlock(Block):
