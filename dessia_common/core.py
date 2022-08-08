@@ -1651,6 +1651,7 @@ class HeterogeneousList(DessiaObject):
         costs = HeterogeneousList.check_costs(len(self.dessia_objects), costs)
         return self[self.__class__.pareto_indexes(costs, tol)]
 
+
     @staticmethod
     def pareto_frontiers(len_data: int, costs: List[List[float]], tol: float = 0.):
         # Experimental
