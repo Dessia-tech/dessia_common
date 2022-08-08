@@ -874,6 +874,7 @@ class HeterogeneousList(DessiaObject):
         """
         return templates.heterogeneouslist_markdown_template.substitute(name=self.name, class_=self.__class__.__name__)
 
+    @staticmethod
     def check_costs(len_data: int, costs: List[List[float]]):
         if len(costs) != len_data:
             return list(map(list,zip(*costs)))
@@ -905,7 +906,7 @@ class HeterogeneousList(DessiaObject):
         return HeterogeneousList(list(itertools.compress(self.dessia_objects,
                                                          self.__class__.pareto_indexes(costs, tol))))
 
-
+    @staticmethod
     def pareto_frontiers(len_data: int, costs: List[List[float]], tol: float = 0.):
         # Experimental
         import matplotlib.pyplot as plt
