@@ -851,8 +851,8 @@ class DessiaFilter(DessiaObject):
         offset_oper = 0
         if offset_boun == 0:
             offset_boun = len(str(self.bound)) + 2
-        string_operator = {'>': '>', '<': '<', '>=': '>=', '<=': '<=', '==': '==', '!=': '!=', 'gt': '>', 'lt': '<', 'ge': '>=',
-                           'le': '<=', 'eq': '==', 'ne': '!=', 'gte': '>=', 'lte': '<='}
+        string_operator = {'>': '>', '<': '<', '>=': '>=', '<=': '<=', '==': '==', '!=': '!=', 'gt': '>', 'lt': '<',
+                           'ge': '>=', 'le': '<=', 'eq': '==', 'ne': '!=', 'gte': '>=', 'lte': '<='}
         printed_operator = string_operator[self.comparison_operator]
         return (self.attribute + " "*(offset_attr - len(self.attribute)) +
                 printed_operator + " "*(offset_oper - len(printed_operator)) +
@@ -1448,7 +1448,7 @@ class HeterogeneousList(DessiaObject):
             self._matrix = matrix
         return self._matrix
 
-    def filtering(self, filters: FiltersList, logical_operator: str = "and"):
+    def filtering(self, filters: FiltersList):
         """
         Filter a HeterogeneousList given a FiltersList.
         Method filtering apply a FiltersList to the current HeterogeneousList.
