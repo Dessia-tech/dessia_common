@@ -1641,7 +1641,7 @@ class HeterogeneousList(DessiaObject):
         :return: a HeterogeneousList containing the selected points
         :rtype: HeterogeneousList
         """
-        return self[self.__class__._pareto_indexes(costs, tol)]
+        return self[self.__class__.pareto_indexes(costs, tol)]
 
     @staticmethod
     def pareto_frontiers(costs, tol: float = 0.):
