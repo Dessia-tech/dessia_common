@@ -12,14 +12,17 @@ all_cars_with_features = HeterogeneousList(all_cars_wi_feat)
 # Auto-generated heterogeneous dataset with nb_clusters clusters of points in nb_dims dimensions
 RandData_heterogeneous = HeterogeneousList(rand_data_large)
 
-# Check platform for datasets
-all_cars_with_features._check_platform()
-all_cars_without_features._check_platform()
-RandData_heterogeneous._check_platform()
+# # Check platform for datasets
+# all_cars_with_features._check_platform()
+# all_cars_without_features._check_platform()
+# RandData_heterogeneous._check_platform()
 
 # Test __getitem__
-picked_list = RandData_heterogeneous[:50][[1, 4, 6, 10, 25]][[True, False, True, True, False]][-1]
-assert(picked_list == rand_data_large[10])
+picked_list = (all_cars_with_features[250:] +
+               RandData_heterogeneous[:50][[1, 4, 6, 10, 25]][[True, False, True, True, False]])
+assert(picked_list._common_attributes is None)
+assert(picked_list._matrix is None)
+assert(picked_list[-1] == rand_data_large[10])
 try:
     all_cars_without_features[[True, False, True]]
     raise ValueError("boolean indexes of len 3 should not be able to index HeterogeneousLists of len 406")

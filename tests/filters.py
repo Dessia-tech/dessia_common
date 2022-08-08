@@ -19,8 +19,9 @@ mpg_low_val = 40.
 filter_1 = DessiaFilter('weight', 'le', weight_val)
 filter_2 = DessiaFilter('mpg', 'ge', mpg_big_val)
 filter_3 = DessiaFilter('mpg', 'ge', mpg_low_val)
-filters_list = [filter_1, filter_3]
-print(FiltersList(filters_list, logical_operator="or"))
+filters = [filter_1, filter_2, filter_3]
+filters_list = FiltersList(filters, logical_operator="or")
+print(filters_list)
 
 # Or testing
 filters_list_fun = lambda x: ((getattr(value, 'weight') <= weight_val or
@@ -28,24 +29,24 @@ filters_list_fun = lambda x: ((getattr(value, 'weight') <= weight_val or
                                getattr(value, 'mpg') >= mpg_low_val)
                               for value in all_cars_no_feat)
 
-assert(all(item in all_cars_without_features.filtering(filters_list, logical_operator="or")
+assert(all(item in all_cars_without_features.filtering(filters_list)
            for item in list(itertools.compress(all_cars_no_feat, filters_list_fun(all_cars_no_feat)))))
 
 # And with non empty result
-filters_list = [filter_1, filter_3]
+filters_list = FiltersList([filter_1, filter_3], logical_operator="and")
 filters_list_fun = lambda x: ((getattr(value, 'weight') <= weight_val and getattr(value, 'mpg') >= mpg_low_val)
                               for value in all_cars_no_feat)
-assert(all(item in all_cars_without_features.filtering(filters_list, logical_operator="and")
+assert(all(item in all_cars_without_features.filtering(filters_list)
            for item in list(itertools.compress(all_cars_no_feat, filters_list_fun(all_cars_no_feat)))))
 
 # And with empty result
-filters_list = [filter_1, filter_2]
-assert(all_cars_without_features.filtering(filters_list, "and") == HeterogeneousList())
+filters_list = FiltersList([filter_1, filter_2], logical_operator="and")
+assert(all_cars_without_features.filtering(filters_list) == HeterogeneousList())
 
 # Xor
 filter_1 = DessiaFilter('weight', 'le', weight_val)
 filter_3 = DessiaFilter('mpg', 'ge', mpg_low_val)
-filters_list = [filter_1, filter_2, filter_3]
+filters_list = FiltersList([filter_1, filter_2, filter_3], logical_operator="xor")
 filters_list_fun = lambda x: ((getattr(value, 'weight') <= weight_val
                                and not getattr(value, 'mpg') >= mpg_big_val
                                and not getattr(value, 'mpg') >= mpg_low_val) or
@@ -56,11 +57,12 @@ filters_list_fun = lambda x: ((getattr(value, 'weight') <= weight_val
                                and not getattr(value, 'mpg') >= mpg_big_val
                                and getattr(value, 'mpg') >= mpg_low_val)
                           for value in all_cars_no_feat)
-assert(all(item in all_cars_without_features.filtering(filters_list, logical_operator="xor")
+assert(all(item in all_cars_without_features.filtering(filters_list)
            for item in list(itertools.compress(all_cars_no_feat, filters_list_fun(all_cars_no_feat)))))
 
+filters_list = FiltersList([filter_1, filter_2, filter_3], logical_operator="blurps")
 try:
-    all_cars_without_features.filtering(filters_list, logical_operator="blurps")
+    all_cars_without_features.filtering(filters_list)
     raise ValueError("'blurps' should not work for logical_operator attribute in FiltersList")
 except Exception as e:
     assert(e.args[0] == "'blurps' str for 'logical_operator' attribute is not a use case")

@@ -1094,14 +1094,6 @@ class HeterogeneousList(DessiaObject):
         booleans_index = filters.get_booleans_index(self.dessia_objects)
         return self.pick_from_boolist(booleans_index)
 
-    # def _get_booleans_from_filters(self, filters: List[DessiaFilter], logical_operator: str = "and"):
-    #     filters_list = FiltersList(filters, logical_operator)
-    #     return filters_list.get_booleans_index(self.dessia_objects)
-
-    # def filtering(self, filters: List[DessiaFilter], logical_operator: str = "and"):
-    #     booleans_index = self._get_booleans_from_filters(filters)
-    #     return self[booleans_index]
-
     def singular_values(self):
         scaled_data = HeterogeneousList.scale_data(npy.array(self.matrix) - npy.mean(self.matrix, axis = 0))
         _, singular_values, _ = npy.linalg.svd(npy.array(scaled_data).T, full_matrices=False)
