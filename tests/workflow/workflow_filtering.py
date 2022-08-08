@@ -1,5 +1,5 @@
 """
-Tests for workflow.filter and HeterogeneousList.filtering
+Tests on filtering methods with block filter and HeterogeneousList.filtering
 """
 import json
 import pkg_resources
@@ -13,7 +13,6 @@ from dessia_common.workflow.core import Workflow, Pipe
 # Import data
 csv_cars = pkg_resources.resource_stream('dessia_common', 'models/data/cars.csv')
 stream_file = StringFile.from_stream(csv_cars)
-cars = Car.from_csv(stream_file)
 
 # =============================================================================================================
 # Filters Workflow (available here https://testanguy.dessia.ovh/workflows/62f0d264fe92095c4b4e4930)
@@ -36,6 +35,7 @@ pipes = [pipe_0, pipe_1, pipe_2, pipe_3]
 
 workflow = Workflow(blocks, pipes, output=block_2.outputs[0], name='Filters demo')
 
+# Workflow run
 filters = [DessiaFilter('cylinders', ">", 4), DessiaFilter('displacement', ">", 0.25)]
 workflow_run = workflow.run({
     workflow.index(block_0.inputs[0]): stream_file,

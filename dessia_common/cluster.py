@@ -16,7 +16,6 @@ import dessia_common.core as dc
 class CategorizedList(dc.HeterogeneousList):
     _allowed_methods = ['from_agglomerative_clustering', 'from_kmeans', 'from_dbscan']
 
-
     def __init__(self, dessia_objects: List[dc.DessiaObject] = None, labels: List[int] = None, name: str = ''):
         dc.HeterogeneousList.__init__(self, dessia_objects=dessia_objects, name=name)
         if labels is None:
