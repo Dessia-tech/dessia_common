@@ -418,7 +418,8 @@ class Concatenate(Block):
         return cls(dict_['number_arguments'], dict_['name'])
 
     def evaluate(self, values: Dict[Variable, Any]):
-        return [concatenate(values)]
+        list_values = list(values.values())
+        return [concatenate(list_values)]
 
 
 class WorkflowBlock(Block):
