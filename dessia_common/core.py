@@ -1420,7 +1420,7 @@ class HeterogeneousList(DessiaObject):
 
     @property
     def common_attributes(self):
-        if self._common_attributes is None:
+        if self._common_attributes is None: # TODO Improve this so that it considers @property attributes
             if len(self.dessia_objects) == 0:
                 return []
             all_class = list(set(dessia_object.__class__ for dessia_object in self.dessia_objects))
