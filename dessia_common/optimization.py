@@ -17,8 +17,7 @@ class Specifications(dc.DessiaObject):
 class FixedAttributeValue(dc.DessiaObject):
     _standalone_in_db = True
 
-    def __init__(self, attribute_name: str, value: float,
-                 name: str = ''):
+    def __init__(self, attribute_name: str, value: float, name: str = ''):
         dc.DessiaObject.__init__(self, name=name)
         self.attribute_name = attribute_name
         self.value = value
@@ -27,8 +26,7 @@ class FixedAttributeValue(dc.DessiaObject):
 class BoundedAttributeValue(dc.DessiaObject):
     _standalone_in_db = True
 
-    def __init__(self, attribute_name: str, min_value: float, max_value: float,
-                 name: str = ''):
+    def __init__(self, attribute_name: str, min_value: float, max_value: float, name: str = ''):
         dc.DessiaObject.__init__(self, name=name)
         self.attribute_name = attribute_name
         self.min_value = min_value
@@ -83,11 +81,10 @@ class DrivenModelOptimizer(Optimizer):
 class InstantiatingModelOptimizer(Optimizer):
     """
     Abstract class, to be subclassed by real class
-    Instantiate a new model at each at each point request
+    Instantiate a new model at each point request
     """
 
-    def __init__(self, fixed_parameters: List[FixedAttributeValue],
-                 optimization_bounds: List[BoundedAttributeValue],
+    def __init__(self, fixed_parameters: List[FixedAttributeValue], optimization_bounds: List[BoundedAttributeValue],
                  name: str = ''):
         self.fixed_parameters = fixed_parameters
         self.optimization_bounds = optimization_bounds
