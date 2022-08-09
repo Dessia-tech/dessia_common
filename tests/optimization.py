@@ -14,7 +14,7 @@ class Engine(DessiaObject):
     Dummy and unrealistic engine, only for tests on optimization package.
     Do not use to optimize an engine.
     """
-    _vector_features = ['diameter', 'stroke', 'mass', 'costs']
+    _vector_features = ['diameter', 'stroke', 'power', 'mass', 'costs']
     def __init__(self, n_cyl: int, diameter: float, stroke: float, r_pow_cyl: float = 1., r_diam_strok: float = 1.,
                  name: str = ''):
         DessiaObject.__init__(self, name=name)
@@ -24,9 +24,9 @@ class Engine(DessiaObject):
         self.r_pow_cyl = r_pow_cyl
         self.r_diam_strok = r_diam_strok
         self.cyl_volume = self.compute_cyl_volume()
-        self._power = None
-        self._mass = None
-        self._costs = None
+        self.power = self._power()
+        self.mass = self._mass()
+        self.costs = self._costs()
 
     def compute_cyl_volume(self):
         return (self.diameter/2)**2 * pi * self.stroke
@@ -36,30 +36,23 @@ class Engine(DessiaObject):
                 abs(sin(
                     (self.r_diam_strok * (1 + 0.5 * (self.stroke / self.diameter + self.diameter / self.stroke)))**2)
                     ))
-    @property
-    def power(self):
-        if self._power is None:
-            self._power = self.n_cyl * self.cylinder_power()
-        return self._power
+
+    def _power(self):
+        return self.n_cyl * self.cylinder_power()
 
     def carter_volume(self):
         return self.stroke * 1.5 * (1 - exp(-self.diameter)) * 3. * self.diameter * 1.2 * self.n_cyl
 
-    @property
-    def mass(self):
-        if self._mass is None:
-            self._mass = 7800*(self.carter_volume() - self.n_cyl * self.cyl_volume)
-        return self._mass
+    def _mass(self):
+        return 7800*(self.carter_volume() - self.n_cyl * self.cyl_volume)
 
-    @property
-    def costs(self):
-        if self._costs is None:
-            self._costs = (110*((0.4 - 2*self.stroke)**2 + (0.3 - self.diameter)**2) +
-                           (1 / (1 + log(1 + self.power)) - sin(self.mass/100))**2)
-        return self._costs
+    def _costs(self):
+        return (110*((0.4 - 2*self.stroke)**2 + (0.3 - self.diameter)**2) +
+                (1 / (1 + log(1 + self.power)) - sin(self.mass/100))**2)
 
     def to_vector(self):
-        return [self.diameter, self.stroke, self.mass, self.costs]
+        return [self.diameter, self.stroke, self.power, self.mass, self.costs]
+
 
 class EngineOptimizer(opt.InstantiatingModelOptimizer):
     """
@@ -76,7 +69,8 @@ class EngineOptimizer(opt.InstantiatingModelOptimizer):
         return Engine(**attributes_values)
 
     def objective_from_model(self, model, clearance: float = 0.003):
-        return model.costs
+        return model._costs()
+
 
 def check_costs_function(cylinders, diameters, strokes, r_pow_cyl, r_diam_strok):
     points = []
