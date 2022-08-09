@@ -6,6 +6,7 @@ import dessia_common as dc
 
 def concatenate(values):
     types_set = set(type(value) for value in values)
+    concatenated_values = None
     if len(types_set) != 1:
         raise TypeError("Block Concatenate only defined for operands of the same type.")
 
@@ -27,4 +28,8 @@ def concatenate(values):
             dessia_objects.extend(value.dessia_objects)
             name += value.name + ("_" if value.name != "" else "")
         concatenated_values = dc.HeterogeneousList(dessia_objects, name)
-    return concatenated_values
+
+    if concatenated_values is not None:
+        return concatenated_values
+
+    raise ValueError("Block Concatenate only defined for classes 'list', 'dict' and 'dessia_common.HeterogeneousList'")
