@@ -1230,9 +1230,11 @@ class HeterogeneousList(DessiaObject):
         if self.__class__ != HeterogeneousList or other.__class__ != HeterogeneousList:
             raise TypeError("Addition only defined for HeterogeneousList. A specific __add__ method is required for "
                             f"{self.__class__}")
-        sum_hlist = self._procreate()
+        sum_hlist = self.__class__()
+        sum_hlist.name = self.name[:5] + '_+_' + other.name[:5]
         sum_hlist.dessia_objects = self.dessia_objects + other.dessia_objects
         if all(item in self.common_attributes for item in other.common_attributes):
+            sum_hlist._common_attributes = self.common_attributes
             if self._matrix is not None and other._matrix is not None:
                 sum_hlist._matrix = self._matrix + other._matrix
         return sum_hlist
@@ -1423,7 +1425,13 @@ class HeterogeneousList(DessiaObject):
         if self._common_attributes is None: # TODO Improve this so that it considers @property attributes
             if len(self.dessia_objects) == 0:
                 return []
-            all_class = list(set(dessia_object.__class__ for dessia_object in self.dessia_objects))
+
+            all_class = []
+            one_instance = []
+            for dessia_object in self.dessia_objects:
+                if dessia_object.__class__ not in all_class:
+                    all_class.append(dessia_object.__class__)
+                    one_instance.append(dessia_object)
 
             if len(all_class) == 1 and isinstance(self.dessia_objects[0], HeterogeneousList):
                 return self.vector_features()
@@ -1432,9 +1440,18 @@ class HeterogeneousList(DessiaObject):
             for klass in all_class[1:]:
                 common_attributes = common_attributes.intersection(set(klass.vector_features()))
 
+            # To consider property object when declared in _vector_features
+            common_properties = []
+            for klass, instance in zip(all_class, one_instance):
+                common_properties += [key for key, item in vars(klass).items()
+                                      if isinstance(item, property)
+                                      and isinstance(getattr(instance, key), (int, float, complex, bool))]
+
             # attributes' order kept this way, not with set or sorted(set)
-            self._common_attributes = list(attr for attr in get_attribute_names(all_class[0])
+            self._common_attributes = list(attr
+                                           for attr in get_attribute_names(all_class[0]) + list(set(common_properties))
                                            if attr in common_attributes)
+
         return self._common_attributes
 
     @property
@@ -1508,7 +1525,8 @@ class HeterogeneousList(DessiaObject):
 
         singular_points = []
         for idx, value in enumerate(normalized_singular_values):
-            singular_points.append({'Index of reduced basis vector': idx + 1, 'Singular value': value})
+            singular_points.append({'Index of reduced basis vector': idx + 1,
+                                    'Singular value': (value if value != 0. else 1e-16)}) # TODO (plot_data log_scale 0)
         return normalized_singular_values, singular_points
 
     @staticmethod
@@ -1546,7 +1564,7 @@ class HeterogeneousList(DessiaObject):
             for col_attr in self.common_attributes:
                 if line_attr == col_attr:
                     unic_values = set((getattr(dobject, line_attr) for dobject in self.dessia_objects))
-                    if len(unic_values) == 1:
+                    if len(unic_values) == 1: # TODO (plot_data linspace axis between two same values)
                         subplots.append(plot_data.Scatter(x_variable=line_attr,
                                                           y_variable=col_attr,
                                                           elements=data_list))

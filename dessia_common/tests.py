@@ -316,7 +316,7 @@ class RandDataD6(RandDataD1):
 
 class RandDataD7(RandDataD1):
     _nb_dims = 7
-    _vector_features = [f'p_{i+1}' for i in range(7)]
+    _vector_features = [f'p_{i+1}' for i in range(7)] + ['test_prop']
     def __init__(self, p_1: float, p_2: float, p_3: float, p_4: float, p_5: float, p_6: float, p_7: float,
                  name: str = ''):
         RandDataD1.__init__(self, p_1, name=name)
@@ -326,11 +326,18 @@ class RandDataD7(RandDataD1):
         self.p_5 = p_5
         self.p_6 = p_6
         self.p_7 = p_7
+        self._test_prop = None
+
+    @property
+    def test_prop(self):
+        if self._test_prop is None:
+            self._test_prop = 3
+        return self._test_prop
 
 
 class RandDataD8(RandDataD1):
     _nb_dims = 8
-    _vector_features = [f'p_{i+1}' for i in range(8)]
+    _vector_features = [f'p_{i+1}' for i in range(8)] + ['test_prop']
     def __init__(self, p_1: float, p_2: float, p_3: float, p_4: float, p_5: float, p_6: float, p_7: float, p_8: float,
                  name: str = ''):
         RandDataD1.__init__(self, p_1, name=name)
@@ -341,11 +348,17 @@ class RandDataD8(RandDataD1):
         self.p_6 = p_6
         self.p_7 = p_7
         self.p_8 = p_8
+        self._test_prop = None
 
+    @property
+    def test_prop(self):
+        if self._test_prop is None:
+            self._test_prop = 3
+        return self._test_prop
 
 class RandDataD9(RandDataD1):
     _nb_dims = 9
-    _vector_features = [f'p_{i+1}' for i in range(9)]
+    _vector_features = [f'p_{i+1}' for i in range(9)] + ['test_prop']
     def __init__(self, p_1: float, p_2: float, p_3: float, p_4: float, p_5: float, p_6: float, p_7: float, p_8: float,
                  p_9: float, name: str = ''):
         RandDataD1.__init__(self, p_1, name=name)
@@ -357,6 +370,13 @@ class RandDataD9(RandDataD1):
         self.p_7 = p_7
         self.p_8 = p_8
         self.p_9 = p_9
+        self._test_prop = None
+
+    @property
+    def test_prop(self):
+        if self._test_prop is None:
+            self._test_prop = 3
+        return self._test_prop
 
 
 class RandDataD10(RandDataD1):
