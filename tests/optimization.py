@@ -56,8 +56,7 @@ class Engine(DessiaObject):
 
 class EngineOptimizer(opt.InstantiatingModelOptimizer):
     """
-    Abstract class, to be subclassed by real class
-    Instantiate a new model at each point request
+    Optimizer for Engine
     """
 
     def __init__(self, fixed_parameters: List[opt.FixedAttributeValue],
@@ -89,11 +88,9 @@ def check_costs_function(cylinders, diameters, strokes, r_pow_cyl, r_diam_strok)
     ax.plot(transposed_points[0], transposed_points[1], transposed_points[-1],
             linestyle = 'None', marker = 'o', markersize = 0.5)
 
-    gg = HeterogeneousList(engines)
-    gg.plot()
+    HeterogeneousList(engines).plot()
 
-
-
+# Script
 diameter = opt.BoundedAttributeValue("diameter", 0.05, 0.5)
 stroke = opt.BoundedAttributeValue("stroke", 0.1, 0.3)
 cylinders = opt.FixedAttributeValue("n_cyl", 4)
@@ -101,19 +98,17 @@ r_pow_cyl = opt.FixedAttributeValue("r_pow_cyl", 1e9)
 r_diam_strok = opt.FixedAttributeValue("r_diam_strok", 1.)
 
 engine_optimizer = EngineOptimizer([cylinders, r_pow_cyl, r_diam_strok], [diameter, stroke])
-model, fx_opt = engine_optimizer.optimize_cma()
+model_cma, fx_opt = engine_optimizer.optimize_cma()
 model_grad, fx_opt_grad = engine_optimizer.optimize_gradient()
 
 diameters = (x / 1000 for x in range(50, 500, 10))
 strokes = (x / 1000 for x in range(100, 300, 4))
-cylinders = [3, 4, 5, 6, 8]
+cylinders = [4]
 check_costs_function(cylinders, diameters, strokes, 1e9, 1.)
 
-fig = plt.gcf()
-ax = fig.gca()
-ax.plot(model.diameter, model.stroke, model.costs,
-        linestyle = 'None', marker = 'o', markersize = 2, color = 'r')
+plt.plot(model_cma.diameter, model_cma.stroke, model_cma.costs,
+         linestyle = 'None', marker = 'o', markersize = 2, color = 'r')
 
-ax.plot(model_grad.diameter, model_grad.stroke, model_grad.costs,
-        linestyle = 'None', marker = 'o', markersize = 2, color = 'm')
+plt.plot(model_grad.diameter, model_grad.stroke, model_grad.costs,
+         linestyle = 'None', marker = 'o', markersize = 2, color = 'm')
 
