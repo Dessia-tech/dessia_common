@@ -46,8 +46,9 @@ class Engine(DessiaObject):
         return 7800*(self.carter_volume() - self.n_cyl * self.cyl_volume)
 
     def _costs(self):
-        return (110*((0.4 - 2*self.stroke)**2 + (0.3 - self.diameter)**2) +
-                (1 / (1 + log(1 + self.power)) - sin(self.mass/100))**2)
+        return (400*((0.175 - self.stroke)**2 + 2*(0.07 - self.diameter)**2) +
+                (sin(self.power/self.r_pow_cyl) + sin(self.mass/10))**2)
+
 
     def to_vector(self):
         return [self.diameter, self.stroke, self.power, self.mass, self.costs]
@@ -99,10 +100,10 @@ engine_optimizer = EngineOptimizer([cylinders, r_pow_cyl, r_diam_strok], [diamet
 model_cma, fx_opt = engine_optimizer.optimize_cma()
 model_grad, fx_opt_grad = engine_optimizer.optimize_gradient()
 
-diameters = (x / 1000 for x in range(50, 500, 10))
-strokes = (x / 1000 for x in range(100, 300, 4))
+diameters = (x / 1000 for x in range(30, 100, 2))
+strokes = (x / 1000 for x in range(100, 250, 2))
 cylinders = [4]
-check_costs_function(cylinders, diameters, strokes, 1e9, 1.)
+check_costs_function(cylinders, diameters, strokes, 1e8, 1.)
 
 plt.plot(model_cma.diameter, model_cma.stroke, model_cma.costs,
          linestyle = 'None', marker = 'o', markersize = 2, color = 'r')
