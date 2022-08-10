@@ -34,8 +34,7 @@ class Engine(DessiaObject):
     def cylinder_power(self):
         return (self.cyl_volume * self.r_pow_cyl *
                 abs(sin(
-                    (self.r_diam_strok * (1 + 0.5 * (self.stroke / self.diameter + self.diameter / self.stroke)))**2)
-                    ))
+                    (self.r_diam_strok * (1 + 0.5 * (self.stroke / self.diameter + self.diameter / self.stroke)))**2)))
 
     def _power(self):
         return self.n_cyl * self.cylinder_power()
@@ -58,7 +57,6 @@ class EngineOptimizer(opt.InstantiatingModelOptimizer):
     """
     Optimizer for Engine
     """
-
     def __init__(self, fixed_parameters: List[opt.FixedAttributeValue],
                  optimization_bounds: List[opt.BoundedAttributeValue],
                  name: str = ''):
@@ -68,7 +66,7 @@ class EngineOptimizer(opt.InstantiatingModelOptimizer):
         return Engine(**attributes_values)
 
     def objective_from_model(self, model, clearance: float = 0.003):
-        return model._costs()
+        return model.costs
 
 
 def check_costs_function(cylinders, diameters, strokes, r_pow_cyl, r_diam_strok):
