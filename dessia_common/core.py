@@ -1136,11 +1136,10 @@ class HeterogeneousList(DessiaObject):
                                                           y_variable=col_attr,
                                                           elements=data_list))
                     else:
-                        subplots.append(plot_data.Histogram(x_variable=line_attr, elements=data_list))
+                        subplots.append(plot_data.Histogram(x_variable=line_attr))
                 else:
                     subplots.append(plot_data.Scatter(x_variable=line_attr,
                                                       y_variable=col_attr,
-                                                      elements=data_list,
                                                       tooltip=plot_data.Tooltip(tooltip),
                                                       **kwargs))
 

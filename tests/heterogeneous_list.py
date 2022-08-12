@@ -12,10 +12,10 @@ all_cars_with_features = HeterogeneousList(all_cars_wi_feat)
 # Auto-generated heterogeneous dataset with nb_clusters clusters of points in nb_dims dimensions
 RandData_heterogeneous = HeterogeneousList(rand_data_large)
 
-# # Check platform for datasets
-# all_cars_with_features._check_platform()
-# all_cars_without_features._check_platform()
-# RandData_heterogeneous._check_platform()
+# Check platform for datasets
+all_cars_with_features._check_platform()
+all_cars_without_features._check_platform()
+RandData_heterogeneous._check_platform()
 
 # Test __getitem__
 picked_list = (all_cars_with_features[250:] +
