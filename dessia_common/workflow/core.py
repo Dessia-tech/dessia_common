@@ -406,9 +406,6 @@ class Workflow(Block):
         if not self._equivalent_imposed_variables_values(other_object):
             return False
 
-        if not set(self.nonblock_variables) == set(other_object.nonblock_variables):
-            return False
-
         return True
 
     def _equivalent_pipes(self, other_wf) -> bool:
@@ -442,7 +439,18 @@ class Workflow(Block):
 
             variable_index_2 = other_wf.variable_index(imposed_key2)
             ivvs_2.append((variable_index_2, other_wf.imposed_variable_values[imposed_key2]))
-        return set(ivvs_1) == set(ivvs_2)
+
+        for ivv1, ivv2 in zip(set(ivvs_1), set(ivvs_2)):
+            if ivv1[0] != ivv2[0]:
+                return False
+
+            if not isinstance(ivv2[1], type(ivv2[1])):
+                return False
+
+            if isinstance(ivv2[1], (int, float, str, bool)) and ivv2[1] != ivv2[1]:
+                return False
+
+        return True
 
     def __deepcopy__(self, memo=None):
         """
