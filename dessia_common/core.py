@@ -1566,14 +1566,12 @@ class HeterogeneousList(DessiaObject):
                     unic_values = set((getattr(dobject, line_attr) for dobject in self.dessia_objects))
                     if len(unic_values) == 1: # TODO (plot_data linspace axis between two same values)
                         subplots.append(plot_data.Scatter(x_variable=line_attr,
-                                                          y_variable=col_attr,
-                                                          elements=data_list))
+                                                          y_variable=col_attr))
                     else:
-                        subplots.append(plot_data.Histogram(x_variable=line_attr, elements=data_list))
+                        subplots.append(plot_data.Histogram(x_variable=line_attr))
                 else:
                     subplots.append(plot_data.Scatter(x_variable=line_attr,
                                                       y_variable=col_attr,
-                                                      elements=data_list,
                                                       tooltip=plot_data.Tooltip(tooltip),
                                                       **kwargs))
 
