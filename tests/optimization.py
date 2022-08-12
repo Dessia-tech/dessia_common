@@ -100,8 +100,8 @@ engine_optimizer = EngineOptimizer([cylinders, r_pow_cyl, r_diam_strok], [diamet
 model_cma, fx_opt = engine_optimizer.optimize_cma()
 model_grad, fx_opt_grad = engine_optimizer.optimize_gradient()
 
-diameters = (x / 1000 for x in range(30, 100, 2))
-strokes = (x / 1000 for x in range(100, 250, 2))
+diameters = (x / 1000 for x in range(30, 100, 1))
+strokes = (x / 1000 for x in range(100, 250, 1))
 cylinders = [4]
 check_costs_function(cylinders, diameters, strokes, 1e8, 1.)
 
