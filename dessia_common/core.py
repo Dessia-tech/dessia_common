@@ -1547,15 +1547,20 @@ class HeterogeneousList(DessiaObject):
         # Plot a correlation matrix : To develop
         # correlation_matrix = []
 
+        # List datadict
+        data_list = self._plot_data_list()
+
         # Dimensionality plot
         dimensionality_plot = self._plot_dimensionality()
 
         # Scattermatrix
-        scatter_matrix = self._build_multiplot(self._plot_data_list(),
-                                               self._tooltip_attributes(),
-                                               axis=dimensionality_plot.axis,
+        scatter_matrix = self._build_multiplot(data_list, self._tooltip_attributes(), axis=dimensionality_plot.axis,
                                                point_style=dimensionality_plot.point_style)
-        return [scatter_matrix, dimensionality_plot]
+
+        # Parallel plot
+        parallel_plot = self._parallel_plot(data_list)
+
+        return [parallel_plot, scatter_matrix, dimensionality_plot]
 
     def _build_multiplot(self, data_list: List[Dict[str, float]], tooltip: List[str], **kwargs: Dict[str, Any]):
         import plot_data
@@ -1594,6 +1599,10 @@ class HeterogeneousList(DessiaObject):
         from plot_data.colors import BLUE
         from plot_data.core import PointFamily
         return [PointFamily(BLUE, list(range(self.__len__())))]
+
+    def _parallel_plot(self, data_list: List[Dict[str, float]]):
+        from plot_data import ParallelPlot
+        return ParallelPlot(elements=data_list, axes=self.common_attributes, disposition='vertical')
 
     def _plot_dimensionality(self):
         import plot_data

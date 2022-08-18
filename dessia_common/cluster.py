@@ -173,7 +173,7 @@ class CategorizedList(dc.HeterogeneousList):
 
         if -1 in self.labels:
             color = plot_data.colors.LIGHTGREY
-            points_index =  list(map(int, npy.where(npy.array(self.labels) == -1)[0].tolist()))
+            points_index = list(map(int, npy.where(npy.array(self.labels) == -1)[0].tolist()))
             point_families.append(plot_data.core.PointFamily(color, points_index, name="Excluded"))
         return point_families
 
