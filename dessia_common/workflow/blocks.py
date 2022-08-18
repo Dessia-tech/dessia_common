@@ -642,10 +642,7 @@ class MultiPlot(Display):
 
     def display_(self, local_values, **kwargs):
         import plot_data
-        if 'reference_path' in kwargs:
-            reference_path = kwargs['reference_path']
-        else:
-            reference_path = ""
+        reference_path = kwargs.get("reference_path", "")
         objects = local_values[self.inputs[self._displayable_input]]
         values = [{a: enhanced_deep_attr(o, a) for a in self.attributes} for o in objects]
         values2d = [{key: val[key]} for key in self.attributes[:2] for val in values]
