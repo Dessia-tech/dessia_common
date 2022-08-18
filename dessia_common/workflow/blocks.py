@@ -22,7 +22,7 @@ from dessia_common.typings import JsonSerializable, MethodType, ClassMethodType
 from dessia_common.files import StringFile, BinaryFile
 
 from dessia_common.workflow.core import Block, Variable, TypedVariable, TypedVariableWithDefaultValue,\
-    set_block_variable_names_from_dict, Workflow, DisplaySetting
+    set_block_variable_names_from_dict, Workflow, DisplaySetting, DisplayObject
 
 
 def set_inputs_from_function(method, inputs=None):
@@ -642,11 +642,10 @@ class MultiPlot(Display):
 
     def display_(self, local_values, **kwargs):
         import plot_data
-        # if 'reference_path' not in kwargs:
-        #     reference_path = 'output_value'  # TODO bof bof bof
-        # else:
-        #     reference_path = kwargs['reference_path']
-
+        if 'reference_path' in kwargs:
+            reference_path = kwargs['reference_path']
+        else:
+            reference_path = ""
         objects = local_values[self.inputs[self._displayable_input]]
         values = [{a: enhanced_deep_attr(o, a) for a in self.attributes} for o in objects]
         values2d = [{key: val[key]} for key in self.attributes[:2] for val in values]
@@ -661,7 +660,8 @@ class MultiPlot(Display):
         sizes = [plot_data.Window(width=560, height=300), plot_data.Window(width=560, height=300)]
         multiplot = plot_data.MultiplePlots(elements=values, plots=objects, sizes=sizes,
                                             coords=[(0, 0), (0, 300)], name='Results plot')
-        return [multiplot.to_dict()]
+        display_object = DisplayObject(type_="plot_data", data=[multiplot.to_dict()], reference_path=reference_path)
+        return [display_object.to_dict()]
 
     def _display_settings(self, block_index: int, local_values: Dict[Variable, Any] = None) -> List[DisplaySetting]:
         display_settings = DisplaySetting(selector="display_" + str(block_index), type_="plot_data",
