@@ -25,12 +25,12 @@ scripts = ['displays.py',
            'utils/algebra.py',
            'utils/interpolation.py',
            'utils/serialization.py',
+           'utils/helpers.py',
            'utils/types.py',
            'type_matching.py',
-           'utils/helpers.py',
            # Unit tests
            'unit_tests.py',
-           'bson_valid.py',
+           'bson_valid.py'
            ]
 
 for script_name in scripts:
