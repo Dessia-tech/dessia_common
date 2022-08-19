@@ -68,7 +68,7 @@ demo_workflow_run_copy = demo_workflow_run.copy()
 assert demo_workflow_run == demo_workflow_run_copy
 
 demo_workflow._check_platform()
-# demo_workflow_run._check_platform()
+demo_workflow_run._check_platform()
 
 # Assert deserialization
 demo_workflow_dict = demo_workflow.to_dict()
@@ -101,3 +101,5 @@ assert isinstance(demo_workflow_run._get_from_path("#/values/8"), dctests.Genera
 
 assert len(demo_workflow_run._get_from_path("#/values/9")) == 25
 assert isinstance(demo_workflow_run._get_from_path("#/values/9/0"), dctests.Model)
+
+print("workflow_with_models.py has passed")
