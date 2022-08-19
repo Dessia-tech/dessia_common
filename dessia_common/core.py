@@ -956,9 +956,11 @@ class HeterogeneousList(DessiaObject):
         if self.__class__ != HeterogeneousList or other.__class__ != HeterogeneousList:
             raise TypeError("Addition only defined for HeterogeneousList. A specific __add__ method is required for " +
                             f"{self.__class__}")
-        sum_hlist = self._procreate()
+        sum_hlist = self.__class__()
+        sum_hlist.name = self.name[:5] + '_+_' + other.name[:5]
         sum_hlist.dessia_objects = self.dessia_objects + other.dessia_objects
         if all(item in self.common_attributes for item in other.common_attributes):
+            sum_hlist._common_attributes = self.common_attributes
             if self._matrix is not None and other._matrix is not None:
                 sum_hlist._matrix = self._matrix + other._matrix
         return sum_hlist
