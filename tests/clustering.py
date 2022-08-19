@@ -45,7 +45,7 @@ aggclustest_clustered._check_platform()
 kmeanstest_clustered._check_platform()
 
 # Test plots outside platform
-clustered_cars_without.plot_data()
+clustered_cars_without.plot()
 clustered_cars_with.plot()
 aggclustest_clustered.plot()
 kmeanstest_clustered.plot()

@@ -1602,7 +1602,66 @@ class HeterogeneousList(DessiaObject):
 
     def _parallel_plot(self, data_list: List[Dict[str, float]]):
         from plot_data import ParallelPlot
-        return ParallelPlot(elements=data_list, axes=self.common_attributes, disposition='vertical')
+        return ParallelPlot(elements=data_list, axes=self._parallel_plot_attr(), disposition='vertical')
+
+    def _parallel_plot_attr(self):
+        r2_scores = []
+        association_list = []
+        attr_series = []
+        for idx, attr1 in enumerate(self.common_attributes):
+            for attr2 in self.common_attributes[idx+1:]:
+                correlation_matrix = npy.corrcoef(self.get_attribute_values(attr1), self.get_attribute_values(attr2))
+                correlation_xy = correlation_matrix[0,1]
+                r2_scores.append(correlation_xy**2)
+                association_list.append([attr1, attr2])
+
+        sorted_r2, sorted_association = map(list, zip(*sorted(zip(r2_scores, association_list))[::-1]))
+        picked_attr = set()
+        while len(picked_attr) != len(self.common_attributes):
+            first_association = sorted_association[0]
+            attr_series.append(first_association)
+            picked_attr.update(set(first_association))
+            del sorted_r2[0], sorted_association[0]
+
+            for idx, _ in enumerate(sorted_r2):
+                if any(item in first_association for item in sorted_association[idx]):
+                    attr_series[-1] += sorted_association[idx]
+                    picked_attr.update(set(sorted_association[idx]))
+                    del sorted_r2[idx], sorted_association[idx]
+                    break
+
+        ordered_attr = []
+        for attr_serie in attr_series:
+            # If no elements, add a new series of three attributes at the end
+            if not any(item in attr_serie for item in ordered_attr):
+                mid_attr = attr_serie[[attr_serie.count(attr) for attr in attr_serie].index(2)]
+                remaining_attr = iter(set(attr_serie).difference({mid_attr}))
+                ordered_attr += [next(remaining_attr), mid_attr, next(remaining_attr)]
+
+            # If element present, add elements good side
+            for side in [0, -1]:
+                if ordered_attr[side] in attr_serie:
+                    nb_inst = attr_serie.count(ordered_attr[side])
+                    for attr_inst in range(nb_inst):
+                        side_index = (nb_inst-1)*2 + attr_serie[(nb_inst-1)*2:].index(ordered_attr[side])
+                        idx_l = side + 1
+                        idx_r = -1*side
+                        init_len = len(ordered_attr)
+                        if side_index % 2 == 0:
+                            if attr_serie[side_index + 1] not in ordered_attr:
+                                ordered_attr = (idx_l*[attr_serie[side_index + 1]] +
+                                                ordered_attr +
+                                                idx_r*[attr_serie[side_index + 1]])
+                        else:
+                            if attr_serie[side_index - 1] not in ordered_attr:
+                                ordered_attr = (idx_l*[attr_serie[side_index - 1]] +
+                                                ordered_attr +
+                                                idx_r*[attr_serie[side_index - 1]])
+
+                        if len(ordered_attr) == init_len:
+                            ordered_attr += list(set(attr_serie).difference(set(ordered_attr)))
+
+        return ordered_attr
 
     def _plot_dimensionality(self):
         import plot_data
