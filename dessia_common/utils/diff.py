@@ -7,6 +7,7 @@ Created on Wed Nov 24 19:24:53 2021
 """
 
 import math
+import numpy as npy
 import dessia_common as dc
 from dessia_common.utils.types import isinstance_base_types, is_sequence, full_classname
 
@@ -97,6 +98,12 @@ def sequence_diff(seq1, seq2, path='#'):
 def data_eq(value1, value2):
     if is_sequence(value1) and is_sequence(value2):
         return sequence_data_eq(value1, value2)
+
+    if isinstance(value1, npy.int64) or isinstance(value2, npy.int64):
+        return value1 == value2
+
+    if isinstance(value1, npy.float64) or isinstance(value2, npy.float64):
+        return math.isclose(value1, value2, abs_tol=dc.FLOAT_TOLERANCE)
 
     if not isinstance(value2, type(value1))\
             and not isinstance(value1, type(value2)):
