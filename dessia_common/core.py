@@ -1537,54 +1537,43 @@ class HeterogeneousList(DessiaObject):
     def plot_data(self):
         """
         Plot data method.
-
         Plot a standard scatter matrix of all attributes in common_attributes and a dimensionality plot.
-
-        .. figure:: images/dimensionality_plot_hlist.png
-        .. figure:: images/scatter_matrix_docstring_hlist.png
-
         """
         # Plot a correlation matrix : To develop
         # correlation_matrix = []
-
         # List datadict
         data_list = self._plot_data_list()
-
         # Dimensionality plot
         dimensionality_plot = self._plot_dimensionality()
-
         # Scattermatrix
         scatter_matrix = self._build_multiplot(data_list, self._tooltip_attributes(), axis=dimensionality_plot.axis,
                                                point_style=dimensionality_plot.point_style)
-
         # Parallel plot
         parallel_plot = self.parallel_plot(data_list)
 
         return [parallel_plot, scatter_matrix, dimensionality_plot]
 
     def _build_multiplot(self, data_list: List[Dict[str, float]], tooltip: List[str], **kwargs: Dict[str, Any]):
-        import plot_data
+        from plot_data import Scatter, Histogram, MultiplePlots, Tooltip
         subplots = []
-        for line_attr in self.common_attributes:
-            for col_attr in self.common_attributes:
-                if line_attr == col_attr:
-                    unic_values = set((getattr(dobject, line_attr) for dobject in self.dessia_objects))
+        for line in self.common_attributes:
+            for col in self.common_attributes:
+                if line == col:
+                    unic_values = set((getattr(dobject, line) for dobject in self.dessia_objects))
                     if len(unic_values) == 1: # TODO (plot_data linspace axis between two same values)
-                        subplots.append(plot_data.Scatter(x_variable=line_attr,
-                                                          y_variable=col_attr))
+                        subplots.append(Scatter(x_variable=line, y_variable=col))
                     else:
-                        subplots.append(plot_data.Histogram(x_variable=line_attr))
+                        subplots.append(Histogram(x_variable=line))
                 else:
-                    subplots.append(plot_data.Scatter(x_variable=line_attr,
-                                                      y_variable=col_attr,
-                                                      tooltip=plot_data.Tooltip(tooltip),
-                                                      **kwargs))
+                    subplots.append(Scatter(x_variable=line, y_variable=col, tooltip=Tooltip(tooltip), **kwargs))
 
-        scatter_matrix = plot_data.MultiplePlots(plots=subplots,
-                                                  elements=data_list,
-                                                  point_families=self._point_families(),
-                                                  initial_view_on=True)
+        scatter_matrix = MultiplePlots(plots=subplots, elements=data_list,
+                                                 point_families=self._point_families(), initial_view_on=True)
         return scatter_matrix
+
+    def parallel_plot(self, data_list: List[Dict[str, float]]):
+        from plot_data import ParallelPlot
+        return ParallelPlot(elements=data_list, axes=self._parallel_plot_attr(), disposition='vertical')
 
     def _tooltip_attributes(self):
         return self.common_attributes
@@ -1600,22 +1589,24 @@ class HeterogeneousList(DessiaObject):
         from plot_data.core import PointFamily
         return [PointFamily(BLUE, list(range(self.__len__())))]
 
-    def parallel_plot(self, data_list: List[Dict[str, float]]):
-        from plot_data import ParallelPlot
-        return ParallelPlot(elements=data_list, axes=self.parallel_plot_attr(), disposition='vertical')
+    def _parallel_plot_attr(self):
+        sorted_r2, sorted_association = self._get_correlations()
+        attr_series = self._find_attribute_trios(sorted_r2, sorted_association)
+        return self._trios_list_to_parallel_axes(attr_series)
 
-    def parallel_plot_attr(self):
+    def _get_correlations(self):
         r2_scores = []
         association_list = []
-        attr_series = []
         for idx, attr1 in enumerate(self.common_attributes):
             for attr2 in self.common_attributes[idx+1:]:
                 correlation_matrix = npy.corrcoef(self.get_attribute_values(attr1), self.get_attribute_values(attr2))
                 correlation_xy = correlation_matrix[0,1]
                 r2_scores.append(correlation_xy**2)
                 association_list.append([attr1, attr2])
+        return map(list, zip(*sorted(zip(r2_scores, association_list))[::-1]))
 
-        sorted_r2, sorted_association = map(list, zip(*sorted(zip(r2_scores, association_list))[::-1]))
+    def _find_attribute_trios(self, sorted_r2, sorted_association):
+        attr_series = []
         picked_attr = set()
         while len(picked_attr) != len(self.common_attributes):
             first_association = sorted_association[0]
@@ -1629,7 +1620,9 @@ class HeterogeneousList(DessiaObject):
                     picked_attr.update(set(sorted_association[idx]))
                     del sorted_r2[idx], sorted_association[idx]
                     break
+        return attr_series
 
+    def _trios_list_to_parallel_axes(self, attr_series):
         ordered_attr = []
         for attr_serie in attr_series:
             # If no elements, add a new series of three attributes at the end
@@ -1637,51 +1630,39 @@ class HeterogeneousList(DessiaObject):
                 mid_attr = attr_serie[[attr_serie.count(attr) for attr in attr_serie].index(2)]
                 remaining_attr = iter(set(attr_serie).difference({mid_attr}))
                 ordered_attr += [next(remaining_attr), mid_attr, next(remaining_attr)]
-
             # If element present, add elements good side
             for side in [0, -1]:
                 if ordered_attr[side] in attr_serie:
                     nb_inst = attr_serie.count(ordered_attr[side])
-                    for attr_inst in range(nb_inst):
+                    for _ in range(nb_inst):
                         side_index = (nb_inst-1)*2 + attr_serie[(nb_inst-1)*2:].index(ordered_attr[side])
                         idx_l = side + 1
                         idx_r = -1*side
                         init_len = len(ordered_attr)
+                        added_attr = []
                         if side_index % 2 == 0:
                             if attr_serie[side_index + 1] not in ordered_attr:
-                                ordered_attr = (idx_l*[attr_serie[side_index + 1]] +
-                                                ordered_attr +
-                                                idx_r*[attr_serie[side_index + 1]])
+                                added_attr = [attr_serie[side_index + 1]]
                         else:
                             if attr_serie[side_index - 1] not in ordered_attr:
-                                ordered_attr = (idx_l*[attr_serie[side_index - 1]] +
-                                                ordered_attr +
-                                                idx_r*[attr_serie[side_index - 1]])
+                                added_attr = [attr_serie[side_index - 1]]
+                        ordered_attr = (idx_l*added_attr + ordered_attr + idx_r*added_attr)
 
                         if len(ordered_attr) == init_len:
                             ordered_attr += list(set(attr_serie).difference(set(ordered_attr)))
-
         return ordered_attr
 
     def _plot_dimensionality(self):
-        import plot_data
+        from plot_data import EdgeStyle, Axis, PointStyle, Scatter
+        from plot_data.colors import GREY, BLUE
         _, singular_points = self.singular_values()
 
-        axis_style = plot_data.EdgeStyle(line_width=0.5, color_stroke=plot_data.colors.GREY)
-        axis = plot_data.Axis(nb_points_x=len(singular_points), nb_points_y=len(singular_points),
-                              axis_style=axis_style)
-        point_style = plot_data.PointStyle(color_fill=plot_data.colors.BLUE,
-                                           color_stroke=plot_data.colors.BLUE,
-                                           stroke_width=0.1,
-                                           size=2,
-                                           shape='circle')
+        axis_style = EdgeStyle(line_width=0.5, color_stroke=GREY)
+        axis = Axis(nb_points_x=len(singular_points), nb_points_y=len(singular_points), axis_style=axis_style)
+        point_style = PointStyle(color_fill=BLUE, color_stroke=BLUE, stroke_width=0.1, size=2, shape='circle')
 
-        dimensionality_plot = plot_data.Scatter(elements=singular_points,
-                                                x_variable='Index of reduced basis vector',
-                                                y_variable='Singular value',
-                                                log_scale_y=True,
-                                                axis=axis,
-                                                point_style=point_style)
+        dimensionality_plot = Scatter(elements=singular_points, x_variable='Index of reduced basis vector',
+                                      y_variable='Singular value', log_scale_y=True, axis=axis, point_style=point_style)
         return dimensionality_plot
 
     def to_markdown(self):  # TODO: Custom this markdown
@@ -1932,26 +1913,6 @@ def deepattr_to_sequence(deepattr: str):
 def sequence_to_deepattr(sequence):
     healed_sequence = [str(attr) if isinstance(attr, int) else attr for attr in sequence]
     return '/'.join(healed_sequence)
-
-
-def is_bounded(filter_: DessiaFilter, value: float):
-    bounded = True
-    comparison_operator = filter_.comparison_operator
-    bound = filter_.bound
-
-    if comparison_operator == 'lte' and value > bound:
-        bounded = False
-    if comparison_operator == 'gte' and value < bound:
-        bounded = False
-
-    if comparison_operator == 'lt' and value >= bound:
-        bounded = False
-    if comparison_operator == 'gt' and value <= bound:
-        bounded = False
-
-    if comparison_operator == 'eq' and value != bound:
-        bounded = False
-    return bounded
 
 
 def type_from_annotation(type_, module):
