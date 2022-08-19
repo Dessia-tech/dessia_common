@@ -43,7 +43,7 @@ MAX_ERROR_BY_TYPE = {
                      'raise-missing-from': 0,
                      'consider-merging-isinstance': 1,
                      'abstract-method': 6,
-                     'import-outside-toplevel': 12, # TODO : will reduced in a future work (when tests are ready)
+                     'import-outside-toplevel': 14, # TODO : will reduced in a future work (when tests are ready)
                      'too-many-instance-attributes': 7,
                      'consider-iterating-dictionary': 4,
                      'attribute-defined-outside-init': 3,

@@ -27,6 +27,7 @@ from ast import literal_eval
 
 import numpy as npy
 from sklearn import preprocessing
+import matplotlib.pyplot as plt
 
 import dessia_common.errors
 from dessia_common.utils.diff import data_eq, diff, dict_hash, list_hash
@@ -1636,20 +1637,16 @@ class HeterogeneousList(DessiaObject):
                     nb_inst = attr_serie.count(ordered_attr[side])
                     for _ in range(nb_inst):
                         side_index = (nb_inst-1)*2 + attr_serie[(nb_inst-1)*2:].index(ordered_attr[side])
-                        idx_l = side + 1
-                        idx_r = -1*side
+                        isadded_idx = side_index + 1 - 2 * (side_index % 2)
                         init_len = len(ordered_attr)
                         added_attr = []
-                        if side_index % 2 == 0:
-                            if attr_serie[side_index + 1] not in ordered_attr:
-                                added_attr = [attr_serie[side_index + 1]]
-                        else:
-                            if attr_serie[side_index - 1] not in ordered_attr:
-                                added_attr = [attr_serie[side_index - 1]]
-                        ordered_attr = (idx_l*added_attr + ordered_attr + idx_r*added_attr)
+                        if attr_serie[isadded_idx] not in ordered_attr:
+                            added_attr = [attr_serie[isadded_idx]]
+                        ordered_attr = (side + 1) * added_attr + ordered_attr + (-1 * side) * added_attr
 
                         if len(ordered_attr) == init_len:
                             ordered_attr += list(set(attr_serie).difference(set(ordered_attr)))
+
         return ordered_attr
 
     def _plot_dimensionality(self):
@@ -1720,7 +1717,6 @@ class HeterogeneousList(DessiaObject):
     @staticmethod
     def pareto_frontiers(len_data: int, costs: List[List[float]], tol: float = 0.):
         # Experimental
-        import matplotlib.pyplot as plt
         costs = HeterogeneousList.check_costs(len_data, costs)
         pareto_indexes = HeterogeneousList.pareto_indexes(costs, tol)
         pareto_costs = npy.array(list(itertools.compress(costs, pareto_indexes)))
