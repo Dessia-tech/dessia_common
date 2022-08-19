@@ -27,7 +27,7 @@ scripts = ['displays.py',
            'utils/serialization.py',
            'utils/types.py',
            'type_matching.py',
-           'utils/helpers.py'
+           'utils/helpers.py',
            # Unit tests
            'unit_tests.py',
            'bson_valid.py',
