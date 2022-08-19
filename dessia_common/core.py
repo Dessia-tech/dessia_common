@@ -1558,7 +1558,7 @@ class HeterogeneousList(DessiaObject):
                                                point_style=dimensionality_plot.point_style)
 
         # Parallel plot
-        parallel_plot = self._parallel_plot(data_list)
+        parallel_plot = self.parallel_plot(data_list)
 
         return [parallel_plot, scatter_matrix, dimensionality_plot]
 
@@ -1600,11 +1600,11 @@ class HeterogeneousList(DessiaObject):
         from plot_data.core import PointFamily
         return [PointFamily(BLUE, list(range(self.__len__())))]
 
-    def _parallel_plot(self, data_list: List[Dict[str, float]]):
+    def parallel_plot(self, data_list: List[Dict[str, float]]):
         from plot_data import ParallelPlot
-        return ParallelPlot(elements=data_list, axes=self._parallel_plot_attr(), disposition='vertical')
+        return ParallelPlot(elements=data_list, axes=self.parallel_plot_attr(), disposition='vertical')
 
-    def _parallel_plot_attr(self):
+    def parallel_plot_attr(self):
         r2_scores = []
         association_list = []
         attr_series = []
