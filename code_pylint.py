@@ -49,7 +49,7 @@ MAX_ERROR_BY_TYPE = {
                      'attribute-defined-outside-init': 3,
                      'simplifiable-if-expression': 3,
                      'broad-except': 3,
-                     'consider-using-get': 1,
+                     'consider-using-get': 0,
                      'undefined-loop-variable': 1,
                      'consider-using-with': 2,
                      'too-many-nested-blocks': 2,
