@@ -54,9 +54,11 @@ workflow_state = workflow_.start_run({})
 workflow_state.add_block_input_values(0, input_values)
 
 workflow_._check_platform()
-# workflow_run._check_platform()
+workflow_run._check_platform()
 
 arguments = workflow_.dict_to_arguments(input_values, 'run')
 
 # Check Breakdown
 assert workflow_run._get_from_path("#/values/1") == 2
+
+print("forms_simulation.py has passed")

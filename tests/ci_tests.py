@@ -1,7 +1,7 @@
 
 import os
+import unittest
 
-# for some akward reason, put scripts before unittests tests
 scripts = ['displays.py',
            'generation.py',
            'models_test.py',
@@ -26,13 +26,17 @@ scripts = ['displays.py',
            'utils/interpolation.py',
            'utils/serialization.py',
            'utils/helpers.py',
-           'type_matching.py',
-           # Unit tests after that
-           'unit_tests.py',
-           'bson_valid.py',
            'utils/types.py',
+           'type_matching.py',
+           # Unit tests
+           'unit_tests.py',
+           'bson_valid.py'
            ]
 
 for script_name in scripts:
     print('\n## Executing script {}'.format(script_name))
     exec(open(script_name).read())
+
+# This needs to be executed once all "assert-tests" have been run + once all unittests are defined
+if __name__ == '__main__':
+    unittest.main(verbosity=2)
