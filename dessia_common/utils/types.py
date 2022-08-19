@@ -50,6 +50,25 @@ def is_jsonable(x):
         return False
 
 
+def is_serializable(obj):
+    if is_jsonable(obj):
+        return True
+    if isinstance(obj, dc.DessiaObject):
+        dict_ = obj.to_dict()
+        return is_jsonable(dict_)
+    if isinstance(obj, dict):
+        for key, value in obj.items():
+            if not is_serializable(key) or not is_serializable(value):
+                return False
+        return True
+    if is_sequence(obj):
+        for element in obj:
+            if not is_serializable(element):
+                return False
+        return True
+    return False
+
+
 def is_sequence(obj):
     """
     :param obj: Object to check
