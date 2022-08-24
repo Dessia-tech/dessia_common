@@ -1115,7 +1115,7 @@ class Workflow(Block):
         data.update({'blocks': blocks, 'nonblock_variables': nonblock_variables, 'edges': edges})
         return data
 
-    def plot(self):
+    def plot(self, **kwargs):
         """
         Display workflow in web browser
         """
