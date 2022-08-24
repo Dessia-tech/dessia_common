@@ -465,8 +465,10 @@ class WorkflowBlock(Block):
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'WorkflowBlock':
-        workflow = Workflow.dict_to_object(dict_=dict_, force_generic=force_generic, global_dict=global_dict,
-                                           pointers_memo=pointers_memo, path=f"{path}/workflow")
+        workflow = Workflow.dict_to_object(dict_=dict_["workflow"])
+        # , force_generic = force_generic,
+        # global_dict = global_dict, pointers_memo = pointers_memo,
+        # path = f"{path}/workflow"
         return cls(workflow=workflow, name=dict_['name'])
 
     def evaluate(self, values):
@@ -547,9 +549,10 @@ class ForEach(Block):
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
-        workflow_block = WorkflowBlock.dict_to_object(dict_=dict_['workflow_block'], force_generic=force_generic,
-                                                      global_dict=global_dict, pointers_memo=pointers_memo,
-                                                      path=f"{path}/workflow_block")
+        workflow_block = WorkflowBlock.dict_to_object(dict_=dict_['workflow_block'])
+        # , force_generic = force_generic,
+        # global_dict = global_dict, pointers_memo = pointers_memo,
+        # path = f"{path}/workflow_block"
         return cls(workflow_block=workflow_block, iter_input_index=dict_['iter_input_index'], name=dict_['name'])
 
     def evaluate(self, values):
