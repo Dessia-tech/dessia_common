@@ -99,7 +99,7 @@ class Display(Block):
         return display_settings
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
-        dict_ = Block.to_dict(self)
+        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         dict_['order'] = self.order
         return dict_
 
@@ -148,7 +148,7 @@ class InstantiateModel(Block):
         return Block.equivalent(self, other) and classname == other_classname
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
-        dict_ = Block.to_dict(self)
+        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         dict_['model_class'] = full_classname(object_=self.model_class, compute_for='class')
         return dict_
 
@@ -220,7 +220,7 @@ class ClassMethod(Block):
         return Block.equivalent(self, other) and same_class and same_method
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
-        dict_ = Block.to_dict(self)
+        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         classname = full_classname(object_=self.method_type.class_, compute_for='class')
         method_type_dict = {'class_': classname, 'name': self.method_type.name}
         dict_.update({'method_type': method_type_dict})
@@ -309,7 +309,7 @@ class ModelMethod(Block):
         return Block.equivalent(self, other) and same_model and same_method
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
-        dict_ = Block.to_dict(self)
+        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         classname = full_classname(object_=self.method_type.class_, compute_for='class')
         method_type_dict = {'class_': classname, 'name': self.method_type.name}
         dict_.update({'method_type': method_type_dict})
@@ -375,7 +375,7 @@ class Sequence(Block):
         return Block.equivalent(self, other) and self.number_arguments == other.number_arguments
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
-        dict_ = Block.to_dict(self)
+        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         dict_['number_arguments'] = self.number_arguments
         return dict_
 
@@ -407,7 +407,7 @@ class Concatenate(Block):
         return Block.equivalent(self, other) and self.number_arguments == other.number_arguments
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
-        dict_ = Block.to_dict(self)
+        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         dict_['number_arguments'] = self.number_arguments
         return dict_
 
@@ -457,16 +457,17 @@ class WorkflowBlock(Block):
         return self.workflow == other.workflow
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
-        dict_ = Block.to_dict(self)
-        dict_.update({'workflow': self.workflow.to_dict(use_pointers=use_pointers, memo=memo,
-                                                        path=f'{path}/workflow')})
+        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
+        dict_.update({'workflow': self.workflow.to_dict(use_pointers=use_pointers, memo=memo, path=f'{path}/workflow')})
         return dict_
 
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
-        return cls(workflow=Workflow.dict_to_object(dict_['workflow']), name=dict_['name'])
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'WorkflowBlock':
+        workflow = Workflow.dict_to_object(dict_=dict_, force_generic=force_generic, global_dict=global_dict,
+                                           pointers_memo=pointers_memo, path=f"{path}/workflow")
+        return cls(workflow=workflow, name=dict_['name'])
 
     def evaluate(self, values):
         args = {self.inputs.index(input_): v for input_, v in values.items()}
@@ -537,17 +538,19 @@ class ForEach(Block):
         return Block.equivalent(self, other) and wb_eq and input_eq
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
-        dict_ = Block.to_dict(self)
-        dict_.update({'workflow_block': self.workflow_block.to_dict(), 'iter_input_index': self.iter_input_index})
+        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
+        wb_dict = self.workflow_block.to_dict(use_pointers=use_pointers, memo=memo, path=f"{path}/worklow_block")
+        dict_.update({'workflow_block': wb_dict, 'iter_input_index': self.iter_input_index})
         return dict_
 
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
-        workflow_block = WorkflowBlock.dict_to_object(dict_['workflow_block'])
-        iter_input_index = dict_['iter_input_index']
-        return cls(workflow_block=workflow_block, iter_input_index=iter_input_index, name=dict_['name'])
+        workflow_block = WorkflowBlock.dict_to_object(dict_=dict_['workflow_block'], force_generic=force_generic,
+                                                      global_dict=global_dict, pointers_memo=pointers_memo,
+                                                      path=f"{path}/workflow_block")
+        return cls(workflow_block=workflow_block, iter_input_index=dict_['iter_input_index'], name=dict_['name'])
 
     def evaluate(self, values):
         values_workflow = {var2: values[var1] for var1, var2 in zip(self.inputs, self.workflow_block.inputs)}
@@ -588,7 +591,7 @@ class Unpacker(Block):
         return len(self.indices)
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
-        dict_ = Block.to_dict(self)
+        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         dict_['indices'] = self.indices
         return dict_
 
@@ -644,7 +647,7 @@ class Product(Block):
         return Block.equivalent(self, other) and self.number_list == other.number_list
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
-        dict_ = Block.to_dict(self)
+        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         dict_['number_list'] = self.number_list
         return dict_
 
@@ -695,15 +698,20 @@ class Filter(Block):
         return int(sum(hashes) % 10e5)
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
-        dict_ = Block.to_dict(self)
-        dict_.update({'filters': [f.to_dict() for f in self.filters]})
+        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
+        filters_dict = [f.to_dict(use_pointers=use_pointers, memo=memo, path=f"{path}/filters/{i}")
+                        for i, f in enumerate(self.filters)]
+        dict_['filters'] = filters_dict
         return dict_
 
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
-        return cls([DessiaFilter.dict_to_object(d) for d in dict_['filters']], dict_['name'])
+        filters = [DessiaFilter.dict_to_object(dict_=d, force_generic=force_generic, global_dict=global_dict,
+                                               pointers_memo=pointers_memo, path=f"{path}/filters/{i}")
+                   for i, d in enumerate(dict_['filters'])]
+        return cls(filters, dict_['name'])
 
     def evaluate(self, values):
         ouput_values = []
@@ -781,7 +789,7 @@ class MultiPlot(Display):
         return [display_settings]
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
-        dict_ = Block.to_dict(self)
+        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         dict_.update({'attributes': self.attributes, 'order': self.order})
         return dict_
 
@@ -821,7 +829,7 @@ class ModelAttribute(Block):
         return Block.equivalent(self, other) and self.attribute_name == other.attribute_name
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
-        dict_ = Block.to_dict(self)
+        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         dict_.update({'attribute_name': self.attribute_name})
         return dict_
 
@@ -860,7 +868,7 @@ class SetModelAttribute(Block):
         return Block.equivalent(self, other) and self.attribute_name == other.attribute_name
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
-        dict_ = Block.to_dict(self)
+        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         dict_.update({'attribute_name': self.attribute_name})
         return dict_
 
@@ -893,7 +901,7 @@ class Sum(Block):
         return Block.equivalent(self, other) and self.number_elements == other.number_elements
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
-        dict_ = Block.to_dict(self)
+        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         dict_.update({'number_elements': self.number_elements})
         return dict_
 
@@ -987,7 +995,7 @@ class Archive(Block):
         Block.__init__(self, inputs=inputs, outputs=[Variable(name="zip archive")], name=name)
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#'):
-        dict_ = Block.to_dict(self)
+        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         dict_['number_exports'] = len(self.inputs)
         return dict_
 
