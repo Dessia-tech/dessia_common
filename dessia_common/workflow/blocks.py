@@ -796,7 +796,6 @@ class MultiPlot(Display):
         return []
 
     def _to_script(self) -> ToScriptElement:
-        # attributes: List[str], order: int = 0, name: str = ''):
         script = f"MultiPlot(attributes={self.attributes}, order={self.order}, name='{self.name}')"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
@@ -926,7 +925,8 @@ class Substraction(Block):
 
 
 class Export(Block):
-    def __init__(self, method_type: MethodType, export_name: str = "", name: str = ""):
+    def __init__(self, method_type: MethodType,  text: bool, export_name: str = "",
+                 extension: str = "", name: str = ""):
         self.method_type = method_type
         if not export_name:
             export_name = "export"
@@ -934,11 +934,28 @@ class Export(Block):
 
         method = method_type.get_method()
 
-        self.extension = ""
-        self.text = None
+        self.extension = extension
+        self.text = text
 
         output = output_from_function(function=method, name="export_output")
         Block.__init__(self, inputs=[TypedVariable(type_=method_type.class_)], outputs=[output], name=name)
+
+    def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#'):
+        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
+        classname = full_classname(object_=self.method_type.class_, compute_for='class')
+        method_type_dict = {'class_': classname, 'name': self.method_type.name}
+        dict_.update({"method_type": method_type_dict, "extension": self.extension,
+                      "text": self.text, "export_name": self.export_name})
+        return dict_
+
+    @classmethod
+    @set_block_variable_names_from_dict
+    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'Export':
+        class_ = get_python_class_from_class_name(dict_['method_type']['class_'])
+        method_type = MethodType(class_=class_, name=dict_['method_type']['name'])
+        return cls(method_type=method_type, text=dict_['text'], export_name=dict_["export_name"],
+                   extension=dict_["extension"], name=dict_["name"])
 
     def evaluate(self, values):
         if self.text:
@@ -958,60 +975,9 @@ class Export(Block):
                  f", name='{self.name}'" \
                  f", export_name='{self.export_name}')"
 
-        imports = [
-            self.full_classname,
-            full_classname(object_=self.method_type, compute_for='instance'),
-            full_classname(object_=self.method_type.class_, compute_for='class'),
-        ]
+        imports = [self.full_classname, full_classname(object_=self.method_type, compute_for='instance'),
+                   full_classname(object_=self.method_type.class_, compute_for='class')]
         return ToScriptElement(declaration=script, imports=imports)
-
-
-class ExportJson(Export):
-    def __init__(self, model_class: Type, export_name: str = "", name: str = ""):
-        self.model_class = model_class
-        method_type = MethodType(class_=model_class, name="save_to_stream")
-
-        Export.__init__(self, method_type=method_type, export_name=export_name, name=name)
-        if not export_name:
-            self.export_name += "_json"
-        self.extension = "json"
-        self.text = True
-
-    def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
-        dict_ = Block.to_dict(self)
-        dict_['model_class'] = full_classname(object_=self.method_type.class_, compute_for='class')
-        return dict_
-
-    @classmethod
-    @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
-        class_ = get_python_class_from_class_name(dict_['model_class'])
-        return cls(class_, name=dict_['name'])
-
-
-class ExportExcel(Export):
-    def __init__(self, model_class: Type, export_name: str = "", name: str = ""):
-        self.model_class = model_class
-        method_type = MethodType(class_=model_class, name="to_xlsx_stream")
-
-        Export.__init__(self, method_type=method_type, export_name=export_name, name=name)
-        if not export_name:
-            self.export_name += "_xlsx"
-        self.extension = "xlsx"
-        self.test = False
-
-    def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
-        dict_ = Block.to_dict(self)
-        dict_['model_class'] = full_classname(object_=self.method_type.class_, compute_for='class')
-        return dict_
-
-    @classmethod
-    @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
-        class_ = get_python_class_from_class_name(dict_['model_class'])
-        return cls(class_, name=dict_['name'])
 
 
 class Archive(Block):

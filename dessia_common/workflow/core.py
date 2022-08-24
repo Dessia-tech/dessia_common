@@ -426,13 +426,16 @@ class Workflow(Block):
         pipe_downstream = copied_workflow.variable_from_index(downstream_index)
         return Pipe(pipe_upstream, pipe_downstream)
 
-    @staticmethod
-    def display_settings() -> List[DisplaySetting]:
+    def display_settings(self) -> List[DisplaySetting]:
         """
         Computes the displays of the objects
         """
         display_settings = [DisplaySetting('documentation', 'markdown', 'to_markdown', None),
                             DisplaySetting('workflow', 'workflow', 'to_dict', None)]
+        block_display_settings = [b._display_settings(block_index=i) for i, b in enumerate(self.blocks)
+                                  if hasattr(b, "_display_settings")]
+        for display_setting in block_display_settings:
+            display_settings.extend(display_setting)
         return display_settings
 
     def to_markdown(self):
@@ -511,6 +514,8 @@ class Workflow(Block):
         export_formats = DessiaObject._export_formats(self)
         export_formats.append({'extension': 'py', 'method_name': 'save_script_to_stream',
                                'text': True, 'args': {}})
+        export_formats.extend([b._export_format(block_index=i) for i, b in enumerate(self.blocks)
+                               if hasattr(b, "_export_format")])
         return export_formats
 
     def to_dict(self, use_pointers=True, memo=None, path='#'):
@@ -729,13 +734,6 @@ class Workflow(Block):
             upstream_blocks = candidates
             i += 1
         return branch_blocks
-
-    @property
-    def export_blocks(self):
-        """
-        Returns block that are not upstream for output
-        """
-        return [b for b in self.blocks if b not in self.runtime_blocks]
 
     def pipe_from_variable_indices(self, upstream_indices: Union[int, Tuple[int, int, int]],
                                    downstream_indices: Union[int, Tuple[int, int, int]]) -> Pipe:
@@ -1668,11 +1666,12 @@ class WorkflowState(DessiaObject):
         """
         Returns a list of all activable blocks, ie blocks that have all inputs ready for evaluation
         """
-        if self.progress < 1:
-            blocks = self.workflow.runtime_blocks
-        else:
-            blocks = self.workflow.export_blocks
-        return [b for b in blocks if not self.activated_items[b] and self._block_activable_by_inputs(b)]
+        # if self.progress < 1:
+        #     blocks = self.workflow.runtime_blocks
+        # else:
+        #     blocks = self.workflow.export_blocks
+        return [b for b in self.workflow.runtime_blocks
+                if not self.activated_items[b] and self._block_activable_by_inputs(b)]
 
     def _block_activable_by_inputs(self, block: Block):
         """
