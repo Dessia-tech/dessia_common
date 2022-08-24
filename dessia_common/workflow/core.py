@@ -715,6 +715,21 @@ class Workflow(Block):
             i += 1
         return runtime_blocks
 
+    def secondary_branch_blocks(self, block):
+        upstream_blocks = self.upstream_blocks(block)
+        branch_blocks = [block]
+        i = 0
+        candidates = upstream_blocks
+        while candidates and i <= len(self.blocks):
+            candidates = []
+            for upstream_block in upstream_blocks:
+                if upstream_block not in self.runtime_blocks and upstream_blocks not in branch_blocks:
+                    branch_blocks.append(upstream_block)
+                    candidates.extend(self.upstream_blocks(upstream_block))
+            upstream_blocks = candidates
+            i += 1
+        return branch_blocks
+
     @property
     def export_blocks(self):
         """
@@ -768,7 +783,7 @@ class Workflow(Block):
 
     def upstream_blocks(self, block: Block) -> List[Block]:
         """
-        Returns a list of given block upstream blocks
+        Returns a list of given block's upstream blocks
         """
         # Setting a dict here to foresee a future use. Might be unnecessary
         upstream_variables = {"available": [], "nonblock": [], "wired": []}
