@@ -1900,6 +1900,7 @@ class WorkflowRun(WorkflowState):
             incoming_pipe = self.workflow.variable_input_pipe(input_)
             local_values[input_] = self.values[incoming_pipe]
             if i == block._displayable_input:
+                # TODO This probably won't work on platform. Should serialise/deserialise
                 reference_path = f'values/{self.workflow.pipes.index(incoming_pipe)}'
         display_ = block.display_(local_values=local_values, reference_path=reference_path)
         return display_[display_index], reference_path
