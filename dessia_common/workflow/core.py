@@ -1499,11 +1499,6 @@ class WorkflowState(DessiaObject):
             for i, value in dict_['values'].items():
                 values[workflow.pipes[int(i)]] = deserialize(value, global_dict=global_dict,
                                                              pointers_memo=pointers_memo, path=f'{path}/values/{i}')
-        # elif 'variable_values' in dict_:
-        #     for i, value in dict_['variable_values'].items():
-        #         values[workflow.variables[int(i)]] = deserialize(value, global_dict=dict_,
-        #                                                          pointers_memo=pointers_memo,
-        #                                                          path=f'{path}/variable_values/{i}')
 
         input_values = {int(i): deserialize(v, global_dict=global_dict, pointers_memo=pointers_memo,
                                             path=f"{path}/input_values/{i}") for i, v in dict_['input_values'].items()}
@@ -1776,13 +1771,6 @@ class WorkflowRun(WorkflowState):
                     '.*': {'type': "object", 'classes': 'Any'}
                 }
             },
-            'variable_values': {
-                'type': 'object', 'order': 3, 'editable': False,
-                'title': 'Variables Values', "python_typing": "Dict[str, Any]",
-                'patternProperties': {
-                    '.*': {'type': "object", 'classes': 'Any'}
-                }
-            },
             'start_time': {"type": "number", "title": "Start Time", "editable": False, "python_typing": "builtins.int",
                            "description": "Start time of simulation", "order": 4},
             'end_time': {"type": "number", "title": "End Time", "editable": False, "python_typing": "builtins.int",
@@ -1801,8 +1789,6 @@ class WorkflowRun(WorkflowState):
             end_time = time.time()
         self.end_time = end_time
         self.execution_time = end_time - start_time
-        self.variable_values = {workflow.variable_indices(k): v for k, v in values.items()
-                                if k.memorize and is_serializable(v)}
         filtered_values = {k: v for k, v in values.items() if is_serializable(v)}
         filtered_input_values = {k: v for k, v in input_values.items() if is_serializable(v)}
         WorkflowState.__init__(self, workflow=workflow, input_values=filtered_input_values,
@@ -1819,17 +1805,6 @@ class WorkflowRun(WorkflowState):
 
         # To force migrating from dessia_common.workflow
         dict_['object_class'] = 'dessia_common.workflow.core.WorkflowRun'
-
-        # TODO REMOVING THIS TEMPORARLY TO PREVENT DISPLAYS TO BE LOST WITH POINTERS
-        #  VARIABLE_VALUES ARE NOT SET BACK IN DICT_TO_OBJECT
-        # if use_pointers:
-        #     variable_values = {}
-        #     for key, value in self.variable_values.items():
-        #         variable_values[str(key)], memo = serialize_with_pointers(value, memo=memo,
-        #                                                                   path=f'{path}/variable_values/{key}')
-        #     dict_["variable_values"] = variable_values
-        # else:
-        dict_["variable_values"] = {str(k): serialize(v) for k, v in self.variable_values.items()}
         return dict_
 
     def display_settings(self) -> List[DisplaySetting]:
@@ -1846,8 +1821,8 @@ class WorkflowRun(WorkflowState):
             block_index = self.workflow.blocks.index(block)
             local_values = {}
             for i, input_ in enumerate(block.inputs):
-                input_adress = self.workflow.variable_indices(input_)
-                local_values[input_] = self.variable_values[input_adress]
+                incoming_pipe = self.workflow.variable_input_pipe(input_)
+                local_values[input_] = self.values[incoming_pipe]
             settings = block._display_settings(block_index, local_values)  # Code intel is not working properly here
             if settings is not None:
                 display_settings.extend(settings)
@@ -1915,7 +1890,6 @@ class WorkflowRun(WorkflowState):
         """
         Computes the display of associated block to use integrate it in the workflow run displays
         """
-        self._activate_activable_pipes()
         self.activate_inputs()
         block = self.workflow.blocks[block_index]
         if block in self._activable_blocks():
@@ -1923,10 +1897,10 @@ class WorkflowRun(WorkflowState):
         reference_path = ""
         local_values = {}
         for i, input_ in enumerate(block.inputs):
-            input_adress = self.workflow.variable_indices(input_)
-            local_values[input_] = self.variable_values[input_adress]
+            incoming_pipe = self.workflow.variable_input_pipe(input_)
+            local_values[input_] = self.values[incoming_pipe]
             if i == block._displayable_input:
-                reference_path = f'variable_values/{input_adress}'
+                reference_path = f'values/{self.workflow.pipes.index(incoming_pipe)}'
         display_ = block.display_(local_values=local_values, reference_path=reference_path)
         return display_[display_index], reference_path
 
