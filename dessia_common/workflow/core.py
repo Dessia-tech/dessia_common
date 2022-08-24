@@ -1392,8 +1392,8 @@ class WorkflowState(DessiaObject):
         input_values = {}
         for input_, value in self.input_values.items():
             if use_pointers:
-                path = f"{path}/input_values/{input_}"
-                serialized_v, memo = serialize_with_pointers(value=value, memo=memo, path=path)
+                serialized_v, memo = serialize_with_pointers(value=value, memo=memo,
+                                                             path=f"{path}/input_values/{input_}")
             else:
                 serialized_v = serialize(value)
             input_values[str(input_)] = serialized_v
@@ -1403,8 +1403,8 @@ class WorkflowState(DessiaObject):
         # Output value: priority for reference before values
         if self.output_value is not None:
             if use_pointers:
-                path = f'{path}/output_value'
-                serialized_output_value, memo = serialize_with_pointers(self.output_value, memo=memo, path=path)
+                serialized_output_value, memo = serialize_with_pointers(self.output_value, memo=memo,
+                                                                        path=f'{path}/output_value')
             else:
                 serialized_output_value = serialize(self.output_value)
 
@@ -1416,8 +1416,8 @@ class WorkflowState(DessiaObject):
         for pipe, value in self.values.items():
             pipe_index = self.workflow.pipes.index(pipe)
             if use_pointers:
-                path = f"{path}/values/{pipe_index}"
-                serialized_value, memo = serialize_with_pointers(value=value, memo=memo, path=path)
+                serialized_value, memo = serialize_with_pointers(value=value, memo=memo,
+                                                                 path=f"{path}/values/{pipe_index}")
                 values[str(pipe_index)] = serialized_value
             else:
                 values[str(pipe_index)] = serialize(value)
