@@ -728,7 +728,7 @@ class Workflow(Block):
         while candidates and i <= len(self.blocks):
             candidates = []
             for upstream_block in upstream_blocks:
-                if upstream_block not in self.runtime_blocks and upstream_blocks not in branch_blocks:
+                if upstream_block not in self.runtime_blocks and upstream_block not in branch_blocks:
                     branch_blocks.append(upstream_block)
                     candidates.extend(self.upstream_blocks(upstream_block))
             upstream_blocks = candidates
