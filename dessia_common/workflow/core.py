@@ -753,7 +753,7 @@ class Workflow(Block):
             candidates = []
             for upstream_block in upstream_blocks:
                 if upstream_block not in self.runtime_blocks and upstream_block not in branch_blocks:
-                    branch_blocks.append(upstream_block)
+                    branch_blocks.insert(0, upstream_block)
                     candidates.extend(self.upstream_blocks(upstream_block))
             upstream_blocks = candidates
             i += 1
@@ -1656,6 +1656,19 @@ class WorkflowState(DessiaObject):
                 something_activated = True
         return evaluated_blocks
 
+    def evaluate_branch(self, blocks: List[Block]):
+        self.activate_inputs()
+        evaluated_blocks = []
+        i = 0
+        while len(evaluated_blocks) != len(blocks) and i <= len(blocks):
+            next_blocks = [b for b in blocks if b in self._activable_blocks() and b not in evaluated_blocks]
+            print(next_blocks)
+            for block in next_blocks:
+                evaluated_blocks.append(block)
+                self._evaluate_block(block)
+            i += 1
+        return evaluated_blocks
+
     def _activate_pipe(self, pipe: Pipe, value):
         self.values[pipe] = value
         self.activated_items[pipe] = True
@@ -1690,12 +1703,9 @@ class WorkflowState(DessiaObject):
         """
         Returns a list of all activable blocks, ie blocks that have all inputs ready for evaluation
         """
-        # if self.progress < 1:
-        #     blocks = self.workflow.runtime_blocks
-        # else:
-        #     blocks = self.workflow.export_blocks
-        return [b for b in self.workflow.runtime_blocks
-                if not self.activated_items[b] and self._block_activable_by_inputs(b)]
+        blocks = [b for b in self.workflow.blocks if self._block_activable_by_inputs(b)
+                  and (not self.activated_items[b] or b not in self.workflow.runtime_blocks)]
+        return blocks
 
     def _block_activable_by_inputs(self, block: Block):
         """
@@ -1853,15 +1863,11 @@ class WorkflowRun(WorkflowState):
         """
         display_settings = self.workflow.display_settings()
 
-        # Find & order displayable blocks
+        # Find displayable blocks
         blocks = [b for b in self.workflow.blocks if hasattr(b, 'display_') and hasattr(b, "_display_settings")]
         # Change last line to isinstance ? Not possible because of circular imports ?
         for block in blocks:
             block_index = self.workflow.blocks.index(block)
-            local_values = {}
-            for i, input_ in enumerate(block.inputs):
-                incoming_pipe = self.workflow.variable_input_pipe(input_)
-                local_values[input_] = self.values[incoming_pipe]
             settings = block._display_settings(block_index)  # Code intel is not working properly here
             if settings is not None:
                 display_settings.append(settings)
@@ -1903,14 +1909,9 @@ class WorkflowRun(WorkflowState):
         # Displays for blocks (getting reference path from block_display return)
         display_setting = self._display_settings_from_selector(selector)
         try:
-            if display_setting.method == "block_display":
-                # Specific hotfix : we propagate reference_path through block_display method
-                display_object, refpath = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
-                data = display_object["data"]
-            else:
-                # But not when calling result objects display methods.
-                # We end up here when evaluating output value display
-                data = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
+            # Specific hotfix : we propagate reference_path through block_display method
+            display_object, refpath = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
+            data = display_object["data"]
         except:
             data = None
             track = tb.format_exc()
