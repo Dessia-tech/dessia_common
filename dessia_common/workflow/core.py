@@ -426,13 +426,16 @@ class Workflow(Block):
         pipe_downstream = copied_workflow.variable_from_index(downstream_index)
         return Pipe(pipe_upstream, pipe_downstream)
 
-    @staticmethod
-    def display_settings() -> List[DisplaySetting]:
+    def display_settings(self) -> List[DisplaySetting]:
         """
         Computes the displays of the objects
         """
         display_settings = [DisplaySetting('documentation', 'markdown', 'to_markdown', None),
                             DisplaySetting('workflow', 'workflow', 'to_dict', None)]
+        block_display_settings = [b._display_settings(block_index=i) for i, b in enumerate(self.blocks)
+                                  if hasattr(b, "_display_settings")]
+        for display_setting in block_display_settings:
+            display_settings.extend(display_setting)
         return display_settings
 
     def to_markdown(self):
@@ -511,6 +514,8 @@ class Workflow(Block):
         export_formats = DessiaObject._export_formats(self)
         export_formats.append({'extension': 'py', 'method_name': 'save_script_to_stream',
                                'text': True, 'args': {}})
+        export_formats.extend([b._export_format(block_index=i) for i, b in enumerate(self.blocks)
+                               if hasattr(b, "_export_format")])
         return export_formats
 
     def to_dict(self, use_pointers=True, memo=None, path='#'):
@@ -715,12 +720,20 @@ class Workflow(Block):
             i += 1
         return runtime_blocks
 
-    @property
-    def export_blocks(self):
-        """
-        Returns block that are not upstream for output
-        """
-        return [b for b in self.blocks if b not in self.runtime_blocks]
+    def secondary_branch_blocks(self, block):
+        upstream_blocks = self.upstream_blocks(block)
+        branch_blocks = [block]
+        i = 0
+        candidates = upstream_blocks
+        while candidates and i <= len(self.blocks):
+            candidates = []
+            for upstream_block in upstream_blocks:
+                if upstream_block not in self.runtime_blocks and upstream_blocks not in branch_blocks:
+                    branch_blocks.append(upstream_block)
+                    candidates.extend(self.upstream_blocks(upstream_block))
+            upstream_blocks = candidates
+            i += 1
+        return branch_blocks
 
     def pipe_from_variable_indices(self, upstream_indices: Union[int, Tuple[int, int, int]],
                                    downstream_indices: Union[int, Tuple[int, int, int]]) -> Pipe:
@@ -768,7 +781,7 @@ class Workflow(Block):
 
     def upstream_blocks(self, block: Block) -> List[Block]:
         """
-        Returns a list of given block upstream blocks
+        Returns a list of given block's upstream blocks
         """
         # Setting a dict here to foresee a future use. Might be unnecessary
         upstream_variables = {"available": [], "nonblock": [], "wired": []}
@@ -1102,7 +1115,7 @@ class Workflow(Block):
         data.update({'blocks': blocks, 'nonblock_variables': nonblock_variables, 'edges': edges})
         return data
 
-    def plot(self):
+    def plot(self, **kwargs):
         """
         Display workflow in web browser
         """
@@ -1392,8 +1405,8 @@ class WorkflowState(DessiaObject):
         input_values = {}
         for input_, value in self.input_values.items():
             if use_pointers:
-                path = f"{path}/input_values/{input_}"
-                serialized_v, memo = serialize_with_pointers(value=value, memo=memo, path=path)
+                serialized_v, memo = serialize_with_pointers(value=value, memo=memo,
+                                                             path=f"{path}/input_values/{input_}")
             else:
                 serialized_v = serialize(value)
             input_values[str(input_)] = serialized_v
@@ -1403,8 +1416,8 @@ class WorkflowState(DessiaObject):
         # Output value: priority for reference before values
         if self.output_value is not None:
             if use_pointers:
-                path = f'{path}/output_value'
-                serialized_output_value, memo = serialize_with_pointers(self.output_value, memo=memo, path=path)
+                serialized_output_value, memo = serialize_with_pointers(self.output_value, memo=memo,
+                                                                        path=f'{path}/output_value')
             else:
                 serialized_output_value = serialize(self.output_value)
 
@@ -1416,8 +1429,9 @@ class WorkflowState(DessiaObject):
         for pipe, value in self.values.items():
             pipe_index = self.workflow.pipes.index(pipe)
             if use_pointers:
-                path = f"{path}/values/{pipe_index}"
-                serialized_value, memo = serialize_with_pointers(value=value, memo=memo, path=path)
+                # TODO This probably won't work on platform. Should serialise/deserialise
+                serialized_value, memo = serialize_with_pointers(value=value, memo=memo,
+                                                                 path=f"{path}/values/{pipe_index}")
                 values[str(pipe_index)] = serialized_value
             else:
                 values[str(pipe_index)] = serialize(value)
@@ -1499,11 +1513,6 @@ class WorkflowState(DessiaObject):
             for i, value in dict_['values'].items():
                 values[workflow.pipes[int(i)]] = deserialize(value, global_dict=global_dict,
                                                              pointers_memo=pointers_memo, path=f'{path}/values/{i}')
-        # elif 'variable_values' in dict_:
-        #     for i, value in dict_['variable_values'].items():
-        #         values[workflow.variables[int(i)]] = deserialize(value, global_dict=dict_,
-        #                                                          pointers_memo=pointers_memo,
-        #                                                          path=f'{path}/variable_values/{i}')
 
         input_values = {int(i): deserialize(v, global_dict=global_dict, pointers_memo=pointers_memo,
                                             path=f"{path}/input_values/{i}") for i, v in dict_['input_values'].items()}
@@ -1657,11 +1666,12 @@ class WorkflowState(DessiaObject):
         """
         Returns a list of all activable blocks, ie blocks that have all inputs ready for evaluation
         """
-        if self.progress < 1:
-            blocks = self.workflow.runtime_blocks
-        else:
-            blocks = self.workflow.export_blocks
-        return [b for b in blocks if not self.activated_items[b] and self._block_activable_by_inputs(b)]
+        # if self.progress < 1:
+        #     blocks = self.workflow.runtime_blocks
+        # else:
+        #     blocks = self.workflow.export_blocks
+        return [b for b in self.workflow.runtime_blocks
+                if not self.activated_items[b] and self._block_activable_by_inputs(b)]
 
     def _block_activable_by_inputs(self, block: Block):
         """
@@ -1724,7 +1734,7 @@ class WorkflowState(DessiaObject):
         If state is complete, returns a WorkflowRun
         """
         if self.progress == 1:
-            values = {v: self.values[v] for v in self.workflow.variables if v in self.values}
+            values = {p: self.values[p] for p in self.workflow.pipes if p in self.values}
             return WorkflowRun(workflow=self.workflow, input_values=self.input_values, output_value=self.output_value,
                                values=values, activated_items=self.activated_items, start_time=self.start_time,
                                end_time=self.end_time, log=self.log, name=name)
@@ -1749,6 +1759,7 @@ class WorkflowState(DessiaObject):
             # TODO We should track different Export branches and run the only one concerned.
             #  Should we use evaluate_block ?
             self.continue_run(export=True)
+
             output = block.outputs[0]
             return self.values[output]
         raise RuntimeError("Workflow has not reached its output and cannot be exported")
@@ -1776,13 +1787,6 @@ class WorkflowRun(WorkflowState):
                     '.*': {'type': "object", 'classes': 'Any'}
                 }
             },
-            'variable_values': {
-                'type': 'object', 'order': 3, 'editable': False,
-                'title': 'Variables Values', "python_typing": "Dict[str, Any]",
-                'patternProperties': {
-                    '.*': {'type': "object", 'classes': 'Any'}
-                }
-            },
             'start_time': {"type": "number", "title": "Start Time", "editable": False, "python_typing": "builtins.int",
                            "description": "Start time of simulation", "order": 4},
             'end_time': {"type": "number", "title": "End Time", "editable": False, "python_typing": "builtins.int",
@@ -1801,8 +1805,6 @@ class WorkflowRun(WorkflowState):
             end_time = time.time()
         self.end_time = end_time
         self.execution_time = end_time - start_time
-        self.variable_values = {workflow.variable_indices(k): v for k, v in values.items()
-                                if k.memorize and is_serializable(v)}
         filtered_values = {k: v for k, v in values.items() if is_serializable(v)}
         filtered_input_values = {k: v for k, v in input_values.items() if is_serializable(v)}
         WorkflowState.__init__(self, workflow=workflow, input_values=filtered_input_values,
@@ -1819,17 +1821,6 @@ class WorkflowRun(WorkflowState):
 
         # To force migrating from dessia_common.workflow
         dict_['object_class'] = 'dessia_common.workflow.core.WorkflowRun'
-
-        # TODO REMOVING THIS TEMPORARLY TO PREVENT DISPLAYS TO BE LOST WITH POINTERS
-        #  VARIABLE_VALUES ARE NOT SET BACK IN DICT_TO_OBJECT
-        # if use_pointers:
-        #     variable_values = {}
-        #     for key, value in self.variable_values.items():
-        #         variable_values[str(key)], memo = serialize_with_pointers(value, memo=memo,
-        #                                                                   path=f'{path}/variable_values/{key}')
-        #     dict_["variable_values"] = variable_values
-        # else:
-        dict_["variable_values"] = {str(k): serialize(v) for k, v in self.variable_values.items()}
         return dict_
 
     def display_settings(self) -> List[DisplaySetting]:
@@ -1846,8 +1837,8 @@ class WorkflowRun(WorkflowState):
             block_index = self.workflow.blocks.index(block)
             local_values = {}
             for i, input_ in enumerate(block.inputs):
-                input_adress = self.workflow.variable_indices(input_)
-                local_values[input_] = self.variable_values[input_adress]
+                incoming_pipe = self.workflow.variable_input_pipe(input_)
+                local_values[input_] = self.values[incoming_pipe]
             settings = block._display_settings(block_index, local_values)  # Code intel is not working properly here
             if settings is not None:
                 display_settings.extend(settings)
@@ -1915,7 +1906,6 @@ class WorkflowRun(WorkflowState):
         """
         Computes the display of associated block to use integrate it in the workflow run displays
         """
-        self._activate_activable_pipes()
         self.activate_inputs()
         block = self.workflow.blocks[block_index]
         if block in self._activable_blocks():
@@ -1923,10 +1913,11 @@ class WorkflowRun(WorkflowState):
         reference_path = ""
         local_values = {}
         for i, input_ in enumerate(block.inputs):
-            input_adress = self.workflow.variable_indices(input_)
-            local_values[input_] = self.variable_values[input_adress]
+            incoming_pipe = self.workflow.variable_input_pipe(input_)
+            local_values[input_] = self.values[incoming_pipe]
             if i == block._displayable_input:
-                reference_path = f'variable_values/{input_adress}'
+                # TODO This probably won't work on platform. Should serialise/deserialise
+                reference_path = f'values/{self.workflow.pipes.index(incoming_pipe)}'
         display_ = block.display_(local_values=local_values, reference_path=reference_path)
         return display_[display_index], reference_path
 
