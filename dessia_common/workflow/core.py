@@ -1645,10 +1645,11 @@ class WorkflowState(DessiaObject):
 
         evaluated_blocks = []
         something_activated = True
-        while something_activated:  # and (self.progress < 1 or export)
+        while something_activated:
             something_activated = False
 
-            for block in self._activable_blocks():
+            blocks = [b for b in self.workflow.runtime_blocks if b in self._activable_blocks()]
+            for block in blocks:
                 evaluated_blocks.append(block)
                 self._evaluate_block(block)
                 if not export:
@@ -1658,14 +1659,17 @@ class WorkflowState(DessiaObject):
 
     def evaluate_branch(self, blocks: List[Block]):
         self.activate_inputs()
-        evaluated_blocks = []
+
+        if not any([b in self._activable_blocks() for b in blocks]):
+            raise WorkflowError("Branch cannot be evaluated because no block has all its inputs activated")
+
+        evaluated_blocks = {}
         i = 0
         while len(evaluated_blocks) != len(blocks) and i <= len(blocks):
             next_blocks = [b for b in blocks if b in self._activable_blocks() and b not in evaluated_blocks]
-            print(next_blocks)
             for block in next_blocks:
-                evaluated_blocks.append(block)
-                self._evaluate_block(block)
+                output_values = self._evaluate_block(block)
+                evaluated_blocks[block] = output_values
             i += 1
         return evaluated_blocks
 
@@ -1745,6 +1749,8 @@ class WorkflowState(DessiaObject):
         if progress_callback is not None:
             progress_callback(self.progress)
 
+        return output_values
+
     def activate_inputs(self, check_all_inputs=False):
         """
         Returns if all inputs are activated
@@ -1788,15 +1794,15 @@ class WorkflowState(DessiaObject):
         """
         Perform export
         """
-        if self.progress >= 1:
-            block = self.workflow.blocks[block_index]
-            # TODO We should track different Export branches and run the only one concerned.
-            #  Should we use evaluate_block ?
-            self.continue_run(export=True)
-
-            output = block.outputs[0]
-            return self.values[output]
-        raise RuntimeError("Workflow has not reached its output and cannot be exported")
+        block = self.workflow.blocks[block_index]
+        export_format = block._export_format(block_index)
+        branch = self.workflow.branch_by_export_format[export_format['export_name']]
+        evaluated_blocks = self.evaluate_branch(branch)
+        if block not in evaluated_blocks:
+            msg = f"Could not reach block at index {block_index}." \
+                  f"Has the workflow been run far enough to evaluate this block ?"
+            raise WorkflowError(msg)
+        return evaluated_blocks[block][0]  # Only one output to an Export Block
 
 
 class WorkflowRun(WorkflowState):
