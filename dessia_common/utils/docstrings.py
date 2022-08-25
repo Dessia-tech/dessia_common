@@ -30,7 +30,8 @@ def parse_docstring(docstring: str, annotations: Dict[str, Any]) -> ParsedDocstr
     should be built.
     """
     if docstring:
-        splitted_docstring = docstring.split(':param ')
+        no_return_docstring = docstring.split(':return:')
+        splitted_docstring = no_return_docstring[0].split(':param ')
         parsed_docstring = {"description": splitted_docstring[0].strip()}
         params = splitted_docstring[1:]
         args = {}
