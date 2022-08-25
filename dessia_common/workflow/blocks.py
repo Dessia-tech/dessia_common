@@ -992,7 +992,7 @@ class Export(Block):
 
 
 class Archive(Block):
-    def __init__(self, number_exports: int = 1, name=""):
+    def __init__(self, number_exports: int = 1, name: str = ""):
         self.number_exports = number_exports
         inputs = [Variable(name="export_" + str(i)) for i in range(number_exports)]
         Block.__init__(self, inputs=inputs, outputs=[Variable(name="zip archive")], name=name)
