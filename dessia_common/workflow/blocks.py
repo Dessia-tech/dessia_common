@@ -63,64 +63,39 @@ def output_from_function(function, name: str = "result output"):
     return Variable(name=name)
 
 
+class BlockError(Exception):
+    pass
+
+
 class Display(Block):
     _displayable_input = 0
     _non_editable_attributes = ['inputs']
 
-    def __init__(self, inputs: List[Variable] = None, order: int = 0, name: str = ''):
+    def __init__(self, inputs: List[Variable] = None, name: str = ''):
         """
         Abstract class for display behaviors
         """
-        self.order = order
         if inputs is None:
             inputs = [Variable(name='Model to Display', memorize=True)]
         Block.__init__(self, inputs=inputs, outputs=[], name=name)
 
-    def equivalent(self, other):
-        return Block.equivalent(self, other) and self.order == other.order
-
-    def equivalent_hash(self):
-        return self.order
-
     def display_(self, local_values: Dict[Variable, Any], **kwargs):
-        object_ = local_values[self.inputs[self._displayable_input]]
-        displays = object_._displays(**kwargs)
-        return displays
+        msg = "Display Block is a base class and should not be used anymore." \
+              "Please use one of its inheriting class (Multiplot,...)"
+        raise BlockError(msg)
 
-    def _display_settings(self, block_index: int, local_values: Dict[Variable, Any]) -> List[DisplaySetting]:
-        object_ = local_values[self.inputs[self._displayable_input]]
-        display_settings = []
-        for i, display_setting in enumerate(object_.display_settings()):
-            display_setting.selector = f"display_{block_index}_{i}"
-            display_setting.method = "block_display"
-            display_setting.arguments = {"block_index": block_index, "display_index": i}
-            display_setting.serialize_data = True
-            display_settings.append(display_setting)
-        return display_settings
-
-    def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
-        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
-        dict_['order'] = self.order
-        return dict_
-
-    @classmethod
-    @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
-        return cls(order=dict_['order'], name=dict_['name'])
+    def _display_settings(self, block_index: int):
+        msg = "Display Block is a base class and should not be used anymore." \
+              "Please use one of its inheriting class (Multiplot,...)"
+        raise BlockError(msg)
 
     @staticmethod
     def evaluate(_):
         return []
 
     def _to_script(self) -> ToScriptElement:
-        script = f"Display(inputs=None, order={self.order}, name='{self.name}')"
-
-        imports = [
-            self.full_classname,
-            Variable().full_classname
-        ]
-
+        script = f"Display(inputs=None, name='{self.name}')"
+        imports = [self.full_classname, Variable().full_classname]
         return ToScriptElement(declaration=script, imports=imports)
 
 
@@ -752,18 +727,17 @@ class MultiPlot(Display):
     :type name: str
     """
 
-    def __init__(self, attributes: List[str], order: int = 0, name: str = ''):
+    def __init__(self, attributes: List[str], name: str = ''):
         self.attributes = attributes
-        Display.__init__(self, order=order, name=name)
+        Display.__init__(self, name=name)
         self.inputs[0].name = 'Input List'
 
     def equivalent(self, other):
         same_attributes = self.attributes == other.attributes
-        same_order = self.order == other.order
-        return Block.equivalent(self, other) and same_attributes and same_order
+        return Block.equivalent(self, other) and same_attributes
 
     def equivalent_hash(self):
-        return sum(len(a) for a in self.attributes) + self.order
+        return sum(len(a) for a in self.attributes)
 
     def display_(self, local_values, **kwargs):
         import plot_data
@@ -785,29 +759,29 @@ class MultiPlot(Display):
         display_object = DisplayObject(type_="plot_data", data=[multiplot.to_dict()], reference_path=reference_path)
         return [display_object.to_dict()]
 
-    def _display_settings(self, block_index: int, local_values: Dict[Variable, Any] = None) -> List[DisplaySetting]:
+    def _display_settings(self, block_index: int) -> DisplaySetting:
         display_settings = DisplaySetting(selector="display_" + str(block_index), type_="plot_data",
                                           method="block_display", serialize_data=True,
                                           arguments={'block_index': block_index, "display_index": 0})
-        return [display_settings]
+        return display_settings
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
         dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
-        dict_.update({'attributes': self.attributes, 'order': self.order})
+        dict_['attributes'] = self.attributes
         return dict_
 
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
-        return cls(attributes=dict_['attributes'], order=dict_['order'], name=dict_['name'])
+        return cls(attributes=dict_['attributes'], name=dict_['name'])
 
     @staticmethod
     def evaluate(_):
         return []
 
     def _to_script(self) -> ToScriptElement:
-        script = f"MultiPlot(attributes={self.attributes}, order={self.order}, name='{self.name}')"
+        script = f"MultiPlot(attributes={self.attributes}, name='{self.name}')"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
 

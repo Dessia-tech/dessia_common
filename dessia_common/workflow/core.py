@@ -357,8 +357,7 @@ class Workflow(Block):
         for i, display_block in enumerate(self.display_blocks):
             branch = self.secondary_branch_blocks(display_block)
             settings = display_block._display_settings(i)
-            for setting in settings:
-                self.branch_by_display_selector[setting.selector] = branch
+            self.branch_by_display_selector[settings.selector] = branch
 
         self.branch_by_export_format = {}
         for i, export_block in enumerate(self.export_blocks):
@@ -454,8 +453,7 @@ class Workflow(Block):
         """
         display_settings = [DisplaySetting('documentation', 'markdown', 'to_markdown', None),
                             DisplaySetting('workflow', 'workflow', 'to_dict', None)]
-        for display_setting in self.blocks_display_settings:
-            display_settings.extend(display_setting)
+        # display_settings.extend(self.blocks_display_settings)
         return display_settings
 
     @property
@@ -472,7 +470,7 @@ class Workflow(Block):
         """
         export_formats = DessiaObject._export_formats(self)
         export_formats.append({'extension': 'py', 'method_name': 'save_script_to_stream', 'text': True, 'args': {}})
-        export_formats.extend(self.blocks_export_formats)
+        # export_formats.extend(self.blocks_export_formats)
         return export_formats
 
     def to_markdown(self):
@@ -1856,18 +1854,17 @@ class WorkflowRun(WorkflowState):
         display_settings = self.workflow.display_settings()
 
         # Find & order displayable blocks
-        d_blocks = [b for b in self.workflow.blocks if hasattr(b, 'display_') and hasattr(b, "_display_settings")]
+        blocks = [b for b in self.workflow.blocks if hasattr(b, 'display_') and hasattr(b, "_display_settings")]
         # Change last line to isinstance ? Not possible because of circular imports ?
-        sorted_d_blocks = sorted(d_blocks, key=lambda b: b.order)
-        for block in sorted_d_blocks:
+        for block in blocks:
             block_index = self.workflow.blocks.index(block)
             local_values = {}
             for i, input_ in enumerate(block.inputs):
                 incoming_pipe = self.workflow.variable_input_pipe(input_)
                 local_values[input_] = self.values[incoming_pipe]
-            settings = block._display_settings(block_index, local_values)  # Code intel is not working properly here
+            settings = block._display_settings(block_index)  # Code intel is not working properly here
             if settings is not None:
-                display_settings.extend(settings)
+                display_settings.append(settings)
         return display_settings
 
     def _get_from_path(self, path: str):
