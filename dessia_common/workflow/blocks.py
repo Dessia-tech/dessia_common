@@ -936,8 +936,8 @@ class Substraction(Block):
 
 
 class Export(Block):
-    def __init__(self, method_type: MethodType,  text: bool, export_name: str = "",
-                 extension: str = "", name: str = ""):
+    def __init__(self, method_type: MethodType[Type],  text: bool, extension: str,
+                 export_name: str = "export", name: str = ""):
         self.method_type = method_type
         if not export_name:
             export_name = "export"
