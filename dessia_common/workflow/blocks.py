@@ -978,7 +978,8 @@ class Export(Block):
 
     def _export_format(self, block_index: int):
         args = {"block_index": block_index}
-        return {"extension": self.extension, "method_name": "export", "text": self.text, "args": args}
+        return {"extension": self.extension, "method_name": self.export_name, "text": self.text,
+                "export_name": self.export_name, "args": args}
 
     def _to_script(self) -> ToScriptElement:
         script = f"Export(method_type=MethodType(" \
@@ -992,21 +993,23 @@ class Export(Block):
 
 
 class Archive(Block):
-    def __init__(self, number_exports: int = 1, name: str = ""):
+    def __init__(self, number_exports: int = 1, export_name: str = "archive", name: str = ""):
         self.number_exports = number_exports
+        self.export_name = export_name
         inputs = [Variable(name="export_" + str(i)) for i in range(number_exports)]
         Block.__init__(self, inputs=inputs, outputs=[Variable(name="zip archive")], name=name)
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#'):
         dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         dict_['number_exports'] = len(self.inputs)
+        dict_["export_name"] = self.export_name
         return dict_
 
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
-        return cls(number_exports=dict_["number_exports"], name=dict_['name'])
+        return cls(number_exports=dict_["number_exports"], export_name=dict_["export_name"], name=dict_['name'])
 
     def evaluate(self, values):
         archive = io.BytesIO()
@@ -1024,10 +1027,10 @@ class Archive(Block):
                     raise ValueError("Archive input is not a file-like object")
         return [archive]
 
-    @staticmethod
-    def _export_format(block_index: int):
-        return {"extension": "zip", "method_name": "export", "text": False, "args": {"block_index": block_index}}
+    def _export_format(self, block_index: int):
+        return {"extension": "zip", "method_name": "export", "text": False,
+                "export_name": self.export_name, "args": {"block_index": block_index}}
 
     def _to_script(self) -> ToScriptElement:
-        script = f"Archive(number_exports={self.number_exports}, name='{self.name}')"
+        script = f"Archive(number_exports={self.number_exports}, export_name={self.export_name}, name='{self.name}')"
         return ToScriptElement(declaration=script, imports=[self.full_classname])

@@ -353,9 +353,23 @@ class Workflow(Block):
         Block.__init__(self, input_variables, [output], name=name)
         self.output = self.outputs[0]
 
+        self.branch_by_display_selector = {}
+        for i, display_block in enumerate(self.display_blocks):
+            branch = self.secondary_branch_blocks(display_block)
+            settings = display_block._display_settings(i)
+            for setting in settings:
+                self.branch_by_display_selector[setting.selector] = branch
+
+        self.branch_by_export_format = {}
+        for i, export_block in enumerate(self.export_blocks):
+            branch = self.secondary_branch_blocks(export_block)
+            format_ = export_block._export_format(block_index=i)
+            # if format_["export_name"] in self.branch_by_export_format:
+            #     raise WorkflowError(f"Several exports have the same export_name : {format_['export_name']}")
+            self.branch_by_export_format[format_["export_name"]] = branch
+
     def _data_hash(self):
         output_hash = hash(self.variable_indices(self.outputs[0]))
-
         base_hash = len(self.blocks) + 11 * len(self.pipes) + output_hash
         block_hash = int(sum(b.equivalent_hash() for b in self.blocks) % 10e5)
         return (base_hash + block_hash) % 1000000000
@@ -426,17 +440,40 @@ class Workflow(Block):
         pipe_downstream = copied_workflow.variable_from_index(downstream_index)
         return Pipe(pipe_upstream, pipe_downstream)
 
+    @property
+    def display_blocks(self):
+        return [b for b in self.blocks if hasattr(b, "_display_settings")]
+
+    @property
+    def blocks_display_settings(self) -> List[List[DisplaySetting]]:
+        return [b._display_settings(i) for i, b in enumerate(self.display_blocks)]
+
     def display_settings(self) -> List[DisplaySetting]:
         """
         Computes the displays of the objects
         """
         display_settings = [DisplaySetting('documentation', 'markdown', 'to_markdown', None),
                             DisplaySetting('workflow', 'workflow', 'to_dict', None)]
-        block_display_settings = [b._display_settings(block_index=i) for i, b in enumerate(self.blocks)
-                                  if hasattr(b, "_display_settings")]
-        for display_setting in block_display_settings:
+        for display_setting in self.blocks_display_settings:
             display_settings.extend(display_setting)
         return display_settings
+
+    @property
+    def export_blocks(self):
+        return [b for b in self.blocks if hasattr(b, "_export_format")]
+
+    @property
+    def blocks_export_formats(self):
+        return [b._export_format(i) for i, b in enumerate(self.export_blocks)]
+
+    def _export_formats(self):
+        """
+        Reads block to compute available export formats
+        """
+        export_formats = DessiaObject._export_formats(self)
+        export_formats.append({'extension': 'py', 'method_name': 'save_script_to_stream', 'text': True, 'args': {}})
+        export_formats.extend(self.blocks_export_formats)
+        return export_formats
 
     def to_markdown(self):
         """
@@ -506,17 +543,6 @@ class Workflow(Block):
         jsonschemas['start_run'] = deepcopy(jsonschemas['run'])
         jsonschemas['start_run']['required'] = []
         return jsonschemas
-
-    def _export_formats(self):
-        """
-        Reads block to compute available export formats
-        """
-        export_formats = DessiaObject._export_formats(self)
-        export_formats.append({'extension': 'py', 'method_name': 'save_script_to_stream',
-                               'text': True, 'args': {}})
-        export_formats.extend([b._export_format(block_index=i) for i, b in enumerate(self.blocks)
-                               if hasattr(b, "_export_format")])
-        return export_formats
 
     def to_dict(self, use_pointers=True, memo=None, path='#'):
         """
