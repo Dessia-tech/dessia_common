@@ -1868,12 +1868,6 @@ class WorkflowRun(WorkflowState):
             settings = block._display_settings(block_index, local_values)  # Code intel is not working properly here
             if settings is not None:
                 display_settings.extend(settings)
-
-        if isinstance(self.output_value, DessiaObject):
-            output_display_settings = [ds.compose(attribute='output_value', serialize_data=True)
-                                       for ds in self.output_value.display_settings()]
-            display_settings.extend(output_display_settings)
-
         return display_settings
 
     def _get_from_path(self, path: str):
