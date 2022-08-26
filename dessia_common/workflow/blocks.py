@@ -7,6 +7,7 @@ Created on Fri Mar 18 18:52:32 2022
 """
 
 import inspect
+import warnings
 
 from zipfile import ZipFile
 import io
@@ -72,19 +73,21 @@ class Display(Block):
     _displayable_input = 0
     _non_editable_attributes = ['inputs']
 
-    def __init__(self, inputs: List[Variable] = None, name: str = ''):
+    def __init__(self, inputs: List[Variable] = None, order: int = None, name: str = ''):
         """
         Abstract class for display behaviors
         """
+        if order is not None:
+            warnings.warn("Display Block : order argument is deprecated and will be removed in a future version."
+                          "You can safely remove it from your block definition", DeprecationWarning)
         if inputs is None:
+            warnings.warn("Display Block used as a generator for the displays of an object is deprecated."
+                          "ts display behavior will be faulty."
+                          "Please use the specific block to generate wanted display (Multiplot, 3D,...)",
+                          DeprecationWarning)
             inputs = [TypedVariable(type_=DessiaObject, name='Model to Display')]
         output = TypedVariable(type_=DisplayObject, name="Display Object")
         Block.__init__(self, inputs=inputs, outputs=[output], name=name)
-
-    def _display_settings(self, block_index: int):
-        msg = "Display Block is a base class and should not be used anymore." \
-              "Please use one of its inheriting class (Multiplot,...)"
-        raise BlockError(msg)
 
     @staticmethod
     def evaluate(_):
@@ -724,7 +727,10 @@ class MultiPlot(Display):
     :type name: str
     """
 
-    def __init__(self, attributes: List[str], name: str = ''):
+    def __init__(self, attributes: List[str], order: int = None, name: str = ''):
+        if order is not None:
+            warnings.warn("Display Block : order argument is deprecated and will be removed in a future version."
+                          "You can safely remove it from your block definition", DeprecationWarning)
         self.attributes = attributes
         Display.__init__(self, name=name)
         self.inputs[0].name = 'Input List'

@@ -203,7 +203,8 @@ def jsonschema_from_annotation(annotation, jsonschema_element, order, editable=N
                                                 'class_': class_jss['class_'],
                                                 'name': {'type': 'string'}}})
         elif origin is type:
-            jsonschema_element[key].update({'type': 'object', 'is_class': True, 'properties': {'name': {'type': 'string'}}})
+            jsonschema_element[key].update({'type': 'object', 'is_class': True,
+                                            'properties': {'name': {'type': 'string'}}})
         else:
             raise NotImplementedError(f"Jsonschema computation of typing {typing_} is not implemented")
 

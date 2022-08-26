@@ -350,7 +350,7 @@ class Workflow(Block):
 
         self.branch_by_export_format = {}
         for export_block in self.export_blocks:
-            block_index = self.blocks.index(display_block)
+            block_index = self.blocks.index(export_block)
             branch = self.secondary_branch_blocks(export_block)
             format_ = export_block._export_format(block_index)
             # if format_["export_name"] in self.branch_by_export_format:
