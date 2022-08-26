@@ -93,13 +93,13 @@ demo_workflow_state._check_platform()
 
 # Test WR _get_from_path specific method
 try:
-    demo_workflow_run._get_from_path("#/values/8/0")
+    demo_workflow_run._get_from_path("#/values/1/0")
 except AttributeError:
     pass
 
-assert isinstance(demo_workflow_run._get_from_path("#/values/8"), dctests.Generator)
+assert isinstance(demo_workflow_run._get_from_path("#/values/1"), dctests.Generator)
 
-assert len(demo_workflow_run._get_from_path("#/values/9")) == 25
-assert isinstance(demo_workflow_run._get_from_path("#/values/9/0"), dctests.Model)
+assert len(demo_workflow_run._get_from_path("#/values/2")) == 25
+assert isinstance(demo_workflow_run._get_from_path("#/values/2/0"), dctests.Model)
 
 print("workflow_with_models.py has passed")
