@@ -1715,7 +1715,7 @@ class WorkflowState(DessiaObject):
     def evaluate_branch(self, blocks: List[Block]):
         self.activate_inputs()
 
-        if not any([b in self._activable_blocks() for b in blocks]):
+        if not any((b in self._activable_blocks() for b in blocks)):
             raise WorkflowError("Branch cannot be evaluated because no block has all its inputs activated")
 
         evaluated_blocks = {}
