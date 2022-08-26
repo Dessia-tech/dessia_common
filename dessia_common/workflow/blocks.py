@@ -80,6 +80,7 @@ class Display(Block):
         if order is not None:
             warnings.warn("Display Block : order argument is deprecated and will be removed in a future version."
                           "You can safely remove it from your block definition", DeprecationWarning)
+        self.order = order
         if inputs is None:
             warnings.warn("Display Block used as a generator for the displays of an object is deprecated."
                           "ts display behavior will be faulty."
@@ -731,6 +732,7 @@ class MultiPlot(Display):
         if order is not None:
             warnings.warn("Display Block : order argument is deprecated and will be removed in a future version."
                           "You can safely remove it from your block definition", DeprecationWarning)
+        self.order = order
         self.attributes = attributes
         Display.__init__(self, name=name)
         self.inputs[0].name = 'Input List'
@@ -950,14 +952,14 @@ class Export(Block):
 
     def _export_format(self, block_index: int):
         args = {"block_index": block_index}
-        return {"extension": self.extension, "method_name": self.export_name, "text": self.text,
+        return {"extension": self.extension, "method_name": "export", "text": self.text,
                 "export_name": self.export_name, "args": args}
 
     def _to_script(self) -> ToScriptElement:
         script = f"Export(method_type=MethodType(" \
                  f"{full_classname(object_=self.method_type.class_, compute_for='class')}, '{self.method_type.name}')" \
-                 f", name='{self.name}'" \
-                 f", export_name='{self.export_name}')"
+                 f", export_name='{self.export_name}', extension='{self.extension}'" \
+                 f", text={self.text}, name='{self.name}')"
 
         imports = [self.full_classname, full_classname(object_=self.method_type, compute_for='instance'),
                    full_classname(object_=self.method_type.class_, compute_for='class')]
@@ -1004,5 +1006,5 @@ class Archive(Block):
                 "export_name": self.export_name, "args": {"block_index": block_index}}
 
     def _to_script(self) -> ToScriptElement:
-        script = f"Archive(number_exports={self.number_exports}, export_name={self.export_name}, name='{self.name}')"
+        script = f"Archive(number_exports={self.number_exports}, export_name='{self.export_name}', name='{self.name}')"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
