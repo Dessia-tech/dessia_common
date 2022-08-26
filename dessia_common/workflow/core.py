@@ -37,11 +37,10 @@ class Variable(DessiaObject):
     _eq_is_data_eq = False
     has_default_value: bool = False
 
-    def __init__(self, memorize: bool = False, name: str = ''):
+    def __init__(self, name: str = ''):
         """
         Variable for workflow
         """
-        self.memorize = memorize
         DessiaObject.__init__(self, name=name)
         self.position = None
 
@@ -54,32 +53,29 @@ class Variable(DessiaObject):
 class TypedVariable(Variable):
     has_default_value: bool = False
 
-    def __init__(self, type_: Type, memorize: bool = False, name: str = ''):
+    def __init__(self, type_: Type, name: str = ''):
         """
         Variable for workflow with a typing
         """
-        Variable.__init__(self, memorize=memorize, name=name)
+        Variable.__init__(self, name=name)
         self.type_ = type_
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
         dict_ = DessiaObject.base_dict(self)
-        dict_.update({'type_': serialize_typing(self.type_), 'memorize': self.memorize,
-                      'has_default_value': self.has_default_value})
+        dict_.update({'type_': serialize_typing(self.type_), 'has_default_value': self.has_default_value})
         return dict_
 
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'TypedVariable':
         type_ = deserialize_typing(dict_['type_'])
-        memorize = dict_['memorize']
-        return cls(type_=type_, memorize=memorize, name=dict_['name'])
+        return cls(type_=type_, name=dict_['name'])
 
     def copy(self, deep: bool = False, memo=None):
-        return TypedVariable(type_=self.type_, memorize=self.memorize, name=self.name)
+        return TypedVariable(type_=self.type_, name=self.name)
 
     def _to_script(self) -> ToScriptElement:
-        script = f"TypedVariable(type_={serialize_typing(self.type_)}, "
-        script += f"memorize={self.memorize}, name='{self.name}')\n"
+        script = f"TypedVariable(type_={serialize_typing(self.type_)}, name='{self.name}')\n"
 
         imports = [self.full_classname]
         imports_as_is = None
@@ -93,40 +89,36 @@ class TypedVariable(Variable):
 class VariableWithDefaultValue(Variable):
     has_default_value: bool = True
 
-    def __init__(self, default_value: Any, memorize: bool = False, name: str = ''):
+    def __init__(self, default_value: Any, name: str = ''):
         """
         A variable with a default value
         """
-        Variable.__init__(self, memorize=memorize, name=name)
+        Variable.__init__(self, name=name)
         self.default_value = default_value
 
 
 class TypedVariableWithDefaultValue(TypedVariable):
     has_default_value: bool = True
 
-    def __init__(self, type_: Type, default_value: Any, memorize: bool = False, name: str = ''):
+    def __init__(self, type_: Type, default_value: Any, name: str = ''):
         """
         Workflow variables wit a type and a default value
         """
-        TypedVariable.__init__(self, type_=type_, memorize=memorize, name=name)
+        TypedVariable.__init__(self, type_=type_, name=name)
         self.default_value = default_value
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#'):
         dict_ = DessiaObject.base_dict(self)
-        dict_.update({'type_': serialize_typing(self.type_), 'memorize': self.memorize,
-                      'default_value': serialize(self.default_value), 'has_default_value': self.has_default_value})
+        dict_.update({'type_': serialize_typing(self.type_), 'default_value': serialize(self.default_value),
+                      'has_default_value': self.has_default_value})
         return dict_
 
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
                        pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'TypedVariableWithDefaultValue':
         type_ = deserialize_typing(dict_['type_'])
-        default_value = deserialize(dict_['default_value'], global_dict=global_dict,
-                                    pointers_memo=pointers_memo)
-        return cls(type_=type_,
-                   default_value=default_value,
-                   memorize=dict_['memorize'],
-                   name=dict_['name'])
+        default_value = deserialize(dict_['default_value'], global_dict=global_dict, pointers_memo=pointers_memo)
+        return cls(type_=type_, default_value=default_value, name=dict_['name'])
 
     def copy(self, deep: bool = False, memo=None):
         """
@@ -139,8 +131,7 @@ class TypedVariableWithDefaultValue(TypedVariable):
         if memo is None:
             memo = {}
         copied_default_value = deepcopy_value(self.default_value, memo=memo)
-        return TypedVariableWithDefaultValue(type_=self.type_, default_value=copied_default_value,
-                                             memorize=self.memorize, name=self.name)
+        return TypedVariableWithDefaultValue(type_=self.type_, default_value=copied_default_value, name=self.name)
 
 
 def set_block_variable_names_from_dict(func):
@@ -347,22 +338,21 @@ class Workflow(Block):
         self.description = description
         self.documentation = documentation
 
-        if output is not None:
-            output.memorize = True
-
         Block.__init__(self, input_variables, [output], name=name)
         self.output = self.outputs[0]
 
         self.branch_by_display_selector = {}
-        for i, display_block in enumerate(self.display_blocks):
+        for display_block in self.display_blocks:
+            block_index = self.blocks.index(display_block)
             branch = self.secondary_branch_blocks(display_block)
-            settings = display_block._display_settings(i)
+            settings = display_block._display_settings(block_index)
             self.branch_by_display_selector[settings.selector] = branch
 
         self.branch_by_export_format = {}
-        for i, export_block in enumerate(self.export_blocks):
+        for export_block in self.export_blocks:
+            block_index = self.blocks.index(display_block)
             branch = self.secondary_branch_blocks(export_block)
-            format_ = export_block._export_format(block_index=i)
+            format_ = export_block._export_format(block_index)
             # if format_["export_name"] in self.branch_by_export_format:
             #     raise WorkflowError(f"Several exports have the same export_name : {format_['export_name']}")
             self.branch_by_export_format[format_["export_name"]] = branch
@@ -1870,7 +1860,7 @@ class WorkflowRun(WorkflowState):
         display_settings = self.workflow.display_settings()
 
         # Find displayable blocks
-        blocks = [b for b in self.workflow.blocks if hasattr(b, 'display_') and hasattr(b, "_display_settings")]
+        blocks = [b for b in self.workflow.blocks if hasattr(b, "_display_settings")]
         # Change last line to isinstance ? Not possible because of circular imports ?
         for block in blocks:
             block_index = self.workflow.blocks.index(block)
@@ -1917,7 +1907,7 @@ class WorkflowRun(WorkflowState):
         try:
             # Specific hotfix : we propagate reference_path through block_display method
             display_object, refpath = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
-            data = display_object["data"]
+            data = display_object.data
         except:
             data = None
             track = tb.format_exc()
@@ -1926,24 +1916,29 @@ class WorkflowRun(WorkflowState):
             data = serialize(data)
         return DisplayObject(type_=display_setting.type, data=data, reference_path=refpath, traceback=track)
 
-    def block_display(self, block_index: int, display_index: int):
+    def block_display(self, block_index: int):
         """
         Computes the display of associated block to use integrate it in the workflow run displays
         """
         self.activate_inputs()
         block = self.workflow.blocks[block_index]
-        if block in self._activable_blocks():
-            self._evaluate_block(block)
+
+        display_settings = block._display_settings(block_index)
+        branch = self.workflow.branch_by_display_selector[display_settings.selector]
+        evaluated_blocks = self.evaluate_branch(branch)
+
         reference_path = ""
-        local_values = {}
         for i, input_ in enumerate(block.inputs):
             incoming_pipe = self.workflow.variable_input_pipe(input_)
-            local_values[input_] = self.values[incoming_pipe]
             if i == block._displayable_input:
                 # TODO This probably won't work on platform. Should serialise/deserialise
                 reference_path = f'values/{self.workflow.pipes.index(incoming_pipe)}'
-        display_ = block.display_(local_values=local_values, reference_path=reference_path)
-        return display_[display_index], reference_path
+
+        if block not in evaluated_blocks:
+            msg = f"Could not reach block at index {block_index}." \
+                  f"Has the workflow been run far enough to evaluate this block ?"
+            raise WorkflowError(msg)
+        return evaluated_blocks[block][0], reference_path  # Only one output to an Export Block
 
     def dict_to_arguments(self, dict_: JsonSerializable, method: str):
         if method in self._allowed_methods:

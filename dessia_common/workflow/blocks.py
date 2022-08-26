@@ -13,7 +13,8 @@ import io
 from typing import List, Type, Any, Dict, get_type_hints
 
 import itertools
-from dessia_common.core import DessiaFilter, is_bounded, enhanced_deep_attr, split_argspecs, type_from_annotation
+from dessia_common.core import DessiaFilter, is_bounded, enhanced_deep_attr, split_argspecs,\
+    type_from_annotation, DessiaObject
 from dessia_common.utils.types import get_python_class_from_class_name, full_classname
 from dessia_common.utils.docstrings import parse_docstring, EMPTY_PARSED_ATTRIBUTE
 from dessia_common.errors import UntypedArgumentError
@@ -76,13 +77,9 @@ class Display(Block):
         Abstract class for display behaviors
         """
         if inputs is None:
-            inputs = [Variable(name='Model to Display', memorize=True)]
-        Block.__init__(self, inputs=inputs, outputs=[], name=name)
-
-    def display_(self, local_values: Dict[Variable, Any], **kwargs):
-        msg = "Display Block is a base class and should not be used anymore." \
-              "Please use one of its inheriting class (Multiplot,...)"
-        raise BlockError(msg)
+            inputs = [TypedVariable(type_=DessiaObject, name='Model to Display')]
+        output = TypedVariable(type_=DisplayObject, name="Display Object")
+        Block.__init__(self, inputs=inputs, outputs=[output], name=name)
 
     def _display_settings(self, block_index: int):
         msg = "Display Block is a base class and should not be used anymore." \
@@ -739,30 +736,10 @@ class MultiPlot(Display):
     def equivalent_hash(self):
         return sum(len(a) for a in self.attributes)
 
-    def display_(self, local_values, **kwargs):
-        import plot_data
-        reference_path = kwargs.get("reference_path", "")
-        objects = local_values[self.inputs[self._displayable_input]]
-        values = [{a: enhanced_deep_attr(o, a) for a in self.attributes} for o in objects]
-        values2d = [{key: val[key]} for key in self.attributes[:2] for val in values]
-        tooltip = plot_data.Tooltip(name='Tooltip', attributes=self.attributes)
-
-        scatterplot = plot_data.Scatter(tooltip=tooltip, x_variable=self.attributes[0], y_variable=self.attributes[1],
-                                        elements=values2d, name='Scatter Plot')
-
-        parallelplot = plot_data.ParallelPlot(disposition='horizontal', axes=self.attributes,
-                                              rgbs=[(192, 11, 11), (14, 192, 11), (11, 11, 192)], elements=values)
-        objects = [scatterplot, parallelplot]
-        sizes = [plot_data.Window(width=560, height=300), plot_data.Window(width=560, height=300)]
-        multiplot = plot_data.MultiplePlots(elements=values, plots=objects, sizes=sizes,
-                                            coords=[(0, 0), (0, 300)], name='Results plot')
-        display_object = DisplayObject(type_="plot_data", data=[multiplot.to_dict()], reference_path=reference_path)
-        return [display_object.to_dict()]
-
     def _display_settings(self, block_index: int) -> DisplaySetting:
+        args = {'block_index': block_index}
         display_settings = DisplaySetting(selector="display_" + str(block_index), type_="plot_data",
-                                          method="block_display", serialize_data=True,
-                                          arguments={'block_index': block_index, "display_index": 0})
+                                          method="block_display", serialize_data=True, arguments=args)
         return display_settings
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
@@ -776,9 +753,24 @@ class MultiPlot(Display):
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
         return cls(attributes=dict_['attributes'], name=dict_['name'])
 
-    @staticmethod
-    def evaluate(_):
-        return []
+    def evaluate(self, values, **kwargs):
+        import plot_data
+        reference_path = kwargs.get("reference_path", "")
+        objects = values[self.inputs[self._displayable_input]]
+        attr_values = [{a: enhanced_deep_attr(o, a) for a in self.attributes} for o in objects]
+        values2d = [{key: val[key]} for key in self.attributes[:2] for val in attr_values]
+        tooltip = plot_data.Tooltip(name='Tooltip', attributes=self.attributes)
+
+        scatterplot = plot_data.Scatter(tooltip=tooltip, x_variable=self.attributes[0], y_variable=self.attributes[1],
+                                        elements=values2d, name='Scatter Plot')
+
+        parallelplot = plot_data.ParallelPlot(disposition='horizontal', axes=self.attributes,
+                                              rgbs=[(192, 11, 11), (14, 192, 11), (11, 11, 192)], elements=attr_values)
+        plots = [scatterplot, parallelplot]
+        sizes = [plot_data.Window(width=560, height=300), plot_data.Window(width=560, height=300)]
+        multiplot = plot_data.MultiplePlots(elements=attr_values, plots=plots, sizes=sizes,
+                                            coords=[(0, 0), (0, 300)], name='Results plot')
+        return [DisplayObject(type_="plot_data", data=[multiplot.to_dict()], reference_path=reference_path)]
 
     def _to_script(self) -> ToScriptElement:
         script = f"MultiPlot(attributes={self.attributes}, name='{self.name}')"
