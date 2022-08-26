@@ -301,11 +301,12 @@ class StandaloneObject(MovingObject):
         frame32 = frame22.translation(offset=vm.X3D)
         return [[frame0, frame0], [frame11, frame12], [frame21, frame22], [frame31, frame32]]
 
-    def scatter_plot(self, points):
+    @staticmethod
+    def scatter_plot():
         attributes = ['cx', 'cy']
         tooltip = plot_data.Tooltip(attributes=attributes, name='Tooltips')
-        return plot_data.Scatter(axis=plot_data.Axis(), tooltip=tooltip, elements=points,
-                                 x_variable=attributes[0], y_variable=attributes[1], name='Scatter Plot')
+        return plot_data.Scatter(axis=plot_data.Axis(), tooltip=tooltip, x_variable=attributes[0],
+                                 y_variable=attributes[1], name='Scatter Plot')
 
     def plot_data(self):
         # Contour
@@ -316,7 +317,7 @@ class StandaloneObject(MovingObject):
         points = [plot_data.Point2D(cx=v[0], cy=v[1], name='Point' + str(i)) for i, v in enumerate(catalog.array)]
 
         # Scatter Plot
-        scatterplot = self.scatter_plot(points)
+        scatterplot = self.scatter_plot()
 
         # Parallel Plot
         parallelplot = plot_data.ParallelPlot(elements=points, axes=['cx', 'cy', 'color_fill', 'color_stroke'],

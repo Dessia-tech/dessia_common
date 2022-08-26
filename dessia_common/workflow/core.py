@@ -1595,11 +1595,6 @@ class WorkflowState(DessiaObject):
                 display_settings.append(settings)
         return display_settings
 
-    def blocks_display_settings(self):
-        """
-        Returns the display settings
-        """
-
     def _display_from_selector(self, selector: str, **kwargs) -> DisplayObject:
         """
         Generate the display from the selector

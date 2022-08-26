@@ -90,7 +90,7 @@ class Display(Block):
         Block.__init__(self, inputs=inputs, outputs=[output], name=name)
 
     @staticmethod
-    def evaluate(_):
+    def evaluate():
         return []
 
     def _to_script(self) -> ToScriptElement:
