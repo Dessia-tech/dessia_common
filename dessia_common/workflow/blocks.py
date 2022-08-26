@@ -943,10 +943,11 @@ class Export(Block):
                    extension=dict_["extension"], name=dict_["name"])
 
     def evaluate(self, values):
+        filename = f"{self.export_name}.{self.extension}"
         if self.text:
-            stream = StringFile()
+            stream = StringFile(filename)
         else:
-            stream = BinaryFile()
+            stream = BinaryFile(filename)
         getattr(values[self.inputs[0]], self.method_type.name)(stream)
         return [stream]
 
@@ -990,12 +991,11 @@ class Archive(Block):
         with ZipFile(archive, 'w') as zip_archive:
             for i, input_ in enumerate(self.inputs):
                 value = values[input_]
-                filename = f"file{i}.{value.extension}"
                 if isinstance(value, StringFile):
-                    with zip_archive.open(filename, 'w') as file:
+                    with zip_archive.open(value.filename, 'w') as file:
                         file.write(value.getvalue().encode('utf-8'))
                 elif isinstance(value, BinaryFile):
-                    with zip_archive.open(filename, 'w') as file:
+                    with zip_archive.open(value.filename, 'w') as file:
                         file.write(value.getbuffer())
                 else:
                     raise ValueError("Archive input is not a file-like object")

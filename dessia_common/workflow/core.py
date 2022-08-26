@@ -26,6 +26,7 @@ from dessia_common.utils.copy import deepcopy_value
 from dessia_common.utils.docstrings import FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE
 from dessia_common.utils.diff import choose_hash
 from dessia_common.typings import JsonSerializable, MethodType
+from dessia_common.files import StringFile, BinaryFile
 from dessia_common.displays import DisplayObject
 from dessia_common.breakdown import attrmethod_getter, ExtractionError
 
@@ -1840,7 +1841,7 @@ class WorkflowState(DessiaObject):
                 export_formats.append(block._export_format(i))
         return export_formats
 
-    def export(self, block_index: int):
+    def export(self, stream: Union[BinaryFile, StringFile], block_index: int):
         """
         Perform export
         """
@@ -1852,7 +1853,12 @@ class WorkflowState(DessiaObject):
             msg = f"Could not reach block at index {block_index}." \
                   f"Has the workflow been run far enough to evaluate this block ?"
             raise WorkflowError(msg)
-        return evaluated_blocks[block][0]  # Only one output to an Export Block
+        export_stream = evaluated_blocks[block][0]  # Only one output to an Export Block
+        if isinstance(stream, StringFile):
+            stream.write(export_stream.getvalue())
+        if isinstance(stream, BinaryFile):
+            stream.write(export_stream.getbuffer())
+        return export_stream
 
 
 class WorkflowRun(WorkflowState):
