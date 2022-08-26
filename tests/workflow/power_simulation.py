@@ -19,8 +19,8 @@ input_values = {0: components1,
 
 workflow_run = simulation_workflow.run(input_values)
 
-system_in_values = workflow_run.variable_values[(0, 1, 0)]
-system_from_get = get_in_object_from_path(workflow_run, '#/variable_values/(0, 1, 0)')
+system_in_values = workflow_run.values[workflow_run.workflow.pipes[0]]
+system_from_get = workflow_run._get_from_path('#/values/0')
 assert system_in_values == system_from_get
 
 print(workflow_run.log)
