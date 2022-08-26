@@ -443,7 +443,6 @@ class Workflow(Block):
         """
         display_settings = [DisplaySetting('documentation', 'markdown', 'to_markdown', None),
                             DisplaySetting('workflow', 'workflow', 'to_dict', None)]
-        # display_settings.extend(self.blocks_display_settings)
         return display_settings
 
     @property
@@ -1580,12 +1579,78 @@ class WorkflowState(DessiaObject):
         indices = self.workflow.block_inputs_global_indices(block_index)
         self.add_several_input_values(indices=indices, values=values)
 
-    @staticmethod
-    def display_settings() -> List[DisplaySetting]:
+    def display_settings(self) -> List[DisplaySetting]:
         """
-        Computes the displays of the objects
+        Computes the displays settings of the objects
         """
-        return [DisplaySetting('workflow-state', 'workflow_state', 'state_display', None)]
+        display_settings = [DisplaySetting('workflow-state', 'workflow_state', 'state_display', None)]
+
+        # Find displayable blocks
+        blocks = [b for b in self.workflow.blocks if hasattr(b, "_display_settings")]
+        # Change last line to isinstance ? Not possible because of circular imports ?
+        for block in blocks:
+            block_index = self.workflow.blocks.index(block)
+            settings = block._display_settings(block_index)  # Code intel is not working properly here
+            if settings is not None:
+                display_settings.append(settings)
+        return display_settings
+
+    def blocks_display_settings(self):
+        """
+        Returns the display settings
+        """
+
+    def _display_from_selector(self, selector: str, **kwargs) -> DisplayObject:
+        """
+        Generate the display from the selector
+        """
+        # TODO THIS IS A TEMPORARY DIRTY HOTFIX OVERWRITE.
+        #  WE SHOULD IMPLEMENT A WAY TO GET RID OF REFERENCE PATH WITH URLS
+        track = ""
+        refpath = kwargs.get("reference_path", "")
+        if selector in ["documentation", "workflow"]:
+            return self.workflow._display_from_selector(selector)
+
+        if selector == "workflow-state":
+            return DessiaObject._display_from_selector(self, selector)
+
+        # Displays for blocks (getting reference path from block_display return)
+        display_setting = self._display_settings_from_selector(selector)
+        try:
+            # Specific hotfix : we propagate reference_path through block_display method
+            display_object, refpath = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
+            data = display_object.data
+        except:
+            data = None
+            track = tb.format_exc()
+
+        if display_setting.serialize_data:
+            data = serialize(data)
+        return DisplayObject(type_=display_setting.type, data=data, reference_path=refpath, traceback=track)
+
+    def block_display(self, block_index: int):
+        """
+        Computes the display of associated block to use integrate it in the workflow run displays
+        """
+        self.activate_inputs()
+        block = self.workflow.blocks[block_index]
+
+        display_settings = block._display_settings(block_index)
+        branch = self.workflow.branch_by_display_selector[display_settings.selector]
+        evaluated_blocks = self.evaluate_branch(branch)
+
+        reference_path = ""
+        for i, input_ in enumerate(block.inputs):
+            incoming_pipe = self.workflow.variable_input_pipe(input_)
+            if i == block._displayable_input:
+                # TODO This probably won't work on platform. Should serialise/deserialise
+                reference_path = f'values/{self.workflow.pipes.index(incoming_pipe)}'
+
+        if block not in evaluated_blocks:
+            msg = f"Could not reach block at index {block_index}." \
+                  f"Has the workflow been run far enough to evaluate this block ?"
+            raise WorkflowError(msg)
+        return evaluated_blocks[block][0], reference_path  # Only one output to an Export Block
 
     @property
     def progress(self):
@@ -1853,22 +1918,6 @@ class WorkflowRun(WorkflowState):
         dict_['object_class'] = 'dessia_common.workflow.core.WorkflowRun'
         return dict_
 
-    def display_settings(self) -> List[DisplaySetting]:
-        """
-        Computes the displays settings of the objects
-        """
-        display_settings = self.workflow.display_settings()
-
-        # Find displayable blocks
-        blocks = [b for b in self.workflow.blocks if hasattr(b, "_display_settings")]
-        # Change last line to isinstance ? Not possible because of circular imports ?
-        for block in blocks:
-            block_index = self.workflow.blocks.index(block)
-            settings = block._display_settings(block_index)  # Code intel is not working properly here
-            if settings is not None:
-                display_settings.append(settings)
-        return display_settings
-
     def _get_from_path(self, path: str):
         """
         Extracts subobject at given path. Tries the generic function, then applies specific cases if it fails.
@@ -1888,62 +1937,20 @@ class WorkflowRun(WorkflowState):
                 return value
         raise NotImplementedError(f"WorkflowRun : Specific object from path method is not defined for path '{path}'")
 
-    def _display_from_selector(self, selector: str, **kwargs) -> DisplayObject:
-        """
-        Generate the display from the selector
-        """
-        # TODO THIS IS A TEMPORARY DIRTY HOTFIX OVERWRITE.
-        #  WE SHOULD IMPLEMENT A WAY TO GET RID OF REFERENCE PATH WITH URLS
-        track = ""
-        refpath = kwargs.get("reference_path", "")
-        if selector in ["documentation", "workflow"]:
-            return self.workflow._display_from_selector(selector)
-
-        if selector == "workflow-state":
-            return DessiaObject._display_from_selector(self, selector)
-
-        # Displays for blocks (getting reference path from block_display return)
-        display_setting = self._display_settings_from_selector(selector)
-        try:
-            # Specific hotfix : we propagate reference_path through block_display method
-            display_object, refpath = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
-            data = display_object.data
-        except:
-            data = None
-            track = tb.format_exc()
-
-        if display_setting.serialize_data:
-            data = serialize(data)
-        return DisplayObject(type_=display_setting.type, data=data, reference_path=refpath, traceback=track)
-
-    def block_display(self, block_index: int):
-        """
-        Computes the display of associated block to use integrate it in the workflow run displays
-        """
-        self.activate_inputs()
-        block = self.workflow.blocks[block_index]
-
-        display_settings = block._display_settings(block_index)
-        branch = self.workflow.branch_by_display_selector[display_settings.selector]
-        evaluated_blocks = self.evaluate_branch(branch)
-
-        reference_path = ""
-        for i, input_ in enumerate(block.inputs):
-            incoming_pipe = self.workflow.variable_input_pipe(input_)
-            if i == block._displayable_input:
-                # TODO This probably won't work on platform. Should serialise/deserialise
-                reference_path = f'values/{self.workflow.pipes.index(incoming_pipe)}'
-
-        if block not in evaluated_blocks:
-            msg = f"Could not reach block at index {block_index}." \
-                  f"Has the workflow been run far enough to evaluate this block ?"
-            raise WorkflowError(msg)
-        return evaluated_blocks[block][0], reference_path  # Only one output to an Export Block
-
     def dict_to_arguments(self, dict_: JsonSerializable, method: str):
         if method in self._allowed_methods:
             return self.workflow.dict_to_arguments(dict_=dict_, method='run')
         raise NotImplementedError(f"Method {method} not in WorkflowRun allowed methods")
+
+    def display_settings(self) -> List[DisplaySetting]:
+        """
+        Computes WorkflowRun display settings by getting WorkflowState ones and instering Workflow display settings
+        """
+        workflow_settings = self.workflow.display_settings()
+        display_settings = WorkflowState.display_settings(self)
+        # TODO : Temporary removing workflow state. We could activate it again when display tree is available
+        display_settings.pop(0)
+        return workflow_settings + display_settings
 
     def method_dict(self, method_name: str = None, method_jsonschema: Any = None):
         if method_name is not None and method_name == 'run_again' and method_jsonschema is not None:
