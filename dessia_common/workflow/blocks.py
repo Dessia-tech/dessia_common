@@ -734,7 +734,7 @@ class MultiPlot(Display):
                           "You can safely remove it from your block definition", DeprecationWarning)
         self.order = order
         self.attributes = attributes
-        Display.__init__(self, name=name)
+        Display.__init__(self, inputs=[TypedVariable(List[DessiaObject])], name=name)
         self.inputs[0].name = 'Input List'
 
     def equivalent(self, other):
