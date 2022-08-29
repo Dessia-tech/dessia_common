@@ -10,7 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - FiltersList class
 - Easy access to HeterogeneousList with getitem, len, add, extend, sort
-- filtering method to HeterogeneousList that calls a FiltersList
+- filtering method in HeterogeneousList that calls a FiltersList
+- Documentation for HeterogeneousList, CategorizedList, DessiaFilter, FiltersList
+- pareto front and parallel plot for HeterogeneousList
+- Sort parallel plot axis with correlation coefficient (experimental algorithm that seems to work)
 
 ### Breaking Changes
 - Change attribute "operator" of DessiaFilter to "comparison_operator"
