@@ -2,15 +2,17 @@
 displays for dessia_common
 
 """
+import warnings
 import webbrowser
 import os
 import tempfile
 import inspect
 
-from typing import Union
+from typing import Union, List
 from networkx import DiGraph, Graph, kamada_kawai_layout
 from dessia_common.templates import visjs_template
 from dessia_common.typings import JsonSerializable
+from dessia_common.utils.types import is_sequence
 
 
 class DisplaySetting:
@@ -43,13 +45,17 @@ class DisplaySetting:
 
 
 class DisplayObject:
-    def __init__(self, type_: str, data: Union[JsonSerializable, str], reference_path: str = '',
-                 traceback: str = '', name: str = ''):
+    def __init__(self, type_: str, data: Union[JsonSerializable, List[JsonSerializable], str],
+                 reference_path: str = '', traceback: str = '', name: str = ''):
         """
         Container for data of display
         A traceback can be set if display fails to be generated.
         """
-
+        if type_ == "plot_data" and not is_sequence(data):
+            warnings.warn("A plot_data DisplayObject must be called with data as a sequence. "
+                          "Please return a list of PlotData objects as the result of plot_data method. "
+                          "Change have been made automatically", Warning)
+            data = [data]
         self.type_ = type_
         self.data = data
         self.traceback = traceback
