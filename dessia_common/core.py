@@ -1642,7 +1642,6 @@ class HeterogeneousList(DessiaObject):
         for side in [0, -1]:
             if ordered_attr[side] in attribute_serie:
                 nb_instances = attribute_serie.count(ordered_attr[side])
-                print(attribute_serie, ordered_attr, ordered_attr[side], side)
                 for ieme_instance in range(nb_instances):
                     idx_in_serie = (ieme_instance)*2 + attribute_serie[ieme_instance*2:].index(ordered_attr[side])
                     # 1 if idx_in_serie = 0, 0 if idx_in_serie = 1, 3 if idx_in_serie = 2, 2 if idx_in_serie = 3
