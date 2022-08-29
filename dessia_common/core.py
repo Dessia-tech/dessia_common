@@ -1568,8 +1568,8 @@ class HeterogeneousList(DessiaObject):
                 else:
                     subplots.append(Scatter(x_variable=line, y_variable=col, tooltip=Tooltip(tooltip), **kwargs))
 
-        scatter_matrix = MultiplePlots(plots=subplots, elements=data_list,
-                                                 point_families=self._point_families(), initial_view_on=True)
+        scatter_matrix = MultiplePlots(plots=subplots, elements=data_list, point_families=self._point_families(),
+                                       initial_view_on=True)
         return scatter_matrix
 
     def parallel_plot(self, data_list: List[Dict[str, float]]):
