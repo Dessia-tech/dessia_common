@@ -30,7 +30,7 @@ kmeanstest_split = kmeanstest_clustered.clustered_sublists()
 # Test print
 clustered_cars_without.labels[0] = 15000
 clustered_cars_without.labels[1] = -1
-clustered_cars_without.labels[2] = 999999
+clustered_cars_without.labels[2:100] = [999999]*len(clustered_cars_without[2:100])
 print(clustered_cars_without)
 hlist = HeterogeneousList(all_cars_wi_feat, name="cars")
 clist = CategorizedList.from_agglomerative_clustering(hlist, n_clusters=10, name="cars")

@@ -497,7 +497,7 @@ class DessiaObject:
                 plot_data.plot_canvas(plot_data_object=data,
                                       canvas_id='canvas',
                                       width=1400, height=900,
-                                      debug_mode=False)
+                                      debug_mode=True)
         else:
             msg = 'Class {} does not implement a plot_data method to define what to plot'
             raise NotImplementedError(msg.format(self.__class__.__name__))
@@ -1688,7 +1688,8 @@ class HeterogeneousList(DessiaObject):
         """
         array_costs = npy.array(costs)
         is_efficient = npy.ones(array_costs.shape[0], dtype=bool)
-        scaled_costs = (array_costs - npy.mean(array_costs, axis=0)) / npy.std(array_costs, axis=0)
+        # scaled_costs = (array_costs - npy.mean(array_costs, axis=0)) / npy.std(array_costs, axis=0)
+        scaled_costs = costs #array_costs - npy.mean(array_costs, axis=0)) / npy.std(array_costs, axis=0)
 
         for index, cost in enumerate(scaled_costs):
             if is_efficient[index]:

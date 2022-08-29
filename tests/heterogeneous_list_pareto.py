@@ -9,7 +9,7 @@ from dessia_common.core import HeterogeneousList
 # =============================================================================
 # TEST PARETO FRONT
 # =============================================================================
-tol = 0.05
+tol = 0.
 # Uniform
 coord_1 = [random.uniform(0, 0.1) for i in range(1000)]
 coord_2 = [random.uniform(0.9e6, 1e6) for i in range(1000)]
@@ -35,8 +35,9 @@ pareto_points = HeterogeneousList.pareto_indexes(costs, tol = tol)
 pareto_frontiers = HeterogeneousList.pareto_frontiers(len(costs), costs, tol = tol)
 
 # Cars
+tol = 0.
 all_cars_with_features = HeterogeneousList(all_cars_wi_feat)
-costs = npy.array([[row[3], row[1]] for row in all_cars_with_features.matrix])
+costs = [all_cars_with_features.get_attribute_values('weight'), all_cars_with_features.get_attribute_values('mpg')]
 
 pareto_points = all_cars_with_features.pareto_points(costs, tol = tol)
-pareto_frontiers = HeterogeneousList.pareto_frontiers(len(all_cars_wi_feat), costs.T, tol = tol)
+pareto_frontiers = HeterogeneousList.pareto_frontiers(len(all_cars_wi_feat), costs, tol = tol)
