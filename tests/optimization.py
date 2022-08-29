@@ -1,7 +1,7 @@
 """
 Tests for dessia_common.optimization package
 """
-from math import pi, exp, log, sin
+from math import pi, exp, sin
 from itertools import product
 import matplotlib.pyplot as plt
 from typing import List
