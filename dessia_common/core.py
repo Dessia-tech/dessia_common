@@ -1591,6 +1591,7 @@ class HeterogeneousList(DessiaObject):
         return [PointFamily(BLUE, list(range(self.__len__())))]
 
     def _parallel_plot_attr(self):
+        # TODO: Put it in plot_data
         sorted_r2, sorted_association = self._get_correlations()
         attr_series = self._get_attribute_trios(sorted_r2, sorted_association)
         return self._trios_list_to_parallel_axes(attr_series)
@@ -1651,7 +1652,6 @@ class HeterogeneousList(DessiaObject):
                         added_attr = [attribute_serie[idx_attr_to_add]]
                         ordered_attr = (side + 1) * added_attr + ordered_attr + (-1 * side) * added_attr
                         break
-
         return ordered_attr
 
     def _plot_dimensionality(self):
