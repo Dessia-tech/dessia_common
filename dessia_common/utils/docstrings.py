@@ -6,7 +6,7 @@ Created on Wed Jan 12 19:24:11 2022
 @author: steven
 """
 
-from typing import Dict, Any, Tuple
+from typing import Dict, Any, Tuple, get_type_hints
 try:
     from typing import TypedDict  # >=3.8
 except ImportError:
@@ -30,8 +30,8 @@ def parse_docstring(docstring: str, annotations: Dict[str, Any]) -> ParsedDocstr
     should be built.
     """
     if docstring:
-        no_return_docstring = docstring.split(':return:')
-        splitted_docstring = no_return_docstring[0].split(':param ')
+        no_return_docstring = docstring.split(':return:')[0]
+        splitted_docstring = no_return_docstring.split(':param ')
         parsed_docstring = {"description": splitted_docstring[0].strip()}
         params = splitted_docstring[1:]
         args = {}
@@ -61,3 +61,26 @@ EMPTY_PARSED_ATTRIBUTE = {"desc": "", "type": "", "annotation": ""}
 FAILED_DOCSTRING_PARSING = {'description': 'Docstring parsing failed', 'attributes': {}}
 FAILED_ATTRIBUTE_PARSING = {"desc": 'Attribute documentation parsing failed',
                             "type": "", "annotation": ""}
+
+
+def _check_docstring(element):
+    """
+    Returns True if an object, a class or a method have a proper docstring.
+    Otherwise, returns False.
+    """
+    docstring = element.__doc__
+    if docstring is None:
+        print(f'Docstring not found for {element}')
+        return False
+    if not callable(element) or isinstance(element, type):
+        # element is an object or a class
+        annotations = get_type_hints(element.__init__)
+    else:
+        # element is a method
+        annotations = get_type_hints(element)
+    try:
+        parse_docstring(docstring=docstring,
+                        annotations=annotations)
+        return True
+    except:
+        raise False
