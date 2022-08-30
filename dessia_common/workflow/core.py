@@ -1446,6 +1446,12 @@ class WorkflowState(DessiaObject):
         self.log = log
 
         self.activate_inputs()
+        self._computed_dict = None
+        self._var_index = None
+        self._wf_blocks = None
+        self._wf_indices = None
+        self._wf_variables = None
+        self._wf_pipes = None
         DessiaObject.__init__(self, name=name)
 
     def __deepcopy__(self, memo=None):
@@ -1482,8 +1488,10 @@ class WorkflowState(DessiaObject):
         workflow = hash(self.workflow)
         output = choose_hash(self.output_value)
         input_values = sum(i * choose_hash(v) for (i, v) in self.input_values.items())
-        values = len(self.values) * 7
-        return (progress + workflow + output + input_values + values) % 1000000000
+
+        values = sum(len(k.name) * choose_hash(v) for (k, v) in self.values.items())
+        return ( progress + workflow + output + input_values + values) % 1000000000
+
 
     def _data_eq(self, other_object: 'WorkflowState'):
         if not (self.__class__.__name__ == other_object.__class__.__name__
@@ -1523,6 +1531,15 @@ class WorkflowState(DessiaObject):
         """
         Transform object into a dict
         """
+
+        if not self._var_index:
+            self._var_index = self.workflow.variable_index
+            self._wf_variables = self.workflow.variables
+            self._wf_indices = self.workflow.variable_indices
+            self._wf_blocks = self.workflow.blocks
+            self._wf_pipes = self.workflow.pipes
+            self._wf_pipes_index = workflow.pipes.index
+
         if memo is None:
             memo = {}
 
@@ -1560,9 +1577,10 @@ class WorkflowState(DessiaObject):
                           'output_value_type': recursive_type(self.output_value)})
 
         # Values
+
         values = {}
         for pipe, value in self.values.items():
-            pipe_index = self.workflow.pipes.index(pipe)
+            pipe_index = self._wf_pipes_index(pipe)
             if use_pointers:
                 try:
                     serialized_value, memo = serialize_with_pointers(value=value, memo=memo,
@@ -1573,16 +1591,17 @@ class WorkflowState(DessiaObject):
                                   SerializationWarning)
             else:
                 values[str(pipe_index)] = serialize(value)
+
         dict_['values'] = values
 
         # In the future comment these below and rely only on activated items
-        dict_['evaluated_blocks_indices'] = [i for i, b in enumerate(self.workflow.blocks)
+        dict_['evaluated_blocks_indices'] = [i for i, b in enumerate(self._wf_blocks)
                                              if b in self.activated_items and self.activated_items[b]]
 
-        dict_['evaluated_pipes_indices'] = [i for i, p in enumerate(self.workflow.pipes)
+        dict_['evaluated_pipes_indices'] = [i for i, p in enumerate(self._wf_pipes)
                                             if p in self.activated_items and self.activated_items[p]]
 
-        dict_['evaluated_variables_indices'] = [self.workflow.variable_indices(v) for v in self.workflow.variables
+        dict_['evaluated_variables_indices'] = [self._wf_indices() for v in self._wf_variables
                                                 if v in self.activated_items and self.activated_items[v]]
 
         # Uncomment when refs are handled as dict keys
@@ -1591,6 +1610,7 @@ class WorkflowState(DessiaObject):
         #     s_key, memo = serialize_with_pointers(key, memo=memo, path=f'{path}/activated_items/{key}')
         #     print('s_key', s_key)
         #     activated_items[s_key] = activated
+
         return dict_
 
     def state_display(self):
@@ -2028,11 +2048,13 @@ class WorkflowRun(WorkflowState):
             end_time = time.time()
         self.end_time = end_time
         self.execution_time = end_time - start_time
+
         filtered_values = {p: v for p, v in values.items() if is_serializable(v) and p.memorize}
         filtered_input_values = {k: v for k, v in input_values.items() if is_serializable(v)}
         WorkflowState.__init__(self, workflow=workflow, input_values=filtered_input_values,
                                activated_items=activated_items, values=filtered_values, start_time=start_time,
                                output_value=output_value, log=log, name=name)
+
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#'):
         """
