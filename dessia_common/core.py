@@ -966,6 +966,22 @@ class HeterogeneousList(DessiaObject):
         return sum_hlist
 
     def extend(self, other: 'HeterogeneousList'):
+        """
+        Update a HeterogeneousList by adding b values to it
+
+        :param b: HeterogeneousList to add to the current HeterogeneousList
+        :type b: HeterogeneousList
+
+        :return: None
+
+        Examples
+        --------
+        >>> from dessia_common.core import HeterogeneousList
+        >>> from dessia_common.models import all_cars_wi_feat
+        >>> HeterogeneousList(all_cars_wi_feat).extend(HeterogeneousList(all_cars_wi_feat))
+        HeterogeneousList(all_cars_wi_feat + all_cars_wi_feat)
+        """
+        # Not "self.dessia_objects += other.dessia_objects" to take advantage of __add__ algorithm
         self.__dict__.update((self + other).__dict__)
 
     def pick_from_int(self, idx: int):
@@ -994,7 +1010,6 @@ class HeterogeneousList(DessiaObject):
         return new_hlist
 
     def __str__(self):
-        print_lim = 15
         attr_name_len = []
         attr_space = []
         prefix = f"{self.__class__.__name__} {self.name if self.name != '' else hex(id(self))}: "
@@ -1005,13 +1020,23 @@ class HeterogeneousList(DessiaObject):
 
         string = ""
         string += self._print_titles(attr_space, attr_name_len)
-
         string += "\n" + "-"*len(string)
-        for dessia_object in self.dessia_objects[:print_lim]:
+
+        string += self._print_objects_slice(slice(0, 5), attr_space, attr_name_len)
+
+        undispl_len = len(self) - 10
+        string += (f"\n+ {undispl_len} undisplayed object" + "s"*(min([undispl_len, 2])-1) + "..."
+                   if len(self) > 10 else '')
+
+        string += self._print_objects_slice(slice(-5, len(self)), attr_space, attr_name_len)
+        return prefix + "\n" + string + "\n"
+
+    def _print_objects_slice(self, key: slice, attr_space: int, attr_name_len: int):
+        string = ""
+        for dessia_object in self.dessia_objects[key]:
             string += "\n"
             string += self._print_objects(dessia_object, attr_space, attr_name_len)
-
-        return prefix + "\n" + string + "\n"
+        return string
 
     def _print_titles(self, attr_space: int, attr_name_len: int):
         string = ""

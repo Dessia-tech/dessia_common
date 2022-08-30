@@ -12,6 +12,9 @@ all_cars_with_features = HeterogeneousList(all_cars_wi_feat)
 # Auto-generated heterogeneous dataset with nb_clusters clusters of points in nb_dims dimensions
 RandData_heterogeneous = HeterogeneousList(rand_data_large)
 
+# Compute one common_attributes
+all_cars_without_features.common_attributes
+
 # Check platform for datasets
 all_cars_with_features._check_platform()
 all_cars_without_features._check_platform()
