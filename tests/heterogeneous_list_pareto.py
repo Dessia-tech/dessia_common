@@ -5,11 +5,12 @@ import random
 import numpy as npy
 from dessia_common.models import all_cars_wi_feat
 from dessia_common.core import HeterogeneousList
+from dessia_common.cluster import CategorizedList
 
 # =============================================================================
 # TEST PARETO FRONT
 # =============================================================================
-tol = 0.05
+tol = 0.
 # Uniform
 coord_1 = [random.uniform(0, 0.1) for i in range(1000)]
 coord_2 = [random.uniform(0.9e6, 1e6) for i in range(1000)]
@@ -36,7 +37,16 @@ pareto_frontiers = HeterogeneousList.pareto_frontiers(len(costs), costs, tol = t
 
 # Cars
 all_cars_with_features = HeterogeneousList(all_cars_wi_feat)
-costs = npy.array([[row[3], row[1]] for row in all_cars_with_features.matrix])
+costs = [[row[3], row[1]] for row in all_cars_with_features.matrix]
 
 pareto_points = all_cars_with_features.pareto_points(costs, tol = tol)
-pareto_frontiers = HeterogeneousList.pareto_frontiers(len(all_cars_wi_feat), costs.T, tol = tol)
+pareto_frontiers = HeterogeneousList.pareto_frontiers(len(all_cars_wi_feat), costs, tol = tol)
+try:
+    transposed_costs = list(map(list,zip(*costs)))
+    pareto_frontiers = HeterogeneousList.pareto_frontiers(len(all_cars_wi_feat), transposed_costs, tol = tol)
+except Exception as e:
+    assert(e.args[0] ==
+           "costs is length 2 and the matching HeterogeneousList is length 406. They should be the same length.")
+
+categorized_pareto = CategorizedList.from_pareto_sheets(all_cars_with_features, costs, 7)
+categorized_pareto.plot()
