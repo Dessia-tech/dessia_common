@@ -642,14 +642,14 @@ class DessiaObject:
         return formats
 
     def to_vector(self):
-        list_vectored_objects = []
+        vectored_objects = []
         for feature in self.vector_features():
-            list_vectored_objects.append(getattr(self, feature.lower()))
+            vectored_objects.append(getattr(self, feature.lower()))
             if not hasattr(self, feature.lower()):
                 raise NotImplementedError(f"{feature} is not an attribute for {self.__class__.__name__} objects. " +
                                           f"<to_vector> method must be customized in {self.__class__.__name__} to " +
                                           "handle computed values that are not class or instance attributes.")
-        return list_vectored_objects
+        return vectored_objects
 
     @classmethod
     def vector_features(cls):
