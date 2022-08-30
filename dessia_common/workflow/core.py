@@ -1233,6 +1233,12 @@ class WorkflowState(DessiaObject):
         self.log = log
 
         self.activate_inputs()
+        self._computed_dict = None
+        self._var_index = None
+        self._wf_blocks = None
+        self._wf_indices = None
+        self._wf_variables = None
+        self._wf_pipes = None
         DessiaObject.__init__(self, name=name)
 
     def __deepcopy__(self, memo=None):
@@ -1266,12 +1272,12 @@ class WorkflowState(DessiaObject):
         return workflow_state
 
     def _data_hash(self):
-        progress = int(100 * self.progress)
+        # progress = int(100 * self.progress)
         workflow = hash(self.workflow)
         output = choose_hash(self.output_value)
         input_values = sum(i * choose_hash(v) for (i, v) in self.input_values.items())
         values = sum(len(k.name) * choose_hash(v) for (k, v) in self.values.items())
-        return (progress + workflow + output + input_values + values) % 1000000000
+        return (workflow + output + input_values + values) % 1000000000
 
     def _data_eq(self, other_object: 'WorkflowState'):
         if not (self.__class__.__name__ == other_object.__class__.__name__
@@ -1313,6 +1319,13 @@ class WorkflowState(DessiaObject):
         """
         # if not use_pointers:
         #     raise NotImplementedError('WorkflowState to_dict should not be called with use_pointers=False')
+        if not self._var_index:
+            self._var_index = self.workflow.variable_index
+            self._wf_variables = self.workflow.variables
+            self._wf_indices = self.workflow.variable_indices
+            self._wf_blocks = self.workflow.blocks
+            self._wf_pipes = self.workflow.pipes
+
         if memo is None:
             memo = {}
 
@@ -1353,23 +1366,23 @@ class WorkflowState(DessiaObject):
         if use_pointers:
             values = {}
             for variable, value in self.values.items():
-                variable_index = self.workflow.variable_index(variable)
+                variable_index = self._var_index(variable)
                 serialized_value, memo = serialize_with_pointers(value=value, memo=memo,
                                                                  path=f"{path}/values/{variable_index}")
                 values[str(variable_index)] = serialized_value
         else:
-            values = {str(self.workflow.variable_index(i)): serialize(v) for i, v in self.values.items()}
+            values = {str(self._var_index(i)): serialize(v) for i, v in self.values.items()}
 
         dict_['values'] = values
 
         # In the future comment these below and rely only on activated items
-        dict_['evaluated_blocks_indices'] = [i for i, b in enumerate(self.workflow.blocks)
+        dict_['evaluated_blocks_indices'] = [i for i, b in enumerate(self._wf_blocks)
                                              if b in self.activated_items and self.activated_items[b]]
 
-        dict_['evaluated_pipes_indices'] = [i for i, p in enumerate(self.workflow.pipes)
+        dict_['evaluated_pipes_indices'] = [i for i, p in enumerate(self._wf_pipes)
                                             if p in self.activated_items and self.activated_items[p]]
 
-        dict_['evaluated_variables_indices'] = [self.workflow.variable_indices(v) for v in self.workflow.variables
+        dict_['evaluated_variables_indices'] = [self._wf_indices for v in self._wf_variables
                                                 if v in self.activated_items and self.activated_items[v]]
 
         # Uncomment when refs are handled as dict keys
@@ -1380,6 +1393,7 @@ class WorkflowState(DessiaObject):
         #     activated_items[s_key] = activated
 
         dict_.update({'start_time': self.start_time, 'end_time': self.end_time, 'log': self.log})
+        self._computed_dict = dict_
         return dict_
 
     def state_display(self):
@@ -1760,6 +1774,7 @@ class WorkflowRun(WorkflowState):
         self.end_time = end_time
         self.execution_time = end_time - start_time
         self.variable_values = {workflow.variable_indices(k): v for k, v in values.items() if k.memorize}
+        self._computed_dict =None
         WorkflowState.__init__(self, workflow=workflow, input_values=input_values, activated_items=activated_items,
                                values=values, start_time=start_time, output_value=output_value, log=log, name=name)
 
@@ -1784,6 +1799,7 @@ class WorkflowRun(WorkflowState):
         #     dict_["variable_values"] = variable_values
         # else:
         dict_["variable_values"] = {str(k): serialize(v) for k, v in self.variable_values.items()}
+        self._computed_dict = dict_
         return dict_
 
     def display_settings(self) -> List[DisplaySetting]:
