@@ -846,13 +846,31 @@ class DessiaFilter(DessiaObject):
     def _comparison_operator(self):
         return self._REAL_OPERATORS[self.comparison_operator]
 
-    # TODO: Chronophage operation is self._to_lambda(values)(values)
-    def _to_lambda(self, values: List[DessiaObject]):
+    def _to_lambda(self):
         return lambda x: (self._comparison_operator()(enhanced_deep_attr(value, self.attribute), self.bound)
-                          for value in values)
+                          for value in x)
 
     def get_booleans_index(self, values: List[DessiaObject]):
-        return list(self._to_lambda(values)(values))
+        """
+        Get the boolean indexing of a filtered list
+
+        :param values:
+            List of DessiaObjects to filter
+        :type values: List[DessiaObject]
+
+        :return: `list of length `len(values)` where elements are `True` if kept by the filter, otherwise `False`.
+        :rtype: `List[bool]`
+
+        Examples
+        --------
+        >>> from dessia_common.core import DessiaFilter
+        >>> from dessia_common.models import all_cars_no_feat
+        >>> values = all_cars_no_feat[:5]
+        >>> filter_ = DessiaFilter('weight', '<=', 3500.)
+        >>> filter_.get_booleans_index(values)
+        [False, False, True, True, True]
+        """
+        return list(self._to_lambda()(values))
 
     @staticmethod
     def booleanlist_to_indexlist(booleans_list: List[int]): # TODO: Should it exist ?
