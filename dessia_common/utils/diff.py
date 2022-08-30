@@ -9,7 +9,7 @@ Created on Wed Nov 24 19:24:53 2021
 import math
 import dessia_common as dc
 from dessia_common.utils.types import isinstance_base_types, is_sequence, full_classname
-
+from dessia_common.files import BinaryFile, StringFile
 
 def diff(value1, value2, path='#'):
     """
@@ -110,6 +110,9 @@ def data_eq(value1, value2):
 
     if isinstance(value1, dict):
         return dict_data_eq(value1, value2)
+
+    if isinstance(value1, (BinaryFile, StringFile)):
+        return value1 == value2
 
     # Else: its an object
 

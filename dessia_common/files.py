@@ -37,6 +37,12 @@ class BinaryFile(io.BytesIO):
             stream.seek(0)
             file.write(stream.getvalue())
 
+    def __hash__(self):
+        return hash(self.filename)
+
+    def __eq__(self, other):
+        return isinstance(other, BinaryFile) and self.getbuffer() == other.getbuffer() \
+               and self.filename == other.filename
 
 class StringFile(io.StringIO):
     """
@@ -72,6 +78,13 @@ class StringFile(io.StringIO):
             stream = cls.stream_template()
             stream.seek(0)
             file.write(stream.getvalue())
+
+    def __hash__(self):
+        return hash(self.filename)
+
+    def __eq__(self, other):
+        return isinstance(other, StringFile) and self.getvalue() == other.getvalue() \
+               and self.filename == other.filename
 
 
 class XLSXFile(BinaryFile):
