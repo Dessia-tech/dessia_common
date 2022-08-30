@@ -1471,14 +1471,14 @@ class HeterogeneousList(DessiaObject):
             self._matrix = matrix
         return self._matrix
 
-    def filtering(self, filters: FiltersList):
+    def filtering(self, filters_list: FiltersList):
         """
         Filter a HeterogeneousList given a FiltersList.
         Method filtering apply a FiltersList to the current HeterogeneousList.
 
-        :param filters:
+        :param filters_list:
             FiltersList to apply on current HeterogeneousList
-        :type filters: FiltersList
+        :type filters_list: FiltersList
 
         :return: The filtered HeterogeneousList
         :rtype: HeterogeneousList
@@ -1499,7 +1499,7 @@ class HeterogeneousList(DessiaObject):
         |               31.0  |             0.076  |              52.0  |            1649.0  |              16.5  |
         |               46.6  |             0.086  |              65.0  |            2110.0  |              17.9  |
         """
-        booleans_index = filters.get_booleans_index(self.dessia_objects)
+        booleans_index = filters_list.get_booleans_index(self.dessia_objects)
         return self.pick_from_boolist(booleans_index)
 
     def singular_values(self):
