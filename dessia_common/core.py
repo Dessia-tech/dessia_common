@@ -1092,8 +1092,35 @@ class HeterogeneousList(DessiaObject):
             self._matrix = matrix
         return self._matrix
 
-    def filtering(self, filters: FiltersList):
-        booleans_index = filters.get_booleans_index(self.dessia_objects)
+    def filtering(self, filters_list: FiltersList):
+        """
+        Filter a HeterogeneousList given a FiltersList.
+        Method filtering apply a FiltersList to the current HeterogeneousList.
+
+        :param filters_list:
+            FiltersList to apply on current HeterogeneousList
+        :type filters_list: FiltersList
+
+        :return: The filtered HeterogeneousList
+        :rtype: HeterogeneousList
+
+        Examples
+        --------
+        >>> from dessia_common.core import HeterogeneousList, DessiaFilter
+        >>> from dessia_common.models import all_cars_wi_feat
+        >>> filters = [DessiaFilter('weight', '<=', 1650.), DessiaFilter('mpg', '>=', 45.)]
+        >>> filters_list = FiltersList(filters, "xor")
+        >>> example_list = HeterogeneousList(all_cars_wi_feat, name="example")
+        >>> filtered_list = example_list.filtering(filters_list)
+        >>> print(filtered_list)
+        HeterogeneousList example: 3 samples, 5 features
+        |         Mpg         |    Displacement    |     Horsepower     |       Weight       |    Acceleration    |
+        -----------------------------------------------------------------------------------------------------------
+        |               35.0  |             0.072  |              69.0  |            1613.0  |              18.0  |
+        |               31.0  |             0.076  |              52.0  |            1649.0  |              16.5  |
+        |               46.6  |             0.086  |              65.0  |            2110.0  |              17.9  |
+        """
+        booleans_index = filters_list.get_booleans_index(self.dessia_objects)
         return self.pick_from_boolist(booleans_index)
 
     def singular_values(self):
