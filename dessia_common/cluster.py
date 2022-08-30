@@ -1,6 +1,7 @@
 """
 Library for building clusters on data.
 """
+import itertools
 from typing import List
 
 import numpy as npy
@@ -377,6 +378,19 @@ class CategorizedList(dc.HeterogeneousList):
         skl_cluster = cluster.DBSCAN(eps=eps, min_samples=min_samples, p=mink_power, leaf_size=leaf_size, metric=metric)
         skl_cluster = cls.fit_cluster(skl_cluster, data.matrix, scaling)
         return cls(data.dessia_objects, skl_cluster.labels_.tolist(), name=name)
+
+    @classmethod
+    def from_pareto_sheets(cls, h_list: dc.HeterogeneousList, costs: List[List[float]], nb_sheets: int = 1):
+        labels = []
+        dessia_objects = []
+        # TODO: __getitem__
+        pareto_sheets, non_optimal_points = h_list.pareto_sheets(costs, nb_sheets)
+        for label, pareto_sheet in enumerate(pareto_sheets):
+            labels.extend([label]*len(pareto_sheet.dessia_objects))
+            dessia_objects.extend(pareto_sheet.dessia_objects)
+        dessia_objects.extend(non_optimal_points.dessia_objects)
+        labels.extend([label + 1]*len(non_optimal_points.dessia_objects))
+        return cls(dessia_objects, labels)
 
     @staticmethod
     def fit_cluster(skl_cluster: cluster, matrix: List[List[float]], scaling: bool):
