@@ -1198,13 +1198,6 @@ class HeterogeneousList(DessiaObject):
         self._matrix = None
         DessiaObject.__init__(self, name=name)
 
-    def _procreate(self):
-        new_hlist = self.__class__()
-        new_hlist.name = self.name
-        new_hlist._common_attributes = deepcopy(self._common_attributes)
-        new_hlist._matrix = deepcopy(self._matrix)
-        return new_hlist
-
     def __getitem__(self, key: Any):
         if len(self.dessia_objects) == 0:
             return []
@@ -1261,7 +1254,8 @@ class HeterogeneousList(DessiaObject):
         return self.dessia_objects[idx]
 
     def pick_from_slice(self, key: slice):
-        new_hlist = self._procreate()
+        new_hlist = self.__class__(dessia_objects = self.dessia_objects[key], name = self.name)
+        new_hlist._common_attributes = copy(self._common_attributes)
         new_hlist.dessia_objects = self.dessia_objects[key]
         if self._matrix is not None:
             new_hlist._matrix = self._matrix[key]
@@ -1275,8 +1269,8 @@ class HeterogeneousList(DessiaObject):
         return boolean_list
 
     def pick_from_boolist(self, key: List[bool]):
-        new_hlist = self._procreate()
-        new_hlist.dessia_objects = DessiaFilter.apply(self.dessia_objects, key)
+        new_hlist = self.__class__(dessia_objects = DessiaFilter.apply(self.dessia_objects, key), name = self.name)
+        new_hlist._common_attributes = copy(self._common_attributes)
         if self._matrix is not None:
             new_hlist._matrix = DessiaFilter.apply(self._matrix, key)
         # new_hlist.name += "_list")
