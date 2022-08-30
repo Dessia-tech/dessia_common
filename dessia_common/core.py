@@ -874,10 +874,9 @@ class DessiaFilter(DessiaObject):
     def _comparison_operator(self):
         return self._REAL_OPERATORS[self.comparison_operator]
 
-    # TODO: Chronophage operation is self._to_lambda(values)(values)
-    def _to_lambda(self, values: List[DessiaObject]):
+    def _to_lambda(self):
         return lambda x: (self._comparison_operator()(enhanced_deep_attr(value, self.attribute), self.bound)
-                          for value in values)
+                          for value in x)
 
     def get_booleans_index(self, values: List[DessiaObject]):
         """
@@ -900,7 +899,7 @@ class DessiaFilter(DessiaObject):
         [False, False, True, True, True]
         """
 
-        return list(self._to_lambda(values)(values))
+        return list(self._to_lambda()(values))
 
     @staticmethod
     def booleanlist_to_indexlist(booleans_list: List[int]):  # TODO: Should it exist ?
