@@ -74,6 +74,12 @@ class StandaloneSubobject(PhysicalObject):
         crls = p2d.ClosedRoundedLineSegments2D(points=points, radius={})
         return crls
 
+    def plot_data(self):
+        primitives = [plot_data.Text(comment="Test with text", position_x=0, position_y=0),
+                      plot_data.Text(comment="Test with text", position_x=0, position_y=0)]
+        primitives_group = plot_data.PrimitiveGroup(primitives=primitives)
+        return [primitives_group]
+
     def voldmlr_primitives(self):
         contour = self.contour()
         volumes = [p3d.ExtrudedProfile(vm.O3D, vm.X3D, vm.Z3D, contour, [], vm.Y3D)]

@@ -1893,10 +1893,7 @@ class WorkflowRun(WorkflowState):
         # TODO THIS IS A TEMPORARY DIRTY HOTFIX OVERWRITE.
         #  WE SHOULD IMPLEMENT A WAY TO GET RID OF REFERENCE PATH WITH URLS
         track = ""
-        if "reference_path" in kwargs:
-            refpath = kwargs["reference_path"]
-        else:
-            refpath = ""
+        refpath = kwargs.get("reference_path", "")
         if selector in ["documentation", "workflow"]:
             return self.workflow._display_from_selector(selector)
 
