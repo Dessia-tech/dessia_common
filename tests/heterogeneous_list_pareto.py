@@ -37,12 +37,12 @@ pareto_frontiers = HeterogeneousList.pareto_frontiers(len(costs), costs)
 # Cars
 all_cars_with_features = HeterogeneousList(all_cars_wi_feat)
 costs = [all_cars_with_features.get_attribute_values('weight'), all_cars_with_features.get_attribute_values('mpg')]
-costs = list(map(list,zip(*costs)))
+costs = list(zip(*costs))
 
 pareto_points = all_cars_with_features.pareto_points(costs)
 pareto_frontiers = HeterogeneousList.pareto_frontiers(len(all_cars_wi_feat), costs)
 try:
-    transposed_costs = list(map(list,zip(*costs)))
+    transposed_costs = list(zip(*costs))
     pareto_frontiers = HeterogeneousList.pareto_frontiers(len(all_cars_wi_feat), transposed_costs)
 except Exception as e:
     assert(e.args[0] ==

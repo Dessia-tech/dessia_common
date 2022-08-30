@@ -383,13 +383,12 @@ class CategorizedList(dc.HeterogeneousList):
     def from_pareto_sheets(cls, h_list: dc.HeterogeneousList, costs: List[List[float]], nb_sheets: int = 1):
         labels = []
         dessia_objects = []
-        # TODO: __getitem__
         pareto_sheets, non_optimal_points = h_list.pareto_sheets(costs, nb_sheets)
         for label, pareto_sheet in enumerate(pareto_sheets):
-            labels.extend([label]*len(pareto_sheet.dessia_objects))
-            dessia_objects.extend(pareto_sheet.dessia_objects)
-        dessia_objects.extend(non_optimal_points.dessia_objects)
-        labels.extend([label + 1]*len(non_optimal_points.dessia_objects))
+            labels.extend([label]*len(pareto_sheet))
+            dessia_objects.extend(pareto_sheet)
+        dessia_objects.extend(non_optimal_points)
+        labels.extend([label + 1]*len(non_optimal_points))
         return cls(dessia_objects, labels)
 
     @staticmethod
