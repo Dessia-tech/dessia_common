@@ -669,8 +669,7 @@ class PhysicalObject(DessiaObject):
         """
         display_settings = DessiaObject.display_settings()
         display_settings.append(DisplaySetting(selector='cad', type_='babylon_data',
-                                               method='volmdlr_volume_model().babylon_data',
-                                               serialize_data=True))
+                                               method='volmdlr_volume_model().babylon_data', serialize_data=True))
         return display_settings
 
     def volmdlr_primitives(self):

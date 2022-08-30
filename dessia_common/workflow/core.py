@@ -1639,7 +1639,6 @@ class WorkflowState(DessiaObject):
         for i, input_ in enumerate(block.inputs):
             incoming_pipe = self.workflow.variable_input_pipe(input_)
             if i == block._displayable_input:
-                # TODO This probably won't work on platform. Should serialise/deserialise
                 reference_path = f'values/{self.workflow.pipes.index(incoming_pipe)}'
 
         if block not in evaluated_blocks:

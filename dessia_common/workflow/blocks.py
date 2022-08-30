@@ -761,9 +761,8 @@ class MultiPlot(Display):
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
         return cls(attributes=dict_['attributes'], name=dict_['name'])
 
-    def evaluate(self, values, **kwargs):
+    def evaluate(self, values):
         import plot_data
-        reference_path = kwargs.get("reference_path", "")
         objects = values[self.inputs[self._displayable_input]]
         attr_values = [{a: enhanced_deep_attr(o, a) for a in self.attributes} for o in objects]
         values2d = [{key: val[key]} for key in self.attributes[:2] for val in attr_values]
@@ -778,10 +777,38 @@ class MultiPlot(Display):
         sizes = [plot_data.Window(width=560, height=300), plot_data.Window(width=560, height=300)]
         multiplot = plot_data.MultiplePlots(elements=attr_values, plots=plots, sizes=sizes,
                                             coords=[(0, 0), (0, 300)], name='Results plot')
-        return [DisplayObject(type_="plot_data", data=[multiplot.to_dict()], reference_path=reference_path)]
+        return [DisplayObject(type_="plot_data", data=[multiplot.to_dict()])]
 
     def _to_script(self) -> ToScriptElement:
         script = f"MultiPlot(attributes={self.attributes}, name='{self.name}')"
+        return ToScriptElement(declaration=script, imports=[self.full_classname])
+
+
+class CadView(Display):
+    """
+    :param name: The name of the block.
+    :type name: str
+    """
+
+    def __init__(self, name: str = ''):
+        input_ = TypedVariable(DessiaObject, name="Model to display")
+        Display.__init__(self, inputs=[input_], name=name)
+
+    def _display_settings(self, block_index: int) -> DisplaySetting:
+        args = {'block_index': block_index}
+        if self.name:
+            selector = self.name
+        else:
+            selector = "display_" + str(block_index)
+        display_settings = DisplaySetting(selector=selector, type_="cad",
+                                          method="block_display", serialize_data=True, arguments=args)
+        return display_settings
+
+    def evaluate(self, values):
+        return []
+
+    def _to_script(self) -> ToScriptElement:
+        script = f"CadView(name='{self.name}')"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
 
