@@ -295,6 +295,8 @@ def recursive_type(obj):
         type_ = TYPES_STRINGS[type(obj)]
     elif isinstance(obj, dc.DessiaObject):
         type_ = obj.__module__ + '.' + obj.__class__.__name__
+    elif hasattr(obj, 'output_type'):
+        type_ = obj.output_type
     elif isinstance(obj, (list, tuple)):
         type_ = []
         for element in obj:
