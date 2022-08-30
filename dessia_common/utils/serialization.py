@@ -4,12 +4,15 @@
 Serialization Tools
 
 """
-
+import traceback
 import warnings
 import inspect
 import collections
 from ast import literal_eval
 from typing import get_origin, get_args, Union, Any, BinaryIO, TextIO
+
+import igraph
+import networkx
 import networkx as nx
 import dessia_common as dc
 import dessia_common.errors as dc_err
@@ -19,6 +22,7 @@ from dessia_common.typings import InstanceOf
 from dessia_common.graph import explore_tree_from_leaves  # , cut_tree_final_branches
 from dessia_common.breakdown import get_in_object_from_path
 
+from igraph import Graph
 
 def serialize_dict(dict_):
     """
@@ -395,16 +399,18 @@ def find_references_dict(dict_, path='#'):
             references.extend(find_references(value, path=path_value))
     return references
 
-
 def pointer_graph(value):
     """
     Create a graph of subattributes of an object with edge representing either:
      * the hierarchy of an subattribute to an attribute
      * the pointer link between the 2 elements
+
+     :return tuple of : set(nodes) , set(edges)
     """
 
     nodes = set()
     edges = set()
+
     for path, reference in find_references(value):
         # Slitting path & reference to add missing nodes
         # For path
@@ -429,27 +435,19 @@ def pointer_graph(value):
 
         edges.add((path, reference))
 
-    graph = nx.DiGraph()
-    graph.add_nodes_from(nodes)
-    graph.add_edges_from(edges)
-
-    return graph
+    return nodes, edges
 
 
 def deserialization_order(dict_):
     """
     Analyse a dict representing an object and give a deserialization order
     """
-    graph = pointer_graph(dict_)
-    if '#' in graph.nodes:
-        cycles = list(nx.simple_cycles(graph))
-        if cycles:
-            # import dessia_common.displays
-            # dessia_common.displays.draw_networkx_graph(graph)
-            for cycle in cycles:
-                print(cycle)
-            raise NotImplementedError('Cycles in jsonpointers not handled')
+    nodes, edges = pointer_graph(dict_)
+    graph = igraph.Graph(directed=True)
+    graph.add_vertices(list(nodes))
+    graph.add_edges(list(edges))
 
+    if graph.vs() and '#' in graph.vs()['name']:
         order = list(explore_tree_from_leaves(graph))
         if '#' in order:
             order.remove('#')
@@ -550,7 +548,11 @@ def pointers_analysis(obj):
     class_number = {}
     composed_by = {}
     class_from_path = {}
-    graph = pointer_graph(dict_)
+    g_nodes, g_edges = pointer_graph(dict_)
+    graph = networkx.DiGraph()
+    graph.add_nodes_from(g_nodes)
+    graph.add_edges_from(g_edges)
+
     for path1, path2 in graph.edges():
         if path1 != '#':
             if path2 in class_from_path:

@@ -147,7 +147,8 @@ setup(
         "parameterized",
         "matplotlib",
         "sklearn",
-        "cma"
+        "cma",
+        "igraph"
     ],
     python_requires=">=3.7",
 )

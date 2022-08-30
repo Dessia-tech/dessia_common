@@ -5,7 +5,7 @@ Created on Thu Nov 18 14:16:30 2021
 
 @author: steven
 """
-
+import igraph
 import networkx as nx
 
 
@@ -32,38 +32,11 @@ def cut_tree_final_branches(graph: nx.DiGraph):
     return graph
 
 
-def explore_tree_from_leaves(graph: nx.DiGraph):
-    exploration_order = []
-    explored = {n: False for n in graph.nodes}
-    number_nodes = graph.number_of_nodes()
-    successors = {}
+def explore_tree_from_leaves(graph: igraph.Graph):
+    if not graph.is_dag():
+        raise NotImplementedError('Cycles in jsonpointers not handled')
 
-    # ns = 0
-    while number_nodes:
-        found_node = False
-        # Finding a starting node
-        for node in graph.nodes:
-            if not explored[node]:
-                neighbors_explored = True
-                if node in successors:
-                    node_successors = successors[node]
-                else:
-                    node_successors = list(graph.successors(node))
-                    successors[node] = node_successors
-                    # ns += 1
+    t_sorting = graph.topological_sorting()
+    z = [graph.vs[x]['name'] for x in t_sorting]
 
-                for out_node in node_successors:
-                    if not explored[out_node]:
-                        neighbors_explored = False
-                        break
-
-                if neighbors_explored:
-                    # Mark explored
-                    explored[node] = True
-                    exploration_order.append(node)
-                    number_nodes -= 1
-                    found_node = True
-                    break
-        if not found_node:
-            raise ValueError('Can not find a node')
-    return exploration_order
+    return list(reversed(z))

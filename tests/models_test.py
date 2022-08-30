@@ -22,8 +22,13 @@ assert simulation_list_copy == simulation_list
 simulation_list.jsonschema()
 
 pointer_analysis = dcus.pointers_analysis(simulation_list)
-pointer_graph = dcus.pointer_graph(d)
-draw_networkx_graph(pointer_graph)
+g_nodes, g_edges = pointer_graph(d)
+graph = networkx.DiGraph()
+graph.add_nodes_from(g_nodes)
+graph.add_edges_from(g_edges)
+
+
+draw_networkx_graph(graph)
 
 system1._check_platform()
 system1.jsonschema()
