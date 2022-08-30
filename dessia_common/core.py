@@ -881,24 +881,24 @@ class HeterogeneousList(DessiaObject):
                              "They should be the same length.")
 
     @staticmethod
-    def pareto_indexes(costs: List[List[float]], tol: float = 0.):
+    def pareto_indexes(costs: List[List[float]]):
         """
         Find the pareto-efficient points
         :return: A (n_points, ) boolean array, indicating whether each point
                  is Pareto efficient
         """
         is_efficient = npy.ones(len(costs), dtype=bool)
-        costs_array = npy.array(costs)
-        # scaled_costs = (costs - npy.mean(costs, axis = 0)) / npy.std(costs, axis = 0)
+        # costs_array = npy.array(costs)
+        costs_array = (costs - npy.mean(costs, axis = 0)) / npy.std(costs, axis = 0)
         for index, cost in enumerate(costs_array):
             if is_efficient[index]:
                 # Keep any point with a lower cost
-                is_efficient[is_efficient] = npy.any(costs_array[is_efficient] < cost + tol, axis=1)
+                is_efficient[is_efficient] = npy.any(costs_array[is_efficient] < cost, axis=1)
                 # And keep self
                 is_efficient[index] = True
         return is_efficient
 
-    def pareto_points(self, costs: List[List[float]], tol: float = 0.):
+    def pareto_points(self, costs: List[List[float]]):
         """
         Find the pareto-efficient points
         :return: A HeterogeneousList of pareto_points
@@ -906,7 +906,7 @@ class HeterogeneousList(DessiaObject):
         HeterogeneousList._check_costs(len(self.dessia_objects), costs)
         # TODO: Replace this line with a __getitem___ command when it is available (branch HList_docstrings)
         return HeterogeneousList(list(itertools.compress(self.dessia_objects,
-                                                         self.__class__.pareto_indexes(costs, tol))))
+                                                         self.__class__.pareto_indexes(costs))))
 
     @staticmethod
     def _get_pareto_sheet(dessia_objects: List[DessiaObject], costs: List[List[float]]):
@@ -914,23 +914,38 @@ class HeterogeneousList(DessiaObject):
         return pareto_sheet, list(itertools.compress(costs, map(lambda x: not x, pareto_sheet)))
 
     def pareto_sheets(self, costs: List[List[float]], nb_sheets: int = 1):
+        """
+        Get successive pareto sheets (i.e. optimal points in a DOE for pre-computed costs).
+
+        :param costs:
+            Pre-computed costs of `len(self)`. Can be multi-dimensional.
+        :type costs: `List[List[float]]`, `n_samples x n_features`
+
+        :param nb_sheets:
+            Number of pareto sheets to pick
+        :type nb_sheets: `int`, `optional`, default to `1`
+
+        :return: The successive pareto sheets and not selected elements
+        :rtype: `List[HeterogeneousList]`, `HeterogeneousList`
+        """
         HeterogeneousList._check_costs(len(self.dessia_objects), costs)
         non_optimal_costs = costs[:]
         non_optimal_points = self.dessia_objects[:]
         pareto_sheets = []
-        for _ in range(nb_sheets):
-            pareto_sheet = HeterogeneousList.pareto_indexes(non_optimal_costs, 0.)
-            pareto_sheets.append(list(itertools.compress(non_optimal_points, pareto_sheet)))
+        for idx in range(nb_sheets):
+            pareto_sheet = HeterogeneousList.pareto_indexes(non_optimal_costs)
+            pareto_sheets.append(HeterogeneousList(list(itertools.compress(non_optimal_points, pareto_sheet)),
+                                                   self.name + f'_pareto_{idx}'))
             non_optimal_points = list(itertools.compress(non_optimal_points, map(lambda x: not x, pareto_sheet)))
             non_optimal_costs = list(itertools.compress(non_optimal_costs, map(lambda x: not x, pareto_sheet)))
-        return pareto_sheets, non_optimal_points
+        return pareto_sheets, HeterogeneousList(non_optimal_points, self.name)
 
     @staticmethod
-    def pareto_frontiers(len_data: int, costs: List[List[float]], tol: float = 0.):
+    def pareto_frontiers(len_data: int, costs: List[List[float]]):
         # Experimental
         import matplotlib.pyplot as plt
         HeterogeneousList._check_costs(len_data, costs)
-        pareto_indexes = HeterogeneousList.pareto_indexes(costs, tol)
+        pareto_indexes = HeterogeneousList.pareto_indexes(costs)
         pareto_costs = npy.array(list(itertools.compress(costs, pareto_indexes)))
 
         array_costs = npy.array(costs)
