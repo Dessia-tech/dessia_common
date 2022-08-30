@@ -237,7 +237,6 @@ class DessiaObject:
         """
         Generic dict_to_object method
         """
-
         if cls is not DessiaObject:
             obj = dict_to_object(dict_=dict_, class_=cls, force_generic=force_generic, global_dict=global_dict,
                                  pointers_memo=pointers_memo, path=path)
@@ -1105,12 +1104,15 @@ def getdeepattr(obj, attr):
 
 def enhanced_deep_attr(obj, sequence):
     """
+    Deprecated. Use get_in_from_path from dessia_common.breakdown.py instead
+
     Get deep attribute where Objects, Dicts and Lists can be found in recursion.
 
     :param obj: Parent object in which recursively find attribute represented by sequence
     :param sequence: List of strings and integers that represents path to deep attribute.
     :return: Value of deep attribute
     """
+    warnings.warn("enhanced_deep_attr is deprecated. Use get_in_from_path from dessia_common.breakdown.py instead")
     if isinstance(sequence, str):
         # Sequence is a string and not a sequence of deep attributes
         if '/' in sequence:
@@ -1153,8 +1155,7 @@ def enhanced_get_attr(obj, attr):
         except TypeError:
             track += tb.format_exc()
             msg = f"Object of type '{classname}' is not subscriptable. Failed to deeply get '{attr}' from it"
-    raise dessia_common.errors.DeepAttributeError(
-        message=msg, traceback_=track)
+    raise dessia_common.errors.DeepAttributeError(message=msg, traceback_=track)
 
 
 def concatenate_attributes(prefix, suffix, type_: str = 'str'):
