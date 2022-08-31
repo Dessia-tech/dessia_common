@@ -41,8 +41,8 @@ assert(all(item in all_cars_without_features.matrix[idx]
 
 # Tests for displays
 all_cars_with_features.plot()
-all_cars_without_features.plot()
-RandData_heterogeneous.plot()
+# all_cars_without_features.plot()
+# RandData_heterogeneous.plot()
 print(all_cars_with_features)
 
 # Tests for empty HeterogeneousList
