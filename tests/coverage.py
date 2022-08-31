@@ -43,8 +43,8 @@ for file_name, data in d['files'].items():
     else:
         # print('Testing if {} is above {}'.format(file_name, MIN_FILE_COVERAGE))
         if data['summary']['percent_covered'] < MIN_MODULE_COVERAGE:
-            raise RuntimeError("Module {file_name} is not covered enough by tests: \
-                               {data['summary']['percent_covered']}% expected minimum {MIN_MODULE_COVERAGE}%")
+            raise RuntimeError(f"Module {file_name} is not covered enough by tests: \
+                                {data['summary']['percent_covered']}% expected minimum {MIN_MODULE_COVERAGE}%")
         min_actual_coverage = min(
             min_actual_coverage, data['summary']['percent_covered'])
 
