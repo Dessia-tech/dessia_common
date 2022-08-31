@@ -82,3 +82,4 @@ assert(all_cars_with_features[0].weight == max(all_cars_with_features.get_attrib
 all_cars_without_features.sort(2)
 assert(all_cars_without_features.common_attributes[2] == "displacement")
 assert(all_cars_without_features[0].displacement == min(all_cars_without_features.get_column_values(2)))
+
