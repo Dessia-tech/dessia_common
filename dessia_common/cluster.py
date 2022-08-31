@@ -54,7 +54,7 @@ class CategorizedList(dc.HeterogeneousList):
     def __init__(self, dessia_objects: List[dc.DessiaObject] = None, labels: List[int] = None, name: str = ''):
         dc.HeterogeneousList.__init__(self, dessia_objects=dessia_objects, name=name)
         if labels is None:
-            labels = [0]*len(self.dessia_objects)
+            labels = [0]*len(self)
         self.labels = labels
         self._n_clusters = None
 
