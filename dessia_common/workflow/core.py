@@ -218,13 +218,15 @@ class Pipe(DessiaObject):
     def __init__(self, input_variable: Variable, output_variable: Variable, name: str = ''):
         self.input_variable = input_variable
         self.output_variable = output_variable
+        self.memorize = False
         DessiaObject.__init__(self, name=name)
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
         """
         transform the pipe into a dict
         """
-        return {'input_variable': self.input_variable, 'output_variable': self.output_variable}
+        return {'input_variable': self.input_variable, 'output_variable': self.output_variable,
+                'memorize': self.memorize}
 
 
 class WorkflowError(Exception):
@@ -734,7 +736,14 @@ class Workflow(Block):
             i += 1
         return runtime_blocks
 
-    def secondary_branch_blocks(self, block):
+    def secondary_branch_blocks(self, block: Block) -> List[Block]:
+        """
+        Computes the necessary upstreams blocks to run a part of a workflow that leads to the given block.
+        It stops looking for blocks when it reaches the main branch, and memorize the connected pipe
+
+        :param block: Block that is the target of the secondary branch
+        :type block: Blocl
+        """
         upstream_blocks = self.upstream_blocks(block)
         branch_blocks = [block]
         i = 0
@@ -747,6 +756,12 @@ class Workflow(Block):
                     candidates.extend(self.upstream_blocks(upstream_block))
             upstream_blocks = candidates
             i += 1
+        for branch_block in branch_blocks:
+            upstream_blocks = self.upstream_blocks(branch_block)
+            for upstream_block in upstream_blocks:
+                if upstream_block in self.runtime_blocks:
+                    for pipe in self.pipes_between_blocks(upstream_block, branch_block):
+                        pipe.memorize = True
         return branch_blocks
 
     def pipe_from_variable_indices(self, upstream_indices: Union[int, Tuple[int, int, int]],
@@ -781,17 +796,27 @@ class Workflow(Block):
     def variable_output_pipes(self, variable: Variable) -> List[Optional[Pipe]]:
         return [p for p in self.pipes if p.input_variable == variable]
 
-    # def block_input_pipes(self, block: Block) -> List[Optional[Pipe]]:
-    #     """
-    #     Gets incoming pipes for every block variable.
-    #     """
-    #     return [self.variable_input_pipe(i) for i in block.inputs]
+    def pipes_between_blocks(self, upstream_block: Block, downstream_block: Block):
+        pipes = []
+        for outgoing_pipe in self.block_outgoing_pipes(upstream_block):
+            if outgoing_pipe is not None and outgoing_pipe in self.block_incoming_pipes(downstream_block):
+                pipes.append(outgoing_pipe)
+        return pipes
 
-    # def block_output_pipes(self, block: Block) -> Dict[Variable, List[Pipe]]:
-    #     """
-    #     Returns all block outgoing pipes
-    #     """
-    #     return {o: self.variable_output_pipes(o) for o in block.outputs}
+    def block_incoming_pipes(self, block: Block) -> List[Optional[Pipe]]:
+        """
+        Gets incoming pipes for every block variable.
+        """
+        return [self.variable_input_pipe(i) for i in block.inputs]
+
+    def block_outgoing_pipes(self, block: Block) -> List[Pipe]:
+        """
+        Returns all block outgoing pipes
+        """
+        outgoing_pipes = []
+        for output in block.outputs:
+            outgoing_pipes.extend(self.variable_output_pipes(output))
+        return outgoing_pipes
 
     def upstream_blocks(self, block: Block) -> List[Block]:
         """
@@ -1900,7 +1925,7 @@ class WorkflowRun(WorkflowState):
             end_time = time.time()
         self.end_time = end_time
         self.execution_time = end_time - start_time
-        filtered_values = {k: v for k, v in values.items() if is_serializable(v)}
+        filtered_values = {p: v for p, v in values.items() if is_serializable(v) and p.memorize}
         filtered_input_values = {k: v for k, v in input_values.items() if is_serializable(v)}
         WorkflowState.__init__(self, workflow=workflow, input_values=filtered_input_values,
                                activated_items=activated_items, values=filtered_values, start_time=start_time,
