@@ -7,6 +7,8 @@ scripts = ['displays.py',
            'models_test.py',
            'files.py',
            'vectored_objects.py',
+           'clustering.py',
+           'heterogeneous_list.py',
            'moving_object.py',
            # Workflows
            'workflow/blocks.py',
@@ -18,17 +20,19 @@ scripts = ['displays.py',
            'workflow/workflow_diverge_converge.py',
            'workflow/workflow_method_dict.py',
            'workflow/various_tests.py',
+           'workflow/workflow_clustering.py',
            # breakdown
            'breakdown.py',
            # Utils
            'utils/algebra.py',
            'utils/interpolation.py',
            'utils/serialization.py',
+           'utils/helpers.py',
            'utils/types.py',
            'type_matching.py',
            # Unit tests
            'unit_tests.py',
-           'bson_valid.py',
+           'bson_valid.py'
            ]
 
 for script_name in scripts:

@@ -13,16 +13,16 @@ import io
 from typing import List, Type, Any, Dict, get_type_hints
 
 import itertools
-from dessia_common import DessiaFilter, is_bounded, enhanced_deep_attr, split_argspecs,\
-    type_from_annotation
+from dessia_common.core import DessiaFilter, is_bounded, enhanced_deep_attr, split_argspecs, type_from_annotation
 from dessia_common.utils.types import get_python_class_from_class_name, full_classname
 from dessia_common.utils.docstrings import parse_docstring, EMPTY_PARSED_ATTRIBUTE
 from dessia_common.errors import UntypedArgumentError
 from dessia_common.typings import JsonSerializable, MethodType, ClassMethodType
 from dessia_common.files import StringFile, BinaryFile
+from dessia_common.utils.helpers import concatenate
 
 from dessia_common.workflow.core import Block, Variable, TypedVariable, TypedVariableWithDefaultValue,\
-    set_block_variable_names_from_dict, Workflow, DisplaySetting
+    set_block_variable_names_from_dict, Workflow, DisplaySetting, DisplayObject
 from dessia_common.workflow.utils import ToScriptElement
 
 
@@ -393,6 +393,35 @@ class Sequence(Block):
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
 
+class Concatenate(Block):
+    def __init__(self, number_arguments: int, name: str = ''):
+        self.number_arguments = number_arguments
+        inputs = [Variable(name=f"Sequence element {i}") for i in range(self.number_arguments)]
+        outputs = [TypedVariable(type_=list, name='sequence')]
+        Block.__init__(self, inputs, outputs, name=name)
+
+    def equivalent_hash(self):
+        return self.number_arguments
+
+    def equivalent(self, other):
+        return Block.equivalent(self, other) and self.number_arguments == other.number_arguments
+
+    def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
+        dict_ = Block.to_dict(self)
+        dict_['number_arguments'] = self.number_arguments
+        return dict_
+
+    @classmethod
+    @set_block_variable_names_from_dict
+    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
+        return cls(dict_['number_arguments'], dict_['name'])
+
+    def evaluate(self, values: Dict[Variable, Any]):
+        list_values = list(values.values())
+        return [concatenate(list_values)]
+
+
 class WorkflowBlock(Block):
     """
     Wrapper around workflow to put it in a block of another workflow
@@ -727,11 +756,7 @@ class MultiPlot(Display):
 
     def display_(self, local_values, **kwargs):
         import plot_data
-        # if 'reference_path' not in kwargs:
-        #     reference_path = 'output_value'  # TODO bof bof bof
-        # else:
-        #     reference_path = kwargs['reference_path']
-
+        reference_path = kwargs.get("reference_path", "")
         objects = local_values[self.inputs[self._displayable_input]]
         values = [{a: enhanced_deep_attr(o, a) for a in self.attributes} for o in objects]
         values2d = [{key: val[key]} for key in self.attributes[:2] for val in values]
@@ -746,7 +771,8 @@ class MultiPlot(Display):
         sizes = [plot_data.Window(width=560, height=300), plot_data.Window(width=560, height=300)]
         multiplot = plot_data.MultiplePlots(elements=values, plots=objects, sizes=sizes,
                                             coords=[(0, 0), (0, 300)], name='Results plot')
-        return [multiplot.to_dict()]
+        display_object = DisplayObject(type_="plot_data", data=[multiplot.to_dict()], reference_path=reference_path)
+        return [display_object.to_dict()]
 
     def _display_settings(self, block_index: int, local_values: Dict[Variable, Any] = None) -> List[DisplaySetting]:
         display_settings = DisplaySetting(selector="display_" + str(block_index), type_="plot_data",
