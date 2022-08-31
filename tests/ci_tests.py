@@ -12,6 +12,7 @@ scripts = ['displays.py',
            'heterogeneous_list_pareto.py',
            'filters.py',
            'moving_object.py',
+           'graph.py',
            # Workflows
            'workflow/blocks.py',
            'workflow/workflow_with_models.py',

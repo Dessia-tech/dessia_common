@@ -24,9 +24,9 @@ MAX_ERROR_BY_TYPE = {
                      'no-else-return': 0,
                      'arguments-differ': 2,
                      'no-member': 1,
-                     'too-many-locals': 14,
+                     'too-many-locals': 16,  # Reduce by dropping vectored objects
                      'wrong-import-order': 7,
-                     'too-many-branches': 9,
+                     'too-many-branches': 10,
                      'unused-import': 1,
                      'unused-argument': 5,
                      'cyclic-import': 10,
@@ -43,7 +43,7 @@ MAX_ERROR_BY_TYPE = {
                      'raise-missing-from': 0,
                      'consider-merging-isinstance': 1,
                      'abstract-method': 6,
-                     'import-outside-toplevel': 14, # TODO : will reduced in a future work (when tests are ready)
+                     'import-outside-toplevel': 11,  # TODO : will reduced in a future work (when tests are ready)
                      'too-many-instance-attributes': 7,
                      'consider-iterating-dictionary': 4,
                      'attribute-defined-outside-init': 3,
