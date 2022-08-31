@@ -13,5 +13,3 @@ import networkx as nx
 G = nx.karate_club_graph()
 
 dcd.draw_networkx_graph(G)
-
-dcg.explore_tree_from_leaves(G)
