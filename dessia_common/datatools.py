@@ -624,7 +624,7 @@ class HeterogeneousList(DessiaObject):
         :return: a HeterogeneousList containing the selected points
         :rtype: HeterogeneousList
         """
-        checked_costs = HeterogeneousList._check_costs(len(self.dessia_objects), costs)
+        checked_costs = HeterogeneousList._check_costs(len(self), costs)
         return self[self.__class__.pareto_indexes(checked_costs)]
 
     def pareto_sheets(self, costs: List[List[float]], nb_sheets: int = 1):
@@ -642,7 +642,7 @@ class HeterogeneousList(DessiaObject):
         :return: The successive pareto sheets and not selected elements
         :rtype: `List[HeterogeneousList]`, `HeterogeneousList`
         """
-        checked_costs = HeterogeneousList._check_costs(len(self.dessia_objects), costs)
+        checked_costs = HeterogeneousList._check_costs(len(self), costs)
         non_optimal_costs = checked_costs[:]
         non_optimal_points = self.dessia_objects[:]
         pareto_sheets = []
