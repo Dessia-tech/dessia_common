@@ -3,7 +3,7 @@ Tests for dessia_common.HeterogeneousList class (loadings, check_platform and pl
 """
 import random
 from dessia_common.models import all_cars_no_feat, all_cars_wi_feat, rand_data_middl
-from dessia_common.core import HeterogeneousList
+from dessia_common.datatools import HeterogeneousList
 
 # When attribute _features is not specified in class Car
 all_cars_without_features = HeterogeneousList(all_cars_no_feat)

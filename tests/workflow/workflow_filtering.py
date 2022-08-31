@@ -7,7 +7,8 @@ from dessia_common.files import StringFile
 from dessia_common.typings import ClassMethodType, MethodType
 from dessia_common.tests import Car
 from dessia_common.workflow.blocks import ClassMethod, InstantiateModel, Filter, ModelMethod
-from dessia_common.core import HeterogeneousList, DessiaFilter, FiltersList
+from dessia_common.core import DessiaFilter, FiltersList
+from dessia_common.datatools import HeterogeneousList
 from dessia_common.workflow.core import Workflow, Pipe
 
 # Import data

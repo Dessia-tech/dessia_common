@@ -3,8 +3,7 @@ Cluster.py package testing.
 """
 import json
 from dessia_common.models import all_cars_no_feat, all_cars_wi_feat, rand_data_small, rand_data_large
-from dessia_common.core import HeterogeneousList
-from dessia_common.cluster import CategorizedList
+from dessia_common.datatools import HeterogeneousList, CategorizedList
 
 # When attribute _features is not specified in class Car
 all_cars_without_features = HeterogeneousList(all_cars_no_feat)

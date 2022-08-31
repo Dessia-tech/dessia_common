@@ -7,7 +7,7 @@ from dessia_common.files import StringFile
 from dessia_common.typings import ClassMethodType, MethodType
 from dessia_common.tests import Car
 from dessia_common.workflow.blocks import ClassMethod, InstantiateModel, ModelMethod, Sequence
-from dessia_common.core import HeterogeneousList
+from dessia_common.datatools import HeterogeneousList
 from dessia_common.workflow.core import Workflow, Pipe
 
 # Import data
@@ -38,8 +38,7 @@ workflow = Workflow(blocks, pipes, output=block_5.outputs[0], name='Pick Pareto 
 workflow_run = workflow.run({
     workflow.index(block_0.inputs[0]): stream_file,
     workflow.index(block_2.inputs[1]): 'weight',
-    workflow.index(block_3.inputs[1]): 'mpg',
-    workflow.index(block_5.inputs[2]): 0.1})
+    workflow.index(block_3.inputs[1]): 'mpg'})
 
 # Workflow tests
 workflow._check_platform()
