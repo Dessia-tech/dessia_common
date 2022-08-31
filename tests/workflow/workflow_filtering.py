@@ -51,7 +51,7 @@ assert(json.dumps(wfrun_plot_data[1].to_dict())[10500:10550] == '"0.10.0", "colo
 assert(json.dumps(wfrun_plot_data[2].to_dict())[50:100] == 'te_names": ["Index of reduced basis vector", "Sing')
 
 # JSON TESTS
-output_dict = workflow_run.output_value[[0, 3, 9, 11, 25, 44]].to_dict(use_pointers=True)
+output_dict = workflow_run.output_value[[0, 3, 9, 11, 25, 44]].to_dict()
 output_json = json.dumps(output_dict)
 output_json_to_dict = json.loads(output_json)
 output_jsondict_to_object = HeterogeneousList.dict_to_object(output_json_to_dict)
