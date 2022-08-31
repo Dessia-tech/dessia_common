@@ -387,7 +387,7 @@ class Workflow(Block):
     def _data_hash(self):
         output_hash = hash(self.variable_indices(self.outputs[0]))
 
-        base_hash = len(self.blocks) + 11 * len(self.pipes) + output_hash
+        base_hash = len(self.blocks) + 11 * len(self.pipes) + 23 * len(self.imposed_variable_values) + output_hash
         block_hash = int(sum(b.equivalent_hash() for b in self.blocks) % 10e5)
         return (base_hash + block_hash) % 1000000000
 
@@ -409,10 +409,6 @@ class Workflow(Block):
         return True
 
     def _equivalent_pipes(self, other_wf) -> bool:
-        if len(self.pipes) != len(other_wf.pipes):
-            # useless as workflows' hashes should be different. But is hash good enough ?
-            return False
-
         pipes_1 = []
         pipes_2 = []
         for pipe1, pipe2 in zip(self.pipes, other_wf.pipes):
@@ -426,10 +422,6 @@ class Workflow(Block):
         return set(pipes_1) == set(pipes_2)
 
     def _equivalent_imposed_variables_values(self, other_wf) -> bool:
-        if len(self.imposed_variable_values) != len(other_wf.imposed_variable_values):
-            # mandatory as imposed_variable_values are not handled by hash method
-            return False
-
         ivvs_1 = []
         ivvs_2 = []
         for imposed_key1, imposed_key2 in zip(self.imposed_variable_values.keys(),
@@ -441,15 +433,8 @@ class Workflow(Block):
             ivvs_2.append((variable_index_2, other_wf.imposed_variable_values[imposed_key2]))
 
         for ivv1, ivv2 in zip(set(ivvs_1), set(ivvs_2)):
-            if ivv1[0] != ivv2[0]:
+            if ivv1 != ivv2:
                 return False
-
-            if not isinstance(ivv2[1], type(ivv2[1])):
-                return False
-
-            if isinstance(ivv2[1], (int, float, str, bool)) and ivv2[1] != ivv2[1]:
-                return False
-
         return True
 
     def __deepcopy__(self, memo=None):
