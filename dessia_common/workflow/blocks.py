@@ -250,7 +250,7 @@ class ModelMethod(Block):
     """
     :param method_type: Represent class and method used.
     :type method_type: MethodType[T]
-    :param name: The name of the block.
+    :param name: Name of the block.
     :type name: str
     """
 
@@ -722,7 +722,10 @@ class Filter(Block):
 
 class MultiPlot(Display):
     """
-    :param attributes: A List of all attributes that will be shown inside the ParallelPlot window on DessIA's Platform.
+    Generates a PlotData multiplot which axes will be the given attributes
+    (can be deep attributes with the '/' separator)
+
+    :param attributes: A List of all attributes that will be shown on axes in the ParallelPlot window.
     :type attributes: List[str]
     :param name: The name of the block.
     :type name: str
@@ -783,6 +786,8 @@ class MultiPlot(Display):
 
 class CadView(Display):
     """
+    Generates a DisplayObject that is displayable in 3D Viewer features (BabylonJS, ...)
+
     :param name: The name of the block.
     :type name: str
     """
@@ -807,6 +812,8 @@ class CadView(Display):
 
 class Markdown(Display):
     """
+    Generates the markdown representation of an object
+
     :param name: Name of the block.
     :type name: str
     """
@@ -954,11 +961,29 @@ class Substraction(Block):
 
 class Export(Block):
     def __init__(self, method_type: MethodType[Type],  text: bool, extension: str,
-                 export_name: str = "export", name: str = ""):
+                 filename: str = "export", name: str = ""):
+        """
+        Block that enables an export of an object calling its configured method.
+        Only Methods that yields streams (and not files) should be used.
+
+        The file generated will be called {filename}.{extension}
+
+        :param method_type: An object that have a class_ input (which is the class of the incoming model)
+            and a name (which is the name of the method that will be called).
+        :type method_type: MethodType[T]
+        :param text: Whether the export is of type text or not
+        :type text: bool
+        :param extension: Extension of the resulting file (ex: json or xlsx)
+        :type extension: str
+        :param filename: Name of the resulting file without its extension
+        :type filename: str
+        :param name: Name of the block.
+        :type name: str
+        """
         self.method_type = method_type
-        if not export_name:
-            export_name = "export"
-        self.export_name = export_name
+        if not filename:
+            filename = "export"
+        self.filename = filename
 
         method = method_type.get_method()
 
@@ -973,7 +998,7 @@ class Export(Block):
         classname = full_classname(object_=self.method_type.class_, compute_for='class')
         method_type_dict = {'class_': classname, 'name': self.method_type.name}
         dict_.update({"method_type": method_type_dict, "extension": self.extension,
-                      "text": self.text, "export_name": self.export_name})
+                      "text": self.text, "filename": self.filename})
         return dict_
 
     @classmethod
@@ -982,11 +1007,11 @@ class Export(Block):
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'Export':
         class_ = get_python_class_from_class_name(dict_['method_type']['class_'])
         method_type = MethodType(class_=class_, name=dict_['method_type']['name'])
-        return cls(method_type=method_type, text=dict_['text'], export_name=dict_["export_name"],
+        return cls(method_type=method_type, text=dict_['text'], filename=dict_["filename"],
                    extension=dict_["extension"], name=dict_["name"])
 
     def evaluate(self, values):
-        filename = f"{self.export_name}.{self.extension}"
+        filename = f"{self.filename}.{self.extension}"
         if self.text:
             stream = StringFile(filename)
         else:
@@ -997,12 +1022,12 @@ class Export(Block):
     def _export_format(self, block_index: int):
         args = {"block_index": block_index}
         return {"extension": self.extension, "method_name": "export", "text": self.text,
-                "export_name": self.export_name, "args": args}
+                "filename": self.filename, "args": args}
 
     def _to_script(self) -> ToScriptElement:
         script = f"Export(method_type=MethodType(" \
                  f"{full_classname(object_=self.method_type.class_, compute_for='class')}, '{self.method_type.name}')" \
-                 f", export_name='{self.export_name}', extension='{self.extension}'" \
+                 f", filename='{self.filename}', extension='{self.extension}'" \
                  f", text={self.text}, name='{self.name}')"
 
         imports = [self.full_classname, full_classname(object_=self.method_type, compute_for='instance'),
@@ -1011,23 +1036,33 @@ class Export(Block):
 
 
 class Archive(Block):
-    def __init__(self, number_exports: int = 1, export_name: str = "archive", name: str = ""):
+    def __init__(self, number_exports: int = 1, filename: str = "archive", name: str = ""):
+        """
+        A block that takes n inputs and store them in a archive (ZIP,...)
+
+        :param number_exports: The number of files that will be stored in the archive
+        :type number_exports: int
+        :param filename: Name of the resulting archive file without its extension
+        :type filename: str
+        :param name: Name of the block.
+        :type name: str
+        """
         self.number_exports = number_exports
-        self.export_name = export_name
+        self.filename = filename
         inputs = [Variable(name="export_" + str(i)) for i in range(number_exports)]
         Block.__init__(self, inputs=inputs, outputs=[Variable(name="zip archive")], name=name)
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#'):
         dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         dict_['number_exports'] = len(self.inputs)
-        dict_["export_name"] = self.export_name
+        dict_["filename"] = self.filename
         return dict_
 
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
-        return cls(number_exports=dict_["number_exports"], export_name=dict_["export_name"], name=dict_['name'])
+        return cls(number_exports=dict_["number_exports"], filename=dict_["filename"], name=dict_['name'])
 
     def evaluate(self, values):
         archive = io.BytesIO()
@@ -1046,10 +1081,10 @@ class Archive(Block):
 
     def _export_format(self, block_index: int):
         return {"extension": "zip", "method_name": "export", "text": False,
-                "export_name": self.export_name, "args": {"block_index": block_index}}
+                "filename": self.filename, "args": {"block_index": block_index}}
 
     def _to_script(self) -> ToScriptElement:
-        script = f"Archive(number_exports={self.number_exports}, export_name='{self.export_name}', name='{self.name}')"
+        script = f"Archive(number_exports={self.number_exports}, filename='{self.filename}', name='{self.name}')"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
 
