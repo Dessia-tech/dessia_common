@@ -748,7 +748,7 @@ class MultiPlot(Display):
         return sum(len(a) for a in self.attributes)
 
     def _display_settings(self, block_index: int) -> DisplaySetting:
-        return block_display_settings(block_index=block_index, type_="markdown", name=self.name)
+        return block_display_settings(block_index=block_index, type_="plot_data", name=self.name)
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
         dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
@@ -797,7 +797,7 @@ class CadView(Display):
         Display.__init__(self, inputs=[input_], name=name)
 
     def _display_settings(self, block_index: int) -> DisplaySetting:
-        return block_display_settings(block_index=block_index, type_="markdown", name=self.name)
+        return block_display_settings(block_index=block_index, type_="cad", name=self.name)
 
     def evaluate(self, values):
         object_ = values[self.inputs[0]]
@@ -1022,7 +1022,7 @@ class Export(Block):
     def _export_format(self, block_index: int):
         args = {"block_index": block_index}
         return {"extension": self.extension, "method_name": "export", "text": self.text,
-                "filename": self.filename, "args": args}
+                "export_name": self.filename, "args": args}
 
     def _to_script(self) -> ToScriptElement:
         script = f"Export(method_type=MethodType(" \
@@ -1081,7 +1081,7 @@ class Archive(Block):
 
     def _export_format(self, block_index: int):
         return {"extension": "zip", "method_name": "export", "text": False,
-                "filename": self.filename, "args": {"block_index": block_index}}
+                "export_name": self.filename, "args": {"block_index": block_index}}
 
     def _to_script(self) -> ToScriptElement:
         script = f"Archive(number_exports={self.number_exports}, filename='{self.filename}', name='{self.name}')"
