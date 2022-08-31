@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Mon Oct 25 12:28:55 2021
 
-@author: masfaraud
-"""
 
 import dessia_common.displays as dcd
 import dessia_common.graph as dcg
 import networkx as nx
 
-G = nx.karate_club_graph()
+G = nx.gn_graph(80)
 
 dcd.draw_networkx_graph(G)
+
+reg = dcg.extract_region(G, [1, 2])
+
+assert 1 in reg
+
+
+order = dcg.explore_tree_from_leaves(G)
