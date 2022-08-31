@@ -1,7 +1,6 @@
 """
 Library for building clusters on data.
 """
-import itertools
 from typing import List
 
 import numpy as npy
