@@ -909,7 +909,7 @@ class HeterogeneousList(DessiaObject):
                                                          self.__class__.pareto_indexes(costs))))
 
     @staticmethod
-    def _get_pareto_sheet(dessia_objects: List[DessiaObject], costs: List[List[float]]):
+    def _get_pareto_sheet(costs: List[List[float]]):
         pareto_sheet = HeterogeneousList.pareto_indexes(costs, 0.)
         return pareto_sheet, list(itertools.compress(costs, map(lambda x: not x, pareto_sheet)))
 
