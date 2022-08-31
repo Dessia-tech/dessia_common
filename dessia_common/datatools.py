@@ -734,7 +734,7 @@ class CategorizedList(HeterogeneousList):
 
     **Built-in methods**: See :func:`~dessia_common.core.HeterogeneousList`
     """
-    _allowed_methods = ['from_agglomerative_clustering', 'from_kmeans', 'from_dbscan']
+    _allowed_methods = ['from_agglomerative_clustering', 'from_kmeans', 'from_dbscan', 'from_pareto_sheets']
 
     def __init__(self, dessia_objects: List[DessiaObject] = None, labels: List[int] = None, name: str = ''):
         HeterogeneousList.__init__(self, dessia_objects=dessia_objects, name=name)
