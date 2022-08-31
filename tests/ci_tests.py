@@ -10,6 +10,7 @@ scripts = ['displays.py',
            'clustering.py',
            'heterogeneous_list.py',
            'heterogeneous_list_pareto.py',
+           'filters.py',
            'moving_object.py',
            'graph.py',
            # Workflows
@@ -21,6 +22,7 @@ scripts = ['displays.py',
            'workflow/workflow_state_equalities.py',
            'workflow/workflow_diverge_converge.py',
            'workflow/workflow_clustering.py',
+           'workflow/workflow_filtering.py',
            # breakdown
            'breakdown.py',
            # Utils

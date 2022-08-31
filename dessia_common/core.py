@@ -8,6 +8,7 @@ dessia_common
 import time
 import sys
 import warnings
+import operator
 import math
 import random
 import itertools
@@ -751,24 +752,389 @@ class MovingObject(PhysicalObject):
         return vm.core.MovingVolumeModel(self.volmdlr_primitives(**kwargs),
                                          self.volmdlr_primitives_step_frames(**kwargs))
 
+# class Catalog(DessiaObject):
+#     def __init__(self, objects: List[DessiaObject], name: str = ''):
+#         self.objects = objects
+#         DessiaObject.__init__(self, name=name)
+
+
+class Parameter(DessiaObject):
+    def __init__(self, lower_bound, upper_bound, periodicity=None, name=''):
+        DessiaObject.__init__(self, name=name)
+        self.lower_bound = lower_bound
+        self.upper_bound = upper_bound
+        self.periodicity = periodicity
+
+    def random_value(self):
+        """
+        Sample a value within the bounds
+        """
+        return random.uniform(self.lower_bound, self.upper_bound)
+
+    def are_values_equal(self, value1, value2, tol=1e-2):
+        if self.periodicity is not None:
+            value1 = value1 % self.periodicity
+            value2 = value2 % self.periodicity
+
+        return math.isclose(value1, value2, abs_tol=tol)
+
+    def normalize(self, value):
+        normalized_value = (value - self.lower_bound) / (self.upper_bound - self.lower_bound)
+        return normalized_value
+
+    def original_value(self, normalized_value):
+        value = normalized_value * (self.upper_bound - self.lower_bound) + self.lower_bound
+        return value
+
+    def optimizer_bounds(self):
+        if self.periodicity is not None:
+            return (self.lower_bound - 0.5 * self.periodicity, self.upper_bound + 0.5 * self.periodicity)
+        return None
+
+
+class ParameterSet(DessiaObject):
+    def __init__(self, values, name=''):
+        self.values = values
+
+        DessiaObject.__init__(self, name=name)
+
+    @property
+    def parameters(self):
+        parameters = [Parameter(min(v), max(v), name=k) for k, v in self.values.items()]
+        return parameters
+
+    @property
+    def means(self):
+        means = {k: sum(v) / len(v) for k, v in self.values.items()}
+        return means
+
+
+class DessiaFilter(DessiaObject):
+    _REAL_OPERATORS = {'>': operator.gt, '<': operator.lt, '>=': operator.ge, '<=': operator.le,'==': operator.eq,
+                       '!=': operator.ne, 'gt': operator.gt, 'lt': operator.lt, 'ge': operator.ge,'le': operator.le,
+                       'eq': operator.eq, 'ne': operator.ne, 'gte': operator.ge,'lte': operator.le}
+
+    def __init__(self, attribute: str, comparison_operator: str, bound: float, name: str = ''):
+        self.attribute = attribute
+        self.comparison_operator = comparison_operator
+        self.bound = bound
+        DessiaObject.__init__(self, name=name)
+
+    def __str__(self, offset_attr: int=10, offset_boun: int=0):
+        offset_oper = 0
+        if offset_boun == 0:
+            offset_boun = len(str(self.bound)) + 2
+        string_operator = {'>':'>','<':'<','>=':'>=','<=':'<=','==':'==','!=':'!=','gt':'>','lt':'<','ge':'>=',
+                           'le':'<=','eq':'==','ne':'!=','gte':'>=','lte':'<='}
+        printed_operator = string_operator[self.comparison_operator]
+        return (self.attribute + " "*(offset_attr - len(self.attribute)) +
+                printed_operator + " "*(offset_oper - len(printed_operator)) +
+                " "*(offset_boun - len(str(self.bound))) +str(self.bound))
+
+    def __hash__(self):
+        hash_ = len(self.attribute)
+        hash_ += hash(self.comparison_operator)
+        hash_ += hash(self.bound)
+        return int(hash_)
+
+    def __eq__(self, other: 'DessiaFilter'):
+        same_attr = self.attribute == other.attribute
+        same_op = self.comparison_operator == other.comparison_operator
+        same_bound = self.bound == other.bound
+        return same_attr and same_op and same_bound
+
+    def _comparison_operator(self):
+        return self._REAL_OPERATORS[self.comparison_operator]
+
+    def _to_lambda(self):
+        return lambda x: (self._comparison_operator()(enhanced_deep_attr(value, self.attribute), self.bound)
+                          for value in x)
+
+    def get_booleans_index(self, values: List[DessiaObject]):
+        """
+        Get the boolean indexing of a filtered list
+
+        :param values:
+            List of DessiaObjects to filter
+        :type values: List[DessiaObject]
+
+        :return: `list of length `len(values)` where elements are `True` if kept by the filter, otherwise `False`.
+        :rtype: `List[bool]`
+
+        Examples
+        --------
+        >>> from dessia_common.core import DessiaFilter
+        >>> from dessia_common.models import all_cars_no_feat
+        >>> values = all_cars_no_feat[:5]
+        >>> filter_ = DessiaFilter('weight', '<=', 3500.)
+        >>> filter_.get_booleans_index(values)
+        [False, False, True, True, True]
+        """
+        return list(self._to_lambda()(values))
+
+    @staticmethod
+    def booleanlist_to_indexlist(booleans_list: List[int]): # TODO: Should it exist ?
+        return list(itertools.compress(booleans_list, range(len(booleans_list))))
+
+    @staticmethod
+    def apply(values: List[DessiaObject], booleans_list: List[List[bool]]):
+        return list(itertools.compress(values, booleans_list))
+
+
+class FiltersList(DessiaObject):
+    _standalone_in_db = True
+
+    def __init__(self, filters: List[DessiaFilter], logical_operator: str = 'and', name: str = ''):
+        self.filters = filters
+        self.logical_operator = logical_operator
+        DessiaObject.__init__(self, name=name)
+
+    def __len__(self):
+        return len(self.filters)
+
+    def __str__(self):
+        print_lim = 15
+        len_attr = max(map(len, [filter_.attribute for filter_ in self.filters]))
+        len_numb = max(map(len, [str(filter_.bound) for filter_ in self.filters]))
+        prefix = f"{self.__class__.__name__} {self.name if self.name != '' else hex(id(self))}: "
+        prefix += f"{len(self)} filters combined with '" + self.logical_operator + "' operator :\n"
+        string = ""
+        for filter_ in self.filters[:print_lim]:
+            string += " "*3 + "- "
+            string += filter_.__str__(len_attr + 2, len_numb + 2)
+            string += "\n"
+        return prefix + string
+
+    @classmethod
+    def from_filters_list(cls, filters_list: List[DessiaFilter], logical_operator: str = 'and', name: str = ''):
+        return cls(filters=filters_list, logical_operator=logical_operator, name=name)
+
+    @staticmethod
+    def combine_booleans_lists(booleans_lists: List[List[bool]], logical_operator: str = 'and'):
+        if logical_operator == 'and':
+            return [all(booleans_tuple) for booleans_tuple in zip(*booleans_lists)]
+        if logical_operator == 'or':
+            return [any(booleans_tuple) for booleans_tuple in zip(*booleans_lists)]
+        if logical_operator == 'xor':
+            return [True if sum(booleans_tuple) == 1 else False for booleans_tuple in zip(*booleans_lists)]
+        raise NotImplementedError(f"'{logical_operator}' str for 'logical_operator' attribute is not a use case")
+
+    def get_booleans_index(self, dobject_list: List[DessiaObject]):
+        booleans_index = []
+        for filter_ in self.filters:
+            booleans_index.append(filter_.get_booleans_index(dobject_list))
+        return self.__class__.combine_booleans_lists(booleans_index, self.logical_operator)
+
+    def apply(self, dobject_list: List[DessiaObject]):
+        booleans_index = self.get_booleans_index(dobject_list)
+        return DessiaFilter.apply(dobject_list, booleans_index)
+
 
 class HeterogeneousList(DessiaObject):
     _standalone_in_db = True
+    _vector_features = ["name", "common_attributes"]
 
     def __init__(self, dessia_objects: List[DessiaObject] = None, name: str = ''):
-        DessiaObject.__init__(self, name=name)
+        if dessia_objects is None:
+            dessia_objects = []
         self.dessia_objects = dessia_objects
-        self.common_attributes = self._common_attributes()
+        self._common_attributes = None
         self._matrix = None
+        DessiaObject.__init__(self, name=name)
 
-    def _common_attributes(self):
-        all_class = list(set(dessia_object.__class__ for dessia_object in self.dessia_objects))
-        common_attributes = set(all_class[0].vector_features())
-        for klass in all_class[1:]:
-            common_attributes = common_attributes.intersection(set(klass.vector_features()))
+    def __getitem__(self, key: Any):
+        if len(self.dessia_objects) == 0:
+            return []
+        if isinstance(key, int):
+            return self.pick_from_int(key)
+        if isinstance(key, slice):
+            return self.pick_from_slice(key)
+        if isinstance(key, list):
+            if len(key) == 0:
+                return self.__class__()
+            if isinstance(key[0], bool):
+                if len(key) == self.__len__():
+                    return self.pick_from_boolist(key)
+                raise ValueError(f"Cannot index {self.__class__.__name__} object of len {self.__len__()} with a " +
+                                 f"list of boolean of len {len(key)}")
+            if isinstance(key[0], int):
+                return self.pick_from_boolist(self.indexlist_to_booleanlist(key))
 
-        # attributes' order kept this way, not with set or sorted(set)
-        return list(attr for attr in get_attribute_names(all_class[0]) if attr in common_attributes)
+        raise NotImplementedError(f"key of type {type(key)} with {type(key[0])} elements not implemented for " +
+                                  "indexing HeterogeneousLists")
+
+    def __add__(self, other: 'HeterogeneousList'):
+        if self.__class__ != HeterogeneousList or other.__class__ != HeterogeneousList:
+            raise TypeError("Addition only defined for HeterogeneousList. A specific __add__ method is required for " +
+                            f"{self.__class__}")
+
+        sum_hlist = self.__class__(dessia_objects = self.dessia_objects + other.dessia_objects,
+                                   name = self.name[:5] + '_+_' + other.name[:5])
+
+        if all(item in self.common_attributes for item in other.common_attributes):
+            sum_hlist._common_attributes = self.common_attributes
+            if self._matrix is not None and other._matrix is not None:
+                sum_hlist._matrix = self._matrix + other._matrix
+        return sum_hlist
+
+    def extend(self, other: 'HeterogeneousList'):
+        """
+        Update a HeterogeneousList by adding b values to it
+
+        :param b: HeterogeneousList to add to the current HeterogeneousList
+        :type b: HeterogeneousList
+
+        :return: None
+
+        Examples
+        --------
+        >>> from dessia_common.core import HeterogeneousList
+        >>> from dessia_common.models import all_cars_wi_feat
+        >>> HeterogeneousList(all_cars_wi_feat).extend(HeterogeneousList(all_cars_wi_feat))
+        HeterogeneousList(all_cars_wi_feat + all_cars_wi_feat)
+        """
+        # Not "self.dessia_objects += other.dessia_objects" to take advantage of __add__ algorithm
+        self.__dict__.update((self + other).__dict__)
+
+    def pick_from_int(self, idx: int):
+        return self.dessia_objects[idx]
+
+    def pick_from_slice(self, key: slice):
+        new_hlist = self.__class__(dessia_objects = self.dessia_objects[key], name = self.name)
+        new_hlist._common_attributes = copy(self._common_attributes)
+        new_hlist.dessia_objects = self.dessia_objects[key]
+        if self._matrix is not None:
+            new_hlist._matrix = self._matrix[key]
+        # new_hlist.name += f"_{key.start if key.start is not None else 0}_{key.stop}")
+        return new_hlist
+
+    def indexlist_to_booleanlist(self, index_list: List[int]):
+        boolean_list = [False]*len(self)
+        for idx in index_list:
+            boolean_list[idx] = True
+        return boolean_list
+
+    def pick_from_boolist(self, key: List[bool]):
+        new_hlist = self.__class__(dessia_objects = DessiaFilter.apply(self.dessia_objects, key), name = self.name)
+        new_hlist._common_attributes = copy(self._common_attributes)
+        if self._matrix is not None:
+            new_hlist._matrix = DessiaFilter.apply(self._matrix, key)
+        # new_hlist.name += "_list")
+        return new_hlist
+
+    def __str__(self):
+        size_col_label = self._set_size_col_label()
+        attr_name_len = []
+        attr_space = []
+        prefix = self._write_str_prefix()
+
+        if self.__len__() == 0:
+            return prefix
+
+        string = ""
+        string += self._print_titles(attr_space, attr_name_len, size_col_label)
+        string += "\n" + "-"*len(string)
+
+        string += self._print_objects_slice(slice(0, 5), attr_space, attr_name_len,
+                                            self._set_label_space(size_col_label))
+
+        undispl_len = len(self) - 10
+        string += (f"\n+ {undispl_len} undisplayed object" + "s"*(min([undispl_len, 2])-1) + "..."
+                   if len(self) > 10 else '')
+
+        string += self._print_objects_slice(slice(-5, len(self)), attr_space, attr_name_len,
+                                            self._set_label_space(size_col_label))
+        return prefix + "\n" + string + "\n"
+
+    def _print_objects_slice(self, key: slice, attr_space: int, attr_name_len: int, label_space: int):
+        string = ""
+        for dessia_object in self.dessia_objects[key]:
+            string += "\n" + " "*label_space
+            string += self._print_objects(dessia_object, attr_space, attr_name_len)
+        return string
+
+    def _set_size_col_label(self):
+        return 0
+
+    def _set_label_space(self, size_col_label: int):
+        if size_col_label:
+            return 2*size_col_label - 1
+        return 0
+
+    def _write_str_prefix(self):
+        prefix = f"{self.__class__.__name__} {self.name if self.name != '' else hex(id(self))}: "
+        prefix += f"{len(self)} samples, {len(self.common_attributes)} features"
+        return prefix
+
+    def _print_titles(self, attr_space: int, attr_name_len: int, size_col_label: int):
+        string = ""
+        if size_col_label:
+            string += "|" + " "*(size_col_label - 1) + "n°" + " "*(size_col_label - 1)
+        for idx, attr in enumerate(self.common_attributes):
+            end_bar = ""
+            if idx == len(self.common_attributes) - 1:
+                end_bar = "|"
+            # attribute
+            attr_space.append(len(attr) + 6)
+            name_attr = " "*3 + f"{attr.capitalize()}" + " "*3
+            attr_name_len.append(len(name_attr))
+            string += "|" + name_attr + end_bar
+        return string
+
+    def _print_objects(self, dessia_object: DessiaObject, attr_space: int, attr_name_len: int):
+        string = ""
+        for idx, attr in enumerate(self.common_attributes):
+            end_bar = ""
+            if idx == len(self.common_attributes) - 1:
+                end_bar = "|"
+
+            # attribute
+            string += "|" + " "*(attr_space[idx] - len(str(getattr(dessia_object, attr))) - 1)
+            string += f"{getattr(dessia_object, attr)}"[:attr_name_len[idx] - 3]
+            if len(str(getattr(dessia_object, attr))) > attr_name_len[idx] - 3:
+                string += "..."
+            else:
+                string += " "
+            string += end_bar
+        return string
+
+    def __len__(self):
+        return len(self.dessia_objects)
+
+    def get_attribute_values(self, attribute: str):
+        return [getattr(dessia_object, attribute) for dessia_object in self.dessia_objects]
+
+    def get_column_values(self, index: int):
+        return [row[index] for row in self.matrix]
+
+    def sort(self, key: Any, ascend: bool = True): # TODO : Replace numpy with faster algorithms
+        if self.__len__() != 0:
+            if isinstance(key, int):
+                sort_indexes = npy.argsort(self.get_column_values(key))
+            elif isinstance(key, str):
+                sort_indexes = npy.argsort(self.get_attribute_values(key))
+            self.dessia_objects = [self.dessia_objects[idx] for idx in (sort_indexes if ascend else sort_indexes[::-1])]
+            if self._matrix is not None:
+                self._matrix = [self._matrix[idx] for idx in (sort_indexes if ascend else sort_indexes[::-1])]
+
+    @property
+    def common_attributes(self):
+        if self._common_attributes is None:
+            if len(self.dessia_objects) == 0:
+                return []
+            all_class = list(set(dessia_object.__class__ for dessia_object in self.dessia_objects))
+
+            if len(all_class) == 1 and isinstance(self.dessia_objects[0], HeterogeneousList):
+                return self.vector_features()
+
+            common_attributes = set(all_class[0].vector_features())
+            for klass in all_class[1:]:
+                common_attributes = common_attributes.intersection(set(klass.vector_features()))
+
+            # attributes' order kept this way, not with set or sorted(set)
+            self._common_attributes = list(attr for attr in get_attribute_names(all_class[0])
+                                           if attr in common_attributes)
+        return self._common_attributes
 
     @property
     def matrix(self):
@@ -780,6 +1146,37 @@ class HeterogeneousList(DessiaObject):
                 matrix.append(list(temp_row[vector_features.index(attr)] for attr in self.common_attributes))
             self._matrix = matrix
         return self._matrix
+
+    def filtering(self, filters_list: FiltersList):
+        """
+        Filter a HeterogeneousList given a FiltersList.
+        Method filtering apply a FiltersList to the current HeterogeneousList.
+
+        :param filters_list:
+            FiltersList to apply on current HeterogeneousList
+        :type filters_list: FiltersList
+
+        :return: The filtered HeterogeneousList
+        :rtype: HeterogeneousList
+
+        Examples
+        --------
+        >>> from dessia_common.core import HeterogeneousList, DessiaFilter
+        >>> from dessia_common.models import all_cars_wi_feat
+        >>> filters = [DessiaFilter('weight', '<=', 1650.), DessiaFilter('mpg', '>=', 45.)]
+        >>> filters_list = FiltersList(filters, "xor")
+        >>> example_list = HeterogeneousList(all_cars_wi_feat, name="example")
+        >>> filtered_list = example_list.filtering(filters_list)
+        >>> print(filtered_list)
+        HeterogeneousList example: 3 samples, 5 features
+        |         Mpg         |    Displacement    |     Horsepower     |       Weight       |    Acceleration    |
+        -----------------------------------------------------------------------------------------------------------
+        |               35.0  |             0.072  |              69.0  |            1613.0  |              18.0  |
+        |               31.0  |             0.076  |              52.0  |            1649.0  |              16.5  |
+        |               46.6  |             0.086  |              65.0  |            2110.0  |              17.9  |
+        """
+        booleans_index = filters_list.get_booleans_index(self.dessia_objects)
+        return self.pick_from_boolist(booleans_index)
 
     def singular_values(self):
         scaled_data = HeterogeneousList.scale_data(npy.array(self.matrix) - npy.mean(self.matrix, axis = 0))
@@ -809,8 +1206,7 @@ class HeterogeneousList(DessiaObject):
                                                self._tooltip_attributes(),
                                                axis=dimensionality_plot.axis,
                                                point_style=dimensionality_plot.point_style)
-
-        return [dimensionality_plot, scatter_matrix]
+        return [scatter_matrix, dimensionality_plot]
 
     def _build_multiplot(self, data_list: List[Dict[str, float]], tooltip: List[str], **kwargs: Dict[str, Any]):
         import plot_data
@@ -818,7 +1214,13 @@ class HeterogeneousList(DessiaObject):
         for line_attr in self.common_attributes:
             for col_attr in self.common_attributes:
                 if line_attr == col_attr:
-                    subplots.append(plot_data.Histogram(x_variable=line_attr))
+                    unic_values = set((getattr(dobject, line_attr) for dobject in self.dessia_objects))
+                    if len(unic_values) == 1:
+                        subplots.append(plot_data.Scatter(x_variable=line_attr,
+                                                          y_variable=col_attr,
+                                                          elements=data_list))
+                    else:
+                        subplots.append(plot_data.Histogram(x_variable=line_attr))
                 else:
                     subplots.append(plot_data.Scatter(x_variable=line_attr,
                                                       y_variable=col_attr,
@@ -826,9 +1228,9 @@ class HeterogeneousList(DessiaObject):
                                                       **kwargs))
 
         scatter_matrix = plot_data.MultiplePlots(plots=subplots,
-                                                 elements=data_list,
-                                                 point_families=self._point_families(),
-                                                 initial_view_on=True)
+                                                  elements=data_list,
+                                                  point_families=self._point_families(),
+                                                  initial_view_on=True)
         return scatter_matrix
 
     def _tooltip_attributes(self):
@@ -843,8 +1245,7 @@ class HeterogeneousList(DessiaObject):
     def _point_families(self):
         from plot_data.colors import BLUE
         from plot_data.core import PointFamily
-        return [PointFamily(BLUE, list(range(len(self.dessia_objects))))]
-
+        return [PointFamily(BLUE, list(range(self.__len__())))]
 
     def plot_dimensionality(self):
         import plot_data
@@ -987,76 +1388,7 @@ class HeterogeneousList(DessiaObject):
 
         return frontier_2d
 
-class Parameter(DessiaObject):
-    def __init__(self, lower_bound, upper_bound, periodicity=None, name=''):
-        DessiaObject.__init__(self, name=name)
-        self.lower_bound = lower_bound
-        self.upper_bound = upper_bound
-        self.periodicity = periodicity
 
-    def random_value(self):
-        """
-        Sample a value within the bounds
-        """
-        return random.uniform(self.lower_bound, self.upper_bound)
-
-    def are_values_equal(self, value1, value2, tol=1e-2):
-        if self.periodicity is not None:
-            value1 = value1 % self.periodicity
-            value2 = value2 % self.periodicity
-
-        return math.isclose(value1, value2, abs_tol=tol)
-
-    def normalize(self, value):
-        normalized_value = (value - self.lower_bound) / (self.upper_bound - self.lower_bound)
-        return normalized_value
-
-    def original_value(self, normalized_value):
-        value = normalized_value * (self.upper_bound - self.lower_bound) + self.lower_bound
-        return value
-
-    def optimizer_bounds(self):
-        if self.periodicity is not None:
-            return (self.lower_bound - 0.5 * self.periodicity, self.upper_bound + 0.5 * self.periodicity)
-        return None
-
-
-class ParameterSet(DessiaObject):
-    def __init__(self, values, name=''):
-        self.values = values
-
-        DessiaObject.__init__(self, name=name)
-
-    @property
-    def parameters(self):
-        parameters = [Parameter(min(v), max(v), name=k) for k, v in self.values.items()]
-        return parameters
-
-    @property
-    def means(self):
-        means = {k: sum(v) / len(v) for k, v in self.values.items()}
-        return means
-
-
-class DessiaFilter(DessiaObject):
-    def __init__(self, attribute: str, operator: str, bound: float, name: str = ''):
-        self.attribute = attribute
-        self.operator = operator
-        self.bound = bound
-
-        DessiaObject.__init__(self, name=name)
-
-    def __hash__(self):
-        hash_ = len(self.attribute)
-        hash_ += hash(self.operator)
-        hash_ += hash(self.bound)
-        return int(hash_)
-
-    def __eq__(self, other: 'DessiaFilter'):
-        same_attr = self.attribute == other.attribute
-        same_op = self.operator == other.operator
-        same_bound = self.bound == other.bound
-        return same_attr and same_op and same_bound
 def dict_merge(old_dct, merge_dct, add_keys=True, extend_lists=True):
     """ Recursive dict merge. Inspired by :meth:``dict.update()``, instead of
     updating only top-level keys, dict_merge recurses down into dicts nested
@@ -1208,20 +1540,20 @@ def sequence_to_deepattr(sequence):
 
 def is_bounded(filter_: DessiaFilter, value: float):
     bounded = True
-    operator = filter_.operator
+    comparison_operator = filter_.comparison_operator
     bound = filter_.bound
 
-    if operator == 'lte' and value > bound:
+    if comparison_operator == 'lte' and value > bound:
         bounded = False
-    if operator == 'gte' and value < bound:
-        bounded = False
-
-    if operator == 'lt' and value >= bound:
-        bounded = False
-    if operator == 'gt' and value <= bound:
+    if comparison_operator == 'gte' and value < bound:
         bounded = False
 
-    if operator == 'eq' and value != bound:
+    if comparison_operator == 'lt' and value >= bound:
+        bounded = False
+    if comparison_operator == 'gt' and value <= bound:
+        bounded = False
+
+    if comparison_operator == 'eq' and value != bound:
         bounded = False
     return bounded
 

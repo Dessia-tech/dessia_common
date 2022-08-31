@@ -23,7 +23,7 @@ def concatenate(values):
 
     if isinstance(first_value, dc.HeterogeneousList): # TODO merge with list case when extend is developed in HList
         dessia_objects = []
-        name = ''
+        name = 'test_concat'
         for value in values:
             dessia_objects.extend(value.dessia_objects)
             name += value.name + ("_" if value.name != "" else "")
