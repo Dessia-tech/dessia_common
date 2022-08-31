@@ -16,7 +16,7 @@ csv_cars = pkg_resources.resource_stream('dessia_common', 'models/data/cars.csv'
 stream_file = StringFile.from_stream(csv_cars)
 
 # ===============================================================================================================
-# CategorizedList Workflow (available here https://testanguy.dessia.ovh/workflows/62f0d264fe92095c4b4e4930)
+# CategorizedList Workflow
 # ===============================================================================================================
 
 block_0 = ClassMethod(method_type=ClassMethodType(Car, 'from_csv'), name='CSV Cars')
@@ -44,8 +44,10 @@ workflow_run = workflow.run({
 
 # Workflow tests
 workflow._check_platform()
-workflow.plot()
-workflow_run.output_value.plot()
+wfrun_plot_data = workflow_run.output_value.plot_data()
+assert(json.dumps(wfrun_plot_data[0].to_dict())[150:200] == 'acceleration": 12.0, "model": 70.0, "Cluster Label')
+assert(json.dumps(wfrun_plot_data[1].to_dict())[10500:10550] == ', "cylinders": 8.0, "displacement": 0.35, "horsepo')
+assert(json.dumps(wfrun_plot_data[2].to_dict())[50:100] == 'te_names": ["Index of reduced basis vector", "Sing')
 
 # JSON TESTS
 output_dict = workflow_run.output_value[[0, 3, 10, 15, 30, -1]].to_dict(use_pointers=True)
@@ -53,10 +55,8 @@ output_json = json.dumps(output_dict)
 output_json_to_dict = json.loads(output_json)
 output_jsondict_to_object_1 = CategorizedList.dict_to_object(output_json_to_dict)
 
-
 # ===============================================================================================================
-# CategorizedList Big Workflow (available here
-#   https://testanguy.dessia.ovh/objects/dessia_common.workflow.core.WorkflowRun/62f10fd38e9c9efc8f3cbe27)
+# CategorizedList Big Workflow
 # ===============================================================================================================
 
 block_0 = ClassMethod(method_type=ClassMethodType(Car, 'from_csv'), name='CSV Cars')
@@ -88,8 +88,10 @@ workflow_run = workflow.run({
 
 # Workflow tests
 workflow._check_platform()
-workflow.plot()
-workflow_run.output_value.plot()
+wfrun_plot_data = workflow_run.output_value.plot_data()
+assert(json.dumps(wfrun_plot_data[0].to_dict())[150:200] == 'cceleration": 20.5, "model": 70.0, "Cluster Label"')
+assert(json.dumps(wfrun_plot_data[1].to_dict())[10500:10550] == '8.0, "displacement": 0.35, "horsepower": 155.0, "w')
+assert(json.dumps(wfrun_plot_data[2].to_dict())[50:100] == 'te_names": ["Index of reduced basis vector", "Sing')
 
 # JSON TESTS
 output_dict = workflow_run.output_value[[0, 3, 5, 2, 12, -1]].to_dict(use_pointers=True)

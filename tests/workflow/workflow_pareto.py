@@ -1,7 +1,7 @@
 """
 Test for pareto in workflows
 """
-
+import json
 import pkg_resources
 from dessia_common.files import StringFile
 from dessia_common.typings import ClassMethodType, MethodType
@@ -42,6 +42,7 @@ workflow_run = workflow.run({
 
 # Workflow tests
 workflow._check_platform()
-workflow.plot()
-workflow_run.output_value.plot()
-
+wfrun_plot_data = workflow_run.output_value.plot_data()
+assert(json.dumps(wfrun_plot_data[0].to_dict())[50:100] == 's": [{"mpg": 26.0, "cylinders": 4.0, "displacement')
+assert(json.dumps(wfrun_plot_data[1].to_dict())[10400:10450] == ': ["mpg", "cylinders", "displacement", "horsepower')
+assert(json.dumps(wfrun_plot_data[2].to_dict())[50:100] == 'te_names": ["Index of reduced basis vector", "Sing')
