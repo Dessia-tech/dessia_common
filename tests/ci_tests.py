@@ -11,6 +11,7 @@ scripts = ['displays.py',
            'heterogeneous_list.py',
            'heterogeneous_list_pareto.py',
            'moving_object.py',
+           'graph.py',
            # Workflows
            'workflow/blocks.py',
            'workflow/workflow_with_models.py',
