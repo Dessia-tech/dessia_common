@@ -14,9 +14,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Documentation for HeterogeneousList, CategorizedList, DessiaFilter, FiltersList
 - pareto front and parallel plot for HeterogeneousList
 - Sort parallel plot axis with correlation coefficient (experimental algorithm that seems to work)
+- Nearly all required tests for all these developments
 
 ### Breaking Changes
 - Change attribute "operator" of DessiaFilter to "comparison_operator"
+- Change name of file "cluster.py" to "datatools.py"
+- Move HeterogeneousList in "datatools.py"
 
 ### Changes
 - Add 'logical_operator="and"' attribute to workflow.block.Filter
