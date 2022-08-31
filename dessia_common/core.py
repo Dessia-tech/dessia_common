@@ -1717,11 +1717,6 @@ class HeterogeneousList(DessiaObject):
         HeterogeneousList._check_costs(len(self), costs)
         return self[self.__class__.pareto_indexes(costs)]
 
-    @staticmethod
-    def _get_pareto_sheet(dessia_objects: List[DessiaObject], costs: List[List[float]]):
-        pareto_sheet = HeterogeneousList.pareto_indexes(costs, 0.)
-        return pareto_sheet, list(itertools.compress(costs, map(lambda x: not x, pareto_sheet)))
-
     def pareto_sheets(self, costs: List[List[float]], nb_sheets: int = 1):
         """
         Get successive pareto sheets (i.e. optimal points in a DOE for pre-computed costs).
