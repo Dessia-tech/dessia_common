@@ -10,7 +10,9 @@ from sklearn import cluster, preprocessing
 import matplotlib.pyplot as plt
 
 try:
-    import plot_data
+    from plot_data.core import Scatter, Histogram, MultiplePlots, Tooltip, ParallelPlot, PointFamily, EdgeStyle, Axis, \
+        PointStyle
+    from plot_data.colors import BLUE, GREY, LIGHTGREY, Color
 except ImportError:
     pass
 from dessia_common.core import DessiaObject, DessiaFilter, FiltersList, get_attribute_names, templates
@@ -467,7 +469,6 @@ class HeterogeneousList(DessiaObject):
         return [parallel_plot, scatter_matrix, dimensionality_plot]
 
     def _build_multiplot(self, data_list: List[Dict[str, float]], tooltip: List[str], **kwargs: Dict[str, Any]):
-        from plot_data import Scatter, Histogram, MultiplePlots, Tooltip
         subplots = []
         for line in self.common_attributes:
             for col in self.common_attributes:
@@ -485,7 +486,6 @@ class HeterogeneousList(DessiaObject):
         return scatter_matrix
 
     def parallel_plot(self, data_list: List[Dict[str, float]]):
-        from plot_data import ParallelPlot
         return ParallelPlot(elements=data_list, axes=self._parallel_plot_attr(), disposition='vertical')
 
     def _tooltip_attributes(self):
@@ -498,8 +498,6 @@ class HeterogeneousList(DessiaObject):
         return plot_data_list
 
     def _point_families(self):
-        from plot_data.colors import BLUE
-        from plot_data.core import PointFamily
         return [PointFamily(BLUE, list(range(self.__len__())))]
 
     def _parallel_plot_attr(self):
@@ -567,8 +565,6 @@ class HeterogeneousList(DessiaObject):
         return ordered_attr
 
     def _plot_dimensionality(self):
-        from plot_data import EdgeStyle, Axis, PointStyle, Scatter
-        from plot_data.colors import GREY, BLUE
         _, singular_points = self.singular_values()
 
         axis_style = EdgeStyle(line_width=0.5, color_stroke=GREY)
@@ -849,14 +845,14 @@ class CategorizedList(HeterogeneousList):
         colormap = plt.cm.get_cmap('hsv', self.n_clusters + 1)(range(self.n_clusters + 1))
         point_families = []
         for i_cluster in range(self.n_clusters):
-            color = plot_data.colors.Color(colormap[i_cluster][0], colormap[i_cluster][1], colormap[i_cluster][2])
+            color = Color(colormap[i_cluster][0], colormap[i_cluster][1], colormap[i_cluster][2])
             points_index = list(map(int, npy.where(npy.array(self.labels) == i_cluster)[0].tolist()))
-            point_families.append(plot_data.core.PointFamily(color, points_index, name="Cluster " + str(i_cluster)))
+            point_families.append(PointFamily(color, points_index, name="Cluster " + str(i_cluster)))
 
         if -1 in self.labels:
-            color = plot_data.colors.LIGHTGREY
+            color = LIGHTGREY
             points_index = list(map(int, npy.where(npy.array(self.labels) == -1)[0].tolist()))
-            point_families.append(plot_data.core.PointFamily(color, points_index, name="Excluded"))
+            point_families.append(PointFamily(color, points_index, name="Excluded"))
         return point_families
 
     @classmethod
