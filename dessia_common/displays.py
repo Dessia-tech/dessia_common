@@ -163,4 +163,3 @@ def draw_networkx_graph(networkx_graph: Graph):
     #     file.write(s.encode('utf-8'))
     webbrowser.open('file://' + os.path.realpath(file.name))
     return file.name
-
