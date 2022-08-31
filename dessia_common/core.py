@@ -497,7 +497,7 @@ class DessiaObject:
                 plot_data.plot_canvas(plot_data_object=data,
                                       canvas_id='canvas',
                                       width=1400, height=900,
-                                      debug_mode=True)
+                                      debug_mode=False)
         else:
             msg = 'Class {} does not implement a plot_data method to define what to plot'
             raise NotImplementedError(msg.format(self.__class__.__name__))
