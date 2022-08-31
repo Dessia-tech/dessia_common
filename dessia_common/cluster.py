@@ -266,7 +266,8 @@ class CategorizedList(dc.HeterogeneousList):
             labels.extend([label]*len(pareto_sheet.dessia_objects))
             dessia_objects.extend(pareto_sheet.dessia_objects)
         dessia_objects.extend(non_optimal_points.dessia_objects)
-        labels.extend([label + 1]*len(non_optimal_points.dessia_objects))
+        labels.extend([len(pareto_sheets)]*len(non_optimal_points.dessia_objects))
+
         return cls(dessia_objects, labels)
 
     @staticmethod
