@@ -1,161 +1,274 @@
 """
-Cluster.py package testing for workflows
+Test for CategorizedList in workflow. Test filtering method
 """
 import json
 import pkg_resources
-from dessia_common import tests
-from dessia_common.core import HeterogeneousList
-from dessia_common.cluster import CategorizedList
-import dessia_common.workflow as wf
 from dessia_common.files import StringFile
+from dessia_common.typings import ClassMethodType, MethodType
+from dessia_common.tests import Car
+from dessia_common.workflow.blocks import ClassMethod, InstantiateModel, ModelMethod, Unpacker, Concatenate
+from dessia_common.cluster import CategorizedList
+from dessia_common.core import HeterogeneousList, DessiaFilter, FiltersList
+from dessia_common.workflow.core import Workflow, Pipe
 
+# Import data
 csv_cars = pkg_resources.resource_stream('dessia_common', 'models/data/cars.csv')
 stream_file = StringFile.from_stream(csv_cars)
 
-# =============================================================================
-# CARS WITHOUT FEATURES
-# =============================================================================
-data_method = wf.MethodType(class_=tests.Car, name='from_csv')
-block_data = wf.ClassMethod(method_type=data_method, name='data load')
+# ===============================================================================================================
+# CategorizedList Workflow (available here https://testanguy.dessia.ovh/workflows/62f0d264fe92095c4b4e4930)
+# ===============================================================================================================
 
-block_heterogeneous_list = wf.InstantiateModel(model_class=HeterogeneousList, name='heterogeneous list of data')
+block_0 = ClassMethod(method_type=ClassMethodType(Car, 'from_csv'), name='CSV Cars')
+block_1 = InstantiateModel(model_class=HeterogeneousList, name='HList Cars')
+block_2 = ClassMethod(method_type=ClassMethodType(FiltersList, 'from_filters_list'), name='Filters Clist')
+block_3 = ClassMethod(method_type=ClassMethodType(CategorizedList, 'from_agglomerative_clustering'), name='Clustering')
+block_4 = ModelMethod(method_type=MethodType(CategorizedList, 'filtering'), name='CList.filtering')
+blocks = [block_0, block_1, block_2, block_3, block_4]
 
-categorized_list_method = wf.MethodType(class_=CategorizedList, name='from_dbscan')
-block_cluster = wf.ClassMethod(method_type=categorized_list_method, name='labelling elements of list')
+pipe_0 = Pipe(block_0.outputs[0], block_1.inputs[0])
+pipe_1 = Pipe(block_1.outputs[0], block_3.inputs[0])
+pipe_2 = Pipe(block_3.outputs[0], block_4.inputs[0])
+pipe_3 = Pipe(block_2.outputs[0], block_4.inputs[1])
+pipes = [pipe_0, pipe_1, pipe_2, pipe_3]
 
-block_workflow = [block_data, block_heterogeneous_list, block_cluster]
-pipe_worflow = [wf.Pipe(block_data.outputs[0], block_heterogeneous_list.inputs[0]),
-                wf.Pipe(block_heterogeneous_list.outputs[0], block_cluster.inputs[0])]
-workflow = wf.Workflow(block_workflow, pipe_worflow, block_cluster.outputs[0])
+workflow = Workflow(blocks, pipes, output=block_4.outputs[0], name='Filters demo Clists')
 
+# Workflow run
+filters = [DessiaFilter('cylinders', ">", 6), DessiaFilter('displacement', ">", 0.3)]
 workflow_run = workflow.run({
-    workflow.index(block_data.inputs[0]): stream_file,
-    workflow.index(block_cluster.inputs[1]): 40})
+    workflow.index(block_0.inputs[0]): stream_file,
+    workflow.index(block_2.inputs[0]): filters,
+    workflow.index(block_2.inputs[1]): 'and',
+    workflow.index(block_3.inputs[1]): 10})
 
 # Workflow tests
 workflow._check_platform()
 workflow.plot()
-workflow.display_settings()
 workflow_run.output_value.plot()
 
 # JSON TESTS
-dict_workflow = workflow.to_dict(use_pointers=True)
-json_dict = json.dumps(dict_workflow)
-decoded_json = json.loads(json_dict)
-deserialized_object = workflow.dict_to_object(decoded_json)
+output_dict = workflow_run.output_value[[0, 3, 10, 15, 30, -1]].to_dict(use_pointers=True)
+output_json = json.dumps(output_dict)
+output_json_to_dict = json.loads(output_json)
+output_jsondict_to_object_1 = CategorizedList.dict_to_object(output_json_to_dict)
 
 
+# ===============================================================================================================
+# CategorizedList Big Workflow (available here
+#   https://testanguy.dessia.ovh/objects/dessia_common.workflow.core.WorkflowRun/62f10fd38e9c9efc8f3cbe27)
+# ===============================================================================================================
 
-# JSON Workflow_run tests
-# dict_workflow_run = workflow_run.to_dict(use_pointers=True)
-# json_dict = json.dumps(dict_workflow_run)
-# decoded_json = json.loads(json_dict)
-# deserialized_object = workflow_run.dict_to_object(decoded_json)
+block_0 = ClassMethod(method_type=ClassMethodType(Car, 'from_csv'), name='CSV Cars')
+block_1 = InstantiateModel(model_class=HeterogeneousList, name='HList Cars')
+block_2 = ClassMethod(method_type=ClassMethodType(CategorizedList, 'from_agglomerative_clustering'), name='Clustering')
+block_3 = ModelMethod(method_type=MethodType(CategorizedList, 'clustered_sublists'), name='Sublists')
+block_4 = Unpacker(indices=[3, 8, 9], name='Unpack_3_8_9')
+block_5 = Concatenate(number_arguments=3, name='Concatenate')
+block_6 = ClassMethod(method_type=ClassMethodType(CategorizedList, 'from_dbscan'), name='DBSCAN')
+blocks = [block_0, block_1, block_2, block_3, block_4, block_5, block_6]
 
-# =============================================================================
-# CARS WITH FEATURES
-# =============================================================================
-data_method = wf.MethodType(class_=tests.CarWithFeatures, name='from_csv')
-block_data = wf.ClassMethod(method_type=data_method, name='data load')
+pipe_0 = Pipe(block_0.outputs[0], block_1.inputs[0])
+pipe_1 = Pipe(block_1.outputs[0], block_2.inputs[0])
+pipe_2 = Pipe(block_2.outputs[0], block_3.inputs[0])
+pipe_3 = Pipe(block_3.outputs[0], block_4.inputs[0])
+pipe_4 = Pipe(block_4.outputs[0], block_5.inputs[0])
+pipe_5 = Pipe(block_4.outputs[1], block_5.inputs[1])
+pipe_6 = Pipe(block_4.outputs[2], block_5.inputs[2])
+pipe_7 = Pipe(block_5.outputs[0], block_6.inputs[0])
+pipes = [pipe_0, pipe_1, pipe_2, pipe_3, pipe_4, pipe_5, pipe_6, pipe_7]
 
-block_heterogeneous_list = wf.InstantiateModel(model_class=HeterogeneousList, name='heterogeneous list of data')
+workflow = Workflow(blocks, pipes, output=block_6.outputs[0], name='SubClist + Concatenate')
 
-categorized_list_method = wf.MethodType(class_=CategorizedList, name='from_dbscan')
-block_cluster = wf.ClassMethod(method_type=categorized_list_method, name='labelling elements of list')
-
-block_workflow = [block_data, block_heterogeneous_list, block_cluster]
-pipe_worflow = [wf.Pipe(block_data.outputs[0], block_heterogeneous_list.inputs[0]),
-                wf.Pipe(block_heterogeneous_list.outputs[0], block_cluster.inputs[0])]
-workflow = wf.Workflow(block_workflow, pipe_worflow, block_cluster.outputs[0])
-
+# Workflow run
 workflow_run = workflow.run({
-    workflow.index(block_data.inputs[0]): stream_file,
-    workflow.index(block_cluster.inputs[1]): 40})
+    workflow.index(block_0.inputs[0]): stream_file,
+    workflow.index(block_2.inputs[1]): 10,
+    workflow.index(block_6.inputs[1]): 40})
 
 # Workflow tests
 workflow._check_platform()
 workflow.plot()
-workflow.display_settings()
 workflow_run.output_value.plot()
 
 # JSON TESTS
-dict_workflow = workflow.to_dict(use_pointers=True)
-json_dict = json.dumps(dict_workflow)
-decoded_json = json.loads(json_dict)
-deserialized_object = workflow.dict_to_object(decoded_json)
+output_dict = workflow_run.output_value[[0, 3, 5, 2, 12, -1]].to_dict(use_pointers=True)
+output_json = json.dumps(output_dict)
+output_json_to_dict = json.loads(output_json)
+output_jsondict_to_object_2 = CategorizedList.dict_to_object(output_json_to_dict)
+print(output_jsondict_to_object_2)
 
-# JSON Workflow_run tests
-# dict_workflow_run = workflow_run.to_dict(use_pointers=True)
-# json_dict = json.dumps(dict_workflow_run)
-# decoded_json = json.loads(json_dict)
-# deserialized_object = workflow_run.dict_to_object(decoded_json)
+# ===============================================================================================================
+# TESTS ON RESULTS
+# ===============================================================================================================
 
-# =============================================================================
-# RANDDATA SMALL DATASET AND BLOC CONCATENATE
-# =============================================================================
-mean_borns = (-50, 50)
-std_borns = (-2, 2)
+reference_output_1 = {
+  "name": "",
+  "object_class": "dessia_common.cluster.CategorizedList",
+  "package_version": "0.9.2.dev320+gecd4609",
+  "dessia_objects": [
+    {
+      "name": "Chevrolet Chevelle Malibu",
+      "object_class": "dessia_common.tests.Car",
+      "package_version": "0.9.2.dev320+gecd4609",
+      "mpg": 18.0,
+      "cylinders": 8.0,
+      "displacement": 0.307,
+      "horsepower": 130.0,
+      "weight": 3504.0,
+      "acceleration": 12.0,
+      "model": 70.0,
+      "origin": "US\r"
+    },
+    {
+      "name": "AMC Rebel SST",
+      "object_class": "dessia_common.tests.Car",
+      "package_version": "0.9.2.dev320+gecd4609",
+      "mpg": 16.0,
+      "cylinders": 8.0,
+      "displacement": 0.304,
+      "horsepower": 150.0,
+      "weight": 3433.0,
+      "acceleration": 12.0,
+      "model": 70.0,
+      "origin": "US\r"
+    },
+    {
+      "name": "Chevrolet Chevelle Concours (sw)",
+      "object_class": "dessia_common.tests.Car",
+      "package_version": "0.9.2.dev320+gecd4609",
+      "mpg": 0.0,
+      "cylinders": 8.0,
+      "displacement": 0.35,
+      "horsepower": 165.0,
+      "weight": 4142.0,
+      "acceleration": 11.5,
+      "model": 70.0,
+      "origin": "US\r"
+    },
+    {
+      "name": "Plymouth 'Cuda 340",
+      "object_class": "dessia_common.tests.Car",
+      "package_version": "0.9.2.dev320+gecd4609",
+      "mpg": 14.0,
+      "cylinders": 8.0,
+      "displacement": 0.34,
+      "horsepower": 160.0,
+      "weight": 3609.0,
+      "acceleration": 8.0,
+      "model": 70.0,
+      "origin": "US\r"
+    },
+    {
+      "name": "Chevrolet Impala",
+      "object_class": "dessia_common.tests.Car",
+      "package_version": "0.9.2.dev320+gecd4609",
+      "mpg": 13.0,
+      "cylinders": 8.0,
+      "displacement": 0.35,
+      "horsepower": 165.0,
+      "weight": 4274.0,
+      "acceleration": 12.0,
+      "model": 72.0,
+      "origin": "US\r"
+    },
+    {
+      "name": "Oldsmobile Cutlass LS",
+      "object_class": "dessia_common.tests.Car",
+      "package_version": "0.9.2.dev320+gecd4609",
+      "mpg": 26.6,
+      "cylinders": 8.0,
+      "displacement": 0.35,
+      "horsepower": 105.0,
+      "weight": 3725.0,
+      "acceleration": 19.0,
+      "model": 81.0,
+      "origin": "US\r"
+    }],
+  "labels": [1, 0, 4, 1, 4, 1]}
 
-data_method_5 = wf.MethodType(class_=tests.RandDataD5, name='create_dataset')
-block_data_d5 = wf.ClassMethod(method_type=data_method_5, name='data d5')
+reference_output_2 = {
+  'name': '',
+  'object_class': 'dessia_common.cluster.CategorizedList',
+  'package_version': '0.8.1.dev105+gb6cb82bfeatcluster',
+  'dessia_objects': [
+    {
+      'name': 'Volkswagen 1131 Deluxe Sedan',
+      'object_class': 'dessia_common.tests.Car',
+      'package_version': '0.8.1.dev105+gb6cb82bfeatcluster',
+      'mpg': 26.0,
+      'cylinders': 4.0,
+      'displacement': 0.097,
+      'horsepower': 46.0,
+      'weight': 1835.0,
+      'acceleration': 20.5,
+      'model': 70.0,
+      'origin': 'Europe\r'
+    },
+    {
+     'name': 'Volkswagen Super Beetle 117',
+     'object_class': 'dessia_common.tests.Car',
+     'package_version': '0.8.1.dev105+gb6cb82bfeatcluster',
+     'mpg': 0.0,
+     'cylinders': 4.0,
+     'displacement': 0.097,
+     'horsepower': 48.0,
+     'weight': 1978.0,
+     'acceleration': 20.0,
+     'model': 71.0,
+     'origin': 'Europe\r'},
+  {
+     'name': 'Peugeot 304',
+     'object_class': 'dessia_common.tests.Car',
+     'package_version': '0.8.1.dev105+gb6cb82bfeatcluster',
+     'mpg': 30.0,
+     'cylinders': 4.0,
+     'displacement': 0.079,
+     'horsepower': 70.0,
+     'weight': 2074.0,
+     'acceleration': 19.5,
+     'model': 71.0,
+     'origin': 'Europe\r'},
+  {
+     'name': 'Toyota Corolla 1200',
+     'object_class': 'dessia_common.tests.Car',
+     'package_version': '0.8.1.dev105+gb6cb82bfeatcluster',
+     'mpg': 31.0,
+     'cylinders': 4.0,
+     'displacement': 0.071,
+     'horsepower': 65.0,
+     'weight': 1773.0,
+     'acceleration': 19.0,
+     'model': 71.0,
+     'origin': 'Japan\r'},
+  {
+     'name': 'Toyota Corolla 1200',
+     'object_class': 'dessia_common.tests.Car',
+     'package_version': '0.8.1.dev105+gb6cb82bfeatcluster',
+     'mpg': 32.0,
+     'cylinders': 4.0,
+     'displacement': 0.071,
+     'horsepower': 65.0,
+     'weight': 1836.0,
+     'acceleration': 21.0,
+     'model': 74.0,
+     'origin': 'Japan\r'},
+  {
+     'name': 'Chevy S-10',
+     'object_class': 'dessia_common.tests.Car',
+     'package_version': '0.8.1.dev105+gb6cb82bfeatcluster',
+     'mpg': 31.0,
+     'cylinders': 4.0,
+     'displacement': 0.119,
+     'horsepower': 82.0,
+     'weight': 2720.0,
+     'acceleration': 19.4,
+     'model': 82.0,
+     'origin': 'US\r'
+     }],
+  'labels': [0, 1, 1, 0, 0, 4]}
 
-data_method_4 = wf.MethodType(class_=tests.RandDataD4, name='create_dataset')
-block_data_d4 = wf.ClassMethod(method_type=data_method_4, name='data d4')
+# Tests
+assert(output_jsondict_to_object_1 == CategorizedList.dict_to_object(reference_output_1))
+assert(output_jsondict_to_object_2 == CategorizedList.dict_to_object(reference_output_2))
 
-data_method_3 = wf.MethodType(class_=tests.RandDataD3, name='create_dataset')
-block_data_d3 = wf.ClassMethod(method_type=data_method_3, name='data d3')
-
-block_concatenate = wf.Concatenate(3)
-
-block_heterogeneous_list = wf.InstantiateModel(model_class=HeterogeneousList, name='heterogeneous list of data')
-
-categorized_list_method = wf.MethodType(class_=CategorizedList, name='from_dbscan')
-block_cluster = wf.ClassMethod(method_type=categorized_list_method, name='labelling elements of list')
-
-block_workflow = [block_data_d5, block_data_d4, block_data_d3,
-                  block_concatenate, block_heterogeneous_list, block_cluster]
-
-pipe_worflow = [wf.Pipe(block_data_d5.outputs[0], block_concatenate.inputs[0]),
-                wf.Pipe(block_data_d4.outputs[0], block_concatenate.inputs[1]),
-                wf.Pipe(block_data_d3.outputs[0], block_concatenate.inputs[2]),
-                wf.Pipe(block_concatenate.outputs[0], block_heterogeneous_list.inputs[0]),
-                wf.Pipe(block_heterogeneous_list.outputs[0], block_cluster.inputs[0])]
-
-workflow = wf.Workflow(block_workflow, pipe_worflow, block_cluster.outputs[0])
-
-workflow_run = workflow.run({workflow.index(block_data_d5.inputs[0]): 10, workflow.index(block_data_d5.inputs[1]): 500,
-                             workflow.index(block_data_d5.inputs[2]): mean_borns,
-                             workflow.index(block_data_d5.inputs[3]): std_borns,
-
-                             workflow.index(block_data_d4.inputs[0]): 10, workflow.index(block_data_d4.inputs[1]): 500,
-                             workflow.index(block_data_d4.inputs[2]): mean_borns,
-                             workflow.index(block_data_d4.inputs[3]): std_borns,
-
-                             workflow.index(block_data_d3.inputs[0]): 10, workflow.index(block_data_d3.inputs[1]): 500,
-                             workflow.index(block_data_d3.inputs[2]): mean_borns,
-                             workflow.index(block_data_d3.inputs[3]): std_borns,
-
-                             workflow.index(block_cluster.inputs[1]): 5})
-
-# Workflow tests
-workflow._check_platform()
-workflow.plot()
-workflow.display_settings()
-workflow_run.output_value.plot()
-
-# JSON TESTS
-dict_workflow = workflow.to_dict(use_pointers=True)
-json_dict = json.dumps(dict_workflow)
-decoded_json = json.loads(json_dict)
-deserialized_object = workflow.dict_to_object(decoded_json)
-
-# JSON Workflow_run tests
-# dict_workflow_run = workflow_run.to_dict(use_pointers=True)
-# json_dict = json.dumps(dict_workflow_run)
-# decoded_json = json.loads(json_dict)
-# deserialized_object = workflow_run.dict_to_object(decoded_json)
-
-# # Debug of block display, kept for now, will be removed soon
-# gg = workflow_run._display_from_selector('plot_data')
-# json.dumps(workflow_run.to_dict())
-# workflow_run._displays
