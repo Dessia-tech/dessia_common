@@ -16,9 +16,9 @@ RandData_heterogeneous = HeterogeneousList(rand_data_large)
 all_cars_without_features.common_attributes
 
 # Check platform for datasets
-# all_cars_with_features._check_platform()
-# all_cars_without_features._check_platform()
-# RandData_heterogeneous._check_platform()
+all_cars_with_features._check_platform()
+all_cars_without_features._check_platform()
+RandData_heterogeneous._check_platform()
 
 # Test __getitem__
 picked_list = (all_cars_with_features[250:] +
