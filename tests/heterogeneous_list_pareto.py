@@ -4,7 +4,6 @@ Tests for dessia_common.HeterogeneousList class (loadings, check_platform and pl
 import json
 import random
 import numpy as npy
-from matplotlib.pyplot import close as closefig
 from dessia_common.models import all_cars_wi_feat
 from dessia_common.datatools import HeterogeneousList, CategorizedList
 
@@ -18,7 +17,6 @@ costs = npy.array([coord_1, coord_2]).T
 
 pareto_points = HeterogeneousList.pareto_indexes(costs)
 pareto_frontiers = HeterogeneousList.pareto_frontiers(len(costs), costs)
-closefig()
 
 # Uniform
 coord_1 = [random.uniform(0, 0.001) for i in range(1000)]
@@ -27,7 +25,6 @@ costs = npy.array([coord_1, coord_2]).T
 
 pareto_points = HeterogeneousList.pareto_indexes(costs)
 pareto_frontiers = HeterogeneousList.pareto_frontiers(len(costs), costs)
-closefig()
 
 # Gaussan
 coord_1 = [random.gauss(50000, 1) for i in range(1000)]
@@ -36,7 +33,6 @@ costs = npy.array([coord_1, coord_2]).T
 
 pareto_points = HeterogeneousList.pareto_indexes(costs)
 pareto_frontiers = HeterogeneousList.pareto_frontiers(len(costs), costs)
-closefig()
 
 # Cars
 all_cars_with_features = HeterogeneousList(all_cars_wi_feat)
@@ -45,12 +41,10 @@ costs = list(zip(*costs))
 
 pareto_points = all_cars_with_features.pareto_points(costs)
 pareto_frontiers = HeterogeneousList.pareto_frontiers(len(all_cars_wi_feat), costs)
-closefig()
 
 # With transposed costs
 transposed_costs = list(zip(*costs))
 pareto_frontiers = HeterogeneousList.pareto_frontiers(len(all_cars_wi_feat), transposed_costs)
-closefig()
 
 categorized_pareto = CategorizedList.from_pareto_sheets(all_cars_with_features, costs, 7)
 pareto_plot_data = categorized_pareto.plot_data()
