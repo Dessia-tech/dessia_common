@@ -43,39 +43,22 @@ class CategorizedList(dc.HeterogeneousList):
         # new_hlist.name += "_list")
         return new_hlist
 
-    def __str__(self):
-        label_space = 4
-        attr_name_len = []
-        attr_space = []
-        prefix = f"{self.__class__.__name__} {self.name if self.name != '' else hex(id(self))}: "
-        prefix += (f"{len(self.dessia_objects)} samples, {len(self.common_attributes)} features, {self.n_clusters} " +
-                   "clusters")
-        if self.__len__() == 0:
-            return prefix
-
-        string = "|" + " "*(label_space - 1) + "n°" + " "*(label_space - 1)
-        string += self._print_titles(attr_space, attr_name_len)
-
-        string += "\n" + "-"*len(string)
-
-        string += self._print_objects_slice(slice(0, 5), attr_space, attr_name_len, label_space)
-
-        undispl_len = len(self) - 10
-        string += (f"\n+ {undispl_len} undisplayed object" + "s"*(min([undispl_len, 2])-1) + "..."
-                   if len(self) > 10 else '')
-
-        string += self._print_objects_slice(slice(-5, len(self)), attr_space, attr_name_len, label_space)
-
-        return prefix + "\n" + string + "\n"
-
-    def _print_objects_slice(self, key: slice, attr_space: int, attr_name_len: int, label_space: int):
-        string = ''
+    def _print_objects_slice(self, key: slice, attr_space: int, attr_name_len: int, label_space: str):
+        string = ""
         for label, dessia_object in zip(self.labels[key], self.dessia_objects[key]):
             string += "\n"
-            space = 2*label_space - 1 - len(str(label))
+            space = label_space - len(str(label))
             string += "|" + " "*space + f"{label}" + " "
             string += self._print_objects(dessia_object, attr_space, attr_name_len)
         return string
+
+    def _write_str_prefix(self):
+        prefix = f"{self.__class__.__name__} {self.name if self.name != '' else hex(id(self))}: "
+        prefix += (f"{len(self)} samples, {len(self.common_attributes)} features, {self.n_clusters} clusters")
+        return prefix
+
+    def _set_size_col_label(self):
+        return 4
 
     def clustered_sublists(self):
         sublists = []

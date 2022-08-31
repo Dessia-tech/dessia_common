@@ -38,17 +38,17 @@ split_clist = clist.clustered_sublists()
 split_clist[0].name = "15g6e4rg84reh56rt4h56j458hrt56gb41rth674r68jr6"
 print(split_clist)
 
-# Test ClusterResults instances on platform
-clustered_cars_without._check_platform()
-clustered_cars_with._check_platform()
-aggclustest_clustered._check_platform()
-kmeanstest_clustered._check_platform()
+# # Test ClusterResults instances on platform
+# clustered_cars_without._check_platform()
+# clustered_cars_with._check_platform()
+# aggclustest_clustered._check_platform()
+# kmeanstest_clustered._check_platform()
 
-# Test plots outside platform
-clustered_cars_without.plot_data()
-clustered_cars_with.plot()
-aggclustest_clustered.plot()
-kmeanstest_clustered.plot()
+# # Test plots outside platform
+# clustered_cars_without.plot_data()
+# clustered_cars_with.plot()
+# aggclustest_clustered.plot()
+# kmeanstest_clustered.plot()
 
 # =============================================================================
 # JSON TESTS
