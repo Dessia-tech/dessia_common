@@ -1,5 +1,4 @@
 
-import os
 
 # for some akward reason, put scripts before unittests tests
 scripts = ['displays.py',
