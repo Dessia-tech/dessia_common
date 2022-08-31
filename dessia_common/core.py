@@ -874,10 +874,9 @@ class DessiaFilter(DessiaObject):
     def _comparison_operator(self):
         return self._REAL_OPERATORS[self.comparison_operator]
 
-    # TODO: Chronophage operation is self._to_lambda(values)(values)
-    def _to_lambda(self, values: List[DessiaObject]):
+    def _to_lambda(self):
         return lambda x: (self._comparison_operator()(enhanced_deep_attr(value, self.attribute), self.bound)
-                          for value in values)
+                          for value in x)
 
     def get_booleans_index(self, values: List[DessiaObject]):
         """
@@ -899,8 +898,7 @@ class DessiaFilter(DessiaObject):
         >>> filter_.get_booleans_index(values)
         [False, False, True, True, True]
         """
-
-        return list(self._to_lambda(values)(values))
+        return list(self._to_lambda()(values))
 
     @staticmethod
     def booleanlist_to_indexlist(booleans_list: List[int]):  # TODO: Should it exist ?
@@ -1199,13 +1197,6 @@ class HeterogeneousList(DessiaObject):
         self._matrix = None
         DessiaObject.__init__(self, name=name)
 
-    def _procreate(self):
-        new_hlist = self.__class__()
-        new_hlist.name = self.name
-        new_hlist._common_attributes = deepcopy(self._common_attributes)
-        new_hlist._matrix = deepcopy(self._matrix)
-        return new_hlist
-
     def __getitem__(self, key: Any):
         if len(self.dessia_objects) == 0:
             return []
@@ -1231,9 +1222,10 @@ class HeterogeneousList(DessiaObject):
         if self.__class__ != HeterogeneousList or other.__class__ != HeterogeneousList:
             raise TypeError("Addition only defined for HeterogeneousList. A specific __add__ method is required for "
                             f"{self.__class__}")
-        sum_hlist = self.__class__()
-        sum_hlist.name = self.name[:5] + '_+_' + other.name[:5]
-        sum_hlist.dessia_objects = self.dessia_objects + other.dessia_objects
+
+        sum_hlist = self.__class__(dessia_objects = self.dessia_objects + other.dessia_objects,
+                                   name = self.name[:5] + '_+_' + other.name[:5])
+
         if all(item in self.common_attributes for item in other.common_attributes):
             sum_hlist._common_attributes = self.common_attributes
             if self._matrix is not None and other._matrix is not None:
@@ -1256,13 +1248,15 @@ class HeterogeneousList(DessiaObject):
         >>> HeterogeneousList(all_cars_wi_feat).extend(HeterogeneousList(all_cars_wi_feat))
         HeterogeneousList(all_cars_wi_feat + all_cars_wi_feat)
         """
+        # Not "self.dessia_objects += other.dessia_objects" to take advantage of __add__ algorithm
         self.__dict__.update((self + other).__dict__)
 
     def pick_from_int(self, idx: int):
         return self.dessia_objects[idx]
 
     def pick_from_slice(self, key: slice):
-        new_hlist = self._procreate()
+        new_hlist = self.__class__(dessia_objects = self.dessia_objects[key], name = self.name)
+        new_hlist._common_attributes = copy(self._common_attributes)
         new_hlist.dessia_objects = self.dessia_objects[key]
         if self._matrix is not None:
             new_hlist._matrix = self._matrix[key]
@@ -1276,15 +1270,14 @@ class HeterogeneousList(DessiaObject):
         return boolean_list
 
     def pick_from_boolist(self, key: List[bool]):
-        new_hlist = self._procreate()
-        new_hlist.dessia_objects = DessiaFilter.apply(self.dessia_objects, key)
+        new_hlist = self.__class__(dessia_objects = DessiaFilter.apply(self.dessia_objects, key), name = self.name)
+        new_hlist._common_attributes = copy(self._common_attributes)
         if self._matrix is not None:
             new_hlist._matrix = DessiaFilter.apply(self._matrix, key)
         # new_hlist.name += "_list")
         return new_hlist
 
     def __str__(self):
-        print_lim = 15
         attr_name_len = []
         attr_space = []
         prefix = f"{self.__class__.__name__} {self.name if self.name != '' else hex(id(self))}: "
@@ -1295,12 +1288,23 @@ class HeterogeneousList(DessiaObject):
 
         string = ""
         string += self._print_titles(attr_space, attr_name_len)
-
         string += "\n" + "-"*len(string)
-        for dessia_object in self.dessia_objects[:print_lim]:
+
+        string += self._print_objects_slice(slice(0, 5), attr_space, attr_name_len)
+
+        undispl_len = len(self) - 10
+        string += (f"\n+ {undispl_len} undisplayed object" + "s"*(min([undispl_len, 2])-1) + "..."
+                   if len(self) > 10 else '')
+
+        string += self._print_objects_slice(slice(-5, len(self)), attr_space, attr_name_len)
+        return prefix + "\n" + string + "\n"
+
+    def _print_objects_slice(self, key: slice, attr_space: int, attr_name_len: int):
+        string = ""
+        for dessia_object in self.dessia_objects[key]:
             string += "\n"
             string += self._print_objects(dessia_object, attr_space, attr_name_len)
-        return prefix + "\n" + string + "\n"
+        return string
 
     def _print_titles(self, attr_space: int, attr_name_len: int):
         string = ""
@@ -1466,14 +1470,14 @@ class HeterogeneousList(DessiaObject):
             self._matrix = matrix
         return self._matrix
 
-    def filtering(self, filters: FiltersList):
+    def filtering(self, filters_list: FiltersList):
         """
         Filter a HeterogeneousList given a FiltersList.
         Method filtering apply a FiltersList to the current HeterogeneousList.
 
-        :param filters:
+        :param filters_list:
             FiltersList to apply on current HeterogeneousList
-        :type filters: FiltersList
+        :type filters_list: FiltersList
 
         :return: The filtered HeterogeneousList
         :rtype: HeterogeneousList
@@ -1494,7 +1498,7 @@ class HeterogeneousList(DessiaObject):
         |               31.0  |             0.076  |              52.0  |            1649.0  |              16.5  |
         |               46.6  |             0.086  |              65.0  |            2110.0  |              17.9  |
         """
-        booleans_index = filters.get_booleans_index(self.dessia_objects)
+        booleans_index = filters_list.get_booleans_index(self.dessia_objects)
         return self.pick_from_boolist(booleans_index)
 
     def singular_values(self):
