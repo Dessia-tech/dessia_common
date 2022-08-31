@@ -22,6 +22,7 @@ from dessia_common.errors import UntypedArgumentError
 from dessia_common.typings import JsonSerializable, MethodType, ClassMethodType
 from dessia_common.files import StringFile, BinaryFile
 from dessia_common.utils.helpers import concatenate
+from dessia_common.breakdown import attrmethod_getter
 
 from dessia_common.workflow.core import Block, Variable, TypedVariable, TypedVariableWithDefaultValue,\
     set_block_variable_names_from_dict, Workflow, DisplaySetting, DisplayObject
@@ -90,8 +91,7 @@ class Display(Block):
         output = TypedVariable(type_=DisplayObject, name="Display Object")
         Block.__init__(self, inputs=inputs, outputs=[output], name=name)
 
-    @staticmethod
-    def evaluate():
+    def evaluate(self, values):
         return []
 
     def _to_script(self) -> ToScriptElement:
@@ -745,10 +745,7 @@ class MultiPlot(Display):
         return sum(len(a) for a in self.attributes)
 
     def _display_settings(self, block_index: int) -> DisplaySetting:
-        args = {'block_index': block_index}
-        display_settings = DisplaySetting(selector="display_" + str(block_index), type_="plot_data",
-                                          method="block_display", serialize_data=True, arguments=args)
-        return display_settings
+        return block_display_settings(block_index=block_index, type_="markdown", name=self.name)
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
         dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
@@ -795,17 +792,36 @@ class CadView(Display):
         Display.__init__(self, inputs=[input_], name=name)
 
     def _display_settings(self, block_index: int) -> DisplaySetting:
-        args = {'block_index': block_index}
-        if self.name:
-            selector = self.name
-        else:
-            selector = "display_" + str(block_index)
-        display_settings = DisplaySetting(selector=selector, type_="cad",
-                                          method="block_display", serialize_data=True, arguments=args)
-        return display_settings
+        return block_display_settings(block_index=block_index, type_="markdown", name=self.name)
 
     def evaluate(self, values):
-        return []
+        object_ = values[self.inputs[0]]
+        settings = object_._display_settings_from_selector('cad')
+        data = attrmethod_getter(object_, settings.method)()
+        return [DisplayObject(type_=settings.type, data=data, name=self.name)]
+
+    def _to_script(self) -> ToScriptElement:
+        script = f"CadView(name='{self.name}')"
+        return ToScriptElement(declaration=script, imports=[self.full_classname])
+
+
+class Markdown(Display):
+    """
+    :param name: Name of the block.
+    :type name: str
+    """
+    def __init__(self, name: str = ''):
+        input_ = TypedVariable(DessiaObject, name="Model to display")
+        Display.__init__(self, inputs=[input_], name=name)
+
+    def _display_settings(self, block_index: int) -> DisplaySetting:
+        return block_display_settings(block_index=block_index, type_="markdown", name=self.name)
+
+    def evaluate(self, values):
+        object_ = values[self.inputs[0]]
+        settings = object_._display_settings_from_selector('markdown')
+        data = attrmethod_getter(object_, settings.method)()
+        return [DisplayObject(type_=settings.type, data=data, name=self.name)]
 
     def _to_script(self) -> ToScriptElement:
         script = f"CadView(name='{self.name}')"
@@ -1035,3 +1051,11 @@ class Archive(Block):
     def _to_script(self) -> ToScriptElement:
         script = f"Archive(number_exports={self.number_exports}, export_name='{self.export_name}', name='{self.name}')"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
+
+
+def block_display_settings(block_index: int, type_: str, name: str = "") -> DisplaySetting:
+    args = {'block_index': block_index}
+    if not name:
+        name = type_
+    selector = f"{name} ({block_index})"
+    return DisplaySetting(selector=selector, type_=type_, method="block_display", serialize_data=True, arguments=args)
