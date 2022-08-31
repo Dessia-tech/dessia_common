@@ -876,9 +876,11 @@ class HeterogeneousList(DessiaObject):
     @staticmethod
     def _check_costs(len_data: int, costs: List[List[float]]):
         if len(costs) != len_data:
-            # return list(map(list,zip(*costs)))
+            if len(costs[0]) == len_data:
+                return list(map(list,zip(*costs)))
             raise ValueError(f"costs is length {len(costs)} and the matching HeterogeneousList is length {len_data}. " +
                              "They should be the same length.")
+        return costs
 
     @staticmethod
     def pareto_indexes(costs: List[List[float]]):
@@ -903,10 +905,10 @@ class HeterogeneousList(DessiaObject):
         Find the pareto-efficient points
         :return: A HeterogeneousList of pareto_points
         """
-        HeterogeneousList._check_costs(len(self.dessia_objects), costs)
+        checked_costs = HeterogeneousList._check_costs(len(self.dessia_objects), costs)
         # TODO: Replace this line with a __getitem___ command when it is available (branch HList_docstrings)
         return HeterogeneousList(list(itertools.compress(self.dessia_objects,
-                                                         self.__class__.pareto_indexes(costs))))
+                                                         self.__class__.pareto_indexes(checked_costs))))
 
     def pareto_sheets(self, costs: List[List[float]], nb_sheets: int = 1):
         """
@@ -923,8 +925,8 @@ class HeterogeneousList(DessiaObject):
         :return: The successive pareto sheets and not selected elements
         :rtype: `List[HeterogeneousList]`, `HeterogeneousList`
         """
-        HeterogeneousList._check_costs(len(self.dessia_objects), costs)
-        non_optimal_costs = costs[:]
+        checked_costs = HeterogeneousList._check_costs(len(self.dessia_objects), costs)
+        non_optimal_costs = checked_costs[:]
         non_optimal_points = self.dessia_objects[:]
         pareto_sheets = []
         for idx in range(nb_sheets):
@@ -939,17 +941,17 @@ class HeterogeneousList(DessiaObject):
     def pareto_frontiers(len_data: int, costs: List[List[float]]):
         # Experimental
         import matplotlib.pyplot as plt
-        HeterogeneousList._check_costs(len_data, costs)
-        pareto_indexes = HeterogeneousList.pareto_indexes(costs)
-        pareto_costs = npy.array(list(itertools.compress(costs, pareto_indexes)))
+        checked_costs = HeterogeneousList._check_costs(len_data, costs)
+        pareto_indexes = HeterogeneousList.pareto_indexes(checked_costs)
+        pareto_costs = npy.array(list(itertools.compress(checked_costs, pareto_indexes)))
 
-        array_costs = npy.array(costs)
+        array_costs = npy.array(checked_costs)
         plt.figure()
         plt.plot(array_costs[:, 0], array_costs[:, 1], linestyle ='None', marker='o', color = 'b')
         plt.plot(pareto_costs[:, 0], pareto_costs[:, 1], linestyle ='None', marker='o', color = 'r')
         plt.show()
 
-        super_mini = npy.min(costs, axis=0)
+        super_mini = npy.min(checked_costs, axis=0)
         pareto_frontiers = []
         for x_dim in range(pareto_costs.shape[1]):
             for y_dim in range(pareto_costs.shape[1]):
