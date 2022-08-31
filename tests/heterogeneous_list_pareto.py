@@ -4,8 +4,7 @@ Tests for dessia_common.HeterogeneousList class (loadings, check_platform and pl
 import random
 import numpy as npy
 from dessia_common.models import all_cars_wi_feat
-from dessia_common.core import HeterogeneousList
-from dessia_common.cluster import CategorizedList
+from dessia_common.datatools import HeterogeneousList, CategorizedList
 
 # =============================================================================
 # TEST PARETO FRONT

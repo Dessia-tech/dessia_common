@@ -625,7 +625,7 @@ class HeterogeneousList(DessiaObject):
         :rtype: HeterogeneousList
         """
         checked_costs = HeterogeneousList._check_costs(len(self.dessia_objects), costs)
-        return self[self.__class__.pareto_indexes(costs)]
+        return self[self.__class__.pareto_indexes(checked_costs)]
 
     def pareto_sheets(self, costs: List[List[float]], nb_sheets: int = 1):
         """
@@ -657,7 +657,7 @@ class HeterogeneousList(DessiaObject):
     @staticmethod
     def pareto_frontiers(len_data: int, costs: List[List[float]]):
         # Experimental
-        checked_costs = HeterogeneousList._check_costs(len(self.dessia_objects), costs)
+        checked_costs = HeterogeneousList._check_costs(len_data, costs)
         pareto_indexes = HeterogeneousList.pareto_indexes(checked_costs)
         pareto_costs = npy.array(list(itertools.compress(checked_costs, pareto_indexes)))
 
