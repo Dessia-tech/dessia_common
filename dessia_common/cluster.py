@@ -81,6 +81,7 @@ class CategorizedList(dc.HeterogeneousList):
 
     def __str__(self):
         label_space = 4
+        print_lim = 15
         attr_name_len = []
         attr_space = []
         prefix = f"{self.__class__.__name__} {self.name if self.name != '' else hex(id(self))}: "
@@ -93,25 +94,14 @@ class CategorizedList(dc.HeterogeneousList):
         string += self._print_titles(attr_space, attr_name_len)
 
         string += "\n" + "-"*len(string)
-
-        string += self._print_objects_slice(slice(0, 5), attr_space, attr_name_len, label_space)
-
-        undispl_len = len(self) - 10
-        string += (f"\n+ {undispl_len} undisplayed object" + "s"*(min([undispl_len, 2])-1) + "..."
-                   if len(self) > 10 else '')
-
-        string += self._print_objects_slice(slice(-5, len(self)), attr_space, attr_name_len, label_space)
-
-        return prefix + "\n" + string + "\n"
-
-    def _print_objects_slice(self, key: slice, attr_space: int, attr_name_len: int, label_space: int):
-        string = ''
-        for label, dessia_object in zip(self.labels[key], self.dessia_objects[key]):
+        for label, dessia_object in zip(self.labels, self.dessia_objects[:print_lim]):
             string += "\n"
             space = 2*label_space - 1 - len(str(label))
             string += "|" + " "*space + f"{label}" + " "
+
             string += self._print_objects(dessia_object, attr_space, attr_name_len)
-        return string
+
+        return prefix + "\n" + string + "\n"
 
     def clustered_sublists(self):
         """

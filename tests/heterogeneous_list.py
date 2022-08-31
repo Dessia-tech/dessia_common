@@ -15,7 +15,7 @@ RandData_heterogeneous = HeterogeneousList(rand_data_middl)
 # Compute one common_attributes
 all_cars_without_features.common_attributes
 
-# Check platform for datasets
+# # Check platform for datasets
 all_cars_with_features._check_platform()
 all_cars_without_features._check_platform()
 RandData_heterogeneous._check_platform()
