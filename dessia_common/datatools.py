@@ -616,10 +616,10 @@ class HeterogeneousList(DessiaObject):
         pareto_costs = npy.array(list(itertools.compress(checked_costs, pareto_indexes)))
 
         array_costs = npy.array(checked_costs)
-        plt.figure()
-        plt.plot(array_costs[:, 0], array_costs[:, 1], linestyle ='None', marker='o', color = 'b')
-        plt.plot(pareto_costs[:, 0], pareto_costs[:, 1], linestyle ='None', marker='o', color = 'r')
-        plt.show()
+        # plt.figure()
+        # plt.plot(array_costs[:, 0], array_costs[:, 1], linestyle ='None', marker='o', color = 'b')
+        # plt.plot(pareto_costs[:, 0], pareto_costs[:, 1], linestyle ='None', marker='o', color = 'r')
+        # plt.show()
 
         super_mini = npy.min(array_costs, axis=0)
         pareto_frontiers = []
@@ -629,9 +629,9 @@ class HeterogeneousList(DessiaObject):
                     frontier_2d = HeterogeneousList._pareto_frontier_2d(x_dim, y_dim, pareto_costs,
                                                                        npy.max(array_costs[ :, x_dim]), super_mini)
                     pareto_frontiers.append(frontier_2d)
-                    plt.plot(frontier_2d[:, x_dim], frontier_2d[:, y_dim], color='g')
+                    # plt.plot(frontier_2d[:, x_dim], frontier_2d[:, y_dim], color='g')
 
-        plt.plot(super_mini[0], super_mini[1], linestyle='None', marker='o', color='k')
+        # plt.plot(super_mini[0], super_mini[1], linestyle='None', marker='o', color='k')
         return pareto_frontiers
 
     @staticmethod
