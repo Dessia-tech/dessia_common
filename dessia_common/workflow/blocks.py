@@ -1008,6 +1008,7 @@ class Export(Block):
         class_ = get_python_class_from_class_name(dict_['method_type']['class_'])
         method_type = MethodType(class_=class_, name=dict_['method_type']['name'])
         if "export_name" in dict_:
+            # RetroCompat
             filename = dict_["export_name"]
         else:
             filename = dict_["filename"]
@@ -1067,6 +1068,7 @@ class Archive(Block):
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
         if "export_name" in dict_:
+            # RetroCompat
             filename = dict_["export_name"]
         else:
             filename = dict_["filename"]

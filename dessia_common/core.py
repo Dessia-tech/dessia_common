@@ -1117,7 +1117,7 @@ def enhanced_deep_attr(obj, sequence):
         # Sequence is a string and not a sequence of deep attributes
         if '/' in sequence:
             # Is deep attribute reference
-            sequence = deepattr_to_sequence(sequence)
+            sequence = sequence.split('/')
             return enhanced_deep_attr(obj=obj, sequence=sequence)
         # Is direct attribute
         return enhanced_get_attr(obj=obj, attr=sequence)
@@ -1180,15 +1180,10 @@ def concatenate_attributes(prefix, suffix, type_: str = 'str'):
     raise ValueError(wrong_concat_type.format(type_))
 
 
-def deepattr_to_sequence(deepattr: str):
-    sequence = deepattr.split('/')
-    healed_sequence = []
-    for attribute in sequence:
-        try:
-            healed_sequence.append(int(attribute))
-        except ValueError:
-            healed_sequence.append(attribute)
-    return healed_sequence
+# def deepattr_to_sequence(deepattr: str):
+#     sequence = deepattr.split('/')
+#     healed_sequence = [a for a in sequence]
+#     return healed_sequence
 
 
 def sequence_to_deepattr(sequence):
