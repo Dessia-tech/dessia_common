@@ -121,33 +121,41 @@ class InstantiatingModelOptimizer(Optimizer):
         return [[0] * len(self.optimization_bounds),
                 [1] * len(self.optimization_bounds)]
 
-    def optimize_gradient(self, method: str = 'L-BFGS-B'):
-        x0 = npy.random.random(self.number_parameters)
+    def optimize_gradient(self, method: str = 'L-BFGS-B', x0: List[float] = None):
+        x0 = self._init_gradient(x0)
         bounds = self.scipy_bounds()
-        result = scipy.optimize.minimize(self.objective_from_dimensionless_vector,
-                                         x0, bounds=bounds, method=method)
 
-        attributes_values = self.vector_to_attributes_values(
-            self.dimensionless_vector_to_vector(result.x))
+        result = scipy.optimize.minimize(self.objective_from_dimensionless_vector, x0, bounds=bounds, method=method)
 
+        attributes_values = self.vector_to_attributes_values(self.dimensionless_vector_to_vector(result.x))
         model = self.instantiate_model(attributes_values)
         return model, result.fun
 
+    def _init_gradient(self, x0: List[float] = None):
+        if x0 is None:
+            return npy.random.random(self.number_parameters)
+        return x0
+
     def optimize_cma(self):
-
         x0 = npy.random.random(self.number_parameters)
-
         bounds = self.cma_bounds()
-        xra, fx_opt = cma.fmin(self.objective_from_dimensionless_vector,
-                               x0, 0.6, options={'bounds': bounds,
-                                                 'tolfun': 1e-3,
-                                                 'maxiter': 250,
-                                                 'verbose': 0,
-                                                 'ftarget': 0.2})[0:2]
+        xra, fx_opt = cma.fmin(self.objective_from_dimensionless_vector, x0, 0.6, options={'bounds': bounds,
+                                                                                           'tolfun': 1e-3,
+                                                                                           'maxiter': 250,
+                                                                                           'verbose': -9,
+                                                                                           'ftarget': 0.2})[0:2]
 
-        attributes_values = self.vector_to_attributes_values(
-            self.dimensionless_vector_to_vector(xra))
+        attributes_values = self.vector_to_attributes_values(self.dimensionless_vector_to_vector(xra))
 
         model = self.instantiate_model(attributes_values)
-
         return model, fx_opt
+
+    def optimize_cma_then_gradient(self, method: str = 'L-BFGS-B'):
+        model_cma, fx_cma = self.optimize_cma()
+        x0 = npy.array([getattr(model_cma, attr.attribute_name) for attr in self.optimization_bounds])
+        model, fx_opt = self.optimize_gradient(method=method, x0=x0)
+        best_fx = npy.min([fx_opt, fx_cma])
+        if best_fx == fx_cma:
+            model = model_cma
+        # print(fx_cma, fx_opt, best_fx)
+        return model, best_fx
