@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Excel Export now used proper length of the cell value
+- Fix workflow.copy() issue where a nbv with several pipes became several nbv with one pipe  
 
 ## v0.9.0 [7/20/2022]
 

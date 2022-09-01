@@ -454,7 +454,7 @@ class Workflow(Block):
 
         copied_workflow = Workflow(blocks=blocks, pipes=[], output=output, name=self.name)
 
-        pipes = [self.copy_pipe(pipe=p, copied_workflow=copied_workflow) for p in self.pipes]
+        pipes = self.copy_pipes(copied_workflow)
 
         imposed_variable_values = {}
         for variable, value in self.imposed_variable_values.items():
@@ -465,22 +465,36 @@ class Workflow(Block):
                                    imposed_variable_values=imposed_variable_values, name=self.name)
         return copied_workflow
 
-    def copy_pipe(self, pipe: Pipe, copied_workflow: 'Workflow') -> Pipe:
-        """
-        Copy a pipe to another workflow
-        """
-        upstream_index = self.variable_indices(pipe.input_variable)
+    def copy_pipes(self, copied_workflow: 'Workflow') -> List[Pipe]:
+        copied_pipes = []
 
-        if isinstance(upstream_index, int):
-            pipe_upstream = pipe.input_variable.copy()
-        elif isinstance(upstream_index, tuple):
+        nbv_pipes = []
+        standard_pipes = []
+        for pipe in self.pipes:
+            upstream_index = self.variable_indices(pipe.input_variable)
+            if isinstance(upstream_index, int):
+                nbv_pipes.append(pipe)
+            else:
+                standard_pipes.append(pipe)
+
+        for pipe in standard_pipes:
+            upstream_index = self.variable_indices(pipe.input_variable)
             pipe_upstream = copied_workflow.variable_from_index(upstream_index)
-        else:
-            raise ValueError(f"Could not find variable at index {upstream_index}")
 
-        downstream_index = self.variable_indices(pipe.output_variable)
-        pipe_downstream = copied_workflow.variable_from_index(downstream_index)
-        return Pipe(pipe_upstream, pipe_downstream)
+            downstream_index = self.variable_indices(pipe.output_variable)
+            pipe_downstream = copied_workflow.variable_from_index(downstream_index)
+            copied_pipes.append(Pipe(pipe_upstream, pipe_downstream))
+
+        for nbv in self.nonblock_variables:
+            related_pipes = [pipe for pipe in nbv_pipes if (pipe.input_variable == nbv)]
+            if related_pipes:
+                copied_variable = nbv.copy()
+                for pipe in related_pipes:
+                    downstream_index = self.variable_indices(pipe.output_variable)
+                    pipe_downstream = copied_workflow.variable_from_index(downstream_index)
+                    copied_pipes.append(Pipe(copied_variable, pipe_downstream))
+
+        return copied_pipes
 
     @staticmethod
     def display_settings() -> List[DisplaySetting]:

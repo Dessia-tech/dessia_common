@@ -28,11 +28,11 @@ from sklearn import preprocessing
 
 import dessia_common.errors
 from dessia_common.utils.diff import data_eq, diff, dict_hash, list_hash
-from dessia_common.utils.serialization import dict_to_object, serialize_dict_with_pointers, serialize_dict,\
+from dessia_common.utils.serialization import dict_to_object, serialize_dict_with_pointers, serialize_dict, \
     deserialize_argument, serialize
 from dessia_common.utils.types import full_classname, is_sequence, is_bson_valid, TYPES_FROM_STRING
 from dessia_common.utils.copy import deepcopy_value
-from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotation, JSONSCHEMA_HEADER,\
+from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotation, JSONSCHEMA_HEADER, \
     set_default_value
 from dessia_common.utils.docstrings import parse_docstring, FAILED_DOCSTRING_PARSING
 from dessia_common.exports import XLSXWriter
@@ -612,7 +612,10 @@ class DessiaObject:
                                                             ' after serialization/deserialization')
         copied_object = self.copy()
         if not copied_object._data_eq(self):
-            print('data diff: ', self._data_diff(copied_object))
+            try:
+                print('data diff: ', self._data_diff(copied_object))
+            except:
+                pass
             raise dessia_common.errors.CopyError('Object is not equal to itself after copy')
 
         valid, hint = is_bson_valid(stringify_dict_keys(dict_))
@@ -781,7 +784,7 @@ class HeterogeneousList(DessiaObject):
         return self._matrix
 
     def singular_values(self):
-        scaled_data = HeterogeneousList.scale_data(npy.array(self.matrix) - npy.mean(self.matrix, axis = 0))
+        scaled_data = HeterogeneousList.scale_data(npy.array(self.matrix) - npy.mean(self.matrix, axis=0))
         _, singular_values, _ = npy.linalg.svd(npy.array(scaled_data).T, full_matrices=False)
         normed_singular_values = singular_values / npy.sum(singular_values)
 
@@ -794,7 +797,6 @@ class HeterogeneousList(DessiaObject):
     def scale_data(data_matrix: List[List[float]]):
         scaled_matrix = preprocessing.StandardScaler().fit_transform(data_matrix)
         return [list(map(float, row.tolist())) for row in scaled_matrix]
-
 
     def plot_data(self):
         # Plot a correlation matrix : To develop
@@ -845,7 +847,6 @@ class HeterogeneousList(DessiaObject):
         from plot_data.core import PointFamily
         return [PointFamily(BLUE, list(range(len(self.dessia_objects))))]
 
-
     def plot_dimensionality(self):
         import plot_data
         _, singular_points = self.singular_values()
@@ -867,7 +868,7 @@ class HeterogeneousList(DessiaObject):
                                                 point_style=point_style)
         return dimensionality_plot
 
-    def to_markdown(self): # TODO: Custom this markdown
+    def to_markdown(self):  # TODO: Custom this markdown
         """
         Render a markdown of the object output type: string
         """
@@ -1274,7 +1275,7 @@ def split_argspecs(argspecs) -> Tuple[int, int]:
 
 
 def get_attribute_names(object_class):
-    attributes = [attribute[0] for attribute in inspect.getmembers(object_class, lambda x:not inspect.isroutine(x))
+    attributes = [attribute[0] for attribute in inspect.getmembers(object_class, lambda x: not inspect.isroutine(x))
                   if not attribute[0].startswith('__')
                   and not attribute[0].endswith('__')
                   and isinstance(attribute[1], (float, int, complex, bool))]
