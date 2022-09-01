@@ -1007,7 +1007,11 @@ class Export(Block):
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'Export':
         class_ = get_python_class_from_class_name(dict_['method_type']['class_'])
         method_type = MethodType(class_=class_, name=dict_['method_type']['name'])
-        return cls(method_type=method_type, text=dict_['text'], filename=dict_["filename"],
+        if "export_name" in dict_:
+            filename = dict_["export_name"]
+        else:
+            filename = dict_["filename"]
+        return cls(method_type=method_type, text=dict_['text'], filename=filename,
                    extension=dict_["extension"], name=dict_["name"])
 
     def evaluate(self, values):
@@ -1062,7 +1066,11 @@ class Archive(Block):
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
-        return cls(number_exports=dict_["number_exports"], filename=dict_["filename"], name=dict_['name'])
+        if "export_name" in dict_:
+            filename = dict_["export_name"]
+        else:
+            filename = dict_["filename"]
+        return cls(number_exports=dict_["number_exports"], filename=filename, name=dict_['name'])
 
     def evaluate(self, values):
         archive = io.BytesIO()
