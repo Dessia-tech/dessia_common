@@ -629,7 +629,7 @@ class HeterogeneousList(DessiaObject):
 
     @staticmethod
     def _pareto_frontier_2d(x_dim: int, y_dim: int, pareto_costs: List[List[float]], max_x_dim: float,
-                           super_mini: List[float]):
+                            super_mini: List[float]):
         # Experimental
         minidx = npy.argmin(pareto_costs[:, y_dim])
         x_coord = pareto_costs[minidx, x_dim]
