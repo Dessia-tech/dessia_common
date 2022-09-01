@@ -16,29 +16,62 @@ import dessia_common.core as dc
 class CategorizedList(dc.HeterogeneousList):
     _allowed_methods = ['from_agglomerative_clustering', 'from_kmeans', 'from_dbscan']
 
-
     def __init__(self, dessia_objects: List[dc.DessiaObject] = None, labels: List[int] = None, name: str = ''):
         dc.HeterogeneousList.__init__(self, dessia_objects=dessia_objects, name=name)
+        if labels is None:
+            labels = [0]*len(self.dessia_objects)
         self.labels = labels
         self._n_clusters = None
 
     @property
     def n_clusters(self):
         if self._n_clusters is None:
-            self._n_clusters = max(self.labels) + 1
+            unic_labels = set(self.labels)
+            unic_labels.discard(-1)
+            self._n_clusters = len(unic_labels)
         return self._n_clusters
+
+    def pick_from_slice(self, key: slice):
+        new_hlist = dc.HeterogeneousList.pick_from_slice(self, key)
+        new_hlist.labels = self.labels[key]
+        # new_hlist.name += f"_{key.start if key.start is not None else 0}_{key.stop}")
+        return new_hlist
+
+    def pick_from_boolist(self, key: List[bool]):
+        new_hlist = dc.HeterogeneousList.pick_from_boolist(self, key)
+        new_hlist.labels = dc.DessiaFilter.apply(self.labels, key)
+        # new_hlist.name += "_list")
+        return new_hlist
+
+    def _print_objects_slice(self, key: slice, attr_space: int, attr_name_len: int, label_space: str):
+        string = ""
+        for label, dessia_object in zip(self.labels[key], self.dessia_objects[key]):
+            string += "\n"
+            space = label_space - len(str(label))
+            string += "|" + " "*space + f"{label}" + " "
+            string += self._print_objects(dessia_object, attr_space, attr_name_len)
+        return string
+
+    def _write_str_prefix(self):
+        prefix = f"{self.__class__.__name__} {self.name if self.name != '' else hex(id(self))}: "
+        prefix += (f"{len(self)} samples, {len(self.common_attributes)} features, {self.n_clusters} clusters")
+        return prefix
+
+    def _set_size_col_label(self):
+        return 4
 
     def clustered_sublists(self):
         sublists = []
         label_tags = sorted(list(map(str, set(self.labels).difference({-1}))))
-        for _ in range(max(self.labels) + 1):
+        unic_labels = list(set(self.labels))
+        for _ in range(self.n_clusters):
             sublists.append([])
         if -1 in self.labels:
             sublists.append([])
             label_tags.append("outliers")
 
         for idx, label in enumerate(self.labels):
-            sublists[label].append(self.dessia_objects[idx])
+            sublists[unic_labels.index(label)].append(self.dessia_objects[idx])
 
         new_dessia_objects = [dc.HeterogeneousList(dessia_objects=sublist, name=self.name + f"_{label_tag}")
                               for label_tag, sublist in zip(label_tags, sublists)]
@@ -73,11 +106,10 @@ class CategorizedList(dc.HeterogeneousList):
             point_families.append(plot_data.core.PointFamily(color, points_index))
         return point_families
 
-
     @classmethod
     def from_agglomerative_clustering(cls, data: dc.HeterogeneousList, n_clusters: int = 2,
                                       affinity: str = 'euclidean', linkage: str = 'ward',
-                                      distance_threshold: float = None, scaling: bool = False):
+                                      distance_threshold: float = None, scaling: bool = False, name: str =""):
 
         """
         Internet doc
@@ -144,11 +176,11 @@ class CategorizedList(dc.HeterogeneousList):
         skl_cluster = cluster.AgglomerativeClustering(
             n_clusters=n_clusters, affinity=affinity, distance_threshold=distance_threshold, linkage=linkage)
         skl_cluster = cls.fit_cluster(skl_cluster, data.matrix, scaling)
-        return cls(data.dessia_objects, skl_cluster.labels_.tolist())
+        return cls(data.dessia_objects, skl_cluster.labels_.tolist(), name=name)
 
     @classmethod
-    def from_kmeans(cls, data: dc.HeterogeneousList, n_clusters: int = 2,
-                    n_init: int = 10, tol: float = 1e-4, scaling: bool = False):
+    def from_kmeans(cls, data: dc.HeterogeneousList, n_clusters: int = 2, n_init: int = 10, tol: float = 1e-4,
+                    scaling: bool = False, name: str =""):
 
         """
         Internet doc
@@ -189,11 +221,11 @@ class CategorizedList(dc.HeterogeneousList):
         """
         skl_cluster = cluster.KMeans(n_clusters=n_clusters, n_init=n_init, tol=tol)
         skl_cluster = cls.fit_cluster(skl_cluster, data.matrix, scaling)
-        return cls(data.dessia_objects, skl_cluster.labels_.tolist())
+        return cls(data.dessia_objects, skl_cluster.labels_.tolist(), name=name)
 
     @classmethod
     def from_dbscan(cls, data: dc.HeterogeneousList, eps: float = 0.5, min_samples: int = 5, mink_power: float = 2,
-                    leaf_size: int = 30, metric: str = "euclidean", scaling: bool = False):
+                    leaf_size: int = 30, metric: str = "euclidean", scaling: bool = False, name: str =""):
 
         """
         Internet doc
@@ -253,7 +285,7 @@ class CategorizedList(dc.HeterogeneousList):
         """
         skl_cluster = cluster.DBSCAN(eps=eps, min_samples=min_samples, p=mink_power, leaf_size=leaf_size, metric=metric)
         skl_cluster = cls.fit_cluster(skl_cluster, data.matrix, scaling)
-        return cls(data.dessia_objects, skl_cluster.labels_.tolist())
+        return cls(data.dessia_objects, skl_cluster.labels_.tolist(), name=name)
 
     @staticmethod
     def fit_cluster(skl_cluster: cluster, matrix: List[List[float]], scaling: bool):

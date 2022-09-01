@@ -7,8 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
-### Fixed
+### Added
+- FiltersList class
+- Easy access to HeterogeneousList with getitem, len, add, extend, sort
+- filtering method to HeterogeneousList that calls a FiltersList
 
+### Breaking Changes
+- Change attribute "operator" of DessiaFilter to "comparison_operator"
+
+### Changes
+- Add 'logical_operator="and"' attribute to workflow.block.Filter
+
+### Performance
+- DessiaFilters and FiltersList: A priori optimized access to elements so it is really faster than before
+
+### Fixed
 - Excel Export now used proper length of the cell value
 - Fix workflow.copy() issue where a nbv with several pipes became several nbv with one pipe  
 
