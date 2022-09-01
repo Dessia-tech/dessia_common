@@ -45,10 +45,6 @@ workflow_run = workflow.run({
 
 # Workflow tests
 workflow._check_platform()
-wfrun_plot_data = workflow_run.output_value.plot_data()
-# assert(json.dumps(wfrun_plot_data[0].to_dict())[150:200] == 'acceleration": 12.0, "model": 70.0}, {"mpg": 15.0,')
-# assert(json.dumps(wfrun_plot_data[1].to_dict())[10500:10550] == '"0.10.0", "color_fill": "rgb(0,19,254)", "color_st')
-# assert(json.dumps(wfrun_plot_data[2].to_dict())[50:100] == 'te_names": ["Index of reduced basis vector", "Sing')
 
 # JSON TESTS
 output_dict = workflow_run.output_value[[0, 3, 9, 11, 25, 44]].to_dict(use_pointers=True)
