@@ -1114,20 +1114,25 @@ def enhanced_deep_attr(obj, sequence):
     """
     warnings.warn("enhanced_deep_attr is deprecated. Use get_in_from_path from dessia_common.breakdown.py instead")
     if isinstance(sequence, str):
-        # Sequence is a string and not a sequence of deep attributes
-        if '/' in sequence:
-            # Is deep attribute reference
-            sequence = sequence.split('/')
-            return enhanced_deep_attr(obj=obj, sequence=sequence)
-        # Is direct attribute
-        return enhanced_get_attr(obj=obj, attr=sequence)
+        path = f"#/{sequence}"
+    else:
+        path = f"#/{'/'.join(sequence)}"
+    return get_in_object_from_path(object_=obj, path=path)
 
-    # Get direct attribute
-    subobj = enhanced_get_attr(obj=obj, attr=sequence[0])
-    if len(sequence) > 1:
-        # Recursively get deep attributes
-        subobj = enhanced_deep_attr(obj=subobj, sequence=sequence[1:])
-    return subobj
+        # # Sequence is a string and not a sequence of deep attributes
+        # if '/' in sequence:
+        #     # Is deep attribute reference
+        #     sequence = sequence.split('/')
+        #     return enhanced_deep_attr(obj=obj, sequence=sequence)
+        # # Is direct attribute
+        # return enhanced_get_attr(obj=obj, attr=sequence)
+    #
+    # # Get direct attribute
+    # subobj = enhanced_get_attr(obj=obj, attr=sequence[0])
+    # if len(sequence) > 1:
+    #     # Recursively get deep attributes
+    #     subobj = enhanced_deep_attr(obj=subobj, sequence=sequence[1:])
+    # return subobj
 
 
 def enhanced_get_attr(obj, attr):
