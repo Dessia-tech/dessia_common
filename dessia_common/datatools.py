@@ -503,7 +503,7 @@ class HeterogeneousList(DessiaObject):
 
     def _parallel_plot_attr(self):
         # TODO: Put it in plot_data
-        sorted_r2, sorted_association = self._get_correlations()
+        sorted_r2, sorted_association, constant_attributes = self._get_correlations()
         transposed_association = zip(*sorted_association)
         correlation_graph = nx.DiGraph()
         correlation_graph.add_weighted_edges_from(list(zip(*transposed_association, sorted_r2)))
@@ -512,15 +512,22 @@ class HeterogeneousList(DessiaObject):
     def _get_correlations(self):
         r2_scores = []
         association_list = []
+        constant_attributes = []
         for idx, attr1 in enumerate(self.common_attributes):
+            if len(set(self.get_attribute_values(attr1))) == 1:
+                constant_attributes.append(attr1)
+                continue
             for _, attr2 in enumerate(self.common_attributes[idx:]):
+                if len(set(self.get_attribute_values(attr2))) == 1:
+                    constant_attributes.append(attr2)
+                    continue
                 if attr1 != attr2:
                     correlation_matrix = npy.corrcoef(self.get_attribute_values(attr1),
                                                       self.get_attribute_values(attr2))
                     correlation_xy = correlation_matrix[0,1]
                     r2_scores.append(correlation_xy**2)
                     association_list.append([attr1, attr2])
-        return zip(*sorted(zip(r2_scores, association_list))[::-1])
+        return zip(*sorted(zip(r2_scores, association_list))[::-1]), list(set(constant_attributes))
 
     def _plot_dimensionality(self):
         _, singular_points = self.singular_values()
