@@ -780,6 +780,10 @@ class CategorizedList(HeterogeneousList):
                                list(set(self.labels).difference({-1})) + ([-1] if -1 in self.labels else []),
                                name=self.name + "_split")
 
+    @classmethod
+    def to_packed_hlists(categorized: 'CategorizedList'):
+        return categorized.clustered_sublists()
+
     def _tooltip_attributes(self):
         return self.common_attributes + ["Cluster Label"]
 
