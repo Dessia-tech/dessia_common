@@ -683,7 +683,7 @@ class CategorizedList(HeterogeneousList):
             --------
             Number of clusters in dessia_objects
 
-    **Built-in methods**: See :func:`~dessia_common.core.HeterogeneousList`
+    **Built-in methods**: See :func:`~HeterogeneousList`
     """
     _allowed_methods = ['from_agglomerative_clustering', 'from_kmeans', 'from_dbscan', 'from_pareto_sheets']
 
@@ -782,6 +782,11 @@ class CategorizedList(HeterogeneousList):
 
     @classmethod
     def to_packed_hlists(categorized: 'CategorizedList'):
+        """
+        Split a CategorizedList of labelled DessiaObjects into a CategorizedList of labelled HeterogeneousLists.
+
+        For more information, see :func:`~CategorizedList.clustered_sublists`
+        """
         return categorized.clustered_sublists()
 
     def _tooltip_attributes(self):
