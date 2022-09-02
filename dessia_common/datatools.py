@@ -784,7 +784,7 @@ class CategorizedList(HeterogeneousList):
         return self.common_attributes + ["Cluster Label"]
 
     def plot_data(self):
-        if type(self.dessia_objects[0]) == HeterogeneousList:
+        if isinstance(self.dessia_objects[0], HeterogeneousList):
             merged_hlists = self.dessia_objects[0][:]
             merged_labels = [self.labels[0]]*len(merged_hlists)
             for dobject, label in zip(self.dessia_objects[1:], self.labels[1:]):
