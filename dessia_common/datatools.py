@@ -6,7 +6,6 @@ from copy import copy
 import itertools
 
 import numpy as npy
-import networkx as nx
 from sklearn import cluster, preprocessing
 import matplotlib.pyplot as plt
 
@@ -503,11 +502,9 @@ class HeterogeneousList(DessiaObject):
 
     def _parallel_plot_attr(self):
         # TODO: Put it in plot_data
-        sorted_r2, sorted_association, constant_attributes = self._get_correlations()
-        transposed_association = zip(*sorted_association)
-        correlation_graph = nx.DiGraph()
-        correlation_graph.add_weighted_edges_from(list(zip(*transposed_association, sorted_r2)))
-        return nx.dag_longest_path(correlation_graph, weight='weight')
+        (sorted_r2, sorted_association), constant_attributes = self._get_correlations()
+        attr_series = self._get_attribute_trios(sorted_r2, sorted_association)
+        return constant_attributes + self._trios_list_to_parallel_axes(attr_series)
 
     def _get_correlations(self):
         r2_scores = []
@@ -527,7 +524,56 @@ class HeterogeneousList(DessiaObject):
                     correlation_xy = correlation_matrix[0,1]
                     r2_scores.append(correlation_xy**2)
                     association_list.append([attr1, attr2])
-        return zip(*sorted(zip(r2_scores, association_list))[::-1]), list(set(constant_attributes))
+        # Returns list of list of associated attributes sorted along their R2 score and constant attributes
+        return map(list, zip(*sorted(zip(r2_scores, association_list))[::-1])), list(set(constant_attributes))
+
+    def _get_attribute_trios(self, sorted_r2, sorted_association):
+        attr_series = []
+        picked_attr = set()
+        set_association = set(sum(sorted_association, []))
+        while len(picked_attr) != len(set_association):
+            first_association = sorted_association[0]
+            attr_series.append(first_association)
+            picked_attr.update(set(first_association))
+            del sorted_r2[0], sorted_association[0]
+
+            for idx, _ in enumerate(sorted_r2):
+                if any(item in first_association for item in sorted_association[idx]):
+                    attr_series[-1] += sorted_association[idx]
+                    picked_attr.update(set(sorted_association[idx]))
+                    del sorted_r2[idx], sorted_association[idx]
+                    break
+        return attr_series
+
+    def _trios_list_to_parallel_axes(self, attribute_series):
+        ordered_attr = []
+        for attribute_serie in attribute_series:
+            if not any(item in attribute_serie for item in ordered_attr):
+                ordered_attr += self._new_attributes_trio(attribute_serie)
+            else:
+                ordered_attr = self._new_sided_attribute(ordered_attr, attribute_serie)
+        return ordered_attr
+
+    def _new_attributes_trio(self, attribute_serie):
+        mid_index = [attribute_serie.count(attr) for attr in attribute_serie].index(2)
+        mid_attr = attribute_serie[mid_index]
+        remaining_attr = iter(set(attribute_serie).difference({mid_attr}))
+        return [next(remaining_attr), mid_attr, next(remaining_attr)]
+
+    def _new_sided_attribute(self, ordered_attr, attribute_serie):
+        for side in [0, -1]:
+            if ordered_attr[side] in attribute_serie:
+                nb_instances = attribute_serie.count(ordered_attr[side])
+                for ieme_instance in range(nb_instances):
+                    idx_in_serie = (ieme_instance)*2 + attribute_serie[ieme_instance*2:].index(ordered_attr[side])
+                    # 1 if idx_in_serie = 0, 0 if idx_in_serie = 1, 3 if idx_in_serie = 2, 2 if idx_in_serie = 3
+                    idx_attr_to_add = idx_in_serie + 1 - 2 * (idx_in_serie % 2)
+                    added_attr = []
+                    if attribute_serie[idx_attr_to_add] not in ordered_attr:
+                        added_attr = [attribute_serie[idx_attr_to_add]]
+                        ordered_attr = (side + 1) * added_attr + ordered_attr + (-1 * side) * added_attr
+                        break
+        return ordered_attr
 
     def _plot_dimensionality(self):
         _, singular_points = self.singular_values()
