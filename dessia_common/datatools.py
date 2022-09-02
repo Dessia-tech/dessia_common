@@ -785,11 +785,14 @@ class CategorizedList(HeterogeneousList):
 
     def plot_data(self):
         if type(self.dessia_objects[0]) == HeterogeneousList:
-            merged_dobjects = sum(self.dessia_objects)
-            merged_labels = [label*len(self.dessia_objects[idx]) for idx, label in enumerate(self)]
-            plotted_clist = self.__class__(dessia_objects=merged_dobjects, labels=merged_labels)
+            merged_hlists = self.dessia_objects[0][:]
+            merged_labels = [self.labels[0]]*len(merged_hlists)
+            for dobject, label in zip(self.dessia_objects[1:], self.labels[1:]):
+                merged_hlists.extend(dobject)
+                merged_labels.extend([label]*len(dobject))
+            plotted_clist = self.__class__(dessia_objects=merged_hlists.dessia_objects, labels=merged_labels)
             return plotted_clist.plot_data()
-        return self.plot_data()
+        return HeterogeneousList.plot_data(self)
 
     def _plot_data_list(self):
         _plot_data_list = []
