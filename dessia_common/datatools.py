@@ -844,7 +844,6 @@ class CategorizedList(HeterogeneousList):
                 merged_hlists.extend(dobject)
                 merged_labels.extend([label]*len(dobject))
             plotted_clist = self.__class__(dessia_objects=merged_hlists.dessia_objects, labels=merged_labels)
-            plotted_clist.common_attributes
             return plotted_clist.plot_data()
         return HeterogeneousList.plot_data(self)
 
