@@ -36,7 +36,8 @@ clist = CategorizedList.from_agglomerative_clustering(hlist, n_clusters=10, name
 split_clist = clist.clustered_sublists()
 split_clist[0].name = "15g6e4rg84reh56rt4h56j458hrt56gb41rth674r68jr6"
 print(split_clist)
-
+split_clist.plot()
+a
 # Test ClusterResults instances on platform
 clustered_cars_without._check_platform()
 clustered_cars_with._check_platform()
