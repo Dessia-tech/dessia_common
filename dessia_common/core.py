@@ -1274,100 +1274,119 @@ class HeterogeneousList(DessiaObject):
         """
         return templates.heterogeneouslist_markdown_template.substitute(name=self.name, class_=self.__class__.__name__)
 
+    @staticmethod
+    def _check_costs(len_data: int, costs: List[List[float]]):
+        if len(costs) != len_data:
+            if len(costs[0]) == len_data:
+                return list(map(list,zip(*costs)))
+            raise ValueError(f"costs is length {len(costs)} and the matching HeterogeneousList is length {len_data}. " +
+                             "They should be the same length.")
+        return costs
 
-# class HomogeneousList(HeterogeneousList):
+    @staticmethod
+    def pareto_indexes(costs: List[List[float]]):
+        """
+        Find the pareto-efficient points
+        :return: A (n_points, ) boolean array, indicating whether each point
+                 is Pareto efficient
+        """
+        is_efficient = npy.ones(len(costs), dtype=bool)
+        # costs_array = npy.array(costs)
+        costs_array = (costs - npy.mean(costs, axis = 0)) / npy.std(costs, axis = 0)
+        for index, cost in enumerate(costs_array):
+            if is_efficient[index]:
+                # Keep any point with a lower cost
+                is_efficient[is_efficient] = npy.any(costs_array[is_efficient] < cost, axis=1)
+                # And keep self
+                is_efficient[index] = True
+        return is_efficient
 
-#     def __init__(self, dessia_objects: List[DessiaObject] = None, name: str = ''):
-#         HeterogeneousList.__init__(
-#             self, dessia_objects=dessia_objects, name=name)
+    def pareto_points(self, costs: List[List[float]]):
+        """
+        Find the pareto-efficient points
+        :return: A HeterogeneousList of pareto_points
+        """
+        checked_costs = HeterogeneousList._check_costs(len(self.dessia_objects), costs)
+        # TODO: Replace this line with a __getitem___ command when it is available (branch HList_docstrings)
+        return HeterogeneousList(list(itertools.compress(self.dessia_objects,
+                                                         self.__class__.pareto_indexes(checked_costs))))
 
-#     def matrix(self):
-#         matrix = []
-#         for dessia_object in self.dessia_objects:
-#             matrix.append(dessia_object.to_vector())
-#         return matrix
+    def pareto_sheets(self, costs: List[List[float]], nb_sheets: int = 1):
+        """
+        Get successive pareto sheets (i.e. optimal points in a DOE for pre-computed costs).
 
+        :param costs:
+            Pre-computed costs of `len(self)`. Can be multi-dimensional.
+        :type costs: `List[List[float]]`, `n_samples x n_features`
 
-# class Evolution(DessiaObject):
-#     """
-#     Defines a generic evolution
+        :param nb_sheets:
+            Number of pareto sheets to pick
+        :type nb_sheets: `int`, `optional`, default to `1`
 
-#     :param evolution: float list
-#     :type evolution: list
-#     """
-#     _non_data_eq_attributes = ['name']
-#     _non_data_hash_attributes = ['name']
-#     _generic_eq = True
+        :return: The successive pareto sheets and not selected elements
+        :rtype: `List[HeterogeneousList]`, `HeterogeneousList`
+        """
+        checked_costs = HeterogeneousList._check_costs(len(self.dessia_objects), costs)
+        non_optimal_costs = checked_costs[:]
+        non_optimal_points = self.dessia_objects[:]
+        pareto_sheets = []
+        for idx in range(nb_sheets):
+            pareto_sheet = HeterogeneousList.pareto_indexes(non_optimal_costs)
+            pareto_sheets.append(HeterogeneousList(list(itertools.compress(non_optimal_points, pareto_sheet)),
+                                                   self.name + f'_pareto_{idx}'))
+            non_optimal_points = list(itertools.compress(non_optimal_points, map(lambda x: not x, pareto_sheet)))
+            non_optimal_costs = list(itertools.compress(non_optimal_costs, map(lambda x: not x, pareto_sheet)))
+        return pareto_sheets, HeterogeneousList(non_optimal_points, self.name)
 
-#     def __init__(self, evolution: List[float] = None, name: str = ''):
-#         if evolution is None:
-#             evolution = []
-#         self.evolution = evolution
+    @staticmethod
+    def pareto_frontiers(len_data: int, costs: List[List[float]]):
+        # Experimental
+        import matplotlib.pyplot as plt
+        checked_costs = HeterogeneousList._check_costs(len_data, costs)
+        pareto_indexes = HeterogeneousList.pareto_indexes(checked_costs)
+        pareto_costs = npy.array(list(itertools.compress(checked_costs, pareto_indexes)))
 
-#         DessiaObject.__init__(self, name=name)
+        array_costs = npy.array(checked_costs)
+        plt.figure()
+        plt.plot(array_costs[:, 0], array_costs[:, 1], linestyle ='None', marker='o', color = 'b')
+        plt.plot(pareto_costs[:, 0], pareto_costs[:, 1], linestyle ='None', marker='o', color = 'r')
+        plt.show()
 
-#     def _displays(self):
-#         displays = [{'angular_component': 'app-evolution1d',
-#                      'table_show': False,
-#                      'evolution': [self.evolution],
-#                      'label_y': ['evolution']}]
-#         return displays
+        super_mini = npy.min(checked_costs, axis=0)
+        pareto_frontiers = []
+        for x_dim in range(pareto_costs.shape[1]):
+            for y_dim in range(pareto_costs.shape[1]):
+                if x_dim != y_dim:
+                    frontier_2d = HeterogeneousList._pareto_frontier_2d(x_dim, y_dim, pareto_costs,
+                                                                       npy.max(array_costs[ :, x_dim]), super_mini)
+                    pareto_frontiers.append(frontier_2d)
+                    plt.plot(frontier_2d[:, x_dim], frontier_2d[:, y_dim], color = 'g')
 
-#     def update(self, evolution):
-#         """
-#         Update the evolution list
-#         """
-#         self.evolution = evolution
+        plt.plot(super_mini[0], super_mini[1], linestyle ='None', marker='o', color = 'k')
 
+        return pareto_frontiers
 
-# class CombinationEvolution(DessiaObject):
-#     _non_data_eq_attributes = ['name']
-#     _non_data_hash_attributes = ['name']
-#     _generic_eq = True
+    @staticmethod
+    def _pareto_frontier_2d(x_dim: int, y_dim: int, pareto_costs: List[List[float]], max_x_dim: float,
+                           super_mini: List[float]):
+        # Experimental
+        minidx = npy.argmin(pareto_costs[:, y_dim])
+        x_coord = pareto_costs[minidx, x_dim]
+        y_coord = pareto_costs[minidx, y_dim]
 
-#     def __init__(self, evolution1: List[Evolution],
-#                  evolution2: List[Evolution], title1: str = 'x',
-#                  title2: str = 'y', name: str = ''):
+        new_pareto = pareto_costs[x_coord - pareto_costs[:, x_dim] != 0., :]
 
-#         self.evolution1 = evolution1
-#         self.evolution2 = evolution2
+        dir_coeffs = (y_coord - new_pareto[:, y_dim]) / (x_coord - new_pareto[:, x_dim])
+        dir_coeffs[x_coord == new_pareto[:, x_dim]] = npy.max(dir_coeffs[x_coord != new_pareto[:, x_dim]])
 
-#         self.x_, self.y_ = self.genere_xy()
+        offsets = y_coord - dir_coeffs * x_coord
+        approx_super_mini = dir_coeffs * super_mini[x_dim] + offsets
+        chosen_line = npy.argmin(npy.absolute(approx_super_mini - super_mini[y_dim]))
 
-#         self.title1 = title1
-#         self.title2 = title2
+        frontier_2d = npy.array([[super_mini[x_dim], max_x_dim], [approx_super_mini[chosen_line], max_x_dim * \
+                                  dir_coeffs[chosen_line] + offsets[chosen_line]]]).T
 
-#         DessiaObject.__init__(self, name=name)
-
-#     def _displays(self):
-#         displays = [{
-#             'angular_component': 'app-evolution2d-combination-evolution',
-#             'table_show': False,
-#             'evolution_x': [self.x_], 'label_x': ['title1'],
-#             'evolution_y': [self.y_], 'label_y': ['title2']
-#         }]
-#         return displays
-
-#     def update(self, evol1, evol2):
-#         """
-#         Update the CombinationEvolution object
-
-#         :param evol1: list
-#         :param evol2: list
-#         """
-#         for evolution, ev1 in zip(self.evolution1, evol1):
-#             evolution.update(ev1)
-#         for evolution, ev2 in zip(self.evolution2, evol2):
-#             evolution.update(ev2)
-#         self.x_, self.y_ = self.genere_xy()
-
-#     def genere_xy(self):
-#         x, y = [], []
-#         for evol in self.evolution1:
-#             x = x + evol.evolution
-#         for evol in self.evolution2:
-#             y = y + evol.evolution
-#         return x, y
+        return frontier_2d
 
 
 def dict_merge(old_dct, merge_dct, add_keys=True, extend_lists=True):
