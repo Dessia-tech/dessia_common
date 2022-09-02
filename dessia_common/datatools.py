@@ -640,7 +640,7 @@ class HeterogeneousList(DessiaObject):
 
         :param costs:
             Pre-computed costs of `len(self)`. Can be multi-dimensional.
-        :type costs: `List[List[float]]`, `n_samples x n_features`
+        :type costs: `List[List[float]]`, `n_samples x n_costs` or `n_costs x n_samples`
 
         :param nb_sheets:
             Number of pareto sheets to pick
@@ -1073,6 +1073,30 @@ class CategorizedList(HeterogeneousList):
 
     @classmethod
     def from_pareto_sheets(cls, h_list: HeterogeneousList, costs: List[List[float]], nb_sheets: int = 1):
+        """
+        Get successive pareto sheets (i.e. optimal points in a DOE for pre-computed costs) and put them in a
+        `CategorizedList` where each label is the index of a pareto sheet.
+
+        :param h_list:
+            --------
+            The HeterogeneousList in which to pick optimal points.
+        :type h_list: `HeterogeneousList`
+
+        :param costs:
+            --------
+            Pre-computed costs of `len(self)`. Can be multi-dimensional.
+        :type costs: `List[List[float]]`, `n_samples x n_costs` or `n_costs x n_samples`
+
+        :param nb_sheets:
+            --------
+            Number of pareto sheets to pick
+        :type nb_sheets: `int`, `optional`, default to `1`
+
+        :return: a CategorizedList where each element is labelled with its pareto_sheet. Elements outside a \
+        pareto_sheet are labelled `n_sheets`
+        :rtype: CategorizedList
+
+        """
         labels = []
         dessia_objects = []
         pareto_sheets, non_optimal_points = h_list.pareto_sheets(costs, nb_sheets)
