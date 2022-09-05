@@ -6,7 +6,7 @@ from itertools import product
 import matplotlib.pyplot as plt
 from typing import List
 
-from dessia_common.core import DessiaObject, HeterogeneousList
+from dessia_common.core import DessiaObject
 import dessia_common.optimization as opt
 
 class Engine(DessiaObject):
