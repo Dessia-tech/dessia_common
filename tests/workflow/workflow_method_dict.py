@@ -36,4 +36,4 @@ class TestMethodDict(unittest.TestCase):
         (optimization_workflow3, {0: generated_standalone_object, 1: "custom_name", 2: 3})
     ])
     def test_method_dict_is_valid(self, workflow, expected_dict):
-        self.assertEqual(workflow.method_dict(method_name='run'), expected_dict)
+        self.assertEqual(expected_dict, workflow.method_dict(method_name='run'))

@@ -727,14 +727,24 @@ class Workflow(Block):
 
     def _run_dict(self) -> Dict:
         dict_ = {}
-        for input_index, input_ in enumerate(self.inputs):
-            if input_ in self.imposed_variable_values:
-                dict_[input_index] = self.imposed_variable_values[input_]
+
+        copied_ivv = {}
+        for variable, value in self.imposed_variable_values.items():
+            variable_index = self.variables.index(variable)
+            copied_ivv[variable_index] = value
+
+        cached_ivv = self.imposed_variable_values
+        self.imposed_variable_values = {}
+        copied_workflow = self.copy()
+        self.imposed_variable_values = cached_ivv
+
+        for input_index, input_ in enumerate(copied_workflow.inputs):
+            variable_index = copied_workflow.variables.index(input_)
+            if variable_index in copied_ivv.keys():
+                dict_[input_index] = copied_ivv[variable_index]
             elif isinstance(input_, TypedVariableWithDefaultValue):
                 dict_[input_index] = input_.default_value
-            # else:
-            #     variable_schema = self._method_jsonschemas['run']['properties'][input_index.__str__()]
-            #     dict_[input_global_index] = chose_default(variable_schema)
+
         return dict_
 
     def _start_run_dict(self) -> Dict:
