@@ -15,6 +15,7 @@ try:
     from plot_data.colors import BLUE, GREY, LIGHTGREY, Color
 except ImportError:
     pass
+from dessia_common.exports import XLSXWriter
 from dessia_common.core import DessiaObject, DessiaFilter, FiltersList, get_attribute_names, templates
 
 
@@ -755,6 +756,16 @@ class CategorizedList(HeterogeneousList):
             self._n_clusters = len(unic_labels)
         return self._n_clusters
 
+    def to_xlsx_stream(self, stream):
+        """
+        Exports the object to an XLSX to a given stream
+        """
+        if not isinstance(self.dessia_objects[0], HeterogeneousList):
+            writer = XLSXWriter(self.clustered_sublists())
+        else:
+            writer = XLSXWriter(self)
+        writer.save_to_stream(stream)
+
     def pick_from_slice(self, key: slice):
         new_hlist = HeterogeneousList.pick_from_slice(self, key)
         new_hlist.labels = self.labels[key]
@@ -833,17 +844,21 @@ class CategorizedList(HeterogeneousList):
                                list(set(self.labels).difference({-1})) + ([-1] if -1 in self.labels else []),
                                name=self.name + "_split")
 
+    def _merge_sublists(self):
+        merged_hlists = self.dessia_objects[0][:]
+        merged_labels = [self.labels[0]]*len(merged_hlists)
+        for dobject, label in zip(self.dessia_objects[1:], self.labels[1:]):
+            merged_hlists.extend(dobject)
+            merged_labels.extend([label]*len(dobject))
+        plotted_clist = self.__class__(dessia_objects=merged_hlists.dessia_objects, labels=merged_labels)
+        return plotted_clist
+
     def _tooltip_attributes(self):
         return self.common_attributes + ["Cluster Label"]
 
     def plot_data(self):
         if isinstance(self.dessia_objects[0], HeterogeneousList):
-            merged_hlists = self.dessia_objects[0][:]
-            merged_labels = [self.labels[0]]*len(merged_hlists)
-            for dobject, label in zip(self.dessia_objects[1:], self.labels[1:]):
-                merged_hlists.extend(dobject)
-                merged_labels.extend([label]*len(dobject))
-            plotted_clist = self.__class__(dessia_objects=merged_hlists.dessia_objects, labels=merged_labels)
+            plotted_clist = self._merge_sublists()
             return plotted_clist.plot_data()
         return HeterogeneousList.plot_data(self)
 
