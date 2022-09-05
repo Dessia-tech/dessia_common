@@ -2,7 +2,7 @@
 Tests for dessia_common.utils.helpers
 """
 from dessia_common.models import all_cars_no_feat
-from dessia_common.core import HeterogeneousList
+from dessia_common.datatools import HeterogeneousList
 from dessia_common.utils.helpers import concatenate
 
 values_list = [all_cars_no_feat, all_cars_no_feat]

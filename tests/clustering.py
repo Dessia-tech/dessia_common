@@ -3,8 +3,7 @@ Cluster.py package testing.
 """
 import json
 from dessia_common.models import all_cars_no_feat, all_cars_wi_feat, rand_data_small, rand_data_large
-from dessia_common.core import HeterogeneousList
-from dessia_common.cluster import CategorizedList
+from dessia_common.datatools import HeterogeneousList, CategorizedList
 
 # When attribute _features is not specified in class Car
 all_cars_without_features = HeterogeneousList(all_cars_no_feat)
@@ -30,7 +29,7 @@ kmeanstest_split = kmeanstest_clustered.clustered_sublists()
 # Test print
 clustered_cars_without.labels[0] = 15000
 clustered_cars_without.labels[1] = -1
-clustered_cars_without.labels[2] = 999999
+clustered_cars_without.labels[2:100] = [999999]*len(clustered_cars_without[2:100])
 print(clustered_cars_without)
 hlist = HeterogeneousList(all_cars_wi_feat, name="cars")
 clist = CategorizedList.from_agglomerative_clustering(hlist, n_clusters=10, name="cars")
@@ -45,10 +44,11 @@ aggclustest_clustered._check_platform()
 kmeanstest_clustered._check_platform()
 
 # Test plots outside platform
-clustered_cars_without.plot_data()
-clustered_cars_with.plot()
-aggclustest_clustered.plot()
-kmeanstest_clustered.plot()
+cluscars_plot_data = clustered_cars_without.plot_data()
+assert(json.dumps(cluscars_plot_data[0].to_dict())[42500:42550] == ' 2515.0, "acceleration": 14.8, "model": 78.0, "Clu')
+assert(json.dumps(cluscars_plot_data[1].to_dict())[52500:52550] == '4.3, "model": 80.0, "Cluster Label": -1}, {"mpg": ')
+assert(json.dumps(cluscars_plot_data[2].to_dict())[50:100] == 'te_names": ["Index of reduced basis vector", "Sing')
+
 
 # =============================================================================
 # JSON TESTS

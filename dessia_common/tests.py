@@ -281,18 +281,25 @@ class RandDataD3(RandDataD1):
 
 class RandDataD4(RandDataD1):
     _nb_dims = 4
-    _vector_features = [f'p_{i+1}' for i in range(4)]
+    _vector_features = [f'p_{i+1}' for i in range(4)] + ['test_prop']
 
     def __init__(self, p_1: float, p_2: float, p_3: float, p_4: float, name: str = ''):
         RandDataD1.__init__(self, p_1, name=name)
         self.p_2 = p_2
         self.p_3 = p_3
         self.p_4 = p_4
+        self._test_prop = None
+
+    @property
+    def test_prop(self):
+        if self._test_prop is None:
+            self._test_prop = 3
+        return self._test_prop
 
 
 class RandDataD5(RandDataD1):
     _nb_dims = 5
-    _vector_features = [f'p_{i+1}' for i in range(5)]
+    _vector_features = [f'p_{i+1}' for i in range(5)] + ['test_prop']
 
     def __init__(self, p_1: float, p_2: float, p_3: float, p_4: float, p_5: float, name: str = ''):
         RandDataD1.__init__(self, p_1, name=name)
@@ -300,11 +307,18 @@ class RandDataD5(RandDataD1):
         self.p_3 = p_3
         self.p_4 = p_4
         self.p_5 = p_5
+        self._test_prop = None
+
+    @property
+    def test_prop(self):
+        if self._test_prop is None:
+            self._test_prop = 3
+        return self._test_prop
 
 
 class RandDataD6(RandDataD1):
     _nb_dims = 6
-    _vector_features = [f'p_{i+1}' for i in range(6)]
+    _vector_features = [f'p_{i+1}' for i in range(6)] + ['test_prop']
     def __init__(self, p_1: float, p_2: float, p_3: float, p_4: float, p_5: float, p_6: float, name: str = ''):
         RandDataD1.__init__(self, p_1, name=name)
         self.p_2 = p_2
@@ -312,6 +326,13 @@ class RandDataD6(RandDataD1):
         self.p_4 = p_4
         self.p_5 = p_5
         self.p_6 = p_6
+        self._test_prop = None
+
+    @property
+    def test_prop(self):
+        if self._test_prop is None:
+            self._test_prop = 3
+        return self._test_prop
 
 
 class RandDataD7(RandDataD1):

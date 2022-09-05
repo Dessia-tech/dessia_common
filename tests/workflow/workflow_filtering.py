@@ -7,7 +7,8 @@ from dessia_common.files import StringFile
 from dessia_common.typings import ClassMethodType, MethodType
 from dessia_common.tests import Car
 from dessia_common.workflow.blocks import ClassMethod, InstantiateModel, Filter, ModelMethod
-from dessia_common.core import HeterogeneousList, DessiaFilter, FiltersList
+from dessia_common.core import DessiaFilter, FiltersList
+from dessia_common.datatools import HeterogeneousList
 from dessia_common.workflow.core import Workflow, Pipe
 
 # Import data
@@ -15,7 +16,7 @@ csv_cars = pkg_resources.resource_stream('dessia_common', 'models/data/cars.csv'
 stream_file = StringFile.from_stream(csv_cars)
 
 # =============================================================================================================
-# Filters Workflow (available here https://testanguy.dessia.ovh/workflows/62f0d264fe92095c4b4e4930)
+# Filters Workflow
 # =============================================================================================================
 
 block_0 = ClassMethod(method_type=ClassMethodType(Car, 'from_csv'), name='CSV Cars')
@@ -44,8 +45,6 @@ workflow_run = workflow.run({
 
 # Workflow tests
 workflow._check_platform()
-workflow.plot()
-workflow_run.output_value.plot()
 
 # JSON TESTS
 output_dict = workflow_run.output_value[[0, 3, 9, 11, 25, 44]].to_dict(use_pointers=True)
