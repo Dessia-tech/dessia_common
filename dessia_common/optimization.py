@@ -122,7 +122,8 @@ class InstantiatingModelOptimizer(Optimizer):
                 [1] * len(self.optimization_bounds)]
 
     def optimize_gradient(self, method: str = 'L-BFGS-B', x0: List[float] = None):
-        x0 = self._init_gradient(x0)
+        if x0 is None:
+            x0 = npy.random.random(self.number_parameters)
         bounds = self.scipy_bounds()
 
         result = scipy.optimize.minimize(self.objective_from_dimensionless_vector, x0, bounds=bounds, method=method)
@@ -130,11 +131,6 @@ class InstantiatingModelOptimizer(Optimizer):
         attributes_values = self.vector_to_attributes_values(self.dimensionless_vector_to_vector(result.x))
         model = self.instantiate_model(attributes_values)
         return model, result.fun
-
-    def _init_gradient(self, x0: List[float] = None):
-        if x0 is None:
-            return npy.random.random(self.number_parameters)
-        return x0
 
     def optimize_cma(self):
         x0 = npy.random.random(self.number_parameters)
