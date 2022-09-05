@@ -16,8 +16,8 @@ minimized_attributes = {'MPG': False, 'Horsepower': True, 'Weight': True, 'Accel
 
 aimpoint = {'MPG': 4, 'Weight': 1000}
 
-filters = [DessiaFilter(attribute='MPG', operator='gte', bound=10),
-           DessiaFilter(attribute='MPG', operator='lte', bound=35)]
+filters = [DessiaFilter(attribute='MPG', comparison_operator='gte', bound=10),
+           DessiaFilter(attribute='MPG', comparison_operator='lte', bound=35)]
 
 # Blocks
 import_csv = wfb.ClassMethod(ClassMethodType(Catalog, 'from_csv'))

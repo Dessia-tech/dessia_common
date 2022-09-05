@@ -65,6 +65,13 @@ class StringFile(io.StringIO):
         return template
 
     @classmethod
+    def from_stream(cls, stream_file):
+        stream = StringFile()
+        stream.write(stream_file.read().decode('utf-8'))
+        stream.seek(0)
+        return stream
+
+    @classmethod
     def save_template_to_file(cls, filename):
         if cls.extension and not filename.endswith(cls.extension):
             filename = f'{filename}.{cls.extension}'

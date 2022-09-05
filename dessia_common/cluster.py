@@ -4,32 +4,113 @@ Library for building clusters on data.
 from typing import List
 
 import numpy as npy
-from sklearn import cluster, manifold
-
+from sklearn import cluster
 import matplotlib.pyplot as plt
 
-import plot_data
+try:
+    import plot_data
+except ImportError:
+    pass
 import dessia_common.core as dc
 
-
-class ClusterResult(dc.DessiaObject):
-    """
-    Cluster object to instantiate and compute clusters on data.
-    """
-    _standalone_in_db = True
+class CategorizedList(dc.HeterogeneousList):
     _allowed_methods = ['from_agglomerative_clustering', 'from_kmeans', 'from_dbscan']
 
-    def __init__(self, data: List[dc.DessiaObject] = None, 
-                 labels: List[int] = None, name: str = ''):
-        dc.DessiaObject.__init__(self, name=name)
-        self.data = data
+    def __init__(self, dessia_objects: List[dc.DessiaObject] = None, labels: List[int] = None, name: str = ''):
+        dc.HeterogeneousList.__init__(self, dessia_objects=dessia_objects, name=name)
+        if labels is None:
+            labels = [0]*len(self.dessia_objects)
         self.labels = labels
-        self.n_clusters = self.set_n_clusters()
+        self._n_clusters = None
+
+    @property
+    def n_clusters(self):
+        if self._n_clusters is None:
+            unic_labels = set(self.labels)
+            unic_labels.discard(-1)
+            self._n_clusters = len(unic_labels)
+        return self._n_clusters
+
+    def pick_from_slice(self, key: slice):
+        new_hlist = dc.HeterogeneousList.pick_from_slice(self, key)
+        new_hlist.labels = self.labels[key]
+        # new_hlist.name += f"_{key.start if key.start is not None else 0}_{key.stop}")
+        return new_hlist
+
+    def pick_from_boolist(self, key: List[bool]):
+        new_hlist = dc.HeterogeneousList.pick_from_boolist(self, key)
+        new_hlist.labels = dc.DessiaFilter.apply(self.labels, key)
+        # new_hlist.name += "_list")
+        return new_hlist
+
+    def _print_objects_slice(self, key: slice, attr_space: int, attr_name_len: int, label_space: str):
+        string = ""
+        for label, dessia_object in zip(self.labels[key], self.dessia_objects[key]):
+            string += "\n"
+            space = label_space - len(str(label))
+            string += "|" + " "*space + f"{label}" + " "
+            string += self._print_objects(dessia_object, attr_space, attr_name_len)
+        return string
+
+    def _write_str_prefix(self):
+        prefix = f"{self.__class__.__name__} {self.name if self.name != '' else hex(id(self))}: "
+        prefix += (f"{len(self)} samples, {len(self.common_attributes)} features, {self.n_clusters} clusters")
+        return prefix
+
+    def _set_size_col_label(self):
+        return 4
+
+    def clustered_sublists(self):
+        sublists = []
+        label_tags = sorted(list(map(str, set(self.labels).difference({-1}))))
+        unic_labels = list(set(self.labels))
+        for _ in range(self.n_clusters):
+            sublists.append([])
+        if -1 in self.labels:
+            sublists.append([])
+            label_tags.append("outliers")
+
+        for idx, label in enumerate(self.labels):
+            sublists[unic_labels.index(label)].append(self.dessia_objects[idx])
+
+        new_dessia_objects = [dc.HeterogeneousList(dessia_objects=sublist, name=self.name + f"_{label_tag}")
+                              for label_tag, sublist in zip(label_tags, sublists)]
+
+        return CategorizedList(new_dessia_objects,
+                               list(set(self.labels).difference({-1})) + ([-1] if -1 in self.labels else []),
+                               name=self.name + "_split")
+
+    def _tooltip_attributes(self):
+        return self.common_attributes + ["Cluster Label"]
+
+    def _plot_data_list(self):
+        _plot_data_list = []
+        for row, label in enumerate(self.labels):
+            _plot_data_list.append({attr: self.matrix[row][col] for col, attr in enumerate(self.common_attributes)})
+            _plot_data_list[-1]["Cluster Label"] = label
+            # (label if label != -1 else "Excluded") plot_data "Excluded" -> NaN
+        return _plot_data_list
+
+
+    def _point_families(self):
+        colormap = plt.cm.get_cmap('hsv', self.n_clusters + 1)(range(self.n_clusters + 1))
+        point_families = []
+        for i_cluster in range(self.n_clusters):
+            color = plot_data.colors.Color(colormap[i_cluster][0], colormap[i_cluster][1], colormap[i_cluster][2])
+            points_index = list(map(int, npy.where(npy.array(self.labels) == i_cluster)[0].tolist()))
+            point_families.append(plot_data.core.PointFamily(color, points_index))
+
+        if -1 in self.labels:
+            color = plot_data.colors.LIGHTGREY
+            points_index =  list(map(int, npy.where(npy.array(self.labels) == -1)[0].tolist()))
+            point_families.append(plot_data.core.PointFamily(color, points_index))
+        return point_families
 
     @classmethod
-    def from_agglomerative_clustering(cls, data: List[dc.DessiaObject], n_clusters: int = 2,
+    def from_agglomerative_clustering(cls, data: dc.HeterogeneousList, n_clusters: int = 2,
                                       affinity: str = 'euclidean', linkage: str = 'ward',
-                                      distance_threshold: float = None):
+                                      distance_threshold: float = None, scaling: bool = False, name: str =""):
+
         """
         Internet doc
         ----------
@@ -56,46 +137,51 @@ class ClusterResult(dc.DessiaObject):
 
             See more : https://scikit-learn.org/stable/modules/clustering.html#hierarchical-clustering
 
-        Parameters
-        ----------
-        cls : ClusterResult class object
+        :param data: The future clustered data.
+        :type data: List[dc.DessiaObject]
 
-        data : List[dc.DessiaObject]
-            list of DessiaObject.
+        :param n_clusters: number of wished clusters, defaults to 2,
+            Must be None if distance_threshold is not None
+        :type n_clusters: int, optional
 
-        n_clusters : int or None, default = 2
-            The number of clusters to find.
-            It must be None if distance_threshold is not None.
-
-        affinity : str or callable, default = ’euclidean’
-            Metric used to compute the linkage.
-            Can be “euclidean”, “l1”, “l2”, “manhattan”, “cosine”, or “precomputed”.
+        :param affinity: metric used to compute the linkage, defaults to 'euclidean'.
+            Can be one of [“euclidean”, “l1”, “l2”, “manhattan”, “cosine”, or “precomputed”].
             If linkage is “ward”, only “euclidean” is accepted.
             If “precomputed”, a distance matrix (instead of a similarity matrix)
             is needed as input for the fit method.
+        :type affinity: str, optional
 
-        linkage: {‘ward’, ‘complete’, ‘average’, ‘single’}, default = ’ward’
-            Which linkage criterion to use.
+        :param linkage: Which linkage criterion to use, defaults to 'ward'
+            Can be one of [‘ward’, ‘complete’, ‘average’, ‘single’]
             The linkage criterion determines which distance to use between sets of observation.
             The algorithm will merge the pairs of cluster that minimize this criterion.
-            - ‘ward’ minimizes the variance of the clusters being merged.
-            - ‘average’ uses the average of the distances of each observation of the two sets.
-            - ‘complete’ or ‘maximum’ linkage uses the maximum distances between all observations of the two sets.
-            - ‘single’ uses the minimum of the distances between all observations of the two sets.
+                - ‘ward’ minimizes the variance of the clusters being merged.
+                - ‘average’ uses the average of the distances of each observation of the two sets.
+                - ‘complete’ or ‘maximum’ linkage uses the maximum distances between all observations of the two sets.
+                - ‘single’ uses the minimum of the distances between all observations of the two sets.
+        :type linkage: str, optional
 
-        distance_threshold : float, default = None
-            The linkage distance threshold above which, clusters will not be merged.
-            If not None, n_clusters must be None and compute_full_tree must be True.
+        :param distance_threshold: The linkage distance above which clusters will not be merged, defaults to None
+            If not None, n_clusters must be None.
+        :type distance_threshold: float, optional
+
+        :param scaling: Whether to scale the data or not before clustering.
+        Formula is scaled_x = ( x - mean ) / standard_deviation, default to False
+        :type scaling: bool, optional
+
+        :return: a ClusterResult object that knows the data and their labels
+        :rtype: ClusterResult
 
         """
-        skl_cluster = cluster.AgglomerativeClustering(n_clusters=n_clusters, affinity=affinity,
-                                                      distance_threshold=distance_threshold, linkage=linkage)
-        skl_cluster.fit(cls.to_matrix(data))
-        return cls(data, skl_cluster.labels_.tolist())
+        skl_cluster = cluster.AgglomerativeClustering(
+            n_clusters=n_clusters, affinity=affinity, distance_threshold=distance_threshold, linkage=linkage)
+        skl_cluster = cls.fit_cluster(skl_cluster, data.matrix, scaling)
+        return cls(data.dessia_objects, skl_cluster.labels_.tolist(), name=name)
 
     @classmethod
-    def from_kmeans(cls, data: List[dc.DessiaObject], n_clusters: int = 2,
-                    n_init: int = 10, tol: float = 1e-4):
+    def from_kmeans(cls, data: dc.HeterogeneousList, n_clusters: int = 2, n_init: int = 10, tol: float = 1e-4,
+                    scaling: bool = False, name: str =""):
+
         """
         Internet doc
         ----------
@@ -111,32 +197,36 @@ class ClusterResult(dc.DessiaObject):
 
             See more : https://scikit-learn.org/stable/modules/clustering.html#k-means
 
-        Parameters
-        ----------
-        cls : ClusterResult class object
+        :param data: The future clustered data.
+        :type data: List[dc.DessiaObject]
 
-        data : List[dc.DessiaObject]
-            list of DessiaObject.
+        :param n_clusters: number of wished clusters, defaults to 2
+        :type n_clusters: int, optional
 
-        n_clusters : int, default = 8
-            The number of clusters to form as well as the number of centroids to generate.
-
-        n_init : int, default = 10
-            Number of time the k-means algorithm will be run with different centroid seeds.
+        :param n_init: Number of time the k-means algorithm will be run with different centroid seeds, defaults to 10
             The final results will be the best output of n_init consecutive runs in terms of inertia.
+        :type n_init: int, optional
 
-        tol : float, default = 1e-4
-            Relative tolerance with regards to Frobenius norm of the difference in the cluster centers
-            of two consecutive iterations to declare convergence.
+        :param tol: Relative tolerance with regards to Frobenius norm of the difference in the cluster centers
+            of two consecutive iterations to declare convergence., defaults to 1e-4
+        :type tol: float, optional
+
+        :param scaling: Whether to scale the data or not before clustering.
+        Formula is scaled_x = ( x - mean ) / standard_deviation, default to False
+        :type scaling: bool, optional
+
+        :return: a ClusterResult object that knows the data and their labels
+        :rtype: ClusterResult
 
         """
         skl_cluster = cluster.KMeans(n_clusters=n_clusters, n_init=n_init, tol=tol)
-        skl_cluster.fit(cls.to_matrix(data))
-        return cls(data, skl_cluster.labels_.tolist())
+        skl_cluster = cls.fit_cluster(skl_cluster, data.matrix, scaling)
+        return cls(data.dessia_objects, skl_cluster.labels_.tolist(), name=name)
 
     @classmethod
-    def from_dbscan(cls, data: List[dc.DessiaObject], eps: float = 0.5, min_samples: int = 5,
-                    mink_power: float = 2, leaf_size: int = 30):
+    def from_dbscan(cls, data: dc.HeterogeneousList, eps: float = 0.5, min_samples: int = 5, mink_power: float = 2,
+                    leaf_size: int = 30, metric: str = "euclidean", scaling: bool = False, name: str =""):
+
         """
         Internet doc
         ----------
@@ -151,102 +241,86 @@ class ClusterResult(dc.DessiaObject):
 
             See more : https://scikit-learn.org/stable/modules/clustering.html#dbscan
 
-        Parameters
+        :param data: The future clustered data.
+        :type data: List[dc.DessiaObject]
+
+        :param eps: The maximum distance between two samples for one to be considered as in the neighborhood
+        of the other. This is not a maximum bound on the distances of points within a cluster.
+        This is the most important DBSCAN parameter to choose appropriately for your data
+        set and distance function, defaults to 0.5
+        :type eps: float, optional
+
+        :param min_samples: The number of samples (or total weight) in a neighborhood for a point to be considered as
+        a core point. This includes the point itself, defaults to 5
+        :type min_samples: int, optional
+
+        :param mink_power: The power of the Minkowski metric to be used to calculate distance between points.
+        If None, then mink_power=2 (equivalent to the Euclidean distance), defaults to 2
+        :type mink_power: float, optional
+
+        :param leaf_size: Leaf size passed to BallTree or cKDTree. This can affect the speed of the construction
+        and query, as well as the memory required to store the tree. The optimal value depends on the nature of
+        the problem, defaults to 30
+        :type leaf_size: int, optional
+
+        :param metric: The metric to use when calculating distance between instances in a feature array.
+        If metric is a string or callable, it must be one of the options allowed by sklearn.metrics.pairwise_distances
+        for its metric parameter. If metric is “precomputed”, X is assumed to be a distance matrix and must be square.
+        X may be a sparse graph, in which case only “nonzero” elements may be considered neighbors for DBSCAN.
+        :type metric: str, or callable, default=’euclidean’
+
+
+        :param scaling: Whether to scale the data or not before clustering.
+        Formula is scaled_x = ( x - mean ) / standard_deviation, default to False
+        :type scaling: bool, optional
+
+        :return: a ClusterResult object that knows the data and their labels
+        :rtype: ClusterResult
+
+        !! WARNING !!
         ----------
-        cls : ClusterResult class object
-
-        data : List[dc.DessiaObject]
-            list of DessiaObject.
-
-        eps : float, default = 0.5
-            The maximum distance between two samples for one to be considered as in the neighborhood of the other.
-            This is not a maximum bound on the distances of points within a cluster.
-            This is the most important DBSCAN parameter to choose appropriately for your data
-            set and distance function.
-
-        min_samples : int, default = 5
-            The number of samples (or total weight) in a neighborhood for a point to be considered as a core point.
-            This includes the point itself.
-
-        mink_power : float, default = None
-            The power of the Minkowski metric to be used to calculate distance between points.
-            If None, then p=2 (equivalent to the Euclidean distance).
-
-        leaf_size : int, default = 30
-            Leaf size passed to BallTree or cKDTree. This can affect the speed of the construction and query,
-            as well as the memory required to store the tree. The optimal value depends on the nature of the problem.
+            All labels are summed with 1 in order to improve the code simplicity and ease to use.
+            Then -1 labelled values are now at 0 and must not be considered as clustered values when using DBSCAN.
 
         """
-        skl_cluster = cluster.DBSCAN(eps=eps, min_samples=min_samples, p=mink_power, leaf_size=leaf_size)
-        skl_cluster.fit(cls.to_matrix(data))
-        skl_cluster.labels_ += 1  # To test
-        return cls(data, skl_cluster.labels_.tolist())
+        skl_cluster = cluster.DBSCAN(eps=eps, min_samples=min_samples, p=mink_power, leaf_size=leaf_size, metric=metric)
+        skl_cluster = cls.fit_cluster(skl_cluster, data.matrix, scaling)
+        return cls(data.dessia_objects, skl_cluster.labels_.tolist(), name=name)
+
+    @classmethod
+    def from_pareto_sheets(cls, h_list: dc.HeterogeneousList, costs: List[List[float]], nb_sheets: int = 1):
+        labels = []
+        dessia_objects = []
+        # TODO: __getitem__
+        pareto_sheets, non_optimal_points = h_list.pareto_sheets(costs, nb_sheets)
+        for label, pareto_sheet in enumerate(pareto_sheets):
+            labels.extend([label]*len(pareto_sheet.dessia_objects))
+            dessia_objects.extend(pareto_sheet.dessia_objects)
+        dessia_objects.extend(non_optimal_points.dessia_objects)
+        labels.extend([len(pareto_sheets)]*len(non_optimal_points.dessia_objects))
+
+        return cls(dessia_objects, labels)
 
     @staticmethod
-    def to_matrix(data: List[dc.DessiaObject]):
-        if 'to_vector' not in dir(data[0]):
-            raise NotImplementedError(f"{data[0].__class__.__name__} objects must have a " +
-                                      "'to_vector' method to be handled in ClusterResult object.")
-        data_matrix = []
-        for element in data:
-            data_matrix.append(element.to_vector())
-        return data_matrix
-
-    @staticmethod
-    # Is it really pertinent to have a staticmethod for that since we will only call it when having a ClusterResult
-    def data_to_clusters(data: List[dc.DessiaObject], labels: npy.ndarray):
-        clusters_list = []
-        for i in range(npy.max(labels) + 1):
-            clusters_list.append([])
-        for i, label in enumerate(labels):
-            clusters_list[label].append(data[i])
-        return clusters_list
-
-    def set_n_clusters(self):
-        if self.labels is None:
-            n_clusters = 0
+    def fit_cluster(skl_cluster: cluster, matrix: List[List[float]], scaling: bool):
+        if scaling:
+            scaled_matrix = dc.HeterogeneousList.scale_data(matrix)
         else:
-            n_clusters = max(self.labels) + 1
-        return n_clusters
+            scaled_matrix = matrix
+        skl_cluster.fit(scaled_matrix)
+        return skl_cluster
 
-    def check_dimensionality(self):
-        _, singular_values, _ = npy.linalg.svd(self.to_matrix(self.data))
-        normed_singular_values = singular_values / npy.sum(singular_values)
-        plt.figure()
-        plt.semilogy(normed_singular_values, linestyle='None', marker='o')
-        plt.grid()
-        plt.title("Normalized singular values of data")
-        plt.xlabel("Index of reduced basis vector")
-        plt.ylabel("Singular value")
-
-    def plot_data(self):
-        n_clusters = npy.max(self.labels) + 1
-        encoding_mds = manifold.MDS(metric=True, n_jobs=-1, n_components=2)
-        matrix_mds = encoding_mds.fit_transform(self.to_matrix(self.data))
-
-        elements = []
-        for i in range(len(matrix_mds)):
-            elements.append({"X_MDS": matrix_mds[i, 0].tolist(),
-                             "Y_MDS": matrix_mds[i, 1]})
-
-        dataset_list = []
-        for i in range(n_clusters):
-            dataset_list.append([])
-        for i, label in enumerate(self.labels):
-            dataset_list[label].append({"X_MDS": matrix_mds[i, 0].tolist(),
-                                        "Y_MDS": matrix_mds[i, 1]})
-
-        cmp_f = plt.cm.get_cmap('jet', n_clusters)(range(n_clusters))
-        edge_style = plot_data.EdgeStyle(line_width=0.0001)
-        for i in range(n_clusters):
-            color = plot_data.colors.Color(cmp_f[i][0], cmp_f[i][1], cmp_f[i][2])
-            point_style = plot_data.PointStyle(color_fill=color, color_stroke=color)
-            dataset_list[i] = plot_data.Dataset(elements=dataset_list[i],
-                                                edge_style=edge_style,
-                                                point_style=point_style)
-
-        scatter_plot = plot_data.Graph2D(x_variable="X_MDS",
-                                         y_variable="Y_MDS",
-                                         graphs=dataset_list)
-
-        return plot_data.plot_canvas(plot_data_object=scatter_plot, debug_mode=True)
+# Function to implement, to find a good eps parameter for dbscan
+# def nearestneighbors(self):
+#     vectors = []
+#     for machine in self.machines:
+#         vector = machine.to_vector()
+#         vectors.append(vector)
+#     neigh = NearestNeighbors(n_neighbors=14)
+#     vectors = StandardScaler().fit_transform(vectors)
+#     nbrs = neigh.fit(vectors)
+#     distances, indices = nbrs.kneighbors(vectors)
+#     distances = npy.sort(distances, axis=0)
+#     distances = distances[:, 1]
+#     plt.plot(distances)
+#     plt.show()

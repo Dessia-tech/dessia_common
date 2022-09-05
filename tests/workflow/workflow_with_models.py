@@ -3,6 +3,7 @@
 """
 A simple workflow composed of functions
 """
+
 import dessia_common.typings as dct
 import dessia_common.workflow as wf
 from dessia_common import DessiaFilter
@@ -32,8 +33,8 @@ parallel_optimization = wf.ForEach(workflow_block=optimization_workflow_block, i
 unpacker = wf.Unpacker(indices=[0, 3, -1], name='Unpacker')
 sequence = wf.Sequence(number_arguments=2, name='Sequence')
 
-filters = [DessiaFilter(attribute='value', operator='gt', bound=0),
-           DessiaFilter(attribute='submodel/subvalue', operator='lt', bound=2000)]
+filters = [DessiaFilter(attribute='value', comparison_operator='gt', bound=0),
+           DessiaFilter(attribute='submodel/subvalue', comparison_operator='lt', bound=2000)]
 
 filter_sort = wf.Filter(filters=filters, name='Filters')
 
@@ -67,7 +68,7 @@ demo_workflow_run_copy = demo_workflow_run.copy()
 assert demo_workflow_run == demo_workflow_run_copy
 
 demo_workflow._check_platform()
-# demo_workflow_run._check_platform()
+demo_workflow_run._check_platform()
 
 # Assert deserialization
 demo_workflow_dict = demo_workflow.to_dict()
@@ -76,3 +77,16 @@ demo_workflow_json = json.dumps(demo_workflow_dict)
 dict_from_json = json.loads(demo_workflow_json)
 deserialized_demo_workflow = wf.Workflow.dict_to_object(dict_from_json)
 assert demo_workflow == deserialized_demo_workflow
+
+# Test WR _get_from_path specific method
+try:
+    demo_workflow_run._get_from_path("#/values/8/0")
+except AttributeError:
+    pass
+
+assert isinstance(demo_workflow_run._get_from_path("#/values/8"), dctests.Generator)
+
+assert len(demo_workflow_run._get_from_path("#/values/9")) == 25
+assert isinstance(demo_workflow_run._get_from_path("#/values/9/0"), dctests.Model)
+
+print("workflow_with_models.py has passed")

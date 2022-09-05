@@ -4,15 +4,15 @@
 Types tools
 
 """
-from ast import literal_eval
-from typing import Any, Dict, List, Tuple, Type, Union, TextIO, BinaryIO, get_origin, get_args
+from typing import Any, Dict, List, Tuple, Type, Union, get_origin, get_args
 
 import json
-import collections
+from collections.abc import Iterator, Sequence
 from importlib import import_module
 
 import dessia_common as dc
 from dessia_common.typings import Subclass, InstanceOf, MethodType, ClassMethodType
+from dessia_common.files import BinaryFile, StringFile
 
 
 TYPING_EQUIVALENCES = {int: 'number', float: 'number', bool: 'boolean', str: 'string'}
@@ -50,13 +50,32 @@ def is_jsonable(x):
         return False
 
 
+def is_serializable(obj):
+    if is_jsonable(obj):
+        return True
+    if isinstance(obj, dc.DessiaObject):
+        dict_ = obj.to_dict()
+        return is_jsonable(dict_)
+    if isinstance(obj, dict):
+        for key, value in obj.items():
+            if not is_serializable(key) or not is_serializable(value):
+                return False
+        return True
+    if is_sequence(obj):
+        for element in obj:
+            if not is_serializable(element):
+                return False
+        return True
+    return False
+
+
 def is_sequence(obj):
     """
     :param obj: Object to check
     :return: bool. True if object is a sequence but not a string.
                    False otherwise
     """
-    return isinstance(obj, collections.abc.Sequence) and not isinstance(obj, str)
+    return isinstance(obj, Sequence) and not isinstance(obj, str)
 
 
 def is_builtin(type_):
@@ -102,12 +121,8 @@ def is_typing(object_: Any):
 def serialize_typing(typing_):
     if is_typing(typing_):
         return serialize_typing_types(typing_)
-    if isinstance(typing_, type):
+    if typing_ in [StringFile, BinaryFile, MethodType, ClassMethodType] or isinstance(typing_, type):
         return full_classname(typing_, compute_for='class')
-    if typing_ is TextIO:
-        return "TextFile"
-    if typing_ is BinaryIO:
-        return "BinaryFile"
     return str(typing_)
 
 
@@ -121,8 +136,8 @@ def serialize_typing_types(typing_):
     if origin is tuple:
         argnames = ', '.join([type_fullname(a) for a in args])
         return f'Tuple[{argnames}]'
-    if origin is collections.Iterator:
-        return f"Iterator[{type_fullname(args[0])}]"
+    # if origin is Iterator:
+    #     return f"Iterator[{type_fullname(args[0])}]"
     if origin is dict:
         key_type = type_fullname(args[0])
         value_type = type_fullname(args[1])
@@ -136,7 +151,7 @@ def serialize_typing_types(typing_):
     if origin is ClassMethodType:
         return f'ClassMethodType[{type_fullname(args[0])}]'
     if origin is type:
-        return "Type"
+        return "typing.Type"
     raise NotImplementedError(f"Serialization of typing {typing_} is not implemented")
 
 
@@ -161,10 +176,15 @@ def type_fullname(arg):
 def type_from_argname(argname):
     splitted_argname = argname.rsplit('.', 1)
     if argname:
-        if splitted_argname[0] != '__builtins__':
-            return get_python_class_from_class_name(argname)
-        return literal_eval(splitted_argname[1])
+        if splitted_argname[0] == '__builtins__':
+            argname = f"builtins.{splitted_argname[1]}"
+        # if splitted_argname[0] != '__builtins__':
+        return get_python_class_from_class_name(argname)
+        # return literal_eval(splitted_argname[1])
     return Any
+
+
+TYPING_FROM_SERIALIZED_NAME = {"List": List, "Tuple": Tuple, "Iterator": Iterator, "Dict": Dict}
 
 
 def deserialize_typing(serialized_typing):
@@ -174,8 +194,11 @@ def deserialize_typing(serialized_typing):
         if serialized_typing in SERIALIZED_BUILTINS:
             return deserialize_builtin_typing(serialized_typing)
 
-        if serialized_typing in ["TextFile", "BinaryFile"]:
+        if serialized_typing in ["dessia_common.files.StringFile", "dessia_common.files.BinaryFile"]:
             return deserialize_file_typing(serialized_typing)
+
+        if serialized_typing in ["dessia_common.typings.MethodType", "dessia_common.typings.ClassMethodType"]:
+            return deserialize_method_typing(serialized_typing)
 
         if serialized_typing == "Type":
             return Type
@@ -183,6 +206,8 @@ def deserialize_typing(serialized_typing):
         if '[' in serialized_typing:
             toptype, remains = serialized_typing.split('[', 1)
             full_argname = remains.rsplit(']', 1)[0]
+            if "[" in full_argname:
+                return TYPING_FROM_SERIALIZED_NAME[toptype][deserialize_typing(full_argname)]
         else:
             toptype = serialized_typing
             full_argname = ''
@@ -190,11 +215,17 @@ def deserialize_typing(serialized_typing):
             return List[type_from_argname(full_argname)]
         if toptype == 'Tuple':
             return deserialize_tuple_typing(full_argname)
+        # if toptype == "Iterator":
+        #     return Iterator[type_from_argname(full_argname)]
         if toptype == 'Dict':
             args = full_argname.split(', ')
             key_type = type_from_argname(args[0])
             value_type = type_from_argname(args[1])
             return Dict[key_type, value_type]
+        if toptype == "InstanceOf":
+            return InstanceOf[type_from_argname(full_argname)]
+        # if toptype == "Subclass":
+        #     return InstanceOf[type_from_argname(full_argname)]
         return get_python_class_from_class_name(serialized_typing)
     raise NotImplementedError(f'{serialized_typing} of type {type(serialized_typing)}')
 
@@ -216,11 +247,19 @@ def deserialize_tuple_typing(full_argname):
 
 
 def deserialize_file_typing(serialized_typing):
-    if serialized_typing == "TextFile":
-        return TextIO
-    if serialized_typing == "BinaryFile":
-        return BinaryIO
+    if serialized_typing == "dessia_common.files.StringFile":
+        return StringFile
+    if serialized_typing == "dessia_common.files.BinaryFile":
+        return BinaryFile
     raise NotImplementedError(f"File typing {serialized_typing} deserialization is not implemented")
+
+
+def deserialize_method_typing(serialized_typing):
+    if serialized_typing == "dessia_common.typings.MethodType":
+        return MethodType
+    if serialized_typing == "dessia_common.typings.ClassMethodType":
+        return ClassMethodType
+    raise NotImplementedError(f"Method typing {serialized_typing} deserialization is not implemented")
 
 
 def deserialize_builtin_typing(serialized_typing):
@@ -250,33 +289,25 @@ def is_bson_valid(value, allow_nonstring_keys=False) -> Tuple[bool, str]:
             # Key check
             if isinstance(k, str):
                 if '.' in k:
-                    log = 'key {} of dict is a string containing a .,' \
-                          ' which is forbidden'
-                    return False, log.format(k)
+                    return False, f'key {k} of dict is a string containing a ., which is forbidden'
             elif isinstance(k, float):
-                log = 'key {} of dict is a float, which is forbidden'
-                return False, log.format(k)
+                return False, f'key {k} of dict is a float, which is forbidden'
             elif isinstance(k, int):
                 if not allow_nonstring_keys:
-                    log = 'key {} of dict is an unsuported type {},' \
-                          ' use allow_nonstring_keys=True to allow'
-                    return False, log.format(k, type(k))
+                    log = f'key {k} of dict is an unsuported type {type(k)},' \
+                          f'use allow_nonstring_keys=True to allow'
+                    return False, log
             else:
-                log = 'key {} of dict is an unsuported type {}'
-                return False, log.format(k, type(k))
+                return False, f'key {k} of dict is an unsuported type {type(k)}'
 
             # Value Check
-            v_valid, hint = is_bson_valid(
-                value=subvalue, allow_nonstring_keys=allow_nonstring_keys
-            )
+            v_valid, hint = is_bson_valid(value=subvalue, allow_nonstring_keys=allow_nonstring_keys)
             if not v_valid:
                 return False, hint
 
     elif is_sequence(value):
         for subvalue in value:
-            valid, hint = is_bson_valid(
-                value=subvalue, allow_nonstring_keys=allow_nonstring_keys
-            )
+            valid, hint = is_bson_valid(value=subvalue, allow_nonstring_keys=allow_nonstring_keys)
             if not valid:
                 return valid, hint
     else:
