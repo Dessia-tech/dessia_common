@@ -23,4 +23,5 @@ rand_data_d9 = RandDataD9.create_dataset(nb_clusters=10, nb_points=500, mean_bor
 rand_data_d10 = RandDataD10.create_dataset(nb_clusters=10, nb_points=250, mean_borns=mean_borns, std_borns=std_borns)
 
 rand_data_small = rand_data_d5 + rand_data_d4 + rand_data_d3
+rand_data_middl = rand_data_d6 + rand_data_d4 + rand_data_d5
 rand_data_large = rand_data_d9 + rand_data_d7 + rand_data_d8

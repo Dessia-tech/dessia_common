@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 from scipy.optimize import minimize
 from pyDOE import lhs
-from dessia_common import DessiaObject, Parameter, is_bounded, DessiaFilter
+from dessia_common import DessiaObject, Parameter, DessiaFilter
 
 
 class ParetoSettings(DessiaObject):
@@ -521,3 +521,23 @@ def pareto_frontier(costs):
             # And keep self
             is_efficient[index] = True
     return is_efficient
+
+
+def is_bounded(filter_: DessiaFilter, value: float):
+    bounded = True
+    comparison_operator = filter_.comparison_operator
+    bound = filter_.bound
+
+    if comparison_operator == 'lte' and value > bound:
+        bounded = False
+    if comparison_operator == 'gte' and value < bound:
+        bounded = False
+
+    if comparison_operator == 'lt' and value >= bound:
+        bounded = False
+    if comparison_operator == 'gt' and value <= bound:
+        bounded = False
+
+    if comparison_operator == 'eq' and value != bound:
+        bounded = False
+    return bounded
