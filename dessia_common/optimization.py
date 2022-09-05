@@ -153,9 +153,8 @@ class InstantiatingModelOptimizer(Optimizer):
     def optimize_cma_then_gradient(self, method: str = 'L-BFGS-B'):
         model_cma, fx_cma = self.optimize_cma()
         x0 = npy.array([getattr(model_cma, attr.attribute_name) for attr in self.optimization_bounds])
-        model, fx_opt = self.optimize_gradient(method=method, x0=x0)
-        best_fx = npy.min([fx_opt, fx_cma])
-        if best_fx == fx_cma:
+        model, best_fx = self.optimize_gradient(method=method, x0=x0)
+        if fx_cma <= best_fx:
             model = model_cma
-        # print(fx_cma, fx_opt, best_fx)
+            best_fx = fx_cma
         return model, best_fx
