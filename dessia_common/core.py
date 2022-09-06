@@ -8,8 +8,10 @@ dessia_common
 import time
 import sys
 import warnings
+import operator
 import math
 import random
+import itertools
 
 from functools import reduce
 import collections
@@ -22,9 +24,6 @@ import traceback as tb
 
 from importlib import import_module
 from ast import literal_eval
-
-import numpy as npy
-from sklearn import preprocessing
 
 import dessia_common.errors
 from dessia_common.utils.diff import data_eq, diff, dict_hash, list_hash
@@ -481,7 +480,7 @@ class DessiaObject:
                 dict_[arg] = deepcopy_value(getattr(self, arg), memo=memo)
         return self.__class__(**dict_)
 
-    def plot_data(self): # TODO: Should it have a **kwargs argument ?
+    def plot_data(self):  # TODO: Should it have a **kwargs argument ?
         return []
 
     def plot(self, **kwargs):
@@ -490,7 +489,7 @@ class DessiaObject:
         """
         if hasattr(self, 'plot_data'):
             import plot_data
-            for data in self.plot_data(**kwargs): #TODO solve inconsistence with the plot_data method just above
+            for data in self.plot_data(**kwargs):  # TODO solve inconsistence with the plot_data method just above
                 plot_data.plot_canvas(plot_data_object=data,
                                       canvas_id='canvas',
                                       width=1400, height=900,
@@ -641,14 +640,14 @@ class DessiaObject:
         return formats
 
     def to_vector(self):
-        list_vectored_objects = []
+        vectored_objects = []
         for feature in self.vector_features():
-            list_vectored_objects.append(getattr(self, feature.lower()))
+            vectored_objects.append(getattr(self, feature.lower()))
             if not hasattr(self, feature.lower()):
                 raise NotImplementedError(f"{feature} is not an attribute for {self.__class__.__name__} objects. " +
                                           f"<to_vector> method must be customized in {self.__class__.__name__} to " +
                                           "handle computed values that are not class or instance attributes.")
-        return list_vectored_objects
+        return vectored_objects
 
     @classmethod
     def vector_features(cls):
@@ -751,148 +750,6 @@ class MovingObject(PhysicalObject):
                                          self.volmdlr_primitives_step_frames(**kwargs))
 
 
-class HeterogeneousList(DessiaObject):
-    _standalone_in_db = True
-
-    def __init__(self, dessia_objects: List[DessiaObject] = None, name: str = ''):
-        DessiaObject.__init__(self, name=name)
-        self.dessia_objects = dessia_objects
-        self.common_attributes = self._common_attributes()
-        self._matrix = None
-
-    def _common_attributes(self):
-        all_class = list(set(dessia_object.__class__ for dessia_object in self.dessia_objects))
-        common_attributes = set(all_class[0].vector_features())
-        for klass in all_class[1:]:
-            common_attributes = common_attributes.intersection(set(klass.vector_features()))
-
-        # attributes' order kept this way, not with set or sorted(set)
-        return list(attr for attr in get_attribute_names(all_class[0]) if attr in common_attributes)
-
-    @property
-    def matrix(self):
-        if self._matrix is None:
-            matrix = []
-            for dessia_object in self.dessia_objects:
-                temp_row = dessia_object.to_vector()
-                vector_features = dessia_object.vector_features()
-                matrix.append(list(temp_row[vector_features.index(attr)] for attr in self.common_attributes))
-            self._matrix = matrix
-        return self._matrix
-
-    def singular_values(self):
-        scaled_data = HeterogeneousList.scale_data(npy.array(self.matrix) - npy.mean(self.matrix, axis = 0))
-        _, singular_values, _ = npy.linalg.svd(npy.array(scaled_data).T, full_matrices=False)
-        normed_singular_values = singular_values / npy.sum(singular_values)
-
-        singular_points = []
-        for idx, value in enumerate(normed_singular_values):
-            singular_points.append({'Index of reduced basis vector': idx + 1, 'Singular value': value})
-        return normed_singular_values, singular_points
-
-    @staticmethod
-    def scale_data(data_matrix: List[List[float]]):
-        scaled_matrix = preprocessing.StandardScaler().fit_transform(data_matrix)
-        return [list(map(float, row.tolist())) for row in scaled_matrix]
-
-
-    def plot_data(self):
-        # Plot a correlation matrix : To develop
-        # correlation_matrix = []
-
-        # Dimensionality plot
-        dimensionality_plot = self.plot_dimensionality()
-
-        # Scattermatrix
-        scatter_matrix = self._build_multiplot(self._plot_data_list(),
-                                               self._tooltip_attributes(),
-                                               axis=dimensionality_plot.axis,
-                                               point_style=dimensionality_plot.point_style)
-
-        return [dimensionality_plot, scatter_matrix]
-
-    def _build_multiplot(self, data_list: List[Dict[str, float]], tooltip: List[str], **kwargs: Dict[str, Any]):
-        import plot_data
-        subplots = []
-        for line_attr in self.common_attributes:
-            for col_attr in self.common_attributes:
-                if line_attr == col_attr:
-                    subplots.append(plot_data.Histogram(x_variable=line_attr, elements=data_list))
-                else:
-                    subplots.append(plot_data.Scatter(x_variable=line_attr,
-                                                      y_variable=col_attr,
-                                                      elements=data_list,
-                                                      tooltip=plot_data.Tooltip(tooltip),
-                                                      **kwargs))
-
-        scatter_matrix = plot_data.MultiplePlots(plots=subplots,
-                                                 elements=data_list,
-                                                 point_families=self._point_families(),
-                                                 initial_view_on=True)
-        return scatter_matrix
-
-    def _tooltip_attributes(self):
-        return self.common_attributes
-
-    def _plot_data_list(self):
-        plot_data_list = []
-        for row, _ in enumerate(self.dessia_objects):
-            plot_data_list.append({attr: self.matrix[row][col] for col, attr in enumerate(self.common_attributes)})
-        return plot_data_list
-
-    def _point_families(self):
-        from plot_data.colors import BLUE
-        from plot_data.core import PointFamily
-        return [PointFamily(BLUE, list(range(len(self.dessia_objects))))]
-
-
-    def plot_dimensionality(self):
-        import plot_data
-        _, singular_points = self.singular_values()
-
-        axis_style = plot_data.EdgeStyle(line_width=0.5, color_stroke=plot_data.colors.GREY)
-        axis = plot_data.Axis(nb_points_x=len(singular_points), nb_points_y=len(singular_points),
-                              axis_style=axis_style)
-        point_style = plot_data.PointStyle(color_fill=plot_data.colors.BLUE,
-                                           color_stroke=plot_data.colors.BLUE,
-                                           stroke_width=0.1,
-                                           size=2,
-                                           shape='circle')
-
-        dimensionality_plot = plot_data.Scatter(elements=singular_points,
-                                                x_variable='Index of reduced basis vector',
-                                                y_variable='Singular value',
-                                                log_scale_y=True,
-                                                axis=axis,
-                                                point_style=point_style)
-        return dimensionality_plot
-
-    def to_markdown(self): # TODO: Custom this markdown
-        """
-        Render a markdown of the object output type: string
-        """
-        return templates.heterogeneouslist_markdown_template.substitute(name=self.name, class_=self.__class__.__name__)
-
-
-# class HomogeneousList(HeterogeneousList):
-
-#     def __init__(self, dessia_objects: List[DessiaObject] = None, name: str = ''):
-#         HeterogeneousList.__init__(
-#             self, dessia_objects=dessia_objects, name=name)
-
-#     def matrix(self):
-#         matrix = []
-#         for dessia_object in self.dessia_objects:
-#             matrix.append(dessia_object.to_vector())
-#         return matrix
-
-
-# class Catalog(DessiaObject):
-#     def __init__(self, objects: List[DessiaObject], name: str = ''):
-#         self.objects = objects
-#         DessiaObject.__init__(self, name=name)
-
-
 class Parameter(DessiaObject):
     def __init__(self, lower_bound, upper_bound, periodicity=None, name=''):
         DessiaObject.__init__(self, name=name)
@@ -945,106 +802,323 @@ class ParameterSet(DessiaObject):
 
 
 class DessiaFilter(DessiaObject):
-    def __init__(self, attribute: str, operator: str, bound: float, name: str = ''):
-        self.attribute = attribute
-        self.operator = operator
-        self.bound = bound
+    """
+    Base class for filters working on lists of DessiaObjects (List[DessiaObject]).
 
+    :param attribute:
+        --------
+        Name of attribute on which to filter
+    :type attribute: str
+
+    :param comparison_operator:
+        --------
+        Comparison operator
+    :type comparison_operator: str
+
+    :param bound:
+        --------
+        The bound value to compare `'attribute'` of DessiaObjects of a list with `'comparison_operator'`
+    :type bound: float
+
+    :param name:
+        --------
+        Name of filter
+    :type name: `str`, `optional`, defaults to `''`
+
+    :Comparison operators:
+        * greater than: >=, gte, ge
+        * greater: >, gt
+        * lower than: <=, lte, le
+        * lower: <, lt
+        * equal: ==, eq
+        * different: !=, ne
+    """
+
+    _REAL_OPERATORS = {'>': operator.gt, '<': operator.lt, '>=': operator.ge, '<=': operator.le, '==': operator.eq,
+                       '!=': operator.ne, 'gt': operator.gt, 'lt': operator.lt, 'ge': operator.ge, 'le': operator.le,
+                       'eq': operator.eq, 'ne': operator.ne, 'gte': operator.ge, 'lte': operator.le}
+
+    def __init__(self, attribute: str, comparison_operator: str, bound: float, name: str = ''):
+        self.attribute = attribute
+        self.comparison_operator = comparison_operator
+        self.bound = bound
         DessiaObject.__init__(self, name=name)
+
+    def __str__(self, offset_attr: int = 10, offset_boun: int = 0):
+        offset_oper = 0
+        if offset_boun == 0:
+            offset_boun = len(str(self.bound)) + 2
+        string_operator = {'>': '>', '<': '<', '>=': '>=', '<=': '<=', '==': '==', '!=': '!=', 'gt': '>', 'lt': '<',
+                           'ge': '>=', 'le': '<=', 'eq': '==', 'ne': '!=', 'gte': '>=', 'lte': '<='}
+        printed_operator = string_operator[self.comparison_operator]
+        return (self.attribute + " "*(offset_attr - len(self.attribute)) +
+                printed_operator + " "*(offset_oper - len(printed_operator)) +
+                " "*(offset_boun - len(str(self.bound))) + str(self.bound))
 
     def __hash__(self):
         hash_ = len(self.attribute)
-        hash_ += hash(self.operator)
+        hash_ += hash(self.comparison_operator)
         hash_ += hash(self.bound)
         return int(hash_)
 
     def __eq__(self, other: 'DessiaFilter'):
         same_attr = self.attribute == other.attribute
-        same_op = self.operator == other.operator
+        same_op = self.comparison_operator == other.comparison_operator
         same_bound = self.bound == other.bound
         return same_attr and same_op and same_bound
 
+    def _comparison_operator(self):
+        return self._REAL_OPERATORS[self.comparison_operator]
 
-# class Evolution(DessiaObject):
-#     """
-#     Defines a generic evolution
+    def _to_lambda(self):
+        return lambda x: (self._comparison_operator()(enhanced_deep_attr(value, self.attribute), self.bound)
+                          for value in x)
 
-#     :param evolution: float list
-#     :type evolution: list
-#     """
-#     _non_data_eq_attributes = ['name']
-#     _non_data_hash_attributes = ['name']
-#     _generic_eq = True
+    def get_booleans_index(self, values: List[DessiaObject]):
+        """
+        Get the boolean indexing of a filtered list
 
-#     def __init__(self, evolution: List[float] = None, name: str = ''):
-#         if evolution is None:
-#             evolution = []
-#         self.evolution = evolution
+        :param values:
+            List of DessiaObjects to filter
+        :type values: List[DessiaObject]
 
-#         DessiaObject.__init__(self, name=name)
+        :return: `list of length `len(values)` where elements are `True` if kept by the filter, otherwise `False`.
+        :rtype: `List[bool]`
 
-#     def _displays(self):
-#         displays = [{'angular_component': 'app-evolution1d',
-#                      'table_show': False,
-#                      'evolution': [self.evolution],
-#                      'label_y': ['evolution']}]
-#         return displays
+        Examples
+        --------
+        >>> from dessia_common.core import DessiaFilter
+        >>> from dessia_common.models import all_cars_no_feat
+        >>> values = all_cars_no_feat[:5]
+        >>> filter_ = DessiaFilter('weight', '<=', 3500.)
+        >>> filter_.get_booleans_index(values)
+        [False, False, True, True, True]
+        """
+        return list(self._to_lambda()(values))
 
-#     def update(self, evolution):
-#         """
-#         Update the evolution list
-#         """
-#         self.evolution = evolution
+    @staticmethod
+    def booleanlist_to_indexlist(booleans_list: List[int]):  # TODO: Should it exist ?
+        """
+        Transform a boolean list to an index list
+
+        :param booleans_list:
+            list of length `len(values)` where elements are `True` if kept, otherwise `False`.
+        :type booleans_list: List[int]
+
+        :return: list of kept indexes
+        :rtype: List[int]
+
+        Examples
+        --------
+        >>> from dessia_common.core import DessiaFilter
+        >>> from dessia_common.models import all_cars_no_feat
+        >>> values = all_cars_no_feat[:5]
+        >>> filter_ = DessiaFilter('weight', '<=', 3500.)
+        >>> booleans_list = filter_.get_booleans_index(values)
+        [False, False, True, True, True]
+        >>> DessiaFilter.booleanlist_to_indexlist(booleans_list)
+        [2, 3, 4]
+        """
+        return list(itertools.compress(range(len(booleans_list)), booleans_list))
+
+    @staticmethod
+    def apply(values: List[DessiaObject], booleans_list: List[List[bool]]):
+        """
+        Apply a Dessia Filter on a list of DessiaObjects
+
+        :param values:
+            --------
+            List of DessiaObjects to filter
+        :type values: List[DessiaObject]
+
+        :param booleans_list:
+            --------
+            list of length `len(values)` where elements are `True` if kept, otherwise `False`.
+        :type booleans_list: List[List[bool]]
+
+        :return: List of filtered values
+        :rtype: List[DessiaObject]
+
+        Examples
+        --------
+        >>> from dessia_common.core import DessiaFilter
+        >>> from dessia_common.models import all_cars_no_feat
+        >>> values = all_cars_no_feat[:5]
+        >>> filter_ = DessiaFilter('weight', '<=', 3500.)
+        >>> booleans_list = filter_.get_booleans_index(values)
+        [False, False, True, True, True]
+        >>> for car in DessiaFilter.apply(values, booleans_list): print(car.weight)
+        3436.0, 3433.0, 3449.0
+        """
+        return list(itertools.compress(values, booleans_list))
 
 
-# class CombinationEvolution(DessiaObject):
-#     _non_data_eq_attributes = ['name']
-#     _non_data_hash_attributes = ['name']
-#     _generic_eq = True
+class FiltersList(DessiaObject):
+    """
+    Combine several filters stored as a list of DessiaFilters with a logical operator.
 
-#     def __init__(self, evolution1: List[Evolution],
-#                  evolution2: List[Evolution], title1: str = 'x',
-#                  title2: str = 'y', name: str = ''):
+    :param filters:
+        --------
+        List of DessiaFilters to combine
+    :type filters: List[DessiaFilter]
 
-#         self.evolution1 = evolution1
-#         self.evolution2 = evolution2
+    :param logical_operator:
+        --------
+        Logical operator to combine filters
+    :type logical_operator: str
 
-#         self.x_, self.y_ = self.genere_xy()
+    :param name:
+        ---------
+        Name of FiltersList
+    :type name: `str`, `optional`, defaults to `''`
 
-#         self.title1 = title1
-#         self.title2 = title2
+    :Logical operators: `'and'`, `'or'`, `'xor'`
+    """
+    _standalone_in_db = True
 
-#         DessiaObject.__init__(self, name=name)
+    def __init__(self, filters: List[DessiaFilter], logical_operator: str = 'and', name: str = ''):
+        self.filters = filters
+        self.logical_operator = logical_operator
+        DessiaObject.__init__(self, name=name)
 
-#     def _displays(self):
-#         displays = [{
-#             'angular_component': 'app-evolution2d-combination-evolution',
-#             'table_show': False,
-#             'evolution_x': [self.x_], 'label_x': ['title1'],
-#             'evolution_y': [self.y_], 'label_y': ['title2']
-#         }]
-#         return displays
+    def __len__(self):
+        return len(self.filters)
 
-#     def update(self, evol1, evol2):
-#         """
-#         Update the CombinationEvolution object
+    def __str__(self):
+        print_lim = 15
+        len_attr = max(map(len, [filter_.attribute for filter_ in self.filters]))
+        len_numb = max(map(len, [str(filter_.bound) for filter_ in self.filters]))
+        prefix = f"{self.__class__.__name__} {self.name if self.name != '' else hex(id(self))}: "
+        prefix += f"{len(self)} filters combined with '" + self.logical_operator + "' operator :\n"
+        string = ""
+        for filter_ in self.filters[:print_lim]:
+            string += " "*3 + "- "
+            string += filter_.__str__(len_attr + 2, len_numb + 2)
+            string += "\n"
+        return prefix + string
 
-#         :param evol1: list
-#         :param evol2: list
-#         """
-#         for evolution, ev1 in zip(self.evolution1, evol1):
-#             evolution.update(ev1)
-#         for evolution, ev2 in zip(self.evolution2, evol2):
-#             evolution.update(ev2)
-#         self.x_, self.y_ = self.genere_xy()
+    @classmethod
+    def from_filters_list(cls, filters: List[DessiaFilter], logical_operator: str = 'and', name: str = ''):
+        """
+        Compute a FilersList from a pre-built list of DessiaFilter
 
-#     def genere_xy(self):
-#         x, y = [], []
-#         for evol in self.evolution1:
-#             x = x + evol.evolution
-#         for evol in self.evolution2:
-#             y = y + evol.evolution
-#         return x, y
+        :param filters:
+            --------
+            List of DessiaFilters to combine
+        :type filters: List[DessiaFilter]
+
+        :param logical_operator:
+            --------
+            Logical operator to combine filters (`'and'`, `'or'` or `'xor'`)
+        :type logical_operator: `str`, `optional`, defaults to `'and'`
+
+        :param name:
+            --------
+            Name of FiltersList
+        :type name: `str`, `optional`, defaults to `''`
+
+        :return: A new instantiated list of DessiaFilter
+        :rtype: FiltersList
+
+        Examples
+        --------
+        >>> from dessia_common.core import DessiaFilter, FiltersList
+        >>> filters = [DessiaFilter('weight', '<=', 3500.), DessiaFilter('mpg', '<=', 40.)]
+        >>> filters_list = FiltersList(filters, logical_operator="or", name="example")
+        >>> print(filters_list)
+        FiltersList example: 2 filters combined with 'or' operator :
+           - weight  <=  3500.0
+           - mpg     <=    40.0
+        """
+        return cls(filters=filters, logical_operator=logical_operator, name=name)
+
+    @staticmethod
+    def combine_booleans_lists(booleans_lists: List[List[bool]], logical_operator: str = "and"):
+        """
+        Combine a list of `n` booleans indexes with the logical operator into a simple booleans index.
+
+        :param booleans_lists:
+            --------
+            List of `n` booleans indexes
+        :type booleans_lists: List[List[bool]]
+
+        :param logical_operator:
+            --------
+            Logical operator to combine filters (`'or'`, `'and'` or `'xor'`)
+        :type logical_operator: `str`, `optional`, defaults to 'and'
+
+        :raises NotImplementedError: If logical_operator is not one of `'and'`, `'or'`, `'xor'`, raises an error
+
+        :return: Booleans index of the filtered data
+        :rtype: List[bool]
+
+        Examples
+        --------
+        >>> from dessia_common.core import FiltersList
+        >>> booleans_lists = [[True, True, False, False], [False, True, True, False]]
+        >>> FiltersList.combine_booleans_lists(booleans_lists, logical_operator="xor")
+        [True, False, True, False]
+        """
+        if logical_operator == 'and':
+            return [all(booleans_tuple) for booleans_tuple in zip(*booleans_lists)]
+        if logical_operator == 'or':
+            return [any(booleans_tuple) for booleans_tuple in zip(*booleans_lists)]
+        if logical_operator == 'xor':
+            return [True if sum(booleans_tuple) == 1 else False for booleans_tuple in zip(*booleans_lists)]
+        raise NotImplementedError(f"'{logical_operator}' str for 'logical_operator' attribute is not a use case")
+
+    def get_booleans_index(self, dobjects_list: List[DessiaObject]):
+        """
+        Compute all the filters of `self.filters` on `dobjects_list` and returns a booleans index of `dobjects_list`
+
+        :param dobject_list: List of data to filter
+        :type dobject_list: List[DessiaObject]
+
+        :return: A `booleans index` of `dobjects_list` of the list of data to filter (`dobjects_list`)
+        :rtype: List[bool]
+
+        Examples
+        --------
+        >>> from dessia_common.core import FiltersList
+        >>> from dessia_common.models import all_cars_no_feat
+        >>> dobjects_list = all_cars_no_feat[:5]
+        >>> filters = [DessiaFilter('weight', '<=', 4000.), DessiaFilter('mpg', '>=', 30.)]
+        >>> filters_list = FiltersList(filters, logical_operator="xor", name="example")
+        >>> filters_list.get_booleans_index(dobjects_list)
+        [True, True, True, True, True]
+        """
+        booleans_index = []
+        for filter_ in self.filters:
+            booleans_index.append(filter_.get_booleans_index(dobjects_list))
+        return self.__class__.combine_booleans_lists(booleans_index, self.logical_operator)
+
+    def apply(self, dobjects_list: List[DessiaObject]):
+        """
+        Apply a FiltersList on a list of DessiaObjects
+
+        :param dobjects_list: List of DessiaObjects to filter
+        :type dobjects_list: List[DessiaObject]
+
+        :return: List of filtered values
+        :rtype: List[DessiaObject]
+
+        Examples
+        --------
+        >>> from dessia_common.core import HeterogeneousList, FiltersList
+        >>> from dessia_common.models import all_cars_wi_feat
+        >>> filters = [DessiaFilter('weight', '<=', 1650.), DessiaFilter('mpg', '>=', 45.)]
+        >>> filters_list = FiltersList(filters, logical_operator="xor", name="example")
+        >>> filtered_cars = filters_list.apply(all_cars_wi_feat)
+        >>> print(HeterogeneousList(filtered_cars, name="example"))
+        HeterogeneousList example: 3 samples, 5 features
+        |         Mpg         |    Displacement    |     Horsepower     |       Weight       |    Acceleration    |
+        -----------------------------------------------------------------------------------------------------------
+        |               35.0  |             0.072  |              69.0  |            1613.0  |              18.0  |
+        |               31.0  |             0.076  |              52.0  |            1649.0  |              16.5  |
+        |               46.6  |             0.086  |              65.0  |            2110.0  |              17.9  |
+        """
+        booleans_index = self.get_booleans_index(dobjects_list)
+        return DessiaFilter.apply(dobjects_list, booleans_index)
 
 
 def dict_merge(old_dct, merge_dct, add_keys=True, extend_lists=True):
@@ -1194,26 +1268,6 @@ def deepattr_to_sequence(deepattr: str):
 def sequence_to_deepattr(sequence):
     healed_sequence = [str(attr) if isinstance(attr, int) else attr for attr in sequence]
     return '/'.join(healed_sequence)
-
-
-def is_bounded(filter_: DessiaFilter, value: float):
-    bounded = True
-    operator = filter_.operator
-    bound = filter_.bound
-
-    if operator == 'lte' and value > bound:
-        bounded = False
-    if operator == 'gte' and value < bound:
-        bounded = False
-
-    if operator == 'lt' and value >= bound:
-        bounded = False
-    if operator == 'gt' and value <= bound:
-        bounded = False
-
-    if operator == 'eq' and value != bound:
-        bounded = False
-    return bounded
 
 
 def type_from_annotation(type_, module):
