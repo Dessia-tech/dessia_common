@@ -1,6 +1,7 @@
 from dessia_common.forms import StandaloneSubobject, EmbeddedSubobject, EnhancedStandaloneSubobject, StandaloneObject,\
     InheritingStandaloneSubobject, EnhancedEmbeddedSubobject
 from dessia_common import enhanced_deep_attr, full_classname, DessiaObject
+from dessia_common.breakdown import get_in_object_from_path
 
 standalone_subobject = StandaloneSubobject(floatarg=3.78)
 embedded_subobject = EmbeddedSubobject()
@@ -228,23 +229,10 @@ except AssertionError as err:
             print('\n', jsonschema['properties'][key])
             raise err
 
-deepfloat = enhanced_deep_attr(obj=standalone_object,
-                               sequence=['standalone_subobject', 'floatarg'])
-assert deepfloat == 3.78
-
-deeplist = enhanced_deep_attr(obj=standalone_object,
-                              sequence=['embedded_subobject',
-                                        'embedded_list', 2])
-assert deeplist == 3
-
-# deeperlist = enhanced_deep_attr(obj=standalone_object,
-#                                 sequence=['subcla', 0,
-#                                           'boolarg'])
-# assert deeperlist
-
-directattr = enhanced_deep_attr(obj=standalone_object, sequence=['strarg'])
-
-assert directattr == 'TestStr'
+assert standalone_object._get_from_path("#/standalone_subobject/floatarg") == 3.78
+assert standalone_object._get_from_path("#/embedded_subobject/embedded_list/2") == 3
+assert standalone_object._get_from_path("#/object_list/0/floatarg") == 666.999
+assert standalone_object._get_from_path("strarg") == 'TestStr'
 
 # Test to_dict/dict_to_object
 d = standalone_object.to_dict()
@@ -263,3 +251,4 @@ o = DessiaObject.dict_to_object(d)
 assert not isinstance(o.subobject_list[0], dict)
 
 obj.to_xlsx('test')
+print("script unit_tests.py passed")
