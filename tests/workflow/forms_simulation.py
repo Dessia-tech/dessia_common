@@ -1,4 +1,5 @@
 from dessia_common.workflow import WorkflowRun, Workflow
+from dessia_common.forms import StandaloneObject
 import json
 
 from dessia_common.models.workflows import workflow_
@@ -64,5 +65,16 @@ arguments = workflow_.dict_to_arguments(input_values, 'run')
 
 # Check Breakdown
 assert workflow_run._get_from_path("#/values/1") == 'Test'
+
+# Test WR _get_from_path specific method
+try:
+    workflow_run._get_from_path("#/values/1/0")
+except AttributeError:
+    pass
+
+assert workflow_run._get_from_path("#/values/0") == 2
+
+assert len(workflow_run._get_from_path("#/values/6")) == 2
+assert isinstance(workflow_run._get_from_path("#/values/6/0"), StandaloneObject)
 
 print("forms_simulation.py has passed")
