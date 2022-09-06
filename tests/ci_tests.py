@@ -12,6 +12,7 @@ scripts = ['displays.py',
            'filters.py',
            'moving_object.py',
            'graph.py',
+           'jsonschema.py',
            # Workflows
            'workflow/blocks.py',
            'workflow/workflow_with_models.py',
