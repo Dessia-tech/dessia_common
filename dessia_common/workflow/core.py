@@ -748,7 +748,7 @@ class Workflow(Block):
         return dict_
 
     def _start_run_dict(self) -> Dict:
-        raise NotImplementedError("start_run method_dict is not implemented yet")
+        return {}
 
     def method_dict(self, method_name: str = None, method_jsonschema: Any = None) -> Dict:
         if method_name == 'run':
