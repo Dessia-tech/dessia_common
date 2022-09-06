@@ -18,17 +18,17 @@ MIN_NOTE = 9.17
 UNWATCHED_ERRORS = ['fixme', 'trailing-whitespace', 'import-error']
 
 MAX_ERROR_BY_TYPE = {
-                     'protected-access': 41,
+                     'protected-access': 44,
                      'invalid-name': 4,
                      'consider-using-f-string': 1,
                      'no-else-return': 0,
-                     'arguments-differ': 3,
+                     'arguments-differ': 2,
                      'no-member': 1,
                      'too-many-locals': 16,  # Reduce by dropping vectored objects
                      'wrong-import-order': 7,
                      'too-many-branches': 10,
                      'unused-import': 1,
-                     'unused-argument': 5,
+                     'unused-argument': 6,
                      'cyclic-import': 10,
                      'no-self-use': 6,
                      'unused-variable': 0,
@@ -85,7 +85,7 @@ MAX_ERROR_BY_TYPE = {
                      'redefined-argument-from-local': 0,
                      'import-error': 0,
                      'unsubscriptable-object': 0,
-                     'unnecessary-dunder-call': 4
+                     'unnecessary-dunder-call': 2
                      }
 
 print('pylint version: ', __version__)
