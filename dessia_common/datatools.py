@@ -1,7 +1,7 @@
 """
 Library for building clusters on data.
 """
-from typing import List, Dict, Any, Type
+from typing import List, Dict, Any
 from copy import copy
 import itertools
 
@@ -17,7 +17,6 @@ except ImportError:
     pass
 from dessia_common.exports import XLSXWriter
 from dessia_common.core import DessiaObject, DessiaFilter, FiltersList, get_attribute_names, templates
-from dessia_common.optimization import FixedAttributeValue, BoundedAttributeValue
 
 
 class HeterogeneousList(DessiaObject):
@@ -1146,14 +1145,4 @@ class CategorizedList(HeterogeneousList):
 #     distances = distances[:, 1]
 #     plt.plot(distances)
 #     plt.show()
-
-class Sampler(DessiaObject):
-    _standalone_in_db = True
-    _vector_features = []
-
-    def __init__(self, object_class: Type, sampled_attributes: List[BoundedAttributeValue],
-                 fixed_attributes: List[FixedAttributeValue], name: str = ''):
-        self.object_class = object_class
-        self.sampled_attributes = sampled_attributes
-        DessiaObject.__init__(self, name=name)
 
