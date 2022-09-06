@@ -1145,4 +1145,3 @@ class CategorizedList(HeterogeneousList):
 #     distances = distances[:, 1]
 #     plt.plot(distances)
 #     plt.show()
-
