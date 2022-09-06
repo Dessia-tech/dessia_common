@@ -518,7 +518,7 @@ def deserialization_order(dict_):
     cleaned_order = []
     equals = nx.get_node_attributes(graph, 'equals')
 
-    for i, node in enumerate(order):
+    for node in order:
         if node in equals:
             if not equals[node] in cleaned_order:
                 cleaned_order.append((node, equals[node]))

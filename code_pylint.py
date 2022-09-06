@@ -31,7 +31,7 @@ MAX_ERROR_BY_TYPE = {
                      'unused-argument': 5,
                      'cyclic-import': 10,
                      'no-self-use': 6,
-                     'unused-variable': 1,
+                     'unused-variable': 0,
                      'trailing-whitespace': 11,
                      'empty-docstring': 7,
                      'missing-module-docstring': 1,

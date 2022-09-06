@@ -1069,7 +1069,7 @@ class Archive(Block):
     def evaluate(self, values):
         archive = io.BytesIO()
         with ZipFile(archive, 'w') as zip_archive:
-            for i, input_ in enumerate(self.inputs):
+            for input_ in self.inputs:
                 value = values[input_]
                 if isinstance(value, StringFile):
                     with zip_archive.open(value.filename, 'w') as file:
