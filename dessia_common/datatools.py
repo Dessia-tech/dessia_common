@@ -1152,7 +1152,8 @@ class Sampler(DessiaObject):
     _standalone_in_db = True
     _vector_features = []
 
-    def __init__(self, object_class: Type, sampled_attributes: List[BoundedAttributeValue], name: str = ''):
+    def __init__(self, object_class: Type, sampled_attributes: List[BoundedAttributeValue],
+                 fixed_attributes: List[FixedAttributeValue], name: str = ''):
         self.object_class = object_class
         self.sampled_attributes = sampled_attributes
         DessiaObject.__init__(self, name=name)
