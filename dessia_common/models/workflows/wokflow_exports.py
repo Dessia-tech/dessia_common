@@ -39,9 +39,9 @@ display_ = MultiPlot(attributes=display_attributes, name='Display')
 unpack_results = Unpacker(indices=[0], name="Unpack Results")
 
 txt_method = MethodType(class_=Generator, name="save_to_stream")
-export_txt = Export(method_type=txt_method, text=True, export_name="export_json", extension="json", name="Export JSON")
+export_txt = Export(method_type=txt_method, text=True, filename="export_json", extension="json", name="Export JSON")
 xlsx_method = MethodType(class_=StandaloneObject, name="to_xlsx_stream")
-export_xlsx = Export(method_type=xlsx_method, text=False, export_name="export_xlsx",
+export_xlsx = Export(method_type=xlsx_method, text=False, filename="export_xlsx",
                      extension="xlsx", name="Export XLSX")
 
 zip_export = Archive(number_exports=2, name="Zip")
