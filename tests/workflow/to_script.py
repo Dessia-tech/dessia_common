@@ -36,7 +36,7 @@ test_blocks = [
     wf.Display(),
     wf.MultiPlot(['multiplot0', 'multiplot1']),
     wf.Product(4, "product_name"),
-    wf.Export(method_type=dct.MethodType(dctests.Model, 'save_to_stream'), name='Export', export_name="export_name",
+    wf.Export(method_type=dct.MethodType(dctests.Model, 'save_to_stream'), name='Export', filename="filename",
               extension="json", text=True)
 ]
 
@@ -66,7 +66,7 @@ script_value = "from dessia_common.tests import Optimizer, Car, Model" \
                "\n" \
                "\nwfblock = WorkflowBlock(workflow=sub_workflow, name='Workflow Block')" \
                "\nblock_0 = ForEach(workflow_block=wfblock, iter_input_index=0)" \
-               "\nblock_1 = Archive(number_exports=1, export_name='archive', name='')" \
+               "\nblock_1 = Archive(number_exports=1, filename='archive', name='')" \
                "\nblock_2 = ClassMethod(method_type=ClassMethodType(Car, 'from_csv'), name='car_from_csv')" \
                "\nblock_3 = InstantiateModel(model_class=Car, name='Instantiate Car')" \
                "\nblock_4 = ModelAttribute(attribute_name='model_to_optimize', name='Model Fetcher')" \
@@ -81,7 +81,7 @@ script_value = "from dessia_common.tests import Optimizer, Car, Model" \
                "\nblock_13 = Display(inputs=None, name='')" \
                "\nblock_14 = MultiPlot(attributes=['multiplot0', 'multiplot1'], name='')" \
                "\nblock_15 = Product(number_list=4, name='product_name')" \
-               "\nblock_16 = Export(method_type=MethodType(dessia_common.tests.Model, 'save_to_stream'), export_name='export_name', extension='json', text=True, name='Export')" \
+               "\nblock_16 = Export(method_type=MethodType(dessia_common.tests.Model, 'save_to_stream'), filename='filename', extension='json', text=True, name='Export')" \
                "\nblocks = [block_0, block_1, block_2, block_3, block_4, block_5, block_6, block_7, block_8, block_9, block_10, block_11, block_12, block_13, block_14, block_15, block_16]" \
                "\n" \
                "\npipe_0 = Pipe(block_0.outputs[0], block_3.inputs[0])" \
