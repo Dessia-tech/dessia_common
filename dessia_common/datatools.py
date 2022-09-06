@@ -5,6 +5,7 @@ from typing import List, Dict, Any
 from copy import copy
 import itertools
 
+import math
 import numpy as npy
 from sklearn import cluster, preprocessing
 import matplotlib.pyplot as plt
@@ -335,6 +336,21 @@ class HeterogeneousList(DessiaObject):
             self.dessia_objects = [self.dessia_objects[idx] for idx in (sort_indexes if ascend else sort_indexes[::-1])]
             if self._matrix is not None:
                 self._matrix = [self._matrix[idx] for idx in (sort_indexes if ascend else sort_indexes[::-1])]
+
+    def mean(self):
+        return [sum(row)/len(row) for row in zip(*self.matrix)]
+
+    def std(self):
+        return [math.sqrt(variance) for variance in self.variance()]
+
+    def variance(self):
+        mean = self.mean()
+        variance = []
+        transposed_matrix = zip(*self.matrix)
+        len_divider = 1./len(self)
+        for idx, row in enumerate(transposed_matrix):
+            variance.append(len_divider * sum([(x-mean[idx])**2 for x in row]))
+        return variance
 
     @property
     def common_attributes(self):
@@ -843,6 +859,15 @@ class CategorizedList(HeterogeneousList):
         return CategorizedList(new_dessia_objects,
                                list(set(self.labels).difference({-1})) + ([-1] if -1 in self.labels else []),
                                name=self.name + "_split")
+
+    def mean_clusters(self):
+        clustered_sublists = self[:]
+        if not isinstance(clustered_sublists.dessia_objects[0], HeterogeneousList):
+            clustered_sublists = self.clustered_sublists()
+        means = []
+        for hlist in clustered_sublists:
+            means.append(hlist.mean())
+        return means
 
     def _merge_sublists(self):
         merged_hlists = self.dessia_objects[0][:]
