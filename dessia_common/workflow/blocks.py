@@ -14,7 +14,7 @@ import io
 from typing import List, Type, Any, Dict, get_type_hints
 
 import itertools
-from dessia_common.core import DessiaFilter, is_bounded, enhanced_deep_attr, split_argspecs,\
+from dessia_common.core import DessiaFilter, FiltersList, enhanced_deep_attr, split_argspecs,\
     type_from_annotation, DessiaObject
 from dessia_common.utils.types import get_python_class_from_class_name, full_classname
 from dessia_common.utils.docstrings import parse_docstring, EMPTY_PARSED_ATTRIBUTE
@@ -397,6 +397,10 @@ class Concatenate(Block):
         list_values = list(values.values())
         return [concatenate(list_values)]
 
+    def _to_script(self) -> ToScriptElement:
+        script = f"Concatenate(number_arguments={len(self.inputs)}, name='{self.name}')"
+        return ToScriptElement(declaration=script, imports=[self.full_classname])
+
 
 class WorkflowBlock(Block):
     """
@@ -655,7 +659,7 @@ class Filter(Block):
     :param filters: A list of dictionaries, each corresponding to a value to filter.
                     The dictionary should be as follows :
                     *{'attribute' : Name of attribute to filter (str),
-                      'operator' : choose between gt, lt, get, let (standing for greater than, lower than,
+                      'comparison_operator' : choose between gt, lt, get, let (standing for greater than, lower than,
                                                                     geater or equal than, lower or equal than) (str),
                       'bound' :  the value (float)}*
     :type filters: list[DessiaFilter]
@@ -663,8 +667,9 @@ class Filter(Block):
     :type name: str
     """
 
-    def __init__(self, filters: List[DessiaFilter], name: str = ''):
+    def __init__(self, filters: List[DessiaFilter], logical_operator: str = "and", name: str = ''):
         self.filters = filters
+        self.logical_operator = logical_operator
         inputs = [Variable(name='input_list')]
         outputs = [Variable(name='output_list')]
         Block.__init__(self, inputs, outputs, name=name)
@@ -680,7 +685,7 @@ class Filter(Block):
         dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         filters_dict = [f.to_dict(use_pointers=use_pointers, memo=memo, path=f"{path}/filters/{i}")
                         for i, f in enumerate(self.filters)]
-        dict_['filters'] = filters_dict
+        dict_.update({"filters": filters_dict, "logical_operator": self.logical_operator})
         return dict_
 
     @classmethod
@@ -690,33 +695,20 @@ class Filter(Block):
         filters = [DessiaFilter.dict_to_object(dict_=d, force_generic=force_generic, global_dict=global_dict,
                                                pointers_memo=pointers_memo, path=f"{path}/filters/{i}")
                    for i, d in enumerate(dict_['filters'])]
-        return cls(filters, dict_['name'])
+        return cls(filters=filters, logical_operator=dict_["logical_operator"], name=dict_["name"])
 
     def evaluate(self, values):
-        ouput_values = []
-        for object_ in values[self.inputs[0]]:
-            bounded = True
-            i = 0
-            while bounded and i < len(self.filters):
-                filter_ = self.filters[i]
-                value = enhanced_deep_attr(object_, filter_.attribute)
-                bounded = is_bounded(filter_, value)
-                i += 1
-            if bounded:
-                ouput_values.append(object_)
-        return [ouput_values]
+        filters_list = FiltersList(self.filters, self.logical_operator)
+        return [filters_list.apply(values[self.inputs[0]])]
 
     def _to_script(self) -> ToScriptElement:
         filter_variables = [f"DessiaFilter("
-                            f"attribute='{f.attribute}', operator='{f.operator}', bound={f.bound}, name='{f.name}'"
-                            f")" for f in self.filters]
+                            f"attribute='{f.attribute}', comparison_operator='{f.comparison_operator}', "
+                            f"bound={f.bound}, name='{f.name}')" for f in self.filters]
         filters = '[' + ",".join(filter_variables) + ']'
-        script = f"Filter(filters={filters}, name='{self.name}')"
+        script = f"Filter(filters={filters}, logical_operator='{self.logical_operator}', name='{self.name}')"
 
-        imports = [
-            DessiaFilter("", "", 0).full_classname,
-            self.full_classname
-        ]
+        imports = [DessiaFilter("", "", 0).full_classname, self.full_classname]
         return ToScriptElement(declaration=script, imports=imports)
 
 

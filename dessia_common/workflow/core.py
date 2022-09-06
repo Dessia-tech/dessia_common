@@ -25,10 +25,13 @@ from dessia_common.utils.types import serialize_typing, deserialize_typing, recu
 from dessia_common.utils.copy import deepcopy_value
 from dessia_common.utils.docstrings import FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE
 from dessia_common.utils.diff import choose_hash
+
 from dessia_common.typings import JsonSerializable, MethodType
 from dessia_common.files import StringFile, BinaryFile
 from dessia_common.displays import DisplayObject
 from dessia_common.breakdown import attrmethod_getter, ExtractionError
+from dessia_common.errors import SerializationError
+from dessia_common.warnings import SerializationWarning
 
 from dessia_common.workflow.utils import ToScriptElement
 
@@ -1468,10 +1471,13 @@ class WorkflowState(DessiaObject):
         for pipe, value in self.values.items():
             pipe_index = self.workflow.pipes.index(pipe)
             if use_pointers:
-                # TODO This probably won't work on platform. Should serialise/deserialise
-                serialized_value, memo = serialize_with_pointers(value=value, memo=memo,
-                                                                 path=f"{path}/values/{pipe_index}")
-                values[str(pipe_index)] = serialized_value
+                try:
+                    serialized_value, memo = serialize_with_pointers(value=value, memo=memo,
+                                                                     path=f"{path}/values/{pipe_index}")
+                    values[str(pipe_index)] = serialized_value
+                except SerializationError:
+                    warnings.warn(f"unable to serialize {value}, dropping it from workflow state/run values",
+                                  SerializationWarning)
             else:
                 values[str(pipe_index)] = serialize(value)
         dict_['values'] = values
