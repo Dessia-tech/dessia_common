@@ -488,7 +488,7 @@ class Workflow(Block):
             copied_pipes.append(Pipe(pipe_upstream, pipe_downstream))
 
         for nbv in self.nonblock_variables:
-            related_pipes = [pipe for pipe in nbv_pipes if (pipe.input_variable == nbv)]
+            related_pipes = [pipe for pipe in nbv_pipes if pipe.input_variable == nbv]
             if related_pipes:
                 copied_variable = nbv.copy()
                 for pipe in related_pipes:
