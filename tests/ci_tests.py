@@ -1,5 +1,4 @@
 
-import os
 import unittest
 
 scripts = ['displays.py',
