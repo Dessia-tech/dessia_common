@@ -5,7 +5,8 @@ from typing import List, Dict, Any
 from copy import copy
 import itertools
 
-import math
+from scipy.spatial import distance_matrix as scipy_distance_matrix
+from scipy.spatial.distance import mahalanobis
 import numpy as npy
 from sklearn import cluster, preprocessing
 import matplotlib.pyplot as plt
@@ -338,19 +339,50 @@ class HeterogeneousList(DessiaObject):
                 self._matrix = [self._matrix[idx] for idx in (sort_indexes if ascend else sort_indexes[::-1])]
 
     def mean(self):
-        return [sum(row)/len(row) for row in zip(*self.matrix)]
+        return [mean(row) for row in zip(*self.matrix)]
 
     def std(self):
-        return [math.sqrt(variance) for variance in self.variance()]
+        return [std(row) for row in zip(*self.matrix)]
 
-    def variance(self):
-        mean = self.mean()
-        variance = []
-        transposed_matrix = zip(*self.matrix)
-        len_divider = 1./len(self)
-        for idx, row in enumerate(transposed_matrix):
-            variance.append(len_divider * sum([(x-mean[idx])**2 for x in row]))
-        return variance
+    def variances(self):
+        return [variance(row) for row in zip(*self.matrix)]
+
+    def covariance_matrix(self):
+        return covariance_matrix(list(zip(*self.matrix)))
+
+    def distance_matrix(self, p: int = 2, method: str = 'minkowski'):
+        if method in ['mahalanobis']:
+            inv_cov_matrix = npy.linalg.pinv(self.covariance_matrix())
+            function = lambda a, b: mahalanobis_distance(a, b, inv_cov_matrix)
+
+            distances = [[] for _ in range(len(self))]
+            for row, row_attr in enumerate(self.matrix):
+                distances[row] = [function(row_attr, col_attr) for col_attr in self.matrix[row:]]
+            for idx_row, row in enumerate(distances):
+                symetric_side = [distances[idx][idx_row] for idx in range(len(self.matrix) - len(row))]
+                distances[idx_row] = symetric_side + row
+            return distances
+
+        if method in ['manhattan', 'l1']:
+            p = 1
+        if method in ['euclidian', 'l2']:
+            p = 2
+        if method in ['minkowski']:
+            p = p
+        return scipy_distance_matrix(self.matrix, self.matrix, p=p).tolist()
+
+    # def covariance_matrix_perso(self):
+    #     covariances = [[] for _ in self.common_attributes]
+    #     for row, row_attr in enumerate(self.common_attributes):
+    #         for _, col_attr in enumerate(self.common_attributes[row:]):
+    #             covariances[row].append(covariance(self.get_attribute_values(row_attr),
+    #                                                 self.get_attribute_values(col_attr)))
+    #     for idx_row, row in enumerate(covariances):
+    #         symetric_side = []
+    #         for idx in range(len(self.common_attributes) - len(row)):
+    #             symetric_side.append(covariances[idx][idx_row])
+    #         covariances[idx_row] = symetric_side + row
+    #     return covariances
 
     @property
     def common_attributes(self):
@@ -1170,3 +1202,62 @@ class CategorizedList(HeterogeneousList):
 #     distances = distances[:, 1]
 #     plt.plot(distances)
 #     plt.show()
+
+def diff_list(list_a, list_b):
+    return (a - b for a, b in zip(list_a, list_b))
+
+def l1_norm(vector):
+    return sum(map(abs, vector))
+
+def l2_norm(vector):
+    # better than numpy for len = 20000, nearly the same for len = 2000
+    return sum(x*x for x in vector)**0.5
+
+def lp_norm(vector, p = 2):
+    return float(npy.linalg.norm(vector, ord=p))
+
+def inf_norm(vector):
+    return max(abs(coord) for coord in vector)
+
+def manhattan_distance(list_a, list_b):
+    # faster than numpy
+    return l1_norm(diff_list(list_a, list_b))
+
+def euclidian_distance(list_a, list_b):
+    # faster than numpy for len = 20000, nearly the same for len = 2000
+    return l2_norm(diff_list(list_a, list_b))
+
+def minkowski_distance(list_a, list_b, p = 2):
+    # faster than sum((a - b)**p for a, b in zip(list_a, list_b))**(1/p)
+    return lp_norm(npy.array(list_a)-npy.array(list_b), p=p)
+
+def mean(vector):
+    return sum(vector)/len(vector)
+
+def variance(vector):
+    # faster than euclidian_distance(vector, [mean(vector)] * len(vector))**2 / len(vector)
+    return float(npy.var(vector))
+
+def covariance(vector_x, vector_y):
+    # nearly as fast as numpy
+    if len(vector_x) != len(vector_y):
+        raise ValueError("vector_x and vector_y must be the same length to compute covariance.")
+    mean_x = mean(vector_x)
+    mean_y = mean(vector_y)
+    return sum((x - mean_x) * (y - mean_y) for x, y in zip(vector_x, vector_y)) / len(vector_x)
+
+def covariance_matrix(matrix):
+    return npy.cov(matrix, dtype=float).tolist()
+
+def std(vector):
+    # faster than euclidian_distance(vector, [mean(vector)] * len(vector)) / math.sqrt(len(vector))
+    return float(npy.std(vector))
+
+def mahalanobis_distance(list_a, list_b, inv_cov_matrix):
+    return mahalanobis(list_a, list_b, inv_cov_matrix)
+
+
+
+
+
+
