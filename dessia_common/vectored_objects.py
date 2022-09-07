@@ -7,12 +7,9 @@ Created on Wed Feb 19 15:56:12 2020
 """
 
 from io import StringIO
-import math
 from typing import List, Dict, Any
 import numpy as np
 import pandas as pd
-from scipy.optimize import minimize
-from pyDOE import lhs
 from dessia_common import DessiaObject, Parameter, DessiaFilter
 
 
