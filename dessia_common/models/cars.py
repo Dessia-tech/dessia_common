@@ -25,7 +25,7 @@ catalog = Catalog.from_csv(csv_cars)
 catalog.name = 'Cars dataset'
 catalog.pareto_settings = pareto_settings
 
-filters = [DessiaFilter(attribute="Weight", operator="lt", bound=4000)]
+filters = [DessiaFilter(attribute="Weight", comparison_operator="lt", bound=4000)]
 
 # Empty objective because this hasn't been used/tested for a while
 objective_settings = ObjectiveSettings()
