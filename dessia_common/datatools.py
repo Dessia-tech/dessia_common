@@ -6,7 +6,7 @@ from copy import copy
 import itertools
 
 from scipy.spatial import distance_matrix as scipy_distance_matrix
-from scipy.spatial.distance import mahalanobis
+from scipy.spatial.distance import mahalanobis, pdist, squareform, cdist
 import numpy as npy
 from sklearn import cluster, preprocessing
 import matplotlib.pyplot as plt
@@ -350,39 +350,11 @@ class HeterogeneousList(DessiaObject):
     def covariance_matrix(self):
         return covariance_matrix(list(zip(*self.matrix)))
 
-    def distance_matrix(self, p: int = 2, method: str = 'minkowski'):
-        if method in ['mahalanobis']:
-            inv_cov_matrix = npy.linalg.pinv(self.covariance_matrix())
-            function = lambda a, b: mahalanobis_distance(a, b, inv_cov_matrix)
-
-            distances = [[] for _ in range(len(self))]
-            for row, row_attr in enumerate(self.matrix):
-                distances[row] = [function(row_attr, col_attr) for col_attr in self.matrix[row:]]
-            for idx_row, row in enumerate(distances):
-                symetric_side = [distances[idx][idx_row] for idx in range(len(self.matrix) - len(row))]
-                distances[idx_row] = symetric_side + row
-            return distances
-
-        if method in ['manhattan', 'l1']:
-            p = 1
-        if method in ['euclidian', 'l2']:
-            p = 2
-        if method in ['minkowski']:
-            p = p
-        return scipy_distance_matrix(self.matrix, self.matrix, p=p).tolist()
-
-    # def covariance_matrix_perso(self):
-    #     covariances = [[] for _ in self.common_attributes]
-    #     for row, row_attr in enumerate(self.common_attributes):
-    #         for _, col_attr in enumerate(self.common_attributes[row:]):
-    #             covariances[row].append(covariance(self.get_attribute_values(row_attr),
-    #                                                 self.get_attribute_values(col_attr)))
-    #     for idx_row, row in enumerate(covariances):
-    #         symetric_side = []
-    #         for idx in range(len(self.common_attributes) - len(row)):
-    #             symetric_side.append(covariances[idx][idx_row])
-    #         covariances[idx_row] = symetric_side + row
-    #     return covariances
+    def distance_matrix(self, method: str = 'minkowski', **kwargs):
+        if 'p' not in kwargs:
+            kwargs['p'] = 2
+        distances = squareform(pdist(self.matrix, method, **kwargs)).astype(float)
+        return distances.tolist()
 
     @property
     def common_attributes(self):
@@ -900,6 +872,33 @@ class CategorizedList(HeterogeneousList):
         for hlist in clustered_sublists:
             means.append(hlist.mean())
         return means
+
+    def cluster_mean_centroids(self, method: str = 'minkowski', **kwargs):
+        clustered_sublists = self[:]
+        if not isinstance(clustered_sublists.dessia_objects[0], HeterogeneousList):
+            clustered_sublists = self.clustered_sublists()
+        if 'p' not in kwargs and method=='minkowski':
+            kwargs['p'] = 2
+        means = clustered_sublists.mean_clusters()
+        cluster_distances = []
+        for mean, hlist in zip(means, clustered_sublists):
+            cluster_distances.append(cdist([mean], hlist.matrix, method, **kwargs).tolist()[0])
+        return cluster_distances
+
+    def cluster_real_centroids(self, method: str = 'minkowski', **kwargs):
+        clustered_sublists = self[:]
+        if not isinstance(clustered_sublists.dessia_objects[0], HeterogeneousList):
+            clustered_sublists = self.clustered_sublists()
+        if 'p' not in kwargs and method=='minkowski':
+            kwargs['p'] = 2
+        labels = clustered_sublists.labels
+        cluster_distances = clustered_sublists.cluster_mean_centroids(method=method, **kwargs)
+        real_centroids = [[] for _ in labels]
+        for label in labels:
+            min_idx = cluster_distances[label].index(min(cluster_distances[label]))
+            real_centroids[label] = clustered_sublists.dessia_objects[label][min_idx]
+        return real_centroids
+
 
     def _merge_sublists(self):
         merged_hlists = self.dessia_objects[0][:]

@@ -17,7 +17,11 @@ RandData_heterogeneous = HeterogeneousList(rand_data_middl)
 all_cars_without_features.common_attributes
 all_cars_with_features.covariance_matrix()
 all_cars_with_features.distance_matrix()
-a
+import time
+hl = HeterogeneousList(all_cars_no_feat*20)
+t = time.time()
+hl.distance_matrix(method='mahalanobis')
+print(time.time()-t)
 # Check platform for datasets
 all_cars_with_features._check_platform()
 all_cars_without_features._check_platform()
