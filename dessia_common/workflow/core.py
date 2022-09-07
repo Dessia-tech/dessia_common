@@ -424,17 +424,17 @@ class Workflow(Block):
         return set(pipes_1) == set(pipes_2)
 
     def _equivalent_imposed_variables_values(self, other_wf) -> bool:
-        ivvs_1 = []
-        ivvs_2 = []
+        ivvs1 = set()
+        ivvs2 = set()
         for imposed_key1, imposed_key2 in zip(self.imposed_variable_values.keys(),
                                               other_wf.imposed_variable_values.keys()):
             variable_index_1 = self.variable_index(imposed_key1)
-            ivvs_1.append((variable_index_1, self.imposed_variable_values[imposed_key1]))
+            ivvs1.add((variable_index_1, self.imposed_variable_values[imposed_key1]))
 
             variable_index_2 = other_wf.variable_index(imposed_key2)
-            ivvs_2.append((variable_index_2, other_wf.imposed_variable_values[imposed_key2]))
+            ivvs2.add((variable_index_2, other_wf.imposed_variable_values[imposed_key2]))
 
-        for ivv1, ivv2 in zip(set(ivvs_1), set(ivvs_2)):
+        for ivv1, ivv2 in zip(ivvs1, ivvs2):
             if ivv1 != ivv2:
                 return False
         return True
