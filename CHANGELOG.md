@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changes
 - Add 'logical_operator="and"' attribute to workflow.block.Filter
+- Improve workflow._data_eq
 
 ### Performance
 - DessiaFilters and FiltersList: A priori optimized access to elements so it is really faster than before
