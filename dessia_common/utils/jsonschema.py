@@ -46,19 +46,20 @@ def datatype_from_jsonschema(jsonschema):
             return 'instance_of'
         if 'patternProperties' in jsonschema:
             return 'dynamic_dict'
-        if 'method' in jsonschema and jsonschema['method']:
+        if 'is_method' in jsonschema and jsonschema['is_method']:
             return 'embedded_object'
         if 'is_class' in jsonschema and jsonschema['is_class']:
             return 'class'
 
-    elif jsonschema['type'] == 'array':
+    if jsonschema['type'] == 'array':
         if 'additionalItems' in jsonschema and not jsonschema['additionalItems']:
             return 'heterogeneous_sequence'
         return 'homogeneous_sequence'
 
-    elif jsonschema['type'] in ['number', 'string', 'boolean']:
-        if 'is_type' in jsonschema and jsonschema['is_type']:
-            return 'file'
+    if jsonschema["type"] == "text" and "is_file" in jsonschema and jsonschema["is_file"]:
+        return "file"
+
+    if jsonschema['type'] in ['number', 'string', 'boolean']:
         return 'builtin'
     return None
 
@@ -176,16 +177,17 @@ def jsonschema_from_annotation(annotation, jsonschema_element, order, editable=N
                                                 }
                                             }})
         elif origin is Subclass:
-            warnings.simplefilter('once', DeprecationWarning)
-            msg = "\n\nTyping of attribute '{0}' from class {1} uses Subclass which is deprecated."\
-                  "\n\nUse 'InstanceOf[{2}]' instead of 'Subclass[{2}]'.\n"
-            arg = args[0].__name__
-            warnings.warn(msg.format(key, args[0], arg), DeprecationWarning)
-            # Several possible classes that are subclass of another one
-            class_ = args[0]
-            classname = dc.full_classname(object_=class_, compute_for='class')
-            jsonschema_element[key].update({'type': 'object', 'instance_of': classname,
-                                            'standalone_in_db': class_._standalone_in_db})
+            pass
+            # warnings.simplefilter('once', DeprecationWarning)
+            # msg = "\n\nTyping of attribute '{0}' from class {1} uses Subclass which is deprecated."\
+            #       "\n\nUse 'InstanceOf[{2}]' instead of 'Subclass[{2}]'.\n"
+            # arg = args[0].__name__
+            # warnings.warn(msg.format(key, args[0], arg), DeprecationWarning)
+            # # Several possible classes that are subclass of another one
+            # class_ = args[0]
+            # classname = dc.full_classname(object_=class_, compute_for='class')
+            # jsonschema_element[key].update({'type': 'object', 'instance_of': classname,
+            #                                 'standalone_in_db': class_._standalone_in_db})
         elif origin is dc_types.InstanceOf:
             # Several possible classes that are subclass of another one
             class_ = args[0]

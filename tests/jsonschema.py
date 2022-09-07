@@ -1,7 +1,9 @@
-from dessia_common.forms import StandaloneObject, StandaloneObjectWithDefaultValues
+from dessia_common.forms import StandaloneObject, StandaloneObjectWithDefaultValues, \
+    ObjectWithOtherTypings, ObjectWithFaultyTyping
 from dessia_common.workflow.blocks import ModelMethod, InstantiateModel
 from dessia_common.models.forms import standalone_object
 import dessia_common.utils.jsonschema as jss
+from typing import get_type_hints
 
 # --- Jsonschema computation ---
 jsonschema = {'definitions': {},
@@ -181,11 +183,15 @@ except AssertionError as err:
                     check_value = jsonschema['properties'][key][subkey]
                     if subvalue != check_value:
                         print('Problematic key :', {subkey})
-                        print('Computed value : ', subvalue,
-                              '\nCheck value : ', check_value)
+                        print('Computed value : ', subvalue, '\nCheck value : ', check_value)
             print('\n', value)
             print('\n', jsonschema['properties'][key])
             raise err
+
+try:
+    ObjectWithFaultyTyping.jsonschema()
+except NotImplementedError:
+    pass
 
 
 # --- Default values ---
@@ -240,7 +246,7 @@ assert jss.chose_default(jsonschema["properties"]["array_arg"]) is None
 assert jss.chose_default(jsonschema["properties"]["name"]) is None  # TODO Is it ?
 
 
-# --- Datatypes
+# --- Datatypes ---
 
 jsonschema = StandaloneObject.jsonschema()
 
@@ -260,12 +266,18 @@ assert jss.datatype_from_jsonschema(jsonschema["properties"]["subclass_arg"]) ==
 assert jss.datatype_from_jsonschema(jsonschema["properties"]["array_arg"]) == "homogeneous_sequence"
 assert jss.datatype_from_jsonschema(jsonschema["properties"]["name"]) == "builtin"
 
-# --- Workflow Blocks
+jsonschema = ObjectWithOtherTypings.jsonschema()
 
-assert jss.datatype_from_jsonschema(ModelMethod.jsonschema()) == "embedded_object"
-assert jss.datatype_from_jsonschema(InstantiateModel.jsonschema()) == "class"
+assert jss.datatype_from_jsonschema(jsonschema["properties"]["undefined_type_attribute"]) is None
+
+# --- Workflow Blocks ---
+
+assert jss.datatype_from_jsonschema(ModelMethod.jsonschema()["properties"]["method_type"]) == "embedded_object"
+assert jss.datatype_from_jsonschema(InstantiateModel.jsonschema()["properties"]["model_class"]) == "class"
+
+# --- Files ---
+
+jsonschema = standalone_object._method_jsonschemas["generate_from_text"]["properties"]["0"]
+assert jss.datatype_from_jsonschema(jsonschema) == "file"
 
 print("test script jsonschema.py has passed")
-
-
-

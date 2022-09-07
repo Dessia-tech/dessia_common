@@ -26,7 +26,7 @@ coding/naming style & convention.
 """
 
 from math import floor, ceil, cos
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Tuple, Union, Iterator, Any
 from numpy import linspace
 
 try:
@@ -126,8 +126,7 @@ DEF_ISS = InheritingStandaloneSubobject.generate(1)
 
 
 class EmbeddedSubobject(DessiaObject):
-    def __init__(self, embedded_list: List[int] = None,
-                 name: str = 'Embedded Subobject'):
+    def __init__(self, embedded_list: List[int] = None, name: str = 'Embedded Subobject'):
         if embedded_list is None:
             self.embedded_list = [1, 2, 3]
         else:
@@ -276,6 +275,9 @@ class StandaloneObject(MovingObject):
         self.standalone_subobject.floatarg += value
         return self.standalone_subobject
 
+    def append_union_arg(self, object_: UnionArg):
+        self.union_arg.append(object_)
+
     def contour(self):
         points = [vm.Point2D(self.intarg, self.intarg), vm.Point2D(self.intarg, self.intarg + 1),
                   vm.Point2D(self.intarg + 1, self.intarg + 1), vm.Point2D(self.intarg + 1, 0)]
@@ -369,6 +371,10 @@ class StandaloneObject(MovingObject):
         computation = nok_string + 'or' + ok_string
 
         return computation
+
+    # @staticmethod
+    # def method_with_faulty_typing(arg0: Iterator[int]):
+    #     return arg0
 
     def to_markdown(self):
         contents = """
@@ -492,6 +498,26 @@ class StandaloneObjectWithDefaultValues(StandaloneObject):
 
 
 DEF_SOWDV = StandaloneObjectWithDefaultValues()
+
+
+class ObjectWithFaultyTyping(DessiaObject):
+    """
+    Dummy class to test faulty typing jsonschema
+    """
+    def __init__(self, faulty_attribute: Iterator[int], name: str = ""):
+        self.faulty_attribute = faulty_attribute
+
+        DessiaObject.__init__(self, name=name)
+
+
+class ObjectWithOtherTypings(DessiaObject):
+    """
+    Dummy class to test some typing jsonschemas
+    """
+    def __init__(self, undefined_type_attribute: Any, name: str = ""):
+        self.undefined_type_attribute = undefined_type_attribute
+
+        DessiaObject.__init__(self, name=name)
 
 
 class MovingStandaloneObject(MovingObject):
