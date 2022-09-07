@@ -40,6 +40,7 @@ def datatype_from_jsonschema(jsonschema):
                 if jsonschema['standalone_in_db']:
                     return 'standalone_object'
                 return 'embedded_object'
+            # Static dict is deprecated
             return 'static_dict'
         if 'instance_of' in jsonschema:
             return 'instance_of'
@@ -51,8 +52,7 @@ def datatype_from_jsonschema(jsonschema):
             return 'class'
 
     elif jsonschema['type'] == 'array':
-        if 'additionalItems' in jsonschema\
-                and not jsonschema['additionalItems']:
+        if 'additionalItems' in jsonschema and not jsonschema['additionalItems']:
             return 'heterogeneous_sequence'
         return 'homogeneous_sequence'
 
@@ -68,9 +68,9 @@ def chose_default(jsonschema):
     if datatype in ['heterogeneous_sequence', 'homogeneous_sequence']:
         return default_sequence(jsonschema)
     if datatype == 'static_dict':
+        # Deprecated
         return default_dict(jsonschema)
-    if datatype in ['standalone_object', 'embedded_object',
-                    'instance_of', 'union']:
+    if datatype in ['standalone_object', 'embedded_object', 'instance_of', 'union']:
         if 'default_value' in jsonschema:
             return jsonschema['default_value']
         return None
@@ -210,18 +210,14 @@ def jsonschema_from_annotation(annotation, jsonschema_element, order, editable=N
 
     elif hasattr(typing_, '__origin__') and typing_.__origin__ is type:
         # TODO Is this deprecated ? Should be used in 3.8 and not 3.9 ?
-        jsonschema_element[key].update({
-            'type': 'object', 'is_class': True,
-            'properties': {'name': {'type': 'string'}}
-        })
+        jsonschema_element[key].update({'type': 'object', 'is_class': True,
+                                        'properties': {'name': {'type': 'string'}}})
     elif typing_ is Any:
         jsonschema_element[key].update({'type': 'object', 'properties': {'.*': '.*'}})
     elif inspect.isclass(typing_) and issubclass(typing_, Measure):
         ann = (key, float)
-        jsonschema_element = jsonschema_from_annotation(
-            annotation=ann, jsonschema_element=jsonschema_element,
-            order=order, editable=editable, title=title
-        )
+        jsonschema_element = jsonschema_from_annotation(annotation=ann, jsonschema_element=jsonschema_element,
+                                                        order=order, editable=editable, title=title)
         jsonschema_element[key]['units'] = typing_.units
     elif issubclass(typing_, (BinaryFile, StringFile)):
         jsonschema_element[key].update({'type': 'text', 'is_file': True})
@@ -229,12 +225,9 @@ def jsonschema_from_annotation(annotation, jsonschema_element, order, editable=N
         classname = dc.full_classname(object_=typing_, compute_for='class')
         if inspect.isclass(typing_) and issubclass(typing_, dc.DessiaObject):
             # Dessia custom classes
-            jsonschema_element[key].update({
-                'type': 'object',
-                'standalone_in_db': typing_._standalone_in_db
-            })
+            jsonschema_element[key].update({'type': 'object', 'standalone_in_db': typing_._standalone_in_db})
         else:
-            # Statically created dict structure
+            # DEPRECATED : Statically created dict structure
             jsonschema_element[key].update(static_dict_jsonschema(typing_))
         jsonschema_element[key]['classes'] = [classname]
     return jsonschema_element
