@@ -307,7 +307,8 @@ class Workflow(Block):
 
         self.coordinates = {}
 
-        self.nonblock_variables = []
+        name_variable = TypedVariableWithDefaultValue(type_=str, default_value="", name="Result Name")
+        self.nonblock_variables = [name_variable]
         self.variables = []
         for block in self.blocks:
             if isinstance(block, Workflow):
@@ -344,8 +345,12 @@ class Workflow(Block):
         self.description = description
         self.documentation = documentation
 
-        Block.__init__(self, input_variables, [output], name=name)
-        self.output = self.outputs[0]
+        outputs = []
+        self.output = output
+        if output is not None:
+            outputs.append(output)
+
+        Block.__init__(self, inputs=input_variables, outputs=outputs, name=name)
 
         self.branch_by_display_selector = {}
         for display_block in self.display_blocks:
@@ -364,7 +369,7 @@ class Workflow(Block):
             self.branch_by_export_format[format_["export_name"]] = branch
 
     def _data_hash(self):
-        output_hash = hash(self.variable_indices(self.outputs[0]))
+        output_hash = hash(self.variable_indices(self.output))
         base_hash = len(self.blocks) + 11 * len(self.pipes) + output_hash
         block_hash = int(sum(b.equivalent_hash() for b in self.blocks) % 10e5)
         return (base_hash + block_hash) % 1000000000
@@ -547,7 +552,8 @@ class Workflow(Block):
 
         pipes = [self.pipe_variable_indices(p) for p in self.pipes]
 
-        dict_.update({'blocks': blocks, 'pipes': pipes, 'output': self.variable_indices(self.outputs[0]),
+        output = self.variable_indices(self.output)
+        dict_.update({'blocks': blocks, 'pipes': pipes, 'output': output,
                       'nonblock_variables': [v.to_dict() for v in self.nonblock_variables],
                       'package_mix': self.package_mix()})
 
@@ -556,7 +562,7 @@ class Workflow(Block):
             var_index = self.variable_indices(variable)
 
             if use_pointers:
-                ser_value, memo = serialize_with_pointers(value, memo=memo,
+                ser_value, memo = serialize_with_pointers(value=value, memo=memo,
                                                           path=f"{path}/imposed_variable_values/{var_index}")
             else:
                 ser_value = serialize(value)
@@ -718,6 +724,7 @@ class Workflow(Block):
         """
         Returns blocks that are upstream for output
         """
+        # TODO Check what's happening when output is null (incomplete workflow)
         output_block = self.block_from_variable(self.output)
         output_upstreams = self.upstream_blocks(output_block)
         runtime_blocks = [output_block] + output_upstreams
@@ -1003,7 +1010,7 @@ class Workflow(Block):
         elements_by_distance = {}
         for element in self.blocks + self.nonblock_variables:
             distances = []
-            paths = nx.all_simple_paths(self.graph, element, self.outputs[0])
+            paths = nx.all_simple_paths(self.graph, element, self.output)
             for path in paths:
                 distance = 1
                 for path_element in path[1:-1]:
