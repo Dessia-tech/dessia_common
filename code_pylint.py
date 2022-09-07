@@ -18,8 +18,8 @@ MIN_NOTE = 9.17
 UNWATCHED_ERRORS = ['fixme', 'trailing-whitespace', 'import-error']
 
 MAX_ERROR_BY_TYPE = {
-                     'protected-access': 48,
-                     'invalid-name': 4,
+                     'protected-access': 43,
+                     'invalid-name': 0,
                      'consider-using-f-string': 1,
                      'no-else-return': 0,
                      'arguments-differ': 2,
@@ -47,7 +47,7 @@ MAX_ERROR_BY_TYPE = {
                      'too-many-instance-attributes': 7,
                      'consider-iterating-dictionary': 4,
                      'attribute-defined-outside-init': 3,
-                     'simplifiable-if-expression': 3,
+                     'simplifiable-if-expression': 1,
                      'broad-except': 3,
                      'consider-using-get': 0,
                      'undefined-loop-variable': 1,

@@ -1211,19 +1211,19 @@ class Workflow(Block):
         blockstr = ""
         imports = []
         imports_as_is = []
-        for ib, block in enumerate(self.blocks):
+        for iblock, block in enumerate(self.blocks):
             block_script = block._to_script()
             imports.extend(block_script.imports)
             if block_script.before_declaration is not None:
                 blockstr += f"{block_script.before_declaration}\n"
-            blockstr += f'{prefix}block_{ib} = {block_script.declaration}\n'
+            blockstr += f'{prefix}block_{iblock} = {block_script.declaration}\n'
 
         blockstr += f"{prefix}blocks = [{', '.join([prefix + 'block_' + str(i) for i in range(len(self.blocks))])}]\n"
 
         # --- Pipes ---
         pipestr = ""
         variable_index = 0
-        for ip, pipe in enumerate(self.pipes):
+        for ipipe, pipe in enumerate(self.pipes):
             input_index = self.variable_indices(pipe.input_variable)
             if isinstance(input_index, int):  # NBV handling
                 input_name = f'{prefix}variable_{variable_index}'
@@ -1245,7 +1245,7 @@ class Workflow(Block):
                 variable_index += 1
             else:
                 output_name = f"{prefix}block_{output_index[0]}.inputs[{output_index[2]}]"
-            pipestr += f"{prefix}pipe_{ip} = Pipe({input_name}, {output_name})\n"
+            pipestr += f"{prefix}pipe_{ipipe} = Pipe({input_name}, {output_name})\n"
         pipestr += f"{prefix}pipes = [{', '.join([prefix + 'pipe_' + str(i) for i in range(len(self.pipes))])}]\n"
 
         # --- Building script ---
@@ -1256,14 +1256,14 @@ class Workflow(Block):
                       f"{prefix}workflow = " \
                       f"Workflow({prefix}blocks, {prefix}pipes, output={output_name}, name='{self.name}')\n"
 
-        for k, v in self.imposed_variable_values.items():
-            variable_indice = self.variable_indices(k)
+        for key, value in self.imposed_variable_values.items():
+            variable_indice = self.variable_indices(key)
             if isinstance(variable_indice, int):
                 variable_str = variable_indice
             else:
                 [block_index, _, variable_index] = variable_indice
                 variable_str = f"{prefix}blocks[{block_index}].inputs[{variable_index}]"
-            full_script += f"{prefix}workflow.imposed_variable_values[{variable_str}] = {v}\n"
+            full_script += f"{prefix}workflow.imposed_variable_values[{variable_str}] = {value}\n"
         return ToScriptElement(declaration=full_script, imports=imports, imports_as_is=imports_as_is)
 
     def to_script(self) -> str:
