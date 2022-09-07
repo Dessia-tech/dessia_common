@@ -22,15 +22,15 @@ assert jss.chose_default(jsonschema["properties"]["name"]) is None
 
 jsonschema = StandaloneObjectWithDefaultValues.jsonschema()
 
-subobject_jsonschema = jsonschema["properties"]["standalone_subobject"]
-assert jss.chose_default(subobject_jsonschema["name"]) == "StandaloneSubobject1"
-assert jss.chose_default(subobject_jsonschema["object_class"]) == "dessia_common.forms.StandaloneSubobject"
-assert jss.chose_default(subobject_jsonschema["floatarg"]) == 1.7
+subobject_default_value = jss.chose_default(jsonschema["properties"]["standalone_subobject"])
+assert subobject_default_value["name"] == "StandaloneSubobject1"
+assert subobject_default_value["object_class"] == "dessia_common.forms.StandaloneSubobject"
+assert subobject_default_value["floatarg"] == 1.7
 
-subobject_jsonschema = jsonschema["properties"]["embedded_subobject"]
-assert jss.chose_default(subobject_jsonschema["name"]) == "Embedded Subobject10"
-assert jss.chose_default(subobject_jsonschema["object_class"]) == "dessia_common.forms.EmbeddedSubobject"
-assert jss.chose_default(subobject_jsonschema["embedded_list"]) == [0, 1, 2, 3, 4]
+subobject_default_value = jss.chose_default(jsonschema["properties"]["embedded_subobject"])
+assert subobject_default_value["name"] == "Embedded Subobject10"
+assert subobject_default_value["object_class"] == "dessia_common.forms.EmbeddedSubobject"
+assert subobject_default_value["embedded_list"] == [0, 1, 2, 3, 4]
 
 assert jss.chose_default(jsonschema["properties"]["dynamic_dict"]) is None
 assert jss.chose_default(jsonschema["properties"]["float_dict"]) is None
@@ -43,11 +43,11 @@ assert jss.chose_default(jsonschema["properties"]["subobject_list"]) is None
 assert jss.chose_default(jsonschema["properties"]["builtin_list"]) is None
 assert jss.chose_default(jsonschema["properties"]["union_arg"]) is None
 
-subobject_jsonschema = jsonschema["properties"]["subclass_arg"]
-assert jss.chose_default(subobject_jsonschema["name"]) == "Inheriting Standalone Subobject1"
-assert jss.chose_default(subobject_jsonschema["object_class"]) == "dessia_common.forms.InheritingStandaloneSubobject"
-assert jss.chose_default(subobject_jsonschema["strarg"]) == "-1"
-assert jss.chose_default(subobject_jsonschema["floatarg"]) == 0.7
+subobject_default_value = jss.chose_default(jsonschema["properties"]["subclass_arg"])
+assert subobject_default_value["name"] == "Inheriting Standalone Subobject1"
+assert subobject_default_value["object_class"] == "dessia_common.forms.InheritingStandaloneSubobject"
+assert subobject_default_value["strarg"] == "-1"
+assert subobject_default_value["floatarg"] == 0.7
 
 assert jss.chose_default(jsonschema["properties"]["array_arg"]) is None
 assert jss.chose_default(jsonschema["properties"]["name"]) is None  # TODO Is it ?
