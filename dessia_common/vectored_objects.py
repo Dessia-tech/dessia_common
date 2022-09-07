@@ -84,7 +84,7 @@ class Objective(DessiaObject):
         """
         compute coefficients from n-1 angles
         """
-        pass
+        raise NotImplementedError("This is deprecated and should not be used anymore")
     #     n = len(angles) + 1
     #     matrix = np.identity(n)
     #     for i, angle in enumerate(angles):
@@ -99,11 +99,11 @@ class Objective(DessiaObject):
     #     signed = np.dot(matrix.T, x).tolist()
     #     unsigned = np.copy(signed).tolist()
     #     return unsigned
-    #
+
     @classmethod
     def from_angles(cls, angles: List[float], variables: List[str], directions: Dict[str, bool],
                     settings: ObjectiveSettings = None, name="Generated from angles") -> 'Objective':
-        pass
+        raise NotImplementedError("This is deprecated and should not be used anymore")
     #     if not isinstance(angles, list) and not isinstance(angles, np.ndarray):
     #         angles = [angles]
     #     generated_coefficients = cls.coefficients_from_angles(angles=angles)
@@ -192,7 +192,7 @@ class Catalog(DessiaObject):
         return catalog
 
     def generate_multiplot(self, values: Dict[str, Any] = None):
-        pass
+        raise NotImplementedError("This is deprecated and should not be used anymore")
         # # TOCHECK Avoid circular imports
         # import plot_data
         #
@@ -367,7 +367,7 @@ class Catalog(DessiaObject):
                    choice_variables=variables, name=name)
 
     def handle_objective(self, objective: Objective) -> List[float]:
-        pass
+        raise NotImplementedError("This is deprecated and should not be used anymore")
         # ratings = []
         # for line in self.array:
         #     values = {variable: self.get_value_by_name(line, variable)
@@ -378,7 +378,7 @@ class Catalog(DessiaObject):
 
     def find_best_objective(self, values: Dict[str, float], minimized: Dict[str, bool],
                             settings: ObjectiveSettings = None):
-        pass
+        raise NotImplementedError("This is deprecated and should not be used anymore")
         # # Unordered list of variables
         # variables = list(values.keys())  # !!!
         # parameters = self.parameters(variables)
@@ -424,7 +424,7 @@ class Catalog(DessiaObject):
         #     raise ValueError("No solutions found")
 
     def plot_data(self):
-        pass
+        raise NotImplementedError("This is deprecated and should not be used anymore")
         # from plot_data.core import Tooltip, TextStyle, SurfaceStyle,\
         #     Scatter, ParallelPlot, PointFamily, MultiplePlots
         # from plot_data.colors import GREY, LIGHTGREY, LIGHTGREEN, LIGHTBLUE
