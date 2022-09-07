@@ -2,8 +2,9 @@ from dessia_common.forms import StandaloneObject, StandaloneObjectWithDefaultVal
     ObjectWithOtherTypings, ObjectWithFaultyTyping
 from dessia_common.workflow.blocks import ModelMethod, InstantiateModel
 from dessia_common.models.forms import standalone_object
+from dessia_common.models.workflows.workflow_from_file_input import workflow_
 import dessia_common.utils.jsonschema as jss
-from typing import get_type_hints
+
 
 # --- Jsonschema computation ---
 jsonschema = {'definitions': {},
@@ -274,6 +275,9 @@ assert jss.datatype_from_jsonschema(jsonschema["properties"]["undefined_type_att
 
 assert jss.datatype_from_jsonschema(ModelMethod.jsonschema()["properties"]["method_type"]) == "embedded_object"
 assert jss.datatype_from_jsonschema(InstantiateModel.jsonschema()["properties"]["model_class"]) == "class"
+
+jsonschema = workflow_._method_jsonschemas["run"]["properties"]["0"]
+assert jss.datatype_from_jsonschema(jsonschema) == "file"
 
 # --- Files ---
 
