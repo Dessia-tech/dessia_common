@@ -5,8 +5,7 @@ from typing import List, Dict, Any
 from copy import copy
 import itertools
 
-from scipy.spatial import distance_matrix as scipy_distance_matrix
-from scipy.spatial.distance import mahalanobis, pdist, squareform, cdist
+from scipy.spatial.distance import pdist, squareform, cdist, mahalanobis
 import numpy as npy
 from sklearn import cluster, preprocessing
 import matplotlib.pyplot as plt
@@ -341,7 +340,7 @@ class HeterogeneousList(DessiaObject):
     def mean(self):
         return [mean(row) for row in zip(*self.matrix)]
 
-    def std(self):
+    def standard_deviation(self):
         return [std(row) for row in zip(*self.matrix)]
 
     def variances(self):
@@ -351,7 +350,7 @@ class HeterogeneousList(DessiaObject):
         return covariance_matrix(list(zip(*self.matrix)))
 
     def distance_matrix(self, method: str = 'minkowski', **kwargs):
-        if 'p' not in kwargs:
+        if 'p' not in kwargs and method=='minkowski':
             kwargs['p'] = 2
         distances = squareform(pdist(self.matrix, method, **kwargs)).astype(float)
         return distances.tolist()
@@ -864,19 +863,21 @@ class CategorizedList(HeterogeneousList):
                                list(set(self.labels).difference({-1})) + ([-1] if -1 in self.labels else []),
                                name=self.name + "_split")
 
-    def mean_clusters(self):
+    def _check_transform_sublists(self):
         clustered_sublists = self[:]
         if not isinstance(clustered_sublists.dessia_objects[0], HeterogeneousList):
             clustered_sublists = self.clustered_sublists()
+        return clustered_sublists
+
+    def mean_clusters(self):
+        clustered_sublists = self._check_transform_sublists()
         means = []
         for hlist in clustered_sublists:
             means.append(hlist.mean())
         return means
 
     def cluster_mean_centroids(self, method: str = 'minkowski', **kwargs):
-        clustered_sublists = self[:]
-        if not isinstance(clustered_sublists.dessia_objects[0], HeterogeneousList):
-            clustered_sublists = self.clustered_sublists()
+        clustered_sublists = self._check_transform_sublists()
         if 'p' not in kwargs and method=='minkowski':
             kwargs['p'] = 2
         means = clustered_sublists.mean_clusters()
@@ -886,9 +887,7 @@ class CategorizedList(HeterogeneousList):
         return cluster_distances
 
     def cluster_real_centroids(self, method: str = 'minkowski', **kwargs):
-        clustered_sublists = self[:]
-        if not isinstance(clustered_sublists.dessia_objects[0], HeterogeneousList):
-            clustered_sublists = self.clustered_sublists()
+        clustered_sublists = self._check_transform_sublists()
         if 'p' not in kwargs and method=='minkowski':
             kwargs['p'] = 2
         labels = clustered_sublists.labels
@@ -1252,11 +1251,6 @@ def std(vector):
     # faster than euclidian_distance(vector, [mean(vector)] * len(vector)) / math.sqrt(len(vector))
     return float(npy.std(vector))
 
-def mahalanobis_distance(list_a, list_b, inv_cov_matrix):
+def mahalanobis_distance(list_a, list_b, cov_matrix):
+    inv_cov_matrix = npy.linalg.pinv(cov_matrix)
     return mahalanobis(list_a, list_b, inv_cov_matrix)
-
-
-
-
-
-

@@ -19,12 +19,15 @@ clustered_cars_without = CategorizedList.from_dbscan(all_cars_without_features, 
 clustered_cars_with = CategorizedList.from_dbscan(all_cars_with_features, eps=40)
 aggclustest_clustered = CategorizedList.from_agglomerative_clustering(big_RandDatas_heterogeneous, n_clusters=10)
 kmeanstest_clustered = CategorizedList.from_kmeans(small_RandDatas_heterogeneous, n_clusters=10, scaling=True)
-clustered_cars_with.cluster_real_centroids('mahalanobis')
+
 # Split lists into labelled lists
 split_cars_without = clustered_cars_without.clustered_sublists()
 split_cars_with = clustered_cars_with.clustered_sublists()
 aggclustest_split = aggclustest_clustered.clustered_sublists()
 kmeanstest_split = kmeanstest_clustered.clustered_sublists()
+
+# Centroids
+assert(clustered_cars_with.cluster_real_centroids('mahalanobis')[0].to_vector()[1] == 0.135)
 
 # Test print
 clustered_cars_without.labels[0] = 15000
