@@ -203,7 +203,6 @@ class Catalog(DessiaObject):
 
         first_vars = self.variables[:2]
         values2d = [{key: val[key]} for key in first_vars for val in values]
-        rgbs = [[192, 11, 11], [14, 192, 11], [11, 11, 192]]
 
         tooltip = plot_data.Tooltip(attributes=self.variables, name='Tooltip')
 
@@ -211,7 +210,7 @@ class Catalog(DessiaObject):
                                         y_variable=first_vars[1], elements=values2d, name='Scatter Plot')
 
         parallelplot = plot_data.ParallelPlot(disposition='horizontal', axes=self.variables,
-                                              rgbs=rgbs, elements=values)
+                                              rgbs=[[192, 11, 11], [14, 192, 11], [11, 11, 192]], elements=values)
         objects = [scatterplot, parallelplot]
         sizes = [plot_data.Window(width=560, height=300),
                  plot_data.Window(width=560, height=300)]
