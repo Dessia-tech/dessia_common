@@ -18,13 +18,13 @@ MIN_NOTE = 9.17
 UNWATCHED_ERRORS = ['fixme', 'trailing-whitespace', 'import-error']
 
 MAX_ERROR_BY_TYPE = {
-                     'protected-access': 43,
+                     'protected-access': 45,
                      'invalid-name': 0,
                      'consider-using-f-string': 1,
                      'no-else-return': 0,
                      'arguments-differ': 2,
                      'no-member': 1,
-                     'too-many-locals': 16,  # Reduce by dropping vectored objects
+                     'too-many-locals': 12,  # Reduce by dropping vectored objects
                      'wrong-import-order': 7,
                      'too-many-branches': 10,
                      'unused-import': 0,
@@ -45,7 +45,7 @@ MAX_ERROR_BY_TYPE = {
                      'abstract-method': 6,
                      'import-outside-toplevel': 12,  # TODO : will reduced in a future work (when tests are ready)
                      'too-many-instance-attributes': 7,
-                     'consider-iterating-dictionary': 4,
+                     'consider-iterating-dictionary': 1,
                      'attribute-defined-outside-init': 3,
                      'simplifiable-if-expression': 1,
                      'broad-except': 3,
