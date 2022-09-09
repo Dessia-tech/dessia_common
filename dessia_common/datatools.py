@@ -83,6 +83,7 @@ class HeterogeneousList(DessiaObject):
     """
     _standalone_in_db = True
     _vector_features = ["name", "common_attributes"]
+    _non_data_eq_attributes = ["name", "_common_attributes", "_matrix"]
 
     def __init__(self, dessia_objects: List[DessiaObject] = None, name: str = ''):
         if dessia_objects is None:
@@ -110,8 +111,10 @@ class HeterogeneousList(DessiaObject):
             if isinstance(key[0], int):
                 return self.pick_from_boolist(self._indexlist_to_booleanlist(key))
 
-        raise NotImplementedError(f"key of type {type(key)} with {type(key[0])} elements not implemented for "
-                                  f"indexing HeterogeneousLists")
+            raise NotImplementedError(f"key of type {type(key)} with {type(key[0])} elements not implemented for "
+                                      f"indexing HeterogeneousLists")
+
+        raise NotImplementedError(f"key of type {type(key)} not implemented for indexing HeterogeneousLists")
 
     def __add__(self, other: 'HeterogeneousList'):
         if self.__class__ != HeterogeneousList or other.__class__ != HeterogeneousList:
@@ -765,15 +768,12 @@ class CategorizedList(HeterogeneousList):
         if labels is None:
             labels = [0]*len(self)
         self.labels = labels
-        self._n_clusters = None
 
     @property
     def n_clusters(self):
-        if self._n_clusters is None:
-            unic_labels = set(self.labels)
-            unic_labels.discard(-1)
-            self._n_clusters = len(unic_labels)
-        return self._n_clusters
+        unic_labels = set(self.labels)
+        unic_labels.discard(-1)
+        return len(unic_labels)
 
     def to_xlsx_stream(self, stream):
         """
@@ -869,6 +869,12 @@ class CategorizedList(HeterogeneousList):
             clustered_sublists = self.clustered_sublists()
         return clustered_sublists
 
+    @staticmethod
+    def _set_distance_kwargs(method: str, kwargs: Dict[str, Any]):
+        if 'p' not in kwargs and method=='minkowski':
+            kwargs['p'] = 2
+        return kwargs
+
     def mean_clusters(self):
         clustered_sublists = self._check_transform_sublists()
         means = []
@@ -878,8 +884,7 @@ class CategorizedList(HeterogeneousList):
 
     def cluster_mean_centroids(self, method: str = 'minkowski', **kwargs):
         clustered_sublists = self._check_transform_sublists()
-        if 'p' not in kwargs and method=='minkowski':
-            kwargs['p'] = 2
+        kwargs = self._set_distance_kwargs(method, kwargs)
         means = clustered_sublists.mean_clusters()
         cluster_distances = []
         for mean, hlist in zip(means, clustered_sublists):
@@ -888,8 +893,7 @@ class CategorizedList(HeterogeneousList):
 
     def cluster_real_centroids(self, method: str = 'minkowski', **kwargs):
         clustered_sublists = self._check_transform_sublists()
-        if 'p' not in kwargs and method=='minkowski':
-            kwargs['p'] = 2
+        kwargs = self._set_distance_kwargs(method, kwargs)
         labels = clustered_sublists.labels
         cluster_distances = clustered_sublists.cluster_mean_centroids(method=method, **kwargs)
         real_centroids = [[] for _ in labels]
