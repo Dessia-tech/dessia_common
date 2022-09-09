@@ -67,7 +67,7 @@ def serialize(value):
     elif hasattr(value, 'to_dict'):
         to_dict_method = getattr(value, 'to_dict', None)
         if callable(to_dict_method):
-            to_dict_method()
+            return to_dict_method()
     else:
         if not dcty.is_jsonable(value):
             msg = f'Element of value {value} is not json serializable'
