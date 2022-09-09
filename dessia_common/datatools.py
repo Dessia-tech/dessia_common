@@ -1049,8 +1049,8 @@ class CategorizedList(HeterogeneousList):
         kwargs = self._set_distance_kwargs(method, kwargs)
         means = clustered_sublists.mean_clusters()
         cluster_distances = []
-        for mean, hlist in zip(means, clustered_sublists):
-            cluster_distances.append(cdist([mean], hlist.matrix, method, **kwargs).tolist()[0])
+        for mean_, hlist in zip(means, clustered_sublists):
+            cluster_distances.append(cdist([mean_], hlist.matrix, method, **kwargs).tolist()[0])
         return cluster_distances
 
     def cluster_real_centroids(self, method: str = 'minkowski', **kwargs):
