@@ -62,3 +62,5 @@ if '$ref' in s:
     raise ValueError('Pointer detected with use_pointers=False')
 
 simulation_workflow.save_script_to_file('_simulation_workflow')
+
+print("script power_simulation.py has passed")
