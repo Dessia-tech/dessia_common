@@ -16,6 +16,8 @@ from copy import deepcopy
 import warnings
 import traceback as tb
 import networkx as nx
+
+import dessia_common.errors
 from dessia_common.templates import workflow_template
 from dessia_common import DessiaObject, is_sequence, JSONSCHEMA_HEADER, jsonschema_from_annotation, \
     deserialize_argument, set_default_value, prettyname, serialize_dict, DisplaySetting
@@ -464,6 +466,17 @@ class Workflow(Block):
                                    imposed_variable_values=imposed_variable_values, name=self.name)
         return copied_workflow
 
+    def copy_pipe(self, copied_workflow: 'Workflow', pipe : Pipe) -> Pipe:
+        upstream_index = self.variable_indices(pipe.input_variable)
+        if isinstance(upstream_index, int):
+            raise dessia_common.errors.CopyError("copy_pipe method cannot handle nonblock-variables. "
+                                                 "Please consider using copy_pipes")
+        pipe_upstream = copied_workflow.variable_from_index(upstream_index)
+
+        downstream_index = self.variable_indices(pipe.output_variable)
+        pipe_downstream = copied_workflow.variable_from_index(downstream_index)
+        return Pipe(pipe_upstream, pipe_downstream)
+
     def copy_pipes(self, copied_workflow: 'Workflow') -> List[Pipe]:
         copied_pipes = []
 
@@ -477,12 +490,7 @@ class Workflow(Block):
                 standard_pipes.append(pipe)
 
         for pipe in standard_pipes:
-            upstream_index = self.variable_indices(pipe.input_variable)
-            pipe_upstream = copied_workflow.variable_from_index(upstream_index)
-
-            downstream_index = self.variable_indices(pipe.output_variable)
-            pipe_downstream = copied_workflow.variable_from_index(downstream_index)
-            copied_pipes.append(Pipe(pipe_upstream, pipe_downstream))
+            copied_pipes.append(self.copy_pipe(copied_workflow, pipe))
 
         for nbv in self.nonblock_variables:
             related_pipes = [pipe for pipe in nbv_pipes if pipe.input_variable == nbv]
