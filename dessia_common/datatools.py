@@ -348,18 +348,119 @@ class HeterogeneousList(DessiaObject):
                 self._matrix = [self._matrix[idx] for idx in (sort_indexes if ascend else sort_indexes[::-1])]
 
     def mean(self):
+        """
+        Compute means along each `common_attribute`.
+
+        :return: A list of means along each dimension
+        :rtype: List[float]
+
+        Examples
+        --------
+        >>> from dessia_common.datatools import HeterogeneousList
+        >>> from dessia_common.models import all_cars_wi_feat
+        >>> example_list = HeterogeneousList(all_cars_wi_feat, "mean_example")
+        >>> print(example_list.mean())
+        [23.051231527093602, 0.1947795566502462, 103.5295566502463, 2979.4137931034484, 15.519704433497521]
+        """
         return [mean(row) for row in zip(*self.matrix)]
 
     def standard_deviation(self):
+        """
+        Compute standard deviations along each `common_attribute`.
+
+        :return: A list of standard deviations along each dimension
+        :rtype: List[float]
+
+        Examples
+        --------
+        >>> from dessia_common.datatools import HeterogeneousList
+        >>> from dessia_common.models import all_cars_wi_feat
+        >>> example_list = HeterogeneousList(all_cars_wi_feat, "std_example")
+        >>> print(example_list.standard_deviation())
+        [8.391423956652817, 0.10479316386533469, 40.47072606559397, 845.9605763601298, 2.799904275515381]
+        """
         return [std(row) for row in zip(*self.matrix)]
 
     def variances(self):
+        """
+        Compute variances along each `common_attribute`.
+
+        :return: A list of variances along each dimension
+        :rtype: List[float]
+
+        Examples
+        --------
+        >>> from dessia_common.datatools import HeterogeneousList
+        >>> from dessia_common.models import all_cars_wi_feat
+        >>> example_list = HeterogeneousList(all_cars_wi_feat, "var_example")
+        >>> print(example_list.variances())
+        [70.41599602028683, 0.010981607192906888, 1637.8796682763475, 715649.2967555631, 7.839463952049309]
+        """
         return [variance(row) for row in zip(*self.matrix)]
 
     def covariance_matrix(self):
+        """
+        Compute the covariance matrix of `self.matrix`.
+
+        :return: the covariance matrix of all stored data in self
+        :rtype: List[List[float]], `n_features x n_features`
+
+        Examples
+        --------
+        >>> from dessia_common.datatools import HeterogeneousList
+        >>> from dessia_common.models import all_cars_wi_feat
+        >>> example_list = HeterogeneousList(all_cars_wi_feat, "covar_example")
+        >>> cov_matrix = example_list.covariance_matrix()
+        >>> for row in cov_matrix: print(row)
+        [70.58986267712706, -0.6737370735267286, -247.39164142796338, -5604.189893571734, 9.998099130329008]
+        [-0.6737370735267286, 0.011008722272395539, 3.714807148938756, 82.86881366538952, -0.16412268260049875]
+        [-247.39164142796338, 3.714807148938756, 1641.9238156054248, 28857.60749255002, -77.47638630420236]
+        [-5604.189893571734, 82.86881366538952, 28857.60749255002, 717416.332056194, -1021.2202724563649]
+        [9.998099130329008, -0.16412268260049875, -77.47638630420236, -1021.2202724563649, 7.8588206531654805]
+        """
         return covariance_matrix(list(zip(*self.matrix)))
 
     def distance_matrix(self, method: str = 'minkowski', **kwargs):
+        """
+        Compute the distance matrix of `self.matrix`, i.e. the pairwise distances between all stored elements in \
+        `self.dessia_objects`. Distances are computed with numerical values of `self.matrix`.
+
+        :param method:
+            --------
+            Method to compute distances.
+            Can be one of `[‘braycurtis’, ‘canberra’, ‘chebyshev’, ‘cityblock’, ‘correlation’, ‘cosine’, ‘dice’, \
+            ‘euclidean’, ‘hamming’, ‘jaccard’, ‘jensenshannon’, ‘kulczynski1’, ‘mahalanobis’, ‘matching’, ‘minkowski’, \
+            ‘rogerstanimoto’, ‘russellrao’, ‘seuclidean’, ‘sokalmichener’, ‘sokalsneath’, ‘sqeuclidean’, ‘yule’]`.
+        :type method: `str`, `optional`, defaults to `'minkowski'`
+
+        :param **kwargs:
+            --------
+            |  Extra arguments to metric: refer to each metric documentation for a list of all possible arguments.
+            |  Some possible arguments:
+            |     - p : scalar The p-norm to apply for Minkowski, weighted and unweighted. Default: `2`.
+            |     - w : array_like The weight vector for metrics that support weights (e.g., Minkowski).
+            |     - V : array_like The variance vector for standardized Euclidean. Default: \
+                `var(vstack([XA, XB]), axis=0, ddof=1)`
+            |     - VI : array_like The inverse of the covariance matrix for Mahalanobis. Default: \
+                `inv(cov(vstack([XA, XB].T))).T`
+            |     - out : ndarray The output array If not None, the distance matrix Y is stored in this array.
+        :type **kwargs: `dict`, `optional`
+
+        :return: the distance matrix of all stored data in self
+        :rtype: List[List[float]], `n_samples x n_samples`
+
+        Examples
+        --------
+        >>> from dessia_common.datatools import HeterogeneousList
+        >>> from dessia_common.models import all_cars_wi_feat
+        >>> example_list = HeterogeneousList(all_cars_wi_feat, "distance_example")
+        >>> distance_matrix = example_list.distance_matrix('mahalanobis')
+        >>> for row in distance_matrix[:4]: print(row[:4])
+        [0.0, 1.6150355142162274, 1.0996902429379676, 1.3991408510938068]
+        [1.6150355142162274, 0.0, 0.7691239946132247, 0.6216479207905371]
+        [1.0996902429379676, 0.7691239946132247, 0.0, 0.7334135920381655]
+        [1.3991408510938068, 0.6216479207905371, 0.7334135920381655, 0.0]
+        """
         kwargs = self._set_distance_kwargs(method, kwargs)
         distances = squareform(pdist(self.matrix, method, **kwargs)).astype(float)
         return distances.tolist()
@@ -430,7 +531,7 @@ class HeterogeneousList(DessiaObject):
         Examples
         --------
         >>> from dessia_common.cor import DessiaFilter
-        >>> from dessia_common.datatools import HeterogeneousList, DessiaFilter
+        >>> from dessia_common.datatools import HeterogeneousList
         >>> from dessia_common.models import all_cars_wi_feat
         >>> filters = [DessiaFilter('weight', '<=', 1650.), DessiaFilter('mpg', '>=', 45.)]
         >>> filters_list = FiltersList(filters, "xor")
@@ -837,7 +938,7 @@ class CategorizedList(HeterogeneousList):
 
         Examples
         --------
-        >>> from dessia_common.datatools import HeterogeneousList
+        >>> from dessia_common.datatools import HeterogeneousList, CategorizedList
         >>> from dessia_common.models import all_cars_wi_feat
         >>> hlist = HeterogeneousList(all_cars_wi_feat, name="cars")
         >>> clist = CategorizedList.from_agglomerative_clustering(hlist, n_clusters=10, name="ex")
@@ -897,8 +998,8 @@ class CategorizedList(HeterogeneousList):
         >>> hlist = HeterogeneousList(all_cars_wi_feat, name="cars")
         >>> clist = CategorizedList.from_agglomerative_clustering(hlist, n_clusters=10, name="ex")
         >>> means = clist.mean_clusters()
-        >>> print(list(map(int, means[0])))
-        [28, 0, 79, 2250, 16]
+        >>> print(means[0])
+        [28.83333333333334, 0.10651785714285714, 79.16666666666667, 2250.3571428571427, 16.075000000000006]
         """
         clustered_sublists = self._check_transform_sublists()
         means = []
@@ -935,14 +1036,14 @@ class CategorizedList(HeterogeneousList):
         :return: `n_clusters` lists of distances of all elements of a cluster from its mean.
         :rtype: List[List[float]]
 
-         Examples
-         --------
-         >>> from dessia_common.models import all_cars_wi_feat
-         >>> hlist = HeterogeneousList(all_cars_wi_feat, name="cars")
-         >>> clist = CategorizedList.from_agglomerative_clustering(hlist, n_clusters=10, name="ex")
-         >>> cluster_distances = clist.cluster_distances()
-         >>> print(list(map(int, cluster_distances[6])))
-         [180, 62, 162, 47, 347, 161, 160, 67, 164, 206, 114, 138, 97, 159, 124, 139]
+        Examples
+        --------
+        >>> from dessia_common.models import all_cars_wi_feat
+        >>> hlist = HeterogeneousList(all_cars_wi_feat, name="cars")
+        >>> clist = CategorizedList.from_agglomerative_clustering(hlist, n_clusters=10, name="ex")
+        >>> cluster_distances = clist.cluster_distances()
+        >>> print(list(map(int, cluster_distances[6])))
+        [180, 62, 162, 47, 347, 161, 160, 67, 164, 206, 114, 138, 97, 159, 124, 139]
         """
         clustered_sublists = self._check_transform_sublists()
         kwargs = self._set_distance_kwargs(method, kwargs)
@@ -971,26 +1072,26 @@ class CategorizedList(HeterogeneousList):
             |     - p : scalar The p-norm to apply for Minkowski, weighted and unweighted. Default: `2`.
             |     - w : array_like The weight vector for metrics that support weights (e.g., Minkowski).
             |     - V : array_like The variance vector for standardized Euclidean. Default: \
-                `var(vstack([XA, XB]), axis=0, ddof=1)`
+               `var(vstack([XA, XB]), axis=0, ddof=1)`
             |     - VI : array_like The inverse of the covariance matrix for Mahalanobis. Default: \
-                `inv(cov(vstack([XA, XB].T))).T`
+               `inv(cov(vstack([XA, XB].T))).T`
             |     - out : ndarray The output array If not None, the distance matrix Y is stored in this array.
         :type **kwargs: `dict`, `optional`
 
         :return: `n_clusters` lists of distances of all elements of a cluster from its mean.
         :rtype: List[List[float]]
 
-         Examples
-         --------
-         >>> from dessia_common.models import all_cars_wi_feat
-         >>> hlist = HeterogeneousList(all_cars_wi_feat, name="cars")
-         >>> clist = CategorizedList.from_agglomerative_clustering(hlist, n_clusters=10, name="ex")
-         >>> cluster_real_centroids = clist.cluster_real_centroids()
-         >>> print(HeterogeneousList([cluster_real_centroids[0]]))
-         HeterogeneousList 0x7f752654a0a0: 1 samples, 5 features
-         |   Name   |   Mpg   |   Displacement   |   Horsepower   |   Weight   |   Acceleration   |
-         ------------------------------------------------------------------------------------------
-         |Dodge C...|    26.0 |            0.098 |           79.0 |     2255.0 |             17.7 |
+        Examples
+        --------
+        >>> from dessia_common.models import all_cars_wi_feat
+        >>> hlist = HeterogeneousList(all_cars_wi_feat, name="cars")
+        >>> clist = CategorizedList.from_agglomerative_clustering(hlist, n_clusters=10, name="ex")
+        >>> cluster_real_centroids = clist.cluster_real_centroids()
+        >>> print(HeterogeneousList([cluster_real_centroids[0]]))
+        HeterogeneousList 0x7f752654a0a0: 1 samples, 5 features
+        |   Name   |   Mpg   |   Displacement   |   Horsepower   |   Weight   |   Acceleration   |
+        ------------------------------------------------------------------------------------------
+        |Dodge C...|    26.0 |            0.098 |           79.0 |     2255.0 |             17.7 |
         """
         clustered_sublists = self._check_transform_sublists()
         kwargs = self._set_distance_kwargs(method, kwargs)
@@ -1305,41 +1406,163 @@ class CategorizedList(HeterogeneousList):
 #     plt.show()
 
 def diff_list(list_a, list_b):
+    """
+    Difference between to lists.
+
+    :param list_a: First list
+    :type list_a: List[float]
+
+    :param list_b: Second list
+    :type list_b: List[float]
+
+    :return: a generator of the difference between each element
+    :rtype: generator
+
+    """
     return (a - b for a, b in zip(list_a, list_b))
 
 def l1_norm(vector):
+    """
+    l1-norm of vector.
+
+    :param vector: vector to get norm
+    :type vector: List[float]
+
+    :return: the l1-norm
+    :rtype: float
+    """
     return sum(map(abs, vector))
 
 def l2_norm(vector):
+    """
+    l2-norm of vector.
+
+    :param vector: vector to get norm
+    :type vector: List[float]
+
+    :return: the l2-norm
+    :rtype: float
+    """
     # better than numpy for len = 20000, nearly the same for len = 2000
     return sum(x*x for x in vector)**0.5
 
 def lp_norm(vector, p = 2):
+    """
+    Minkowski norm of vector.
+
+    :param vector: vector to get norm
+    :type vector: List[float]
+
+    :param p: the value of exponent in Minkowski norm
+    :type p: float
+
+    :return: the Minkowski norm
+    :rtype: float
+    """
     return float(npy.linalg.norm(vector, ord=p))
 
 def inf_norm(vector):
+    """
+    Inifinite norm of vector.
+
+    :param vector: vector to get norm
+    :type vector: List[float]
+
+    :return: maximum value of absolute values in vector
+    :rtype: float
+    """
     return max(abs(coord) for coord in vector)
 
 def manhattan_distance(list_a, list_b):
+    """
+    Compute the l1 distance between list_a and list_b, i.e. the l1-norm of difference between list_a and list_b.
+
+    :param list_a: First list
+    :type list_a: List[float]
+
+    :param list_b: Second list
+    :type list_b: List[float]
+
+    :return: the l1 distance between the two list
+    :rtype: float
+    """
     # faster than numpy
     return l1_norm(diff_list(list_a, list_b))
 
 def euclidian_distance(list_a, list_b):
+    """
+    Compute the euclidian distance between list_a and list_b, i.e. the l2-norm of difference between list_a and list_b.\
+    It is the natural distance of 3D space.
+
+    :param list_a: First list
+    :type list_a: List[float]
+
+    :param list_b: Second list
+    :type list_b: List[float]
+
+    :return: the l2 distance between the two list
+    :rtype: float
+    """
     # faster than numpy for len = 20000, nearly the same for len = 2000
     return l2_norm(diff_list(list_a, list_b))
 
 def minkowski_distance(list_a, list_b, p = 2):
+    """
+    Compute the Minkowski distance between list_a and list_b, i.e. the lp-norm of difference between list_a and list_b.
+
+    :param list_a: First list
+    :type list_a: List[float]
+
+    :param list_b: Second list
+    :type list_b: List[float]
+
+    :param p: the value of exponent in Minkowski norm
+    :type p: float
+
+    :return: the Minkowski distance between the two list
+    :rtype: float
+    """
     # faster than sum((a - b)**p for a, b in zip(list_a, list_b))**(1/p)
     return lp_norm(npy.array(list_a)-npy.array(list_b), p=p)
 
 def mean(vector):
+    """
+    Mean of vector.
+
+    :param vector: vector to get mean
+    :type vector: List[float]
+
+    :return: the mean of vector
+    :rtype: float
+    """
     return sum(vector)/len(vector)
 
 def variance(vector):
+    """
+    Variance of vector.
+
+    :param vector: vector to get variance
+    :type vector: List[float]
+
+    :return: the variance of vector
+    :rtype: float
+    """
     # faster than euclidian_distance(vector, [mean(vector)] * len(vector))**2 / len(vector)
     return float(npy.var(vector))
 
 def covariance(vector_x, vector_y):
+    """
+    Covariance between vector_x and vector_y.
+
+    :param vector_x: first vector to get covariance
+    :type vector_x: List[float]
+
+    :param vector_y: second vector to get covariance
+    :type vector_y: List[float]
+
+    :return: the covariance between vector_x and vector_y
+    :rtype: float
+    """
     # nearly as fast as numpy
     if len(vector_x) != len(vector_y):
         raise ValueError("vector_x and vector_y must be the same length to compute covariance.")
@@ -1351,9 +1574,35 @@ def covariance_matrix(matrix):
     return npy.cov(matrix, dtype=float).tolist()
 
 def std(vector):
+    """
+    Standard deviation of vector.
+
+    :param vector: vector to get standard deviation
+    :type vector: List[float]
+
+    :return: the standard deviation of vector
+    :rtype: float
+    """
     # faster than euclidian_distance(vector, [mean(vector)] * len(vector)) / math.sqrt(len(vector))
     return float(npy.std(vector))
 
 def mahalanobis_distance(list_a, list_b, cov_matrix):
+    """
+    Compute the Mahalanobis distance between list_a and list_b. This method computes distances considering the scale \
+    and the data repartition on each dimension (covariance matrix). It is adviced to use this method to compute \
+    distances in spaces constituted of very different dimensions in terms of scale and data repartition.
+
+    :param list_a: First list
+    :type list_a: List[float]
+
+    :param list_b: Second list
+    :type list_b: List[float]
+
+    :param cov_matrix: the covariance matrix of data
+    :type cov_matrix: List[List[float]]
+
+    :return: the Mahalanobis distance between the two list
+    :rtype: float
+    """
     inv_cov_matrix = npy.linalg.pinv(cov_matrix)
     return mahalanobis(list_a, list_b, inv_cov_matrix)
