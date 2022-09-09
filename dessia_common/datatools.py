@@ -530,7 +530,7 @@ class HeterogeneousList(DessiaObject):
 
         Examples
         --------
-        >>> from dessia_common.cor import DessiaFilter
+        >>> from dessia_common.core import DessiaFilter
         >>> from dessia_common.datatools import HeterogeneousList
         >>> from dessia_common.models import all_cars_wi_feat
         >>> filters = [DessiaFilter('weight', '<=', 1650.), DessiaFilter('mpg', '>=', 45.)]
@@ -1574,6 +1574,22 @@ def covariance(vector_x, vector_y):
     return sum((x - mean_x) * (y - mean_y) for x, y in zip(vector_x, vector_y)) / len(vector_x)
 
 def covariance_matrix(matrix):
+    """
+    Compute the covariance matrix of `matrix` of dimension `N x M`.
+
+    :return: the covariance matrix of `matrix`
+    :rtype: List[List[float]], `N x N`
+
+    Examples
+    --------
+    >>> from dessia_common.datatools import covariance_matrix
+    >>> from dessia_common.models import all_cars_wi_feat
+    >>> matrix = HeterogeneousList(all_cars_wi_feat).matrix
+    >>> cov_matrix = covariance_matrix(list(zip(*matrix)))
+    >>> for row in cov_matrix[:2]: print(row[:2])
+    [70.58986267712706, -0.6737370735267286]
+    [-0.6737370735267286, 0.011008722272395539]
+    """
     return npy.cov(matrix, dtype=float).tolist()
 
 def std(vector):
