@@ -97,19 +97,19 @@ class HeterogeneousList(DessiaObject):
         if len(self) == 0:
             return []
         if isinstance(key, int):
-            return self.pick_from_int(key)
+            return self._pick_from_int(key)
         if isinstance(key, slice):
-            return self.pick_from_slice(key)
+            return self._pick_from_slice(key)
         if isinstance(key, list):
             if len(key) == 0:
                 return self.__class__()
             if isinstance(key[0], bool):
                 if len(key) == self.__len__():
-                    return self.pick_from_boolist(key)
+                    return self._pick_from_boolist(key)
                 raise ValueError(f"Cannot index {self.__class__.__name__} object of len {self.__len__()} with a "
                                  f"list of boolean of len {len(key)}")
             if isinstance(key[0], int):
-                return self.pick_from_boolist(self._indexlist_to_booleanlist(key))
+                return self._pick_from_boolist(self._indexlist_to_booleanlist(key))
 
             raise NotImplementedError(f"key of type {type(key)} with {type(key[0])} elements not implemented for "
                                       f"indexing HeterogeneousLists")
@@ -149,10 +149,10 @@ class HeterogeneousList(DessiaObject):
         # Not "self.dessia_objects += other.dessia_objects" to take advantage of __add__ algorithm
         self.__dict__.update((self + other).__dict__)
 
-    def pick_from_int(self, idx: int):
+    def _pick_from_int(self, idx: int):
         return self.dessia_objects[idx]
 
-    def pick_from_slice(self, key: slice):
+    def _pick_from_slice(self, key: slice):
         new_hlist = self.__class__(dessia_objects = self.dessia_objects[key], name = self.name)
         new_hlist._common_attributes = copy(self._common_attributes)
         new_hlist.dessia_objects = self.dessia_objects[key]
@@ -167,7 +167,7 @@ class HeterogeneousList(DessiaObject):
             boolean_list[idx] = True
         return boolean_list
 
-    def pick_from_boolist(self, key: List[bool]):
+    def _pick_from_boolist(self, key: List[bool]):
         new_hlist = self.__class__(dessia_objects = DessiaFilter.apply(self.dessia_objects, key), name = self.name)
         new_hlist._common_attributes = copy(self._common_attributes)
         if self._matrix is not None:
@@ -338,7 +338,7 @@ class HeterogeneousList(DessiaObject):
         |               18.0  |             0.318  |             150.0  |            3436.0  |              11.0  |
         |               15.0  |              0.35  |             165.0  |            3693.0  |              11.5  |
         """
-        if self.__len__() != 0:
+        if len(self) != 0:
             if isinstance(key, int):
                 sort_indexes = npy.argsort(self.get_column_values(key))
             elif isinstance(key, str):
@@ -546,7 +546,7 @@ class HeterogeneousList(DessiaObject):
         |               46.6  |             0.086  |              65.0  |            2110.0  |              17.9  |
         """
         booleans_index = filters_list.get_booleans_index(self.dessia_objects)
-        return self.pick_from_boolist(booleans_index)
+        return self._pick_from_boolist(booleans_index)
 
     def singular_values(self):
         """
@@ -571,7 +571,7 @@ class HeterogeneousList(DessiaObject):
         :rtype: Tuple[List[float], List[Dict[str, float]]]
 
         """
-        scaled_data = HeterogeneousList.scale_data(npy.array(self.matrix) - npy.mean(self.matrix, axis=0))
+        scaled_data = HeterogeneousList._scale_data(npy.array(self.matrix) - npy.mean(self.matrix, axis=0))
         _, singular_values, _ = npy.linalg.svd(npy.array(scaled_data).T, full_matrices=False)
         normalized_singular_values = singular_values / npy.sum(singular_values)
 
@@ -582,7 +582,7 @@ class HeterogeneousList(DessiaObject):
         return normalized_singular_values, singular_points
 
     @staticmethod
-    def scale_data(data_matrix: List[List[float]]):
+    def _scale_data(data_matrix: List[List[float]]):
         scaled_matrix = preprocessing.StandardScaler().fit_transform(data_matrix)
         return [list(map(float, row.tolist())) for row in scaled_matrix]
 
@@ -601,7 +601,7 @@ class HeterogeneousList(DessiaObject):
         scatter_matrix = self._build_multiplot(data_list, self._tooltip_attributes(), axis=dimensionality_plot.axis,
                                                point_style=dimensionality_plot.point_style)
         # Parallel plot
-        parallel_plot = self.parallel_plot(data_list)
+        parallel_plot = self._parallel_plot(data_list)
 
         return [parallel_plot, scatter_matrix, dimensionality_plot]
 
@@ -622,7 +622,7 @@ class HeterogeneousList(DessiaObject):
                                        initial_view_on=True)
         return scatter_matrix
 
-    def parallel_plot(self, data_list: List[Dict[str, float]]):
+    def _parallel_plot(self, data_list: List[Dict[str, float]]):
         return ParallelPlot(elements=data_list, axes=self._parallel_plot_attr(), disposition='vertical')
 
     def _tooltip_attributes(self):
@@ -635,7 +635,7 @@ class HeterogeneousList(DessiaObject):
         return plot_data_list
 
     def _point_families(self):
-        return [PointFamily(BLUE, list(range(self.__len__())))]
+        return [PointFamily(BLUE, list(range(len(self))))]
 
     def _parallel_plot_attr(self):
         # TODO: Put it in plot_data
@@ -899,14 +899,14 @@ class CategorizedList(HeterogeneousList):
             writer = XLSXWriter(self)
         writer.save_to_stream(stream)
 
-    def pick_from_slice(self, key: slice):
-        new_hlist = HeterogeneousList.pick_from_slice(self, key)
+    def _pick_from_slice(self, key: slice):
+        new_hlist = HeterogeneousList._pick_from_slice(self, key)
         new_hlist.labels = self.labels[key]
         # new_hlist.name += f"_{key.start if key.start is not None else 0}_{key.stop}")
         return new_hlist
 
-    def pick_from_boolist(self, key: List[bool]):
-        new_hlist = HeterogeneousList.pick_from_boolist(self, key)
+    def _pick_from_boolist(self, key: List[bool]):
+        new_hlist = HeterogeneousList._pick_from_boolist(self, key)
         new_hlist.labels = DessiaFilter.apply(self.labels, key)
         # new_hlist.name += "_list")
         return new_hlist
@@ -1384,7 +1384,7 @@ class CategorizedList(HeterogeneousList):
     @staticmethod
     def fit_cluster(skl_cluster: cluster, matrix: List[List[float]], scaling: bool):
         if scaling:
-            scaled_matrix = HeterogeneousList.scale_data(matrix)
+            scaled_matrix = HeterogeneousList._scale_data(matrix)
         else:
             scaled_matrix = matrix
         skl_cluster.fit(scaled_matrix)
@@ -1446,20 +1446,20 @@ def l2_norm(vector):
     # better than numpy for len = 20000, nearly the same for len = 2000
     return sum(x*x for x in vector)**0.5
 
-def lp_norm(vector, p = 2):
+def lp_norm(vector, mink_power = 2):
     """
     Minkowski norm of vector.
 
     :param vector: vector to get norm
     :type vector: List[float]
 
-    :param p: the value of exponent in Minkowski norm
-    :type p: float
+    :param mink_power: the value of exponent in Minkowski norm
+    :type mink_power: float
 
     :return: the Minkowski norm
     :rtype: float
     """
-    return float(npy.linalg.norm(vector, ord=p))
+    return float(npy.linalg.norm(vector, ord=mink_power))
 
 def inf_norm(vector):
     """
@@ -1506,7 +1506,7 @@ def euclidian_distance(list_a, list_b):
     # faster than numpy for len = 20000, nearly the same for len = 2000
     return l2_norm(diff_list(list_a, list_b))
 
-def minkowski_distance(list_a, list_b, p = 2):
+def minkowski_distance(list_a, list_b, mink_power = 2):
     """
     Compute the Minkowski distance between list_a and list_b, i.e. the lp-norm of difference between list_a and list_b.
 
@@ -1516,14 +1516,14 @@ def minkowski_distance(list_a, list_b, p = 2):
     :param list_b: Second list
     :type list_b: List[float]
 
-    :param p: the value of exponent in Minkowski norm
-    :type p: float
+    :param mink_power: the value of exponent in Minkowski norm
+    :type mink_power: float
 
     :return: the Minkowski distance between the two list
     :rtype: float
     """
     # faster than sum((a - b)**p for a, b in zip(list_a, list_b))**(1/p)
-    return lp_norm(npy.array(list_a)-npy.array(list_b), p=p)
+    return lp_norm(npy.array(list_a)-npy.array(list_b), mink_power=mink_power)
 
 def mean(vector):
     """
