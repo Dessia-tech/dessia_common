@@ -411,33 +411,30 @@ class Workflow(Block):
         return True
 
     def _equivalent_pipes(self, other_wf) -> bool:
-        pipes_1 = []
-        pipes_2 = []
-        for pipe1, pipe2 in zip(self.pipes, other_wf.pipes):
-            input_index1 = self.variable_index(pipe1.input_variable)
-            output_index1 = self.variable_index(pipe1.output_variable)
-            pipes_1.append((input_index1, output_index1))
+        pipes = []
+        other_pipes = []
+        for pipe, other_pipe in zip(self.pipes, other_wf.pipes):
+            input_index = self.variable_index(pipe.input_variable)
+            output_index = self.variable_index(pipe.output_variable)
+            pipes.append((input_index, output_index))
 
-            input_index2 = other_wf.variable_index(pipe2.input_variable)
-            output_index2 = other_wf.variable_index(pipe2.output_variable)
-            pipes_2.append((input_index2, output_index2))
-        return set(pipes_1) == set(pipes_2)
+            other_input_index = other_wf.variable_index(other_pipe.input_variable)
+            other_output_index = other_wf.variable_index(other_pipe.output_variable)
+            other_pipes.append((other_input_index, other_output_index))
+        return set(pipes) == set(other_pipes)
 
     def _equivalent_imposed_variables_values(self, other_wf) -> bool:
-        ivvs1 = set()
-        ivvs2 = set()
-        for imposed_key1, imposed_key2 in zip(self.imposed_variable_values.keys(),
+        ivvs = set()
+        other_ivvs = set()
+        for imposed_key, other_imposed_key in zip(self.imposed_variable_values.keys(),
                                               other_wf.imposed_variable_values.keys()):
-            variable_index_1 = self.variable_index(imposed_key1)
-            ivvs1.add((variable_index_1, self.imposed_variable_values[imposed_key1]))
+            variable_index = self.variable_index(imposed_key)
+            ivvs.add((variable_index, self.imposed_variable_values[imposed_key]))
 
-            variable_index_2 = other_wf.variable_index(imposed_key2)
-            ivvs2.add((variable_index_2, other_wf.imposed_variable_values[imposed_key2]))
+            other_variable_index = other_wf.variable_index(other_imposed_key)
+            other_ivvs.add((other_variable_index, other_wf.imposed_variable_values[other_imposed_key]))
 
-        for ivv1, ivv2 in zip(ivvs1, ivvs2):
-            if ivv1 != ivv2:
-                return False
-        return True
+        return ivvs == other_ivvs
 
     def __deepcopy__(self, memo=None):
         """
@@ -737,6 +734,8 @@ class Workflow(Block):
         self.imposed_variable_values = {}
         copied_workflow = self.copy()
         self.imposed_variable_values = cached_ivv
+        # We need to clear the imposed_variables_values and then copy the workflow in order
+        # to have the good input indices in the loop bellow
 
         for input_index, input_ in enumerate(copied_workflow.inputs):
             variable_index = copied_workflow.variables.index(input_)
