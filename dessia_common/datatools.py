@@ -994,6 +994,7 @@ class CategorizedList(HeterogeneousList):
 
         Examples
         --------
+        >>> from dessia_common.datatools import HeterogeneousList, CategorizedList
         >>> from dessia_common.models import all_cars_wi_feat
         >>> hlist = HeterogeneousList(all_cars_wi_feat, name="cars")
         >>> clist = CategorizedList.from_agglomerative_clustering(hlist, n_clusters=10, name="ex")
@@ -1038,6 +1039,7 @@ class CategorizedList(HeterogeneousList):
 
         Examples
         --------
+        >>> from dessia_common.datatools import HeterogeneousList, CategorizedList
         >>> from dessia_common.models import all_cars_wi_feat
         >>> hlist = HeterogeneousList(all_cars_wi_feat, name="cars")
         >>> clist = CategorizedList.from_agglomerative_clustering(hlist, n_clusters=10, name="ex")
@@ -1083,6 +1085,7 @@ class CategorizedList(HeterogeneousList):
 
         Examples
         --------
+        >>> from dessia_common.datatools import HeterogeneousList, CategorizedList
         >>> from dessia_common.models import all_cars_wi_feat
         >>> hlist = HeterogeneousList(all_cars_wi_feat, name="cars")
         >>> clist = CategorizedList.from_agglomerative_clustering(hlist, n_clusters=10, name="ex")
