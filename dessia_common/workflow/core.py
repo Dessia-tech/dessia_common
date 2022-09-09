@@ -1798,7 +1798,7 @@ class WorkflowRun(WorkflowState):
         #                                                                   path=f'{path}/variable_values/{key}')
         #     dict_["variable_values"] = variable_values
         # else:
-        dict_["variable_values"] = {str(k): serialize(v) for k, v in self.variable_values.items()}
+        dict_["variable_values"] = {serialize(k): serialize(v) for k, v in self.variable_values.items()}
         self._computed_dict = dict_
         return dict_
 
