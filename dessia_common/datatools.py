@@ -45,7 +45,7 @@ class HeterogeneousList(DessiaObject):
 
     **Built-in methods**:
         * __init__
-            >>> from dessia_common.core import HeterogeneousList
+            >>> from dessia_common.datatools import HeterogeneousList
             >>> from dessia_common.models import all_cars_wi_feat
             >>> hlist = HeterogeneousList(all_cars_wi_feat, name="init")
 
@@ -141,7 +141,7 @@ class HeterogeneousList(DessiaObject):
 
         Examples
         --------
-        >>> from dessia_common.core import HeterogeneousList
+        >>> from dessia_common.datatools import HeterogeneousList
         >>> from dessia_common.models import all_cars_wi_feat
         >>> HeterogeneousList(all_cars_wi_feat).extend(HeterogeneousList(all_cars_wi_feat))
         HeterogeneousList(all_cars_wi_feat + all_cars_wi_feat)
@@ -179,6 +179,7 @@ class HeterogeneousList(DessiaObject):
         size_col_label = self._set_size_col_label()
         attr_name_len = []
         attr_space = []
+
         prefix = self._write_str_prefix()
 
         if self.__len__() == 0:
@@ -191,13 +192,19 @@ class HeterogeneousList(DessiaObject):
         string += self._print_objects_slice(slice(0, 5), attr_space, attr_name_len,
                                             self._set_label_space(size_col_label))
 
-        undispl_len = len(self) - 10
-        string += (f"\n+ {undispl_len} undisplayed object" + "s"*(min([undispl_len, 2])-1) + "..."
-                   if len(self) > 10 else '')
+        if len(self) > 10:
+            undispl_len = len(self) - 10
+            string += (f"\n+ {undispl_len} undisplayed object" + "s"*(min([undispl_len, 2])-1) + "...")
 
-        string += self._print_objects_slice(slice(-5, len(self)), attr_space, attr_name_len,
-                                            self._set_label_space(size_col_label))
+        if len(self) > 5:
+            string += self._print_objects_slice(slice(-5, len(self)), attr_space, attr_name_len,
+                                                self._set_label_space(size_col_label))
         return prefix + "\n" + string + "\n"
+
+    def _printed_attributes(self):
+        if 'name' in self.common_attributes:
+            return self.common_attributes
+        return ['name'] + self.common_attributes
 
     def _print_objects_slice(self, key: slice, attr_space: int, attr_name_len: int, label_space: int):
         string = ""
@@ -223,9 +230,9 @@ class HeterogeneousList(DessiaObject):
         string = ""
         if size_col_label:
             string += "|" + " "*(size_col_label - 1) + "n°" + " "*(size_col_label - 1)
-        for idx, attr in enumerate(self.common_attributes):
+        for idx, attr in enumerate(self._printed_attributes()):
             end_bar = ""
-            if idx == len(self.common_attributes) - 1:
+            if idx == len(self.common_attributes):
                 end_bar = "|"
             # attribute
             attr_space.append(len(attr) + 6)
@@ -236,9 +243,9 @@ class HeterogeneousList(DessiaObject):
 
     def _print_objects(self, dessia_object: DessiaObject, attr_space: int, attr_name_len: int):
         string = ""
-        for idx, attr in enumerate(self.common_attributes):
+        for idx, attr in enumerate(self._printed_attributes()):
             end_bar = ""
-            if idx == len(self.common_attributes) - 1:
+            if idx == len(self.common_attributes):
                 end_bar = "|"
 
             # attribute
@@ -266,7 +273,7 @@ class HeterogeneousList(DessiaObject):
 
         Examples
         --------
-        >>> from dessia_common.core import HeterogeneousList
+        >>> from dessia_common.datatools import HeterogeneousList
         >>> from dessia_common.models import all_cars_wi_feat
         >>> HeterogeneousList(all_cars_wi_feat[:10]).get_attribute_values("weight")
         [3504.0, 3693.0, 3436.0, 3433.0, 3449.0, 4341.0, 4354.0, 4312.0, 4425.0, 3850.0]
@@ -285,7 +292,7 @@ class HeterogeneousList(DessiaObject):
 
         Examples
         --------
-        >>> from dessia_common.core import HeterogeneousList
+        >>> from dessia_common.datatools import HeterogeneousList
         >>> from dessia_common.models import all_cars_wi_feat
         >>> HeterogeneousList(all_cars_wi_feat[:10]).get_column_values(2)
         [130.0, 165.0, 150.0, 150.0, 140.0, 198.0, 220.0, 215.0, 225.0, 190.0]
@@ -311,7 +318,7 @@ class HeterogeneousList(DessiaObject):
 
         Examples
         --------
-        >>> from dessia_common.core import HeterogeneousList
+        >>> from dessia_common.datatools import HeterogeneousList
         >>> from dessia_common.models import all_cars_wi_feat
         >>> example_list = HeterogeneousList(all_cars_wi_feat[:3], "sort_example")
         >>> example_list.sort("mpg", False)
@@ -353,10 +360,15 @@ class HeterogeneousList(DessiaObject):
         return covariance_matrix(list(zip(*self.matrix)))
 
     def distance_matrix(self, method: str = 'minkowski', **kwargs):
-        if 'p' not in kwargs and method=='minkowski':
-            kwargs['p'] = 2
+        kwargs = self._set_distance_kwargs(method, kwargs)
         distances = squareform(pdist(self.matrix, method, **kwargs)).astype(float)
         return distances.tolist()
+
+    @staticmethod
+    def _set_distance_kwargs(method: str, kwargs: Dict[str, Any]):
+        if 'p' not in kwargs and method=='minkowski':
+            kwargs['p'] = 2
+        return kwargs
 
     @property
     def common_attributes(self):
@@ -417,7 +429,8 @@ class HeterogeneousList(DessiaObject):
 
         Examples
         --------
-        >>> from dessia_common.core import HeterogeneousList, DessiaFilter
+        >>> from dessia_common.cor import DessiaFilter
+        >>> from dessia_common.datatools import HeterogeneousList, DessiaFilter
         >>> from dessia_common.models import all_cars_wi_feat
         >>> filters = [DessiaFilter('weight', '<=', 1650.), DessiaFilter('mpg', '>=', 45.)]
         >>> filters_list = FiltersList(filters, "xor")
@@ -824,7 +837,7 @@ class CategorizedList(HeterogeneousList):
 
         Examples
         --------
-        >>> from dessia_common.core import HeterogeneousList
+        >>> from dessia_common.datatools import HeterogeneousList
         >>> from dessia_common.models import all_cars_wi_feat
         >>> hlist = HeterogeneousList(all_cars_wi_feat, name="cars")
         >>> clist = CategorizedList.from_agglomerative_clustering(hlist, n_clusters=10, name="ex")
@@ -869,20 +882,68 @@ class CategorizedList(HeterogeneousList):
             clustered_sublists = self.clustered_sublists()
         return clustered_sublists
 
-    @staticmethod
-    def _set_distance_kwargs(method: str, kwargs: Dict[str, Any]):
-        if 'p' not in kwargs and method=='minkowski':
-            kwargs['p'] = 2
-        return kwargs
-
     def mean_clusters(self):
+        """
+        Compute mathematical means of all clusters. Means are computed from the property `matrix`. Each element of \
+        the output is the average values in each dimension in one cluster.
+
+        :return: A list of `n_cluster` lists of `n_samples` where each element is the average value in a dimension in \
+        one cluster.
+        :rtype: List[List[float]]
+
+        Examples
+        --------
+        >>> from dessia_common.models import all_cars_wi_feat
+        >>> hlist = HeterogeneousList(all_cars_wi_feat, name="cars")
+        >>> clist = CategorizedList.from_agglomerative_clustering(hlist, n_clusters=10, name="ex")
+        >>> means = clist.mean_clusters()
+        >>> print(list(map(int, means[0])))
+        [28, 0, 79, 2250, 16]
+        """
         clustered_sublists = self._check_transform_sublists()
         means = []
         for hlist in clustered_sublists:
             means.append(hlist.mean())
         return means
 
-    def cluster_mean_centroids(self, method: str = 'minkowski', **kwargs):
+    def cluster_distances(self, method: str = 'minkowski', **kwargs):
+        """
+        Computes all distances between elements of each cluster and their mean. Gives an indicator on how clusters are \
+        built.
+
+        :param method:
+            --------
+            Method to compute distances.
+            Can be one of `[‘braycurtis’, ‘canberra’, ‘chebyshev’, ‘cityblock’, ‘correlation’, ‘cosine’, ‘dice’, \
+            ‘euclidean’, ‘hamming’, ‘jaccard’, ‘jensenshannon’, ‘kulczynski1’, ‘mahalanobis’, ‘matching’, ‘minkowski’, \
+            ‘rogerstanimoto’, ‘russellrao’, ‘seuclidean’, ‘sokalmichener’, ‘sokalsneath’, ‘sqeuclidean’, ‘yule’]`.
+        :type method: `str`, `optional`, defaults to `'minkowski'`
+
+        :param **kwargs:
+            --------
+            |  Extra arguments to metric: refer to each metric documentation for a list of all possible arguments.
+            |  Some possible arguments:
+            |     - p : scalar The p-norm to apply for Minkowski, weighted and unweighted. Default: `2`.
+            |     - w : array_like The weight vector for metrics that support weights (e.g., Minkowski).
+            |     - V : array_like The variance vector for standardized Euclidean. Default: \
+                `var(vstack([XA, XB]), axis=0, ddof=1)`
+            |     - VI : array_like The inverse of the covariance matrix for Mahalanobis. Default: \
+                `inv(cov(vstack([XA, XB].T))).T`
+            |     - out : ndarray The output array If not None, the distance matrix Y is stored in this array.
+        :type **kwargs: `dict`, `optional`
+
+        :return: `n_clusters` lists of distances of all elements of a cluster from its mean.
+        :rtype: List[List[float]]
+
+         Examples
+         --------
+         >>> from dessia_common.models import all_cars_wi_feat
+         >>> hlist = HeterogeneousList(all_cars_wi_feat, name="cars")
+         >>> clist = CategorizedList.from_agglomerative_clustering(hlist, n_clusters=10, name="ex")
+         >>> cluster_distances = clist.cluster_distances()
+         >>> print(list(map(int, cluster_distances[6])))
+         [180, 62, 162, 47, 347, 161, 160, 67, 164, 206, 114, 138, 97, 159, 124, 139]
+        """
         clustered_sublists = self._check_transform_sublists()
         kwargs = self._set_distance_kwargs(method, kwargs)
         means = clustered_sublists.mean_clusters()
@@ -892,16 +953,54 @@ class CategorizedList(HeterogeneousList):
         return cluster_distances
 
     def cluster_real_centroids(self, method: str = 'minkowski', **kwargs):
+        """
+        In each cluster, finds the nearest existing element from the cluster's mean.
+
+        :param method:
+            --------
+            Method to compute distances.
+            Can be one of `[‘braycurtis’, ‘canberra’, ‘chebyshev’, ‘cityblock’, ‘correlation’, ‘cosine’, ‘dice’, \
+            ‘euclidean’, ‘hamming’, ‘jaccard’, ‘jensenshannon’, ‘kulczynski1’, ‘mahalanobis’, ‘matching’, ‘minkowski’, \
+            ‘rogerstanimoto’, ‘russellrao’, ‘seuclidean’, ‘sokalmichener’, ‘sokalsneath’, ‘sqeuclidean’, ‘yule’]`.
+        :type method: `str`, `optional`, defaults to `'minkowski'`
+
+        :param **kwargs:
+            --------
+            |  Extra arguments to metric: refer to each metric documentation for a list of all possible arguments.
+            |  Some possible arguments:
+            |     - p : scalar The p-norm to apply for Minkowski, weighted and unweighted. Default: `2`.
+            |     - w : array_like The weight vector for metrics that support weights (e.g., Minkowski).
+            |     - V : array_like The variance vector for standardized Euclidean. Default: \
+                `var(vstack([XA, XB]), axis=0, ddof=1)`
+            |     - VI : array_like The inverse of the covariance matrix for Mahalanobis. Default: \
+                `inv(cov(vstack([XA, XB].T))).T`
+            |     - out : ndarray The output array If not None, the distance matrix Y is stored in this array.
+        :type **kwargs: `dict`, `optional`
+
+        :return: `n_clusters` lists of distances of all elements of a cluster from its mean.
+        :rtype: List[List[float]]
+
+         Examples
+         --------
+         >>> from dessia_common.models import all_cars_wi_feat
+         >>> hlist = HeterogeneousList(all_cars_wi_feat, name="cars")
+         >>> clist = CategorizedList.from_agglomerative_clustering(hlist, n_clusters=10, name="ex")
+         >>> cluster_real_centroids = clist.cluster_real_centroids()
+         >>> print(HeterogeneousList([cluster_real_centroids[0]]))
+         HeterogeneousList 0x7f752654a0a0: 1 samples, 5 features
+         |   Name   |   Mpg   |   Displacement   |   Horsepower   |   Weight   |   Acceleration   |
+         ------------------------------------------------------------------------------------------
+         |Dodge C...|    26.0 |            0.098 |           79.0 |     2255.0 |             17.7 |
+        """
         clustered_sublists = self._check_transform_sublists()
         kwargs = self._set_distance_kwargs(method, kwargs)
         labels = clustered_sublists.labels
-        cluster_distances = clustered_sublists.cluster_mean_centroids(method=method, **kwargs)
+        cluster_distances = clustered_sublists.cluster_distances(method=method, **kwargs)
         real_centroids = [[] for _ in labels]
         for label in labels:
             min_idx = cluster_distances[label].index(min(cluster_distances[label]))
             real_centroids[label] = clustered_sublists.dessia_objects[label][min_idx]
         return real_centroids
-
 
     def _merge_sublists(self):
         merged_hlists = self.dessia_objects[0][:]
