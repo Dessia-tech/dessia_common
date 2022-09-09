@@ -334,7 +334,6 @@ class Workflow(Block):
         self._utd_graph = False
 
         input_variables = []
-
         for variable in self.variables:
             if (variable not in self.imposed_variable_values) and \
                     (len(nx.ancestors(self.graph, variable)) == 0):
@@ -358,22 +357,6 @@ class Workflow(Block):
         Block.__init__(self, input_variables, [output], name=name)
         self.output = self.outputs[0]
 
-        self.branch_by_display_selector = {}
-        for display_block in self.display_blocks:
-            block_index = self.blocks.index(display_block)
-            branch = self.secondary_branch_blocks(display_block)
-            settings = display_block._display_settings(block_index)
-            self.branch_by_display_selector[settings.selector] = branch
-
-        self.branch_by_export_format = {}
-        for export_block in self.export_blocks:
-            block_index = self.blocks.index(export_block)
-            branch = self.secondary_branch_blocks(export_block)
-            format_ = export_block._export_format(block_index)
-            # if format_["export_name"] in self.branch_by_export_format:
-            #     raise WorkflowError(f"Several exports have the same export_name : {format_['export_name']}")
-            self.branch_by_export_format[format_["export_name"]] = branch
-
     def _data_hash(self):
         output_hash = hash(self.variable_indices(self.outputs[0]))
         base_hash = len(self.blocks) + 11 * len(self.pipes) + 23 * len(self.imposed_variable_values) + output_hash
@@ -394,6 +377,7 @@ class Workflow(Block):
 
         if not self._equivalent_imposed_variables_values(other_object):
             return False
+        return True
 
     def _equivalent_pipes(self, other_wf) -> bool:
         pipes = []
@@ -509,6 +493,28 @@ class Workflow(Block):
     @property
     def blocks_export_formats(self):
         return [b._export_format(i) for i, b in enumerate(self.export_blocks)]
+
+    @property
+    def branch_by_display_selector(self):
+        selector_branches = {}
+        for display_block in self.display_blocks:
+            block_index = self.blocks.index(display_block)
+            branch = self.secondary_branch_blocks(display_block)
+            settings = display_block._display_settings(block_index)
+            selector_branches[settings.selector] = branch
+        return selector_branches
+
+    @property
+    def branch_by_export_format(self):
+        format_branches = {}
+        for export_block in self.export_blocks:
+            block_index = self.blocks.index(export_block)
+            branch = self.secondary_branch_blocks(export_block)
+            format_ = export_block._export_format(block_index)
+            # if format_["export_name"] in self.branch_by_export_format:
+            #     raise WorkflowError(f"Several exports have the same export_name : {format_['export_name']}")
+            format_branches[format_["export_name"]] = branch
+        return format_branches
 
     def _export_formats(self):
         """
