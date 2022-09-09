@@ -1810,26 +1810,6 @@ class WorkflowState(DessiaObject):
                                end_time=self.end_time, log=self.log, name=name)
         raise ValueError('Workflow not completed')
 
-    def method_dict(self, method_name=None, method_jsonschema=None):
-        #     def get_input_default_value(self, input_index : int) -> Any:
-        # input_ = self.inputs[input_index]
-        # if input_ in self.imposed_variable_values:
-        #     return self.imposed_variable_values[input_]
-        # if isinstance(input_, TypedVariableWithDefaultValue) :
-        #     return input_.default_value
-        #
-        # variable_schema = self._method_jsonschemas['run']['properties'][input_index.__str__()]
-        # return chose_default(variable_schema)
-
-        # dict = {}
-        # for input_index in range(len(self.workflow.inputs)):
-        #     if input_index in self.input_values:
-        #         dict[input_index] = self.input_values[input_index]
-        #     else:
-        #         dict[input_index] = self.workflow.get_input_default_value(input_index)
-        # return dict
-        raise NotImplementedError("Method commented for debug purpose")
-
     def _export_formats(self):
         """
         Reads block to compute available export formats
