@@ -303,44 +303,25 @@ class Workflow(Block):
         self.pipes = pipes
 
         if imposed_variable_values is None:
-            self.imposed_variable_values = {}
-        else:
-            self.imposed_variable_values = imposed_variable_values
+            imposed_variable_values = {}
+        self.imposed_variable_values = imposed_variable_values
 
         self.coordinates = {}
 
         self.nonblock_variables = []
         self.variables = []
         for block in self.blocks:
-            if isinstance(block, Workflow):
-                raise ValueError("Using workflow as blocks is forbidden, use WorkflowBlock wrapper instead")
-            self.variables.extend(block.inputs)
-            self.variables.extend(block.outputs)
-            try:
-                self.coordinates[block] = (0, 0)
-            except ValueError as err:
-                raise ValueError(f"Cannot serialize block {block} ({block.name})") from err
+            self.handle_block(block)
 
         for pipe in self.pipes:
-            upstream_var = pipe.input_variable
-            downstream_var = pipe.output_variable
-            if upstream_var not in self.variables:
-                self.variables.append(upstream_var)
-                self.nonblock_variables.append(upstream_var)
-            if downstream_var not in self.variables:
-                self.variables.append(downstream_var)
-                self.nonblock_variables.append(downstream_var)
+            self.handle_pipe(pipe)
 
         self._utd_graph = False
 
-        input_variables = []
-        for variable in self.variables:
-            if (variable not in self.imposed_variable_values) and \
-                    (len(nx.ancestors(self.graph, variable)) == 0):
-                # !!! Why not just : if nx.ancestors(self.graph, variable) ?
-                # if not hasattr(variable, 'type_'):
-                #     raise WorkflowError('Workflow as an untyped input variable: {}'.format(variable.name))
-                input_variables.append(variable)
+        inputs = [v for v in self.variables if v not in self.imposed_variable_values
+                  and len(nx.ancestors(self.graph, v)) == 0]
+        # if not hasattr(variable, 'type_'):
+        #     raise WorkflowError('Workflow as an untyped input variable: {}'.format(variable.name))
 
         self.description = description
         self.documentation = documentation
@@ -354,8 +335,28 @@ class Workflow(Block):
             if not found_output:
                 raise WorkflowError("workflow's output is not in any block's outputs")
 
-        Block.__init__(self, input_variables, [output], name=name)
+        Block.__init__(self, inputs=inputs, outputs=[output], name=name)
         self.output = self.outputs[0]
+
+    def handle_pipe(self, pipe):
+        upstream_var = pipe.input_variable
+        downstream_var = pipe.output_variable
+        if upstream_var not in self.variables:
+            self.variables.append(upstream_var)
+            self.nonblock_variables.append(upstream_var)
+        if downstream_var not in self.variables:
+            self.variables.append(downstream_var)
+            self.nonblock_variables.append(downstream_var)
+
+    def handle_block(self, block):
+        if isinstance(block, Workflow):
+            raise ValueError("Using workflow as blocks is forbidden, use WorkflowBlock wrapper instead")
+        self.variables.extend(block.inputs)
+        self.variables.extend(block.outputs)
+        try:
+            self.coordinates[block] = (0, 0)
+        except ValueError as err:
+            raise ValueError(f"Cannot serialize block {block} ({block.name})") from err
 
     def _data_hash(self):
         output_hash = hash(self.variable_indices(self.outputs[0]))
@@ -396,7 +397,7 @@ class Workflow(Block):
         ivvs = set()
         other_ivvs = set()
         for imposed_key, other_imposed_key in zip(self.imposed_variable_values.keys(),
-                                              other_wf.imposed_variable_values.keys()):
+                                                  other_wf.imposed_variable_values.keys()):
             variable_index = self.variable_index(imposed_key)
             ivvs.add((variable_index, self.imposed_variable_values[imposed_key]))
 
