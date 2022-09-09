@@ -1382,7 +1382,7 @@ class WorkflowState(DessiaObject):
         dict_['evaluated_pipes_indices'] = [i for i, p in enumerate(self._wf_pipes)
                                             if p in self.activated_items and self.activated_items[p]]
 
-        dict_['evaluated_variables_indices'] = [self._wf_indices for v in self._wf_variables
+        dict_['evaluated_variables_indices'] = [self._wf_indices(v) for v in self._wf_variables
                                                 if v in self.activated_items and self.activated_items[v]]
 
         # Uncomment when refs are handled as dict keys
@@ -1798,7 +1798,11 @@ class WorkflowRun(WorkflowState):
         #                                                                   path=f'{path}/variable_values/{key}')
         #     dict_["variable_values"] = variable_values
         # else:
-        dict_["variable_values"] = {serialize(k): serialize(v) for k, v in self.variable_values.items()}
+        try:
+            dict_["variable_values"] = {str(serialize(k)): serialize(v) for k, v in self.variable_values.items()}
+        except:
+            print(self.variable_values.items())
+            raise
         self._computed_dict = dict_
         return dict_
 
