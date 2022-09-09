@@ -339,6 +339,9 @@ class Workflow(Block):
         self.output = self.outputs[0]
 
     def handle_pipe(self, pipe):
+        """
+        Perform some initialization action on a pipe and its variables
+        """
         upstream_var = pipe.input_variable
         downstream_var = pipe.output_variable
         if upstream_var not in self.variables:
@@ -349,6 +352,9 @@ class Workflow(Block):
             self.nonblock_variables.append(downstream_var)
 
     def handle_block(self, block):
+        """
+        Perform some initialization action on a block and its variables
+        """
         if isinstance(block, Workflow):
             raise ValueError("Using workflow as blocks is forbidden, use WorkflowBlock wrapper instead")
         self.variables.extend(block.inputs)
@@ -434,7 +440,7 @@ class Workflow(Block):
                                    imposed_variable_values=imposed_variable_values, name=self.name)
         return copied_workflow
 
-    def copy_pipe(self, copied_workflow: 'Workflow', pipe : Pipe) -> Pipe:
+    def copy_pipe(self, copied_workflow: 'Workflow', pipe: Pipe) -> Pipe:
         upstream_index = self.variable_indices(pipe.input_variable)
         if isinstance(upstream_index, int):
             raise dessia_common.errors.CopyError("copy_pipe method cannot handle nonblock-variables. "
@@ -473,15 +479,21 @@ class Workflow(Block):
 
     @property
     def display_blocks(self):
+        """
+        Returns list of blocks that can display something (3D, PlotData, Markdown,...)
+        """
         return [b for b in self.blocks if hasattr(b, "_display_settings")]
 
     @property
     def blocks_display_settings(self) -> List[List[DisplaySetting]]:
+        """
+        Computes all display blocks display_settings
+        """
         return [b._display_settings(i) for i, b in enumerate(self.display_blocks)]
 
     def display_settings(self) -> List[DisplaySetting]:
         """
-        Computes the displays of the objects
+        Computes the displays settings of the workflow
         """
         display_settings = [DisplaySetting('documentation', 'markdown', 'to_markdown', None),
                             DisplaySetting('workflow', 'workflow', 'to_dict', None)]
@@ -489,14 +501,23 @@ class Workflow(Block):
 
     @property
     def export_blocks(self):
+        """
+        Returns list of blocks that can export something (3D, PlotData, Markdown,...)
+        """
         return [b for b in self.blocks if hasattr(b, "_export_format")]
 
     @property
     def blocks_export_formats(self):
+        """
+        Computes all export blocks export_formats
+        """
         return [b._export_format(i) for i, b in enumerate(self.export_blocks)]
 
     @property
     def branch_by_display_selector(self):
+        """
+        Return the corresponding branch to each display selector
+        """
         selector_branches = {}
         for display_block in self.display_blocks:
             block_index = self.blocks.index(display_block)
@@ -507,6 +528,9 @@ class Workflow(Block):
 
     @property
     def branch_by_export_format(self):
+        """
+        Return the corresponding branch to each export format
+        """
         format_branches = {}
         for export_block in self.export_blocks:
             block_index = self.blocks.index(export_block)
@@ -881,9 +905,15 @@ class Workflow(Block):
         return None
 
     def variable_output_pipes(self, variable: Variable) -> List[Optional[Pipe]]:
+        """
+        Computes all pipes going out a given variable
+        """
         return [p for p in self.pipes if p.input_variable == variable]
 
     def pipes_between_blocks(self, upstream_block: Block, downstream_block: Block):
+        """
+        Computes all the pipes linking two blocks
+        """
         pipes = []
         for outgoing_pipe in self.block_outgoing_pipes(upstream_block):
             if outgoing_pipe is not None and outgoing_pipe in self.block_incoming_pipes(downstream_block):
@@ -1804,6 +1834,9 @@ class WorkflowState(DessiaObject):
         return evaluated_blocks
 
     def evaluate_branch(self, blocks: List[Block]):
+        """
+        Evaluate all blocks of a branch, automatically finding the first executable ones
+        """
         self.activate_inputs()
 
         if not any((b in self._activable_blocks() for b in blocks)):
@@ -1820,11 +1853,17 @@ class WorkflowState(DessiaObject):
         return evaluated_blocks
 
     def _activate_pipe(self, pipe: Pipe, value):
+        """
+        Set the pipe value and activate its downstream variable
+        """
         self.values[pipe] = value
         self.activated_items[pipe] = True
         self._activate_variable(variable=pipe.output_variable, value=value)
 
     def _activate_block(self, block: Block, output_values):
+        """
+        Activate all block outputs
+        """
         # Unpacking result of evaluation
         output_items = zip(block.outputs, output_values)
         for output, output_value in output_items:
@@ -1832,6 +1871,9 @@ class WorkflowState(DessiaObject):
         self.activated_items[block] = True
 
     def _activate_variable(self, variable: Variable, value):
+        """
+        Activate the given variable with its value and propagate activation to its outgoing pipe
+        """
         outgoing_pipes = self.workflow.variable_output_pipes(variable)
         if self.workflow.output == variable:
             self.output_value = value
@@ -1840,6 +1882,9 @@ class WorkflowState(DessiaObject):
         self.activated_items[variable] = True
 
     def _activate_input(self, input_: TypedVariable, value):  # Inputs must always be Typed
+        """
+        Typecheck, activate the variable and propagate the value to its pipe
+        """
         # Type checking
         value_type_check(value, input_.type_)
         input_index = self.workflow.input_index(input_)
