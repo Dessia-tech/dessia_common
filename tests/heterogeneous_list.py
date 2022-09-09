@@ -108,7 +108,9 @@ except Exception as e:
 all_cars_with_features.sort('weight', ascend=False)
 assert(all_cars_with_features[0].weight == max(all_cars_with_features.get_attribute_values('weight')))
 
-all_cars_without_features.sort(2)
-assert(all_cars_without_features.common_attributes[2] == "displacement")
-assert(all_cars_without_features[0].displacement == min(all_cars_without_features.get_column_values(2)))
+idx_dpl = all_cars_without_features.common_attributes.index('displacement')
+all_cars_without_features.sort(idx_dpl)
+assert(all(attr in ['displacement', 'cylinders', 'mpg', 'horsepower', 'weight', 'acceleration', 'model']
+           for attr in all_cars_without_features.common_attributes))
+assert(all_cars_without_features[0].displacement == min(all_cars_without_features.get_column_values(idx_dpl)))
 

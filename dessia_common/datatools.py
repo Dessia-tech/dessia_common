@@ -352,6 +352,7 @@ class HeterogeneousList(DessiaObject):
             all_attributes = sum((instance.vector_features() for instance in one_instance), [])
             set_attributes = set.intersection(*(set(instance.vector_features()) for instance in one_instance))
 
+            # Keep order
             self._common_attributes = []
             for attr in all_attributes:
                 if attr in set_attributes:
