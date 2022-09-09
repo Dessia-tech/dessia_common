@@ -64,6 +64,10 @@ def serialize(value):
         serialized_value = value
     elif isinstance(value, type) or dcty.is_typing(value):
         return dcty.serialize_typing(value)
+    elif hasattr(value, 'to_dict'):
+        to_dict_method = getattr(value, 'to_dict', None)
+        if callable(to_dict_method):
+            to_dict_method()
     else:
         if not dcty.is_jsonable(value):
             msg = f'Element of value {value} is not json serializable'
