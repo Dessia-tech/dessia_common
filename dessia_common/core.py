@@ -611,7 +611,10 @@ class DessiaObject:
                                                             ' after serialization/deserialization')
         copied_object = self.copy()
         if not copied_object._data_eq(self):
-            print('data diff: ', self._data_diff(copied_object))
+            try:
+                print('data diff: ', self._data_diff(copied_object))
+            except:
+                pass
             raise dessia_common.errors.CopyError('Object is not equal to itself after copy')
 
         valid, hint = is_bson_valid(stringify_dict_keys(dict_))
