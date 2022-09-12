@@ -16,7 +16,7 @@ try:
 except ImportError:
     pass
 from dessia_common.exports import XLSXWriter
-from dessia_common.core import DessiaObject, DessiaFilter, FiltersList, get_attribute_names, templates
+from dessia_common.core import DessiaObject, DessiaFilter, FiltersList, templates
 
 
 class HeterogeneousList(DessiaObject):
@@ -92,6 +92,10 @@ class HeterogeneousList(DessiaObject):
         DessiaObject.__init__(self, name=name)
 
     def __getitem__(self, key: Any):
+        """
+        Is added in a further release (feat/clists_metrics)
+
+        """
         if len(self) == 0:
             return []
         if isinstance(key, int):
@@ -113,6 +117,10 @@ class HeterogeneousList(DessiaObject):
                                   f"indexing HeterogeneousLists")
 
     def __add__(self, other: 'HeterogeneousList'):
+        """
+        Is added in a further release (feat/clists_metrics)
+
+        """
         if self.__class__ != HeterogeneousList or other.__class__ != HeterogeneousList:
             raise TypeError("Addition only defined for HeterogeneousList. A specific __add__ method is required for "
                             f"{self.__class__}")
@@ -248,6 +256,10 @@ class HeterogeneousList(DessiaObject):
         return string
 
     def __len__(self):
+        """
+        Is added in a further release (feat/clists_metrics)
+
+        """
         return len(self.dessia_objects)
 
     def get_attribute_values(self, attribute: str):
@@ -349,24 +361,15 @@ class HeterogeneousList(DessiaObject):
                     all_class.append(dessia_object.__class__)
                     one_instance.append(dessia_object)
 
-            if len(all_class) == 1 and isinstance(self.dessia_objects[0], HeterogeneousList):
-                return self.vector_features()
+            all_attributes = sum((instance.vector_features() for instance in one_instance), [])
+            set_attributes = set.intersection(*(set(instance.vector_features()) for instance in one_instance))
 
-            common_attributes = set(all_class[0].vector_features())
-            for klass in all_class[1:]:
-                common_attributes = common_attributes.intersection(set(klass.vector_features()))
-
-            # To consider property object when declared in _vector_features
-            common_properties = []
-            for klass, instance in zip(all_class, one_instance):
-                common_properties += [key for key, item in vars(klass).items()
-                                      if isinstance(item, property)
-                                      and isinstance(getattr(instance, key), (int, float, complex, bool))]
-
-            # attributes' order kept this way, not with set or sorted(set)
-            self._common_attributes = list(attr
-                                           for attr in get_attribute_names(all_class[0]) + list(set(common_properties))
-                                           if attr in common_attributes)
+            # Keep order
+            self._common_attributes = []
+            for attr in all_attributes:
+                if attr in set_attributes:
+                    self._common_attributes.append(attr)
+                    set_attributes.remove(attr)
 
         return self._common_attributes
 
@@ -960,7 +963,8 @@ class CategorizedList(HeterogeneousList):
         :type scaling: `bool`, `optional`, default to `False`
 
         :return: a CategorizedList that knows the data and their labels
-        :rtype: CategorizedListt
+        :rtype: CategorizedList
+
         """
         skl_cluster = cluster.AgglomerativeClustering(
             n_clusters=n_clusters, affinity=affinity, distance_threshold=distance_threshold, linkage=linkage)
@@ -1012,6 +1016,7 @@ class CategorizedList(HeterogeneousList):
 
         :return: a CategorizedList that knows the data and their labels
         :rtype: CategorizedList
+
         """
         skl_cluster = cluster.KMeans(n_clusters=n_clusters, n_init=n_init, tol=tol)
         skl_cluster = cls.fit_cluster(skl_cluster, data.matrix, scaling)
@@ -1079,6 +1084,7 @@ class CategorizedList(HeterogeneousList):
 
         :return: a CategorizedList that knows the data and their labels
         :rtype: CategorizedList
+
         """
         skl_cluster = cluster.DBSCAN(eps=eps, min_samples=min_samples, p=mink_power, leaf_size=leaf_size, metric=metric)
         skl_cluster = cls.fit_cluster(skl_cluster, data.matrix, scaling)
