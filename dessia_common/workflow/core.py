@@ -16,8 +16,10 @@ from copy import deepcopy
 import warnings
 import traceback as tb
 import networkx as nx
+
+import dessia_common.errors
 from dessia_common.templates import workflow_template
-from dessia_common import DessiaObject, is_sequence, JSONSCHEMA_HEADER, jsonschema_from_annotation,\
+from dessia_common import DessiaObject, is_sequence, JSONSCHEMA_HEADER, jsonschema_from_annotation, \
     deserialize_argument, set_default_value, prettyname, serialize_dict, DisplaySetting
 
 from dessia_common.utils.serialization import deserialize, serialize_with_pointers, serialize, update_pointers_data
@@ -301,9 +303,8 @@ class Workflow(Block):
         self.pipes = pipes
 
         if imposed_variable_values is None:
-            self.imposed_variable_values = {}
-        else:
-            self.imposed_variable_values = imposed_variable_values
+            imposed_variable_values = {}
+        self.imposed_variable_values = imposed_variable_values
 
         self.coordinates = {}
 
@@ -311,36 +312,17 @@ class Workflow(Block):
         self.nonblock_variables = [name_variable]
         self.variables = []
         for block in self.blocks:
-            if isinstance(block, Workflow):
-                raise ValueError("Using workflow as blocks is forbidden, use WorkflowBlock wrapper instead")
-            self.variables.extend(block.inputs)
-            self.variables.extend(block.outputs)
-            try:
-                self.coordinates[block] = (0, 0)
-            except ValueError as err:
-                raise ValueError(f"Cannot serialize block {block} ({block.name})") from err
+            self.handle_block(block)
 
         for pipe in self.pipes:
-            upstream_var = pipe.input_variable
-            downstream_var = pipe.output_variable
-            if upstream_var not in self.variables:
-                self.variables.append(upstream_var)
-                self.nonblock_variables.append(upstream_var)
-            if downstream_var not in self.variables:
-                self.variables.append(downstream_var)
-                self.nonblock_variables.append(downstream_var)
+            self.handle_pipe(pipe)
 
         self._utd_graph = False
 
-        input_variables = []
-
-        for variable in self.variables:
-            if (variable not in self.imposed_variable_values) and \
-                    (len(nx.ancestors(self.graph, variable)) == 0):
-                # !!! Why not just : if nx.ancestors(self.graph, variable) ?
-                # if not hasattr(variable, 'type_'):
-                #     raise WorkflowError('Workflow as an untyped input variable: {}'.format(variable.name))
-                input_variables.append(variable)
+        inputs = [v for v in self.variables if v not in self.imposed_variable_values
+                  and len(nx.ancestors(self.graph, v)) == 0]
+        # if not hasattr(variable, 'type_'):
+        #     raise WorkflowError('Workflow as an untyped input variable: {}'.format(variable.name))
 
         self.description = description
         self.documentation = documentation
@@ -349,50 +331,90 @@ class Workflow(Block):
         self.output = output
         if output is not None:
             outputs.append(output)
+            found_output = False
+            i = 0
+            while not found_output and i < len(self.blocks):
+                found_output = output in self.blocks[i].outputs
+                i += 1
+            if not found_output:
+                raise WorkflowError("workflow's output is not in any block's outputs")
 
-        Block.__init__(self, inputs=input_variables, outputs=outputs, name=name)
+        Block.__init__(self, inputs=inputs, outputs=outputs, name=name)
+        self.output = self.outputs[0]
 
-        self.branch_by_display_selector = {}
-        for display_block in self.display_blocks:
-            block_index = self.blocks.index(display_block)
-            branch = self.secondary_branch_blocks(display_block)
-            settings = display_block._display_settings(block_index)
-            self.branch_by_display_selector[settings.selector] = branch
+    def handle_pipe(self, pipe):
+        """
+        Perform some initialization action on a pipe and its variables
+        """
+        upstream_var = pipe.input_variable
+        downstream_var = pipe.output_variable
+        if upstream_var not in self.variables:
+            self.variables.append(upstream_var)
+            self.nonblock_variables.append(upstream_var)
+        if downstream_var not in self.variables:
+            self.variables.append(downstream_var)
+            self.nonblock_variables.append(downstream_var)
 
-        self.branch_by_export_format = {}
-        for export_block in self.export_blocks:
-            block_index = self.blocks.index(export_block)
-            branch = self.secondary_branch_blocks(export_block)
-            format_ = export_block._export_format(block_index)
-            # if format_["export_name"] in self.branch_by_export_format:
-            #     raise WorkflowError(f"Several exports have the same export_name : {format_['export_name']}")
-            self.branch_by_export_format[format_["export_name"]] = branch
+    def handle_block(self, block):
+        """
+        Perform some initialization action on a block and its variables
+        """
+        if isinstance(block, Workflow):
+            raise ValueError("Using workflow as blocks is forbidden, use WorkflowBlock wrapper instead")
+        self.variables.extend(block.inputs)
+        self.variables.extend(block.outputs)
+        try:
+            self.coordinates[block] = (0, 0)
+        except ValueError as err:
+            raise ValueError(f"Cannot serialize block {block} ({block.name})") from err
 
     def _data_hash(self):
         output_hash = hash(self.variable_indices(self.output))
-        base_hash = len(self.blocks) + 11 * len(self.pipes) + output_hash
+        base_hash = len(self.blocks) + 11 * len(self.pipes) + 23 * len(self.imposed_variable_values) + output_hash
         block_hash = int(sum(b.equivalent_hash() for b in self.blocks) % 10e5)
         return (base_hash + block_hash) % 1000000000
 
-    def _data_eq(self, other_object):  # TODO: implement imposed_variable_values in equality
+    def _data_eq(self, other_object) -> bool:
         if hash(self) != hash(other_object) or not Block.equivalent(self, other_object):
             return False
-        # TODO: temp , reuse graph!!!!
+
+        # TODO: temp , reuse graph to handle block order!!!!
         for block1, block2 in zip(self.blocks, other_object.blocks):
             if not block1.equivalent(block2):
                 return False
 
-        if len(self.imposed_variable_values) != len(other_object.imposed_variable_values):
+        if not self._equivalent_pipes(other_object):
             return False
-        for imposed_key1, imposed_key2 in zip(self.imposed_variable_values.keys(),
-                                              other_object.imposed_variable_values.keys()):
-            if hash(imposed_key1) != hash(imposed_key2):
-                return False
-            imposed_value1 = self.imposed_variable_values[imposed_key1]
-            imposed_value2 = other_object.imposed_variable_values[imposed_key2]
-            if hash(imposed_value1) != hash(imposed_value2):
-                return False
+
+        if not self._equivalent_imposed_variables_values(other_object):
+            return False
         return True
+
+    def _equivalent_pipes(self, other_wf) -> bool:
+        pipes = []
+        other_pipes = []
+        for pipe, other_pipe in zip(self.pipes, other_wf.pipes):
+            input_index = self.variable_index(pipe.input_variable)
+            output_index = self.variable_index(pipe.output_variable)
+            pipes.append((input_index, output_index))
+
+            other_input_index = other_wf.variable_index(other_pipe.input_variable)
+            other_output_index = other_wf.variable_index(other_pipe.output_variable)
+            other_pipes.append((other_input_index, other_output_index))
+        return set(pipes) == set(other_pipes)
+
+    def _equivalent_imposed_variables_values(self, other_wf) -> bool:
+        ivvs = set()
+        other_ivvs = set()
+        for imposed_key, other_imposed_key in zip(self.imposed_variable_values.keys(),
+                                                  other_wf.imposed_variable_values.keys()):
+            variable_index = self.variable_index(imposed_key)
+            ivvs.add((variable_index, self.imposed_variable_values[imposed_key]))
+
+            other_variable_index = other_wf.variable_index(other_imposed_key)
+            other_ivvs.add((other_variable_index, other_wf.imposed_variable_values[other_imposed_key]))
+
+        return ivvs == other_ivvs
 
     def __deepcopy__(self, memo=None):
         """
@@ -411,7 +433,7 @@ class Workflow(Block):
 
         copied_workflow = Workflow(blocks=blocks, pipes=[], output=output, name=self.name)
 
-        pipes = [self.copy_pipe(pipe=p, copied_workflow=copied_workflow) for p in self.pipes]
+        pipes = self.copy_pipes(copied_workflow)
 
         imposed_variable_values = {}
         for variable, value in self.imposed_variable_values.items():
@@ -422,34 +444,60 @@ class Workflow(Block):
                                    imposed_variable_values=imposed_variable_values, name=self.name)
         return copied_workflow
 
-    def copy_pipe(self, pipe: Pipe, copied_workflow: 'Workflow') -> Pipe:
-        """
-        Copy a pipe to another workflow
-        """
+    def copy_pipe(self, copied_workflow: 'Workflow', pipe: Pipe) -> Pipe:
         upstream_index = self.variable_indices(pipe.input_variable)
-
         if isinstance(upstream_index, int):
-            pipe_upstream = pipe.input_variable.copy()
-        elif isinstance(upstream_index, tuple):
-            pipe_upstream = copied_workflow.variable_from_index(upstream_index)
-        else:
-            raise ValueError(f"Could not find variable at index {upstream_index}")
+            raise dessia_common.errors.CopyError("copy_pipe method cannot handle nonblock-variables. "
+                                                 "Please consider using copy_pipes")
+        pipe_upstream = copied_workflow.variable_from_index(upstream_index)
 
         downstream_index = self.variable_indices(pipe.output_variable)
         pipe_downstream = copied_workflow.variable_from_index(downstream_index)
         return Pipe(pipe_upstream, pipe_downstream)
 
+    def copy_pipes(self, copied_workflow: 'Workflow') -> List[Pipe]:
+        copied_pipes = []
+
+        nbv_pipes = []
+        standard_pipes = []
+        for pipe in self.pipes:
+            upstream_index = self.variable_indices(pipe.input_variable)
+            if isinstance(upstream_index, int):
+                nbv_pipes.append(pipe)
+            else:
+                standard_pipes.append(pipe)
+
+        for pipe in standard_pipes:
+            copied_pipes.append(self.copy_pipe(copied_workflow, pipe))
+
+        for nbv in self.nonblock_variables:
+            related_pipes = [pipe for pipe in nbv_pipes if pipe.input_variable == nbv]
+            if related_pipes:
+                copied_variable = nbv.copy()
+                for pipe in related_pipes:
+                    downstream_index = self.variable_indices(pipe.output_variable)
+                    pipe_downstream = copied_workflow.variable_from_index(downstream_index)
+                    copied_pipes.append(Pipe(copied_variable, pipe_downstream))
+
+        return copied_pipes
+
     @property
     def display_blocks(self):
+        """
+        Returns list of blocks that can display something (3D, PlotData, Markdown,...)
+        """
         return [b for b in self.blocks if hasattr(b, "_display_settings")]
 
     @property
     def blocks_display_settings(self) -> List[List[DisplaySetting]]:
+        """
+        Computes all display blocks display_settings
+        """
         return [b._display_settings(i) for i, b in enumerate(self.display_blocks)]
 
     def display_settings(self) -> List[DisplaySetting]:
         """
-        Computes the displays of the objects
+        Computes the displays settings of the workflow
         """
         display_settings = [DisplaySetting('documentation', 'markdown', 'to_markdown', None),
                             DisplaySetting('workflow', 'workflow', 'to_dict', None)]
@@ -457,11 +505,45 @@ class Workflow(Block):
 
     @property
     def export_blocks(self):
+        """
+        Returns list of blocks that can export something (3D, PlotData, Markdown,...)
+        """
         return [b for b in self.blocks if hasattr(b, "_export_format")]
 
     @property
     def blocks_export_formats(self):
+        """
+        Computes all export blocks export_formats
+        """
         return [b._export_format(i) for i, b in enumerate(self.export_blocks)]
+
+    @property
+    def branch_by_display_selector(self):
+        """
+        Return the corresponding branch to each display selector
+        """
+        selector_branches = {}
+        for display_block in self.display_blocks:
+            block_index = self.blocks.index(display_block)
+            branch = self.secondary_branch_blocks(display_block)
+            settings = display_block._display_settings(block_index)
+            selector_branches[settings.selector] = branch
+        return selector_branches
+
+    @property
+    def branch_by_export_format(self):
+        """
+        Return the corresponding branch to each export format
+        """
+        format_branches = {}
+        for export_block in self.export_blocks:
+            block_index = self.blocks.index(export_block)
+            branch = self.secondary_branch_blocks(export_block)
+            format_ = export_block._export_format(block_index)
+            # if format_["export_name"] in self.branch_by_export_format:
+            #     raise WorkflowError(f"Several exports have the same export_name : {format_['export_name']}")
+            format_branches[format_["export_name"]] = branch
+        return format_branches
 
     def _export_formats(self):
         """
@@ -675,8 +757,39 @@ class Workflow(Block):
             return arguments
         raise NotImplementedError(f"Method {method} not in Workflow allowed methods")
 
-    def method_dict(self, method_name: str = None, method_jsonschema: Any = None):
+    def _run_dict(self) -> Dict:
+        dict_ = {}
+
+        copied_ivv = {}
+        for variable, value in self.imposed_variable_values.items():
+            variable_index = self.variables.index(variable)
+            copied_ivv[variable_index] = value
+
+        cached_ivv = self.imposed_variable_values
+        self.imposed_variable_values = {}
+        copied_workflow = self.copy()
+        self.imposed_variable_values = cached_ivv
+        # We need to clear the imposed_variables_values and then copy the workflow in order
+        # to have the good input indices in the loop bellow
+
+        for input_index, input_ in enumerate(copied_workflow.inputs):
+            variable_index = copied_workflow.variables.index(input_)
+            if variable_index in copied_ivv.keys():
+                dict_[input_index] = copied_ivv[variable_index]
+            elif isinstance(input_, TypedVariableWithDefaultValue):
+                dict_[input_index] = input_.default_value
+
+        return dict_
+
+    def _start_run_dict(self) -> Dict:
         return {}
+
+    def method_dict(self, method_name: str = None, method_jsonschema: Any = None) -> Dict:
+        if method_name == 'run':
+            return self._run_dict()
+        if method_name == 'start_run':
+            return self._start_run_dict()
+        raise WorkflowError(f"Calling method_dict with unknown method_name {method_name}")
 
     def variable_from_index(self, index: Union[int, Tuple[int, int, int]]):
         """
@@ -798,9 +911,15 @@ class Workflow(Block):
         return None
 
     def variable_output_pipes(self, variable: Variable) -> List[Optional[Pipe]]:
+        """
+        Computes all pipes going out a given variable
+        """
         return [p for p in self.pipes if p.input_variable == variable]
 
     def pipes_between_blocks(self, upstream_block: Block, downstream_block: Block):
+        """
+        Computes all the pipes linking two blocks
+        """
         pipes = []
         for outgoing_pipe in self.block_outgoing_pipes(upstream_block):
             if outgoing_pipe is not None and outgoing_pipe in self.block_incoming_pipes(downstream_block):
@@ -1224,7 +1343,6 @@ class Workflow(Block):
             if block_script.before_declaration is not None:
                 blockstr += f"{block_script.before_declaration}\n"
             blockstr += f'{prefix}block_{iblock} = {block_script.declaration}\n'
-
         blockstr += f"{prefix}blocks = [{', '.join([prefix + 'block_' + str(i) for i in range(len(self.blocks))])}]\n"
 
         # --- Pipes ---
@@ -1722,6 +1840,9 @@ class WorkflowState(DessiaObject):
         return evaluated_blocks
 
     def evaluate_branch(self, blocks: List[Block]):
+        """
+        Evaluate all blocks of a branch, automatically finding the first executable ones
+        """
         self.activate_inputs()
 
         if not any((b in self._activable_blocks() for b in blocks)):
@@ -1738,11 +1859,17 @@ class WorkflowState(DessiaObject):
         return evaluated_blocks
 
     def _activate_pipe(self, pipe: Pipe, value):
+        """
+        Set the pipe value and activate its downstream variable
+        """
         self.values[pipe] = value
         self.activated_items[pipe] = True
         self._activate_variable(variable=pipe.output_variable, value=value)
 
     def _activate_block(self, block: Block, output_values):
+        """
+        Activate all block outputs
+        """
         # Unpacking result of evaluation
         output_items = zip(block.outputs, output_values)
         for output, output_value in output_items:
@@ -1750,6 +1877,9 @@ class WorkflowState(DessiaObject):
         self.activated_items[block] = True
 
     def _activate_variable(self, variable: Variable, value):
+        """
+        Activate the given variable with its value and propagate activation to its outgoing pipe
+        """
         outgoing_pipes = self.workflow.variable_output_pipes(variable)
         if self.workflow.output == variable:
             self.output_value = value
@@ -1758,6 +1888,9 @@ class WorkflowState(DessiaObject):
         self.activated_items[variable] = True
 
     def _activate_input(self, input_: TypedVariable, value):  # Inputs must always be Typed
+        """
+        Typecheck, activate the variable and propagate the value to its pipe
+        """
         # Type checking
         value_type_check(value, input_.type_)
         input_index = self.workflow.input_index(input_)

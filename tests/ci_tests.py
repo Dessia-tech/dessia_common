@@ -10,6 +10,7 @@ scripts = ['displays.py',
            'heterogeneous_list_pareto.py',
            'filters.py',
            'moving_object.py',
+           'optimization.py',
            'graph.py',
            'jsonschema.py',
            # Workflows
@@ -23,6 +24,8 @@ scripts = ['displays.py',
            'workflow/workflow_clustering.py',
            'workflow/workflow_filtering.py',
            'workflow/workflow_pareto.py',
+           'workflow/workflow_method_dict.py',
+           'workflow/various_tests.py',
            # breakdown
            'breakdown.py',
            # Utils
