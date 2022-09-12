@@ -22,21 +22,25 @@ assert(bidon_hlist.common_attributes == ['attr1'])
 
 # Tests on common_attributes
 class Bidon(DessiaObject):
-    _vector_features = ['attr1', 'attr2', 'prop1']
+    _vector_features = ['attr1', 'attr2', 'prop1', 'in_to_vector']
     def __init__(self, attr1: float = 1.2):
         self.attr1 = attr1
         self.attr2 = attr1*2
     @property
     def prop1(self):
         return self.attr1 + self.attr2
+    def to_vector(self):
+        return [self.attr1, self.attr2, self.prop1, random.randint(0, 32)]
 
 bidon = Bidon()
 bidon_hlist = HeterogeneousList([bidon]*3)
-assert(bidon_hlist.common_attributes == ['attr1', 'attr2', 'prop1'])
-
+bidon_hlist.plot()
+assert(bidon_hlist.common_attributes == ['attr1', 'attr2', 'prop1', 'in_to_vector'])
 
 # When attribute _features is not specified in class Car
 all_cars_without_features = HeterogeneousList(all_cars_no_feat)
+all_cars_without_features.plot()
+
 # When attribute _features is specified in class CarWithFeatures
 all_cars_with_features = HeterogeneousList(all_cars_wi_feat)
 # Auto-generated heterogeneous dataset with nb_clusters clusters of points in nb_dims dimensions
