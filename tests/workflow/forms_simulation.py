@@ -1,4 +1,5 @@
 from dessia_common.workflow import WorkflowRun, Workflow
+from dessia_common.forms import StandaloneObject
 import json
 
 from dessia_common.models.workflows import workflow_
@@ -23,12 +24,16 @@ match_dict = {'(0, 0, 0)': ['0'],
               '(0, 0, 1)': ['0'],
               '(0, 0, 2)': ['(1, 1, 0)'],
               '(0, 0, 3)': ['1'],
-              '(0, 1, 0)': ['(1, 0, 0)'],
+              '(0, 1, 0)': ['(1, 0, 0)', '(6, 0, 0)'],
               '(1, 0, 0)': ['(0, 1, 0)'],
-              '(1, 1, 0)': ['(0, 0, 2)'],
-              '(1, 1, 1)': [],
+              '(1, 1, 0)': ['(0, 0, 2)', '(4, 0, 0)'],
+              '(1, 1, 1)': ['(6, 0, 0)'],
               '(3, 0, 1)': ['1'],
               '(3, 0, 2)': ['0'],
+              '(4, 0, 0)': [],
+              '(4, 1, 0)': [],
+              '(6, 0, 0)': [],
+              '(6, 1, 0)': [],
               '0': ['(0, 0, 0)', '(0, 0, 1)', '(3, 0, 2)'],
               '1': ['(0, 0, 3)', '(3, 0, 1)']}
 
@@ -54,11 +59,22 @@ workflow_state = workflow_.start_run({})
 workflow_state.add_block_input_values(0, input_values)
 
 workflow_._check_platform()
-workflow_run._check_platform()
+# workflow_run._check_platform()
 
 arguments = workflow_.dict_to_arguments(input_values, 'run')
 
 # Check Breakdown
-assert workflow_run._get_from_path("#/values/1") == 2
+assert workflow_run._get_from_path("#/values/1") == 'Test'
+
+# Test WR _get_from_path specific method
+try:
+    workflow_run._get_from_path("#/values/1/0")
+except AttributeError:
+    pass
+
+assert workflow_run._get_from_path("#/values/0") == 2
+
+# assert len(workflow_run._get_from_path("#/values/6")) == 2
+# assert isinstance(workflow_run._get_from_path("#/values/6/0"), StandaloneObject)
 
 print("forms_simulation.py has passed")

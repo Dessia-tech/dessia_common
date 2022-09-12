@@ -518,7 +518,7 @@ def deserialization_order(dict_):
     cleaned_order = []
     equals = nx.get_node_attributes(graph, 'equals')
 
-    for i, node in enumerate(order):
+    for node in order:
         if node in equals:
             if not equals[node] in cleaned_order:
                 cleaned_order.append((node, equals[node]))
@@ -534,17 +534,13 @@ def dereference_jsonpointers(dict_):  # , global_dict):
     - deserialize them in the right order to respect pointers graph
     :returns: a dict with key the path of the item and the value is the python object
     """
-
     order = deserialization_order(dict_)
-
     pointers_memo = {}
     for node, reference in order:
         if reference is None:
-            serialized_element = get_in_object_from_path(dict_, node, evaluate_pointers=False)
-            pointers_memo[node] = deserialize(serialized_element=serialized_element,
-                                              global_dict=dict_,
-                                              pointers_memo=pointers_memo,
-                                              path=node)
+            serialized_element = get_in_object_from_path(object_=dict_, path=node, evaluate_pointers=False)
+            pointers_memo[node] = deserialize(serialized_element=serialized_element, global_dict=dict_,
+                                              pointers_memo=pointers_memo, path=node)
         else:
             pointers_memo[node] = pointers_memo[reference]
     return pointers_memo

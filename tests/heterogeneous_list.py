@@ -2,10 +2,39 @@
 Tests for dessia_common.HeterogeneousList class (loadings, check_platform and plots)
 """
 import random
+from dessia_common.core import DessiaObject
 from dessia_common.models import all_cars_no_feat, all_cars_wi_feat, rand_data_middl
 from dessia_common.datatools import covariance, manhattan_distance, euclidian_distance, minkowski_distance, inf_norm,\
     mahalanobis_distance
 from dessia_common.datatools import HeterogeneousList
+
+# Tests on common_attributes
+class Bidon(DessiaObject):
+    def __init__(self, attr1: float = 1.2):
+        self.attr1 = attr1
+        self.attr2 = attr1*2
+    @property
+    def prop1(self):
+        return self.attr1 + self.attr2
+
+bidon = Bidon()
+bidon_hlist = HeterogeneousList([bidon]*3)
+assert(bidon_hlist.common_attributes == ['attr1'])
+
+# Tests on common_attributes
+class Bidon(DessiaObject):
+    _vector_features = ['attr1', 'attr2', 'prop1']
+    def __init__(self, attr1: float = 1.2):
+        self.attr1 = attr1
+        self.attr2 = attr1*2
+    @property
+    def prop1(self):
+        return self.attr1 + self.attr2
+
+bidon = Bidon()
+bidon_hlist = HeterogeneousList([bidon]*3)
+assert(bidon_hlist.common_attributes == ['attr1', 'attr2', 'prop1'])
+
 
 # When attribute _features is not specified in class Car
 all_cars_without_features = HeterogeneousList(all_cars_no_feat)
@@ -17,10 +46,10 @@ RandData_heterogeneous = HeterogeneousList(rand_data_middl)
 # Compute one common_attributes
 all_cars_without_features.common_attributes
 
-# # Check platform for datasets
-# all_cars_with_features._check_platform()
-# all_cars_without_features._check_platform()
-# RandData_heterogeneous._check_platform()
+# Check platform for datasets
+all_cars_with_features._check_platform()
+all_cars_without_features._check_platform()
+RandData_heterogeneous._check_platform()
 
 # Test __getitem__
 picked_list = (all_cars_with_features[250:] +
@@ -28,7 +57,6 @@ picked_list = (all_cars_with_features[250:] +
 assert(picked_list._common_attributes is None)
 assert(picked_list._matrix is None)
 assert(picked_list[-1] == rand_data_middl[10])
-assert(RandData_heterogeneous.common_attributes == ['p_1', 'p_2', 'p_3', 'p_4', 'test_prop'])
 try:
     all_cars_without_features[[True, False, True]]
     raise ValueError("boolean indexes of len 3 should not be able to index HeterogeneousLists of len 406")
@@ -98,9 +126,11 @@ except Exception as e:
 all_cars_with_features.sort('weight', ascend=False)
 assert(all_cars_with_features[0].weight == max(all_cars_with_features.get_attribute_values('weight')))
 
-all_cars_without_features.sort(2)
-assert(all_cars_without_features.common_attributes[2] == "displacement")
-assert(all_cars_without_features[0].displacement == min(all_cars_without_features.get_column_values(2)))
+idx_dpl = all_cars_without_features.common_attributes.index('displacement')
+all_cars_without_features.sort(idx_dpl)
+assert(all(attr in ['displacement', 'cylinders', 'mpg', 'horsepower', 'weight', 'acceleration', 'model']
+           for attr in all_cars_without_features.common_attributes))
+assert(all_cars_without_features[0].displacement == min(all_cars_without_features.get_column_values(idx_dpl)))
 
 # Missing tests after coverage report
 assert(all_cars_without_features[[]] == empty_list)
