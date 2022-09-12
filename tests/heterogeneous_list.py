@@ -82,9 +82,9 @@ print(all_cars_with_features)
 
 # Tests for metrics
 assert(int(all_cars_with_features.distance_matrix('minkowski')[25][151]) == 186)
-assert(int(all_cars_with_features.mean()[3]) == 2979)
-assert(int(all_cars_with_features.standard_deviation()[3]) == 845)
-assert(int(all_cars_with_features.variances()[3]) == 715649)
+assert(int(all_cars_with_features.mean()[3]) == 15)
+assert(int(all_cars_with_features.standard_deviation()[4]) == 845)
+assert(int(all_cars_with_features.variances()[2]) == 1637)
 assert(int(manhattan_distance(all_cars_with_features.matrix[3], all_cars_with_features.matrix[125])) == 1361)
 assert(int(minkowski_distance(all_cars_with_features.matrix[3], all_cars_with_features.matrix[125], mink_power=7.2)) == 1275)
 assert(int(euclidian_distance(all_cars_with_features.matrix[3], all_cars_with_features.matrix[125])) == 1277)
