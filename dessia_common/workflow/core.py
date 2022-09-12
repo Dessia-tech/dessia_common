@@ -626,9 +626,9 @@ class Workflow(Block):
                 current_dict.update(dict_)
             if input_ not in self.imposed_variable_values:  # Removes from Optional in edits
                 properties_dict[str(i)] = current_dict[str(i)]
-        properties_dict[str(len(self.inputs) + 1)] = {'type': 'string', 'title': 'WorkflowRun Name', 'editable': True,
-                                                      'order': 0, "description": "Name for the resulting WorkflowRun",
-                                                      'default_value': '', 'python_typing': 'builtins.str'}
+        # properties_dict[str(len(self.inputs) + 1)] = {'type': 'string', 'title': 'WorkflowRun Name', 'editable': True,
+        #                                               'order': 0, "description": "Name for the resulting WorkflowRun",
+        #                                               'default_value': '', 'python_typing': 'builtins.str'}
         jsonschemas['run'].update({'required': required_inputs, 'method': True,
                                    'python_typing': serialize_typing(MethodType)})
         jsonschemas['start_run'] = deepcopy(jsonschemas['run'])
@@ -764,21 +764,17 @@ class Workflow(Block):
         """
         dict_ = {int(k): v for k, v in dict_.items()}  # serialisation set keys as strings
         if method in self._allowed_methods:
+            name = None
             arguments_values = {}
             for i, input_ in enumerate(self.inputs):
                 has_default = input_.has_default_value
                 if not has_default or (has_default and i in dict_):
                     value = dict_[i]
                     deserialized_value = deserialize_argument(type_=input_.type_, argument=value)
+                    if input_.name == "Result Name":
+                        name = deserialize_argument(type_=input_.type_, argument=value)
                     arguments_values[i] = deserialized_value
-
-            name_index = len(self.inputs) + 1
-            if name_index in dict_:
-                name = dict_[name_index]
-            else:
-                name = None
-            arguments = {'input_values': arguments_values, 'name': name}
-            return arguments
+            return {'input_values': arguments_values, 'name': name}
         raise NotImplementedError(f"Method {method} not in Workflow allowed methods")
 
     def _run_dict(self) -> Dict:
