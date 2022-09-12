@@ -2100,16 +2100,27 @@ def initialize_workflow(dict_, global_dict, pointers_memo) -> Workflow:
     blocks = [deserialize(serialized_element=d, global_dict=global_dict, pointers_memo=pointers_memo)
               for d in dict_["blocks"]]
     if 'nonblock_variables' in dict_:
-        nonblock_variables = [deserialize(serialized_element=d, global_dict=global_dict,
-                                          pointers_memo=pointers_memo)
+        nonblock_variables = [deserialize(serialized_element=d, global_dict=global_dict, pointers_memo=pointers_memo)
                               for d in dict_['nonblock_variables']]
     else:
         nonblock_variables = []
 
     connected_nbvs = {v: False for v in nonblock_variables}
 
+    pipes = deserialize_pipes(pipes_dict=dict_['pipes'], blocks=blocks, nonblock_variables=nonblock_variables,
+                              connected_nbvs=connected_nbvs)
+
+    if dict_['output'] is not None:
+        output = blocks[dict_['output'][0]].outputs[dict_['output'][2]]
+    else:
+        output = None
+    return Workflow(blocks=blocks, pipes=pipes, output=output,
+                    detached_variables=[v for v, is_connected in connected_nbvs.items() if not is_connected])
+
+
+def deserialize_pipes(pipes_dict, blocks, nonblock_variables, connected_nbvs):
     pipes = []
-    for source, target in dict_['pipes']:
+    for source, target in pipes_dict:
         if isinstance(source, int):
             variable1 = nonblock_variables[source]
             connected_nbvs[variable1] = True
@@ -2125,13 +2136,7 @@ def initialize_workflow(dict_, global_dict, pointers_memo) -> Workflow:
             variable2 = blocks[ib2].inputs[ip2]
 
         pipes.append(Pipe(variable1, variable2))
-
-    if dict_['output'] is not None:
-        output = blocks[dict_['output'][0]].outputs[dict_['output'][2]]
-    else:
-        output = None
-    return Workflow(blocks=blocks, pipes=pipes, output=output,
-                    detached_variables=[v for v, is_connected in connected_nbvs.items() if not is_connected])
+    return pipes
 
 
 def value_type_check(value, type_):
