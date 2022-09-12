@@ -7,6 +7,7 @@ from copy import deepcopy
 import inspect
 import warnings
 import collections
+import collections.abc
 from typing import get_origin, get_args, Union, get_type_hints
 import dessia_common as dc
 import dessia_common.utils.types as dc_types
@@ -152,7 +153,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element, order, editable=N
             else:
                 # Types union
                 jsonschema_union_types(key, args, typing_, jsonschema_element)
-        elif origin in [list, collections.Iterator]:
+        elif origin in [list, collections.abc.Iterator]:
             # Homogenous sequences
             jsonschema_element[key].update(jsonschema_sequence_recursion(
                 value=typing_, order=order, title=title, editable=editable

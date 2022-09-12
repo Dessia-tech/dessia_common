@@ -18,7 +18,7 @@ MIN_NOTE = 9.17
 UNWATCHED_ERRORS = ['fixme', 'trailing-whitespace', 'import-error']
 
 MAX_ERROR_BY_TYPE = {
-                     'protected-access': 41,
+                     'protected-access': 40,
                      'invalid-name': 4,
                      'consider-using-f-string': 1,
                      'no-else-return': 0,
@@ -29,7 +29,7 @@ MAX_ERROR_BY_TYPE = {
                      'too-many-branches': 10,
                      'unused-import': 1,
                      'unused-argument': 5,
-                     'cyclic-import': 11,
+                     'cyclic-import': 12,
                      'no-self-use': 6,
                      'unused-variable': 1,
                      'trailing-whitespace': 11,
@@ -43,11 +43,11 @@ MAX_ERROR_BY_TYPE = {
                      'raise-missing-from': 0,
                      'consider-merging-isinstance': 1,
                      'abstract-method': 6,
-                     'import-outside-toplevel': 12,  # TODO : will reduced in a future work (when tests are ready)
+                     'import-outside-toplevel': 7,  # TODO : will reduced in a future work (when tests are ready)
                      'too-many-instance-attributes': 7,
                      'consider-iterating-dictionary': 4,
                      'attribute-defined-outside-init': 3,
-                     'simplifiable-if-expression': 3,
+                     'simplifiable-if-expression': 1,
                      'broad-except': 3,
                      'consider-using-get': 0,
                      'undefined-loop-variable': 1,
@@ -85,7 +85,7 @@ MAX_ERROR_BY_TYPE = {
                      'redefined-argument-from-local': 0,
                      'import-error': 0,
                      'unsubscriptable-object': 0,
-                     'unnecessary-dunder-call': 4
+                     'unnecessary-dunder-call': 0
                      }
 
 print('pylint version: ', __version__)

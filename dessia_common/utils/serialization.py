@@ -8,6 +8,7 @@ Serialization Tools
 import warnings
 import inspect
 import collections
+import collections.abc
 from ast import literal_eval
 from typing import get_origin, get_args, Union, Any, BinaryIO, TextIO
 from numpy import int64, float64
@@ -78,13 +79,9 @@ def serialize_with_pointers(value, memo=None, path='#'):
     """
     Main function for serialization with pointers
     """
-    # print('\n\nvalue', str(value)[:40])
     if memo is None:
         memo = {}
-    # print('len memo', len(memo))
-    # print('memo:', len(memo))
     if isinstance(value, (dc.DessiaObject, dessia_common.core.DessiaObject)):
-        # print('dc')
         if value in memo:
             return {'$ref': memo[value]}, memo
         try:
@@ -94,21 +91,17 @@ def serialize_with_pointers(value, memo=None, path='#'):
             warnings.warn('specific to_dict should implement use_pointers, memo and path arguments', Warning)
             serialized = value.to_dict()
         memo[value] = path
-        # print('len memo 23', len(memo))
-   
+
     elif hasattr(value, 'to_dict'):
-        print('todict', str(value)[:40])
         if value in memo:
             return {'$ref': memo[value]}, memo
         serialized = value.to_dict()
         memo[value] = path
     elif isinstance(value, dict):
-        # print('dict')
         serialized, memo = serialize_dict_with_pointers(value, memo=memo, path=path)
     elif dcty.is_sequence(value):
-        # print('seq')
         serialized, memo = serialize_sequence_with_pointers(value, memo=memo, path=path)
-        
+
     elif isinstance(value, (BinaryFile, StringFile)):
         serialized = value
     elif isinstance(value, (int64, float64)):
@@ -320,11 +313,11 @@ def deserialize_with_typing(type_, argument):
             except KeyError:
                 # This is not the right class, we should go see the parent
                 classes.remove(children_class)
-    elif origin in [list, collections.Iterator]:
+    elif origin in [list, collections.abc.Iterator]:
         # Homogenous sequences (lists)
         sequence_subtype = args[0]
         deserialized_arg = [deserialize_argument(sequence_subtype, arg) for arg in argument]
-        if origin is collections.Iterator:
+        if origin is collections.abc.Iterator:
             deserialized_arg = iter(deserialized_arg)
 
     elif origin is tuple:
@@ -485,8 +478,8 @@ def pointer_graph(value):
         if last_name_change:
             # marking as new path from top level pointer
             segments = point_at.split('/')
-            for i in range(len(segments)-1):
-                node = '/'.join(segments[:i+2])
+            for i in range(len(segments) - 1):
+                node = '/'.join(segments[:i + 2])
                 new_path = node.replace(*last_name_change)
                 if new_path != node:
                     new_paths[node] = new_path
