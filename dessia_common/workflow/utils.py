@@ -34,9 +34,9 @@ class ToScriptElement:
 
     def get_import_dict(self) -> Dict[str, List[str]]:
         imports_dict: Dict[str, List[str]] = {}
-        for c in self.imports:
-            module = '.'.join(c.split('.')[:-1])
-            class_ = c.split('.')[-1]
+        for import_ in self.imports:
+            module = '.'.join(import_.split('.')[:-1])
+            class_ = import_.split('.')[-1]
             if module not in imports_dict :
                 imports_dict[module] = [class_]
             else:
