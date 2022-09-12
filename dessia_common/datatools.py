@@ -92,6 +92,10 @@ class HeterogeneousList(DessiaObject):
         DessiaObject.__init__(self, name=name)
 
     def __getitem__(self, key: Any):
+        """
+        Is added in a further release (feat/clists_metrics)
+
+        """
         if len(self) == 0:
             return []
         if isinstance(key, int):
@@ -113,6 +117,10 @@ class HeterogeneousList(DessiaObject):
                                   f"indexing HeterogeneousLists")
 
     def __add__(self, other: 'HeterogeneousList'):
+        """
+        Is added in a further release (feat/clists_metrics)
+
+        """
         if self.__class__ != HeterogeneousList or other.__class__ != HeterogeneousList:
             raise TypeError("Addition only defined for HeterogeneousList. A specific __add__ method is required for "
                             f"{self.__class__}")
@@ -248,6 +256,10 @@ class HeterogeneousList(DessiaObject):
         return string
 
     def __len__(self):
+        """
+        Is added in a further release (feat/clists_metrics)
+
+        """
         return len(self.dessia_objects)
 
     def get_attribute_values(self, attribute: str):
@@ -880,7 +892,6 @@ class CategorizedList(HeterogeneousList):
     def from_agglomerative_clustering(cls, data: HeterogeneousList, n_clusters: int = 2,
                                       affinity: str = 'euclidean', linkage: str = 'ward',
                                       distance_threshold: float = None, scaling: bool = False, name: str =""):
-
         """
         Hierarchical clustering is a general family of clustering algorithms that
         build nested clusters by merging or splitting them successively.
@@ -952,7 +963,8 @@ class CategorizedList(HeterogeneousList):
         :type scaling: `bool`, `optional`, default to `False`
 
         :return: a CategorizedList that knows the data and their labels
-        :rtype: CategorizedListt
+        :rtype: CategorizedList
+
         """
         skl_cluster = cluster.AgglomerativeClustering(
             n_clusters=n_clusters, affinity=affinity, distance_threshold=distance_threshold, linkage=linkage)
@@ -1004,6 +1016,7 @@ class CategorizedList(HeterogeneousList):
 
         :return: a CategorizedList that knows the data and their labels
         :rtype: CategorizedList
+
         """
         skl_cluster = cluster.KMeans(n_clusters=n_clusters, n_init=n_init, tol=tol)
         skl_cluster = cls.fit_cluster(skl_cluster, data.matrix, scaling)
@@ -1012,7 +1025,6 @@ class CategorizedList(HeterogeneousList):
     @classmethod
     def from_dbscan(cls, data: HeterogeneousList, eps: float = 0.5, min_samples: int = 5, mink_power: float = 2,
                     leaf_size: int = 30, metric: str = "euclidean", scaling: bool = False, name: str =""):
-
         """
         The DBSCAN algorithm views clusters as areas of high density separated by areas of low density.
         Due to this rather generic view, clusters found by DBSCAN can be any shape, as opposed to k-means
@@ -1072,6 +1084,7 @@ class CategorizedList(HeterogeneousList):
 
         :return: a CategorizedList that knows the data and their labels
         :rtype: CategorizedList
+
         """
         skl_cluster = cluster.DBSCAN(eps=eps, min_samples=min_samples, p=mink_power, leaf_size=leaf_size, metric=metric)
         skl_cluster = cls.fit_cluster(skl_cluster, data.matrix, scaling)
