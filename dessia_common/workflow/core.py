@@ -743,20 +743,8 @@ class Workflow(Block):
 
             if 'imposed_variable_indices' not in dict_ and 'imposed_variable_values' not in dict_:
                 imposed_variable_values = None
-
-        if "description" in dict_:
-            # Retro-compatibility
-            description = dict_["description"]
-        else:
-            description = ""
-
-        if "documentation" in dict_:
-            # Retro-compatibility
-            documentation = dict_["documentation"]
-        else:
-            documentation = ""
         return cls(blocks=blocks, pipes=pipes, output=output, imposed_variable_values=imposed_variable_values,
-                   description=description, documentation=documentation, name=dict_["name"])
+                   description=dict_["description"], documentation=dict_["documentation"], name=dict_["name"])
 
     def dict_to_arguments(self, dict_: JsonSerializable, method: str):
         """
