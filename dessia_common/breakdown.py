@@ -239,6 +239,9 @@ def deep_getsizeof(obj, ids=None):
 
 
 def breakdown_analysis(obj):
+    """
+    Returns an analysis of the structure of the object
+    """
     obj_breakdown = object_breakdown(obj)
 
     stats = {}

@@ -13,6 +13,7 @@ from typing import get_origin, get_args, Union, Any, BinaryIO, TextIO
 from numpy import int64, float64
 import networkx as nx
 import dessia_common as dc
+import dessia_common.core
 import dessia_common.errors as dc_err
 from dessia_common.files import StringFile, BinaryFile
 import dessia_common.utils.types as dcty
@@ -46,7 +47,7 @@ def serialize(value):
     Main function for serialization without pointers
     Calls recursively itself serialize_sequence and serialize_dict
     """
-    if isinstance(value, dc.DessiaObject):
+    if isinstance(value, (dc.DessiaObject, dessia_common.core.DessiaObject)):
         try:
             serialized_value = value.to_dict(use_pointers=False)
         except TypeError:
@@ -77,9 +78,13 @@ def serialize_with_pointers(value, memo=None, path='#'):
     """
     Main function for serialization with pointers
     """
+    # print('\n\nvalue', str(value)[:40])
     if memo is None:
         memo = {}
-    if isinstance(value, dc.DessiaObject):
+    # print('len memo', len(memo))
+    # print('memo:', len(memo))
+    if isinstance(value, (dc.DessiaObject, dessia_common.core.DessiaObject)):
+        # print('dc')
         if value in memo:
             return {'$ref': memo[value]}, memo
         try:
@@ -88,14 +93,22 @@ def serialize_with_pointers(value, memo=None, path='#'):
         except TypeError:
             warnings.warn('specific to_dict should implement use_pointers, memo and path arguments', Warning)
             serialized = value.to_dict()
-
         memo[value] = path
+        # print('len memo 23', len(memo))
+   
     elif hasattr(value, 'to_dict'):
+        print('todict', str(value)[:40])
+        if value in memo:
+            return {'$ref': memo[value]}, memo
         serialized = value.to_dict()
+        memo[value] = path
     elif isinstance(value, dict):
-        serialized, memo = serialize_dict_with_pointers(value, memo, path)
+        # print('dict')
+        serialized, memo = serialize_dict_with_pointers(value, memo=memo, path=path)
     elif dcty.is_sequence(value):
-        serialized, memo = serialize_sequence_with_pointers(value, memo, path)
+        # print('seq')
+        serialized, memo = serialize_sequence_with_pointers(value, memo=memo, path=path)
+        
     elif isinstance(value, (BinaryFile, StringFile)):
         serialized = value
     elif isinstance(value, (int64, float64)):
@@ -146,7 +159,7 @@ def serialize_sequence_with_pointers(seq, memo, path):
     serialized_sequence = []
     for ival, value in enumerate(seq):
         value_path = f'{path}/{ival}'
-        serialized_value, memo = serialize_with_pointers(value, memo, path=value_path)
+        serialized_value, memo = serialize_with_pointers(value, memo=memo, path=value_path)
         serialized_sequence.append(serialized_value)
 
     return serialized_sequence, memo
@@ -357,7 +370,7 @@ def deserialize_argument(type_, argument):
     if type_ is Any:
         # Any type
         return argument
-    if inspect.isclass(type_) and issubclass(type_, dc.DessiaObject):
+    if inspect.isclass(type_) and issubclass(type_, (dc.DessiaObject, dessia_common.core.DessiaObject)):
         # Custom classes
         return type_.dict_to_object(argument)
 
