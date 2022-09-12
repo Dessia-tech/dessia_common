@@ -1,5 +1,4 @@
 
-import os
 import unittest
 
 scripts = ['displays.py',
@@ -25,6 +24,8 @@ scripts = ['displays.py',
            'workflow/workflow_clustering.py',
            'workflow/workflow_filtering.py',
            'workflow/workflow_pareto.py',
+           'workflow/workflow_method_dict.py',
+           'workflow/various_tests.py',
            # breakdown
            'breakdown.py',
            # Utils
