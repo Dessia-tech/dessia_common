@@ -80,12 +80,17 @@ class HeterogeneousList(DessiaObject):
             HeterogeneousList(all_cars_wi_feat)
             >>> HeterogeneousList(all_cars_wi_feat).extend(HeterogeneousList(all_cars_wi_feat))
             HeterogeneousList(all_cars_wi_feat + all_cars_wi_feat)
+
     """
     _standalone_in_db = True
     _vector_features = ["name", "common_attributes"]
     _non_data_eq_attributes = ["name", "_common_attributes", "_matrix"]
 
     def __init__(self, dessia_objects: List[DessiaObject] = None, name: str = ''):
+        """
+        See class docstring.
+
+        """
         if dessia_objects is None:
             dessia_objects = []
         self.dessia_objects = dessia_objects
@@ -94,6 +99,11 @@ class HeterogeneousList(DessiaObject):
         DessiaObject.__init__(self, name=name)
 
     def __getitem__(self, key: Any):
+        """
+        Custom getitem for HeterogeneousList. In addition to work as numpy.arrays of dimension `(n,)`, allows to pick \
+        a sub-HeterogeneousList from a list of indexes.
+
+        """
         if len(self) == 0:
             return []
         if isinstance(key, int):
@@ -117,6 +127,10 @@ class HeterogeneousList(DessiaObject):
         raise NotImplementedError(f"key of type {type(key)} not implemented for indexing HeterogeneousLists")
 
     def __add__(self, other: 'HeterogeneousList'):
+        """
+        Allows to merge two HeterogeneousList into one by merging their dessia_object into one list.
+
+        """
         if self.__class__ != HeterogeneousList or other.__class__ != HeterogeneousList:
             raise TypeError("Addition only defined for HeterogeneousList. A specific __add__ method is required for "
                             f"{self.__class__}")
@@ -145,6 +159,7 @@ class HeterogeneousList(DessiaObject):
         >>> from dessia_common.models import all_cars_wi_feat
         >>> HeterogeneousList(all_cars_wi_feat).extend(HeterogeneousList(all_cars_wi_feat))
         HeterogeneousList(all_cars_wi_feat + all_cars_wi_feat)
+
         """
         # Not "self.dessia_objects += other.dessia_objects" to take advantage of __add__ algorithm
         self.__dict__.update((self + other).__dict__)
@@ -176,6 +191,10 @@ class HeterogeneousList(DessiaObject):
         return new_hlist
 
     def __str__(self):
+        """
+        Print HeterogeneousList as a table.
+
+        """
         size_col_label = self._set_size_col_label()
         attr_name_len = []
         attr_space = []
@@ -259,6 +278,10 @@ class HeterogeneousList(DessiaObject):
         return string
 
     def __len__(self):
+        """
+        Length of HeterogeneousList is len(HeterogeneousList.dessia_objects)
+
+        """
         return len(self.dessia_objects)
 
     def get_attribute_values(self, attribute: str):
@@ -277,6 +300,7 @@ class HeterogeneousList(DessiaObject):
         >>> from dessia_common.models import all_cars_wi_feat
         >>> HeterogeneousList(all_cars_wi_feat[:10]).get_attribute_values("weight")
         [3504.0, 3693.0, 3436.0, 3433.0, 3449.0, 4341.0, 4354.0, 4312.0, 4425.0, 3850.0]
+
         """
         return [getattr(dessia_object, attribute) for dessia_object in self.dessia_objects]
 
@@ -296,6 +320,7 @@ class HeterogeneousList(DessiaObject):
         >>> from dessia_common.models import all_cars_wi_feat
         >>> HeterogeneousList(all_cars_wi_feat[:10]).get_column_values(2)
         [130.0, 165.0, 150.0, 150.0, 140.0, 198.0, 220.0, 215.0, 225.0, 190.0]
+
         """
         return [row[index] for row in self.matrix]
 
@@ -337,6 +362,7 @@ class HeterogeneousList(DessiaObject):
         |               18.0  |             0.307  |             130.0  |            3504.0  |              12.0  |
         |               18.0  |             0.318  |             150.0  |            3436.0  |              11.0  |
         |               15.0  |              0.35  |             165.0  |            3693.0  |              11.5  |
+
         """
         if len(self) != 0:
             if isinstance(key, int):
@@ -361,6 +387,7 @@ class HeterogeneousList(DessiaObject):
         >>> example_list = HeterogeneousList(all_cars_wi_feat, "mean_example")
         >>> print(example_list.mean())
         [23.051231527093602, 0.1947795566502462, 103.5295566502463, 2979.4137931034484, 15.519704433497521]
+
         """
         return [mean(row) for row in zip(*self.matrix)]
 
@@ -378,6 +405,7 @@ class HeterogeneousList(DessiaObject):
         >>> example_list = HeterogeneousList(all_cars_wi_feat, "std_example")
         >>> print(example_list.standard_deviation())
         [8.391423956652817, 0.10479316386533469, 40.47072606559397, 845.9605763601298, 2.799904275515381]
+
         """
         return [std(row) for row in zip(*self.matrix)]
 
@@ -395,6 +423,7 @@ class HeterogeneousList(DessiaObject):
         >>> example_list = HeterogeneousList(all_cars_wi_feat, "var_example")
         >>> print(example_list.variances())
         [70.41599602028683, 0.010981607192906888, 1637.8796682763475, 715649.2967555631, 7.839463952049309]
+
         """
         return [variance(row) for row in zip(*self.matrix)]
 
@@ -417,6 +446,7 @@ class HeterogeneousList(DessiaObject):
         [-247.39164142796338, 3.714807148938756, 1641.9238156054248, 28857.60749255002, -77.47638630420236]
         [-5604.189893571734, 82.86881366538952, 28857.60749255002, 717416.332056194, -1021.2202724563649]
         [9.998099130329008, -0.16412268260049875, -77.47638630420236, -1021.2202724563649, 7.8588206531654805]
+
         """
         return covariance_matrix(list(zip(*self.matrix)))
 
@@ -460,6 +490,7 @@ class HeterogeneousList(DessiaObject):
         [1.6150355142162274, 0.0, 0.7691239946132247, 0.6216479207905371]
         [1.0996902429379676, 0.7691239946132247, 0.0, 0.7334135920381655]
         [1.3991408510938068, 0.6216479207905371, 0.7334135920381655, 0.0]
+
         """
         kwargs = self._set_distance_kwargs(method, kwargs)
         distances = squareform(pdist(self.matrix, method, **kwargs)).astype(float)
@@ -473,6 +504,10 @@ class HeterogeneousList(DessiaObject):
 
     @property
     def common_attributes(self):
+        """
+        List of common attributes of stored dessia_objects.
+
+        """
         if self._common_attributes is None:
             if len(self) == 0:
                 return []
@@ -507,6 +542,10 @@ class HeterogeneousList(DessiaObject):
 
     @property
     def matrix(self):
+        """
+        Get equivalent matrix of dessia_objects, which is of dimensions `len(dessia_objects) x len(common_attributes)`
+
+        """
         if self._matrix is None:
             matrix = []
             for dessia_object in self.dessia_objects:
@@ -544,6 +583,7 @@ class HeterogeneousList(DessiaObject):
         |               35.0  |             0.072  |              69.0  |            1613.0  |              18.0  |
         |               31.0  |             0.076  |              52.0  |            1649.0  |              16.5  |
         |               46.6  |             0.086  |              65.0  |            2110.0  |              17.9  |
+
         """
         booleans_index = filters_list.get_booleans_index(self.dessia_objects)
         return self._pick_from_boolist(booleans_index)
@@ -590,6 +630,7 @@ class HeterogeneousList(DessiaObject):
         """
         Plot data method.
         Plot a standard scatter matrix of all attributes in common_attributes and a dimensionality plot.
+
         """
         # Plot a correlation matrix : To develop
         # correlation_matrix = []
@@ -726,6 +767,7 @@ class HeterogeneousList(DessiaObject):
     def to_markdown(self):  # TODO: Custom this markdown
         """
         Render a markdown of the object output type: string
+
         """
         return templates.heterogeneouslist_markdown_template.substitute(name=self.name, class_=self.__class__.__name__)
 
@@ -744,6 +786,7 @@ class HeterogeneousList(DessiaObject):
         Find the pareto-efficient points
 
         :return: A (n_points, ) boolean list, indicating whether each point is Pareto efficient
+
         """
         is_efficient = npy.ones(len(costs), dtype=bool)
         # costs_array = npy.array(costs)
@@ -767,6 +810,7 @@ class HeterogeneousList(DessiaObject):
 
         :return: a HeterogeneousList containing the selected points
         :rtype: HeterogeneousList
+
         """
         checked_costs = HeterogeneousList._check_costs(len(self), costs)
         return self[self.__class__.pareto_indexes(checked_costs)]
@@ -785,6 +829,7 @@ class HeterogeneousList(DessiaObject):
 
         :return: The successive pareto sheets and not selected elements
         :rtype: `List[HeterogeneousList]`, `HeterogeneousList`
+
         """
         checked_costs = HeterogeneousList._check_costs(len(self), costs)
         non_optimal_costs = checked_costs[:]
@@ -800,6 +845,10 @@ class HeterogeneousList(DessiaObject):
 
     @staticmethod
     def pareto_frontiers(len_data: int, costs: List[List[float]]):
+        """
+        Experimental method to draw the borders of pareto domain.
+
+        """
         # Experimental
         checked_costs = HeterogeneousList._check_costs(len_data, costs)
         pareto_indexes = HeterogeneousList.pareto_indexes(checked_costs)
@@ -874,10 +923,15 @@ class CategorizedList(HeterogeneousList):
             Number of clusters in dessia_objects
 
     **Built-in methods**: See :func:`~HeterogeneousList`
+
     """
     _allowed_methods = ['from_agglomerative_clustering', 'from_kmeans', 'from_dbscan', 'from_pareto_sheets']
 
     def __init__(self, dessia_objects: List[DessiaObject] = None, labels: List[int] = None, name: str = ''):
+        """
+        See class docstring.
+
+        """
         HeterogeneousList.__init__(self, dessia_objects=dessia_objects, name=name)
         if labels is None:
             labels = [0]*len(self)
@@ -885,6 +939,10 @@ class CategorizedList(HeterogeneousList):
 
     @property
     def n_clusters(self):
+        """
+        Number of clusters in dessia_objects.
+
+        """
         unic_labels = set(self.labels)
         unic_labels.discard(-1)
         return len(unic_labels)
@@ -892,6 +950,7 @@ class CategorizedList(HeterogeneousList):
     def to_xlsx_stream(self, stream):
         """
         Exports the object to an XLSX to a given stream
+
         """
         if not isinstance(self.dessia_objects[0], HeterogeneousList):
             writer = XLSXWriter(self.clustered_sublists())
@@ -957,6 +1016,7 @@ class CategorizedList(HeterogeneousList):
         |    21.0 |              0.2 |           85.0 |     2587.0 |             16.0 |
         |    25.0 |             0.11 |           87.0 |     2672.0 |             17.5 |
         |    21.0 |            0.199 |           90.0 |     2648.0 |             15.0 |
+
         """
         sublists = []
         label_tags = sorted(list(map(str, set(self.labels).difference({-1}))))
@@ -1001,6 +1061,7 @@ class CategorizedList(HeterogeneousList):
         >>> means = clist.mean_clusters()
         >>> print(means[0])
         [28.83333333333334, 0.10651785714285714, 79.16666666666667, 2250.3571428571427, 16.075000000000006]
+
         """
         clustered_sublists = self._check_transform_sublists()
         means = []
@@ -1046,6 +1107,7 @@ class CategorizedList(HeterogeneousList):
         >>> cluster_distances = clist.cluster_distances()
         >>> print(list(map(int, cluster_distances[6])))
         [180, 62, 162, 47, 347, 161, 160, 67, 164, 206, 114, 138, 97, 159, 124, 139]
+
         """
         clustered_sublists = self._check_transform_sublists()
         kwargs = self._set_distance_kwargs(method, kwargs)
@@ -1095,6 +1157,7 @@ class CategorizedList(HeterogeneousList):
         |   Name   |   Mpg   |   Displacement   |   Horsepower   |   Weight   |   Acceleration   |
         ------------------------------------------------------------------------------------------
         |Dodge C...|    26.0 |            0.098 |           79.0 |     2255.0 |             17.7 |
+
         """
         clustered_sublists = self._check_transform_sublists()
         kwargs = self._set_distance_kwargs(method, kwargs)
@@ -1119,6 +1182,11 @@ class CategorizedList(HeterogeneousList):
         return self.common_attributes + ["Cluster Label"]
 
     def plot_data(self):
+        """
+        Plot data method.
+        If dessia_objects are HeterogeneousList, merge all HeterogeneousList to plot them in one.
+
+        """
         if isinstance(self.dessia_objects[0], HeterogeneousList):
             plotted_clist = self._merge_sublists()
             return plotted_clist.plot_data()
@@ -1151,7 +1219,6 @@ class CategorizedList(HeterogeneousList):
     def from_agglomerative_clustering(cls, data: HeterogeneousList, n_clusters: int = 2,
                                       affinity: str = 'euclidean', linkage: str = 'ward',
                                       distance_threshold: float = None, scaling: bool = False, name: str =""):
-
         """
         Hierarchical clustering is a general family of clustering algorithms that
         build nested clusters by merging or splitting them successively.
@@ -1223,7 +1290,8 @@ class CategorizedList(HeterogeneousList):
         :type scaling: `bool`, `optional`, default to `False`
 
         :return: a CategorizedList that knows the data and their labels
-        :rtype: CategorizedListt
+        :rtype: CategorizedList
+
         """
         skl_cluster = cluster.AgglomerativeClustering(
             n_clusters=n_clusters, affinity=affinity, distance_threshold=distance_threshold, linkage=linkage)
@@ -1275,6 +1343,7 @@ class CategorizedList(HeterogeneousList):
 
         :return: a CategorizedList that knows the data and their labels
         :rtype: CategorizedList
+
         """
         skl_cluster = cluster.KMeans(n_clusters=n_clusters, n_init=n_init, tol=tol)
         skl_cluster = cls.fit_cluster(skl_cluster, data.matrix, scaling)
@@ -1283,7 +1352,6 @@ class CategorizedList(HeterogeneousList):
     @classmethod
     def from_dbscan(cls, data: HeterogeneousList, eps: float = 0.5, min_samples: int = 5, mink_power: float = 2,
                     leaf_size: int = 30, metric: str = "euclidean", scaling: bool = False, name: str =""):
-
         """
         The DBSCAN algorithm views clusters as areas of high density separated by areas of low density.
         Due to this rather generic view, clusters found by DBSCAN can be any shape, as opposed to k-means
@@ -1343,6 +1411,7 @@ class CategorizedList(HeterogeneousList):
 
         :return: a CategorizedList that knows the data and their labels
         :rtype: CategorizedList
+
         """
         skl_cluster = cluster.DBSCAN(eps=eps, min_samples=min_samples, p=mink_power, leaf_size=leaf_size, metric=metric)
         skl_cluster = cls.fit_cluster(skl_cluster, data.matrix, scaling)
@@ -1386,6 +1455,26 @@ class CategorizedList(HeterogeneousList):
 
     @staticmethod
     def fit_cluster(skl_cluster: cluster, matrix: List[List[float]], scaling: bool):
+        """
+        Find clusters in data set for skl_cluster model.
+
+        :param skl_cluster: sklearn.cluster object to compute clusters.
+        :type data: cluster
+
+        :param matrix:
+            --------
+            List of data
+        :type matrix: `float`, `n_samples x n_features`
+
+        :param scaling:
+            --------
+            Whether to scale the data or not before clustering.
+        :type scaling: `bool`, `optional`, defaults to `False`
+
+        :return: a fit sklearn.cluster object
+        :rtype: cluster
+
+        """
         if scaling:
             scaled_matrix = HeterogeneousList._scale_data(matrix)
         else:
@@ -1433,6 +1522,7 @@ def l1_norm(vector):
 
     :return: the l1-norm
     :rtype: float
+
     """
     return sum(map(abs, vector))
 
@@ -1445,6 +1535,7 @@ def l2_norm(vector):
 
     :return: the l2-norm
     :rtype: float
+
     """
     # better than numpy for len = 20000, nearly the same for len = 2000
     return sum(x*x for x in vector)**0.5
@@ -1461,6 +1552,7 @@ def lp_norm(vector, mink_power = 2):
 
     :return: the Minkowski norm
     :rtype: float
+
     """
     return float(npy.linalg.norm(vector, ord=mink_power))
 
@@ -1473,6 +1565,7 @@ def inf_norm(vector):
 
     :return: maximum value of absolute values in vector
     :rtype: float
+
     """
     return max(abs(coord) for coord in vector)
 
@@ -1488,6 +1581,7 @@ def manhattan_distance(list_a, list_b):
 
     :return: the l1 distance between the two list
     :rtype: float
+
     """
     # faster than numpy
     return l1_norm(diff_list(list_a, list_b))
@@ -1505,6 +1599,7 @@ def euclidian_distance(list_a, list_b):
 
     :return: the l2 distance between the two list
     :rtype: float
+
     """
     # faster than numpy for len = 20000, nearly the same for len = 2000
     return l2_norm(diff_list(list_a, list_b))
@@ -1524,6 +1619,7 @@ def minkowski_distance(list_a, list_b, mink_power = 2):
 
     :return: the Minkowski distance between the two list
     :rtype: float
+
     """
     # faster than sum((a - b)**p for a, b in zip(list_a, list_b))**(1/p)
     return lp_norm(npy.array(list_a)-npy.array(list_b), mink_power=mink_power)
@@ -1537,6 +1633,7 @@ def mean(vector):
 
     :return: the mean of vector
     :rtype: float
+
     """
     return sum(vector)/len(vector)
 
@@ -1549,6 +1646,7 @@ def variance(vector):
 
     :return: the variance of vector
     :rtype: float
+
     """
     # faster than euclidian_distance(vector, [mean(vector)] * len(vector))**2 / len(vector)
     return float(npy.var(vector))
@@ -1565,6 +1663,7 @@ def covariance(vector_x, vector_y):
 
     :return: the covariance between vector_x and vector_y
     :rtype: float
+
     """
     # nearly as fast as numpy
     if len(vector_x) != len(vector_y):
@@ -1589,6 +1688,7 @@ def covariance_matrix(matrix):
     >>> for row in cov_matrix[:2]: print(row[:2])
     [70.58986267712706, -0.6737370735267286]
     [-0.6737370735267286, 0.011008722272395539]
+
     """
     return npy.cov(matrix, dtype=float).tolist()
 
@@ -1601,6 +1701,7 @@ def std(vector):
 
     :return: the standard deviation of vector
     :rtype: float
+
     """
     # faster than euclidian_distance(vector, [mean(vector)] * len(vector)) / math.sqrt(len(vector))
     return float(npy.std(vector))
@@ -1622,6 +1723,7 @@ def mahalanobis_distance(list_a, list_b, cov_matrix):
 
     :return: the Mahalanobis distance between the two list
     :rtype: float
+
     """
     inv_cov_matrix = npy.linalg.pinv(cov_matrix)
     return mahalanobis(list_a, list_b, inv_cov_matrix)
