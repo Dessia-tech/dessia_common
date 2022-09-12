@@ -298,7 +298,8 @@ class Workflow(Block):
     }
 
     def __init__(self, blocks, pipes, output, *, imposed_variable_values=None,
-                 description: str = "", documentation: str = "", name: str = ""):
+                 detached_variables: List[TypedVariable] = None , description: str = "",
+                 documentation: str = "", name: str = ""):
         self.blocks = blocks
         self.pipes = pipes
 
@@ -308,9 +309,12 @@ class Workflow(Block):
 
         self.coordinates = {}
 
-        name_variable = TypedVariableWithDefaultValue(type_=str, default_value="", name="Result Name")
-        self.nonblock_variables = [name_variable]
+        name_variable = TypedVariable(type_=str, name="Result Name")
         self.variables = []
+        self.nonblock_variables = []
+        if detached_variables is None:
+            detached_variables = []
+        self.detached_variables = detached_variables
         for block in self.blocks:
             self.handle_block(block)
 
@@ -339,8 +343,17 @@ class Workflow(Block):
             if not found_output:
                 raise WorkflowError("workflow's output is not in any block's outputs")
 
+        found_name = False
+        i = 0
+        all_nbvs = self.nonblock_variables + self.detached_variables
+        while not found_name and i < len(all_nbvs):
+            variable = all_nbvs[i]
+            found_name = variable.name == "Result Name"
+            i += 1
+        if not found_name:
+            self.detached_variables.insert(0, name_variable)
+
         Block.__init__(self, inputs=inputs, outputs=outputs, name=name)
-        self.output = self.outputs[0]
 
     def handle_pipe(self, pipe):
         """
@@ -350,6 +363,8 @@ class Workflow(Block):
         downstream_var = pipe.output_variable
         if upstream_var not in self.variables:
             self.variables.append(upstream_var)
+            if upstream_var in self.detached_variables:
+                self.detached_variables.remove(upstream_var)
             self.nonblock_variables.append(upstream_var)
         if downstream_var not in self.variables:
             self.variables.append(downstream_var)
@@ -636,7 +651,7 @@ class Workflow(Block):
 
         output = self.variable_indices(self.output)
         dict_.update({'blocks': blocks, 'pipes': pipes, 'output': output,
-                      'nonblock_variables': [v.to_dict() for v in self.nonblock_variables],
+                      'nonblock_variables': [v.to_dict() for v in self.nonblock_variables + self.detached_variables],
                       'package_mix': self.package_mix()})
 
         imposed_variable_values = {}
@@ -672,27 +687,36 @@ class Workflow(Block):
         else:
             nonblock_variables = []
 
+        connected_nbvs = {v: False for v in nonblock_variables}
+
         pipes = []
         for source, target in dict_['pipes']:
             if isinstance(source, int):
                 variable1 = nonblock_variables[source]
+                connected_nbvs[variable1] = True
             else:
                 ib1, _, ip1 = source
                 variable1 = blocks[ib1].outputs[ip1]
 
             if isinstance(target, int):
                 variable2 = nonblock_variables[target]
+                connected_nbvs[variable2] = True
             else:
                 ib2, _, ip2 = target
                 variable2 = blocks[ib2].inputs[ip2]
 
             pipes.append(Pipe(variable1, variable2))
 
+        detached_variables = []
+        for variable, is_connected in connected_nbvs.items():
+            if not is_connected:
+                detached_variables.append(variable)
+
         if dict_['output'] is not None:
             output = blocks[dict_['output'][0]].outputs[dict_['output'][2]]
         else:
             output = None
-        temp_workflow = cls(blocks=blocks, pipes=pipes, output=output)
+        temp_workflow = cls(blocks=blocks, pipes=pipes, output=output, detached_variables=detached_variables)
 
         if 'imposed_variable_values' in dict_ and 'imposed_variables' in dict_:
             # Legacy support of double list
@@ -1127,25 +1151,26 @@ class Workflow(Block):
         """
         coordinates = {}
         elements_by_distance = {}
-        for element in self.blocks + self.nonblock_variables:
-            distances = []
-            paths = nx.all_simple_paths(self.graph, element, self.output)
-            for path in paths:
-                distance = 1
-                for path_element in path[1:-1]:
-                    if path_element in self.blocks:
-                        distance += 1
-                    elif path_element in self.nonblock_variables:
-                        distance += 1
-                distances.append(distance)
-            try:
-                distance = max(distances)
-            except ValueError:
-                distance = 3
-            if distance in elements_by_distance:
-                elements_by_distance[distance].append(element)
-            else:
-                elements_by_distance[distance] = [element]
+        if self.output:
+            for element in self.blocks + self.nonblock_variables:
+                distances = []
+                paths = nx.all_simple_paths(self.graph, element, self.output)
+                for path in paths:
+                    distance = 1
+                    for path_element in path[1:-1]:
+                        if path_element in self.blocks:
+                            distance += 1
+                        elif path_element in self.nonblock_variables:
+                            distance += 1
+                    distances.append(distance)
+                try:
+                    distance = max(distances)
+                except ValueError:
+                    distance = 3
+                if distance in elements_by_distance:
+                    elements_by_distance[distance].append(element)
+                else:
+                    elements_by_distance[distance] = [element]
 
         if len(elements_by_distance) != 0:
             max_distance = max(elements_by_distance.keys())
