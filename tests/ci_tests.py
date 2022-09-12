@@ -1,12 +1,10 @@
 
-import os
 import unittest
 
 scripts = ['displays.py',
            'generation.py',
            'models_test.py',
            'files.py',
-           'vectored_objects.py',
            'clustering.py',
            'heterogeneous_list.py',
            'heterogeneous_list_pareto.py',
@@ -14,6 +12,7 @@ scripts = ['displays.py',
            'moving_object.py',
            'optimization.py',
            'graph.py',
+           'jsonschema.py',
            # Workflows
            'workflow/blocks.py',
            'workflow/workflow_with_models.py',
@@ -25,6 +24,8 @@ scripts = ['displays.py',
            'workflow/workflow_clustering.py',
            'workflow/workflow_filtering.py',
            'workflow/workflow_pareto.py',
+           'workflow/workflow_method_dict.py',
+           'workflow/various_tests.py',
            # breakdown
            'breakdown.py',
            # Utils

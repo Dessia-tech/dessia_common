@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 """
 Module for errors in dessia_common
-
 """
 
 

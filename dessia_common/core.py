@@ -236,7 +236,6 @@ class DessiaObject:
         """
         Generic dict_to_object method
         """
-
         if cls is not DessiaObject:
             obj = dict_to_object(dict_=dict_, class_=cls, force_generic=force_generic, global_dict=global_dict,
                                  pointers_memo=pointers_memo, path=path)
@@ -611,7 +610,10 @@ class DessiaObject:
                                                             ' after serialization/deserialization')
         copied_object = self.copy()
         if not copied_object._data_eq(self):
-            print('data diff: ', self._data_diff(copied_object))
+            try:
+                print('data diff: ', self._data_diff(copied_object))
+            except:
+                pass
             raise dessia_common.errors.CopyError('Object is not equal to itself after copy')
 
         valid, hint = is_bson_valid(stringify_dict_keys(dict_))
@@ -668,8 +670,7 @@ class PhysicalObject(DessiaObject):
         """
         display_settings = DessiaObject.display_settings()
         display_settings.append(DisplaySetting(selector='cad', type_='babylon_data',
-                                               method='volmdlr_volume_model().babylon_data',
-                                               serialize_data=True))
+                                               method='volmdlr_volume_model().babylon_data', serialize_data=True))
         return display_settings
 
     def volmdlr_primitives(self):
@@ -1104,7 +1105,8 @@ class FiltersList(DessiaObject):
 
         Examples
         --------
-        >>> from dessia_common.core import HeterogeneousList, FiltersList
+        >>> from dessia_common.core import FiltersList
+        >>> from dessia_common.datatools import HeterogeneousList
         >>> from dessia_common.models import all_cars_wi_feat
         >>> filters = [DessiaFilter('weight', '<=', 1650.), DessiaFilter('mpg', '>=', 45.)]
         >>> filters_list = FiltersList(filters, logical_operator="xor", name="example")
@@ -1180,27 +1182,35 @@ def getdeepattr(obj, attr):
 
 def enhanced_deep_attr(obj, sequence):
     """
+    Deprecated. Use get_in_from_path from dessia_common.breakdown.py instead
+
     Get deep attribute where Objects, Dicts and Lists can be found in recursion.
 
     :param obj: Parent object in which recursively find attribute represented by sequence
     :param sequence: List of strings and integers that represents path to deep attribute.
     :return: Value of deep attribute
     """
+    warnings.warn("enhanced_deep_attr is deprecated. Use get_in_from_path from dessia_common.breakdown.py instead")
     if isinstance(sequence, str):
-        # Sequence is a string and not a sequence of deep attributes
-        if '/' in sequence:
-            # Is deep attribute reference
-            sequence = deepattr_to_sequence(sequence)
-            return enhanced_deep_attr(obj=obj, sequence=sequence)
-        # Is direct attribute
-        return enhanced_get_attr(obj=obj, attr=sequence)
+        path = f"#/{sequence}"
+    else:
+        path = f"#/{'/'.join(sequence)}"
+    return get_in_object_from_path(object_=obj, path=path)
 
-    # Get direct attribute
-    subobj = enhanced_get_attr(obj=obj, attr=sequence[0])
-    if len(sequence) > 1:
-        # Recursively get deep attributes
-        subobj = enhanced_deep_attr(obj=subobj, sequence=sequence[1:])
-    return subobj
+        # # Sequence is a string and not a sequence of deep attributes
+        # if '/' in sequence:
+        #     # Is deep attribute reference
+        #     sequence = sequence.split('/')
+        #     return enhanced_deep_attr(obj=obj, sequence=sequence)
+        # # Is direct attribute
+        # return enhanced_get_attr(obj=obj, attr=sequence)
+    #
+    # # Get direct attribute
+    # subobj = enhanced_get_attr(obj=obj, attr=sequence[0])
+    # if len(sequence) > 1:
+    #     # Recursively get deep attributes
+    #     subobj = enhanced_deep_attr(obj=subobj, sequence=sequence[1:])
+    # return subobj
 
 
 def enhanced_get_attr(obj, attr):
@@ -1228,8 +1238,7 @@ def enhanced_get_attr(obj, attr):
         except TypeError:
             track += tb.format_exc()
             msg = f"Object of type '{classname}' is not subscriptable. Failed to deeply get '{attr}' from it"
-    raise dessia_common.errors.DeepAttributeError(
-        message=msg, traceback_=track)
+    raise dessia_common.errors.DeepAttributeError(message=msg, traceback_=track)
 
 
 def concatenate_attributes(prefix, suffix, type_: str = 'str'):
@@ -1254,15 +1263,10 @@ def concatenate_attributes(prefix, suffix, type_: str = 'str'):
     raise ValueError(wrong_concat_type.format(type_))
 
 
-def deepattr_to_sequence(deepattr: str):
-    sequence = deepattr.split('/')
-    healed_sequence = []
-    for attribute in sequence:
-        try:
-            healed_sequence.append(int(attribute))
-        except ValueError:
-            healed_sequence.append(attribute)
-    return healed_sequence
+# def deepattr_to_sequence(deepattr: str):
+#     sequence = deepattr.split('/')
+#     healed_sequence = [a for a in sequence]
+#     return healed_sequence
 
 
 def sequence_to_deepattr(sequence):
