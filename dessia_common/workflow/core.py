@@ -678,73 +678,34 @@ class Workflow(Block):
         global_dict, pointers_memo = update_pointers_data(global_dict=global_dict, current_dict=dict_,
                                                           pointers_memo=pointers_memo)
 
-        blocks = [deserialize(serialized_element=d, global_dict=global_dict, pointers_memo=pointers_memo)
-                  for d in dict_["blocks"]]
-        if 'nonblock_variables' in dict_:
-            nonblock_variables = [deserialize(serialized_element=d, global_dict=global_dict,
-                                              pointers_memo=pointers_memo)
-                                  for d in dict_['nonblock_variables']]
-        else:
-            nonblock_variables = []
-
-        connected_nbvs = {v: False for v in nonblock_variables}
-
-        pipes = []
-        for source, target in dict_['pipes']:
-            if isinstance(source, int):
-                variable1 = nonblock_variables[source]
-                connected_nbvs[variable1] = True
-            else:
-                ib1, _, ip1 = source
-                variable1 = blocks[ib1].outputs[ip1]
-
-            if isinstance(target, int):
-                variable2 = nonblock_variables[target]
-                connected_nbvs[variable2] = True
-            else:
-                ib2, _, ip2 = target
-                variable2 = blocks[ib2].inputs[ip2]
-
-            pipes.append(Pipe(variable1, variable2))
-
-        detached_variables = []
-        for variable, is_connected in connected_nbvs.items():
-            if not is_connected:
-                detached_variables.append(variable)
-
-        if dict_['output'] is not None:
-            output = blocks[dict_['output'][0]].outputs[dict_['output'][2]]
-        else:
-            output = None
-        temp_workflow = cls(blocks=blocks, pipes=pipes, output=output, detached_variables=detached_variables)
+        workflow = initialize_workflow(dict_=dict_, global_dict=global_dict, pointers_memo=pointers_memo)
 
         if 'imposed_variable_values' in dict_ and 'imposed_variables' in dict_:
             # Legacy support of double list
             imposed_variable_values = {}
-            iterator = zip(dict_['imposed_variables'], dict_['imposed_variable_values'])
-            for variable_index, serialized_value in iterator:
+            for variable_index, serialized_value in zip(dict_['imposed_variables'], dict_['imposed_variable_values']):
                 value = deserialize(serialized_value, global_dict=global_dict, pointers_memo=pointers_memo)
-                variable = temp_workflow.variable_from_index(variable_index)
-
+                variable = workflow.variable_from_index(variable_index)
                 imposed_variable_values[variable] = value
         else:
             imposed_variable_values = {}
             if 'imposed_variable_indices' in dict_:
                 for variable_index in dict_['imposed_variable_indices']:
-                    variable = temp_workflow.variable_from_index(variable_index)
+                    variable = workflow.variable_from_index(variable_index)
                     imposed_variable_values[variable] = variable.default_value
             if 'imposed_variable_values' in dict_:
                 # New format with a dict
                 for variable_index_str, serialized_value in dict_['imposed_variable_values'].items():
                     variable_index = ast.literal_eval(variable_index_str)
                     value = deserialize(serialized_value, global_dict=global_dict, pointers_memo=pointers_memo)
-                    variable = temp_workflow.variable_from_index(variable_index)
+                    variable = workflow.variable_from_index(variable_index)
                     imposed_variable_values[variable] = value
 
             if 'imposed_variable_indices' not in dict_ and 'imposed_variable_values' not in dict_:
                 imposed_variable_values = None
-        return cls(blocks=blocks, pipes=pipes, output=output, imposed_variable_values=imposed_variable_values,
-                   description=dict_["description"], documentation=dict_["documentation"], name=dict_["name"])
+        return cls(blocks=workflow.blocks, pipes=workflow.pipes, output=workflow.output,
+                   imposed_variable_values=imposed_variable_values, description=dict_["description"],
+                   documentation=dict_["documentation"], name=dict_["name"])
 
     def dict_to_arguments(self, dict_: JsonSerializable, method: str):
         """
@@ -2133,6 +2094,44 @@ class WorkflowRun(WorkflowState):
         jsonschemas = {"run_again": workflow_jsonschemas.pop('run')}
         jsonschemas['run_again']['classes'] = ["dessia_common.workflow.WorkflowRun"]
         return jsonschemas
+
+
+def initialize_workflow(dict_, global_dict, pointers_memo) -> Workflow:
+    blocks = [deserialize(serialized_element=d, global_dict=global_dict, pointers_memo=pointers_memo)
+              for d in dict_["blocks"]]
+    if 'nonblock_variables' in dict_:
+        nonblock_variables = [deserialize(serialized_element=d, global_dict=global_dict,
+                                          pointers_memo=pointers_memo)
+                              for d in dict_['nonblock_variables']]
+    else:
+        nonblock_variables = []
+
+    connected_nbvs = {v: False for v in nonblock_variables}
+
+    pipes = []
+    for source, target in dict_['pipes']:
+        if isinstance(source, int):
+            variable1 = nonblock_variables[source]
+            connected_nbvs[variable1] = True
+        else:
+            ib1, _, ip1 = source
+            variable1 = blocks[ib1].outputs[ip1]
+
+        if isinstance(target, int):
+            variable2 = nonblock_variables[target]
+            connected_nbvs[variable2] = True
+        else:
+            ib2, _, ip2 = target
+            variable2 = blocks[ib2].inputs[ip2]
+
+        pipes.append(Pipe(variable1, variable2))
+
+    if dict_['output'] is not None:
+        output = blocks[dict_['output'][0]].outputs[dict_['output'][2]]
+    else:
+        output = None
+    return Workflow(blocks=blocks, pipes=pipes, output=output,
+                    detached_variables=[v for v, is_connected in connected_nbvs.items() if not is_connected])
 
 
 def value_type_check(value, type_):
