@@ -3,7 +3,7 @@
 
 
 import dessia_common
-from dessia_common.models.tests import standalone_object
+from dessia_common.models.forms import standalone_object
 
 import unittest
 from parameterized import parameterized

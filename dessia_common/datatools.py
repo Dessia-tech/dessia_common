@@ -16,7 +16,7 @@ try:
 except ImportError:
     pass
 from dessia_common.exports import XLSXWriter
-from dessia_common.core import DessiaObject, DessiaFilter, FiltersList, get_attribute_names, templates
+from dessia_common.core import DessiaObject, DessiaFilter, FiltersList, templates
 
 
 class HeterogeneousList(DessiaObject):

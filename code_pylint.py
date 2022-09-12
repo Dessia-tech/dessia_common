@@ -18,20 +18,20 @@ MIN_NOTE = 9.17
 UNWATCHED_ERRORS = ['fixme', 'trailing-whitespace', 'import-error']
 
 MAX_ERROR_BY_TYPE = {
-                     'protected-access': 41,
-                     'invalid-name': 4,
+                     'protected-access': 45,
+                     'invalid-name': 0,
                      'consider-using-f-string': 1,
                      'no-else-return': 0,
                      'arguments-differ': 2,
                      'no-member': 1,
-                     'too-many-locals': 16,  # Reduce by dropping vectored objects
+                     'too-many-locals': 12,  # Reduce by dropping vectored objects
                      'wrong-import-order': 7,
-                     'too-many-branches': 11,
-                     'unused-import': 1,
-                     'unused-argument': 5,
+                     'too-many-branches': 10,
+                     'unused-import': 0,
+                     'unused-argument': 6,
                      'cyclic-import': 10,
                      'no-self-use': 6,
-                     'unused-variable': 1,
+                     'unused-variable': 0,
                      'trailing-whitespace': 11,
                      'empty-docstring': 7,
                      'missing-module-docstring': 1,
@@ -45,9 +45,9 @@ MAX_ERROR_BY_TYPE = {
                      'abstract-method': 6,
                      'import-outside-toplevel': 12,  # TODO : will reduced in a future work (when tests are ready)
                      'too-many-instance-attributes': 7,
-                     'consider-iterating-dictionary': 4,
+                     'consider-iterating-dictionary': 1,
                      'attribute-defined-outside-init': 3,
-                     'simplifiable-if-expression': 3,
+                     'simplifiable-if-expression': 1,
                      'broad-except': 3,
                      'consider-using-get': 0,
                      'undefined-loop-variable': 1,
@@ -85,7 +85,7 @@ MAX_ERROR_BY_TYPE = {
                      'redefined-argument-from-local': 0,
                      'import-error': 0,
                      'unsubscriptable-object': 0,
-                     'unnecessary-dunder-call': 4
+                     'unnecessary-dunder-call': 2
                      }
 
 print('pylint version: ', __version__)
