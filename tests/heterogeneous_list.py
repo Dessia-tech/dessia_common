@@ -34,12 +34,10 @@ class Bidon(DessiaObject):
 
 bidon = Bidon()
 bidon_hlist = HeterogeneousList([bidon]*3)
-bidon_hlist.plot()
 assert(bidon_hlist.common_attributes == ['attr1', 'attr2', 'prop1', 'in_to_vector'])
 
 # When attribute _features is not specified in class Car
 all_cars_without_features = HeterogeneousList(all_cars_no_feat)
-all_cars_without_features.plot()
 
 # When attribute _features is specified in class CarWithFeatures
 all_cars_with_features = HeterogeneousList(all_cars_wi_feat)

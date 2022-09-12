@@ -280,8 +280,7 @@ class HeterogeneousList(DessiaObject):
         [3504.0, 3693.0, 3436.0, 3433.0, 3449.0, 4341.0, 4354.0, 4312.0, 4425.0, 3850.0]
         """
         if not hasattr(self.dessia_objects[0], attribute):
-            idx = self.common_attributes.index(attribute)
-            return [row[idx] for row in self.matrix]
+            return self.get_column_values(self.common_attributes.index(attribute))
         return [getattr(dessia_object, attribute) for dessia_object in self.dessia_objects]
 
     def get_column_values(self, index: int):
