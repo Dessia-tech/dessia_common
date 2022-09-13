@@ -32,7 +32,6 @@ MAX_ERROR_BY_TYPE = {
                      'cyclic-import': 12,
                      'unused-import': 0,
                      'unused-argument': 6,
-                     'cyclic-import': 10,
                      'no-self-use': 6,
                      'unused-variable': 0,
                      'trailing-whitespace': 11,
