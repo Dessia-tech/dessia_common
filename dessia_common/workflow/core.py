@@ -298,7 +298,7 @@ class Workflow(Block):
     }
 
     def __init__(self, blocks, pipes, output, *, imposed_variable_values=None,
-                 detached_variables: List[TypedVariable] = None , description: str = "",
+                 detached_variables: List[TypedVariable] = None, description: str = "",
                  documentation: str = "", name: str = ""):
         self.blocks = blocks
         self.pipes = pipes
@@ -703,9 +703,20 @@ class Workflow(Block):
 
             if 'imposed_variable_indices' not in dict_ and 'imposed_variable_values' not in dict_:
                 imposed_variable_values = None
+
+        if "description" in dict_: # retro compat
+            description = dict_["description"]
+        else:
+            description = ""
+
+        if "documentation" in dict_: # retro compat
+            documentation = dict_["documentation"]
+        else:
+            documentation = ""
+
         return cls(blocks=workflow.blocks, pipes=workflow.pipes, output=workflow.output,
-                   imposed_variable_values=imposed_variable_values, description=dict_["description"],
-                   documentation=dict_["documentation"], name=dict_["name"])
+                   imposed_variable_values=imposed_variable_values, description=description,
+                   documentation=documentation, name=dict_["name"])
 
     def dict_to_arguments(self, dict_: JsonSerializable, method: str):
         """
