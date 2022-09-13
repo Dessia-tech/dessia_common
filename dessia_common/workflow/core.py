@@ -140,6 +140,9 @@ class TypedVariableWithDefaultValue(TypedVariable):
         return TypedVariableWithDefaultValue(type_=self.type_, default_value=copied_default_value, name=self.name)
 
 
+NAME_VARIABLE = TypedVariable(type_=str, name="Result Name")
+
+
 def set_block_variable_names_from_dict(func):
     def func_wrapper(cls, dict_):
         obj = func(cls, dict_)
@@ -298,7 +301,8 @@ class Workflow(Block):
     }
 
     def __init__(self, blocks, pipes, output, *, imposed_variable_values=None,
-                 description: str = "", documentation: str = "", name: str = ""):
+                 detached_variables: List[TypedVariable] = None, description: str = "",
+                 documentation: str = "", name: str = ""):
         self.blocks = blocks
         self.pipes = pipes
 
@@ -308,8 +312,11 @@ class Workflow(Block):
 
         self.coordinates = {}
 
-        self.nonblock_variables = []
         self.variables = []
+        self.nonblock_variables = []
+        if detached_variables is None:
+            detached_variables = []
+        self.detached_variables = detached_variables
         for block in self.blocks:
             self.handle_block(block)
 
@@ -326,7 +333,10 @@ class Workflow(Block):
         self.description = description
         self.documentation = documentation
 
+        outputs = []
+        self.output = output
         if output is not None:
+            outputs.append(output)
             found_output = False
             i = 0
             while not found_output and i < len(self.blocks):
@@ -335,8 +345,17 @@ class Workflow(Block):
             if not found_output:
                 raise WorkflowError("workflow's output is not in any block's outputs")
 
-        Block.__init__(self, inputs=inputs, outputs=[output], name=name)
-        self.output = self.outputs[0]
+        found_name = False
+        i = 0
+        all_nbvs = self.nonblock_variables + self.detached_variables
+        while not found_name and i < len(all_nbvs):
+            variable = all_nbvs[i]
+            found_name = variable.name == "Result Name"
+            i += 1
+        if not found_name:
+            self.detached_variables.insert(0, NAME_VARIABLE)
+
+        Block.__init__(self, inputs=inputs, outputs=outputs, name=name)
 
     def handle_pipe(self, pipe):
         """
@@ -346,6 +365,8 @@ class Workflow(Block):
         downstream_var = pipe.output_variable
         if upstream_var not in self.variables:
             self.variables.append(upstream_var)
+            if upstream_var in self.detached_variables:
+                self.detached_variables.remove(upstream_var)
             self.nonblock_variables.append(upstream_var)
         if downstream_var not in self.variables:
             self.variables.append(downstream_var)
@@ -365,7 +386,7 @@ class Workflow(Block):
             raise ValueError(f"Cannot serialize block {block} ({block.name})") from err
 
     def _data_hash(self):
-        output_hash = hash(self.variable_indices(self.outputs[0]))
+        output_hash = hash(self.variable_indices(self.output))
         base_hash = len(self.blocks) + 11 * len(self.pipes) + 23 * len(self.imposed_variable_values) + output_hash
         block_hash = int(sum(b.equivalent_hash() for b in self.blocks) % 10e5)
         return (base_hash + block_hash) % 1000000000
@@ -607,9 +628,9 @@ class Workflow(Block):
                 current_dict.update(dict_)
             if input_ not in self.imposed_variable_values:  # Removes from Optional in edits
                 properties_dict[str(i)] = current_dict[str(i)]
-        properties_dict[str(len(self.inputs) + 1)] = {'type': 'string', 'title': 'WorkflowRun Name', 'editable': True,
-                                                      'order': 0, "description": "Name for the resulting WorkflowRun",
-                                                      'default_value': '', 'python_typing': 'builtins.str'}
+        # properties_dict[str(len(self.inputs) + 1)] = {'type': 'string', 'title': 'WorkflowRun Name', 'editable': True,
+        #                                               'order': 0, "description": "Name for the resulting WorkflowRun",
+        #                                               'default_value': '', 'python_typing': 'builtins.str'}
         jsonschemas['run'].update({'required': required_inputs, 'method': True,
                                    'python_typing': serialize_typing(MethodType)})
         jsonschemas['start_run'] = deepcopy(jsonschemas['run'])
@@ -630,8 +651,9 @@ class Workflow(Block):
 
         pipes = [self.pipe_variable_indices(p) for p in self.pipes]
 
-        dict_.update({'blocks': blocks, 'pipes': pipes, 'output': self.variable_indices(self.outputs[0]),
-                      'nonblock_variables': [v.to_dict() for v in self.nonblock_variables],
+        output = self.variable_indices(self.output)
+        dict_.update({'blocks': blocks, 'pipes': pipes, 'output': output,
+                      'nonblock_variables': [v.to_dict() for v in self.nonblock_variables + self.detached_variables],
                       'package_mix': self.package_mix()})
 
         imposed_variable_values = {}
@@ -639,7 +661,7 @@ class Workflow(Block):
             var_index = self.variable_indices(variable)
 
             if use_pointers:
-                ser_value, memo = serialize_with_pointers(value, memo=memo,
+                ser_value, memo = serialize_with_pointers(value=value, memo=memo,
                                                           path=f"{path}/imposed_variable_values/{var_index}")
             else:
                 ser_value = serialize(value)
@@ -658,76 +680,45 @@ class Workflow(Block):
         global_dict, pointers_memo = update_pointers_data(global_dict=global_dict, current_dict=dict_,
                                                           pointers_memo=pointers_memo)
 
-        blocks = [deserialize(serialized_element=d, global_dict=global_dict, pointers_memo=pointers_memo)
-                  for d in dict_["blocks"]]
-        if 'nonblock_variables' in dict_:
-            nonblock_variables = [deserialize(serialized_element=d, global_dict=global_dict,
-                                              pointers_memo=pointers_memo)
-                                  for d in dict_['nonblock_variables']]
-        else:
-            nonblock_variables = []
-
-        pipes = []
-        for source, target in dict_['pipes']:
-            if isinstance(source, int):
-                variable1 = nonblock_variables[source]
-            else:
-                ib1, _, ip1 = source
-                variable1 = blocks[ib1].outputs[ip1]
-
-            if isinstance(target, int):
-                variable2 = nonblock_variables[target]
-            else:
-                ib2, _, ip2 = target
-                variable2 = blocks[ib2].inputs[ip2]
-
-            pipes.append(Pipe(variable1, variable2))
-
-        if dict_['output'] is not None:
-            output = blocks[dict_['output'][0]].outputs[dict_['output'][2]]
-        else:
-            output = None
-        temp_workflow = cls(blocks=blocks, pipes=pipes, output=output)
+        workflow = initialize_workflow(dict_=dict_, global_dict=global_dict, pointers_memo=pointers_memo)
 
         if 'imposed_variable_values' in dict_ and 'imposed_variables' in dict_:
             # Legacy support of double list
             imposed_variable_values = {}
-            iterator = zip(dict_['imposed_variables'], dict_['imposed_variable_values'])
-            for variable_index, serialized_value in iterator:
+            for variable_index, serialized_value in zip(dict_['imposed_variables'], dict_['imposed_variable_values']):
                 value = deserialize(serialized_value, global_dict=global_dict, pointers_memo=pointers_memo)
-                variable = temp_workflow.variable_from_index(variable_index)
-
+                variable = workflow.variable_from_index(variable_index)
                 imposed_variable_values[variable] = value
         else:
             imposed_variable_values = {}
             if 'imposed_variable_indices' in dict_:
                 for variable_index in dict_['imposed_variable_indices']:
-                    variable = temp_workflow.variable_from_index(variable_index)
+                    variable = workflow.variable_from_index(variable_index)
                     imposed_variable_values[variable] = variable.default_value
             if 'imposed_variable_values' in dict_:
                 # New format with a dict
                 for variable_index_str, serialized_value in dict_['imposed_variable_values'].items():
                     variable_index = ast.literal_eval(variable_index_str)
                     value = deserialize(serialized_value, global_dict=global_dict, pointers_memo=pointers_memo)
-                    variable = temp_workflow.variable_from_index(variable_index)
+                    variable = workflow.variable_from_index(variable_index)
                     imposed_variable_values[variable] = value
 
             if 'imposed_variable_indices' not in dict_ and 'imposed_variable_values' not in dict_:
                 imposed_variable_values = None
 
-        if "description" in dict_:
-            # Retro-compatibility
+        if "description" in dict_: # retro compat
             description = dict_["description"]
         else:
             description = ""
 
-        if "documentation" in dict_:
-            # Retro-compatibility
+        if "documentation" in dict_: # retro compat
             documentation = dict_["documentation"]
         else:
             documentation = ""
-        return cls(blocks=blocks, pipes=pipes, output=output, imposed_variable_values=imposed_variable_values,
-                   description=description, documentation=documentation, name=dict_["name"])
+
+        return cls(blocks=workflow.blocks, pipes=workflow.pipes, output=workflow.output,
+                   imposed_variable_values=imposed_variable_values, description=description,
+                   documentation=documentation, name=dict_["name"])
 
     def dict_to_arguments(self, dict_: JsonSerializable, method: str):
         """
@@ -735,21 +726,17 @@ class Workflow(Block):
         """
         dict_ = {int(k): v for k, v in dict_.items()}  # serialisation set keys as strings
         if method in self._allowed_methods:
+            name = None
             arguments_values = {}
             for i, input_ in enumerate(self.inputs):
                 has_default = input_.has_default_value
                 if not has_default or (has_default and i in dict_):
                     value = dict_[i]
                     deserialized_value = deserialize_argument(type_=input_.type_, argument=value)
+                    if input_.name == "Result Name":
+                        name = deserialize_argument(type_=input_.type_, argument=value)
                     arguments_values[i] = deserialized_value
-
-            name_index = len(self.inputs) + 1
-            if name_index in dict_:
-                name = dict_[name_index]
-            else:
-                name = None
-            arguments = {'input_values': arguments_values, 'name': name}
-            return arguments
+            return {'input_values': arguments_values, 'name': name}
         raise NotImplementedError(f"Method {method} not in Workflow allowed methods")
 
     def _run_dict(self) -> Dict:
@@ -832,6 +819,7 @@ class Workflow(Block):
         """
         Returns blocks that are upstream for output
         """
+        # TODO Check what's happening when output is null (incomplete workflow)
         output_block = self.block_from_variable(self.output)
         output_upstreams = self.upstream_blocks(output_block)
         runtime_blocks = [output_block] + output_upstreams
@@ -1121,25 +1109,26 @@ class Workflow(Block):
         """
         coordinates = {}
         elements_by_distance = {}
-        for element in self.blocks + self.nonblock_variables:
-            distances = []
-            paths = nx.all_simple_paths(self.graph, element, self.outputs[0])
-            for path in paths:
-                distance = 1
-                for path_element in path[1:-1]:
-                    if path_element in self.blocks:
-                        distance += 1
-                    elif path_element in self.nonblock_variables:
-                        distance += 1
-                distances.append(distance)
-            try:
-                distance = max(distances)
-            except ValueError:
-                distance = 3
-            if distance in elements_by_distance:
-                elements_by_distance[distance].append(element)
-            else:
-                elements_by_distance[distance] = [element]
+        if self.output:
+            for element in self.blocks + self.nonblock_variables:
+                distances = []
+                paths = nx.all_simple_paths(self.graph, element, self.output)
+                for path in paths:
+                    distance = 1
+                    for path_element in path[1:-1]:
+                        if path_element in self.blocks:
+                            distance += 1
+                        elif path_element in self.nonblock_variables:
+                            distance += 1
+                    distances.append(distance)
+                try:
+                    distance = max(distances)
+                except ValueError:
+                    distance = 3
+                if distance in elements_by_distance:
+                    elements_by_distance[distance].append(element)
+                else:
+                    elements_by_distance[distance] = [element]
 
         if len(elements_by_distance) != 0:
             max_distance = max(elements_by_distance.keys())
@@ -2118,6 +2107,49 @@ class WorkflowRun(WorkflowState):
         jsonschemas = {"run_again": workflow_jsonschemas.pop('run')}
         jsonschemas['run_again']['classes'] = ["dessia_common.workflow.WorkflowRun"]
         return jsonschemas
+
+
+def initialize_workflow(dict_, global_dict, pointers_memo) -> Workflow:
+    blocks = [deserialize(serialized_element=d, global_dict=global_dict, pointers_memo=pointers_memo)
+              for d in dict_["blocks"]]
+    if 'nonblock_variables' in dict_:
+        nonblock_variables = [deserialize(serialized_element=d, global_dict=global_dict, pointers_memo=pointers_memo)
+                              for d in dict_['nonblock_variables']]
+    else:
+        nonblock_variables = []
+
+    connected_nbvs = {v: False for v in nonblock_variables}
+
+    pipes = deserialize_pipes(pipes_dict=dict_['pipes'], blocks=blocks, nonblock_variables=nonblock_variables,
+                              connected_nbvs=connected_nbvs)
+
+    if dict_['output'] is not None:
+        output = blocks[dict_['output'][0]].outputs[dict_['output'][2]]
+    else:
+        output = None
+    return Workflow(blocks=blocks, pipes=pipes, output=output,
+                    detached_variables=[v for v, is_connected in connected_nbvs.items() if not is_connected])
+
+
+def deserialize_pipes(pipes_dict, blocks, nonblock_variables, connected_nbvs):
+    pipes = []
+    for source, target in pipes_dict:
+        if isinstance(source, int):
+            variable1 = nonblock_variables[source]
+            connected_nbvs[variable1] = True
+        else:
+            ib1, _, ip1 = source
+            variable1 = blocks[ib1].outputs[ip1]
+
+        if isinstance(target, int):
+            variable2 = nonblock_variables[target]
+            connected_nbvs[variable2] = True
+        else:
+            ib2, _, ip2 = target
+            variable2 = blocks[ib2].inputs[ip2]
+
+        pipes.append(Pipe(variable1, variable2))
+    return pipes
 
 
 def value_type_check(value, type_):
