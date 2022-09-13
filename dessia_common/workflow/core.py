@@ -140,6 +140,9 @@ class TypedVariableWithDefaultValue(TypedVariable):
         return TypedVariableWithDefaultValue(type_=self.type_, default_value=copied_default_value, name=self.name)
 
 
+NAME_VARIABLE = TypedVariable(type_=str, name="Result Name")
+
+
 def set_block_variable_names_from_dict(func):
     def func_wrapper(cls, dict_):
         obj = func(cls, dict_)
@@ -309,7 +312,6 @@ class Workflow(Block):
 
         self.coordinates = {}
 
-        name_variable = TypedVariable(type_=str, name="Result Name")
         self.variables = []
         self.nonblock_variables = []
         if detached_variables is None:
@@ -351,7 +353,7 @@ class Workflow(Block):
             found_name = variable.name == "Result Name"
             i += 1
         if not found_name:
-            self.detached_variables.insert(0, name_variable)
+            self.detached_variables.insert(0, NAME_VARIABLE)
 
         Block.__init__(self, inputs=inputs, outputs=outputs, name=name)
 
