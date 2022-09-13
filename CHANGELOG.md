@@ -7,9 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
-### Fixed
+### Added
+- FiltersList class
+- Easy access to HeterogeneousList with getitem, len, add, extend, sort
+- filtering method in HeterogeneousList that calls a FiltersList
+- Documentation for HeterogeneousList, CategorizedList, DessiaFilter, FiltersList
+- pareto front and parallel plot for HeterogeneousList
+- Sort parallel plot axis with correlation coefficient (experimental algorithm that seems to work)
+- Nearly all required tests for all these developments
 
+### Breaking Changes
+- Change attribute "operator" of DessiaFilter to "comparison_operator"
+- Change name of file "cluster.py" to "datatools.py"
+- Move HeterogeneousList in "datatools.py"
+
+### Changes
+- Add 'logical_operator="and"' attribute to workflow.block.Filter
+- Improve workflow._data_eq
+
+### Performance
+- DessiaFilters and FiltersList: A priori optimized access to elements so it is really faster than before
+
+### Fixed
 - Excel Export now used proper length of the cell value
+- Fix workflow.copy() issue where a nbv with several pipes became several nbv with one pipe  
 
 ## v0.9.0 [7/20/2022]
 
