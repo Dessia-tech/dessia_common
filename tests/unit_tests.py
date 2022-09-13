@@ -13,7 +13,7 @@ serialized_union = 'Union[{}, {}]'.format(subobject_classname, enhanced_classnam
 assert standalone_object._get_from_path("#/standalone_subobject/floatarg") == 3.78
 assert standalone_object._get_from_path("#/embedded_subobject/embedded_list/2") == 3
 assert standalone_object._get_from_path("#/object_list/0/floatarg") == 666.999
-assert standalone_object._get_from_path("strarg") == 'TestStr'
+assert standalone_object._get_from_path("intarg") == 5
 
 # Test to_dict/dict_to_object
 d = standalone_object.to_dict()

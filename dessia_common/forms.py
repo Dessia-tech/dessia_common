@@ -181,8 +181,6 @@ class StandaloneObject(MovingObject):
     :type embedded_subobject: EmbeddedSubobject
     :param dynamic_dict: A variable length dict
     :type dynamic_dict: Dict[str, bool]
-    :param tuple_arg: A heterogeneous sequence
-    :type tuple_arg: tuple
     """
     _standalone_in_db = True
     _generic_eq = True
@@ -191,8 +189,7 @@ class StandaloneObject(MovingObject):
 
     def __init__(self, standalone_subobject: StandaloneSubobject, embedded_subobject: EmbeddedSubobject,
                  dynamic_dict: Dict[str, bool], float_dict: Dict[str, float], string_dict: Dict[str, str],
-                 tuple_arg: Tuple[str, int], intarg: int, strarg: str,
-                 object_list: List[StandaloneSubobject], subobject_list: List[EmbeddedSubobject],
+                 intarg: int, object_list: List[StandaloneSubobject], subobject_list: List[EmbeddedSubobject],
                  builtin_list: List[int], union_arg: List[UnionArg],
                  subclass_arg: InstanceOf[StandaloneSubobject], array_arg: List[List[float]],
                  name: str = 'Standalone Object Demo'):
@@ -200,12 +197,10 @@ class StandaloneObject(MovingObject):
         self.builtin_list = builtin_list
         self.subobject_list = subobject_list
         self.object_list = object_list
-        self.tuple_arg = tuple_arg
-        self.strarg = strarg
-        self.intarg = intarg
         self.dynamic_dict = dynamic_dict
         self.float_dict = float_dict
         self.string_dict = string_dict
+        self.intarg = intarg
         self.standalone_subobject = standalone_subobject
         self.embedded_subobject = embedded_subobject
         self.subclass_arg = subclass_arg
@@ -227,8 +222,7 @@ class StandaloneObject(MovingObject):
             subclass_arg = InheritingStandaloneSubobject.generate(seed)
         return cls(standalone_subobject=StandaloneSubobject.generate(seed),
                    embedded_subobject=EmbeddedSubobject.generate(seed),
-                   dynamic_dict=dynamic_dict, float_dict=float_dict, string_dict=string_dict,
-                   tuple_arg=('value', seed * 3), intarg=seed, strarg=str(seed) * floor(seed / 3),
+                   dynamic_dict=dynamic_dict, float_dict=float_dict, string_dict=string_dict, intarg=seed,
                    object_list=StandaloneSubobject.generate_many(seed),
                    subobject_list=EmbeddedSubobject.generate_many(seed), builtin_list=builtin_list, union_arg=union_arg,
                    subclass_arg=subclass_arg, array_arg=array_arg, name=name)
@@ -460,17 +454,11 @@ class StandaloneObjectWithDefaultValues(StandaloneObject):
 
     def __init__(self, standalone_subobject: StandaloneSubobject = DEF_SS,
                  embedded_subobject: EmbeddedSubobject = DEF_ES,
-                 dynamic_dict: Dict[str, bool] = None,
-                 float_dict: Dict[str, float] = None,
-                 string_dict: Dict[str, str] = None,
-                 tuple_arg: Tuple[str, int] = ("Default Tuple", 0),
-                 intarg: int = 1, strarg: str = "Default Strarg",
-                 object_list: List[StandaloneSubobject] = None,
-                 subobject_list: List[EmbeddedSubobject] = None,
-                 builtin_list: List[int] = None,
-                 union_arg: List[UnionArg] = None,
-                 subclass_arg: InstanceOf[StandaloneSubobject] = DEF_ISS,
-                 array_arg: List[List[float]] = None,
+                 dynamic_dict: Dict[str, bool] = None, float_dict: Dict[str, float] = None,
+                 string_dict: Dict[str, str] = None, intarg: int = 1,
+                 object_list: List[StandaloneSubobject] = None, subobject_list: List[EmbeddedSubobject] = None,
+                 builtin_list: List[int] = None, union_arg: List[UnionArg] = None,
+                 subclass_arg: InstanceOf[StandaloneSubobject] = DEF_ISS, array_arg: List[List[float]] = None,
                  name: str = 'Standalone Object Demo'):
         if dynamic_dict is None:
             dynamic_dict = {}
@@ -491,13 +479,31 @@ class StandaloneObjectWithDefaultValues(StandaloneObject):
 
         StandaloneObject.__init__(self, standalone_subobject=standalone_subobject,
                                   embedded_subobject=embedded_subobject, dynamic_dict=dynamic_dict,
-                                  float_dict=float_dict, string_dict=string_dict, tuple_arg=tuple_arg, intarg=intarg,
-                                  strarg=strarg, object_list=object_list, subobject_list=subobject_list,
+                                  float_dict=float_dict, string_dict=string_dict, intarg=intarg,
+                                  object_list=object_list, subobject_list=subobject_list,
                                   builtin_list=builtin_list, union_arg=union_arg, subclass_arg=subclass_arg,
                                   array_arg=array_arg, name=name)
 
 
 DEF_SOWDV = StandaloneObjectWithDefaultValues()
+
+
+class LightObject(DessiaObject):
+    def __init__(self, heterogeneous_tuple: Tuple[str, int], homogeneous_tuple: Tuple[float, float, float],
+                 single_tuple: Tuple[int], strarg: str, name: str = ""):
+        self.heterogeneous_tuple = heterogeneous_tuple
+        self.homogeneous_tuple = homogeneous_tuple
+        self.single_tuple = single_tuple
+        self.strarg = strarg
+
+        DessiaObject.__init__(self, name=name)
+
+    @classmethod
+    def generate(cls, seed: int, name: str = 'Standalone Object Demo') -> 'LightObject':
+        floated_seed = 1.379 * seed
+        return cls(heterogeneous_tuple=('value', seed * 3),
+                   homogeneous_tuple=(floated_seed - 1, floated_seed, floated_seed + 1),
+                   single_tuple=(seed,), strarg=str(seed) * floor(seed / 3), name=name)
 
 
 class ObjectWithFaultyTyping(DessiaObject):

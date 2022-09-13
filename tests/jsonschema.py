@@ -10,19 +10,8 @@ import dessia_common.utils.jsonschema as jss
 jsonschema = {'definitions': {},
               '$schema': 'http://json-schema.org/draft-07/schema#',
               'type': 'object',
-              'required': ['standalone_subobject',
-                           'embedded_subobject',
-                           'dynamic_dict',
-                           'float_dict',
-                           'string_dict',
-                           'tuple_arg',
-                           'intarg',
-                           'strarg',
-                           'object_list',
-                           'subobject_list',
-                           'builtin_list',
-                           'union_arg',
-                           'subclass_arg',
+              'required': ['standalone_subobject', 'embedded_subobject', 'dynamic_dict', 'float_dict', 'string_dict',
+                           'intarg', 'object_list', 'subobject_list', 'builtin_list', 'union_arg', 'subclass_arg',
                            'array_arg'],
               'properties': {'standalone_subobject': {'title': 'Standalone Subobject',
                                                       'editable': True,
@@ -61,29 +50,16 @@ jsonschema = {'definitions': {},
                                              'type': 'object',
                                              'description': '',
                                              'patternProperties': {'.*': {'type': 'string'}}},
-                             'tuple_arg': {'title': 'Tuple Arg',
-                                           'editable': True,
-                                           'order': 5,
-                                           'python_typing': 'Tuple[__builtins__.str, __builtins__.int]',
-                                           'additionalItems': False,
-                                           'type': 'array',
-                                           'items': [{'type': 'string'}, {'type': 'number'}],
-                                           'description': 'A heterogeneous sequence'},
                              'intarg': {'title': 'Intarg',
                                         'editable': True,
-                                        'order': 6,
+                                        'order': 5,
                                         'python_typing': 'builtins.int',
                                         'description': '',
                                         'type': 'number'},
-                             'strarg': {'title': 'Strarg',
-                                        'editable': True,
-                                        'order': 7,
-                                        'python_typing': 'builtins.str',
-                                        'description': '',
-                                        'type': 'string'},
+
                              'object_list': {'title': 'Object List',
                                              'editable': True,
-                                             'order': 8,
+                                             'order': 6,
                                              'python_typing': 'List[dessia_common.forms.StandaloneSubobject]',
                                              'description': '',
                                              'type': 'array',
@@ -97,7 +73,7 @@ jsonschema = {'definitions': {},
                                                        'classes': ['dessia_common.forms.StandaloneSubobject']}},
                              'subobject_list': {'title': 'Subobject List',
                                                 'editable': True,
-                                                'order': 9,
+                                                'order': 7,
                                                 'python_typing': 'List[dessia_common.forms.EmbeddedSubobject]',
                                                 'description': '',
                                                 'type': 'array',
@@ -111,7 +87,7 @@ jsonschema = {'definitions': {},
                                                           'classes': ['dessia_common.forms.EmbeddedSubobject']}},
                              'builtin_list': {'title': 'Builtin List',
                                               'editable': True,
-                                              'order': 10,
+                                              'order': 8,
                                               'python_typing': 'List[__builtins__.int]',
                                               'description': '',
                                               'type': 'array',
@@ -123,7 +99,7 @@ jsonschema = {'definitions': {},
                                                         'type': 'number'}},
                              'union_arg': {'title': 'Union Arg',
                                            'editable': True,
-                                           'order': 11,
+                                           'order': 9,
                                            'python_typing': 'List[Union[dessia_common.forms.EmbeddedSubobject, dessia_common.forms.EnhancedEmbeddedSubobject]]',
                                            'type': 'array',
                                            'description': '',
@@ -138,7 +114,7 @@ jsonschema = {'definitions': {},
                                                      'standalone_in_db': False}},
                              'subclass_arg': {'title': 'Subclass Arg',
                                               'editable': True,
-                                              'order': 12,
+                                              'order': 10,
                                               'python_typing': 'InstanceOf[dessia_common.forms.StandaloneSubobject]',
                                               'type': 'object',
                                               'description': '',
@@ -146,7 +122,7 @@ jsonschema = {'definitions': {},
                                               'standalone_in_db': True},
                              'array_arg': {'title': 'Array Arg',
                                            'editable': True,
-                                           'order': 13,
+                                           'order': 11,
                                            'python_typing': 'List[List[__builtins__.float]]',
                                            'description': '',
                                            'type': 'array',
@@ -161,7 +137,7 @@ jsonschema = {'definitions': {},
                                                                'type': 'number'}}},
                              'name': {'title': 'Name',
                                       'editable': True,
-                                      'order': 14,
+                                      'order': 12,
                                       'description': '',
                                       'python_typing': 'builtins.str',
                                       'type': 'string',
@@ -203,9 +179,7 @@ assert jss.chose_default(jsonschema["properties"]["embedded_subobject"]) is None
 assert jss.chose_default(jsonschema["properties"]["dynamic_dict"]) is None
 assert jss.chose_default(jsonschema["properties"]["float_dict"]) is None
 assert jss.chose_default(jsonschema["properties"]["string_dict"]) is None
-assert jss.chose_default(jsonschema["properties"]["tuple_arg"]) == [None, None]
 assert jss.chose_default(jsonschema["properties"]["intarg"]) is None
-assert jss.chose_default(jsonschema["properties"]["strarg"]) is None
 assert jss.chose_default(jsonschema["properties"]["object_list"]) is None
 assert jss.chose_default(jsonschema["properties"]["subobject_list"]) is None
 assert jss.chose_default(jsonschema["properties"]["builtin_list"]) is None
@@ -229,9 +203,7 @@ assert subobject_default_value["embedded_list"] == [0, 1, 2, 3, 4]
 assert jss.chose_default(jsonschema["properties"]["dynamic_dict"]) is None
 assert jss.chose_default(jsonschema["properties"]["float_dict"]) is None
 assert jss.chose_default(jsonschema["properties"]["string_dict"]) is None
-assert jss.chose_default(jsonschema["properties"]["tuple_arg"]) == ("Default Tuple", 0)
 assert jss.chose_default(jsonschema["properties"]["intarg"]) is None  # TODO Is it ?
-assert jss.chose_default(jsonschema["properties"]["strarg"]) is None  # TODO Is it ?
 assert jss.chose_default(jsonschema["properties"]["object_list"]) is None
 assert jss.chose_default(jsonschema["properties"]["subobject_list"]) is None
 assert jss.chose_default(jsonschema["properties"]["builtin_list"]) is None
@@ -256,9 +228,7 @@ assert jss.datatype_from_jsonschema(jsonschema["properties"]["embedded_subobject
 assert jss.datatype_from_jsonschema(jsonschema["properties"]["dynamic_dict"]) == "dynamic_dict"
 assert jss.datatype_from_jsonschema(jsonschema["properties"]["float_dict"]) == "dynamic_dict"
 assert jss.datatype_from_jsonschema(jsonschema["properties"]["string_dict"]) == "dynamic_dict"
-assert jss.datatype_from_jsonschema(jsonschema["properties"]["tuple_arg"]) == "heterogeneous_sequence"
 assert jss.datatype_from_jsonschema(jsonschema["properties"]["intarg"]) == "builtin"
-assert jss.datatype_from_jsonschema(jsonschema["properties"]["strarg"]) == "builtin"
 assert jss.datatype_from_jsonschema(jsonschema["properties"]["object_list"]) == "homogeneous_sequence"
 assert jss.datatype_from_jsonschema(jsonschema["properties"]["subobject_list"]) == "homogeneous_sequence"
 assert jss.datatype_from_jsonschema(jsonschema["properties"]["builtin_list"]) == "homogeneous_sequence"
@@ -283,5 +253,30 @@ assert jss.datatype_from_jsonschema(jsonschema) == "file"
 
 jsonschema = standalone_object._method_jsonschemas["generate_from_text"]["properties"]["0"]
 assert jss.datatype_from_jsonschema(jsonschema) == "file"
+
+#
+# 'strarg': {'title': 'Strarg',
+#                                         'editable': True,
+#                                         'order': 7,
+#                                         'python_typing': 'builtins.str',
+#                                         'description': '',
+#                                         'type': 'string'},
+
+# 'tuple_arg': {'title': 'Tuple Arg',
+#                                            'editable': True,
+#                                            'order': 5,
+#                                            'python_typing': 'Tuple[__builtins__.str, __builtins__.int]',
+#                                            'additionalItems': False,
+#                                            'type': 'array',
+#                                            'items': [{'type': 'string'}, {'type': 'number'}],
+#                                            'description': 'A heterogeneous sequence'},
+
+# assert jss.chose_default(jsonschema["properties"]["tuple_arg"]) == [None, None]
+# assert jss.chose_default(jsonschema["properties"]["strarg"]) is None
+
+# assert jss.chose_default(jsonschema["properties"]["tuple_arg"]) == ("Default Tuple", 0)
+# assert jss.chose_default(jsonschema["properties"]["strarg"]) is None  # TODO Is it ?
+# assert jss.datatype_from_jsonschema(jsonschema["properties"]["tuple_arg"]) == "heterogeneous_sequence"
+# assert jss.datatype_from_jsonschema(jsonschema["properties"]["strarg"]) == "builtin"
 
 print("test script jsonschema.py has passed")
