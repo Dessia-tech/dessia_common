@@ -7,13 +7,10 @@ Created on Wed Feb 19 15:56:12 2020
 """
 
 from io import StringIO
-import math
 from typing import List, Dict, Any
 import numpy as np
 import pandas as pd
-from scipy.optimize import minimize
-from pyDOE import lhs
-from dessia_common import DessiaObject, Parameter, is_bounded, DessiaFilter
+from dessia_common import DessiaObject, Parameter, DessiaFilter
 
 
 class ParetoSettings(DessiaObject):
@@ -84,40 +81,42 @@ class Objective(DessiaObject):
         """
         compute coefficients from n-1 angles
         """
-        n = len(angles) + 1
-        matrix = np.identity(n)
-        for i, angle in enumerate(angles):
-            matrix_i = np.identity(n)
-            matrix_i[i, i] = math.cos(angle)
-            matrix_i[i + 1, i] = -math.sin(angle)
-            matrix_i[i, i + 1] = math.sin(angle)
-            matrix_i[i + 1, i + 1] = math.cos(angle)
-            matrix = np.dot(matrix, matrix_i)
-        x = np.zeros(n)
-        x[0] = 1
-        signed = np.dot(matrix.T, x).tolist()
-        unsigned = np.copy(signed).tolist()
-        return unsigned
+        raise NotImplementedError("This is deprecated and should not be used anymore")
+    #     n = len(angles) + 1
+    #     matrix = np.identity(n)
+    #     for i, angle in enumerate(angles):
+    #         matrix_i = np.identity(n)
+    #         matrix_i[i, i] = math.cos(angle)
+    #         matrix_i[i + 1, i] = -math.sin(angle)
+    #         matrix_i[i, i + 1] = math.sin(angle)
+    #         matrix_i[i + 1, i + 1] = math.cos(angle)
+    #         matrix = np.dot(matrix, matrix_i)
+    #     x = np.zeros(n)
+    #     x[0] = 1
+    #     signed = np.dot(matrix.T, x).tolist()
+    #     unsigned = np.copy(signed).tolist()
+    #     return unsigned
 
     @classmethod
     def from_angles(cls, angles: List[float], variables: List[str], directions: Dict[str, bool],
                     settings: ObjectiveSettings = None, name="Generated from angles") -> 'Objective':
-        if not isinstance(angles, list) and not isinstance(angles, np.ndarray):
-            angles = [angles]
-        generated_coefficients = cls.coefficients_from_angles(angles=angles)
-        coefficients = {}
-        for i, var in enumerate(variables):
-            coeff = generated_coefficients[i]
-            if (directions[var] and coeff < 0)\
-                    or (not directions[var] and coeff >= 0):
-                coefficients[var] = -coeff
-            else:
-                coefficients[var] = coeff
-
-        if settings is None:
-            settings = ObjectiveSettings()
-
-        return Objective(coefficients=coefficients, directions=directions, settings=settings, name=name)
+        raise NotImplementedError("This is deprecated and should not be used anymore")
+    #     if not isinstance(angles, list) and not isinstance(angles, np.ndarray):
+    #         angles = [angles]
+    #     generated_coefficients = cls.coefficients_from_angles(angles=angles)
+    #     coefficients = {}
+    #     for i, var in enumerate(variables):
+    #         coeff = generated_coefficients[i]
+    #         if (directions[var] and coeff < 0)\
+    #                 or (not directions[var] and coeff >= 0):
+    #             coefficients[var] = -coeff
+    #         else:
+    #             coefficients[var] = coeff
+    #
+    #     if settings is None:
+    #         settings = ObjectiveSettings()
+    #
+    #     return Objective(coefficients=coefficients, directions=directions, settings=settings, name=name)
 
 
 class Catalog(DessiaObject):
@@ -190,35 +189,36 @@ class Catalog(DessiaObject):
         return catalog
 
     def generate_multiplot(self, values: Dict[str, Any] = None):
-        # TOCHECK Avoid circular imports
-        import plot_data
-
-        if values is None:
-            values = []
-            for line in self.array:
-                value = {}
-                for variable in self.variables:
-                    value[variable] = self.get_value_by_name(line, variable)
-                values.append(value)
-
-        first_vars = self.variables[:2]
-        values2d = [{key: val[key]} for key in first_vars for val in values]
-        rgbs = [[192, 11, 11], [14, 192, 11], [11, 11, 192]]
-
-        tooltip = plot_data.Tooltip(attributes=self.variables, name='Tooltip')
-
-        scatterplot = plot_data.Scatter(axis=plot_data.Axis(), tooltip=tooltip, x_variable=first_vars[0],
-                                        y_variable=first_vars[1], elements=values2d, name='Scatter Plot')
-
-        parallelplot = plot_data.ParallelPlot(disposition='horizontal', axes=self.variables,
-                                              rgbs=rgbs, elements=values)
-        objects = [scatterplot, parallelplot]
-        sizes = [plot_data.Window(width=560, height=300),
-                 plot_data.Window(width=560, height=300)]
-        coords = [(0, 0), (0, 300)]
-        multiplot = plot_data.MultiplePlots(plots=objects, elements=values, sizes=sizes,
-                                            coords=coords, name='Results plot')
-        return multiplot
+        raise NotImplementedError("This is deprecated and should not be used anymore")
+        # # TOCHECK Avoid circular imports
+        # import plot_data
+        #
+        # if values is None:
+        #     values = []
+        #     for line in self.array:
+        #         value = {}
+        #         for variable in self.variables:
+        #             value[variable] = self.get_value_by_name(line, variable)
+        #         values.append(value)
+        #
+        # first_vars = self.variables[:2]
+        # values2d = [{key: val[key]} for key in first_vars for val in values]
+        # rgbs = [[192, 11, 11], [14, 192, 11], [11, 11, 192]]
+        #
+        # tooltip = plot_data.Tooltip(attributes=self.variables, name='Tooltip')
+        #
+        # scatterplot = plot_data.Scatter(axis=plot_data.Axis(), tooltip=tooltip, x_variable=first_vars[0],
+        #                                 y_variable=first_vars[1], elements=values2d, name='Scatter Plot')
+        #
+        # parallelplot = plot_data.ParallelPlot(disposition='horizontal', axes=self.variables,
+        #                                       rgbs=rgbs, elements=values)
+        # objects = [scatterplot, parallelplot]
+        # sizes = [plot_data.Window(width=560, height=300),
+        #          plot_data.Window(width=560, height=300)]
+        # coords = [(0, 0), (0, 300)]
+        # multiplot = plot_data.MultiplePlots(plots=objects, elements=values, sizes=sizes,
+        #                                     coords=coords, name='Results plot')
+        # return multiplot
 
     def filter_(self, filters: List[DessiaFilter], name: str = ''):
         def apply_filters(line):
@@ -364,132 +364,134 @@ class Catalog(DessiaObject):
                    choice_variables=variables, name=name)
 
     def handle_objective(self, objective: Objective) -> List[float]:
-        ratings = []
-        for line in self.array:
-            values = {variable: self.get_value_by_name(line, variable)
-                      for variable in objective.coefficients}
-            rating = objective.apply_individual(values)
-            ratings.append(rating)
-        return ratings
+        raise NotImplementedError("This is deprecated and should not be used anymore")
+        # ratings = []
+        # for line in self.array:
+        #     values = {variable: self.get_value_by_name(line, variable)
+        #               for variable in objective.coefficients}
+        #     rating = objective.apply_individual(values)
+        #     ratings.append(rating)
+        # return ratings
 
-    def find_best_objective(self, values: Dict[str, float],
-                            minimized: Dict[str, bool],
+    def find_best_objective(self, values: Dict[str, float], minimized: Dict[str, bool],
                             settings: ObjectiveSettings = None):
-        # Unordered list of variables
-        variables = list(values.keys())  # !!!
-        parameters = self.parameters(variables)
-        names = [p.name for p in parameters]
-
-        # Get pareto points
-        pareto_settings = ParetoSettings(minimized_attributes=minimized)
-        costs = self.build_costs(pareto_settings=pareto_settings)
-        pareto_indices = pareto_frontier(costs=costs)
-        pareto_values = [{var: self.get_value_by_name(self.array[i], var)
-                          for var in variables}
-                         for i, is_efficient in enumerate(pareto_indices)
-                         if is_efficient]
-
-        def apply(x):
-            objective = Objective.from_angles(angles=x,
-                                              variables=names,
-                                              directions=minimized)
-            best_on_pareto = min(objective.apply_individual(pareto_value) for pareto_value in pareto_values)
-            rating = objective.apply_individual(values)
-            delta = rating - best_on_pareto
-            return delta
-
-        i = 0
-        success = False
-        randomized_angles = lhs(len(values) - 1, 100)
-        available_angles = [[angle * 2 * math.pi for angle in angles]
-                            for angles in randomized_angles]
-        while i < len(available_angles) and not success:
-            res = minimize(fun=apply, x0=randomized_angles[i], method="Powell")
-            i += 1
-            if res.success:
-                success = True
-                best_objective = Objective.from_angles(angles=res.x.tolist(),
-                                                       variables=names,
-                                                       directions=minimized,
-                                                       settings=settings)
-                best_objective.name = "Best Coefficients"\
-                                      + str(self.generated_best_objectives)
-                self.generated_best_objectives += 1
-                self.objectives.append(best_objective)
-        if not success:
-            raise ValueError("No solutions found")
+        raise NotImplementedError("This is deprecated and should not be used anymore")
+        # # Unordered list of variables
+        # variables = list(values.keys())  # !!!
+        # parameters = self.parameters(variables)
+        # names = [p.name for p in parameters]
+        #
+        # # Get pareto points
+        # pareto_settings = ParetoSettings(minimized_attributes=minimized)
+        # costs = self.build_costs(pareto_settings=pareto_settings)
+        # pareto_indices = pareto_frontier(costs=costs)
+        # pareto_values = [{var: self.get_value_by_name(self.array[i], var)
+        #                   for var in variables}
+        #                  for i, is_efficient in enumerate(pareto_indices)
+        #                  if is_efficient]
+        #
+        # def apply(x):
+        #     objective = Objective.from_angles(angles=x,
+        #                                       variables=names,
+        #                                       directions=minimized)
+        #     best_on_pareto = min(objective.apply_individual(pareto_value) for pareto_value in pareto_values)
+        #     rating = objective.apply_individual(values)
+        #     delta = rating - best_on_pareto
+        #     return delta
+        #
+        # i = 0
+        # success = False
+        # randomized_angles = lhs(len(values) - 1, 100)
+        # available_angles = [[angle * 2 * math.pi for angle in angles]
+        #                     for angles in randomized_angles]
+        # while i < len(available_angles) and not success:
+        #     res = minimize(fun=apply, x0=randomized_angles[i], method="Powell")
+        #     i += 1
+        #     if res.success:
+        #         success = True
+        #         best_objective = Objective.from_angles(angles=res.x.tolist(),
+        #                                                variables=names,
+        #                                                directions=minimized,
+        #                                                settings=settings)
+        #         best_objective.name = "Best Coefficients"\
+        #                               + str(self.generated_best_objectives)
+        #         self.generated_best_objectives += 1
+        #         self.objectives.append(best_objective)
+        # if not success:
+        #     raise ValueError("No solutions found")
 
     def plot_data(self):
-        from plot_data.core import Tooltip, TextStyle, SurfaceStyle,\
-            Scatter, ParallelPlot, PointFamily, MultiplePlots
-        from plot_data.colors import GREY, LIGHTGREY, LIGHTGREEN, LIGHTBLUE
-
-        name_column_0 = self.variables[0]
-        list_name = self.get_values(name_column_0)
-
-        list_settings = list(self.pareto_settings.minimized_attributes)
-        list_value = [self.get_values(cv) for cv in self.choice_variables]
-        if self.pareto_is_enabled:
-            cost = self.build_costs(self.pareto_settings)
-            p_frontier = pareto_frontier(cost)
-            elements = [[], []]  # point_non_pareto, point_pareto
-            for i, name in enumerate(list_name):
-                dict_element = {name_column_0: name}
-                for k, setting in enumerate(self.choice_variables):
-                    dict_element[setting] = list_value[k][i]
-
-                if p_frontier[i]:
-                    elements[1].append(dict_element)
-                else:
-                    elements[0].append(dict_element)
-
-        else:
-            elements = [[], []]
-            for i, name in enumerate(list_name):
-                dict_element = {name_column_0: name}
-                for k, setting in enumerate(self.choice_variables):
-                    dict_element[setting] = list_value[k][i]
-
-                elements[0].append(dict_element)
-
-        # ScatterPlot
-        attributes = self.choice_variables
-        text_style = TextStyle(text_color=GREY,
-                               font_size=10,
-                               font_style='sans-serif')
-        surface_style = SurfaceStyle(color_fill=LIGHTGREY, opacity=0.3)
-        custom_tooltip = Tooltip(attributes=attributes,
-                                 surface_style=surface_style,
-                                 text_style=text_style,
-                                 tooltip_radius=10)
-
-        all_points = elements[0] + elements[1]
-
-        plots = []
-
-        # ScatterPlot
-        for j, setting in enumerate(list_settings):
-            for i in range(j + 1, len(list_settings)):
-                if len(plots) < 3:
-                    plots.append(Scatter(tooltip=custom_tooltip,
-                                         x_variable=setting,
-                                         y_variable=list_settings[i],
-                                         elements=all_points))
-
-        list_index_0 = list(range(len(elements[0])))
-        point_family_0 = PointFamily(LIGHTBLUE, list_index_0,
-                                     name='Non pareto')
-
-        n_pareto = len(elements[1])
-        list_index_1 = [len(all_points) - i - 1 for i in range(n_pareto)]
-        point_family_1 = PointFamily(LIGHTGREEN, list_index_1, name='Pareto')
-
-        # ParallelPlot
-        plots.append(ParallelPlot(elements=all_points,
-                                  axes=attributes))
-
-        return [MultiplePlots(plots=plots, elements=all_points, point_families=[point_family_0, point_family_1],
-                              initial_view_on=True)]
+        raise NotImplementedError("This is deprecated and should not be used anymore")
+        # from plot_data.core import Tooltip, TextStyle, SurfaceStyle,\
+        #     Scatter, ParallelPlot, PointFamily, MultiplePlots
+        # from plot_data.colors import GREY, LIGHTGREY, LIGHTGREEN, LIGHTBLUE
+        #
+        # name_column_0 = self.variables[0]
+        # list_name = self.get_values(name_column_0)
+        #
+        # list_settings = list(self.pareto_settings.minimized_attributes)
+        # list_value = [self.get_values(cv) for cv in self.choice_variables]
+        # if self.pareto_is_enabled:
+        #     cost = self.build_costs(self.pareto_settings)
+        #     p_frontier = pareto_frontier(cost)
+        #     elements = [[], []]  # point_non_pareto, point_pareto
+        #     for i, name in enumerate(list_name):
+        #         dict_element = {name_column_0: name}
+        #         for k, setting in enumerate(self.choice_variables):
+        #             dict_element[setting] = list_value[k][i]
+        #
+        #         if p_frontier[i]:
+        #             elements[1].append(dict_element)
+        #         else:
+        #             elements[0].append(dict_element)
+        #
+        # else:
+        #     elements = [[], []]
+        #     for i, name in enumerate(list_name):
+        #         dict_element = {name_column_0: name}
+        #         for k, setting in enumerate(self.choice_variables):
+        #             dict_element[setting] = list_value[k][i]
+        #
+        #         elements[0].append(dict_element)
+        #
+        # # ScatterPlot
+        # attributes = self.choice_variables
+        # text_style = TextStyle(text_color=GREY,
+        #                        font_size=10,
+        #                        font_style='sans-serif')
+        # surface_style = SurfaceStyle(color_fill=LIGHTGREY, opacity=0.3)
+        # custom_tooltip = Tooltip(attributes=attributes,
+        #                          surface_style=surface_style,
+        #                          text_style=text_style,
+        #                          tooltip_radius=10)
+        #
+        # all_points = elements[0] + elements[1]
+        #
+        # plots = []
+        #
+        # # ScatterPlot
+        # for j, setting in enumerate(list_settings):
+        #     for i in range(j + 1, len(list_settings)):
+        #         if len(plots) < 3:
+        #             plots.append(Scatter(tooltip=custom_tooltip,
+        #                                  x_variable=setting,
+        #                                  y_variable=list_settings[i],
+        #                                  elements=all_points))
+        #
+        # list_index_0 = list(range(len(elements[0])))
+        # point_family_0 = PointFamily(LIGHTBLUE, list_index_0,
+        #                              name='Non pareto')
+        #
+        # n_pareto = len(elements[1])
+        # list_index_1 = [len(all_points) - i - 1 for i in range(n_pareto)]
+        # point_family_1 = PointFamily(LIGHTGREEN, list_index_1, name='Pareto')
+        #
+        # # ParallelPlot
+        # plots.append(ParallelPlot(elements=all_points,
+        #                           axes=attributes))
+        #
+        # return [MultiplePlots(plots=plots, elements=all_points, point_families=[point_family_0, point_family_1],
+        #                       initial_view_on=True)]
 
 
 def from_csv(filename: str, end: int = None, remove_duplicates: bool = False):
@@ -521,3 +523,23 @@ def pareto_frontier(costs):
             # And keep self
             is_efficient[index] = True
     return is_efficient
+
+
+def is_bounded(filter_: DessiaFilter, value: float):
+    bounded = True
+    comparison_operator = filter_.comparison_operator
+    bound = filter_.bound
+
+    if comparison_operator == 'lte' and value > bound:
+        bounded = False
+    if comparison_operator == 'gte' and value < bound:
+        bounded = False
+
+    if comparison_operator == 'lt' and value >= bound:
+        bounded = False
+    if comparison_operator == 'gt' and value <= bound:
+        bounded = False
+
+    if comparison_operator == 'eq' and value != bound:
+        bounded = False
+    return bounded

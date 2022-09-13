@@ -3,7 +3,8 @@ Tests for dessia_common.DessiaFilters/FiltersList class
 """
 import itertools
 from dessia_common.models import all_cars_no_feat, all_cars_wi_feat, rand_data_large
-from dessia_common.core import HeterogeneousList, DessiaFilter, FiltersList
+from dessia_common.core import DessiaFilter, FiltersList
+from dessia_common.datatools import HeterogeneousList
 
 # When attribute _features is not specified in class Car
 all_cars_without_features = HeterogeneousList(all_cars_no_feat)

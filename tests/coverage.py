@@ -8,16 +8,16 @@ Created on Wed Sep 29 14:35:47 2021
 
 import json
 
-MIN_MODULE_COVERAGE = 51.
-MIN_GLOBAL_COVERAGE = 80.5
+MIN_MODULE_COVERAGE = 60.
+MIN_GLOBAL_COVERAGE = 80.0
+
 RATCHET_COVERAGE = 3.
 
 untracked_modules = ["dessia_common/templates.py",
                      "dessia_common/utils.py",
                      "dessia_common/optimization.py",
                      'workflows/forms_simulation.py',
-                     'workflows/vectored_workflow.py',
-                     'models/tests.py']
+                     'models/forms.py']
 
 print("untracked modules:", untracked_modules)
 
