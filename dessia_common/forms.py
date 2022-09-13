@@ -183,7 +183,6 @@ class StandaloneObject(MovingObject):
     :type dynamic_dict: Dict[str, bool]
     """
     _standalone_in_db = True
-    _generic_eq = True
     _allowed_methods = ['add_standalone_object', 'add_embedded_object',
                         'add_float', 'generate_from_text', 'generate_from_bin']
 
@@ -489,6 +488,7 @@ DEF_SOWDV = StandaloneObjectWithDefaultValues()
 
 
 class LightObject(DessiaObject):
+    _standalone_in_db = True
     def __init__(self, heterogeneous_tuple: Tuple[str, int], homogeneous_tuple: Tuple[float, float, float],
                  single_tuple: Tuple[int], strarg: str, name: str = ""):
         self.heterogeneous_tuple = heterogeneous_tuple
