@@ -10,6 +10,7 @@ scripts = ['displays.py',
            'heterogeneous_list_pareto.py',
            'filters.py',
            'moving_object.py',
+           'optimization.py',
            'graph.py',
            'jsonschema.py',
            # Workflows
