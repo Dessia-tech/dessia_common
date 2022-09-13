@@ -26,6 +26,7 @@ scripts = ['displays.py',
            'workflow/workflow_pareto.py',
            'workflow/workflow_method_dict.py',
            'workflow/various_tests.py',
+           'workflow/workflow_building.py',
            # breakdown
            'breakdown.py',
            # Utils
