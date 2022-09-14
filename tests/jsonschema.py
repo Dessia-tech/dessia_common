@@ -189,10 +189,10 @@ except AssertionError as err:
             print('\n', jsonschema['properties'][key])
             raise err
 
-try:
-    ObjectWithFaultyTyping.jsonschema()
-except NotImplementedError:
-    pass
+# try:
+#     ObjectWithFaultyTyping.jsonschema()
+# except NotImplementedError:
+#     pass
 
 
 # --- Default values ---
