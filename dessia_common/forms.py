@@ -489,8 +489,24 @@ DEF_SOWDV = StandaloneObjectWithDefaultValues()
 
 class LightObject(DessiaObject):
     _standalone_in_db = True
-    def __init__(self, heterogeneous_tuple: Tuple[str, int], homogeneous_tuple: Tuple[float, float, float],
-                 single_tuple: Tuple[int], strarg: str, name: str = ""):
+
+    def __init__(self, heterogeneous_tuple: Tuple[str, int] = None,
+                 homogeneous_tuple: Tuple[float, float, float] = None,
+                 single_tuple: Tuple[int] = None, strarg: str = "Test", name: str = ""):
+        """
+        Light object with few attr and tuple diversity
+
+        :param heterogeneous_tuple: A tuple with different type of inputs
+        :type heterogeneous_tuple: Tuple[str, int]
+        :param homogeneous_tuple: A tuple with all inputs being the same type
+        :type homogeneous_tuple: Tuple[float, float, float]
+        :param single_tuple: A tuple with only one element
+        :type single_tuple: Tuple[int]
+        :param strarg: An arg being a string
+        :type strarg: str
+        :param name: Name of the object
+        :type name: str
+        """
         self.heterogeneous_tuple = heterogeneous_tuple
         self.homogeneous_tuple = homogeneous_tuple
         self.single_tuple = single_tuple
