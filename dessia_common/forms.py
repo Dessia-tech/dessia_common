@@ -26,7 +26,7 @@ coding/naming style & convention.
 """
 
 from math import floor, ceil, cos
-from typing import Dict, List, Tuple, Union, Iterator, Any
+from typing import Dict, List, Tuple, Union, Any
 from numpy import linspace
 
 try:
@@ -499,15 +499,14 @@ class StandaloneObjectWithDefaultValues(StandaloneObject):
 
 DEF_SOWDV = StandaloneObjectWithDefaultValues()
 
-
-class ObjectWithFaultyTyping(DessiaObject):
-    """
-    Dummy class to test faulty typing jsonschema
-    """
-    def __init__(self, faulty_attribute: Iterator[int], name: str = ""):
-        self.faulty_attribute = faulty_attribute
-
-        DessiaObject.__init__(self, name=name)
+# class ObjectWithFaultyTyping(DessiaObject):
+#     """
+#     Dummy class to test faulty typing jsonschema
+#     """
+#     def __init__(self, faulty_attribute: Iterator[int], name: str = ""):
+#         self.faulty_attribute = faulty_attribute
+#
+#         DessiaObject.__init__(self, name=name)
 
 
 class ObjectWithOtherTypings(DessiaObject):
