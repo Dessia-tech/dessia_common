@@ -759,7 +759,7 @@ class Workflow(Block):
             if variable_index in copied_ivv.keys():
                 dict_[input_index] = copied_ivv[variable_index]
             elif isinstance(input_, TypedVariableWithDefaultValue):
-                dict_[input_index] = input_.default_value
+                dict_[input_index] = serialize(input_.default_value)
 
         return dict_
 
