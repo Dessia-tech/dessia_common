@@ -27,9 +27,11 @@ MAX_ERROR_BY_TYPE = {
                      'too-many-locals': 12,  # Reduce by dropping vectored objects
                      'wrong-import-order': 7,
                      'too-many-branches': 10,
+                     'unused-import': 1,
+                     'unused-argument': 5,
+                     'cyclic-import': 12,
                      'unused-import': 0,
                      'unused-argument': 6,
-                     'cyclic-import': 10,
                      'no-self-use': 6,
                      'unused-variable': 0,
                      'trailing-whitespace': 11,
@@ -43,7 +45,7 @@ MAX_ERROR_BY_TYPE = {
                      'raise-missing-from': 0,
                      'consider-merging-isinstance': 1,
                      'abstract-method': 6,
-                     'import-outside-toplevel': 12,  # TODO : will reduced in a future work (when tests are ready)
+                     'import-outside-toplevel': 7,  # TODO : will reduced in a future work (when tests are ready)
                      'too-many-instance-attributes': 7,
                      'consider-iterating-dictionary': 1,
                      'attribute-defined-outside-init': 3,
@@ -85,7 +87,7 @@ MAX_ERROR_BY_TYPE = {
                      'redefined-argument-from-local': 0,
                      'import-error': 0,
                      'unsubscriptable-object': 0,
-                     'unnecessary-dunder-call': 2
+                     'unnecessary-dunder-call': 0
                      }
 
 print('pylint version: ', __version__)

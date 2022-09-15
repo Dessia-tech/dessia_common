@@ -135,8 +135,8 @@ class HeterogeneousList(DessiaObject):
             raise TypeError("Addition only defined for HeterogeneousList. A specific __add__ method is required for "
                             f"{self.__class__}")
 
-        sum_hlist = self.__class__(dessia_objects = self.dessia_objects + other.dessia_objects,
-                                   name = self.name[:5] + '_+_' + other.name[:5])
+        sum_hlist = self.__class__(dessia_objects=self.dessia_objects + other.dessia_objects,
+                                   name=self.name[:5] + '_+_' + other.name[:5])
 
         if all(item in self.common_attributes for item in other.common_attributes):
             sum_hlist._common_attributes = self.common_attributes
@@ -177,7 +177,7 @@ class HeterogeneousList(DessiaObject):
         return new_hlist
 
     def _indexlist_to_booleanlist(self, index_list: List[int]):
-        boolean_list = [False]*len(self)
+        boolean_list = [False] * len(self)
         for idx in index_list:
             boolean_list[idx] = True
         return boolean_list
@@ -206,11 +206,11 @@ class HeterogeneousList(DessiaObject):
 
         string = ""
         string += self._print_titles(attr_space, attr_name_len, size_col_label)
-        string += "\n" + "-"*len(string)
+        string += "\n" + "-" * len(string)
 
         string += self._print_objects_slice(slice(0, 5), attr_space, attr_name_len,
                                             self._set_label_space(size_col_label))
-
+                                            
         if len(self) > 10:
             undispl_len = len(self) - 10
             string += (f"\n+ {undispl_len} undisplayed object" + "s"*(min([undispl_len, 2])-1) + "...")
@@ -228,7 +228,7 @@ class HeterogeneousList(DessiaObject):
     def _print_objects_slice(self, key: slice, attr_space: int, attr_name_len: int, label_space: int):
         string = ""
         for dessia_object in self.dessia_objects[key]:
-            string += "\n" + " "*label_space
+            string += "\n" + " " * label_space
             string += self._print_objects(dessia_object, attr_space, attr_name_len)
         return string
 
@@ -237,7 +237,7 @@ class HeterogeneousList(DessiaObject):
 
     def _set_label_space(self, size_col_label: int):
         if size_col_label:
-            return 2*size_col_label - 1
+            return 2 * size_col_label - 1
         return 0
 
     def _write_str_prefix(self):
@@ -255,7 +255,7 @@ class HeterogeneousList(DessiaObject):
                 end_bar = "|"
             # attribute
             attr_space.append(len(attr) + 6)
-            name_attr = " "*3 + f"{attr.capitalize()}" + " "*3
+            name_attr = " " * 3 + f"{attr.capitalize()}" + " " * 3
             attr_name_len.append(len(name_attr))
             string += "|" + name_attr + end_bar
         return string
@@ -268,7 +268,7 @@ class HeterogeneousList(DessiaObject):
                 end_bar = "|"
 
             # attribute
-            string += "|" + " "*(attr_space[idx] - len(str(getattr(dessia_object, attr))) - 1)
+            string += "|" + " " * (attr_space[idx] - len(str(getattr(dessia_object, attr))) - 1)
             string += f"{getattr(dessia_object, attr)}"[:attr_name_len[idx] - 3]
             if len(str(getattr(dessia_object, attr))) > attr_name_len[idx] - 3:
                 string += "..."
@@ -608,8 +608,9 @@ class HeterogeneousList(DessiaObject):
 
         singular_points = []
         for idx, value in enumerate(normalized_singular_values):
+            # TODO (plot_data log_scale 0)
             singular_points.append({'Index of reduced basis vector': idx + 1,
-                                    'Singular value': (value if value != 0. else 1e-16)}) # TODO (plot_data log_scale 0)
+                                    'Singular value': (value if value != 0. else 1e-16)})
         return normalized_singular_values, singular_points
 
     @staticmethod
@@ -643,7 +644,7 @@ class HeterogeneousList(DessiaObject):
             for col in self.common_attributes:
                 if line == col:
                     unic_values = set((getattr(dobject, line) for dobject in self.dessia_objects))
-                    if len(unic_values) == 1: # TODO (plot_data linspace axis between two same values)
+                    if len(unic_values) == 1:  # TODO (plot_data linspace axis between two same values)
                         subplots.append(Scatter(x_variable=line, y_variable=col))
                     else:
                         subplots.append(Histogram(x_variable=line))
@@ -690,7 +691,7 @@ class HeterogeneousList(DessiaObject):
                 if attr1 != attr2:
                     correlation_matrix = npy.corrcoef(self.get_attribute_values(attr1),
                                                       self.get_attribute_values(attr2))
-                    correlation_xy = correlation_matrix[0,1]
+                    correlation_xy = correlation_matrix[0, 1]
                     r2_scores.append(correlation_xy**2)
                     association_list.append([attr1, attr2])
         # Returns list of list of associated attributes sorted along their R2 score and constant attributes
@@ -734,7 +735,7 @@ class HeterogeneousList(DessiaObject):
             if ordered_attr[side] in attribute_serie:
                 nb_instances = attribute_serie.count(ordered_attr[side])
                 for ieme_instance in range(nb_instances):
-                    idx_in_serie = (ieme_instance)*2 + attribute_serie[ieme_instance*2:].index(ordered_attr[side])
+                    idx_in_serie = (ieme_instance) * 2 + attribute_serie[ieme_instance * 2:].index(ordered_attr[side])
                     # 1 if idx_in_serie = 0, 0 if idx_in_serie = 1, 3 if idx_in_serie = 2, 2 if idx_in_serie = 3
                     idx_attr_to_add = idx_in_serie + 1 - 2 * (idx_in_serie % 2)
                     added_attr = []
@@ -766,7 +767,7 @@ class HeterogeneousList(DessiaObject):
     def _check_costs(len_data: int, costs: List[List[float]]):
         if len(costs) != len_data:
             if len(costs[0]) == len_data:
-                return list(map(list,zip(*costs)))
+                return list(map(list, zip(*costs)))
             raise ValueError(f"costs is length {len(costs)} and the matching HeterogeneousList is length {len_data}. " +
                              "They should be the same length.")
         return costs
@@ -781,7 +782,7 @@ class HeterogeneousList(DessiaObject):
         """
         is_efficient = npy.ones(len(costs), dtype=bool)
         # costs_array = npy.array(costs)
-        costs_array = (costs - npy.mean(costs, axis = 0)) / npy.std(costs, axis = 0)
+        costs_array = (costs - npy.mean(costs, axis=0)) / npy.std(costs, axis=0)
         for index, cost in enumerate(costs_array):
             if is_efficient[index]:
                 # Keep any point with a lower cost
@@ -852,7 +853,7 @@ class HeterogeneousList(DessiaObject):
             for y_dim in range(pareto_costs.shape[1]):
                 if x_dim != y_dim:
                     frontier_2d = HeterogeneousList._pareto_frontier_2d(x_dim, y_dim, pareto_costs,
-                                                                       npy.max(array_costs[ :, x_dim]), super_mini)
+                                                                        npy.max(array_costs[:, x_dim]), super_mini)
                     pareto_frontiers.append(frontier_2d)
 
         return pareto_frontiers
@@ -925,7 +926,7 @@ class CategorizedList(HeterogeneousList):
         """
         HeterogeneousList.__init__(self, dessia_objects=dessia_objects, name=name)
         if labels is None:
-            labels = [0]*len(self)
+            labels = [0] * len(self)
         self.labels = labels
 
     @property
@@ -966,7 +967,7 @@ class CategorizedList(HeterogeneousList):
         for label, dessia_object in zip(self.labels[key], self.dessia_objects[key]):
             string += "\n"
             space = label_space - len(str(label))
-            string += "|" + " "*space + f"{label}" + " "
+            string += "|" + " " * space + f"{label}" + " "
             string += self._print_objects(dessia_object, attr_space, attr_name_len)
         return string
 
@@ -1162,10 +1163,10 @@ class CategorizedList(HeterogeneousList):
 
     def _merge_sublists(self):
         merged_hlists = self.dessia_objects[0][:]
-        merged_labels = [self.labels[0]]*len(merged_hlists)
+        merged_labels = [self.labels[0]] * len(merged_hlists)
         for dobject, label in zip(self.dessia_objects[1:], self.labels[1:]):
             merged_hlists.extend(dobject)
-            merged_labels.extend([label]*len(dobject))
+            merged_labels.extend([label] * len(dobject))
         plotted_clist = self.__class__(dessia_objects=merged_hlists.dessia_objects, labels=merged_labels)
         return plotted_clist
 
@@ -1191,7 +1192,6 @@ class CategorizedList(HeterogeneousList):
             # (label if label != -1 else "Excluded") plot_data "Excluded" -> NaN
         return _plot_data_list
 
-
     def _point_families(self):
         colormap = plt.cm.get_cmap('hsv', self.n_clusters + 1)(range(self.n_clusters + 1))
         point_families = []
@@ -1209,7 +1209,7 @@ class CategorizedList(HeterogeneousList):
     @classmethod
     def from_agglomerative_clustering(cls, data: HeterogeneousList, n_clusters: int = 2,
                                       affinity: str = 'euclidean', linkage: str = 'ward',
-                                      distance_threshold: float = None, scaling: bool = False, name: str =""):
+                                      distance_threshold: float = None, scaling: bool = False, name: str = ""):
         """
         Hierarchical clustering is a general family of clustering algorithms that
         build nested clusters by merging or splitting them successively.
@@ -1291,7 +1291,7 @@ class CategorizedList(HeterogeneousList):
 
     @classmethod
     def from_kmeans(cls, data: HeterogeneousList, n_clusters: int = 2, n_init: int = 10, tol: float = 1e-4,
-                    scaling: bool = False, name: str =""):
+                    scaling: bool = False, name: str = ""):
         """
         The KMeans algorithm clusters data by trying to separate samples in n groups of equal variance,
         minimizing a criterion known as the inertia or within-cluster sum-of-squares (see below).
@@ -1342,7 +1342,7 @@ class CategorizedList(HeterogeneousList):
 
     @classmethod
     def from_dbscan(cls, data: HeterogeneousList, eps: float = 0.5, min_samples: int = 5, mink_power: float = 2,
-                    leaf_size: int = 30, metric: str = "euclidean", scaling: bool = False, name: str =""):
+                    leaf_size: int = 30, metric: str = "euclidean", scaling: bool = False, name: str = ""):
         """
         The DBSCAN algorithm views clusters as areas of high density separated by areas of low density.
         Due to this rather generic view, clusters found by DBSCAN can be any shape, as opposed to k-means
@@ -1438,10 +1438,10 @@ class CategorizedList(HeterogeneousList):
         dessia_objects = []
         pareto_sheets, non_optimal_points = h_list.pareto_sheets(costs, nb_sheets)
         for label, pareto_sheet in enumerate(pareto_sheets):
-            labels.extend([label]*len(pareto_sheet))
+            labels.extend([label] * len(pareto_sheet))
             dessia_objects.extend(pareto_sheet)
         dessia_objects.extend(non_optimal_points)
-        labels.extend([len(pareto_sheets)]*len(non_optimal_points))
+        labels.extend([len(pareto_sheets)] * len(non_optimal_points))
         return cls(dessia_objects, labels)
 
     @staticmethod
