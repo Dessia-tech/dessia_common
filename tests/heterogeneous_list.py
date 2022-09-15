@@ -1,10 +1,11 @@
 """
 Tests for dessia_common.HeterogeneousList class (loadings, check_platform and plots)
 """
-import json
 import random
 from dessia_common.core import DessiaObject
 from dessia_common.models import all_cars_no_feat, all_cars_wi_feat, rand_data_middl
+from dessia_common.datatools import covariance, manhattan_distance, euclidian_distance, minkowski_distance, inf_norm,\
+    mahalanobis_distance
 from dessia_common.datatools import HeterogeneousList
 
 # Tests on common_attributes
@@ -42,6 +43,9 @@ all_cars_with_features = HeterogeneousList(all_cars_wi_feat)
 # Auto-generated heterogeneous dataset with nb_clusters clusters of points in nb_dims dimensions
 RandData_heterogeneous = HeterogeneousList(rand_data_middl)
 
+# Compute one common_attributes
+all_cars_without_features.common_attributes
+
 # Check platform for datasets
 all_cars_with_features._check_platform()
 all_cars_without_features._check_platform()
@@ -75,6 +79,20 @@ hlist_cars_plot_data = all_cars_without_features.plot_data()
 #        {"mpg": 13.0,')
 # assert(json.dumps(hlist_cars_plot_data[2].to_dict())[50:100] == 'te_names": ["Index of reduced basis vector", "Sing')
 print(all_cars_with_features)
+
+# Tests for metrics
+assert(int(all_cars_with_features.distance_matrix('minkowski')[25][151]) == 186)
+assert(int(all_cars_with_features.mean()[3]) == 15)
+assert(int(all_cars_with_features.standard_deviation()[4]) == 845)
+assert(int(all_cars_with_features.variances()[2]) == 1637)
+assert(int(manhattan_distance(all_cars_with_features.matrix[3], all_cars_with_features.matrix[125])) == 1361)
+assert(int(minkowski_distance(all_cars_with_features.matrix[3], all_cars_with_features.matrix[125], mink_power=7.2)) == 1275)
+assert(int(euclidian_distance(all_cars_with_features.matrix[3], all_cars_with_features.matrix[125])) == 1277)
+assert(int(covariance(all_cars_with_features.matrix[3], all_cars_with_features.matrix[125])) == 1155762)
+assert(int(inf_norm([1,2,3,45,4.,4.21515,-12,-0,0,-25214.1511])) == 25214)
+assert(int(mahalanobis_distance(all_cars_with_features.matrix[3],
+                                all_cars_with_features.matrix[125],
+                                all_cars_with_features.covariance_matrix())) == 2)
 
 # Tests for empty HeterogeneousList
 empty_list = HeterogeneousList()
@@ -113,4 +131,27 @@ all_cars_without_features.sort(idx_dpl)
 assert(all(attr in ['displacement', 'cylinders', 'mpg', 'horsepower', 'weight', 'acceleration', 'model']
            for attr in all_cars_without_features.common_attributes))
 assert(all_cars_without_features[0].displacement == min(all_cars_without_features.get_column_values(idx_dpl)))
+
+# Missing tests after coverage report
+assert(all_cars_without_features[[]] == empty_list)
+all_cars_without_features.extend(all_cars_without_features)
+assert(len(all_cars_without_features._matrix) == 812)
+try:
+    all_cars_without_features[float]
+    raise ValueError("float should not work as __getitem__ object for HeterogeneousList")
+except Exception as e:
+    assert(e.args[0] == "key of type <class 'type'> not implemented for indexing HeterogeneousLists")
+
+try:
+    all_cars_without_features[[float]]
+    raise ValueError("float should not work as __getitem__ object for HeterogeneousList")
+except Exception as e:
+    assert(e.args[0] == "key of type <class 'list'> with <class 'type'> elements not implemented for indexing " +
+           "HeterogeneousLists")
+
+try:
+    covariance([1,2], [1])
+    raise ValueError("covariance should be able to compute on lists of different lengths")
+except Exception as e:
+    assert(e.args[0] == "vector_x and vector_y must be the same length to compute covariance.")
 
