@@ -302,6 +302,8 @@ class HeterogeneousList(DessiaObject):
         [3504.0, 3693.0, 3436.0, 3433.0, 3449.0, 4341.0, 4354.0, 4312.0, 4425.0, 3850.0]
 
         """
+        if not hasattr(self.dessia_objects[0], attribute):
+            return self.get_column_values(self.common_attributes.index(attribute))
         return [getattr(dessia_object, attribute) for dessia_object in self.dessia_objects]
 
     def get_column_values(self, index: int):
@@ -641,10 +643,11 @@ class HeterogeneousList(DessiaObject):
     def _build_multiplot(self, data_list: List[Dict[str, float]], tooltip: List[str], **kwargs: Dict[str, Any]):
         subplots = []
         for line in self.common_attributes:
-            for col in self.common_attributes:
+            for icol, col in enumerate(self.common_attributes):
                 if line == col:
-                    unic_values = set((getattr(dobject, line) for dobject in self.dessia_objects))
-                    if len(unic_values) == 1:  # TODO (plot_data linspace axis between two same values)
+                    # unic_values = set((getattr(dobject, line) for dobject in self.dessia_objects))
+                    unic_values = set((row_matrix[icol] for row_matrix in self.matrix))
+                    if len(unic_values) == 1: # TODO (plot_data linspace axis between two same values)
                         subplots.append(Scatter(x_variable=line, y_variable=col))
                     else:
                         subplots.append(Histogram(x_variable=line))
@@ -694,6 +697,17 @@ class HeterogeneousList(DessiaObject):
                     correlation_xy = correlation_matrix[0, 1]
                     r2_scores.append(correlation_xy**2)
                     association_list.append([attr1, attr2])
+
+        if len(association_list) == 0:
+            association_list = []
+            r2_scores = []
+            unreal_score = 1.
+            for idx, attr1 in enumerate(self.common_attributes):
+                for attr2 in self.common_attributes[idx+1:]:
+                    association_list.append([attr1, attr2])
+                    r2_scores.append(unreal_score)
+                    unreal_score += -1/10.
+            return map(list, zip(*sorted(zip(r2_scores, association_list))[::-1])), []
         # Returns list of list of associated attributes sorted along their R2 score and constant attributes
         return map(list, zip(*sorted(zip(r2_scores, association_list))[::-1])), list(set(constant_attributes))
 
