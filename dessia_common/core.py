@@ -15,6 +15,7 @@ import itertools
 
 from functools import reduce
 import collections
+import collections.abc
 from copy import deepcopy, copy
 import inspect
 import json
@@ -852,9 +853,9 @@ class DessiaFilter(DessiaObject):
         string_operator = {'>': '>', '<': '<', '>=': '>=', '<=': '<=', '==': '==', '!=': '!=', 'gt': '>', 'lt': '<',
                            'ge': '>=', 'le': '<=', 'eq': '==', 'ne': '!=', 'gte': '>=', 'lte': '<='}
         printed_operator = string_operator[self.comparison_operator]
-        return (self.attribute + " "*(offset_attr - len(self.attribute)) +
-                printed_operator + " "*(offset_oper - len(printed_operator)) +
-                " "*(offset_boun - len(str(self.bound))) + str(self.bound))
+        return (self.attribute + " " * (offset_attr - len(self.attribute)) +
+                printed_operator + " " * (offset_oper - len(printed_operator)) +
+                " " * (offset_boun - len(str(self.bound))) + str(self.bound))
 
     def __hash__(self):
         hash_ = len(self.attribute)
@@ -993,7 +994,7 @@ class FiltersList(DessiaObject):
         prefix += f"{len(self)} filters combined with '" + self.logical_operator + "' operator :\n"
         string = ""
         for filter_ in self.filters[:print_lim]:
-            string += " "*3 + "- "
+            string += " " * 3 + "- "
             string += filter_.__str__(len_attr + 2, len_numb + 2)
             string += "\n"
         return prefix + string
@@ -1151,7 +1152,7 @@ def dict_merge(old_dct, merge_dct, add_keys=True, extend_lists=True):
         merge_dct = {k: merge_dct[k] for k in set(dct).intersection(set(merge_dct))}
 
     for key, value in merge_dct.items():
-        if isinstance(dct.get(key), dict) and isinstance(value, collections.Mapping):
+        if isinstance(dct.get(key), dict) and isinstance(value, collections.abc.Mapping):
             dct[key] = dict_merge(dct[key], merge_dct[key], add_keys=add_keys, extend_lists=extend_lists)
         elif isinstance(dct.get(key), list) and extend_lists:
             dct[key].extend(value)

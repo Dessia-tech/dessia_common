@@ -30,3 +30,7 @@ system1.jsonschema()
 system1.save_to_file('system1')
 system1_lff = dc.DessiaObject.load_from_file('system1.json')
 assert system1_lff == system1
+
+memo = {}
+a,memo = dcus.serialize_with_pointers(system1)
+assert memo
