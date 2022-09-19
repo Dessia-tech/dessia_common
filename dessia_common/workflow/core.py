@@ -163,13 +163,16 @@ class Block(DessiaObject):
     _non_serializable_attributes = []
 
     def __init__(self, inputs: List[Variable], outputs: List[Variable],
-                 position: Tuple[float, float] = (0, 0), name: str = ''):
+                 position: Tuple[float, float] = None, name: str = ''):
         """
         An Abstract block. Do not instantiate alone
         """
+        if position is None:
+            self.position = (0, 0)
+        else:
+            self.position = position
         self.inputs = inputs
         self.outputs = outputs
-        self.position = position
         DessiaObject.__init__(self, name=name)
 
     def equivalent_hash(self):
