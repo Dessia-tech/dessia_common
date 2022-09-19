@@ -644,7 +644,7 @@ class Workflow(Block):
         if memo is None:
             memo = {}
 
-        self.refresh_blocks_positions()
+        # self.refresh_blocks_positions()
         dict_ = Block.to_dict(self)
         dict_['object_class'] = 'dessia_common.workflow.core.Workflow'  # TO force migrating from dessia_common.workflow
         blocks = [b.to_dict() for b in self.blocks]
@@ -1142,6 +1142,13 @@ class Workflow(Block):
             for j, element in enumerate(elements_by_distance[distance]):
                 coordinates[element] = (i * horizontal_spacing, (j + 0.5) * vertical_spacing)
         return coordinates
+
+    def blocks_positions(self):
+        coordinates = self.layout()
+        res = {}
+        for block, coordinate in coordinates.items():
+            res[self.blocks.index(block)] = coordinate
+        return res
 
     def refresh_blocks_positions(self):
         """
