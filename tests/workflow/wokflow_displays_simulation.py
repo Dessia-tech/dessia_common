@@ -1,4 +1,5 @@
 from dessia_common.models.workflows.workflow_displays import workflow
+from dessia_common.utils.types import is_jsonable
 
 workflow_run = workflow.run(input_values={0: 1})
 display_settings = workflow_run.display_settings()
@@ -18,6 +19,10 @@ assert display_settings[4].type == "markdown"
 cad_do = workflow_run.block_display(1)[0]
 pd_do = workflow_run.block_display(2)[0]
 md_do = workflow_run.block_display(3)[0]
+
+assert is_jsonable(cad_do.data)
+assert is_jsonable(pd_do.data)
+assert is_jsonable(md_do.data)
 
 assert len(cad_do.data["meshes"]) == 2
 assert len(pd_do.data) == 5
