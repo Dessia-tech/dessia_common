@@ -713,7 +713,7 @@ class Display(Block):
     def selector(self):
         if self._selector:
             return self._selector
-        if type(self) is Display:
+        if self.__class__ is Display:
             self.warn_deprecation()
             return ""
         raise NotImplementedError(f"selector is not implemented for type '{type(self)}'")
