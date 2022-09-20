@@ -711,11 +711,11 @@ class Display(Block):
 
     @property
     def selector(self):
-        print(self._selector, self.__class__.__name__)
         if self._selector:
             return self._selector
         if type(self) is Display:
             self.warn_deprecation()
+            return ""
         raise NotImplementedError(f"selector is not implemented for type '{type(self)}'")
 
     def _display_settings(self, block_index: int) -> DisplaySetting:
@@ -751,6 +751,7 @@ class MultiPlot(Display):
         self.attributes = attributes
         Display.__init__(self, inputs=[TypedVariable(List[DessiaObject])], name=name)
         self.inputs[0].name = 'Input List'
+        self._selector = "plot_data"
 
     def equivalent(self, other):
         same_attributes = self.attributes == other.attributes
@@ -758,9 +759,6 @@ class MultiPlot(Display):
 
     def equivalent_hash(self):
         return sum(len(a) for a in self.attributes)
-
-    def _display_settings(self, block_index: int) -> DisplaySetting:
-        return block_display_settings(block_index=block_index, type_="plot_data", name=self.name)
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
         dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
@@ -796,9 +794,6 @@ class MultiPlot(Display):
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
 
-# TODO Are these 3 next blocks mutualizable into Display ?
-
-
 class CadView(Display):
     """
     Generates a DisplayObject that is displayable in 3D Viewer features (BabylonJS, ...)
@@ -813,16 +808,6 @@ class CadView(Display):
 
         self._selector = "cad"
 
-    # def evaluate(self, values):
-    #     object_ = values[self.inputs[0]]
-    #     settings = object_._display_settings_from_selector('cad')
-    #     data = attrmethod_getter(object_, settings.method)()
-    #     return [DisplayObject(type_=settings.type, data=data, name=self.name)]
-    #
-    # def _to_script(self) -> ToScriptElement:
-    #     script = f"CadView(name='{self.name}')"
-    #     return ToScriptElement(declaration=script, imports=[self.full_classname])
-
 
 class Markdown(Display):
     """
@@ -836,19 +821,6 @@ class Markdown(Display):
         Display.__init__(self, inputs=[input_], name=name)
 
         self._selector = "markdown"
-
-    # def _display_settings(self, block_index: int) -> DisplaySetting:
-    #     return block_display_settings(block_index=block_index, type_="markdown", name=self.name)
-    #
-    # def evaluate(self, values):
-    #     object_ = values[self.inputs[0]]
-    #     settings = object_._display_settings_from_selector('markdown')
-    #     data = attrmethod_getter(object_, settings.method)()
-    #     return [DisplayObject(type_=settings.type, data=data, name=self.name)]
-    #
-    # def _to_script(self) -> ToScriptElement:
-    #     script = f"CadView(name='{self.name}')"
-    #     return ToScriptElement(declaration=script, imports=[self.full_classname])
 
 
 class PlotData(Display):
@@ -865,10 +837,6 @@ class PlotData(Display):
         Display.__init__(self, inputs=[input_], name=name)
 
         self._selector = "plot_data"
-
-    # def _to_script(self) -> ToScriptElement:
-    #     script = f"PlotData(name='{self.name}')"
-    #     return ToScriptElement(declaration=script, imports=[self.full_classname])
 
 
 class ModelAttribute(Block):
