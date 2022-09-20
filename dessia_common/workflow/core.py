@@ -357,6 +357,9 @@ class Workflow(Block):
 
         Block.__init__(self, inputs=inputs, outputs=outputs, name=name)
 
+        self.branch_by_display_selector = self.display_branches
+        self.branch_by_export_format = self.export_branches
+
     def handle_pipe(self, pipe):
         """
         Perform some initialization action on a pipe and its variables
@@ -535,7 +538,7 @@ class Workflow(Block):
         return [b._export_format(i) for i, b in enumerate(self.export_blocks)]
 
     @property
-    def branch_by_display_selector(self):
+    def display_branches(self):
         """
         Return the corresponding branch to each display selector
         """
@@ -548,7 +551,7 @@ class Workflow(Block):
         return selector_branches
 
     @property
-    def branch_by_export_format(self):
+    def export_branches(self):
         """
         Return the corresponding branch to each export format
         """
