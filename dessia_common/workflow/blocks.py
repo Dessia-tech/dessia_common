@@ -18,6 +18,7 @@ from dessia_common.core import DessiaFilter, FiltersList, enhanced_deep_attr, sp
     type_from_annotation, DessiaObject
 from dessia_common.utils.types import get_python_class_from_class_name, full_classname
 from dessia_common.utils.docstrings import parse_docstring, EMPTY_PARSED_ATTRIBUTE
+from dessia_common.utils.serialization import serialize
 from dessia_common.errors import UntypedArgumentError
 from dessia_common.typings import JsonSerializable, MethodType, ClassMethodType
 from dessia_common.files import StringFile, BinaryFile
@@ -776,6 +777,9 @@ class MultiPlot(Display):
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
 
+# TODO Are these 3 next blocks mutualizable into Display ?
+
+
 class CadView(Display):
     """
     Generates a DisplayObject that is displayable in 3D Viewer features (BabylonJS, ...)
@@ -824,6 +828,33 @@ class Markdown(Display):
 
     def _to_script(self) -> ToScriptElement:
         script = f"CadView(name='{self.name}')"
+        return ToScriptElement(declaration=script, imports=[self.full_classname])
+
+
+class PlotData(Display):
+    """
+    Generates a DisplayObject that is displayable in PlotData features.
+    Uses the the input object's plot_data method.
+
+    :param name: The name of the block.
+    :type name: str
+    """
+
+    def __init__(self, name: str = ''):
+        input_ = TypedVariable(DessiaObject, name="Model to display")
+        Display.__init__(self, inputs=[input_], name=name)
+
+    def _display_settings(self, block_index: int) -> DisplaySetting:
+        return block_display_settings(block_index=block_index, type_="plot_data", name=self.name)
+
+    def evaluate(self, values):
+        object_ = values[self.inputs[0]]
+        settings = object_._display_settings_from_selector('plot_data')
+        data = attrmethod_getter(object_, settings.method)()
+        return [DisplayObject(type_=settings.type, data=serialize(data), name=self.name)]
+
+    def _to_script(self) -> ToScriptElement:
+        script = f"PlotData(name='{self.name}')"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
 
