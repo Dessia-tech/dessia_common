@@ -1330,50 +1330,48 @@ class Workflow(Block):
             raise ValueError("A workflow output must be set")
 
         # --- Blocks ---
-        blockstr = ""
+        blocks_str = ""
         imports = []
         imports_as_is = []
         for iblock, block in enumerate(self.blocks):
             block_script = block._to_script()
             imports.extend(block_script.imports)
             if block_script.before_declaration is not None:
-                blockstr += f"{block_script.before_declaration}\n"
-            blockstr += f'{prefix}block_{iblock} = {block_script.declaration}\n'
-        blockstr += f"{prefix}blocks = [{', '.join([prefix + 'block_' + str(i) for i in range(len(self.blocks))])}]\n"
+                blocks_str += f"{block_script.before_declaration}\n"
+            blocks_str += f'{prefix}block_{iblock} = {block_script.declaration}\n'
+        blocks_str += f"{prefix}blocks = [{', '.join([prefix + 'block_' + str(i) for i in range(len(self.blocks))])}]\n"
+
+        # --- NBVs ---
+        nbvs_str = ""
+        for nbv_index, nbv in enumerate(self.nonblock_variables):
+            nbv_script = nbv._to_script()
+            imports.extend(nbv_script.imports)
+            imports_as_is.extend(nbv_script.imports_as_is)
+            nbvs_str += f"{prefix}variable_{nbv_index} = {nbv_script.declaration}"
 
         # --- Pipes ---
-        pipestr = ""
-        variable_index = 0
+        pipes_str = ""
         for ipipe, pipe in enumerate(self.pipes):
             input_index = self.variable_indices(pipe.input_variable)
             if isinstance(input_index, int):  # NBV handling
-                input_name = f'{prefix}variable_{variable_index}'
-                input_script_elements = pipe.input_variable._to_script()
-                imports.extend(input_script_elements.imports)
-                imports_as_is.extend((input_script_elements.imports_as_is))
-                pipestr += f'{input_name} = {input_script_elements.declaration}'
-                variable_index += 1
+                input_name = f'{prefix}variable_{input_index}'
             else:
                 input_name = f"{prefix}block_{input_index[0]}.outputs[{input_index[2]}]"
 
             output_index = self.variable_indices(pipe.output_variable)
             if isinstance(output_index, int):  # NBV handling
-                output_name = f'{prefix}variable_{variable_index}'
-                output_script_elements = pipe.output_variable._to_script()
-                imports.extend(output_script_elements.imports)
-                imports_as_is.extend(output_script_elements.imports_as_is)
-                pipestr += f'{output_name } = {output_script_elements.declaration}'
-                variable_index += 1
+                output_name = f'{prefix}variable_{output_index}'
             else:
                 output_name = f"{prefix}block_{output_index[0]}.inputs[{output_index[2]}]"
-            pipestr += f"{prefix}pipe_{ipipe} = Pipe({input_name}, {output_name})\n"
-        pipestr += f"{prefix}pipes = [{', '.join([prefix + 'pipe_' + str(i) for i in range(len(self.pipes))])}]\n"
+            pipes_str += f"{prefix}pipe_{ipipe} = Pipe({input_name}, {output_name})\n"
+        pipes_str += f"{prefix}pipes = [{', '.join([prefix + 'pipe_' + str(i) for i in range(len(self.pipes))])}]\n"
 
         # --- Building script ---
         output_name = f"{prefix}block_{workflow_output_index[0]}.outputs[{workflow_output_index[2]}]"
 
-        full_script = f"{blockstr}\n" \
-                      f"{pipestr}\n" \
+        full_script = f"{blocks_str}\n" \
+                      f"{nbvs_str}\n" \
+                      f"{pipes_str}\n" \
                       f"{prefix}workflow = " \
                       f"Workflow({prefix}blocks, {prefix}pipes, output={output_name}, name='{self.name}')\n"
 
