@@ -43,39 +43,43 @@ class Variable(DessiaObject):
     _eq_is_data_eq = False
     has_default_value: bool = False
 
-    def __init__(self, name: str = ''):
+    def __init__(self, name: str = '', position = None):
         """
         Variable for workflow
         """
         DessiaObject.__init__(self, name=name)
-        self.position = None
+        if position is None:
+            self.position = (0, 0)
+        else:
+            self.position = position
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
         dict_ = DessiaObject.base_dict(self)
-        dict_.update({'has_default_value': self.has_default_value})
+        dict_.update({'has_default_value': self.has_default_value,
+                      'position': self.position})
         return dict_
 
 
 class TypedVariable(Variable):
     has_default_value: bool = False
 
-    def __init__(self, type_: Type, name: str = ''):
+    def __init__(self, type_: Type, name: str = '', position = None):
         """
         Variable for workflow with a typing
         """
-        Variable.__init__(self, name=name)
+        Variable.__init__(self, name=name, position=position)
         self.type_ = type_
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
-        dict_ = DessiaObject.base_dict(self)
-        dict_.update({'type_': serialize_typing(self.type_), 'has_default_value': self.has_default_value})
+        dict_ = super().to_dict(use_pointers, memo, path)
+        dict_.update({'type_': serialize_typing(self.type_)})
         return dict_
 
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'TypedVariable':
         type_ = deserialize_typing(dict_['type_'])
-        return cls(type_=type_, name=dict_['name'])
+        return cls(type_=type_, name=dict_['name'], position=dict_.get("position"))
 
     def copy(self, deep: bool = False, memo=None):
         return TypedVariable(type_=self.type_, name=self.name)
@@ -95,28 +99,27 @@ class TypedVariable(Variable):
 class VariableWithDefaultValue(Variable):
     has_default_value: bool = True
 
-    def __init__(self, default_value: Any, name: str = ''):
+    def __init__(self, default_value: Any, name: str = '', position=None):
         """
         A variable with a default value
         """
-        Variable.__init__(self, name=name)
+        Variable.__init__(self, name=name, position=position)
         self.default_value = default_value
 
 
 class TypedVariableWithDefaultValue(TypedVariable):
     has_default_value: bool = True
 
-    def __init__(self, type_: Type, default_value: Any, name: str = ''):
+    def __init__(self, type_: Type, default_value: Any, name: str = '', position = None):
         """
         Workflow variables wit a type and a default value
         """
-        TypedVariable.__init__(self, type_=type_, name=name)
+        TypedVariable.__init__(self, type_=type_, name=name, position=position)
         self.default_value = default_value
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#'):
-        dict_ = DessiaObject.base_dict(self)
-        dict_.update({'type_': serialize_typing(self.type_), 'default_value': serialize(self.default_value),
-                      'has_default_value': self.has_default_value})
+        dict_ = super().to_dict(use_pointers, memo, path)
+        dict_.update({'default_value': serialize(self.default_value)})
         return dict_
 
     @classmethod
@@ -124,7 +127,7 @@ class TypedVariableWithDefaultValue(TypedVariable):
                        pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'TypedVariableWithDefaultValue':
         type_ = deserialize_typing(dict_['type_'])
         default_value = deserialize(dict_['default_value'], global_dict=global_dict, pointers_memo=pointers_memo)
-        return cls(type_=type_, default_value=default_value, name=dict_['name'])
+        return cls(type_=type_, default_value=default_value, name=dict_['name'], position=dict_.get('position'))
 
     def copy(self, deep: bool = False, memo=None):
         """

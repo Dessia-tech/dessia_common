@@ -74,7 +74,7 @@ class Display(Block):
     _displayable_input = 0
     _non_editable_attributes = ['inputs']
 
-    def __init__(self, inputs: List[Variable] = None, order: int = None, name: str = ''):
+    def __init__(self, inputs: List[Variable] = None, order: int = None, name: str = '', position=None):
         """
         Abstract class for display behaviors
         """
@@ -89,7 +89,7 @@ class Display(Block):
                           DeprecationWarning)
             inputs = [TypedVariable(type_=DessiaObject, name='Model to Display')]
         output = TypedVariable(type_=DisplayObject, name="Display Object")
-        Block.__init__(self, inputs=inputs, outputs=[output], name=name)
+        Block.__init__(self, inputs=inputs, outputs=[output], name=name, position=position)
 
     def evaluate(self, values):
         return []
