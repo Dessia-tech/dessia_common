@@ -60,6 +60,18 @@ class Variable(DessiaObject):
         return dict_
 
 
+    def _to_script(self) -> ToScriptElement:
+        script = self._get_to_script_elements()
+        script.declaration = f"{self.__class__.__name__}({script.declaration})"
+
+        script.imports.append(self.full_classname)
+        return script
+
+    def _get_to_script_elements(self):
+        declaration = f"name='{self.name}', position={self.position}"
+        return ToScriptElement(declaration=declaration, imports=[], imports_as_is=[])
+
+
 class TypedVariable(Variable):
     has_default_value: bool = False
 
@@ -84,16 +96,14 @@ class TypedVariable(Variable):
     def copy(self, deep: bool = False, memo=None):
         return TypedVariable(type_=self.type_, name=self.name)
 
-    def _to_script(self) -> ToScriptElement:
-        script = f"TypedVariable(type_={serialize_typing(self.type_)}, name='{self.name}')\n"
+    def _get_to_script_elements(self) -> ToScriptElement:
+        script = super()._get_to_script_elements()
 
-        imports = [self.full_classname]
-        imports_as_is = None
-        if "builtins" in serialize_typing(self.type_):
-            imports_as_is = ["builtins"]
-        else:
-            imports.append(serialize_typing(self.type_))
-        return ToScriptElement(declaration=script, imports=imports, imports_as_is=imports_as_is)
+        script.declaration += f", type_={self.type_.__name__}"
+
+        if "builtins" not in serialize_typing(self.type_):
+            script.imports.append(serialize_typing(self.type_))
+        return script
 
 
 class VariableWithDefaultValue(Variable):
@@ -141,6 +151,12 @@ class TypedVariableWithDefaultValue(TypedVariable):
             memo = {}
         copied_default_value = deepcopy_value(self.default_value, memo=memo)
         return TypedVariableWithDefaultValue(type_=self.type_, default_value=copied_default_value, name=self.name)
+
+    def _to_script(self) -> ToScriptElement:
+        warnings.warn("to_script method is not implemented for TypedVariableWithDefaultValue yet. "
+                      "We are losing the default value as we call the TypedVariable method")
+        casted_variable = TypedVariable(type_=self.type_, name=self.name, position=self.position)
+        return casted_variable._to_script()
 
 
 NAME_VARIABLE = TypedVariable(type_=str, name="Result Name")
@@ -1347,7 +1363,7 @@ class Workflow(Block):
             nbv_script = nbv._to_script()
             imports.extend(nbv_script.imports)
             imports_as_is.extend(nbv_script.imports_as_is)
-            nbvs_str += f"{prefix}variable_{nbv_index} = {nbv_script.declaration}"
+            nbvs_str += f"{prefix}variable_{nbv_index} = {nbv_script.declaration}\n"
 
         # --- Pipes ---
         pipes_str = ""
