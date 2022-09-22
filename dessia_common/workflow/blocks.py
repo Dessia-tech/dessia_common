@@ -1059,11 +1059,12 @@ class Archive(Block):
         self.number_exports = number_exports
         self.filename = filename
         inputs = [Variable(name="export_" + str(i)) for i in range(number_exports)]
+        inputs.append(TypedVariableWithDefaultValue(type_=str, default_value=filename, name="filename"))
         Block.__init__(self, inputs=inputs, outputs=[Variable(name="zip archive")], name=name)
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#'):
         dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
-        dict_['number_exports'] = len(self.inputs)
+        dict_['number_exports'] = len(self.inputs) - 1   # Filename is also a block input
         dict_["filename"] = self.filename
         return dict_
 
@@ -1079,9 +1080,11 @@ class Archive(Block):
         return cls(number_exports=dict_["number_exports"], filename=filename, name=dict_['name'])
 
     def evaluate(self, values):
-        archive = io.BytesIO()
+        name_input = self.inputs[-1]
+        archive_name = values.pop(name_input)
+        archive = BinaryFile(archive_name)
         with ZipFile(archive, 'w') as zip_archive:
-            for input_ in self.inputs:
+            for input_ in self.inputs[:-1]:  # Filename is last block input
                 value = values[input_]
                 if isinstance(value, StringFile):
                     with zip_archive.open(value.filename, 'w') as file:
@@ -1090,7 +1093,7 @@ class Archive(Block):
                     with zip_archive.open(value.filename, 'w') as file:
                         file.write(value.getbuffer())
                 else:
-                    raise ValueError("Archive input is not a file-like object")
+                    raise ValueError(f"Archive input is not a file-like object. Got '{value}' of type {type(value)}")
         return [archive]
 
     def _export_format(self, block_index: int):
