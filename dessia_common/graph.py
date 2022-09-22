@@ -73,8 +73,11 @@ class GraphExplorer:
         return self.exploration_order
 
 
-def explore_tree_from_leaves(graph):
-    return GraphExplorer(graph).explore_tree_from_leaves()
+def explore_tree_from_leaves(graph: nx.DiGraph):
+    if not nx.is_directed_acyclic_graph(graph):
+        raise NotImplementedError('Cycles in jsonpointers not handled')
+
+    return list(nx.topological_sort(graph))
 
 
 def cut_tree_final_branches(graph: nx.DiGraph):
