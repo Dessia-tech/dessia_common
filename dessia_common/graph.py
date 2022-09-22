@@ -10,67 +10,67 @@ Created on Thu Nov 18 14:16:30 2021
 import networkx as nx
 
 
-class GraphExplorer:
+# class GraphExplorer:
 
-    def __init__(self, graph: nx.DiGraph):
-        self.graph = graph
-        self.exploration_order = []
-        self.number_nodes = self.graph.number_of_nodes()
-        self.successors = {}
+#     def __init__(self, graph: nx.DiGraph):
+#         self.graph = graph
+#         self.exploration_order = []
+#         self.number_nodes = self.graph.number_of_nodes()
+#         self.successors = {}
 
-        self.remaining_nodes = list(self.graph.nodes)
-        self.explored = {n: False for n in self.remaining_nodes}
+#         self.remaining_nodes = list(self.graph.nodes)
+#         self.explored = {n: False for n in self.remaining_nodes}
 
-    def are_neighbors_explored(self, node):
-        try:
-            node_successors = self.successors[node]
-        except KeyError:
-            node_successors = list(self.graph.successors(node))
-            self.successors[node] = node_successors
+#     def are_neighbors_explored(self, node):
+#         try:
+#             node_successors = self.successors[node]
+#         except KeyError:
+#             node_successors = list(self.graph.successors(node))
+#             self.successors[node] = node_successors
 
-        for out_node in node_successors:
-            if not self.explored[out_node]:
-                return False
-        return True
+#         for out_node in node_successors:
+#             if not self.explored[out_node]:
+#                 return False
+#         return True
 
-    def add_node_to_order(self, node):
-        self.explored[node] = True
-        self.number_nodes -= 1
-        self.exploration_order.append(node)
-        self.remaining_nodes.remove(node)
+#     def add_node_to_order(self, node):
+#         self.explored[node] = True
+#         self.number_nodes -= 1
+#         self.exploration_order.append(node)
+#         self.remaining_nodes.remove(node)
 
-    def add_node_to_order_with_index(self, node, index=None):
-        self.explored[node] = True
-        self.number_nodes -= 1
-        self.exploration_order.append(node)
-        del self.remaining_nodes[index]
+#     def add_node_to_order_with_index(self, node, index=None):
+#         self.explored[node] = True
+#         self.number_nodes -= 1
+#         self.exploration_order.append(node)
+#         del self.remaining_nodes[index]
 
-    def explore_tree_from_leaves(self):
-        while self.number_nodes:
-            found_node = False
-            # Regular find of a node
-            for node_index, node in enumerate(self.remaining_nodes):
-                if self.are_neighbors_explored(node):
-                    # Mark explored
-                    self.add_node_to_order_with_index(node, node_index)
-                    found_node = True
-                    current_node = node
-                    break
+#     def explore_tree_from_leaves(self):
+#         while self.number_nodes:
+#             found_node = False
+#             # Regular find of a node
+#             for node_index, node in enumerate(self.remaining_nodes):
+#                 if self.are_neighbors_explored(node):
+#                     # Mark explored
+#                     self.add_node_to_order_with_index(node, node_index)
+#                     found_node = True
+#                     current_node = node
+#                     break
 
-            if found_node:
-                parent_found = True
-                while parent_found:
-                    # Searching if parents are unlocked
-                    parent_found = False
-                    for parent in self.graph.predecessors(current_node):
-                        if self.are_neighbors_explored(parent):
-                            self.add_node_to_order(parent)
-                            current_node = parent
-                            parent_found = True
+#             if found_node:
+#                 parent_found = True
+#                 while parent_found:
+#                     # Searching if parents are unlocked
+#                     parent_found = False
+#                     for parent in self.graph.predecessors(current_node):
+#                         if self.are_neighbors_explored(parent):
+#                             self.add_node_to_order(parent)
+#                             current_node = parent
+#                             parent_found = True
 
-            else:
-                raise ValueError('Can not find a node')
-        return self.exploration_order
+#             else:
+#                 raise ValueError('Can not find a node')
+#         return self.exploration_order
 
 
 def explore_tree_from_leaves(graph):
