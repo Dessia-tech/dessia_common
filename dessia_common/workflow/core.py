@@ -322,6 +322,10 @@ class Workflow(Block):
         }
     }
 
+    @property
+    def nodes(self):
+        return self.blocks + self.nonblock_variables
+
     def __init__(self, blocks, pipes, output, *, imposed_variable_values=None,
                  detached_variables: List[TypedVariable] = None, description: str = "",
                  documentation: str = "", name: str = ""):
@@ -1132,7 +1136,7 @@ class Workflow(Block):
         coordinates = {}
         elements_by_distance = {}
         if self.output:
-            for element in self.blocks + self.nonblock_variables:
+            for element in self.nodes:
                 distances = []
                 paths = nx.all_simple_paths(self.graph, element, self.output)
                 for path in paths:
@@ -1168,8 +1172,8 @@ class Workflow(Block):
     def blocks_positions(self):
         coordinates = self.layout()
         res = {}
-        for block, coordinate in coordinates.items():
-            res[self.blocks.index(block)] = coordinate
+        for node, coordinate in coordinates.items():
+            res[self.nodes.index(node)] = coordinate
         return res
 
     def refresh_blocks_positions(self):
