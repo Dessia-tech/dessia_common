@@ -357,6 +357,9 @@ class Workflow(Block):
 
         Block.__init__(self, inputs=inputs, outputs=outputs, name=name)
 
+        self.branch_by_display_selector = self.display_branches
+        self.branch_by_export_format = self.export_branches
+
     def handle_pipe(self, pipe):
         """
         Perform some initialization action on a pipe and its variables
@@ -535,7 +538,7 @@ class Workflow(Block):
         return [b._export_format(i) for i, b in enumerate(self.export_blocks)]
 
     @property
-    def branch_by_display_selector(self):
+    def display_branches(self):
         """
         Return the corresponding branch to each display selector
         """
@@ -548,7 +551,7 @@ class Workflow(Block):
         return selector_branches
 
     @property
-    def branch_by_export_format(self):
+    def export_branches(self):
         """
         Return the corresponding branch to each export format
         """
@@ -592,13 +595,13 @@ class Workflow(Block):
         properties_dict = jsonschemas['run']['properties']
         required_inputs = []
         parsed_attributes = {}
-        for i, input_ in enumerate(self.inputs):
+        for i, input_ in enumerate(self.inputs + self.detached_variables):
             current_dict = {}
             if isinstance(input_, TypedVariable) or isinstance(input_, TypedVariableWithDefaultValue):
                 annotation = (str(i), input_.type_)
             else:
                 annotation = (str(i), Any)
-            if input_ in self.nonblock_variables:
+            if input_ in self.nonblock_variables or input_ in self.detached_variables:
                 title = input_.name
                 parsed_attributes = None
             else:
@@ -628,9 +631,7 @@ class Workflow(Block):
                 current_dict.update(dict_)
             if input_ not in self.imposed_variable_values:  # Removes from Optional in edits
                 properties_dict[str(i)] = current_dict[str(i)]
-        # properties_dict[str(len(self.inputs) + 1)] = {'type': 'string', 'title': 'WorkflowRun Name', 'editable': True,
-        #                                               'order': 0, "description": "Name for the resulting WorkflowRun",
-        #                                               'default_value': '', 'python_typing': 'builtins.str'}
+
         jsonschemas['run'].update({'required': required_inputs, 'method': True,
                                    'python_typing': serialize_typing(MethodType)})
         jsonschemas['start_run'] = deepcopy(jsonschemas['run'])
@@ -736,6 +737,9 @@ class Workflow(Block):
                     if input_.name == "Result Name":
                         name = deserialize_argument(type_=input_.type_, argument=value)
                     arguments_values[i] = deserialized_value
+            if name is None and len(self.inputs) in dict_ and isinstance(dict_[len(self.inputs)], str):
+                # Hot fixing name not attached
+                name = dict_[len(self.inputs)]
             return {'input_values': arguments_values, 'name': name}
         raise NotImplementedError(f"Method {method} not in Workflow allowed methods")
 
