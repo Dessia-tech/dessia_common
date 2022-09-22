@@ -10,7 +10,6 @@ import inspect
 import warnings
 
 from zipfile import ZipFile
-import io
 from typing import List, Type, Any, Dict, get_type_hints
 
 import itertools
