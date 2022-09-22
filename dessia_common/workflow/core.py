@@ -233,6 +233,9 @@ class Block(DessiaObject):
         block_docstring = {i: EMPTY_PARSED_ATTRIBUTE for i in self.inputs}
         return block_docstring
 
+    def base_script(self) -> str:
+        return f"name='{self.name}', position={self.position}"
+
 
 class Pipe(DessiaObject):
     """

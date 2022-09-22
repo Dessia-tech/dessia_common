@@ -95,7 +95,7 @@ class Display(Block):
         return []
 
     def _to_script(self) -> ToScriptElement:
-        script = f"Display(inputs=None, name='{self.name}')"
+        script = f"Display(inputs=None, {self.base_script()})"
         imports = [self.full_classname, Variable().full_classname]
         return ToScriptElement(declaration=script, imports=imports)
 
@@ -158,7 +158,7 @@ class InstantiateModel(Block):
 
     def _to_script(self) -> ToScriptElement:
         script = f"InstantiateModel(model_class=" \
-                 f"{self.model_class.__name__}, name='{self.name}')"
+                 f"{self.model_class.__name__}, {self.base_script()})"
 
         imports = [
             full_classname(object_=self.model_class, compute_for='class'),
@@ -235,7 +235,7 @@ class ClassMethod(Block):
     def _to_script(self) -> ToScriptElement:
         script = f"ClassMethod(method_type=ClassMethodType(" \
                  f"{self.method_type.class_.__name__}, '{self.method_type.name}')" \
-                 f", name='{self.name}')"
+                 f", {self.base_script()})"
 
         imports = [
             full_classname(object_=self.method_type, compute_for='instance'),
@@ -327,7 +327,7 @@ class ModelMethod(Block):
     def _to_script(self) -> ToScriptElement:
         script = f"ModelMethod(method_type=MethodType(" \
                  f"{self.method_type.class_.__name__}, '{self.method_type.name}')" \
-                 f", name='{self.name}')"
+                 f", {self.base_script()})"
 
         imports = [
             full_classname(object_=self.method_type, compute_for='instance'),
@@ -365,7 +365,7 @@ class Sequence(Block):
         return [[values[var] for var in self.inputs]]
 
     def _to_script(self) -> ToScriptElement:
-        script = f"Sequence(number_arguments={len(self.inputs)}, name='{self.name}')"
+        script = f"Sequence(number_arguments={len(self.inputs)}, {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
 
@@ -398,7 +398,7 @@ class Concatenate(Block):
         return [concatenate(list_values)]
 
     def _to_script(self) -> ToScriptElement:
-        script = f"Concatenate(number_arguments={len(self.inputs)}, name='{self.name}')"
+        script = f"Concatenate(number_arguments={len(self.inputs)}, {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
 
@@ -475,7 +475,7 @@ class WorkflowBlock(Block):
             f"{workflow_script.declaration}" \
             f"# --- End Subworkflow --- \n"
 
-        script = f"WorkflowBlock(workflow={prefix}workflow, name='{self.name}')"
+        script = f"WorkflowBlock(workflow={prefix}workflow, {self.base_script()})"
 
         imports = workflow_script.imports + [self.full_classname]
         return ToScriptElement(declaration=script, before_declaration=script_workflow, imports=imports)
@@ -556,7 +556,8 @@ class ForEach(Block):
         wfblock_script_elements = self.workflow_block._to_script()
         wfblock_script = f"{wfblock_script_elements.before_declaration}\n" \
                          f"wfblock = {wfblock_script_elements.declaration}"
-        foreach_script = f"ForEach(workflow_block=wfblock, iter_input_index={self.iter_input_index})"
+        foreach_script = f"ForEach(workflow_block=wfblock, iter_input_index={self.iter_input_index}, " \
+                         f"{self.base_script()})"
 
         imports = wfblock_script_elements.imports + [self.full_classname]
         return ToScriptElement(declaration=foreach_script, before_declaration=wfblock_script, imports=imports)
@@ -588,7 +589,7 @@ class Unpacker(Block):
         return [values[self.inputs[0]][i] for i in self.indices]
 
     def _to_script(self) -> ToScriptElement:
-        script = f"Unpacker(indices={self.indices}, name='{self.name}')"
+        script = f"Unpacker(indices={self.indices}, {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
 
@@ -613,7 +614,7 @@ class Flatten(Block):
         return [output]
 
     def _to_script(self) -> ToScriptElement:
-        script = f"Flatten(name='{self.name}')"
+        script = f"Flatten({self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
 
@@ -651,7 +652,7 @@ class Product(Block):
         return [output_value]
 
     def _to_script(self) -> ToScriptElement:
-        script = f"Product(number_list={self.number_list}, name='{self.name}')"
+        script = f"Product(number_list={self.number_list}, {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
 
@@ -708,7 +709,7 @@ class Filter(Block):
                             f"attribute='{f.attribute}', comparison_operator='{f.comparison_operator}', "
                             f"bound={f.bound}, name='{f.name}')" for f in self.filters]
         filters = '[' + ",".join(filter_variables) + ']'
-        script = f"Filter(filters={filters}, logical_operator='{self.logical_operator}', name='{self.name}')"
+        script = f"Filter(filters={filters}, logical_operator='{self.logical_operator}', {self.base_script()})"
 
         imports = [DessiaFilter("", "", 0).full_classname, self.full_classname]
         return ToScriptElement(declaration=script, imports=imports)
@@ -774,7 +775,7 @@ class MultiPlot(Display):
         return [DisplayObject(type_="plot_data", data=[multiplot.to_dict()])]
 
     def _to_script(self) -> ToScriptElement:
-        script = f"MultiPlot(attributes={self.attributes}, name='{self.name}')"
+        script = f"MultiPlot(attributes={self.attributes}, {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
 
@@ -800,7 +801,7 @@ class CadView(Display):
         return [DisplayObject(type_=settings.type, data=data, name=self.name)]
 
     def _to_script(self) -> ToScriptElement:
-        script = f"CadView(name='{self.name}')"
+        script = f"CadView({self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
 
@@ -825,7 +826,7 @@ class Markdown(Display):
         return [DisplayObject(type_=settings.type, data=data, name=self.name)]
 
     def _to_script(self) -> ToScriptElement:
-        script = f"CadView(name='{self.name}')"
+        script = f"CadView({self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
 
@@ -864,7 +865,7 @@ class ModelAttribute(Block):
         return [enhanced_deep_attr(values[self.inputs[0]], self.attribute_name)]
 
     def _to_script(self) -> ToScriptElement:
-        script = f"ModelAttribute(attribute_name='{self.attribute_name}', name='{self.name}')"
+        script = f"ModelAttribute(attribute_name='{self.attribute_name}', {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
 
@@ -905,7 +906,7 @@ class SetModelAttribute(Block):
         return [model]
 
     def _to_script(self) -> ToScriptElement:
-        script = f"SetModelAttribute(attribute_name='{self.attribute_name}', name='{self.name}')"
+        script = f"SetModelAttribute(attribute_name='{self.attribute_name}', {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
 
@@ -937,7 +938,7 @@ class Sum(Block):
         return [sum(values)]
 
     def _to_script(self) -> ToScriptElement:
-        script = f"Sum(number_elements={self.number_elements}, name='{self.name}')"
+        script = f"Sum(number_elements={self.number_elements}, {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
 
@@ -950,7 +951,7 @@ class Substraction(Block):
         return [values[self.inputs[0]] - values[self.inputs[1]]]
 
     def _to_script(self) -> ToScriptElement:
-        script = f"Substraction(name='{self.name}')"
+        script = f"Substraction({self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
 
@@ -1029,7 +1030,7 @@ class Export(Block):
         script = f"Export(method_type=MethodType(" \
                  f"{full_classname(object_=self.method_type.class_, compute_for='class')}, '{self.method_type.name}')" \
                  f", filename='{self.filename}', extension='{self.extension}'" \
-                 f", text={self.text}, name='{self.name}')"
+                 f", text={self.text}, {self.base_script()})"
 
         imports = [self.full_classname, full_classname(object_=self.method_type, compute_for='instance'),
                    full_classname(object_=self.method_type.class_, compute_for='class')]
@@ -1091,7 +1092,7 @@ class Archive(Block):
                 "export_name": self.filename, "args": {"block_index": block_index}}
 
     def _to_script(self) -> ToScriptElement:
-        script = f"Archive(number_exports={self.number_exports}, filename='{self.filename}', name='{self.name}')"
+        script = f"Archive(number_exports={self.number_exports}, filename='{self.filename}', {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
 
