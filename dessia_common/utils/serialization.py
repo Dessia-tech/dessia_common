@@ -206,8 +206,9 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
     """
     class_argspec = None
 
-    global_dict, pointers_memo = update_pointers_data(global_dict=global_dict, current_dict=dict_,
-                                                      pointers_memo=pointers_memo)
+    if pointers_memo is None or global_dict is None:
+        global_dict, pointers_memo = update_pointers_data(global_dict=global_dict, current_dict=dict_,
+                                                          pointers_memo=pointers_memo)
 
     if '$ref' in dict_:
         try:
@@ -426,8 +427,9 @@ def pointer_graph(value):
 
     # refs = []
     refs_by_path = {}
+    references = find_references(value)
 
-    for path, reference in find_references(value):
+    for path, reference in references:
         # refs.append(reference)
         refs_by_path[path] = reference
         # Slitting path & reference to add missing nodes
@@ -458,7 +460,6 @@ def pointer_graph(value):
     graph.add_edges_from(path_edges, path=True)
     graph.add_edges_from(pointer_edges, head_type='circle', color='#008000', path=False)
 
-    references = find_references(value)
     refs_by_path = {r[0]: r[1] for r in references}
     extra_edges = []
     new_paths = {}

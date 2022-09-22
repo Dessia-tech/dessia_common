@@ -60,3 +60,13 @@ pareto_plot_data = categorized_pareto.plot_data()
 # assert(json.dumps(pareto_plot_data[0].to_dict())[150:200] == ' "Cluster Label": 0}, {"mpg": 14.0, "displacement"')
 # assert(json.dumps(pareto_plot_data[1].to_dict())[10500:10550] == 'acceleration": 8.5, "Cluster Label": 1}, {"mpg": 0')
 # assert(json.dumps(pareto_plot_data[2].to_dict())[50:100] == 'te_names": ["Index of reduced basis vector", "Sing')
+
+# Missing tests after coverage report
+try:
+    CategorizedList.from_pareto_sheets(all_cars_with_features, [[1,2,3]], 1)
+    raise ValueError("len(costs) must be the length of corresponding HeterogeneousList")
+except Exception as e:
+    assert(e.args[0] == "costs is length 1 and the matching HeterogeneousList is length 406. " +
+           "They should be the same length.")
+
+

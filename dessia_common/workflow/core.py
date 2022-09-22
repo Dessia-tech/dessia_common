@@ -678,8 +678,9 @@ class Workflow(Block):
         """
         Recompute the object from a dict
         """
-        global_dict, pointers_memo = update_pointers_data(global_dict=global_dict, current_dict=dict_,
-                                                          pointers_memo=pointers_memo)
+        if pointers_memo is None or global_dict is None:
+            global_dict, pointers_memo = update_pointers_data(global_dict=global_dict, current_dict=dict_,
+                                                              pointers_memo=pointers_memo)
 
         workflow = initialize_workflow(dict_=dict_, global_dict=global_dict, pointers_memo=pointers_memo)
 
@@ -707,15 +708,8 @@ class Workflow(Block):
             if 'imposed_variable_indices' not in dict_ and 'imposed_variable_values' not in dict_:
                 imposed_variable_values = None
 
-        if "description" in dict_: # retro compat
-            description = dict_["description"]
-        else:
-            description = ""
-
-        if "documentation" in dict_: # retro compat
-            documentation = dict_["documentation"]
-        else:
-            documentation = ""
+        description = dict_.get("description", "")
+        documentation = dict_.get("documentation", "")
 
         return cls(blocks=workflow.blocks, pipes=workflow.pipes, output=workflow.output,
                    imposed_variable_values=imposed_variable_values, description=description,
@@ -1635,8 +1629,9 @@ class WorkflowState(DessiaObject):
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'WorkflowState':
 
-        global_dict, pointers_memo = update_pointers_data(global_dict=global_dict, current_dict=dict_,
-                                                          pointers_memo=pointers_memo)
+        if pointers_memo is None or global_dict is None:
+            global_dict, pointers_memo = update_pointers_data(global_dict=global_dict, current_dict=dict_,
+                                                              pointers_memo=pointers_memo)
 
         workflow = Workflow.dict_to_object(dict_=dict_['workflow'], global_dict=global_dict,
                                            pointers_memo=pointers_memo, path=f"{path}/workflow")
