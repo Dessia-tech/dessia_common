@@ -2001,6 +2001,7 @@ class WorkflowState(DessiaObject):
             stream.write(export_stream.getvalue())
         if isinstance(stream, BinaryFile):
             stream.write(export_stream.getbuffer())
+        stream.filename = export_stream.filename
         return export_stream
 
 
