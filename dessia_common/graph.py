@@ -36,7 +36,7 @@ def explore_tree_from_leaves(graph: nx.DiGraph):
     if not nx.is_directed_acyclic_graph(graph):
         raise NotImplementedError('Cycles in jsonpointers not handled')
 
-    return list(nx.topological_sort(graph))
+    return reversed(list(nx.topological_sort(graph)))
 
 
 def extract_region(networkx_graph: nx.Graph, nodes, distance: int = 5):
