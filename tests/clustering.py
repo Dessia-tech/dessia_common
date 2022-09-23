@@ -26,6 +26,10 @@ split_cars_with = clustered_cars_with.clustered_sublists()
 aggclustest_split = aggclustest_clustered.clustered_sublists()
 kmeanstest_split = kmeanstest_clustered.clustered_sublists()
 
+# Centroids
+assert(clustered_cars_with.cluster_real_centroids('mahalanobis')[0].to_vector()[1] == 0.135)
+assert(clustered_cars_with.cluster_real_centroids('minkowski')[0].to_vector()[1] == 0.156)
+
 # Test print
 clustered_cars_without.labels[0] = 15000
 clustered_cars_without.labels[1] = -1
@@ -45,6 +49,7 @@ kmeanstest_clustered._check_platform()
 
 # Test plots outside platform
 cluscars_plot_data = clustered_cars_without.plot_data()
+cluscars_plot_data = split_cars_with.plot_data()
 # assert(json.dumps(cluscars_plot_data[0].to_dict())[42500:42550] == ' 2515.0, "acceleration": 14.8, "model": 78.0, "Clu')
 # assert(json.dumps(cluscars_plot_data[1].to_dict())[52500:52550] == '4.3, "model": 80.0, "Cluster Label": -1}, {"mpg": ')
 # assert(json.dumps(cluscars_plot_data[2].to_dict())[50:100] == 'te_names": ["Index of reduced basis vector", "Sing')
@@ -77,3 +82,16 @@ deserialized_object = aggclustest_clustered.dict_to_object(decoded_json)
 json_dict = json.dumps(dict_kmeanstest)
 decoded_json = json.loads(json_dict)
 deserialized_object = kmeanstest_clustered.dict_to_object(decoded_json)
+
+# Missing tests after coverage report
+try:
+    clustered_cars_without + clustered_cars_without
+    raise ValueError("CategorizedList should be summable")
+except Exception as e:
+    assert(e.args[0] == "Addition only defined for HeterogeneousList. A specific __add__ method is required for " +
+            "<class 'dessia_common.datatools.CategorizedList'>")
+
+# Exports XLS
+clustered_cars_without.to_xlsx('clus_xls.xlsx')
+split_cars_with.to_xlsx('clus_xls_2.xlsx')
+

@@ -1,5 +1,5 @@
 from dessia_common.forms import StandaloneObject, StandaloneObjectWithDefaultValues, \
-    ObjectWithOtherTypings, ObjectWithFaultyTyping
+    ObjectWithOtherTypings
 from dessia_common.workflow.blocks import ModelMethod, InstantiateModel
 from dessia_common.models.forms import standalone_object
 from dessia_common.models.workflows.workflow_from_file_input import workflow_
@@ -189,10 +189,10 @@ except AssertionError as err:
             print('\n', jsonschema['properties'][key])
             raise err
 
-try:
-    ObjectWithFaultyTyping.jsonschema()
-except NotImplementedError:
-    pass
+# try:
+#     ObjectWithFaultyTyping.jsonschema()
+# except NotImplementedError:
+#     pass
 
 
 # --- Default values ---
