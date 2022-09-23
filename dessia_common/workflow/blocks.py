@@ -978,6 +978,53 @@ class Substraction(Block):
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
 
+class ConcatenateStrings(Block):
+    """
+    Concatenates the n input elements, separate by the separator input, into one string
+
+    :param number_elements: Number of block inputs
+    :type number_elements: int
+    :param separator: Character used to joins the input elements together
+    :type separator: str
+    """
+    def __init__(self, number_elements: int = 2, separator: str = "", name: str = ''):
+        self.number_elements = number_elements
+        self.separator = separator
+        inputs = [TypedVariableWithDefaultValue(name=f"Element {i + 1}", type_=str, default_value="")
+                  for i in range(number_elements)]
+        output = TypedVariable(name="name", type_=str)
+        Block.__init__(self, inputs=inputs, outputs=[output], name=name)
+
+    def equivalent_hash(self):
+        return self.number_elements + hash(self.separator)
+
+    def equivalent(self, other):
+        same_number = self.number_elements == other.number_elements
+        same_separator = self.separator == other.separator
+        return Block.equivalent(self, other) and same_number and same_separator
+
+    def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
+        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
+        dict_.update({'number_elements': self.number_elements, "separator": self.separator})
+        return dict_
+
+    @classmethod
+    @set_block_variable_names_from_dict
+    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
+        return cls(number_elements=dict_['number_elements'], separator=dict_["separator"], name=dict_['name'])
+
+    def evaluate(self, values):
+        chunks = [values[i] for i in self.inputs]
+        return [self.separator.join(chunks)]
+
+    def _to_script(self) -> ToScriptElement:
+        script = f"ConcatenateStrings(number_elements={self.number_elements}, " \
+                 f"separator='{self.separator}', " \
+                 f"name='{self.name}')"
+        return ToScriptElement(declaration=script, imports=[self.full_classname])
+
+
 class Export(Block):
     def __init__(self, method_type: MethodType[Type],  text: bool, extension: str,
                  filename: str = "export", name: str = ""):
@@ -1010,7 +1057,9 @@ class Export(Block):
         self.text = text
 
         output = output_from_function(function=method, name="export_output")
-        Block.__init__(self, inputs=[TypedVariable(type_=method_type.class_)], outputs=[output], name=name)
+        inputs = [TypedVariable(type_=method_type.class_, name="model_to_export"),
+                  TypedVariableWithDefaultValue(type_=str, default_value=filename, name="filename")]
+        Block.__init__(self, inputs=inputs, outputs=[output], name=name)
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#'):
         dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
@@ -1035,7 +1084,7 @@ class Export(Block):
                    extension=dict_["extension"], name=dict_["name"])
 
     def evaluate(self, values):
-        filename = f"{self.filename}.{self.extension}"
+        filename = values.pop(self.inputs[-1])
         if self.text:
             stream = StringFile(filename)
         else:
