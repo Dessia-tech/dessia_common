@@ -12,7 +12,7 @@ import dessia_common as dc
 import dessia_common.utils.types as dc_types
 from dessia_common.files import BinaryFile, StringFile
 from dessia_common.typings import Measure, Subclass, MethodType, ClassMethodType, Any
-from dessia_common.utils.docstrings import FAILED_ATTRIBUTE_PARSING
+from dessia_common.utils.docstrings import parse_docstring, FAILED_DOCSTRING_PARSING, FAILED_ATTRIBUTE_PARSING
 
 
 JSONSCHEMA_HEADER = {"definitions": {},
@@ -27,9 +27,22 @@ Issue = TypedDict("Issue", {"attribute": str, "severity": str, "message": str})
 class Jsonschema:
     _untreated_argnames = ["self", "return"]
 
-    def __init__(self, annotations):
+    def __init__(self, annotations, argspec, docstring):
         self.annotations = annotations
-        self.attributes = []
+        self.attributes = [a for a in argspec.args if a not in self._untreated_argnames]
+
+        self.standalone_in_db = None
+        self.python_typing = ""
+
+        # Parse docstring
+        try:
+            self.parsed_docstring = parse_docstring(docstring=docstring, annotations=annotations)
+        except Exception:
+            self.parsed_docstring = FAILED_DOCSTRING_PARSING
+
+        self.parsed_attributes = self.parsed_docstring['attributes']
+
+        self.required_arguments, self.default_arguments = dc.inspect_arguments(argspec=argspec, merge=False)
 
     def annotations_are_valid(self) -> Tuple[bool, List[Issue]]:
         issues = []
@@ -52,18 +65,21 @@ class Jsonschema:
                     issues.append({"attribute": attribute, "severity": "error", "message": msg})
         return not any(issues), issues
 
-    def chunk(self, attribute, parsed_attributes=None):
+    def chunk(self, attribute):
         annotation = self.annotations[attribute]
 
-        if parsed_attributes is not None and attribute in parsed_attributes:
+        if self.parsed_attributes is not None and attribute in self.parsed_attributes:
             try:
-                description = parsed_attributes[attribute]['desc']
+                description = self.parsed_attributes[attribute]['desc']
             except Exception:
                 description = FAILED_ATTRIBUTE_PARSING["desc"]
         else:
             description = ""
-        return jsonschema_chunk(annotation=annotation, title=dc.prettyname(attribute),
-                                editable=attribute not in ['return'], description=description)
+        chunk = jsonschema_chunk(annotation=annotation, title=dc.prettyname(attribute),
+                                 editable=attribute not in ['return'], description=description)
+        if attribute in self.default_arguments:
+            chunk = set_default_value(jsonschema_element=chunk, default_value=self.default_arguments[attribute])
+        return chunk
 
     @property
     def chunks(self):
@@ -71,22 +87,23 @@ class Jsonschema:
 
     def write(self):
         jsonschema = deepcopy(JSONSCHEMA_HEADER)
-        properties = jsonschema["properties"]
-        for attribute in self.attributes:
-            properties[attribute] = self.chunk(attribute)
+        properties = {a: self.chunk(a) for a in self.attributes}
+        jsonschema.update({"required": self.required_arguments, "properties": properties,
+                           "description": self.parsed_docstring["description"]})
         return jsonschema
 
 
 class ClassJsonschema(Jsonschema):
     def __init__(self, class_: Type):
         self.class_ = class_
+        self.standalone_in_db = class_._standalone_in_db
+        self.python_typing = str(class_)
         annotations = get_type_hints(class_.__init__)
 
         members = inspect.getfullargspec(self.class_.__init__)
+        docstring = class_.__doc__
 
-        Jsonschema.__init__(self, annotations=annotations)
-
-        self.attributes = [a for a in members.args if a not in self._untreated_argnames]
+        Jsonschema.__init__(self, annotations=annotations, argspec=members, docstring=docstring)
 
     def check(self) -> Tuple[bool, List[Issue]]:
         issues = []
@@ -255,7 +272,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element, order, editable=N
             # warnings.warn(msg.format(key, args[0], arg), DeprecationWarning)
             # # Several possible classes that are subclass of another one
             # class_ = args[0]
-            # classname = dc.full_classname(object_=class_, compute_for='class')
+            # classname = full_classname(object_=class_, compute_for='class')
             # jsonschema_element[key].update({'type': 'object', 'instance_of': classname,
             #                                 'standalone_in_db': class_._standalone_in_db})
         elif origin is dc_types.InstanceOf:
@@ -318,7 +335,8 @@ def jsonschema_chunk(annotation, title: str, editable: bool, description: str):
         chunk = {'type': 'object', 'standalone_in_db': annotation._standalone_in_db, "classes": [classname]}
     else:
         raise NotImplementedError
-    chunk.update({'title': title, 'editable': editable, 'description': description})
+    chunk.update({'title': title, 'editable': editable, 'description': description,
+                  'python_typing': dc_types.serialize_typing(annotation)})
     return chunk
 
 
@@ -348,7 +366,7 @@ def typing_jsonschema(typing_, title: str, editable: bool, description: str):
         # warnings.warn(msg.format(key, args[0], arg), DeprecationWarning)
         # # Several possible classes that are subclass of another one
         # class_ = args[0]
-        # classname = dc.full_classname(object_=class_, compute_for='class')
+        # classname = full_classname(object_=class_, compute_for='class')
         # jsonschema_element[key].update({'type': 'object', 'instance_of': classname,
         #                                 'standalone_in_db': class_._standalone_in_db})
     if origin is dc_types.InstanceOf:
@@ -370,14 +388,14 @@ def jsonschema_sequence_recursion(value, title: str = None, editable: bool = Fal
     if dc_types.is_typing(items_type) and get_origin(items_type) is list:
         chunk['items'] = jsonschema_sequence_recursion(value=items_type, title=title, editable=editable)
     else:
-        chunk.update(jsonschema_chunk(annotation=items_type, title=title, editable=editable, description=""))
+        chunk["items"] = jsonschema_chunk(annotation=items_type, title=title, editable=editable, description="")
     return chunk
 
 
-def set_default_value(jsonschema_element, key, default_value):
-    datatype = datatype_from_jsonschema(jsonschema_element[key])
+def set_default_value(jsonschema_element, default_value):
+    datatype = datatype_from_jsonschema(jsonschema_element)
     if default_value is None or datatype in ['builtin', 'heterogeneous_sequence', 'static_dict', 'dynamic_dict']:
-        jsonschema_element[key]['default_value'] = default_value
+        jsonschema_element['default_value'] = default_value
     # elif datatype == 'builtin':
     #     jsonschema_element[key]['default_value'] = default_value
     # elif datatype == 'heterogeneous_sequence':
@@ -388,7 +406,7 @@ def set_default_value(jsonschema_element, key, default_value):
         raise NotImplementedError(msg.format(default_value, type_))
     elif datatype in ['standalone_object', 'embedded_object', 'instance_of', 'union']:
         object_dict = default_value.to_dict()
-        jsonschema_element[key]['default_value'] = object_dict
+        jsonschema_element['default_value'] = object_dict
     return jsonschema_element
     # if isinstance(default_value, tuple(TYPING_EQUIVALENCES.keys())) \
     #         or default_value is None:

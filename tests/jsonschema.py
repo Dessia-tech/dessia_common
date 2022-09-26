@@ -15,7 +15,6 @@ jsonschema = {'definitions': {},
                            'array_arg'],
               'properties': {'standalone_subobject': {'title': 'Standalone Subobject',
                                                       'editable': True,
-                                                      'order': 0,
                                                       'python_typing': 'dessia_common.forms.StandaloneSubobject',
                                                       'type': 'object',
                                                       'standalone_in_db': True,
@@ -23,7 +22,6 @@ jsonschema = {'definitions': {},
                                                       'description': 'A dev subobject that is standalone_in_db'},
                              'embedded_subobject': {'title': 'Embedded Subobject',
                                                     'editable': True,
-                                                    'order': 1,
                                                     'python_typing': 'dessia_common.forms.EmbeddedSubobject',
                                                     'type': 'object',
                                                     'standalone_in_db': False,
@@ -31,41 +29,35 @@ jsonschema = {'definitions': {},
                                                     'description': "A dev subobject that isn't standalone_in_db"},
                              'dynamic_dict': {'title': 'Dynamic Dict',
                                               'editable': True,
-                                              'order': 2,
                                               'python_typing': 'Dict[__builtins__.str, __builtins__.bool]',
                                               'type': 'object',
                                               'patternProperties': {'.*': {'type': 'boolean'}},
                                               'description': 'A variable length dict'},
                              'float_dict': {'title': 'Float Dict',
                                             'editable': True,
-                                            'order': 3,
                                             'python_typing': 'Dict[__builtins__.str, __builtins__.float]',
                                             'type': 'object',
                                             'description': '',
                                             'patternProperties': {'.*': {'type': 'number'}}},
                              'string_dict': {'title': 'String Dict',
                                              'editable': True,
-                                             'order': 4,
                                              'python_typing': 'Dict[__builtins__.str, __builtins__.str]',
                                              'type': 'object',
                                              'description': '',
                                              'patternProperties': {'.*': {'type': 'string'}}},
                              'intarg': {'title': 'Intarg',
                                         'editable': True,
-                                        'order': 5,
                                         'python_typing': 'builtins.int',
                                         'description': '',
                                         'type': 'number'},
 
                              'object_list': {'title': 'Object List',
                                              'editable': True,
-                                             'order': 6,
                                              'python_typing': 'List[dessia_common.forms.StandaloneSubobject]',
                                              'description': '',
                                              'type': 'array',
                                              'items': {'title': 'Object List',
                                                        'editable': True,
-                                                       'order': 0,
                                                        'python_typing': 'dessia_common.forms.StandaloneSubobject',
                                                        'description': '',
                                                        'type': 'object',
@@ -73,13 +65,11 @@ jsonschema = {'definitions': {},
                                                        'classes': ['dessia_common.forms.StandaloneSubobject']}},
                              'subobject_list': {'title': 'Subobject List',
                                                 'editable': True,
-                                                'order': 7,
                                                 'python_typing': 'List[dessia_common.forms.EmbeddedSubobject]',
                                                 'description': '',
                                                 'type': 'array',
                                                 'items': {'title': 'Subobject List',
                                                           'editable': True,
-                                                          'order': 0,
                                                           'python_typing': 'dessia_common.forms.EmbeddedSubobject',
                                                           'description': '',
                                                           'type': 'object',
@@ -87,25 +77,21 @@ jsonschema = {'definitions': {},
                                                           'classes': ['dessia_common.forms.EmbeddedSubobject']}},
                              'builtin_list': {'title': 'Builtin List',
                                               'editable': True,
-                                              'order': 8,
                                               'python_typing': 'List[__builtins__.int]',
                                               'description': '',
                                               'type': 'array',
                                               'items': {'title': 'Builtin List',
                                                         'editable': True,
-                                                        'order': 0,
                                                         'description': '',
                                                         'python_typing': 'builtins.int',
                                                         'type': 'number'}},
                              'union_arg': {'title': 'Union Arg',
                                            'editable': True,
-                                           'order': 9,
                                            'python_typing': 'List[Union[dessia_common.forms.EmbeddedSubobject, dessia_common.forms.EnhancedEmbeddedSubobject]]',
                                            'type': 'array',
                                            'description': '',
                                            'items': {'title': 'Union Arg',
                                                      'editable': True,
-                                                     'order': 0,
                                                      'description': '',
                                                      'python_typing': 'Union[dessia_common.forms.EmbeddedSubobject, dessia_common.forms.EnhancedEmbeddedSubobject]',
                                                      'type': 'object',
@@ -114,7 +100,6 @@ jsonschema = {'definitions': {},
                                                      'standalone_in_db': False}},
                              'subclass_arg': {'title': 'Subclass Arg',
                                               'editable': True,
-                                              'order': 10,
                                               'python_typing': 'InstanceOf[dessia_common.forms.StandaloneSubobject]',
                                               'type': 'object',
                                               'description': '',
@@ -122,22 +107,18 @@ jsonschema = {'definitions': {},
                                               'standalone_in_db': True},
                              'array_arg': {'title': 'Array Arg',
                                            'editable': True,
-                                           'order': 11,
                                            'python_typing': 'List[List[__builtins__.float]]',
                                            'description': '',
                                            'type': 'array',
                                            'items': {'type': 'array',
-                                                     'order': 0,
                                                      'python_typing': 'List[__builtins__.float]',
                                                      'items': {'title': 'Array Arg',
                                                                'editable': True,
-                                                               'order': 0,
                                                                'description': '',
                                                                'python_typing': 'builtins.float',
                                                                'type': 'number'}}},
                              'name': {'title': 'Name',
                                       'editable': True,
-                                      'order': 12,
                                       'description': '',
                                       'python_typing': 'builtins.str',
                                       'type': 'string',
@@ -148,7 +129,9 @@ jsonschema = {'definitions': {},
               'classes': ['dessia_common.forms.StandaloneObject'],
               'whitelist_attributes': []}
 
-computed_jsonschema = standalone_object.jsonschema()
+computed_jsonschema = jss.ClassJsonschema(StandaloneObject).write()
+
+# computed_jsonschema = standalone_object.jsonschema()
 try:
     assert computed_jsonschema == jsonschema
 except AssertionError as err:
@@ -172,7 +155,7 @@ except NotImplementedError:
 
 
 # --- Default values ---
-jsonschema = StandaloneObject.jsonschema()
+jsonschema = computed_jsonschema
 
 assert jss.chose_default(jsonschema["properties"]["standalone_subobject"]) is None
 assert jss.chose_default(jsonschema["properties"]["embedded_subobject"]) is None
@@ -188,7 +171,7 @@ assert jss.chose_default(jsonschema["properties"]["subclass_arg"]) is None
 assert jss.chose_default(jsonschema["properties"]["array_arg"]) is None
 assert jss.chose_default(jsonschema["properties"]["name"]) is None
 
-jsonschema = StandaloneObjectWithDefaultValues.jsonschema()
+jsonschema = jss.ClassJsonschema(StandaloneObjectWithDefaultValues).write()
 
 subobject_default_value = jss.chose_default(jsonschema["properties"]["standalone_subobject"])
 assert subobject_default_value["name"] == "StandaloneSubobject1"
@@ -221,7 +204,7 @@ assert jss.chose_default(jsonschema["properties"]["name"]) is None  # TODO Is it
 
 # --- Datatypes ---
 
-jsonschema = StandaloneObject.jsonschema()
+jsonschema = jss.ClassJsonschema(StandaloneObject).write()
 
 assert jss.datatype_from_jsonschema(jsonschema["properties"]["standalone_subobject"]) == "standalone_object"
 assert jss.datatype_from_jsonschema(jsonschema["properties"]["embedded_subobject"]) == "embedded_object"
@@ -237,7 +220,7 @@ assert jss.datatype_from_jsonschema(jsonschema["properties"]["subclass_arg"]) ==
 assert jss.datatype_from_jsonschema(jsonschema["properties"]["array_arg"]) == "homogeneous_sequence"
 assert jss.datatype_from_jsonschema(jsonschema["properties"]["name"]) == "builtin"
 
-jsonschema = ObjectWithOtherTypings.jsonschema()
+jsonschema = jss.ClassJsonschema(ObjectWithOtherTypings).write()
 
 assert jss.datatype_from_jsonschema(jsonschema["properties"]["undefined_type_attribute"]) is None
 
