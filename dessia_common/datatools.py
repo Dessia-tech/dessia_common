@@ -18,8 +18,6 @@ except ImportError:
     pass
 from dessia_common.exports import XLSXWriter
 from dessia_common.core import DessiaObject, DessiaFilter, FiltersList, templates
-from dessia_common.optimization import FixedAttributeValue, BoundedAttributeValue
-
 
 class HeterogeneousList(DessiaObject):
     """
@@ -1535,15 +1533,6 @@ class CategorizedList(HeterogeneousList):
 #     distances = distances[:, 1]
 #     plt.plot(distances)
 #     plt.show()
-
-class Sampler(DessiaObject):
-    _standalone_in_db = True
-    _vector_features = []
-
-    def __init__(self, object_class: Type, sampled_attributes: List[BoundedAttributeValue], name: str = ''):
-        self.object_class = object_class
-        self.sampled_attributes = sampled_attributes
-        DessiaObject.__init__(self, name=name)
 
 def diff_list(list_a, list_b):
     """
