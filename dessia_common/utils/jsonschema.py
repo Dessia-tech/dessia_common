@@ -5,10 +5,9 @@ JsonSchema generation functions
 """
 from copy import deepcopy
 import inspect
-import warnings
 import collections
 import collections.abc
-from typing import get_origin, get_args, Union, get_type_hints
+from typing import get_origin, get_args, Union, get_type_hints, Type, Callable, List, Tuple, TypedDict
 import dessia_common as dc
 import dessia_common.utils.types as dc_types
 from dessia_common.files import BinaryFile, StringFile
@@ -21,6 +20,89 @@ JSONSCHEMA_HEADER = {"definitions": {},
                      "type": "object",
                      "required": [],
                      "properties": {}}
+
+Issue = TypedDict("Issue", {"attribute": str, "severity": str, "message": str})
+
+
+class Jsonschema:
+    _untreated_argnames = ["self", "return"]
+
+    def __init__(self, annotations):
+        self.annotations = annotations
+        self.attributes = []
+
+    def annotations_are_valid(self) -> Tuple[bool, List[Issue]]:
+        issues = []
+        for attribute in self.attributes:
+            annotation = self.annotations[attribute]
+            if dc_types.is_typing(annotation):
+                origin = get_origin(annotation)
+                args = get_args(annotation)
+                if origin is dict and len(args) != 2:
+                    msg = f"Attribute '{attribute}' is typed as a 'Dict' which requires exactly 2 arguments." \
+                          f"Expected Dict[KeyType, ValueType], got {annotation}."
+                    issues.append({"attribute": attribute, "severity": "error", "message": msg})
+                if origin is list and len(args) != 1:
+                    msg = f"Attribute '{attribute}' is typed as a 'List' which requires exactly 1 argument." \
+                          f"Expected List[Type], got {annotation}."
+                    issues.append({"attribute": attribute, "severity": "error", "message": msg})
+                if origin is tuple and len(args) == 0:
+                    msg = f"Attribute '{attribute}' is typed as a 'Tuple' which requires at least 1 argument." \
+                          f"Expected Tuple[Type0, Type1, ..., TypeN], got {annotation}."
+                    issues.append({"attribute": attribute, "severity": "error", "message": msg})
+        return not any(issues), issues
+
+    def chunk(self, attribute, parsed_attributes=None):
+        annotation = self.annotations[attribute]
+
+        if parsed_attributes is not None and attribute in parsed_attributes:
+            try:
+                description = parsed_attributes[attribute]['desc']
+            except Exception:
+                description = FAILED_ATTRIBUTE_PARSING["desc"]
+        else:
+            description = ""
+        return jsonschema_chunk(annotation=annotation, title=dc.prettyname(attribute),
+                                editable=attribute not in ['return'], description=description)
+
+    @property
+    def chunks(self):
+        return [self.chunk(a) for a in self.attributes]
+
+    def write(self):
+        jsonschema = deepcopy(JSONSCHEMA_HEADER)
+        properties = jsonschema["properties"]
+        for attribute in self.attributes:
+            properties[attribute] = self.chunk(attribute)
+        return jsonschema
+
+
+class ClassJsonschema(Jsonschema):
+    def __init__(self, class_: Type):
+        self.class_ = class_
+        annotations = get_type_hints(class_.__init__)
+
+        members = inspect.getfullargspec(self.class_.__init__)
+
+        Jsonschema.__init__(self, annotations=annotations)
+
+        self.attributes = [a for a in members.args if a not in self._untreated_argnames]
+
+    def check(self) -> Tuple[bool, List[Issue]]:
+        issues = []
+        for attribute in self.attributes:
+            if attribute not in self.annotations:
+                msg = f"Property {attribute} has no typing"
+                issues.append({"attribute": attribute, "severity": "error", "message": msg})
+        return not any(issues), issues
+
+
+class MethodJsonschema(Jsonschema):
+    def __init__(self, method: Callable):
+        self.method = method
+
+        annotations = get_type_hints(method)
+        Jsonschema.__init__(self, annotations=annotations)
 
 
 def default_sequence(array_jsonschema):
@@ -102,7 +184,8 @@ def default_dict(jsonschema):
     return dict_
 
 
-def jsonschema_union_types(key, args, typing_, jsonschema_element):
+def jsonschema_union_types(annotation):
+    args = get_args(annotation)
     classnames = [dc.full_classname(object_=a, compute_for='class') for a in args]
     standalone_args = [a._standalone_in_db for a in args]
     if all(standalone_args):
@@ -110,8 +193,8 @@ def jsonschema_union_types(key, args, typing_, jsonschema_element):
     elif not any(standalone_args):
         standalone = False
     else:
-        raise ValueError(f"standalone_in_db values for type '{typing_}' are not consistent")
-    jsonschema_element[key].update({'type': 'object', 'classes': classnames, 'standalone_in_db': standalone})
+        raise ValueError(f"standalone_in_db values for type '{annotation}' are not consistent")
+    return {'type': 'object', 'classes': classnames, 'standalone_in_db': standalone}
 
 
 def jsonschema_from_annotation(annotation, jsonschema_element, order, editable=None, title=None,
@@ -159,24 +242,10 @@ def jsonschema_from_annotation(annotation, jsonschema_element, order, editable=N
                                                                          title=title, editable=editable))
         elif origin is tuple:
             # Heterogenous sequences (tuples)
-            items = []
-            for type_ in args:
-                items.append({'type': dc_types.TYPING_EQUIVALENCES[type_]})
-            jsonschema_element[key].update({'additionalItems': False, 'type': 'array', 'items': items})
+            jsonschema_element[key].update(tuple_jsonschema(args))
         elif origin is dict:
             # Dynamically created dict structure
-            key_type, value_type = args
-            if key_type != str:
-                # !!! Should we support other types ? Numeric ?
-                raise NotImplementedError('Non strings keys not supported')
-            if value_type not in dc_types.TYPING_EQUIVALENCES:
-                raise ValueError(f'Dicts should have only builtins keys and values, got {value_type}')
-            jsonschema_element[key].update({'type': 'object',
-                                            'patternProperties': {
-                                                '.*': {
-                                                    'type': dc_types.TYPING_EQUIVALENCES[value_type]
-                                                }
-                                            }})
+            jsonschema_element[key].update(dynamic_dict_jsonschema(args))
         elif origin is Subclass:
             pass
             # warnings.simplefilter('once', DeprecationWarning)
@@ -191,23 +260,11 @@ def jsonschema_from_annotation(annotation, jsonschema_element, order, editable=N
             #                                 'standalone_in_db': class_._standalone_in_db})
         elif origin is dc_types.InstanceOf:
             # Several possible classes that are subclass of another one
-            class_ = args[0]
-            classname = dc.full_classname(object_=class_, compute_for='class')
-            jsonschema_element[key].update({'type': 'object', 'instance_of': classname,
-                                            'standalone_in_db': class_._standalone_in_db})
+            jsonschema_element[key].update(instance_of_jsonschema(args))
         elif origin is MethodType or origin is ClassMethodType:
-            class_type = get_args(typing_)[0]
-            classmethod_ = origin is ClassMethodType
-            class_jss = jsonschema_from_annotation(annotation=('class_', class_type), jsonschema_element={},
-                                                   order=order, editable=editable, title='Class')
-            jsonschema_element[key].update({'type': 'object', 'is_method': True,
-                                            'classmethod_': classmethod_,
-                                            'properties': {
-                                                'class_': class_jss['class_'],
-                                                'name': {'type': 'string'}}})
+            jsonschema_element[key].update(method_type_jsonschema(typing_=typing_, order=order, editable=editable))
         elif origin is type:
-            jsonschema_element[key].update({'type': 'object', 'is_class': True,
-                                            'properties': {'name': {'type': 'string'}}})
+            jsonschema_element[key].update(class_jsonschema)
         else:
             raise NotImplementedError(f"Jsonschema computation of typing {typing_} is not implemented")
 
@@ -229,69 +286,97 @@ def jsonschema_from_annotation(annotation, jsonschema_element, order, editable=N
         if inspect.isclass(typing_) and issubclass(typing_, dc.DessiaObject):
             # Dessia custom classes
             jsonschema_element[key].update({'type': 'object', 'standalone_in_db': typing_._standalone_in_db})
-        else:
+        # else:
             # DEPRECATED : Statically created dict structure
-            jsonschema_element[key].update(static_dict_jsonschema(typing_))
+            # jsonschema_element[key].update(static_dict_jsonschema(typing_))
         jsonschema_element[key]['classes'] = [classname]
     return jsonschema_element
 
 
-def jsonschema_sequence_recursion(value, order: int, title: str = None,
-                                  editable: bool = False):
+def jsonschema_chunk(annotation, title: str, editable: bool, description: str):
+    if isinstance(annotation, str):
+        raise ValueError
+
+    if annotation in dc_types.TYPING_EQUIVALENCES:
+        # Python Built-in type
+        chunk = builtin_jsonschema(annotation)
+    elif dc_types.is_typing(annotation):
+        chunk = typing_jsonschema(typing_=annotation, title=title, editable=editable, description=description)
+    elif hasattr(annotation, '__origin__') and annotation.__origin__ is type:
+        # TODO Is this deprecated ? Should be used in 3.8 and not 3.9 ?
+        chunk = {'type': 'object', 'is_class': True, 'properties': {'name': {'type': 'string'}}}
+    elif annotation is Any:
+        chunk = {'type': 'object', 'properties': {'.*': '.*'}}
+    elif inspect.isclass(annotation) and issubclass(annotation, Measure):
+        chunk = jsonschema_chunk(annotation=float, title=title, editable=editable, description=description)
+        chunk['units'] = annotation.units
+    elif inspect.isclass(annotation) and issubclass(annotation, (BinaryFile, StringFile)):
+        chunk = {'type': 'text', 'is_file': True}
+    elif inspect.isclass(annotation) and issubclass(annotation, dc.DessiaObject):
+        # Dessia custom classes
+        classname = dc.full_classname(object_=annotation, compute_for='class')
+        chunk = {'type': 'object', 'standalone_in_db': annotation._standalone_in_db, "classes": [classname]}
+    else:
+        raise NotImplementedError
+    chunk.update({'title': title, 'editable': editable, 'description': description})
+    return chunk
+
+
+def typing_jsonschema(typing_, title: str, editable: bool, description: str):
+    origin = get_origin(typing_)
+    if origin is Union:
+        if dc_types.union_is_default_value(typing_):
+            # This is a false Union => Is a default value set to None
+            return jsonschema_chunk(annotation=typing_, title=title, editable=editable, description=description)
+        # Types union
+        return jsonschema_union_types(typing_)
+    if origin in [list, collections.abc.Iterator]:
+        # Homogenous sequences
+        return jsonschema_sequence_recursion(value=typing_, title=title, editable=editable)
+    if origin is tuple:
+        # Heterogenous sequences (tuples)
+        return tuple_jsonschema(typing_)
+    if origin is dict:
+        # Dynamically created dict structure)
+        return dynamic_dict_jsonschema(typing_)
+    if origin is Subclass:
+        pass
+        # warnings.simplefilter('once', DeprecationWarning)
+        # msg = "\n\nTyping of attribute '{0}' from class {1} uses Subclass which is deprecated."\
+        #       "\n\nUse 'InstanceOf[{2}]' instead of 'Subclass[{2}]'.\n"
+        # arg = args[0].__name__
+        # warnings.warn(msg.format(key, args[0], arg), DeprecationWarning)
+        # # Several possible classes that are subclass of another one
+        # class_ = args[0]
+        # classname = dc.full_classname(object_=class_, compute_for='class')
+        # jsonschema_element[key].update({'type': 'object', 'instance_of': classname,
+        #                                 'standalone_in_db': class_._standalone_in_db})
+    if origin is dc_types.InstanceOf:
+        # Several possible classes that are subclass of another one
+        return instance_of_jsonschema(typing_)
+    if origin is MethodType or origin is ClassMethodType:
+        return method_type_jsonschema(annotation=typing_, editable=editable)
+    if origin is type:
+        return class_jsonschema()
+    raise NotImplementedError(f"Jsonschema computation of typing {typing_} is not implemented")
+
+
+def jsonschema_sequence_recursion(value, title: str = None, editable: bool = False):
     if title is None:
         title = 'Items'
-    jsonschema_element = {'type': 'array', 'order': order,
-                          'python_typing': dc_types.serialize_typing(value)}
+    chunk = {'type': 'array', 'python_typing': dc_types.serialize_typing(value)}
 
     items_type = get_args(value)[0]
     if dc_types.is_typing(items_type) and get_origin(items_type) is list:
-        jss = jsonschema_sequence_recursion(value=items_type, order=0,
-                                            title=title, editable=editable)
-        jsonschema_element['items'] = jss
+        chunk['items'] = jsonschema_sequence_recursion(value=items_type, title=title, editable=editable)
     else:
-        annotation = ('items', items_type)
-        jss = jsonschema_from_annotation(annotation=annotation,
-                                         jsonschema_element=jsonschema_element,
-                                         order=0, title=title)
-        jsonschema_element.update(jss)
-    return jsonschema_element
-
-
-def static_dict_jsonschema(typed_dict, title=None):
-    warnings.simplefilter('once', DeprecationWarning)
-    msg = "\n\nStatic Dict typing is not fully supported.\n" \
-          "This will most likely lead to non predictable behavior" \
-          " or malfunctionning features. \n" \
-          "Define a custom non-standalone class for type '{}'\n\n"
-    classname = dc.full_classname(typed_dict, compute_for='class')
-    warnings.warn(msg.format(classname), DeprecationWarning)
-    jsonschema_element = deepcopy(JSONSCHEMA_HEADER)
-    jss_properties = jsonschema_element['properties']
-
-    # Every value is required in a StaticDict
-    annotations = get_type_hints(typed_dict)
-    jsonschema_element['required'] = list(annotations.keys())
-
-    # TOCHECK : Not actually ordered !
-    for i, annotation in enumerate(annotations.items()):
-        attribute, typing_ = annotation
-        if not dc_types.is_builtin(typing_):
-            msg = "Complex structure as Static dict values is not supported." \
-                  "\n Attribute {} got type {} instead of builtin." \
-                  "\n Consider creating a custom class for complex structures."
-            raise TypeError(msg.format(attribute, typing_))
-        jss = jsonschema_from_annotation(annotation=annotation,
-                                         jsonschema_element=jss_properties,
-                                         order=i, title=title)
-        jss_properties.update(jss)
-    return jsonschema_element
+        chunk.update(jsonschema_chunk(annotation=items_type, title=title, editable=editable, description=""))
+    return chunk
 
 
 def set_default_value(jsonschema_element, key, default_value):
     datatype = datatype_from_jsonschema(jsonschema_element[key])
-    if default_value is None\
-            or datatype in ['builtin', 'heterogeneous_sequence',
-                            'static_dict', 'dynamic_dict']:
+    if default_value is None or datatype in ['builtin', 'heterogeneous_sequence', 'static_dict', 'dynamic_dict']:
         jsonschema_element[key]['default_value'] = default_value
     # elif datatype == 'builtin':
     #     jsonschema_element[key]['default_value'] = default_value
@@ -301,8 +386,7 @@ def set_default_value(jsonschema_element, key, default_value):
         msg = 'Object {} of type {} is not supported as default value'
         type_ = type(default_value)
         raise NotImplementedError(msg.format(default_value, type_))
-    elif datatype in ['standalone_object', 'embedded_object',
-                      'instance_of', 'union']:
+    elif datatype in ['standalone_object', 'embedded_object', 'instance_of', 'union']:
         object_dict = default_value.to_dict()
         jsonschema_element[key]['default_value'] = object_dict
     return jsonschema_element
@@ -322,3 +406,63 @@ def set_default_value(jsonschema_element, key, default_value):
     #     object_dict = default_value.to_dict()
     #     jsonschema_element[key]['default_value'] = object_dict
     #     else:
+
+
+def builtin_jsonschema(annotation):
+    chunk = {"type": dc_types.TYPING_EQUIVALENCES[annotation], 'python_typing': dc_types.serialize_typing(annotation)}
+    return chunk
+
+
+def tuple_jsonschema(annotation):
+    args = get_args(annotation)
+    items = []
+    for type_ in args:
+        items.append({'type': dc_types.TYPING_EQUIVALENCES[type_]})
+    return {'additionalItems': False, 'type': 'array', 'items': items}
+
+
+def dynamic_dict_jsonschema(annotation):
+    args = get_args(annotation)
+    key_type, value_type = args
+    if key_type != str:
+        # !!! Should we support other types ? Numeric ?
+        raise NotImplementedError('Non strings keys not supported')
+    if value_type not in dc_types.TYPING_EQUIVALENCES:
+        raise ValueError(f'Dicts should have only builtins keys and values, got {value_type}')
+    jsonschema = {
+        'type': 'object',
+        'patternProperties': {
+            '.*': {
+                'type': dc_types.TYPING_EQUIVALENCES[value_type]
+            }
+        }
+    }
+    return jsonschema
+
+
+def instance_of_jsonschema(annotation):
+    args = get_args(annotation)
+    class_ = args[0]
+    classname = dc.full_classname(object_=class_, compute_for='class')
+    return {'type': 'object', 'instance_of': classname, 'standalone_in_db': class_._standalone_in_db}
+
+
+def method_type_jsonschema(annotation, editable):
+    origin = get_origin(annotation)
+    class_type = get_args(annotation)[0]
+    classmethod_ = origin is ClassMethodType
+    chunk = jsonschema_chunk(annotation=class_type, title="Class", editable=editable, description="")
+    jsonschema = {
+        'type': 'object', 'is_method': True, 'classmethod_': classmethod_,
+        'properties': {
+            'class_': chunk,
+            'name': {
+                'type': 'string'
+            }
+        }
+    }
+    return jsonschema
+
+
+def class_jsonschema():
+    return {'type': 'object', 'is_class': True, 'properties': {'name': {'type': 'string'}}}
