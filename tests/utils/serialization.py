@@ -12,7 +12,7 @@ from dessia_common.utils.diff import dict_diff
 ds1 = {'key': 'val1'}
 ds2 = {'key': 'val2'}
 
-path, val1, val2 = dict_diff(ds1, ds2)[0][0]
-assert path == '#/key'
-assert val1 == 'val1'
-assert val2 == 'val2'
+dv1 = dict_diff(ds1, ds2).different_values[0]
+assert dv1.path == '#/key'
+assert dv1.value1 == 'val1'
+assert dv1.value2 == 'val2'
