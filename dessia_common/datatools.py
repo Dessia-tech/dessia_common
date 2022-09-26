@@ -225,7 +225,7 @@ class HeterogeneousList(DessiaObject):
         string = ""
         for dessia_object in self.dessia_objects[key]:
             string += "\n"
-            string += self._print_objects(dessia_object, attr_space)
+            string += self._print_object(dessia_object, attr_space)
         return string
 
     def _write_str_prefix(self):
@@ -254,7 +254,7 @@ class HeterogeneousList(DessiaObject):
             string += "|" + name_attr + end_bar
         return string
 
-    def _print_objects(self, dessia_object: DessiaObject, attr_space: int):
+    def _print_object(self, dessia_object: DessiaObject, attr_space: int):
         printed_attributes = self._printed_attributes()
         string = ""
         for idx, attr in enumerate(printed_attributes):
