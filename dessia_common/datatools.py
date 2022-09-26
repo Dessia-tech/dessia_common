@@ -195,7 +195,6 @@ class HeterogeneousList(DessiaObject):
         Print HeterogeneousList as a table.
 
         """
-        attr_name_len = []
         attr_space = []
 
         prefix = self._write_str_prefix()
@@ -204,17 +203,17 @@ class HeterogeneousList(DessiaObject):
             return prefix
 
         string = ""
-        string += self._print_titles(attr_space, attr_name_len)
+        string += self._print_titles(attr_space)
         string += "\n" + "-" * len(string)
 
-        string += self._print_objects_slice(slice(0, 5), attr_space, attr_name_len)
+        string += self._print_objects_slice(slice(0, 5), attr_space)
 
         if len(self) > 10:
             undispl_len = len(self) - 10
             string += (f"\n+ {undispl_len} undisplayed object" + "s"*(min([undispl_len, 2])-1) + "...")
 
         if len(self) > 5:
-            string += self._print_objects_slice(slice(-5, len(self)), attr_space, attr_name_len)
+            string += self._print_objects_slice(slice(-5, len(self)), attr_space)
         return prefix + "\n" + string + "\n"
 
     def _printed_attributes(self):
@@ -222,11 +221,11 @@ class HeterogeneousList(DessiaObject):
             return self.common_attributes
         return ['name'] + self.common_attributes
 
-    def _print_objects_slice(self, key: slice, attr_space: int, attr_name_len: int):
+    def _print_objects_slice(self, key: slice, attr_space: int):
         string = ""
         for dessia_object in self.dessia_objects[key]:
             string += "\n"
-            string += self._print_objects(dessia_object, attr_space, attr_name_len)
+            string += self._print_objects(dessia_object, attr_space)
         return string
 
     def _write_str_prefix(self):
@@ -234,7 +233,7 @@ class HeterogeneousList(DessiaObject):
         prefix += f"{len(self)} samples, {len(self.common_attributes)} features"
         return prefix
 
-    def _print_titles(self, attr_space: int, attr_name_len: int):
+    def _print_titles(self, attr_space: int):
         min_col_length = 16
         printed_attributes = self._printed_attributes()
         string = ""
@@ -250,14 +249,12 @@ class HeterogeneousList(DessiaObject):
                 odd_incr = int(indentation % 2)
                 indentation = int(indentation / 2)
 
-            # attr_space.append(max(len(attr) + 6, min_col_length))
             name_attr = " " * indentation + " " * odd_incr + f"{attr.capitalize()}" + " " * indentation
             attr_space.append(len(name_attr))
-            attr_name_len.append(len(name_attr))
             string += "|" + name_attr + end_bar
         return string
 
-    def _print_objects(self, dessia_object: DessiaObject, attr_space: int, attr_name_len: int):
+    def _print_objects(self, dessia_object: DessiaObject, attr_space: int):
         printed_attributes = self._printed_attributes()
         string = ""
         for idx, attr in enumerate(printed_attributes):
@@ -272,10 +269,10 @@ class HeterogeneousList(DessiaObject):
                 attr_value = self.labels[self.dessia_objects.index(dessia_object)]
 
             string += "|" + " " * max((attr_space[idx] - len(str(attr_value)) - 1), 1)
-            string += f"{attr_value}"[:attr_name_len[idx] - 4]
-            if len(str(attr_value)) > attr_name_len[idx] - 3:
+            string += f"{attr_value}"[:attr_space[idx] - 4]
+            if len(str(attr_value)) > attr_space[idx] - 3:
                 string = string[:-1] + "... "
-            elif len(str(attr_value)) == attr_name_len[idx] - 3:
+            elif len(str(attr_value)) == attr_space[idx] - 3:
                 string += f"{attr_value}"[-1] + " "
             else:
                 string += " "
