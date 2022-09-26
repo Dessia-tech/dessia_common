@@ -41,6 +41,7 @@ except ImportError:
 from dessia_common import DessiaObject, PhysicalObject, MovingObject
 from dessia_common.typings import InstanceOf, Distance
 from dessia_common.vectored_objects import Catalog
+import time
 
 
 from dessia_common.files import BinaryFile, StringFile
@@ -520,6 +521,16 @@ class LightObject(DessiaObject):
         return cls(heterogeneous_tuple=('value', seed * 3),
                    homogeneous_tuple=(floated_seed - 1, floated_seed, floated_seed + 1),
                    single_tuple=(seed,), strarg=str(seed) * floor(seed / 3), name=name)
+
+    def timed_method(self, duration: float):
+        """
+        A method which duration can be customized to test long execution
+
+        :param duration: Duration of the method in ms
+        :type duration: float
+        """
+        time.sleep(duration/1000)
+        return self.strarg
 
 
 class ObjectWithFaultyTyping(DessiaObject):

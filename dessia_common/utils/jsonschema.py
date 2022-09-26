@@ -42,7 +42,7 @@ class Jsonschema:
 
         self.parsed_attributes = self.parsed_docstring['attributes']
 
-        self.required_arguments, self.default_arguments = dc.inspect_arguments(argspec=argspec, merge=False)
+        self.required_arguments, self.default_arguments = dc.split_default_args(argspec=argspec, merge=False)
 
     def annotations_are_valid(self) -> Tuple[bool, List[Issue]]:
         issues = []

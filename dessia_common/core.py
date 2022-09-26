@@ -19,7 +19,6 @@ import collections.abc
 from copy import deepcopy, copy
 import inspect
 import json
-from types import FunctionType
 
 from typing import List, Dict, Any, Tuple, get_type_hints
 import traceback as tb
@@ -34,7 +33,7 @@ from dessia_common.utils.serialization import dict_to_object, serialize_dict_wit
 from dessia_common.utils.types import full_classname, is_sequence, is_bson_valid, TYPES_FROM_STRING
 from dessia_common.utils.copy import deepcopy_value
 from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotation, JSONSCHEMA_HEADER,\
-    set_default_value
+    set_default_value, ClassJsonschema
 from dessia_common.utils.docstrings import parse_docstring, FAILED_DOCSTRING_PARSING
 from dessia_common.exports import XLSXWriter
 from dessia_common.typings import JsonSerializable
@@ -270,67 +269,68 @@ class DessiaObject:
         if hasattr(cls, '_jsonschema'):
             _jsonschema = cls._jsonschema
             return _jsonschema
-
-        # Get __init__ method and its annotations
-        init = cls.__init__
-        if cls._init_variables is None:
-            annotations = get_type_hints(init)
-        else:
-            annotations = cls._init_variables
-
-        # Get ordered variables
-        if cls._ordered_attributes:
-            ordered_attributes = cls._ordered_attributes
-        else:
-            ordered_attributes = list(annotations.keys())
-
-        unordered_count = 0
-
-        # Parse docstring
-        try:
-            docstring = cls.__doc__
-            parsed_docstring = parse_docstring(docstring=docstring, annotations=annotations)
-        except Exception:
-            parsed_docstring = FAILED_DOCSTRING_PARSING
-        parsed_attributes = parsed_docstring['attributes']
-
-        # Initialize jsonschema
-        _jsonschema = deepcopy(JSONSCHEMA_HEADER)
-
-        required_arguments, default_arguments = inspect_arguments(init, False)
-        _jsonschema['required'] = required_arguments
-        _jsonschema['standalone_in_db'] = cls._standalone_in_db
-        _jsonschema['description'] = parsed_docstring['description']
-        _jsonschema['python_typing'] = str(cls)
-
-        # Set jsonschema
-        for annotation in annotations.items():
-            name = annotation[0]
-            if name in ordered_attributes:
-                order = ordered_attributes.index(name)
-            else:
-                order = len(ordered_attributes) + unordered_count
-                unordered_count += 1
-            if name in cls._titled_attributes:
-                title = cls._titled_attributes[name]
-            else:
-                title = None
-
-            if name != 'return':
-                editable = name not in cls._non_editable_attributes
-                annotation_type = type_from_annotation(annotation[1], cls)
-                annotation = (name, annotation_type)
-                jss_elt = jsonschema_from_annotation(annotation=annotation, jsonschema_element={}, order=order,
-                                                     editable=editable, title=title,
-                                                     parsed_attributes=parsed_attributes)
-                _jsonschema['properties'].update(jss_elt)
-                if name in default_arguments:
-                    default = set_default_value(_jsonschema['properties'][name], default_arguments[name])
-                    _jsonschema['properties'].update(default)
-
-        _jsonschema['classes'] = [cls.__module__ + '.' + cls.__name__]
-        _jsonschema['whitelist_attributes'] = cls._whitelist_attributes
-        return _jsonschema
+        jsonschema = ClassJsonschema(cls)
+        return jsonschema.write()
+        # # Get __init__ method and its annotations
+        # init = cls.__init__
+        # if cls._init_variables is None:
+        #     annotations = get_type_hints(init)
+        # else:
+        #     annotations = cls._init_variables
+        #
+        # # Get ordered variables
+        # if cls._ordered_attributes:
+        #     ordered_attributes = cls._ordered_attributes
+        # else:
+        #     ordered_attributes = list(annotations.keys())
+        #
+        # unordered_count = 0
+        #
+        # # Parse docstring
+        # try:
+        #     docstring = cls.__doc__
+        #     parsed_docstring = parse_docstring(docstring=docstring, annotations=annotations)
+        # except Exception:
+        #     parsed_docstring = FAILED_DOCSTRING_PARSING
+        # parsed_attributes = parsed_docstring['attributes']
+        #
+        # # Initialize jsonschema
+        # _jsonschema = deepcopy(JSONSCHEMA_HEADER)
+        #
+        # required_arguments, default_arguments = inspect_arguments(init, False)
+        # _jsonschema['required'] = required_arguments
+        # _jsonschema['standalone_in_db'] = cls._standalone_in_db
+        # _jsonschema['description'] = parsed_docstring['description']
+        # _jsonschema['python_typing'] = str(cls)
+        #
+        # # Set jsonschema
+        # for annotation in annotations.items():
+        #     name = annotation[0]
+        #     if name in ordered_attributes:
+        #         order = ordered_attributes.index(name)
+        #     else:
+        #         order = len(ordered_attributes) + unordered_count
+        #         unordered_count += 1
+        #     if name in cls._titled_attributes:
+        #         title = cls._titled_attributes[name]
+        #     else:
+        #         title = None
+        #
+        #     if name != 'return':
+        #         editable = name not in cls._non_editable_attributes
+        #         annotation_type = type_from_annotation(annotation[1], cls)
+        #         annotation = (name, annotation_type)
+        #         jss_elt = jsonschema_from_annotation(annotation=annotation, jsonschema_element={}, order=order,
+        #                                              editable=editable, title=title,
+        #                                              parsed_attributes=parsed_attributes)
+        #         _jsonschema['properties'].update(jss_elt)
+        #         if name in default_arguments:
+        #             default = set_default_value(_jsonschema['properties'][name], default_arguments[name])
+        #             _jsonschema['properties'].update(default)
+        #
+        # _jsonschema['classes'] = [cls.__module__ + '.' + cls.__name__]
+        # _jsonschema['whitelist_attributes'] = cls._whitelist_attributes
+        # return _jsonschema
 
     @property
     def _method_jsonschemas(self):
@@ -1302,14 +1302,16 @@ def prettyname(namestr):
     return pretty_name
 
 
-def inspect_arguments(argspec, merge=False):
+def inspect_arguments(method, merge=False):
     """
     TODO : Could move this to utils.jsonschema.Be careful with dessia-platform-backend retro-compat
     """
-    if isinstance(argspec, FunctionType):
-        # Retro compatibility
-        argspec = inspect.getfullargspec(argspec)
+    argspec = inspect.getfullargspec(method)
     # Find default value and required arguments of class construction
+    return split_default_args(argspec=argspec, merge=merge)
+
+
+def split_default_args(argspec, merge: bool = False):
     nargs, ndefault_args = split_argspecs(argspec)
 
     default_arguments = {}
