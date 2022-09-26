@@ -371,7 +371,7 @@ def deserialize_argument(type_, argument):
         # Custom classes
         return type_.dict_to_object(argument)
 
-    raise TypeError(f"Deserialization of ype {type_} is Not Implemented")
+    raise TypeError(f"Deserialization of type {type_} is Not Implemented; arg is {argument}")
 
 
 def find_references(value, path='#'):
