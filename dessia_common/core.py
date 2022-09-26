@@ -19,6 +19,7 @@ import collections.abc
 from copy import deepcopy, copy
 import inspect
 import json
+from types import FunctionType
 
 from typing import List, Dict, Any, Tuple, get_type_hints
 import traceback as tb
@@ -296,7 +297,7 @@ class DessiaObject:
         # Initialize jsonschema
         _jsonschema = deepcopy(JSONSCHEMA_HEADER)
 
-        required_arguments, default_arguments = inspect_arguments(method=init, merge=False)
+        required_arguments, default_arguments = inspect_arguments(init, False)
         _jsonschema['required'] = required_arguments
         _jsonschema['standalone_in_db'] = cls._standalone_in_db
         _jsonschema['description'] = parsed_docstring['description']
@@ -324,7 +325,7 @@ class DessiaObject:
                                                      parsed_attributes=parsed_attributes)
                 _jsonschema['properties'].update(jss_elt)
                 if name in default_arguments:
-                    default = set_default_value(_jsonschema['properties'], name, default_arguments[name])
+                    default = set_default_value(_jsonschema['properties'][name], default_arguments[name])
                     _jsonschema['properties'].update(default)
 
         _jsonschema['classes'] = [cls.__module__ + '.' + cls.__name__]
@@ -351,7 +352,7 @@ class DessiaObject:
             method = getattr(class_, method_name)
 
             if not isinstance(method, property):
-                required_args, default_args = inspect_arguments(method=method, merge=False)
+                required_args, default_args = inspect_arguments(argspec=method, merge=False)
                 annotations = get_type_hints(method)
                 if annotations:
                     jsonschemas[method_name] = deepcopy(JSONSCHEMA_HEADER)
@@ -367,8 +368,7 @@ class DessiaObject:
 
                             jsonschemas[method_name]['properties'][str(i)] = jsonschema_element
                             if argname in default_args:
-                                default = set_default_value(jsonschemas[method_name]['properties'],
-                                                            str(i),
+                                default = set_default_value(jsonschemas[method_name]['properties'][str(i)],
                                                             default_args[argname])
                                 jsonschemas[method_name]['properties'].update(default)
         return jsonschemas
@@ -1302,17 +1302,22 @@ def prettyname(namestr):
     return pretty_name
 
 
-def inspect_arguments(method, merge=False):
+def inspect_arguments(argspec, merge=False):
+    """
+    TODO : Could move this to utils.jsonschema.Be careful with dessia-platform-backend retro-compat
+    """
+    if isinstance(argspec, FunctionType):
+        # Retro compatibility
+        argspec = inspect.getfullargspec(argspec)
     # Find default value and required arguments of class construction
-    argspecs = inspect.getfullargspec(method)
-    nargs, ndefault_args = split_argspecs(argspecs)
+    nargs, ndefault_args = split_argspecs(argspec)
 
     default_arguments = {}
     arguments = []
-    for iargument, argument in enumerate(argspecs.args[1:]):
+    for iargument, argument in enumerate(argspec.args[1:]):
         if argument not in _FORBIDDEN_ARGNAMES:
             if iargument >= nargs - ndefault_args:
-                default_value = argspecs.defaults[ndefault_args - nargs + iargument]
+                default_value = argspec.defaults[ndefault_args - nargs + iargument]
                 if merge:
                     arguments.append((argument, default_value))
                 else:
