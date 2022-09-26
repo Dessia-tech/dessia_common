@@ -445,6 +445,16 @@ class StandaloneObject(MovingObject):
         """
         return contents
 
+    def timed_method(self, duration: float):
+        """
+        A method which duration can be customized to test long execution
+
+        :param duration: Duration of the method in ms
+        :type duration: float
+        """
+        time.sleep(duration/1000)
+        return self.intarg
+
 
 DEF_SO = StandaloneObject.generate(1)
 
