@@ -263,10 +263,11 @@ class HeterogeneousList(DessiaObject):
                 end_bar = "|"
 
             # attribute
-            if attr not in ["label"]:
-                attr_value = getattr(dessia_object, attr)
-            else:
-                attr_value = self.labels[self.dessia_objects.index(dessia_object)]
+            # if attr not in ["label"]:
+            #     attr_value = getattr(dessia_object, attr)
+            # else:
+            #     attr_value = self.labels[self.dessia_objects.index(dessia_object)]
+            attr_value = self._get_printed_value(dessia_object, attr)
 
             string += "|" + " " * max((attr_space[idx] - len(str(attr_value)) - 1), 1)
             string += f"{attr_value}"[:attr_space[idx] - 4]
@@ -278,6 +279,9 @@ class HeterogeneousList(DessiaObject):
                 string += " "
             string += end_bar
         return string
+
+    def _get_printed_value(self, dessia_object: DessiaObject, attr: str):
+        return getattr(dessia_object, attr)
 
     def __len__(self):
         """
@@ -986,6 +990,11 @@ class CategorizedList(HeterogeneousList):
         prefix += (f"{len(self)} samples, {len(self.common_attributes)} features, {self.n_clusters} clusters")
         return prefix
 
+    def _get_printed_value(self, dessia_object: DessiaObject, attr: str):
+        if attr not in ["label"]:
+            return HeterogeneousList._get_printed_value(self, dessia_object, attr)
+        return self.labels[self.dessia_objects.index(dessia_object)]
+
     def clustered_sublists(self):
         """
         Split a CategorizedList of labelled DessiaObjects into a CategorizedList of labelled HeterogeneousLists.
@@ -1037,10 +1046,9 @@ class CategorizedList(HeterogeneousList):
                                name=self.name + "_split")
 
     def _check_transform_sublists(self):
-        clustered_sublists = self[:]
-        if not isinstance(clustered_sublists.dessia_objects[0], HeterogeneousList):
-            clustered_sublists = self.clustered_sublists()
-        return clustered_sublists
+        if not isinstance(self.dessia_objects[0], HeterogeneousList):
+            return self.clustered_sublists()
+        return self[:]
 
     def mean_clusters(self):
         """
