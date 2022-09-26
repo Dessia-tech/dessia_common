@@ -262,11 +262,6 @@ class HeterogeneousList(DessiaObject):
             if idx == len(printed_attributes) - 1:
                 end_bar = "|"
 
-            # attribute
-            # if attr not in ["label"]:
-            #     attr_value = getattr(dessia_object, attr)
-            # else:
-            #     attr_value = self.labels[self.dessia_objects.index(dessia_object)]
             attr_value = self._get_printed_value(dessia_object, attr)
 
             string += "|" + " " * max((attr_space[idx] - len(str(attr_value)) - 1), 1)
