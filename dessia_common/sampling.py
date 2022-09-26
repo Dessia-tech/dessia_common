@@ -27,6 +27,9 @@ class Sampler(DessiaObject):
     def _get_attributes_names(self):
         return [attr.attribute_name for attr in self.constant_attributes + self.sampled_attributes]
 
+    def _get_instances_numbers(self):
+        return [1] * len(self.constant_attributes) + [attr.number for attr in self.sampled_attributes]
+
     def _build_parameter_grid(self, instances_numbers: List[int]):
         parameter_grid = []
         for attr, instances_number in zip(self.constant_attributes, instances_numbers[:len(self.constant_attributes)]):
@@ -37,17 +40,8 @@ class Sampler(DessiaObject):
 
         return parameter_grid
 
-    def _get_doe(self):
-        return
-
-    def _lhs_sampling(self):
-        return
-
-    def _montecarlo_sampling(self):
-        return
-
     def _full_factorial_sampling(self):
-        instances_numbers = [1] * len(self.constant_attributes) + [attr.number for attr in self.sampled_attributes]
+        instances_numbers = self._get_instances_numbers()
         parameter_grid = self._build_parameter_grid(instances_numbers)
         idx_sampling = pyDOE.fullfact(instances_numbers)
         full_doe = []
@@ -55,4 +49,26 @@ class Sampler(DessiaObject):
             valued_sample = [parameter_grid[attr_row][int(idx)] for attr_row, idx in enumerate(idx_sample)]
             full_doe.append(self.object_class(**dict(zip(self.attributes, valued_sample))))
         return full_doe
+
+    def _get_doe(self, method: str = 'fullfact'):
+        if method == 'fullfact':
+            return self._full_factorial_sampling()
+        if method == 'lhs':
+            return self._lhs_sampling()
+        return
+
+    def make_doe(self, method: str = 'fullfact', name: str = ''):
+        return HeterogeneousList(self._get_doe(method=method), name=name)
+
+    def _lhs_sampling(self, samples: int = 10, criterion: str = 'center'):
+        varying_sampling = pyDOE.lhs(len(self.sampled_attributes), samples=samples, criterion=criterion)
+        full_sampling = npy.ones(())
+        for nodim_sample in varying_sampling:
+            print(2)
+
+
+        return
+
+    def _montecarlo_sampling(self):
+        return
 

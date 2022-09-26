@@ -23,6 +23,6 @@ randata_sampling = Sampler(object_class=RandDataD6,
                            sampled_attributes=sampled_attributes,
                            constant_attributes=constant_attributes)
 
-test = randata_sampling._full_factorial_sampling()
-test_hlist = HeterogeneousList(test)
+# test_hlist = randata_sampling.make_doe('fullfact')
+test_hlist = randata_sampling.make_doe('lhs')
 test_hlist.plot()

@@ -26,7 +26,7 @@ class FixedAttributeValue(dc.DessiaObject):
 class BoundedAttributeValue(dc.DessiaObject):
     _standalone_in_db = True
 
-    def __init__(self, attribute_name: str, min_value: float, max_value: float, number: int = 3, name: str = ''):
+    def __init__(self, attribute_name: str, min_value: float, max_value: float, number: int = 2, name: str = ''):
         dc.DessiaObject.__init__(self, name=name)
         self.attribute_name = attribute_name
         self.min_value = min_value
