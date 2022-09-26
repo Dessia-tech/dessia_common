@@ -1,7 +1,8 @@
 """
 Library for building clusters on data.
+
 """
-from typing import List, Dict, Any, Type
+from typing import List, Dict, Any
 from copy import copy
 import itertools
 
@@ -18,8 +19,6 @@ except ImportError:
     pass
 from dessia_common.exports import XLSXWriter
 from dessia_common.core import DessiaObject, DessiaFilter, FiltersList, templates
-from dessia_common.optimization import FixedAttributeValue, BoundedAttributeValue
-
 
 
 class HeterogeneousList(DessiaObject):
@@ -212,7 +211,7 @@ class HeterogeneousList(DessiaObject):
 
         string += self._print_objects_slice(slice(0, 5), attr_space, attr_name_len,
                                             self._set_label_space(size_col_label))
-                                            
+
         if len(self) > 10:
             undispl_len = len(self) - 10
             string += (f"\n+ {undispl_len} undisplayed object" + "s"*(min([undispl_len, 2])-1) + "...")
@@ -1504,15 +1503,6 @@ class CategorizedList(HeterogeneousList):
 #     plt.plot(distances)
 #     plt.show()
 
-class Sampler(DessiaObject):
-    _standalone_in_db = True
-    _vector_features = []
-
-    def __init__(self, object_class: Type, sampled_attributes: List[BoundedAttributeValue], name: str = ''):
-        self.object_class = object_class
-        self.sampled_attributes = sampled_attributes
-        DessiaObject.__init__(self, name=name)
-
 def diff_list(list_a, list_b):
     """
     Difference between to lists.
@@ -1743,4 +1733,3 @@ def mahalanobis_distance(list_a, list_b, cov_matrix):
     """
     inv_cov_matrix = npy.linalg.pinv(cov_matrix)
     return mahalanobis(list_a, list_b, inv_cov_matrix)
-
