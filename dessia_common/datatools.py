@@ -1764,4 +1764,3 @@ def mahalanobis_distance(list_a, list_b, cov_matrix):
     """
     inv_cov_matrix = npy.linalg.pinv(cov_matrix)
     return mahalanobis(list_a, list_b, inv_cov_matrix)
-
