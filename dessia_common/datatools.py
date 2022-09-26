@@ -195,7 +195,6 @@ class HeterogeneousList(DessiaObject):
         Print HeterogeneousList as a table.
 
         """
-        size_col_label = self._set_size_col_label()
         attr_name_len = []
         attr_space = []
 
@@ -205,19 +204,17 @@ class HeterogeneousList(DessiaObject):
             return prefix
 
         string = ""
-        string += self._print_titles(attr_space, attr_name_len, size_col_label)
+        string += self._print_titles(attr_space, attr_name_len)
         string += "\n" + "-" * len(string)
 
-        string += self._print_objects_slice(slice(0, 5), attr_space, attr_name_len,
-                                            self._set_label_space(size_col_label))
-                                            
+        string += self._print_objects_slice(slice(0, 5), attr_space, attr_name_len)
+
         if len(self) > 10:
             undispl_len = len(self) - 10
             string += (f"\n+ {undispl_len} undisplayed object" + "s"*(min([undispl_len, 2])-1) + "...")
 
         if len(self) > 5:
-            string += self._print_objects_slice(slice(-5, len(self)), attr_space, attr_name_len,
-                                                self._set_label_space(size_col_label))
+            string += self._print_objects_slice(slice(-5, len(self)), attr_space, attr_name_len)
         return prefix + "\n" + string + "\n"
 
     def _printed_attributes(self):
@@ -225,53 +222,61 @@ class HeterogeneousList(DessiaObject):
             return self.common_attributes
         return ['name'] + self.common_attributes
 
-    def _print_objects_slice(self, key: slice, attr_space: int, attr_name_len: int, label_space: int):
+    def _print_objects_slice(self, key: slice, attr_space: int, attr_name_len: int):
         string = ""
         for dessia_object in self.dessia_objects[key]:
-            string += "\n" + " " * label_space
+            string += "\n"
             string += self._print_objects(dessia_object, attr_space, attr_name_len)
         return string
-
-    def _set_size_col_label(self):
-        return 0
-
-    def _set_label_space(self, size_col_label: int):
-        if size_col_label:
-            return 2 * size_col_label - 1
-        return 0
 
     def _write_str_prefix(self):
         prefix = f"{self.__class__.__name__} {self.name if self.name != '' else hex(id(self))}: "
         prefix += f"{len(self)} samples, {len(self.common_attributes)} features"
         return prefix
 
-    def _print_titles(self, attr_space: int, attr_name_len: int, size_col_label: int):
+    def _print_titles(self, attr_space: int, attr_name_len: int):
+        min_col_length = 16
+        printed_attributes = self._printed_attributes()
         string = ""
-        if size_col_label:
-            string += "|" + " "*(size_col_label - 1) + "n°" + " "*(size_col_label - 1)
-        for idx, attr in enumerate(self._printed_attributes()):
+        for idx, attr in enumerate(printed_attributes):
             end_bar = ""
-            if idx == len(self.common_attributes):
+            if idx == len(printed_attributes) - 1:
                 end_bar = "|"
             # attribute
-            attr_space.append(len(attr) + 6)
-            name_attr = " " * 3 + f"{attr.capitalize()}" + " " * 3
+            if len(attr) + 6 > min_col_length:
+                indentation = 3
+            else:
+                indentation = min_col_length - len(attr)
+                odd_incr = int(indentation % 2)
+                indentation = int(indentation / 2)
+
+            # attr_space.append(max(len(attr) + 6, min_col_length))
+            name_attr = " " * indentation + " " * odd_incr + f"{attr.capitalize()}" + " " * indentation
+            attr_space.append(len(name_attr))
             attr_name_len.append(len(name_attr))
             string += "|" + name_attr + end_bar
         return string
 
     def _print_objects(self, dessia_object: DessiaObject, attr_space: int, attr_name_len: int):
+        printed_attributes = self._printed_attributes()
         string = ""
-        for idx, attr in enumerate(self._printed_attributes()):
+        for idx, attr in enumerate(printed_attributes):
             end_bar = ""
-            if idx == len(self.common_attributes):
+            if idx == len(printed_attributes) - 1:
                 end_bar = "|"
 
             # attribute
-            string += "|" + " " * (attr_space[idx] - len(str(getattr(dessia_object, attr))) - 1)
-            string += f"{getattr(dessia_object, attr)}"[:attr_name_len[idx] - 3]
-            if len(str(getattr(dessia_object, attr))) > attr_name_len[idx] - 3:
-                string += "..."
+            if attr not in ["label"]:
+                attr_value = getattr(dessia_object, attr)
+            else:
+                attr_value = self.labels[self.dessia_objects.index(dessia_object)]
+
+            string += "|" + " " * max((attr_space[idx] - len(str(attr_value)) - 1), 1)
+            string += f"{attr_value}"[:attr_name_len[idx] - 4]
+            if len(str(attr_value)) > attr_name_len[idx] - 3:
+                string = string[:-1] + "... "
+            elif len(str(attr_value)) == attr_name_len[idx] - 3:
+                string += f"{attr_value}"[-1] + " "
             else:
                 string += " "
             string += end_bar
@@ -976,22 +981,13 @@ class CategorizedList(HeterogeneousList):
         # new_hlist.name += "_list")
         return new_hlist
 
-    def _print_objects_slice(self, key: slice, attr_space: int, attr_name_len: int, label_space: str):
-        string = ""
-        for label, dessia_object in zip(self.labels[key], self.dessia_objects[key]):
-            string += "\n"
-            space = label_space - len(str(label))
-            string += "|" + " " * space + f"{label}" + " "
-            string += self._print_objects(dessia_object, attr_space, attr_name_len)
-        return string
+    def _printed_attributes(self):
+        return ["label"] + HeterogeneousList._printed_attributes(self)
 
     def _write_str_prefix(self):
         prefix = f"{self.__class__.__name__} {self.name if self.name != '' else hex(id(self))}: "
         prefix += (f"{len(self)} samples, {len(self.common_attributes)} features, {self.n_clusters} clusters")
         return prefix
-
-    def _set_size_col_label(self):
-        return 4
 
     def clustered_sublists(self):
         """
