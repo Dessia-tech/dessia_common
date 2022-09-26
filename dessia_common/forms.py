@@ -26,7 +26,7 @@ coding/naming style & convention.
 """
 
 from math import floor, ceil, cos
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Tuple, Union, Any
 from numpy import linspace
 
 try:
@@ -126,8 +126,7 @@ DEF_ISS = InheritingStandaloneSubobject.generate(1)
 
 
 class EmbeddedSubobject(DessiaObject):
-    def __init__(self, embedded_list: List[int] = None,
-                 name: str = 'Embedded Subobject'):
+    def __init__(self, embedded_list: List[int] = None, name: str = 'Embedded Subobject'):
         if embedded_list is None:
             self.embedded_list = [1, 2, 3]
         else:
@@ -216,30 +215,23 @@ class StandaloneObject(MovingObject):
 
     @classmethod
     def generate(cls, seed: int, name: str = 'Standalone Object Demo') -> 'StandaloneObject':
-        is_even = not bool(seed % 2)
-        standalone_subobject = StandaloneSubobject.generate(seed)
-        embedded_subobject = EmbeddedSubobject.generate(seed)
         dynamic_dict = {'n' + str(i): bool(seed % 2) for i in range(seed)}
         float_dict = {'k' + str(i): seed * 1.09 for i in range(seed)}
         string_dict = {'key' + str(i): 'value' + str(i) for i in range(seed)}
-        tuple_arg = ('value', seed * 3)
-        intarg = seed
-        strarg = str(seed) * floor(seed / 3)
-        object_list = StandaloneSubobject.generate_many(seed)
-        subobject_list = EmbeddedSubobject.generate_many(seed)
         builtin_list = [seed] * seed
         array_arg = [builtin_list] * 3
-        union_arg = [EnhancedEmbeddedSubobject.generate(seed),
-                     EmbeddedSubobject.generate(seed)]
-        if is_even:
+        union_arg = [EnhancedEmbeddedSubobject.generate(seed), EmbeddedSubobject.generate(seed)]
+        if not bool(seed % 2):
             subclass_arg = StandaloneSubobject.generate(-seed)
         else:
             subclass_arg = InheritingStandaloneSubobject.generate(seed)
-        return cls(standalone_subobject=standalone_subobject, embedded_subobject=embedded_subobject,
-                   dynamic_dict=dynamic_dict, float_dict=float_dict, string_dict=string_dict, tuple_arg=tuple_arg,
-                   intarg=intarg, strarg=strarg, object_list=object_list, subobject_list=subobject_list,
-                   builtin_list=builtin_list, union_arg=union_arg, subclass_arg=subclass_arg,
-                   array_arg=array_arg, name=name)
+        return cls(standalone_subobject=StandaloneSubobject.generate(seed),
+                   embedded_subobject=EmbeddedSubobject.generate(seed),
+                   dynamic_dict=dynamic_dict, float_dict=float_dict, string_dict=string_dict,
+                   tuple_arg=('value', seed * 3), intarg=seed, strarg=str(seed) * floor(seed / 3),
+                   object_list=StandaloneSubobject.generate_many(seed),
+                   subobject_list=EmbeddedSubobject.generate_many(seed), builtin_list=builtin_list, union_arg=union_arg,
+                   subclass_arg=subclass_arg, array_arg=array_arg, name=name)
 
     @classmethod
     def generate_from_bin(cls, stream: BinaryFile):
@@ -283,6 +275,9 @@ class StandaloneObject(MovingObject):
         self.standalone_subobject.floatarg += value
         return self.standalone_subobject
 
+    def append_union_arg(self, object_: UnionArg):
+        self.union_arg.append(object_)
+
     def contour(self):
         points = [vm.Point2D(self.intarg, self.intarg), vm.Point2D(self.intarg, self.intarg + 1),
                   vm.Point2D(self.intarg + 1, self.intarg + 1), vm.Point2D(self.intarg + 1, 0)]
@@ -308,32 +303,33 @@ class StandaloneObject(MovingObject):
         frame32 = frame22.translation(offset=vm.X3D)
         return [[frame0, frame0], [frame11, frame12], [frame21, frame22], [frame31, frame32]]
 
-    def plot_data(self):
+    @staticmethod
+    def scatter_plot():
         attributes = ['cx', 'cy']
+        tooltip = plot_data.Tooltip(attributes=attributes, name='Tooltips')
+        return plot_data.Scatter(axis=plot_data.Axis(), tooltip=tooltip, x_variable=attributes[0],
+                                 y_variable=attributes[1], name='Scatter Plot')
 
+    def plot_data(self):
         # Contour
         contour = self.standalone_subobject.contour().plot_data()
         primitives_group = plot_data.PrimitiveGroup(primitives=[contour], name='Contour')
 
-        # Scatter Plot
-        bounds = {'x': [0, 6], 'y': [100, 2000]}
-        catalog = Catalog.random_2d(bounds=bounds, threshold=8000)
+        catalog = Catalog.random_2d(bounds={'x': [0, 6], 'y': [100, 2000]}, threshold=8000)
         points = [plot_data.Point2D(cx=v[0], cy=v[1], name='Point' + str(i)) for i, v in enumerate(catalog.array)]
-        axis = plot_data.Axis()
-        tooltip = plot_data.Tooltip(attributes=attributes, name='Tooltips')
-        scatter_plot = plot_data.Scatter(axis=axis, tooltip=tooltip, x_variable=attributes[0],
-                                         y_variable=attributes[1], name='Scatter Plot')
+
+        # Scatter Plot
+        scatterplot = self.scatter_plot()
 
         # Parallel Plot
-        attributes = ['cx', 'cy', 'color_fill', 'color_stroke']
-        parallel_plot = plot_data.ParallelPlot(elements=points, axes=attributes, name='Parallel Plot')
+        parallelplot = plot_data.ParallelPlot(elements=points, axes=['cx', 'cy', 'color_fill', 'color_stroke'],
+                                              name='Parallel Plot')
 
         # Multi Plot
-        objects = [scatter_plot, parallel_plot]
+        objects = [scatterplot, parallelplot]
         sizes = [plot_data.Window(width=560, height=300), plot_data.Window(width=560, height=300)]
-        coords = [(0, 0), (300, 0)]
-        multi_plot = plot_data.MultiplePlots(elements=points, plots=objects, sizes=sizes,
-                                             coords=coords, name='Multiple Plot')
+        multiplot = plot_data.MultiplePlots(elements=points, plots=objects, sizes=sizes,
+                                            coords=[(0, 0), (300, 0)], name='Multiple Plot')
 
         attribute_names = ['time', 'electric current']
         tooltip = plot_data.Tooltip(attributes=attribute_names)
@@ -361,8 +357,7 @@ class StandaloneObject(MovingObject):
 
         graph2d = plot_data.Graph2D(graphs=[custom_dataset, dataset2],
                                     x_variable=attribute_names[0], y_variable=attribute_names[1])
-        return [primitives_group, scatter_plot,
-                parallel_plot, multi_plot, graph2d]
+        return [primitives_group, scatterplot, parallelplot, multiplot, graph2d]
 
     def maldefined_method(self, arg0, arg1=1, arg2: int = 10, arg3=3):
         """
@@ -376,6 +371,10 @@ class StandaloneObject(MovingObject):
         computation = nok_string + 'or' + ok_string
 
         return computation
+
+    # @staticmethod
+    # def method_with_faulty_typing(arg0: Iterator[int]):
+    #     return arg0
 
     def to_markdown(self):
         contents = """
@@ -499,6 +498,25 @@ class StandaloneObjectWithDefaultValues(StandaloneObject):
 
 
 DEF_SOWDV = StandaloneObjectWithDefaultValues()
+
+# class ObjectWithFaultyTyping(DessiaObject):
+#     """
+#     Dummy class to test faulty typing jsonschema
+#     """
+#     def __init__(self, faulty_attribute: Iterator[int], name: str = ""):
+#         self.faulty_attribute = faulty_attribute
+#
+#         DessiaObject.__init__(self, name=name)
+
+
+class ObjectWithOtherTypings(DessiaObject):
+    """
+    Dummy class to test some typing jsonschemas
+    """
+    def __init__(self, undefined_type_attribute: Any, name: str = ""):
+        self.undefined_type_attribute = undefined_type_attribute
+
+        DessiaObject.__init__(self, name=name)
 
 
 class MovingStandaloneObject(MovingObject):

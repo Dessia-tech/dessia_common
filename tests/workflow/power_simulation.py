@@ -19,10 +19,6 @@ input_values = {0: components1,
 
 workflow_run = simulation_workflow.run(input_values)
 
-system_in_values = workflow_run.variable_values[(0, 1, 0)]
-system_from_get = get_in_object_from_path(workflow_run, '#/variable_values/(0, 1, 0)')
-assert system_in_values == system_from_get
-
 print(workflow_run.log)
 
 arguments = {str(k): serialize(v) for k, v in input_values.items()}
@@ -66,3 +62,5 @@ if '$ref' in s:
     raise ValueError('Pointer detected with use_pointers=False')
 
 simulation_workflow.save_script_to_file('_simulation_workflow')
+
+print("script power_simulation.py has passed")

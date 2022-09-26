@@ -7,6 +7,7 @@ from copy import deepcopy
 import inspect
 import warnings
 import collections
+import collections.abc
 from typing import get_origin, get_args, Union, get_type_hints
 import dessia_common as dc
 import dessia_common.utils.types as dc_types
@@ -40,25 +41,26 @@ def datatype_from_jsonschema(jsonschema):
                 if jsonschema['standalone_in_db']:
                     return 'standalone_object'
                 return 'embedded_object'
+            # Static dict is deprecated
             return 'static_dict'
         if 'instance_of' in jsonschema:
             return 'instance_of'
         if 'patternProperties' in jsonschema:
             return 'dynamic_dict'
-        if 'method' in jsonschema and jsonschema['method']:
+        if 'is_method' in jsonschema and jsonschema['is_method']:
             return 'embedded_object'
         if 'is_class' in jsonschema and jsonschema['is_class']:
             return 'class'
 
-    elif jsonschema['type'] == 'array':
-        if 'additionalItems' in jsonschema\
-                and not jsonschema['additionalItems']:
+    if jsonschema['type'] == 'array':
+        if 'additionalItems' in jsonschema and not jsonschema['additionalItems']:
             return 'heterogeneous_sequence'
         return 'homogeneous_sequence'
 
-    elif jsonschema['type'] in ['number', 'string', 'boolean']:
-        if 'is_type' in jsonschema and jsonschema['is_type']:
-            return 'file'
+    if jsonschema["type"] == "text" and "is_file" in jsonschema and jsonschema["is_file"]:
+        return "file"
+
+    if jsonschema['type'] in ['number', 'string', 'boolean']:
         return 'builtin'
     return None
 
@@ -68,9 +70,9 @@ def chose_default(jsonschema):
     if datatype in ['heterogeneous_sequence', 'homogeneous_sequence']:
         return default_sequence(jsonschema)
     if datatype == 'static_dict':
+        # Deprecated
         return default_dict(jsonschema)
-    if datatype in ['standalone_object', 'embedded_object',
-                    'instance_of', 'union']:
+    if datatype in ['standalone_object', 'embedded_object', 'instance_of', 'union']:
         if 'default_value' in jsonschema:
             return jsonschema['default_value']
         return None
@@ -132,8 +134,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element, order, editable=N
         description = ""
 
     # Compute base entries
-    jsonschema_element[key] = {'title': title, 'editable': editable,
-                               'order': order, 'description': description,
+    jsonschema_element[key] = {'title': title, 'editable': editable, 'order': order, 'description': description,
                                'python_typing': dc_types.serialize_typing(typing_)}
 
     if typing_ in dc_types.TYPING_EQUIVALENCES:
@@ -152,11 +153,10 @@ def jsonschema_from_annotation(annotation, jsonschema_element, order, editable=N
             else:
                 # Types union
                 jsonschema_union_types(key, args, typing_, jsonschema_element)
-        elif origin in [list, collections.Iterator]:
+        elif origin in [list, collections.abc.Iterator]:
             # Homogenous sequences
-            jsonschema_element[key].update(jsonschema_sequence_recursion(
-                value=typing_, order=order, title=title, editable=editable
-            ))
+            jsonschema_element[key].update(jsonschema_sequence_recursion(value=typing_, order=order,
+                                                                         title=title, editable=editable))
         elif origin is tuple:
             # Heterogenous sequences (tuples)
             items = []
@@ -171,84 +171,66 @@ def jsonschema_from_annotation(annotation, jsonschema_element, order, editable=N
                 raise NotImplementedError('Non strings keys not supported')
             if value_type not in dc_types.TYPING_EQUIVALENCES:
                 raise ValueError(f'Dicts should have only builtins keys and values, got {value_type}')
-            jsonschema_element[key].update({
-                'type': 'object',
-                'patternProperties': {
-                    '.*': {
-                        'type': dc_types.TYPING_EQUIVALENCES[value_type]
-                    }
-                }
-            })
+            jsonschema_element[key].update({'type': 'object',
+                                            'patternProperties': {
+                                                '.*': {
+                                                    'type': dc_types.TYPING_EQUIVALENCES[value_type]
+                                                }
+                                            }})
         elif origin is Subclass:
-            warnings.simplefilter('once', DeprecationWarning)
-            msg = "\n\nTyping of attribute '{0}' from class {1} "\
-                  "uses Subclass which is deprecated."\
-                  "\n\nUse 'InstanceOf[{2}]' instead of 'Subclass[{2}]'.\n"
-            arg = args[0].__name__
-            warnings.warn(msg.format(key, args[0], arg), DeprecationWarning)
-            # Several possible classes that are subclass of another one
-            class_ = args[0]
-            classname = dc.full_classname(object_=class_, compute_for='class')
-            jsonschema_element[key].update({
-                'type': 'object', 'instance_of': classname,
-                'standalone_in_db': class_._standalone_in_db
-            })
+            pass
+            # warnings.simplefilter('once', DeprecationWarning)
+            # msg = "\n\nTyping of attribute '{0}' from class {1} uses Subclass which is deprecated."\
+            #       "\n\nUse 'InstanceOf[{2}]' instead of 'Subclass[{2}]'.\n"
+            # arg = args[0].__name__
+            # warnings.warn(msg.format(key, args[0], arg), DeprecationWarning)
+            # # Several possible classes that are subclass of another one
+            # class_ = args[0]
+            # classname = dc.full_classname(object_=class_, compute_for='class')
+            # jsonschema_element[key].update({'type': 'object', 'instance_of': classname,
+            #                                 'standalone_in_db': class_._standalone_in_db})
         elif origin is dc_types.InstanceOf:
             # Several possible classes that are subclass of another one
             class_ = args[0]
             classname = dc.full_classname(object_=class_, compute_for='class')
-            jsonschema_element[key].update({
-                'type': 'object', 'instance_of': classname,
-                'standalone_in_db': class_._standalone_in_db
-            })
+            jsonschema_element[key].update({'type': 'object', 'instance_of': classname,
+                                            'standalone_in_db': class_._standalone_in_db})
         elif origin is MethodType or origin is ClassMethodType:
             class_type = get_args(typing_)[0]
             classmethod_ = origin is ClassMethodType
-            class_jss = jsonschema_from_annotation(
-                annotation=('class_', class_type), jsonschema_element={},
-                order=order, editable=editable, title='Class'
-            )
-            jsonschema_element[key].update({
-                'type': 'object', 'is_method': True,
-                'classmethod_': classmethod_,
-                'properties': {
-                    'class_': class_jss['class_'],
-                    'name': {'type': 'string'}}
-            })
+            class_jss = jsonschema_from_annotation(annotation=('class_', class_type), jsonschema_element={},
+                                                   order=order, editable=editable, title='Class')
+            jsonschema_element[key].update({'type': 'object', 'is_method': True,
+                                            'classmethod_': classmethod_,
+                                            'properties': {
+                                                'class_': class_jss['class_'],
+                                                'name': {'type': 'string'}}})
         elif origin is type:
             jsonschema_element[key].update({'type': 'object', 'is_class': True,
                                             'properties': {'name': {'type': 'string'}}})
         else:
-            msg = "Jsonschema computation of typing {} is not implemented"
-            raise NotImplementedError(msg.format(typing_))
+            raise NotImplementedError(f"Jsonschema computation of typing {typing_} is not implemented")
 
     elif hasattr(typing_, '__origin__') and typing_.__origin__ is type:
         # TODO Is this deprecated ? Should be used in 3.8 and not 3.9 ?
-        jsonschema_element[key].update({
-            'type': 'object', 'is_class': True,
-            'properties': {'name': {'type': 'string'}}
-        })
+        jsonschema_element[key].update({'type': 'object', 'is_class': True,
+                                        'properties': {'name': {'type': 'string'}}})
     elif typing_ is Any:
         jsonschema_element[key].update({'type': 'object', 'properties': {'.*': '.*'}})
     elif inspect.isclass(typing_) and issubclass(typing_, Measure):
         ann = (key, float)
-        jsonschema_element = jsonschema_from_annotation(
-            annotation=ann, jsonschema_element=jsonschema_element,
-            order=order, editable=editable, title=title
-        )
+        jsonschema_element = jsonschema_from_annotation(annotation=ann, jsonschema_element=jsonschema_element,
+                                                        order=order, editable=editable, title=title)
         jsonschema_element[key]['units'] = typing_.units
-    elif issubclass(typing_, (BinaryFile, StringFile)):
+    elif inspect.isclass(typing_) and issubclass(typing_, (BinaryFile, StringFile)):
         jsonschema_element[key].update({'type': 'text', 'is_file': True})
     else:
         classname = dc.full_classname(object_=typing_, compute_for='class')
         if inspect.isclass(typing_) and issubclass(typing_, dc.DessiaObject):
             # Dessia custom classes
-            jsonschema_element[key].update({
-                'type': 'object',
-                'standalone_in_db': typing_._standalone_in_db
-            })
+            jsonschema_element[key].update({'type': 'object', 'standalone_in_db': typing_._standalone_in_db})
         else:
-            # Statically created dict structure
+            # DEPRECATED : Statically created dict structure
             jsonschema_element[key].update(static_dict_jsonschema(typing_))
         jsonschema_element[key]['classes'] = [classname]
     return jsonschema_element

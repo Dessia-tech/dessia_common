@@ -8,11 +8,13 @@ Serialization Tools
 import warnings
 import inspect
 import collections
+import collections.abc
 from ast import literal_eval
 from typing import get_origin, get_args, Union, Any, BinaryIO, TextIO
 from numpy import int64, float64
 import networkx as nx
 import dessia_common as dc
+import dessia_common.core
 import dessia_common.errors as dc_err
 from dessia_common.files import StringFile, BinaryFile
 import dessia_common.utils.types as dcty
@@ -46,7 +48,7 @@ def serialize(value):
     Main function for serialization without pointers
     Calls recursively itself serialize_sequence and serialize_dict
     """
-    if isinstance(value, dc.DessiaObject):
+    if isinstance(value, (dc.DessiaObject, dessia_common.core.DessiaObject)):
         try:
             serialized_value = value.to_dict(use_pointers=False)
         except TypeError:
@@ -79,7 +81,7 @@ def serialize_with_pointers(value, memo=None, path='#'):
     """
     if memo is None:
         memo = {}
-    if isinstance(value, dc.DessiaObject):
+    if isinstance(value, (dc.DessiaObject, dessia_common.core.DessiaObject)):
         if value in memo:
             return {'$ref': memo[value]}, memo
         try:
@@ -88,14 +90,18 @@ def serialize_with_pointers(value, memo=None, path='#'):
         except TypeError:
             warnings.warn('specific to_dict should implement use_pointers, memo and path arguments', Warning)
             serialized = value.to_dict()
-
         memo[value] = path
+
     elif hasattr(value, 'to_dict'):
+        if value in memo:
+            return {'$ref': memo[value]}, memo
         serialized = value.to_dict()
+        memo[value] = path
     elif isinstance(value, dict):
-        serialized, memo = serialize_dict_with_pointers(value, memo, path)
+        serialized, memo = serialize_dict_with_pointers(value, memo=memo, path=path)
     elif dcty.is_sequence(value):
-        serialized, memo = serialize_sequence_with_pointers(value, memo, path)
+        serialized, memo = serialize_sequence_with_pointers(value, memo=memo, path=path)
+
     elif isinstance(value, (BinaryFile, StringFile)):
         serialized = value
     elif isinstance(value, (int64, float64)):
@@ -146,7 +152,7 @@ def serialize_sequence_with_pointers(seq, memo, path):
     serialized_sequence = []
     for ival, value in enumerate(seq):
         value_path = f'{path}/{ival}'
-        serialized_value, memo = serialize_with_pointers(value, memo, path=value_path)
+        serialized_value, memo = serialize_with_pointers(value, memo=memo, path=value_path)
         serialized_sequence.append(serialized_value)
 
     return serialized_sequence, memo
@@ -200,8 +206,9 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
     """
     class_argspec = None
 
-    global_dict, pointers_memo = update_pointers_data(global_dict=global_dict, current_dict=dict_,
-                                                      pointers_memo=pointers_memo)
+    if pointers_memo is None or global_dict is None:
+        global_dict, pointers_memo = update_pointers_data(global_dict=global_dict, current_dict=dict_,
+                                                          pointers_memo=pointers_memo)
 
     if '$ref' in dict_:
         try:
@@ -307,11 +314,11 @@ def deserialize_with_typing(type_, argument):
             except KeyError:
                 # This is not the right class, we should go see the parent
                 classes.remove(children_class)
-    elif origin in [list, collections.Iterator]:
+    elif origin in [list, collections.abc.Iterator]:
         # Homogenous sequences (lists)
         sequence_subtype = args[0]
         deserialized_arg = [deserialize_argument(sequence_subtype, arg) for arg in argument]
-        if origin is collections.Iterator:
+        if origin is collections.abc.Iterator:
             deserialized_arg = iter(deserialized_arg)
 
     elif origin is tuple:
@@ -357,7 +364,7 @@ def deserialize_argument(type_, argument):
     if type_ is Any:
         # Any type
         return argument
-    if inspect.isclass(type_) and issubclass(type_, dc.DessiaObject):
+    if inspect.isclass(type_) and issubclass(type_, (dc.DessiaObject, dessia_common.core.DessiaObject)):
         # Custom classes
         return type_.dict_to_object(argument)
 
@@ -420,8 +427,9 @@ def pointer_graph(value):
 
     # refs = []
     refs_by_path = {}
+    references = find_references(value)
 
-    for path, reference in find_references(value):
+    for path, reference in references:
         # refs.append(reference)
         refs_by_path[path] = reference
         # Slitting path & reference to add missing nodes
@@ -452,7 +460,6 @@ def pointer_graph(value):
     graph.add_edges_from(path_edges, path=True)
     graph.add_edges_from(pointer_edges, head_type='circle', color='#008000', path=False)
 
-    references = find_references(value)
     refs_by_path = {r[0]: r[1] for r in references}
     extra_edges = []
     new_paths = {}
@@ -472,8 +479,8 @@ def pointer_graph(value):
         if last_name_change:
             # marking as new path from top level pointer
             segments = point_at.split('/')
-            for i in range(len(segments)-1):
-                node = '/'.join(segments[:i+2])
+            for i in range(len(segments) - 1):
+                node = '/'.join(segments[:i + 2])
                 new_path = node.replace(*last_name_change)
                 if new_path != node:
                     new_paths[node] = new_path
@@ -518,7 +525,7 @@ def deserialization_order(dict_):
     cleaned_order = []
     equals = nx.get_node_attributes(graph, 'equals')
 
-    for i, node in enumerate(order):
+    for node in order:
         if node in equals:
             if not equals[node] in cleaned_order:
                 cleaned_order.append((node, equals[node]))
@@ -534,17 +541,13 @@ def dereference_jsonpointers(dict_):  # , global_dict):
     - deserialize them in the right order to respect pointers graph
     :returns: a dict with key the path of the item and the value is the python object
     """
-
     order = deserialization_order(dict_)
-
     pointers_memo = {}
     for node, reference in order:
         if reference is None:
-            serialized_element = get_in_object_from_path(dict_, node, evaluate_pointers=False)
-            pointers_memo[node] = deserialize(serialized_element=serialized_element,
-                                              global_dict=dict_,
-                                              pointers_memo=pointers_memo,
-                                              path=node)
+            serialized_element = get_in_object_from_path(object_=dict_, path=node, evaluate_pointers=False)
+            pointers_memo[node] = deserialize(serialized_element=serialized_element, global_dict=dict_,
+                                              pointers_memo=pointers_memo, path=node)
         else:
             pointers_memo[node] = pointers_memo[reference]
     return pointers_memo
