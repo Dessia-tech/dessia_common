@@ -21,7 +21,6 @@ from dessia_common.core import DessiaObject, DessiaFilter, FiltersList, template
 from dessia_common.optimization import FixedAttributeValue, BoundedAttributeValue
 
 
-
 class HeterogeneousList(DessiaObject):
     """
     Base object for handling a list of DessiaObjects.
@@ -212,7 +211,7 @@ class HeterogeneousList(DessiaObject):
 
         string += self._print_objects_slice(slice(0, 5), attr_space, attr_name_len,
                                             self._set_label_space(size_col_label))
-                                            
+
         if len(self) > 10:
             undispl_len = len(self) - 10
             string += (f"\n+ {undispl_len} undisplayed object" + "s"*(min([undispl_len, 2])-1) + "...")
@@ -1488,6 +1487,39 @@ class CategorizedList(HeterogeneousList):
             scaled_matrix = matrix
         skl_cluster.fit(scaled_matrix)
         return skl_cluster
+
+    @classmethod
+    def list_agglomerative_clustering(cls, data: List[DessiaObject], n_clusters: int = 2,
+                                      affinity: str = 'euclidean', linkage: str = 'ward',
+                                      distance_threshold: float = None, scaling: bool = False, name: str = ""):
+        """
+        Does the same as `from_agglomerative_clustering` method but data is a `List[DessiaObject]` and not a \
+        `HeterogeneousList`.
+
+        """
+        return cls.from_agglomerative_clustering(HeterogeneousList(data), n_clusters=n_clusters, affinity=affinity,
+                                                 linkage=linkage, distance_threshold=distance_threshold,
+                                                 scaling=scaling, name=name)
+
+    @classmethod
+    def list_kmeans(cls, data: List[DessiaObject], n_clusters: int = 2, n_init: int = 10, tol: float = 1e-4,
+                    scaling: bool = False, name: str = ""):
+        """
+        Does the same as `from_kmeans` method but data is a `List[DessiaObject]` and not a `HeterogeneousList`.
+
+        """
+        return cls.from_kmeans(HeterogeneousList(data), n_clusters=n_clusters, n_init=n_init, tol=tol, scaling=scaling,
+                               name=name)
+
+    @classmethod
+    def list_dbscan(cls, data: List[DessiaObject], eps: float = 0.5, min_samples: int = 5, mink_power: float = 2,
+                    leaf_size: int = 30, metric: str = "euclidean", scaling: bool = False, name: str = ""):
+        """
+        Does the same as `from_dbscan` method but data is a `List[DessiaObject]` and not a `HeterogeneousList`.
+
+        """
+        return cls.from_dbscan(HeterogeneousList(data), eps=eps, min_samples=min_samples, mink_power=mink_power,
+                               leaf_size=leaf_size, metric=metric, scaling=scaling, name=name)
 
 # Function to implement, to find a good eps parameter for dbscan
 # def nearestneighbors(self):
