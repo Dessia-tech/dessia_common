@@ -16,6 +16,14 @@ class Generator(dc.DessiaObject):
         dc.DessiaObject.__init__(self, name=name)
 
     def is_model_valid(self, model) -> bool:
+        """
+        Checks if Model is valid or not
+
+        :param model: Model generated
+
+        :return: True if valid and False othewise
+        :rtype: bool
+        """
         raise NotImplementedError('the method is_model_valid must be overloaded by subclassing class')
 
     def number_possibilities_from_model(self, model):
@@ -35,9 +43,24 @@ class TreeGenerator(Generator):
         Generator.__init__(self, name=name)
 
     def model_from_vector(self, vector: List[int]):
+        """
+        Generates the physical model from vector node
+        :param vector: decision tree node vector
+        :type vector: List[int]
+        :return: model
+        """
         raise NotImplementedError('the method model_from_vector must be overloaded by subclassing class')
 
     def is_vector_valid(self, vector: List[int]) -> bool:
+        """
+        Verifies and Validates the decision tree vector
+
+        :param vector: decision tree node list
+        :type vector: List[int]
+
+        :return: True if valid and False otherwise
+        :rtype: bool
+        """
         return True
 
     def number_possibilities_from_vector(self, vector: List[int]):
@@ -143,7 +166,7 @@ class RegularDecisionTreeGenerator(TreeGenerator):
                     print('node model validity:', valid)
 
                 # TODO create a function in dectreee to know if a leaf
-                if self.tree.current_depth == self.leaves_depth:
+                if valid and self.tree.current_depth == self.leaves_depth:
                     yield model
 
             next_node_function(valid)

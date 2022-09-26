@@ -1,28 +1,23 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Wed Jul 21 14:43:53 2021
 
-@author: steven
-"""
 
 import dessia_common
-from dessia_common.models.tests import standalone_object
-
+from dessia_common.models.forms import standalone_object
 
 import unittest
-from parameterized import parameterized_class
+from parameterized import parameterized
 
 
-@parameterized_class(('value',), [
-    (standalone_object, ),
-])
 class TestSerialization(unittest.TestCase):
 
-    def test_serialization(self):
-        d = self.value.to_dict()
+    @parameterized.expand([
+        (standalone_object,),
+    ])
+    def test_objects_serialization_deserialization(self, my_obj):
+        d = my_obj.to_dict()
         obj = dessia_common.DessiaObject.dict_to_object(d)
-        assert obj == self.value
+        assert obj == my_obj
 
 
 if __name__ == '__main__':

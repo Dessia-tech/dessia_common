@@ -9,7 +9,7 @@ minimized_attributes = {'MPG': False, 'Horsepower': True,
 
 aimpoint = {'MPG': 4, 'Weight': 1000}
 
-filter_min = [{'attribute': 'MPG', 'operator': 'lte', 'bound': 20}]
+filter_min = [{'attribute': 'MPG', 'comparison_operator': 'lte', 'bound': 20}]
 
 # Blocks
 import_csv = wf.Import(type_='csv')
@@ -23,7 +23,7 @@ filter1 = wf.ModelMethod(model_class=Catalog,
 filtered_catalog1 = wf.InstanciateModel(model_class=Catalog,
                                         name='Filtered Catalog 1')
 
-filter_max = [{'attribute': 'MPG', 'operator': 'gte', 'bound': 30}]
+filter_max = [{'attribute': 'MPG', 'comparison_operator': 'gte', 'bound': 30}]
 catalog2 = wf.InstanciateModel(model_class=Catalog,
                                name='Car 2')
 filter2 = wf.ModelMethod(model_class=Catalog,

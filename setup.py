@@ -101,6 +101,7 @@ def get_version():
     #         version += f'{branch}'
     #     else:
     #         version += f'+{branch}'
+
     return version
 
 
