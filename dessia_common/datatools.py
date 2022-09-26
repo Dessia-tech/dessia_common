@@ -1,7 +1,7 @@
 """
 Library for building clusters on data.
 """
-from typing import List, Dict, Any, Type
+from typing import List, Dict, Any
 from copy import copy
 import itertools
 
