@@ -47,7 +47,7 @@ class Sampler(DessiaObject):
         return
 
     def _full_factorial_sampling(self):
-        instances_numbers = [1] * len(self.constant_attributes) + [4] * len(self.sampled_attributes)
+        instances_numbers = [1] * len(self.constant_attributes) + [attr.number for attr in self.sampled_attributes]
         parameter_grid = self._build_parameter_grid(instances_numbers)
         idx_sampling = pyDOE.fullfact(instances_numbers)
         full_doe = []

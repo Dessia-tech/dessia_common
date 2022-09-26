@@ -10,9 +10,9 @@ from dessia_common.sampling import Sampler
 from dessia_common.optimization import FixedAttributeValue, BoundedAttributeValue
 
 
-sampled_attributes = [BoundedAttributeValue('p_3', 0.1, 0.5),
-                      BoundedAttributeValue('p_5', 1500, 5000),
-                      BoundedAttributeValue('p_4', 4, 8),
+sampled_attributes = [BoundedAttributeValue('p_3', 0.1, 0.5, 5),
+                      BoundedAttributeValue('p_5', 1500, 5000, 2),
+                      BoundedAttributeValue('p_4', 4, 8, 4),
                       BoundedAttributeValue('p_1', 25, 50)]
 
 constant_attributes = [FixedAttributeValue('name', 'sampled_randata'),
