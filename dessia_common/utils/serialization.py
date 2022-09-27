@@ -96,11 +96,18 @@ def serialize_with_pointers(value, memo=None, path='#'):
             serialized = value.to_dict()
         memo[value] = path
 
+    elif isinstance(value, type):
+        if value in memo:
+            return {'$ref': memo[value]}, memo
+        serialized = str(value).translate(str.maketrans('', '', "<>'")).replace('class ', '')
+        memo[value] = path
+
     elif hasattr(value, 'to_dict'):
         if value in memo:
             return {'$ref': memo[value]}, memo
         serialized = value.to_dict()
         memo[value] = path
+
     elif isinstance(value, dict):
         serialized, memo = serialize_dict_with_pointers(value, memo=memo, path=path)
     elif dcty.is_sequence(value):

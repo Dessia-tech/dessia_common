@@ -26,3 +26,5 @@ randata_sampling = Sampler(object_class=RandDataD6,
 # test_hlist = randata_sampling.make_doe('fullfact')
 test_hlist = randata_sampling.make_doe('lhs', samples = 20)
 test_hlist.plot()
+
+randata_sampling._check_platform()
