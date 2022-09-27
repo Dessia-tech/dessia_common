@@ -4,9 +4,9 @@ Library for sampling data.
 """
 from typing import List, Dict, Any, Type
 
+import random
 import numpy as npy
 import pyDOE2 as pyDOE
-import matplotlib.pyplot as plt
 
 from dessia_common.core import DessiaObject
 from dessia_common.datatools import HeterogeneousList
@@ -50,25 +50,34 @@ class Sampler(DessiaObject):
             full_doe.append(self.object_class(**dict(zip(self.attributes, valued_sample))))
         return full_doe
 
-    def _get_doe(self, method: str = 'fullfact'):
+    def _lhs_sampling(self, samples: int = 10, criterion: str = 'center'):
+        varying_sampling = pyDOE.lhs(len(self.sampled_attributes), samples=samples, criterion=criterion)
+        full_doe = []
+        fixed_values = [attr.value for attr in self.constant_attributes]
+        for nodim_sample in varying_sampling:
+            varying_values = [attr.dimensionless_to_value(value)
+                              for attr, value in zip(self.sampled_attributes, nodim_sample)]
+            full_doe.append(self.object_class(**dict(zip(self.attributes, fixed_values + varying_values))))
+        return full_doe
+
+    def _montecarlo_sampling(self, samples: int = 10):
+        full_doe = []
+        fixed_values = [attr.value for attr in self.constant_attributes]
+        for _ in range(samples):
+            varying_values = [random.uniform(attr.min_value, attr.max_value) for attr in self.sampled_attributes]
+            full_doe.append(self.object_class(**dict(zip(self.attributes, fixed_values + varying_values))))
+        return full_doe
+
+    def _get_doe(self, method: str = 'fullfact', samples: int = None, lhs_criterion: str = 'center'):
         if method == 'fullfact':
             return self._full_factorial_sampling()
         if method == 'lhs':
-            return self._lhs_sampling()
-        return
+            return self._lhs_sampling(samples=samples, criterion=lhs_criterion)
+        if method == 'montecarlo':
+            return self._montecarlo_sampling(samples=samples)
+        raise NotImplementedError(f"Method '{method}' is not implemented in {self.__class__}._get_doe method.")
 
-    def make_doe(self, method: str = 'fullfact', name: str = ''):
-        return HeterogeneousList(self._get_doe(method=method), name=name)
+    def make_doe(self, method: str = 'fullfact', samples: int = None, lhs_criterion: str = 'center', name: str = ''):
+        return HeterogeneousList(self._get_doe(method=method, samples=samples, lhs_criterion=lhs_criterion), name=name)
 
-    def _lhs_sampling(self, samples: int = 10, criterion: str = 'center'):
-        varying_sampling = pyDOE.lhs(len(self.sampled_attributes), samples=samples, criterion=criterion)
-        full_sampling = npy.ones(())
-        for nodim_sample in varying_sampling:
-            print(2)
-
-
-        return
-
-    def _montecarlo_sampling(self):
-        return
 

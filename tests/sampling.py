@@ -24,5 +24,5 @@ randata_sampling = Sampler(object_class=RandDataD6,
                            constant_attributes=constant_attributes)
 
 # test_hlist = randata_sampling.make_doe('fullfact')
-test_hlist = randata_sampling.make_doe('lhs')
+test_hlist = randata_sampling.make_doe('lhs', samples = 20)
 test_hlist.plot()
