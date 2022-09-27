@@ -1,4 +1,4 @@
-from dessia_common.tests import RandDataD4
+from dessia_common.tests import RandDataD2
 from dessia_common.sampling import Sampler
 from dessia_common.optimization import FixedAttributeValue, BoundedAttributeValue
 from dessia_common.workflow.blocks import InstantiateModel, ModelMethod
@@ -14,13 +14,11 @@ pipes = [pipe_0]
 
 workflow = Workflow(blocks, pipes, output=block_1.outputs[0], name='')
 
-sampled_attributes = [BoundedAttributeValue('p_1', 0.1, 0.5, 250),
-                      BoundedAttributeValue('p_4', 0.1, 0.5, 5),
-                      BoundedAttributeValue('p_3', 10, 150, 10)]
+sampled_attributes = [BoundedAttributeValue('p_1', 0.1, 0.5, 250)]
 constant_attributes = [FixedAttributeValue('p_2', 25)]
 
 # Workflow run
-workflow_run = workflow.run({workflow.index(block_0.inputs[0]): RandDataD4,
+workflow_run = workflow.run({workflow.index(block_0.inputs[0]): RandDataD2,
                              workflow.index(block_0.inputs[1]): sampled_attributes,
                              workflow.index(block_0.inputs[2]): constant_attributes})
 
