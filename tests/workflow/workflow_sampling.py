@@ -24,4 +24,4 @@ workflow_run = workflow.run({workflow.index(block_0.inputs[0]): RandDataD2,
 
 # Workflow tests
 workflow._check_platform()
-wfrun_plot_data = workflow_run.output_value.plot()
+wfrun_plot_data = workflow_run.output_value._check_platform()

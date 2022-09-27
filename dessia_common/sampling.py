@@ -4,6 +4,7 @@ Library for sampling data.
 """
 from typing import List, Type
 
+import importlib
 import random
 import numpy as npy
 import pyDOE2 as pyDOE
@@ -16,13 +17,20 @@ class Sampler(DessiaObject):
     _standalone_in_db = True
     _vector_features = []
 
-    def __init__(self, object_class: Type, sampled_attributes: List[BoundedAttributeValue],
+    def __init__(self, sampled_class: Type, sampled_attributes: List[BoundedAttributeValue],
                  constant_attributes: List[FixedAttributeValue], name: str = ''):
-        self.object_class = object_class
+        self.sampled_class = str(sampled_class).translate(str.maketrans('', '', "<>'")).replace('class ', '')
         self.sampled_attributes = sampled_attributes
         self.constant_attributes = constant_attributes
         self.attributes = self._get_attributes_names()
         DessiaObject.__init__(self, name=name)
+
+    def _get_class(self): # TODO : full_class_name / deserialize(type)
+        split_class_name = self.sampled_class.split('.')
+        package = '.'.join(split_class_name[:-1])
+        sampled_class = split_class_name[-1]
+        imported_module = importlib.import_module(package)
+        return getattr(imported_module, sampled_class)
 
     def _get_attributes_names(self):
         return [attr.attribute_name for attr in self.constant_attributes + self.sampled_attributes]
@@ -47,7 +55,7 @@ class Sampler(DessiaObject):
         full_doe = []
         for idx_sample in idx_sampling:
             valued_sample = [parameter_grid[attr_row][int(idx)] for attr_row, idx in enumerate(idx_sample)]
-            full_doe.append(self.object_class(**dict(zip(self.attributes, valued_sample))))
+            full_doe.append(self._get_class()(**dict(zip(self.attributes, valued_sample))))
         return full_doe
 
     def _lhs_sampling(self, samples: int = 10, criterion: str = 'center'):
@@ -57,7 +65,7 @@ class Sampler(DessiaObject):
         for nodim_sample in varying_sampling:
             varying_values = [attr.dimensionless_to_value(value)
                               for attr, value in zip(self.sampled_attributes, nodim_sample)]
-            full_doe.append(self.object_class(**dict(zip(self.attributes, fixed_values + varying_values))))
+            full_doe.append(self._get_class()(**dict(zip(self.attributes, fixed_values + varying_values))))
         return full_doe
 
     def _montecarlo_sampling(self, samples: int = 10):
@@ -65,7 +73,7 @@ class Sampler(DessiaObject):
         fixed_values = [attr.value for attr in self.constant_attributes]
         for _ in range(samples):
             varying_values = [random.uniform(attr.min_value, attr.max_value) for attr in self.sampled_attributes]
-            full_doe.append(self.object_class(**dict(zip(self.attributes, fixed_values + varying_values))))
+            full_doe.append(self._get_class()(**dict(zip(self.attributes, fixed_values + varying_values))))
         return full_doe
 
     def _get_doe(self, method: str = 'fullfact', samples: int = None, lhs_criterion: str = 'center'):
@@ -80,5 +88,3 @@ class Sampler(DessiaObject):
     def make_doe(self, method: str = 'fullfact', samples: int = None, lhs_criterion: str = 'center', name: str = ''):
         print("C'est super ! Le print s'affiche dans la plateforme !")
         return HeterogeneousList(self._get_doe(method=method, samples=samples, lhs_criterion=lhs_criterion), name=name)
-
-
