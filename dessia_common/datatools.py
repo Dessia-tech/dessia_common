@@ -210,7 +210,7 @@ class HeterogeneousList(DessiaObject):
 
         string += self._print_objects_slice(slice(0, 5), attr_space, attr_name_len,
                                             self._set_label_space(size_col_label))
-                                            
+
         if len(self) > 10:
             undispl_len = len(self) - 10
             string += (f"\n+ {undispl_len} undisplayed object" + "s"*(min([undispl_len, 2])-1) + "...")
@@ -626,40 +626,45 @@ class HeterogeneousList(DessiaObject):
         Plot a standard scatter matrix of all attributes in common_attributes and a dimensionality plot.
 
         """
-        # Plot a correlation matrix : To develop
-        # correlation_matrix = []
-        # List datadict
         data_list = self._plot_data_list()
-        # Dimensionality plot
-        dimensionality_plot = self._plot_dimensionality()
-        # Scattermatrix
-        scatter_matrix = self._build_multiplot(data_list, self._tooltip_attributes(), axis=dimensionality_plot.axis,
-                                               point_style=dimensionality_plot.point_style)
-        # Parallel plot
-        parallel_plot = self._parallel_plot(data_list)
+        if len(self.common_attributes) > 1:
+            # Plot a correlation matrix : To develop
+            # correlation_matrix = []
+            # Dimensionality plot
+            dimensionality_plot = self._plot_dimensionality()
+            # Scattermatrix
+            scatter_matrix = self._build_multiplot(data_list, self._tooltip_attributes(), axis=dimensionality_plot.axis,
+                                                   point_style=dimensionality_plot.point_style)
+            # Parallel plot
+            parallel_plot = self._parallel_plot(data_list)
+            return [parallel_plot, scatter_matrix, dimensionality_plot]
 
-        return [parallel_plot, scatter_matrix, dimensionality_plot]
+        plot_mono_attr = self._histogram_unic_value(0, name_attr=self.common_attributes[0])
+        plot_mono_attr.elements = data_list
+        return [plot_mono_attr]
 
     def _build_multiplot(self, data_list: List[Dict[str, float]], tooltip: List[str], **kwargs: Dict[str, Any]):
         subplots = []
         for line in self.common_attributes:
-            for icol, col in enumerate(self.common_attributes):
+            for idx_col, col in enumerate(self.common_attributes):
                 if line == col:
-                    # unic_values = set((getattr(dobject, line) for dobject in self.dessia_objects))
-                    unic_values = set((row_matrix[icol] for row_matrix in self.matrix))
-                    if len(unic_values) == 1: # TODO (plot_data linspace axis between two same values)
-                        subplots.append(Scatter(x_variable=line, y_variable=col))
-                    else:
-                        subplots.append(Histogram(x_variable=line))
+                    subplots.append(self._histogram_unic_value(idx_col, col))
                 else:
-                    subplots.append(Scatter(x_variable=line, y_variable=col, tooltip=Tooltip(tooltip), **kwargs))
+                    subplots.append(Scatter(x_variable=col, y_variable=col, tooltip=Tooltip(tooltip), **kwargs))
 
         scatter_matrix = MultiplePlots(plots=subplots, elements=data_list, point_families=self._point_families(),
                                        initial_view_on=True)
         return scatter_matrix
 
-    def _parallel_plot(self, data_list: List[Dict[str, float]]):
-        return ParallelPlot(elements=data_list, axes=self._parallel_plot_attr(), disposition='vertical')
+    def _histogram_unic_value(self, idx_col: int, name_attr: str):
+        # unic_values = set((getattr(dobject, line) for dobject in self.dessia_objects))
+        unic_values = set((row_matrix[idx_col] for row_matrix in self.matrix))
+        if len(unic_values) == 1: # TODO (plot_data linspace axis between two same values)
+            plot_obj = Scatter(x_variable=name_attr, y_variable=name_attr)
+        else:
+            plot_obj = Histogram(x_variable=name_attr)
+        return plot_obj
+
 
     def _tooltip_attributes(self):
         return self.common_attributes
@@ -673,11 +678,14 @@ class HeterogeneousList(DessiaObject):
     def _point_families(self):
         return [PointFamily(BLUE, list(range(len(self))))]
 
+    def _parallel_plot(self, data_list: List[Dict[str, float]]):
+        return ParallelPlot(elements=data_list, axes=self._parallel_plot_attr(), disposition='vertical')
+
     def _parallel_plot_attr(self):
         # TODO: Put it in plot_data
         (sorted_r2, sorted_association), constant_attributes = self._get_correlations()
-        attr_series = self._get_attribute_trios(sorted_r2, sorted_association)
-        return constant_attributes + self._trios_list_to_parallel_axes(attr_series)
+        attribute_series = self._get_attribute_trios(sorted_r2, sorted_association)
+        return constant_attributes + self._trios_list_to_parallel_axes(attribute_series)
 
     def _get_correlations(self):
         r2_scores = []
@@ -712,22 +720,22 @@ class HeterogeneousList(DessiaObject):
         return map(list, zip(*sorted(zip(r2_scores, association_list))[::-1])), list(set(constant_attributes))
 
     def _get_attribute_trios(self, sorted_r2, sorted_association):
-        attr_series = []
+        attribute_series = []
         picked_attr = set()
         set_association = set(sum(sorted_association, []))
         while len(picked_attr) != len(set_association):
             first_association = sorted_association[0]
-            attr_series.append(first_association)
+            attribute_series.append(first_association)
             picked_attr.update(set(first_association))
             del sorted_r2[0], sorted_association[0]
 
             for idx, _ in enumerate(sorted_r2):
                 if any(item in first_association for item in sorted_association[idx]):
-                    attr_series[-1] += sorted_association[idx]
+                    attribute_series[-1] += sorted_association[idx]
                     picked_attr.update(set(sorted_association[idx]))
                     del sorted_r2[idx], sorted_association[idx]
                     break
-        return attr_series
+        return attribute_series
 
     def _trios_list_to_parallel_axes(self, attribute_series):
         ordered_attr = []
@@ -739,6 +747,8 @@ class HeterogeneousList(DessiaObject):
         return ordered_attr
 
     def _new_attributes_trio(self, attribute_serie):
+        if len(attribute_serie) < 3:
+            return attribute_serie
         mid_index = [attribute_serie.count(attr) for attr in attribute_serie].index(2)
         mid_attr = attribute_serie[mid_index]
         remaining_attr = iter(set(attribute_serie).difference({mid_attr}))
