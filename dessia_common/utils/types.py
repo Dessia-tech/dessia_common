@@ -46,7 +46,7 @@ def is_classname_transform(string: str):
             try:
                 class_ = get_python_class_from_class_name(string)
                 return class_
-            except Exception:
+            except (AttributeError, TypeError, ModuleNotFoundError, SyntaxError):
                 return False
     return False
 
