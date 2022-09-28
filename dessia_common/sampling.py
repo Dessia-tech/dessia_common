@@ -13,6 +13,22 @@ from dessia_common.datatools import HeterogeneousList
 from dessia_common.optimization import FixedAttributeValue, BoundedAttributeValue
 
 class Sampler(DessiaObject):
+    """
+    Base object to build a DOE from a class and choosen limits for all specified sampled_class attributes.
+
+    :param sampled_class: Class type to sample
+    :type sampled_class: `type`
+
+    :param sampled_attributes: List of varying attributes in the DOE
+    :type sampled_attributes: `List[BoundedAttributeValue]`
+
+    :param constant_attributes: List of fixed attributes in the DOE
+    :type constant_attributes: `List[FixedAttributeValue]`
+
+    :param name: Name of Sampler
+    :type name: `str`, `optional`, defaults to `''`
+
+    """
     _standalone_in_db = True
     _vector_features = []
 
@@ -78,4 +94,51 @@ class Sampler(DessiaObject):
         raise NotImplementedError(f"Method '{method}' is not implemented in {self.__class__}._get_doe method.")
 
     def make_doe(self, method: str = 'fullfact', samples: int = None, lhs_criterion: str = 'center', name: str = ''):
+        """
+        Generate all `DessiaObject` with the choosen method and store them in a `HeterogeneousList`
+
+        :param method:
+            --------
+            Method to generate the DOE.
+            Can be one of `[fullfact, lhs, montecarlo]`. For more information, see: https://pythonhosted.org/pyDOE/
+        :type method: `str`, `optional`, defaults to `'fullfact'`
+
+        :param samples:
+            --------
+            Targert number of `DessiaObject` in the DOE. Not used for `'lhs'` method.
+        :type samples: `int`, `optional`, defaults to `None`,
+
+        :param lhs_criterion:
+            --------
+            |  Only used with `'lhs'` method.
+            |  A string that tells lhs how to sample the points (default: None, which simply randomizes the points \
+            |  within the intervals):
+            |     - `“center”` or `“c”`: center the points within the sampling intervals
+            |     - `“maximin”` or `“m”`: maximize the minimum distance between points, but place the point in a \
+                randomized location within its interval
+            |     - `“correlation”` or `“corr”`: minimize the maximum correlation coefficient
+        :type lhs_criterion: `str`, `optional`, defaults to `'center'`
+
+        :param name: Name of the generated `HeterogeneousList`
+        :type name: `str`, `optional`, defaults to `''`
+
+        :return: the `HeterogeneousList` containing all generated samples of the sampled_class
+        :rtype: `HeterogeneousList`
+
+        :Examples:
+        >>> from dessia_common.sampling import Sampler
+        >>> from dessia_common.tests import RandDataD2
+        >>> sampled_attr = [BoundedAttributeValue('p_1', 150, 250, 3)]
+        >>> constant_attr = [FixedAttributeValue('p_2', 42)]
+        >>> randata_sampling = Sampler(RandDataD2, sampled_attributes=sampled_attr, constant_attributes=constant_attr)
+        >>> doe_hlist = randata_sampling.make_doe(method='fullfact')
+        >>> print(doe_hlist)
+        HeterogeneousList 0x7facdb871430: 3 samples, 2 features
+        |   Name   |   P_1   |   P_2   |
+        --------------------------------
+        |          |   150.0 |      42 |
+        |          |   200.0 |      42 |
+        |          |   250.0 |      42 |
+
+        """
         return HeterogeneousList(self._get_doe(method=method, samples=samples, lhs_criterion=lhs_criterion), name=name)
