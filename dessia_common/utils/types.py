@@ -44,11 +44,9 @@ def is_classname_transform(string: str):
         split_string = string.split('.')
         if len(split_string) >= 2:
             try:
-                raise NotImplementedError(f'2 => {string}')
                 class_ = get_python_class_from_class_name(string)
                 return class_
             except:
-                raise NotImplementedError(f'3 => {string}')
                 return False
     raise NotImplementedError(f'4 => {string}')
     return False
