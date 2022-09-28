@@ -31,3 +31,7 @@ json_dict = json.dumps(randata_sampling.to_dict())
 decoded_json = json.loads(json_dict)
 deserialized_object = randata_sampling.dict_to_object(decoded_json)
 randata_sampling._check_platform()
+
+from typing import Type
+from dessia_common.utils.serialization import deserialize_argument
+deserialize_argument(type(RandDataD6), "dessia_common.tests.RandDataD6")
