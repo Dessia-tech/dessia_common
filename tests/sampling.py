@@ -34,4 +34,4 @@ randata_sampling._check_platform()
 
 from typing import Type
 from dessia_common.utils.serialization import deserialize_argument
-deserialize_argument(type(RandDataD6), "dessia_common.tests.RandDataD6")
+deserialize_argument(Type, "dessia_common.tests.RandDataD6")

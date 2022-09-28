@@ -359,11 +359,12 @@ def deserialize_argument(type_, argument):
     """
     if argument is None:
         return None
+
+    if type_ == dcty.Type:
+        return dcty.is_classname_transform(argument)
+
     if dcty.is_typing(type_):
         return deserialize_with_typing(type_, argument)
-
-    if isinstance(type_, type):
-        return dcty.is_classname_transform(argument)
 
     if type_ in [TextIO, BinaryIO] or isinstance(argument, (StringFile, BinaryFile)):
         return argument
