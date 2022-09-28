@@ -4,7 +4,8 @@ sampling.py package testing.
 """
 
 import json
-from dessia_common.datatools import HeterogeneousList
+from typing import Type
+from dessia_common.utils.serialization import deserialize_argument
 from dessia_common.tests import RandDataD6
 from dessia_common.sampling import Sampler
 from dessia_common.optimization import FixedAttributeValue, BoundedAttributeValue
@@ -32,6 +33,5 @@ decoded_json = json.loads(json_dict)
 deserialized_object = randata_sampling.dict_to_object(decoded_json)
 randata_sampling._check_platform()
 
-from typing import Type
-from dessia_common.utils.serialization import deserialize_argument
+
 deserialize_argument(Type, "dessia_common.tests.RandDataD6")
