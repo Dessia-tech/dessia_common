@@ -24,8 +24,13 @@ randata_sampling = Sampler(sampled_class=RandDataD6,
                            sampled_attributes=sampled_attributes,
                            constant_attributes=constant_attributes)
 
-# test_hlist = randata_sampling.make_doe('fullfact')
-# test_hlist = randata_sampling.make_doe('lhs', samples = 20)
+test_hlist = randata_sampling.make_doe('fullfact')
+test_hlist = randata_sampling.make_doe('lhs', samples = 200)
+test_hlist = randata_sampling.make_doe('montecarlo', samples = 200)
+try:
+    test_hlist = randata_sampling.make_doe('truc', samples = 200)
+except NotImplementedError as e:
+    assert(e.args[0] == "Method 'truc' is not implemented in <class 'dessia_common.sampling.Sampler'>._get_doe method.")
 # test_hlist.plot()
 
 json_dict = json.dumps(randata_sampling.to_dict())
