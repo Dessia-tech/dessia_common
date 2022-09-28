@@ -361,7 +361,6 @@ def deserialize_argument(type_, argument):
         return None
 
     if type_ == dcty.Type:
-        raise NotImplementedError(f'{type_}, {dcty.Type}, {type_ == dcty.Type}, {argument}')
         return dcty.is_classname_transform(argument)
 
     if dcty.is_typing(type_):

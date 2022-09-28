@@ -40,14 +40,19 @@ def full_classname(object_, compute_for: str = 'instance'):
 
 
 def is_classname_transform(string: str):
+    raise NotImplementedError(f'0 => {string}')
     if '.' in string:
         split_string = string.split('.')
+        raise NotImplementedError(f'1 => {string}')
         if len(split_string) >= 2:
             try:
+                raise NotImplementedError(f'2 => {string}')
                 class_ = get_python_class_from_class_name(string)
                 return class_
             except:
+                raise NotImplementedError(f'3 => {string}')
                 return False
+    raise NotImplementedError(f'4 => {string}')
     return False
 
 
