@@ -360,9 +360,6 @@ def deserialize_argument(type_, argument):
     if argument is None:
         return None
 
-    if type_ == dcty.Type:
-        return dcty.is_classname_transform(argument)
-
     if dcty.is_typing(type_):
         return deserialize_with_typing(type_, argument)
 
@@ -386,6 +383,9 @@ def deserialize_argument(type_, argument):
     if inspect.isclass(type_) and issubclass(type_, (dc.DessiaObject, dessia_common.core.DessiaObject)):
         # Custom classes
         return type_.dict_to_object(argument)
+
+    if type_ == dcty.Type:
+        return dcty.is_classname_transform(argument)
 
     raise TypeError(f"Deserialization of ype {type_} is Not Implemented")
 

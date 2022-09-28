@@ -48,7 +48,6 @@ def is_classname_transform(string: str):
                 return class_
             except:
                 return False
-    raise NotImplementedError(f'4 => {string}')
     return False
 
 
