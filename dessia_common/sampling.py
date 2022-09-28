@@ -4,7 +4,6 @@ Library for sampling data.
 """
 from typing import List, Type
 
-import importlib
 import random
 import numpy as npy
 import pyDOE2 as pyDOE
@@ -79,5 +78,4 @@ class Sampler(DessiaObject):
         raise NotImplementedError(f"Method '{method}' is not implemented in {self.__class__}._get_doe method.")
 
     def make_doe(self, method: str = 'fullfact', samples: int = None, lhs_criterion: str = 'center', name: str = ''):
-        print("C'est super ! Le print s'affiche dans la plateforme !")
         return HeterogeneousList(self._get_doe(method=method, samples=samples, lhs_criterion=lhs_criterion), name=name)
