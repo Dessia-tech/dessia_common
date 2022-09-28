@@ -347,6 +347,8 @@ def deserialize_with_typing(type_, argument):
         object_class = dc.full_classname(object_=classname, compute_for='class')
         class_ = dcty.get_python_class_from_class_name(object_class)
         deserialized_arg = class_.dict_to_object(argument)
+    elif type_ == dcty.Type:
+        deserialized_arg = dcty.is_classname_transform(argument)
     else:
         msg = "Deserialization of typing {} is not implemented"
         raise NotImplementedError(msg.format(type_))
