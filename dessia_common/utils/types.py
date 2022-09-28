@@ -39,6 +39,18 @@ def full_classname(object_, compute_for: str = 'instance'):
     raise NotImplementedError(msg.format(compute_for, object_))
 
 
+def is_classname_transform(string: str):
+    if '.' in string:
+        split_string = string.split('.')
+        if len(split_string) >= 2:
+            try:
+                class_ = get_python_class_from_class_name(string)
+                return class_
+            except:
+                return False
+    return False
+
+
 def is_jsonable(x):
     """
     returns if object can be dumped as it is in a json

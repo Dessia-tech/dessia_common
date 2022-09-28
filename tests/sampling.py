@@ -24,10 +24,10 @@ randata_sampling = Sampler(sampled_class=RandDataD6,
                            constant_attributes=constant_attributes)
 
 # test_hlist = randata_sampling.make_doe('fullfact')
-test_hlist = randata_sampling.make_doe('lhs', samples = 20)
+# test_hlist = randata_sampling.make_doe('lhs', samples = 20)
 # test_hlist.plot()
 
-# json_dict = json.dumps(randata_sampling.to_dict())
-# decoded_json = json.loads(json_dict)
-# deserialized_object = randata_sampling.dict_to_object(decoded_json)
+json_dict = json.dumps(randata_sampling.to_dict())
+decoded_json = json.loads(json_dict)
+deserialized_object = randata_sampling.dict_to_object(decoded_json)
 randata_sampling._check_platform()

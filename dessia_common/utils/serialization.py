@@ -96,6 +96,12 @@ def serialize_with_pointers(value, memo=None, path='#'):
             serialized = value.to_dict()
         memo[value] = path
 
+    elif isinstance(value, type):
+        if value in memo:
+            return {'$ref': memo[value]}, memo
+        serialized = dcty.serialize_typing(value)
+        memo[value] = path
+
     elif hasattr(value, 'to_dict'):
         if value in memo:
             return {'$ref': memo[value]}, memo
@@ -184,6 +190,10 @@ def deserialize(serialized_element, sequence_annotation: str = 'List',
     if dcty.is_sequence(serialized_element):
         return deserialize_sequence(sequence=serialized_element, annotation=sequence_annotation,
                                     global_dict=global_dict, pointers_memo=pointers_memo, path=path)
+    if isinstance(serialized_element, str):
+        is_class_transformed = dcty.is_classname_transform(serialized_element)
+        if is_class_transformed:
+            return is_class_transformed
     return serialized_element
 
 
