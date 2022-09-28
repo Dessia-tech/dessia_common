@@ -42,7 +42,6 @@ def full_classname(object_, compute_for: str = 'instance'):
 def is_classname_transform(string: str):
     if '.' in string:
         split_string = string.split('.')
-        raise NotImplementedError(f'1 => {string}')
         if len(split_string) >= 2:
             try:
                 raise NotImplementedError(f'2 => {string}')
