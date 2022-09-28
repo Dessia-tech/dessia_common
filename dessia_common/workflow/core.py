@@ -1498,12 +1498,12 @@ class WorkflowState(DessiaObject):
         return workflow_state
 
     def _data_hash(self):
-        progress = int(100 * self.progress)
+        #progress = int(100 * self.progress)
         workflow = hash(self.workflow)
         output = choose_hash(self.output_value)
         input_values = sum(i * choose_hash(v) for (i, v) in self.input_values.items())
         values = len(self.values) * 7
-        return (progress + workflow + output + input_values + values) % 1000000000
+        return ( workflow + output + input_values + values) % 1000000000
 
     def _data_eq(self, other_object: 'WorkflowState'):
         if not (self.__class__.__name__ == other_object.__class__.__name__
