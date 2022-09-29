@@ -28,6 +28,7 @@ coding/naming style & convention.
 from math import floor, ceil, cos
 from typing import Dict, List, Tuple, Union, Any
 from numpy import linspace
+import time
 
 try:
     import volmdlr as vm
@@ -186,7 +187,7 @@ class StandaloneObject(MovingObject):
     """
     _standalone_in_db = True
     _generic_eq = True
-    _allowed_methods = ['add_standalone_object', 'add_embedded_object',
+    _allowed_methods = ['add_standalone_object', 'add_embedded_object', "count_until",
                         'add_float', 'generate_from_text', 'generate_from_bin']
 
     def __init__(self, standalone_subobject: StandaloneSubobject, embedded_subobject: EmbeddedSubobject,
@@ -450,6 +451,28 @@ class StandaloneObject(MovingObject):
         arduus quae vestigia aliquis; meritorum Dorylas, scindunt.
         """
         return contents
+
+    def count_until(self, duration: float, raise_error: bool = False):
+        """
+        A method which duration can be customized to test long execution
+
+        :param duration: Duration of the method in s
+        :type duration: float
+        :param raise_error: Wether the computation should raise an error or not at the end
+        :type raise_error: bool
+        """
+        starting_time = time.time()
+        current_time = time.time()
+        last_duration = round(current_time - starting_time)
+        while current_time - starting_time <= duration:
+            current_time = time.time()
+            current_duration = current_time - starting_time
+            if current_duration > last_duration + 1:
+                last_duration = round(current_time - starting_time)
+                print(round(current_duration))
+
+        if raise_error:
+            raise RuntimeError(f"Evaluation stopped after {duration}s")
 
 
 DEF_SO = StandaloneObject.generate(1)
