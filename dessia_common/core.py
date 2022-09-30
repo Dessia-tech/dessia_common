@@ -356,7 +356,7 @@ class DessiaObject:
                 if annotations:
                     jsonschemas[method_name] = deepcopy(JSONSCHEMA_HEADER)
                     jsonschemas[method_name]['required'] = []
-                    jsonschemas[method_name]['method'] = True
+                    jsonschemas[method_name]['is_method'] = True
                     for i, annotation in enumerate(annotations.items()):
                         # TOCHECK Not actually ordered
                         argname = annotation[0]
