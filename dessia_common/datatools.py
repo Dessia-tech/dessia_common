@@ -19,7 +19,6 @@ except ImportError:
 from dessia_common.exports import XLSXWriter
 from dessia_common.core import DessiaObject, DessiaFilter, FiltersList, templates
 
-
 class HeterogeneousList(DessiaObject):
     """
     Base object for handling a list of DessiaObjects.
@@ -153,8 +152,7 @@ class HeterogeneousList(DessiaObject):
 
         :return: None
 
-        Examples
-        --------
+        :Examples:
         >>> from dessia_common.datatools import HeterogeneousList
         >>> from dessia_common.models import all_cars_wi_feat
         >>> HeterogeneousList(all_cars_wi_feat).extend(HeterogeneousList(all_cars_wi_feat))
@@ -295,8 +293,7 @@ class HeterogeneousList(DessiaObject):
         :return: A list of all values of the specified attribute of dessia_objects
         :rtype: List[Any]
 
-        Examples
-        --------
+        :Examples:
         >>> from dessia_common.datatools import HeterogeneousList
         >>> from dessia_common.models import all_cars_wi_feat
         >>> HeterogeneousList(all_cars_wi_feat[:10]).get_attribute_values("weight")
@@ -317,8 +314,7 @@ class HeterogeneousList(DessiaObject):
         :return: A list of all values of the specified attribute of dessia_objects
         :rtype: List[float]
 
-        Examples
-        --------
+        :Examples:
         >>> from dessia_common.datatools import HeterogeneousList
         >>> from dessia_common.models import all_cars_wi_feat
         >>> HeterogeneousList(all_cars_wi_feat[:10]).get_column_values(2)
@@ -344,8 +340,7 @@ class HeterogeneousList(DessiaObject):
 
         :return: None
 
-        Examples
-        --------
+        :Examples:
         >>> from dessia_common.datatools import HeterogeneousList
         >>> from dessia_common.models import all_cars_wi_feat
         >>> example_list = HeterogeneousList(all_cars_wi_feat[:3], "sort_example")
@@ -383,8 +378,7 @@ class HeterogeneousList(DessiaObject):
         :return: A list of means along each dimension
         :rtype: List[float]
 
-        Examples
-        --------
+        :Examples:
         >>> from dessia_common.datatools import HeterogeneousList
         >>> from dessia_common.models import all_cars_wi_feat
         >>> example_list = HeterogeneousList(all_cars_wi_feat, "mean_example")
@@ -401,8 +395,7 @@ class HeterogeneousList(DessiaObject):
         :return: A list of standard deviations along each dimension
         :rtype: List[float]
 
-        Examples
-        --------
+        :Examples:
         >>> from dessia_common.datatools import HeterogeneousList
         >>> from dessia_common.models import all_cars_wi_feat
         >>> example_list = HeterogeneousList(all_cars_wi_feat, "std_example")
@@ -419,8 +412,7 @@ class HeterogeneousList(DessiaObject):
         :return: A list of variances along each dimension
         :rtype: List[float]
 
-        Examples
-        --------
+        :Examples:
         >>> from dessia_common.datatools import HeterogeneousList
         >>> from dessia_common.models import all_cars_wi_feat
         >>> example_list = HeterogeneousList(all_cars_wi_feat, "var_example")
@@ -437,8 +429,7 @@ class HeterogeneousList(DessiaObject):
         :return: the covariance matrix of all stored data in self
         :rtype: List[List[float]], `n_features x n_features`
 
-        Examples
-        --------
+        :Examples:
         >>> from dessia_common.datatools import HeterogeneousList
         >>> from dessia_common.models import all_cars_wi_feat
         >>> example_list = HeterogeneousList(all_cars_wi_feat, "covar_example")
@@ -482,8 +473,7 @@ class HeterogeneousList(DessiaObject):
         :return: the distance matrix of all stored data in self
         :rtype: List[List[float]], `n_samples x n_samples`
 
-        Examples
-        --------
+        :Examples:
         >>> from dessia_common.datatools import HeterogeneousList
         >>> from dessia_common.models import all_cars_wi_feat
         >>> example_list = HeterogeneousList(all_cars_wi_feat, "distance_example")
@@ -561,8 +551,7 @@ class HeterogeneousList(DessiaObject):
         :return: The filtered HeterogeneousList
         :rtype: HeterogeneousList
 
-        Examples
-        --------
+        :Examples:
         >>> from dessia_common.core import DessiaFilter
         >>> from dessia_common.datatools import HeterogeneousList
         >>> from dessia_common.models import all_cars_wi_feat
@@ -998,8 +987,7 @@ class CategorizedList(HeterogeneousList):
             the labels of each cluster, i.e. stored HeterogeneousList
         :rtype: CategorizedList[HeterogeneousList]
 
-        Examples
-        --------
+        :Examples:
         >>> from dessia_common.datatools import HeterogeneousList, CategorizedList
         >>> from dessia_common.models import all_cars_wi_feat
         >>> hlist = HeterogeneousList(all_cars_wi_feat, name="cars")
@@ -1054,8 +1042,7 @@ class CategorizedList(HeterogeneousList):
         one cluster.
         :rtype: List[List[float]]
 
-        Examples
-        --------
+        :Examples:
         >>> from dessia_common.datatools import HeterogeneousList, CategorizedList
         >>> from dessia_common.models import all_cars_wi_feat
         >>> hlist = HeterogeneousList(all_cars_wi_feat, name="cars")
@@ -1100,8 +1087,7 @@ class CategorizedList(HeterogeneousList):
         :return: `n_clusters` lists of distances of all elements of a cluster from its mean.
         :rtype: List[List[float]]
 
-        Examples
-        --------
+        :Examples:
         >>> from dessia_common.datatools import HeterogeneousList, CategorizedList
         >>> from dessia_common.models import all_cars_wi_feat
         >>> hlist = HeterogeneousList(all_cars_wi_feat, name="cars")
@@ -1147,8 +1133,7 @@ class CategorizedList(HeterogeneousList):
         :return: `n_clusters` lists of distances of all elements of a cluster from its mean.
         :rtype: List[List[float]]
 
-        Examples
-        --------
+        :Examples:
         >>> from dessia_common.datatools import HeterogeneousList, CategorizedList
         >>> from dessia_common.models import all_cars_wi_feat
         >>> hlist = HeterogeneousList(all_cars_wi_feat, name="cars")
@@ -1427,7 +1412,7 @@ class CategorizedList(HeterogeneousList):
         :param h_list:
             --------
             The HeterogeneousList in which to pick optimal points.
-        :type h_list: `HeterogeneousList`
+        :type h_list: HeterogeneousList
 
         :param costs:
             --------
@@ -1482,6 +1467,39 @@ class CategorizedList(HeterogeneousList):
             scaled_matrix = matrix
         skl_cluster.fit(scaled_matrix)
         return skl_cluster
+
+    @classmethod
+    def list_agglomerative_clustering(cls, data: List[DessiaObject], n_clusters: int = 2,
+                                      affinity: str = 'euclidean', linkage: str = 'ward',
+                                      distance_threshold: float = None, scaling: bool = False, name: str = ""):
+        """
+        Does the same as `from_agglomerative_clustering` method but data is a `List[DessiaObject]` and not a \
+        `HeterogeneousList`.
+
+        """
+        return cls.from_agglomerative_clustering(HeterogeneousList(data), n_clusters=n_clusters, affinity=affinity,
+                                                 linkage=linkage, distance_threshold=distance_threshold,
+                                                 scaling=scaling, name=name)
+
+    @classmethod
+    def list_kmeans(cls, data: List[DessiaObject], n_clusters: int = 2, n_init: int = 10, tol: float = 1e-4,
+                    scaling: bool = False, name: str = ""):
+        """
+        Does the same as `from_kmeans` method but data is a `List[DessiaObject]` and not a `HeterogeneousList`.
+
+        """
+        return cls.from_kmeans(HeterogeneousList(data), n_clusters=n_clusters, n_init=n_init, tol=tol, scaling=scaling,
+                               name=name)
+
+    @classmethod
+    def list_dbscan(cls, data: List[DessiaObject], eps: float = 0.5, min_samples: int = 5, mink_power: float = 2,
+                    leaf_size: int = 30, metric: str = "euclidean", scaling: bool = False, name: str = ""):
+        """
+        Does the same as `from_dbscan` method but data is a `List[DessiaObject]` and not a `HeterogeneousList`.
+
+        """
+        return cls.from_dbscan(HeterogeneousList(data), eps=eps, min_samples=min_samples, mink_power=mink_power,
+                               leaf_size=leaf_size, metric=metric, scaling=scaling, name=name)
 
 # Function to implement, to find a good eps parameter for dbscan
 # def nearestneighbors(self):
@@ -1680,8 +1698,7 @@ def covariance_matrix(matrix):
     :return: the covariance matrix of `matrix`
     :rtype: List[List[float]], `N x N`
 
-    Examples
-    --------
+    :Examples:
     >>> from dessia_common.datatools import covariance_matrix
     >>> from dessia_common.models import all_cars_wi_feat
     >>> matrix = HeterogeneousList(all_cars_wi_feat).matrix
