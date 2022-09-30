@@ -332,13 +332,13 @@ class StandaloneObject(MovingObject):
         multiplot = plot_data.MultiplePlots(elements=points, plots=objects, sizes=sizes,
                                             coords=[(0, 0), (300, 0)], name='Multiple Plot')
 
-        attribute_names = ['time', 'electric current']
+        attribute_names = ['timestep', 'electric current']
         tooltip = plot_data.Tooltip(attributes=attribute_names)
-        time1 = linspace(0, 20, 20)
-        current1 = [t ** 2 for t in time1]
+        timesteps = linspace(0, 20, 20)
+        current1 = [t ** 2 for t in timesteps]
         elements1 = []
-        for time, current in zip(time1, current1):
-            elements1.append({'time': time, 'electric current': current})
+        for timestep, current in zip(timesteps, current1):
+            elements1.append({'timestep': timestep, 'electric current': current})
 
         # The previous line instantiates a dataset with limited arguments but several customizations are available
         point_style = plot_data.PointStyle(color_fill=plot_data.colors.RED, color_stroke=plot_data.colors.BLACK)
@@ -348,11 +348,11 @@ class StandaloneObject(MovingObject):
                                            point_style=point_style, edge_style=edge_style)
 
         # Now let's create another dataset for the purpose of this exercice
-        time2 = linspace(0, 20, 100)
-        current2 = [100 * (1 + cos(t)) for t in time2]
+        timesteps = linspace(0, 20, 100)
+        current2 = [100 * (1 + cos(t)) for t in timesteps]
         elements2 = []
-        for time, current in zip(time2, current2):
-            elements2.append({'time': time, 'electric current': current})
+        for timestep, current in zip(timesteps, current2):
+            elements2.append({'timestep': timestep, 'electric current': current})
 
         dataset2 = plot_data.Dataset(elements=elements2, name='I2 = f(t)')
 
