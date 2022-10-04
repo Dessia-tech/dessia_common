@@ -1157,9 +1157,11 @@ class Report(DessiaObject):
         line = ' ' * offset
         time_elapsed = str(round((time.time() - self.time_start) / 60, 2))
         if time_to_add != 0 and text_to_add != '':
-            line += '*ELAPSED TIME min -- {} {} -- global {}*'.format(text_to_add, time_to_add, time_elapsed)
+            # line += '*ELAPSED TIME min -- {} {} -- global {}*'.format(text_to_add, time_to_add, time_elapsed)
+            line += f'*ELAPSED TIME min -- {text_to_add} {time_to_add} -- global {time_elapsed}*'
         else:
-            line += '*ELAPSED TIME min -- global {}* '.format(time_elapsed)
+            # line += '*ELAPSED TIME min -- global {}* '.format(time_elapsed)
+            line += f'*ELAPSED TIME min -- global {time_elapsed}* '
         self.add_lines([line], nb_line_blank=0)
 
     def open(self, option: str = 'a'):
@@ -1170,12 +1172,10 @@ class Report(DessiaObject):
         file.close()
 
     def add_lines(self, lines: List[str], offset: int = 0, nb_line_blank: int = 0):
-        # file = self.open()
         for line in range(nb_line_blank):
             lines.append('')
         for line in lines:
-            # file.write(line + '\n')
-            self.core += line + '  \n  '
+            self.core += offset*'' + line + '  \n  '
 
             print(line)
 
@@ -1245,10 +1245,9 @@ class Report(DessiaObject):
         # | left baz      | right baz     |
 
         offset = self.last_offset + 2
-        number_column = len(title)
         line_length = self.width_line - offset
 
-        real_line_length = line_length - (number_column + 1) - 2 * number_column
+        real_line_length = line_length - (len(title) + 1) - 2 * len(title)
         if real_line_length < 0:
             raise KeyError('too many columns in the report')
 
@@ -1258,14 +1257,12 @@ class Report(DessiaObject):
             for index, elem in enumerate(element):
                 max_length[index] = max(max_length[index], len(str(elem)))
 
-        sum_max_length = sum(max_length)
-        pourcent_length = [m / sum_max_length for m in max_length]
+        pourcent_length = [m / sum(max_length) for m in max_length]
 
         real_length = []
         for pourcent in pourcent_length[0:-1]:
             real_length.append(int(pourcent * real_line_length))
-        actual_length = sum(real_length)
-        real_length.append(real_line_length - actual_length)
+        real_length.append(real_line_length - sum(real_length))
 
         lines = ['  \n  ']
         line_temp, line_temp2 = ' ' * offset, ' ' * offset
@@ -1274,8 +1271,6 @@ class Report(DessiaObject):
             right_cell_length = int(full_cell_length / 2)
             left_cell_length = full_cell_length - right_cell_length
             line_temp += '| ' + ' ' * right_cell_length + str(titl) + ' ' * left_cell_length + ' '
-
-            line_length = right_cell_length + len(str(titl)) + left_cell_length
 
             line_temp2 += '|:' + '-' * (right_cell_length + len(str(titl)) + left_cell_length) + ':'
 
