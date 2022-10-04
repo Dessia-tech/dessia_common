@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 """
+Setup
 
+Changelog:
+v1.0: add branch to local version if possible
 """
 
 from setuptools import setup
@@ -57,7 +60,7 @@ def version_from_git_describe(version):
             split_versions.extend(["0", "0"])
         split_versions[-1] = str(int(split_versions[-1]) + 1)
         split_versions = ".".join(split_versions)
-        return "{}.dev{}".format(split_versions, number_commits_ahead)
+        return "{}.dev{}+{}".format(split_versions, number_commits_ahead, commit_hash)
     else:
         if suffix is not None:
             split_versions.append(suffix)
@@ -66,10 +69,10 @@ def version_from_git_describe(version):
 
 # Just testing if get_version works well
 assert version_from_git_describe("v0.1.7.post2") == "0.1.7.post2"
-assert version_from_git_describe("v0.0.1-25-gaf0bf53") == "0.0.2.dev25"
-assert version_from_git_describe("v0.1-15-zsdgaz") == "0.1.1.dev15"
+assert version_from_git_describe("v0.0.1-25-gaf0bf53") == "0.0.2.dev25+gaf0bf53"
+assert version_from_git_describe("v0.1-15-zsdgaz") == "0.1.1.dev15+zsdgaz"
 assert version_from_git_describe("v1") == "1"
-assert version_from_git_describe("v1-3-aqsfjbo") == "1.0.1.dev3"
+assert version_from_git_describe("v1-3-aqsfjbo") == "1.0.1.dev3+aqsfjbo"
 
 
 def get_version():
@@ -85,12 +88,33 @@ def get_version():
             version = check_output(cmd.split()).decode().strip()[:]
         except CalledProcessError:
             raise RuntimeError("Unable to get version number from git tags")
-        return version_from_git_describe(version)
+        version = version_from_git_describe(version)
     else:
         # Extract the version from the PKG-INFO file.
         with open(join(d, "PKG-INFO")) as f:
             version = version_re.search(f.read()).group(1)
+
+    # branch = get_branch()
+    # if branch and branch != 'master':
+    #     branch = re.sub('[^A-Za-z0-9]+', '', branch)
+    #     if '+' in version:
+    #         version += f'{branch}'
+    #     else:
+    #         version += f'+{branch}'
+
     return version
+
+
+def get_branch():
+
+    if isdir(join(dirname(__file__), ".git")):
+        cmd = "git branch --show-current"
+        try:
+            return check_output(cmd.split()).decode().strip()[:]
+        except CalledProcessError:
+            pass
+
+    return None
 
 
 setup(
@@ -98,6 +122,7 @@ setup(
     version=get_version(),
     description="Common tools for DessIA software",
     long_description=readme(),
+    long_description_content_type='text/markdown',
     keywords=["Dessia", "SDK", "engineering"],
     url="https://github.com/Dessia-tech/dessia-common",
     author="Steven Masfaraud",
@@ -105,6 +130,7 @@ setup(
     include_package_data=True,
     packages=[
         "dessia_common",
+        "dessia_common.workflow",
         "dessia_common.utils",
         "dessia_common.models",
         "dessia_common.models.workflows",
@@ -120,6 +146,9 @@ setup(
         "dectree",
         "openpyxl",
         "parameterized",
+        "matplotlib",
+        "sklearn",
+        "cma"
     ],
     python_requires=">=3.7",
 )

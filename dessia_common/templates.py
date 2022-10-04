@@ -1,4 +1,21 @@
+"""
+templates for dessia_common
+
+"""
 from string import Template
+
+
+dessia_object_markdown_template = Template('''
+# Object $name of class $class_
+
+This is a markdown file https://www.markdownguide.org/cheat-sheet/
+
+The good practice is to create a string python template and move the template to another python module
+(like templates.py) to avoid mix python code and markdown, as python syntax conflicts with markdown
+
+You can substitute values with object attributes like the name of the object: $name
+
+''')
 
 workflow_template = Template('''
 <!DOCTYPE html>
@@ -302,4 +319,17 @@ var edges = new vis.DataSet($edges);
 </script>
 </body>
 </html>
+''')
+
+
+heterogeneouslist_markdown_template = Template('''
+# Object $name of class $class_
+
+This is a markdown file https://www.markdownguide.org/cheat-sheet/
+
+The good practice is to create a string python template and move the template to another python module
+(like templates.py) to avoid mix python code and markdown, as python syntax conflicts with markdown
+
+You can substitute values with object attributes like the name of the object: $name
+
 ''')

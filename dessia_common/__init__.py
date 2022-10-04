@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""
+__init__ for dessia_common module
+"""
 
-from .core import *
 import pkg_resources
+from .core import *
 
 __version__ = pkg_resources.require("dessia_common")[0].version
 

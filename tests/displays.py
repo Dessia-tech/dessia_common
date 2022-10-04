@@ -7,9 +7,9 @@ Created on Mon Oct 25 12:28:55 2021
 """
 
 import dessia_common.displays as dcd
+import dessia_common.graph as dcg
 import networkx as nx
 
 G = nx.karate_club_graph()
 
 dcd.draw_networkx_graph(G)
-

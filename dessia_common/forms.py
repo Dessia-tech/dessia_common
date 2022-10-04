@@ -25,35 +25,36 @@ this module can also be seen as a template for Dessia's
 coding/naming style & convention.
 """
 
-from math import floor, ceil
-from typing import Dict, List, Tuple, Union, TextIO, BinaryIO
+from math import floor, ceil, cos
+from typing import Dict, List, Tuple, Union, Any
+from numpy import linspace
+import time
 
 try:
     import volmdlr as vm
-    from volmdlr.wires import Contour2D
     from volmdlr import primitives2d as p2d
     from volmdlr import primitives3d as p3d
     import plot_data
-    from plot_data.colors import *
-except:
+    import plot_data.colors
+except ImportError:
     pass
 
-from dessia_common import DessiaObject
+from dessia_common import DessiaObject, PhysicalObject, MovingObject
 from dessia_common.typings import InstanceOf, Distance
 from dessia_common.vectored_objects import Catalog
 
-from numpy import linspace
-from math import cos
+
+from dessia_common.files import BinaryFile, StringFile
 
 
-class StandaloneSubobject(DessiaObject):
+class StandaloneSubobject(PhysicalObject):
     _standalone_in_db = True
     _generic_eq = True
 
     def __init__(self, floatarg: Distance, name: str = 'Standalone Subobject'):
         self.floatarg = floatarg
 
-        DessiaObject.__init__(self, name=name)
+        PhysicalObject.__init__(self, name=name)
 
     @classmethod
     def generate(cls, seed: int) -> 'StandaloneSubobject':
@@ -63,20 +64,26 @@ class StandaloneSubobject(DessiaObject):
 
     @classmethod
     def generate_many(cls, seed: int) -> List['StandaloneSubobject']:
-        subobjects = [cls.generate((i+1)*1000) for i in range(seed)]
+        subobjects = [cls.generate((i + 1) * 1000) for i in range(seed)]
         return subobjects
 
     def contour(self):
-        points = [vm.Point2D(0, 0), vm.Point2D(0, 1),
-                  vm.Point2D(1, 1), vm.Point2D(1, 0)]
+        origin = self.floatarg
+        points = [vm.Point2D(origin, origin), vm.Point2D(origin, origin + 1),
+                  vm.Point2D(origin + 1, origin + 1), vm.Point2D(origin + 1, origin)]
 
         crls = p2d.ClosedRoundedLineSegments2D(points=points, radius={})
-        return vm.wires.Contour2D(crls.primitives)
+        return crls
+
+    def plot_data(self):
+        primitives = [plot_data.Text(comment="Test with text", position_x=0, position_y=0),
+                      plot_data.Text(comment="Test with text", position_x=0, position_y=0)]
+        primitives_group = plot_data.PrimitiveGroup(primitives=primitives)
+        return [primitives_group]
 
     def voldmlr_primitives(self):
         contour = self.contour()
-        volumes = [p3d.ExtrudedProfile(vm.O3D, vm.X3D, vm.Z3D,
-                                       contour, [], vm.Y3D)]
+        volumes = [p3d.ExtrudedProfile(vm.O3D, vm.X3D, vm.Z3D, contour, [], vm.Y3D)]
         return volumes
 
 
@@ -120,8 +127,7 @@ DEF_ISS = InheritingStandaloneSubobject.generate(1)
 
 
 class EmbeddedSubobject(DessiaObject):
-    def __init__(self, embedded_list: List[int] = None,
-                 name: str = 'Embedded Subobject'):
+    def __init__(self, embedded_list: List[int] = None, name: str = 'Embedded Subobject'):
         if embedded_list is None:
             self.embedded_list = [1, 2, 3]
         else:
@@ -132,7 +138,7 @@ class EmbeddedSubobject(DessiaObject):
     @classmethod
     def generate(cls, seed: int) -> 'EmbeddedSubobject':
         if not bool(seed % 2):
-            embedded_list = list(range(int(seed/2)))
+            embedded_list = list(range(int(seed / 2)))
         else:
             embedded_list = None
         name = 'Embedded Subobject' + str(seed)
@@ -140,7 +146,7 @@ class EmbeddedSubobject(DessiaObject):
 
     @classmethod
     def generate_many(cls, seed: int) -> List['EmbeddedSubobject']:
-        return [cls.generate(i) for i in range(ceil(seed/3))]
+        return [cls.generate(i) for i in range(ceil(seed / 3))]
 
 
 class EnhancedEmbeddedSubobject(EmbeddedSubobject):
@@ -149,16 +155,14 @@ class EnhancedEmbeddedSubobject(EmbeddedSubobject):
                  name: str = 'Enhanced Embedded Subobject'):
         self.embedded_array = embedded_array
 
-        EmbeddedSubobject.__init__(self, embedded_list=embedded_list,
-                                   name=name)
+        EmbeddedSubobject.__init__(self, embedded_list=embedded_list, name=name)
 
     @classmethod
     def generate(cls, seed: int) -> 'EnhancedEmbeddedSubobject':
         embedded_list = [seed]
-        embedded_array = [[seed, seed*10, seed*10]]*seed
+        embedded_array = [[seed, seed * 10, seed * 10]] * seed
         name = 'Embedded Subobject' + str(seed)
-        return cls(embedded_list=embedded_list, embedded_array=embedded_array,
-                   name=name)
+        return cls(embedded_list=embedded_list, embedded_array=embedded_array, name=name)
 
 
 DEF_ES = EmbeddedSubobject.generate(10)
@@ -168,7 +172,7 @@ DEF_EES = EnhancedEmbeddedSubobject.generate(3)
 UnionArg = Union[EmbeddedSubobject, EnhancedEmbeddedSubobject]
 
 
-class StandaloneObject(DessiaObject):
+class StandaloneObject(MovingObject):
     """
     Dev Object for testing purpose
 
@@ -183,22 +187,15 @@ class StandaloneObject(DessiaObject):
     """
     _standalone_in_db = True
     _generic_eq = True
-    _allowed_methods = ['add_standalone_object', 'add_embedded_object',
+    _allowed_methods = ['add_standalone_object', 'add_embedded_object', "count_until",
                         'add_float', 'generate_from_text', 'generate_from_bin']
 
-    def __init__(self, standalone_subobject: StandaloneSubobject,
-                 embedded_subobject: EmbeddedSubobject,
-                 dynamic_dict: Dict[str, bool],
-                 float_dict: Dict[str, float],
-                 string_dict: Dict[str, str],
-                 tuple_arg: Tuple[str, int],
-                 intarg: int, strarg: str,
-                 object_list: List[StandaloneSubobject],
-                 subobject_list: List[EmbeddedSubobject],
-                 builtin_list: List[int],
-                 union_arg: List[UnionArg],
-                 subclass_arg: InstanceOf[StandaloneSubobject],
-                 array_arg: List[List[float]],
+    def __init__(self, standalone_subobject: StandaloneSubobject, embedded_subobject: EmbeddedSubobject,
+                 dynamic_dict: Dict[str, bool], float_dict: Dict[str, float], string_dict: Dict[str, str],
+                 tuple_arg: Tuple[str, int], intarg: int, strarg: str,
+                 object_list: List[StandaloneSubobject], subobject_list: List[EmbeddedSubobject],
+                 builtin_list: List[int], union_arg: List[UnionArg],
+                 subclass_arg: InstanceOf[StandaloneSubobject], array_arg: List[List[float]],
                  name: str = 'Standalone Object Demo'):
         self.union_arg = union_arg
         self.builtin_list = builtin_list
@@ -215,61 +212,44 @@ class StandaloneObject(DessiaObject):
         self.subclass_arg = subclass_arg
         self.array_arg = array_arg
 
-        DessiaObject.__init__(self, name=name)
+        MovingObject.__init__(self, name=name)
 
     @classmethod
-    def generate(cls, seed: int,
-                 name: str = 'Standalone Object Demo') -> 'StandaloneObject':
-        is_even = not bool(seed % 2)
-        standalone_subobject = StandaloneSubobject.generate(seed)
-        embedded_subobject = EmbeddedSubobject.generate(seed)
-        dynamic_dict = {'n'+str(i): bool(seed % 2) for i in range(seed)}
-        float_dict = {'k'+str(i): seed*1.09 for i in range(seed)}
-        string_dict = {'key'+str(i): 'value'+str(i) for i in range(seed)}
-        tuple_arg = ('value', seed * 3)
-        intarg = seed
-        strarg = str(seed) * floor(seed/3)
-        object_list = StandaloneSubobject.generate_many(seed)
-        subobject_list = EmbeddedSubobject.generate_many(seed)
-        builtin_list = [seed]*seed
-        array_arg = [builtin_list]*3
-        union_arg = [EnhancedEmbeddedSubobject.generate(seed),
-                     EmbeddedSubobject.generate(seed)]
-        if is_even:
+    def generate(cls, seed: int, name: str = 'Standalone Object Demo') -> 'StandaloneObject':
+        dynamic_dict = {'n' + str(i): bool(seed % 2) for i in range(seed)}
+        float_dict = {'k' + str(i): seed * 1.09 for i in range(seed)}
+        string_dict = {'key' + str(i): 'value' + str(i) for i in range(seed)}
+        builtin_list = [seed] * seed
+        array_arg = [builtin_list] * 3
+        union_arg = [EnhancedEmbeddedSubobject.generate(seed), EmbeddedSubobject.generate(seed)]
+        if not bool(seed % 2):
             subclass_arg = StandaloneSubobject.generate(-seed)
         else:
             subclass_arg = InheritingStandaloneSubobject.generate(seed)
-        return cls(standalone_subobject=standalone_subobject,
-                   embedded_subobject=embedded_subobject,
-                   dynamic_dict=dynamic_dict,
-                   float_dict=float_dict,
-                   string_dict=string_dict,
-                   tuple_arg=tuple_arg,
-                   intarg=intarg, strarg=strarg, object_list=object_list,
-                   subobject_list=subobject_list, builtin_list=builtin_list,
-                   union_arg=union_arg, subclass_arg=subclass_arg,
-                   array_arg=array_arg, name=name)
+        return cls(standalone_subobject=StandaloneSubobject.generate(seed),
+                   embedded_subobject=EmbeddedSubobject.generate(seed),
+                   dynamic_dict=dynamic_dict, float_dict=float_dict, string_dict=string_dict,
+                   tuple_arg=('value', seed * 3), intarg=seed, strarg=str(seed) * floor(seed / 3),
+                   object_list=StandaloneSubobject.generate_many(seed),
+                   subobject_list=EmbeddedSubobject.generate_many(seed), builtin_list=builtin_list, union_arg=union_arg,
+                   subclass_arg=subclass_arg, array_arg=array_arg, name=name)
 
     @classmethod
-    def generate_from_text(cls, stream: TextIO):
-        try:
-            my_string = stream.read()
-            name, raw_seed = my_string.split(",")
-            seed = int(raw_seed.strip())
-        finally:
-            stream.close()
-        return cls.generate(seed=seed, name=name)
+    def generate_from_bin(cls, stream: BinaryFile):
+        # User need to decode the binary as he see fit
+        my_string = stream.read().decode('utf8')
+        my_file_name = stream.filename
+        _, raw_seed = my_string.split(",")
+        seed = int(raw_seed.strip())
+        return cls.generate(seed=seed, name=my_file_name)
 
     @classmethod
-    def generate_from_bin(cls, stream: BinaryIO):
-        # the user need to decode the binary as he see fit
-        try:
-            my_string = stream.read().decode('utf8')
-            my_name, raw_seed = my_string.split(",")
-            seed = int(raw_seed.strip())
-        finally:
-            stream.close()
-        return cls.generate(seed=seed, name="TODO From Bytes")
+    def generate_from_text(cls, stream: StringFile):
+        my_text = stream.getvalue()
+        my_file_name = stream.filename
+        _, raw_seed = my_text.split(",")
+        seed = int(raw_seed.strip())
+        return cls.generate(seed=seed, name=my_file_name)
 
     def add_standalone_object(self, object_: StandaloneSubobject):
         """
@@ -296,80 +276,91 @@ class StandaloneObject(DessiaObject):
         self.standalone_subobject.floatarg += value
         return self.standalone_subobject
 
+    def append_union_arg(self, object_: UnionArg):
+        self.union_arg.append(object_)
+
+    def contour(self):
+        points = [vm.Point2D(self.intarg, self.intarg), vm.Point2D(self.intarg, self.intarg + 1),
+                  vm.Point2D(self.intarg + 1, self.intarg + 1), vm.Point2D(self.intarg + 1, 0)]
+
+        crls = p2d.ClosedRoundedLineSegments2D(points=points, radius={})
+        return crls
+
     def volmdlr_primitives(self):
-        return self.standalone_subobject.voldmlr_primitives()
+        subcube = self.standalone_subobject.voldmlr_primitives()[0]
+        contour = self.contour()
+        cube = p3d.ExtrudedProfile(plane_origin=vm.Point3D(0, 1, -1), x=vm.X3D, y=vm.Z3D,
+                                   outer_contour2d=contour, inner_contours2d=[], extrusion_vector=vm.Y3D)
+        return [subcube, cube]
+
+    def volmdlr_primitives_step_frames(self):
+        frame0 = vm.Frame3D(vm.O3D.copy(), vm.X3D.copy(), vm.Y3D.copy(), vm.Z3D.copy())
+        frame11 = frame0.rotation(center=vm.O3D, axis=vm.Y3D, angle=0.7)
+        frame21 = frame11.translation(offset=vm.Y3D)
+        frame31 = frame21.rotation(center=vm.O3D, axis=vm.Y3D, angle=0.7)
+
+        frame12 = frame0.translation(offset=vm.Z3D)
+        frame22 = frame12.translation(offset=vm.X3D)
+        frame32 = frame22.translation(offset=vm.X3D)
+        return [[frame0, frame0], [frame11, frame12], [frame21, frame22], [frame31, frame32]]
+
+    @staticmethod
+    def scatter_plot():
+        attributes = ['cx', 'cy']
+        tooltip = plot_data.Tooltip(attributes=attributes, name='Tooltips')
+        return plot_data.Scatter(axis=plot_data.Axis(), tooltip=tooltip, x_variable=attributes[0],
+                                 y_variable=attributes[1], name='Scatter Plot')
 
     def plot_data(self):
-        attributes = ['cx', 'cy']
-
         # Contour
         contour = self.standalone_subobject.contour().plot_data()
-        primitives_group = plot_data.PrimitiveGroup(primitives=[contour],
-                                                    name='Contour')
+        primitives_group = plot_data.PrimitiveGroup(primitives=[contour], name='Contour')
+
+        catalog = Catalog.random_2d(bounds={'x': [0, 6], 'y': [100, 2000]}, threshold=8000)
+        points = [plot_data.Point2D(cx=v[0], cy=v[1], name='Point' + str(i)) for i, v in enumerate(catalog.array)]
 
         # Scatter Plot
-        bounds = {'x': [0, 6], 'y': [100, 2000]}
-        catalog = Catalog.random_2d(bounds=bounds, threshold=8000)
-        points = [plot_data.Point2D(cx=v[0], cy=v[1], name='Point'+str(i))
-                  for i, v in enumerate(catalog.array)]
-        axis = plot_data.Axis()
-        tooltip = plot_data.Tooltip(attributes=attributes,
-                                    name='Tooltips')
-        scatter_plot = plot_data.Scatter(axis=axis, tooltip=tooltip,
-                                         elements=points,
-                                         x_variable=attributes[0],
-                                         y_variable=attributes[1],
-                                         name='Scatter Plot')
+        scatterplot = self.scatter_plot()
 
         # Parallel Plot
-        attributes = ['cx', 'cy', 'color_fill', 'color_stroke']
-        parallel_plot = plot_data.ParallelPlot(elements=points,
-                                               axes=attributes,
-                                               name='Parallel Plot')
+        parallelplot = plot_data.ParallelPlot(elements=points, axes=['cx', 'cy', 'color_fill', 'color_stroke'],
+                                              name='Parallel Plot')
 
         # Multi Plot
-        objects = [scatter_plot, parallel_plot]
-        sizes = [plot_data.Window(width=560, height=300),
-                 plot_data.Window(width=560, height=300)]
-        coords = [(0, 0), (300, 0)]
-        multi_plot = plot_data.MultiplePlots(elements=points, plots=objects,
-                                             sizes=sizes, coords=coords,
-                                             name='Multiple Plot')
+        objects = [scatterplot, parallelplot]
+        sizes = [plot_data.Window(width=560, height=300), plot_data.Window(width=560, height=300)]
+        multiplot = plot_data.MultiplePlots(elements=points, plots=objects, sizes=sizes,
+                                            coords=[(0, 0), (300, 0)], name='Multiple Plot')
 
-        attribute_names = ['time', 'electric current']
+        attribute_names = ['timestep', 'electric current']
         tooltip = plot_data.Tooltip(attributes=attribute_names)
-        time1 = linspace(0, 20, 20)
-        current1 = [t ** 2 for t in time1]
+        timesteps = linspace(0, 20, 20)
+        current1 = [t ** 2 for t in timesteps]
         elements1 = []
-        for time, current in zip(time1, current1):
-            elements1.append({'time': time, 'electric current': current})
+        for timestep, current in zip(timesteps, current1):
+            elements1.append({'timestep': timestep, 'electric current': current})
 
-        # The previous line instantiates a dataset with limited arguments but
-        # several customizations are available
-        point_style = plot_data.PointStyle(color_fill=RED, color_stroke=BLACK)
-        edge_style = plot_data.EdgeStyle(color_stroke=BLUE, dashline=[10, 5])
+        # The previous line instantiates a dataset with limited arguments but several customizations are available
+        point_style = plot_data.PointStyle(color_fill=plot_data.colors.RED, color_stroke=plot_data.colors.BLACK)
+        edge_style = plot_data.EdgeStyle(color_stroke=plot_data.colors.BLUE, dashline=[10, 5])
 
-        custom_dataset = plot_data.Dataset(elements=elements1, name='I = f(t)',
-                                           tooltip=tooltip,
-                                           point_style=point_style,
-                                           edge_style=edge_style)
+        custom_dataset = plot_data.Dataset(elements=elements1, name='I = f(t)', tooltip=tooltip,
+                                           point_style=point_style, edge_style=edge_style)
 
         # Now let's create another dataset for the purpose of this exercice
-        time2 = linspace(0, 20, 100)
-        current2 = [100 * (1 + cos(t)) for t in time2]
+        timesteps = linspace(0, 20, 100)
+        current2 = [100 * (1 + cos(t)) for t in timesteps]
         elements2 = []
-        for time, current in zip(time2, current2):
-            elements2.append({'time': time, 'electric current': current})
+        for timestep, current in zip(timesteps, current2):
+            elements2.append({'timestep': timestep, 'electric current': current})
 
         dataset2 = plot_data.Dataset(elements=elements2, name='I2 = f(t)')
 
         graph2d = plot_data.Graph2D(graphs=[custom_dataset, dataset2],
-                                    x_variable=attribute_names[0],
-                                    y_variable=attribute_names[1])
-        return [primitives_group, scatter_plot,
-                parallel_plot, multi_plot, graph2d]
+                                    x_variable=attribute_names[0], y_variable=attribute_names[1])
+        return [primitives_group, scatterplot, parallelplot, multiplot, graph2d]
 
-    def maldefined_method(self, arg0, arg1=1, arg2: int = 10, arg3 = 3):
+    def maldefined_method(self, arg0, arg1=1, arg2: int = 10, arg3=3):
         """
         Defining a docstring for testing parsing purpose
         """
@@ -381,6 +372,10 @@ class StandaloneObject(DessiaObject):
         computation = nok_string + 'or' + ok_string
 
         return computation
+
+    # @staticmethod
+    # def method_with_faulty_typing(arg0: Iterator[int]):
+    #     return arg0
 
     def to_markdown(self):
         contents = """
@@ -398,14 +393,14 @@ class StandaloneObject(DessiaObject):
         [Clymene venisses sinat](http://est.net/umbram.html)
         protinus pulchra, sucos! Tanta haec varios tuaque,
         nisi Erigonen si aquae Hippomene inguine murmur.
-        
+
         1. Poma enim dextra icta capillis extinctum foedera
         2. Mediis requirit exercita ascendere fecisse sola
         3. Sua externis tigride saevarum
         4. Aves est pendebant sume latentis
-        
+
         ## Suum videre quondam generis dolentem simul femineos
-        
+
         Ille lacus progenitore Cycnum pressa, excidit silva
         [crudus](http://www.domino.com/nequevox), boum ducem vocari,
         ne monte tanto harenae.
@@ -416,23 +411,23 @@ class StandaloneObject(DessiaObject):
         Dedit putrefacta cortex.
         Tenet aut carmina quod proditione media; pro ense medicina
         vita repetit adrectisque inops e sentiat.
-        
+
         > Imagine caesaries superbos muneraque *ne terras* cunctis.
         Diversae Hesioneque
         > numinis regia at anima nascuntur Iovis.
         Sua fama quoque capillos lugubris
         > **egimus**, a ingenti [Ericthonio](http://raptos.org/lucem)
         iubebat!
-        
+
         ## Ponderis venit veteris mihi tofis
-        
+
         Propensum discedunt, iacere dedisti; lene potest caelo,
         felix flamma caecus decet excipit.
         *Aurum occiderat*, retro cum, quorum *Diana timuere At*.
         Ait Labros hasta mundi, **ut est** ruit nosse o gravet!
-        
+
         ## Qui aether undis nulla
-        
+
         Homines oppidaque nominibus devexo genitoris quoque,
         praesensque rota Saturnia.
         Auras cecinit fera quae mirantum imbris,
@@ -440,7 +435,7 @@ class StandaloneObject(DessiaObject):
         saepe adicit trepidant.
         [Siqua radiis quod](http://www.naris-pectebant.org/comeset)
         ad duabus alienisque, sponte; dum.
-        
+
         Occidit Babylonia dubitare. Vultus cui: erat dea!
         Iam ense forma est se, tibi pedem adfectat nec nostra.
         Armenta socium nutrix [precatur](http://in-fraxinus.io/)
@@ -449,13 +444,35 @@ class StandaloneObject(DessiaObject):
         Verum a, tuo quoque nec Mysum per posses;
         vigor danda meruit: tecum audire responsa
         [conplexae](http://quis.io/disrestat.html) et alios.
-        
+
         Agros grata illo animo mei nova, in magis furens et
         [modo](http://pondere.com/aquis) dimittere ubi neque es!
         Sua qua ac ire una facit Alcmene coepere
         arduus quae vestigia aliquis; meritorum Dorylas, scindunt.
         """
         return contents
+
+    def count_until(self, duration: float, raise_error: bool = False):
+        """
+        A method which duration can be customized to test long execution
+
+        :param duration: Duration of the method in s
+        :type duration: float
+        :param raise_error: Wether the computation should raise an error or not at the end
+        :type raise_error: bool
+        """
+        starting_time = time.time()
+        current_time = time.time()
+        last_duration = round(current_time - starting_time)
+        while current_time - starting_time <= duration:
+            current_time = time.time()
+            current_duration = current_time - starting_time
+            if current_duration > last_duration + 1:
+                last_duration = round(current_time - starting_time)
+                print(round(current_duration))
+
+        if raise_error:
+            raise RuntimeError(f"Evaluation stopped after {duration}s")
 
 
 DEF_SO = StandaloneObject.generate(1)
@@ -495,37 +512,105 @@ class StandaloneObjectWithDefaultValues(StandaloneObject):
         if array_arg is None:
             array_arg = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
 
-        StandaloneObject.__init__(
-            self, standalone_subobject=standalone_subobject,
-            embedded_subobject=embedded_subobject, dynamic_dict=dynamic_dict,
-            float_dict=float_dict, string_dict=string_dict,
-            tuple_arg=tuple_arg, intarg=intarg, strarg=strarg,
-            object_list=object_list, subobject_list=subobject_list,
-            builtin_list=builtin_list, union_arg=union_arg,
-            subclass_arg=subclass_arg, array_arg=array_arg, name=name
-        )
+        StandaloneObject.__init__(self, standalone_subobject=standalone_subobject,
+                                  embedded_subobject=embedded_subobject, dynamic_dict=dynamic_dict,
+                                  float_dict=float_dict, string_dict=string_dict, tuple_arg=tuple_arg, intarg=intarg,
+                                  strarg=strarg, object_list=object_list, subobject_list=subobject_list,
+                                  builtin_list=builtin_list, union_arg=union_arg, subclass_arg=subclass_arg,
+                                  array_arg=array_arg, name=name)
 
 
 DEF_SOWDV = StandaloneObjectWithDefaultValues()
 
+# class ObjectWithFaultyTyping(DessiaObject):
+#     """
+#     Dummy class to test faulty typing jsonschema
+#     """
+#     def __init__(self, faulty_attribute: Iterator[int], name: str = ""):
+#         self.faulty_attribute = faulty_attribute
+#
+#         DessiaObject.__init__(self, name=name)
 
-class Generator(DessiaObject):
+
+class ObjectWithOtherTypings(DessiaObject):
+    """
+    Dummy class to test some typing jsonschemas
+    """
+    def __init__(self, undefined_type_attribute: Any, name: str = ""):
+        self.undefined_type_attribute = undefined_type_attribute
+
+        DessiaObject.__init__(self, name=name)
+
+
+class MovingStandaloneObject(MovingObject):
     _standalone_in_db = True
 
-    def __init__(self, parameter: int, nb_solutions: int = 25, name: str = ''):
+    def __init__(self, origin: float, name: str = ""):
+        self.origin = origin
+        MovingObject.__init__(self, name=name)
+
+    @classmethod
+    def generate(cls, seed: int):
+        return cls(origin=1.3*seed, name=f"moving_{seed}")
+
+    def contour(self):
+        points = [vm.Point2D(self.origin, self.origin), vm.Point2D(self.origin, self.origin + 1),
+                  vm.Point2D(self.origin + 1, self.origin + 1), vm.Point2D(self.origin + 1, 0)]
+
+        crls = p2d.ClosedRoundedLineSegments2D(points=points, radius={})
+        return crls
+
+    def volmdlr_primitives(self):
+        contour = self.contour()
+        volume = p3d.ExtrudedProfile(plane_origin=vm.O3D, x=vm.X3D, y=vm.Z3D, outer_contour2d=contour,
+                                     inner_contours2d=[], extrusion_vector=vm.Y3D)
+        return [volume]
+
+    def volmdlr_primitives_step_frames(self):
+        frame1 = vm.Frame3D(vm.O3D.copy(), vm.X3D.copy(), vm.Y3D.copy(), vm.Z3D.copy())
+        frame2 = frame1.rotation(center=vm.O3D, axis=vm.Y3D, angle=0.7)
+        frame3 = frame2.translation(offset=vm.Y3D)
+        frame4 = frame3.rotation(center=vm.O3D, axis=vm.Y3D, angle=0.7)
+        return [[frame1], [frame2], [frame3], [frame4]]
+
+
+class Generator(DessiaObject):
+    """
+    A class that allow to generate several StandaloneObjects from different parameters
+
+    :param parameter: An "offset" for the seed that will be used in generation
+    :type parameter: int
+    :param nb_solutions: The max number of solutions that will be generated
+    :type nb_solutions: int
+    :param name: The name of the Generator. It is not used in object generation
+    :type name: str
+    """
+    _standalone_in_db = True
+
+    def __init__(self, parameter: int, nb_solutions: int = 25, models: List[StandaloneObject] = None, name: str = ''):
         self.parameter = parameter
         self.nb_solutions = nb_solutions
-        self.models = None
+        self.models = models
 
         DessiaObject.__init__(self, name=name)
 
     def generate(self) -> List[StandaloneObject]:
-        self.models = [StandaloneObject.generate(self.parameter + i)
-                       for i in range(self.nb_solutions)]
+        """
+        Generates a list of Standalone objects
+        """
+        self.models = [StandaloneObject.generate(self.parameter + i) for i in range(self.nb_solutions)]
         return self.models
 
 
 class Optimizer(DessiaObject):
+    """
+    Mock an optimization process
+
+    :param model_to_optimize: An object which will be modified (one of its attributes)
+    :type model_to_optimize: StandaloneObject
+    :param name: Name of the optimizer. Will not be used in the optimization process
+    :type name: str
+    """
     _standalone_in_db = True
 
     def __init__(self, model_to_optimize: StandaloneObject, name: str = ''):
@@ -534,6 +619,12 @@ class Optimizer(DessiaObject):
         DessiaObject.__init__(self, name=name)
 
     def optimize(self, optimization_value: int = 3) -> int:
+        """
+        Sums model value with given one
+
+        :param optimization_value: value that will be added to model's intarg attribute
+        :type optimization_value: int
+        """
         self.model_to_optimize.intarg += optimization_value
         return self.model_to_optimize.intarg
 
@@ -551,7 +642,6 @@ class Container(DessiaObject):
         DessiaObject.__init__(self, name=name)
 
     @classmethod
-    def generate_from_text_files(cls, files: List[TextIO],
-                                 name: str = "Generated from text files"):
+    def generate_from_text_files(cls, files: List[StringFile], name: str = "Generated from text files"):
         models = [StandaloneObject.generate_from_text(file) for file in files]
         return cls(models=models, name=name)

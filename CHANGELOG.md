@@ -5,28 +5,126 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unrealeased [=> 0.4.8]
+## Unreleased
+
 ### Added
+- FiltersList class
+- Easy access to HeterogeneousList with getitem, len, add, extend, sort
+- filtering method in HeterogeneousList that calls a FiltersList
+- Documentation for HeterogeneousList, CategorizedList, DessiaFilter, FiltersList
+- pareto front and parallel plot for HeterogeneousList
+- Sort parallel plot axis with correlation coefficient (experimental algorithm that seems to work)
+- Metrics for HeterogeneousList and CategorizedList
+- Centroids for CategorizedList
+- Nearly all required tests for all these developments
+
+### Breaking Changes
+- Change attribute "operator" of DessiaFilter to "comparison_operator"
+- Change name of file "cluster.py" to "datatools.py"
+- Move HeterogeneousList in "datatools.py"
+
+### Changes
+- Add 'logical_operator="and"' attribute to workflow.block.Filter
+- Improve workflow._data_eq
+
+### Performance
+- DessiaFilters and FiltersList: A priori optimized access to elements so it is really faster than before
+
+### Fixed
+- Excel Export now used proper length of the cell value
+- Fix workflow.copy() issue where a nbv with several pipes became several nbv with one pipe  
+
+## v0.9.0 [7/20/2022]
+
+### Added
+- Clustering classes
+
+### Fixed
+- Implement to_script method for workflow class
+- Prevent foreach name from being it's iter_input name
+- Temporarly remove workflow-state from workflow run display settings
+
+## v0.8.0
+
+### Added
+- performance analysis function
+
+### Fixed
+- babylon display fix
+- Any typing does not trigger error with subclass anymore
+- workflow: imposed variable values fixes
+
+### Performance
+- types: caching type from calling import_module
+
+## v0.7.0
+
+### Fixed
+- FileTypes looks for subclass in jsonschema computation instead of wrong isinstance
+
+### Added
+- Physical Object: splitting CAD capabilities from DessiaObject
+- Workflow to script (for a few blocks to begin with)
+- Separate evaluation of displays with display settings feature
+- workflow: port matching 
+
+### Changed
+- Enhanced get attr use literal eval to try to get dict keys
+- moved blocks in dessia_common.workflow.blocks, retrocompatbility with previous behavior
+
+### Deleted
+- Import Block in workflow
+
+## v0.6.0
+### Added
+- Exports in workflows
+- Workflow inputs documentation from docstrings
+- Workflow description and documentation
+- Custom Dessia FileTypes
+
+### Changed
+- split export functions in two: one to write to a file, one to save in a stream
+- to_dict use jsonpointers, des
+
+## v0.5.1
+### Fixed
+- copy problems
+- more tests
+
+## v0.5.0
+
+### Added
+- Workflow stop/start first features
+- Files Typings
+- Inputs can now search for upstream nonblock_variables
+- Add input_values addition bulk methods (from block_index & indice sequence)
+- Can compute jsonschema from Any annotation
 - Add more structure to dev objects
 - ClassMethod Block now supports MethodType
 - WorkflowState add_input_values activates them
 - Several variables index computation methods
 
 ### Changed
+- data_eq checks for a dual non insinstance test before returning false
 - Moved errors to submodule dessia_common.errors
 - Workflow.variable_from_indices is not a classmethod anymore
 - Full support of MethodType for ModelMethod Block
 
 ### Fixed
+- Re-instantiate nonblock_variable when copying workflow
 - WorkflowState now serialize its values keys in to_dict
+- deepcopy of workflow 
 
-## 0.4.7
+### Refactor
+- Separate in utils module
+
+## v0.4.7
 ## Added
 - File typings
 - Support for Iterator typing
 - Object's default_dicts now implement objct_class
 
-## 0.4.6
+## v0.4.6
 
 ### Added
 ### Fixed

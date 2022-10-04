@@ -11,7 +11,10 @@ Welcome to DessiaCommon's documentation!
    :caption: Contents:
 
    getting_started
+   subclassing
+   customizing
    core
+   datatools
    workflow
    advanced
 
