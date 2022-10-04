@@ -143,6 +143,7 @@ setup(
         "mypy_extensions",
         "scipy",
         "pyDOE",
+        "pyDOE2",
         "dectree",
         "openpyxl",
         "parameterized",

@@ -13,6 +13,14 @@ and can be clustered into a CategorizedList to help in clustering similar data.
 .. autoclass:: dessia_common.datatools.HeterogeneousList
    :members:
 
+Sampler
+===============
+
+A Sampler is an object that allows to generate a DOE from a class and bounds for its attributes.
+
+.. autoclass:: dessia_common.sampling.Sampler
+   :members:
+
 Categorized List
 ===============
 
