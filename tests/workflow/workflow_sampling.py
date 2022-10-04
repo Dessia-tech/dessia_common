@@ -20,7 +20,8 @@ constant_attributes = [FixedAttributeValue('p_2', 25)]
 # Workflow run
 workflow_run = workflow.run({workflow.index(block_0.inputs[0]): RandDataD2,
                              workflow.index(block_0.inputs[1]): sampled_attributes,
-                             workflow.index(block_0.inputs[2]): constant_attributes})
+                             workflow.index(block_0.inputs[2]): constant_attributes,
+                             workflow.index(block_1.inputs[1]): 400})
 
 # Workflow tests
 workflow._check_platform()

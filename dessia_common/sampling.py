@@ -93,20 +93,20 @@ class Sampler(DessiaObject):
             return self._montecarlo_sampling(samples=samples)
         raise NotImplementedError(f"Method '{method}' is not implemented in {self.__class__}._get_doe method.")
 
-    def make_doe(self, method: str = 'fullfact', samples: int = 10, lhs_criterion: str = 'center', name: str = ''):
+    def make_doe(self, samples: int, method: str = 'fullfact', lhs_criterion: str = 'center', name: str = ''):
         """
         Generate all `DessiaObject` with the choosen method and store them in a `HeterogeneousList`
+
+        :param samples:
+            --------
+            Targert number of `DessiaObject` in the DOE. Not used for `'fullfact'` method.
+        :type samples: `int`
 
         :param method:
             --------
             Method to generate the DOE.
             Can be one of `[fullfact, lhs, montecarlo]`. For more information, see: https://pythonhosted.org/pyDOE/
         :type method: `str`, `optional`, defaults to `'fullfact'`
-
-        :param samples:
-            --------
-            Targert number of `DessiaObject` in the DOE. Not used for `'lhs'` method.
-        :type samples: `int`, `optional`, defaults to `10`,
 
         :param lhs_criterion:
             --------
