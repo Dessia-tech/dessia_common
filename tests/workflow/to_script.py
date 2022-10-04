@@ -33,7 +33,6 @@ test_blocks = [
     wf.Flatten('flatten_name'),
     wf.Filter([DessiaFilter("attributeFilter", "operatorFilter", bound=3.1415)]),
     wf.Unpacker([1, 3], "unpacker_name"),
-    wf.Display(),
     wf.MultiPlot(['multiplot0', 'multiplot1']),
     wf.Product(4, "product_name"),
     wf.Export(method_type=dct.MethodType(dctests.Model, 'save_to_stream'), name='Export', filename="filename",
@@ -45,10 +44,10 @@ test_pipes = [wf.Pipe(test_blocks[0].outputs[0], test_blocks[3].inputs[0])]
 workflow_script = wf.Workflow(test_blocks, test_pipes, test_blocks[0].outputs[0], name="script_workflow")
 
 script_value = "from dessia_common.tests import Optimizer, Car, Model" \
-               "\nfrom dessia_common.workflow.blocks import InstantiateModel, ModelMethod, ModelAttribute, WorkflowBlock, ForEach, Archive, ClassMethod, Sequence, SetModelAttribute, Substraction, Sum, Flatten, Filter, Unpacker, Display, MultiPlot, Product, Export" \
+               "\nfrom dessia_common.workflow.blocks import InstantiateModel, ModelMethod, ModelAttribute, WorkflowBlock, ForEach, Archive, ClassMethod, Sequence, SetModelAttribute, Substraction, Sum, Flatten, Filter, Unpacker, MultiPlot, Product, Export" \
                "\nfrom dessia_common.typings import MethodType, ClassMethodType" \
                "\nfrom dessia_common.core import DessiaFilter" \
-               "\nfrom dessia_common.workflow.core import Variable, Workflow, Pipe" \
+               "\nfrom dessia_common.workflow.core import Workflow, Pipe" \
                "\n" \
                "\n" \
                "\n# --- Subworkflow --- " \
@@ -78,11 +77,10 @@ script_value = "from dessia_common.tests import Optimizer, Car, Model" \
                "\nblock_10 = Flatten(name='flatten_name')" \
                "\nblock_11 = Filter(filters=[DessiaFilter(attribute='attributeFilter', comparison_operator='operatorFilter', bound=3.1415, name='')], logical_operator='and', name='')" \
                "\nblock_12 = Unpacker(indices=[1, 3], name='unpacker_name')" \
-               "\nblock_13 = Display(inputs=None, name='')" \
-               "\nblock_14 = MultiPlot(attributes=['multiplot0', 'multiplot1'], name='')" \
-               "\nblock_15 = Product(number_list=4, name='product_name')" \
-               "\nblock_16 = Export(method_type=MethodType(dessia_common.tests.Model, 'save_to_stream'), filename='filename', extension='json', text=True, name='Export')" \
-               "\nblocks = [block_0, block_1, block_2, block_3, block_4, block_5, block_6, block_7, block_8, block_9, block_10, block_11, block_12, block_13, block_14, block_15, block_16]" \
+               "\nblock_13 = MultiPlot(attributes=['multiplot0', 'multiplot1'], name='')" \
+               "\nblock_14 = Product(number_list=4, name='product_name')" \
+               "\nblock_15 = Export(method_type=MethodType(dessia_common.tests.Model, 'save_to_stream'), filename='filename', extension='json', text=True, name='Export')" \
+               "\nblocks = [block_0, block_1, block_2, block_3, block_4, block_5, block_6, block_7, block_8, block_9, block_10, block_11, block_12, block_13, block_14, block_15]" \
                "\n" \
                "\npipe_0 = Pipe(block_0.outputs[0], block_3.inputs[0])" \
                "\npipes = [pipe_0]" \
@@ -92,4 +90,5 @@ script_value = "from dessia_common.tests import Optimizer, Car, Model" \
 
 
 assert workflow_script.to_script() == script_value
+
 print("test to_script.py passed")

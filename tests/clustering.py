@@ -16,6 +16,9 @@ big_RandDatas_heterogeneous = HeterogeneousList(rand_data_large)
 
 # Build CategorizedLists
 clustered_cars_without = CategorizedList.from_dbscan(all_cars_without_features, eps=40)
+clustered_cars_without_list = CategorizedList.list_dbscan(all_cars_no_feat, eps=40)
+assert(clustered_cars_without_list == clustered_cars_without)
+
 clustered_cars_with = CategorizedList.from_dbscan(all_cars_with_features, eps=40)
 aggclustest_clustered = CategorizedList.from_agglomerative_clustering(big_RandDatas_heterogeneous, n_clusters=10)
 kmeanstest_clustered = CategorizedList.from_kmeans(small_RandDatas_heterogeneous, n_clusters=10, scaling=True)
