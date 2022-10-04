@@ -328,6 +328,7 @@ def deserialize_with_typing(type_, argument):
                 instantiated = True
             except KeyError:
                 # This is not the right class, we should go see the parent
+                warnings.warn(f'Tried & failed to deserialize with class {children_class.__name__}')
                 classes.remove(children_class)
     elif origin in [list, collections.abc.Iterator]:
         # Homogenous sequences (lists)
@@ -384,7 +385,8 @@ def deserialize_argument(type_, argument):
         return argument
     if inspect.isclass(type_) and issubclass(type_, (dc.DessiaObject, dessia_common.core.DessiaObject)):
         # Custom classes
-        return type_.dict_to_object(argument)
+        return deserialize(argument)
+        # return type_.dict_to_object(argument)
 
     if type_ == dcty.Type:
         return dcty.is_classname_transform(argument)
