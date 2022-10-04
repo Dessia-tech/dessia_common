@@ -66,7 +66,7 @@ class Sampler(DessiaObject):
             full_doe.append(self.sampled_class(**dict(zip(self.attributes, valued_sample))))
         return full_doe
 
-    def _lhs_sampling(self, samples: int = 10, criterion: str = 'center'):
+    def _lhs_sampling(self, samples: int, criterion: str):
         varying_sampling = pyDOE.lhs(len(self.sampled_attributes), samples=samples, criterion=criterion)
         full_doe = []
         fixed_values = [attr.value for attr in self.constant_attributes]
@@ -76,7 +76,7 @@ class Sampler(DessiaObject):
             full_doe.append(self.sampled_class(**dict(zip(self.attributes, fixed_values + varying_values))))
         return full_doe
 
-    def _montecarlo_sampling(self, samples: int = 10):
+    def _montecarlo_sampling(self, samples: int):
         full_doe = []
         fixed_values = [attr.value for attr in self.constant_attributes]
         for _ in range(samples):
@@ -84,7 +84,7 @@ class Sampler(DessiaObject):
             full_doe.append(self.sampled_class(**dict(zip(self.attributes, fixed_values + varying_values))))
         return full_doe
 
-    def _get_doe(self, method: str = 'fullfact', samples: int = None, lhs_criterion: str = 'center'):
+    def _get_doe(self, method: str, samples: int, lhs_criterion: str):
         if method == 'fullfact':
             return self._full_factorial_sampling()
         if method == 'lhs':
@@ -93,7 +93,7 @@ class Sampler(DessiaObject):
             return self._montecarlo_sampling(samples=samples)
         raise NotImplementedError(f"Method '{method}' is not implemented in {self.__class__}._get_doe method.")
 
-    def make_doe(self, method: str = 'fullfact', samples: int = None, lhs_criterion: str = 'center', name: str = ''):
+    def make_doe(self, method: str = 'fullfact', samples: int = 10, lhs_criterion: str = 'center', name: str = ''):
         """
         Generate all `DessiaObject` with the choosen method and store them in a `HeterogeneousList`
 
@@ -106,7 +106,7 @@ class Sampler(DessiaObject):
         :param samples:
             --------
             Targert number of `DessiaObject` in the DOE. Not used for `'lhs'` method.
-        :type samples: `int`, `optional`, defaults to `None`,
+        :type samples: `int`, `optional`, defaults to `10`,
 
         :param lhs_criterion:
             --------
