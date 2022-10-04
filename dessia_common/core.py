@@ -1255,29 +1255,29 @@ class Report(DessiaObject):
         max_length = [len(t) for t in title]
 
         for element in elements:
-            for i, e in enumerate(element):
-                max_length[i] = max(max_length[i], len(str(e)))
+            for index, elem in enumerate(element):
+                max_length[index] = max(max_length[index], len(str(elem)))
 
         sum_max_length = sum(max_length)
         pourcent_length = [m / sum_max_length for m in max_length]
 
         real_length = []
-        for p in pourcent_length[0:-1]:
-            real_length.append(int(p * real_line_length))
+        for pourcent in pourcent_length[0:-1]:
+            real_length.append(int(pourcent * real_line_length))
         actual_length = sum(real_length)
         real_length.append(real_line_length - actual_length)
 
         lines = ['  \n  ']
         line_temp, line_temp2 = ' ' * offset, ' ' * offset
-        for r, t in zip(real_length, title):
-            full_cell_length = r - len(str(t))
+        for real_l, titl in zip(real_length, title):
+            full_cell_length = real_l - len(str(titl))
             right_cell_length = int(full_cell_length / 2)
             left_cell_length = full_cell_length - right_cell_length
-            line_temp += '| ' + ' ' * right_cell_length + str(t) + ' ' * left_cell_length + ' '
+            line_temp += '| ' + ' ' * right_cell_length + str(titl) + ' ' * left_cell_length + ' '
 
-            line_length = right_cell_length + len(str(t)) + left_cell_length
+            line_length = right_cell_length + len(str(titl)) + left_cell_length
 
-            line_temp2 += '|:' + '-' * (right_cell_length + len(str(t)) + left_cell_length) + ':'
+            line_temp2 += '|:' + '-' * (right_cell_length + len(str(titl)) + left_cell_length) + ':'
 
         line_temp += '|'
         line_temp2 += '|'
@@ -1285,11 +1285,11 @@ class Report(DessiaObject):
 
         for element in elements:
             line_temp = ' ' * offset
-            for r, e in zip(real_length, element):
-                full_cell_length = r - len(str(e))
+            for real_l, elem in zip(real_length, element):
+                full_cell_length = real_l - len(str(elem))
                 right_cell_length = int(full_cell_length / 2)
                 left_cell_length = full_cell_length - right_cell_length
-                line_temp += '| ' + ' ' * right_cell_length + str(e) + ' ' * left_cell_length + ' '
+                line_temp += '| ' + ' ' * right_cell_length + str(elem) + ' ' * left_cell_length + ' '
             line_temp += '|'
             lines.append(line_temp)
 
