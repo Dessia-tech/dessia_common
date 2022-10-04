@@ -627,7 +627,7 @@ class HeterogeneousList(DessiaObject):
                                                    point_style=dimensionality_plot.point_style)
             # Parallel plot
             parallel_plot = self._parallel_plot(data_list)
-            return [parallel_plot, scatter_matrix, dimensionality_plot]
+            return [parallel_plot, scatter_matrix]#, dimensionality_plot]
 
         plot_mono_attr = self._histogram_unic_value(0, name_attr=self.common_attributes[0])
         plot_mono_attr.elements = data_list
