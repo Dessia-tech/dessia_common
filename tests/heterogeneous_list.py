@@ -10,23 +10,27 @@ from dessia_common.datatools import HeterogeneousList
 
 # Tests on common_attributes
 class Bidon(DessiaObject):
-    def __init__(self, attr1: float = 1.2):
+    _vector_features = ['attr1']
+    def __init__(self, attr1: float = 1.2, name: str = ''):
         self.attr1 = attr1
         self.attr2 = attr1*2
+        DessiaObject.__init__(self, name=name)
     @property
     def prop1(self):
         return self.attr1 + self.attr2
 
 bidon = Bidon()
-bidon_hlist = HeterogeneousList([bidon]*3)
+bidon_hlist = HeterogeneousList([bidon]*10)
+bidon_hlist.plot_data()
 assert(bidon_hlist.common_attributes == ['attr1'])
 
 # Tests on common_attributes
 class Bidon(DessiaObject):
     _vector_features = ['attr1', 'attr2', 'prop1', 'in_to_vector']
-    def __init__(self, attr1: float = 1.2):
+    def __init__(self, attr1: float = 1.2, name: str = ''):
         self.attr1 = attr1
         self.attr2 = attr1*2
+        DessiaObject.__init__(self, name=name)
     @property
     def prop1(self):
         return self.attr1 + self.attr2
@@ -34,7 +38,8 @@ class Bidon(DessiaObject):
         return [self.attr1, self.attr2, self.prop1, random.randint(0, 32)]
 
 bidon = Bidon()
-bidon_hlist = HeterogeneousList([bidon]*3)
+bidon_hlist = HeterogeneousList([bidon]*10)
+bidon_hlist.plot_data()
 assert(bidon_hlist.common_attributes == ['attr1', 'attr2', 'prop1', 'in_to_vector'])
 
 # When attribute _features is not specified in class Car
@@ -117,7 +122,7 @@ try:
     empty_list.plot_data()
     raise ValueError("plot_data should not work on empty HeterogeneousLists")
 except Exception as e:
-    assert(e.__class__.__name__ == "ValueError")
+    assert(e.__class__.__name__ == "IndexError")
 try:
     empty_list.singular_values()
     raise ValueError("singular_values should not work on empty HeterogeneousLists")
