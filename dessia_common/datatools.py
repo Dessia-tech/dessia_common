@@ -617,6 +617,7 @@ class HeterogeneousList(DessiaObject):
 
         """
         data_list = self._plot_data_list()
+        print(self.matrix, len(self))
         if len(self.common_attributes) > 1:
             # Plot a correlation matrix : To develop
             # correlation_matrix = []
@@ -662,6 +663,7 @@ class HeterogeneousList(DessiaObject):
     def _plot_data_list(self):
         plot_data_list = []
         for row, _ in enumerate(self.dessia_objects):
+            print(row)
             plot_data_list.append({attr: self.matrix[row][col] for col, attr in enumerate(self.common_attributes)})
         return plot_data_list
 
