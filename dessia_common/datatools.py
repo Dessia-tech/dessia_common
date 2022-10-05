@@ -97,6 +97,7 @@ class HeterogeneousList(DessiaObject):
         self._common_attributes = None
         self._matrix = None
         DessiaObject.__init__(self, name=name)
+        print(self)
 
     def __getitem__(self, key: Any):
         """
@@ -1191,6 +1192,7 @@ class CategorizedList(HeterogeneousList):
 
     def _plot_data_list(self):
         _plot_data_list = []
+        print(self.matrix)
         for row, label in enumerate(self.labels):
             _plot_data_list.append({attr: self.matrix[row][col] for col, attr in enumerate(self.common_attributes)})
             _plot_data_list[-1]["Cluster Label"] = label
