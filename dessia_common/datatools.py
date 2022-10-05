@@ -1341,6 +1341,7 @@ class CategorizedList(HeterogeneousList):
         :rtype: CategorizedList
 
         """
+        print(data)
         skl_cluster = cluster.KMeans(n_clusters=n_clusters, n_init=n_init, tol=tol)
         skl_cluster = cls.fit_cluster(skl_cluster, data.matrix, scaling)
         return cls(data.dessia_objects, skl_cluster.labels_.tolist(), name=name)
