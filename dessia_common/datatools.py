@@ -616,6 +616,7 @@ class HeterogeneousList(DessiaObject):
         Plot a standard scatter matrix of all attributes in common_attributes and a dimensionality plot.
 
         """
+        print(self)
         data_list = self._plot_data_list()
         if len(self.common_attributes) > 1:
             # Plot a correlation matrix : To develop
