@@ -617,7 +617,6 @@ class HeterogeneousList(DessiaObject):
 
         """
         data_list = self._plot_data_list()
-        print(self.matrix, len(self))
         if len(self.common_attributes) > 1:
             # Plot a correlation matrix : To develop
             # correlation_matrix = []
@@ -627,8 +626,8 @@ class HeterogeneousList(DessiaObject):
             scatter_matrix = self._build_multiplot(data_list, self._tooltip_attributes(), axis=dimensionality_plot.axis,
                                                    point_style=dimensionality_plot.point_style)
             # Parallel plot
-            parallel_plot = self._parallel_plot(data_list)
-            return [parallel_plot, scatter_matrix, dimensionality_plot]
+            # parallel_plot = self._parallel_plot(data_list)
+            return [scatter_matrix, dimensionality_plot] #parallel_plot,
 
         plot_mono_attr = self._histogram_unic_value(0, name_attr=self.common_attributes[0])
         plot_mono_attr.elements = data_list
