@@ -97,7 +97,6 @@ class HeterogeneousList(DessiaObject):
         self._common_attributes = None
         self._matrix = None
         DessiaObject.__init__(self, name=name)
-        print(self)
 
     def __getitem__(self, key: Any):
         """
