@@ -1289,7 +1289,6 @@ class CategorizedList(HeterogeneousList):
         :rtype: CategorizedList
 
         """
-        print(data)
         skl_cluster = cluster.AgglomerativeClustering(
             n_clusters=n_clusters, affinity=affinity, distance_threshold=distance_threshold, linkage=linkage)
         skl_cluster = cls.fit_cluster(skl_cluster, data.matrix, scaling)
@@ -1342,7 +1341,6 @@ class CategorizedList(HeterogeneousList):
         :rtype: CategorizedList
 
         """
-        print(data)
         skl_cluster = cluster.KMeans(n_clusters=n_clusters, n_init=n_init, tol=tol)
         skl_cluster = cls.fit_cluster(skl_cluster, data.matrix, scaling)
         return cls(data.dessia_objects, skl_cluster.labels_.tolist(), name=name)
@@ -1411,7 +1409,6 @@ class CategorizedList(HeterogeneousList):
         :rtype: CategorizedList
 
         """
-        print(data)
         skl_cluster = cluster.DBSCAN(eps=eps, min_samples=min_samples, p=mink_power, leaf_size=leaf_size, metric=metric)
         skl_cluster = cls.fit_cluster(skl_cluster, data.matrix, scaling)
         return cls(data.dessia_objects, skl_cluster.labels_.tolist(), name=name)
