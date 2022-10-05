@@ -1,5 +1,6 @@
 """
 Cluster.py package testing.
+
 """
 import json
 from dessia_common.models import all_cars_no_feat, all_cars_wi_feat, rand_data_small, rand_data_large

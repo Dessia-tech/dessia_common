@@ -189,6 +189,9 @@ def data_eq(value1, value2):
     if isinstance(value1, (BinaryFile, StringFile)):
         return value1 == value2
 
+    if isinstance(value1, type):
+        return full_classname(value1) == full_classname(value2)
+
     # Else: its an object
 
     if full_classname(value1) != full_classname(value2):
