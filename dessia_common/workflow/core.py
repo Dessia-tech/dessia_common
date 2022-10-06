@@ -1166,30 +1166,6 @@ class Workflow(Block):
                 coordinates[element] = (i * horizontal_spacing, (j + 0.5) * vertical_spacing)
         return coordinates
 
-    def _generate_coordinates(self, elements_by_distance: Dict,
-                              min_horizontal_spacing=300, min_vertical_spacing=200,
-                              max_height=800, max_length=1500 ) -> Dict:
-        """
-        :param elements_by_distance:  key : distance ; value :  element[]
-        """
-        print(f" ----------------- in generate_coordinates ----------------\n"
-              f"elements_by_distance : {elements_by_distance}")
-        coordinates = {} #element -> position
-
-        if len(elements_by_distance) != 0:
-            max_distance = max(elements_by_distance.keys())
-        else:
-            max_distance = 3  # TODO: this is an awfull quick fix
-
-        horizontal_spacing = max(min_horizontal_spacing, max_length / max_distance)
-
-        for i, distance in enumerate(sorted(elements_by_distance.keys())[::-1]):
-            vertical_spacing = min(min_vertical_spacing, max_height / len(elements_by_distance[distance]))
-            for j, element in enumerate(elements_by_distance[distance]):
-                coordinates[element] = (i * horizontal_spacing, (j + 0.5) * vertical_spacing)
-
-        return coordinates
-
     def _build_layout_graph(self) -> nx.DiGraph:
         # subgraphs = [graph.subgraph(c) for c in nx.connected_components(graph)]
         graph = nx.DiGraph()
@@ -1210,68 +1186,53 @@ class Workflow(Block):
         end_of_path = longest_path[-1]
 
         distances = {}
-        untreated_nodes = [n for n in self.nodes if n not in longest_path]
+        untreated_nodes = [n for n in graph.nodes if n not in longest_path]
 
         for node in longest_path:
-            distances[node] = len(longest_path) - longest_path.index(node)
+            distances[node] = longest_path.index(node)
 
         for node in untreated_nodes:
             # looking for nodes heading to end_of_path
             try:
                 path = list(nx.shortest_simple_paths(graph, node, end_of_path))[-1]
-                distances[node] = len(path)
+                distances[node] = len(longest_path) - len(path)
             except nx.exception.NetworkXNoPath:
                 continue
 
         for current_node in untreated_nodes:
             # looking for node that heads to current_node (which does not head to end_of_path)
-            treated_nodes = [node for node in self.nodes if node not in untreated_nodes]
-            # subgraph = nx.subgraph(graph, treated_nodes + [untreated_node])
+            treated_nodes = [node for node in graph.nodes if node not in untreated_nodes]
             for treated_node in treated_nodes:
                 try:
                     paths = nx.shortest_simple_paths(graph, treated_node, current_node)
                     longest_path = list(paths)[-1]
-                    distance_via_current_node = distances[treated_node] - len(longest_path) + 1
+                    distance_via_current_node = distances[treated_node] + len(longest_path) - 1
                     if current_node not in distances or distances[current_node] < distance_via_current_node:
                         distances[current_node] = distance_via_current_node
                 except nx.exception.NetworkXNoPath:
                     continue
 
             if current_node not in distances:
-                distances[current_node] = 1
+                distances[current_node] = len(longest_path)
 
         return distances
 
     def get_element_by_distance(self, graph) -> Dict:
-        print(graph)
         distances = self.get_distances(graph)
         elements_by_distance = {}
-        for k, v in distances.items():
-            elements_by_distance[v] = elements_by_distance.get(v, []) + [k]
+        for node, distance in distances.items():
+            node_index = self.nodes.index(node)
+            elements_by_distance[distance] = elements_by_distance.get(distance, []) + [node_index]
 
         return elements_by_distance
 
-    def new_layout(self, min_horizontal_spacing=300, min_vertical_spacing=200, max_height=800, max_length=1500):
-        """
-        Computes workflow layout
-        """
-        graph = self._build_layout_graph()
-        elements_by_distance = self.get_element_by_distance(graph)
-
-        return self._generate_coordinates(
-            elements_by_distance,
-            min_horizontal_spacing,
-            min_vertical_spacing,
-            max_height,
-            max_length
-        )
-
     def blocks_positions(self):
-        coordinates = self.new_layout()
-        res = {}
-        for node, coordinate in coordinates.items():
-            res[self.nodes.index(node)] = coordinate
-        return res
+        digraph = self._build_layout_graph()
+        graph = digraph.to_undirected()
+        connected_components = nx.connected_components(graph)
+
+        elements_by_distance = [self.get_element_by_distance(digraph.subgraph(cc)) for cc in list(connected_components)]
+        return elements_by_distance
 
     def refresh_blocks_positions(self):
         """
