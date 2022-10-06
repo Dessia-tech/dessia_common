@@ -14,6 +14,7 @@ import dessia_common as dc
 from dessia_common.utils.types import isinstance_base_types, is_sequence, full_classname
 from dessia_common.files import BinaryFile, StringFile
 
+
 class DifferentValues:
     def __init__(self, path, value1, value2):
         self.path = path
@@ -74,9 +75,7 @@ class Diff:
         if self.invalid_types:
             object_print += 'Invalid types:\n'
             for diff_value in self.invalid_types:
-                print('jj')
                 object_print += f'\t{diff_value}\n'
-        print('object_print', object_print)
         return object_print
 
     def __add__(self, other_diff):
