@@ -2,7 +2,7 @@
 Tools for copying objects
 """
 
-from dessia_common.datatools import HeterogeneousList
+from dessia_common.datatools import DataSet
 
 def concatenate(values):
     types_set = set(type(value) for value in values)
