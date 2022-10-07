@@ -67,6 +67,10 @@ def serialize(value):
         serialized_value = float(value)
     elif isinstance(value, type) or dcty.is_typing(value):
         return dcty.serialize_typing(value)
+    elif hasattr(value, 'to_dict'):
+        to_dict_method = getattr(value, 'to_dict', None)
+        if callable(to_dict_method):
+            return to_dict_method()
     else:
         if not dcty.is_jsonable(value):
             msg = f'Element of value {value} is not json serializable'
@@ -92,11 +96,18 @@ def serialize_with_pointers(value, memo=None, path='#'):
             serialized = value.to_dict()
         memo[value] = path
 
+    elif isinstance(value, type):
+        if value in memo:
+            return {'$ref': memo[value]}, memo
+        serialized = dcty.serialize_typing(value)
+        memo[value] = path
+
     elif hasattr(value, 'to_dict'):
         if value in memo:
             return {'$ref': memo[value]}, memo
         serialized = value.to_dict()
         memo[value] = path
+
     elif isinstance(value, dict):
         serialized, memo = serialize_dict_with_pointers(value, memo=memo, path=path)
     elif dcty.is_sequence(value):
@@ -179,6 +190,10 @@ def deserialize(serialized_element, sequence_annotation: str = 'List',
     if dcty.is_sequence(serialized_element):
         return deserialize_sequence(sequence=serialized_element, annotation=sequence_annotation,
                                     global_dict=global_dict, pointers_memo=pointers_memo, path=path)
+    if isinstance(serialized_element, str):
+        is_class_transformed = dcty.is_classname_transform(serialized_element)
+        if is_class_transformed:
+            return is_class_transformed
     return serialized_element
 
 
@@ -332,6 +347,8 @@ def deserialize_with_typing(type_, argument):
         object_class = dc.full_classname(object_=classname, compute_for='class')
         class_ = dcty.get_python_class_from_class_name(object_class)
         deserialized_arg = class_.dict_to_object(argument)
+    elif type_ == dcty.Type:
+        deserialized_arg = dcty.is_classname_transform(argument)
     else:
         msg = "Deserialization of typing {} is not implemented"
         raise NotImplementedError(msg.format(type_))
@@ -344,6 +361,7 @@ def deserialize_argument(type_, argument):
     """
     if argument is None:
         return None
+
     if dcty.is_typing(type_):
         return deserialize_with_typing(type_, argument)
 
@@ -367,6 +385,9 @@ def deserialize_argument(type_, argument):
     if inspect.isclass(type_) and issubclass(type_, (dc.DessiaObject, dessia_common.core.DessiaObject)):
         # Custom classes
         return type_.dict_to_object(argument)
+
+    if type_ == dcty.Type:
+        return dcty.is_classname_transform(argument)
 
     raise TypeError(f"Deserialization of ype {type_} is Not Implemented")
 

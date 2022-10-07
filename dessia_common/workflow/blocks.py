@@ -18,6 +18,7 @@ from dessia_common.core import DessiaFilter, FiltersList, enhanced_deep_attr, sp
     type_from_annotation, DessiaObject
 from dessia_common.utils.types import get_python_class_from_class_name, full_classname
 from dessia_common.utils.docstrings import parse_docstring, EMPTY_PARSED_ATTRIBUTE
+from dessia_common.utils.serialization import serialize
 from dessia_common.errors import UntypedArgumentError
 from dessia_common.typings import JsonSerializable, MethodType, ClassMethodType
 from dessia_common.files import StringFile, BinaryFile
@@ -68,36 +69,6 @@ def output_from_function(function, name: str = "result output"):
 
 class BlockError(Exception):
     pass
-
-
-class Display(Block):
-    _displayable_input = 0
-    _non_editable_attributes = ['inputs']
-
-    def __init__(self, inputs: List[Variable] = None, order: int = None, name: str = '', position=None):
-        """
-        Abstract class for display behaviors
-        """
-        if order is not None:
-            warnings.warn("Display Block : order argument is deprecated and will be removed in a future version."
-                          "You can safely remove it from your block definition", DeprecationWarning)
-        self.order = order
-        if inputs is None:
-            warnings.warn("Display Block used as a generator for the displays of an object is deprecated."
-                          "ts display behavior will be faulty."
-                          "Please use the specific block to generate wanted display (Multiplot, 3D,...)",
-                          DeprecationWarning)
-            inputs = [TypedVariable(type_=DessiaObject, name='Model to Display')]
-        output = TypedVariable(type_=DisplayObject, name="Display Object")
-        Block.__init__(self, inputs=inputs, outputs=[output], name=name, position=position)
-
-    def evaluate(self, values):
-        return []
-
-    def _to_script(self) -> ToScriptElement:
-        script = f"Display(inputs=None, {self.base_script()})"
-        imports = [self.full_classname, Variable().full_classname]
-        return ToScriptElement(declaration=script, imports=imports)
 
 
 class InstantiateModel(Block):
@@ -715,6 +686,55 @@ class Filter(Block):
         return ToScriptElement(declaration=script, imports=imports)
 
 
+class Display(Block):
+    _displayable_input = 0
+    _non_editable_attributes = ['inputs']
+
+    def __init__(self, inputs: List[Variable] = None, order: int = None, name: str = '', position = None):
+        """
+        Abstract class for display behaviors
+        """
+        if order is not None:
+            warnings.warn("Display Block : order argument is deprecated and will be removed in a future version."
+                          "You can safely remove it from your block definition", DeprecationWarning)
+        self.order = order
+        if inputs is None:
+            self.warn_deprecation()
+            inputs = [TypedVariable(type_=DessiaObject, name='Model to Display')]
+        output = TypedVariable(type_=DisplayObject, name="Display Object")
+        Block.__init__(self, inputs=inputs, outputs=[output], name=name, position=position)
+
+        self._selector = None
+
+    @staticmethod
+    def warn_deprecation():
+        warnings.warn("Display Block used as a generator for the displays of an object is deprecated."
+                      "ts display behavior will be faulty. Please use the specific block"
+                      "to generate wanted displays (MultiPlot, CadView, PlotData, Markdown)", DeprecationWarning)
+
+    @property
+    def selector(self):
+        if self._selector:
+            return self._selector
+        if self.__class__ is Display:
+            self.warn_deprecation()
+            return ""
+        raise NotImplementedError(f"selector is not implemented for type '{type(self)}'")
+
+    def _display_settings(self, block_index: int) -> DisplaySetting:
+        return block_display_settings(block_index=block_index, type_=self.selector, name=self.name)
+
+    def evaluate(self, values):
+        object_ = values[self.inputs[0]]
+        settings = object_._display_settings_from_selector(self.selector)
+        data = attrmethod_getter(object_, settings.method)()
+        return [DisplayObject(type_=settings.type, data=serialize(data), name=self.name)]
+
+    def _to_script(self) -> ToScriptElement:
+        script = f"{self.__class__.__name__}(name='{self.name}')"
+        return ToScriptElement(declaration=script, imports=[self.full_classname])
+
+
 class MultiPlot(Display):
     """
     Generates a PlotData multiplot which axes will be the given attributes
@@ -734,6 +754,7 @@ class MultiPlot(Display):
         self.attributes = attributes
         Display.__init__(self, inputs=[TypedVariable(List[DessiaObject])], name=name, position=position)
         self.inputs[0].name = 'Input List'
+        self._selector = "plot_data"
 
     def equivalent(self, other):
         same_attributes = self.attributes == other.attributes
@@ -741,9 +762,6 @@ class MultiPlot(Display):
 
     def equivalent_hash(self):
         return sum(len(a) for a in self.attributes)
-
-    def _display_settings(self, block_index: int) -> DisplaySetting:
-        return block_display_settings(block_index=block_index, type_="plot_data", name=self.name)
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
         dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
@@ -791,18 +809,7 @@ class CadView(Display):
         input_ = TypedVariable(DessiaObject, name="Model to display")
         Display.__init__(self, inputs=[input_], name=name, position=position)
 
-    def _display_settings(self, block_index: int) -> DisplaySetting:
-        return block_display_settings(block_index=block_index, type_="cad", name=self.name)
-
-    def evaluate(self, values):
-        object_ = values[self.inputs[0]]
-        settings = object_._display_settings_from_selector('cad')
-        data = attrmethod_getter(object_, settings.method)()
-        return [DisplayObject(type_=settings.type, data=data, name=self.name)]
-
-    def _to_script(self) -> ToScriptElement:
-        script = f"CadView({self.base_script()})"
-        return ToScriptElement(declaration=script, imports=[self.full_classname])
+        self._selector = "cad"
 
 
 class Markdown(Display):
@@ -816,18 +823,23 @@ class Markdown(Display):
         input_ = TypedVariable(DessiaObject, name="Model to display")
         Display.__init__(self, inputs=[input_], name=name, position=position)
 
-    def _display_settings(self, block_index: int) -> DisplaySetting:
-        return block_display_settings(block_index=block_index, type_="markdown", name=self.name)
+        self._selector = "markdown"
 
-    def evaluate(self, values):
-        object_ = values[self.inputs[0]]
-        settings = object_._display_settings_from_selector('markdown')
-        data = attrmethod_getter(object_, settings.method)()
-        return [DisplayObject(type_=settings.type, data=data, name=self.name)]
 
-    def _to_script(self) -> ToScriptElement:
-        script = f"CadView({self.base_script()})"
-        return ToScriptElement(declaration=script, imports=[self.full_classname])
+class PlotData(Display):
+    """
+    Generates a DisplayObject that is displayable in PlotData features.
+    Uses the the input object's plot_data method.
+
+    :param name: The name of the block.
+    :type name: str
+    """
+
+    def __init__(self, name: str = '', position = None):
+        input_ = TypedVariable(DessiaObject, name="Model to display")
+        Display.__init__(self, inputs=[input_], name=name, position=position)
+
+        self._selector = "plot_data"
 
 
 class ModelAttribute(Block):

@@ -8,7 +8,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 
 ### Added
+- Sampler class
+- (De)Serialization handles 'typing.Type'
 - Workflow: handle position in to_dict / dict_to_object process
+
+### Breaking Changes
+
+
+### Changes
+- Workflow: improve layout method
+
+### Performance
+
+
+### Fixed
+
+
+## v0.10.0 [9/26/2022]
+
+### Added
 - FiltersList class
 - Easy access to HeterogeneousList with getitem, len, add, extend, sort
 - filtering method in HeterogeneousList that calls a FiltersList

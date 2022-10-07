@@ -36,7 +36,6 @@ class WorkflowToScriptTest(unittest.TestCase):
             wf.Flatten('flatten_name', position=(33, 22.22)),
             wf.Filter([DessiaFilter("attributeFilter", "operatorFilter", bound=3.1415)], position=(44, 33.33)),
             wf.Unpacker([1, 3], "unpacker_name", position=(55, 44.44)),
-            wf.Display(position=(66, 55.55)),
             wf.MultiPlot(['multiplot0', 'multiplot1'], position=(77, 66.66)),
             wf.Product(4, "product_name", position=(88, 77.77)),
             wf.Export(method_type=dct.MethodType(dctests.Model, 'save_to_stream'), name='Export', filename="filename",
@@ -81,11 +80,10 @@ class WorkflowToScriptTest(unittest.TestCase):
                        "\nblock_10 = Flatten(name='flatten_name', position=(33, 22.22))" \
                        "\nblock_11 = Filter(filters=[DessiaFilter(attribute='attributeFilter', comparison_operator='operatorFilter', bound=3.1415, name='')], logical_operator='and', name='', position=(44, 33.33))" \
                        "\nblock_12 = Unpacker(indices=[1, 3], name='unpacker_name', position=(55, 44.44))" \
-                       "\nblock_13 = Display(inputs=None, name='', position=(66, 55.55))" \
-                       "\nblock_14 = MultiPlot(attributes=['multiplot0', 'multiplot1'], name='', position=(77, 66.66))" \
-                       "\nblock_15 = Product(number_list=4, name='product_name', position=(88, 77.77))" \
-                       "\nblock_16 = Export(method_type=MethodType(dessia_common.tests.Model, 'save_to_stream'), filename='filename', extension='json', text=True, name='Export', position=(99, 88.88))" \
-                       "\nblocks = [block_0, block_1, block_2, block_3, block_4, block_5, block_6, block_7, block_8, block_9, block_10, block_11, block_12, block_13, block_14, block_15, block_16]" \
+                       "\nblock_13 = MultiPlot(attributes=['multiplot0', 'multiplot1'], name='', position=(77, 66.66))" \
+                       "\nblock_14 = Product(number_list=4, name='product_name', position=(88, 77.77))" \
+                       "\nblock_15 = Export(method_type=MethodType(dessia_common.tests.Model, 'save_to_stream'), filename='filename', extension='json', text=True, name='Export', position=(99, 88.88))" \
+                       "\nblocks = [block_0, block_1, block_2, block_3, block_4, block_5, block_6, block_7, block_8, block_9, block_10, block_11, block_12, block_13, block_14, block_15]" \
                        "\n\n" \
                        "\npipe_0 = Pipe(block_0.outputs[0], block_3.inputs[0])" \
                        "\npipes = [pipe_0]" \
@@ -93,4 +91,3 @@ class WorkflowToScriptTest(unittest.TestCase):
                        "\nworkflow = Workflow(blocks, pipes, output=block_0.outputs[0], name='script_workflow')" \
                        "\n"
         self.assertEqual(workflow.to_script(), expected_script_value)
-
