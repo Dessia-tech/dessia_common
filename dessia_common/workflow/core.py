@@ -18,6 +18,7 @@ import traceback as tb
 import networkx as nx
 
 import dessia_common.errors
+from dessia_common.graph import get_distance_by_nodes
 from dessia_common.templates import workflow_template
 from dessia_common import DessiaObject, is_sequence, JSONSCHEMA_HEADER, jsonschema_from_annotation, \
     deserialize_argument, set_default_value, prettyname, serialize_dict, DisplaySetting
@@ -1166,10 +1167,10 @@ class Workflow(Block):
                 coordinates[element] = (i * horizontal_spacing, (j + 0.5) * vertical_spacing)
         return coordinates
 
-    def _build_layout_graph(self) -> nx.DiGraph:
-        # subgraphs = [graph.subgraph(c) for c in nx.connected_components(graph)]
+    @property
+    def layout_graph(self) -> nx.DiGraph:
         graph = nx.DiGraph()
-        graph.add_nodes_from(self.nodes)
+        graph.add_nodes_from(self.nodes) #does not handle detached_variable
 
         for pipe in self.pipes:
             if pipe.input_variable in self.nonblock_variables:
@@ -1181,57 +1182,21 @@ class Workflow(Block):
 
         return graph
 
-    def get_distances(self, graph) -> Dict:
-        longest_path = nx.dag_longest_path(graph)
-        end_of_path = longest_path[-1]
-
-        distances = {}
-        untreated_nodes = [n for n in graph.nodes if n not in longest_path]
-
-        for node in longest_path:
-            distances[node] = longest_path.index(node)
-
-        for node in untreated_nodes:
-            # looking for nodes heading to end_of_path
-            try:
-                path = list(nx.shortest_simple_paths(graph, node, end_of_path))[-1]
-                distances[node] = len(longest_path) - len(path)
-            except nx.exception.NetworkXNoPath:
-                continue
-
-        for current_node in untreated_nodes:
-            # looking for node that heads to current_node (which does not head to end_of_path)
-            treated_nodes = [node for node in graph.nodes if node not in untreated_nodes]
-            for treated_node in treated_nodes:
-                try:
-                    paths = nx.shortest_simple_paths(graph, treated_node, current_node)
-                    longest_path = list(paths)[-1]
-                    distance_via_current_node = distances[treated_node] + len(longest_path) - 1
-                    if current_node not in distances or distances[current_node] < distance_via_current_node:
-                        distances[current_node] = distance_via_current_node
-                except nx.exception.NetworkXNoPath:
-                    continue
-
-            if current_node not in distances:
-                distances[current_node] = len(longest_path)
-
-        return distances
-
-    def get_element_by_distance(self, graph) -> Dict:
-        distances = self.get_distances(graph)
+    def graph_distances(self, graph) -> list:
+        distances = get_distance_by_nodes(graph)
         elements_by_distance = {}
         for node, distance in distances.items():
             node_index = self.nodes.index(node)
             elements_by_distance[distance] = elements_by_distance.get(distance, []) + [node_index]
 
-        return elements_by_distance
+        return [column_list for column_list in elements_by_distance.values()]
 
     def blocks_positions(self):
-        digraph = self._build_layout_graph()
+        digraph = self.layout_graph
         graph = digraph.to_undirected()
         connected_components = nx.connected_components(graph)
 
-        elements_by_distance = [self.get_element_by_distance(digraph.subgraph(cc)) for cc in list(connected_components)]
+        elements_by_distance = [self.graph_distances(digraph.subgraph(cc)) for cc in list(connected_components)]
         return elements_by_distance
 
     def refresh_blocks_positions(self):
