@@ -62,38 +62,38 @@ def get_longest_path(graph: nx.DiGraph, begin, end) -> list:
     return list(nx.shortest_simple_paths(graph, begin, end))[-1]
 
 
+def get_paths_from_to(graph: nx.DiGraph, _from: list, _to: list) -> list:
+    paths = []
+    for origin in _from:
+        for destination in _to:
+            try:
+                paths.append(get_longest_path(graph, origin, destination))
+            except nx.exception.NetworkXNoPath:
+                continue
+    return paths
+
+
 def get_distance_by_nodes(graph: nx.DiGraph) -> Dict:
     longest_path = nx.dag_longest_path(graph)
     end_of_path = longest_path[-1]
 
     distances = {}
-    untreated_nodes = [n for n in graph.nodes if n not in longest_path]
 
     for node in longest_path:
         distances[node] = longest_path.index(node)
 
-    for node in untreated_nodes:
-        # looking for nodes heading to end_of_path
+    for node in [n for n in graph.nodes if n not in longest_path]:
         try:
             path = get_longest_path(graph, node, end_of_path)
             distances[node] = len(longest_path) - len(path)
         except nx.exception.NetworkXNoPath:
-            continue
+            pass
 
-    for current_node in untreated_nodes:
-        # looking for node that heads to current_node (which does not head to end_of_path)
-        treated_nodes = [node for node in graph.nodes if node not in untreated_nodes]
-        for treated_node in treated_nodes:
-            try:
-                longest_path = get_longest_path(graph, treated_node, current_node)
-                distance_via_current_node = distances[treated_node] + len(longest_path) - 1
-                if current_node not in distances or distances[current_node] < distance_via_current_node:
-                    distances[current_node] = distance_via_current_node
-            except nx.exception.NetworkXNoPath:
-                continue
-
-        if current_node not in distances:
-            distances[current_node] = len(longest_path)
+        if node not in distances:
+            for path in get_paths_from_to(graph, list(graph.nodes), [node]):
+                distance_via_current_node = distances[path[0]] + len(path) - 1
+                if node not in distances or distances[node] < distance_via_current_node:
+                    distances[node] = distance_via_current_node
 
     return distances
 

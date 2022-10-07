@@ -1147,9 +1147,9 @@ class Workflow(Block):
     WorkflowLayout = list[GraphLayout]
 
     def graph_distances(self, graph) -> GraphLayout:
-        distances = get_distance_by_nodes(graph)
+        distance_by_element = get_distance_by_nodes(graph)
         elements_by_distance = {}
-        for node, distance in distances.items():
+        for node, distance in distance_by_element.items():
             node_index = self.nodes.index(node)
             elements_by_distance[distance] = elements_by_distance.get(distance, []) + [node_index]
 
