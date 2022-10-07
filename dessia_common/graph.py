@@ -96,4 +96,3 @@ def get_distance_by_nodes(graph: nx.DiGraph) -> Dict:
                     distances[node] = distance_via_current_node
 
     return distances
-
