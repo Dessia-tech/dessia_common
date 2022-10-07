@@ -1127,46 +1127,6 @@ class Workflow(Block):
             return False
         return True
 
-    def layout(self, min_horizontal_spacing=300, min_vertical_spacing=200, max_height=800, max_length=1500):
-        """
-        Computes workflow layout
-        """
-        coordinates = {}
-        elements_by_distance = {}
-        if self.output:
-            for element in self.nodes:
-                distances = []
-                paths = nx.all_simple_paths(self.graph, element, self.output)
-                for path in paths:
-                    distance = 1
-                    for path_element in path[1:-1]:
-                        if path_element in self.blocks:
-                            distance += 1
-                        elif path_element in self.nonblock_variables:
-                            distance += 1
-                    distances.append(distance)
-                try:
-                    distance = max(distances)
-                except ValueError:
-                    distance = 3
-                if distance in elements_by_distance:
-                    elements_by_distance[distance].append(element)
-                else:
-                    elements_by_distance[distance] = [element]
-
-        if len(elements_by_distance) != 0:
-            max_distance = max(elements_by_distance.keys())
-        else:
-            max_distance = 3  # TODO: this is an awfull quick fix
-
-        horizontal_spacing = max(min_horizontal_spacing, max_length / max_distance)
-
-        for i, distance in enumerate(sorted(elements_by_distance.keys())[::-1]):
-            vertical_spacing = min(min_vertical_spacing, max_height / len(elements_by_distance[distance]))
-            for j, element in enumerate(elements_by_distance[distance]):
-                coordinates[element] = (i * horizontal_spacing, (j + 0.5) * vertical_spacing)
-        return coordinates
-
     @property
     def layout_graph(self) -> nx.DiGraph:
         graph = nx.DiGraph()
@@ -1191,21 +1151,13 @@ class Workflow(Block):
 
         return [column_list for column_list in elements_by_distance.values()]
 
-    def blocks_positions(self):
+    def layout(self):
         digraph = self.layout_graph
         graph = digraph.to_undirected()
         connected_components = nx.connected_components(graph)
 
         elements_by_distance = [self.graph_distances(digraph.subgraph(cc)) for cc in list(connected_components)]
         return elements_by_distance
-
-    def refresh_blocks_positions(self):
-        """
-        Recomputes block positions
-        """
-        coordinates = self.layout()
-        for block, coordinate in coordinates.items():
-            block.position = coordinate
 
     def plot_graph(self):
         """
@@ -1263,11 +1215,51 @@ class Workflow(Block):
         """
         return WorkflowState(self, input_values=input_values, name=name)
 
+    def jointjs_layout(self, min_horizontal_spacing=300, min_vertical_spacing=200, max_height=800, max_length=1500):
+        """
+        Deprecated workflow layout. Used only in jointjs_data method.
+        """
+        coordinates = {}
+        elements_by_distance = {}
+        if self.output:
+            for element in self.nodes:
+                distances = []
+                paths = nx.all_simple_paths(self.graph, element, self.output)
+                for path in paths:
+                    distance = 1
+                    for path_element in path[1:-1]:
+                        if path_element in self.blocks:
+                            distance += 1
+                        elif path_element in self.nonblock_variables:
+                            distance += 1
+                    distances.append(distance)
+                try:
+                    distance = max(distances)
+                except ValueError:
+                    distance = 3
+                if distance in elements_by_distance:
+                    elements_by_distance[distance].append(element)
+                else:
+                    elements_by_distance[distance] = [element]
+
+        if len(elements_by_distance) != 0:
+            max_distance = max(elements_by_distance.keys())
+        else:
+            max_distance = 3  # TODO: this is an awfull quick fix
+
+        horizontal_spacing = max(min_horizontal_spacing, max_length / max_distance)
+
+        for i, distance in enumerate(sorted(elements_by_distance.keys())[::-1]):
+            vertical_spacing = min(min_vertical_spacing, max_height / len(elements_by_distance[distance]))
+            for j, element in enumerate(elements_by_distance[distance]):
+                coordinates[element] = (i * horizontal_spacing, (j + 0.5) * vertical_spacing)
+        return coordinates
+
     def jointjs_data(self):
         """
         Computes the data needed for jointjs ploting
         """
-        coordinates = self.layout()
+        coordinates = self.jointjs_layout()
         blocks = []
         for block in self.blocks:
             # TOCHECK Is it necessary to add is_workflow_input/output for outputs/inputs ??

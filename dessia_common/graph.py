@@ -58,7 +58,11 @@ def extract_region(networkx_graph: nx.Graph, nodes, distance: int = 5):
     return networkx_graph.subgraph(region_nodes)
 
 
-def get_distance_by_nodes(graph) -> Dict:
+def get_longest_path(graph: nx.DiGraph, begin, end) -> list:
+    return list(nx.shortest_simple_paths(graph, begin, end))[-1]
+
+
+def get_distance_by_nodes(graph: nx.DiGraph) -> Dict:
     longest_path = nx.dag_longest_path(graph)
     end_of_path = longest_path[-1]
 
@@ -71,7 +75,7 @@ def get_distance_by_nodes(graph) -> Dict:
     for node in untreated_nodes:
         # looking for nodes heading to end_of_path
         try:
-            path = list(nx.shortest_simple_paths(graph, node, end_of_path))[-1]
+            path = get_longest_path(graph, node, end_of_path)
             distances[node] = len(longest_path) - len(path)
         except nx.exception.NetworkXNoPath:
             continue
@@ -81,8 +85,7 @@ def get_distance_by_nodes(graph) -> Dict:
         treated_nodes = [node for node in graph.nodes if node not in untreated_nodes]
         for treated_node in treated_nodes:
             try:
-                paths = nx.shortest_simple_paths(graph, treated_node, current_node)
-                longest_path = list(paths)[-1]
+                longest_path = get_longest_path(graph, treated_node, current_node)
                 distance_via_current_node = distances[treated_node] + len(longest_path) - 1
                 if current_node not in distances or distances[current_node] < distance_via_current_node:
                     distances[current_node] = distance_via_current_node
