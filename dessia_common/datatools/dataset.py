@@ -1,5 +1,5 @@
 """
-Library for building DataSet.
+Library for building Dataset.
 
 """
 from typing import List, Dict, Any
@@ -18,24 +18,24 @@ except ImportError:
     pass
 from dessia_common.core import DessiaObject, DessiaFilter, FiltersList, templates
 
-class DataSet(DessiaObject):
+class Dataset(DessiaObject):
     """
     Base object for handling a list of DessiaObjects.
 
     :param dessia_objects:
         --------
-        List of DessiaObjects to store in DataSet
+        List of DessiaObjects to store in Dataset
     :type dessia_objects: `List[DessiaObject]`, `optional`, defaults to `None`
 
     :param name:
         --------
-        Name of DataSet
+        Name of Dataset
     :type name: `str`, `optional`, defaults to `''`
 
     :Properties:
         * **common_attributes:** (`List[str]`)
             --------
-            Common attributes of DessiaObjects contained in the current `DataSet`
+            Common attributes of DessiaObjects contained in the current `Dataset`
 
         * **matrix:** (`List[List[float]]`, `n_samples x n_features`)
             --------
@@ -43,13 +43,13 @@ class DataSet(DessiaObject):
 
     **Built-in methods**:
         * __init__
-            >>> from dessia_common.datatools import DataSet
+            >>> from dessia_common.datatools import Dataset
             >>> from dessia_common.models import all_cars_wi_feat
-            >>> hlist = DataSet(all_cars_wi_feat, name="init")
+            >>> hlist = Dataset(all_cars_wi_feat, name="init")
 
         * __str__
-            >>> print(DataSet(all_cars_wi_feat[:3], name='printed'))
-            DataSet printed: 3 samples, 5 features
+            >>> print(Dataset(all_cars_wi_feat[:3], name='printed'))
+            Dataset printed: 3 samples, 5 features
             |         Mpg         |    Displacement    |     Horsepower     |       Weight       |    Acceleration    |
             -----------------------------------------------------------------------------------------------------------
             |               18.0  |             0.307  |             130.0  |            3504.0  |              12.0  |
@@ -57,27 +57,27 @@ class DataSet(DessiaObject):
             |               18.0  |             0.318  |             150.0  |            3436.0  |              11.0  |
 
         * __len__
-            >>> len(DataSet(all_cars_wi_feat))
+            >>> len(Dataset(all_cars_wi_feat))
             returns len(all_cars_wi_feat)
 
         * __get_item__
-            >>> DataSet(all_cars_wi_feat)[0]
+            >>> Dataset(all_cars_wi_feat)[0]
             returns <dessia_common.tests.CarWithFeatures object at 'memory_address'>
-            >>> DataSet(all_cars_wi_feat)[0:2]
-            returns DataSet(all_cars_wi_feat[0:2])
-            >>> DataSet(all_cars_wi_feat)[[0,5,6]]
-            returns DataSet([all_cars_wi_feat[idx] for idx in [0,5,6]])
+            >>> Dataset(all_cars_wi_feat)[0:2]
+            returns Dataset(all_cars_wi_feat[0:2])
+            >>> Dataset(all_cars_wi_feat)[[0,5,6]]
+            returns Dataset([all_cars_wi_feat[idx] for idx in [0,5,6]])
             >>> booleans_list = [True, False,..., True] of length len(all_cars_wi_feat)
-            >>> DataSet(all_cars_wi_feat)[booleans_list]
-            returns DataSet([car for car, boolean in zip(all_cars_wi_feat, booleans_list) if boolean])
+            >>> Dataset(all_cars_wi_feat)[booleans_list]
+            returns Dataset([car for car, boolean in zip(all_cars_wi_feat, booleans_list) if boolean])
 
         * __add__
-            >>> DataSet(all_cars_wi_feat) + DataSet(all_cars_wi_feat)
-            DataSet(all_cars_wi_feat + all_cars_wi_feat)
-            >>> DataSet(all_cars_wi_feat) + DataSet()
-            DataSet(all_cars_wi_feat)
-            >>> DataSet(all_cars_wi_feat).extend(DataSet(all_cars_wi_feat))
-            DataSet(all_cars_wi_feat + all_cars_wi_feat)
+            >>> Dataset(all_cars_wi_feat) + Dataset(all_cars_wi_feat)
+            Dataset(all_cars_wi_feat + all_cars_wi_feat)
+            >>> Dataset(all_cars_wi_feat) + Dataset()
+            Dataset(all_cars_wi_feat)
+            >>> Dataset(all_cars_wi_feat).extend(Dataset(all_cars_wi_feat))
+            Dataset(all_cars_wi_feat + all_cars_wi_feat)
 
     """
     _standalone_in_db = True
@@ -98,8 +98,8 @@ class DataSet(DessiaObject):
 
     def __getitem__(self, key: Any):
         """
-        Custom getitem for DataSet. In addition to work as numpy.arrays of dimension `(n,)`, allows to pick \
-        a sub-DataSet from a list of indexes.
+        Custom getitem for Dataset. In addition to work as numpy.arrays of dimension `(n,)`, allows to pick \
+        a sub-Dataset from a list of indexes.
 
         """
         if len(self) == 0:
@@ -120,17 +120,17 @@ class DataSet(DessiaObject):
                 return self._pick_from_boolist(self._indexlist_to_booleanlist(key))
 
             raise NotImplementedError(f"key of type {type(key)} with {type(key[0])} elements not implemented for "
-                                      f"indexing DataSets")
+                                      f"indexing Datasets")
 
-        raise NotImplementedError(f"key of type {type(key)} not implemented for indexing DataSets")
+        raise NotImplementedError(f"key of type {type(key)} not implemented for indexing Datasets")
 
-    def __add__(self, other: 'DataSet'):
+    def __add__(self, other: 'Dataset'):
         """
-        Allows to merge two DataSet into one by merging their dessia_object into one list.
+        Allows to merge two Dataset into one by merging their dessia_object into one list.
 
         """
-        if self.__class__ != DataSet or other.__class__ != DataSet:
-            raise TypeError("Addition only defined for DataSet. A specific __add__ method is required for "
+        if self.__class__ != Dataset or other.__class__ != Dataset:
+            raise TypeError("Addition only defined for Dataset. A specific __add__ method is required for "
                             f"{self.__class__}")
 
         sum_hlist = self.__class__(dessia_objects=self.dessia_objects + other.dessia_objects,
@@ -142,20 +142,20 @@ class DataSet(DessiaObject):
                 sum_hlist._matrix = self._matrix + other._matrix
         return sum_hlist
 
-    def extend(self, other: 'DataSet'):
+    def extend(self, other: 'Dataset'):
         """
-        Update a DataSet by adding b values to it
+        Update a Dataset by adding b values to it
 
-        :param b: DataSet to add to the current DataSet
-        :type b: DataSet
+        :param b: Dataset to add to the current Dataset
+        :type b: Dataset
 
         :return: None
 
         :Examples:
-        >>> from dessia_common.datatools import DataSet
+        >>> from dessia_common.datatools import Dataset
         >>> from dessia_common.models import all_cars_wi_feat
-        >>> DataSet(all_cars_wi_feat).extend(DataSet(all_cars_wi_feat))
-        DataSet(all_cars_wi_feat + all_cars_wi_feat)
+        >>> Dataset(all_cars_wi_feat).extend(Dataset(all_cars_wi_feat))
+        Dataset(all_cars_wi_feat + all_cars_wi_feat)
 
         """
         # Not "self.dessia_objects += other.dessia_objects" to take advantage of __add__ algorithm
@@ -189,7 +189,7 @@ class DataSet(DessiaObject):
 
     def __str__(self):
         """
-        Print DataSet as a table.
+        Print Dataset as a table.
 
         """
         attr_space = []
@@ -276,7 +276,7 @@ class DataSet(DessiaObject):
 
     def __len__(self):
         """
-        Length of DataSet is len(DataSet.dessia_objects)
+        Length of Dataset is len(Dataset.dessia_objects)
 
         """
         return len(self.dessia_objects)
@@ -292,9 +292,9 @@ class DataSet(DessiaObject):
         :rtype: List[Any]
 
         :Examples:
-        >>> from dessia_common.datatools import DataSet
+        >>> from dessia_common.datatools import Dataset
         >>> from dessia_common.models import all_cars_wi_feat
-        >>> DataSet(all_cars_wi_feat[:10]).get_attribute_values("weight")
+        >>> Dataset(all_cars_wi_feat[:10]).get_attribute_values("weight")
         [3504.0, 3693.0, 3436.0, 3433.0, 3449.0, 4341.0, 4354.0, 4312.0, 4425.0, 3850.0]
 
         """
@@ -313,9 +313,9 @@ class DataSet(DessiaObject):
         :rtype: List[float]
 
         :Examples:
-        >>> from dessia_common.datatools import DataSet
+        >>> from dessia_common.datatools import Dataset
         >>> from dessia_common.models import all_cars_wi_feat
-        >>> DataSet(all_cars_wi_feat[:10]).get_column_values(2)
+        >>> Dataset(all_cars_wi_feat[:10]).get_column_values(2)
         [130.0, 165.0, 150.0, 150.0, 140.0, 198.0, 220.0, 215.0, 225.0, 190.0]
 
         """
@@ -323,28 +323,28 @@ class DataSet(DessiaObject):
 
     def sort(self, key: Any, ascend: bool = True):  # TODO : Replace numpy with faster algorithms
         """
-        Sort the current DataSet along the given key.
+        Sort the current Dataset along the given key.
 
         :param key:
             --------
-            The parameter on which to sort the DataSet. Can be an attribute or its index in \
+            The parameter on which to sort the Dataset. Can be an attribute or its index in \
                 `common_attributes`
         :type key: `int` or `str`
 
         :param ascend:
             --------
-            Whether to sort the DataSet in ascending (`True`) or descending (`False`) order
+            Whether to sort the Dataset in ascending (`True`) or descending (`False`) order
         :type key: `bool`, defaults to `True`
 
         :return: None
 
         :Examples:
-        >>> from dessia_common.datatools import DataSet
+        >>> from dessia_common.datatools import Dataset
         >>> from dessia_common.models import all_cars_wi_feat
-        >>> example_list = DataSet(all_cars_wi_feat[:3], "sort_example")
+        >>> example_list = Dataset(all_cars_wi_feat[:3], "sort_example")
         >>> example_list.sort("mpg", False)
         >>> print(example_list)
-        DataSet sort_example: 3 samples, 5 features
+        Dataset sort_example: 3 samples, 5 features
         |         Mpg         |    Displacement    |     Horsepower     |       Weight       |    Acceleration    |
         -----------------------------------------------------------------------------------------------------------
         |               18.0  |             0.318  |             150.0  |            3436.0  |              11.0  |
@@ -352,7 +352,7 @@ class DataSet(DessiaObject):
         |               15.0  |              0.35  |             165.0  |            3693.0  |              11.5  |
         >>> example_list.sort(2, True)
         >>> print(example_list)
-        DataSet sort_example: 3 samples, 5 features
+        Dataset sort_example: 3 samples, 5 features
         |         Mpg         |    Displacement    |     Horsepower     |       Weight       |    Acceleration    |
         -----------------------------------------------------------------------------------------------------------
         |               18.0  |             0.307  |             130.0  |            3504.0  |              12.0  |
@@ -377,9 +377,9 @@ class DataSet(DessiaObject):
         :rtype: List[float]
 
         :Examples:
-        >>> from dessia_common.datatools import DataSet
+        >>> from dessia_common.datatools import Dataset
         >>> from dessia_common.models import all_cars_wi_feat
-        >>> example_list = DataSet(all_cars_wi_feat, "mean_example")
+        >>> example_list = Dataset(all_cars_wi_feat, "mean_example")
         >>> print(example_list.mean())
         [23.051231527093602, 0.1947795566502462, 103.5295566502463, 2979.4137931034484, 15.519704433497521]
 
@@ -394,9 +394,9 @@ class DataSet(DessiaObject):
         :rtype: List[float]
 
         :Examples:
-        >>> from dessia_common.datatools import DataSet
+        >>> from dessia_common.datatools import Dataset
         >>> from dessia_common.models import all_cars_wi_feat
-        >>> example_list = DataSet(all_cars_wi_feat, "std_example")
+        >>> example_list = Dataset(all_cars_wi_feat, "std_example")
         >>> print(example_list.standard_deviation())
         [8.391423956652817, 0.10479316386533469, 40.47072606559397, 845.9605763601298, 2.799904275515381]
 
@@ -411,9 +411,9 @@ class DataSet(DessiaObject):
         :rtype: List[float]
 
         :Examples:
-        >>> from dessia_common.datatools import DataSet
+        >>> from dessia_common.datatools import Dataset
         >>> from dessia_common.models import all_cars_wi_feat
-        >>> example_list = DataSet(all_cars_wi_feat, "var_example")
+        >>> example_list = Dataset(all_cars_wi_feat, "var_example")
         >>> print(example_list.variances())
         [70.41599602028683, 0.010981607192906888, 1637.8796682763475, 715649.2967555631, 7.839463952049309]
 
@@ -428,9 +428,9 @@ class DataSet(DessiaObject):
         :rtype: List[List[float]], `n_features x n_features`
 
         :Examples:
-        >>> from dessia_common.datatools import DataSet
+        >>> from dessia_common.datatools import Dataset
         >>> from dessia_common.models import all_cars_wi_feat
-        >>> example_list = DataSet(all_cars_wi_feat, "covar_example")
+        >>> example_list = Dataset(all_cars_wi_feat, "covar_example")
         >>> cov_matrix = example_list.covariance_matrix()
         >>> for row in cov_matrix: print(row)
         [70.58986267712706, -0.6737370735267286, -247.39164142796338, -5604.189893571734, 9.998099130329008]
@@ -472,9 +472,9 @@ class DataSet(DessiaObject):
         :rtype: List[List[float]], `n_samples x n_samples`
 
         :Examples:
-        >>> from dessia_common.datatools import DataSet
+        >>> from dessia_common.datatools import Dataset
         >>> from dessia_common.models import all_cars_wi_feat
-        >>> example_list = DataSet(all_cars_wi_feat, "distance_example")
+        >>> example_list = Dataset(all_cars_wi_feat, "distance_example")
         >>> distance_matrix = example_list.distance_matrix('mahalanobis')
         >>> for row in distance_matrix[:4]: print(row[:4])
         [0.0, 1.6150355142162274, 1.0996902429379676, 1.3991408510938068]
@@ -539,26 +539,26 @@ class DataSet(DessiaObject):
 
     def filtering(self, filters_list: FiltersList):
         """
-        Filter a DataSet given a FiltersList.
-        Method filtering apply a FiltersList to the current DataSet.
+        Filter a Dataset given a FiltersList.
+        Method filtering apply a FiltersList to the current Dataset.
 
         :param filters_list:
-            FiltersList to apply on current DataSet
+            FiltersList to apply on current Dataset
         :type filters_list: FiltersList
 
-        :return: The filtered DataSet
-        :rtype: DataSet
+        :return: The filtered Dataset
+        :rtype: Dataset
 
         :Examples:
         >>> from dessia_common.core import DessiaFilter
-        >>> from dessia_common.datatools import DataSet
+        >>> from dessia_common.datatools import Dataset
         >>> from dessia_common.models import all_cars_wi_feat
         >>> filters = [DessiaFilter('weight', '<=', 1650.), DessiaFilter('mpg', '>=', 45.)]
         >>> filters_list = FiltersList(filters, "xor")
-        >>> example_list = DataSet(all_cars_wi_feat, name="example")
+        >>> example_list = Dataset(all_cars_wi_feat, name="example")
         >>> filtered_list = example_list.filtering(filters_list)
         >>> print(filtered_list)
-        DataSet example: 3 samples, 5 features
+        Dataset example: 3 samples, 5 features
         |         Mpg         |    Displacement    |     Horsepower     |       Weight       |    Acceleration    |
         -----------------------------------------------------------------------------------------------------------
         |               35.0  |             0.072  |              69.0  |            1613.0  |              18.0  |
@@ -580,7 +580,7 @@ class DataSet(DessiaObject):
                 `0.95`, and keep only the `r` first normalized singular values which sum is greater than the threshold.
 
         `r` is the rank of the matrix and gives a good indication on the real dimensionality of the data contained in \
-            the current DataSet. `r` is often much smaller than the current dimension of the studied data.
+            the current Dataset. `r` is often much smaller than the current dimension of the studied data.
         This indicates that the used features can be combined into less new features, which do not necessarily \
             make sense for engineers.
 
@@ -592,7 +592,7 @@ class DataSet(DessiaObject):
         :rtype: Tuple[List[float], List[Dict[str, float]]]
 
         """
-        scaled_data = DataSet._scale_data(npy.array(self.matrix) - npy.mean(self.matrix, axis=0))
+        scaled_data = Dataset._scale_data(npy.array(self.matrix) - npy.mean(self.matrix, axis=0))
         _, singular_values, _ = npy.linalg.svd(npy.array(scaled_data).T, full_matrices=False)
         normalized_singular_values = singular_values / npy.sum(singular_values)
 
@@ -773,14 +773,14 @@ class DataSet(DessiaObject):
         Render a markdown of the object output type: string
 
         """
-        return templates.DataSet_markdown_template.substitute(name=self.name, class_=self.__class__.__name__)
+        return templates.Dataset_markdown_template.substitute(name=self.name, class_=self.__class__.__name__)
 
     @staticmethod
     def _check_costs(len_data: int, costs: List[List[float]]):
         if len(costs) != len_data:
             if len(costs[0]) == len_data:
                 return list(map(list, zip(*costs)))
-            raise ValueError(f"costs is length {len(costs)} and the matching DataSet is length {len_data}. " +
+            raise ValueError(f"costs is length {len(costs)} and the matching Dataset is length {len_data}. " +
                              "They should be the same length.")
         return costs
 
@@ -812,11 +812,11 @@ class DataSet(DessiaObject):
             costs on which the pareto points are computed
         :type costs: `List[List[float]]`, `n_samples x n_features`
 
-        :return: a DataSet containing the selected points
-        :rtype: DataSet
+        :return: a Dataset containing the selected points
+        :rtype: Dataset
 
         """
-        checked_costs = DataSet._check_costs(len(self), costs)
+        checked_costs = Dataset._check_costs(len(self), costs)
         return self[self.__class__.pareto_indexes(checked_costs)]
 
     def pareto_sheets(self, costs: List[List[float]], nb_sheets: int = 1):
@@ -832,20 +832,20 @@ class DataSet(DessiaObject):
         :type nb_sheets: `int`, `optional`, default to `1`
 
         :return: The successive pareto sheets and not selected elements
-        :rtype: `List[DataSet]`, `DataSet`
+        :rtype: `List[Dataset]`, `Dataset`
 
         """
-        checked_costs = DataSet._check_costs(len(self), costs)
+        checked_costs = Dataset._check_costs(len(self), costs)
         non_optimal_costs = checked_costs[:]
         non_optimal_points = self.dessia_objects[:]
         pareto_sheets = []
         for idx in range(nb_sheets):
-            pareto_sheet = DataSet.pareto_indexes(non_optimal_costs)
-            pareto_sheets.append(DataSet(list(itertools.compress(non_optimal_points, pareto_sheet)),
+            pareto_sheet = Dataset.pareto_indexes(non_optimal_costs)
+            pareto_sheets.append(Dataset(list(itertools.compress(non_optimal_points, pareto_sheet)),
                                                    self.name + f'_pareto_{idx}'))
             non_optimal_points = list(itertools.compress(non_optimal_points, map(lambda x: not x, pareto_sheet)))
             non_optimal_costs = list(itertools.compress(non_optimal_costs, map(lambda x: not x, pareto_sheet)))
-        return pareto_sheets, DataSet(non_optimal_points, self.name)
+        return pareto_sheets, Dataset(non_optimal_points, self.name)
 
     @staticmethod
     def pareto_frontiers(len_data: int, costs: List[List[float]]):
@@ -854,8 +854,8 @@ class DataSet(DessiaObject):
 
         """
         # Experimental
-        checked_costs = DataSet._check_costs(len_data, costs)
-        pareto_indexes = DataSet.pareto_indexes(checked_costs)
+        checked_costs = Dataset._check_costs(len_data, costs)
+        pareto_indexes = Dataset.pareto_indexes(checked_costs)
         pareto_costs = npy.array(list(itertools.compress(checked_costs, pareto_indexes)))
 
         array_costs = npy.array(checked_costs)
@@ -864,7 +864,7 @@ class DataSet(DessiaObject):
         for x_dim in range(pareto_costs.shape[1]):
             for y_dim in range(pareto_costs.shape[1]):
                 if x_dim != y_dim:
-                    frontier_2d = DataSet._pareto_frontier_2d(x_dim, y_dim, pareto_costs,
+                    frontier_2d = Dataset._pareto_frontier_2d(x_dim, y_dim, pareto_costs,
                                                                         npy.max(array_costs[:, x_dim]), super_mini)
                     pareto_frontiers.append(frontier_2d)
 
@@ -1077,7 +1077,7 @@ def covariance_matrix(matrix):
     :Examples:
     >>> from dessia_common.datatools import covariance_matrix
     >>> from dessia_common.models import all_cars_wi_feat
-    >>> matrix = DataSet(all_cars_wi_feat).matrix
+    >>> matrix = Dataset(all_cars_wi_feat).matrix
     >>> cov_matrix = covariance_matrix(list(zip(*matrix)))
     >>> for row in cov_matrix[:2]: print(row[:2])
     [70.58986267712706, -0.6737370735267286]

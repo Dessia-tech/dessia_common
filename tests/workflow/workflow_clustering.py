@@ -8,7 +8,7 @@ from dessia_common.typings import ClassMethodType, MethodType
 from dessia_common.tests import Car
 from dessia_common.workflow.blocks import ClassMethod, InstantiateModel, ModelMethod, Unpacker, Concatenate
 from dessia_common.core import DessiaFilter, FiltersList
-from dessia_common.datatools import HeterogeneousList, CategorizedList
+from dessia_common.datatools import Dataset, CategorizedList
 from dessia_common.workflow.core import Workflow, Pipe
 
 # Import data
@@ -20,7 +20,7 @@ stream_file = StringFile.from_stream(csv_cars)
 # ===============================================================================================================
 
 block_0 = ClassMethod(method_type=ClassMethodType(Car, 'from_csv'), name='CSV Cars')
-block_1 = InstantiateModel(model_class=HeterogeneousList, name='HList Cars')
+block_1 = InstantiateModel(model_class=Dataset, name='HList Cars')
 block_2 = ClassMethod(method_type=ClassMethodType(FiltersList, 'from_filters_list'), name='Filters Clist')
 block_3 = ClassMethod(method_type=ClassMethodType(CategorizedList, 'from_agglomerative_clustering'), name='Clustering')
 block_4 = ModelMethod(method_type=MethodType(CategorizedList, 'filtering'), name='CList.filtering')
@@ -60,7 +60,7 @@ output_jsondict_to_object_1 = CategorizedList.dict_to_object(output_json_to_dict
 # ===============================================================================================================
 
 block_0 = ClassMethod(method_type=ClassMethodType(Car, 'from_csv'), name='CSV Cars')
-block_1 = InstantiateModel(model_class=HeterogeneousList, name='HList Cars')
+block_1 = InstantiateModel(model_class=Dataset, name='HList Cars')
 block_2 = ClassMethod(method_type=ClassMethodType(CategorizedList, 'from_agglomerative_clustering'), name='Clustering')
 block_3 = ModelMethod(method_type=MethodType(CategorizedList, 'clustered_sublists'), name='Sublists')
 block_4 = Unpacker(indices=[3, 8, 9], name='Unpack_3_8_9')

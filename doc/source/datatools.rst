@@ -10,7 +10,7 @@ It implements many features that can help engineers to explore the data containe
 HeterogenenousList includes, among others, a plot_data method, filtering capabilities, data exploration features, metrics, statistics
 and can be clustered into a CategorizedList to help in clustering similar data.
 
-.. autoclass:: dessia_common.datatools.HeterogeneousList
+.. autoclass:: dessia_common.datatools.Dataset
    :members:
 
 Sampler

@@ -4,16 +4,16 @@ Cluster.py package testing.
 """
 import json
 from dessia_common.models import all_cars_no_feat, all_cars_wi_feat, rand_data_small, rand_data_large
-from dessia_common.datatools import HeterogeneousList, CategorizedList
+from dessia_common.datatools import Dataset, CategorizedList
 
 # When attribute _features is not specified in class Car
-all_cars_without_features = HeterogeneousList(all_cars_no_feat)
+all_cars_without_features = Dataset(all_cars_no_feat)
 # When attribute _features is specified in class CarWithFeatures
-all_cars_with_features = HeterogeneousList(all_cars_wi_feat)
+all_cars_with_features = Dataset(all_cars_wi_feat)
 # Auto-generated heterogeneous small dataset with nb_clusters clusters of points in nb_dims dimensions
-small_RandDatas_heterogeneous = HeterogeneousList(rand_data_small)
+small_RandDatas_heterogeneous = Dataset(rand_data_small)
 # Auto-generated heterogeneous large dataset with nb_clusters clusters of points in nb_dims dimensions
-big_RandDatas_heterogeneous = HeterogeneousList(rand_data_large)
+big_RandDatas_heterogeneous = Dataset(rand_data_large)
 
 # Build CategorizedLists
 clustered_cars_without = CategorizedList.from_dbscan(all_cars_without_features, eps=40)
@@ -39,7 +39,7 @@ clustered_cars_without.labels[0] = 15000
 clustered_cars_without.labels[1] = -1
 clustered_cars_without.labels[2:100] = [999999]*len(clustered_cars_without[2:100])
 print(clustered_cars_without)
-hlist = HeterogeneousList(all_cars_wi_feat, name="cars")
+hlist = Dataset(all_cars_wi_feat, name="cars")
 clist = CategorizedList.from_agglomerative_clustering(hlist, n_clusters=10, name="cars")
 split_clist = clist.clustered_sublists()
 split_clist[0].name = "15g6e4rg84reh56rt4h56j458hrt56gb41rth674r68jr6"
@@ -92,7 +92,7 @@ try:
     clustered_cars_without + clustered_cars_without
     raise ValueError("CategorizedList should be summable")
 except Exception as e:
-    assert(e.args[0] == "Addition only defined for HeterogeneousList. A specific __add__ method is required for " +
+    assert(e.args[0] == "Addition only defined for Dataset. A specific __add__ method is required for " +
             "<class 'dessia_common.datatools.CategorizedList'>")
 
 # Exports XLS

@@ -2,7 +2,7 @@
 Tools for copying objects
 """
 
-from dessia_common.datatools import DataSet
+from dessia_common.datatools import Dataset
 
 def concatenate(values):
     types_set = set(type(value) for value in values)
@@ -21,15 +21,15 @@ def concatenate(values):
         for value in values[1:]:
             concatenated_values = dict(concatenated_values, **value)
 
-    if isinstance(first_value, HeterogeneousList): # TODO merge with list case when extend is developed in HList
+    if isinstance(first_value, Dataset): # TODO merge with list case when extend is developed in HList
         dessia_objects = []
         name = 'test_concat'
         for value in values:
             dessia_objects.extend(value.dessia_objects)
             name += value.name + ("_" if value.name != "" else "")
-        concatenated_values = HeterogeneousList(dessia_objects, name)
+        concatenated_values = Dataset(dessia_objects, name)
 
     if concatenated_values is not None:
         return concatenated_values
 
-    raise ValueError("Block Concatenate only defined for classes 'list', 'dict' and 'dessia_common.HeterogeneousList'")
+    raise ValueError("Block Concatenate only defined for classes 'list', 'dict' and 'dessia_common.Dataset'")
