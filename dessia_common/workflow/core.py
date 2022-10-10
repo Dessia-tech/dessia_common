@@ -1138,9 +1138,7 @@ class Workflow(Block):
                 for path in paths:
                     distance = 1
                     for path_element in path[1:-1]:
-                        if path_element in self.blocks:
-                            distance += 1
-                        elif path_element in self.nonblock_variables:
+                        if path_element in self.blocks + self.nonblock_variables:
                             distance += 1
                     distances.append(distance)
                 try:
