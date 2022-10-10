@@ -1146,7 +1146,7 @@ class Workflow(Block):
 
         return graph
 
-    def graph_distances(self, graph) -> list[list]:
+    def graph_distances(self, graph) -> list:
         """
         :returns: list[ColumnLayout] where ColumnLayout is list[node_index]
         """
@@ -1158,7 +1158,7 @@ class Workflow(Block):
 
         return [column_list for column_list in elements_by_distance.values()]
 
-    def layout(self) -> list[list[list]]:
+    def layout(self) -> list:
         """
         :returns: list[GraphLayout] where GraphLayout is list[ColumnLayout] and ColumnLayout is list[node_index]
         """
