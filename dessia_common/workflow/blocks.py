@@ -701,6 +701,7 @@ class Display(Block):
         output = TypedVariable(type_=DisplayObject, name="Display Object")
         Block.__init__(self, inputs=inputs, outputs=[output], name=name)
 
+        self._type = None
         self._selector = None
 
     @staticmethod
@@ -710,16 +711,27 @@ class Display(Block):
                       "to generate wanted displays (MultiPlot, CadView, PlotData, Markdown)", DeprecationWarning)
 
     @property
+    def type_(self):
+        if self._type:
+            return self._type
+        if self.__class__ is Display:
+            self.warn_deprecation()
+            return ""
+        raise NotImplementedError(f"type_ attribute is not implemented for block of type '{type(self)}'")
+
+    @property
     def selector(self):
         if self._selector:
             return self._selector
         if self.__class__ is Display:
             self.warn_deprecation()
             return ""
-        raise NotImplementedError(f"selector is not implemented for type '{type(self)}'")
+        raise NotImplementedError(f"selector attribute is not implemented for block of type '{type(self)}'")
 
     def _display_settings(self, block_index: int) -> DisplaySetting:
-        return block_display_settings(block_index=block_index, type_=self.selector, name=self.name)
+        args = {'block_index': block_index}
+        return DisplaySetting(selector=None, type_=self.type_, method="block_display", serialize_data=True,
+                              arguments=args)
 
     def evaluate(self, values):
         object_ = values[self.inputs[0]]
@@ -751,7 +763,8 @@ class MultiPlot(Display):
         self.attributes = attributes
         Display.__init__(self, inputs=[TypedVariable(List[DessiaObject])], name=name)
         self.inputs[0].name = 'Input List'
-        self._selector = "plot_data"
+        self._type = "plot_data"
+        self._selector = None
 
     def equivalent(self, other):
         same_attributes = self.attributes == other.attributes
@@ -787,7 +800,7 @@ class MultiPlot(Display):
         sizes = [plot_data.Window(width=560, height=300), plot_data.Window(width=560, height=300)]
         multiplot = plot_data.MultiplePlots(elements=attr_values, plots=plots, sizes=sizes,
                                             coords=[(0, 0), (0, 300)], name='Results plot')
-        return [DisplayObject(type_="plot_data", data=[multiplot.to_dict()])]
+        return [DisplayObject(type_=self.type_, data=[multiplot.to_dict()])]
 
     def _to_script(self) -> ToScriptElement:
         script = f"MultiPlot(attributes={self.attributes}, name='{self.name}')"
@@ -806,6 +819,7 @@ class CadView(Display):
         input_ = TypedVariable(DessiaObject, name="Model to display")
         Display.__init__(self, inputs=[input_], name=name)
 
+        self._type = "babylon_data"
         self._selector = "cad"
 
 
@@ -820,6 +834,7 @@ class Markdown(Display):
         input_ = TypedVariable(DessiaObject, name="Model to display")
         Display.__init__(self, inputs=[input_], name=name)
 
+        self._type = "markdown"
         self._selector = "markdown"
 
 
@@ -836,6 +851,7 @@ class PlotData(Display):
         input_ = TypedVariable(DessiaObject, name="Model to display")
         Display.__init__(self, inputs=[input_], name=name)
 
+        self._type = "plot_data"
         self._selector = "plot_data"
 
 
@@ -1100,11 +1116,3 @@ class Archive(Block):
     def _to_script(self) -> ToScriptElement:
         script = f"Archive(number_exports={self.number_exports}, filename='{self.filename}', name='{self.name}')"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
-
-
-def block_display_settings(block_index: int, type_: str, name: str = "") -> DisplaySetting:
-    args = {'block_index': block_index}
-    if not name:
-        name = type_
-    selector = f"{name} ({block_index})"
-    return DisplaySetting(selector=selector, type_=type_, method="block_display", serialize_data=True, arguments=args)
