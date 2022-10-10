@@ -1146,11 +1146,10 @@ class Workflow(Block):
 
         return graph
 
-    ColumnLayout = list[int]
-    GraphLayout = list[ColumnLayout]
-    WorkflowLayout = list[GraphLayout]
-
-    def graph_distances(self, graph) -> GraphLayout:
+    def graph_distances(self, graph) -> list[list[int]]:
+        """
+        :returns: list[ColumnLayout] where ColumnLayout is list[node_index]
+        """
         distance_by_element = get_distance_by_nodes(graph)
         elements_by_distance = {}
         for node, distance in distance_by_element.items():
@@ -1159,7 +1158,10 @@ class Workflow(Block):
 
         return [column_list for column_list in elements_by_distance.values()]
 
-    def layout(self) -> WorkflowLayout:
+    def layout(self) -> list[list[list[int]]]:
+        """
+        :returns: list[GraphLayout] where GraphLayout is list[ColumnLayout] and ColumnLayout is list[node_index]
+        """
         digraph = self.layout_graph
         graph = digraph.to_undirected()
         connected_components = nx.connected_components(graph)
