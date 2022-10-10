@@ -1084,7 +1084,7 @@ class Export(Block):
                    extension=dict_["extension"], name=dict_["name"])
 
     def evaluate(self, values):
-        filename = values.pop(self.inputs[-1])
+        filename = f"{values.pop(self.inputs[-1])}.{self.extension}"
         if self.text:
             stream = StringFile(filename)
         else:
@@ -1145,7 +1145,7 @@ class Archive(Block):
 
     def evaluate(self, values):
         name_input = self.inputs[-1]
-        archive_name = values.pop(name_input)
+        archive_name = f"{values.pop(name_input)}.zip"
         archive = BinaryFile(archive_name)
         with ZipFile(archive, 'w') as zip_archive:
             for input_ in self.inputs[:-1]:  # Filename is last block input

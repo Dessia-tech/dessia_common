@@ -1994,7 +1994,7 @@ class WorkflowState(DessiaObject):
         evaluated_blocks = self.evaluate_branch(branch)
         if block not in evaluated_blocks:
             msg = f"Could not reach block at index {block_index}." \
-                  f"Has the workflow been run far enough to evaluate this block ?"
+                  f"Has the workflow been ran far enough to evaluate this block ?"
             raise WorkflowError(msg)
         export_stream = evaluated_blocks[block][0]  # Only one output to an Export Block
         if isinstance(stream, StringFile):
