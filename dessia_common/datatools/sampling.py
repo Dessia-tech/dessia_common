@@ -9,7 +9,7 @@ import numpy as npy
 import pyDOE2 as pyDOE
 
 from dessia_common.core import DessiaObject
-from dessia_common.datatools import Dataset
+from dessia_common.datatools.dataset import Dataset
 from dessia_common.optimization import FixedAttributeValue, BoundedAttributeValue
 
 class Sampler(DessiaObject):

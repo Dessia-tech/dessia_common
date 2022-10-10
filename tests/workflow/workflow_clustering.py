@@ -8,7 +8,8 @@ from dessia_common.typings import ClassMethodType, MethodType
 from dessia_common.tests import Car
 from dessia_common.workflow.blocks import ClassMethod, InstantiateModel, ModelMethod, Unpacker, Concatenate
 from dessia_common.core import DessiaFilter, FiltersList
-from dessia_common.datatools import Dataset, ClusteredDataset
+from dessia_common.datatools.dataset import Dataset
+from dessia_common.datatools.cluster import ClusteredDataset
 from dessia_common.workflow.core import Workflow, Pipe
 
 # Import data

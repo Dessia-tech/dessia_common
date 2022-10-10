@@ -16,7 +16,7 @@ except ImportError:
     pass
 from dessia_common.exports import XLSXWriter
 from dessia_common.core import DessiaObject, DessiaFilter
-from dessia_common.datatools import Dataset
+from dessia_common.datatools.dataset import Dataset
 
 
 class ClusteredDataset(Dataset):

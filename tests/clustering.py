@@ -4,7 +4,8 @@ Cluster.py package testing.
 """
 import json
 from dessia_common.models import all_cars_no_feat, all_cars_wi_feat, rand_data_small, rand_data_large
-from dessia_common.datatools import Dataset, ClusteredDataset
+from dessia_common.datatools.dataset import Dataset
+from dessia_common.datatools.cluster import ClusteredDataset
 
 # When attribute _features is not specified in class Car
 all_cars_without_features = Dataset(all_cars_no_feat)
@@ -93,7 +94,7 @@ try:
     raise ValueError("ClusteredDataset should be summable")
 except Exception as e:
     assert(e.args[0] == "Addition only defined for Dataset. A specific __add__ method is required for " +
-            "<class 'dessia_common.datatools.ClusteredDataset'>")
+            "<class 'dessia_common.datatools.cluster.ClusteredDataset'>")
 
 # Exports XLS
 clustered_cars_without.to_xlsx('clus_xls.xlsx')
