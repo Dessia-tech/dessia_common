@@ -14,8 +14,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Documentation for HeterogeneousList, CategorizedList, DessiaFilter, FiltersList
 - pareto front and parallel plot for HeterogeneousList
 - Sort parallel plot axis with correlation coefficient (experimental algorithm that seems to work)
-- Metrics for HeterogeneousList and CategorizedList
-- Centroids for CategorizedList
 - Nearly all required tests for all these developments
 
 ### Breaking Changes

@@ -14,7 +14,6 @@ Welcome to DessiaCommon's documentation!
    subclassing
    customizing
    core
-   datatools
    workflow
    advanced
 

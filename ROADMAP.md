@@ -6,9 +6,8 @@ Once implemented, update CHANGELOG.md
 ## Short term (next month)
 
 ### Refactorings
+* core: split DessiaObject with a new class PhysicalObject
 * workflow: move blocks to submodule
-* remove barrel imports: dessia_common, dessia_common.workflow
-* split Dessia Object in equality , serailization, export & displays capabilities
 
 ### New features
  
