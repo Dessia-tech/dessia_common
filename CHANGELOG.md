@@ -27,19 +27,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - FiltersList class
-- Easy access to HeterogeneousList with getitem, len, add, extend, sort
-- filtering method in HeterogeneousList that calls a FiltersList
-- Documentation for HeterogeneousList, CategorizedList, DessiaFilter, FiltersList
-- pareto front and parallel plot for HeterogeneousList
+- Easy access to Dataset with getitem, len, add, extend, sort
+- filtering method in Dataset that calls a FiltersList
+- Documentation for Dataset, ClusteredDataset, DessiaFilter, FiltersList
+- pareto front and parallel plot for Dataset
 - Sort parallel plot axis with correlation coefficient (experimental algorithm that seems to work)
-- Metrics for HeterogeneousList and CategorizedList
-- Centroids for CategorizedList
+- Metrics for Dataset and ClusteredDataset
+- Centroids for ClusteredDataset
 - Nearly all required tests for all these developments
 
 ### Breaking Changes
 - Change attribute "operator" of DessiaFilter to "comparison_operator"
 - Change name of file "cluster.py" to "datatools.py"
-- Move HeterogeneousList in "datatools.py"
+- Move Dataset in "datatools.py"
 
 ### Changes
 - Add 'logical_operator="and"' attribute to workflow.block.Filter

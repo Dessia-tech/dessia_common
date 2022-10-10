@@ -19,33 +19,33 @@ from dessia_common.core import DessiaObject, DessiaFilter
 from dessia_common.datatools import Dataset
 
 
-class Cluster(Dataset):
+class ClusteredDataset(Dataset):
     """
     Base object for handling a categorized (clustered) list of DessiaObjects.
 
-    **CategorizedList should be instantiated with** `from_...` **methods.**
+    **ClusteredDataset should be instantiated with** `from_...` **methods.**
 
-    **Do not use** `__init__` **to instantiate a CategorizedList.**
+    **Do not use** `__init__` **to instantiate a ClusteredDataset.**
 
     :param dessia_objects:
         --------
-        List of DessiaObjects to store in CategorizedList
+        List of DessiaObjects to store in ClusteredDataset
     :type dessia_objects: `List[DessiaObject]`, `optional`, defaults to `None`
 
     :param labels:
         --------
-        Labels of DessiaObjects' cluster stored in CategorizedList
+        Labels of DessiaObjects' cluster stored in ClusteredDataset
     :type labels: `List[int]`, `optional`, defaults to `None`
 
     :param name:
         --------
-        Name of CategorizedList
+        Name of ClusteredDataset
     :type name: `str`, `optional`, defaults to `""`
 
     :Properties:
         * **common_attributes:** (`List[str]`)
             --------
-            Common attributes of DessiaObjects contained in the current `CategorizedList`
+            Common attributes of DessiaObjects contained in the current `ClusteredDataset`
         * **matrix:** (`List[List[float]]`, `n_samples x n_features`)
             --------
             Matrix of data computed by calling the to_vector method of all dessia_objects
@@ -116,20 +116,20 @@ class Cluster(Dataset):
 
     def clustered_sublists(self):
         """
-        Split a CategorizedList of labelled DessiaObjects into a CategorizedList of labelled Datasets.
+        Split a ClusteredDataset of labelled DessiaObjects into aClusteredDatasetet of labelled Datasets.
 
-        :return: A CategorizedList of length n_cluster that store each cluster in a Dataset. Labels are \
+        :return: A ClusteredDataset of length n_cluster that store each cluster in a Dataset. Labels are \
             the labels of each cluster, i.e. stored Dataset
-        :rtype: CategorizedList[Dataset]
+        :rtype: ClusteredDataset[Dataset]
 
         :Examples:
-        >>> from dessia_common.datatools import Dataset, CategorizedList
+        >>> from dessia_common.datatools import Dataset, ClusteredDataset
         >>> from dessia_common.models import all_cars_wi_feat
         >>> hlist = Dataset(all_cars_wi_feat, name="cars")
-        >>> clist = CategorizedList.from_agglomerative_clustering(hlist, n_clusters=10, name="ex")
+        >>> clist = ClusteredDataset.from_agglomerative_clustering(hlist, n_clusters=10, name="ex")
         >>> split_clist = clist.clustered_sublists()
         >>> print(split_clist[:3])
-        CategorizedList ex_split: 3 samples, 2 features, 3 clusters
+        ClusteredDataset ex_split: 3 samples, 2 features, 3 clusters
         |   n°   |   Name   |   Common_attributes   |
         ---------------------------------------------
         |      0 |     ex_0 |['mpg', 'displacemen...|
@@ -159,7 +159,7 @@ class Cluster(Dataset):
         new_dessia_objects = [Dataset(dessia_objects=sublist, name=self.name + f"_{label_tag}")
                               for label_tag, sublist in zip(label_tags, sublists)]
 
-        return CategorizedList(new_dessia_objects,
+        return ClusteredDataset(new_dessia_objects,
                                list(set(self.labels).difference({-1})) + ([-1] if -1 in self.labels else []),
                                name=self.name + "_split")
 
@@ -178,10 +178,10 @@ class Cluster(Dataset):
         :rtype: List[List[float]]
 
         :Examples:
-        >>> from dessia_common.datatools import Dataset, CategorizedList
+        >>> from dessia_common.datatools import Dataset, ClusteredDataset
         >>> from dessia_common.models import all_cars_wi_feat
         >>> hlist = Dataset(all_cars_wi_feat, name="cars")
-        >>> clist = CategorizedList.from_agglomerative_clustering(hlist, n_clusters=10, name="ex")
+        >>> clist = ClusteredDataset.from_agglomerative_clustering(hlist, n_clusters=10, name="ex")
         >>> means = clist.mean_clusters()
         >>> print(means[0])
         [28.83333333333334, 0.10651785714285714, 79.16666666666667, 2250.3571428571427, 16.075000000000006]
@@ -223,10 +223,10 @@ class Cluster(Dataset):
         :rtype: List[List[float]]
 
         :Examples:
-        >>> from dessia_common.datatools import Dataset, CategorizedList
+        >>> from dessia_common.datatools import Dataset, ClusteredDataset
         >>> from dessia_common.models import all_cars_wi_feat
         >>> hlist = Dataset(all_cars_wi_feat, name="cars")
-        >>> clist = CategorizedList.from_agglomerative_clustering(hlist, n_clusters=10, name="ex")
+        >>> clist = ClusteredDataset.from_agglomerative_clustering(hlist, n_clusters=10, name="ex")
         >>> cluster_distances = clist.cluster_distances()
         >>> print(list(map(int, cluster_distances[6])))
         [180, 62, 162, 47, 347, 161, 160, 67, 164, 206, 114, 138, 97, 159, 124, 139]
@@ -269,10 +269,10 @@ class Cluster(Dataset):
         :rtype: List[List[float]]
 
         :Examples:
-        >>> from dessia_common.datatools import Dataset, CategorizedList
+        >>> from dessia_common.datatools import Dataset, ClusteredDataset
         >>> from dessia_common.models import all_cars_wi_feat
         >>> hlist = Dataset(all_cars_wi_feat, name="cars")
-        >>> clist = CategorizedList.from_agglomerative_clustering(hlist, n_clusters=10, name="ex")
+        >>> clist = ClusteredDataset.from_agglomerative_clustering(hlist, n_clusters=10, name="ex")
         >>> cluster_real_centroids = clist.cluster_real_centroids()
         >>> print(Dataset([cluster_real_centroids[0]]))
         Dataset 0x7f752654a0a0: 1 samples, 5 features
@@ -410,8 +410,8 @@ class Cluster(Dataset):
             Formula is `scaled_x = ( x - mean )/standard_deviation`
         :type scaling: `bool`, `optional`, default to `False`
 
-        :return: a CategorizedList that knows the data and their labels
-        :rtype: CategorizedList
+        :return: a ClusteredDataset that knows the data and their labels
+        :rtype: ClusteredDataset
 
         """
         skl_cluster = cluster.AgglomerativeClustering(
@@ -462,8 +462,8 @@ class Cluster(Dataset):
             Formula is `scaled_x = ( x - mean )/standard_deviation`
         :type scaling: `bool`, `optional`, default to `False`
 
-        :return: a CategorizedList that knows the data and their labels
-        :rtype: CategorizedList
+        :return: a ClusteredDataset that knows the data and their labels
+        :rtype: ClusteredDataset
 
         """
         skl_cluster = cluster.KMeans(n_clusters=n_clusters, n_init=n_init, tol=tol)
@@ -530,8 +530,8 @@ class Cluster(Dataset):
             Formula is `scaled_x = ( x - mean )/standard_deviation`
         :type scaling: `bool`, `optional`, default to `False`
 
-        :return: a CategorizedList that knows the data and their labels
-        :rtype: CategorizedList
+        :return: a ClusteredDataset that knows the data and their labels
+        :rtype: ClusteredDataset
 
         """
         skl_cluster = cluster.DBSCAN(eps=eps, min_samples=min_samples, p=mink_power, leaf_size=leaf_size, metric=metric)
@@ -542,7 +542,7 @@ class Cluster(Dataset):
     def from_pareto_sheets(cls, h_list: Dataset, costs: List[List[float]], nb_sheets: int = 1):
         """
         Get successive pareto sheets (i.e. optimal points in a DOE for pre-computed costs) and put them in a
-        `CategorizedList` where each label is the index of a pareto sheet.
+        `ClusteredDataset` where each label is the index of a pareto sheet.
 
         :param h_list:
             --------
@@ -559,9 +559,9 @@ class Cluster(Dataset):
             Number of pareto sheets to pick
         :type nb_sheets: `int`, `optional`, default to `1`
 
-        :return: a CategorizedList where each element is labelled with its pareto_sheet. Elements outside a \
+        :return: a ClusteredDataset where each element is labelled with its pareto_sheet. Elements outside a \
         pareto_sheet are labelled `n_sheets`
-        :rtype: CategorizedList
+        :rtype: ClusteredDataset
 
         """
         labels = []

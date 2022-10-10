@@ -4,7 +4,7 @@ Cluster.py package testing.
 """
 import json
 from dessia_common.models import all_cars_no_feat, all_cars_wi_feat, rand_data_small, rand_data_large
-from dessia_common.datatools import Dataset, CategorizedList
+from dessia_common.datatools import Dataset, ClusteredDataset
 
 # When attribute _features is not specified in class Car
 all_cars_without_features = Dataset(all_cars_no_feat)
@@ -15,14 +15,14 @@ small_RandDatas_heterogeneous = Dataset(rand_data_small)
 # Auto-generated heterogeneous large dataset with nb_clusters clusters of points in nb_dims dimensions
 big_RandDatas_heterogeneous = Dataset(rand_data_large)
 
-# Build CategorizedLists
-clustered_cars_without = CategorizedList.from_dbscan(all_cars_without_features, eps=40)
-clustered_cars_without_list = CategorizedList.list_dbscan(all_cars_no_feat, eps=40)
+# Build ClusteredDatasets
+clustered_cars_without = ClusteredDataset.from_dbscan(all_cars_without_features, eps=40)
+clustered_cars_without_list = ClusteredDataset.list_dbscan(all_cars_no_feat, eps=40)
 assert(clustered_cars_without_list == clustered_cars_without)
 
-clustered_cars_with = CategorizedList.from_dbscan(all_cars_with_features, eps=40)
-aggclustest_clustered = CategorizedList.from_agglomerative_clustering(big_RandDatas_heterogeneous, n_clusters=10)
-kmeanstest_clustered = CategorizedList.from_kmeans(small_RandDatas_heterogeneous, n_clusters=10, scaling=True)
+clustered_cars_with = ClusteredDataset.from_dbscan(all_cars_with_features, eps=40)
+aggclustest_clustered = ClusteredDataset.from_agglomerative_clustering(big_RandDatas_heterogeneous, n_clusters=10)
+kmeanstest_clustered = ClusteredDataset.from_kmeans(small_RandDatas_heterogeneous, n_clusters=10, scaling=True)
 
 # Split lists into labelled lists
 split_cars_without = clustered_cars_without.clustered_sublists()
@@ -40,7 +40,7 @@ clustered_cars_without.labels[1] = -1
 clustered_cars_without.labels[2:100] = [999999]*len(clustered_cars_without[2:100])
 print(clustered_cars_without)
 hlist = Dataset(all_cars_wi_feat, name="cars")
-clist = CategorizedList.from_agglomerative_clustering(hlist, n_clusters=10, name="cars")
+clist = ClusteredDataset.from_agglomerative_clustering(hlist, n_clusters=10, name="cars")
 split_clist = clist.clustered_sublists()
 split_clist[0].name = "15g6e4rg84reh56rt4h56j458hrt56gb41rth674r68jr6"
 print(split_clist)
@@ -90,10 +90,10 @@ deserialized_object = kmeanstest_clustered.dict_to_object(decoded_json)
 # Missing tests after coverage report
 try:
     clustered_cars_without + clustered_cars_without
-    raise ValueError("CategorizedList should be summable")
+    raise ValueError("ClusteredDataset should be summable")
 except Exception as e:
     assert(e.args[0] == "Addition only defined for Dataset. A specific __add__ method is required for " +
-            "<class 'dessia_common.datatools.CategorizedList'>")
+            "<class 'dessia_common.datatools.ClusteredDataset'>")
 
 # Exports XLS
 clustered_cars_without.to_xlsx('clus_xls.xlsx')
