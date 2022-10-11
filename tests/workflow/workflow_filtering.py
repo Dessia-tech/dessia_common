@@ -54,7 +54,7 @@ output_jsondict_to_object = Dataset.dict_to_object(output_json_to_dict)
 
 reference_output = {
   "name": "",
-  "object_class": "dessia_common.core.Dataset",
+  "object_class": "dessia_common.datatools.dataset.Dataset",
   "package_version": "0.9.2.dev320+gecd4609",
   "dessia_objects": [
     {

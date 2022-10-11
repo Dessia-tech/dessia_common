@@ -107,7 +107,7 @@ print(output_jsondict_to_object_2)
 
 reference_output_1 = {
   "name": "",
-  "object_class": "dessia_common.cluster.ClusteredDataset",
+  "object_class": "dessia_common.datatools.cluster.ClusteredDataset",
   "package_version": "0.9.2.dev320+gecd4609",
   "dessia_objects": [
     {
@@ -192,7 +192,7 @@ reference_output_1 = {
 
 reference_output_2 = {
   'name': '',
-  'object_class': 'dessia_common.cluster.ClusteredDataset',
+  'object_class': 'dessia_common.datatools.cluster.ClusteredDataset',
   'package_version': '0.8.1.dev105+gb6cb82bfeatcluster',
   'dessia_objects': [
     {

@@ -123,6 +123,7 @@ try:
     raise ValueError("plot_data should not work on empty Datasets")
 except Exception as e:
     assert(e.__class__.__name__ == "IndexError")
+
 try:
     empty_list.singular_values()
     raise ValueError("singular_values should not work on empty Datasets")

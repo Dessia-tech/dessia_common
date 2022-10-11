@@ -35,7 +35,7 @@ scripts = ['displays.py',
            'utils/algebra.py',
            'utils/interpolation.py',
            'utils/serialization.py',
-           # 'utils/helpers.py',
+           'utils/helpers.py',
            'utils/types.py',
            'type_matching.py',
            # Unit tests
