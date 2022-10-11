@@ -4,6 +4,7 @@ Tools for copying objects
 
 from dessia_common.datatools.dataset import Dataset
 
+
 def concatenate(values):
     types_set = set(type(value) for value in values)
     concatenated_values = None
