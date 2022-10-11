@@ -3,16 +3,17 @@ __init__ method for datatools module
 """
 
 import warnings
-from dessia_common.datatools.dataset import Dataset
-from dessia_common.datatools.cluster import ClusteredDataset
+import dessia_common.datatools.dataset as DS
+import dessia_common.datatools.cluster as DC
+
 
 # Imports for retrocompatibility
 # TODO: Remove it kindly in next releases.
 
-class HeterogeneousList(Dataset):
+class HeterogeneousList(DS.Dataset):
     def __init__(self, *kwargs):
         self.warning_string()
-        Dataset.__init__(self, *kwargs)
+        DS.Dataset.__init__(self, *kwargs)
 
     def warning_string(self):
         string = "Class HeterogeneousList is not supported anymore and will be deleted in next releases (0.11.0).\n"
@@ -26,10 +27,10 @@ class HeterogeneousList(Dataset):
         print(string)
 
 
-class CategorizedList(ClusteredDataset):
+class CategorizedList(DC.ClusteredDataset):
     def __init__(self, *kwargs):
         self.warning_string()
-        ClusteredDataset.__init__(self, *kwargs)
+        DC.ClusteredDataset.__init__(self, *kwargs)
 
     def warning_string(self):
         string = "Class CatagorizedList is not supported anymore and will be deleted in next releases (0.11.0).\n"
