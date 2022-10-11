@@ -1,3 +1,7 @@
+"""
+report for dessia_common
+
+"""
 from dessia_common.core import DessiaObject
 from typing import List
 import time
@@ -45,6 +49,7 @@ class Report(DessiaObject):
 
     def open(self, option: str = 'a'):
         #To avoid : Using open without explicitly specifying an encoding
+        # file = open(self.name_report + '.log', option)
         if option == 'r':
             file = open(self.name_report + '.log', 'r')
         elif option == 'w':
