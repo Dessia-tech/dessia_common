@@ -6,7 +6,7 @@ import json
 from dessia_common.models import all_cars_no_feat, all_cars_wi_feat, rand_data_small, rand_data_large
 from dessia_common.datatools.dataset import Dataset
 from dessia_common.datatools.cluster import ClusteredDataset
-from dessia_common.datatools import HeterogeneousList, CategorizedList
+# from dessia_common.datatools import HeterogeneousList, CategorizedList
 
 # When attribute _features is not specified in class Car
 all_cars_without_features = Dataset(all_cars_no_feat)
@@ -102,5 +102,5 @@ clustered_cars_without.to_xlsx('clus_xls.xlsx')
 split_cars_with.to_xlsx('clus_xls_2.xlsx')
 
 # Retrocompatibility
-Hlist = HeterogeneousList(all_cars_no_feat)
-Clist = CategorizedList(all_cars_no_feat)
+# Hlist = HeterogeneousList(all_cars_no_feat)
+# Clist = CategorizedList(all_cars_no_feat)
