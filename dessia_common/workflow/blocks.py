@@ -990,7 +990,7 @@ class ConcatenateStrings(Block):
     def __init__(self, number_elements: int = 2, separator: str = "", name: str = ''):
         self.number_elements = number_elements
         self.separator = separator
-        inputs = [TypedVariableWithDefaultValue(name=f"Element {i + 1}", type_=str, default_value="")
+        inputs = [TypedVariableWithDefaultValue(name=f"Substring {i + 1}", type_=str, default_value="")
                   for i in range(number_elements)]
         output = TypedVariable(name="Concatenation", type_=str)
         Block.__init__(self, inputs=inputs, outputs=[output], name=name)
