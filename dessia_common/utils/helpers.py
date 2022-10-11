@@ -10,7 +10,7 @@ def concatenate(values):
 
     first_value = values[0]
     if hasattr(first_value, 'extend'):
-        concatenated_values = values[0].__class__()
+        concatenated_values = first_value.__class__()
         for value in values:
             concatenated_values.extend(value)
 
