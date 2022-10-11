@@ -123,7 +123,8 @@ class ClusteredDataset(Dataset):
         :rtype: ClusteredDataset[Dataset]
 
         :Examples:
-        >>> from dessia_common.datatools import Dataset, ClusteredDataset
+        >>> from dessia_common.datatools.dataset import Dataset
+from dessia_common.datatools.cluster import ClusteredDataset
         >>> from dessia_common.models import all_cars_wi_feat
         >>> hlist = Dataset(all_cars_wi_feat, name="cars")
         >>> clist = ClusteredDataset.from_agglomerative_clustering(hlist, n_clusters=10, name="ex")
@@ -178,7 +179,8 @@ class ClusteredDataset(Dataset):
         :rtype: List[List[float]]
 
         :Examples:
-        >>> from dessia_common.datatools import Dataset, ClusteredDataset
+        >>> from dessia_common.datatools.dataset import Dataset
+        >>> from dessia_common.datatools.cluster import ClusteredDataset
         >>> from dessia_common.models import all_cars_wi_feat
         >>> hlist = Dataset(all_cars_wi_feat, name="cars")
         >>> clist = ClusteredDataset.from_agglomerative_clustering(hlist, n_clusters=10, name="ex")
@@ -223,7 +225,8 @@ class ClusteredDataset(Dataset):
         :rtype: List[List[float]]
 
         :Examples:
-        >>> from dessia_common.datatools import Dataset, ClusteredDataset
+        >>> from dessia_common.datatools.dataset import Dataset
+        >>> from dessia_common.datatools.cluster import ClusteredDatasetrom dessia_common.datatools import Dataset, ClusteredDataset
         >>> from dessia_common.models import all_cars_wi_feat
         >>> hlist = Dataset(all_cars_wi_feat, name="cars")
         >>> clist = ClusteredDataset.from_agglomerative_clustering(hlist, n_clusters=10, name="ex")
@@ -269,7 +272,8 @@ class ClusteredDataset(Dataset):
         :rtype: List[List[float]]
 
         :Examples:
-        >>> from dessia_common.datatools import Dataset, ClusteredDataset
+        >>> from dessia_common.datatools.dataset import Dataset
+        >>> from dessia_common.datatools.cluster import ClusteredDataset
         >>> from dessia_common.models import all_cars_wi_feat
         >>> hlist = Dataset(all_cars_wi_feat, name="cars")
         >>> clist = ClusteredDataset.from_agglomerative_clustering(hlist, n_clusters=10, name="ex")

@@ -44,7 +44,7 @@ class Dataset(DessiaObject):
 
     **Built-in methods**:
         * __init__
-            >>> from dessia_common.datatools import Dataset
+            >>> from dessia_common.datatools.dataset import Dataset
             >>> from dessia_common.models import all_cars_wi_feat
             >>> hlist = Dataset(all_cars_wi_feat, name="init")
 
@@ -153,7 +153,7 @@ class Dataset(DessiaObject):
         :return: None
 
         :Examples:
-        >>> from dessia_common.datatools import Dataset
+        >>> from dessia_common.datatools.dataset import Dataset
         >>> from dessia_common.models import all_cars_wi_feat
         >>> Dataset(all_cars_wi_feat).extend(Dataset(all_cars_wi_feat))
         Dataset(all_cars_wi_feat + all_cars_wi_feat)
@@ -293,7 +293,7 @@ class Dataset(DessiaObject):
         :rtype: List[Any]
 
         :Examples:
-        >>> from dessia_common.datatools import Dataset
+        >>> from dessia_common.datatools.dataset import Dataset
         >>> from dessia_common.models import all_cars_wi_feat
         >>> Dataset(all_cars_wi_feat[:10]).get_attribute_values("weight")
         [3504.0, 3693.0, 3436.0, 3433.0, 3449.0, 4341.0, 4354.0, 4312.0, 4425.0, 3850.0]
@@ -314,7 +314,7 @@ class Dataset(DessiaObject):
         :rtype: List[float]
 
         :Examples:
-        >>> from dessia_common.datatools import Dataset
+        >>> from dessia_common.datatools.dataset import Dataset
         >>> from dessia_common.models import all_cars_wi_feat
         >>> Dataset(all_cars_wi_feat[:10]).get_column_values(2)
         [130.0, 165.0, 150.0, 150.0, 140.0, 198.0, 220.0, 215.0, 225.0, 190.0]
@@ -340,7 +340,7 @@ class Dataset(DessiaObject):
         :return: None
 
         :Examples:
-        >>> from dessia_common.datatools import Dataset
+        >>> from dessia_common.datatools.dataset import Dataset
         >>> from dessia_common.models import all_cars_wi_feat
         >>> example_list = Dataset(all_cars_wi_feat[:3], "sort_example")
         >>> example_list.sort("mpg", False)
@@ -378,7 +378,7 @@ class Dataset(DessiaObject):
         :rtype: List[float]
 
         :Examples:
-        >>> from dessia_common.datatools import Dataset
+        >>> from dessia_common.datatools.dataset import Dataset
         >>> from dessia_common.models import all_cars_wi_feat
         >>> example_list = Dataset(all_cars_wi_feat, "mean_example")
         >>> print(example_list.mean())
@@ -395,7 +395,7 @@ class Dataset(DessiaObject):
         :rtype: List[float]
 
         :Examples:
-        >>> from dessia_common.datatools import Dataset
+        >>> from dessia_common.datatools.dataset import Dataset
         >>> from dessia_common.models import all_cars_wi_feat
         >>> example_list = Dataset(all_cars_wi_feat, "std_example")
         >>> print(example_list.standard_deviation())
@@ -412,7 +412,7 @@ class Dataset(DessiaObject):
         :rtype: List[float]
 
         :Examples:
-        >>> from dessia_common.datatools import Dataset
+        >>> from dessia_common.datatools.dataset import Dataset
         >>> from dessia_common.models import all_cars_wi_feat
         >>> example_list = Dataset(all_cars_wi_feat, "var_example")
         >>> print(example_list.variances())
@@ -429,7 +429,7 @@ class Dataset(DessiaObject):
         :rtype: List[List[float]], `n_features x n_features`
 
         :Examples:
-        >>> from dessia_common.datatools import Dataset
+        >>> from dessia_common.datatools.dataset import Dataset
         >>> from dessia_common.models import all_cars_wi_feat
         >>> example_list = Dataset(all_cars_wi_feat, "covar_example")
         >>> cov_matrix = example_list.covariance_matrix()
@@ -473,7 +473,7 @@ class Dataset(DessiaObject):
         :rtype: List[List[float]], `n_samples x n_samples`
 
         :Examples:
-        >>> from dessia_common.datatools import Dataset
+        >>> from dessia_common.datatools.dataset import Dataset
         >>> from dessia_common.models import all_cars_wi_feat
         >>> example_list = Dataset(all_cars_wi_feat, "distance_example")
         >>> distance_matrix = example_list.distance_matrix('mahalanobis')
@@ -552,7 +552,7 @@ class Dataset(DessiaObject):
 
         :Examples:
         >>> from dessia_common.core import DessiaFilter
-        >>> from dessia_common.datatools import Dataset
+        >>> from dessia_common.datatools.dataset import Dataset
         >>> from dessia_common.models import all_cars_wi_feat
         >>> filters = [DessiaFilter('weight', '<=', 1650.), DessiaFilter('mpg', '>=', 45.)]
         >>> filters_list = FiltersList(filters, "xor")

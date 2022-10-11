@@ -1107,7 +1107,7 @@ class FiltersList(DessiaObject):
         Examples
         --------
         >>> from dessia_common.core import FiltersList
-        >>> from dessia_common.datatools import Dataset
+        >>> from dessia_common.datatools.dataset import Dataset
         >>> from dessia_common.models import all_cars_wi_feat
         >>> filters = [DessiaFilter('weight', '<=', 1650.), DessiaFilter('mpg', '>=', 45.)]
         >>> filters_list = FiltersList(filters, logical_operator="xor", name="example")

@@ -190,7 +190,7 @@ def covariance_matrix(matrix):
     :rtype: List[List[float]], `N x N`
 
     :Examples:
-    >>> from dessia_common.datatools import covariance_matrix
+    >>> from dessia_common.datatools.metrics import covariance_matrix
     >>> from dessia_common.models import all_cars_wi_feat
     >>> matrix = Dataset(all_cars_wi_feat).matrix
     >>> cov_matrix = covariance_matrix(list(zip(*matrix)))
