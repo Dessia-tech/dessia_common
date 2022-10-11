@@ -126,7 +126,7 @@ class Sampler(DessiaObject):
         :rtype: `Dataset`
 
         :Examples:
-        >>> from dessia_common.sampling import Sampler
+        >>> from dessia_common.datatools.sampling import Sampler
         >>> from dessia_common.tests import RandDataD2
         >>> sampled_attr = [BoundedAttributeValue('p_1', 150, 250, 3)]
         >>> constant_attr = [FixedAttributeValue('p_2', 42)]
