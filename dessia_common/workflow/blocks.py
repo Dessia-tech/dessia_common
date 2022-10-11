@@ -992,7 +992,7 @@ class ConcatenateStrings(Block):
         self.separator = separator
         inputs = [TypedVariableWithDefaultValue(name=f"Element {i + 1}", type_=str, default_value="")
                   for i in range(number_elements)]
-        output = TypedVariable(name="name", type_=str)
+        output = TypedVariable(name="Concatenation", type_=str)
         Block.__init__(self, inputs=inputs, outputs=[output], name=name)
 
     def equivalent_hash(self):
