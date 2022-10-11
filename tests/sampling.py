@@ -30,7 +30,8 @@ test_hlist = randata_sampling.make_doe(samples=2000, method='montecarlo')
 try:
     test_hlist = randata_sampling.make_doe(samples=2000, method='truc')
 except NotImplementedError as e:
-    assert(e.args[0] == "Method 'truc' is not implemented in <class 'dessia_common.sampling.Sampler'>._get_doe method.")
+    assert(e.args[0] == ("Method 'truc' is not implemented in " +
+                         "<class 'dessia_common.datatools.sampling.Sampler'>._get_doe method."))
 test_hlist.plot()
 
 json_dict = json.dumps(randata_sampling.to_dict())
