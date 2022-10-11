@@ -32,4 +32,4 @@ def concatenate(values):
     if concatenated_values is not None:
         return concatenated_values
 
-    raise ValueError("Block Concatenate only defined for classes 'list', 'dict' and 'dessia_common.Dataset'")
+    raise ValueError("Block Concatenate only defined for classes 'list', 'dict' and 'datatools.dataset.Dataset'")

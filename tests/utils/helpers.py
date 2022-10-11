@@ -25,4 +25,4 @@ try:
     concatenate(wrong_type)
 except Exception as e:
     assert(e.args[0] == ("Block Concatenate only defined for classes 'list', 'dict' and "\
-                         "'dessia_common.Dataset'"))
+                         "'datatools.dataset.Dataset'"))

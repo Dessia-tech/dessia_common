@@ -104,4 +104,3 @@ split_cars_with.to_xlsx('clus_xls_2.xlsx')
 # Retrocompatibility
 Hlist = HeterogeneousList(all_cars_no_feat)
 Clist = CategorizedList(all_cars_no_feat)
-
