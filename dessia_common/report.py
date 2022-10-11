@@ -43,7 +43,11 @@ class Report(DessiaObject):
         self.add_lines([line], nb_line_blank=0)
 
     def open(self, option: str = 'a'):
-        file = open(self.name_report + '.log', option)
+        #To avoid : Using open without explicitly specifying an encoding
+        if option == 'r':
+            file = open(self.name_report + '.log', 'r')
+        elif option == 'w':
+            file = open(self.name_report + '.log', 'w')
         return file
 
     def close(self, file):
@@ -123,9 +127,9 @@ class Report(DessiaObject):
         # | left baz      | right baz     |
 
         offset = self.last_offset + 2
-        line_length = self.width_line - offset
+        # line_length = self.width_line - offset
 
-        real_line_length = line_length - (len(title) + 1) - 2 * len(title)
+        real_line_length = self.width_line - offset - (len(title) + 1) - 2 * len(title)
         if real_line_length < 0:
             raise KeyError('too many columns in the report')
 
@@ -135,10 +139,11 @@ class Report(DessiaObject):
             for index, elem in enumerate(element):
                 max_length[index] = max(max_length[index], len(str(elem)))
 
-        pourcent_length = [m / sum(max_length) for m in max_length]
+        # pourcent_length = [m / sum(max_length) for m in max_length]
 
         real_length = []
-        for pourcent in pourcent_length[0:-1]:
+        # for pourcent in pourcent_length[0:-1]:
+        for pourcent in [m / sum(max_length) for m in max_length][0:-1]:
             real_length.append(int(pourcent * real_line_length))
         real_length.append(real_line_length - sum(real_length))
 
