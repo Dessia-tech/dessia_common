@@ -11,19 +11,20 @@ class Report(DessiaObject):
 
     def __init__(self, name_report: str = 'Output',
                  width_line: int = 100,
-                 time_start: float = None,
+                 # time_start: float = None,
                  core: str = None,
                  last_offset: int = 0,
                  name: str = ''):
+        """
+        Name and parameters for report's layout
+        """
         DessiaObject.__init__(self, name=name)
         self.width_line = width_line
         self.name_report = name_report
-        # file = self.open('w')
-        # self.close(file)
-        if time_start is None:
-            self.time_start = time.time()
-        else:
-            self.time_start = time_start
+        # if time_start is None:
+        self.time_start = time.time()
+        # else:
+        #     self.time_start = time_start
         self.last_offset = last_offset
         self.error = False
         if core is None:
@@ -139,44 +140,39 @@ class Report(DessiaObject):
             for index, elem in enumerate(element):
                 max_length[index] = max(max_length[index], len(str(elem)))
 
-        # pourcent_length = [m / sum(max_length) for m in max_length]
+        pourcent_length = [m / sum(max_length) for m in max_length]
 
         real_length = []
-        # for pourcent in pourcent_length[0:-1]:
-        for pourcent in [m / sum(max_length) for m in max_length][0:-1]:
+        for pourcent in pourcent_length[0:-1]:
             real_length.append(int(pourcent * real_line_length))
         real_length.append(real_line_length - sum(real_length))
 
         lines = ['  \n  ']
-        line_temp, line_temp2 = ' ' * offset, ' ' * offset
-        for real_l, titl in zip(real_length, title):
-            full_cell_length = real_l - len(str(titl))
-            right_cell_length = int(full_cell_length / 2)
-            left_cell_length = full_cell_length - right_cell_length
-            line_temp += '| ' + ' ' * right_cell_length + str(titl) + ' ' * left_cell_length + ' '
-
-            line_temp2 += '|:' + '-' * (right_cell_length + len(str(titl)) + left_cell_length) + ':'
-
-        line_temp += '|'
-        line_temp2 += '|'
-        lines.extend((line_temp, line_temp2))
+        lines.append(self.add_table_line(offset, real_length, title))
+        lines.append(self.add_table_line(offset, real_length, title, is_title = True))
 
         for element in elements:
-            line_temp = ' ' * offset
-            for real_l, elem in zip(real_length, element):
-                full_cell_length = real_l - len(str(elem))
-                right_cell_length = int(full_cell_length / 2)
-                left_cell_length = full_cell_length - right_cell_length
-                line_temp += '| ' + ' ' * right_cell_length + str(elem) + ' ' * left_cell_length + ' '
-            line_temp += '|'
-            lines.append(line_temp)
+            lines.append(self.add_table_line(offset, real_length, element))
 
         lines.append('  \n  ')
         self.add_lines(lines, offset)
 
+    def add_table_line(self, offset, columns_length, element_to_add, is_title: bool = False):
+        line_temp = ' ' * offset
+        for real_l, element in zip(columns_length, element_to_add):
+            full_cell_length = real_l - len(str(element))
+            right_cell_length = int(full_cell_length / 2)
+            left_cell_length = full_cell_length - right_cell_length
+            if is_title:
+                line_temp += '|:' + '-' * (right_cell_length + len(str(element)) + left_cell_length) + ':'
+            else:
+                line_temp += '| ' + ' ' * right_cell_length + str(element) + ' ' * left_cell_length + ' '
+
+        line_temp += '|'
+        return line_temp
+
     def add_error(self, text: str):
         self.error = True
-        # self.add_text("\n *** ERROR *** -> " + text + " \n")
         self.add_text("\n **ERROR** " + text + " \n")
 
     def to_txt(self):
