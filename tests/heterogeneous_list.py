@@ -7,6 +7,7 @@ from dessia_common.models import all_cars_no_feat, all_cars_wi_feat, rand_data_m
 from dessia_common.datatools.metrics import covariance, manhattan_distance, euclidian_distance, minkowski_distance,\
     inf_norm, mahalanobis_distance
 from dessia_common.datatools.dataset import Dataset
+from dessia_common.datatools import HeterogeneousList, CategorizedList
 
 # Tests on common_attributes
 class Bidon(DessiaObject):
@@ -161,4 +162,9 @@ try:
     raise ValueError("covariance should be able to compute on lists of different lengths")
 except Exception as e:
     assert(e.args[0] == "vector_x and vector_y must be the same length to compute covariance.")
+
+# Retrocompatibility Hlist:
+Hlist = HeterogeneousList(all_cars_no_feat)
+Clist = CategorizedList(all_cars_no_feat)
+
 

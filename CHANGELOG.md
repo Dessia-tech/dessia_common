@@ -11,13 +11,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sampler class
 - (De)Serialization handles 'typing.Type'
 
+
 ### Breaking Changes
+- HeterogeneousList becomes Dataset
+- CategorizedList becomes ClusteredDataset
+- Change file organization for datatools:
+    * File datatools.py becomes directory datatools
+    * class Dataset is now coded in file dataset.py
+    * class ClusteredDataset is now coded in file cluster.py
+    * class Sampler is now coded in file sampling.py
+    * Metrics function are now coded in file metrics.py
 
 
 ### Changes
 
 
 ### Performance
+- Retrocompatibility is supported for the present time, with a big warning
 
 
 ### Fixed
@@ -29,11 +39,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - FiltersList class
 - Easy access to Dataset with getitem, len, add, extend, sort
 - filtering method in Dataset that calls a FiltersList
-- Documentation for Dataset, ClusteredDataset, DessiaFilter, FiltersList
+- Documentation for Dataset (previously HeterogeneousList), ClusteredDataset (previously CategorizedList), DessiaFilter, FiltersList
 - pareto front and parallel plot for Dataset
 - Sort parallel plot axis with correlation coefficient (experimental algorithm that seems to work)
-- Metrics for Dataset and ClusteredDataset
-- Centroids for ClusteredDataset
+- Metrics for Dataset (previously HeterogeneousList) and ClusteredDataset (previously CategorizedList)
+- Centroids for ClusteredDataset (previously CategorizedList)
 - Nearly all required tests for all these developments
 
 ### Breaking Changes
