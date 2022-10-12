@@ -4,24 +4,33 @@ report for dessia_common
 """
 from dessia_common.core import DessiaObject
 from typing import List
+from string import Template
 import time
+
+dessia_object_markdown_template = Template(
+'''
+$log
+''')
 
 class Report(DessiaObject):
     _standalone_in_db = True
-    _eq_is_data_eq = True
-    _non_serializable_attributes = []
-    _non_data_eq_attributes = ['name']
-    _non_data_hash_attributes = ['name']
+    # _eq_is_data_eq = True
+    # _non_serializable_attributes = []
+    # _non_data_eq_attributes = ['name']
+    # _non_data_hash_attributes = ['name']
 
     def __init__(self, name_report: str = 'Output',
                  width_line: int = 100,
                  # time_start: float = None,
-                 core: str = None,
-                 last_offset: int = 0,
+                 content: str = '',
+                 last_offset: int = 0, #Perhaps we could delete it, to see with platform integration
                  name: str = ''):
         """
         Name and parameters for report's layout
         """
+
+        #Mettre en attribut facultatif pour l'export txt à chaque écriture, same pour le print
+
         DessiaObject.__init__(self, name=name)
         self.width_line = width_line
         self.name_report = name_report
@@ -31,10 +40,7 @@ class Report(DessiaObject):
         #     self.time_start = time_start
         self.last_offset = last_offset
         self.error = False
-        if core is None:
-            self.core = ''
-        else:
-            self.core = core
+        self.content = content
 
     def add_time(self, offset: int = 0, text_to_add: str = '', time_to_add: float = 0):
         line = ' ' * offset
@@ -50,6 +56,7 @@ class Report(DessiaObject):
     def open(self, option: str = 'a'):
         #To avoid : Using open without explicitly specifying an encoding
         # file = open(self.name_report + '.log', option)
+        # TODO : Mettre with open
         if option == 'r':
             file = open(self.name_report + '.log', 'r')
         elif option == 'w':
@@ -63,11 +70,13 @@ class Report(DessiaObject):
         for line in range(nb_line_blank):
             lines.append('')
         for line in lines:
-            self.core += offset*'' + line + '  \n  '
+            self.content += offset*'' + line + '  \n  '
 
             print(line)
 
         # self.close(file)
+        # TODO : si besoin de l'export txt, j'ajoute que les lignes nécessaire
+        # with open .... f_stream, f_stream.write en allant à la derniere ligne
         self.to_txt()
 
     def add_title(self, title: str):
@@ -181,6 +190,10 @@ class Report(DessiaObject):
         self.add_text("\n **ERROR** " + text + " \n")
 
     def to_txt(self):
+        # TODO : connaitre le fichier comme un chemin, le réouvrir et faire ça propre
         file = self.open('w')
-        file.write(self.core)
+        file.write(self.content)
         self.close(file)
+
+    def to_markdown(self):
+        return dessia_object_markdown_template.substitute(log=self.content)

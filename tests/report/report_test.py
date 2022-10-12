@@ -2,7 +2,7 @@ from dessia_common.report import Report
 
 report = Report(name_report='LogTest',
                 width_line=100,
-                core='',
+                content='',
                 last_offset=0,
                 name='name_not_util')
 
