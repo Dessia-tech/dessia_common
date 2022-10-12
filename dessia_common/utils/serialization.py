@@ -284,7 +284,7 @@ def deserialize_with_type(type_, value):
     raise NotImplementedError(type_)
 
 
-def deserialize_with_typing(type_, argument):
+def deserialize_with_typing(type_, argument, global_dict=None, pointers_memo=None, path='#'):
     """
     Deserialize an object with a typing info
     """
@@ -310,7 +310,8 @@ def deserialize_with_typing(type_, argument):
                 # Throws KeyError if we try to put wrong dict into
                 # dict_to_object. This means we try to instantiate
                 # a children class with a parent dict_to_object
-                deserialized_arg = children_class.dict_to_object(argument)
+                deserialized_arg = children_class.dict_to_object(argument, global_dict=global_dict,
+                                                                 pointers_memo=pointers_memo, path=path)
 
                 # If it succeeds we have the right
                 # class and instantiated object
@@ -335,14 +336,15 @@ def deserialize_with_typing(type_, argument):
         classname = args[0]
         object_class = dc.full_classname(object_=classname, compute_for='class')
         class_ = dcty.get_python_class_from_class_name(object_class)
-        deserialized_arg = class_.dict_to_object(argument)
+        deserialized_arg = class_.dict_to_object(argument, global_dict=global_dict,
+                                                 pointers_memo=pointers_memo, path=path)
     else:
         msg = "Deserialization of typing {} is not implemented"
         raise NotImplementedError(msg.format(type_))
     return deserialized_arg
 
 
-def deserialize_argument(type_, argument):
+def deserialize_argument(type_, argument, global_dict=None, pointers_memo=None, path='#'):
     """
     Deserialize an argument of a function with the type
     """
@@ -370,7 +372,7 @@ def deserialize_argument(type_, argument):
         return argument
     if inspect.isclass(type_) and issubclass(type_, (dc.DessiaObject, dessia_common.core.DessiaObject)):
         # Custom classes
-        return type_.dict_to_object(argument)
+        return type_.dict_to_object(argument, global_dict=global_dict, pointers_memo=pointers_memo, path=path)
 
     raise TypeError(f"Deserialization of ype {type_} is Not Implemented")
 

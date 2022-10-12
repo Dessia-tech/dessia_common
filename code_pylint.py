@@ -61,6 +61,7 @@ MAX_ERROR_BY_TYPE = {
                      'wildcard-import': 1,
                      'use-maxsplit-arg': 1,
                      'duplicate-code': 1,
+                     'unspecified-encoding': 1,
                      # No tolerance errors
                      'eval-used': 0,
                      'redefined-builtin': 0,
@@ -76,7 +77,6 @@ MAX_ERROR_BY_TYPE = {
                      'unexpected-special-method-signature': 0,
                      'too-many-lines': 1,
                      'bare-except': 3,
-                     'unspecified-encoding': 0,
                      'no-else-raise': 0,
                      'bad-indentation': 0,
                      'reimported': 0,

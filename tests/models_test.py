@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Tue Nov  9 16:03:59 2021
 
-@author: steven
 """
 
+import os
 from dessia_common.models import simulation_list, system1
 import dessia_common as dc
 import dessia_common.utils.serialization as dcus
@@ -27,10 +26,13 @@ draw_networkx_graph(pointer_graph)
 
 system1._check_platform()
 system1.jsonschema()
+system1.save_export_to_file('xlsx', 'generic_xlsx')
+os.path.isfile('generic_xlsx.xlsx')
+
 system1.save_to_file('system1')
 system1_lff = dc.DessiaObject.load_from_file('system1.json')
 assert system1_lff == system1
 
 memo = {}
-a,memo = dcus.serialize_with_pointers(system1)
+a, memo = dcus.serialize_with_pointers(system1)
 assert memo

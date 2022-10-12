@@ -715,7 +715,8 @@ class Workflow(Block):
                    imposed_variable_values=imposed_variable_values, description=description,
                    documentation=documentation, name=dict_["name"])
 
-    def dict_to_arguments(self, dict_: JsonSerializable, method: str):
+    def dict_to_arguments(self, dict_: JsonSerializable, method: str, global_dict=None,
+                          pointers_memo=None, path='#'):
         """
         Process a json of arguments and deserialize them
         """
@@ -727,9 +728,13 @@ class Workflow(Block):
                 has_default = input_.has_default_value
                 if not has_default or (has_default and i in dict_):
                     value = dict_[i]
-                    deserialized_value = deserialize_argument(type_=input_.type_, argument=value)
+                    path_value = f'{path}/inputs/{i}'
+                    deserialized_value = deserialize_argument(type_=input_.type_, argument=value,
+                                                              global_dict=global_dict,
+                                                              pointers_memo=pointers_memo, path=path_value)
                     if input_.name == "Result Name":
-                        name = deserialize_argument(type_=input_.type_, argument=value)
+                        name = deserialize_argument(type_=input_.type_, argument=value, global_dict=global_dict,
+                                                    pointers_memo=pointers_memo, path=path_value)
                     arguments_values[i] = deserialized_value
             if name is None and len(self.inputs) in dict_ and isinstance(dict_[len(self.inputs)], str):
                 # Hot fixing name not attached

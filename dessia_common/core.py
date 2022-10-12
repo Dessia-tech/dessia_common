@@ -638,9 +638,27 @@ class DessiaObject:
         writer.save_to_stream(stream)
 
     def _export_formats(self):
-        formats = [{"extension": "json", "method_name": "save_to_stream", "text": True, "args": {}},
-                   {"extension": "xlsx", "method_name": "to_xlsx_stream", "text": False, "args": {}}]
+        formats = [{"selector": "json", "extension": "json",
+                    "method_name": "save_to_stream", "text": True, "args": {}},
+                   {"selector": "xlsx", "extension": "xlsx",
+                    "method_name": "to_xlsx_stream", "text": False, "args": {}}]
         return formats
+
+    def save_export_to_file(self, selector, filepath):
+        for export_format in self._export_formats():
+            if export_format['selector'] == selector:
+                if not filepath.endswith(f".{export_format['extension']}"):
+                    filepath += f".{export_format['extension']}"
+                    print(f'Renaming filepath to {filepath}')
+                if export_format['text']:
+                    mode = 'w'
+                else:
+                    mode = 'wb'
+                with open(filepath, mode) as stream:
+                    getattr(self, export_format['method_name'])(stream, **export_format['args'])
+                return filepath
+
+        raise ValueError(f'Export selector not found: {selector}')
 
     def to_vector(self):
         vectored_objects = []
@@ -732,8 +750,10 @@ class PhysicalObject(DessiaObject):
 
     def _export_formats(self):
         formats = DessiaObject._export_formats(self)
-        formats3d = [{"extension": "step", "method_name": "to_step_stream", "text": True, "args": {}},
-                     {"extension": "stl", "method_name": "to_stl_stream", "text": False, "args": {}}]
+        formats3d = [{"selector": "step", "extension": "step",
+                      "method_name": "to_step_stream", "text": True, "args": {}},
+                     {"selector": "stl", "extension": "stl",
+                      "method_name": "to_stl_stream", "text": False, "args": {}}]
         formats.extend(formats3d)
         return formats
 
@@ -1198,13 +1218,13 @@ def enhanced_deep_attr(obj, sequence):
         path = f"#/{'/'.join(sequence)}"
     return get_in_object_from_path(object_=obj, path=path)
 
-        # # Sequence is a string and not a sequence of deep attributes
-        # if '/' in sequence:
-        #     # Is deep attribute reference
-        #     sequence = sequence.split('/')
-        #     return enhanced_deep_attr(obj=obj, sequence=sequence)
-        # # Is direct attribute
-        # return enhanced_get_attr(obj=obj, attr=sequence)
+    # # Sequence is a string and not a sequence of deep attributes
+    # if '/' in sequence:
+    #     # Is deep attribute reference
+    #     sequence = sequence.split('/')
+    #     return enhanced_deep_attr(obj=obj, sequence=sequence)
+    # # Is direct attribute
+    # return enhanced_get_attr(obj=obj, attr=sequence)
     #
     # # Get direct attribute
     # subobj = enhanced_get_attr(obj=obj, attr=sequence[0])
