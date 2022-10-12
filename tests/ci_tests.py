@@ -13,6 +13,7 @@ scripts = ['displays.py',
            'optimization.py',
            'graph.py',
            'jsonschema.py',
+           'sampling.py',
            # Workflows
            'workflow/blocks.py',
            'workflow/workflow_with_models.py',
@@ -27,6 +28,7 @@ scripts = ['displays.py',
            'workflow/workflow_method_dict.py',
            'workflow/various_tests.py',
            'workflow/workflow_building.py',
+           'workflow/workflow_sampling.py',
            # breakdown
            'breakdown.py',
            # Utils

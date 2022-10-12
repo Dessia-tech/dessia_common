@@ -1,5 +1,6 @@
 """
 Library for building clusters on data.
+
 """
 from typing import List, Dict, Any
 from copy import copy
@@ -18,6 +19,7 @@ except ImportError:
     pass
 from dessia_common.exports import XLSXWriter
 from dessia_common.core import DessiaObject, DessiaFilter, FiltersList, templates
+
 
 class HeterogeneousList(DessiaObject):
     """
@@ -166,7 +168,7 @@ class HeterogeneousList(DessiaObject):
         return self.dessia_objects[idx]
 
     def _pick_from_slice(self, key: slice):
-        new_hlist = self.__class__(dessia_objects = self.dessia_objects[key], name = self.name)
+        new_hlist = self.__class__(dessia_objects=self.dessia_objects[key], name=self.name)
         new_hlist._common_attributes = copy(self._common_attributes)
         new_hlist.dessia_objects = self.dessia_objects[key]
         if self._matrix is not None:
@@ -181,7 +183,7 @@ class HeterogeneousList(DessiaObject):
         return boolean_list
 
     def _pick_from_boolist(self, key: List[bool]):
-        new_hlist = self.__class__(dessia_objects = DessiaFilter.apply(self.dessia_objects, key), name = self.name)
+        new_hlist = self.__class__(dessia_objects=DessiaFilter.apply(self.dessia_objects, key), name=self.name)
         new_hlist._common_attributes = copy(self._common_attributes)
         if self._matrix is not None:
             new_hlist._matrix = DessiaFilter.apply(self._matrix, key)
@@ -207,7 +209,7 @@ class HeterogeneousList(DessiaObject):
 
         if len(self) > 10:
             undispl_len = len(self) - 10
-            string += (f"\n+ {undispl_len} undisplayed object" + "s"*(min([undispl_len, 2])-1) + "...")
+            string += (f"\n+ {undispl_len} undisplayed object" + "s" * (min([undispl_len, 2]) - 1) + "...")
 
         if len(self) > 5:
             string += self._print_objects_slice(slice(-5, len(self)), attr_space)
@@ -490,7 +492,7 @@ class HeterogeneousList(DessiaObject):
 
     @staticmethod
     def _set_distance_kwargs(method: str, kwargs: Dict[str, Any]):
-        if 'p' not in kwargs and method=='minkowski':
+        if 'p' not in kwargs and method == 'minkowski':
             kwargs['p'] = 2
         return kwargs
 
@@ -648,12 +650,11 @@ class HeterogeneousList(DessiaObject):
     def _histogram_unic_value(self, idx_col: int, name_attr: str):
         # unic_values = set((getattr(dobject, line) for dobject in self.dessia_objects))
         unic_values = set((row_matrix[idx_col] for row_matrix in self.matrix))
-        if len(unic_values) == 1: # TODO (plot_data linspace axis between two same values)
+        if len(unic_values) == 1:  # TODO (plot_data linspace axis between two same values)
             plot_obj = Scatter(x_variable=name_attr, y_variable=name_attr)
         else:
             plot_obj = Histogram(x_variable=name_attr)
         return plot_obj
-
 
     def _tooltip_attributes(self):
         return self.common_attributes
@@ -700,10 +701,10 @@ class HeterogeneousList(DessiaObject):
             r2_scores = []
             unreal_score = 1.
             for idx, attr1 in enumerate(self.common_attributes):
-                for attr2 in self.common_attributes[idx+1:]:
+                for attr2 in self.common_attributes[idx + 1:]:
                     association_list.append([attr1, attr2])
                     r2_scores.append(unreal_score)
-                    unreal_score += -1/10.
+                    unreal_score += -1 / 10.
             return map(list, zip(*sorted(zip(r2_scores, association_list))[::-1])), []
         # Returns list of list of associated attributes sorted along their R2 score and constant attributes
         return map(list, zip(*sorted(zip(r2_scores, association_list))[::-1])), list(set(constant_attributes))
@@ -1525,6 +1526,7 @@ class CategorizedList(HeterogeneousList):
 #     plt.plot(distances)
 #     plt.show()
 
+
 def diff_list(list_a, list_b):
     """
     Difference between to lists.
@@ -1541,6 +1543,7 @@ def diff_list(list_a, list_b):
     """
     return (a - b for a, b in zip(list_a, list_b))
 
+
 def l1_norm(vector):
     """
     l1-norm of vector.
@@ -1554,6 +1557,7 @@ def l1_norm(vector):
     """
     return sum(map(abs, vector))
 
+
 def l2_norm(vector):
     """
     l2-norm of vector.
@@ -1566,9 +1570,10 @@ def l2_norm(vector):
 
     """
     # better than numpy for len = 20000, nearly the same for len = 2000
-    return sum(x*x for x in vector)**0.5
+    return sum(x * x for x in vector)**0.5
 
-def lp_norm(vector, mink_power = 2):
+
+def lp_norm(vector, mink_power=2):
     """
     Minkowski norm of vector.
 
@@ -1584,6 +1589,7 @@ def lp_norm(vector, mink_power = 2):
     """
     return float(npy.linalg.norm(vector, ord=mink_power))
 
+
 def inf_norm(vector):
     """
     Inifinite norm of vector.
@@ -1596,6 +1602,7 @@ def inf_norm(vector):
 
     """
     return max(abs(coord) for coord in vector)
+
 
 def manhattan_distance(list_a, list_b):
     """
@@ -1613,6 +1620,7 @@ def manhattan_distance(list_a, list_b):
     """
     # faster than numpy
     return l1_norm(diff_list(list_a, list_b))
+
 
 def euclidian_distance(list_a, list_b):
     """
@@ -1632,7 +1640,8 @@ def euclidian_distance(list_a, list_b):
     # faster than numpy for len = 20000, nearly the same for len = 2000
     return l2_norm(diff_list(list_a, list_b))
 
-def minkowski_distance(list_a, list_b, mink_power = 2):
+
+def minkowski_distance(list_a, list_b, mink_power=2):
     """
     Compute the Minkowski distance between list_a and list_b, i.e. the lp-norm of difference between list_a and list_b.
 
@@ -1650,7 +1659,8 @@ def minkowski_distance(list_a, list_b, mink_power = 2):
 
     """
     # faster than sum((a - b)**p for a, b in zip(list_a, list_b))**(1/p)
-    return lp_norm(npy.array(list_a)-npy.array(list_b), mink_power=mink_power)
+    return lp_norm(npy.array(list_a) - npy.array(list_b), mink_power=mink_power)
+
 
 def mean(vector):
     """
@@ -1663,7 +1673,8 @@ def mean(vector):
     :rtype: float
 
     """
-    return sum(vector)/len(vector)
+    return sum(vector) / len(vector)
+
 
 def variance(vector):
     """
@@ -1678,6 +1689,7 @@ def variance(vector):
     """
     # faster than euclidian_distance(vector, [mean(vector)] * len(vector))**2 / len(vector)
     return float(npy.var(vector))
+
 
 def covariance(vector_x, vector_y):
     """
@@ -1700,6 +1712,7 @@ def covariance(vector_x, vector_y):
     mean_y = mean(vector_y)
     return sum((x - mean_x) * (y - mean_y) for x, y in zip(vector_x, vector_y)) / len(vector_x)
 
+
 def covariance_matrix(matrix):
     """
     Compute the covariance matrix of `matrix` of dimension `N x M`.
@@ -1719,6 +1732,7 @@ def covariance_matrix(matrix):
     """
     return npy.cov(matrix, dtype=float).tolist()
 
+
 def std(vector):
     """
     Standard deviation of vector.
@@ -1732,6 +1746,7 @@ def std(vector):
     """
     # faster than euclidian_distance(vector, [mean(vector)] * len(vector)) / math.sqrt(len(vector))
     return float(npy.std(vector))
+
 
 def mahalanobis_distance(list_a, list_b, cov_matrix):
     """

@@ -1,5 +1,6 @@
 """
 Cluster.py package testing.
+
 """
 import json
 from dessia_common.models import all_cars_no_feat, all_cars_wi_feat, rand_data_small, rand_data_large
@@ -36,7 +37,7 @@ assert(clustered_cars_with.cluster_real_centroids('minkowski')[0].to_vector()[1]
 # Test print
 clustered_cars_without.labels[0] = 15000
 clustered_cars_without.labels[1] = -1
-clustered_cars_without.labels[2:100] = [999999]*len(clustered_cars_without[2:100])
+clustered_cars_without.labels[2:100] = [999999] * len(clustered_cars_without[2:100])
 print(clustered_cars_without)
 hlist = HeterogeneousList(all_cars_wi_feat, name="cars")
 clist = CategorizedList.from_agglomerative_clustering(hlist, n_clusters=10, name="cars")
@@ -92,9 +93,8 @@ try:
     raise ValueError("CategorizedList should be summable")
 except Exception as e:
     assert(e.args[0] == "Addition only defined for HeterogeneousList. A specific __add__ method is required for " +
-            "<class 'dessia_common.datatools.CategorizedList'>")
+           "<class 'dessia_common.datatools.CategorizedList'>")
 
 # Exports XLS
 clustered_cars_without.to_xlsx('clus_xls.xlsx')
 split_cars_with.to_xlsx('clus_xls_2.xlsx')
-

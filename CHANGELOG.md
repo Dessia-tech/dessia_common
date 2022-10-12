@@ -9,6 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Generic save to file
+- Sampler class
+- (De)Serialization handles 'typing.Type'
+
+### Breaking Changes
+
+
+### Changes
+
+
+### Performance
+
+
+### Fixed
+
+
+## v0.10.0 [9/26/2022]
+
+### Added
 - FiltersList class
 - Easy access to HeterogeneousList with getitem, len, add, extend, sort
 - filtering method in HeterogeneousList that calls a FiltersList

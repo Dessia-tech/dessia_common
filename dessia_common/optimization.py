@@ -26,11 +26,12 @@ class FixedAttributeValue(dc.DessiaObject):
 class BoundedAttributeValue(dc.DessiaObject):
     _standalone_in_db = True
 
-    def __init__(self, attribute_name: str, min_value: float, max_value: float, name: str = ''):
+    def __init__(self, attribute_name: str, min_value: float, max_value: float, number: int = 2, name: str = ''):
         dc.DessiaObject.__init__(self, name=name)
         self.attribute_name = attribute_name
         self.min_value = min_value
         self.max_value = max_value
+        self.number = number
         self.interval_length = max_value - min_value
 
     def dimensionless_to_value(self, dimless_value: float):

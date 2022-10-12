@@ -17,6 +17,10 @@ assert simulation_list_2 == simulation_list
 
 simulation_list_copy = simulation_list.copy()
 assert simulation_list_copy == simulation_list
+diff = simulation_list_copy._data_diff(simulation_list)
+assert diff.is_empty()
+# Let this print to test diff utils __repr__
+print(diff)
 
 simulation_list.jsonschema()
 
