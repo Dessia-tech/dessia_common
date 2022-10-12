@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 
 ### Added
+- Generic save to file
 - FiltersList class
 - Easy access to HeterogeneousList with getitem, len, add, extend, sort
 - filtering method in HeterogeneousList that calls a FiltersList
