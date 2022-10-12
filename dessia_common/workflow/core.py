@@ -18,7 +18,7 @@ import traceback as tb
 import networkx as nx
 
 import dessia_common.errors
-from dessia_common.graph import get_distance_by_nodes
+from dessia_common.graph import get_column_by_node
 from dessia_common.templates import workflow_template
 from dessia_common import DessiaObject, is_sequence, JSONSCHEMA_HEADER, jsonschema_from_annotation, \
     deserialize_argument, set_default_value, prettyname, serialize_dict, DisplaySetting
@@ -1146,19 +1146,19 @@ class Workflow(Block):
 
         return graph
 
-    def graph_distances(self, graph) -> list:
+    def graph_columns(self, graph):
         """
         :returns: list[ColumnLayout] where ColumnLayout is list[node_index]
         """
-        distance_by_element = get_distance_by_nodes(graph)
-        elements_by_distance = {}
-        for node, distance in distance_by_element.items():
+        column_by_node = get_column_by_node(graph)
+        nodes_by_column = {}
+        for node, column_index in column_by_node.items():
             node_index = self.nodes.index(node)
-            elements_by_distance[distance] = elements_by_distance.get(distance, []) + [node_index]
+            nodes_by_column[column_index] = nodes_by_column.get(column_index, []) + [node_index]
 
-        return [column_list for column_list in elements_by_distance.values()]
+        return [column_list for column_list in nodes_by_column.values()]
 
-    def layout(self) -> list:
+    def layout(self):
         """
         :returns: list[GraphLayout] where GraphLayout is list[ColumnLayout] and ColumnLayout is list[node_index]
         """
@@ -1166,8 +1166,7 @@ class Workflow(Block):
         graph = digraph.to_undirected()
         connected_components = nx.connected_components(graph)
 
-        elements_by_distance = [self.graph_distances(digraph.subgraph(cc)) for cc in list(connected_components)]
-        return elements_by_distance
+        return [self.graph_columns(digraph.subgraph(cc)) for cc in list(connected_components)]
 
     def plot_graph(self):
         """

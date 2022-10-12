@@ -3,8 +3,6 @@
 """
 Graph helpers
 """
-from typing import Dict
-
 import networkx as nx
 
 
@@ -62,10 +60,16 @@ def get_longest_path(graph: nx.DiGraph, begin, end) -> list:
     return list(nx.shortest_simple_paths(graph, begin, end))[-1]
 
 
-def get_paths_from_to(graph: nx.DiGraph, _from: list, _to: list) -> list:
+def get_paths_from_to(graph: nx.DiGraph, origins, destinations):
+    """
+    :param graph: a digraph
+    :param origins: a list of nodes in graph
+    :param destinations: a list of nodes in graph
+    :returns: a list of the longest paths where the begging is in origins and the end of the path is in destinations
+    """
     paths = []
-    for origin in _from:
-        for destination in _to:
+    for origin in origins:
+        for destination in destinations:
             try:
                 paths.append(get_longest_path(graph, origin, destination))
             except nx.exception.NetworkXNoPath:
@@ -73,26 +77,27 @@ def get_paths_from_to(graph: nx.DiGraph, _from: list, _to: list) -> list:
     return paths
 
 
-def get_distance_by_nodes(graph: nx.DiGraph) -> Dict:
+def get_column_by_node(graph: nx.DiGraph):
+    """
+    :returns: a Dict containing the column_index of each node
+    """
     longest_path = nx.dag_longest_path(graph)
     end_of_path = longest_path[-1]
 
-    distances = {}
+    columns = {}
 
     for node in longest_path:
-        distances[node] = longest_path.index(node)
+        columns[node] = longest_path.index(node)
 
     for node in [n for n in graph.nodes if n not in longest_path]:
         try:
             path = get_longest_path(graph, node, end_of_path)
-            distances[node] = len(longest_path) - len(path)
+            columns[node] = len(longest_path) - len(path)
         except nx.exception.NetworkXNoPath:
-            pass
-
-        if node not in distances:
+            # There is no path from node to end_of_path
             for path in get_paths_from_to(graph, list(graph.nodes), [node]):
-                distance_via_current_node = distances[path[0]] + len(path) - 1
-                if node not in distances or distances[node] < distance_via_current_node:
-                    distances[node] = distance_via_current_node
+                column_index = columns[path[0]] + len(path) - 1
+                if node not in columns or columns[node] < column_index:
+                    columns[node] = column_index
 
-    return distances
+    return columns
