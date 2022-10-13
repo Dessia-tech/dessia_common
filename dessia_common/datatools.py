@@ -308,7 +308,7 @@ class HeterogeneousList(DessiaObject):
 
         if len(self) > 2*print_limit:
             undispl_len = len(self) - print_limit
-            table_attributes += (f"| *+ {undispl_len} undisplayed object" + "s"*(min([undispl_len, 2])-1) + "...* |" +
+            table_attributes += (f"| + {undispl_len} undisplayed object" + "s"*(min([undispl_len, 2])-1) + "... ||" +
                                  "\n")
 
         if len(self) > print_limit:
