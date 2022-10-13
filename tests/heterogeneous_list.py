@@ -19,6 +19,7 @@ class Bidon(DessiaObject):
     def prop1(self):
         return self.attr1 + self.attr2
 
+
 bidon = Bidon()
 bidon_hlist = HeterogeneousList([bidon]*10)
 bidon_hlist.plot_data()

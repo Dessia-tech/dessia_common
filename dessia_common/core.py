@@ -12,6 +12,7 @@ import operator
 import math
 import random
 import itertools
+from string import Template
 
 from functools import reduce
 import collections
@@ -562,10 +563,65 @@ class DessiaObject:
             displays.append(display_.to_dict())
         return displays
 
+    def _markdown_class_summary(self):
+        return ("Summary: This is a class summary and can be customize by customizing method " +
+                "<_markdown_class_summary()> of DessiaObject to write a class summary in markdown")
+
+    def _markdown_attr_table(self):
+        table_attributes = "| Attribute | Type | Contains | Subvalues |\n"
+        table_attributes += "| ------ | ------ | ------ | ------ |\n"
+        for attr, value in self.__dict__.items():
+            table_attributes += f"| {attr} | {value.__class__.__name__} |"
+            all_class = {}
+            first_value = copy(value)
+
+            if isinstance(value, (list, tuple, dict)):
+                if len(value) != 0:
+                    if isinstance(value, dict):
+                        first_value = list(value.values())[0]
+                        all_class = set(subvalue.__class__.__name__ for subvalue in value.values())
+                    else:
+                        first_value = value[0]
+                        all_class = set(subvalue.__class__.__name__ for subvalue in value)
+
+            if len(all_class) == 0:
+                if not isinstance(value, DessiaObject):
+                    printed_string = str(value)
+                else:
+                    printed_string = (value.name if value.name != '' else 'unnamed')
+
+                printed_string = printed_string[:20] + ('...' if len(printed_string) > 20 else '')
+                table_attributes += " - | " + printed_string + " |\n"
+
+            else:
+                str_all_class = str(all_class).translate(str(all_class).maketrans('', '', "{}'"))
+                if isinstance(first_value, DessiaObject):
+                    printed_string = [subvalue.name if subvalue.name != '' else 'unnamed' for subvalue in value]
+                    printed_string = ', '.join(printed_string)
+                    printed_string = printed_string
+
+                else:
+                    printed_string = str(value)
+
+                printed_string = printed_string[:20] + ('...' if len(printed_string) > 20 else '')
+                table_attributes += f" {len(value)} elements of classes {str_all_class} |"
+                table_attributes += f" {printed_string} |\n"
+
+        return table_attributes
+
     def to_markdown(self) -> str:
         """
         Render a markdown of the object output type: string
         """
+        text = f"# Object {self.name} of class {self.__class__.__name__}\n\n"
+        text += "## Summary\n"
+        text += "\n$summary\n\n"
+        text += "\n## Attribute values\n\n"
+        text += "$table_attributes\n"
+        text = Template(text).substitute(summary=self._markdown_class_summary(),
+                                         table_attributes=self._markdown_attr_table(),
+                                         name=self.name, class_=self.__class__.__name__)
+        print(text)
         return templates.dessia_object_markdown_template.substitute(name=self.name, class_=self.__class__.__name__)
 
     def _performance_analysis(self):
