@@ -20,10 +20,10 @@ class Report(DessiaObject):
     # _non_data_hash_attributes = ['name']
 
     def __init__(self, name_report: str = 'Output',
-                 width_line: int = 100,
+                 # width_line: int = 100,
                  # time_start: float = None,
                  content: str = '',
-                 last_offset: int = 0, #Perhaps we could delete it, to see with platform integration
+                 # last_offset: int = 0, #To see with platform integration if taken into account
                  name: str = ''):
         """
         Name and parameters for report's layout
@@ -32,13 +32,13 @@ class Report(DessiaObject):
         #Mettre en attribut facultatif pour l'export txt à chaque écriture, same pour le print
 
         DessiaObject.__init__(self, name=name)
-        self.width_line = width_line
+        self.width_line = 100
         self.name_report = name_report
         # if time_start is None:
         self.time_start = time.time()
         # else:
         #     self.time_start = time_start
-        self.last_offset = last_offset
+        self.last_offset = 0 #To see with platform integration if taken into account
         self.error = False
         self.content = content
 
@@ -46,10 +46,8 @@ class Report(DessiaObject):
         line = ' ' * offset
         time_elapsed = str(round((time.time() - self.time_start) / 60, 2))
         if time_to_add != 0 and text_to_add != '':
-            # line += '*ELAPSED TIME min -- {} {} -- global {}*'.format(text_to_add, time_to_add, time_elapsed)
             line += f'*ELAPSED TIME min -- {text_to_add} {time_to_add} -- global {time_elapsed}*'
         else:
-            # line += '*ELAPSED TIME min -- global {}* '.format(time_elapsed)
             line += f'*ELAPSED TIME min -- global {time_elapsed}* '
         self.add_lines([line], nb_line_blank=0)
 
@@ -67,10 +65,9 @@ class Report(DessiaObject):
         file.close()
 
     def add_lines(self, lines: List[str], offset: int = 0, nb_line_blank: int = 0):
-        for line in range(nb_line_blank):
-            lines.append('')
+        lines += ['']*nb_line_blank
         for line in lines:
-            self.content += offset*'' + line + '  \n  '
+            self.content += offset*' ' + line + '  \n  '
 
             print(line)
 
@@ -88,9 +85,9 @@ class Report(DessiaObject):
 
     def add_subtitle(self, title: str):
         self.last_offset = 0
-        title = title[0].upper() + title[1:]
-        if len(title) > self.width_line:
-            title = title[0: self.width_line]
+        title = title.capitalize()
+        # if len(title) > self.width_line:
+        title = title[0: self.width_line]
 
         lines = ['', '## ' + title]
         self.add_lines(lines, nb_line_blank=1)
@@ -98,9 +95,9 @@ class Report(DessiaObject):
     def add_subsubtitle(self, title: str):
         offset = 2
         self.last_offset = offset
-        title = title[0].upper() + title[1:]
-        if len(title) > self.width_line - offset:
-            title = title[0: self.width_line - offset]
+        title = title.capitalize()
+        # if len(title) > self.width_line - offset:
+        title = title[0: self.width_line - offset]
 
         lines = [' ' * offset + '### ' + title]
         self.add_lines(lines, offset, nb_line_blank=0)
@@ -157,7 +154,7 @@ class Report(DessiaObject):
         pourcent_length = [m / sum(max_length) for m in max_length]
 
         real_length = []
-        for pourcent in pourcent_length[0:-1]:
+        for pourcent in pourcent_length[:-1]:
             real_length.append(int(pourcent * real_line_length))
         real_length.append(real_line_length - sum(real_length))
 
