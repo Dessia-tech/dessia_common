@@ -38,7 +38,6 @@ from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotat
 from dessia_common.utils.docstrings import parse_docstring, FAILED_DOCSTRING_PARSING
 from dessia_common.exports import XLSXWriter
 from dessia_common.typings import JsonSerializable
-from dessia_common import templates
 from dessia_common.displays import DisplayObject, DisplaySetting
 from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
 
@@ -564,8 +563,9 @@ class DessiaObject:
         return displays
 
     def _markdown_class_summary(self):
-        return ("Summary: This is a class summary and can be customize by customizing method " +
-                "<_markdown_class_summary()> of DessiaObject to write a class summary in markdown")
+        return ("Summary: This is a standard class summary and can be customized by changing method " +
+                "<_markdown_class_summary()> of DessiaObject to write a class summary in markdown.\n" +
+                "More information can be found here: https://www.markdownguide.org/cheat-sheet/")
 
     def _markdown_attr_table(self):
         table_attributes = "| Attribute | Type | Contains | Subvalues |\n"
@@ -622,7 +622,7 @@ class DessiaObject:
                                          table_attributes=self._markdown_attr_table(),
                                          name=self.name, class_=self.__class__.__name__)
         print(text)
-        return text#templates.dessia_object_markdown_template.substitute(name=self.name, class_=self.__class__.__name__)
+        return text
 
     def _performance_analysis(self):
         """
