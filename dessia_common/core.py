@@ -567,9 +567,15 @@ class DessiaObject:
                 "<_markdown_class_summary()> of DessiaObject to write a class summary in markdown.\n" +
                 "More information can be found here: https://www.markdownguide.org/cheat-sheet/")
 
+    def _markdown_titles(self):
+        return "| Attribute | Type | Contains | Subvalues |\n"
+
+    def _markdown_empty_row(self):
+        return "| ------ | ------ | ------ | ------ |\n"
+
     def _markdown_attr_table(self):
-        table_attributes = "| Attribute | Type | Contains | Subvalues |\n"
-        table_attributes += "| ------ | ------ | ------ | ------ |\n"
+        table_attributes = self._markdown_titles()
+        table_attributes += self._markdown_empty_row()
         for attr, value in self.__dict__.items():
             table_attributes += f"| {attr} | {value.__class__.__name__} |"
             all_class = {}
@@ -613,7 +619,8 @@ class DessiaObject:
         """
         Render a markdown of the object output type: string
         """
-        text = f"# Object {self.name} of class {self.__class__.__name__}\n\n"
+        printed_name = (self.name + ' ' if self.name != '' else '')
+        text = f"# Object {printed_name}of class {self.__class__.__name__}\n\n"
         text += "## Summary\n"
         text += "\n$summary\n\n"
         text += "\n## Attribute values\n\n"

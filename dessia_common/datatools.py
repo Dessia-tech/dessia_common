@@ -282,8 +282,39 @@ class HeterogeneousList(DessiaObject):
                 "<_markdown_class_summary()> of DessiaObject to write a class summary in markdown.\n" +
                 "More information can be found here: https://www.markdownguide.org/cheat-sheet/")
 
+    def _markdown_titles(self):
+        return "| " + "| ".join(self._printed_attributes()) + " |\n"
+
+    def _markdown_empty_row(self):
+        return "| ------ " * len(self._printed_attributes()) + "|\n"
+
+    def _markdown_parent_attributes_in_table(self, dessia_object: DessiaObject):
+        return f'| {dessia_object.name} '
+
+    def _markdown_filling(self, key: slice):
+        added_string = ''
+        for idx, dessia_object in enumerate(self[key]):
+            matrix_idx = idx + key.start
+            added_string += self._markdown_parent_attributes_in_table(dessia_object)
+            added_string += '| ' + ' | '.join(list(map(str, self.matrix[matrix_idx]))) + ' |\n'
+
+        return added_string
+
+
     def _markdown_attr_table(self):
-        return self.__str__()
+        print_limit = 10
+        table_attributes = self._markdown_titles() + self._markdown_empty_row()
+        table_attributes += self._markdown_filling(slice(0, print_limit, 1))
+
+        if len(self) > 2*print_limit:
+            undispl_len = len(self) - print_limit
+            table_attributes += (f"| + {undispl_len} undisplayed object" + "s"*(min([undispl_len, 2])-1) + "... |" +
+                                 "\n")
+
+        if len(self) > print_limit:
+            table_attributes += self._markdown_filling(slice(-print_limit, len(self)))
+
+        return table_attributes
 
     def __len__(self):
         """
@@ -997,6 +1028,9 @@ class CategorizedList(HeterogeneousList):
         if attr not in ["label"]:
             return HeterogeneousList._get_printed_value(self, dessia_object, attr)
         return self.labels[self.dessia_objects.index(dessia_object)]
+
+    def _markdown_parent_attributes_in_table(self, dessia_object: DessiaObject):
+        return f"| {self._get_printed_value(dessia_object, 'label')} | {dessia_object.name} "
 
     def clustered_sublists(self):
         """
