@@ -19,7 +19,7 @@ try:
 except ImportError:
     pass
 from dessia_common.exports import XLSXWriter
-from dessia_common.core import DessiaObject, DessiaFilter, FiltersList, templates
+from dessia_common.core import DessiaObject, DessiaFilter, FiltersList
 
 class HeterogeneousList(DessiaObject):
     """
