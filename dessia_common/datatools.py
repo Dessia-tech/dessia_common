@@ -283,63 +283,7 @@ class HeterogeneousList(DessiaObject):
                 "More information can be found here: https://www.markdownguide.org/cheat-sheet/")
 
     def _markdown_attr_table(self):
-        # printed_attributes = self._printed_attributes()
-        # table_attributes = "| " + "| ".join(printed_attributes) + " |\n"
-        # table_attributes += "| ------ " * (len(printed_attributes) - 1) + " |\n"
-        # for idx, attr in enumerate(printed_attributes):
-        #     attr_value = self._get_printed_value(dessia_object, attr)
-        #     table_attributes += f"| {attr} | {value.__class__.__name__} |"
-        #     all_class = {}
-        #     first_value = copy(value)
-
-        #     if isinstance(value, (list, tuple, dict)):
-        #         if len(value) != 0:
-        #             if isinstance(value, dict):
-        #                 first_value = list(value.values())[0]
-        #                 all_class = set(subvalue.__class__.__name__ for subvalue in value.values())
-        #             else:
-        #                 first_value = value[0]
-        #                 all_class = set(subvalue.__class__.__name__ for subvalue in value)
-
-        #     if len(all_class) == 0:
-        #         if not isinstance(value, DessiaObject):
-        #             printed_string = str(value)
-        #         else:
-        #             printed_string = (value.name if value.name != '' else 'unnamed')
-
-        #         printed_string = printed_string[:20] + ('...' if len(printed_string) > 20 else '')
-        #         table_attributes += " - | " + printed_string + " |\n"
-
-        #     else:
-        #         str_all_class = str(all_class).translate(str(all_class).maketrans('', '', "{}'"))
-        #         if isinstance(first_value, DessiaObject):
-        #             printed_string = [subvalue.name if subvalue.name != '' else 'unnamed' for subvalue in value]
-        #             printed_string = ', '.join(printed_string)
-        #             printed_string = printed_string
-
-        #         else:
-        #             printed_string = str(value)
-
-        #         printed_string = printed_string[:20] + ('...' if len(printed_string) > 20 else '')
-        #         table_attributes += f" {len(value)} elements of classes {str_all_class} |"
-        #         table_attributes += f" {printed_string} |\n"
-
         return self.__str__()
-
-    def to_markdown(self) -> str:
-        """
-        Render a markdown of the object output type: string
-        """
-        text = f"# Object {self.name} of class {self.__class__.__name__}\n\n"
-        text += "## Summary\n"
-        text += "\n$summary\n\n"
-        text += "\n## Attribute values\n\n"
-        text += "$table_attributes\n"
-        text = Template(text).substitute(summary=self._markdown_class_summary(),
-                                         table_attributes=self._markdown_attr_table(),
-                                         name=self.name, class_=self.__class__.__name__)
-        print(text)
-        return text
 
     def __len__(self):
         """
