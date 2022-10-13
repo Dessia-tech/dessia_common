@@ -622,7 +622,7 @@ class DessiaObject:
                                          table_attributes=self._markdown_attr_table(),
                                          name=self.name, class_=self.__class__.__name__)
         print(text)
-        return templates.dessia_object_markdown_template.substitute(name=self.name, class_=self.__class__.__name__)
+        return text#templates.dessia_object_markdown_template.substitute(name=self.name, class_=self.__class__.__name__)
 
     def _performance_analysis(self):
         """
