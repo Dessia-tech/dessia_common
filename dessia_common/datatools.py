@@ -303,7 +303,8 @@ class HeterogeneousList(DessiaObject):
 
     def _markdown_attr_table(self):
         print_limit = 10
-        table_attributes = self._markdown_titles() + self._markdown_empty_row()
+        table_attributes = '<font size= “1”>'
+        table_attributes += self._markdown_titles() + self._markdown_empty_row()
         table_attributes += self._markdown_filling(slice(0, print_limit, 1))
 
         if len(self) > 2*print_limit:
@@ -314,7 +315,7 @@ class HeterogeneousList(DessiaObject):
         if len(self) > print_limit:
             table_attributes += self._markdown_filling(slice(-print_limit, len(self)))
 
-        return table_attributes
+        return table_attributes + '</font>'
 
     def __len__(self):
         """
