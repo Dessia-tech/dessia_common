@@ -5,7 +5,6 @@ Library for building clusters on data.
 from typing import List, Dict, Any
 from copy import copy
 import itertools
-from string import Template
 
 from scipy.spatial.distance import pdist, squareform, cdist, mahalanobis
 import numpy as npy

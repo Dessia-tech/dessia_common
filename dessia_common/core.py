@@ -604,7 +604,6 @@ class DessiaObject:
                 if isinstance(first_value, DessiaObject):
                     printed_string = [subvalue.name if subvalue.name != '' else 'unnamed' for subvalue in value]
                     printed_string = ', '.join(printed_string)
-                    printed_string = printed_string
 
                 else:
                     printed_string = str(value)
