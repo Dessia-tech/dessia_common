@@ -302,7 +302,7 @@ class HeterogeneousList(DessiaObject):
 
 
     def _markdown_attr_table(self):
-        print_limit = 10
+        print_limit = 5
         table_attributes = self._markdown_titles() + self._markdown_empty_row()
         table_attributes += self._markdown_filling(slice(0, print_limit, 1))
 
