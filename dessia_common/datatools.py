@@ -283,7 +283,7 @@ class HeterogeneousList(DessiaObject):
                 "More information can be found here: https://www.markdownguide.org/cheat-sheet/")
 
     def _markdown_titles(self):
-        return "| " + "| ".join(self._printed_attributes()) + " |\n"
+        return "| " + "| ".join(map(lambda x: x.capitalize(), self._printed_attributes())) + " |\n"
 
     def _markdown_empty_row(self):
         return "| ------ " * len(self._printed_attributes()) + "|\n"
