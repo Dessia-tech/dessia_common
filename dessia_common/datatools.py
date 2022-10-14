@@ -810,13 +810,6 @@ class HeterogeneousList(DessiaObject):
                                       y_variable='Singular value', log_scale_y=True, axis=axis, point_style=point_style)
         return dimensionality_plot
 
-    # def to_markdown(self):  # TODO: Custom this markdown
-    #     """
-    #     Render a markdown of the object output type: string
-
-    #     """
-    #     return templates.heterogeneouslist_markdown_template.substitute(name=self.name, class_=self.__class__.__name__)
-
     @staticmethod
     def _check_costs(len_data: int, costs: List[List[float]]):
         if len(costs) != len_data:
