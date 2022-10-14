@@ -15,15 +15,16 @@ class Report(DessiaObject):
                  core: str = None,
                  last_offset: int = 0,
                  name: str = ''):
+
         DessiaObject.__init__(self, name=name)
+
         self.width_line = width_line
         self.name_report = name_report
-        # file = self.open('w')
-        # self.close(file)
         if time_start is None:
             self.time_start = time.time()
         else:
             self.time_start = time_start
+
         self.last_offset = last_offset
         self.error = False
         if core is None:
@@ -42,22 +43,12 @@ class Report(DessiaObject):
             line += f'*ELAPSED TIME min -- global {time_elapsed}* '
         self.add_lines([line], nb_line_blank=0)
 
-    def open(self, option: str = 'a'):
-        file = open(self.name_report + '.log', option)
-        return file
-
-    def close(self, file):
-        file.close()
-
     def add_lines(self, lines: List[str], offset: int = 0, nb_line_blank: int = 0):
         for line in range(nb_line_blank):
             lines.append('')
         for line in lines:
             self.core += offset*'' + line + '  \n  '
-
             print(line)
-
-        # self.close(file)
         self.to_txt()
 
     def add_title(self, title: str):
@@ -173,6 +164,13 @@ class Report(DessiaObject):
         self.error = True
         # self.add_text("\n *** ERROR *** -> " + text + " \n")
         self.add_text("\n **ERROR** " + text + " \n")
+
+    def open(self, option: str = 'a'):
+        file = open(self.name_report + '.log', option)
+        return file
+
+    def close(self, file):
+        file.close()
 
     def to_txt(self):
         file = self.open('w')
