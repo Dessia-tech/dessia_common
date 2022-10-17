@@ -109,7 +109,7 @@ for _ in range(250):
     list_fx.append(fx_opt_mix)
 
     # Set to True to see optimization results on complex cost function (the mix approach should be prefered)
-if True:
+if False:
     check_costs_function(cylinders, diameters, strokes, 1e8, 1.)
     plt.plot(model_cma.diameter, model_cma.stroke, model_cma.costs,
              linestyle = 'None', marker = 'D', markersize = 6, color = 'r', label='Solution CMA')
