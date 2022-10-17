@@ -10,7 +10,6 @@ import inspect
 import warnings
 
 from zipfile import ZipFile
-import io
 from typing import List, Type, Any, Dict, get_type_hints
 
 import itertools
@@ -701,6 +700,7 @@ class Display(Block):
         output = TypedVariable(type_=DisplayObject, name="Display Object")
         Block.__init__(self, inputs=inputs, outputs=[output], name=name)
 
+        self._type = None
         self._selector = None
 
     @staticmethod
@@ -710,16 +710,27 @@ class Display(Block):
                       "to generate wanted displays (MultiPlot, CadView, PlotData, Markdown)", DeprecationWarning)
 
     @property
+    def type_(self):
+        if self._type:
+            return self._type
+        if self.__class__ is Display:
+            self.warn_deprecation()
+            return ""
+        raise NotImplementedError(f"type_ attribute is not implemented for block of type '{type(self)}'")
+
+    @property
     def selector(self):
         if self._selector:
             return self._selector
         if self.__class__ is Display:
             self.warn_deprecation()
             return ""
-        raise NotImplementedError(f"selector is not implemented for type '{type(self)}'")
+        raise NotImplementedError(f"selector attribute is not implemented for block of type '{type(self)}'")
 
     def _display_settings(self, block_index: int) -> DisplaySetting:
-        return block_display_settings(block_index=block_index, type_=self.selector, name=self.name)
+        args = {'block_index': block_index}
+        return DisplaySetting(selector=None, type_=self.type_, method="block_display", serialize_data=True,
+                              arguments=args)
 
     def evaluate(self, values):
         object_ = values[self.inputs[0]]
@@ -751,7 +762,8 @@ class MultiPlot(Display):
         self.attributes = attributes
         Display.__init__(self, inputs=[TypedVariable(List[DessiaObject])], name=name)
         self.inputs[0].name = 'Input List'
-        self._selector = "plot_data"
+        self._type = "plot_data"
+        self._selector = None
 
     def equivalent(self, other):
         same_attributes = self.attributes == other.attributes
@@ -787,7 +799,7 @@ class MultiPlot(Display):
         sizes = [plot_data.Window(width=560, height=300), plot_data.Window(width=560, height=300)]
         multiplot = plot_data.MultiplePlots(elements=attr_values, plots=plots, sizes=sizes,
                                             coords=[(0, 0), (0, 300)], name='Results plot')
-        return [DisplayObject(type_="plot_data", data=[multiplot.to_dict()])]
+        return [DisplayObject(type_=self.type_, data=[multiplot.to_dict()])]
 
     def _to_script(self) -> ToScriptElement:
         script = f"MultiPlot(attributes={self.attributes}, name='{self.name}')"
@@ -806,6 +818,7 @@ class CadView(Display):
         input_ = TypedVariable(DessiaObject, name="Model to display")
         Display.__init__(self, inputs=[input_], name=name)
 
+        self._type = "babylon_data"
         self._selector = "cad"
 
 
@@ -816,10 +829,12 @@ class Markdown(Display):
     :param name: Name of the block.
     :type name: str
     """
+
     def __init__(self, name: str = ''):
         input_ = TypedVariable(DessiaObject, name="Model to display")
         Display.__init__(self, inputs=[input_], name=name)
 
+        self._type = "markdown"
         self._selector = "markdown"
 
 
@@ -836,6 +851,7 @@ class PlotData(Display):
         input_ = TypedVariable(DessiaObject, name="Model to display")
         Display.__init__(self, inputs=[input_], name=name)
 
+        self._type = "plot_data"
         self._selector = "plot_data"
 
 
@@ -963,8 +979,56 @@ class Substraction(Block):
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
 
+class ConcatenateStrings(Block):
+    """
+    Concatenates the n input elements, separate by the separator input, into one string
+
+    :param number_elements: Number of block inputs
+    :type number_elements: int
+    :param separator: Character used to joins the input elements together
+    :type separator: str
+    """
+
+    def __init__(self, number_elements: int = 2, separator: str = "", name: str = ''):
+        self.number_elements = number_elements
+        self.separator = separator
+        inputs = [TypedVariableWithDefaultValue(name=f"Substring {i + 1}", type_=str, default_value="")
+                  for i in range(number_elements)]
+        output = TypedVariable(name="Concatenation", type_=str)
+        Block.__init__(self, inputs=inputs, outputs=[output], name=name)
+
+    def equivalent_hash(self):
+        return self.number_elements + hash(self.separator)
+
+    def equivalent(self, other):
+        same_number = self.number_elements == other.number_elements
+        same_separator = self.separator == other.separator
+        return Block.equivalent(self, other) and same_number and same_separator
+
+    def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
+        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
+        dict_.update({'number_elements': self.number_elements, "separator": self.separator})
+        return dict_
+
+    @classmethod
+    @set_block_variable_names_from_dict
+    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
+        return cls(number_elements=dict_['number_elements'], separator=dict_["separator"], name=dict_['name'])
+
+    def evaluate(self, values):
+        chunks = [values[i] for i in self.inputs]
+        return [self.separator.join(chunks)]
+
+    def _to_script(self) -> ToScriptElement:
+        script = f"ConcatenateStrings(number_elements={self.number_elements}, " \
+                 f"separator='{self.separator}', " \
+                 f"name='{self.name}')"
+        return ToScriptElement(declaration=script, imports=[self.full_classname])
+
+
 class Export(Block):
-    def __init__(self, method_type: MethodType[Type],  text: bool, extension: str,
+    def __init__(self, method_type: MethodType[Type], text: bool, extension: str,
                  filename: str = "export", name: str = ""):
         """
         Block that enables an export of an object calling its configured method.
@@ -995,7 +1059,9 @@ class Export(Block):
         self.text = text
 
         output = output_from_function(function=method, name="export_output")
-        Block.__init__(self, inputs=[TypedVariable(type_=method_type.class_)], outputs=[output], name=name)
+        inputs = [TypedVariable(type_=method_type.class_, name="model_to_export"),
+                  TypedVariableWithDefaultValue(type_=str, default_value=filename, name="filename")]
+        Block.__init__(self, inputs=inputs, outputs=[output], name=name)
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#'):
         dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
@@ -1020,7 +1086,7 @@ class Export(Block):
                    extension=dict_["extension"], name=dict_["name"])
 
     def evaluate(self, values):
-        filename = f"{self.filename}.{self.extension}"
+        filename = f"{values.pop(self.inputs[-1])}.{self.extension}"
         if self.text:
             stream = StringFile(filename)
         else:
@@ -1059,11 +1125,12 @@ class Archive(Block):
         self.number_exports = number_exports
         self.filename = filename
         inputs = [Variable(name="export_" + str(i)) for i in range(number_exports)]
+        inputs.append(TypedVariableWithDefaultValue(type_=str, default_value=filename, name="filename"))
         Block.__init__(self, inputs=inputs, outputs=[Variable(name="zip archive")], name=name)
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#'):
         dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
-        dict_['number_exports'] = len(self.inputs)
+        dict_['number_exports'] = len(self.inputs) - 1   # Filename is also a block input
         dict_["filename"] = self.filename
         return dict_
 
@@ -1079,9 +1146,11 @@ class Archive(Block):
         return cls(number_exports=dict_["number_exports"], filename=filename, name=dict_['name'])
 
     def evaluate(self, values):
-        archive = io.BytesIO()
+        name_input = self.inputs[-1]
+        archive_name = f"{values.pop(name_input)}.zip"
+        archive = BinaryFile(archive_name)
         with ZipFile(archive, 'w') as zip_archive:
-            for input_ in self.inputs:
+            for input_ in self.inputs[:-1]:  # Filename is last block input
                 value = values[input_]
                 if isinstance(value, StringFile):
                     with zip_archive.open(value.filename, 'w') as file:
@@ -1090,7 +1159,7 @@ class Archive(Block):
                     with zip_archive.open(value.filename, 'w') as file:
                         file.write(value.getbuffer())
                 else:
-                    raise ValueError("Archive input is not a file-like object")
+                    raise ValueError(f"Archive input is not a file-like object. Got '{value}' of type {type(value)}")
         return [archive]
 
     def _export_format(self, block_index: int):
@@ -1100,11 +1169,3 @@ class Archive(Block):
     def _to_script(self) -> ToScriptElement:
         script = f"Archive(number_exports={self.number_exports}, filename='{self.filename}', name='{self.name}')"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
-
-
-def block_display_settings(block_index: int, type_: str, name: str = "") -> DisplaySetting:
-    args = {'block_index': block_index}
-    if not name:
-        name = type_
-    selector = f"{name} ({block_index})"
-    return DisplaySetting(selector=selector, type_=type_, method="block_display", serialize_data=True, arguments=args)
