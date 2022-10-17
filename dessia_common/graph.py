@@ -56,7 +56,7 @@ def extract_region(networkx_graph: nx.Graph, nodes, distance: int = 5):
     return networkx_graph.subgraph(region_nodes)
 
 
-def get_longest_path(graph: nx.DiGraph, begin, end) -> list:
+def get_longest_path(graph: nx.DiGraph, begin, end):
     return list(nx.shortest_simple_paths(graph, begin, end))[-1]
 
 
@@ -65,7 +65,7 @@ def get_paths_from_to(graph: nx.DiGraph, origins, destinations):
     :param graph: a digraph
     :param origins: a list of nodes in graph
     :param destinations: a list of nodes in graph
-    :returns: a list of the longest paths where the begging is in origins and the end of the path is in destinations
+    :returns: a list of the longest paths where the beginning is in origins and the end is in destinations
     """
     paths = []
     for origin in origins:
