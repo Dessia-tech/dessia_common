@@ -49,22 +49,16 @@ class Report(DessiaObject):
 
     def add_time(self, offset: int = 0, text_to_add: str = '', time_to_add: float = 0):
         line = ' ' * offset
-        time_elapsed = str(round((time.time() - self.time_start) / 60, 2))
+        time_elapsed = time.strftime("%H:%M:%S", time.gmtime(time.time() - self.time_start))
         if time_to_add != 0 and text_to_add != '':
-            line += f'*ELAPSED TIME min -- {text_to_add} {time_to_add} -- global {time_elapsed}*'
+            line += f'*ELAPSED TIME -- {text_to_add} {time_to_add} min -- global {time_elapsed}*'
         else:
-            line += f'*ELAPSED TIME min -- global {time_elapsed}* '
+            line += f'*ELAPSED TIME -- global {time_elapsed}* '
         self.add_lines([line], nb_line_blank=0)
 
-    # def open(self, option: str = 'a'):
-    #     #To avoid : Using open without explicitly specifying an encoding
-    #     # file = open(self.name_report + '.log', option)
-    #     # TODO : Mettre with open
-    #     if option == 'r':
-    #         file = open(self.name_report + '.log', 'r')
-    #     elif option == 'w':
-    #         file = open(self.name_report + '.log', 'w')
-    #     return file
+    def open(self, option: str = 'a'):
+        with open(self.name_report + '.log', option) as file:
+            return file
     #
     # def close(self, file):
     #     file.close()
@@ -190,10 +184,6 @@ class Report(DessiaObject):
     def add_error(self, text: str):
         self.error = True
         self.add_text("\n **ERROR** " + text + " \n")
-
-    def open(self, option: str = 'a'):
-        file = open(self.name_report + '.log', option)
-        return file
 
     def close(self, file):
         file.close()

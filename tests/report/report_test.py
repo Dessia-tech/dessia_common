@@ -1,4 +1,7 @@
 from dessia_common.report import Report
+import time
+
+init_time = 1666036470.7088366
 
 report = Report(name_report='LogTest',
                 content='',
@@ -43,3 +46,6 @@ report.add_subtitle('Mostly french')
 report.add_subsubtitle('With another brand')
 report.add_text('Here is a table with some electric vehicle, mostly french')
 report.add_table(titles, vehicles)
+
+
+report.add_time(text_to_add = 'Usecase done', time_to_add = time.time()-init_time)
