@@ -27,6 +27,7 @@ class Report(DessiaObject):
                  # width_line: int = 100,
                  # time_start: float = None,
                  content: str = '',
+                 to_print: bool = True,
                  # last_offset: int = 0, #To see with platform integration if taken into account
                  name: str = ''):
         """
@@ -46,6 +47,7 @@ class Report(DessiaObject):
         self.error = False
         self.content = content
         self.profiler = Profiler()
+        self.to_print = to_print
 
     def add_time(self, offset: int = 0, text_to_add: str = '', time_to_add: float = 0):
         line = ' ' * offset
@@ -59,22 +61,27 @@ class Report(DessiaObject):
     def open(self, option: str = 'a'):
         with open(self.name_report + '.log', option) as file:
             return file
-    #
-    # def close(self, file):
-    #     file.close()
+    def close(self, file):
+        file.close()
 
     def add_lines(self, lines: List[str], offset: int = 0, nb_line_blank: int = 0):
         lines += ['']*nb_line_blank
         for line in lines:
 
             self.content += offset*' ' + line + '  \n  '
-            print(line)
+            if self.to_print:
+                print(line)
 
         # self.close(file)
         # TODO : si besoin de l'export txt, j'ajoute que les lignes nécessaire
         # with open .... f_stream, f_stream.write en allant à la derniere ligne
         self.to_txt()
 
+        # print('lines:', lines)
+        # file = self.open('')
+        # print('file:', file)
+        # file.writelines(lines)
+        # self.close(file)
     def add_title(self, title: str):
         self.last_offset = 0
         title = title.upper()
@@ -86,7 +93,7 @@ class Report(DessiaObject):
         self.last_offset = 0
         title = title.capitalize()
         # if len(title) > self.width_line:
-        title = title[0: self.width_line]
+        title = title[: self.width_line]
 
         lines = ['', '## ' + title]
         self.add_lines(lines, nb_line_blank=1)
@@ -96,7 +103,7 @@ class Report(DessiaObject):
         self.last_offset = offset
         title = title.capitalize()
         # if len(title) > self.width_line - offset:
-        title = title[0: self.width_line - offset]
+        title = title[: self.width_line - offset]
 
         lines = [' ' * offset + '### ' + title]
         self.add_lines(lines, offset, nb_line_blank=0)
@@ -184,9 +191,6 @@ class Report(DessiaObject):
     def add_error(self, text: str):
         self.error = True
         self.add_text("\n **ERROR** " + text + " \n")
-
-    def close(self, file):
-        file.close()
 
     def to_txt(self):
         # TODO : connaitre le fichier comme un chemin, le réouvrir et faire ça propre
