@@ -573,6 +573,42 @@ class DessiaObject:
     def _markdown_empty_row(self):
         return "| ------ | ------ | ------ | ------ |\n"
 
+    def _markdown_sequence_row(self, value):
+        if len(value) == 0:
+            return {}, copy(value)
+
+        if isinstance(value, dict):
+            in_values = list(value.values())
+        else:
+            in_values = value
+
+        first_value = in_values[0]
+        all_class = set(subvalue.__class__.__name__ for subvalue in in_values)
+
+        return all_class, first_value
+
+    def _markdown_printed_string_in_table(self, printed_string, str_types):
+        printed_string = printed_string[:20] + ('...' if len(printed_string) > 20 else '')
+        return str_types + f" {printed_string} |\n"
+
+    def _markdown_simple_value_row(self, value):
+        if not isinstance(value, DessiaObject):
+            printed_string = str(value)
+        else:
+            printed_string = (value.name if value.name != '' else 'unnamed')
+        return self._markdown_printed_string_in_table(printed_string, ' - |')
+
+    def _markdown_multiclass_row(self, value, first_value, all_class):
+        if isinstance(first_value, DessiaObject):
+            printed_string = [subvalue.name if subvalue.name != '' else 'unnamed' for subvalue in value]
+            printed_string = ', '.join(printed_string)
+        else:
+            printed_string = str(value)
+
+        str_all_class = str(all_class).translate(str(all_class).maketrans('', '', "{}'"))
+        str_types = f" {len(value)} elements of classes {str_all_class} |"
+        return self._markdown_printed_string_in_table(printed_string, str_types)
+
     def _markdown_attr_table(self):
         table_attributes = self._markdown_titles()
         table_attributes += self._markdown_empty_row()
@@ -582,35 +618,12 @@ class DessiaObject:
             first_value = copy(value)
 
             if isinstance(value, (list, tuple, dict)):
-                if len(value) != 0:
-                    if isinstance(value, dict):
-                        first_value = list(value.values())[0]
-                        all_class = set(subvalue.__class__.__name__ for subvalue in value.values())
-                    else:
-                        first_value = value[0]
-                        all_class = set(subvalue.__class__.__name__ for subvalue in value)
+                all_class, first_value = self._markdown_sequence_row(value)
 
             if len(all_class) == 0:
-                if not isinstance(value, DessiaObject):
-                    printed_string = str(value)
-                else:
-                    printed_string = (value.name if value.name != '' else 'unnamed')
-
-                printed_string = printed_string[:20] + ('...' if len(printed_string) > 20 else '')
-                table_attributes += " - | " + printed_string + " |\n"
-
+                table_attributes += self._markdown_simple_value_row(value)
             else:
-                str_all_class = str(all_class).translate(str(all_class).maketrans('', '', "{}'"))
-                if isinstance(first_value, DessiaObject):
-                    printed_string = [subvalue.name if subvalue.name != '' else 'unnamed' for subvalue in value]
-                    printed_string = ', '.join(printed_string)
-
-                else:
-                    printed_string = str(value)
-
-                printed_string = printed_string[:20] + ('...' if len(printed_string) > 20 else '')
-                table_attributes += f" {len(value)} elements of classes {str_all_class} |"
-                table_attributes += f" {printed_string} |\n"
+                table_attributes += self._markdown_multiclass_row(value, first_value, all_class)
 
         return table_attributes
 
@@ -627,7 +640,6 @@ class DessiaObject:
         text = Template(text).substitute(summary=self._markdown_class_summary(),
                                          table_attributes=self._markdown_attr_table(),
                                          name=self.name, class_=self.__class__.__name__)
-        print(text)
         return text
 
     def _performance_analysis(self):
