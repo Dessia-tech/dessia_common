@@ -14,6 +14,7 @@ scripts = ['displays.py',
            'graph.py',
            'jsonschema.py',
            'sampling.py',
+           'markdowns.py',
            # Workflows
            'workflow/blocks.py',
            'workflow/workflow_with_models.py',
