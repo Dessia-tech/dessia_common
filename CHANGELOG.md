@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Sampler class
 - (De)Serialization handles 'typing.Type'
+- Workflow: handle position in to_dict / dict_to_object process
 
 
 ### Breaking Changes
@@ -24,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ### Changes
-
+- Workflow: improve layout method
 
 ### Performance
 - Retrocompatibility is supported for the present time, with a big warning
