@@ -59,8 +59,14 @@ class Report(DessiaObject):
         self.add_lines([line], nb_line_blank=0)
 
     def open(self, option: str = 'a'):
-        with open(self.name_report + '.log', option) as file:
-            return file
+        print('If you want to write something in the Report, please use _write(txt_to_add)')
+        # with open(self.name_report + '.txt', option) as file:
+        #     print('file:', file)
+        #     return file
+
+    def _write(self, txt_to_add: str=''):
+        with open(self.name_report + '.log', 'w') as file:
+            file.write(txt_to_add)
     def close(self, file):
         file.close()
 
@@ -194,9 +200,11 @@ class Report(DessiaObject):
 
     def to_txt(self):
         # TODO : connaitre le fichier comme un chemin, le réouvrir et faire ça propre
-        file = self.open('w')
-        file.write(self.content)
-        self.close(file)
+        # file = self._open('w')
+        # print('file2:', file)
+        # file.write(self.content)
+        self._write(self.content)
+        # self.close(file)
 
     def to_markdown(self):
         return dessia_object_markdown_template.substitute(log=self.content)
