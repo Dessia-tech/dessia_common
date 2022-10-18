@@ -387,6 +387,18 @@ class Workflow(Block):
 
         Block.__init__(self, inputs=inputs, outputs=outputs, name=name)
 
+        self.block_selectors = {}
+        for i, block in enumerate(self.blocks):
+            if block in self.display_blocks:
+                name = block.name
+                if not name:
+                    name = block.type_
+                selector = f"{name} ({i})"
+                self.block_selectors[block] = selector
+            else:
+                # TODO : should do the export one when exports have selectors
+                self.block_selectors[block] = None
+
         self.branch_by_display_selector = self.display_branches
         self.branch_by_export_format = self.export_branches
 
@@ -539,11 +551,18 @@ class Workflow(Block):
         return [b for b in self.blocks if hasattr(b, "_display_settings")]
 
     @property
-    def blocks_display_settings(self) -> List[List[DisplaySetting]]:
+    def blocks_display_settings(self) -> List[DisplaySetting]:
         """
         Computes all display blocks display_settings
         """
-        return [b._display_settings(i) for i, b in enumerate(self.display_blocks)]
+        display_settings = []
+        for block in self.display_blocks:
+            block_index = self.blocks.index(block)
+            settings = block._display_settings(block_index)
+            if settings is not None:
+                settings.selector = self.block_selectors[block]
+                display_settings.append(settings)
+        return display_settings
 
     def display_settings(self) -> List[DisplaySetting]:
         """
@@ -574,10 +593,9 @@ class Workflow(Block):
         """
         selector_branches = {}
         for display_block in self.display_blocks:
-            block_index = self.blocks.index(display_block)
             branch = self.secondary_branch_blocks(display_block)
-            settings = display_block._display_settings(block_index)
-            selector_branches[settings.selector] = branch
+            selector = self.block_selectors[display_block]
+            selector_branches[selector] = branch
         return selector_branches
 
     @property
@@ -1237,9 +1255,7 @@ class Workflow(Block):
                 for path in paths:
                     distance = 1
                     for path_element in path[1:-1]:
-                        if path_element in self.blocks:
-                            distance += 1
-                        elif path_element in self.nonblock_variables:
+                        if path_element in self.blocks + self.nonblock_variables:
                             distance += 1
                     distances.append(distance)
                 try:
@@ -1761,14 +1777,8 @@ class WorkflowState(DessiaObject):
         """
         display_settings = [DisplaySetting('workflow-state', 'workflow_state', 'state_display', None)]
 
-        # Find displayable blocks
-        blocks = [b for b in self.workflow.blocks if hasattr(b, "_display_settings")]
-        # Change last line to isinstance ? Not possible because of circular imports ?
-        for block in blocks:
-            block_index = self.workflow.blocks.index(block)
-            settings = block._display_settings(block_index)  # Code intel is not working properly here
-            if settings is not None:
-                display_settings.append(settings)
+        # Displayable blocks
+        display_settings.extend(self.workflow.blocks_display_settings)
         return display_settings
 
     def _display_from_selector(self, selector: str, **kwargs) -> DisplayObject:
@@ -1806,8 +1816,8 @@ class WorkflowState(DessiaObject):
         self.activate_inputs()
         block = self.workflow.blocks[block_index]
 
-        display_settings = block._display_settings(block_index)
-        branch = self.workflow.branch_by_display_selector[display_settings.selector]
+        selector = self.workflow.block_selectors[block]
+        branch = self.workflow.branch_by_display_selector[selector]
         evaluated_blocks = self.evaluate_branch(branch)
 
         reference_path = ""
@@ -2034,13 +2044,14 @@ class WorkflowState(DessiaObject):
         evaluated_blocks = self.evaluate_branch(branch)
         if block not in evaluated_blocks:
             msg = f"Could not reach block at index {block_index}." \
-                  f"Has the workflow been run far enough to evaluate this block ?"
+                  f"Has the workflow been ran far enough to evaluate this block ?"
             raise WorkflowError(msg)
         export_stream = evaluated_blocks[block][0]  # Only one output to an Export Block
         if isinstance(stream, StringFile):
             stream.write(export_stream.getvalue())
         if isinstance(stream, BinaryFile):
             stream.write(export_stream.getbuffer())
+        stream.filename = export_stream.filename
         return export_stream
 
 

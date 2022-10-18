@@ -18,7 +18,7 @@ MIN_NOTE = 9.17
 UNWATCHED_ERRORS = ['fixme', 'trailing-whitespace', 'import-error']
 
 MAX_ERROR_BY_TYPE = {
-                     'protected-access': 46,
+                     'protected-access': 41,
                      'invalid-name': 0,
                      'consider-using-f-string': 1,
                      'no-else-return': 0,
@@ -26,6 +26,8 @@ MAX_ERROR_BY_TYPE = {
                      'no-member': 1,
                      'too-many-locals': 12,  # Reduce by dropping vectored objects
                      'wrong-import-order': 7,
+                     'too-many-branches': 12,
+                     'wrong-import-order': 1,
                      'too-many-branches': 12,
                      'unused-import': 0,
                      'unused-argument': 5,

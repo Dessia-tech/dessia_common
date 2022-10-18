@@ -12,7 +12,7 @@ assert display_settings[4].selector == "MD (3)"
 
 assert display_settings[0].type == "markdown"
 assert display_settings[1].type == "workflow"
-assert display_settings[2].type == "cad"
+assert display_settings[2].type == "babylon_data"
 assert display_settings[3].type == "plot_data"
 assert display_settings[4].type == "markdown"
 
