@@ -136,6 +136,7 @@ setup(
         "dessia_common.models.workflows",
     ],
     install_requires=[
+        "orjson",
         "typeguard",
         "networkx",
         "numpy",

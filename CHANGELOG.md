@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ### Performance
-
+- switch is_jsonable to orjson
 
 ### Fixed
 
