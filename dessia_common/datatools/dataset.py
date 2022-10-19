@@ -16,7 +16,7 @@ try:
     from plot_data.colors import BLUE, GREY
 except ImportError:
     pass
-from dessia_common.core import DessiaObject, DessiaFilter, FiltersList, templates
+from dessia_common.core import DessiaObject, DessiaFilter, FiltersList
 from dessia_common.datatools.metrics import mean, std, variance, covariance_matrix
 
 class Dataset(DessiaObject):
@@ -271,6 +271,44 @@ class Dataset(DessiaObject):
                 string += " "
             string += end_bar
         return string
+
+    def _markdown_class_summary(self):
+        return ("Summary: This is a standard class summary and can be customized by changing method " +
+                "<_markdown_class_summary()> of DessiaObject to write a class summary in markdown.\n" +
+                "More information can be found here: https://www.markdownguide.org/cheat-sheet/")
+
+    def _markdown_titles(self):
+        return "| " + " | ".join(map(lambda x: x.capitalize(), self._printed_attributes())) + " |\n"
+
+    def _markdown_empty_row(self):
+        return "| ------ " * len(self._printed_attributes()) + "|\n"
+
+    def _markdown_parent_attributes_in_table(self, dessia_object: DessiaObject):
+        return f'| {dessia_object.name} '
+
+    def _markdown_filling(self, key: slice):
+        added_string = ''
+        for idx, dessia_object in enumerate(self[key]):
+            matrix_idx = idx + key.start
+            added_string += self._markdown_parent_attributes_in_table(dessia_object)
+            added_string += '| ' + ' | '.join(list(map(str, self.matrix[matrix_idx]))) + ' |\n'
+
+        return added_string
+
+    def _markdown_attr_table(self):
+        print_limit = 5
+        table_attributes = self._markdown_titles() + self._markdown_empty_row()
+        table_attributes += self._markdown_filling(slice(0, print_limit, 1))
+
+        if len(self) > 2 * print_limit:
+            undispl_len = len(self) - print_limit * 2
+            table_attributes += (f"| + {undispl_len} undisplayed object" + "s"*(min([undispl_len, 2])-1) + "... ||" +
+                                 "\n")
+
+        if len(self) > print_limit:
+            table_attributes += self._markdown_filling(slice(-print_limit, len(self)))
+
+        return table_attributes
 
     def _get_printed_value(self, dessia_object: DessiaObject, attr: str):
         return getattr(dessia_object, attr)
@@ -768,13 +806,6 @@ class Dataset(DessiaObject):
         dimensionality_plot = Scatter(elements=singular_points, x_variable='Index of reduced basis vector',
                                       y_variable='Singular value', log_scale_y=True, axis=axis, point_style=point_style)
         return dimensionality_plot
-
-    def to_markdown(self):  # TODO: Custom this markdown
-        """
-        Render a markdown of the object output type: string
-
-        """
-        return templates.Dataset_markdown_template.substitute(name=self.name, class_=self.__class__.__name__)
 
     @staticmethod
     def _check_costs(len_data: int, costs: List[List[float]]):

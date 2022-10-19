@@ -38,6 +38,7 @@ from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotat
 from dessia_common.utils.docstrings import parse_docstring, FAILED_DOCSTRING_PARSING
 from dessia_common.exports import XLSXWriter
 from dessia_common.typings import JsonSerializable
+from dessia_common import templates
 from dessia_common.displays import DisplayObject, DisplaySetting
 from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
 
@@ -562,85 +563,11 @@ class DessiaObject:
             displays.append(display_.to_dict())
         return displays
 
-    def _markdown_class_summary(self):
-        return ("Summary: This is a standard class summary and can be customized by changing method " +
-                "<_markdown_class_summary()> of DessiaObject to write a class summary in markdown.\n" +
-                "More information can be found here: https://www.markdownguide.org/cheat-sheet/")
-
-    def _markdown_titles(self):
-        return "| Attribute | Type | Contains | Subvalues |\n"
-
-    def _markdown_empty_row(self):
-        return "| ------ | ------ | ------ | ------ |\n"
-
-    def _markdown_sequence_row(self, value):
-        if len(value) == 0:
-            return {}, copy(value)
-
-        if isinstance(value, dict):
-            in_values = list(value.values())
-        else:
-            in_values = value
-
-        first_value = in_values[0]
-        all_class = set(subvalue.__class__.__name__ for subvalue in in_values)
-
-        return all_class, first_value
-
-    def _markdown_printed_string_in_table(self, printed_string, str_types):
-        printed_string = printed_string[:20] + ('...' if len(printed_string) > 20 else '')
-        return str_types + f" {printed_string} |\n"
-
-    def _markdown_simple_value_row(self, value):
-        if not isinstance(value, DessiaObject):
-            printed_string = str(value)
-        else:
-            printed_string = (value.name if value.name != '' else 'unnamed')
-        return self._markdown_printed_string_in_table(printed_string, ' - |')
-
-    def _markdown_multiclass_row(self, value, first_value, all_class):
-        if isinstance(first_value, DessiaObject):
-            printed_string = [subvalue.name if subvalue.name != '' else 'unnamed' for subvalue in value]
-            printed_string = ', '.join(printed_string)
-        else:
-            printed_string = str(value)
-
-        str_all_class = str(all_class).translate(str(all_class).maketrans('', '', "{}'"))
-        str_types = f" {len(value)} elements of classes {str_all_class} |"
-        return self._markdown_printed_string_in_table(printed_string, str_types)
-
-    def _markdown_attr_table(self):
-        table_attributes = self._markdown_titles()
-        table_attributes += self._markdown_empty_row()
-        for attr, value in self.__dict__.items():
-            table_attributes += f"| {attr} | {value.__class__.__name__} |"
-            all_class = {}
-            first_value = copy(value)
-
-            if isinstance(value, (list, tuple, dict)):
-                all_class, first_value = self._markdown_sequence_row(value)
-
-            if len(all_class) == 0:
-                table_attributes += self._markdown_simple_value_row(value)
-            else:
-                table_attributes += self._markdown_multiclass_row(value, first_value, all_class)
-
-        return table_attributes
-
     def to_markdown(self) -> str:
         """
         Render a markdown of the object output type: string
         """
-        printed_name = (self.name + ' ' if self.name != '' else '')
-        text = f"# Object {printed_name}of class {self.__class__.__name__}\n\n"
-        text += "## Summary\n"
-        text += "\n$summary\n\n"
-        text += "\n## Attribute values\n\n"
-        text += "$table_attributes\n"
-        text = Template(text).substitute(summary=self._markdown_class_summary(),
-                                         table_attributes=self._markdown_attr_table(),
-                                         name=self.name, class_=self.__class__.__name__)
-        return text
+        return templates.dessia_object_markdown_template.substitute(name=self.name, class_=self.__class__.__name__)
 
     def _performance_analysis(self):
         """
