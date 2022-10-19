@@ -873,7 +873,7 @@ class DessiaFilter(DessiaObject):
         return self._REAL_OPERATORS[self.comparison_operator]
 
     def _to_lambda(self):
-        return lambda x: (self._comparison_operator()(enhanced_deep_attr(value, self.attribute), self.bound)
+        return lambda x: (self._comparison_operator()(get_in_object_from_path(value, self.attribute), self.bound)
                           for value in x)
 
     def get_booleans_index(self, values: List[DessiaObject]):
