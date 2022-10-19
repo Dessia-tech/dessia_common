@@ -539,19 +539,19 @@ class HeterogeneousList(DessiaObject):
             self._matrix = matrix
         return self._matrix
 
-    # def _displays(self, **kwargs):
-    #     if 'reference_path' in kwargs:
-    #         reference_path = kwargs['reference_path'] + '/dessia_objects'
-    #     else:
-    #         reference_path = '/dessia_objects'
-    #     return DessiaObject._displays(self, reference_path=reference_path)
+    def _displays(self, **kwargs):
+        if 'reference_path' in kwargs:
+            reference_path = kwargs['reference_path'] + '/dessia_objects'
+        else:
+            reference_path = '/dessia_objects'
+        return DessiaObject._displays(self, reference_path=reference_path)
 
-    # def _display_from_selector(self, selector: str, **kwargs):
-    #     if 'reference_path' in kwargs:
-    #         reference_path = kwargs['reference_path'] + '/dessia_objects'
-    #     else:
-    #         reference_path = '/dessia_objects'
-    #     return DessiaObject._display_from_selector(self, selector=selector, reference_path=reference_path)
+    def _display_from_selector(self, selector: str, **kwargs):
+        if 'reference_path' in kwargs:
+            reference_path = kwargs['reference_path'] + '/dessia_objects'
+        else:
+            reference_path = '/dessia_objects'
+        return DessiaObject._display_from_selector(self, selector=selector, reference_path=reference_path)
 
     def filtering(self, filters_list: FiltersList):
         """
