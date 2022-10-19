@@ -3,7 +3,6 @@ Library for building clusters on data.
 
 """
 from typing import List, Dict, Any
-import traceback as tb
 from copy import copy
 import itertools
 
