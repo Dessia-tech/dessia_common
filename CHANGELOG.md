@@ -12,7 +12,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - (De)Serialization handles 'typing.Type'
 - Workflow: handle position in to_dict / dict_to_object process
 
+
 ### Breaking Changes
+- HeterogeneousList becomes Dataset
+- CategorizedList becomes ClusteredDataset
+- Change file organization for datatools:
+    * File datatools.py becomes directory datatools
+    * class Dataset is now coded in file dataset.py
+    * class ClusteredDataset is now coded in file cluster.py
+    * class Sampler is now coded in file sampling.py
+    * Metrics function are now coded in file metrics.py
+- Retrocompatibility is supported for the present time, with a big warning
 
 
 ### Changes
@@ -28,19 +38,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - FiltersList class
-- Easy access to HeterogeneousList with getitem, len, add, extend, sort
-- filtering method in HeterogeneousList that calls a FiltersList
-- Documentation for HeterogeneousList, CategorizedList, DessiaFilter, FiltersList
-- pareto front and parallel plot for HeterogeneousList
+- Easy access to Dataset with getitem, len, add, extend, sort
+- filtering method in Dataset that calls a FiltersList
+- Documentation for Dataset (previously HeterogeneousList), ClusteredDataset (previously CategorizedList), DessiaFilter, FiltersList
+- pareto front and parallel plot for Dataset
 - Sort parallel plot axis with correlation coefficient (experimental algorithm that seems to work)
-- Metrics for HeterogeneousList and CategorizedList
-- Centroids for CategorizedList
+- Metrics for Dataset (previously HeterogeneousList) and ClusteredDataset (previously CategorizedList)
+- Centroids for ClusteredDataset (previously CategorizedList)
 - Nearly all required tests for all these developments
 
 ### Breaking Changes
 - Change attribute "operator" of DessiaFilter to "comparison_operator"
 - Change name of file "cluster.py" to "datatools.py"
-- Move HeterogeneousList in "datatools.py"
+- Move Dataset in "datatools.py"
 
 ### Changes
 - Add 'logical_operator="and"' attribute to workflow.block.Filter

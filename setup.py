@@ -134,6 +134,7 @@ setup(
         "dessia_common.utils",
         "dessia_common.models",
         "dessia_common.models.workflows",
+        "dessia_common.datatools"
     ],
     install_requires=[
         "orjson",

@@ -1,5 +1,5 @@
 from dessia_common.tests import RandDataD2
-from dessia_common.sampling import Sampler
+from dessia_common.datatools.sampling import Sampler
 from dessia_common.optimization import FixedAttributeValue, BoundedAttributeValue
 from dessia_common.workflow.blocks import InstantiateModel, ModelMethod
 from dessia_common.typings import MethodType
