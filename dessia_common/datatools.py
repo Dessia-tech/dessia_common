@@ -3,6 +3,7 @@ Library for building clusters on data.
 
 """
 from typing import List, Dict, Any
+import traceback as tb
 from copy import copy
 import itertools
 
@@ -539,6 +540,20 @@ class HeterogeneousList(DessiaObject):
             self._matrix = matrix
         return self._matrix
 
+    def _displays(self, **kwargs):
+        if 'reference_path' in kwargs:
+            reference_path = kwargs['reference_path'] + '/dessia_objects'
+        else:
+            reference_path = '/dessia_objects'
+        return DessiaObject._displays(self, reference_path=reference_path)
+
+    def _display_from_selector(self, selector: str, **kwargs):
+        if 'reference_path' in kwargs:
+            reference_path = kwargs['reference_path'] + '/dessia_objects'
+        else:
+            reference_path = '/dessia_objects'
+        return DessiaObject._display_from_selector(self, selector=selector, reference_path=reference_path)
+
     def filtering(self, filters_list: FiltersList):
         """
         Filter a HeterogeneousList given a FiltersList.
@@ -654,7 +669,6 @@ class HeterogeneousList(DessiaObject):
         else:
             plot_obj = Histogram(x_variable=name_attr)
         return plot_obj
-
 
     def _tooltip_attributes(self):
         return self.common_attributes
