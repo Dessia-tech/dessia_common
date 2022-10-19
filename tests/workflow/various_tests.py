@@ -42,6 +42,21 @@ class WorkflowTests(WorkflowUnitTest):
             output=self.block_0.outputs[0]
         )
 
+    def test_layout(self):
+        wf = Workflow(
+            blocks=[self.block_0, self.block_1],
+            pipes=[],
+            output=self.block_0.outputs[0]
+        )
+        wf.layout()
+
+        wf = Workflow(
+            blocks=[self.block_0, self.block_1],
+            pipes=[Pipe(self.block_0.outputs[0], self.block_1.inputs[0])],
+            output=self.block_0.outputs[0]
+        )
+        wf.layout()
+
 
 class WorkflowDataEq(WorkflowUnitTest):
 

@@ -322,7 +322,7 @@ var edges = new vis.DataSet($edges);
 ''')
 
 
-heterogeneouslist_markdown_template = Template('''
+Dataset_markdown_template = Template('''
 # Object $name of class $class_
 
 This is a markdown file https://www.markdownguide.org/cheat-sheet/
