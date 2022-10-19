@@ -1,12 +1,12 @@
 """
-Tests for dessia_common.HeterogeneousList class (loadings, check_platform and plots)
+Tests for dessia_common.Dataset class (loadings, check_platform and plots)
 """
 import random
 from dessia_common.core import DessiaObject
 from dessia_common.models import all_cars_no_feat, all_cars_wi_feat, rand_data_middl
-from dessia_common.datatools import covariance, manhattan_distance, euclidian_distance, minkowski_distance, inf_norm,\
-    mahalanobis_distance
-from dessia_common.datatools import HeterogeneousList
+from dessia_common.datatools.metrics import covariance, manhattan_distance, euclidian_distance, minkowski_distance,\
+    inf_norm, mahalanobis_distance
+from dessia_common.datatools.dataset import Dataset
 
 # Tests on common_attributes
 class Bidon(DessiaObject):
@@ -21,7 +21,7 @@ class Bidon(DessiaObject):
 
 
 bidon = Bidon()
-bidon_hlist = HeterogeneousList([bidon]*10)
+bidon_hlist = Dataset([bidon]*10)
 bidon_hlist.plot_data()
 assert(bidon_hlist.common_attributes == ['attr1'])
 
@@ -39,17 +39,17 @@ class Bidon(DessiaObject):
         return [self.attr1, self.attr2, self.prop1, random.randint(0, 32)]
 
 bidon = Bidon()
-bidon_hlist = HeterogeneousList([bidon]*10)
+bidon_hlist = Dataset([bidon]*10)
 bidon_hlist.plot_data()
 assert(bidon_hlist.common_attributes == ['attr1', 'attr2', 'prop1', 'in_to_vector'])
 
 # When attribute _features is not specified in class Car
-all_cars_without_features = HeterogeneousList(all_cars_no_feat)
+all_cars_without_features = Dataset(all_cars_no_feat)
 
 # When attribute _features is specified in class CarWithFeatures
-all_cars_with_features = HeterogeneousList(all_cars_wi_feat)
+all_cars_with_features = Dataset(all_cars_wi_feat)
 # Auto-generated heterogeneous dataset with nb_clusters clusters of points in nb_dims dimensions
-RandData_heterogeneous = HeterogeneousList(rand_data_middl)
+RandData_heterogeneous = Dataset(rand_data_middl)
 
 # Compute one common_attributes
 all_cars_without_features.common_attributes
@@ -67,9 +67,9 @@ assert(picked_list._matrix is None)
 assert(picked_list[-1] == rand_data_middl[10])
 try:
     all_cars_without_features[[True, False, True]]
-    raise ValueError("boolean indexes of len 3 should not be able to index HeterogeneousLists of len 406")
+    raise ValueError("boolean indexes of len 3 should not be able to index Datasets of len 406")
 except Exception as e:
-    assert(e.args[0] == "Cannot index HeterogeneousList object of len 406 with a list of boolean of len 3")
+    assert(e.args[0] == "Cannot index Dataset object of len 406 with a list of boolean of len 3")
 
 # Test on matrice
 idx = random.randint(0, len(all_cars_without_features) - 1)
@@ -102,31 +102,32 @@ assert(int(mahalanobis_distance(all_cars_with_features.matrix[3],
                                 all_cars_with_features.matrix[125],
                                 all_cars_with_features.covariance_matrix())) == 2)
 
-# Tests for empty HeterogeneousList
-empty_list = HeterogeneousList()
+# Tests for empty Dataset
+empty_list = Dataset()
 print(empty_list)
 assert(empty_list[0] == [])
 assert(empty_list[:] == [])
 assert(empty_list[[False, True]] == [])
-assert(empty_list + empty_list == HeterogeneousList())
+assert(empty_list + empty_list == Dataset())
 assert(empty_list + all_cars_without_features == all_cars_without_features)
 assert(all_cars_without_features + empty_list == all_cars_without_features)
 assert(len(empty_list) == 0)
 assert(empty_list.matrix == [])
 assert(empty_list.common_attributes == [])
 empty_list.sort(0)
-assert(empty_list == HeterogeneousList())
+assert(empty_list == Dataset())
 empty_list.sort("weight")
-assert(empty_list == HeterogeneousList())
+assert(empty_list == Dataset())
 
 try:
     empty_list.plot_data()
-    raise ValueError("plot_data should not work on empty HeterogeneousLists")
+    raise ValueError("plot_data should not work on empty Datasets")
 except Exception as e:
     assert(e.__class__.__name__ == "IndexError")
+
 try:
     empty_list.singular_values()
-    raise ValueError("singular_values should not work on empty HeterogeneousLists")
+    raise ValueError("singular_values should not work on empty Datasets")
 except Exception as e:
     assert(e.__class__.__name__ == "ValueError")
 
@@ -146,20 +147,19 @@ all_cars_without_features.extend(all_cars_without_features)
 assert(len(all_cars_without_features._matrix) == 812)
 try:
     all_cars_without_features[float]
-    raise ValueError("float should not work as __getitem__ object for HeterogeneousList")
+    raise ValueError("float should not work as __getitem__ object for Dataset")
 except Exception as e:
-    assert(e.args[0] == "key of type <class 'type'> not implemented for indexing HeterogeneousLists")
+    assert(e.args[0] == "key of type <class 'type'> not implemented for indexing Datasets")
 
 try:
     all_cars_without_features[[float]]
-    raise ValueError("float should not work as __getitem__ object for HeterogeneousList")
+    raise ValueError("float should not work as __getitem__ object for Dataset")
 except Exception as e:
     assert(e.args[0] == "key of type <class 'list'> with <class 'type'> elements not implemented for indexing " +
-           "HeterogeneousLists")
+           "Datasets")
 
 try:
     covariance([1,2], [1])
     raise ValueError("covariance should be able to compute on lists of different lengths")
 except Exception as e:
     assert(e.args[0] == "vector_x and vector_y must be the same length to compute covariance.")
-

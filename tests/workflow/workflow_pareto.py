@@ -7,7 +7,7 @@ from dessia_common.files import StringFile
 from dessia_common.typings import ClassMethodType, MethodType
 from dessia_common.tests import Car
 from dessia_common.workflow.blocks import ClassMethod, InstantiateModel, ModelMethod, Sequence
-from dessia_common.datatools import HeterogeneousList
+from dessia_common.datatools.dataset import Dataset
 from dessia_common.workflow.core import Workflow, Pipe
 
 # Import data
@@ -16,11 +16,11 @@ stream_file = StringFile.from_stream(csv_cars)
 
 # Workflow
 block_0 = ClassMethod(method_type=ClassMethodType(Car, 'from_csv'), name='CSV Cars')
-block_1 = InstantiateModel(model_class=HeterogeneousList, name='HeterogeneousList')
-block_2 = ModelMethod(method_type=MethodType(HeterogeneousList, 'get_attribute_values'), name='Weight')
-block_3 = ModelMethod(method_type=MethodType(HeterogeneousList, 'get_attribute_values'), name='MPG')
+block_1 = InstantiateModel(model_class=Dataset, name='Dataset')
+block_2 = ModelMethod(method_type=MethodType(Dataset, 'get_attribute_values'), name='Weight')
+block_3 = ModelMethod(method_type=MethodType(Dataset, 'get_attribute_values'), name='MPG')
 block_4 = Sequence(number_arguments=2, name='list of costs')
-block_5 = ModelMethod(method_type=MethodType(HeterogeneousList, 'pareto_points'), name='Pareto Points')
+block_5 = ModelMethod(method_type=MethodType(Dataset, 'pareto_points'), name='Pareto Points')
 blocks = [block_0, block_1, block_2, block_3, block_4, block_5]
 
 pipe_0 = Pipe(block_0.outputs[0], block_1.inputs[0])

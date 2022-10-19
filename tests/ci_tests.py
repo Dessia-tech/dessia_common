@@ -6,8 +6,8 @@ scripts = ['displays.py',
            'models_test.py',
            'files.py',
            'clustering.py',
-           'heterogeneous_list.py',
-           'heterogeneous_list_pareto.py',
+           'dataset.py',
+           'dataset_pareto.py',
            'filters.py',
            'moving_object.py',
            'optimization.py',
@@ -50,4 +50,4 @@ for script_name in scripts:
 
 # This needs to be executed once all "assert-tests" have been run + once all unittests are defined
 if __name__ == '__main__':
-    unittest.main(verbosity=2)
+    unittest.main(verbosity=3)
