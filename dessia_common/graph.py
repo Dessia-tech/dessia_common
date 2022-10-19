@@ -3,8 +3,6 @@
 """
 Graph helpers
 """
-
-
 import networkx as nx
 
 
@@ -56,3 +54,50 @@ def extract_region(networkx_graph: nx.Graph, nodes, distance: int = 5):
         region_nodes.extend(ancs)
 
     return networkx_graph.subgraph(region_nodes)
+
+
+def get_longest_path(graph: nx.DiGraph, begin, end):
+    return list(nx.shortest_simple_paths(graph, begin, end))[-1]
+
+
+def get_paths_from_to(graph: nx.DiGraph, origins, destinations):
+    """
+    :param graph: a digraph
+    :param origins: a list of nodes in graph
+    :param destinations: a list of nodes in graph
+    :returns: a list of the longest paths where the beginning is in origins and the end is in destinations
+    """
+    paths = []
+    for origin in origins:
+        for destination in destinations:
+            try:
+                paths.append(get_longest_path(graph, origin, destination))
+            except nx.exception.NetworkXNoPath:
+                continue
+    return paths
+
+
+def get_column_by_node(graph: nx.DiGraph):
+    """
+    :returns: a Dict containing the column_index of each node
+    """
+    longest_path = nx.dag_longest_path(graph)
+    end_of_path = longest_path[-1]
+
+    columns = {}
+
+    for node in longest_path:
+        columns[node] = longest_path.index(node)
+
+    for node in [n for n in graph.nodes if n not in longest_path]:
+        try:
+            path = get_longest_path(graph, node, end_of_path)
+            columns[node] = len(longest_path) - len(path)
+        except nx.exception.NetworkXNoPath:
+            # There is no path from node to end_of_path
+            for path in get_paths_from_to(graph, list(graph.nodes), [node]):
+                column_index = columns[path[0]] + len(path) - 1
+                if node not in columns or columns[node] < column_index:
+                    columns[node] = column_index
+
+    return columns
