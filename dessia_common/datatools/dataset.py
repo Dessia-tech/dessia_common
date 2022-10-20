@@ -3,6 +3,7 @@ Library for building Dataset.
 
 """
 from typing import List, Dict, Any
+from string import Template
 from copy import copy
 import itertools
 
@@ -17,6 +18,7 @@ try:
 except ImportError:
     pass
 from dessia_common.core import DessiaObject, DessiaFilter, FiltersList
+from dessia_common.exports import MarkdownWriter
 from dessia_common.datatools.metrics import mean, std, variance, covariance_matrix
 
 class Dataset(DessiaObject):
@@ -294,6 +296,22 @@ class Dataset(DessiaObject):
             added_string += '| ' + ' | '.join(list(map(str, self.matrix[matrix_idx]))) + ' |\n'
 
         return added_string
+
+    def to_markdown(self) -> str:
+        """
+        Render a markdown of the object output type: string
+        """
+        printed_name = (self.name + ' ' if self.name != '' else '')
+        text = f"# Object {printed_name}of class {self.__class__.__name__}\n\n"
+        text += "## Summary\n"
+        text += "\n$summary\n\n"
+        text += "\n## Attribute values\n\n"
+        text += "$table_attributes\n"
+        text = Template(text).substitute(summary=self._markdown_class_summary(),
+                                         table_attributes=self._markdown_attr_table(),
+                                         name=self.name, class_=self.__class__.__name__)
+        # return text
+        return MarkdownWriter(self).text
 
     def _markdown_attr_table(self):
         print_limit = 5
