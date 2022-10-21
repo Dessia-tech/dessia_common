@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 __init__ for dessia_common module
+
 """
 
 import pkg_resources

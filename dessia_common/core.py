@@ -1127,13 +1127,13 @@ class FiltersList(DessiaObject):
         Examples
         --------
         >>> from dessia_common.core import FiltersList
-        >>> from dessia_common.datatools import HeterogeneousList
+        >>> from dessia_common.datatools.dataset import Dataset
         >>> from dessia_common.models import all_cars_wi_feat
         >>> filters = [DessiaFilter('weight', '<=', 1650.), DessiaFilter('mpg', '>=', 45.)]
         >>> filters_list = FiltersList(filters, logical_operator="xor", name="example")
         >>> filtered_cars = filters_list.apply(all_cars_wi_feat)
-        >>> print(HeterogeneousList(filtered_cars, name="example"))
-        HeterogeneousList example: 3 samples, 5 features
+        >>> print(Dataset(filtered_cars, name="example"))
+        Dataset example: 3 samples, 5 features
         |         Mpg         |    Displacement    |     Horsepower     |       Weight       |    Acceleration    |
         -----------------------------------------------------------------------------------------------------------
         |               35.0  |             0.072  |              69.0  |            1613.0  |              18.0  |
