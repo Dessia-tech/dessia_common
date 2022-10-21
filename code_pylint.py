@@ -25,7 +25,6 @@ MAX_ERROR_BY_TYPE = {
                      'arguments-differ': 2,
                      'no-member': 2,
                      'too-many-locals': 12,  # Reduce by dropping vectored objects
-                     'wrong-import-order': 7,
                      'too-many-branches': 12,
                      'wrong-import-order': 1,
                      'too-many-branches': 12,
@@ -38,14 +37,14 @@ MAX_ERROR_BY_TYPE = {
                      'empty-docstring': 7,
                      'missing-module-docstring': 1,
                      'too-many-arguments': 20,
-                     'too-few-public-methods': 5,
-                     'unnecessary-comprehension': 5,
+                     'too-few-public-methods': 4,
+                     'unnecessary-comprehension': 1,
                      'no-value-for-parameter': 2,
                      'too-many-return-statements': 10,
                      'raise-missing-from': 0,
                      'consider-merging-isinstance': 1,
                      'abstract-method': 6,
-                     'import-outside-toplevel': 7,  # TODO : will reduced in a future work (when tests are ready)
+                     'import-outside-toplevel': 4,  # TODO : will reduced in a future work (when tests are ready)
                      'too-many-instance-attributes': 7,
                      'consider-iterating-dictionary': 1,
                      'attribute-defined-outside-init': 3,
@@ -63,6 +62,7 @@ MAX_ERROR_BY_TYPE = {
                      'wildcard-import': 1,
                      'use-maxsplit-arg': 1,
                      'duplicate-code': 1,
+                     'c-extension-no-member': 2,
                      # No tolerance errors
                      'eval-used': 0,
                      'redefined-builtin': 0,
@@ -77,7 +77,7 @@ MAX_ERROR_BY_TYPE = {
                      'inconsistent-return-statements': 0,
                      'unexpected-special-method-signature': 0,
                      'too-many-lines': 1,
-                     'bare-except': 4,
+                     'bare-except': 3,
                      'unspecified-encoding': 0,
                      'no-else-raise': 0,
                      'bad-indentation': 0,
