@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ### Breaking Changes
+- Measures moved to dessia_common.measures
 - HeterogeneousList becomes Dataset
 - CategorizedList becomes ClusteredDataset
 - Change file organization for datatools:
