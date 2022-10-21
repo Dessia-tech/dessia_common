@@ -34,7 +34,7 @@ MAX_ERROR_BY_TYPE = {
                      'no-self-use': 6,
                      'unused-variable': 0,
                      'trailing-whitespace': 11,
-                     'empty-docstring': 7,
+                     'empty-docstring': 1,
                      'missing-module-docstring': 1,
                      'too-many-arguments': 20,
                      'too-few-public-methods': 4,

@@ -40,8 +40,9 @@ except ImportError:
     pass
 
 from dessia_common import DessiaObject, PhysicalObject, MovingObject
-from dessia_common.typings import InstanceOf, Distance
+from dessia_common.typings import InstanceOf
 from dessia_common.vectored_objects import Catalog
+from dessia_common.measures import Distance
 
 
 from dessia_common.files import BinaryFile, StringFile
@@ -536,6 +537,7 @@ class ObjectWithOtherTypings(DessiaObject):
     """
     Dummy class to test some typing jsonschemas
     """
+
     def __init__(self, undefined_type_attribute: Any, name: str = ""):
         self.undefined_type_attribute = undefined_type_attribute
 
@@ -551,7 +553,7 @@ class MovingStandaloneObject(MovingObject):
 
     @classmethod
     def generate(cls, seed: int):
-        return cls(origin=1.3*seed, name=f"moving_{seed}")
+        return cls(origin=1.3 * seed, name=f"moving_{seed}")
 
     def contour(self):
         points = [vm.Point2D(self.origin, self.origin), vm.Point2D(self.origin, self.origin + 1),
