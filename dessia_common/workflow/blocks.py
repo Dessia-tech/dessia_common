@@ -889,7 +889,7 @@ class ModelAttribute(Block):
         return cls(dict_['attribute_name'], dict_['name'], position=dict_.get('position'))
 
     def evaluate(self, values):
-        return [get_in_object_from_path(values[self.inputs[0]], self.attribute_name)]
+        return [get_in_object_from_path(values[self.inputs[0]], f'#/{self.attribute_name}')]
 
     def _to_script(self) -> ToScriptElement:
         script = f"ModelAttribute(attribute_name='{self.attribute_name}', {self.base_script()})"
