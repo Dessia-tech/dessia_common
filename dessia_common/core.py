@@ -12,7 +12,6 @@ import operator
 import math
 import random
 import itertools
-from string import Template
 
 from functools import reduce
 import collections

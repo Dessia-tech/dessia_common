@@ -6,6 +6,8 @@ exports for dessia_common
 """
 from copy import copy
 from string import Template
+from typing import List, Any, Union
+
 
 from openpyxl.styles.borders import Border, Side
 from openpyxl.styles import PatternFill, Font
@@ -343,12 +345,74 @@ class MarkdownWriter:
                                          name=self.object_.name, class_=self.object_.__class__.__name__)
         return text
 
-    def write_table(self, class_):
-        if 'dessia_common' in str(class_):
-            return self._object_table()
-        if isinstance(class_, (float, int, bool, complex, str)):
-            return self._simple_value_table()
-        if isinstance(class_, (list, dict, set)):
-            return self._sequence_table()
+    def write_table(self, object_):
+        if isinstance(object_, (float, int, bool, complex, str)):
+            return self._simple_value_table(object_)
+        if isinstance(object_, (list, dict, set)):
+            return self._sequence_table(object_)
+        if hasattr(object_, 'name'):
+            return self._object_with_name_table(object_)
+        else:
+            return self._object_table(object_)
+
+    def _write_head_table(self, col_names: List[str] = None) -> str:
+        return ("| " + " | ".join(col_names) + " |\n" +
+                "| ------ " * len(col_names) + "|\n")
+
+    def _sequence_to_str(self, value: List[Union[list, dict, set]]):
+        in_values = value
+        if isinstance(value, dict):
+            in_values = list(value.values())
+
+        first_value = in_values[0]
+        all_class = set(subvalue.__class__.__name__ for subvalue in in_values)
+
+        if len(all_class) == 1:
+            if all_class[0]
+
+        if hasattr(first_value, 'name'):
+            printed_string = [subvalue.name if subvalue.name != '' else 'unnamed' for subvalue in value]
+            printed_string = ', '.join(printed_string)
+        else:
+            printed_string = str(first_value)
+
+        str_all_class = str(all_class).translate(str(all_class).maketrans('', '', "{}'"))
+        str_types = f" {len(value)} elements of classes {str_all_class} |"
+        return self._printed_string_in_table(printed_string, str_types)
+
+
+    def _write_line_table(self, row: List[Any]) -> str:
+        line = "|"
+        for value in row:
+            line += " "
+            if isinstance(value, (float, int, bool, complex)):
+                line += str(round(value, 6))
+
+            if isinstance(value, str):
+                line += value[:15]
+
+            if isinstance(value, (list, dict, set)):
+                line += self._sequence_to_str(value)
+
+            if hasattr(value, 'name'):
+                return self._object_with_name_line(value)
+
+            else:
+                return self._object_line(value)
+
+            line += " |"
+
+        return line + "\n"
+
+    def _write_content_table(self, content: List[List[Any]]) -> str:
+        table = ''
+        for row in content:
+            table += self._write_line_table(row)
+
+
+    def _matrix_table(self, matrix: List[List[float]], col_names: List[str] = None) -> str:
+        table = self._write_head_table(col_names)
+
+
 
 
