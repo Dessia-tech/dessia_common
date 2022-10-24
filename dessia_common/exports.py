@@ -276,90 +276,13 @@ class MarkdownWriter:
     def _empty_row(self):
         return "| ------ | ------ | ------ | ------ |\n"
 
-    def _sequence_row(self, value):
-        if len(value) == 0:
-            return {}, copy(value)
-
-        if isinstance(value, dict):
-            in_values = list(value.values())
-        else:
-            in_values = value
-
-        all_class = set(subvalue.__class__.__name__ for subvalue in in_values)
-
-        return all_class
-
-    def _printed_string_in_table(self, printed_string, str_types):
-        printed_string = printed_string[:20] + ('...' if len(printed_string) > 20 else '')
-        return str_types + f" {printed_string} |"
-
-    def _simple_value_row(self, value):
-        if hasattr(value, 'name'):
-            printed_string = (value.name if value.name != '' else 'unnamed')
-        else:
-            printed_string = str(value)
-        return self._printed_string_in_table(printed_string, ' - |')
-
-    def _multiclass_row(self, value, all_class):
-        if hasattr(value[0], 'name'):
-            printed_string = [subvalue.name if subvalue.name != '' else 'unnamed' for subvalue in value]
-            printed_string = ', '.join(printed_string)
-        else:
-            printed_string = str(value)
-
-        str_all_class = str(all_class).translate(str(all_class).maketrans('', '', "{}'"))
-        str_types = f" {len(value)} elements of classes {str_all_class} |"
-        return self._printed_string_in_table(printed_string, str_types)
-
-    def _attr_table(self):
-        table_attributes = self._titles()
-        table_attributes += self._empty_row()
-        for attr, value in self.object_.__dict__.items():
-            table_attributes += f"| {attr} | {value.__class__.__name__} |"
-            all_class = {}
-
-            if isinstance(value, (list, tuple, dict)):
-                all_class = self._sequence_row(value)
-
-            if len(all_class) == 0:
-                table_attributes += self._simple_value_row(value)
-            else:
-                table_attributes += self._multiclass_row(value, all_class)
-
-        return table_attributes
-
-    def to_text(self) -> str:
-        """
-        Render a markdown of the object output type: string
-        """
-        printed_name = (self.object_.name + ' ' if self.object_.name != '' else '')
-        text = f"# Object {printed_name}of class {self.__class__.__name__}\n\n"
-        text += "## Summary\n"
-        text += "\n$summary\n\n"
-        text += "\n## Attribute values\n\n"
-        text += "$table_attributes\n"
-        text = Template(text).substitute(summary=self._class_summary(),
-                                         table_attributes=self._attr_table(),
-                                         name=self.object_.name, class_=self.object_.__class__.__name__)
-        return text
-
-    def write_table(self, object_):
-        if isinstance(object_, (float, int, bool, complex, str)):
-            return self._simple_value_table(object_)
-        if isinstance(object_, (list, dict, set)):
-            return self._sequence_table(object_)
-        if hasattr(object_, 'name'):
-            return self._object_with_name_table(object_)
-        else:
-            return self._object_table(object_)
-
     def _write_head_table(self, col_names: List[str] = None) -> str:
         return ("| " + " | ".join(col_names) + " |\n" +
                 "| ------ " * len(col_names) + "|\n")
 
     def _sequence_to_str(self, value: List[Union[list, dict, set]]):
         in_values = value
-        str_types = f"{len(value)} elements"
+        printed_string = f"{len(value)} elements"
         if isinstance(value, dict):
             in_values = list(value.values())
 
@@ -367,18 +290,13 @@ class MarkdownWriter:
         first_class = next(iter(all_class))
 
         if len(all_class) == 1:
-            str_types += f" of classes {first_class.__name__}"
-            # if hasattr(in_values[0], 'name'):
-            #     printed_string = [subvalue.name if subvalue.name != '' else 'unnamed' for subvalue in in_values]
-            #     printed_string = ', '.join(printed_string)
-            # else:
-            #     printed_string = str(value)
+            printed_string += f" of classes {first_class.__name__}"
 
         else:
             str_all_class = str(all_class).translate(str(all_class).maketrans('', '', "{}'"))
-            str_types += f" of classes {str_all_class}"
+            printed_string += f" of classes {str_all_class}"
 
-        return str_types #self._printed_string_in_table('', str_types)
+        return printed_string
 
 
     def _write_line_table(self, row: List[Any]) -> str:
@@ -401,8 +319,7 @@ class MarkdownWriter:
             #     return self._object_line(value)
 
             line += " |"
-        if ' | 2 |' in line:
-            a=1
+
         return line + "\n"
 
     def _write_content_table(self, content: List[List[Any]]) -> str:
