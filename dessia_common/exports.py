@@ -298,6 +298,13 @@ class MarkdownWriter:
 
         return printed_string
 
+    def _object_to_str(self, value) -> str:
+        unnamed_string = f'unnamed {type(value).__name__}'
+        if hasattr(value, 'name' ):
+            return f"{(value.name if value.name != '' else unnamed_string)}"
+
+        return unnamed_string
+
 
     def _write_line_table(self, row: List[Any]) -> str:
         line = "|"
@@ -306,17 +313,14 @@ class MarkdownWriter:
             if isinstance(value, (float, int, bool, complex)):
                 line += str(round(value, 6))
 
-            if isinstance(value, str):
+            elif isinstance(value, str):
                 line += value[:15]
 
-            if isinstance(value, (list, dict, set)):
+            elif isinstance(value, (list, dict, set)):
                 line += self._sequence_to_str(value)
 
-            if hasattr(value, 'name'):
-                return self._object_with_name_line(value)
-
-            # else:
-            #     return self._object_line(value)
+            else:
+                line += self._object_to_str(value)
 
             line += " |"
 
