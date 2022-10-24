@@ -311,7 +311,7 @@ class Dataset(DessiaObject):
         #                                  table_attributes=self._markdown_attr_table(),
         #                                  name=self.name, class_=self.__class__.__name__)
         # return text
-        return MarkdownWriter(self).write_table(self.matrix, self.common_attributes)
+        return MarkdownWriter().matrix_table(self.matrix, self.common_attributes)
 
     def _markdown_attr_table(self):
         print_limit = 5

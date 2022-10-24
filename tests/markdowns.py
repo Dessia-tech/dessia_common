@@ -7,7 +7,7 @@ from dessia_common.datatools import HeterogeneousList, CategorizedList
 from dessia_common.exports import MarkdownWriter
 
 standalone_object = StandaloneObjectWithDefaultValues()
-standalone_object.to_markdown()
+print(standalone_object.to_markdown())
 
 dataset = HeterogeneousList(all_cars_no_feat)
 print(dataset.to_markdown())
@@ -15,6 +15,6 @@ print(dataset.to_markdown())
 clustered_dataset = CategorizedList(all_cars_no_feat)
 clustered_dataset.to_markdown()
 
-print(MarkdownWriter(StandaloneObjectWithDefaultValues()).write_table([[all_cars_no_feat[0:2],2, all_cars_no_feat[0]],
-                                                                       [all_cars_no_feat[:5],3, all_cars_no_feat[10]]],
+print(MarkdownWriter(StandaloneObjectWithDefaultValues()).matrix_table([[all_cars_no_feat[0:2],2, all_cars_no_feat[0]],
+                                                                        [all_cars_no_feat[:5],3, all_cars_no_feat[10]]],
                                                                       ['subobject_list','object_list', 'carname']))
