@@ -291,7 +291,7 @@ class MarkdownWriter:
 
     def _printed_string_in_table(self, printed_string, str_types):
         printed_string = printed_string[:20] + ('...' if len(printed_string) > 20 else '')
-        return str_types + f" {printed_string} |\n"
+        return str_types + f" {printed_string} |"
 
     def _simple_value_row(self, value):
         if hasattr(value, 'name'):
@@ -301,7 +301,7 @@ class MarkdownWriter:
         return self._printed_string_in_table(printed_string, ' - |')
 
     def _multiclass_row(self, value, all_class):
-        if hasattr(value, 'name'):
+        if hasattr(value[0], 'name'):
             printed_string = [subvalue.name if subvalue.name != '' else 'unnamed' for subvalue in value]
             printed_string = ', '.join(printed_string)
         else:
@@ -359,25 +359,26 @@ class MarkdownWriter:
 
     def _sequence_to_str(self, value: List[Union[list, dict, set]]):
         in_values = value
-        str_types = f" {len(value)} elements"
+        str_types = f"{len(value)} elements"
         if isinstance(value, dict):
             in_values = list(value.values())
 
-        all_class = set(subvalue.__class__.__name__ for subvalue in in_values)
+        all_class = set(subvalue.__class__ for subvalue in in_values)
+        first_class = next(iter(all_class))
 
         if len(all_class) == 1:
-            str_types += f"of classes {all_class[0].__name__} |"
-            if hasattr(all_class[0], 'name'):
-                printed_string = [subvalue.name if subvalue.name != '' else 'unnamed' for subvalue in value]
-                printed_string = ', '.join(printed_string)
-            else:
-                printed_string = str(value)
+            str_types += f" of classes {first_class.__name__}"
+            # if hasattr(in_values[0], 'name'):
+            #     printed_string = [subvalue.name if subvalue.name != '' else 'unnamed' for subvalue in in_values]
+            #     printed_string = ', '.join(printed_string)
+            # else:
+            #     printed_string = str(value)
 
         else:
             str_all_class = str(all_class).translate(str(all_class).maketrans('', '', "{}'"))
-            str_types += f"of classes {str_all_class} |"
+            str_types += f" of classes {str_all_class}"
 
-        return self._printed_string_in_table(printed_string, str_types)
+        return str_types #self._printed_string_in_table('', str_types)
 
 
     def _write_line_table(self, row: List[Any]) -> str:
@@ -400,7 +401,8 @@ class MarkdownWriter:
             #     return self._object_line(value)
 
             line += " |"
-
+        if ' | 2 |' in line:
+            a=1
         return line + "\n"
 
     def _write_content_table(self, content: List[List[Any]]) -> str:
