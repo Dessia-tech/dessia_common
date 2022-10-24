@@ -288,9 +288,9 @@ visjs_template = Template('''
     <div id="mynetwork"></div>
 
     <script type="text/javascript">
-    var nodes = new vis.Dataset($nodes);
+    var nodes = new vis.DataSet($nodes);
 
-var edges = new vis.Dataset($edges);
+var edges = new vis.DataSet($edges);
 
 
 // create a network
