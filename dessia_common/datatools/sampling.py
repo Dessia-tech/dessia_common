@@ -9,7 +9,7 @@ import numpy as npy
 import pyDOE2 as pyDOE
 
 from dessia_common.core import DessiaObject
-from dessia_common.datatools import HeterogeneousList
+from dessia_common.datatools.dataset import Dataset
 from dessia_common.optimization import FixedAttributeValue, BoundedAttributeValue
 
 class Sampler(DessiaObject):
@@ -95,7 +95,7 @@ class Sampler(DessiaObject):
 
     def make_doe(self, samples: int, method: str = 'fullfact', lhs_criterion: str = 'center', name: str = ''):
         """
-        Generate all `DessiaObject` with the choosen method and store them in a `HeterogeneousList`
+        Generate all `DessiaObject` with the choosen method and store them in a `Dataset`
 
         :param samples:
             --------
@@ -119,21 +119,21 @@ class Sampler(DessiaObject):
             |     - `“correlation”` or `“corr”`: minimize the maximum correlation coefficient
         :type lhs_criterion: `str`, `optional`, defaults to `'center'`
 
-        :param name: Name of the generated `HeterogeneousList`
+        :param name: Name of the generated `Dataset`
         :type name: `str`, `optional`, defaults to `''`
 
-        :return: the `HeterogeneousList` containing all generated samples of the sampled_class
-        :rtype: `HeterogeneousList`
+        :return: the `Dataset` containing all generated samples of the sampled_class
+        :rtype: `Dataset`
 
         :Examples:
-        >>> from dessia_common.sampling import Sampler
+        >>> from dessia_common.datatools.sampling import Sampler
         >>> from dessia_common.tests import RandDataD2
         >>> sampled_attr = [BoundedAttributeValue('p_1', 150, 250, 3)]
         >>> constant_attr = [FixedAttributeValue('p_2', 42)]
         >>> randata_sampling = Sampler(RandDataD2, sampled_attributes=sampled_attr, constant_attributes=constant_attr)
         >>> doe_hlist = randata_sampling.make_doe(method='fullfact')
         >>> print(doe_hlist)
-        HeterogeneousList 0x7facdb871430: 3 samples, 2 features
+        Dataset 0x7facdb871430: 3 samples, 2 features
         |   Name   |   P_1   |   P_2   |
         --------------------------------
         |          |   150.0 |      42 |
@@ -141,4 +141,4 @@ class Sampler(DessiaObject):
         |          |   250.0 |      42 |
 
         """
-        return HeterogeneousList(self._get_doe(method=method, samples=samples, lhs_criterion=lhs_criterion), name=name)
+        return Dataset(self._get_doe(method=method, samples=samples, lhs_criterion=lhs_criterion), name=name)
