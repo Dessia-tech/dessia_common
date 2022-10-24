@@ -301,17 +301,17 @@ class Dataset(DessiaObject):
         """
         Render a markdown of the object output type: string
         """
-        printed_name = (self.name + ' ' if self.name != '' else '')
-        text = f"# Object {printed_name}of class {self.__class__.__name__}\n\n"
-        text += "## Summary\n"
-        text += "\n$summary\n\n"
-        text += "\n## Attribute values\n\n"
-        text += "$table_attributes\n"
-        text = Template(text).substitute(summary=self._markdown_class_summary(),
-                                         table_attributes=self._markdown_attr_table(),
-                                         name=self.name, class_=self.__class__.__name__)
+        # printed_name = (self.name + ' ' if self.name != '' else '')
+        # text = f"# Object {printed_name}of class {self.__class__.__name__}\n\n"
+        # text += "## Summary\n"
+        # text += "\n$summary\n\n"
+        # text += "\n## Attribute values\n\n"
+        # text += "$table_attributes\n"
+        # text = Template(text).substitute(summary=self._markdown_class_summary(),
+        #                                  table_attributes=self._markdown_attr_table(),
+        #                                  name=self.name, class_=self.__class__.__name__)
         # return text
-        return MarkdownWriter(self).text
+        return MarkdownWriter(self).write_table(self.matrix, self.common_attributes)
 
     def _markdown_attr_table(self):
         print_limit = 5
