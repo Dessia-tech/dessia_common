@@ -344,7 +344,7 @@ class StandaloneObject(MovingObject):
         point_style = plot_data.PointStyle(color_fill=plot_data.colors.RED, color_stroke=plot_data.colors.BLACK)
         edge_style = plot_data.EdgeStyle(color_stroke=plot_data.colors.BLUE, dashline=[10, 5])
 
-        custom_dataset = plot_data.DataSet(elements=elements1, name='I = f(t)', tooltip=tooltip,
+        custom_dataset = plot_data.Dataset(elements=elements1, name='I = f(t)', tooltip=tooltip,
                                            point_style=point_style, edge_style=edge_style)
 
         # Now let's create another dataset for the purpose of this exercice
@@ -354,7 +354,7 @@ class StandaloneObject(MovingObject):
         for timestep, current in zip(timesteps, current2):
             elements2.append({'timestep': timestep, 'electric current': current})
 
-        dataset2 = plot_data.DataSet(elements=elements2, name='I2 = f(t)')
+        dataset2 = plot_data.Dataset(elements=elements2, name='I2 = f(t)')
 
         graph2d = plot_data.Graph2D(graphs=[custom_dataset, dataset2],
                                     x_variable=attribute_names[0], y_variable=attribute_names[1])
