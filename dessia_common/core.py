@@ -148,6 +148,10 @@ class DessiaObject:
             return self._data_eq(other_object)
         return object.__eq__(self, other_object)
 
+    def _data_eq_dict(self):
+        return {k: v for k, v in self._serializable_dict().items()
+                if k not in self._non_data_eq_attributes + ['package_version', 'name']}
+
     def _data_eq(self, other_object):
         return data_eq(self, other_object)
 
@@ -202,6 +206,16 @@ class DessiaObject:
         dict_ = {'name': self.name, 'object_class': object_class}
         if package_version:
             dict_['package_version'] = package_version
+        return dict_
+
+    def _serializable_dict(self):
+        """
+        Returns a dict of attribute_name, values (still python, not serialized)
+        Keys are filtered with non serializable attributes controls
+        """
+
+        dict_ = {k: v for k, v in self.__dict__.items()
+                 if k not in self._non_serializable_attributes and not k.startswith('_')}
         return dict_
 
     def _serializable_dict(self):
@@ -1198,13 +1212,13 @@ def enhanced_deep_attr(obj, sequence):
         path = f"#/{'/'.join(sequence)}"
     return get_in_object_from_path(object_=obj, path=path)
 
-        # # Sequence is a string and not a sequence of deep attributes
-        # if '/' in sequence:
-        #     # Is deep attribute reference
-        #     sequence = sequence.split('/')
-        #     return enhanced_deep_attr(obj=obj, sequence=sequence)
-        # # Is direct attribute
-        # return enhanced_get_attr(obj=obj, attr=sequence)
+    # # Sequence is a string and not a sequence of deep attributes
+    # if '/' in sequence:
+    #     # Is deep attribute reference
+    #     sequence = sequence.split('/')
+    #     return enhanced_deep_attr(obj=obj, sequence=sequence)
+    # # Is direct attribute
+    # return enhanced_get_attr(obj=obj, attr=sequence)
     #
     # # Get direct attribute
     # subobj = enhanced_get_attr(obj=obj, attr=sequence[0])
