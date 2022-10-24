@@ -1,5 +1,5 @@
 """
-Test for CategorizedList in workflow. Test filtering method
+Test for ClusteredDataset in workflow. Test filtering method
 """
 import json
 import pkg_resources
@@ -8,7 +8,8 @@ from dessia_common.typings import ClassMethodType, MethodType
 from dessia_common.tests import Car
 from dessia_common.workflow.blocks import ClassMethod, InstantiateModel, ModelMethod, Unpacker, Concatenate
 from dessia_common.core import DessiaFilter, FiltersList
-from dessia_common.datatools import HeterogeneousList, CategorizedList
+from dessia_common.datatools.dataset import Dataset
+from dessia_common.datatools.cluster import ClusteredDataset
 from dessia_common.workflow.core import Workflow, Pipe
 
 # Import data
@@ -16,14 +17,14 @@ csv_cars = pkg_resources.resource_stream('dessia_common', 'models/data/cars.csv'
 stream_file = StringFile.from_stream(csv_cars)
 
 # ===============================================================================================================
-# CategorizedList Workflow
+# ClusteredDataset Workflow
 # ===============================================================================================================
 
 block_0 = ClassMethod(method_type=ClassMethodType(Car, 'from_csv'), name='CSV Cars')
-block_1 = InstantiateModel(model_class=HeterogeneousList, name='HList Cars')
+block_1 = InstantiateModel(model_class=Dataset, name='HList Cars')
 block_2 = ClassMethod(method_type=ClassMethodType(FiltersList, 'from_filters_list'), name='Filters Clist')
-block_3 = ClassMethod(method_type=ClassMethodType(CategorizedList, 'from_agglomerative_clustering'), name='Clustering')
-block_4 = ModelMethod(method_type=MethodType(CategorizedList, 'filtering'), name='CList.filtering')
+block_3 = ClassMethod(method_type=ClassMethodType(ClusteredDataset, 'from_agglomerative_clustering'), name='Clustering')
+block_4 = ModelMethod(method_type=MethodType(ClusteredDataset, 'filtering'), name='CList.filtering')
 blocks = [block_0, block_1, block_2, block_3, block_4]
 
 pipe_0 = Pipe(block_0.outputs[0], block_1.inputs[0])
@@ -53,19 +54,19 @@ wfrun_plot_data = workflow_run.output_value.plot_data()
 output_dict = workflow_run.output_value[[0, 3, 10, 15, 30, -1]].to_dict(use_pointers=True)
 output_json = json.dumps(output_dict)
 output_json_to_dict = json.loads(output_json)
-output_jsondict_to_object_1 = CategorizedList.dict_to_object(output_json_to_dict)
+output_jsondict_to_object_1 = ClusteredDataset.dict_to_object(output_json_to_dict)
 
 # ===============================================================================================================
-# CategorizedList Big Workflow
+# ClusteredDataset Big Workflow
 # ===============================================================================================================
 
 block_0 = ClassMethod(method_type=ClassMethodType(Car, 'from_csv'), name='CSV Cars')
-block_1 = InstantiateModel(model_class=HeterogeneousList, name='HList Cars')
-block_2 = ClassMethod(method_type=ClassMethodType(CategorizedList, 'from_agglomerative_clustering'), name='Clustering')
-block_3 = ModelMethod(method_type=MethodType(CategorizedList, 'clustered_sublists'), name='Sublists')
+block_1 = InstantiateModel(model_class=Dataset, name='HList Cars')
+block_2 = ClassMethod(method_type=ClassMethodType(ClusteredDataset, 'from_agglomerative_clustering'), name='Clustering')
+block_3 = ModelMethod(method_type=MethodType(ClusteredDataset, 'clustered_sublists'), name='Sublists')
 block_4 = Unpacker(indices=[3, 8, 9], name='Unpack_3_8_9')
 block_5 = Concatenate(number_arguments=3, name='Concatenate')
-block_6 = ClassMethod(method_type=ClassMethodType(CategorizedList, 'from_dbscan'), name='DBSCAN')
+block_6 = ClassMethod(method_type=ClassMethodType(ClusteredDataset, 'from_dbscan'), name='DBSCAN')
 blocks = [block_0, block_1, block_2, block_3, block_4, block_5, block_6]
 
 pipe_0 = Pipe(block_0.outputs[0], block_1.inputs[0])
@@ -97,7 +98,7 @@ wfrun_plot_data = workflow_run.output_value.plot_data()
 output_dict = workflow_run.output_value[[0, 3, 5, 2, 12, -1]].to_dict(use_pointers=True)
 output_json = json.dumps(output_dict)
 output_json_to_dict = json.loads(output_json)
-output_jsondict_to_object_2 = CategorizedList.dict_to_object(output_json_to_dict)
+output_jsondict_to_object_2 = ClusteredDataset.dict_to_object(output_json_to_dict)
 print(output_jsondict_to_object_2)
 
 # ===============================================================================================================
@@ -106,7 +107,7 @@ print(output_jsondict_to_object_2)
 
 reference_output_1 = {
   "name": "",
-  "object_class": "dessia_common.cluster.CategorizedList",
+  "object_class": "dessia_common.datatools.cluster.ClusteredDataset",
   "package_version": "0.9.2.dev320+gecd4609",
   "dessia_objects": [
     {
@@ -191,7 +192,7 @@ reference_output_1 = {
 
 reference_output_2 = {
   'name': '',
-  'object_class': 'dessia_common.cluster.CategorizedList',
+  'object_class': 'dessia_common.datatools.cluster.ClusteredDataset',
   'package_version': '0.8.1.dev105+gb6cb82bfeatcluster',
   'dessia_objects': [
     {
@@ -271,6 +272,6 @@ reference_output_2 = {
   'labels': [0, 1, 1, 0, 0, 4]}
 
 # Tests
-assert(output_jsondict_to_object_1 == CategorizedList.dict_to_object(reference_output_1))
-assert(output_jsondict_to_object_2 == CategorizedList.dict_to_object(reference_output_2))
+assert(output_jsondict_to_object_1 == ClusteredDataset.dict_to_object(reference_output_1))
+assert(output_jsondict_to_object_2 == ClusteredDataset.dict_to_object(reference_output_2))
 
