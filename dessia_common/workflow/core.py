@@ -389,14 +389,13 @@ class Workflow(Block):
 
         self.block_selectors = {}
         for i, block in enumerate(self.blocks):
-            if block in self.display_blocks:
+            if block in self.display_blocks + self.export_blocks:
                 name = block.name
                 if not name:
                     name = block.type_
                 selector = f"{name} ({i})"
                 self.block_selectors[block] = selector
             else:
-                # TODO : should do the export one when exports have selectors
                 self.block_selectors[block] = None
 
         self.branch_by_display_selector = self.display_branches
@@ -584,7 +583,14 @@ class Workflow(Block):
         """
         Computes all export blocks export_formats
         """
-        return [b._export_format(i) for i, b in enumerate(self.export_blocks)]
+        export_formats = []
+        for block in self.export_blocks:
+            block_index = self.blocks.index(block)
+            format_ = block._export_format(block_index)
+            if format_ is not None:
+                format_["selector"] = self.block_selectors[block]
+                export_formats.append(format_)
+        return export_formats
 
     @property
     def display_branches(self):
@@ -605,12 +611,9 @@ class Workflow(Block):
         """
         format_branches = {}
         for export_block in self.export_blocks:
-            block_index = self.blocks.index(export_block)
             branch = self.secondary_branch_blocks(export_block)
-            format_ = export_block._export_format(block_index)
-            # if format_["export_name"] in self.branch_by_export_format:
-            #     raise WorkflowError(f"Several exports have the same export_name : {format_['export_name']}")
-            format_branches[format_["export_name"]] = branch
+            selector = self.block_selectors[export_block]
+            format_branches[selector] = branch
         return format_branches
 
     def _export_formats(self):
@@ -2044,7 +2047,9 @@ class WorkflowState(DessiaObject):
         Perform export
         """
         block = self.workflow.blocks[block_index]
-        export_format = block._export_format(block_index)
+        selector = self.workflow.block_selectors[block]
+        export_format = self.workflow.branch_by_export_format[selector]
+        # export_format = block._export_format(block_index)
         branch = self.workflow.branch_by_export_format[export_format['export_name']]
         evaluated_blocks = self.evaluate_branch(branch)
         if block not in evaluated_blocks:
@@ -2151,6 +2156,9 @@ class WorkflowRun(WorkflowState):
         # TODO : Temporary removing workflow state. We could activate it again when display tree is available
         display_settings.pop(0)
         return workflow_settings + display_settings
+
+    def _export_formats(self):
+        return self.workflow.blocks_export_formats
 
     def method_dict(self, method_name: str = None, method_jsonschema: Any = None):
         if method_name is not None and method_name == 'run_again' and method_jsonschema is not None:
