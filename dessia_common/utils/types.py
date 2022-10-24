@@ -60,7 +60,7 @@ def is_jsonable(obj):
 
     # First trying with orjson which is more efficient
     try:
-        orjson.dumps(obj, option=orjson.OPT_SERIALIZE_NUMPY).decode('utf-8')
+        orjson.dumps(obj, option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS).decode('utf-8')
         return True
     except Exception:
         return False

@@ -23,7 +23,7 @@ MAX_ERROR_BY_TYPE = {
                      'protected-access': 41,
                      'consider-using-f-string': 1,
                      'arguments-differ': 2,
-                     'no-member': 2,
+                     'no-member': 3,
                      'too-many-locals': 12,  # Reduce by dropping vectored objects
                      'too-many-branches': 12,
                      'wrong-import-order': 1,
