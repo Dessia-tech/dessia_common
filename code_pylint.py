@@ -21,20 +21,16 @@ UNWATCHED_ERRORS = ['fixme', 'trailing-whitespace', 'import-error']
 
 MAX_ERROR_BY_TYPE = {
                      'protected-access': 41,
-                     'invalid-name': 0,
                      'consider-using-f-string': 1,
-                     'no-else-return': 0,
                      'arguments-differ': 2,
                      'no-member': 2,
                      'too-many-locals': 12,  # Reduce by dropping vectored objects
                      'too-many-branches': 12,
                      'wrong-import-order': 1,
                      'too-many-branches': 12,
-                     'unused-import': 0,
                      'unused-argument': 5,
                      'cyclic-import': 12,
                      'no-self-use': 6,
-                     'unused-variable': 0,
                      'trailing-whitespace': 11,
                      'empty-docstring': 1,
                      'missing-module-docstring': 1,
@@ -43,7 +39,6 @@ MAX_ERROR_BY_TYPE = {
                      'unnecessary-comprehension': 1,
                      'no-value-for-parameter': 2,
                      'too-many-return-statements': 10,
-                     'raise-missing-from': 0,
                      'consider-merging-isinstance': 1,
                      'abstract-method': 6,
                      'import-outside-toplevel': 4,  # TODO : will reduced in a future work (when tests are ready)
@@ -53,7 +48,7 @@ MAX_ERROR_BY_TYPE = {
                      'attribute-defined-outside-init': 3,
                      'simplifiable-if-expression': 1,
                      'broad-except': 4,
-                     'consider-using-get': 0,
+                     'bare-except': 4,
                      'undefined-loop-variable': 1,
                      'consider-using-with': 2,
                      'too-many-nested-blocks': 2,
@@ -65,32 +60,9 @@ MAX_ERROR_BY_TYPE = {
                      'wildcard-import': 1,
                      'use-maxsplit-arg': 1,
                      'duplicate-code': 1,
-                     'c-extension-no-member': 2,
+                     'too-many-lines': 1
                      # No tolerance errors
-                     'eval-used': 0,
-                     'redefined-builtin': 0,
-                     'arguments-renamed': 0,
-                     'ungrouped-imports': 0,
-                     'super-init-not-called': 0,
-                     'superfluous-parens': 0,
-                     'unused-wildcard-import': 0,
-                     'consider-using-enumerate': 0,
-                     'undefined-variable': 0,
-                     'function-redefined': 0,
-                     'inconsistent-return-statements': 0,
-                     'unexpected-special-method-signature': 0,
-                     'too-many-lines': 1,
-                     'bare-except': 3,
-                     'unspecified-encoding': 0,
-                     'no-else-raise': 0,
-                     'bad-indentation': 0,
-                     'reimported': 0,
-                     'use-implicit-booleaness-not-comparison': 0,
-                     'misplaced-bare-raise': 0,
-                     'redefined-argument-from-local': 0,
-                     'import-error': 0,
-                     'unsubscriptable-object': 0,
-                     'unnecessary-dunder-call': 0
+
                      }
 
 print('pylint version: ', __version__)
