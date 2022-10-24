@@ -13,14 +13,14 @@ class Measure(float):
 
     def to_dict(self):
         return {'object_class': f'{self.__module__}.{self.__class__.__name__}',
-                'value': self}
+                'value': self.real}
 
     @classmethod
     def dict_to_object(cls, dict_):
         class_ = get_python_class_from_class_name(dict_['object_class'])
         return class_(dict_['value'])
 
-    def __repr__(self):
+    def __str__(self):
         return f'{self.__class__.__name__} {round(self, 6)} {self.si_unit}'
 
 
