@@ -873,7 +873,7 @@ class DessiaFilter(DessiaObject):
         return self._REAL_OPERATORS[self.comparison_operator]
 
     def _to_lambda(self):
-        return lambda x: (self._comparison_operator()(enhanced_deep_attr(value, self.attribute), self.bound)
+        return lambda x: (self._comparison_operator()(get_in_object_from_path(value, f'#/{self.attribute}'), self.bound)
                           for value in x)
 
     def get_booleans_index(self, values: List[DessiaObject]):
@@ -1107,13 +1107,13 @@ class FiltersList(DessiaObject):
         Examples
         --------
         >>> from dessia_common.core import FiltersList
-        >>> from dessia_common.datatools import HeterogeneousList
+        >>> from dessia_common.datatools.dataset import Dataset
         >>> from dessia_common.models import all_cars_wi_feat
         >>> filters = [DessiaFilter('weight', '<=', 1650.), DessiaFilter('mpg', '>=', 45.)]
         >>> filters_list = FiltersList(filters, logical_operator="xor", name="example")
         >>> filtered_cars = filters_list.apply(all_cars_wi_feat)
-        >>> print(HeterogeneousList(filtered_cars, name="example"))
-        HeterogeneousList example: 3 samples, 5 features
+        >>> print(Dataset(filtered_cars, name="example"))
+        Dataset example: 3 samples, 5 features
         |         Mpg         |    Displacement    |     Horsepower     |       Weight       |    Acceleration    |
         -----------------------------------------------------------------------------------------------------------
         |               35.0  |             0.072  |              69.0  |            1613.0  |              18.0  |
