@@ -264,7 +264,7 @@ class MarkdownWriter:
         self.table_limit = table_limit
 
     def _object_titles(self):
-        return ['Attribute', 'Type', 'Contains', 'Subvalues']
+        return ['Attribute', 'Type', 'Value'] #, 'Subvalues']
 
     def _sequence_to_str(self, value: List[Union[list, dict, set]]):
         in_values = value
@@ -286,10 +286,9 @@ class MarkdownWriter:
         return printed_string
 
     def _object_to_str(self, value) -> str:
-        unnamed_string = f'unnamed {type(value).__name__}'
         if hasattr(value, 'name' ):
-            return f"{(value.name if value.name != '' else unnamed_string)}"
-        return unnamed_string
+            return f"{value.name}"
+        return 'unnamed'
 
     def _value_to_str(self, value: Any) -> str:
         if isinstance(value, (float, int, bool, complex)):
@@ -308,7 +307,7 @@ class MarkdownWriter:
         for attr, value in object_.__dict__.items():
             matrix.append([attr,
                            type(value).__name__,
-                           (self._sequence_to_str(value) if isinstance(value, (list, dict, set)) else ' - '),
+                           # (self._sequence_to_str(value) if isinstance(value, (list, dict, set)) else ' - '),
                            (self._value_to_str(value) if not isinstance(value, (list, dict, set)) else ' - ')])
         return matrix
 

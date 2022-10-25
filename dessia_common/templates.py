@@ -16,7 +16,7 @@ You can substitute values with object attributes like the name of the object: $n
 
 # Attributes
 
-Object $name of class <$class_> has the following attributes:
+Object $name of class $class_ has the following attributes:
 
 $table
 
