@@ -149,10 +149,16 @@ class DessiaObject:
         return object.__eq__(self, other_object)
 
     def _data_eq_dict(self):
+        """
+        Returns a dict of what to look at for data eq. Keys in non data eq attributes are removed
+        """
         return {k: v for k, v in self._serializable_dict().items()
                 if k not in self._non_data_eq_attributes + ['package_version', 'name']}
 
-    def _data_eq(self, other_object):
+    def _data_eq(self, other_object) -> bool:
+        """
+        Returns if the object is equal to the other object in the sense of data contained in the objects
+        """
         return data_eq(self, other_object)
 
     def _data_hash(self):
@@ -206,16 +212,6 @@ class DessiaObject:
         dict_ = {'name': self.name, 'object_class': object_class}
         if package_version:
             dict_['package_version'] = package_version
-        return dict_
-
-    def _serializable_dict(self):
-        """
-        Returns a dict of attribute_name, values (still python, not serialized)
-        Keys are filtered with non serializable attributes controls
-        """
-
-        dict_ = {k: v for k, v in self.__dict__.items()
-                 if k not in self._non_serializable_attributes and not k.startswith('_')}
         return dict_
 
     def _serializable_dict(self):
