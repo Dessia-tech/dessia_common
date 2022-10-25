@@ -261,32 +261,11 @@ class XLSXWriter:
 
 
 class MarkdownWriter:
-    def __init__(self):
-        pass
-        # self.object_ = object_
-
-    def _class_summary(self):
-        return ("Summary: This is a standard class summary and can be customized by changing method " +
-                "<_class_summary()> of DessiaObject to write a class summary in markdown.\n" +
-                "More information can be found here: https://www.markdownguide.org/cheat-sheet/")
+    def __init__(self, print_limit: int = 25):
+        self.print_limit = print_limit
 
     def _object_titles(self):
         return ['Attribute', 'Type', 'Contains', 'Subvalues']
-
-    def _object_matrix(self, object_):
-        matrix = []
-        for attr in object_.__dict__:
-            value = getattr(object_, attr)
-            matrix.append([attr,
-                           type(value).__name__,
-                           (self._sequence_to_str(value) if isinstance(value, (list, dict, set)) else ' - '),
-                           (self._value_to_str(value) if not isinstance(value, (list, dict, set)) else ' - ')])
-        return matrix
-
-
-    def _write_head_table(self, col_names: List[str] = None) -> str:
-        return ("| " + " | ".join(col_names) + " |\n" +
-                "| ------ " * len(col_names) + "|\n")
 
     def _sequence_to_str(self, value: List[Union[list, dict, set]]):
         in_values = value
@@ -297,14 +276,11 @@ class MarkdownWriter:
         if isinstance(value, dict):
             in_values = list(value.values())
 
-        all_class = set(subvalue.__class__ for subvalue in in_values)
-        first_class = next(iter(all_class))
-
-        if len(all_class) == 1:
-            printed_string += f"{first_class.__name__}"
-
+        all_class_names = list(set(subvalue.__class__.__name__ for subvalue in in_values))
+        if len(all_class_names) == 1:
+            printed_string += f"{all_class_names[0]}"
         else:
-            str_all_class = str(all_class).translate(str(all_class).maketrans('', '', "{}'"))
+            str_all_class = str(all_class_names).translate(str(all_class_names).maketrans('', '', "{}'"))
             printed_string += f"{str_all_class}"
 
         return printed_string
@@ -318,29 +294,58 @@ class MarkdownWriter:
     def _value_to_str(self, value: Any) -> str:
         if isinstance(value, (float, int, bool, complex)):
             return str(round(value, 6))
-        elif isinstance(value, str):
-            return value[:15]
-        elif isinstance(value, (list, dict, set)):
+        if isinstance(value, str):
+            return value
+        if isinstance(value, (list, dict, set)):
             return self._sequence_to_str(value)
-        else:
-            return self._object_to_str(value)
+        return self._object_to_str(value)
 
-    def _write_line_table(self, row: List[Any]) -> str:
+    def _string_in_table(self, string: str = ''):
+        return string[:self.print_limit] + ('...' if len(string) > self.print_limit else '')
+
+    def _matrix_from_colnames(self, object_, titles: List[str] = None):
+        if titles is None:
+            titles = object_.__dict__
+
+        matrix = []
+        for attr in titles:
+            value = getattr(object_, attr)
+            matrix.append([attr,
+                           type(value).__name__,
+                           (self._sequence_to_str(value) if isinstance(value, (list, dict, set)) else ' - '),
+                           (self._value_to_str(value) if not isinstance(value, (list, dict, set)) else ' - ')])
+        return matrix
+
+    def _head_table(self, col_names: List[str] = None) -> str:
+        return ("| " + " | ".join(col_names) + " |\n" +
+                "| ------ " * len(col_names) + "|\n")
+
+    def _table_line(self, row: List[Any]) -> str:
         line = "|"
         for value in row:
-            line += ''.join([" ", self._value_to_str(value), " |"])
+            line += ''.join([" ", self._string_in_table(self._value_to_str(value)), " |"])
         return line + "\n"
 
-    def _write_content_table(self, content: List[List[Any]]) -> str:
+    def _content_table(self, content: List[List[Any]]) -> str:
         table = ''
         for row in content[:5]:
-            table += self._write_line_table(row)
+            table += self._table_line(row)
         return table
 
     def matrix_table(self, matrix: List[List[float]], col_names: List[str] = None) -> str:
-        table = self._write_head_table(col_names)
-        table += self._write_content_table(matrix)
-        return table
+        return ''.join([self._head_table(col_names),
+                        self._content_table(matrix)])
 
-    def object_table(self, object_):
-        return self.matrix_table(self._object_matrix(object_), self._object_titles())
+    def object_table(self, object_) -> str:
+        return self.matrix_table(self._matrix_from_colnames(object_, None), self._object_titles())
+
+    def table_from_titles(self, object_, titles: List[str] = None) -> str:
+        return self.matrix_table(self._matrix_from_colnames(object_, titles), titles)
+
+    def class_summary(self, object_) -> str:
+        if object_.class_summary() != '':
+            return object_.class_summary()
+
+        return ("Summary: This is a standard class summary and can be customized by changing method " +
+                "<class_summary()> of DessiaObject to write a class summary in markdown.\n" +
+                "More information can be found here: https://www.markdownguide.org/cheat-sheet/")
