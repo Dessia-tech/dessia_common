@@ -112,15 +112,12 @@ for _ in range(250):
 if False:
     check_costs_function(cylinders, diameters, strokes, 1e8, 1.)
     plt.plot(model_cma.diameter, model_cma.stroke, model_cma.costs,
-             linestyle = 'None', marker = 'D', markersize = 6, color = 'r')
+             linestyle = 'None', marker = 'o', markersize = 2, color = 'r')
 
     plt.plot(model_grad.diameter, model_grad.stroke, model_grad.costs,
-             linestyle = 'None', marker = 'D', markersize = 6, color = 'm')
+             linestyle = 'None', marker = 'o', markersize = 2, color = 'm')
 
     plt.plot(model_mix.diameter, model_mix.stroke, model_mix.costs,
-             linestyle = 'None', marker = 'D', markersize = 6, color = 'g')
-
-    plt.legend()
-
+             linestyle = 'None', marker = 'o', markersize = 2, color = 'g')
 
 assert(sum(list_fx)/len(list_fx) <= 0.05)
