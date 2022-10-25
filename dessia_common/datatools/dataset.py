@@ -19,6 +19,7 @@ except ImportError:
     pass
 from dessia_common.core import DessiaObject, DessiaFilter, FiltersList
 from dessia_common.exports import MarkdownWriter
+from dessia_common import templates
 from dessia_common.datatools.metrics import mean, std, variance, covariance_matrix
 
 class Dataset(DessiaObject):
@@ -301,17 +302,14 @@ class Dataset(DessiaObject):
         """
         Render a markdown of the object output type: string
         """
-        # printed_name = (self.name + ' ' if self.name != '' else '')
-        # text = f"# Object {printed_name}of class {self.__class__.__name__}\n\n"
-        # text += "## Summary\n"
-        # text += "\n$summary\n\n"
-        # text += "\n## Attribute values\n\n"
-        # text += "$table_attributes\n"
-        # text = Template(text).substitute(summary=self._markdown_class_summary(),
-        #                                  table_attributes=self._markdown_attr_table(),
-        #                                  name=self.name, class_=self.__class__.__name__)
-        # return text
-        return MarkdownWriter().matrix_table(self.matrix, self.common_attributes)
+        md_writer = MarkdownWriter(print_limit=25, table_limit=12)
+        name = md_writer.print_name(self)
+        class_ = md_writer.print_class(self)
+        element_details = md_writer.element_details(self)
+        table = md_writer.matrix_table(self.matrix, self.common_attributes)
+
+        return templates.dataset_markdown_template.substitute(name=name, class_=class_, element_details=element_details,
+                                                              table=table)
 
     def _markdown_attr_table(self):
         print_limit = 5
