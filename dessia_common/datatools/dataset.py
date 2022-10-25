@@ -3,7 +3,6 @@ Library for building Dataset.
 
 """
 from typing import List, Dict, Any
-from string import Template
 from copy import copy
 import itertools
 
