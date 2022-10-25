@@ -287,21 +287,6 @@ class Dataset(DessiaObject):
         return templates.dataset_markdown_template.substitute(name=name, class_=class_, element_details=element_details,
                                                               table=table)
 
-    def _markdown_attr_table(self):
-        print_limit = 5
-        table_attributes = self._markdown_titles() + self._markdown_empty_row()
-        table_attributes += self._markdown_filling(slice(0, print_limit, 1))
-
-        if len(self) > 2 * print_limit:
-            undispl_len = len(self) - print_limit * 2
-            table_attributes += (f"| + {undispl_len} undisplayed object" + "s"*(min([undispl_len, 2])-1) + "... ||" +
-                                 "\n")
-
-        if len(self) > print_limit:
-            table_attributes += self._markdown_filling(slice(-print_limit, len(self)))
-
-        return table_attributes
-
     def _get_printed_value(self, dessia_object: DessiaObject, attr: str):
         return getattr(dessia_object, attr)
 
