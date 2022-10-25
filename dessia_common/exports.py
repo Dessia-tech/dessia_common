@@ -294,7 +294,7 @@ class MarkdownWriter:
         if isinstance(value, (float, int, bool, complex)):
             return str(round(value, 6))
         if isinstance(value, str):
-            return value
+            return (value if value != '' else 'no_value')
         if isinstance(value, (list, dict, set)):
             return self._sequence_to_str(value)
         return self._object_to_str(value)

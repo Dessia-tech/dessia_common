@@ -274,29 +274,6 @@ class Dataset(DessiaObject):
             string += end_bar
         return string
 
-    def _markdown_class_summary(self):
-        return ("Summary: This is a standard class summary and can be customized by changing method " +
-                "<_markdown_class_summary()> of DessiaObject to write a class summary in markdown.\n" +
-                "More information can be found here: https://www.markdownguide.org/cheat-sheet/")
-
-    def _markdown_titles(self):
-        return "| " + " | ".join(map(lambda x: x.capitalize(), self._printed_attributes())) + " |\n"
-
-    def _markdown_empty_row(self):
-        return "| ------ " * len(self._printed_attributes()) + "|\n"
-
-    def _markdown_parent_attributes_in_table(self, dessia_object: DessiaObject):
-        return f'| {dessia_object.name} '
-
-    def _markdown_filling(self, key: slice):
-        added_string = ''
-        for idx, dessia_object in enumerate(self[key]):
-            matrix_idx = idx + key.start
-            added_string += self._markdown_parent_attributes_in_table(dessia_object)
-            added_string += '| ' + ' | '.join(list(map(str, self.matrix[matrix_idx]))) + ' |\n'
-
-        return added_string
-
     def to_markdown(self) -> str:
         """
         Render a markdown of the object output type: string
