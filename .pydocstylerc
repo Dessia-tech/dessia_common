@@ -1,3 +1,4 @@
 [pydocstyle]
 inherit = false
-ignore = D400,D415,D404,D212,D205,D200,D203,D401,D210,D204,D101,D105
+select = D101,D102,D103,D201,D205,D207,D208,D209,D211,D300,D403,D417
+match = ./dessia_common/[^/]*.py
