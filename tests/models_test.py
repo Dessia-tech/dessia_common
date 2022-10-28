@@ -32,6 +32,8 @@ draw_networkx_graph(pointer_graph)
 system1._check_platform()
 system1.jsonschema()
 
+checks = system1.checks()
+
 system1.save_to_file('system1')
 system1_lff = dc.DessiaObject.load_from_file('system1.json')
 assert system1_lff == system1
