@@ -40,6 +40,7 @@ from dessia_common.typings import JsonSerializable
 from dessia_common import templates
 from dessia_common.displays import DisplayObject, DisplaySetting
 from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
+import dessia_common.files as dcf
 
 _FORBIDDEN_ARGNAMES = ['self', 'cls', 'progress_callback', 'return']
 
@@ -700,6 +701,19 @@ class PhysicalObject(DessiaObject):
         Exports the CAD of the object to a stream in the STEP format. Works if the class define a custom volmdlr model
         """
         return self.volmdlr_volume_model().to_step_stream(stream=stream)
+
+    def to_html_stream(self, stream: dcf.StringFile):
+        #try:
+        #    primitives = self.volmdlr_primitives(piping=True)
+        #except TypeError:
+        #    primitives = self.volmdlr_primitives()
+        #model = vm.core.VolumeModel(primitives)
+        model = self.volmdlr_volume_model()
+        babylon_data = model.babylon_data()
+        script = model.babylonjs_script(babylon_data)
+        stream.write(script)
+
+        return stream
 
     def to_stl_stream(self, stream):
         """
