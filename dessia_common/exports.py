@@ -4,7 +4,7 @@
 exports for dessia_common
 
 """
-from typing import List, Any, Union
+from typing import List, Dict, Set, Any, Union
 
 
 from openpyxl.styles.borders import Border, Side
@@ -266,7 +266,7 @@ class MarkdownWriter:
     def _object_titles(self):
         return ['Attribute', 'Type', 'Value'] #, 'Subvalues']
 
-    def _sequence_to_str(self, value: List[Union[list, dict, set]]):
+    def _sequence_to_str(self, value: List[Union[List, Dict, Set]]):
         in_values = value
         if len(value) == 0:
             return f"empty {type(value).__name__}"
