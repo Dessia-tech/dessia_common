@@ -4,13 +4,14 @@
 exports for dessia_common
 
 """
-from typing import List, Dict, Set, Any, Union
+from typing import List, Dict, Any, Sequence
 
 
 from openpyxl.styles.borders import Border, Side
 from openpyxl.styles import PatternFill, Font
 from openpyxl import Workbook
 import openpyxl.utils
+from dessia_common.utils.types import is_sequence
 from dessia_common.breakdown import breakdown
 
 
@@ -266,16 +267,13 @@ class MarkdownWriter:
     def _object_titles(self):
         return ['Attribute', 'Type', 'Value'] #, 'Subvalues']
 
-    def _sequence_to_str(self, value: List[Union[List, Dict, Set]]):
-        in_values = value
+    def _sequence_to_str(self, value: Sequence):
         if len(value) == 0:
             return f"empty {type(value).__name__}"
 
         printed_string = f"{len(value)} "
-        if isinstance(value, dict):
-            in_values = list(value.values())
 
-        all_class_names = list(set(subvalue.__class__.__name__ for subvalue in in_values))
+        all_class_names = list(set(subvalue.__class__.__name__ for subvalue in value))
         if len(all_class_names) == 1:
             printed_string += ''.join([f"{all_class_names[0]}",
                                        f"{'s' if len(value) > 1 else ''}"])
@@ -285,18 +283,24 @@ class MarkdownWriter:
 
         return printed_string
 
+    def _dict_to_str(self, value: Dict):
+        return self._sequence_to_str(list(value.values()))
+
     def _object_to_str(self, value) -> str:
         if hasattr(value, 'name' ):
-            return f"{value.name}"
+            if value.name != '':
+                return f"{value.name}"
         return 'unnamed'
 
     def _value_to_str(self, value: Any) -> str:
         if isinstance(value, (float, int, bool, complex)):
             return str(round(value, 6))
         if isinstance(value, str):
-            return (value if value != '' else 'no_value')
-        if isinstance(value, (list, dict, set)):
+            return (value if value != '' else 'no value')
+        if is_sequence(value):
             return self._sequence_to_str(value)
+        if isinstance(value, Dict):
+            return self._dict_to_str(value)
         return self._object_to_str(value)
 
     def _string_in_table(self, string: str = ''):
@@ -306,12 +310,11 @@ class MarkdownWriter:
         matrix = []
         for attr, value in object_.__dict__.items():
             matrix.append([attr,
-                           type(value).__name__,
-                           # (self._sequence_to_str(value) if isinstance(value, (list, dict, set)) else ' - '),
+                           value.__class__.__name__,
                            (self._value_to_str(value) if not isinstance(value, (list, dict, set)) else ' - ')])
         return matrix
 
-    def _head_table(self, col_names: List[str] = None) -> str:
+    def _head_table(self, col_names: List[str]) -> str:
         cap_names = map(lambda x: x.capitalize(), col_names)
         return ("| " + " | ".join(cap_names) + " |\n" +
                 "| ------ " * len(col_names) + "|\n")
@@ -343,7 +346,7 @@ class MarkdownWriter:
     def print_class(self, object_) -> str:
         return object_.__class__.__name__
 
-    def matrix_table(self, matrix: List[List[float]], col_names: List[str] = None) -> str:
+    def matrix_table(self, matrix: List[List[float]], col_names: List[str]) -> str:
         return ''.join([self._head_table(col_names),
                         self._content_table(matrix)])
 
