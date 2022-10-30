@@ -28,11 +28,11 @@ from ast import literal_eval
 
 import dessia_common.errors
 from dessia_common.utils.diff import data_eq, diff, dict_hash, list_hash
-from dessia_common.utils.serialization import dict_to_object, serialize_dict_with_pointers, serialize_dict,\
+from dessia_common.utils.serialization import dict_to_object, serialize_dict_with_pointers, serialize_dict, \
     deserialize_argument, serialize
 from dessia_common.utils.types import full_classname, is_sequence, is_bson_valid, TYPES_FROM_STRING
 from dessia_common.utils.copy import deepcopy_value
-from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotation, JSONSCHEMA_HEADER,\
+from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotation, JSONSCHEMA_HEADER, \
     set_default_value
 from dessia_common.utils.docstrings import parse_docstring, FAILED_DOCSTRING_PARSING
 from dessia_common.exports import XLSXWriter
@@ -703,11 +703,9 @@ class PhysicalObject(DessiaObject):
         return self.volmdlr_volume_model().to_step_stream(stream=stream)
 
     def to_html_stream(self, stream: dcf.StringFile):
-        #try:
-        #    primitives = self.volmdlr_primitives(piping=True)
-        #except TypeError:
-        #    primitives = self.volmdlr_primitives()
-        #model = vm.core.VolumeModel(primitives)
+        """
+        Exports the CAD of the object to a stream in the html format.
+        """
         model = self.volmdlr_volume_model()
         babylon_data = model.babylon_data()
         script = model.babylonjs_script(babylon_data)
@@ -1213,13 +1211,13 @@ def enhanced_deep_attr(obj, sequence):
         path = f"#/{'/'.join(sequence)}"
     return get_in_object_from_path(object_=obj, path=path)
 
-        # # Sequence is a string and not a sequence of deep attributes
-        # if '/' in sequence:
-        #     # Is deep attribute reference
-        #     sequence = sequence.split('/')
-        #     return enhanced_deep_attr(obj=obj, sequence=sequence)
-        # # Is direct attribute
-        # return enhanced_get_attr(obj=obj, attr=sequence)
+    # # Sequence is a string and not a sequence of deep attributes
+    # if '/' in sequence:
+    #     # Is deep attribute reference
+    #     sequence = sequence.split('/')
+    #     return enhanced_deep_attr(obj=obj, sequence=sequence)
+    # # Is direct attribute
+    # return enhanced_get_attr(obj=obj, attr=sequence)
     #
     # # Get direct attribute
     # subobj = enhanced_get_attr(obj=obj, attr=sequence[0])
@@ -1348,7 +1346,7 @@ def split_argspecs(argspecs) -> Tuple[int, int]:
 
 
 def get_attribute_names(object_class):
-    attributes = [attribute[0] for attribute in inspect.getmembers(object_class, lambda x:not inspect.isroutine(x))
+    attributes = [attribute[0] for attribute in inspect.getmembers(object_class, lambda x: not inspect.isroutine(x))
                   if not attribute[0].startswith('__')
                   and not attribute[0].endswith('__')
                   and isinstance(attribute[1], (float, int, complex, bool))]
