@@ -119,7 +119,7 @@ def serialize_with_pointers(value, memo=None, path='#'):
         serialized = serialize(value)
     else:
         if not dcty.is_jsonable(value):
-            msg = f'Element of value {value} is not json serializable'
+            msg = f'Element of value {value} (type: {value.__class__.__name__}) is not json serializable'
             raise dc_err.SerializationError(msg)
         serialized = value
     return serialized, memo
