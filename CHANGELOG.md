@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ### Breaking Changes
+- Measures moved to dessia_common.measures
 - HeterogeneousList becomes Dataset
 - CategorizedList becomes ClusteredDataset
 - Change file organization for datatools:
@@ -22,14 +23,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     * class ClusteredDataset is now coded in file cluster.py
     * class Sampler is now coded in file sampling.py
     * Metrics function are now coded in file metrics.py
+- Retrocompatibility is supported for the present time, with a big warning
 
 
 ### Changes
 - Workflow: improve layout method
 
 ### Performance
-- Retrocompatibility is supported for the present time, with a big warning
-
+- switch is_jsonable to orjson
 
 ### Fixed
 

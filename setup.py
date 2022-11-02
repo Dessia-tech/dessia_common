@@ -137,6 +137,7 @@ setup(
         "dessia_common.datatools"
     ],
     install_requires=[
+        "orjson>=3.8.0",
         "typeguard",
         "networkx",
         "numpy",
