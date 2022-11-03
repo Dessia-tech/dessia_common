@@ -322,16 +322,16 @@ class Dataset(DessiaObject):
         """
         return [row[index] for row in self.matrix]
 
-    def sub_dataset(self, indexes: List[int] = None, attributes: List[str] = None):
+    def sub_matrix(self, indexes: List[int] = None, attributes: List[str] = None):
         """
-        Build a subdataset of the current Dataset taking column numbers in indexes or attribute values in attributes.
+        Build a sub matrix of the current Dataset taking column numbers in indexes or attribute values in attributes.
 
         /!\ Only one of `indexes` or `attributes` has to be specified.
 
-        :param indexes: List of columns' indexes to create a sub `Dataset`
+        :param indexes: List of columns' indexes to create a sub matrix
         :type index: List[int], defaults to `None`
 
-        :param indexes: List of attribute names of dessia_objects to create a sub `Dataset`
+        :param indexes: List of attribute names of dessia_objects to create a sub matrix
         :type index: List[str], defaults to `None`
 
         :return: Data stored in matrix reduced to the specified `indexes` or `attributes`
