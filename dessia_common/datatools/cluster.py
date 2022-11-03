@@ -161,8 +161,8 @@ class ClusteredDataset(Dataset):
                               for label_tag, sublist in zip(label_tags, sublists)]
 
         return ClusteredDataset(new_dessia_objects,
-                               list(set(self.labels).difference({-1})) + ([-1] if -1 in self.labels else []),
-                               name=self.name + "_split")
+                                list(set(self.labels).difference({-1})) + ([-1] if -1 in self.labels else []),
+                                name=self.name + "_split")
 
     def _check_transform_sublists(self):
         if not isinstance(self.dessia_objects[0], Dataset):

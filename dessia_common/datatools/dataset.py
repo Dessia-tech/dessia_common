@@ -284,7 +284,7 @@ class Dataset(DessiaObject):
 
     def attribute_values(self, attribute: str):
         """
-        Get a list of all values of dessia_objects of an attribute given by name
+        Get a list of all values of dessia_objects of an attribute given by name.
 
         :param attribute: Attribute to get all values
         :type attribute: str
@@ -305,7 +305,7 @@ class Dataset(DessiaObject):
 
     def column_values(self, index: int):
         """
-        Get a list of all values of dessia_objects for an attribute given by its index common_attributes
+        Get a list of all values of dessia_objects for an attribute given by its index common_attributes.
 
         :param index: Index in common_attributes to get all values of dessia_objects
         :type index: int
@@ -321,6 +321,40 @@ class Dataset(DessiaObject):
 
         """
         return [row[index] for row in self.matrix]
+
+    def sub_dataset(self, indexes: List[int] = None, attributes: List[str] = None):
+        """
+        Build a subdataset of the current Dataset taking column numbers in indexes or attribute values in attributes.
+
+        /!\ Only one of `indexes` or `attributes` has to be specified.
+
+        :param indexes: List of columns' indexes to create a sub `Dataset`
+        :type index: List[int], defaults to `None`
+
+        :param indexes: List of attribute names of dessia_objects to create a sub `Dataset`
+        :type index: List[str], defaults to `None`
+
+        :return: Data stored in matrix reduced to the specified `indexes` or `attributes`
+        :rtype: List[List[float]]
+
+        :Examples:
+        >>> from dessia_common.datatools.dataset import Dataset
+        >>> from dessia_common.models import all_cars_wi_feat
+        >>> print(Dataset(all_cars_wi_feat[:10]).sub_dataset([1,2]))
+        [[0.307, 0.35, 0.318, 0.304, 0.302, 0.429, 0.454, 0.44, 0.455, 0.39],
+         [130.0, 165.0, 150.0, 150.0, 140.0, 198.0, 220.0, 215.0, 225.0, 190.0]]
+
+        """
+        if indexes is None and attributes is None:
+            raise ValueError("One of <indexes> or <attributes> must be specified.")
+
+        if indexes is not None:
+            if attributes is not None:
+                raise ValueError("<indexes> or <attributes> are specified. Only one of them has to be specified.")
+            return [self.column_values(idx) for idx in indexes]
+
+        return [self.attribute_values(attr) for attr in attributes]
+
 
     def sort(self, key: Any, ascend: bool = True):  # TODO : Replace numpy with faster algorithms
         """
