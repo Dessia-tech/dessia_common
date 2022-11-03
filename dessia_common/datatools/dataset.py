@@ -2,7 +2,7 @@
 Library for building Dataset.
 
 """
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Union
 from copy import copy
 import itertools
 
@@ -322,17 +322,14 @@ class Dataset(DessiaObject):
         """
         return [row[index] for row in self.matrix]
 
-    def sub_matrix(self, indexes: List[int] = None, attributes: List[str] = None):
+    def sub_matrix(self, columns: Union[List[int], List[str]]):
         """
         Build a sub matrix of the current Dataset taking column numbers in indexes or attribute values in attributes.
 
         /!\ Only one of `indexes` or `attributes` has to be specified.
 
-        :param indexes: List of columns' indexes to create a sub matrix
-        :type index: List[int], defaults to `None`
-
-        :param indexes: List of attribute names of dessia_objects to create a sub matrix
-        :type index: List[str], defaults to `None`
+        :param columns: List of columns' indexes or attributes to create a sub matrix
+        :type columns: Union[List[int], List[str]]
 
         :return: Data stored in matrix reduced to the specified `indexes` or `attributes`
         :rtype: List[List[float]]
@@ -345,16 +342,16 @@ class Dataset(DessiaObject):
          [130.0, 165.0, 150.0, 150.0, 140.0, 198.0, 220.0, 215.0, 225.0, 190.0]]
 
         """
-        if indexes is None and attributes is None:
-            raise ValueError("One of <indexes> or <attributes> must be specified.")
+        all_classes = set(column.__class__ for column in columns)
+        if len(all_classes) != 1:
+            raise ValueError("Elements of <columns> are not only int or str but the two of them.")
 
-        if indexes is not None:
-            if attributes is not None:
-                raise ValueError("<indexes> or <attributes> are specified. Only one of them has to be specified.")
-            return [self.column_values(idx) for idx in indexes]
+        if isinstance(all_classes[0], int):
+            return [self.column_values(column) for column in columns]
+        if isinstance(all_classes[0], str):
+            return [self.attribute_values(column) for column in columns]
 
-        return [self.attribute_values(attr) for attr in attributes]
-
+        raise ValueError("Elements of <columns> must be int or str.")
 
     def sort(self, key: Any, ascend: bool = True):  # TODO : Replace numpy with faster algorithms
         """
@@ -828,7 +825,6 @@ class Dataset(DessiaObject):
 
         """
         is_efficient = npy.ones(len(costs), dtype=bool)
-        # costs_array = npy.array(costs)
         costs_array = (costs - npy.mean(costs, axis=0)) / npy.std(costs, axis=0)
         for index, cost in enumerate(costs_array):
             if is_efficient[index]:
@@ -837,50 +833,6 @@ class Dataset(DessiaObject):
                 # And keep self
                 is_efficient[index] = True
         return is_efficient.tolist()
-
-    def pareto_points(self, costs: List[List[float]]):
-        """
-        Find the pareto-efficient points
-
-        :param costs:
-            -----------
-            costs on which the pareto points are computed
-        :type costs: `List[List[float]]`, `n_samples x n_features`
-
-        :return: a Dataset containing the selected points
-        :rtype: Dataset
-
-        """
-        checked_costs = Dataset._check_costs(len(self), costs)
-        return self[self.__class__.pareto_indexes(checked_costs)]
-
-    def pareto_sheets(self, costs: List[List[float]], nb_sheets: int = 1):
-        """
-        Get successive pareto sheets (i.e. optimal points in a DOE for pre-computed costs).
-
-        :param costs:
-            Pre-computed costs of `len(self)`. Can be multi-dimensional.
-        :type costs: `List[List[float]]`, `n_samples x n_costs` or `n_costs x n_samples`
-
-        :param nb_sheets:
-            Number of pareto sheets to pick
-        :type nb_sheets: `int`, `optional`, default to `1`
-
-        :return: The successive pareto sheets and not selected elements
-        :rtype: `List[Dataset]`, `Dataset`
-
-        """
-        checked_costs = Dataset._check_costs(len(self), costs)
-        non_optimal_costs = checked_costs[:]
-        non_optimal_points = self.dessia_objects[:]
-        pareto_sheets = []
-        for idx in range(nb_sheets):
-            pareto_sheet = Dataset.pareto_indexes(non_optimal_costs)
-            pareto_sheets.append(Dataset(list(itertools.compress(non_optimal_points, pareto_sheet)),
-                                                   self.name + f'_pareto_{idx}'))
-            non_optimal_points = list(itertools.compress(non_optimal_points, map(lambda x: not x, pareto_sheet)))
-            non_optimal_costs = list(itertools.compress(non_optimal_costs, map(lambda x: not x, pareto_sheet)))
-        return pareto_sheets, Dataset(non_optimal_points, self.name)
 
     @staticmethod
     def pareto_frontiers(len_data: int, costs: List[List[float]]):
@@ -925,3 +877,52 @@ class Dataset(DessiaObject):
         frontier_2d = npy.array([[super_mini[x_dim], max_x_dim], [approx_super_mini[chosen_line], max_x_dim *
                                                                   dir_coeffs[chosen_line] + offsets[chosen_line]]]).T
         return frontier_2d
+
+    def _compute_costs(self, costs_columns: Union[List[int], List[str]]):
+        costs = self.sub_matrix(costs_columns)
+        return Dataset._check_costs(len(self), costs)
+
+    def pareto_points(self, costs_columns: Union[List[int], List[str]]):
+        """
+        Find the pareto-efficient points
+
+        :param costs_columns:
+            -----------
+            List of columns' indexes or attributes on which costs are stored in current Dataset
+        :type costs_columns: `Union[List[int], List[str]]`
+
+        :return: a Dataset containing the selected points
+        :rtype: Dataset
+
+        """
+        checked_costs = self._compute_costs(costs_columns)
+        return self[self.__class__.pareto_indexes(checked_costs)]
+
+    def pareto_sheets(self, costs_columns: Union[List[int], List[str]], nb_sheets: int = 1):
+        """
+        Get successive pareto sheets (i.e. optimal points in a DOE for pre-computed costs).
+
+        :param costs_columns:
+            -----------
+            List of columns' indexes or attributes on which costs are stored in current Dataset
+        :type costs_columns: `Union[List[int], List[str]]`
+
+        :param nb_sheets:
+            Number of pareto sheets to pick
+        :type nb_sheets: `int`, `optional`, default to `1`
+
+        :return: The successive pareto sheets and not selected elements
+        :rtype: `List[Dataset]`, `Dataset`
+
+        """
+        checked_costs = self._compute_costs(costs_columns)
+        non_optimal_costs = checked_costs[:]
+        non_optimal_points = self.dessia_objects[:]
+        pareto_sheets = []
+        for idx in range(nb_sheets):
+            pareto_sheet = Dataset.pareto_indexes(non_optimal_costs)
+            pareto_sheets.append(Dataset(list(itertools.compress(non_optimal_points, pareto_sheet)),
+                                                   self.name + f'_pareto_{idx}'))
+            non_optimal_points = list(itertools.compress(non_optimal_points, map(lambda x: not x, pareto_sheet)))
+            non_optimal_costs = list(itertools.compress(non_optimal_costs, map(lambda x: not x, pareto_sheet)))
+        return pareto_sheets, Dataset(non_optimal_points, self.name)
