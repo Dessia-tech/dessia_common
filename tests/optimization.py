@@ -87,39 +87,75 @@ def check_costs_function(cylinders, diameters, strokes, r_pow_cyl, r_diam_strok)
     ax.plot(transposed_points[0], transposed_points[1], transposed_points[-1],
             linestyle = 'None', marker = 'o', markersize = 0.5)
 
+def three_ways_optimize_engine():
+    list_fx = []
+    for _ in range(250):
+        diameter = opt.BoundedAttributeValue("diameter", 0.05, 0.5)
+        stroke = opt.BoundedAttributeValue("stroke", 0.1, 0.3)
+        cylinders = opt.FixedAttributeValue("n_cyl", 4)
+        r_pow_cyl = opt.FixedAttributeValue("r_pow_cyl", 1e9)
+        r_diam_strok = opt.FixedAttributeValue("r_diam_strok", 1.)
 
-# Script
-list_cma = []
-list_fx = []
-for _ in range(250):
-    diameter = opt.BoundedAttributeValue("diameter", 0.05, 0.5)
-    stroke = opt.BoundedAttributeValue("stroke", 0.1, 0.3)
-    cylinders = opt.FixedAttributeValue("n_cyl", 4)
-    r_pow_cyl = opt.FixedAttributeValue("r_pow_cyl", 1e9)
-    r_diam_strok = opt.FixedAttributeValue("r_diam_strok", 1.)
+        engine_optimizer = EngineOptimizer([cylinders, r_pow_cyl, r_diam_strok], [diameter, stroke])
+        model_cma, fx_opt = engine_optimizer.optimize_cma()
+        model_grad, fx_opt_grad = engine_optimizer.optimize_gradient()
+        model_mix, fx_opt_mix = engine_optimizer.optimize_cma_then_gradient()
 
-    engine_optimizer = EngineOptimizer([cylinders, r_pow_cyl, r_diam_strok], [diameter, stroke])
-    model_cma, fx_opt = engine_optimizer.optimize_cma()
-    model_grad, fx_opt_grad = engine_optimizer.optimize_gradient()
-    model_mix, fx_opt_mix = engine_optimizer.optimize_cma_then_gradient()
+        diameters = (x / 1000 for x in range(30, 100, 1))
+        strokes = (x / 1000 for x in range(100, 250, 1))
+        cylinders = [4]
+        list_fx.append(fx_opt_mix)
+    return {'cylinders':cylinders, 'diameters':diameters, 'strokes':strokes,
+            'model_cma':model_cma, 'model_grad':model_grad, 'model_mix':model_mix,
+            'optimal_confs':list_fx}
 
-    diameters = (x / 1000 for x in range(30, 100, 1))
-    strokes = (x / 1000 for x in range(100, 250, 1))
-    cylinders = [4]
-    list_fx.append(fx_opt_mix)
+def test_script():
+    results = three_ways_optimize_engine()
+    assert(sum(results['optimal_confs'])/len(results['optimal_confs']) <= 0.05)
 
-    # Set to True to see optimization results on complex cost function (the mix approach should be prefered)
-if False:
-    check_costs_function(cylinders, diameters, strokes, 1e8, 1.)
-    plt.plot(model_cma.diameter, model_cma.stroke, model_cma.costs,
+    assert(opt.Specifications().name == '')
+    assert(opt.BoundedAttributeValue('test', 0, 100).dimensionless_value(50) == 0.5)
+
+    assert(opt.Optimizer().adimensioned_vector([1,2]) is None)
+    assert(opt.Optimizer().reduced_vector([1,2]) is None)
+    assert(opt.Optimizer().cma_bounds() is None)
+    assert(opt.Optimizer().scipy_minimize_bounds() is None)
+    assert(opt.Optimizer().cma_optimization() is None)
+    assert(opt.Optimizer().scipy_minimize_optimization() is None)
+
+    assert(opt.DrivenModelOptimizer(lambda x: x**2).model(4) == 16)
+    try:
+        opt.DrivenModelOptimizer(lambda x: x**2).get_model_from_vector()
+    except Exception as e:
+        assert(e.args[0] == 'the method must be overloaded by subclassing class')
+
+    standard_optimizer = opt.InstantiatingModelOptimizer([opt.FixedAttributeValue("n_cyl", 4)],
+                                                         [opt.BoundedAttributeValue("diameter", 0.05, 0.5)])
+    try:
+        standard_optimizer.instantiate_model(None)
+    except Exception as e:
+        assert(e.args[0] == 'the method instantiate_model must be overloaded by subclassing class')
+    try:
+        standard_optimizer.objective_from_model(lambda x: x**2, clearance = 0.003)
+    except Exception as e:
+        assert(e.args[0] == 'the method objective_from_model must be overloaded by subclassing class')
+
+def __main__():
+    results = three_ways_optimize_engine()
+    check_costs_function(results['cylinders'], results['diameters'], results['strokes'], 1e8, 1.)
+
+    plt.plot(results['model_cma'].diameter, results['model_cma'].stroke, results['model_cma'].costs,
              linestyle = 'None', marker = 'D', markersize = 6, color = 'r', label='Solution CMA')
 
-    plt.plot(model_grad.diameter, model_grad.stroke, model_grad.costs,
+    plt.plot(results['model_grad'].diameter, results['model_grad'].stroke, results['model_grad'].costs,
              linestyle = 'None', marker = 'D', markersize = 6, color = 'm', label='Solution Gradient Descent')
 
-    plt.plot(model_mix.diameter, model_mix.stroke, model_mix.costs,
+    plt.plot(results['model_mix'].diameter, results['model_mix'].stroke, results['model_mix'].costs,
              linestyle = 'None', marker = 'D', markersize = 6, color = 'g', label='Solution approche mixte')
 
     plt.legend()
 
-assert(sum(list_fx)/len(list_fx) <= 0.05)
+# Script
+test_script()
+if __name__ == "__main__":
+    __main__()
