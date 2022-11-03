@@ -282,6 +282,50 @@ class Dataset(DessiaObject):
         """
         return len(self.dessia_objects)
 
+    @property
+    def common_attributes(self):
+        """
+        List of common attributes of stored dessia_objects.
+
+        """
+        if self._common_attributes is None:
+            if len(self) == 0:
+                return []
+
+            all_class = []
+            one_instance = []
+            for dessia_object in self.dessia_objects:
+                if dessia_object.__class__ not in all_class:
+                    all_class.append(dessia_object.__class__)
+                    one_instance.append(dessia_object)
+
+            all_attributes = sum((instance.vector_features() for instance in one_instance), [])
+            set_attributes = set.intersection(*(set(instance.vector_features()) for instance in one_instance))
+
+            # Keep order
+            self._common_attributes = []
+            for attr in all_attributes:
+                if attr in set_attributes:
+                    self._common_attributes.append(attr)
+                    set_attributes.remove(attr)
+
+        return self._common_attributes
+
+    @property
+    def matrix(self):
+        """
+        Get equivalent matrix of dessia_objects, which is of dimensions `len(dessia_objects) x len(common_attributes)`
+
+        """
+        if self._matrix is None:
+            matrix = []
+            for dessia_object in self.dessia_objects:
+                temp_row = dessia_object.to_vector()
+                vector_features = dessia_object.vector_features()
+                matrix.append(list(temp_row[vector_features.index(attr)] for attr in self.common_attributes))
+            self._matrix = matrix
+        return self._matrix
+
     def attribute_values(self, attribute: str):
         """
         Get a list of all values of dessia_objects of an attribute given by name.
@@ -524,50 +568,6 @@ class Dataset(DessiaObject):
         if 'p' not in kwargs and method=='minkowski':
             kwargs['p'] = 2
         return kwargs
-
-    @property
-    def common_attributes(self):
-        """
-        List of common attributes of stored dessia_objects.
-
-        """
-        if self._common_attributes is None:
-            if len(self) == 0:
-                return []
-
-            all_class = []
-            one_instance = []
-            for dessia_object in self.dessia_objects:
-                if dessia_object.__class__ not in all_class:
-                    all_class.append(dessia_object.__class__)
-                    one_instance.append(dessia_object)
-
-            all_attributes = sum((instance.vector_features() for instance in one_instance), [])
-            set_attributes = set.intersection(*(set(instance.vector_features()) for instance in one_instance))
-
-            # Keep order
-            self._common_attributes = []
-            for attr in all_attributes:
-                if attr in set_attributes:
-                    self._common_attributes.append(attr)
-                    set_attributes.remove(attr)
-
-        return self._common_attributes
-
-    @property
-    def matrix(self):
-        """
-        Get equivalent matrix of dessia_objects, which is of dimensions `len(dessia_objects) x len(common_attributes)`
-
-        """
-        if self._matrix is None:
-            matrix = []
-            for dessia_object in self.dessia_objects:
-                temp_row = dessia_object.to_vector()
-                vector_features = dessia_object.vector_features()
-                matrix.append(list(temp_row[vector_features.index(attr)] for attr in self.common_attributes))
-            self._matrix = matrix
-        return self._matrix
 
     def filtering(self, filters_list: FiltersList):
         """
