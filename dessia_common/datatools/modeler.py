@@ -20,14 +20,37 @@ from dessia_common.core import DessiaObject, DessiaFilter, FiltersList, template
 from dessia_common.datatools.metrics import mean, std, variance, covariance_matrix
 
 
+class IdentityScaler(preprocessing.StandardScaler):
+    def __init__(self):
+        preprocessing.StandardScaler.__init__(self, with_mean=False, with_std=False, copy=True)
+
+    def fit(self, X: List[List[float]]):
+        return
+
+    def fit_transform(self, X: List[List[float]]):
+        return X
+
+    def transform(self, X: List[List[float]]):
+        return X
+
+    def inverse_transform(self, X: List[List[float]]):
+        return X
+
+
 class Modeler(DessiaObject):
 
-    def __init__(self, scaled_inputs: bool = True, sacled_outputs: bool = False, name: str = ''):
+    def __init__(self, scaled_inputs: bool = True, scaled_outputs: bool = False, name: str = ''):
         self.scaled_inputs = scaled_inputs
         self.scaled_outputs = scaled_outputs
         DessiaObject.__init__(self, name=name)
 
-    def _s
+    def _compute_scaler(self, matrix):
+        return
+
+    def _scale_matrix(self, matrix):
+        return
+
+
 
 
 
