@@ -390,9 +390,9 @@ class Dataset(DessiaObject):
         if len(all_classes) != 1:
             raise ValueError("Elements of <columns> are not only int or str but the two of them.")
 
-        if isinstance(all_classes[0], int):
+        if isinstance(columns[0], int):
             return [self.column_values(column) for column in columns]
-        if isinstance(all_classes[0], str):
+        if isinstance(columns[0], str):
             return [self.attribute_values(column) for column in columns]
 
         raise ValueError("Elements of <columns> must be int or str.")
