@@ -37,7 +37,7 @@ pareto_frontiers = Dataset.pareto_frontiers(len(costs), costs)
 
 # Cars
 all_cars_with_features = Dataset(all_cars_wi_feat)
-costs = [all_cars_with_features.get_attribute_values('weight'), all_cars_with_features.get_attribute_values('mpg')]
+costs = [all_cars_with_features.attribute_values('weight'), all_cars_with_features.attribute_values('mpg')]
 costs = list(zip(*costs))
 
 pareto_points = all_cars_with_features.pareto_points(costs)

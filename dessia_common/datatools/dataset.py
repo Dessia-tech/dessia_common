@@ -282,7 +282,7 @@ class Dataset(DessiaObject):
         """
         return len(self.dessia_objects)
 
-    def get_attribute_values(self, attribute: str):
+    def attribute_values(self, attribute: str):
         """
         Get a list of all values of dessia_objects of an attribute given by name
 
@@ -295,15 +295,15 @@ class Dataset(DessiaObject):
         :Examples:
         >>> from dessia_common.datatools.dataset import Dataset
         >>> from dessia_common.models import all_cars_wi_feat
-        >>> Dataset(all_cars_wi_feat[:10]).get_attribute_values("weight")
+        >>> Dataset(all_cars_wi_feat[:10]).attribute_values("weight")
         [3504.0, 3693.0, 3436.0, 3433.0, 3449.0, 4341.0, 4354.0, 4312.0, 4425.0, 3850.0]
 
         """
         if not hasattr(self.dessia_objects[0], attribute):
-            return self.get_column_values(self.common_attributes.index(attribute))
+            return self.column_values(self.common_attributes.index(attribute))
         return [getattr(dessia_object, attribute) for dessia_object in self.dessia_objects]
 
-    def get_column_values(self, index: int):
+    def column_values(self, index: int):
         """
         Get a list of all values of dessia_objects for an attribute given by its index common_attributes
 
@@ -316,7 +316,7 @@ class Dataset(DessiaObject):
         :Examples:
         >>> from dessia_common.datatools.dataset import Dataset
         >>> from dessia_common.models import all_cars_wi_feat
-        >>> Dataset(all_cars_wi_feat[:10]).get_column_values(2)
+        >>> Dataset(all_cars_wi_feat[:10]).column_values(2)
         [130.0, 165.0, 150.0, 150.0, 140.0, 198.0, 220.0, 215.0, 225.0, 190.0]
 
         """
@@ -363,9 +363,9 @@ class Dataset(DessiaObject):
         """
         if len(self) != 0:
             if isinstance(key, int):
-                sort_indexes = npy.argsort(self.get_column_values(key))
+                sort_indexes = npy.argsort(self.column_values(key))
             elif isinstance(key, str):
-                sort_indexes = npy.argsort(self.get_attribute_values(key))
+                sort_indexes = npy.argsort(self.attribute_values(key))
             self.dessia_objects = [self.dessia_objects[idx] for idx in (sort_indexes if ascend else sort_indexes[::-1])]
             if self._matrix is not None:
                 self._matrix = [self._matrix[idx] for idx in (sort_indexes if ascend else sort_indexes[::-1])]
@@ -681,16 +681,16 @@ class Dataset(DessiaObject):
         association_list = []
         constant_attributes = []
         for idx, attr1 in enumerate(self.common_attributes):
-            if len(set(self.get_attribute_values(attr1))) == 1:
+            if len(set(self.attribute_values(attr1))) == 1:
                 constant_attributes.append(attr1)
                 continue
             for _, attr2 in enumerate(self.common_attributes[idx:]):
-                if len(set(self.get_attribute_values(attr2))) == 1:
+                if len(set(self.attribute_values(attr2))) == 1:
                     constant_attributes.append(attr2)
                     continue
                 if attr1 != attr2:
-                    correlation_matrix = npy.corrcoef(self.get_attribute_values(attr1),
-                                                      self.get_attribute_values(attr2))
+                    correlation_matrix = npy.corrcoef(self.attribute_values(attr1),
+                                                      self.attribute_values(attr2))
                     correlation_xy = correlation_matrix[0, 1]
                     r2_scores.append(correlation_xy**2)
                     association_list.append([attr1, attr2])
