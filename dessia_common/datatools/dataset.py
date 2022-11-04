@@ -2,7 +2,7 @@
 Library for building Dataset.
 
 """
-from typing import List, Dict, Any, Union
+from typing import List, Dict, Any
 from copy import copy
 import itertools
 
@@ -898,7 +898,7 @@ class Dataset(DessiaObject):
         :param costs_attributes:
             -----------
             List of columns' attributes on which costs are stored in current Dataset
-        :type costs_attributes: `Union[List[int], List[str]]`
+        :type costs_attributes: `List[str]
 
         :param nb_sheets:
             Number of pareto sheets to pick

@@ -2,7 +2,7 @@
 Library for building clusters on Dataset or List.
 
 """
-from typing import List, Union
+from typing import List
 
 from scipy.spatial.distance import cdist
 import numpy as npy
@@ -556,7 +556,7 @@ class ClusteredDataset(Dataset):
          :param costs_columns:
              -----------
              List of columns' indexes or attributes on which costs are stored in current Dataset
-         :type costs_columns: `Union[List[int], List[str]]`
+         :type costs_columns: `List[str]`
 
         :param nb_sheets:
             --------
