@@ -6,7 +6,7 @@ from dessia_common.typings import MethodType
 from dessia_common.workflow.core import Workflow, Pipe
 
 block_0 = InstantiateModel(model_class=ClassSampler, name='ClassSampler')
-block_1 = ModelMethod(method_type=MethodType(ClassSampler, 'make_doe'), name='gytgy')
+block_1 = ModelMethod(method_type=MethodType(ClassSampler, 'make_doe'), name='Make DOE method')
 blocks = [block_0, block_1]
 
 pipe_0 = Pipe(block_0.outputs[0], block_1.inputs[0])
