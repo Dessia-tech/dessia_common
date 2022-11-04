@@ -372,7 +372,7 @@ class Dataset(DessiaObject):
         """
         Build a sub matrix of the current Dataset taking column numbers in indexes or attribute values in attributes.
 
-        /!\ Only one of `indexes` or `attributes` has to be specified.
+        Warning: Only one of `indexes` or `attributes` has to be specified.
 
         :param columns_names: List of columns' names to create a sub matrix
         :type columns_names: List[str]
