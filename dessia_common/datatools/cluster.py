@@ -543,7 +543,7 @@ class ClusteredDataset(Dataset):
         return cls(data.dessia_objects, skl_cluster.labels_.tolist(), name=name)
 
     @classmethod
-    def from_pareto_sheets(cls, h_list: Dataset, costs_columns: Union[List[int], List[str]], nb_sheets: int = 1):
+    def from_pareto_sheets(cls, h_list: Dataset, costs_columns: List[str], nb_sheets: int = 1):
         """
         Get successive pareto sheets (i.e. optimal points in a DOE for pre-computed costs) and put them in a
         `ClusteredDataset` where each label is the index of a pareto sheet.

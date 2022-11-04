@@ -65,10 +65,9 @@ pareto_plot_data = categorized_pareto.plot_data()
 
 # Missing tests after coverage report
 try:
-    pp=ClusteredDataset.from_pareto_sheets(all_cars_with_features, [1,2,3], 1)
-    raise ValueError("len(costs) must be the length of corresponding Dataset")
+    ClusteredDataset.from_pareto_sheets(all_cars_with_features, ['sddd'], 1)
 except Exception as e:
-    assert(e.args[0] == "costs is length 1 and the matching Dataset is length 406. " +
-           "They should be the same length.")
+    assert(e.args[0] == ("sddd not in common_attributes = ['mpg', 'displacement', 'horsepower', 'acceleration', " +
+                         "'weight']"))
 
 
