@@ -21,8 +21,8 @@ from dessia_common.datatools.metrics import mean, std, variance, covariance_matr
 
 
 class IdentityScaler(preprocessing.StandardScaler):
-    def __init__(self):
-        preprocessing.StandardScaler.__init__(self, with_mean=False, with_std=False, copy=True)
+    def __init__(self, copy_X: bool = True):
+        preprocessing.StandardScaler.__init__(self, with_mean=False, with_std=False, copy=copy_X)
 
     def fit(self, X: List[List[float]]):
         return
