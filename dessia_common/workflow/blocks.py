@@ -334,7 +334,7 @@ class Sequence(Block):
     def evaluate(self, values):
         return [[values[var] for var in self.inputs]]
 
-    def _to_script(self) -> ToScriptElement:
+    def _to_script(self, _) -> ToScriptElement:
         script = f"Sequence(number_arguments={len(self.inputs)}, {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
