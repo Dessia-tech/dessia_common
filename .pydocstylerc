@@ -1,5 +1,7 @@
 [pydocstyle]
 inherit = false
-select = D101,D102,D103,D201,D205,D207,D208,D209,D211,D213,D214,D215,D300,D403,D417
-match = .*\.py
+select = D101,D102,D103,D201,D207,D208,D209,D211,D213,D214,D215,D300,D403,D417
+match = .[^setup][^code_pylint].*\.py
 match-dir = dessia_common
+
+# To be added: datatools/, models/ (?), utils/, workflow
