@@ -38,14 +38,29 @@ class IdentityScaler(preprocessing.StandardScaler):
         return matrix
 
 
-class Modeler(DessiaObject):
+class BaseModel(DessiaObject):
+    def __init__(self, name: str = ''):
+        DessiaObject.__init__(self, name=name)
 
-    def __init__(self, model_type: str, scaled_inputs: bool = True, scaled_outputs: bool = False, name: str = ''):
-        self.model = model_type
+    def fit(self, matrix: List[List[float]]):
+        return
+
+    def fit_predict(self, matrix: List[List[float]]):
+        return matrix
+
+    def predict(self, matrix: List[List[float]]):
+        return matrix
+
+
+class Modeler(DessiaObject):
+    def __init__(self, scaled_inputs: bool = True, scaled_outputs: bool = False, name: str = ''):
+        self.model_ = dict()
+        self.model_attributes = dict()
         self.scaled_inputs = scaled_inputs
         self.scaled_outputs = scaled_outputs
         DessiaObject.__init__(self, name=name)
 
+##### SCALE ##########
     def _init_scaler(self, is_scaled: bool):
         if is_scaled:
             return preprocessing.StandardScaler()
@@ -65,9 +80,22 @@ class Modeler(DessiaObject):
         scaled_matrix = self._fit_transform_scaler(matrix, scaler)
         return scaler, scaled_matrix
 
-    def init_model(self, model_name: str):
-        raise NotImplementedError(f"Method init_model not implemented for class {self.__class__}.")
+##### MODEL ##########
+    def _init_model(self):
+        return BaseModel()
 
+    def _set_model_attributes(self, model, attributes: Dict[str, float]):
+        for attr, value in attributes.items():
+            setattr(model, attr, value)
+        return model
+
+    def _instantiate_model(self):
+        model = self._init_model()
+        model = self._set_model_attributes(model, self.model_attributes)
+        model = self._set_model_attributes(model, self.model_)
+        return model
+
+##### MODEL METHODS ##########
     def fit(self, inputs: List[List[float]], outputs: List[List[float]]):
         input_scaler, scaled_inputs = self._auto_scale(inputs, self.scaled_inputs)
         output_scaler, scaled_outputs = self._auto_scale(outputs, self.scaled_outputs)
