@@ -9,7 +9,7 @@ import itertools
 from scipy.spatial.distance import pdist, squareform
 import numpy as npy
 import sklearn
-from sklearn import preprocessing
+from sklearn import preprocessing, linear_model
 
 try:
     from plot_data.core import Scatter, Histogram, MultiplePlots, Tooltip, ParallelPlot, PointFamily, EdgeStyle, Axis, \
@@ -19,70 +19,139 @@ except ImportError:
     pass
 from dessia_common.core import DessiaObject
 
+# =============================================================================
+# Scalers
+# =============================================================================
+class DessiaScaler(DessiaObject):
+    _rebuild_attributes = []
 
-class IdentityScaler(DessiaObject):
     def __init__(self, name: str = ''):
         DessiaObject.__init__(self, name=name)
 
-    def _instantiate(self):
-        return preprocessing.StandardScaler(with_mean = False, with_std = False)
+    def _instantiate(self, scaler):
+        for attr in self._rebuild_attributes:
+            setattr(scaler, attr, getattr(self, attr))
+        return scaler
 
     @classmethod
     def fit(cls, matrix: List[List[float]], name: str = ''):
-        return cls(name)
+        raise NotImplementedError('Method fit not implemented for DessiaScaler. Please use children.')
 
     def transform(self, matrix: List[List[float]]):
-        return matrix
+        raise NotImplementedError('Method transform not implemented for DessiaScaler. Please use children.')
 
     @classmethod
     def fit_transform(cls, matrix: List[List[float]], name: str = ''):
-        return cls(name), matrix
+        raise NotImplementedError('Method fit_transform not implemented for DessiaScaler. Please use children.')
 
 
-class StandardScaler(IdentityScaler):
+class StandardScaler(DessiaObject):
+    _rebuild_attributes = ['mean_', 'scale_', 'var_']
+    _standalone_in_db = True
+
     def __init__(self, mean_: List[float] = None, scale_: List[float] = None, var_: List[float] = None, name: str = ''):
         self.mean_ = mean_
         self.scale_ = scale_
         self.var_ = var_
-        IdentityScaler.__init__(self, name=name)
-
-    def _instantiate(self):
-        scaler = preprocessing.StandardScaler()
-        scaler.mean_ = self.mean_
-        scaler.scale_ = self.scale_
-        scaler.std_ = self.std_
-        return scaler
+        DessiaObject.__init__(self, name=name)
 
     @classmethod
     def fit(cls, matrix: List[List[float]], name: str = ''):
         scaler = preprocessing.StandardScaler()
         scaler.fit(matrix)
-        return cls(scaler.mean_, scaler.scale_, scaler.var_, name)
+        return cls(scaler.mean_.tolist(), scaler.scale_.tolist(), scaler.var_.tolist(), name)
 
     def transform(self, matrix: List[List[float]]):
-        scaler = self._instantiate()
-        return scaler.transform(matrix)
+        scaler = self._instantiate(preprocessing.StandardScaler())
+        return scaler.transform(matrix).tolist()
 
     @classmethod
     def fit_transform(cls, matrix: List[List[float]], name: str = ''):
         scaler = cls.fit(matrix, name)
-        return cls(scaler.mean_, scaler.scale_, scaler.var_, name), scaler.transform(matrix)
+        return scaler, scaler.transform(matrix)
 
 
+class IdentityScaler(StandardScaler):
+
+    def __init__(self, mean_: List[float] = None, scale_: List[float] = None, var_: List[float] = None, name: str = ''):
+        StandardScaler.__init__(self, mean_=mean_, scale_=scale_, var_=var_, name=name)
+
+    @classmethod
+    def fit(cls, matrix: List[List[float]], name: str = ''):
+        return cls([0.]*len(matrix[0]), [1.]*len(matrix[0]), [1.]*len(matrix[0]), name)
+
+    def transform(self, matrix: List[List[float]]):
+        return matrix
+
+    @classmethod
+    def fit_transform(cls, matrix: List[List[float]], name: str = ''):
+        return cls([0.]*len(matrix[0]), [1.]*len(matrix[0]), [1.]*len(matrix[0]), name), matrix
+
+# =============================================================================
+# Models
+# =============================================================================
 class DessiaModel(DessiaObject):
+    _rebuild_attributes = []
+
     def __init__(self, name: str = ''):
         DessiaObject.__init__(self, name=name)
 
-    def fit(self, matrix: List[List[float]]):
-        return
+    def _instantiate(self, model):
+        for attr in self._rebuild_attributes:
+            setattr(model, attr, getattr(self, attr))
+        return model
 
-    def fit_predict(self, matrix: List[List[float]]):
-        return matrix
+    @classmethod
+    def fit(cls, matrix: List[List[float]], name: str = ''):
+        raise NotImplementedError('Method fit not implemented for DessiaModel. Please use children.')
 
     def predict(self, matrix: List[List[float]]):
-        return matrix
+        raise NotImplementedError('Method predict not implemented for DessiaModel. Please use children.')
+
+    @classmethod
+    def fit_predict(cls, matrix: List[List[float]], name: str = ''):
+        raise NotImplementedError('Method fit_predict not implemented for DessiaModel. Please use children.')
 
 
+class LinearRegression(DessiaModel):
+    _rebuild_attributes = ['coefs_', 'intercept_']
+
+    def __init__(self, alpha: float = 1., fit_intercept: bool = True, tol: float = 0.001, solver: str = 'auto',
+                 coefs_: List[List[float]] = None, intercept_: List[List[float]] = None, name: str = ''):
+        self.model_attributes = self.__class__._compile_model_attributes(alpha, fit_intercept, tol, solver)
+        self.coefs_ = coefs_
+        self.intercept_ = intercept_
+        DessiaObject.__init__(self, name=name)
+
+    @staticmethod
+    def _compile_model_attributes(alpha: float = 1., fit_intercept: bool = True, tol: float = 0.001,
+                                  solver: str = 'auto'):
+        return {'alpha': alpha, 'fit_intercept': fit_intercept, 'tol': tol, 'solver': solver}
+
+    @classmethod
+    def fit(cls, matrix: List[List[float]],
+            alpha: float = 1., fit_intercept: bool = True, tol: float = 0.001, solver: str = 'auto',
+            name: str = ''):
+        model_attributes = cls._compile_model_attributes(alpha, fit_intercept, tol, solver)
+        regressor = linear_model.Ridge(**model_attributes)
+        regressor.fit(matrix)
+        return cls(**model_attributes, coefs_=regressor.coefs_, intercept_=regressor.intercept__, name=name)
+
+    def predict(self, matrix: List[List[float]]):
+        model = self._instantiate(linear_model.Ridge())
+        return model.predict(matrix).tolist()
+
+    @classmethod
+    def fit_predict(cls, matrix: List[List[float]],
+                    alpha: float = 1., fit_intercept: bool = True, tol: float = 0.001, solver: str = 'auto',
+                    name: str = ''):
+        model = cls.fit(matrix, alpha=alpha, fit_intercept=fit_intercept, tol=tol, solver=solver, name=name)
+        return model, model.predict(matrix)
+
+
+# =============================================================================
+# Modeler
+# =============================================================================
 class Modeler(DessiaObject):
     def __init__(self, scaled_inputs: bool = True, scaled_outputs: bool = False, name: str = ''):
         self.model_ = dict()
@@ -95,12 +164,12 @@ class Modeler(DessiaObject):
 ##### SCALE ##########
     def _initialize_scaler(self, is_scaled: bool):
         if is_scaled:
-            return preprocessing.StandardScaler()
+            return StandardScaler()
         return IdentityScaler()
 
 ##### MODEL ##########
-    def _init_model(self):
-        return BaseModel()
+    def _initialize_model(self):
+        return DessiaModel()
 
     def _set_model_attributes(self, model, attributes: Dict[str, float]):
         for attr, value in attributes.items():
