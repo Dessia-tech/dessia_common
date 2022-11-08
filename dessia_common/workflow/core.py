@@ -783,7 +783,7 @@ class Workflow(Block):
                 # Hot fixing name not attached
                 name = dict_[len(self.inputs)]
             return {'input_values': arguments_values, 'name': name}
-        raise NotImplementedError(f"Method {method} not in Workflow allowed methods")
+        raise ValueError(f"Method {method} not in Workflow allowed methods")
 
     def _run_dict(self) -> Dict:
         dict_ = {}

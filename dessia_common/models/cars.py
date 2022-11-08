@@ -6,6 +6,7 @@ Tests for cars data
 import pkg_resources
 from dessia_common.vectored_objects import Catalog, ParetoSettings, Objective, ObjectiveSettings
 from dessia_common import DessiaFilter
+from dessia_common.datatools.dataset import Dataset
 from dessia_common.tests import Car, CarWithFeatures
 from dessia_common.files import StringFile
 
@@ -37,3 +38,5 @@ merged_catalog = Catalog.concatenate(catalogs=[catalog, filtered_catalog])
 # Used models
 all_cars_no_feat = Car.from_csv(stream)
 all_cars_wi_feat = CarWithFeatures.from_csv(stream)
+
+car_dataset = Dataset(all_cars_wi_feat)

@@ -84,6 +84,7 @@ class Dataset(DessiaObject):
     _standalone_in_db = True
     _vector_features = ["name", "common_attributes"]
     _non_data_eq_attributes = ["name", "_common_attributes", "_matrix"]
+    _allowed_methods = ['filtering', 'sort', 'pareto_points', 'pareto_sheets']
 
     def __init__(self, dessia_objects: List[DessiaObject] = None, name: str = ''):
         """

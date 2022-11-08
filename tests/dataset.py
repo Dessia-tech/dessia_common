@@ -3,10 +3,12 @@ Tests for dessia_common.Dataset class (loadings, check_platform and plots)
 """
 import random
 from dessia_common.core import DessiaObject
-from dessia_common.models import all_cars_no_feat, all_cars_wi_feat, rand_data_middl
+from dessia_common.models.rand_data import rand_data_middl
+from dessia_common.models import all_cars_no_feat, all_cars_wi_feat
 from dessia_common.datatools.metrics import covariance, manhattan_distance, euclidian_distance, minkowski_distance,\
     inf_norm, mahalanobis_distance
 from dessia_common.datatools.dataset import Dataset
+
 
 # Tests on common_attributes
 class Bidon(DessiaObject):
@@ -48,6 +50,8 @@ all_cars_without_features = Dataset(all_cars_no_feat)
 # When attribute _features is specified in class CarWithFeatures
 all_cars_with_features = Dataset(all_cars_wi_feat)
 # Auto-generated heterogeneous dataset with nb_clusters clusters of points in nb_dims dimensions
+
+
 RandData_heterogeneous = Dataset(rand_data_middl)
 
 # Compute one common_attributes
