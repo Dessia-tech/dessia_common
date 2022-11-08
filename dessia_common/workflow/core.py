@@ -21,9 +21,10 @@ import dessia_common.errors
 from dessia_common.graph import get_column_by_node
 from dessia_common.templates import workflow_template
 from dessia_common import DessiaObject, is_sequence, JSONSCHEMA_HEADER, jsonschema_from_annotation, \
-    deserialize_argument, set_default_value, prettyname, serialize_dict, DisplaySetting
+    deserialize_argument, set_default_value, prettyname, DisplaySetting
 
-from dessia_common.utils.serialization import deserialize, serialize_with_pointers, serialize, update_pointers_data
+from dessia_common.utils.serialization import deserialize, serialize_with_pointers, serialize, update_pointers_data, \
+    serialize_dict
 from dessia_common.utils.types import serialize_typing, deserialize_typing, recursive_type, typematch, is_serializable
 from dessia_common.utils.copy import deepcopy_value
 from dessia_common.utils.docstrings import FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE
@@ -44,7 +45,7 @@ class Variable(DessiaObject):
     _eq_is_data_eq = False
     has_default_value: bool = False
 
-    def __init__(self, name: str = '', position = None):
+    def __init__(self, name: str = '', position=None):
         """
         Variable for workflow
         """
@@ -59,7 +60,6 @@ class Variable(DessiaObject):
         dict_.update({'has_default_value': self.has_default_value,
                       'position': self.position})
         return dict_
-
 
     def _to_script(self) -> ToScriptElement:
         script = self._get_to_script_elements()
@@ -76,7 +76,7 @@ class Variable(DessiaObject):
 class TypedVariable(Variable):
     has_default_value: bool = False
 
-    def __init__(self, type_: Type, name: str = '', position = None):
+    def __init__(self, type_: Type, name: str = '', position=None):
         """
         Variable for workflow with a typing
         """
@@ -121,7 +121,7 @@ class VariableWithDefaultValue(Variable):
 class TypedVariableWithDefaultValue(TypedVariable):
     has_default_value: bool = True
 
-    def __init__(self, type_: Type, default_value: Any, name: str = '', position = None):
+    def __init__(self, type_: Type, default_value: Any, name: str = '', position=None):
         """
         Workflow variables wit a type and a default value
         """
@@ -1152,7 +1152,7 @@ class Workflow(Block):
     @property
     def layout_graph(self) -> nx.DiGraph:
         graph = nx.DiGraph()
-        graph.add_nodes_from(self.nodes) #does not handle detached_variable
+        graph.add_nodes_from(self.nodes)  # does not handle detached_variable
 
         for pipe in self.pipes:
             if pipe.input_variable in self.nonblock_variables:

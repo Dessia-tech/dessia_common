@@ -72,6 +72,9 @@ def is_str(value, level='error'):
 
 
 def type_check(value, expected_type, level='error'):
+    """
+    This is experimental!
+    """
     if expected_type is int:
         return is_int(value)
     if expected_type is float:
