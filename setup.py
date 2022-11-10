@@ -150,7 +150,7 @@ setup(
         "openpyxl",
         "parameterized",
         "matplotlib",
-        "sklearn",
+        "scikit-learn",
         "cma"
     ],
     python_requires=">=3.7",
