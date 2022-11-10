@@ -12,6 +12,7 @@ import dessia_common as dc
 from dessia_common.utils.types import isinstance_base_types, is_sequence, full_classname
 from dessia_common.files import BinaryFile, StringFile
 
+
 def diff(value1, value2, path='#'):
     """
     Main function to get the diff of two objects
@@ -96,6 +97,9 @@ def sequence_diff(seq1, seq2, path='#'):
 
 
 def data_eq(value1, value2):
+    """
+    Doc of this function is at DessiaObject._data_eq
+    """
     if is_sequence(value1) and is_sequence(value2):
         return sequence_data_eq(value1, value2)
 
@@ -135,11 +139,11 @@ def data_eq(value1, value2):
             return value1._data_eq(value2)
 
     # Not custom, use generic implementation
-    eq_dict = value1._serializable_dict()
+    eq_dict = value1._data_eq_dict()
     if 'name' in eq_dict:
         del eq_dict['name']
 
-    other_eq_dict = value2._serializable_dict()
+    other_eq_dict = value2._data_eq_dict()
 
     return dict_data_eq(eq_dict, other_eq_dict)
 
