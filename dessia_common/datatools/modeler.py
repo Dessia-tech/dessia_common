@@ -116,9 +116,7 @@ class DessiaModel(DessiaObject):
 class LinearRegression(DessiaModel):
     _rebuild_attributes = ['coefs_', 'intercept_']
 
-    def __init__(self, alpha: float = 1., fit_intercept: bool = True, tol: float = 0.001, solver: str = 'auto',
-                 coefs_: List[List[float]] = None, intercept_: List[List[float]] = None, name: str = ''):
-        self.model_attributes = self.__class__._compile_model_attributes(alpha, fit_intercept, tol, solver)
+    def __init__(self, coefs_: List[List[float]] = None, intercept_: List[List[float]] = None, name: str = ''):
         self.coefs_ = coefs_
         self.intercept_ = intercept_
         DessiaObject.__init__(self, name=name)
@@ -129,22 +127,20 @@ class LinearRegression(DessiaModel):
         return {'alpha': alpha, 'fit_intercept': fit_intercept, 'tol': tol, 'solver': solver}
 
     @classmethod
-    def fit(cls, matrix: List[List[float]],
-            alpha: float = 1., fit_intercept: bool = True, tol: float = 0.001, solver: str = 'auto',
-            name: str = ''):
+    def fit(cls, matrix: List[List[float]], alpha: float = 1., fit_intercept: bool = True, tol: float = 0.001,
+            solver: str = 'auto', name: str = ''):
         model_attributes = cls._compile_model_attributes(alpha, fit_intercept, tol, solver)
         regressor = linear_model.Ridge(**model_attributes)
         regressor.fit(matrix)
-        return cls(**model_attributes, coefs_=regressor.coefs_, intercept_=regressor.intercept__, name=name)
+        return cls(coefs_=regressor.coefs_, intercept_=regressor.intercept__, name=name)
 
     def predict(self, matrix: List[List[float]]):
         model = self._instantiate(linear_model.Ridge())
         return model.predict(matrix).tolist()
 
     @classmethod
-    def fit_predict(cls, matrix: List[List[float]],
-                    alpha: float = 1., fit_intercept: bool = True, tol: float = 0.001, solver: str = 'auto',
-                    name: str = ''):
+    def fit_predict(cls, matrix: List[List[float]], alpha: float = 1., fit_intercept: bool = True, tol: float = 0.001,
+                    solver: str = 'auto', name: str = ''):
         model = cls.fit(matrix, alpha=alpha, fit_intercept=fit_intercept, tol=tol, solver=solver, name=name)
         return model, model.predict(matrix)
 
