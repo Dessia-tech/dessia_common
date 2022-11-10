@@ -6,13 +6,14 @@ scripts = ['displays.py',
            'models_test.py',
            'files.py',
            'clustering.py',
-           'heterogeneous_list.py',
-           'heterogeneous_list_pareto.py',
+           'dataset.py',
+           'dataset_pareto.py',
            'filters.py',
            'moving_object.py',
            'optimization.py',
            'graph.py',
            'jsonschema.py',
+           'sampling.py',
            # Workflows
            'workflow/blocks.py',
            'workflow/workflow_with_models.py',
@@ -27,6 +28,7 @@ scripts = ['displays.py',
            'workflow/workflow_method_dict.py',
            'workflow/various_tests.py',
            'workflow/workflow_building.py',
+           'workflow/workflow_sampling.py',
            # breakdown
            'breakdown.py',
            # Utils
@@ -47,4 +49,4 @@ for script_name in scripts:
 
 # This needs to be executed once all "assert-tests" have been run + once all unittests are defined
 if __name__ == '__main__':
-    unittest.main(verbosity=2)
+    unittest.main(verbosity=3)
