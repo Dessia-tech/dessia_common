@@ -25,7 +25,6 @@ MAX_ERROR_BY_TYPE = {
                      'arguments-differ': 2,
                      'no-member': 3,
                      'too-many-locals': 12,  # Reduce by dropping vectored objects
-                     'too-many-branches': 12,
                      'wrong-import-order': 1,
                      'too-many-branches': 12,
                      'unused-argument': 6,
