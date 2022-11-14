@@ -49,8 +49,8 @@ class WorkflowToScriptTest(unittest.TestCase):
         expected_script_value = "from dessia_common.tests import Optimizer, Car, Model" \
                        "\nfrom dessia_common.workflow.blocks import InstantiateModel, ModelMethod, ModelAttribute, WorkflowBlock, ForEach, Archive, ClassMethod, Sequence, SetModelAttribute, Substraction, Sum, Flatten, Filter, Unpacker, MultiPlot, Product, Export" \
                        "\nfrom dessia_common.typings import MethodType, ClassMethodType" \
+                       "\nfrom dessia_common.workflow.core import Pipe, Workflow" \
                        "\nfrom dessia_common.core import DessiaFilter" \
-                       "\nfrom dessia_common.workflow.core import Workflow, Pipe" \
                        "\n" \
                        "\n" \
                        "\n# --- Subworkflow --- " \
