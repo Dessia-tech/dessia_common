@@ -35,7 +35,10 @@ def full_classname(object_, compute_for: str = 'instance'):
     if compute_for == 'instance':
         return object_.__class__.__module__ + '.' + object_.__class__.__name__
     if compute_for == 'class':
-        return object_.__module__ + '.' + object_.__name__
+        try:
+            return object_.__module__ + '.' + object_.__name__
+        except:
+            print(object_)
 
     msg = 'Cannot compute {} full classname for object {}'
     raise NotImplementedError(msg.format(compute_for, object_))
