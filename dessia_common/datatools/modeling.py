@@ -97,21 +97,40 @@ class DessiaModel(DessiaObject):
     def __init__(self, name: str = ''):
         DessiaObject.__init__(self, name=name)
 
-    def _instantiate(self, model):
+    @classmethod
+    def _call_skl_model(cls):
+        raise NotImplementedError('Method _call_skl_model not implemented for DessiaModel. Please use children.')
+
+    def _instantiate_skl_model(self):
+        model = self._call_skl_model()
         for attr in self._rebuild_attributes:
             setattr(model, attr, getattr(self, attr))
         return model
 
     @classmethod
+    def _instantiate_dessia_model(cls, model, name: str = ''):
+        kwargs_dict = {'name': name}
+        for attr in cls._rebuild_attributes:
+            if hasattr(model, attr):
+                if isinstance(getattr(model, attr), npy.ndarray):
+                    kwargs_dict[attr] = getattr(model, attr).tolist()
+                kwargs_dict[attr] = getattr(model, attr)
+        return kwargs_dict
+
+    @classmethod
     def fit(cls, matrix: List[List[float]], name: str = ''):
-        raise NotImplementedError('Method fit not implemented for DessiaModel. Please use children.')
+        model = cls._call_skl_model()
+        model.fit(matrix)
+        return cls(**cls._instantiate_dessia_model(model, name))
 
     def predict(self, matrix: List[List[float]]):
-        raise NotImplementedError('Method predict not implemented for DessiaModel. Please use children.')
+        model = self._instantiate_skl_model()
+        return model.predict(matrix).tolist()
 
     @classmethod
     def fit_predict(cls, matrix: List[List[float]], name: str = ''):
-        raise NotImplementedError('Method fit_predict not implemented for DessiaModel. Please use children.')
+        model = cls.fit(matrix, name)
+        return model, model.predict(matrix)
 
 
 class LinearRegression(DessiaModel):
@@ -122,28 +141,32 @@ class LinearRegression(DessiaModel):
         self.intercept_ = intercept_
         DessiaObject.__init__(self, name=name)
 
-    @staticmethod
-    def _compile_model_attributes(alpha: float = 1., fit_intercept: bool = True, tol: float = 0.001,
-                                  solver: str = 'auto'):
-        return {'alpha': alpha, 'fit_intercept': fit_intercept, 'tol': tol, 'solver': solver}
-
     @classmethod
-    def fit(cls, matrix: List[List[float]], alpha: float = 1., fit_intercept: bool = True, tol: float = 0.001,
-            solver: str = 'auto', name: str = ''):
-        model_attributes = cls._compile_model_attributes(alpha, fit_intercept, tol, solver)
-        regressor = linear_model.Ridge(**model_attributes)
-        regressor.fit(matrix)
-        return cls(coefs_=regressor.coefs_, intercept_=regressor.intercept__, name=name)
+    def _call_skl_model(cls):
+        return linear_model.Ridge()
 
-    def predict(self, matrix: List[List[float]]):
-        model = self._instantiate(linear_model.Ridge())
-        return model.predict(matrix).tolist()
+    # @staticmethod
+    # def _compile_model_attributes(alpha: float = 1., fit_intercept: bool = True, tol: float = 0.001,
+    #                               solver: str = 'auto'):
+    #     return {'alpha': alpha, 'fit_intercept': fit_intercept, 'tol': tol, 'solver': solver}
 
-    @classmethod
-    def fit_predict(cls, matrix: List[List[float]], alpha: float = 1., fit_intercept: bool = True, tol: float = 0.001,
-                    solver: str = 'auto', name: str = ''):
-        model = cls.fit(matrix, alpha=alpha, fit_intercept=fit_intercept, tol=tol, solver=solver, name=name)
-        return model, model.predict(matrix)
+    # @classmethod
+    # def fit(cls, matrix: List[List[float]], alpha: float = 1., fit_intercept: bool = True, tol: float = 0.001,
+    #         solver: str = 'auto', name: str = ''):
+    #     model_attributes = cls._compile_model_attributes(alpha, fit_intercept, tol, solver)
+    #     regressor = linear_model.Ridge(**model_attributes)
+    #     regressor.fit(matrix)
+    #     return cls(coefs_=regressor.coefs_, intercept_=regressor.intercept__, name=name)
+
+    # def predict(self, matrix: List[List[float]]):
+    #     model = self._instantiate(linear_model.Ridge())
+    #     return model.predict(matrix).tolist()
+
+    # @classmethod
+    # def fit_predict(cls, matrix: List[List[float]], alpha: float = 1., fit_intercept: bool = True, tol: float = 0.001,
+    #                 solver: str = 'auto', name: str = ''):
+    #     model = cls.fit(matrix, alpha=alpha, fit_intercept=fit_intercept, tol=tol, solver=solver, name=name)
+    #     return model, model.predict(matrix)
 
 
 # =============================================================================
