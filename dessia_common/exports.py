@@ -325,8 +325,13 @@ class MarkdownWriter:
         return line + "\n"
 
     def _content_table(self, content: List[List[Any]]) -> str:
-        half_table = int(self.table_limit / 2)
+        if self.table_limit == 0:
+            return ''
+        elif self.table_limit == 1:
+            return self._table_line(content[0])
+
         table = ''
+        half_table = int(self.table_limit / 2)
         for row in content[:half_table]:
             table += self._table_line(row)
 
