@@ -9,7 +9,7 @@ import itertools
 from scipy.spatial.distance import pdist, squareform
 import numpy as npy
 import sklearn
-from sklearn import preprocessing, linear_model, ensemble
+from sklearn import preprocessing, linear_model, ensemble, tree
 
 try:
     from plot_data.core import Scatter, Histogram, MultiplePlots, Tooltip, ParallelPlot, PointFamily, EdgeStyle, Axis, \
@@ -188,14 +188,33 @@ class LinearRegression(DessiaModel):
         return linear_model.Ridge()
 
 
-class DessiaTree(DessiaObject):
-    _rebuild_attributes = ['estimators_']
+class DessiaTree(DessiaModel):
+    _rebuild_attributes = ['node_count', 'capacity', 'max_depth', 'children_left', 'children_right', 'feature',
+                           'threshold', 'value', 'impurity', 'n_node_samples', 'weighted_n_node_samples']
 
     def __init__(self, node_count: int, capacity: int, max_depth: int, children_left: List[int],
                  children_right: List[int], feature: List[int], threshold: List[float], value: List[List[List[float]]],
                  impurity: List[float], n_node_samples: List[int], weighted_n_node_samples: List[float],
                  name: str = ''):
-        DessiaObject.__init__(self, name=name)
+        self.node_count = node_count
+        self.capacity = capacity
+        self.max_depth = max_depth
+        self.children_left = children_left
+        self.children_right = children_right
+        self.feature = feature
+        self.threshold = threshold
+        self.value = value
+        self.impurity = impurity
+        self.n_node_samples = n_node_samples
+        self.weighted_n_node_samples = weighted_n_node_samples
+        DessiaModel.__init__(self, name=name)
+
+    @classmethod
+    def _call_skl_model(cls, tree_args):
+        subtree = tree._tree.Tree(**tree_args)
+        return tree._tree.TreeBuilder.build(subtree) #tree._tree.Tree()
+
+
 
 class DecisionTree(DessiaModel):
     _rebuild_attributes = ['estimators_']
@@ -206,7 +225,7 @@ class DecisionTree(DessiaModel):
 
     @classmethod
     def _call_skl_model(cls):
-        return ensemble.RandomForestRegressor()
+        return ensemble.DecisionTreeRegressor()
 
 
 class RandomForest(DessiaModel):
