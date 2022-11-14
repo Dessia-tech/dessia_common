@@ -28,21 +28,38 @@ class DessiaScaler(DessiaObject):
     def __init__(self, name: str = ''):
         DessiaObject.__init__(self, name=name)
 
-    def _instantiate(self, scaler):
+    def _call_skl_scaler(self):
+        raise NotImplementedError('Method _call_skl_scaler not implemented for DessiaScaler. Please use children.')
+
+    def _instantiate_skl_scaler(self):
+        scaler = self._call_skl_scaler()
         for attr in self._rebuild_attributes:
             setattr(scaler, attr, getattr(self, attr))
         return scaler
 
     @classmethod
+    def _instantiate_dessia_scaler(cls, scaler, name: str = ''):
+        kwargs_dict = {'name': name}
+        for attr in cls._rebuild_attributes:
+            if isinstance(getattr(scaler, attr), npy.ndarray):
+                kwargs_dict[attr] = getattr(scaler, attr).tolist()
+            kwargs_dict[attr] = getattr(scaler, attr)
+        return kwargs_dict
+
+    @classmethod
     def fit(cls, matrix: List[List[float]], name: str = ''):
-        raise NotImplementedError('Method fit not implemented for DessiaScaler. Please use children.')
+        scaler = cls._instantiate_skl_scaler()
+        scaler.fit(matrix)
+        return cls(**cls._instantiate_dessia_scaler(scaler, name))
 
     def transform(self, matrix: List[List[float]]):
-        raise NotImplementedError('Method transform not implemented for DessiaScaler. Please use children.')
+        scaler = self._instantiate_skl_scaler(preprocessing.StandardScaler())
+        return scaler.transform(matrix).tolist()
 
     @classmethod
     def fit_transform(cls, matrix: List[List[float]], name: str = ''):
-        raise NotImplementedError('Method fit_transform not implemented for DessiaScaler. Please use children.')
+        scaler = cls.fit(matrix, name)
+        return scaler, scaler.transform(matrix)
 
 
 class StandardScaler(DessiaObject):
