@@ -148,7 +148,17 @@ class DessiaObject:
             return self._data_eq(other_object)
         return object.__eq__(self, other_object)
 
-    def _data_eq(self, other_object):
+    def _data_eq_dict(self):
+        """
+        Returns a dict of what to look at for data eq. Keys in non data eq attributes are removed
+        """
+        return {k: v for k, v in self._serializable_dict().items()
+                if k not in self._non_data_eq_attributes + ['package_version', 'name']}
+
+    def _data_eq(self, other_object) -> bool:
+        """
+        Returns if the object is equal to the other object in the sense of data contained in the objects
+        """
         return data_eq(self, other_object)
 
     def _data_hash(self):
@@ -695,7 +705,6 @@ class PhysicalObject(DessiaObject):
         Exports the CAD of the object to step. Works if the class define a custom volmdlr model
         :param filepath: a str representing a filepath
         """
-        self.volmdlr_volume_model().to_step(filepath=filepath)
         return self.volmdlr_volume_model().to_step(filepath=filepath)
 
     def to_step_stream(self, stream):
@@ -1201,13 +1210,13 @@ def enhanced_deep_attr(obj, sequence):
         path = f"#/{'/'.join(sequence)}"
     return get_in_object_from_path(object_=obj, path=path)
 
-        # # Sequence is a string and not a sequence of deep attributes
-        # if '/' in sequence:
-        #     # Is deep attribute reference
-        #     sequence = sequence.split('/')
-        #     return enhanced_deep_attr(obj=obj, sequence=sequence)
-        # # Is direct attribute
-        # return enhanced_get_attr(obj=obj, attr=sequence)
+    # # Sequence is a string and not a sequence of deep attributes
+    # if '/' in sequence:
+    #     # Is deep attribute reference
+    #     sequence = sequence.split('/')
+    #     return enhanced_deep_attr(obj=obj, sequence=sequence)
+    # # Is direct attribute
+    # return enhanced_get_attr(obj=obj, attr=sequence)
     #
     # # Get direct attribute
     # subobj = enhanced_get_attr(obj=obj, attr=sequence[0])

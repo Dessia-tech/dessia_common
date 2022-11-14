@@ -12,7 +12,7 @@ from dessia_common.core import DessiaObject
 from dessia_common.datatools.dataset import Dataset
 from dessia_common.optimization import FixedAttributeValue, BoundedAttributeValue
 
-class Sampler(DessiaObject):
+class ClassSampler(DessiaObject):
     """
     Base object to build a DOE from a class and choosen limits for all specified sampled_class attributes.
 
@@ -56,7 +56,16 @@ class Sampler(DessiaObject):
 
         return parameter_grid
 
-    def _full_factorial_sampling(self):
+    def full_factorial(self):
+        """
+        Generate all `DessiaObject` with a Full Factorial sampling and store them in a `Dataset`.
+        A number to discretize each dimension of the problem must be specified in used `BoundedAttributeValue` and they
+        are the only ones to be used for sampling data.
+
+        :return: a `Dataset` containing all generated samples of the sampled_class
+        :rtype: `Dataset`
+
+        """
         instances_numbers = self._get_instances_numbers()
         parameter_grid = self._build_parameter_grid(instances_numbers)
         idx_sampling = pyDOE.fullfact(instances_numbers)
@@ -66,7 +75,20 @@ class Sampler(DessiaObject):
             full_doe.append(self.sampled_class(**dict(zip(self.attributes, valued_sample))))
         return full_doe
 
-    def _lhs_sampling(self, samples: int, criterion: str):
+    def lhs(self, samples: int, criterion: str):
+        """
+        Generate all `DessiaObject` with a Latin Hypercube Sampling (LHS) and store them in a `Dataset`
+        Documentation LHS: https://www.statology.org/latin-hypercube-sampling/
+
+        :param samples:
+            --------
+            Targert number of `DessiaObject` in the DOE.
+        :type samples: `int`
+
+        :return: a `Dataset` containing all generated samples of the sampled_class
+        :rtype: `Dataset`
+
+        """
         varying_sampling = pyDOE.lhs(len(self.sampled_attributes), samples=samples, criterion=criterion)
         full_doe = []
         fixed_values = [attr.value for attr in self.constant_attributes]
@@ -76,7 +98,24 @@ class Sampler(DessiaObject):
             full_doe.append(self.sampled_class(**dict(zip(self.attributes, fixed_values + varying_values))))
         return full_doe
 
-    def _montecarlo_sampling(self, samples: int):
+    def montecarlo(self, samples: int):
+        """
+        Generate all `DessiaObject` with a Monte-Carlo (random uniform) sampling and store them in a `Dataset`.
+        In other words, it is a random uniform sampling for all dimensions of the problem.
+
+        For example, a two dimensions problem sampled with 100 elements with Monte-Carlo method would result in 100
+        samples. Each dimension of each sample would have a random uniform value. Redundancies are allowed with this
+        sampling method.
+
+        :param samples:
+            --------
+            Targert number of `DessiaObject` in the DOE.
+        :type samples: `int`
+
+        :return: a `Dataset` containing all generated samples of the sampled_class
+        :rtype: `Dataset`
+
+        """
         full_doe = []
         fixed_values = [attr.value for attr in self.constant_attributes]
         for _ in range(samples):
@@ -86,11 +125,11 @@ class Sampler(DessiaObject):
 
     def _get_doe(self, method: str, samples: int, lhs_criterion: str):
         if method == 'fullfact':
-            return self._full_factorial_sampling()
+            return self.full_factorial()
         if method == 'lhs':
-            return self._lhs_sampling(samples=samples, criterion=lhs_criterion)
+            return self.lhs(samples=samples, criterion=lhs_criterion)
         if method == 'montecarlo':
-            return self._montecarlo_sampling(samples=samples)
+            return self.montecarlo(samples=samples)
         raise NotImplementedError(f"Method '{method}' is not implemented in {self.__class__}._get_doe method.")
 
     def make_doe(self, samples: int, method: str = 'fullfact', lhs_criterion: str = 'center', name: str = ''):
