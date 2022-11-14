@@ -28,7 +28,8 @@ class DessiaScaler(DessiaObject):
     def __init__(self, name: str = ''):
         DessiaObject.__init__(self, name=name)
 
-    def _call_skl_scaler(self):
+    @classmethod
+    def _call_skl_scaler(cls):
         raise NotImplementedError('Method _call_skl_scaler not implemented for DessiaScaler. Please use children.')
 
     def _instantiate_skl_scaler(self):
@@ -41,19 +42,20 @@ class DessiaScaler(DessiaObject):
     def _instantiate_dessia_scaler(cls, scaler, name: str = ''):
         kwargs_dict = {'name': name}
         for attr in cls._rebuild_attributes:
-            if isinstance(getattr(scaler, attr), npy.ndarray):
-                kwargs_dict[attr] = getattr(scaler, attr).tolist()
-            kwargs_dict[attr] = getattr(scaler, attr)
+            if hasattr(scaler, attr):
+                if isinstance(getattr(scaler, attr), npy.ndarray):
+                    kwargs_dict[attr] = getattr(scaler, attr).tolist()
+                kwargs_dict[attr] = getattr(scaler, attr)
         return kwargs_dict
 
     @classmethod
     def fit(cls, matrix: List[List[float]], name: str = ''):
-        scaler = cls._instantiate_skl_scaler()
+        scaler = cls._call_skl_scaler()
         scaler.fit(matrix)
         return cls(**cls._instantiate_dessia_scaler(scaler, name))
 
     def transform(self, matrix: List[List[float]]):
-        scaler = self._instantiate_skl_scaler(preprocessing.StandardScaler())
+        scaler = self._instantiate_skl_scaler()
         return scaler.transform(matrix).tolist()
 
     @classmethod
@@ -62,7 +64,7 @@ class DessiaScaler(DessiaObject):
         return scaler, scaler.transform(matrix)
 
 
-class StandardScaler(DessiaObject):
+class StandardScaler(DessiaScaler):
     _rebuild_attributes = ['mean_', 'scale_', 'var_']
     _standalone_in_db = True
 
@@ -73,19 +75,8 @@ class StandardScaler(DessiaObject):
         DessiaObject.__init__(self, name=name)
 
     @classmethod
-    def fit(cls, matrix: List[List[float]], name: str = ''):
-        scaler = preprocessing.StandardScaler()
-        scaler.fit(matrix)
-        return cls(scaler.mean_.tolist(), scaler.scale_.tolist(), scaler.var_.tolist(), name)
-
-    def transform(self, matrix: List[List[float]]):
-        scaler = self._instantiate(preprocessing.StandardScaler())
-        return scaler.transform(matrix).tolist()
-
-    @classmethod
-    def fit_transform(cls, matrix: List[List[float]], name: str = ''):
-        scaler = cls.fit(matrix, name)
-        return scaler, scaler.transform(matrix)
+    def _call_skl_scaler(cls):
+        return preprocessing.StandardScaler()
 
 
 class IdentityScaler(StandardScaler):
@@ -94,15 +85,8 @@ class IdentityScaler(StandardScaler):
         StandardScaler.__init__(self, mean_=mean_, scale_=scale_, var_=var_, name=name)
 
     @classmethod
-    def fit(cls, matrix: List[List[float]], name: str = ''):
-        return cls([0.]*len(matrix[0]), [1.]*len(matrix[0]), [1.]*len(matrix[0]), name)
-
-    def transform(self, matrix: List[List[float]]):
-        return matrix
-
-    @classmethod
-    def fit_transform(cls, matrix: List[List[float]], name: str = ''):
-        return cls([0.]*len(matrix[0]), [1.]*len(matrix[0]), [1.]*len(matrix[0]), name), matrix
+    def _call_skl_scaler(cls):
+        return preprocessing.StandardScaler(with_mean = False, with_std = False)
 
 # =============================================================================
 # Models
