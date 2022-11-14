@@ -40,8 +40,9 @@ except ImportError:
     pass
 
 from dessia_common import DessiaObject, PhysicalObject, MovingObject
-from dessia_common.typings import InstanceOf, Distance
+from dessia_common.typings import InstanceOf
 from dessia_common.vectored_objects import Catalog
+from dessia_common.measures import Distance
 
 
 from dessia_common.files import BinaryFile, StringFile
@@ -344,7 +345,7 @@ class StandaloneObject(MovingObject):
         point_style = plot_data.PointStyle(color_fill=plot_data.colors.RED, color_stroke=plot_data.colors.BLACK)
         edge_style = plot_data.EdgeStyle(color_stroke=plot_data.colors.BLUE, dashline=[10, 5])
 
-        custom_dataset = plot_data.DataSet(elements=elements1, name='I = f(t)', tooltip=tooltip,
+        custom_dataset = plot_data.Dataset(elements=elements1, name='I = f(t)', tooltip=tooltip,
                                            point_style=point_style, edge_style=edge_style)
 
         # Now let's create another dataset for the purpose of this exercice
@@ -354,7 +355,7 @@ class StandaloneObject(MovingObject):
         for timestep, current in zip(timesteps, current2):
             elements2.append({'timestep': timestep, 'electric current': current})
 
-        dataset2 = plot_data.DataSet(elements=elements2, name='I2 = f(t)')
+        dataset2 = plot_data.Dataset(elements=elements2, name='I2 = f(t)')
 
         graph2d = plot_data.Graph2D(graphs=[custom_dataset, dataset2],
                                     x_variable=attribute_names[0], y_variable=attribute_names[1])
@@ -536,6 +537,7 @@ class ObjectWithOtherTypings(DessiaObject):
     """
     Dummy class to test some typing jsonschemas
     """
+
     def __init__(self, undefined_type_attribute: Any, name: str = ""):
         self.undefined_type_attribute = undefined_type_attribute
 
@@ -551,7 +553,7 @@ class MovingStandaloneObject(MovingObject):
 
     @classmethod
     def generate(cls, seed: int):
-        return cls(origin=1.3*seed, name=f"moving_{seed}")
+        return cls(origin=1.3 * seed, name=f"moving_{seed}")
 
     def contour(self):
         points = [vm.Point2D(self.origin, self.origin), vm.Point2D(self.origin, self.origin + 1),
