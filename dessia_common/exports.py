@@ -321,7 +321,7 @@ class MarkdownWriter:
     def _table_line(self, row: List[Any]) -> str:
         line = "|"
         for value in row:
-            line += ''.join([" ", self._string_in_table(self._value_to_str(value)), " |"])
+            line += f" {self._string_in_table(self._value_to_str(value))} |"
         return line + "\n"
 
     def _content_table(self, content: List[List[Any]]) -> str:
