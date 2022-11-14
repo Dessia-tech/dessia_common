@@ -287,9 +287,8 @@ class MarkdownWriter:
         return self._sequence_to_str(list(value.values()))
 
     def _object_to_str(self, value) -> str:
-        if hasattr(value, 'name' ):
-            if value.name != '':
-                return f"{value.name}"
+        if hasattr(value, 'name' ) and value.name:
+            return value.name
         return 'unnamed'
 
     def _value_to_str(self, value: Any) -> str:
