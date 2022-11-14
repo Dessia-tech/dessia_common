@@ -327,7 +327,7 @@ class MarkdownWriter:
     def _content_table(self, content: List[List[Any]]) -> str:
         if self.table_limit == 0:
             return ''
-        elif self.table_limit == 1:
+        if self.table_limit == 1:
             return self._table_line(content[0])
 
         table = ''
