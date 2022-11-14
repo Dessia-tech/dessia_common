@@ -15,15 +15,17 @@ dataset_example = Dataset(all_cars_no_feat)
 # Test scalers
 idty_scaler = IdentityScaler().fit(dataset_example.matrix)
 idty_matrix = idty_scaler.transform(dataset_example.matrix)
-idty_scaler, idty_matrix = idty_scaler.fit_transform(dataset_example.matrix)
+idty_scaler, idty_matrix = IdentityScaler().fit_transform(dataset_example.matrix)
 
 inputs = dataset_example.sub_matrix(['displacement', 'horsepower', 'model', 'acceleration', 'cylinders'])
 outputs = dataset_example.sub_matrix(['mpg', 'weight'])
 std_scaler = StandardScaler().fit(inputs)
 std_inputs = std_scaler.transform(inputs)
-std_scaler, std_inputs = std_scaler.fit_transform(inputs)
+std_scaler, std_inputs = StandardScaler().fit_transform(inputs)
 
 # Tests models
 linear_model = LinearRegression().fit(std_inputs, outputs)
+predicted_data = linear_model.predict(std_inputs[50:100])
+linear_model = LinearRegression().fit_predict(std_inputs, outputs, std_inputs[50:100])
 
 

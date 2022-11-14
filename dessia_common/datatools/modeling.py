@@ -65,6 +65,26 @@ class DessiaScaler(DessiaObject):
 
 
 class StandardScaler(DessiaScaler):
+    """
+    Data scaler that standardly scale data. The operation made by this scaler is `new_X = (X - mean(X))/std(X)`.
+
+    :param mean_:
+        --------
+        List of means
+    :type mean_: `List[float]`, `optional`, defaults to `None`
+
+    :param scale_:
+        --------
+        List of standard deviations
+    :type mean_: `List[float]`, `optional`, defaults to `None`
+
+    :param var_:
+        --------
+        List of variances
+    :type mean_: `List[float]`, `optional`, defaults to `None`
+
+
+    """
     _rebuild_attributes = ['mean_', 'scale_', 'var_']
     _standalone_in_db = True
 
@@ -80,6 +100,26 @@ class StandardScaler(DessiaScaler):
 
 
 class IdentityScaler(StandardScaler):
+    """
+    Data scaler that does no scaler. It is implemented to keep code consistency and readability and may be useful to
+    avoid conditions if data is scaled or not.
+
+    :param mean_:
+        --------
+        List of means
+    :type mean_: `None`
+
+    :param scale_:
+        --------
+        List of standard deviations
+    :type mean_: `None`
+
+    :param var_:
+        --------
+        List of variances
+    :type mean_: `None`
+
+    """
 
     def __init__(self, mean_: List[float] = None, scale_: List[float] = None, var_: List[float] = None, name: str = ''):
         StandardScaler.__init__(self, mean_=mean_, scale_=scale_, var_=var_, name=name)
@@ -120,7 +160,7 @@ class DessiaModel(DessiaObject):
     @classmethod
     def fit(cls, inputs: List[List[float]], outputs: List[List[float]], name: str = ''):
         model = cls._call_skl_model()
-        model.fit(inputs, outputs[0])
+        model.fit(inputs, outputs)
         return cls(**cls._instantiate_dessia_model(model, name))
 
     def predict(self, inputs: List[List[float]]):
@@ -128,16 +168,18 @@ class DessiaModel(DessiaObject):
         return model.predict(inputs).tolist()
 
     @classmethod
-    def fit_predict(cls, inputs: List[List[float]], outputs: List[List[float]], name: str = ''):
+    def fit_predict(cls, inputs: List[List[float]], outputs: List[List[float]], predicted_inputs: List[List[float]],
+                    name: str = ''):
         model = cls.fit(inputs, outputs, name)
-        return model, model.predict(inputs)
+        return model, model.predict(predicted_inputs)
 
 
 class LinearRegression(DessiaModel):
-    _rebuild_attributes = ['coefs_', 'intercept_']
+    _rebuild_attributes = ['coef_', 'intercept_']
+    _standalone_in_db = True
 
-    def __init__(self, coefs_: List[List[float]] = None, intercept_: List[List[float]] = None, name: str = ''):
-        self.coefs_ = coefs_
+    def __init__(self, coef_: List[List[float]] = None, intercept_: List[List[float]] = None, name: str = ''):
+        self.coef_ = coef_
         self.intercept_ = intercept_
         DessiaObject.__init__(self, name=name)
 
@@ -145,28 +187,6 @@ class LinearRegression(DessiaModel):
     def _call_skl_model(cls):
         return linear_model.Ridge()
 
-    # @staticmethod
-    # def _compile_model_attributes(alpha: float = 1., fit_intercept: bool = True, tol: float = 0.001,
-    #                               solver: str = 'auto'):
-    #     return {'alpha': alpha, 'fit_intercept': fit_intercept, 'tol': tol, 'solver': solver}
-
-    # @classmethod
-    # def fit(cls, matrix: List[List[float]], alpha: float = 1., fit_intercept: bool = True, tol: float = 0.001,
-    #         solver: str = 'auto', name: str = ''):
-    #     model_attributes = cls._compile_model_attributes(alpha, fit_intercept, tol, solver)
-    #     regressor = linear_model.Ridge(**model_attributes)
-    #     regressor.fit(matrix)
-    #     return cls(coefs_=regressor.coefs_, intercept_=regressor.intercept__, name=name)
-
-    # def predict(self, matrix: List[List[float]]):
-    #     model = self._instantiate(linear_model.Ridge())
-    #     return model.predict(matrix).tolist()
-
-    # @classmethod
-    # def fit_predict(cls, matrix: List[List[float]], alpha: float = 1., fit_intercept: bool = True, tol: float = 0.001,
-    #                 solver: str = 'auto', name: str = ''):
-    #     model = cls.fit(matrix, alpha=alpha, fit_intercept=fit_intercept, tol=tol, solver=solver, name=name)
-    #     return model, model.predict(matrix)
 
 
 # =============================================================================
