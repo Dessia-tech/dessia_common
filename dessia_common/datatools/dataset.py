@@ -384,11 +384,12 @@ class Dataset(DessiaObject):
         >>> from dessia_common.datatools.dataset import Dataset
         >>> from dessia_common.models import all_cars_wi_feat
         >>> print(Dataset(all_cars_wi_feat[:10]).sub_matrix(['displacement', 'horsepower']))
-        [[0.307, 0.35, 0.318, 0.304, 0.302, 0.429, 0.454, 0.44, 0.455, 0.39],
-         [130.0, 165.0, 150.0, 150.0, 140.0, 198.0, 220.0, 215.0, 225.0, 190.0]]
+        [[0.307, 130.0], [0.35, 165.0], [0.318, 150.0], [0.304, 150.0], [0.302, 140.0], [0.429, 198.0],
+         [0.454, 220.0], [0.44, 215.0], [0.455, 225.0], [0.39, 190.0]]
 
         """
-        return [self.attribute_values(column_name) for column_name in columns_names]
+        transposed_submatrix = [self.attribute_values(column_name) for column_name in columns_names]
+        return list(map(list, zip(*transposed_submatrix)))
 
     def sort(self, key: Any, ascend: bool = True):  # TODO : Replace numpy with faster algorithms
         """
