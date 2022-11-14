@@ -3,6 +3,7 @@ Tests for dessia_common.modeling file
 
 """
 
+from sklearn import ensemble
 from dessia_common.core import DessiaObject
 from dessia_common.models import all_cars_no_feat
 from dessia_common.datatools.dataset import Dataset
@@ -27,5 +28,8 @@ std_scaler, std_inputs = StandardScaler().fit_transform(inputs)
 linear_model = LinearRegression().fit(std_inputs, outputs)
 predicted_data = linear_model.predict(std_inputs[50:100])
 linear_model = LinearRegression().fit_predict(std_inputs, outputs, std_inputs[50:100])
+
+rf_regressor = ensemble.RandomForestRegressor(n_estimators=10)
+rf_regressor.fit(std_inputs, outputs)
 
 
