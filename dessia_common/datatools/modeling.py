@@ -118,19 +118,19 @@ class DessiaModel(DessiaObject):
         return kwargs_dict
 
     @classmethod
-    def fit(cls, matrix: List[List[float]], name: str = ''):
+    def fit(cls, inputs: List[List[float]], outputs: List[List[float]], name: str = ''):
         model = cls._call_skl_model()
-        model.fit(matrix)
+        model.fit(inputs, outputs[0])
         return cls(**cls._instantiate_dessia_model(model, name))
 
-    def predict(self, matrix: List[List[float]]):
+    def predict(self, inputs: List[List[float]]):
         model = self._instantiate_skl_model()
-        return model.predict(matrix).tolist()
+        return model.predict(inputs).tolist()
 
     @classmethod
-    def fit_predict(cls, matrix: List[List[float]], name: str = ''):
-        model = cls.fit(matrix, name)
-        return model, model.predict(matrix)
+    def fit_predict(cls, inputs: List[List[float]], outputs: List[List[float]], name: str = ''):
+        model = cls.fit(inputs, outputs, name)
+        return model, model.predict(inputs)
 
 
 class LinearRegression(DessiaModel):

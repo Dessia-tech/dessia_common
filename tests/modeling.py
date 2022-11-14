@@ -17,11 +17,13 @@ idty_scaler = IdentityScaler().fit(dataset_example.matrix)
 idty_matrix = idty_scaler.transform(dataset_example.matrix)
 idty_scaler, idty_matrix = idty_scaler.fit_transform(dataset_example.matrix)
 
-std_scaler = StandardScaler().fit(dataset_example.matrix)
-std_matrix = std_scaler.transform(dataset_example.matrix)
-std_scaler, std_matrix = std_scaler.fit_transform(dataset_example.matrix)
+inputs = dataset_example.sub_matrix(['displacement', 'horsepower', 'model', 'acceleration', 'cylinders'])
+outputs = dataset_example.sub_matrix(['mpg', 'weight'])
+std_scaler = StandardScaler().fit(inputs)
+std_inputs = std_scaler.transform(inputs)
+std_scaler, std_inputs = std_scaler.fit_transform(inputs)
 
 # Tests models
-linear_model = LinearRegression().fit(std_matrix)
+linear_model = LinearRegression().fit(std_inputs, outputs)
 
 
