@@ -276,16 +276,43 @@ class DessiaTree(DessiaModel):
 
 
 
-class DecisionTree(DessiaModel):
-    _rebuild_attributes = ['estimators_']
+class DecisionTreeRegressor(DessiaModel):
+    _rebuild_attributes = ['tree_', 'n_outputs']
 
-    def __init__(self, tree_: DessiaTree = None, name: str = ''):
+    def __init__(self, n_outputs: int, tree_: DessiaTree = None, name: str = ''):
+        self.n_outputs = n_outputs
         self.tree_ = tree_
         DessiaObject.__init__(self, name=name)
 
     @classmethod
-    def _call_skl_model(cls):
-        return ensemble.DecisionTreeRegressor()
+    def _skl_class(cls):
+        return tree.DecisionTreeRegressor
+
+    def _call_skl_model(self):
+        skl_model = self._skl_class()()
+        setattr(skl_model, 'n_outputs_', self.n_outputs)
+        return skl_model
+
+    def _instantiate_skl_model(self):
+        model = self._call_skl_model()
+        setattr(model, 'n_outputs_', self.n_outputs)
+        setattr(model, 'tree_', self.tree_)
+        return model
+
+    @classmethod
+    def fit(cls, inputs: List[List[float]], outputs: List[List[float]], name: str = '',
+            alpha: float = 1., fit_intercept: bool = True, tol: float = 0.001):
+        return cls._fit(inputs, outputs, name=name, alpha=alpha, fit_intercept=fit_intercept, tol=tol)
+
+    def predict(self, inputs: List[List[float]]):
+        return self._predict(inputs)
+
+    @classmethod
+    def fit_predict(cls, inputs: List[List[float]], outputs: List[List[float]], predicted_inputs: List[List[float]],
+                    name: str = '', alpha: float = 1., fit_intercept: bool = True, tol: float = 0.001):
+        return cls._fit_predict(inputs, outputs, predicted_inputs, name=name,
+                                alpha=alpha, fit_intercept=fit_intercept, tol=tol)
+
 
 
 class RandomForest(DessiaModel):

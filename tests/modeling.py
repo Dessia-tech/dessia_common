@@ -4,11 +4,12 @@ Tests for dessia_common.modeling file
 """
 
 import numpy as npy
-from sklearn import ensemble
+from sklearn import tree, ensemble
 from dessia_common.core import DessiaObject
 from dessia_common.models import all_cars_no_feat
 from dessia_common.datatools.dataset import Dataset
-from dessia_common.datatools.modeling import DessiaScaler, StandardScaler, IdentityScaler, LinearRegression, DessiaTree
+from dessia_common.datatools.modeling import DessiaScaler, StandardScaler, IdentityScaler, LinearRegression, DessiaTree,\
+    DecisionTreeRegressor
 
 
 # Load Data and put it in a Dataset (matrix is automatically computed)
@@ -39,4 +40,15 @@ pred_skl_tree = rf_regressor.estimators_[12].tree_.predict(npy.array(std_inputs[
 pred_dessia_tree = DessiaTree._instantiate_dessia_model(rf_regressor.estimators_[12].tree_)
 assert(npy.all(pred_dessia_tree.predict(npy.array(std_inputs[50:100], dtype=npy.float32)) == pred_skl_tree))
 
+
+skl_dectree = rf_regressor.estimators_[12]
+new_tree = tree.DecisionTreeRegressor()
+new_tree.tree_ = skl_dectree.tree_
+new_tree.n_outputs_ = skl_dectree.tree_.n_outputs
+
+assert(npy.all(new_tree.predict(npy.array(std_inputs[50:100], dtype=npy.float32)) == skl_dectree.predict(npy.array(std_inputs[50:100], dtype=npy.float32))))
+
+dessia_tree = DecisionTreeRegressor(skl_dectree.tree_.n_outputs, skl_dectree.tree_)
+test = dessia_tree._instantiate_skl_model()
+assert(npy.all(new_tree.predict(npy.array(std_inputs[50:100], dtype=npy.float32)) == skl_dectree.predict(npy.array(std_inputs[50:100], dtype=npy.float32))))
 
