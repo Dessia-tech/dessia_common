@@ -26,8 +26,9 @@ coding/naming style & convention.
 """
 
 from math import floor, ceil, cos
-from typing import Dict, List, Tuple, Union, Iterator, Any
+from typing import Dict, List, Tuple, Union, Any
 from numpy import linspace
+import time
 
 try:
     import volmdlr as vm
@@ -39,8 +40,9 @@ except ImportError:
     pass
 
 from dessia_common import DessiaObject, PhysicalObject, MovingObject
-from dessia_common.typings import InstanceOf, Distance
+from dessia_common.typings import InstanceOf
 from dessia_common.vectored_objects import Catalog
+from dessia_common.measures import Distance
 import time
 
 
@@ -184,8 +186,8 @@ class StandaloneObject(MovingObject):
     :type dynamic_dict: Dict[str, bool]
     """
     _standalone_in_db = True
-    _allowed_methods = ['add_standalone_object', 'add_embedded_object',
-                        'add_float', 'generate_from_text', 'generate_from_bin']
+    _allowed_methods = ["add_standalone_object", "add_embedded_object", "count_until",
+                        "add_float", "generate_from_text", "generate_from_bin"]
 
     def __init__(self, standalone_subobject: StandaloneSubobject, embedded_subobject: EmbeddedSubobject,
                  dynamic_dict: Dict[str, bool], float_dict: Dict[str, float], string_dict: Dict[str, str],
@@ -325,13 +327,13 @@ class StandaloneObject(MovingObject):
         multiplot = plot_data.MultiplePlots(elements=points, plots=objects, sizes=sizes,
                                             coords=[(0, 0), (300, 0)], name='Multiple Plot')
 
-        attribute_names = ['time', 'electric current']
+        attribute_names = ['timestep', 'electric current']
         tooltip = plot_data.Tooltip(attributes=attribute_names)
-        time1 = linspace(0, 20, 20)
-        current1 = [t ** 2 for t in time1]
+        timesteps = linspace(0, 20, 20)
+        current1 = [t ** 2 for t in timesteps]
         elements1 = []
-        for time, current in zip(time1, current1):
-            elements1.append({'time': time, 'electric current': current})
+        for timestep, current in zip(timesteps, current1):
+            elements1.append({'timestep': timestep, 'electric current': current})
 
         # The previous line instantiates a dataset with limited arguments but several customizations are available
         point_style = plot_data.PointStyle(color_fill=plot_data.colors.RED, color_stroke=plot_data.colors.BLACK)
@@ -341,11 +343,11 @@ class StandaloneObject(MovingObject):
                                            point_style=point_style, edge_style=edge_style)
 
         # Now let's create another dataset for the purpose of this exercice
-        time2 = linspace(0, 20, 100)
-        current2 = [100 * (1 + cos(t)) for t in time2]
+        timesteps = linspace(0, 20, 100)
+        current2 = [100 * (1 + cos(t)) for t in timesteps]
         elements2 = []
-        for time, current in zip(time2, current2):
-            elements2.append({'time': time, 'electric current': current})
+        for timestep, current in zip(timesteps, current2):
+            elements2.append({'timestep': timestep, 'electric current': current})
 
         dataset2 = plot_data.Dataset(elements=elements2, name='I2 = f(t)')
 
@@ -445,6 +447,28 @@ class StandaloneObject(MovingObject):
         """
         return contents
 
+    def count_until(self, duration: float, raise_error: bool = False):
+        """
+        A method which duration can be customized to test long execution
+
+        :param duration: Duration of the method in s
+        :type duration: float
+        :param raise_error: Wether the computation should raise an error or not at the end
+        :type raise_error: bool
+        """
+        starting_time = time.time()
+        current_time = time.time()
+        last_duration = round(current_time - starting_time)
+        while current_time - starting_time <= duration:
+            current_time = time.time()
+            current_duration = current_time - starting_time
+            if current_duration > last_duration + 1:
+                last_duration = round(current_time - starting_time)
+                print(round(current_duration))
+
+        if raise_error:
+            raise RuntimeError(f"Evaluation stopped after {duration}s")
+
 
 DEF_SO = StandaloneObject.generate(1)
 
@@ -532,21 +556,21 @@ class LightObject(DessiaObject):
         time.sleep(duration/1000)
         return self.strarg
 
-
-class ObjectWithFaultyTyping(DessiaObject):
-    """
-    Dummy class to test faulty typing jsonschema
-    """
-    def __init__(self, faulty_attribute: Iterator[int], name: str = ""):
-        self.faulty_attribute = faulty_attribute
-
-        DessiaObject.__init__(self, name=name)
+# class ObjectWithFaultyTyping(DessiaObject):
+#     """
+#     Dummy class to test faulty typing jsonschema
+#     """
+#     def __init__(self, faulty_attribute: Iterator[int], name: str = ""):
+#         self.faulty_attribute = faulty_attribute
+#
+#         DessiaObject.__init__(self, name=name)
 
 
 class ObjectWithOtherTypings(DessiaObject):
     """
     Dummy class to test some typing jsonschemas
     """
+
     def __init__(self, undefined_type_attribute: Any, name: str = ""):
         self.undefined_type_attribute = undefined_type_attribute
 
@@ -562,7 +586,7 @@ class MovingStandaloneObject(MovingObject):
 
     @classmethod
     def generate(cls, seed: int):
-        return cls(origin=1.3*seed, name=f"moving_{seed}")
+        return cls(origin=1.3 * seed, name=f"moving_{seed}")
 
     def contour(self):
         points = [vm.Point2D(self.origin, self.origin), vm.Point2D(self.origin, self.origin + 1),

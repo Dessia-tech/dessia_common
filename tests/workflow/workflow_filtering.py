@@ -1,5 +1,5 @@
 """
-Tests on filtering methods with block filter and HeterogeneousList.filtering
+Tests on filtering methods with block filter and Dataset.filtering
 """
 import json
 import pkg_resources
@@ -8,7 +8,7 @@ from dessia_common.typings import ClassMethodType, MethodType
 from dessia_common.tests import Car
 from dessia_common.workflow.blocks import ClassMethod, InstantiateModel, Filter, ModelMethod
 from dessia_common.core import DessiaFilter, FiltersList
-from dessia_common.datatools import HeterogeneousList
+from dessia_common.datatools.dataset import Dataset
 from dessia_common.workflow.core import Workflow, Pipe
 
 # Import data
@@ -20,8 +20,8 @@ stream_file = StringFile.from_stream(csv_cars)
 # =============================================================================================================
 
 block_0 = ClassMethod(method_type=ClassMethodType(Car, 'from_csv'), name='CSV Cars')
-block_1 = InstantiateModel(model_class=HeterogeneousList, name='HList Cars')
-block_2 = ModelMethod(method_type=MethodType(HeterogeneousList, 'filtering'), name='Filters HList')
+block_1 = InstantiateModel(model_class=Dataset, name='HList Cars')
+block_2 = ModelMethod(method_type=MethodType(Dataset, 'filtering'), name='Filters HList')
 block_3 = ClassMethod(method_type=ClassMethodType(FiltersList, 'from_filters_list'), name='Filters Hlist')
 block_4 = Filter(filters=[DessiaFilter(attribute='weight', comparison_operator='<=', bound=4000, name='weight'),
                           DessiaFilter(attribute='mpg', comparison_operator='>=', bound=25, name='mpg')],
@@ -50,11 +50,11 @@ workflow._check_platform()
 output_dict = workflow_run.output_value[[0, 3, 9, 11, 25, 44]].to_dict(use_pointers=True)
 output_json = json.dumps(output_dict)
 output_json_to_dict = json.loads(output_json)
-output_jsondict_to_object = HeterogeneousList.dict_to_object(output_json_to_dict)
+output_jsondict_to_object = Dataset.dict_to_object(output_json_to_dict)
 
 reference_output = {
   "name": "",
-  "object_class": "dessia_common.core.HeterogeneousList",
+  "object_class": "dessia_common.datatools.dataset.Dataset",
   "package_version": "0.9.2.dev320+gecd4609",
   "dessia_objects": [
     {
@@ -138,4 +138,4 @@ reference_output = {
 }
 
 # Test
-assert(output_jsondict_to_object == HeterogeneousList.dict_to_object(reference_output))
+assert(output_jsondict_to_object == Dataset.dict_to_object(reference_output))

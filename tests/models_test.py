@@ -18,6 +18,10 @@ assert simulation_list_2 == simulation_list
 
 simulation_list_copy = simulation_list.copy()
 assert simulation_list_copy == simulation_list
+diff = simulation_list_copy._data_diff(simulation_list)
+assert diff.is_empty()
+# Let this print to test diff utils __repr__
+print(diff)
 
 simulation_list.jsonschema()
 
@@ -27,10 +31,11 @@ draw_networkx_graph(pointer_graph)
 
 system1._check_platform()
 system1.jsonschema()
+
 system1.save_to_file('system1')
 system1_lff = dc.DessiaObject.load_from_file('system1.json')
 assert system1_lff == system1
 
 memo = {}
-a,memo = dcus.serialize_with_pointers(system1)
+a, memo = dcus.serialize_with_pointers(system1)
 assert memo

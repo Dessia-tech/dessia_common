@@ -11,9 +11,9 @@ from typing import get_origin, get_args, Union, get_type_hints, Type, Callable, 
 import dessia_common as dc
 import dessia_common.utils.types as dc_types
 from dessia_common.files import BinaryFile, StringFile
-from dessia_common.typings import Measure, Subclass, MethodType, ClassMethodType, Any
 from dessia_common.utils.docstrings import parse_docstring, FAILED_DOCSTRING_PARSING, FAILED_ATTRIBUTE_PARSING
-
+from dessia_common.typings import Subclass, MethodType, ClassMethodType, Any
+from dessia_common.measures import Measure
 
 JSONSCHEMA_HEADER = {"definitions": {},
                      "$schema": "http://json-schema.org/draft-07/schema#",
@@ -185,12 +185,11 @@ def default_dict(jsonschema):
     if datatype in ['standalone_object', 'embedded_object', 'static_dict']:
         if 'classes' in jsonschema:
             dict_['object_class'] = jsonschema['classes'][0]
-        elif 'method' in jsonschema and jsonschema['method']:
+        elif 'is_method' in jsonschema and jsonschema['is_method']:
             # Method can have no classes in jsonschema
             pass
         else:
-            msg = "DessiaObject of type {} must have 'classes' in jsonschema"
-            raise ValueError(msg.format(jsonschema['python_typing']))
+            raise ValueError(f"DessiaObject of type {jsonschema['python_typing']} must have 'classes' in jsonschema")
         for property_, jss in jsonschema['properties'].items():
             if 'default_value' in jss:
                 dict_[property_] = jss['default_value']
