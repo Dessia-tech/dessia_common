@@ -269,7 +269,6 @@ class DessiaTree(DessiaModel):
         raise NotImplementedError('fit_predict method is not supposed to be used in DessiaTree and is not implemented.')
 
 
-
 class DecisionTreeRegressor(DessiaModel):
     _rebuild_attributes = ['tree_', 'n_outputs_']
 
@@ -308,7 +307,6 @@ class DecisionTreeRegressor(DessiaModel):
         return cls._fit_predict(inputs, outputs, predicted_inputs, name=name, criterion=criterion, max_depth=max_depth)
 
 
-
 class DecisionTreeClassifier(DecisionTreeRegressor):
     _rebuild_attributes = ['tree_', 'n_outputs_']
 
@@ -322,7 +320,6 @@ class DecisionTreeClassifier(DecisionTreeRegressor):
         return tree.DecisionTreeClassifier
 
 
-
 class RandomForest(DessiaModel):
     _rebuild_attributes = ['estimators_']
 
@@ -331,8 +328,8 @@ class RandomForest(DessiaModel):
         DessiaObject.__init__(self, name=name)
 
     @classmethod
-    def _call_skl_model(cls):
-        return ensemble.RandomForestRegressor()
+    def _skl_class(cls):
+        return ensemble.RandomForestRegressor
 
 
 
