@@ -25,18 +25,18 @@ std_scaler = StandardScaler().fit(inputs)
 std_inputs = std_scaler.transform(inputs)
 std_scaler, std_inputs = StandardScaler().fit_transform(inputs)
 
-# # Tests models
-# linear_model = LinearRegression().fit(std_inputs, outputs)
-# predicted_data = linear_model.predict(std_inputs[50:100])
-# linear_model = LinearRegression().fit_predict(std_inputs, outputs, std_inputs[50:100])
+# Tests models
+linear_model = LinearRegression().fit(std_inputs, outputs)
+predicted_data = linear_model.predict(std_inputs[50:100])
+linear_model, pred_dessia = LinearRegression().fit_predict(std_inputs, outputs, std_inputs[50:100])
+assert(npy.all(pred_dessia == predicted_data))
 
-rf_regressor = ensemble.RandomForestRegressor(n_estimators=1)
+# Tree, DecisionTree, RandomForest
+rf_regressor = ensemble.RandomForestRegressor(n_estimators=20)
 rf_regressor.fit(std_inputs, outputs)
 
-mm=rf_regressor.estimators_[0].tree_.predict(npy.array(std_inputs[50:100], dtype=npy.float32))
+pred_skl_tree = rf_regressor.estimators_[12].tree_.predict(npy.array(std_inputs[50:100], dtype=npy.float32))
+pred_dessia_tree = DessiaTree._instantiate_dessia_model(rf_regressor.estimators_[12].tree_)
+assert(npy.all(pred_dessia_tree.predict(npy.array(std_inputs[50:100], dtype=npy.float32)) == pred_skl_tree))
 
-test_tree = DessiaTree._instantiate_dessia_model(rf_regressor.estimators_[0].tree_)
-test_tree.predict(npy.array(std_inputs[50:100], dtype=npy.float32))
-# jj=DessiaTree(**test_tree).predict(npy.array(std_inputs[50:100], dtype=npy.float32))
 
-# predictions = DessiaTree(**test_tree).predict(std_inputs[50:100])

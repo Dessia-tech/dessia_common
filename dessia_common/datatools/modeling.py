@@ -203,7 +203,8 @@ class LinearRegression(DessiaModel):
     @classmethod
     def fit_predict(cls, inputs: List[List[float]], outputs: List[List[float]], predicted_inputs: List[List[float]],
                     name: str = '', alpha: float = 1., fit_intercept: bool = True, tol: float = 0.001):
-        return cls._fit_predict(inputs, outputs, name=name, alpha=alpha, fit_intercept=fit_intercept, tol=tol)
+        return cls._fit_predict(inputs, outputs, predicted_inputs, name=name,
+                                alpha=alpha, fit_intercept=fit_intercept, tol=tol)
 
 
 class DessiaTree(DessiaModel):
@@ -225,11 +226,6 @@ class DessiaTree(DessiaModel):
     def _call_skl_model(self):
         return self._skl_class()(self.n_features, npy.array(self.n_classes), self.n_outputs)
 
-    def _instantiate_skl_model(self):
-        model = self._call_skl_model()
-        model = self._setstate_dessia(model, self.tree_state)
-        return model
-
     @staticmethod
     def _getstate_dessia(model):
         state = model.__getstate__()
@@ -247,6 +243,11 @@ class DessiaTree(DessiaModel):
         skl_state['values'] = npy.array(state['values'])
         skl_state['nodes'] = npy.array(state['nodes']['values'], dtype=state['nodes']['dtypes'])
         model.__setstate__(skl_state)
+        return model
+
+    def _instantiate_skl_model(self):
+        model = self._call_skl_model()
+        model = self._setstate_dessia(model, self.tree_state)
         return model
 
     @classmethod
