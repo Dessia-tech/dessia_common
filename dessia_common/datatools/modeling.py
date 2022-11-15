@@ -171,7 +171,7 @@ class DessiaModel(DessiaObject):
         model.fit(inputs, outputs)
         return cls._instantiate_dessia_model(model, name)
 
-    def _predict(self, inputs: List[List[float]]):
+    def predict(self, inputs: List[List[float]]):
         model = self._instantiate_skl_model()
         return model.predict(inputs).tolist()
 
@@ -199,9 +199,6 @@ class LinearRegression(DessiaModel):
     def fit(cls, inputs: List[List[float]], outputs: List[List[float]], name: str = '',
             alpha: float = 1., fit_intercept: bool = True, tol: float = 0.001):
         return cls._fit(inputs, outputs, name=name, alpha=alpha, fit_intercept=fit_intercept, tol=tol)
-
-    def predict(self, inputs: List[List[float]]):
-        return self._predict(inputs)
 
     @classmethod
     def fit_predict(cls, inputs: List[List[float]], outputs: List[List[float]], predicted_inputs: List[List[float]],
@@ -271,13 +268,10 @@ class DessiaTree(DessiaModel):
                     name: str = ''):
         raise NotImplementedError('fit_predict method is not supposed to be used in DessiaTree and is not implemented.')
 
-    def predict(self, inputs: List[List[float]]):
-        return self._predict(inputs)
-
 
 
 class DecisionTreeRegressor(DessiaModel):
-    _rebuild_attributes = ['tree_']
+    _rebuild_attributes = ['tree_', 'n_outputs_']
 
     def __init__(self, n_outputs_: int, tree_: DessiaTree = None, name: str = ''):
         self.n_outputs_ = n_outputs_
@@ -302,16 +296,14 @@ class DecisionTreeRegressor(DessiaModel):
         return cls(**kwargs_dict)
 
     @classmethod
-    def fit(cls, inputs: List[List[float]], outputs: List[List[float]], name: str = ''):
-        return cls._fit(inputs, outputs, name=name)
-
-    def predict(self, inputs: List[List[float]]):
-        return self._predict(inputs)
+    def fit(cls, inputs: List[List[float]], outputs: List[List[float]], name: str = '',
+            criterion: str = 'squared_error', max_depth: int = None):
+        return cls._fit(inputs, outputs, name=name, criterion=criterion, max_depth=max_depth)
 
     @classmethod
     def fit_predict(cls, inputs: List[List[float]], outputs: List[List[float]], predicted_inputs: List[List[float]],
-                    name: str = ''):
-        return cls._fit_predict(inputs, outputs, predicted_inputs, name=name)
+                    name: str = '', criterion: str = 'squared_error', max_depth: int = None):
+        return cls._fit_predict(inputs, outputs, predicted_inputs, name=name, criterion=criterion, max_depth=max_depth)
 
 
 
