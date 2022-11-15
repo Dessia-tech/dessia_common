@@ -1325,16 +1325,25 @@ def prettyname(namestr):
 
 
 def inspect_arguments(method, merge=False):
+    """
+    TODO : Could move this to utils.schemas.py. Be aware of :
+     - dessia_platform_backend retrocompat
+     - Cyclic imports
+    """
+    argspec = inspect.getfullargspec(method)
     # Find default value and required arguments of class construction
-    argspecs = inspect.getfullargspec(method)
-    nargs, ndefault_args = split_argspecs(argspecs)
+    return split_default_args(argspec=argspec, merge=merge)
+
+
+def split_default_args(argspec, merge: bool = False):
+    nargs, ndefault_args = split_argspecs(argspec)
 
     default_arguments = {}
     arguments = []
-    for iargument, argument in enumerate(argspecs.args[1:]):
+    for iargument, argument in enumerate(argspec.args[1:]):
         if argument not in _FORBIDDEN_ARGNAMES:
             if iargument >= nargs - ndefault_args:
-                default_value = argspecs.defaults[ndefault_args - nargs + iargument]
+                default_value = argspec.defaults[ndefault_args - nargs + iargument]
                 if merge:
                     arguments.append((argument, default_value))
                 else:
