@@ -10,7 +10,7 @@ steps:
     event: push 
     branch: master
   commands:
-  - git fetch testing
+  - git fetch origin testing
   - git checkout testing
   - git merge master
   - git push
@@ -21,7 +21,7 @@ steps:
     event: push 
     branch: testing
   commands:
-  - git fetch dev
+  - git fetch origin dev
   - git checkout dev
   - git merge testing
   - git push
