@@ -491,7 +491,7 @@ class DessiaObject:
                 dict_[arg] = deepcopy_value(getattr(self, arg), memo=memo)
         return self.__class__(**dict_)
 
-    def plot_data(self):  # TODO: Should it have a **kwargs argument ?
+    def plot_data(self, **kwargs):
         return []
 
     def plot(self, **kwargs):
