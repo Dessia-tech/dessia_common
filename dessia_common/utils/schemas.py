@@ -76,7 +76,7 @@ class Schema:
         else:
             description = ""
         chunk = schema_chunk(annotation=annotation, title=dc.prettyname(attribute),
-                                 editable=attribute not in ['return'], description=description)
+                             editable=attribute not in ['return'], description=description)
         if attribute in self.default_arguments:
             chunk = set_default_value(schema_element=chunk, default_value=self.default_arguments[attribute])
         return chunk
@@ -89,7 +89,7 @@ class Schema:
         schema = deepcopy(SCHEMA_HEADER)
         properties = {a: self.chunk(a) for a in self.attributes}
         schema.update({"required": self.required_arguments, "properties": properties,
-                           "description": self.parsed_docstring["description"]})
+                       "description": self.parsed_docstring["description"]})
         return schema
 
 
@@ -213,8 +213,7 @@ def schema_union_types(annotation):
     return {'type': 'object', 'classes': classnames, 'standalone_in_db': standalone}
 
 
-def schema_from_annotation(annotation, schema_element, order, editable=None, title=None,
-                               parsed_attributes=None):
+def schema_from_annotation(annotation, schema_element, order, editable=None, title=None, parsed_attributes=None):
     key, typing_ = annotation
     if isinstance(typing_, str):
         raise ValueError
@@ -234,7 +233,7 @@ def schema_from_annotation(annotation, schema_element, order, editable=None, tit
 
     # Compute base entries
     schema_element[key] = {'title': title, 'editable': editable, 'order': order, 'description': description,
-                               'python_typing': dc_types.serialize_typing(typing_)}
+                           'python_typing': dc_types.serialize_typing(typing_)}
 
     if typing_ in dc_types.TYPING_EQUIVALENCES:
         # Python Built-in type
@@ -248,14 +247,14 @@ def schema_from_annotation(annotation, schema_element, order, editable=None, tit
                 # This is a false Union => Is a default value set to None
                 ann = (key, args[0])
                 schema_from_annotation(annotation=ann, schema_element=schema_element,
-                                           order=order, editable=editable, title=title)
+                                       order=order, editable=editable, title=title)
             else:
                 # Types union
                 schema_union_types(key, args, typing_, schema_element)
         elif origin in [list, collections.abc.Iterator]:
             # Homogenous sequences
             schema_element[key].update(schema_sequence_recursion(value=typing_, order=order,
-                                                                         title=title, editable=editable))
+                                                                 title=title, editable=editable))
         elif origin is tuple:
             # Heterogenous sequences (tuples)
             schema_element[key].update(tuple_schema(args))
@@ -287,13 +286,13 @@ def schema_from_annotation(annotation, schema_element, order, editable=None, tit
     elif hasattr(typing_, '__origin__') and typing_.__origin__ is type:
         # TODO Is this deprecated ? Should be used in 3.8 and not 3.9 ?
         schema_element[key].update({'type': 'object', 'is_class': True,
-                                        'properties': {'name': {'type': 'string'}}})
+                                    'properties': {'name': {'type': 'string'}}})
     elif typing_ is Any:
         schema_element[key].update({'type': 'object', 'properties': {'.*': '.*'}})
     elif inspect.isclass(typing_) and issubclass(typing_, Measure):
         ann = (key, float)
         schema_element = schema_from_annotation(annotation=ann, schema_element=schema_element,
-                                                        order=order, editable=editable, title=title)
+                                                order=order, editable=editable, title=title)
         schema_element[key]['units'] = typing_.units
     elif inspect.isclass(typing_) and issubclass(typing_, (BinaryFile, StringFile)):
         schema_element[key].update({'type': 'text', 'is_file': True})

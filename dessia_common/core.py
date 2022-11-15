@@ -32,8 +32,8 @@ from dessia_common.utils.serialization import dict_to_object, serialize_dict_wit
     deserialize_argument, serialize
 from dessia_common.utils.types import full_classname, is_sequence, is_bson_valid, TYPES_FROM_STRING
 from dessia_common.utils.copy import deepcopy_value
-from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotation, JSONSCHEMA_HEADER, \
-    set_default_value
+from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotation, JSONSCHEMA_HEADER
+from dessia_common.utils.schemas import set_default_value, SCHEMA_HEADER, ClassSchema
 from dessia_common.utils.docstrings import parse_docstring, FAILED_DOCSTRING_PARSING
 from dessia_common.exports import XLSXWriter
 from dessia_common.typings import JsonSerializable
@@ -261,16 +261,32 @@ class DessiaObject:
         raise NotImplementedError('No object_class in dict')
 
     @classmethod
-    def base_jsonschema(cls):
-        jsonschema = deepcopy(JSONSCHEMA_HEADER)
-        jsonschema['properties']['name'] = {
+    def base_schema(cls):
+        schema = deepcopy(SCHEMA_HEADER)
+        schema['properties']['name'] = {
             "type": 'string',
             "title": "Object Name",
             "description": "Object name",
             "editable": True,
             "default_value": "Object Name"
         }
-        return jsonschema
+        return schema
+
+    @classmethod
+    def base_jsonschema(cls):
+        warnings.warn("base_jsonschema method is deprecated. Use base_schema instead", DeprecationWarning)
+        return cls.base_schema()
+
+    @classmethod
+    def schema(cls):
+        if hasattr(cls, '_jsonschema'):
+            warnings.warn("Jsonschema is fully deprecated and you may want to use the new generic schema feature."
+                          "Please consider so", DeprecationWarning)
+            return cls._jsonschema
+
+        schema = ClassSchema(cls)
+        # Get __init__ method and its annotations
+        return schema.write()
 
     @classmethod
     def jsonschema(cls):
@@ -335,12 +351,18 @@ class DessiaObject:
                                                      parsed_attributes=parsed_attributes)
                 _jsonschema['properties'].update(jss_elt)
                 if name in default_arguments:
-                    default = set_default_value(_jsonschema['properties'], name, default_arguments[name])
+                    default = set_default_value(_jsonschema["properties"]["name"], default_arguments[name])
                     _jsonschema['properties'].update(default)
 
         _jsonschema['classes'] = [cls.__module__ + '.' + cls.__name__]
         _jsonschema['whitelist_attributes'] = cls._whitelist_attributes
         return _jsonschema
+
+    def method_schema(self):
+        """
+        TODO
+        """
+        pass
 
     @property
     def _method_jsonschemas(self):
@@ -378,8 +400,7 @@ class DessiaObject:
 
                             jsonschemas[method_name]['properties'][str(i)] = jsonschema_element
                             if argname in default_args:
-                                default = set_default_value(jsonschemas[method_name]['properties'],
-                                                            str(i),
+                                default = set_default_value(jsonschemas[method_name]['properties'][str(i)],
                                                             default_args[argname])
                                 jsonschemas[method_name]['properties'].update(default)
         return jsonschemas
