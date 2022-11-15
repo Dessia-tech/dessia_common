@@ -210,7 +210,8 @@ class DessiaTree(DessiaModel):
     _rebuild_attributes = ['n_classes', 'n_features', 'n_outputs', 'tree_state']
     _standalone_in_db = True
 
-    def __init__(self, n_classes, n_features, n_outputs, tree_state, name: str = ''):
+    def __init__(self, n_classes: List[int], n_features: int, n_outputs: int, tree_state: Dict[str, Any],
+                 name: str = ''):
         self.n_classes = n_classes
         self.n_features = n_features
         self.n_outputs = n_outputs
@@ -222,18 +223,43 @@ class DessiaTree(DessiaModel):
         return tree._tree.Tree
 
     def _call_skl_model(self):
-        return self._skl_class()(self.n_features, self.n_classes, self.n_outputs)
+        return self._skl_class()(self.n_features, npy.array(self.n_classes), self.n_outputs)
 
     def _instantiate_skl_model(self):
         model = self._call_skl_model()
-        model.__setstate__(self.tree_state)
+        model = self._setstate_dessia(model, self.tree_state)
+        return model
+
+    @staticmethod
+    def _getstate_dessia(model):
+        state = model.__getstate__()
+        dessia_state = dict()
+        for key, value in state.items():
+            if isinstance(value, (int, float, bool, complex)):
+                dessia_state[key] = value
+
+        dessia_state['values'] = state['values'].tolist()
+        dessia_state['nodes'] = {'dtypes': state['nodes'].dtype.descr, 'values': state['nodes'].tolist()}
+
+        return dessia_state
+
+    @staticmethod
+    def _setstate_dessia(model, state):
+        skl_state = dict()
+        for key, value in state.items():
+            if isinstance(value, (int, float, bool, complex)):
+                skl_state[key] = value
+
+        skl_state['values'] = npy.array(state['values'])
+        skl_state['nodes'] = npy.array(state['nodes']['values'], dtype=state['nodes']['dtypes'])
+        model.__setstate__(skl_state)
         return model
 
     @classmethod
     def _instantiate_dessia_model(cls, model, name: str = ''):
         kwargs_dict = {'name': name}
-        kwargs_dict['tree_state'] = model.__getstate__()
-        kwargs_dict['n_classes'] = model.n_classes
+        kwargs_dict['tree_state'] = cls._getstate_dessia(model)
+        kwargs_dict['n_classes'] = model.n_classes.tolist()
         kwargs_dict['n_features'] = model.n_features
         kwargs_dict['n_outputs'] = model.n_outputs
         return cls(**kwargs_dict)
