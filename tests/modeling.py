@@ -45,10 +45,11 @@ skl_dectree = rf_regressor.estimators_[12]
 new_tree = tree.DecisionTreeRegressor()
 new_tree.tree_ = skl_dectree.tree_
 new_tree.n_outputs_ = skl_dectree.tree_.n_outputs
-
 assert(npy.all(new_tree.predict(npy.array(std_inputs[50:100], dtype=npy.float32)) == skl_dectree.predict(npy.array(std_inputs[50:100], dtype=npy.float32))))
 
-dessia_tree = DecisionTreeRegressor(skl_dectree.tree_.n_outputs, skl_dectree.tree_)
+dessia_tree = DecisionTreeRegressor.fit(std_inputs, outputs, DessiaTree._instantiate_dessia_model(skl_dectree.tree_))
 test = dessia_tree._instantiate_skl_model()
-assert(npy.all(new_tree.predict(npy.array(std_inputs[50:100], dtype=npy.float32)) == skl_dectree.predict(npy.array(std_inputs[50:100], dtype=npy.float32))))
+assert(npy.all(dessia_tree.predict(npy.array(std_inputs[50:100], dtype=npy.float32)) == test.predict(npy.array(std_inputs[50:100], dtype=npy.float32))))
 
+pp=DecisionTreeRegressor._instantiate_dessia_model(test)
+assert(npy.all(pp.predict(npy.array(std_inputs[50:100], dtype=npy.float32)) == test.predict(npy.array(std_inputs[50:100], dtype=npy.float32))))

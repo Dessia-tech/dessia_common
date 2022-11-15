@@ -277,10 +277,10 @@ class DessiaTree(DessiaModel):
 
 
 class DecisionTreeRegressor(DessiaModel):
-    _rebuild_attributes = ['tree_', 'n_outputs']
+    _rebuild_attributes = ['tree_']
 
-    def __init__(self, n_outputs: int, tree_: DessiaTree = None, name: str = ''):
-        self.n_outputs = n_outputs
+    def __init__(self, n_outputs_: int, tree_: DessiaTree = None, name: str = ''):
+        self.n_outputs_ = n_outputs_
         self.tree_ = tree_
         DessiaObject.__init__(self, name=name)
 
@@ -288,30 +288,30 @@ class DecisionTreeRegressor(DessiaModel):
     def _skl_class(cls):
         return tree.DecisionTreeRegressor
 
-    def _call_skl_model(self):
-        skl_model = self._skl_class()()
-        setattr(skl_model, 'n_outputs_', self.n_outputs)
-        return skl_model
-
     def _instantiate_skl_model(self):
         model = self._call_skl_model()
-        setattr(model, 'n_outputs_', self.n_outputs)
-        setattr(model, 'tree_', self.tree_)
+        setattr(model, 'n_outputs_', self.n_outputs_)
+        setattr(model, 'tree_', self.tree_._instantiate_skl_model())
         return model
 
     @classmethod
-    def fit(cls, inputs: List[List[float]], outputs: List[List[float]], name: str = '',
-            alpha: float = 1., fit_intercept: bool = True, tol: float = 0.001):
-        return cls._fit(inputs, outputs, name=name, alpha=alpha, fit_intercept=fit_intercept, tol=tol)
+    def _instantiate_dessia_model(cls, model, name: str = ''):
+        kwargs_dict = {'name': name}
+        kwargs_dict['tree_'] = DessiaTree._instantiate_dessia_model(model.tree_)
+        kwargs_dict['n_outputs_'] = model.n_outputs_
+        return cls(**kwargs_dict)
+
+    @classmethod
+    def fit(cls, inputs: List[List[float]], outputs: List[List[float]], name: str = ''):
+        return cls._fit(inputs, outputs, name=name)
 
     def predict(self, inputs: List[List[float]]):
         return self._predict(inputs)
 
     @classmethod
     def fit_predict(cls, inputs: List[List[float]], outputs: List[List[float]], predicted_inputs: List[List[float]],
-                    name: str = '', alpha: float = 1., fit_intercept: bool = True, tol: float = 0.001):
-        return cls._fit_predict(inputs, outputs, predicted_inputs, name=name,
-                                alpha=alpha, fit_intercept=fit_intercept, tol=tol)
+                    name: str = ''):
+        return cls._fit_predict(inputs, outputs, predicted_inputs, name=name)
 
 
 
