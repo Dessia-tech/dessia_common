@@ -4,12 +4,13 @@ type: docker
 name: default
 
 steps:
-- name: merge master on tesing
+- name: merge master on testing
   image: alpine/git
   when:
     event: push 
     branch: master
   commands:
+  - git fetch testing
   - git checkout testing
   - git merge master
   - git push
@@ -20,6 +21,7 @@ steps:
     event: push 
     branch: testing
   commands:
+  - git fetch dev
   - git checkout dev
   - git merge testing
   - git push
