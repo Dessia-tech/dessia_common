@@ -271,6 +271,7 @@ class DessiaTree(DessiaModel):
 
 class DecisionTreeRegressor(DessiaModel):
     _rebuild_attributes = ['tree_', 'n_outputs_']
+    _standalone_in_db = True
 
     def __init__(self, n_outputs_: int, tree_: DessiaTree = None, name: str = ''):
         self.n_outputs_ = n_outputs_
@@ -308,8 +309,6 @@ class DecisionTreeRegressor(DessiaModel):
 
 
 class DecisionTreeClassifier(DecisionTreeRegressor):
-    _rebuild_attributes = ['tree_', 'n_outputs_']
-
     def __init__(self, n_outputs_: int, tree_: DessiaTree = None, name: str = ''):
         self.n_outputs_ = n_outputs_
         self.tree_ = tree_
