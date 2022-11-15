@@ -2,7 +2,7 @@
 Tools and base classes for machine learning methods.
 
 """
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Tuple
 from copy import copy
 import itertools
 
@@ -29,8 +29,11 @@ class DessiaScaler(DessiaObject):
         DessiaObject.__init__(self, name=name)
 
     @classmethod
-    def _call_skl_scaler(cls):
-        raise NotImplementedError('Method _call_skl_scaler not implemented for DessiaScaler. Please use children.')
+    def _skl_class(cls):
+        raise NotImplementedError('Method _skl_class not implemented for DessiaScaler. Please use children.')
+
+    def _call_skl_scaler(self):
+        return self._skl_class()()
 
     def _instantiate_skl_scaler(self):
         scaler = self._call_skl_scaler()
@@ -46,13 +49,13 @@ class DessiaScaler(DessiaObject):
                 if isinstance(getattr(scaler, attr), npy.ndarray):
                     kwargs_dict[attr] = getattr(scaler, attr).tolist()
                 kwargs_dict[attr] = getattr(scaler, attr)
-        return kwargs_dict
+        return cls(**kwargs_dict)
 
     @classmethod
     def fit(cls, matrix: List[List[float]], name: str = ''):
-        scaler = cls._call_skl_scaler()
+        scaler = cls._skl_class()()
         scaler.fit(matrix)
-        return cls(**cls._instantiate_dessia_scaler(scaler, name))
+        return cls._instantiate_dessia_scaler(scaler, name)
 
     def transform(self, matrix: List[List[float]]):
         scaler = self._instantiate_skl_scaler()
@@ -95,8 +98,8 @@ class StandardScaler(DessiaScaler):
         DessiaObject.__init__(self, name=name)
 
     @classmethod
-    def _call_skl_scaler(cls):
-        return preprocessing.StandardScaler()
+    def _skl_class(cls):
+        return preprocessing.StandardScaler
 
 
 class IdentityScaler(StandardScaler):
@@ -124,9 +127,8 @@ class IdentityScaler(StandardScaler):
     def __init__(self, mean_: List[float] = None, scale_: List[float] = None, var_: List[float] = None, name: str = ''):
         StandardScaler.__init__(self, mean_=mean_, scale_=scale_, var_=var_, name=name)
 
-    @classmethod
-    def _call_skl_scaler(cls):
-        return preprocessing.StandardScaler(with_mean = False, with_std = False)
+    def _call_skl_scaler(self):
+        return self._skl_class()(with_mean = False, with_std = False)
 
 # =============================================================================
 # Models
@@ -138,8 +140,11 @@ class DessiaModel(DessiaObject):
         DessiaObject.__init__(self, name=name)
 
     @classmethod
-    def _call_skl_model(cls):
-        raise NotImplementedError('Method _call_skl_model not implemented for DessiaModel. Please use children.')
+    def _skl_class(cls):
+        raise NotImplementedError('Method _skl_class not implemented for DessiaModel. Please use children.')
+
+    def _call_skl_model(self):
+        return self._skl_class()()
 
     def _instantiate_skl_model(self):
         model = self._call_skl_model()
@@ -155,22 +160,22 @@ class DessiaModel(DessiaObject):
                 if isinstance(getattr(model, attr), npy.ndarray):
                     kwargs_dict[attr] = getattr(model, attr).tolist()
                 kwargs_dict[attr] = getattr(model, attr)
-        return kwargs_dict
+        return cls(**kwargs_dict)
 
     @classmethod
-    def fit(cls, inputs: List[List[float]], outputs: List[List[float]], name: str = ''):
-        model = cls._call_skl_model()
+    def _fit(cls, inputs: List[List[float]], outputs: List[List[float]], name: str = '', **hyperparameters):
+        model = cls._skl_class()(**hyperparameters)
         model.fit(inputs, outputs)
-        return cls(**cls._instantiate_dessia_model(model, name))
+        return cls._instantiate_dessia_model(model, name)
 
-    def predict(self, inputs: List[List[float]]):
+    def _predict(self, inputs: List[List[float]]):
         model = self._instantiate_skl_model()
         return model.predict(inputs).tolist()
 
     @classmethod
-    def fit_predict(cls, inputs: List[List[float]], outputs: List[List[float]], predicted_inputs: List[List[float]],
-                    name: str = ''):
-        model = cls.fit(inputs, outputs, name)
+    def _fit_predict(cls, inputs: List[List[float]], outputs: List[List[float]], predicted_inputs: List[List[float]],
+                    name: str = '', **hyperparameters):
+        model = cls.fit(inputs, outputs, name, **hyperparameters)
         return model, model.predict(predicted_inputs)
 
 
@@ -184,36 +189,57 @@ class LinearRegression(DessiaModel):
         DessiaObject.__init__(self, name=name)
 
     @classmethod
-    def _call_skl_model(cls):
-        return linear_model.Ridge()
+    def _skl_class(cls):
+        return linear_model.Ridge
+
+    @classmethod
+    def fit(cls, inputs: List[List[float]], outputs: List[List[float]], name: str = '',
+            alpha: float = 1., fit_intercept: bool = True, tol: float = 0.001):
+        return cls._fit(inputs, outputs, name, alpha, fit_intercept, tol)
+
+    def predict(self, inputs: List[List[float]]):
+        return self._predict(inputs)
+
+    @classmethod
+    def fit_predict(cls, inputs: List[List[float]], outputs: List[List[float]], predicted_inputs: List[List[float]],
+                    name: str = '', alpha: float = 1., fit_intercept: bool = True, tol: float = 0.001):
+        return cls._fit_predict(inputs, outputs, name, alpha, fit_intercept, tol)
 
 
 class DessiaTree(DessiaModel):
-    _rebuild_attributes = ['node_count', 'capacity', 'max_depth', 'children_left', 'children_right', 'feature',
-                           'threshold', 'value', 'impurity', 'n_node_samples', 'weighted_n_node_samples']
+    _rebuild_attributes = ['n_classes', 'n_features', 'n_outputs', 'tree_state']
+    _standalone_in_db = True
 
-    def __init__(self, node_count: int, capacity: int, max_depth: int, children_left: List[int],
-                 children_right: List[int], feature: List[int], threshold: List[float], value: List[List[List[float]]],
-                 impurity: List[float], n_node_samples: List[int], weighted_n_node_samples: List[float],
-                 name: str = ''):
-        self.node_count = node_count
-        self.capacity = capacity
-        self.max_depth = max_depth
-        self.children_left = children_left
-        self.children_right = children_right
-        self.feature = feature
-        self.threshold = threshold
-        self.value = value
-        self.impurity = impurity
-        self.n_node_samples = n_node_samples
-        self.weighted_n_node_samples = weighted_n_node_samples
-        DessiaModel.__init__(self, name=name)
+    def __init__(self, n_classes, n_features, n_outputs, tree_state, name: str = ''):
+        self.n_classes = n_classes
+        self.n_features = n_features
+        self.n_outputs = n_outputs
+        self.tree_state = tree_state
+        DessiaObject.__init__(self, name=name)
 
     @classmethod
-    def _call_skl_model(cls, tree_args):
-        subtree = tree._tree.Tree(**tree_args)
-        return tree._tree.TreeBuilder.build(subtree) #tree._tree.Tree()
+    def _skl_class(cls):
+        return tree._tree.Tree
 
+    def _call_skl_model(self):
+        return self._skl_class()(self.n_features, self.n_classes, self.n_outputs)
+
+    def _instantiate_skl_model(self):
+        model = self._call_skl_model()
+        model.__setstate__(self.tree_state)
+        return model
+
+    @classmethod
+    def _instantiate_dessia_model(cls, model, name: str = ''):
+        kwargs_dict = {'name': name}
+        kwargs_dict['tree_state'] = model.__getstate__()
+        kwargs_dict['n_classes'] = model.n_classes
+        kwargs_dict['n_features'] = model.n_features
+        kwargs_dict['n_outputs'] = model.n_outputs
+        return cls(**kwargs_dict)
+
+    def predict(self, inputs: List[List[float]]):
+        return self._predict(inputs)
 
 
 class DecisionTree(DessiaModel):
