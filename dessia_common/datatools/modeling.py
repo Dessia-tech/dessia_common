@@ -195,7 +195,7 @@ class LinearRegression(DessiaModel):
     @classmethod
     def fit(cls, inputs: List[List[float]], outputs: List[List[float]], name: str = '',
             alpha: float = 1., fit_intercept: bool = True, tol: float = 0.001):
-        return cls._fit(inputs, outputs, name, alpha, fit_intercept, tol)
+        return cls._fit(inputs, outputs, name=name, alpha=alpha, fit_intercept=fit_intercept, tol=tol)
 
     def predict(self, inputs: List[List[float]]):
         return self._predict(inputs)
@@ -203,7 +203,7 @@ class LinearRegression(DessiaModel):
     @classmethod
     def fit_predict(cls, inputs: List[List[float]], outputs: List[List[float]], predicted_inputs: List[List[float]],
                     name: str = '', alpha: float = 1., fit_intercept: bool = True, tol: float = 0.001):
-        return cls._fit_predict(inputs, outputs, name, alpha, fit_intercept, tol)
+        return cls._fit_predict(inputs, outputs, name=name, alpha=alpha, fit_intercept=fit_intercept, tol=tol)
 
 
 class DessiaTree(DessiaModel):
@@ -233,23 +233,17 @@ class DessiaTree(DessiaModel):
     @staticmethod
     def _getstate_dessia(model):
         state = model.__getstate__()
-        dessia_state = dict()
-        for key, value in state.items():
-            if isinstance(value, (int, float, bool, complex)):
-                dessia_state[key] = value
-
+        dessia_state = {'max_depth': int(state['max_depth'])}
+        dessia_state['node_count'] = int(state['node_count'])
         dessia_state['values'] = state['values'].tolist()
         dessia_state['nodes'] = {'dtypes': state['nodes'].dtype.descr, 'values': state['nodes'].tolist()}
-
         return dessia_state
 
     @staticmethod
     def _setstate_dessia(model, state):
         skl_state = dict()
-        for key, value in state.items():
-            if isinstance(value, (int, float, bool, complex)):
-                skl_state[key] = value
-
+        skl_state = {'max_depth': int(state['max_depth'])}
+        skl_state['node_count'] = int(state['node_count'])
         skl_state['values'] = npy.array(state['values'])
         skl_state['nodes'] = npy.array(state['nodes']['values'], dtype=state['nodes']['dtypes'])
         model.__setstate__(skl_state)
