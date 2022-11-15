@@ -298,12 +298,28 @@ class DecisionTreeRegressor(DessiaModel):
     @classmethod
     def fit(cls, inputs: List[List[float]], outputs: List[List[float]], name: str = '',
             criterion: str = 'squared_error', max_depth: int = None):
+        if cls is not DecisionTreeRegressor and criterion == 'squared_error':
+            criterion = 'gini'
         return cls._fit(inputs, outputs, name=name, criterion=criterion, max_depth=max_depth)
 
     @classmethod
     def fit_predict(cls, inputs: List[List[float]], outputs: List[List[float]], predicted_inputs: List[List[float]],
                     name: str = '', criterion: str = 'squared_error', max_depth: int = None):
         return cls._fit_predict(inputs, outputs, predicted_inputs, name=name, criterion=criterion, max_depth=max_depth)
+
+
+
+class DecisionTreeClassifier(DecisionTreeRegressor):
+    _rebuild_attributes = ['tree_', 'n_outputs_']
+
+    def __init__(self, n_outputs_: int, tree_: DessiaTree = None, name: str = ''):
+        self.n_outputs_ = n_outputs_
+        self.tree_ = tree_
+        DessiaObject.__init__(self, name=name)
+
+    @classmethod
+    def _skl_class(cls):
+        return tree.DecisionTreeClassifier
 
 
 
@@ -317,6 +333,8 @@ class RandomForest(DessiaModel):
     @classmethod
     def _call_skl_model(cls):
         return ensemble.RandomForestRegressor()
+
+
 
 
 
