@@ -238,8 +238,18 @@ class DessiaTree(DessiaModel):
         kwargs_dict['n_outputs'] = model.n_outputs
         return cls(**kwargs_dict)
 
+    @classmethod
+    def fit(cls, inputs: List[List[float]], outputs: List[List[float]], name: str = ''):
+        raise NotImplementedError('fit method is not supposed to be used in DessiaTree and is not implemented.')
+
+    @classmethod
+    def fit_predict(cls, inputs: List[List[float]], outputs: List[List[float]], predicted_inputs: List[List[float]],
+                    name: str = ''):
+        raise NotImplementedError('fit_predict method is not supposed to be used in DessiaTree and is not implemented.')
+
     def predict(self, inputs: List[List[float]]):
         return self._predict(inputs)
+
 
 
 class DecisionTree(DessiaModel):
