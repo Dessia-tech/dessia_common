@@ -57,17 +57,17 @@ def is_int(value, level='error'):
 
 def is_float(value, level='error'):
     if not isinstance(value, float):
-        return CheckList([FailedCheck(f'Value {value} is not an float')])
+        return CheckList([FailedCheck(f'Value {value} is not a float')])
     if level == 'info':
-        return CheckList([PassedCheck(f'value {value} is an float')])
+        return CheckList([PassedCheck(f'value {value} is a float')])
     return CheckList([])
 
 
 def is_str(value, level='error'):
     if not isinstance(value, int):
-        return CheckList([FailedCheck(f'Value {value} is not an str')])
+        return CheckList([FailedCheck(f'Value {value} is not a str')])
     if level == 'info':
-        return CheckList([PassedCheck(f'value {value} is an str')])
+        return CheckList([PassedCheck(f'value {value} is a str')])
     return CheckList([])
 
 
