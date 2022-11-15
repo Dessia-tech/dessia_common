@@ -182,7 +182,6 @@ class DessiaObject:
         Make a diff between two objects
         returns: different values, missing keys in other object
         """
-        # return diff(self, other_object)
         return diff(self, other_object)
 
     def _get_from_path(self, path: str):
@@ -263,13 +262,8 @@ class DessiaObject:
     @classmethod
     def base_schema(cls):
         schema = deepcopy(SCHEMA_HEADER)
-        schema['properties']['name'] = {
-            "type": 'string',
-            "title": "Object Name",
-            "description": "Object name",
-            "editable": True,
-            "default_value": "Object Name"
-        }
+        schema['properties']['name'] = {"type": 'string', "title": "Object Name", "description": "Object name",
+                                        "editable": True, "default_value": "Object Name"}
         return schema
 
     @classmethod
@@ -283,9 +277,7 @@ class DessiaObject:
             warnings.warn("Jsonschema is fully deprecated and you may want to use the new generic schema feature."
                           "Please consider so", DeprecationWarning)
             return cls._jsonschema
-
         schema = ClassSchema(cls)
-        # Get __init__ method and its annotations
         return schema.write()
 
     @classmethod

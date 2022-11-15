@@ -16,7 +16,7 @@ from dessia_common.typings import Subclass, MethodType, ClassMethodType, Any
 from dessia_common.measures import Measure
 
 SCHEMA_HEADER = {"definitions": {},
-                 "$schema": "http://json-schema.org/draft-07/schema#",
+                 "$schema": "http://json-schema.org/d_raft-07/schema#",
                  "type": "object",
                  "required": [],
                  "properties": {}}
@@ -332,7 +332,7 @@ def schema_chunk(annotation, title: str, editable: bool, description: str):
         classname = dc.full_classname(object_=annotation, compute_for='class')
         chunk = {'type': 'object', 'standalone_in_db': annotation._standalone_in_db, "classes": [classname]}
     else:
-        raise NotImplementedError
+        raise NotImplementedError(f"Annotation {annotation} is not supported.")
     chunk.update({'title': title, 'editable': editable, 'description': description,
                   'python_typing': dc_types.serialize_typing(annotation)})
     return chunk
