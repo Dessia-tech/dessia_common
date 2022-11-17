@@ -28,7 +28,7 @@ MAX_ERROR_BY_TYPE = {
                      'wrong-import-order': 1,
                      'too-many-branches': 13,
                      'unused-argument': 6,
-                     'cyclic-import': 14,
+                     'cyclic-import': 15,
                      'no-self-use': 6,
                      'trailing-whitespace': 11,
                      'empty-docstring': 1,

@@ -82,7 +82,7 @@ def type_check(value, expected_type, level='error'):
     if expected_type is str:
         return is_str(value)
 
-    if not issubclass(value.__class__, expected_type):
+    if not isinstance(value, expected_type):
         return CheckList([FailedCheck(f'Value {value} is not of type {expected_type}')])
     if level == 'info':
         return CheckList([PassedCheck(f'value {value} is of expected type {expected_type}')])
