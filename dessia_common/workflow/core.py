@@ -1399,7 +1399,7 @@ class Workflow(Block):
         imports = []
         imports_as_is = []
         for iblock, block in enumerate(self.blocks):
-            block_script = block._to_script()
+            block_script = block._to_script(prefix)
             imports.extend(block_script.imports)
             if block_script.before_declaration is not None:
                 blocks_str += f"{block_script.before_declaration}\n"
@@ -1415,6 +1415,9 @@ class Workflow(Block):
             nbvs_str += f"{prefix}variable_{nbv_index} = {nbv_script.declaration}\n"
 
         # --- Pipes ---
+        if len(self.pipes) > 0:
+            imports.append(self.pipes[0].full_classname)
+
         pipes_str = ""
         for ipipe, pipe in enumerate(self.pipes):
             input_index = self.variable_indices(pipe.input_variable)
@@ -1460,8 +1463,6 @@ class Workflow(Block):
 
         self_script = self._to_script()
         self_script.imports.append(self.full_classname)
-        if len(self.pipes) > 0:
-            self_script.imports.append(self.pipes[0].full_classname)
 
         script_imports = self_script.imports_to_str()
 

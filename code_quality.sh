@@ -11,14 +11,4 @@ if [[ "$cq_result" ]];
 	
 fi;
 
-nb_pydoc_errors=$(pydocstyle --count dessia_common/*.py | tail -1)
-echo "$nb_pydoc_errors pydoc errors, limit is $max_pydoc_errors"
-if [[ "$nb_pydoc_errors" -gt "$max_pydoc_errors" ]];
-  then 
-	  echo "Error in doc quality check, run pydocstyle to correct docstrings">&2;
-	  exit 64;
-  else
-	  echo "You can lower number of pydoc errors to $nb_pydoc_errors (actual $max_pydoc_errors)"
-fi;
-
 
