@@ -1101,7 +1101,7 @@ class Export(Block):
 
     def _export_format(self, block_index: int):
         args = {"block_index": block_index}
-        return {"extension": self.extension, "method_name": "export", "text": self.text,
+        return {"selector": None, "extension": self.extension, "method_name": "export", "text": self.text,
                 "export_name": self.filename, "args": args}
 
     def _to_script(self, _) -> ToScriptElement:
@@ -1169,7 +1169,7 @@ class Archive(Block):
         return [archive]
 
     def _export_format(self, block_index: int):
-        return {"extension": "zip", "method_name": "export", "text": False,
+        return {"selector": None, "extension": "zip", "method_name": "export", "text": False,
                 "export_name": self.filename, "args": {"block_index": block_index}}
 
     def _to_script(self, _) -> ToScriptElement:

@@ -389,18 +389,18 @@ class Workflow(Block):
 
         self.block_selectors = {}
         for i, block in enumerate(self.blocks):
-            if block in self.display_blocks:
-                name = block.name
-                if not name:
+            name = block.name
+            if not name:
+                if block in self.display_blocks:
                     name = block.type_
-                selector = f"{name} ({i})"
-                self.block_selectors[block] = selector
-            else:
-                # TODO : should do the export one when exports have selectors
-                self.block_selectors[block] = None
+                elif block in self.export_blocks:
+                    name = block.extension
+                else:
+                    name = "Block"
+            self.block_selectors[block] = f"{name} ({i})"
 
-        self.branch_by_display_selector = self.display_branches
-        self.branch_by_export_format = self.export_branches
+        self.branch_by_display_selector = self.branch_by_selector(self.display_blocks)
+        self.branch_by_export_format = self.branch_by_selector(self.export_blocks)
 
     def handle_pipe(self, pipe):
         """
@@ -543,6 +543,17 @@ class Workflow(Block):
 
         return copied_pipes
 
+    def branch_by_selector(self, blocks: List[Block]):
+        """
+        Return the corresponding branch to each display or export selector
+        """
+        selector_branches = {}
+        for block in blocks:
+            branch = self.secondary_branch_blocks(block)
+            selector = self.block_selectors[block]
+            selector_branches[selector] = branch
+        return selector_branches
+
     @property
     def display_blocks(self):
         """
@@ -584,34 +595,14 @@ class Workflow(Block):
         """
         Computes all export blocks export_formats
         """
-        return [b._export_format(i) for i, b in enumerate(self.export_blocks)]
-
-    @property
-    def display_branches(self):
-        """
-        Return the corresponding branch to each display selector
-        """
-        selector_branches = {}
-        for display_block in self.display_blocks:
-            branch = self.secondary_branch_blocks(display_block)
-            selector = self.block_selectors[display_block]
-            selector_branches[selector] = branch
-        return selector_branches
-
-    @property
-    def export_branches(self):
-        """
-        Return the corresponding branch to each export format
-        """
-        format_branches = {}
-        for export_block in self.export_blocks:
-            block_index = self.blocks.index(export_block)
-            branch = self.secondary_branch_blocks(export_block)
-            format_ = export_block._export_format(block_index)
-            # if format_["export_name"] in self.branch_by_export_format:
-            #     raise WorkflowError(f"Several exports have the same export_name : {format_['export_name']}")
-            format_branches[format_["export_name"]] = branch
-        return format_branches
+        export_formats = []
+        for block in self.export_blocks:
+            block_index = self.blocks.index(block)
+            format_ = block._export_format(block_index)
+            if format_ is not None:
+                format_["selector"] = self.block_selectors[block]
+                export_formats.append(format_)
+        return export_formats
 
     def _export_formats(self):
         """
@@ -2035,18 +2026,24 @@ class WorkflowState(DessiaObject):
         Reads block to compute available export formats
         """
         export_formats = DessiaObject._export_formats(self)
-        for i, block in enumerate(self.workflow.blocks):
-            if hasattr(block, "_export_format"):
-                export_formats.append(block._export_format(i))
+
+        # Exportable Blocks
+        export_formats.extend(self.workflow.blocks_export_formats)
         return export_formats
+
+    def export_format_from_selector(self, selector):
+        for export_format in self.workflow.blocks_export_formats:
+            if export_format["selector"] == selector:
+                return export_format
+        raise ValueError(f"No block defines an export with the selector '{selector}'")
 
     def export(self, stream: Union[BinaryFile, StringFile], block_index: int):
         """
         Perform export
         """
         block = self.workflow.blocks[block_index]
-        export_format = block._export_format(block_index)
-        branch = self.workflow.branch_by_export_format[export_format['export_name']]
+        selector = self.workflow.block_selectors[block]
+        branch = self.workflow.branch_by_export_format[selector]
         evaluated_blocks = self.evaluate_branch(branch)
         if block not in evaluated_blocks:
             msg = f"Could not reach block at index {block_index}." \
