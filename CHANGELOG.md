@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## v0.10.2
+
+- non serializable attributes were not working
+- wrong import to sklearn -> scikit-learn
+
+## v0.10.1
+
+### Fixed
+- jsonschema bug
+- time rendering on workflow
+
+## v0.10.0
+
 ### Added
 - Sampler class
 - (De)Serialization handles 'typing.Type'
@@ -33,6 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - switch is_jsonable to orjson
 
 ### Fixed
+- Workflow: improve to_script
 
 
 ## v0.10.0 [9/26/2022]
