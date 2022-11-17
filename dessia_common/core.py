@@ -576,7 +576,7 @@ class DessiaObject:
         """
         Render a markdown of the object output type: string
         """
-        md_writer = MarkdownWriter(print_limit=25, table_limit=-1)
+        md_writer = MarkdownWriter(print_limit=25, table_limit=None)
         return templates.dessia_object_markdown_template.substitute(name=self.name,
                                                                     class_=self.__class__.__name__,
                                                                     table=md_writer.object_table(self))

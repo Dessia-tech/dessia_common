@@ -452,7 +452,7 @@ class StandaloneObject(MovingObject):
         arduus quae vestigia aliquis; meritorum Dorylas, scindunt.
         """
         contents += "\n## Attribute Table\n\n"
-        contents += MarkdownWriter(print_limit=25, table_limit=-1).object_table(self)
+        contents += MarkdownWriter(print_limit=25, table_limit=None).object_table(self)
         return contents
 
     def count_until(self, duration: float, raise_error: bool = False):
