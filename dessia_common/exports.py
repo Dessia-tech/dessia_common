@@ -324,23 +324,27 @@ class MarkdownWriter:
             line += f" {self._string_in_table(self._value_to_str(value))} |"
         return line + "\n"
 
+    def _table_rows_from_content(self, content: List[List[Any]]) -> str:
+        string = ''
+        for row in content:
+            string += self._table_line(row)
+        return string
+
     def _content_table(self, content: List[List[Any]]) -> str:
-        if self.table_limit == 0:
-            return ''
-        if self.table_limit == 1:
-            return self._table_line(content[0])
+        if self.table_limit is None:
+            return self._table_rows_from_content(content)
 
         table = ''
         half_table = int(self.table_limit / 2)
-        for row in content[:half_table]:
-            table += self._table_line(row)
 
-        if len(content) > self.table_limit and self.table_limit != -1:
-            table += f"| + {len(content) - self.table_limit} unprinted elements | |\n"
+        table += self._table_rows_from_content(content[:half_table])
 
-        if len(content) > half_table:
-            for row in content[-half_table:]:
-                table += self._table_line(row)
+        if self.table_limit > 1:
+            if len(content) > self.table_limit:
+                table += f"| + {len(content) - self.table_limit} unprinted elements | |\n"
+
+            if len(content) > half_table:
+                table += self._table_rows_from_content(content[-half_table:])
 
         return table
 
