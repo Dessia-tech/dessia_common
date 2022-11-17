@@ -10,6 +10,7 @@ steps:
   - pip install radon pydocstyle pylint
   - ./code_quality.sh
   - python code_pylint.py
+  - python code_pydocstyle.py
 
 - name: check pep8 formatting
   image: python:3.8
@@ -17,7 +18,7 @@ steps:
     - git fetch --tags
     - pip3 install -U pip autopep8
     - bash code_pep8.sh
-        
+
 - name: install, run scripts and build doc
   image: python:3.8
   commands:
@@ -31,7 +32,7 @@ steps:
   - cd ../tests
   - coverage run --source dessia_common ci_tests.py
   - coverage json
-  - python coverage.py 
+  - python coverage.py
   - coverage report
 
 - name: develop
@@ -59,7 +60,7 @@ steps:
 - name: upload_doc_master
   image: appleboy/drone-scp
   when:
-    event: push 
+    event: push
     branch: master
   settings:
     host: austerlitz.dessia.tech

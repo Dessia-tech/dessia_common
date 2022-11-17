@@ -1,9 +1,10 @@
 from dessia_common.forms import StandaloneObject, StandaloneObjectWithDefaultValues, \
-    ObjectWithOtherTypings, ObjectWithFaultyTyping
+    ObjectWithOtherTypings
 from dessia_common.workflow.blocks import ModelMethod, InstantiateModel
 from dessia_common.models.forms import standalone_object
 from dessia_common.models.workflows.workflow_from_file_input import workflow_
 import dessia_common.utils.jsonschema as jss
+from dessia_common.measures import Distance
 
 
 # --- Jsonschema computation ---
@@ -148,10 +149,10 @@ except AssertionError as err:
             print('\n', jsonschema['properties'][key])
             raise err
 
-try:
-    ObjectWithFaultyTyping.jsonschema()
-except NotImplementedError:
-    pass
+# try:
+#     ObjectWithFaultyTyping.jsonschema()
+# except NotImplementedError:
+#     pass
 
 
 # --- Default values ---
@@ -176,7 +177,7 @@ jsonschema = jss.ClassJsonschema(StandaloneObjectWithDefaultValues).write()
 subobject_default_value = jss.chose_default(jsonschema["properties"]["standalone_subobject"])
 assert subobject_default_value["name"] == "StandaloneSubobject1"
 assert subobject_default_value["object_class"] == "dessia_common.forms.StandaloneSubobject"
-assert subobject_default_value["floatarg"] == 1.7
+assert subobject_default_value["floatarg"]['value'] == 1.7
 
 subobject_default_value = jss.chose_default(jsonschema["properties"]["embedded_subobject"])
 assert subobject_default_value["name"] == "Embedded Subobject10"
@@ -196,7 +197,7 @@ subobject_default_value = jss.chose_default(jsonschema["properties"]["subclass_a
 assert subobject_default_value["name"] == "Inheriting Standalone Subobject1"
 assert subobject_default_value["object_class"] == "dessia_common.forms.InheritingStandaloneSubobject"
 assert subobject_default_value["strarg"] == "-1"
-assert subobject_default_value["floatarg"] == 0.7
+assert subobject_default_value["floatarg"]['value'] == 0.7
 
 assert jss.chose_default(jsonschema["properties"]["array_arg"]) is None
 assert jss.chose_default(jsonschema["properties"]["name"]) is None  # TODO Is it ?

@@ -28,18 +28,18 @@ from ast import literal_eval
 
 import dessia_common.errors
 from dessia_common.utils.diff import data_eq, diff, dict_hash, list_hash
-from dessia_common.utils.serialization import dict_to_object, serialize_dict_with_pointers, serialize_dict,\
+from dessia_common.utils.serialization import dict_to_object, serialize_dict_with_pointers, serialize_dict, \
     deserialize_argument, serialize
 from dessia_common.utils.types import full_classname, is_sequence, is_bson_valid, TYPES_FROM_STRING
 from dessia_common.utils.copy import deepcopy_value
-from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotation, JSONSCHEMA_HEADER,\
+from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotation, JSONSCHEMA_HEADER, \
     set_default_value, ClassJsonschema
-from dessia_common.utils.docstrings import parse_docstring, FAILED_DOCSTRING_PARSING
 from dessia_common.exports import XLSXWriter
 from dessia_common.typings import JsonSerializable
 from dessia_common import templates
 from dessia_common.displays import DisplayObject, DisplaySetting
 from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
+import dessia_common.files as dcf
 
 _FORBIDDEN_ARGNAMES = ['self', 'cls', 'progress_callback', 'return']
 
@@ -148,7 +148,17 @@ class DessiaObject:
             return self._data_eq(other_object)
         return object.__eq__(self, other_object)
 
-    def _data_eq(self, other_object):
+    def _data_eq_dict(self):
+        """
+        Returns a dict of what to look at for data eq. Keys in non data eq attributes are removed
+        """
+        return {k: v for k, v in self._serializable_dict().items()
+                if k not in self._non_data_eq_attributes + ['package_version', 'name']}
+
+    def _data_eq(self, other_object) -> bool:
+        """
+        Returns if the object is equal to the other object in the sense of data contained in the objects
+        """
         return data_eq(self, other_object)
 
     def _data_hash(self):
@@ -357,7 +367,7 @@ class DessiaObject:
                 if annotations:
                     jsonschemas[method_name] = deepcopy(JSONSCHEMA_HEADER)
                     jsonschemas[method_name]['required'] = []
-                    jsonschemas[method_name]['method'] = True
+                    jsonschemas[method_name]['is_method'] = True
                     for i, annotation in enumerate(annotations.items()):
                         # TOCHECK Not actually ordered
                         argname = annotation[0]
@@ -692,7 +702,6 @@ class PhysicalObject(DessiaObject):
         Exports the CAD of the object to step. Works if the class define a custom volmdlr model
         :param filepath: a str representing a filepath
         """
-        self.volmdlr_volume_model().to_step(filepath=filepath)
         return self.volmdlr_volume_model().to_step(filepath=filepath)
 
     def to_step_stream(self, stream):
@@ -700,6 +709,17 @@ class PhysicalObject(DessiaObject):
         Exports the CAD of the object to a stream in the STEP format. Works if the class define a custom volmdlr model
         """
         return self.volmdlr_volume_model().to_step_stream(stream=stream)
+
+    def to_html_stream(self, stream: dcf.StringFile):
+        """
+        Exports the CAD of the object to a stream in the html format.
+        """
+        model = self.volmdlr_volume_model()
+        babylon_data = model.babylon_data()
+        script = model.babylonjs_script(babylon_data)
+        stream.write(script)
+
+        return stream
 
     def to_stl_stream(self, stream):
         """
@@ -733,7 +753,8 @@ class PhysicalObject(DessiaObject):
     def _export_formats(self):
         formats = DessiaObject._export_formats(self)
         formats3d = [{"extension": "step", "method_name": "to_step_stream", "text": True, "args": {}},
-                     {"extension": "stl", "method_name": "to_stl_stream", "text": False, "args": {}}]
+                     {"extension": "stl", "method_name": "to_stl_stream", "text": False, "args": {}},
+                     {"extension": "html", "method_name": "to_html_stream", "text": True, "args": {}}]
         formats.extend(formats3d)
         return formats
 
@@ -873,7 +894,7 @@ class DessiaFilter(DessiaObject):
         return self._REAL_OPERATORS[self.comparison_operator]
 
     def _to_lambda(self):
-        return lambda x: (self._comparison_operator()(enhanced_deep_attr(value, self.attribute), self.bound)
+        return lambda x: (self._comparison_operator()(get_in_object_from_path(value, f'#/{self.attribute}'), self.bound)
                           for value in x)
 
     def get_booleans_index(self, values: List[DessiaObject]):
@@ -1107,13 +1128,13 @@ class FiltersList(DessiaObject):
         Examples
         --------
         >>> from dessia_common.core import FiltersList
-        >>> from dessia_common.datatools import HeterogeneousList
+        >>> from dessia_common.datatools.dataset import Dataset
         >>> from dessia_common.models import all_cars_wi_feat
         >>> filters = [DessiaFilter('weight', '<=', 1650.), DessiaFilter('mpg', '>=', 45.)]
         >>> filters_list = FiltersList(filters, logical_operator="xor", name="example")
         >>> filtered_cars = filters_list.apply(all_cars_wi_feat)
-        >>> print(HeterogeneousList(filtered_cars, name="example"))
-        HeterogeneousList example: 3 samples, 5 features
+        >>> print(Dataset(filtered_cars, name="example"))
+        Dataset example: 3 samples, 5 features
         |         Mpg         |    Displacement    |     Horsepower     |       Weight       |    Acceleration    |
         -----------------------------------------------------------------------------------------------------------
         |               35.0  |             0.072  |              69.0  |            1613.0  |              18.0  |
@@ -1198,13 +1219,13 @@ def enhanced_deep_attr(obj, sequence):
         path = f"#/{'/'.join(sequence)}"
     return get_in_object_from_path(object_=obj, path=path)
 
-        # # Sequence is a string and not a sequence of deep attributes
-        # if '/' in sequence:
-        #     # Is deep attribute reference
-        #     sequence = sequence.split('/')
-        #     return enhanced_deep_attr(obj=obj, sequence=sequence)
-        # # Is direct attribute
-        # return enhanced_get_attr(obj=obj, attr=sequence)
+    # # Sequence is a string and not a sequence of deep attributes
+    # if '/' in sequence:
+    #     # Is deep attribute reference
+    #     sequence = sequence.split('/')
+    #     return enhanced_deep_attr(obj=obj, sequence=sequence)
+    # # Is direct attribute
+    # return enhanced_get_attr(obj=obj, attr=sequence)
     #
     # # Get direct attribute
     # subobj = enhanced_get_attr(obj=obj, attr=sequence[0])
@@ -1340,7 +1361,7 @@ def split_argspecs(argspecs) -> Tuple[int, int]:
 
 
 def get_attribute_names(object_class):
-    attributes = [attribute[0] for attribute in inspect.getmembers(object_class, lambda x:not inspect.isroutine(x))
+    attributes = [attribute[0] for attribute in inspect.getmembers(object_class, lambda x: not inspect.isroutine(x))
                   if not attribute[0].startswith('__')
                   and not attribute[0].endswith('__')
                   and isinstance(attribute[1], (float, int, complex, bool))]

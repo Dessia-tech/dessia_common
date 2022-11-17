@@ -6,9 +6,11 @@ Types tools
 """
 from typing import Any, Dict, List, Tuple, Type, Union, get_origin, get_args
 
-import json
+# import json
 from collections.abc import Iterator, Sequence
 from importlib import import_module
+
+import orjson
 
 import dessia_common as dc
 from dessia_common.typings import Subclass, InstanceOf, MethodType, ClassMethodType
@@ -39,15 +41,36 @@ def full_classname(object_, compute_for: str = 'instance'):
     raise NotImplementedError(msg.format(compute_for, object_))
 
 
-def is_jsonable(x):
+def is_classname_transform(string: str):
+    if '.' in string:
+        split_string = string.split('.')
+        if len(split_string) >= 2:
+            try:
+                class_ = get_python_class_from_class_name(string)
+                return class_
+            except (AttributeError, TypeError, ModuleNotFoundError, SyntaxError):
+                return False
+    return False
+
+
+def is_jsonable(obj):
     """
     returns if object can be dumped as it is in a json
     """
+
+    # First trying with orjson which is more efficient
     try:
-        json.dumps(x)
+        orjson.dumps(obj, option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS).decode('utf-8')
         return True
-    except TypeError:
+    except Exception:
         return False
+
+    # # If an error occurs try with json
+    # try:
+    #     json.dumps(obj)
+    #     return True
+    # except TypeError:
+    #     return False
 
 
 def is_serializable(obj):
@@ -326,6 +349,8 @@ def recursive_type(obj):
         type_ = TYPES_STRINGS[type(obj)]
     elif isinstance(obj, dc.DessiaObject):
         type_ = obj.__module__ + '.' + obj.__class__.__name__
+    elif hasattr(obj, 'output_type'):
+        type_ = obj.output_type
     elif isinstance(obj, (list, tuple)):
         type_ = []
         for element in obj:
