@@ -28,11 +28,11 @@ from ast import literal_eval
 
 import dessia_common.errors
 from dessia_common.utils.diff import data_eq, diff, dict_hash, list_hash
-from dessia_common.utils.serialization import dict_to_object, serialize_dict_with_pointers, serialize_dict,\
+from dessia_common.utils.serialization import dict_to_object, serialize_dict_with_pointers, serialize_dict, \
     deserialize_argument, serialize
 from dessia_common.utils.types import full_classname, is_sequence, is_bson_valid, TYPES_FROM_STRING
 from dessia_common.utils.copy import deepcopy_value
-from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotation, JSONSCHEMA_HEADER,\
+from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotation, JSONSCHEMA_HEADER, \
     set_default_value
 from dessia_common.utils.docstrings import parse_docstring, FAILED_DOCSTRING_PARSING
 from dessia_common.exports import XLSXWriter, MarkdownWriter
@@ -40,6 +40,7 @@ from dessia_common.typings import JsonSerializable
 from dessia_common import templates
 from dessia_common.displays import DisplayObject, DisplaySetting
 from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
+import dessia_common.files as dcf
 
 _FORBIDDEN_ARGNAMES = ['self', 'cls', 'progress_callback', 'return']
 
@@ -713,6 +714,17 @@ class PhysicalObject(DessiaObject):
         """
         return self.volmdlr_volume_model().to_step_stream(stream=stream)
 
+    def to_html_stream(self, stream: dcf.StringFile):
+        """
+        Exports the CAD of the object to a stream in the html format.
+        """
+        model = self.volmdlr_volume_model()
+        babylon_data = model.babylon_data()
+        script = model.babylonjs_script(babylon_data)
+        stream.write(script)
+
+        return stream
+
     def to_stl_stream(self, stream):
         """
         Exports the CAD of the object to STL to a given stream
@@ -745,7 +757,8 @@ class PhysicalObject(DessiaObject):
     def _export_formats(self):
         formats = DessiaObject._export_formats(self)
         formats3d = [{"extension": "step", "method_name": "to_step_stream", "text": True, "args": {}},
-                     {"extension": "stl", "method_name": "to_stl_stream", "text": False, "args": {}}]
+                     {"extension": "stl", "method_name": "to_stl_stream", "text": False, "args": {}},
+                     {"extension": "html", "method_name": "to_html_stream", "text": True, "args": {}}]
         formats.extend(formats3d)
         return formats
 
@@ -1345,7 +1358,7 @@ def split_argspecs(argspecs) -> Tuple[int, int]:
 
 
 def get_attribute_names(object_class):
-    attributes = [attribute[0] for attribute in inspect.getmembers(object_class, lambda x:not inspect.isroutine(x))
+    attributes = [attribute[0] for attribute in inspect.getmembers(object_class, lambda x: not inspect.isroutine(x))
                   if not attribute[0].startswith('__')
                   and not attribute[0].endswith('__')
                   and isinstance(attribute[1], (float, int, complex, bool))]
