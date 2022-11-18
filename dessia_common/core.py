@@ -34,6 +34,7 @@ from dessia_common.utils.types import full_classname, is_sequence, is_bson_valid
 from dessia_common.utils.copy import deepcopy_value
 from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotation, JSONSCHEMA_HEADER, \
     set_default_value
+from dessia_common.utils.schemas import ClassSchema
 from dessia_common.utils.docstrings import parse_docstring, FAILED_DOCSTRING_PARSING
 from dessia_common.exports import XLSXWriter
 from dessia_common.typings import JsonSerializable
@@ -341,6 +342,14 @@ class DessiaObject:
         _jsonschema['classes'] = [cls.__module__ + '.' + cls.__name__]
         _jsonschema['whitelist_attributes'] = cls._whitelist_attributes
         return _jsonschema
+
+    @classmethod
+    def schema(cls):
+        if hasattr(cls, '_jsonschema'):
+            _jsonschema = cls._jsonschema
+            return _jsonschema
+        class_schema = ClassSchema(cls)
+        return class_schema.write()
 
     @property
     def _method_jsonschemas(self):
