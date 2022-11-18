@@ -7,6 +7,9 @@ General checks & checklists
 from dessia_common.core import SerializableObject
 
 
+LEVEL_TO_INT = {'debug': 0, 'info': 1, 'warning': 2, 'error': 3}
+
+
 class PassedCheck(SerializableObject):
     level = 'info'
 
@@ -38,13 +41,18 @@ class CheckList(SerializableObject):
         self.checks = checks
 
     def __repr__(self):
-        rep = ''
-        for check in self.checks:
-            rep += str(check)
+        rep = f'Check list containing {len(self.checks)} checks:\n'
+        for check_idx, check in enumerate(self.checks):
+            rep += f'Check {check_idx+1}: {check}\n'
         return rep
 
     def __add__(self, other_checklist):
         return self.__class__(self.checks + other_checklist.checks)
+
+    def raise_if_above_level(self, level='error'):
+        for check in self.checks:
+            if LEVEL_TO_INT[check.level] >= LEVEL_TO_INT[level]:
+                raise ValueError(f'Check: {check} is above level "{level}"')
 
 
 def is_int(value, level='error'):
@@ -56,6 +64,16 @@ def is_int(value, level='error'):
 
 
 def is_float(value, level='error'):
+    """
+
+    :param value: DESCRIPTION
+    :type value: TYPE
+    :param level: DESCRIPTION, defaults to 'error'
+    :type level: TYPE, optional
+    :return: DESCRIPTION
+    :rtype: TYPE
+
+    """
     if not isinstance(value, float):
         return CheckList([FailedCheck(f'Value {value} is not a float')])
     if level == 'info':
@@ -64,7 +82,7 @@ def is_float(value, level='error'):
 
 
 def is_str(value, level='error'):
-    if not isinstance(value, int):
+    if not isinstance(value, str):
         return CheckList([FailedCheck(f'Value {value} is not a str')])
     if level == 'info':
         return CheckList([PassedCheck(f'value {value} is a str')])
