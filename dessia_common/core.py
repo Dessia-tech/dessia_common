@@ -35,7 +35,7 @@ from dessia_common.utils.copy import deepcopy_value
 from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotation, JSONSCHEMA_HEADER, \
     set_default_value
 from dessia_common.utils.docstrings import parse_docstring, FAILED_DOCSTRING_PARSING
-from dessia_common.exports import XLSXWriter
+from dessia_common.exports import XLSXWriter, MarkdownWriter
 from dessia_common.typings import JsonSerializable
 from dessia_common import templates
 from dessia_common.displays import DisplayObject, DisplaySetting
@@ -577,7 +577,10 @@ class DessiaObject:
         """
         Render a markdown of the object output type: string
         """
-        return templates.dessia_object_markdown_template.substitute(name=self.name, class_=self.__class__.__name__)
+        md_writer = MarkdownWriter(print_limit=25, table_limit=None)
+        return templates.dessia_object_markdown_template.substitute(name=self.name,
+                                                                    class_=self.__class__.__name__,
+                                                                    table=md_writer.object_table(self))
 
     def _performance_analysis(self):
         """

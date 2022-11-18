@@ -43,7 +43,7 @@ from dessia_common import DessiaObject, PhysicalObject, MovingObject
 from dessia_common.typings import InstanceOf
 from dessia_common.vectored_objects import Catalog
 from dessia_common.measures import Distance
-
+from dessia_common.exports import MarkdownWriter
 
 from dessia_common.files import BinaryFile, StringFile
 
@@ -451,6 +451,8 @@ class StandaloneObject(MovingObject):
         Sua qua ac ire una facit Alcmene coepere
         arduus quae vestigia aliquis; meritorum Dorylas, scindunt.
         """
+        contents += "\n## Attribute Table\n\n"
+        contents += MarkdownWriter(print_limit=25, table_limit=None).object_table(self)
         return contents
 
     def count_until(self, duration: float, raise_error: bool = False):
