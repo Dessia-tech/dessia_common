@@ -136,20 +136,15 @@ def diff(value1, value2, path='#'):
 def dict_diff(dict1, dict2, path='#'):
     diff_object = Diff([], [], [])
 
-    dict_ = dict1
-    other_dict = dict2
-    first_object = False
-    if len(dict2) > len(dict1):
-        dict_ = dict2
-        other_dict = dict1
-        first_object = True
-    for key, value in dict_.items():
+    for key, value in dict1.items():
         path_key = f'{path}/{key}'
-        if key not in other_dict:
-            diff_object.missing_attributes.append(MissingAttribute(path=path_key, missing_in_first_object=first_object))
+        if key not in dict2:
+            # missing_keys_in_other_object.append(key)
+            diff_object.missing_attributes.append(MissingAttribute(path, missing_in_first_object=False))
         else:
-            diff_key = diff(value, other_dict[key], path=path_key)
+            diff_key = diff(value, dict2[key], path=path_key)
             diff_object += diff_key
+
     return diff_object
 
 
