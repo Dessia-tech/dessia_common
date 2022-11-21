@@ -420,7 +420,7 @@ class Catalog(DessiaObject):
         # if not success:
         #     raise ValueError("No solutions found")
 
-    def plot_data(self):
+    def plot_data(self, **kwargs):
         raise NotImplementedError("This is deprecated and should not be used anymore")
         # from plot_data.core import Tooltip, TextStyle, SurfaceStyle,\
         #     Scatter, ParallelPlot, PointFamily, MultiplePlots
