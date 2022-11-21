@@ -47,7 +47,7 @@ MAX_ERROR_BY_TYPE = {
                      'attribute-defined-outside-init': 3,
                      'simplifiable-if-expression': 1,
                      'broad-except': 4,
-                     'bare-except': 3,
+                     'bare-except': 4,
                      'undefined-loop-variable': 1,
                      'consider-using-with': 2,
                      'too-many-nested-blocks': 2,
