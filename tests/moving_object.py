@@ -4,11 +4,13 @@ mso = MovingStandaloneObject(origin=0, name="Moving Test")
 
 disp = mso._displays()
 
-md_data = '# Object Moving Test of class MovingStandaloneObject\n\n' \
-          'This is a markdown file https://www.markdownguide.org/cheat-sheet/\n\n' \
-          'The good practice is to create a string python template and move the template to another python module\n' \
-          '(like templates.py) to avoid mix python code and markdown, as python syntax conflicts with markdown\n\n' \
-          'You can substitute values with object attributes like the name of the object: Moving Test'
+md_data = '# Object Moving Test of class MovingStandaloneObject\n\nThis is a markdown file' \
+        ' https://www.markdownguide.org/cheat-sheet/\n\nThe good practice is to create a string python template and '\
+        'move the template to another python module\n(like templates.py) to avoid mix python code and markdown, as '\
+        'python syntax conflicts with markdown\n\nYou can substitute values with object attributes like the name of '\
+        'the object: Moving Test\n\n# Attributes\n\nObject Moving Test of class MovingStandaloneObject has the '\
+        'following attributes:\n\n| Attribute | Type | Value |\n| ------ | ------ | ------ |\n| origin | int | 0 |'\
+        '\n| name | str | Moving Test |'
 
 assert disp == [
     {
