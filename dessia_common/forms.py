@@ -76,7 +76,7 @@ class StandaloneSubobject(PhysicalObject):
         crls = p2d.ClosedRoundedLineSegments2D(points=points, radius={})
         return crls
 
-    def plot_data(self):
+    def plot_data(self, **kwargs):
         primitives = [plot_data.Text(comment="Test with text", position_x=0, position_y=0),
                       plot_data.Text(comment="Test with text", position_x=0, position_y=0)]
         primitives_group = plot_data.PrimitiveGroup(primitives=primitives)
@@ -312,7 +312,7 @@ class StandaloneObject(MovingObject):
         return plot_data.Scatter(axis=plot_data.Axis(), tooltip=tooltip, x_variable=attributes[0],
                                  y_variable=attributes[1], name='Scatter Plot')
 
-    def plot_data(self):
+    def plot_data(self, **kwargs):
         # Contour
         contour = self.standalone_subobject.contour().plot_data()
         primitives_group = plot_data.PrimitiveGroup(primitives=[contour], name='Contour')
