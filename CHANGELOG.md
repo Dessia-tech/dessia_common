@@ -7,10 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
-### Fixed
-- Diff Dict is now robust to uneven arguments commutation
-- Fix path deepth when dict misses keys
-
 ## v0.10.2
 
 - non serializable attributes were not working
