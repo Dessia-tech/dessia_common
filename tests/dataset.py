@@ -132,13 +132,13 @@ except Exception as e:
 
 # Tests sort
 all_cars_with_features.sort('weight', ascend=False)
-assert(all_cars_with_features[0].weight == max(all_cars_with_features.get_attribute_values('weight')))
+assert(all_cars_with_features[0].weight == max(all_cars_with_features.attribute_values('weight')))
 
 idx_dpl = all_cars_without_features.common_attributes.index('displacement')
 all_cars_without_features.sort(idx_dpl)
 assert(all(attr in ['displacement', 'cylinders', 'mpg', 'horsepower', 'weight', 'acceleration', 'model']
            for attr in all_cars_without_features.common_attributes))
-assert(all_cars_without_features[0].displacement == min(all_cars_without_features.get_column_values(idx_dpl)))
+assert(all_cars_without_features[0].displacement == min(all_cars_without_features.column_values(idx_dpl)))
 
 # Missing tests after coverage report
 assert(all_cars_without_features[[]] == empty_list)
