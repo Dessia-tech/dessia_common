@@ -16,8 +16,11 @@ try:
     from plot_data.colors import BLUE, GREY
 except ImportError:
     pass
-from dessia_common.core import DessiaObject, DessiaFilter, FiltersList, templates
+from dessia_common.core import DessiaObject, DessiaFilter, FiltersList
+from dessia_common.exports import MarkdownWriter
+from dessia_common import templates
 from dessia_common.datatools.metrics import mean, std, variance, covariance_matrix
+
 
 class Dataset(DessiaObject):
     """
@@ -166,7 +169,7 @@ class Dataset(DessiaObject):
         return self.dessia_objects[idx]
 
     def _pick_from_slice(self, key: slice):
-        new_hlist = self.__class__(dessia_objects = self.dessia_objects[key], name = self.name)
+        new_hlist = self.__class__(dessia_objects=self.dessia_objects[key], name=self.name)
         new_hlist._common_attributes = copy(self._common_attributes)
         new_hlist.dessia_objects = self.dessia_objects[key]
         if self._matrix is not None:
@@ -181,7 +184,7 @@ class Dataset(DessiaObject):
         return boolean_list
 
     def _pick_from_boolist(self, key: List[bool]):
-        new_hlist = self.__class__(dessia_objects = DessiaFilter.apply(self.dessia_objects, key), name = self.name)
+        new_hlist = self.__class__(dessia_objects=DessiaFilter.apply(self.dessia_objects, key), name=self.name)
         new_hlist._common_attributes = copy(self._common_attributes)
         if self._matrix is not None:
             new_hlist._matrix = DessiaFilter.apply(self._matrix, key)
@@ -207,7 +210,7 @@ class Dataset(DessiaObject):
 
         if len(self) > 10:
             undispl_len = len(self) - 10
-            string += (f"\n+ {undispl_len} undisplayed object" + "s"*(min([undispl_len, 2])-1) + "...")
+            string += (f"\n+ {undispl_len} undisplayed object" + "s" * (min([undispl_len, 2]) - 1) + "...")
 
         if len(self) > 5:
             string += self._print_objects_slice(slice(-5, len(self)), attr_space)
@@ -271,6 +274,19 @@ class Dataset(DessiaObject):
                 string += " "
             string += end_bar
         return string
+
+    def to_markdown(self) -> str:
+        """
+        Render a markdown of the object output type: string
+        """
+        md_writer = MarkdownWriter(print_limit=25, table_limit=12)
+        name = md_writer.print_name(self)
+        class_ = md_writer.print_class(self)
+        element_details = md_writer.element_details(self)
+        table = md_writer.matrix_table(self.matrix, self.common_attributes)
+
+        return templates.dataset_markdown_template.substitute(name=name, class_=class_, element_details=element_details,
+                                                              table=table)
 
     def _get_printed_value(self, dessia_object: DessiaObject, attr: str):
         return getattr(dessia_object, attr)
@@ -490,7 +506,7 @@ class Dataset(DessiaObject):
 
     @staticmethod
     def _set_distance_kwargs(method: str, kwargs: Dict[str, Any]):
-        if 'p' not in kwargs and method=='minkowski':
+        if 'p' not in kwargs and method == 'minkowski':
             kwargs['p'] = 2
         return kwargs
 
@@ -648,12 +664,11 @@ class Dataset(DessiaObject):
     def _histogram_unic_value(self, idx_col: int, name_attr: str):
         # unic_values = set((getattr(dobject, line) for dobject in self.dessia_objects))
         unic_values = set((row_matrix[idx_col] for row_matrix in self.matrix))
-        if len(unic_values) == 1: # TODO (plot_data linspace axis between two same values)
+        if len(unic_values) == 1:  # TODO (plot_data linspace axis between two same values)
             plot_obj = Scatter(x_variable=name_attr, y_variable=name_attr)
         else:
             plot_obj = Histogram(x_variable=name_attr)
         return plot_obj
-
 
     def _tooltip_attributes(self):
         return self.common_attributes
@@ -700,10 +715,10 @@ class Dataset(DessiaObject):
             r2_scores = []
             unreal_score = 1.
             for idx, attr1 in enumerate(self.common_attributes):
-                for attr2 in self.common_attributes[idx+1:]:
+                for attr2 in self.common_attributes[idx + 1:]:
                     association_list.append([attr1, attr2])
                     r2_scores.append(unreal_score)
-                    unreal_score += -1/10.
+                    unreal_score += -1 / 10.
             return map(list, zip(*sorted(zip(r2_scores, association_list))[::-1])), []
         # Returns list of list of associated attributes sorted along their R2 score and constant attributes
         return map(list, zip(*sorted(zip(r2_scores, association_list))[::-1])), list(set(constant_attributes))
@@ -768,13 +783,6 @@ class Dataset(DessiaObject):
         dimensionality_plot = Scatter(elements=singular_points, x_variable='Index of reduced basis vector',
                                       y_variable='Singular value', log_scale_y=True, axis=axis, point_style=point_style)
         return dimensionality_plot
-
-    def to_markdown(self):  # TODO: Custom this markdown
-        """
-        Render a markdown of the object output type: string
-
-        """
-        return templates.Dataset_markdown_template.substitute(name=self.name, class_=self.__class__.__name__)
 
     @staticmethod
     def _check_costs(len_data: int, costs: List[List[float]]):
@@ -843,7 +851,7 @@ class Dataset(DessiaObject):
         for idx in range(nb_sheets):
             pareto_sheet = Dataset.pareto_indexes(non_optimal_costs)
             pareto_sheets.append(Dataset(list(itertools.compress(non_optimal_points, pareto_sheet)),
-                                                   self.name + f'_pareto_{idx}'))
+                                         self.name + f'_pareto_{idx}'))
             non_optimal_points = list(itertools.compress(non_optimal_points, map(lambda x: not x, pareto_sheet)))
             non_optimal_costs = list(itertools.compress(non_optimal_costs, map(lambda x: not x, pareto_sheet)))
         return pareto_sheets, Dataset(non_optimal_points, self.name)
@@ -866,7 +874,7 @@ class Dataset(DessiaObject):
             for y_dim in range(pareto_costs.shape[1]):
                 if x_dim != y_dim:
                     frontier_2d = Dataset._pareto_frontier_2d(x_dim, y_dim, pareto_costs,
-                                                                        npy.max(array_costs[:, x_dim]), super_mini)
+                                                              npy.max(array_costs[:, x_dim]), super_mini)
                     pareto_frontiers.append(frontier_2d)
 
         return pareto_frontiers
