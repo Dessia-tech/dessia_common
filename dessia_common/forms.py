@@ -27,9 +27,9 @@ coding/naming style & convention.
 
 from math import floor, ceil, cos
 from typing import Dict, List, Tuple, Union, Any
-from numpy import linspace
 import time
 import random
+from numpy import linspace
 
 try:
     import volmdlr as vm
