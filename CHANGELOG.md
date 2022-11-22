@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sampler class
 - (De)Serialization handles 'typing.Type'
 - Workflow: handle position in to_dict / dict_to_object process
+- sub_matrix method to Dataset
 
 
 ### Breaking Changes
@@ -38,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     * class Sampler is now coded in file sampling.py
     * Metrics function are now coded in file metrics.py
 - Retrocompatibility is supported for the present time, with a big warning
+- pareto methods of datatools are now called with a list of attributes and not anymore a costs matrix
 
 
 ### Changes

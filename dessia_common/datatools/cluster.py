@@ -161,8 +161,8 @@ class ClusteredDataset(Dataset):
                               for label_tag, sublist in zip(label_tags, sublists)]
 
         return ClusteredDataset(new_dessia_objects,
-                               list(set(self.labels).difference({-1})) + ([-1] if -1 in self.labels else []),
-                               name=self.name + "_split")
+                                list(set(self.labels).difference({-1})) + ([-1] if -1 in self.labels else []),
+                                name=self.name + "_split")
 
     def _check_transform_sublists(self):
         if not isinstance(self.dessia_objects[0], Dataset):
@@ -543,7 +543,7 @@ class ClusteredDataset(Dataset):
         return cls(data.dessia_objects, skl_cluster.labels_.tolist(), name=name)
 
     @classmethod
-    def from_pareto_sheets(cls, h_list: Dataset, costs: List[List[float]], nb_sheets: int = 1):
+    def from_pareto_sheets(cls, h_list: Dataset, costs_columns: List[str], nb_sheets: int = 1):
         """
         Get successive pareto sheets (i.e. optimal points in a DOE for pre-computed costs) and put them in a
         `ClusteredDataset` where each label is the index of a pareto sheet.
@@ -553,10 +553,10 @@ class ClusteredDataset(Dataset):
             The Dataset in which to pick optimal points.
         :type h_list: Dataset
 
-        :param costs:
-            --------
-            Pre-computed costs of `len(self)`. Can be multi-dimensional.
-        :type costs: `List[List[float]]`, `n_samples x n_costs` or `n_costs x n_samples`
+         :param costs_columns:
+             -----------
+             List of columns' indexes or attributes on which costs are stored in current Dataset
+         :type costs_columns: `List[str]`
 
         :param nb_sheets:
             --------
@@ -570,7 +570,7 @@ class ClusteredDataset(Dataset):
         """
         labels = []
         dessia_objects = []
-        pareto_sheets, non_optimal_points = h_list.pareto_sheets(costs, nb_sheets)
+        pareto_sheets, non_optimal_points = h_list.pareto_sheets(costs_columns, nb_sheets)
         for label, pareto_sheet in enumerate(pareto_sheets):
             labels.extend([label] * len(pareto_sheet))
             dessia_objects.extend(pareto_sheet)

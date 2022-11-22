@@ -575,7 +575,8 @@ class Workflow(Block):
                 display_settings.append(settings)
         return display_settings
 
-    def display_settings(self) -> List[DisplaySetting]:
+    @staticmethod
+    def display_settings() -> List[DisplaySetting]:
         """
         Computes the displays settings of the workflow
         """
