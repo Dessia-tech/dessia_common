@@ -4,7 +4,7 @@
 exports for dessia_common
 
 """
-from typing import List, Dict, Any, Sequence
+from typing import List, Dict, Any, Sequence, Optional
 
 
 from openpyxl.styles.borders import Border, Side
@@ -39,6 +39,23 @@ def is_builtins_list(list_):
         if not (is_number(element) or isinstance(element, str)):
             return False
     return True
+
+
+class ExportFormat:
+    def __init__(self, selector: Optional[str], extension: str, method_name: str, text: bool,
+                 export_name: str = "", args: Dict[str, Any] = None):
+        self.selector = selector
+        self.extension = extension
+        self.method_name = method_name
+        self.text = text
+        self.export_name = export_name
+        if args is None:
+            args = {}
+        self.args = args
+
+    def to_dict(self):
+        return {"selector": self.selector, "extension": self.extension, "method_name": self.method_name,
+                "text": self.text, "export_name": self.method_name, "args": self.args}
 
 
 class XLSXWriter:

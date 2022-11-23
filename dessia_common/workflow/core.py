@@ -35,6 +35,7 @@ from dessia_common.displays import DisplayObject
 from dessia_common.breakdown import attrmethod_getter, ExtractionError
 from dessia_common.errors import SerializationError
 from dessia_common.warnings import SerializationWarning
+from dessia_common.exports import ExportFormat
 
 from dessia_common.workflow.utils import ToScriptElement
 
@@ -601,7 +602,7 @@ class Workflow(Block):
             block_index = self.blocks.index(block)
             format_ = block._export_format(block_index)
             if format_ is not None:
-                format_["selector"] = self.block_selectors[block]
+                format_.selector = self.block_selectors[block]
                 export_formats.append(format_)
         return export_formats
 
@@ -610,7 +611,8 @@ class Workflow(Block):
         Reads block to compute available export formats
         """
         export_formats = DessiaObject._export_formats(self)
-        export_formats.append({'extension': 'py', 'method_name': 'save_script_to_stream', 'text': True, 'args': {}})
+        script_export = ExportFormat(selector="py", extension="py", method_name="save_script_to_stream", text=True)
+        export_formats.append(script_export)
         return export_formats
 
     def to_markdown(self):
@@ -2150,9 +2152,6 @@ class WorkflowRun(WorkflowState):
         # TODO : Temporary removing workflow state. We could activate it again when display tree is available
         display_settings.pop(0)
         return workflow_settings + display_settings
-
-    def _export_formats(self):
-        return self.workflow.blocks_export_formats
 
     def method_dict(self, method_name: str = None, method_jsonschema: Any = None):
         if method_name is not None and method_name == 'run_again' and method_jsonschema is not None:
