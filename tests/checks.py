@@ -17,8 +17,8 @@ class Battery(DessiaObject):
     #         return False
     #     return True
 
-    def checks(self, level='info'):
-        check_list = DessiaObject.checks(self, level=level)
+    def check_list(self, level='info'):
+        check_list = DessiaObject.check_list(self, level=level)
 
         check_list += checks.is_float(self.capacity, level=level)
         check_list += checks.is_int(self.number_cells, level=level)
@@ -28,12 +28,12 @@ class Battery(DessiaObject):
 
 
 battery = Battery(3., 2, 'Good name')
-check_list = battery.checks()
+check_list = battery.check_list()
 print(check_list)
 check_list.raise_if_above_level('error')
 
 battery = Battery(None, 22.2, 1)
-check_list2 = battery.checks()
+check_list2 = battery.check_list()
 print(check_list2)
 
 raised = False

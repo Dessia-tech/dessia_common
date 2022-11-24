@@ -49,10 +49,16 @@ class CheckList(SerializableObject):
     def __add__(self, other_checklist):
         return self.__class__(self.checks + other_checklist.checks)
 
-    def raise_if_above_level(self, level='error'):
+    def checks_above_level(self, level='error'):
+        checks = []
         for check in self.checks:
             if LEVEL_TO_INT[check.level] >= LEVEL_TO_INT[level]:
-                raise ValueError(f'Check: {check} is above level "{level}"')
+                checks.append(check)
+        return checks
+
+    def raise_if_above_level(self, level='error'):
+        for check in self.checks_above_level(level=level):
+            raise ValueError(f'Check: {check} is above level "{level}"')
 
 
 def is_int(value, level='error'):

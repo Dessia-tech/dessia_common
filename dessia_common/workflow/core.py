@@ -1343,7 +1343,7 @@ class Workflow(Block):
             file.write(rendered_template.encode('utf-8'))
         webbrowser.open('file://' + temp_file)
 
-    def is_valid(self):
+    def is_valid(self, level='error'):
         """
         Tell if the workflow is valid:
             * check type compatibility of pipes inputs/outputs

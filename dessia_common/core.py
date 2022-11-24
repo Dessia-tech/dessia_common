@@ -395,7 +395,7 @@ class DessiaObject(SerializableObject):
 
         return cls.dict_to_object(dict_)
 
-    def checks(self, level='error'):
+    def check_list(self, level='error'):
         check_list = CheckList([])
 
         check_list += self._check_platform(level=level)
@@ -413,6 +413,9 @@ class DessiaObject(SerializableObject):
         #             check_list += type_check(value, annotations[arg].annotation.__class__, level=level)
 
         return check_list
+
+    def is_valid(self, level='error'):
+        return not self.check_list().checks_above_level(level=level)
 
     def copy(self, deep=True, memo=None):
         if deep:
@@ -538,7 +541,7 @@ class DessiaObject(SerializableObject):
                                                                     class_=self.__class__.__name__,
                                                                     table=md_writer.object_table(self))
 
-    def _performance_analysis(self):
+    def performance_analysis(self):
         """
         Prints time of rendering some commons operations (serialization, hash, displays)
         """
