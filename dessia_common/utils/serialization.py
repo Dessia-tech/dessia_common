@@ -362,6 +362,9 @@ def deserialize_argument(type_, argument):
     if argument is None:
         return None
 
+    if isinstance(argument, dessia_common.DessiaObject):
+        return argument
+
     if dcty.is_typing(type_):
         return deserialize_with_typing(type_, argument)
 
