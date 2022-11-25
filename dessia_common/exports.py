@@ -55,7 +55,7 @@ class ExportFormat:
 
     def to_dict(self):
         return {"selector": self.selector, "extension": self.extension, "method_name": self.method_name,
-                "text": self.text, "export_name": self.method_name, "args": self.args}
+                "text": self.text, "export_name": self.export_name, "args": self.args}
 
 
 class XLSXWriter:
