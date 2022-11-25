@@ -662,10 +662,9 @@ class DessiaObject:
                 if not filepath.endswith(f".{export_format.extension}"):
                     filepath += f".{export_format.extension}"
                     print(f'Renaming filepath to {filepath}')
-                if export_format.text:
-                    mode = 'w'
-                else:
-                    mode = 'wb'
+                mode = "w"
+                if not export_format.text:
+                    mode += 'b'
                 with open(filepath, mode) as stream:
                     getattr(self, export_format.method_name)(stream, **export_format.args)
                 return filepath
