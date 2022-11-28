@@ -1130,6 +1130,8 @@ class Archive(Block):
         """
         self.number_exports = number_exports
         self.filename = filename
+        self.extension = "zip"
+        self.text = False
         inputs = [Variable(name="export_" + str(i)) for i in range(number_exports)]
         inputs.append(TypedVariableWithDefaultValue(type_=str, default_value=filename, name="filename"))
         Block.__init__(self, inputs=inputs, outputs=[Variable(name="zip archive")], name=name, position=position)
