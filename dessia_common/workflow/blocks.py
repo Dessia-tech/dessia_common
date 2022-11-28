@@ -1156,7 +1156,7 @@ class Archive(Block):
 
     def evaluate(self, values):
         name_input = self.inputs[-1]
-        archive_name = f"{values.pop(name_input)}.zip"
+        archive_name = f"{values.pop(name_input)}.{self.extension}"
         archive = BinaryFile(archive_name)
         with ZipFile(archive, 'w') as zip_archive:
             for input_ in self.inputs[:-1]:  # Filename is last block input
@@ -1173,7 +1173,7 @@ class Archive(Block):
 
     def _export_format(self, block_index: int) -> ExportFormat:
         args = {"block_index": block_index}
-        return ExportFormat(selector=None, extension="zip", method_name="export", text=False,
+        return ExportFormat(selector=None, extension=self.extension, method_name="export", text=self.text,
                             export_name=self.filename, args=args)
 
     def _to_script(self, _) -> ToScriptElement:
