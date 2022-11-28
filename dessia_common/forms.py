@@ -132,7 +132,7 @@ class StandaloneBuiltinsSubobject(EmbeddedBuiltinsSubobject):
         self.intarg = intarg
         self.boolarg = boolarg
 
-        PhysicalObject.__init__(self, name=name)
+        EmbeddedBuiltinsSubobject.__init__(self, name=name)
 
 
 DEF_EBS = EmbeddedBuiltinsSubobject.generate(1)
