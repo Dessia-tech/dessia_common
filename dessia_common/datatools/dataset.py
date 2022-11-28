@@ -16,7 +16,9 @@ try:
     from plot_data.colors import BLUE, GREY
 except ImportError:
     pass
-from dessia_common.core import DessiaObject, DessiaFilter, FiltersList, templates
+from dessia_common.core import DessiaObject, DessiaFilter, FiltersList
+from dessia_common.exports import MarkdownWriter
+from dessia_common import templates
 from dessia_common.datatools.metrics import mean, std, variance, covariance_matrix
 
 class Dataset(DessiaObject):
@@ -271,6 +273,19 @@ class Dataset(DessiaObject):
                 string += " "
             string += end_bar
         return string
+
+    def to_markdown(self) -> str:
+        """
+        Render a markdown of the object output type: string
+        """
+        md_writer = MarkdownWriter(print_limit=25, table_limit=12)
+        name = md_writer.print_name(self)
+        class_ = md_writer.print_class(self)
+        element_details = md_writer.element_details(self)
+        table = md_writer.matrix_table(self.matrix, self.common_attributes)
+
+        return templates.dataset_markdown_template.substitute(name=name, class_=class_, element_details=element_details,
+                                                              table=table)
 
     def _get_printed_value(self, dessia_object: DessiaObject, attr: str):
         return getattr(dessia_object, attr)
@@ -793,13 +808,6 @@ class Dataset(DessiaObject):
         dimensionality_plot = Scatter(elements=singular_points, x_variable='Index of reduced basis vector',
                                       y_variable='Singular value', log_scale_y=True, axis=axis, point_style=point_style)
         return dimensionality_plot
-
-    def to_markdown(self):  # TODO: Custom this markdown
-        """
-        Render a markdown of the object output type: string
-
-        """
-        return templates.Dataset_markdown_template.substitute(name=self.name, class_=self.__class__.__name__)
 
     @staticmethod
     def _check_costs(len_data: int, costs: List[List[float]]):

@@ -136,15 +136,20 @@ def diff(value1, value2, path='#'):
 def dict_diff(dict1, dict2, path='#'):
     diff_object = Diff([], [], [])
 
-    for key, value in dict1.items():
+    dict_ = dict1
+    other_dict = dict2
+    first_object = False
+    if len(dict2) > len(dict1):
+        dict_ = dict2
+        other_dict = dict1
+        first_object = True
+    for key, value in dict_.items():
         path_key = f'{path}/{key}'
-        if key not in dict2:
-            # missing_keys_in_other_object.append(key)
-            diff_object.missing_attributes.append(MissingAttribute(path, missing_in_first_object=False))
+        if key not in other_dict:
+            diff_object.missing_attributes.append(MissingAttribute(path=path_key, missing_in_first_object=first_object))
         else:
-            diff_key = diff(value, dict2[key], path=path_key)
+            diff_key = diff(value, other_dict[key], path=path_key)
             diff_object += diff_key
-
     return diff_object
 
 
@@ -163,9 +168,6 @@ def sequence_diff(seq1, seq2, path='#'):
 
 
 def data_eq(value1, value2):
-    """
-    Doc of this function is at DessiaObject._data_eq
-    """
     if is_sequence(value1) and is_sequence(value2):
         return sequence_data_eq(value1, value2)
 
@@ -208,11 +210,11 @@ def data_eq(value1, value2):
             return value1._data_eq(value2)
 
     # Not custom, use generic implementation
-    eq_dict = value1._data_eq_dict()
+    eq_dict = value1._serializable_dict()
     if 'name' in eq_dict:
         del eq_dict['name']
 
-    other_eq_dict = value2._data_eq_dict()
+    other_eq_dict = value2._serializable_dict()
 
     return dict_data_eq(eq_dict, other_eq_dict)
 
