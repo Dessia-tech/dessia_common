@@ -16,7 +16,9 @@ try:
     from plot_data.colors import BLUE, GREY
 except ImportError:
     pass
-from dessia_common.core import DessiaObject, DessiaFilter, FiltersList, templates
+from dessia_common.core import DessiaObject, DessiaFilter, FiltersList
+from dessia_common.exports import MarkdownWriter
+from dessia_common import templates
 from dessia_common.datatools.metrics import mean, std, variance, covariance_matrix
 
 class Dataset(DessiaObject):
@@ -272,6 +274,19 @@ class Dataset(DessiaObject):
             string += end_bar
         return string
 
+    def to_markdown(self) -> str:
+        """
+        Render a markdown of the object output type: string
+        """
+        md_writer = MarkdownWriter(print_limit=25, table_limit=12)
+        name = md_writer.print_name(self)
+        class_ = md_writer.print_class(self)
+        element_details = md_writer.element_details(self)
+        table = md_writer.matrix_table(self.matrix, self.common_attributes)
+
+        return templates.dataset_markdown_template.substitute(name=name, class_=class_, element_details=element_details,
+                                                              table=table)
+
     def _get_printed_value(self, dessia_object: DessiaObject, attr: str):
         return getattr(dessia_object, attr)
 
@@ -282,9 +297,53 @@ class Dataset(DessiaObject):
         """
         return len(self.dessia_objects)
 
-    def get_attribute_values(self, attribute: str):
+    @property
+    def common_attributes(self):
         """
-        Get a list of all values of dessia_objects of an attribute given by name
+        List of common attributes of stored dessia_objects.
+
+        """
+        if self._common_attributes is None:
+            if len(self) == 0:
+                return []
+
+            all_class = []
+            one_instance = []
+            for dessia_object in self.dessia_objects:
+                if dessia_object.__class__ not in all_class:
+                    all_class.append(dessia_object.__class__)
+                    one_instance.append(dessia_object)
+
+            all_attributes = sum((instance.vector_features() for instance in one_instance), [])
+            set_attributes = set.intersection(*(set(instance.vector_features()) for instance in one_instance))
+
+            # Keep order
+            self._common_attributes = []
+            for attr in all_attributes:
+                if attr in set_attributes:
+                    self._common_attributes.append(attr)
+                    set_attributes.remove(attr)
+
+        return self._common_attributes
+
+    @property
+    def matrix(self):
+        """
+        Get equivalent matrix of dessia_objects, which is of dimensions `len(dessia_objects) x len(common_attributes)`
+
+        """
+        if self._matrix is None:
+            matrix = []
+            for dessia_object in self.dessia_objects:
+                temp_row = dessia_object.to_vector()
+                vector_features = dessia_object.vector_features()
+                matrix.append(list(temp_row[vector_features.index(attr)] for attr in self.common_attributes))
+            self._matrix = matrix
+        return self._matrix
+
+    def attribute_values(self, attribute: str):
+        """
+        Get a list of all values of dessia_objects of an attribute given by name.
 
         :param attribute: Attribute to get all values
         :type attribute: str
@@ -295,17 +354,19 @@ class Dataset(DessiaObject):
         :Examples:
         >>> from dessia_common.datatools.dataset import Dataset
         >>> from dessia_common.models import all_cars_wi_feat
-        >>> Dataset(all_cars_wi_feat[:10]).get_attribute_values("weight")
+        >>> Dataset(all_cars_wi_feat[:10]).attribute_values("weight")
         [3504.0, 3693.0, 3436.0, 3433.0, 3449.0, 4341.0, 4354.0, 4312.0, 4425.0, 3850.0]
 
         """
         if not hasattr(self.dessia_objects[0], attribute):
-            return self.get_column_values(self.common_attributes.index(attribute))
+            if attribute not in self.common_attributes:
+                raise ValueError(f"{attribute} not in common_attributes = {self.common_attributes}")
+            return self.column_values(self.common_attributes.index(attribute))
         return [getattr(dessia_object, attribute) for dessia_object in self.dessia_objects]
 
-    def get_column_values(self, index: int):
+    def column_values(self, index: int):
         """
-        Get a list of all values of dessia_objects for an attribute given by its index common_attributes
+        Get a list of all values of dessia_objects for an attribute given by its index common_attributes.
 
         :param index: Index in common_attributes to get all values of dessia_objects
         :type index: int
@@ -316,11 +377,34 @@ class Dataset(DessiaObject):
         :Examples:
         >>> from dessia_common.datatools.dataset import Dataset
         >>> from dessia_common.models import all_cars_wi_feat
-        >>> Dataset(all_cars_wi_feat[:10]).get_column_values(2)
+        >>> Dataset(all_cars_wi_feat[:10]).column_values(2)
         [130.0, 165.0, 150.0, 150.0, 140.0, 198.0, 220.0, 215.0, 225.0, 190.0]
 
         """
         return [row[index] for row in self.matrix]
+
+    def sub_matrix(self, columns_names: List[str]):
+        """
+        Build a sub matrix of the current Dataset taking column numbers in indexes or attribute values in attributes.
+
+        Warning: Only one of `indexes` or `attributes` has to be specified.
+
+        :param columns_names: List of columns' names to create a sub matrix
+        :type columns_names: List[str]
+
+        :return: Data stored in matrix reduced to the specified `indexes` or `attributes`
+        :rtype: List[List[float]]
+
+        :Examples:
+        >>> from dessia_common.datatools.dataset import Dataset
+        >>> from dessia_common.models import all_cars_wi_feat
+        >>> print(Dataset(all_cars_wi_feat[:10]).sub_matrix(['displacement', 'horsepower']))
+        [[0.307, 130.0], [0.35, 165.0], [0.318, 150.0], [0.304, 150.0], [0.302, 140.0], [0.429, 198.0],
+         [0.454, 220.0], [0.44, 215.0], [0.455, 225.0], [0.39, 190.0]]
+
+        """
+        transposed_submatrix = [self.attribute_values(column_name) for column_name in columns_names]
+        return list(map(list, zip(*transposed_submatrix)))
 
     def sort(self, key: Any, ascend: bool = True):  # TODO : Replace numpy with faster algorithms
         """
@@ -363,9 +447,9 @@ class Dataset(DessiaObject):
         """
         if len(self) != 0:
             if isinstance(key, int):
-                sort_indexes = npy.argsort(self.get_column_values(key))
+                sort_indexes = npy.argsort(self.column_values(key))
             elif isinstance(key, str):
-                sort_indexes = npy.argsort(self.get_attribute_values(key))
+                sort_indexes = npy.argsort(self.attribute_values(key))
             self.dessia_objects = [self.dessia_objects[idx] for idx in (sort_indexes if ascend else sort_indexes[::-1])]
             if self._matrix is not None:
                 self._matrix = [self._matrix[idx] for idx in (sort_indexes if ascend else sort_indexes[::-1])]
@@ -493,50 +577,6 @@ class Dataset(DessiaObject):
         if 'p' not in kwargs and method=='minkowski':
             kwargs['p'] = 2
         return kwargs
-
-    @property
-    def common_attributes(self):
-        """
-        List of common attributes of stored dessia_objects.
-
-        """
-        if self._common_attributes is None:
-            if len(self) == 0:
-                return []
-
-            all_class = []
-            one_instance = []
-            for dessia_object in self.dessia_objects:
-                if dessia_object.__class__ not in all_class:
-                    all_class.append(dessia_object.__class__)
-                    one_instance.append(dessia_object)
-
-            all_attributes = sum((instance.vector_features() for instance in one_instance), [])
-            set_attributes = set.intersection(*(set(instance.vector_features()) for instance in one_instance))
-
-            # Keep order
-            self._common_attributes = []
-            for attr in all_attributes:
-                if attr in set_attributes:
-                    self._common_attributes.append(attr)
-                    set_attributes.remove(attr)
-
-        return self._common_attributes
-
-    @property
-    def matrix(self):
-        """
-        Get equivalent matrix of dessia_objects, which is of dimensions `len(dessia_objects) x len(common_attributes)`
-
-        """
-        if self._matrix is None:
-            matrix = []
-            for dessia_object in self.dessia_objects:
-                temp_row = dessia_object.to_vector()
-                vector_features = dessia_object.vector_features()
-                matrix.append(list(temp_row[vector_features.index(attr)] for attr in self.common_attributes))
-            self._matrix = matrix
-        return self._matrix
 
     def filtering(self, filters_list: FiltersList):
         """
@@ -681,16 +721,16 @@ class Dataset(DessiaObject):
         association_list = []
         constant_attributes = []
         for idx, attr1 in enumerate(self.common_attributes):
-            if len(set(self.get_attribute_values(attr1))) == 1:
+            if len(set(self.attribute_values(attr1))) == 1:
                 constant_attributes.append(attr1)
                 continue
             for _, attr2 in enumerate(self.common_attributes[idx:]):
-                if len(set(self.get_attribute_values(attr2))) == 1:
+                if len(set(self.attribute_values(attr2))) == 1:
                     constant_attributes.append(attr2)
                     continue
                 if attr1 != attr2:
-                    correlation_matrix = npy.corrcoef(self.get_attribute_values(attr1),
-                                                      self.get_attribute_values(attr2))
+                    correlation_matrix = npy.corrcoef(self.attribute_values(attr1),
+                                                      self.attribute_values(attr2))
                     correlation_xy = correlation_matrix[0, 1]
                     r2_scores.append(correlation_xy**2)
                     association_list.append([attr1, attr2])
@@ -769,13 +809,6 @@ class Dataset(DessiaObject):
                                       y_variable='Singular value', log_scale_y=True, axis=axis, point_style=point_style)
         return dimensionality_plot
 
-    def to_markdown(self):  # TODO: Custom this markdown
-        """
-        Render a markdown of the object output type: string
-
-        """
-        return templates.Dataset_markdown_template.substitute(name=self.name, class_=self.__class__.__name__)
-
     @staticmethod
     def _check_costs(len_data: int, costs: List[List[float]]):
         if len(costs) != len_data:
@@ -794,7 +827,6 @@ class Dataset(DessiaObject):
 
         """
         is_efficient = npy.ones(len(costs), dtype=bool)
-        # costs_array = npy.array(costs)
         costs_array = (costs - npy.mean(costs, axis=0)) / npy.std(costs, axis=0)
         for index, cost in enumerate(costs_array):
             if is_efficient[index]:
@@ -803,50 +835,6 @@ class Dataset(DessiaObject):
                 # And keep self
                 is_efficient[index] = True
         return is_efficient.tolist()
-
-    def pareto_points(self, costs: List[List[float]]):
-        """
-        Find the pareto-efficient points
-
-        :param costs:
-            -----------
-            costs on which the pareto points are computed
-        :type costs: `List[List[float]]`, `n_samples x n_features`
-
-        :return: a Dataset containing the selected points
-        :rtype: Dataset
-
-        """
-        checked_costs = Dataset._check_costs(len(self), costs)
-        return self[self.__class__.pareto_indexes(checked_costs)]
-
-    def pareto_sheets(self, costs: List[List[float]], nb_sheets: int = 1):
-        """
-        Get successive pareto sheets (i.e. optimal points in a DOE for pre-computed costs).
-
-        :param costs:
-            Pre-computed costs of `len(self)`. Can be multi-dimensional.
-        :type costs: `List[List[float]]`, `n_samples x n_costs` or `n_costs x n_samples`
-
-        :param nb_sheets:
-            Number of pareto sheets to pick
-        :type nb_sheets: `int`, `optional`, default to `1`
-
-        :return: The successive pareto sheets and not selected elements
-        :rtype: `List[Dataset]`, `Dataset`
-
-        """
-        checked_costs = Dataset._check_costs(len(self), costs)
-        non_optimal_costs = checked_costs[:]
-        non_optimal_points = self.dessia_objects[:]
-        pareto_sheets = []
-        for idx in range(nb_sheets):
-            pareto_sheet = Dataset.pareto_indexes(non_optimal_costs)
-            pareto_sheets.append(Dataset(list(itertools.compress(non_optimal_points, pareto_sheet)),
-                                                   self.name + f'_pareto_{idx}'))
-            non_optimal_points = list(itertools.compress(non_optimal_points, map(lambda x: not x, pareto_sheet)))
-            non_optimal_costs = list(itertools.compress(non_optimal_costs, map(lambda x: not x, pareto_sheet)))
-        return pareto_sheets, Dataset(non_optimal_points, self.name)
 
     @staticmethod
     def pareto_frontiers(len_data: int, costs: List[List[float]]):
@@ -891,3 +879,52 @@ class Dataset(DessiaObject):
         frontier_2d = npy.array([[super_mini[x_dim], max_x_dim], [approx_super_mini[chosen_line], max_x_dim *
                                                                   dir_coeffs[chosen_line] + offsets[chosen_line]]]).T
         return frontier_2d
+
+    def _compute_costs(self, costs_attributes: List[str]):
+        costs = self.sub_matrix(costs_attributes)
+        return Dataset._check_costs(len(self), costs)
+
+    def pareto_points(self, costs_attributes: List[str]):
+        """
+        Find the pareto-efficient points
+
+        :param costs_attributes:
+            -----------
+            List of columns' attributes on which costs are stored in current Dataset
+        :type costs_attributes: `List[str]`
+
+        :return: a Dataset containing the selected points
+        :rtype: Dataset
+
+        """
+        checked_costs = self._compute_costs(costs_attributes)
+        return self[self.__class__.pareto_indexes(checked_costs)]
+
+    def pareto_sheets(self, costs_attributes: List[str], nb_sheets: int = 1):
+        """
+        Get successive pareto sheets (i.e. optimal points in a DOE for pre-computed costs).
+
+        :param costs_attributes:
+            -----------
+            List of columns' attributes on which costs are stored in current Dataset
+        :type costs_attributes: `List[str]
+
+        :param nb_sheets:
+            Number of pareto sheets to pick
+        :type nb_sheets: `int`, `optional`, default to `1`
+
+        :return: The successive pareto sheets and not selected elements
+        :rtype: `List[Dataset]`, `Dataset`
+
+        """
+        checked_costs = self._compute_costs(costs_attributes)
+        non_optimal_costs = checked_costs[:]
+        non_optimal_points = self.dessia_objects[:]
+        pareto_sheets = []
+        for idx in range(nb_sheets):
+            pareto_sheet = Dataset.pareto_indexes(non_optimal_costs)
+            pareto_sheets.append(Dataset(list(itertools.compress(non_optimal_points, pareto_sheet)),
+                                                   self.name + f'_pareto_{idx}'))
+            non_optimal_points = list(itertools.compress(non_optimal_points, map(lambda x: not x, pareto_sheet)))
+            non_optimal_costs = list(itertools.compress(non_optimal_costs, map(lambda x: not x, pareto_sheet)))
+        return pareto_sheets, Dataset(non_optimal_points, self.name)
