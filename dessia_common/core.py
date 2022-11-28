@@ -665,7 +665,7 @@ class DessiaObject:
                 mode = "w"
                 if not export_format.text:
                     mode += 'b'
-                with open(filepath, mode) as stream:
+                with open(filepath, mode, encoding="utf-8") as stream:
                     getattr(self, export_format.method_name)(stream, **export_format.args)
                 return filepath
 
