@@ -663,9 +663,11 @@ class DessiaObject:
                     filepath += f".{export_format.extension}"
                     print(f'Renaming filepath to {filepath}')
                 mode = "w"
+                encoding = "utf-8"
                 if not export_format.text:
                     mode += 'b'
-                with open(filepath, mode, encoding="utf-8") as stream:
+                    encoding = "strict"
+                with open(filepath, mode, encoding=encoding) as stream:
                     getattr(self, export_format.method_name)(stream, **export_format.args)
                 return filepath
 
