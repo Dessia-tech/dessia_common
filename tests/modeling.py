@@ -9,7 +9,7 @@ from dessia_common.core import DessiaObject
 from dessia_common.models import all_cars_no_feat
 from dessia_common.datatools.dataset import Dataset
 from dessia_common.datatools.modeling import StandardScaler, IdentityScaler, LinearRegression, DessiaTree,\
-    DecisionTreeRegressor, DecisionTreeClassifier, RandomForestRegressor, RandomForestClassifier
+    DecisionTreeRegressor, DecisionTreeClassifier, RandomForestRegressor, RandomForestClassifier, SVR
 
 
 # Load Data and put it in a Dataset (matrix is automatically computed)
@@ -54,7 +54,7 @@ assert(npy.all(dessia_tree.predict(npy.array(std_inputs[50:100], dtype=npy.float
 pp=DecisionTreeRegressor._instantiate_dessia_model(test)
 assert(npy.all(pp.predict(npy.array(std_inputs[50:100], dtype=npy.float32)) == test.predict(npy.array(std_inputs[50:100], dtype=npy.float32))))
 
-labelled_outputs = [[npy.random.randint(4)] for _ in outputs]
+labelled_outputs = [npy.random.randint(4) for _ in outputs]
 dessia_tree = DecisionTreeClassifier.fit(std_inputs, labelled_outputs)
 
 dessia_forest = RandomForestRegressor.fit(std_inputs, outputs)
@@ -63,4 +63,7 @@ dessia_forest.predict(std_inputs[50:100])
 dessia_forest = RandomForestClassifier.fit(std_inputs, labelled_outputs)
 dessia_forest.predict(std_inputs[50:100])
 
-dessia_forest._check_platform()
+outputs = [output[0] for output in outputs]
+dessia_svr = SVR.fit(std_inputs, outputs)
+dessia_svr.predict(std_inputs[50:100])
+

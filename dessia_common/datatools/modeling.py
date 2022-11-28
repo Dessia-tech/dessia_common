@@ -9,7 +9,7 @@ import itertools
 from scipy.spatial.distance import pdist, squareform
 import numpy as npy
 import sklearn
-from sklearn import preprocessing, linear_model, ensemble, tree
+from sklearn import preprocessing, linear_model, ensemble, tree, svm
 
 try:
     from plot_data.core import Scatter, Histogram, MultiplePlots, Tooltip, ParallelPlot, PointFamily, EdgeStyle, Axis, \
@@ -336,7 +336,7 @@ class DecisionTreeClassifier(DecisionTreeRegressor):
 
 class RandomForest(DessiaModel):
 
-    def __init__(self, estimators_: List[List[float]] = None,
+    def __init__(self, estimators_: List[DecisionTree] = None,
                  name: str = ''):
         self.estimators_ = estimators_
         DessiaObject.__init__(self, name=name)
@@ -364,7 +364,7 @@ class RandomForest(DessiaModel):
 class RandomForestRegressor(RandomForest):
     _standalone_in_db = True
 
-    def __init__(self, n_outputs_: int, estimators_: List[List[float]] = None, name: str = ''):
+    def __init__(self, n_outputs_: int, estimators_: List[DecisionTree] = None, name: str = ''):
         self.n_outputs_ = n_outputs_
         RandomForest.__init__(self, estimators_=estimators_, name=name)
 
@@ -389,7 +389,7 @@ class RandomForestRegressor(RandomForest):
 
 class RandomForestClassifier(RandomForestRegressor):
 
-    def __init__(self, n_classes_: int, classes_: List[int], n_outputs_: int, estimators_: List[List[float]] = None,
+    def __init__(self, n_classes_: int, classes_: List[int], n_outputs_: int, estimators_: List[DecisionTree] = None,
                  name: str = ''):
         self.n_classes_ = n_classes_
         self.classes_ = classes_
@@ -415,6 +415,51 @@ class RandomForestClassifier(RandomForestRegressor):
         kwargs_dict['n_classes_'] = model.n_classes_
         kwargs_dict['n_outputs_'] = model.n_outputs_
         kwargs_dict['classes_'] = model.classes_.tolist()
+        return cls(**kwargs_dict)
+
+
+
+class SVM(DessiaModel):
+
+    def __init__(self, coef_: List[List[float]] = None,
+                 name: str = ''):
+        self.coef_ = coef_
+        DessiaObject.__init__(self, name=name)
+
+    @classmethod
+    def _skl_class(cls):
+        raise NotImplementedError('Method _skl_class not implemented for SVM. Please use SVC or SVR.')
+
+    @classmethod
+    def fit(cls, inputs: List[List[float]], outputs: List[List[float]], name: str = '', C: float = 1.):
+        return cls.fit_(inputs, outputs, name=name, C=C)
+
+    @classmethod
+    def fit_predict(cls, inputs: List[List[float]], outputs: List[List[float]], predicted_inputs: List[List[float]],
+                    name: str = '', C: float = 1.):
+        return cls.fit_predict_(inputs, outputs, predicted_inputs, name=name, C=C)
+
+
+
+class SVR(SVM):
+
+    def __init__(self, coef_: List[List[float]] = None,
+                 name: str = ''):
+        SVM.__init__(self, coef_=coef_, name=name)
+
+    @classmethod
+    def _skl_class(cls):
+        return svm.SVR
+
+    def _instantiate_skl_model(self):
+        model = self._call_skl_model()
+        model.coef_ = self.coef_
+        return model
+
+    @classmethod
+    def _instantiate_dessia_model(cls, model, name: str = ''):
+        kwargs_dict = {'name': name}
+        kwargs_dict['coef_'] = model._get_coef().tolist()
         return cls(**kwargs_dict)
 
 
