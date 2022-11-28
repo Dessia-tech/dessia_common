@@ -135,7 +135,6 @@ class IdentityScaler(StandardScaler):
 #                                                        M O D E L S
 # ======================================================================================================================
 class DessiaModel(DessiaObject): # TODO: is there a better name ?
-    _rebuild_attributes = []
 
     def __init__(self, name: str = ''):
         DessiaObject.__init__(self, name=name)
@@ -148,23 +147,10 @@ class DessiaModel(DessiaObject): # TODO: is there a better name ?
         return self._skl_class()()
 
     def _instantiate_skl_model(self):
-        # model = self._call_skl_model()
-        # for attr in self._rebuild_attributes:
-        #     setattr(model, attr, getattr(self, attr))
-        # return model
         raise NotImplementedError(f'Method _instantiate_skl_model not implemented for {type(self).__name__}.')
-
 
     @classmethod
     def _instantiate_dessia_model(cls, model, name: str = ''):
-        # kwargs_dict = {'name': name}
-        # for attr in cls._rebuild_attributes:
-        #     if hasattr(model, attr):
-        #         if isinstance(getattr(model, attr), npy.ndarray):
-        #             kwargs_dict[attr] = getattr(model, attr).tolist()
-        #             continue
-        #         kwargs_dict[attr] = getattr(model, attr)
-        # return cls(**kwargs_dict)
         raise NotImplementedError(f'Method _instantiate_dessia_model not implemented for {cls.__name__}.')
 
     @classmethod
@@ -185,7 +171,6 @@ class DessiaModel(DessiaObject): # TODO: is there a better name ?
 
 
 class LinearRegression(DessiaModel):
-    _rebuild_attributes = ['coef_', 'intercept_']
     _standalone_in_db = True
 
     def __init__(self, coef_: List[List[float]] = None, intercept_: List[List[float]] = None, name: str = ''):
@@ -220,7 +205,6 @@ class LinearRegression(DessiaModel):
 
 
 class DessiaTree(DessiaModel): # TODO: is there a better name ?
-    _rebuild_attributes = ['n_classes', 'n_features', 'n_outputs', 'tree_state']
     _standalone_in_db = True
 
     def __init__(self, n_classes: List[int], n_features: int, n_outputs: int, tree_state: Dict[str, Any],
@@ -281,14 +265,32 @@ class DessiaTree(DessiaModel): # TODO: is there a better name ?
         raise NotImplementedError('fit_predict method is not supposed to be used in DessiaTree and is not implemented.')
 
 
-class DecisionTreeRegressor(DessiaModel):
-    _rebuild_attributes = ['tree_', 'n_outputs_']
+class DecisionTree(DessiaModel):
+    _standalone_in_db = True
+
+    def __init__(self, tree_: DessiaTree = None, name: str = ''):
+        self.tree_ = tree_
+        DessiaObject.__init__(self, name=name)
+
+    @classmethod
+    def fit(cls, inputs: List[List[float]], outputs: List[List[float]], name: str = '',
+            criterion: str = 'squared_error', max_depth: int = None):
+        if cls is not DecisionTreeRegressor and criterion == 'squared_error':
+            criterion = 'gini'
+        return cls.fit_(inputs, outputs, name=name, criterion=criterion, max_depth=max_depth)
+
+    @classmethod
+    def fit_predict(cls, inputs: List[List[float]], outputs: List[List[float]], predicted_inputs: List[List[float]],
+                    name: str = '', criterion: str = 'squared_error', max_depth: int = None):
+        return cls.fit_predict_(inputs, outputs, predicted_inputs, name=name, criterion=criterion, max_depth=max_depth)
+
+
+class DecisionTreeRegressor(DecisionTree):
     _standalone_in_db = True
 
     def __init__(self, n_outputs_: int, tree_: DessiaTree = None, name: str = ''):
         self.n_outputs_ = n_outputs_
-        self.tree_ = tree_
-        DessiaObject.__init__(self, name=name)
+        DecisionTree.__init__(self, tree_=tree_, name=name)
 
     @classmethod
     def _skl_class(cls):
@@ -307,35 +309,35 @@ class DecisionTreeRegressor(DessiaModel):
         kwargs_dict['n_outputs_'] = model.n_outputs_
         return cls(**kwargs_dict)
 
-    @classmethod
-    def fit(cls, inputs: List[List[float]], outputs: List[List[float]], name: str = '',
-            criterion: str = 'squared_error', max_depth: int = None):
-        if cls is not DecisionTreeRegressor and criterion == 'squared_error':
-            criterion = 'gini'
-        return cls.fit_(inputs, outputs, name=name, criterion=criterion, max_depth=max_depth)
-
-    @classmethod
-    def fit_predict(cls, inputs: List[List[float]], outputs: List[List[float]], predicted_inputs: List[List[float]],
-                    name: str = '', criterion: str = 'squared_error', max_depth: int = None):
-        return cls.fit_predict_(inputs, outputs, predicted_inputs, name=name, criterion=criterion, max_depth=max_depth)
-
 
 class DecisionTreeClassifier(DecisionTreeRegressor):
-    def __init__(self, n_outputs_: int, tree_: DessiaTree = None, name: str = ''):
-        self.n_outputs_ = n_outputs_
-        self.tree_ = tree_
-        DessiaObject.__init__(self, name=name)
+    def __init__(self, n_classes_: int, n_outputs_: int, tree_: DessiaTree = None, name: str = ''):
+        self.n_classes_ = n_classes_
+        DecisionTreeRegressor.__init__(self, n_outputs_=n_outputs_, tree_=tree_, name=name)
 
     @classmethod
     def _skl_class(cls):
         return tree.DecisionTreeClassifier
 
+    def _instantiate_skl_model(self):
+        model = self._call_skl_model()
+        model.n_outputs_ = self.n_outputs_
+        model.n_classes_ = self.n_classes_
+        model.tree_ = self.tree_._instantiate_skl_model()
+        return model
+
+    @classmethod
+    def _instantiate_dessia_model(cls, model, name: str = ''):
+        kwargs_dict = {'name': name}
+        kwargs_dict['tree_'] = DessiaTree._instantiate_dessia_model(model.tree_)
+        kwargs_dict['n_outputs_'] = model.n_outputs_
+        kwargs_dict['n_classes_'] = model.n_classes_
+        return cls(**kwargs_dict)
+
 
 class RandomForest(DessiaModel):
-    _rebuild_attributes = ['estimators_', 'n_outputs_']
-
-    def __init__(self, n_outputs_: int, estimators_: List[List[float]] = None, name: str = ''):
-        self.n_outputs_ = n_outputs_
+    def __init__(self, estimators_: List[List[float]] = None,
+                 name: str = ''):
         self.estimators_ = estimators_
         DessiaObject.__init__(self, name=name)
 
@@ -343,20 +345,6 @@ class RandomForest(DessiaModel):
     def _skl_class(cls):
         raise NotImplementedError('Method _skl_class not implemented for RandomForest. Please use '\
                                   'RandomForestClassifier or RandomForestRegressor.')
-
-    def _instantiate_skl_model(self):
-        model = self._call_skl_model()
-        model.estimators_ = [tree._instantiate_skl_model() for tree in self.estimators_]
-        model.n_outputs_ = self.n_outputs_
-        return model
-
-    @classmethod
-    def _instantiate_dessia_model(cls, model, name: str = ''):
-        kwargs_dict = {'name': name}
-        kwargs_dict['estimators_'] = [DecisionTreeRegressor._instantiate_dessia_model(tree)
-                                      for tree in model.estimators_]
-        kwargs_dict['n_outputs_'] = model.n_outputs_
-        return cls(**kwargs_dict)
 
     @classmethod
     def fit(cls, inputs: List[List[float]], outputs: List[List[float]], name: str = '',
@@ -373,22 +361,58 @@ class RandomForest(DessiaModel):
                                 criterion=criterion, max_depth=max_depth, n_jobs=1)
 
 
-class RandomForestClassifier(RandomForest):
+class RandomForestRegressor(RandomForest):
     def __init__(self, n_outputs_: int, estimators_: List[List[float]] = None, name: str = ''):
-        RandomForest.__init__(self, n_outputs_=n_outputs_, estimators_=estimators_, name=name)
+        self.n_outputs_ = n_outputs_
+        RandomForest.__init__(self, estimators_=estimators_, name=name)
+
+    @classmethod
+    def _skl_class(cls):
+        return ensemble.RandomForestRegressor
+
+    def _instantiate_skl_model(self):
+        model = self._call_skl_model()
+        model.estimators_ = [tree._instantiate_skl_model() for tree in self.estimators_]
+        model.n_outputs_ = self.n_outputs_
+        return model
+
+    @classmethod
+    def _instantiate_dessia_model(cls, model, name: str = ''):
+        kwargs_dict = {'name': name}
+        kwargs_dict['estimators_'] = [DecisionTreeRegressor._instantiate_dessia_model(tree)
+                                      for tree in model.estimators_]
+        kwargs_dict['n_outputs_'] = model.n_outputs_
+        return cls(**kwargs_dict)
+
+
+class RandomForestClassifier(RandomForestRegressor):
+    def __init__(self, n_classes_: int, classes_: List[int], n_outputs_: int, estimators_: List[List[float]] = None,
+                 name: str = ''):
+        self.n_classes_ = n_classes_
+        self.classes_ = classes_
+        RandomForestRegressor.__init__(self, n_outputs_=n_outputs_, estimators_=estimators_, name=name)
 
     @classmethod
     def _skl_class(cls):
         return ensemble.RandomForestClassifier
 
-
-class RandomForestRegressor(RandomForest):
-    def __init__(self, n_outputs_: int, estimators_: List[List[float]] = None, name: str = ''):
-        RandomForest.__init__(self, n_outputs_=n_outputs_, estimators_=estimators_, name=name)
+    def _instantiate_skl_model(self):
+        model = self._call_skl_model()
+        model.estimators_ = [tree._instantiate_skl_model() for tree in self.estimators_]
+        model.n_classes_ = self.n_classes_
+        model.n_outputs_ = self.n_outputs_
+        model.classes_ = npy.array(self.classes_)
+        return model
 
     @classmethod
-    def _skl_class(cls):
-        return ensemble.RandomForestRegressor
+    def _instantiate_dessia_model(cls, model, name: str = ''):
+        kwargs_dict = {'name': name}
+        kwargs_dict['estimators_'] = [DecisionTreeClassifier._instantiate_dessia_model(tree)
+                                      for tree in model.estimators_]
+        kwargs_dict['n_classes_'] = model.n_classes_
+        kwargs_dict['n_outputs_'] = model.n_outputs_
+        kwargs_dict['classes_'] = model.classes_.tolist()
+        return cls(**kwargs_dict)
 
 
 # ======================================================================================================================
