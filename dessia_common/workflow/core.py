@@ -326,10 +326,6 @@ class Workflow(Block):
         }
     }
 
-    @property
-    def nodes(self):
-        return self.blocks + self.nonblock_variables
-
     def __init__(self, blocks, pipes, output, *, imposed_variable_values=None,
                  detached_variables: List[TypedVariable] = None, description: str = "",
                  documentation: str = "", name: str = ""):
@@ -401,6 +397,14 @@ class Workflow(Block):
 
         self.branch_by_display_selector = self.display_branches
         self.branch_by_export_format = self.export_branches
+
+    @classmethod
+    def generate_empty(cls):
+        return cls(blocks=[], pipes=[], output=None)
+
+    @property
+    def nodes(self):
+        return self.blocks + self.nonblock_variables
 
     def handle_pipe(self, pipe):
         """
