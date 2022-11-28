@@ -662,11 +662,12 @@ class DessiaObject:
                 if not filepath.endswith(f".{export_format.extension}"):
                     filepath += f".{export_format.extension}"
                     print(f'Renaming filepath to {filepath}')
-                kwargs = {"mode": "wb"}
                 if export_format.text:
-                    kwargs = {"mode": "w", "encoding": "utf-8"}
-                with open(filepath, **kwargs) as stream:
-                    getattr(self, export_format.method_name)(stream, **export_format.args)
+                    with open(filepath, mode="w", encoding="utf-8") as stream:
+                        getattr(self, export_format.method_name)(stream, **export_format.args)
+                else:
+                    with open(filepath, mode="wb") as stream:
+                        getattr(self, export_format.method_name)(stream, **export_format.args)
                 return filepath
         raise ValueError(f'Export selector not found: {selector}')
 
