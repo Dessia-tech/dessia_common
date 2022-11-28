@@ -205,7 +205,6 @@ class LinearRegression(DessiaModel):
 
 
 class DessiaTree(DessiaModel): # TODO: is there a better name ?
-    _standalone_in_db = True
 
     def __init__(self, n_classes: List[int], n_features: int, n_outputs: int, tree_state: Dict[str, Any],
                  name: str = ''):
@@ -241,13 +240,13 @@ class DessiaTree(DessiaModel): # TODO: is there a better name ?
         model.__setstate__(skl_state)
         return model
 
-    def _instantiate_skl_model(self):
+    def instantiate_skl(self):
         model = self._call_skl_model()
         model = self._setstate_dessia(model, self.tree_state)
         return model
 
     @classmethod
-    def _instantiate_dessia_model(cls, model, name: str = ''):
+    def instantiate_dessia(cls, model, name: str = ''):
         kwargs_dict = {'name': name}
         kwargs_dict['tree_state'] = cls._getstate_dessia(model)
         kwargs_dict['n_classes'] = model.n_classes.tolist()
@@ -266,7 +265,6 @@ class DessiaTree(DessiaModel): # TODO: is there a better name ?
 
 
 class DecisionTree(DessiaModel):
-    _standalone_in_db = True
 
     def __init__(self, tree_: DessiaTree = None, name: str = ''):
         self.tree_ = tree_
@@ -299,18 +297,19 @@ class DecisionTreeRegressor(DecisionTree):
     def _instantiate_skl_model(self):
         model = self._call_skl_model()
         model.n_outputs_ = self.n_outputs_
-        model.tree_ = self.tree_._instantiate_skl_model()
+        model.tree_ = self.tree_.instantiate_skl()
         return model
 
     @classmethod
     def _instantiate_dessia_model(cls, model, name: str = ''):
         kwargs_dict = {'name': name}
-        kwargs_dict['tree_'] = DessiaTree._instantiate_dessia_model(model.tree_)
+        kwargs_dict['tree_'] = DessiaTree.instantiate_dessia(model.tree_)
         kwargs_dict['n_outputs_'] = model.n_outputs_
         return cls(**kwargs_dict)
 
 
 class DecisionTreeClassifier(DecisionTreeRegressor):
+
     def __init__(self, n_classes_: int, n_outputs_: int, tree_: DessiaTree = None, name: str = ''):
         self.n_classes_ = n_classes_
         DecisionTreeRegressor.__init__(self, n_outputs_=n_outputs_, tree_=tree_, name=name)
@@ -323,19 +322,20 @@ class DecisionTreeClassifier(DecisionTreeRegressor):
         model = self._call_skl_model()
         model.n_outputs_ = self.n_outputs_
         model.n_classes_ = self.n_classes_
-        model.tree_ = self.tree_._instantiate_skl_model()
+        model.tree_ = self.tree_.instantiate_skl()
         return model
 
     @classmethod
     def _instantiate_dessia_model(cls, model, name: str = ''):
         kwargs_dict = {'name': name}
-        kwargs_dict['tree_'] = DessiaTree._instantiate_dessia_model(model.tree_)
+        kwargs_dict['tree_'] = DessiaTree.instantiate_dessia(model.tree_)
         kwargs_dict['n_outputs_'] = model.n_outputs_
         kwargs_dict['n_classes_'] = model.n_classes_
         return cls(**kwargs_dict)
 
 
 class RandomForest(DessiaModel):
+
     def __init__(self, estimators_: List[List[float]] = None,
                  name: str = ''):
         self.estimators_ = estimators_
@@ -362,6 +362,8 @@ class RandomForest(DessiaModel):
 
 
 class RandomForestRegressor(RandomForest):
+    _standalone_in_db = True
+
     def __init__(self, n_outputs_: int, estimators_: List[List[float]] = None, name: str = ''):
         self.n_outputs_ = n_outputs_
         RandomForest.__init__(self, estimators_=estimators_, name=name)
@@ -386,6 +388,7 @@ class RandomForestRegressor(RandomForest):
 
 
 class RandomForestClassifier(RandomForestRegressor):
+
     def __init__(self, n_classes_: int, classes_: List[int], n_outputs_: int, estimators_: List[List[float]] = None,
                  name: str = ''):
         self.n_classes_ = n_classes_
