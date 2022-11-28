@@ -127,12 +127,9 @@ class StandaloneBuiltinsSubobject(EmbeddedBuiltinsSubobject):
 
     def __init__(self, distarg: Distance, floatarg: float, intarg: int,
                  boolarg: bool, name: str = 'Standalone Subobject'):
-        self.distarg = distarg
-        self.floatarg = floatarg
-        self.intarg = intarg
-        self.boolarg = boolarg
 
-        EmbeddedBuiltinsSubobject.__init__(self, name=name)
+        EmbeddedBuiltinsSubobject.__init__(self, distarg=distarg, floatarg=floatarg,
+                                           intarg=intarg, boolarg=boolarg, name=name)
 
 
 DEF_EBS = EmbeddedBuiltinsSubobject.generate(1)
