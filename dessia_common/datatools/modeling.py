@@ -18,6 +18,8 @@ try:
 except ImportError:
     pass
 from dessia_common.core import DessiaObject
+from dessia_common.utils.diff import data_eq, diff, dict_hash, list_hash
+from dessia_common.utils.types import full_classname, is_sequence
 
 
 # ======================================================================================================================
@@ -235,6 +237,13 @@ class BaseTree(BaseModel):
         self.n_outputs = n_outputs
         self.tree_state = tree_state
         DessiaObject.__init__(self, name=name)
+
+    def _data_hash(self):
+        hash_ = npy.linalg.norm(self.tree_state['values'][0])
+        hash_ += sum(self.n_classes)
+        hash_ += self.n_features
+        hash_ += self.n_outputs
+        return int(hash_ % 1e5)
 
     @classmethod
     def _skl_class(cls):
