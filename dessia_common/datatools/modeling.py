@@ -95,7 +95,7 @@ class StandardScaler(BaseScaler):
         self.mean_ = mean_
         self.scale_ = scale_
         self.var_ = var_
-        DessiaObject.__init__(self, name=name)
+        BaseScaler.__init__(self, name=name)
 
     @classmethod
     def _skl_class(cls):
