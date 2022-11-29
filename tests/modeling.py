@@ -4,12 +4,12 @@ Tests for dessia_common.modeling file
 """
 
 import numpy as npy
-from sklearn import tree, ensemble
+from sklearn import tree, ensemble, svm
 from dessia_common.core import DessiaObject
 from dessia_common.models import all_cars_no_feat
 from dessia_common.datatools.dataset import Dataset
 from dessia_common.datatools.modeling import StandardScaler, IdentityScaler, LinearRegression, DessiaTree,\
-    DecisionTreeRegressor, DecisionTreeClassifier, RandomForestRegressor, RandomForestClassifier, SVR
+    DecisionTreeRegressor, DecisionTreeClassifier, RandomForestRegressor, RandomForestClassifier, SVR, SVC
 
 
 # Load Data and put it in a Dataset (matrix is automatically computed)
@@ -64,6 +64,11 @@ dessia_forest = RandomForestClassifier.fit(std_inputs, labelled_outputs)
 dessia_forest.predict(std_inputs[50:100])
 
 outputs = [output[0] for output in outputs]
-dessia_svr = SVR.fit(std_inputs, outputs)
-dessia_svr.predict(std_inputs[50:100])
+dessia_svr = SVR.fit(std_inputs, outputs, kernel='rbf')
+dessia_svc = SVC.fit(std_inputs, labelled_outputs, kernel='rbf')
+skl_svr = svm.SVR(kernel='rbf')
+skl_svr.fit(std_inputs, outputs)
 
+dessia_svr.predict(std_inputs[50:55])
+dessia_svc.predict(std_inputs[50:55])
+skl_svr.predict(std_inputs[50:55])

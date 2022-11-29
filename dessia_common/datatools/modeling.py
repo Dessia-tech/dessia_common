@@ -346,6 +346,18 @@ class RandomForest(DessiaModel):
         raise NotImplementedError('Method _skl_class not implemented for RandomForest. Please use '\
                                   'RandomForestClassifier or RandomForestRegressor.')
 
+    def generic_skl_attributes(self):
+        model = self._call_skl_model()
+        model.estimators_ = [tree._instantiate_skl_model() for tree in self.estimators_]
+        model.n_outputs_ = self.n_outputs_
+        return model
+
+    @classmethod
+    def generic_dessia_attributes(cls, model, name: str = ''):
+        kwargs_dict = {'name': name}
+        kwargs_dict['n_outputs_'] = model.n_outputs_
+        return kwargs_dict
+
     @classmethod
     def fit(cls, inputs: List[List[float]], outputs: List[List[float]], name: str = '',
             n_estimators: int = 100, criterion: str = 'squared_error', max_depth: int = None):
@@ -373,17 +385,13 @@ class RandomForestRegressor(RandomForest):
         return ensemble.RandomForestRegressor
 
     def _instantiate_skl_model(self):
-        model = self._call_skl_model()
-        model.estimators_ = [tree._instantiate_skl_model() for tree in self.estimators_]
-        model.n_outputs_ = self.n_outputs_
-        return model
+        return self.generic_skl_attributes()
 
     @classmethod
     def _instantiate_dessia_model(cls, model, name: str = ''):
-        kwargs_dict = {'name': name}
+        kwargs_dict = cls.generic_dessia_attributes(model, name=name)
         kwargs_dict['estimators_'] = [DecisionTreeRegressor._instantiate_dessia_model(tree)
                                       for tree in model.estimators_]
-        kwargs_dict['n_outputs_'] = model.n_outputs_
         return cls(**kwargs_dict)
 
 
@@ -400,67 +408,136 @@ class RandomForestClassifier(RandomForestRegressor):
         return ensemble.RandomForestClassifier
 
     def _instantiate_skl_model(self):
-        model = self._call_skl_model()
-        model.estimators_ = [tree._instantiate_skl_model() for tree in self.estimators_]
+        model = self.generic_skl_attributes()
         model.n_classes_ = self.n_classes_
-        model.n_outputs_ = self.n_outputs_
         model.classes_ = npy.array(self.classes_)
         return model
 
     @classmethod
     def _instantiate_dessia_model(cls, model, name: str = ''):
-        kwargs_dict = {'name': name}
+        kwargs_dict = cls.generic_dessia_attributes(model, name=name)
         kwargs_dict['estimators_'] = [DecisionTreeClassifier._instantiate_dessia_model(tree)
                                       for tree in model.estimators_]
         kwargs_dict['n_classes_'] = model.n_classes_
-        kwargs_dict['n_outputs_'] = model.n_outputs_
         kwargs_dict['classes_'] = model.classes_.tolist()
         return cls(**kwargs_dict)
 
 
-
 class SVM(DessiaModel):
 
-    def __init__(self, coef_: List[List[float]] = None,
-                 name: str = ''):
-        self.coef_ = coef_
+    def __init__(self, raw_coef_: List[List[float]] = None, _dual_coef_: List[List[float]] = None,
+                  support_vectors_: List[List[float]] = None, _sparse: bool = False, kernel: str = 'linear', _n_support: int = 1,
+                  support_: List[int] = 1, _intercept_: List[List[float]] = None, _probA: List[List[float]] = None, _probB: List[List[float]] = None,
+                  _gamma: float = 1., name: str = ''):
+        self.raw_coef_ = raw_coef_
+        self.kernel = kernel
+        self._dual_coef_ = _dual_coef_
+        self._sparse = _sparse
+        self._n_support = _n_support
+        self.support_ = support_
+        self._intercept_ = _intercept_
+        self._probA = _probA
+        self._probB = _probB
+        self._gamma = _gamma
+        self.support_vectors_ = support_vectors_
         DessiaObject.__init__(self, name=name)
 
     @classmethod
     def _skl_class(cls):
         raise NotImplementedError('Method _skl_class not implemented for SVM. Please use SVC or SVR.')
 
-    @classmethod
-    def fit(cls, inputs: List[List[float]], outputs: List[List[float]], name: str = '', C: float = 1.):
-        return cls.fit_(inputs, outputs, name=name, C=C)
+    def generic_skl_attributes(self):
+        model = self._call_skl_model()
+        setattr(model, 'raw_coef_', npy.array(self.raw_coef_))
+        setattr(model, '_dual_coef_', npy.array(self._dual_coef_))
+        setattr(model, 'support_vectors_', npy.array(self.support_vectors_))
+        setattr(model, '_sparse', self._sparse)
+        setattr(model, '_n_support', npy.array(self._n_support, dtype=npy.int32))
+        setattr(model, 'support_', npy.array(self.support_, dtype=npy.int32))
+        setattr(model, '_intercept_', npy.array(self._intercept_))
+        setattr(model, '_probA', npy.array(self._probA))
+        setattr(model, '_probB', npy.array(self._probB))
+        setattr(model, '_gamma', self._gamma)
+        return model
 
     @classmethod
-    def fit_predict(cls, inputs: List[List[float]], outputs: List[List[float]], predicted_inputs: List[List[float]],
+    def generic_dessia_attributes(cls, model, name: str = ''):
+        kwargs_dict = {'name': name}
+        kwargs_dict['raw_coef_'] = model._get_coef().tolist()
+        kwargs_dict['_dual_coef_'] = model._dual_coef_.tolist()
+        kwargs_dict['support_vectors_'] = model.support_vectors_.tolist()
+        kwargs_dict['_sparse'] = model._sparse
+        kwargs_dict['_n_support'] = model._n_support
+        kwargs_dict['support_'] = model.support_.tolist()
+        kwargs_dict['_intercept_'] = model._intercept_.tolist()
+        kwargs_dict['_probA'] = model._probA.tolist()
+        kwargs_dict['_probB'] = model._probB.tolist()
+        kwargs_dict['_gamma'] = model._gamma
+        kwargs_dict['kernel'] = model.kernel
+        return kwargs_dict
+
+    def _instantiate_skl_model(self):
+        return self.generic_skl_attributes()
+
+    @classmethod
+    def _instantiate_dessia_model(cls, model, name: str = ''):
+        return cls(**cls.generic_dessia_attributes(model, name=name))
+
+    def _call_skl_model(self):
+        return self._skl_class()(kernel=self.kernel)
+
+    @classmethod
+    def fit(cls, inputs: List[List[float]], outputs: List[List[float]], name: str = '', C: float = 1., kernel: str = 'rbf'):
+        return cls.fit_(inputs, outputs, name=name, C=C, kernel=kernel)
+
+    @classmethod
+    def fit_predict(cls, inputs: List[List[float]], outputs: List[List[float]], predicted_inputs: List[List[float]], kernel: str = 'rbf',
                     name: str = '', C: float = 1.):
-        return cls.fit_predict_(inputs, outputs, predicted_inputs, name=name, C=C)
-
+        return cls.fit_predict_(inputs, outputs, predicted_inputs, name=name, C=C, kernel=kernel)
 
 
 class SVR(SVM):
 
-    def __init__(self, coef_: List[List[float]] = None,
-                 name: str = ''):
-        SVM.__init__(self, coef_=coef_, name=name)
+    def __init__(self, raw_coef_: List[List[float]] = None, _dual_coef_: List[List[float]] = None,
+                 support_vectors_: List[List[float]] = None, _sparse: bool = False, kernel: str = 'linear', _n_support: int = 1,
+                 support_: List[int] = 1, _intercept_: List[List[float]] = None, _probA: List[List[float]] = None, _probB: List[List[float]] = None,
+                 _gamma: float = 1., name: str = ''):
+        SVM.__init__(self, raw_coef_=raw_coef_, _dual_coef_=_dual_coef_, support_vectors_=support_vectors_,
+                     _sparse=_sparse, kernel=kernel, _n_support=_n_support, support_=support_, _intercept_=_intercept_,
+                     _probA=_probA, _probB=_probB, _gamma=_gamma, name=name)
 
     @classmethod
     def _skl_class(cls):
         return svm.SVR
 
+
+
+class SVC(SVM):
+
+    def __init__(self, raw_coef_: List[List[float]] = None, _dual_coef_: List[List[float]] = None,
+                 support_vectors_: List[List[float]] = None, _sparse: bool = False, kernel: str = 'linear', _n_support: int = 1,
+                 support_: List[int] = 1, _intercept_: List[List[float]] = None, _probA: List[List[float]] = None, _probB: List[List[float]] = None,
+                 _gamma: float = 1., classes_: List[int] = None, name: str = ''):
+        self.classes_ = classes_
+        SVM.__init__(self, raw_coef_=raw_coef_, _dual_coef_=_dual_coef_, support_vectors_=support_vectors_,
+                    _sparse=_sparse, kernel=kernel, _n_support=_n_support, support_=support_, _intercept_=_intercept_,
+                    _probA=_probA, _probB=_probB, _gamma=_gamma, name=name)
+
+    @classmethod
+    def _skl_class(cls):
+        return svm.SVC
+
     def _instantiate_skl_model(self):
-        model = self._call_skl_model()
-        model.coef_ = self.coef_
+        model = self.generic_skl_attributes()
+        setattr(model, 'classes_', self.classes_)
         return model
 
     @classmethod
     def _instantiate_dessia_model(cls, model, name: str = ''):
-        kwargs_dict = {'name': name}
-        kwargs_dict['coef_'] = model._get_coef().tolist()
+        kwargs_dict = cls.generic_dessia_attributes(model, name=name)
+        kwargs_dict['classes_'] = model.classes_
         return cls(**kwargs_dict)
+
 
 
 # ======================================================================================================================
