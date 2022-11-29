@@ -5,13 +5,10 @@ Tests for dessia_common.modeling file
 import time
 import numpy as npy
 from sklearn import tree, ensemble, svm, neural_network
-from dessia_common.core import DessiaObject
 from dessia_common.models import all_cars_no_feat
 from dessia_common.datatools.dataset import Dataset
-from dessia_common.datatools.modeling import StandardScaler, IdentityScaler, LinearRegression, BaseTree,\
-    DecisionTreeRegressor, DecisionTreeClassifier, RandomForestRegressor, RandomForestClassifier, SVR, SVC,\
-        MLPRegressor, MLPClassifier
-
+from dessia_common.datatools.modeling import StandardScaler, IdentityScaler, LinearRegression, SVR, SVC, MLPRegressor,\
+    DecisionTreeRegressor, DecisionTreeClassifier, RandomForestRegressor, RandomForestClassifier, MLPClassifier
 
 # Load Data and put it in a Dataset (matrix is automatically computed)
 dataset_example = Dataset(all_cars_no_feat)

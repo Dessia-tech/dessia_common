@@ -2,24 +2,12 @@
 Tools and base classes for machine learning methods.
 
 """
-from typing import List, Dict, Any, Tuple
-from copy import copy
-import itertools
+from typing import List, Dict, Any
 
-from scipy.spatial.distance import pdist, squareform
 import numpy as npy
-import sklearn
 from sklearn import preprocessing, linear_model, ensemble, tree, svm, neural_network
 
-try:
-    from plot_data.core import Scatter, Histogram, MultiplePlots, Tooltip, ParallelPlot, PointFamily, EdgeStyle, Axis, \
-        PointStyle
-    from plot_data.colors import BLUE, GREY
-except ImportError:
-    pass
 from dessia_common.core import DessiaObject
-from dessia_common.utils.diff import data_eq, diff, dict_hash, list_hash
-from dessia_common.utils.types import full_classname, is_sequence
 
 
 # ======================================================================================================================
@@ -375,9 +363,9 @@ class DecisionTreeClassifier(DecisionTree):
 
 class RandomForest(BaseModel):
 
-    def __init__(self, estimators_: List[DecisionTree] = None,
-                 name: str = ''):
+    def __init__(self, n_outputs_: int, estimators_: List[DecisionTree] = None, name: str = ''):
         self.estimators_ = estimators_
+        self.n_outputs_ = n_outputs_
         BaseModel.__init__(self, name=name)
 
     # def copy(self, deep=True, memo=None):
@@ -419,8 +407,7 @@ class RandomForestRegressor(RandomForest):
     _standalone_in_db = True
 
     def __init__(self, n_outputs_: int, estimators_: List[DecisionTree] = None, name: str = ''):
-        self.n_outputs_ = n_outputs_
-        RandomForest.__init__(self, estimators_=estimators_, name=name)
+        RandomForest.__init__(self, estimators_=estimators_, n_outputs_=n_outputs_, name=name)
 
     @classmethod
     def _skl_class(cls):
@@ -442,10 +429,9 @@ class RandomForestClassifier(RandomForest):
 
     def __init__(self, n_classes_: int, classes_: List[int], n_outputs_: int, estimators_: List[DecisionTree] = None,
                  name: str = ''):
-        self.n_outputs_ = n_outputs_
         self.n_classes_ = n_classes_
         self.classes_ = classes_
-        RandomForest.__init__(self, estimators_=estimators_, name=name)
+        RandomForest.__init__(self, estimators_=estimators_, n_outputs_=n_outputs_, name=name)
 
     @classmethod
     def _skl_class(cls):
@@ -740,11 +726,3 @@ class Modeler(DessiaObject):
         predicted_outputs = model.fit_predict(scaled_inputs, scaled_outputs)
         self.model_ = {key: value for key, value in model.items() if key in self._required_attributes}
         return predicted_outputs
-
-# Does sklearn objects have to be serialized ?
-
-
-
-
-
-
