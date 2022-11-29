@@ -126,7 +126,7 @@ class InstantiateModel(Block):
                            else EMPTY_PARSED_ATTRIBUTE for i in self.inputs}
         return block_docstring
 
-    def _to_script(self) -> ToScriptElement:
+    def _to_script(self, _) -> ToScriptElement:
         script = f"InstantiateModel(model_class=" \
                  f"{self.model_class.__name__}, {self.base_script()})"
 
@@ -202,7 +202,7 @@ class ClassMethod(Block):
                            else EMPTY_PARSED_ATTRIBUTE for i in self.inputs}
         return block_docstring
 
-    def _to_script(self) -> ToScriptElement:
+    def _to_script(self, _) -> ToScriptElement:
         script = f"ClassMethod(method_type=ClassMethodType(" \
                  f"{self.method_type.class_.__name__}, '{self.method_type.name}')" \
                  f", {self.base_script()})"
@@ -294,7 +294,7 @@ class ModelMethod(Block):
                            else EMPTY_PARSED_ATTRIBUTE for i in self.inputs}
         return block_docstring
 
-    def _to_script(self) -> ToScriptElement:
+    def _to_script(self, _) -> ToScriptElement:
         script = f"ModelMethod(method_type=MethodType(" \
                  f"{self.method_type.class_.__name__}, '{self.method_type.name}')" \
                  f", {self.base_script()})"
@@ -334,7 +334,7 @@ class Sequence(Block):
     def evaluate(self, values):
         return [[values[var] for var in self.inputs]]
 
-    def _to_script(self) -> ToScriptElement:
+    def _to_script(self, _) -> ToScriptElement:
         script = f"Sequence(number_arguments={len(self.inputs)}, {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
@@ -367,7 +367,7 @@ class Concatenate(Block):
         list_values = list(values.values())
         return [concatenate(list_values)]
 
-    def _to_script(self) -> ToScriptElement:
+    def _to_script(self, _) -> ToScriptElement:
         script = f"Concatenate(number_arguments={len(self.inputs)}, {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
@@ -438,8 +438,8 @@ class WorkflowBlock(Block):
                     docstring[input_] = block_docstring[input_]
         return docstring
 
-    def _to_script(self) -> ToScriptElement:
-        prefix = 'sub_'
+    def _to_script(self, prefix : str) -> ToScriptElement:
+        prefix = f'{prefix}sub_'
         workflow_script = self.workflow._to_script(prefix)
         script_workflow = f"\n# --- Subworkflow --- \n" \
             f"{workflow_script.declaration}" \
@@ -522,8 +522,8 @@ class ForEach(Block):
             block_docstring[input_] = wb_docstring[workflow_input]
         return block_docstring
 
-    def _to_script(self) -> ToScriptElement:
-        wfblock_script_elements = self.workflow_block._to_script()
+    def _to_script(self, prefix : str) -> ToScriptElement:
+        wfblock_script_elements = self.workflow_block._to_script(prefix)
         wfblock_script = f"{wfblock_script_elements.before_declaration}\n" \
                          f"wfblock = {wfblock_script_elements.declaration}"
         foreach_script = f"ForEach(workflow_block=wfblock, iter_input_index={self.iter_input_index}, " \
@@ -558,7 +558,7 @@ class Unpacker(Block):
     def evaluate(self, values):
         return [values[self.inputs[0]][i] for i in self.indices]
 
-    def _to_script(self) -> ToScriptElement:
+    def _to_script(self, _) -> ToScriptElement:
         script = f"Unpacker(indices={self.indices}, {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
@@ -583,7 +583,7 @@ class Flatten(Block):
             output.extend(value)
         return [output]
 
-    def _to_script(self) -> ToScriptElement:
+    def _to_script(self, _) -> ToScriptElement:
         script = f"Flatten({self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
@@ -621,7 +621,7 @@ class Product(Block):
         output_value = list(itertools.product(*list_product))
         return [output_value]
 
-    def _to_script(self) -> ToScriptElement:
+    def _to_script(self, _) -> ToScriptElement:
         script = f"Product(number_list={self.number_list}, {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
@@ -674,7 +674,7 @@ class Filter(Block):
         filters_list = FiltersList(self.filters, self.logical_operator)
         return [filters_list.apply(values[self.inputs[0]])]
 
-    def _to_script(self) -> ToScriptElement:
+    def _to_script(self, _) -> ToScriptElement:
         filter_variables = [f"DessiaFilter("
                             f"attribute='{f.attribute}', comparison_operator='{f.comparison_operator}', "
                             f"bound={f.bound}, name='{f.name}')" for f in self.filters]
@@ -739,9 +739,11 @@ class Display(Block):
         object_ = values[self.inputs[0]]
         settings = object_._display_settings_from_selector(self.selector)
         data = attrmethod_getter(object_, settings.method)()
-        return [DisplayObject(type_=settings.type, data=serialize(data), name=self.name)]
+        if settings.serialize_data:
+            data = serialize(data)
+        return [DisplayObject(type_=settings.type, data=data, name=self.name)]
 
-    def _to_script(self) -> ToScriptElement:
+    def _to_script(self, _) -> ToScriptElement:
         script = f"{self.__class__.__name__}(name='{self.name}')"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
@@ -804,7 +806,7 @@ class MultiPlot(Display):
                                             coords=[(0, 0), (0, 300)], name='Results plot')
         return [DisplayObject(type_=self.type_, data=[multiplot.to_dict()])]
 
-    def _to_script(self) -> ToScriptElement:
+    def _to_script(self, _) -> ToScriptElement:
         script = f"MultiPlot(attributes={self.attributes}, {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
@@ -891,7 +893,7 @@ class ModelAttribute(Block):
     def evaluate(self, values):
         return [get_in_object_from_path(values[self.inputs[0]], f'#/{self.attribute_name}')]
 
-    def _to_script(self) -> ToScriptElement:
+    def _to_script(self, _) -> ToScriptElement:
         script = f"ModelAttribute(attribute_name='{self.attribute_name}', {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
@@ -932,7 +934,7 @@ class SetModelAttribute(Block):
         setattr(model, self.attribute_name, values[self.inputs[1]])
         return [model]
 
-    def _to_script(self) -> ToScriptElement:
+    def _to_script(self, _) -> ToScriptElement:
         script = f"SetModelAttribute(attribute_name='{self.attribute_name}', {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
@@ -964,7 +966,7 @@ class Sum(Block):
     def evaluate(values):
         return [sum(values)]
 
-    def _to_script(self) -> ToScriptElement:
+    def _to_script(self, _) -> ToScriptElement:
         script = f"Sum(number_elements={self.number_elements}, {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
@@ -977,7 +979,7 @@ class Substraction(Block):
     def evaluate(self, values):
         return [values[self.inputs[0]] - values[self.inputs[1]]]
 
-    def _to_script(self) -> ToScriptElement:
+    def _to_script(self, _) -> ToScriptElement:
         script = f"Substraction({self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
@@ -1023,7 +1025,7 @@ class ConcatenateStrings(Block):
         chunks = [values[i] for i in self.inputs]
         return [self.separator.join(chunks)]
 
-    def _to_script(self) -> ToScriptElement:
+    def _to_script(self, _) -> ToScriptElement:
         script = f"ConcatenateStrings(number_elements={self.number_elements}, " \
                  f"separator='{self.separator}', " \
                  f"name='{self.name}')"
@@ -1102,7 +1104,7 @@ class Export(Block):
         return {"extension": self.extension, "method_name": "export", "text": self.text,
                 "export_name": self.filename, "args": args}
 
-    def _to_script(self) -> ToScriptElement:
+    def _to_script(self, _) -> ToScriptElement:
         script = f"Export(method_type=MethodType(" \
                  f"{full_classname(object_=self.method_type.class_, compute_for='class')}, '{self.method_type.name}')" \
                  f", filename='{self.filename}', extension='{self.extension}'" \
@@ -1170,6 +1172,6 @@ class Archive(Block):
         return {"extension": "zip", "method_name": "export", "text": False,
                 "export_name": self.filename, "args": {"block_index": block_index}}
 
-    def _to_script(self) -> ToScriptElement:
+    def _to_script(self, _) -> ToScriptElement:
         script = f"Archive(number_exports={self.number_exports}, filename='{self.filename}', {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
