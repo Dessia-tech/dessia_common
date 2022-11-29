@@ -287,12 +287,16 @@ class BaseTree(BaseModel):
         raise NotImplementedError('fit_predict method is not supposed to be used in BaseTree and is not implemented.')
 
 
-class DecisionTree(BaseModel):
+class DecisionTreeRegressor(BaseModel):
 
     def __init__(self, n_outputs_: int, tree_: BaseTree = None, name: str = ''):
         self.n_outputs_ = n_outputs_
         self.tree_ = tree_
         BaseModel.__init__(self, name=name)
+
+    @classmethod
+    def _skl_class(cls):
+        return tree.DecisionTreeRegressor
 
     def generic_skl_attributes(self):
         model = self._call_skl_model()
@@ -327,23 +331,12 @@ class DecisionTree(BaseModel):
         return cls.fit_predict_(inputs, outputs, predicted_inputs, name=name, criterion=criterion, max_depth=max_depth)
 
 
-class DecisionTreeRegressor(DecisionTree):
-    _standalone_in_db = True
-
-    def __init__(self, n_outputs_: int, tree_: BaseTree = None, name: str = ''):
-        DecisionTree.__init__(self, n_outputs_=n_outputs_, tree_=tree_, name=name)
-
-    @classmethod
-    def _skl_class(cls):
-        return tree.DecisionTreeRegressor
-
-
-class DecisionTreeClassifier(DecisionTree):
+class DecisionTreeClassifier(DecisionTreeRegressor):
     _standalone_in_db = True
 
     def __init__(self, n_classes_: int, n_outputs_: int, tree_: BaseTree = None, name: str = ''):
         self.n_classes_ = n_classes_
-        DecisionTree.__init__(self, n_outputs_=n_outputs_, tree_=tree_, name=name)
+        DecisionTreeRegressor.__init__(self, n_outputs_=n_outputs_, tree_=tree_, name=name)
 
     @classmethod
     def _skl_class(cls):
@@ -363,7 +356,7 @@ class DecisionTreeClassifier(DecisionTree):
 
 class RandomForest(BaseModel):
 
-    def __init__(self, n_outputs_: int, estimators_: List[DecisionTree] = None, name: str = ''):
+    def __init__(self, n_outputs_: int, estimators_: List[DecisionTreeRegressor] = None, name: str = ''):
         self.estimators_ = estimators_
         self.n_outputs_ = n_outputs_
         BaseModel.__init__(self, name=name)
@@ -406,7 +399,7 @@ class RandomForest(BaseModel):
 class RandomForestRegressor(RandomForest):
     _standalone_in_db = True
 
-    def __init__(self, n_outputs_: int, estimators_: List[DecisionTree] = None, name: str = ''):
+    def __init__(self, n_outputs_: int, estimators_: List[DecisionTreeRegressor] = None, name: str = ''):
         RandomForest.__init__(self, estimators_=estimators_, n_outputs_=n_outputs_, name=name)
 
     @classmethod
@@ -427,8 +420,8 @@ class RandomForestRegressor(RandomForest):
 class RandomForestClassifier(RandomForest):
     _standalone_in_db = True
 
-    def __init__(self, n_classes_: int, classes_: List[int], n_outputs_: int, estimators_: List[DecisionTree] = None,
-                 name: str = ''):
+    def __init__(self, n_classes_: int, classes_: List[int], n_outputs_: int,
+                 estimators_: List[DecisionTreeRegressor] = None, name: str = ''):
         self.n_classes_ = n_classes_
         self.classes_ = classes_
         RandomForest.__init__(self, estimators_=estimators_, n_outputs_=n_outputs_, name=name)
@@ -673,56 +666,56 @@ class MLPClassifier(MLP):
         return cls(**kwargs_dict)
 
 
-# ======================================================================================================================
-#                                                    M O D E L E R S
-# ======================================================================================================================
-class Modeler(DessiaObject):
-    def __init__(self, model: BaseModel, scaler: BaseScaler, scaled_inputs: bool = True, scaled_outputs: bool = False,
-                 name: str = ''):
-        self.model = model
-        self.scaler = scaler
-        self.scaled_inputs = scaled_inputs
-        self.scaled_outputs = scaled_outputs
-        DessiaObject.__init__(self, name=name)
+# # ======================================================================================================================
+# #                                                    M O D E L E R S
+# # ======================================================================================================================
+# class Modeler(DessiaObject):
+#     def __init__(self, model: BaseModel, scaler: BaseScaler, scaled_inputs: bool = True, scaled_outputs: bool = False,
+#                  name: str = ''):
+#         self.model = model
+#         self.scaler = scaler
+#         self.scaled_inputs = scaled_inputs
+#         self.scaled_outputs = scaled_outputs
+#         DessiaObject.__init__(self, name=name)
 
-##### SCALE ##########
-    def _initialize_scaler(self, is_scaled: bool):
-        if is_scaled:
-            return StandardScaler()
-        return IdentityScaler()
+# ##### SCALE ##########
+#     def _initialize_scaler(self, is_scaled: bool):
+#         if is_scaled:
+#             return StandardScaler()
+#         return IdentityScaler()
 
-##### MODEL ##########
-    def _initialize_model(self):
-        return BaseModel()
+# ##### MODEL ##########
+#     def _initialize_model(self):
+#         return BaseModel()
 
-    def _set_model_attributes(self, model, attributes: Dict[str, float]):
-        for attr, value in attributes.items():
-            setattr(model, attr, value)
-        return model
+#     def _set_model_attributes(self, model, attributes: Dict[str, float]):
+#         for attr, value in attributes.items():
+#             setattr(model, attr, value)
+#         return model
 
-    def _instantiate_model(self):
-        model = self._init_model()
-        model = self._set_model_attributes(model, self.model_attributes)
-        model = self._set_model_attributes(model, self.model_)
-        return model
+#     def _instantiate_model(self):
+#         model = self._init_model()
+#         model = self._set_model_attributes(model, self.model_attributes)
+#         model = self._set_model_attributes(model, self.model_)
+#         return model
 
-##### MODEL METHODS ##########
-    def fit(self, inputs: List[List[float]], outputs: List[List[float]]):
-        input_scaler, scaled_inputs = self._auto_scale(inputs, self.scaled_inputs)
-        output_scaler, scaled_outputs = self._auto_scale(outputs, self.scaled_outputs)
-        model = self._instantiate_model()
-        model.fit(scaled_inputs, scaled_outputs)
-        self.model_ = {key: value for key, value in model.items() if key in self._required_attributes}
+# ##### MODEL METHODS ##########
+#     def fit(self, inputs: List[List[float]], outputs: List[List[float]]):
+#         input_scaler, scaled_inputs = self._auto_scale(inputs, self.scaled_inputs)
+#         output_scaler, scaled_outputs = self._auto_scale(outputs, self.scaled_outputs)
+#         model = self._instantiate_model()
+#         model.fit(scaled_inputs, scaled_outputs)
+#         self.model_ = {key: value for key, value in model.items() if key in self._required_attributes}
 
-    def predict(self, inputs: List[List[float]], input_scaler, output_scaler):
-        scaled_inputs = input_scaler.transform(inputs)
-        model = self._instantiate_model()
-        return output_scaler.inverse_transform(model.predict(scaled_inputs))
+#     def predict(self, inputs: List[List[float]], input_scaler, output_scaler):
+#         scaled_inputs = input_scaler.transform(inputs)
+#         model = self._instantiate_model()
+#         return output_scaler.inverse_transform(model.predict(scaled_inputs))
 
-    def fit_predict(self, inputs: List[List[float]], outputs: List[List[float]]):
-        input_scaler, scaled_inputs = self._auto_scale(inputs, self.scaled_inputs)
-        output_scaler, scaled_outputs = self._auto_scale(outputs, self.scaled_outputs)
-        model = self._instantiate_model()
-        predicted_outputs = model.fit_predict(scaled_inputs, scaled_outputs)
-        self.model_ = {key: value for key, value in model.items() if key in self._required_attributes}
-        return predicted_outputs
+#     def fit_predict(self, inputs: List[List[float]], outputs: List[List[float]]):
+#         input_scaler, scaled_inputs = self._auto_scale(inputs, self.scaled_inputs)
+#         output_scaler, scaled_outputs = self._auto_scale(outputs, self.scaled_outputs)
+#         model = self._instantiate_model()
+#         predicted_outputs = model.fit_predict(scaled_inputs, scaled_outputs)
+#         self.model_ = {key: value for key, value in model.items() if key in self._required_attributes}
+#         return predicted_outputs
