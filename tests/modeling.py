@@ -8,7 +8,7 @@ from sklearn import tree, ensemble, svm
 from dessia_common.core import DessiaObject
 from dessia_common.models import all_cars_no_feat
 from dessia_common.datatools.dataset import Dataset
-from dessia_common.datatools.modeling import StandardScaler, IdentityScaler, LinearRegression, DessiaTree,\
+from dessia_common.datatools.modeling import StandardScaler, IdentityScaler, LinearRegression, BaseTree,\
     DecisionTreeRegressor, DecisionTreeClassifier, RandomForestRegressor, RandomForestClassifier, SVR, SVC
 
 

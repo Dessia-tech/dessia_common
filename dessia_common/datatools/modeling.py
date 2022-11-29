@@ -23,7 +23,7 @@ from dessia_common.core import DessiaObject
 # ======================================================================================================================
 #                                                     S C A L E R S
 # ======================================================================================================================
-class DessiaScaler(DessiaObject): # TODO: is there a better name ?
+class BaseScaler(DessiaObject): # TODO: is there a better name ?
     _rebuild_attributes = []
 
     def __init__(self, name: str = ''):
@@ -31,7 +31,7 @@ class DessiaScaler(DessiaObject): # TODO: is there a better name ?
 
     @classmethod
     def _skl_class(cls):
-        raise NotImplementedError('Method _skl_class not implemented for DessiaScaler. Please use children.')
+        raise NotImplementedError('Method _skl_class not implemented for BaseScaler. Please use children.')
 
     def _call_skl_scaler(self):
         return self._skl_class()()
@@ -68,7 +68,7 @@ class DessiaScaler(DessiaObject): # TODO: is there a better name ?
         return scaler, scaler.transform(matrix)
 
 
-class StandardScaler(DessiaScaler):
+class StandardScaler(BaseScaler):
     """
     Data scaler that standardly scale data. The operation made by this scaler is `new_X = (X - mean(X))/std(X)`.
 
@@ -134,14 +134,14 @@ class IdentityScaler(StandardScaler):
 # ======================================================================================================================
 #                                                        M O D E L S
 # ======================================================================================================================
-class DessiaModel(DessiaObject): # TODO: is there a better name ?
+class BaseModel(DessiaObject): # TODO: is there a better name ?
 
     def __init__(self, name: str = ''):
         DessiaObject.__init__(self, name=name)
 
     @classmethod
     def _skl_class(cls):
-        raise NotImplementedError('Method _skl_class not implemented for DessiaModel. Please use children.')
+        raise NotImplementedError('Method _skl_class not implemented for BaseModel. Please use children.')
 
     def _call_skl_model(self):
         return self._skl_class()()
@@ -170,7 +170,7 @@ class DessiaModel(DessiaObject): # TODO: is there a better name ?
         return model, model.predict(predicted_inputs)
 
 
-class LinearRegression(DessiaModel):
+class LinearRegression(BaseModel):
     _standalone_in_db = True
 
     def __init__(self, coef_: List[List[float]] = None, intercept_: List[List[float]] = None, name: str = ''):
@@ -204,7 +204,7 @@ class LinearRegression(DessiaModel):
                                 alpha=alpha, fit_intercept=fit_intercept, tol=tol)
 
 
-class DessiaTree(DessiaModel): # TODO: is there a better name ?
+class BaseTree(BaseModel): # TODO: is there a better name ?
 
     def __init__(self, n_classes: List[int], n_features: int, n_outputs: int, tree_state: Dict[str, Any],
                  name: str = ''):
@@ -256,17 +256,17 @@ class DessiaTree(DessiaModel): # TODO: is there a better name ?
 
     @classmethod
     def fit(cls, inputs: List[List[float]], outputs: List[List[float]], name: str = ''):
-        raise NotImplementedError('fit method is not supposed to be used in DessiaTree and is not implemented.')
+        raise NotImplementedError('fit method is not supposed to be used in BaseTree and is not implemented.')
 
     @classmethod
     def fit_predict(cls, inputs: List[List[float]], outputs: List[List[float]], predicted_inputs: List[List[float]],
                     name: str = ''):
-        raise NotImplementedError('fit_predict method is not supposed to be used in DessiaTree and is not implemented.')
+        raise NotImplementedError('fit_predict method is not supposed to be used in BaseTree and is not implemented.')
 
 
-class DecisionTree(DessiaModel):
+class DecisionTree(BaseModel):
 
-    def __init__(self, n_outputs_: int, tree_: DessiaTree = None, name: str = ''):
+    def __init__(self, n_outputs_: int, tree_: BaseTree = None, name: str = ''):
         self.n_outputs_ = n_outputs_
         self.tree_ = tree_
         DessiaObject.__init__(self, name=name)
@@ -281,7 +281,7 @@ class DecisionTree(DessiaModel):
     @classmethod
     def generic_dessia_attributes(cls, model, name: str = ''):
         kwargs_dict = {'name': name}
-        kwargs_dict['tree_'] = DessiaTree.instantiate_dessia(model.tree_)
+        kwargs_dict['tree_'] = BaseTree.instantiate_dessia(model.tree_)
         kwargs_dict['n_outputs_'] = model.n_outputs_
         return kwargs_dict
 
@@ -301,7 +301,7 @@ class DecisionTree(DessiaModel):
 class DecisionTreeRegressor(DecisionTree):
     _standalone_in_db = True
 
-    def __init__(self, n_outputs_: int, tree_: DessiaTree = None, name: str = ''):
+    def __init__(self, n_outputs_: int, tree_: BaseTree = None, name: str = ''):
         DecisionTree.__init__(self, n_outputs_=n_outputs_, tree_=tree_, name=name)
 
     @classmethod
@@ -318,7 +318,7 @@ class DecisionTreeRegressor(DecisionTree):
 
 class DecisionTreeClassifier(DecisionTree):
 
-    def __init__(self, n_classes_: int, n_outputs_: int, tree_: DessiaTree = None, name: str = ''):
+    def __init__(self, n_classes_: int, n_outputs_: int, tree_: BaseTree = None, name: str = ''):
         self.n_classes_ = n_classes_
         DecisionTree.__init__(self, n_outputs_=n_outputs_, tree_=tree_, name=name)
 
@@ -338,7 +338,7 @@ class DecisionTreeClassifier(DecisionTree):
         return cls(**kwargs_dict)
 
 
-class RandomForest(DessiaModel):
+class RandomForest(BaseModel):
 
     def __init__(self, estimators_: List[DecisionTree] = None,
                  name: str = ''):
@@ -428,7 +428,7 @@ class RandomForestClassifier(RandomForest):
         return cls(**kwargs_dict)
 
 
-class SVM(DessiaModel):
+class SVM(BaseModel):
 
     def __init__(self, kernel: str = 'rbf', raw_coef_: List[List[float]] = None,
                  _dual_coef_: List[List[float]] = None, _intercept_: List[List[float]] = None, support_: List[int] = 1,
@@ -568,7 +568,7 @@ class Modeler(DessiaObject):
 
 ##### MODEL ##########
     def _initialize_model(self):
-        return DessiaModel()
+        return BaseModel()
 
     def _set_model_attributes(self, model, attributes: Dict[str, float]):
         for attr, value in attributes.items():
