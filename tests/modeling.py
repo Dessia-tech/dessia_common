@@ -38,7 +38,7 @@ rf_regressor = ensemble.RandomForestRegressor(n_estimators=20)
 rf_regressor.fit(std_inputs, raw_outputs)
 
 pred_skl_tree = rf_regressor.estimators_[12].tree_.predict(npy.array(std_inputs[50:100], dtype=npy.float32))
-pred_dessia_tree = DecisionTreeRegressor._instantiate_dessia_model(rf_regressor.estimators_[12])
+pred_dessia_tree = DecisionTreeRegressor._instantiate_dessia(rf_regressor.estimators_[12])
 assert(npy.all(pred_dessia_tree.predict(std_inputs[50:100]) == pred_skl_tree[:,:,0]))
 
 
@@ -49,10 +49,10 @@ new_tree.n_outputs_ = skl_dectree.tree_.n_outputs
 assert(npy.all(new_tree.predict(npy.array(std_inputs[50:100], dtype=npy.float32)) == skl_dectree.predict(npy.array(std_inputs[50:100], dtype=npy.float32))))
 
 dessia_tree = DecisionTreeRegressor.fit(std_inputs, raw_outputs)
-test = dessia_tree._instantiate_skl_model()
+test = dessia_tree._instantiate_skl()
 assert(npy.all(dessia_tree.predict(npy.array(std_inputs[50:100], dtype=npy.float32)) == test.predict(npy.array(std_inputs[50:100], dtype=npy.float32))))
 
-pp=DecisionTreeRegressor._instantiate_dessia_model(test)
+pp=DecisionTreeRegressor._instantiate_dessia(test)
 assert(npy.all(pp.predict(npy.array(std_inputs[50:100], dtype=npy.float32)) == test.predict(npy.array(std_inputs[50:100], dtype=npy.float32))))
 
 labelled_outputs = [npy.random.randint(4) for _ in raw_outputs]
@@ -84,7 +84,7 @@ skl_mlp.fit(std_inputs, outputs)
 dessia_mlp.predict(std_inputs[50:55])
 skl_mlp.predict(std_inputs[50:55])
 
-test_dessia_mlp = MLPRegressor._instantiate_dessia_model(skl_mlp)
+test_dessia_mlp = MLPRegressor._instantiate_dessia(skl_mlp)
 test_dessia_mlp.predict(std_inputs[50:55])
 
 
@@ -97,7 +97,7 @@ skl_mlp.fit(std_inputs, labelled_outputs)
 dessia_mlp.predict(std_inputs[50:55])
 skl_mlp.predict(std_inputs[50:55])
 
-test_dessia_mlp = MLPClassifier._instantiate_dessia_model(skl_mlp)
+test_dessia_mlp = MLPClassifier._instantiate_dessia(skl_mlp)
 test_dessia_mlp.predict(std_inputs[50:55])
 
 

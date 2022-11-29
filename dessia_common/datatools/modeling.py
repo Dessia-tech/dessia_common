@@ -170,21 +170,21 @@ class BaseModel(DessiaObject):
     def _call_skl_model(self):
         return self._skl_class()()
 
-    def _instantiate_skl_model(self):
-        raise NotImplementedError(f'Method _instantiate_skl_model not implemented for {type(self).__name__}.')
+    def _instantiate_skl(self):
+        raise NotImplementedError(f'Method _instantiate_skl not implemented for {type(self).__name__}.')
 
     @classmethod
-    def _instantiate_dessia_model(cls, model, name: str = ''):
-        raise NotImplementedError(f'Method _instantiate_dessia_model not implemented for {cls.__name__}.')
+    def _instantiate_dessia(cls, model, name: str = ''):
+        raise NotImplementedError(f'Method _instantiate_dessia not implemented for {cls.__name__}.')
 
     @classmethod
     def fit_(cls, inputs: List[List[float]], outputs: List[List[float]], name: str = '', **hyperparameters):
         model = cls._skl_class()(**hyperparameters)
         model.fit(inputs, outputs)
-        return cls._instantiate_dessia_model(model, name)
+        return cls._instantiate_dessia(model, name)
 
     def predict(self, inputs: List[List[float]]):
-        model = self._instantiate_skl_model()
+        model = self._instantiate_skl()
         return model.predict(inputs).tolist()
 
     @classmethod
@@ -194,7 +194,7 @@ class BaseModel(DessiaObject):
         return model, model.predict(predicted_inputs)
 
     def score(self, inputs: List[List[float]], outputs: List[List[float]]):
-        model = self._instantiate_skl_model()
+        model = self._instantiate_skl()
         return model.score(inputs, outputs)
 
 
@@ -204,20 +204,20 @@ class LinearRegression(BaseModel):
     def __init__(self, coef_: List[List[float]] = None, intercept_: List[List[float]] = None, name: str = ''):
         self.coef_ = coef_
         self.intercept_ = intercept_
-        DessiaObject.__init__(self, name=name)
+        BaseModel.__init__(self, name=name)
 
     @classmethod
     def _skl_class(cls):
         return linear_model.Ridge
 
-    def _instantiate_skl_model(self):
+    def _instantiate_skl(self):
         model = self._call_skl_model()
         model.coef_ = npy.array(self.coef_)
         model.intercept_  = npy.array(self.intercept_)
         return model
 
     @classmethod
-    def _instantiate_dessia_model(cls, model, name: str = ''):
+    def _instantiate_dessia(cls, model, name: str = ''):
         return cls(coef_=model.coef_.tolist(), intercept_=model.intercept_.tolist(), name=name)
 
     @classmethod
@@ -240,7 +240,7 @@ class BaseTree(BaseModel):
         self.n_features = n_features
         self.n_outputs = n_outputs
         self.tree_state = tree_state
-        DessiaObject.__init__(self, name=name)
+        BaseModel.__init__(self, name=name)
 
     def _data_hash(self):
         hash_ = npy.linalg.norm(self.tree_state['values'][0])
@@ -275,13 +275,13 @@ class BaseTree(BaseModel):
         model.__setstate__(skl_state)
         return model
 
-    def instantiate_skl(self):
+    def _instantiate_skl(self):
         model = self._call_skl_model()
         model = self._setstate_dessia(model, self.tree_state)
         return model
 
     @classmethod
-    def instantiate_dessia(cls, model, name: str = ''):
+    def _instantiate_dessia(cls, model, name: str = ''):
         kwargs_dict = {'name': name}
         kwargs_dict['tree_state'] = cls._getstate_dessia(model)
         kwargs_dict['n_classes'] = model.n_classes.tolist()
@@ -304,18 +304,18 @@ class DecisionTree(BaseModel):
     def __init__(self, n_outputs_: int, tree_: BaseTree = None, name: str = ''):
         self.n_outputs_ = n_outputs_
         self.tree_ = tree_
-        DessiaObject.__init__(self, name=name)
+        BaseModel.__init__(self, name=name)
 
     def generic_skl_attributes(self):
         model = self._call_skl_model()
         model.n_outputs_ = self.n_outputs_
-        model.tree_ = self.tree_.instantiate_skl()
+        model.tree_ = self.tree_._instantiate_skl()
         return model
 
     @classmethod
     def generic_dessia_attributes(cls, model, name: str = ''):
         kwargs_dict = {'name': name}
-        kwargs_dict['tree_'] = BaseTree.instantiate_dessia(model.tree_)
+        kwargs_dict['tree_'] = BaseTree._instantiate_dessia(model.tree_)
         kwargs_dict['n_outputs_'] = model.n_outputs_
         return kwargs_dict
 
@@ -342,11 +342,11 @@ class DecisionTreeRegressor(DecisionTree):
     def _skl_class(cls):
         return tree.DecisionTreeRegressor
 
-    def _instantiate_skl_model(self):
+    def _instantiate_skl(self):
         return self.generic_skl_attributes()
 
     @classmethod
-    def _instantiate_dessia_model(cls, model, name: str = ''):
+    def _instantiate_dessia(cls, model, name: str = ''):
         return cls(**cls.generic_dessia_attributes(model, name=name))
 
 
@@ -361,13 +361,13 @@ class DecisionTreeClassifier(DecisionTree):
     def _skl_class(cls):
         return tree.DecisionTreeClassifier
 
-    def _instantiate_skl_model(self):
+    def _instantiate_skl(self):
         model = self.generic_skl_attributes()
         model.n_classes_ = self.n_classes_
         return model
 
     @classmethod
-    def _instantiate_dessia_model(cls, model, name: str = ''):
+    def _instantiate_dessia(cls, model, name: str = ''):
         kwargs_dict = cls.generic_dessia_attributes(model, name=name)
         kwargs_dict['n_classes_'] = model.n_classes_
         return cls(**kwargs_dict)
@@ -378,7 +378,7 @@ class RandomForest(BaseModel):
     def __init__(self, estimators_: List[DecisionTree] = None,
                  name: str = ''):
         self.estimators_ = estimators_
-        DessiaObject.__init__(self, name=name)
+        BaseModel.__init__(self, name=name)
 
     # def copy(self, deep=True, memo=None):
     #     return copy(self)
@@ -390,7 +390,7 @@ class RandomForest(BaseModel):
 
     def generic_skl_attributes(self):
         model = self._call_skl_model()
-        model.estimators_ = [tree._instantiate_skl_model() for tree in self.estimators_]
+        model.estimators_ = [tree._instantiate_skl() for tree in self.estimators_]
         model.n_outputs_ = self.n_outputs_
         return model
 
@@ -426,13 +426,13 @@ class RandomForestRegressor(RandomForest):
     def _skl_class(cls):
         return ensemble.RandomForestRegressor
 
-    def _instantiate_skl_model(self):
+    def _instantiate_skl(self):
         return self.generic_skl_attributes()
 
     @classmethod
-    def _instantiate_dessia_model(cls, model, name: str = ''):
+    def _instantiate_dessia(cls, model, name: str = ''):
         kwargs_dict = cls.generic_dessia_attributes(model, name=name)
-        kwargs_dict['estimators_'] = [DecisionTreeRegressor._instantiate_dessia_model(tree)
+        kwargs_dict['estimators_'] = [DecisionTreeRegressor._instantiate_dessia(tree)
                                       for tree in model.estimators_]
         return cls(**kwargs_dict)
 
@@ -451,16 +451,16 @@ class RandomForestClassifier(RandomForest):
     def _skl_class(cls):
         return ensemble.RandomForestClassifier
 
-    def _instantiate_skl_model(self):
+    def _instantiate_skl(self):
         model = self.generic_skl_attributes()
         model.n_classes_ = self.n_classes_
         model.classes_ = npy.array(self.classes_)
         return model
 
     @classmethod
-    def _instantiate_dessia_model(cls, model, name: str = ''):
+    def _instantiate_dessia(cls, model, name: str = ''):
         kwargs_dict = cls.generic_dessia_attributes(model, name=name)
-        kwargs_dict['estimators_'] = [DecisionTreeClassifier._instantiate_dessia_model(tree)
+        kwargs_dict['estimators_'] = [DecisionTreeClassifier._instantiate_dessia(tree)
                                       for tree in model.estimators_]
         kwargs_dict['n_classes_'] = int(model.n_classes_)
         kwargs_dict['classes_'] = model.classes_.tolist()
@@ -484,7 +484,7 @@ class SVM(BaseModel):
         self._probB = _probB
         self._gamma = _gamma
         self._sparse = _sparse
-        DessiaObject.__init__(self, name=name)
+        BaseModel.__init__(self, name=name)
 
     @classmethod
     def _skl_class(cls):
@@ -548,11 +548,11 @@ class SVR(SVM):
     def _skl_class(cls):
         return svm.SVR
 
-    def _instantiate_skl_model(self):
+    def _instantiate_skl(self):
         return self.generic_skl_attributes()
 
     @classmethod
-    def _instantiate_dessia_model(cls, model, name: str = ''):
+    def _instantiate_dessia(cls, model, name: str = ''):
         return cls(**cls.generic_dessia_attributes(model, name=name))
 
 
@@ -573,13 +573,13 @@ class SVC(SVM):
     def _skl_class(cls):
         return svm.SVC
 
-    def _instantiate_skl_model(self):
+    def _instantiate_skl(self):
         model = self.generic_skl_attributes()
         model.classes_ = npy.array(self.classes_)
         return model
 
     @classmethod
-    def _instantiate_dessia_model(cls, model, name: str = ''):
+    def _instantiate_dessia(cls, model, name: str = ''):
         kwargs_dict = cls.generic_dessia_attributes(model, name=name)
         kwargs_dict['classes_'] = model.classes_.tolist()
         return cls(**kwargs_dict)
@@ -594,7 +594,7 @@ class MLP(BaseModel):
         self.n_layers_ = n_layers_
         self.activation = activation
         self.out_activation_ = out_activation_
-        DessiaObject.__init__(self, name=name)
+        BaseModel.__init__(self, name=name)
 
     @classmethod
     def _skl_class(cls):
@@ -650,11 +650,11 @@ class MLPRegressor(MLP):
     def _skl_class(cls):
         return neural_network.MLPRegressor
 
-    def _instantiate_skl_model(self):
+    def _instantiate_skl(self):
         return self.generic_skl_attributes()
 
     @classmethod
-    def _instantiate_dessia_model(cls, model, name: str = ''):
+    def _instantiate_dessia(cls, model, name: str = ''):
         return cls(**cls.generic_dessia_attributes(model, name=name))
 
 
@@ -673,14 +673,14 @@ class MLPClassifier(MLP):
     def _skl_class(cls):
         return neural_network.MLPClassifier
 
-    def _instantiate_skl_model(self):
+    def _instantiate_skl(self):
         model = self.generic_skl_attributes()
         model.n_outputs_ = self.n_outputs_
         model._label_binarizer = self._label_binarizer.instantiate_skl()
         return model
 
     @classmethod
-    def _instantiate_dessia_model(cls, model, name: str = ''):
+    def _instantiate_dessia(cls, model, name: str = ''):
         kwargs_dict = cls.generic_dessia_attributes(model, name=name)
         kwargs_dict['n_outputs_'] = model.n_outputs_
         kwargs_dict['_label_binarizer'] = LabelBinarizer.instantiate_dessia(model._label_binarizer)
