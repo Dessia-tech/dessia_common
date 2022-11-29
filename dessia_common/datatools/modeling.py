@@ -546,6 +546,39 @@ class SVC(SVM):
         return cls(**kwargs_dict)
 
 
+class LabelBinarizer(DessiaObject):
+
+    def __init__(self, classes_: List[int] = None, y_type_: str = 'multiclass', sparse_input_: bool = False,
+                 name: str = ''):
+        self.classes_ = classes_
+        self.y_type_ = y_type_
+        self.sparse_input_ = sparse_input_
+        DessiaObject.__init__(self, name=name)
+
+    @classmethod
+    def _skl_class(cls):
+        return preprocessing._label.LabelBinarizer
+
+    def _call_skl_model(self):
+        return self._skl_class()()
+
+    def instantiate_skl(self):
+        model = self._call_skl_model()
+        model.classes_ = npy.array(self.classes_)
+        model.y_type_ = self.y_type_
+        model.sparse_input_ = self.sparse_input_
+        return model
+
+    @classmethod
+    def instantiate_dessia(cls, model, name: str = ''):
+        kwargs_dict = {'name': name}
+        kwargs_dict['classes_'] = model.classes_.tolist()
+        kwargs_dict['y_type_'] = model.y_type_
+        kwargs_dict['sparse_input_'] = model.sparse_input_
+        return cls(**kwargs_dict)
+
+
+
 class MLP(BaseModel):
 
     def __init__(self, coefs_: List[List[List[float]]] = None, intercepts_: List[List[float]] = None,
@@ -600,6 +633,7 @@ class MLP(BaseModel):
 
 
 class MLPRegressor(MLP):
+    _standalone_in_db = True
 
     def __init__(self, coefs_: List[List[List[float]]] = None, intercepts_: List[List[float]] = None,
                  n_layers_: int = None, activation: str = 'relu', out_activation_: str = 'identity', name: str = ''):
@@ -616,6 +650,36 @@ class MLPRegressor(MLP):
     @classmethod
     def _instantiate_dessia_model(cls, model, name: str = ''):
         return cls(**cls.generic_dessia_attributes(model, name=name))
+
+
+class MLPClassifier(MLP):
+    _standalone_in_db = True
+
+    def __init__(self, coefs_: List[List[List[float]]] = None, intercepts_: List[List[float]] = None,
+                 n_layers_: int = None, activation: str = 'relu', out_activation_: str = 'identity',
+                 n_outputs_: int = None, _label_binarizer: LabelBinarizer = None,name: str = ''):
+        self.n_outputs_ = n_outputs_
+        self._label_binarizer = _label_binarizer
+        MLP.__init__(self, coefs_=coefs_, intercepts_=intercepts_, n_layers_=n_layers_, activation=activation,
+                     out_activation_=out_activation_, name=name)
+
+    @classmethod
+    def _skl_class(cls):
+        return neural_network.MLPClassifier
+
+    def _instantiate_skl_model(self):
+        model = self.generic_skl_attributes()
+        model.n_outputs_ = self.n_outputs_
+        model._label_binarizer = self._label_binarizer.instantiate_skl()
+        return model
+
+    @classmethod
+    def _instantiate_dessia_model(cls, model, name: str = ''):
+        kwargs_dict = cls.generic_dessia_attributes(model, name=name)
+        kwargs_dict['n_outputs_'] = model.n_outputs_
+        kwargs_dict['_label_binarizer'] = LabelBinarizer.instantiate_dessia(model._label_binarizer)
+        return cls(**kwargs_dict)
+
 
 # ======================================================================================================================
 #                                                    M O D E L E R S

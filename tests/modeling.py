@@ -9,7 +9,8 @@ from dessia_common.core import DessiaObject
 from dessia_common.models import all_cars_no_feat
 from dessia_common.datatools.dataset import Dataset
 from dessia_common.datatools.modeling import StandardScaler, IdentityScaler, LinearRegression, BaseTree,\
-    DecisionTreeRegressor, DecisionTreeClassifier, RandomForestRegressor, RandomForestClassifier, SVR, SVC, MLPRegressor
+    DecisionTreeRegressor, DecisionTreeClassifier, RandomForestRegressor, RandomForestClassifier, SVR, SVC,\
+        MLPRegressor, MLPClassifier
 
 
 # Load Data and put it in a Dataset (matrix is automatically computed)
@@ -54,7 +55,7 @@ std_scaler, std_inputs = StandardScaler().fit_transform(inputs)
 # pp=DecisionTreeRegressor._instantiate_dessia_model(test)
 # assert(npy.all(pp.predict(npy.array(std_inputs[50:100], dtype=npy.float32)) == test.predict(npy.array(std_inputs[50:100], dtype=npy.float32))))
 
-# labelled_outputs = [npy.random.randint(4) for _ in outputs]
+labelled_outputs = [npy.random.randint(4) for _ in outputs]
 # dessia_tree = DecisionTreeClassifier.fit(std_inputs, labelled_outputs)
 
 # dessia_forest = RandomForestRegressor.fit(std_inputs, outputs)
@@ -74,14 +75,27 @@ std_scaler, std_inputs = StandardScaler().fit_transform(inputs)
 # skl_svr.predict(std_inputs[50:55])
 
 
-dessia_mlp = MLPRegressor.fit(std_inputs, outputs, hidden_layer_sizes = (100, 100, 100, 100, 100),
+# dessia_mlp = MLPRegressor.fit(std_inputs, outputs, hidden_layer_sizes = (100, 100, 100, 100, 100),
+#                               alpha=100, max_iter = 1000, activation = 'identity', solver='adam', tol=1)
+# skl_mlp = neural_network.MLPRegressor(hidden_layer_sizes = (100, 100, 100, 100, 100), alpha=100, max_iter = 1000,
+#                                       activation = 'identity', solver='adam', tol=1)
+# skl_mlp.fit(std_inputs, outputs)
+
+# dessia_mlp.predict(std_inputs[50:55])
+# skl_mlp.predict(std_inputs[50:55])
+
+# test_dessia_mlp = MLPRegressor._instantiate_dessia_model(skl_mlp)
+# test_dessia_mlp.predict(std_inputs[50:55])
+
+
+dessia_mlp = MLPClassifier.fit(std_inputs, labelled_outputs, hidden_layer_sizes = (100, 100, 100, 100, 100),
                               alpha=100, max_iter = 1000, activation = 'identity', solver='adam', tol=1)
-skl_mlp = neural_network.MLPRegressor(hidden_layer_sizes = (100, 100, 100, 100, 100), alpha=100, max_iter = 1000,
+skl_mlp = neural_network.MLPClassifier(hidden_layer_sizes = (100, 100, 100, 100, 100), alpha=100, max_iter = 1000,
                                       activation = 'identity', solver='adam', tol=1)
-skl_mlp.fit(std_inputs, outputs)
+skl_mlp.fit(std_inputs, labelled_outputs)
 
 dessia_mlp.predict(std_inputs[50:55])
 skl_mlp.predict(std_inputs[50:55])
 
-test_dessia_mlp = MLPRegressor._instantiate_dessia_model(skl_mlp)
+test_dessia_mlp = MLPClassifier._instantiate_dessia_model(skl_mlp)
 test_dessia_mlp.predict(std_inputs[50:55])
