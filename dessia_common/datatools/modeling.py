@@ -302,7 +302,6 @@ class DecisionTree(BaseModel):
         self.tree_ = tree_
         DessiaObject.__init__(self, name=name)
 
-
     def generic_skl_attributes(self):
         model = self._call_skl_model()
         model.n_outputs_ = self.n_outputs_
@@ -348,6 +347,7 @@ class DecisionTreeRegressor(DecisionTree):
 
 
 class DecisionTreeClassifier(DecisionTree):
+    _standalone_in_db = True
 
     def __init__(self, n_classes_: int, n_outputs_: int, tree_: BaseTree = None, name: str = ''):
         self.n_classes_ = n_classes_
@@ -375,6 +375,9 @@ class RandomForest(BaseModel):
                  name: str = ''):
         self.estimators_ = estimators_
         DessiaObject.__init__(self, name=name)
+
+    # def copy(self, deep=True, memo=None):
+    #     return copy(self)
 
     @classmethod
     def _skl_class(cls):
@@ -431,6 +434,7 @@ class RandomForestRegressor(RandomForest):
 
 
 class RandomForestClassifier(RandomForest):
+    _standalone_in_db = True
 
     def __init__(self, n_classes_: int, classes_: List[int], n_outputs_: int, estimators_: List[DecisionTree] = None,
                  name: str = ''):
@@ -683,10 +687,10 @@ class MLPClassifier(MLP):
 #                                                    M O D E L E R S
 # ======================================================================================================================
 class Modeler(DessiaObject):
-    def __init__(self, scaled_inputs: bool = True, scaled_outputs: bool = False, name: str = ''):
-        self.model_ = dict()
-        self.model_attributes = dict()
-        self._required_attributes = []
+    def __init__(self, model: BaseModel, scaler: BaseScaler, scaled_inputs: bool = True, scaled_outputs: bool = False,
+                 name: str = ''):
+        self.model = model
+        self.scaler = scaler
         self.scaled_inputs = scaled_inputs
         self.scaled_outputs = scaled_outputs
         DessiaObject.__init__(self, name=name)
