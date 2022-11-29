@@ -293,7 +293,7 @@ def schema_from_annotation(annotation, schema_element, order, editable=None, tit
         ann = (key, float)
         schema_element = schema_from_annotation(annotation=ann, schema_element=schema_element,
                                                 order=order, editable=editable, title=title)
-        schema_element[key]['units'] = typing_.units
+        schema_element[key]['si_unit'] = typing_.si_unit
     elif inspect.isclass(typing_) and issubclass(typing_, (BinaryFile, StringFile)):
         schema_element[key].update({'type': 'text', 'is_file': True})
     else:
@@ -324,7 +324,7 @@ def schema_chunk(annotation, title: str, editable: bool, description: str):
         chunk = {'type': 'object', 'properties': {'.*': '.*'}}
     elif inspect.isclass(annotation) and issubclass(annotation, Measure):
         chunk = schema_chunk(annotation=float, title=title, editable=editable, description=description)
-        chunk['units'] = annotation.units
+        chunk['si_unit'] = annotation.si_unit
     elif inspect.isclass(annotation) and issubclass(annotation, (BinaryFile, StringFile)):
         chunk = {'type': 'text', 'is_file': True}
     elif inspect.isclass(annotation) and issubclass(annotation, dc.DessiaObject):
@@ -433,6 +433,7 @@ def tuple_schema(annotation):
     args = get_args(annotation)
     items = []
     for type_ in args:
+        # TODO Should classes other than builtins be allowed here ?
         items.append({'type': dc_types.TYPING_EQUIVALENCES[type_]})
     return {'additionalItems': False, 'type': 'array', 'items': items}
 
