@@ -423,7 +423,7 @@ class RandomForestClassifier(RandomForest):
         kwargs_dict = cls.generic_dessia_attributes(model, name=name)
         kwargs_dict['estimators_'] = [DecisionTreeClassifier._instantiate_dessia_model(tree)
                                       for tree in model.estimators_]
-        kwargs_dict['n_classes_'] = model.n_classes_
+        kwargs_dict['n_classes_'] = int(model.n_classes_)
         kwargs_dict['classes_'] = model.classes_.tolist()
         return cls(**kwargs_dict)
 
@@ -477,16 +477,15 @@ class SVM(BaseModel):
         kwargs_dict['_intercept_'] = model._intercept_.tolist()
         kwargs_dict['support_'] = model.support_.tolist()
         kwargs_dict['support_vectors_'] = model.support_vectors_.tolist()
-        kwargs_dict['_n_support'] = model._n_support
+        kwargs_dict['_n_support'] = model._n_support.tolist()
         kwargs_dict['_probA'] = model._probA.tolist()
         kwargs_dict['_probB'] = model._probB.tolist()
-        kwargs_dict['_gamma'] = model._gamma
+        kwargs_dict['_gamma'] = float(model._gamma)
         kwargs_dict['_sparse'] = model._sparse
         return kwargs_dict
 
     @classmethod
-    def fit(cls, inputs: List[List[float]], outputs: List[float], C: float = 1., kernel: str = 'rbf',
-            name: str = ''):
+    def fit(cls, inputs: List[List[float]], outputs: List[float], C: float = 1., kernel: str = 'rbf', name: str = ''):
         return cls.fit_(inputs, outputs, name=name, C=C, kernel=kernel)
 
     @classmethod
@@ -537,13 +536,13 @@ class SVC(SVM):
 
     def _instantiate_skl_model(self):
         model = self.generic_skl_attributes()
-        model.classes_ = self.classes_
+        model.classes_ = npy.array(self.classes_)
         return model
 
     @classmethod
     def _instantiate_dessia_model(cls, model, name: str = ''):
         kwargs_dict = cls.generic_dessia_attributes(model, name=name)
-        kwargs_dict['classes_'] = model.classes_
+        kwargs_dict['classes_'] = model.classes_.tolist()
         return cls(**kwargs_dict)
 
 
