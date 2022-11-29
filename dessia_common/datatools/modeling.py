@@ -193,6 +193,10 @@ class BaseModel(DessiaObject):
         model = cls.fit_(inputs, outputs, name, **hyperparameters)
         return model, model.predict(predicted_inputs)
 
+    def score(self, inputs: List[List[float]], outputs: List[List[float]]):
+        model = self._instantiate_skl_model()
+        return model.score(inputs, outputs)
+
 
 class LinearRegression(BaseModel):
     _standalone_in_db = True
