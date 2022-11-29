@@ -266,9 +266,24 @@ class DessiaTree(DessiaModel): # TODO: is there a better name ?
 
 class DecisionTree(DessiaModel):
 
-    def __init__(self, tree_: DessiaTree = None, name: str = ''):
+    def __init__(self, n_outputs_: int, tree_: DessiaTree = None, name: str = ''):
+        self.n_outputs_ = n_outputs_
         self.tree_ = tree_
         DessiaObject.__init__(self, name=name)
+
+
+    def generic_skl_attributes(self):
+        model = self._call_skl_model()
+        model.n_outputs_ = self.n_outputs_
+        model.tree_ = self.tree_.instantiate_skl()
+        return model
+
+    @classmethod
+    def generic_dessia_attributes(cls, model, name: str = ''):
+        kwargs_dict = {'name': name}
+        kwargs_dict['tree_'] = DessiaTree.instantiate_dessia(model.tree_)
+        kwargs_dict['n_outputs_'] = model.n_outputs_
+        return kwargs_dict
 
     @classmethod
     def fit(cls, inputs: List[List[float]], outputs: List[List[float]], name: str = '',
@@ -287,49 +302,38 @@ class DecisionTreeRegressor(DecisionTree):
     _standalone_in_db = True
 
     def __init__(self, n_outputs_: int, tree_: DessiaTree = None, name: str = ''):
-        self.n_outputs_ = n_outputs_
-        DecisionTree.__init__(self, tree_=tree_, name=name)
+        DecisionTree.__init__(self, n_outputs_=n_outputs_, tree_=tree_, name=name)
 
     @classmethod
     def _skl_class(cls):
         return tree.DecisionTreeRegressor
 
     def _instantiate_skl_model(self):
-        model = self._call_skl_model()
-        model.n_outputs_ = self.n_outputs_
-        model.tree_ = self.tree_.instantiate_skl()
-        return model
+        return self.generic_skl_attributes()
 
     @classmethod
     def _instantiate_dessia_model(cls, model, name: str = ''):
-        kwargs_dict = {'name': name}
-        kwargs_dict['tree_'] = DessiaTree.instantiate_dessia(model.tree_)
-        kwargs_dict['n_outputs_'] = model.n_outputs_
-        return cls(**kwargs_dict)
+        return cls(**cls.generic_dessia_attributes(model, name=name))
 
 
-class DecisionTreeClassifier(DecisionTreeRegressor):
+class DecisionTreeClassifier(DecisionTree):
 
     def __init__(self, n_classes_: int, n_outputs_: int, tree_: DessiaTree = None, name: str = ''):
         self.n_classes_ = n_classes_
-        DecisionTreeRegressor.__init__(self, n_outputs_=n_outputs_, tree_=tree_, name=name)
+        DecisionTree.__init__(self, n_outputs_=n_outputs_, tree_=tree_, name=name)
 
     @classmethod
     def _skl_class(cls):
         return tree.DecisionTreeClassifier
 
     def _instantiate_skl_model(self):
-        model = self._call_skl_model()
-        model.n_outputs_ = self.n_outputs_
+        model = self.generic_skl_attributes()
         model.n_classes_ = self.n_classes_
-        model.tree_ = self.tree_.instantiate_skl()
         return model
 
     @classmethod
     def _instantiate_dessia_model(cls, model, name: str = ''):
-        kwargs_dict = {'name': name}
-        kwargs_dict['tree_'] = DessiaTree.instantiate_dessia(model.tree_)
-        kwargs_dict['n_outputs_'] = model.n_outputs_
+        kwargs_dict = cls.generic_dessia_attributes(model, name=name)
         kwargs_dict['n_classes_'] = model.n_classes_
         return cls(**kwargs_dict)
 
