@@ -129,7 +129,7 @@ class LabelBinarizer(BaseScaler):
         self.classes_ = classes_
         self.y_type_ = y_type_
         self.sparse_input_ = sparse_input_
-        DessiaObject.__init__(self, name=name)
+        BaseScaler.__init__(self, name=name)
 
     @classmethod
     def _skl_class(cls):
@@ -255,7 +255,7 @@ class BaseTree(BaseModel):
 
     @staticmethod
     def _setstate_dessia(model, state):
-        skl_state = dict()
+        skl_state = {}
         skl_state = {'max_depth': int(state['max_depth'])}
         skl_state['node_count'] = int(state['node_count'])
         skl_state['values'] = npy.array(state['values'])
@@ -307,6 +307,13 @@ class DecisionTree(BaseModel):
         kwargs_dict['n_outputs_'] = model.n_outputs_
         return kwargs_dict
 
+    def _instantiate_skl(self):
+        return self.generic_skl_attributes()
+
+    @classmethod
+    def _instantiate_dessia(cls, model, name: str = ''):
+        return cls(**cls.generic_dessia_attributes(model, name=name))
+
     @classmethod
     def fit(cls, inputs: List[List[float]], outputs: List[List[float]], name: str = '',
             criterion: str = 'squared_error', max_depth: int = None):
@@ -329,13 +336,6 @@ class DecisionTreeRegressor(DecisionTree):
     @classmethod
     def _skl_class(cls):
         return tree.DecisionTreeRegressor
-
-    def _instantiate_skl(self):
-        return self.generic_skl_attributes()
-
-    @classmethod
-    def _instantiate_dessia(cls, model, name: str = ''):
-        return cls(**cls.generic_dessia_attributes(model, name=name))
 
 
 class DecisionTreeClassifier(DecisionTree):

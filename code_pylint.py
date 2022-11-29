@@ -59,7 +59,8 @@ MAX_ERROR_BY_TYPE = {
                      'wildcard-import': 1,
                      'use-maxsplit-arg': 1,
                      'duplicate-code': 1,
-                     'too-many-lines': 1
+                     'too-many-lines': 1,
+                     'invalid-name': 4
                      # No tolerance errors
 
                      }
