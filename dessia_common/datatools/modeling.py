@@ -448,10 +448,10 @@ class RandomForestClassifier(RandomForest):
 
 class SVM(BaseModel):
 
-    def __init__(self, kernel: str = 'rbf', raw_coef_: List[List[float]] = None,
-                 _dual_coef_: List[List[float]] = None, _intercept_: List[float] = None, support_: List[int] = 1,
-                 support_vectors_: List[List[float]] = None, _n_support: List[int] = None, _probA: List[float] = None,
-                 _probB: List[float] = None, _gamma: float = 1., _sparse: bool = False, name: str = ''):
+    def __init__(self, kernel: str = 'rbf', raw_coef_: List[List[float]] = None, _dual_coef_: List[List[float]] = None,
+                 _intercept_: List[float] = None, support_: List[int] = 1, support_vectors_: List[List[float]] = None,
+                 _n_support: List[int] = None, _probA: List[float] = None, _probB: List[float] = None,
+                 _gamma: float = 1., _sparse: bool = False, name: str = ''):
         self.kernel = kernel
         self.raw_coef_ = raw_coef_
         self._dual_coef_ = _dual_coef_
@@ -515,10 +515,10 @@ class SVM(BaseModel):
 class SVR(SVM):
     _standalone_in_db = True
 
-    def __init__(self, kernel: str = 'rbf', raw_coef_: List[List[float]] = None,
-                 _dual_coef_: List[List[float]] = None, _intercept_: List[float] = None, support_: List[int] = 1,
-                 support_vectors_: List[List[float]] = None, _n_support: List[int] = None, _probA: List[float] = None,
-                 _probB: List[float] = None, _gamma: float = 1., _sparse: bool = False, name: str = ''):
+    def __init__(self, kernel: str = 'rbf', raw_coef_: List[List[float]] = None, _dual_coef_: List[List[float]] = None,
+                 _intercept_: List[float] = None, support_: List[int] = 1, support_vectors_: List[List[float]] = None,
+                 _n_support: List[int] = None, _probA: List[float] = None, _probB: List[float] = None,
+                 _gamma: float = 1., _sparse: bool = False, name: str = ''):
         SVM.__init__(self, raw_coef_=raw_coef_, _dual_coef_=_dual_coef_, support_vectors_=support_vectors_,
                      _sparse=_sparse, kernel=kernel, _n_support=_n_support, support_=support_, _intercept_=_intercept_,
                      _probA=_probA, _probB=_probB, _gamma=_gamma, name=name)
@@ -538,11 +538,10 @@ class SVR(SVM):
 class SVC(SVM):
     _standalone_in_db = True
 
-    def __init__(self, kernel: str = 'rbf', raw_coef_: List[List[float]] = None,
-                 _dual_coef_: List[List[float]] = None, _intercept_: List[float] = None, support_: List[int] = 1,
-                 support_vectors_: List[List[float]] = None, _n_support: List[int] = None, _probA: List[float] = None,
-                 _probB: List[float] = None, _gamma: float = 1., _sparse: bool = False,
-                 classes_: List[int] = None, name: str = ''):
+    def __init__(self, kernel: str = 'rbf', raw_coef_: List[List[float]] = None, _dual_coef_: List[List[float]] = None,
+                 _intercept_: List[float] = None, support_: List[int] = 1, support_vectors_: List[List[float]] = None,
+                 _n_support: List[int] = None, _probA: List[float] = None, _probB: List[float] = None,
+                 _gamma: float = 1., _sparse: bool = False, classes_: List[int] = None, name: str = ''):
         self.classes_ = classes_
         SVM.__init__(self, raw_coef_=raw_coef_, _dual_coef_=_dual_coef_, support_vectors_=support_vectors_,
                     _sparse=_sparse, kernel=kernel, _n_support=_n_support, support_=support_, _intercept_=_intercept_,
@@ -666,9 +665,9 @@ class MLPClassifier(MLP):
         return cls(**kwargs_dict)
 
 
-# # ======================================================================================================================
+# # ====================================================================================================================
 # #                                                    M O D E L E R S
-# # ======================================================================================================================
+# # ====================================================================================================================
 # class Modeler(DessiaObject):
 #     def __init__(self, model: BaseModel, scaler: BaseScaler, scaled_inputs: bool = True, scaled_outputs: bool = False,
 #                  name: str = ''):
