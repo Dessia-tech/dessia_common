@@ -1,7 +1,7 @@
 from dessia_common.forms import StandaloneObject, StandaloneObjectWithDefaultValues, \
     ObjectWithOtherTypings
 from dessia_common.workflow.blocks import ModelMethod, InstantiateModel
-from dessia_common.models.forms import standalone_object
+from dessia_common.forms import DEF_SO
 from dessia_common.models.workflows.workflow_from_file_input import workflow_
 import dessia_common.utils.jsonschema as jss
 from dessia_common.measures import Distance
@@ -28,10 +28,10 @@ jsonschema = {'definitions': {},
               'properties': {'standalone_subobject': {'title': 'Standalone Subobject',
                                                       'editable': True,
                                                       'order': 0,
-                                                      'python_typing': 'dessia_common.forms.StandaloneSubobject',
+                                                      'python_typing': 'dessia_common.forms.StandaloneBuiltinsSubobject',
                                                       'type': 'object',
                                                       'standalone_in_db': True,
-                                                      'classes': ['dessia_common.forms.StandaloneSubobject'],
+                                                      'classes': ['dessia_common.forms.StandaloneBuiltinsSubobject'],
                                                       'description': 'A dev subobject that is standalone_in_db'},
                              'embedded_subobject': {'title': 'Embedded Subobject',
                                                     'editable': True,
@@ -70,35 +70,23 @@ jsonschema = {'definitions': {},
                                            'type': 'array',
                                            'items': [{'type': 'string'}, {'type': 'number'}],
                                            'description': 'A heterogeneous sequence'},
-                             'intarg': {'title': 'Intarg',
-                                        'editable': True,
-                                        'order': 6,
-                                        'python_typing': 'builtins.int',
-                                        'description': '',
-                                        'type': 'number'},
-                             'strarg': {'title': 'Strarg',
-                                        'editable': True,
-                                        'order': 7,
-                                        'python_typing': 'builtins.str',
-                                        'description': '',
-                                        'type': 'string'},
                              'object_list': {'title': 'Object List',
                                              'editable': True,
-                                             'order': 8,
-                                             'python_typing': 'List[dessia_common.forms.StandaloneSubobject]',
+                                             'order': 6,
+                                             'python_typing': 'List[dessia_common.forms.StandaloneBuiltinsSubobject]',
                                              'description': '',
                                              'type': 'array',
                                              'items': {'title': 'Object List',
                                                        'editable': True,
                                                        'order': 0,
-                                                       'python_typing': 'dessia_common.forms.StandaloneSubobject',
+                                                       'python_typing': 'dessia_common.forms.StandaloneBuiltinsSubobject',
                                                        'description': '',
                                                        'type': 'object',
                                                        'standalone_in_db': True,
-                                                       'classes': ['dessia_common.forms.StandaloneSubobject']}},
+                                                       'classes': ['dessia_common.forms.StandaloneBuiltinsSubobject']}},
                              'subobject_list': {'title': 'Subobject List',
                                                 'editable': True,
-                                                'order': 9,
+                                                'order': 7,
                                                 'python_typing': 'List[dessia_common.forms.EmbeddedSubobject]',
                                                 'description': '',
                                                 'type': 'array',
@@ -112,7 +100,7 @@ jsonschema = {'definitions': {},
                                                           'classes': ['dessia_common.forms.EmbeddedSubobject']}},
                              'builtin_list': {'title': 'Builtin List',
                                               'editable': True,
-                                              'order': 10,
+                                              'order': 8,
                                               'python_typing': 'List[__builtins__.int]',
                                               'description': '',
                                               'type': 'array',
@@ -124,7 +112,7 @@ jsonschema = {'definitions': {},
                                                         'type': 'number'}},
                              'union_arg': {'title': 'Union Arg',
                                            'editable': True,
-                                           'order': 11,
+                                           'order': 9,
                                            'python_typing': 'List[Union[dessia_common.forms.EmbeddedSubobject, dessia_common.forms.EnhancedEmbeddedSubobject]]',
                                            'type': 'array',
                                            'description': '',
@@ -139,15 +127,15 @@ jsonschema = {'definitions': {},
                                                      'standalone_in_db': False}},
                              'subclass_arg': {'title': 'Subclass Arg',
                                               'editable': True,
-                                              'order': 12,
-                                              'python_typing': 'InstanceOf[dessia_common.forms.StandaloneSubobject]',
+                                              'order': 10,
+                                              'python_typing': 'InstanceOf[dessia_common.forms.StandaloneBuiltinsSubobject]',
                                               'type': 'object',
                                               'description': '',
-                                              'instance_of': 'dessia_common.forms.StandaloneSubobject',
+                                              'instance_of': 'dessia_common.forms.StandaloneBuiltinsSubobject',
                                               'standalone_in_db': True},
                              'array_arg': {'title': 'Array Arg',
                                            'editable': True,
-                                           'order': 13,
+                                           'order': 11,
                                            'python_typing': 'List[List[__builtins__.float]]',
                                            'description': '',
                                            'type': 'array',
@@ -162,7 +150,7 @@ jsonschema = {'definitions': {},
                                                                'type': 'number'}}},
                              'name': {'title': 'Name',
                                       'editable': True,
-                                      'order': 14,
+                                      'order': 12,
                                       'description': '',
                                       'python_typing': 'builtins.str',
                                       'type': 'string',
@@ -173,7 +161,7 @@ jsonschema = {'definitions': {},
               'classes': ['dessia_common.forms.StandaloneObject'],
               'whitelist_attributes': []}
 
-computed_jsonschema = standalone_object.jsonschema()
+computed_jsonschema = DEF_SO.jsonschema()
 try:
     assert computed_jsonschema == jsonschema
 except AssertionError as err:
@@ -205,8 +193,6 @@ assert jss.chose_default(jsonschema["properties"]["dynamic_dict"]) is None
 assert jss.chose_default(jsonschema["properties"]["float_dict"]) is None
 assert jss.chose_default(jsonschema["properties"]["string_dict"]) is None
 assert jss.chose_default(jsonschema["properties"]["tuple_arg"]) == [None, None]
-assert jss.chose_default(jsonschema["properties"]["intarg"]) is None
-assert jss.chose_default(jsonschema["properties"]["strarg"]) is None
 assert jss.chose_default(jsonschema["properties"]["object_list"]) is None
 assert jss.chose_default(jsonschema["properties"]["subobject_list"]) is None
 assert jss.chose_default(jsonschema["properties"]["builtin_list"]) is None
@@ -219,8 +205,9 @@ jsonschema = StandaloneObjectWithDefaultValues.jsonschema()
 
 subobject_default_value = jss.chose_default(jsonschema["properties"]["standalone_subobject"])
 assert subobject_default_value["name"] == "StandaloneSubobject1"
-assert subobject_default_value["object_class"] == "dessia_common.forms.StandaloneSubobject"
-assert subobject_default_value["floatarg"]['value'] == 1.7
+assert subobject_default_value["object_class"] == "dessia_common.forms.StandaloneBuiltinsSubobject"
+assert subobject_default_value["floatarg"] == 0.3
+assert subobject_default_value["distarg"]["value"] == 0.51
 
 subobject_default_value = jss.chose_default(jsonschema["properties"]["embedded_subobject"])
 assert subobject_default_value["name"] == "Embedded Subobject10"
@@ -231,8 +218,6 @@ assert jss.chose_default(jsonschema["properties"]["dynamic_dict"]) is None
 assert jss.chose_default(jsonschema["properties"]["float_dict"]) is None
 assert jss.chose_default(jsonschema["properties"]["string_dict"]) is None
 assert jss.chose_default(jsonschema["properties"]["tuple_arg"]) == ("Default Tuple", 0)
-assert jss.chose_default(jsonschema["properties"]["intarg"]) is None  # TODO Is it ?
-assert jss.chose_default(jsonschema["properties"]["strarg"]) is None  # TODO Is it ?
 assert jss.chose_default(jsonschema["properties"]["object_list"]) is None
 assert jss.chose_default(jsonschema["properties"]["subobject_list"]) is None
 assert jss.chose_default(jsonschema["properties"]["builtin_list"]) is None
@@ -242,7 +227,8 @@ subobject_default_value = jss.chose_default(jsonschema["properties"]["subclass_a
 assert subobject_default_value["name"] == "Inheriting Standalone Subobject1"
 assert subobject_default_value["object_class"] == "dessia_common.forms.InheritingStandaloneSubobject"
 assert subobject_default_value["strarg"] == "-1"
-assert subobject_default_value["floatarg"]['value'] == 0.7
+assert subobject_default_value["floatarg"] == 0.1
+assert subobject_default_value["distarg"]["value"] == 0.7
 
 assert jss.chose_default(jsonschema["properties"]["array_arg"]) is None
 assert jss.chose_default(jsonschema["properties"]["name"]) is None  # TODO Is it ?
@@ -258,8 +244,6 @@ assert jss.datatype_from_jsonschema(jsonschema["properties"]["dynamic_dict"]) ==
 assert jss.datatype_from_jsonschema(jsonschema["properties"]["float_dict"]) == "dynamic_dict"
 assert jss.datatype_from_jsonschema(jsonschema["properties"]["string_dict"]) == "dynamic_dict"
 assert jss.datatype_from_jsonschema(jsonschema["properties"]["tuple_arg"]) == "heterogeneous_sequence"
-assert jss.datatype_from_jsonschema(jsonschema["properties"]["intarg"]) == "builtin"
-assert jss.datatype_from_jsonschema(jsonschema["properties"]["strarg"]) == "builtin"
 assert jss.datatype_from_jsonschema(jsonschema["properties"]["object_list"]) == "homogeneous_sequence"
 assert jss.datatype_from_jsonschema(jsonschema["properties"]["subobject_list"]) == "homogeneous_sequence"
 assert jss.datatype_from_jsonschema(jsonschema["properties"]["builtin_list"]) == "homogeneous_sequence"
@@ -282,7 +266,7 @@ assert jss.datatype_from_jsonschema(jsonschema) == "file"
 
 # --- Files ---
 
-jsonschema = standalone_object._method_jsonschemas["generate_from_text"]["properties"]["0"]
+jsonschema = DEF_SO._method_jsonschemas["generate_from_text"]["properties"]["0"]
 assert jss.datatype_from_jsonschema(jsonschema) == "file"
 
 print("test script jsonschema.py has passed")
