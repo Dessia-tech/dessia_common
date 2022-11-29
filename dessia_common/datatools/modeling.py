@@ -9,7 +9,7 @@ import itertools
 from scipy.spatial.distance import pdist, squareform
 import numpy as npy
 import sklearn
-from sklearn import preprocessing, linear_model, ensemble, tree, svm
+from sklearn import preprocessing, linear_model, ensemble, tree, svm, neural_network
 
 try:
     from plot_data.core import Scatter, Histogram, MultiplePlots, Tooltip, ParallelPlot, PointFamily, EdgeStyle, Axis, \
@@ -546,6 +546,76 @@ class SVC(SVM):
         return cls(**kwargs_dict)
 
 
+class MLP(BaseModel):
+
+    def __init__(self, coefs_: List[List[List[float]]] = None, intercepts_: List[List[float]] = None,
+                 n_layers_: int = None, activation: str = 'relu', out_activation_: str = 'identity', name: str = ''):
+        self.coefs_ = coefs_
+        self.intercepts_ = intercepts_
+        self.n_layers_ = n_layers_
+        self.activation = activation
+        self.out_activation_ = out_activation_
+        DessiaObject.__init__(self, name=name)
+
+    @classmethod
+    def _skl_class(cls):
+        raise NotImplementedError('Method _skl_class not implemented for MLP. Please use MLPRegressor or '\
+                                  'MLPClassifier.')
+
+    def _call_skl_model(self):
+        return self._skl_class()()
+
+    def generic_skl_attributes(self):
+        model = self._call_skl_model()
+        model.coefs_ = [npy.array(coefs_) for coefs_ in self.coefs_]
+        model.intercepts_ = [npy.array(intercepts_) for intercepts_ in self.intercepts_]
+        model.n_layers_ = self.n_layers_
+        model.activation = self.activation
+        model.out_activation_ = self.out_activation_
+        return model
+
+    @classmethod
+    def generic_dessia_attributes(cls, model, name: str = ''):
+        kwargs_dict = {'name': name}
+        kwargs_dict['coefs_'] = [coefs_.tolist() for coefs_ in model.coefs_]
+        kwargs_dict['intercepts_'] = [intercepts_.tolist() for intercepts_ in model.intercepts_]
+        kwargs_dict['n_layers_'] = model.n_layers_
+        kwargs_dict['activation'] = model.activation
+        kwargs_dict['out_activation_'] = model.out_activation_
+        return kwargs_dict
+
+    @classmethod
+    def fit(cls, inputs: List[List[float]], outputs: List[float], hidden_layer_sizes: List[int] = None,
+            activation: str = 'relu', alpha: float = 0.0001, solver: str = 'adam', max_iter: int = 200,
+            tol: float = 0.0001, name: str = ''):
+        return cls.fit_(inputs, outputs, name=name, hidden_layer_sizes=hidden_layer_sizes, activation=activation,
+                        alpha=alpha, solver=solver, max_iter=max_iter, tol=tol)
+
+    @classmethod
+    def fit_predict(cls, inputs: List[List[float]], outputs: List[float], predicted_inputs: List[List[float]],
+                    hidden_layer_sizes: List[int] = None, activation: str = 'relu', alpha: float = 0.0001,
+                    solver: str = 'adam', max_iter: int = 200, tol: float = 0.0001, name: str = ''):
+        return cls.fit_predict_(inputs, outputs, predicted_inputs, name=name, hidden_layer_sizes=hidden_layer_sizes,
+                                activation=activation, alpha=alpha, solver=solver, max_iter=max_iter, tol=tol)
+
+
+class MLPRegressor(MLP):
+
+    def __init__(self, coefs_: List[List[List[float]]] = None, intercepts_: List[List[float]] = None,
+                 n_layers_: int = None, activation: str = 'relu', out_activation_: str = 'identity', name: str = ''):
+        MLP.__init__(self, coefs_=coefs_, intercepts_=intercepts_, n_layers_=n_layers_, activation=activation,
+                     out_activation_=out_activation_, name=name)
+
+    @classmethod
+    def _skl_class(cls):
+        return neural_network.MLPRegressor
+
+    def _instantiate_skl_model(self):
+        return self.generic_skl_attributes()
+
+    @classmethod
+    def _instantiate_dessia_model(cls, model, name: str = ''):
+        return cls(**cls.generic_dessia_attributes(model, name=name))
 
 # ======================================================================================================================
 #                                                    M O D E L E R S

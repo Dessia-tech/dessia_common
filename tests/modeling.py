@@ -4,12 +4,12 @@ Tests for dessia_common.modeling file
 """
 
 import numpy as npy
-from sklearn import tree, ensemble, svm
+from sklearn import tree, ensemble, svm, neural_network
 from dessia_common.core import DessiaObject
 from dessia_common.models import all_cars_no_feat
 from dessia_common.datatools.dataset import Dataset
 from dessia_common.datatools.modeling import StandardScaler, IdentityScaler, LinearRegression, BaseTree,\
-    DecisionTreeRegressor, DecisionTreeClassifier, RandomForestRegressor, RandomForestClassifier, SVR, SVC
+    DecisionTreeRegressor, DecisionTreeClassifier, RandomForestRegressor, RandomForestClassifier, SVR, SVC, MLPRegressor
 
 
 # Load Data and put it in a Dataset (matrix is automatically computed)
@@ -26,49 +26,62 @@ std_scaler = StandardScaler().fit(inputs)
 std_inputs = std_scaler.transform(inputs)
 std_scaler, std_inputs = StandardScaler().fit_transform(inputs)
 
-# Tests models
-linear_model = LinearRegression().fit(std_inputs, outputs, alpha = 0.1)
-predicted_data = linear_model.predict(std_inputs[50:100])
-linear_model, pred_dessia = LinearRegression().fit_predict(std_inputs, outputs, std_inputs[50:100], alpha = 0.1)
-assert(npy.all(pred_dessia == predicted_data))
+# # Tests models
+# linear_model = LinearRegression().fit(std_inputs, outputs, alpha = 0.1)
+# predicted_data = linear_model.predict(std_inputs[50:100])
+# linear_model, pred_dessia = LinearRegression().fit_predict(std_inputs, outputs, std_inputs[50:100], alpha = 0.1)
+# assert(npy.all(pred_dessia == predicted_data))
 
-# Tree, DecisionTree, RandomForest
-rf_regressor = ensemble.RandomForestRegressor(n_estimators=20)
-rf_regressor.fit(std_inputs, outputs)
+# # Tree, DecisionTree, RandomForest
+# rf_regressor = ensemble.RandomForestRegressor(n_estimators=20)
+# rf_regressor.fit(std_inputs, outputs)
 
-pred_skl_tree = rf_regressor.estimators_[12].tree_.predict(npy.array(std_inputs[50:100], dtype=npy.float32))
-pred_dessia_tree = DecisionTreeRegressor._instantiate_dessia_model(rf_regressor.estimators_[12])
-assert(npy.all(pred_dessia_tree.predict(std_inputs[50:100]) == pred_skl_tree[:,:,0]))
+# pred_skl_tree = rf_regressor.estimators_[12].tree_.predict(npy.array(std_inputs[50:100], dtype=npy.float32))
+# pred_dessia_tree = DecisionTreeRegressor._instantiate_dessia_model(rf_regressor.estimators_[12])
+# assert(npy.all(pred_dessia_tree.predict(std_inputs[50:100]) == pred_skl_tree[:,:,0]))
 
 
-skl_dectree = rf_regressor.estimators_[12]
-new_tree = tree.DecisionTreeRegressor()
-new_tree.tree_ = skl_dectree.tree_
-new_tree.n_outputs_ = skl_dectree.tree_.n_outputs
-assert(npy.all(new_tree.predict(npy.array(std_inputs[50:100], dtype=npy.float32)) == skl_dectree.predict(npy.array(std_inputs[50:100], dtype=npy.float32))))
+# skl_dectree = rf_regressor.estimators_[12]
+# new_tree = tree.DecisionTreeRegressor()
+# new_tree.tree_ = skl_dectree.tree_
+# new_tree.n_outputs_ = skl_dectree.tree_.n_outputs
+# assert(npy.all(new_tree.predict(npy.array(std_inputs[50:100], dtype=npy.float32)) == skl_dectree.predict(npy.array(std_inputs[50:100], dtype=npy.float32))))
 
-dessia_tree = DecisionTreeRegressor.fit(std_inputs, outputs)
-test = dessia_tree._instantiate_skl_model()
-assert(npy.all(dessia_tree.predict(npy.array(std_inputs[50:100], dtype=npy.float32)) == test.predict(npy.array(std_inputs[50:100], dtype=npy.float32))))
+# dessia_tree = DecisionTreeRegressor.fit(std_inputs, outputs)
+# test = dessia_tree._instantiate_skl_model()
+# assert(npy.all(dessia_tree.predict(npy.array(std_inputs[50:100], dtype=npy.float32)) == test.predict(npy.array(std_inputs[50:100], dtype=npy.float32))))
 
-pp=DecisionTreeRegressor._instantiate_dessia_model(test)
-assert(npy.all(pp.predict(npy.array(std_inputs[50:100], dtype=npy.float32)) == test.predict(npy.array(std_inputs[50:100], dtype=npy.float32))))
+# pp=DecisionTreeRegressor._instantiate_dessia_model(test)
+# assert(npy.all(pp.predict(npy.array(std_inputs[50:100], dtype=npy.float32)) == test.predict(npy.array(std_inputs[50:100], dtype=npy.float32))))
 
-labelled_outputs = [npy.random.randint(4) for _ in outputs]
-dessia_tree = DecisionTreeClassifier.fit(std_inputs, labelled_outputs)
+# labelled_outputs = [npy.random.randint(4) for _ in outputs]
+# dessia_tree = DecisionTreeClassifier.fit(std_inputs, labelled_outputs)
 
-dessia_forest = RandomForestRegressor.fit(std_inputs, outputs)
-dessia_forest.predict(std_inputs[50:100])
+# dessia_forest = RandomForestRegressor.fit(std_inputs, outputs)
+# dessia_forest.predict(std_inputs[50:100])
 
-dessia_forest = RandomForestClassifier.fit(std_inputs, labelled_outputs)
-dessia_forest.predict(std_inputs[50:100])
+# dessia_forest = RandomForestClassifier.fit(std_inputs, labelled_outputs)
+# dessia_forest.predict(std_inputs[50:100])
 
-outputs = [output[0] for output in outputs]
-dessia_svr = SVR.fit(std_inputs, outputs, kernel='rbf')
-dessia_svc = SVC.fit(std_inputs, labelled_outputs, kernel='rbf')
-skl_svr = svm.SVR(kernel='rbf')
-skl_svr.fit(std_inputs, outputs)
+# outputs = [output[0] for output in outputs]
+# dessia_svr = SVR.fit(std_inputs, outputs, kernel='rbf')
+# dessia_svc = SVC.fit(std_inputs, labelled_outputs, kernel='rbf')
+# skl_svr = svm.SVR(kernel='rbf')
+# skl_svr.fit(std_inputs, outputs)
 
-dessia_svr.predict(std_inputs[50:55])
-dessia_svc.predict(std_inputs[50:55])
-skl_svr.predict(std_inputs[50:55])
+# dessia_svr.predict(std_inputs[50:55])
+# dessia_svc.predict(std_inputs[50:55])
+# skl_svr.predict(std_inputs[50:55])
+
+
+dessia_mlp = MLPRegressor.fit(std_inputs, outputs, hidden_layer_sizes = (100, 100, 100, 100, 100),
+                              alpha=100, max_iter = 1000, activation = 'identity', solver='adam', tol=1)
+skl_mlp = neural_network.MLPRegressor(hidden_layer_sizes = (100, 100, 100, 100, 100), alpha=100, max_iter = 1000,
+                                      activation = 'identity', solver='adam', tol=1)
+skl_mlp.fit(std_inputs, outputs)
+
+dessia_mlp.predict(std_inputs[50:55])
+skl_mlp.predict(std_inputs[50:55])
+
+test_dessia_mlp = MLPRegressor._instantiate_dessia_model(skl_mlp)
+test_dessia_mlp.predict(std_inputs[50:55])
