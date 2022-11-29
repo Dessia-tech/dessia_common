@@ -23,6 +23,7 @@ from dessia_common.typings import JsonSerializable, MethodType, ClassMethodType
 from dessia_common.files import StringFile, BinaryFile
 from dessia_common.utils.helpers import concatenate
 from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
+from dessia_common.exports import ExportFormat
 
 from dessia_common.workflow.core import Block, Variable, TypedVariable, TypedVariableWithDefaultValue,\
     set_block_variable_names_from_dict, Workflow, DisplaySetting, DisplayObject
@@ -1099,10 +1100,10 @@ class Export(Block):
         getattr(values[self.inputs[0]], self.method_type.name)(stream)
         return [stream]
 
-    def _export_format(self, block_index: int):
+    def _export_format(self, block_index: int) -> ExportFormat:
         args = {"block_index": block_index}
-        return {"extension": self.extension, "method_name": "export", "text": self.text,
-                "export_name": self.filename, "args": args}
+        return ExportFormat(selector=None, extension=self.extension, method_name="export", text=self.text,
+                            export_name=self.filename, args=args)
 
     def _to_script(self, _) -> ToScriptElement:
         script = f"Export(method_type=MethodType(" \
@@ -1129,6 +1130,8 @@ class Archive(Block):
         """
         self.number_exports = number_exports
         self.filename = filename
+        self.extension = "zip"
+        self.text = False
         inputs = [Variable(name="export_" + str(i)) for i in range(number_exports)]
         inputs.append(TypedVariableWithDefaultValue(type_=str, default_value=filename, name="filename"))
         Block.__init__(self, inputs=inputs, outputs=[Variable(name="zip archive")], name=name, position=position)
@@ -1153,7 +1156,7 @@ class Archive(Block):
 
     def evaluate(self, values):
         name_input = self.inputs[-1]
-        archive_name = f"{values.pop(name_input)}.zip"
+        archive_name = f"{values.pop(name_input)}.{self.extension}"
         archive = BinaryFile(archive_name)
         with ZipFile(archive, 'w') as zip_archive:
             for input_ in self.inputs[:-1]:  # Filename is last block input
@@ -1168,9 +1171,10 @@ class Archive(Block):
                     raise ValueError(f"Archive input is not a file-like object. Got '{value}' of type {type(value)}")
         return [archive]
 
-    def _export_format(self, block_index: int):
-        return {"extension": "zip", "method_name": "export", "text": False,
-                "export_name": self.filename, "args": {"block_index": block_index}}
+    def _export_format(self, block_index: int) -> ExportFormat:
+        args = {"block_index": block_index}
+        return ExportFormat(selector=None, extension=self.extension, method_name="export", text=self.text,
+                            export_name=self.filename, args=args)
 
     def _to_script(self, _) -> ToScriptElement:
         script = f"Archive(number_exports={self.number_exports}, filename='{self.filename}', {self.base_script()})"
