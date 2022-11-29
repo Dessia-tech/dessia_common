@@ -220,7 +220,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element, order, editable=N
         ann = (key, float)
         jsonschema_element = jsonschema_from_annotation(annotation=ann, jsonschema_element=jsonschema_element,
                                                         order=order, editable=editable, title=title)
-        jsonschema_element[key]['units'] = typing_.units
+        jsonschema_element[key]['units'] = typing_.si_unit
     elif inspect.isclass(typing_) and issubclass(typing_, (BinaryFile, StringFile)):
         jsonschema_element[key].update({'type': 'text', 'is_file': True})
     else:
