@@ -27,7 +27,7 @@ std_scaler = StandardScaler().fit(inputs)
 std_inputs = std_scaler.transform(inputs)
 std_scaler, std_inputs = StandardScaler().fit_transform(inputs)
 
-# # Tests models
+# Tests models
 # linear_model = LinearRegression().fit(std_inputs, outputs, alpha = 0.1)
 # predicted_data = linear_model.predict(std_inputs[50:100])
 # linear_model, pred_dessia = LinearRegression().fit_predict(std_inputs, outputs, std_inputs[50:100], alpha = 0.1)

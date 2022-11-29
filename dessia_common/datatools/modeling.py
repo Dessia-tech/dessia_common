@@ -36,19 +36,20 @@ class BaseScaler(DessiaObject):
     def _call_skl_scaler(self):
         return self._skl_class()()
 
-    def _instantiate_skl_scaler(self):
+    def instantiate_skl(self):
         scaler = self._call_skl_scaler()
         for attr in self._rebuild_attributes:
             setattr(scaler, attr, getattr(self, attr))
         return scaler
 
     @classmethod
-    def _instantiate_dessia_scaler(cls, scaler, name: str = ''):
+    def instantiate_dessia(cls, scaler, name: str = ''):
         kwargs_dict = {'name': name}
         for attr in cls._rebuild_attributes:
             if hasattr(scaler, attr):
                 if isinstance(getattr(scaler, attr), npy.ndarray):
                     kwargs_dict[attr] = getattr(scaler, attr).tolist()
+                    continue
                 kwargs_dict[attr] = getattr(scaler, attr)
         return cls(**kwargs_dict)
 
@@ -56,10 +57,10 @@ class BaseScaler(DessiaObject):
     def fit(cls, matrix: List[List[float]], name: str = ''):
         scaler = cls._skl_class()()
         scaler.fit(matrix)
-        return cls._instantiate_dessia_scaler(scaler, name)
+        return cls.instantiate_dessia(scaler, name)
 
     def transform(self, matrix: List[List[float]]):
-        scaler = self._instantiate_skl_scaler()
+        scaler = self.instantiate_skl()
         return scaler.transform(matrix).tolist()
 
     @classmethod
@@ -129,6 +130,27 @@ class IdentityScaler(StandardScaler):
     def _call_skl_scaler(self):
         return self._skl_class()(with_mean = False, with_std = False)
 
+
+class LabelBinarizer(BaseScaler):
+    _rebuild_attributes = ['classes_', 'y_type_', 'sparse_input_']
+
+    def __init__(self, classes_: List[int] = None, y_type_: str = 'multiclass', sparse_input_: bool = False,
+                 name: str = ''):
+        self.classes_ = classes_
+        self.y_type_ = y_type_
+        self.sparse_input_ = sparse_input_
+        DessiaObject.__init__(self, name=name)
+
+    @classmethod
+    def _skl_class(cls):
+        return preprocessing._label.LabelBinarizer
+
+    def instantiate_skl(self):
+        model = self._call_skl_scaler()
+        model.classes_ = npy.array(self.classes_)
+        model.y_type_ = self.y_type_
+        model.sparse_input_ = self.sparse_input_
+        return model
 
 
 # ======================================================================================================================
@@ -544,39 +566,6 @@ class SVC(SVM):
         kwargs_dict = cls.generic_dessia_attributes(model, name=name)
         kwargs_dict['classes_'] = model.classes_.tolist()
         return cls(**kwargs_dict)
-
-
-class LabelBinarizer(DessiaObject):
-
-    def __init__(self, classes_: List[int] = None, y_type_: str = 'multiclass', sparse_input_: bool = False,
-                 name: str = ''):
-        self.classes_ = classes_
-        self.y_type_ = y_type_
-        self.sparse_input_ = sparse_input_
-        DessiaObject.__init__(self, name=name)
-
-    @classmethod
-    def _skl_class(cls):
-        return preprocessing._label.LabelBinarizer
-
-    def _call_skl_model(self):
-        return self._skl_class()()
-
-    def instantiate_skl(self):
-        model = self._call_skl_model()
-        model.classes_ = npy.array(self.classes_)
-        model.y_type_ = self.y_type_
-        model.sparse_input_ = self.sparse_input_
-        return model
-
-    @classmethod
-    def instantiate_dessia(cls, model, name: str = ''):
-        kwargs_dict = {'name': name}
-        kwargs_dict['classes_'] = model.classes_.tolist()
-        kwargs_dict['y_type_'] = model.y_type_
-        kwargs_dict['sparse_input_'] = model.sparse_input_
-        return cls(**kwargs_dict)
-
 
 
 class MLP(BaseModel):
