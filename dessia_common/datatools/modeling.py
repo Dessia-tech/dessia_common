@@ -23,7 +23,7 @@ from dessia_common.core import DessiaObject
 # ======================================================================================================================
 #                                                     S C A L E R S
 # ======================================================================================================================
-class BaseScaler(DessiaObject): # TODO: is there a better name ?
+class BaseScaler(DessiaObject):
     _rebuild_attributes = []
 
     def __init__(self, name: str = ''):
@@ -134,7 +134,7 @@ class IdentityScaler(StandardScaler):
 # ======================================================================================================================
 #                                                        M O D E L S
 # ======================================================================================================================
-class BaseModel(DessiaObject): # TODO: is there a better name ?
+class BaseModel(DessiaObject):
 
     def __init__(self, name: str = ''):
         DessiaObject.__init__(self, name=name)
@@ -204,7 +204,7 @@ class LinearRegression(BaseModel):
                                 alpha=alpha, fit_intercept=fit_intercept, tol=tol)
 
 
-class BaseTree(BaseModel): # TODO: is there a better name ?
+class BaseTree(BaseModel):
 
     def __init__(self, n_classes: List[int], n_features: int, n_outputs: int, tree_state: Dict[str, Any],
                  name: str = ''):
@@ -431,9 +431,9 @@ class RandomForestClassifier(RandomForest):
 class SVM(BaseModel):
 
     def __init__(self, kernel: str = 'rbf', raw_coef_: List[List[float]] = None,
-                 _dual_coef_: List[List[float]] = None, _intercept_: List[List[float]] = None, support_: List[int] = 1,
-                 support_vectors_: List[List[float]] = None, _n_support: int = 1, _probA: List[List[float]] = None,
-                 _probB: List[List[float]] = None, _gamma: float = 1., _sparse: bool = False, name: str = ''):
+                 _dual_coef_: List[List[float]] = None, _intercept_: List[float] = None, support_: List[int] = 1,
+                 support_vectors_: List[List[float]] = None, _n_support: List[int] = None, _probA: List[float] = None,
+                 _probB: List[float] = None, _gamma: float = 1., _sparse: bool = False, name: str = ''):
         self.kernel = kernel
         self.raw_coef_ = raw_coef_
         self._dual_coef_ = _dual_coef_
@@ -485,12 +485,12 @@ class SVM(BaseModel):
         return kwargs_dict
 
     @classmethod
-    def fit(cls, inputs: List[List[float]], outputs: List[List[float]], C: float = 1., kernel: str = 'rbf',
+    def fit(cls, inputs: List[List[float]], outputs: List[float], C: float = 1., kernel: str = 'rbf',
             name: str = ''):
         return cls.fit_(inputs, outputs, name=name, C=C, kernel=kernel)
 
     @classmethod
-    def fit_predict(cls, inputs: List[List[float]], outputs: List[List[float]], predicted_inputs: List[List[float]],
+    def fit_predict(cls, inputs: List[List[float]], outputs: List[float], predicted_inputs: List[List[float]],
                     C: float = 1., kernel: str = 'rbf', name: str = ''):
         return cls.fit_predict_(inputs, outputs, predicted_inputs, name=name, C=C, kernel=kernel)
 
@@ -499,9 +499,9 @@ class SVR(SVM):
     _standalone_in_db = True
 
     def __init__(self, kernel: str = 'rbf', raw_coef_: List[List[float]] = None,
-                 _dual_coef_: List[List[float]] = None, _intercept_: List[List[float]] = None, support_: List[int] = 1,
-                 support_vectors_: List[List[float]] = None, _n_support: int = 1, _probA: List[List[float]] = None,
-                 _probB: List[List[float]] = None, _gamma: float = 1., _sparse: bool = False, name: str = ''):
+                 _dual_coef_: List[List[float]] = None, _intercept_: List[float] = None, support_: List[int] = 1,
+                 support_vectors_: List[List[float]] = None, _n_support: List[int] = None, _probA: List[float] = None,
+                 _probB: List[float] = None, _gamma: float = 1., _sparse: bool = False, name: str = ''):
         SVM.__init__(self, raw_coef_=raw_coef_, _dual_coef_=_dual_coef_, support_vectors_=support_vectors_,
                      _sparse=_sparse, kernel=kernel, _n_support=_n_support, support_=support_, _intercept_=_intercept_,
                      _probA=_probA, _probB=_probB, _gamma=_gamma, name=name)
@@ -522,9 +522,9 @@ class SVC(SVM):
     _standalone_in_db = True
 
     def __init__(self, kernel: str = 'rbf', raw_coef_: List[List[float]] = None,
-                 _dual_coef_: List[List[float]] = None, _intercept_: List[List[float]] = None, support_: List[int] = 1,
-                 support_vectors_: List[List[float]] = None, _n_support: int = 1, _probA: List[List[float]] = None,
-                 _probB: List[List[float]] = None, _gamma: float = 1., _sparse: bool = False,
+                 _dual_coef_: List[List[float]] = None, _intercept_: List[float] = None, support_: List[int] = 1,
+                 support_vectors_: List[List[float]] = None, _n_support: List[int] = None, _probA: List[float] = None,
+                 _probB: List[float] = None, _gamma: float = 1., _sparse: bool = False,
                  classes_: List[int] = None, name: str = ''):
         self.classes_ = classes_
         SVM.__init__(self, raw_coef_=raw_coef_, _dual_coef_=_dual_coef_, support_vectors_=support_vectors_,
