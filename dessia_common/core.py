@@ -546,26 +546,28 @@ class DessiaObject(SerializableObject):
         """
         Prints time of rendering some commons operations (serialization, hash, displays)
         """
+        print(f'### Performance analysis of object {self} ###')
         data_hash_time = time.time()
         self._data_hash()
         data_hash_time = time.time() - data_hash_time
-        print(f'Data hash time: {round(data_hash_time, 3)} seconds')
+        print(f'\t- data hash time: {round(data_hash_time, 3)} seconds')
 
         todict_time = time.time()
         dict_ = self.to_dict()
         todict_time = time.time() - todict_time
-        print(f'to_dict time: {round(todict_time, 3)} seconds')
+        print(f'\t- to_dict time: {round(todict_time, 3)} seconds')
 
         dto_time = time.time()
         self.dict_to_object(dict_)
         dto_time = time.time() - dto_time
-        print(f'dict_to_object time: {round(dto_time, 3)} seconds')
+        print(f'\t- dict_to_object time: {round(dto_time, 3)} seconds')
 
         for display_setting in self.display_settings():
             display_time = time.time()
             self._display_from_selector(display_setting.selector)
             display_time = time.time() - display_time
-            print(f'Generation of display {display_setting.selector} in: {round(display_time, 6)} seconds')
+            print(f'\t- generation of display {display_setting.selector} in: {round(display_time, 6)} seconds')
+        print('\n')
 
     def _check_platform(self, level='error'):
         """
