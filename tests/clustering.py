@@ -39,7 +39,7 @@ assert(clustered_cars_with.cluster_real_centroids('minkowski')[0].to_vector()[1]
 # Test print
 clustered_cars_without.labels[0] = 15000
 clustered_cars_without.labels[1] = -1
-clustered_cars_without.labels[2:100] = [999999]*len(clustered_cars_without[2:100])
+clustered_cars_without.labels[2:100] = [999999] * len(clustered_cars_without[2:100])
 print(clustered_cars_without)
 hlist = Dataset(all_cars_wi_feat, name="cars")
 clist = ClusteredDataset.from_agglomerative_clustering(hlist, n_clusters=10, name="cars")
@@ -95,7 +95,7 @@ try:
     raise ValueError("ClusteredDataset should be summable")
 except Exception as e:
     assert(e.args[0] == "Addition only defined for Dataset. A specific __add__ method is required for " +
-            "<class 'dessia_common.datatools.cluster.ClusteredDataset'>")
+           "<class 'dessia_common.datatools.cluster.ClusteredDataset'>")
 
 # Exports XLS
 clustered_cars_without.to_xlsx('clus_xls.xlsx')

@@ -35,7 +35,8 @@ from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotat
 from dessia_common.utils.docstrings import parse_docstring, FAILED_DOCSTRING_PARSING
 
 from dessia_common.base import SerializableObject
-from dessia_common.exports import XLSXWriter, MarkdownWriter
+from dessia_common.exports import XLSXWriter, MarkdownWriter, ExportFormat
+
 from dessia_common.typings import JsonSerializable
 from dessia_common import templates
 from dessia_common.checks import CheckList, FailedCheck
@@ -617,10 +618,25 @@ class DessiaObject(SerializableObject):
         writer = XLSXWriter(self)
         writer.save_to_stream(stream)
 
-    def _export_formats(self):
-        formats = [{"extension": "json", "method_name": "save_to_stream", "text": True, "args": {}},
-                   {"extension": "xlsx", "method_name": "to_xlsx_stream", "text": False, "args": {}}]
+    def _export_formats(self) -> List[ExportFormat]:
+        formats = [ExportFormat(selector="json", extension="json", method_name="save_to_stream", text=True),
+                   ExportFormat(selector="xlsx", extension="xlsx", method_name="to_xlsx_stream", text=False)]
         return formats
+
+    def save_export_to_file(self, selector, filepath):
+        for export_format in self._export_formats():
+            if export_format.selector == selector:
+                if not filepath.endswith(f".{export_format.extension}"):
+                    filepath += f".{export_format.extension}"
+                    print(f'Renaming filepath to {filepath}')
+                if export_format.text:
+                    with open(filepath, mode="w", encoding="utf-8") as stream:
+                        getattr(self, export_format.method_name)(stream, **export_format.args)
+                else:
+                    with open(filepath, mode="wb") as stream:
+                        getattr(self, export_format.method_name)(stream, **export_format.args)
+                return filepath
+        raise ValueError(f'Export selector not found: {selector}')
 
     def to_vector(self):
         vectored_objects = []
@@ -720,11 +736,11 @@ class PhysicalObject(DessiaObject):
     def save_babylonjs_to_file(self, filename: str = None, use_cdn: bool = True, debug: bool = False, **kwargs):
         self.volmdlr_volume_model(**kwargs).save_babylonjs_to_file(filename=filename, use_cdn=use_cdn, debug=debug)
 
-    def _export_formats(self):
+    def _export_formats(self) -> List[ExportFormat]:
         formats = DessiaObject._export_formats(self)
-        formats3d = [{"extension": "step", "method_name": "to_step_stream", "text": True, "args": {}},
-                     {"extension": "stl", "method_name": "to_stl_stream", "text": False, "args": {}},
-                     {"extension": "html", "method_name": "to_html_stream", "text": True, "args": {}}]
+        formats3d = [ExportFormat(selector="step", extension="step", method_name="to_step_stream", text=True),
+                     ExportFormat(selector="stl", extension="stl", method_name="to_stl_stream", text=False),
+                     ExportFormat(selector="html", extension="html", method_name="to_html_stream", text=True)]
         formats.extend(formats3d)
         return formats
 
