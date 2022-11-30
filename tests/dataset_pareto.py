@@ -69,5 +69,3 @@ try:
 except Exception as e:
     assert(e.args[0] == ("sddd not in common_attributes = ['mpg', 'displacement', 'horsepower', 'acceleration', " +
                          "'weight']"))
-
-

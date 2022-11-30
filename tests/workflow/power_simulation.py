@@ -51,7 +51,7 @@ manual_run._displays()
 manual_run.to_dict(use_pointers=False)
 
 manual_run.jsonschema()
-manual_run._performance_analysis()
+manual_run.performance_analysis()
 
 # Testing that there is no pointer when use_pointers=False
 d = workflow_run.to_dict(use_pointers=False)
