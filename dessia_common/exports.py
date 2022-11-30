@@ -282,7 +282,7 @@ class MarkdownWriter:
         self.table_limit = table_limit
 
     def _object_titles(self):
-        return ['Attribute', 'Type', 'Value'] #, 'Subvalues']
+        return ['Attribute', 'Type', 'Value']  # , 'Subvalues']
 
     def _sequence_to_str(self, value: Sequence):
         if len(value) == 0:
@@ -304,7 +304,7 @@ class MarkdownWriter:
         return self._sequence_to_str(list(value.values()))
 
     def _object_to_str(self, value) -> str:
-        if hasattr(value, 'name' ) and value.name:
+        if hasattr(value, 'name') and value.name:
             return value.name
         return 'unnamed'
 
