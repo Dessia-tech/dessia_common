@@ -153,30 +153,3 @@ try:
     raise ValueError("fit_predict() should not work for BaseTree object.")
 except Exception as e:
     assert (e.args[0] == 'fit_predict method is not supposed to be used in BaseTree and is not implemented.')
-
-
-# t = time.time()
-# dessia_mlp._check_platform()
-# r2 = dessia_mlp.score(std_inputs[50:200], labelled_outputs[50:200])
-# print("MLP : ", time.time() - t, "R2 = ", r2)
-
-# t = time.time()
-# dessia_svc._check_platform()
-# r2 = dessia_svc.score(std_inputs[50:200], labelled_outputs[50:200])
-# print("SVC : ", time.time() - t, "R2 = ", r2)
-
-# t = time.time()
-# dessia_svr._check_platform()
-# r2 = dessia_svr.score(std_inputs[50:200], outputs[50:200])
-# print("SVR : ", time.time() - t, "R2 = ", r2)
-
-# t = time.time()
-# dessia_forest._check_platform()
-# r2 = dessia_forest.score(std_inputs[50:200], labelled_outputs[50:200])
-# print("RF : ", time.time() - t, "R2 = ", r2)
-
-# t = time.time()
-# linear_model._check_platform()
-# r2 = linear_model.score(std_inputs[50:200], raw_outputs[50:200])
-# print("Linear : ", time.time() - t, "R2 = ", r2)
-
