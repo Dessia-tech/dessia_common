@@ -12,7 +12,9 @@ from dessia_common.core import DessiaObject
 from dessia_common.datatools.dataset import Dataset
 from dessia_common.optimization import FixedAttributeValue, BoundedAttributeValue
 
+
 class ClassSampler(DessiaObject):
+
     """
     Base object to build a DOE from a class and choosen limits for all specified sampled_class attributes.
 
@@ -165,7 +167,7 @@ class ClassSampler(DessiaObject):
         :rtype: `Dataset`
 
         :Examples:
-        >>> from dessia_common.datatools.sampling import Sampler
+        >>> from dessia_common.datatools.sampling import ClassSampler
         >>> from dessia_common.tests import RandDataD2
         >>> sampled_attr = [BoundedAttributeValue('p_1', 150, 250, 3)]
         >>> constant_attr = [FixedAttributeValue('p_2', 42)]

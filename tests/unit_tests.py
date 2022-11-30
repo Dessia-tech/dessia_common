@@ -1,6 +1,6 @@
 from dessia_common.forms import EmbeddedSubobject, StandaloneObject, EnhancedEmbeddedSubobject
 from dessia_common import full_classname, DessiaObject
-from dessia_common.models.forms import standalone_object
+from dessia_common.forms import DEF_SO
 
 subobject_classname = full_classname(object_=EmbeddedSubobject, compute_for='class')
 enhanced_classname = full_classname(object_=EnhancedEmbeddedSubobject, compute_for='class')
@@ -10,26 +10,27 @@ assert enhanced_classname == 'dessia_common.forms.EnhancedEmbeddedSubobject'
 serialized_union = 'Union[{}, {}]'.format(subobject_classname, enhanced_classname)
 
 # Test deep_attr
-assert standalone_object._get_from_path("#/standalone_subobject/floatarg") == 3.78
-assert standalone_object._get_from_path("#/embedded_subobject/embedded_list/2") == 3
-assert standalone_object._get_from_path("#/object_list/0/floatarg") == 666.999
-assert standalone_object._get_from_path("strarg") == 'TestStr'
+assert DEF_SO._get_from_path("#/standalone_subobject/floatarg") == 0.3
+assert DEF_SO._get_from_path("#/embedded_subobject/embedded_list/2") == 3
+assert DEF_SO._get_from_path("#/object_list/0/floatarg") == 0.3
+assert DEF_SO._get_from_path("#/standalone_subobject/name") == "StandaloneSubobject1"
+assert DEF_SO._get_from_path("name") == "Standalone Object Demo"
 
 # Test to_dict/dict_to_object
-d = standalone_object.to_dict()
+d = DEF_SO.to_dict()
 obj = StandaloneObject.dict_to_object(d)
-standalone_object._check_platform()
+DEF_SO._check_platform()
 
 # Testing not empty cad displays
-assert standalone_object._display_from_selector('cad').data
+assert DEF_SO._display_from_selector('cad').data
 
-assert standalone_object == obj
+assert DEF_SO == obj
 
 # Test serialization
-d = standalone_object.to_dict(use_pointers=True)
-assert '$ref' in d['subobject_list'][0]
-o = DessiaObject.dict_to_object(d)
-assert not isinstance(o.subobject_list[0], dict)
+d = DEF_SO.to_dict(use_pointers=True)
+assert '$ref' in d['union_arg'][1]
+o = StandaloneObject.dict_to_object(d)
+assert not isinstance(o.union_arg[1], dict)
 
 obj.to_xlsx('test')
 print("script unit_tests.py passed")
