@@ -33,7 +33,7 @@ system1.jsonschema()
 system1.save_export_to_file('xlsx', 'generic_xlsx')
 os.path.isfile('generic_xlsx.xlsx')
 
-checks = system1.checks()
+check_list = system1.check_list()
 
 system1.save_to_file('system1')
 system1_lff = dc.DessiaObject.load_from_file('system1.json')
