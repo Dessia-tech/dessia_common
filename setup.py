@@ -150,7 +150,7 @@ setup(
         "openpyxl",
         "parameterized",
         "matplotlib",
-        "scikit-learn",
+        "scikit-learn<1.1",  # Drop <1.1 when support for python3.7 will be removed
         "cma"
     ],
     python_requires=">=3.7",
