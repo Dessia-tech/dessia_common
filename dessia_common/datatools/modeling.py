@@ -428,8 +428,7 @@ class RandomForestRegressor(RandomForest):
     @classmethod
     def _instantiate_dessia(cls, model, name: str = ''):
         kwargs_dict = cls.generic_dessia_attributes(model, name=name)
-        kwargs_dict['estimators_'] = [DecisionTreeRegressor._instantiate_dessia(tree)
-                                      for tree in model.estimators_]
+        kwargs_dict['estimators_'] = [DecisionTreeRegressor._instantiate_dessia(tree) for tree in model.estimators_]
         return cls(**kwargs_dict)
 
 
@@ -455,8 +454,7 @@ class RandomForestClassifier(RandomForest):
     @classmethod
     def _instantiate_dessia(cls, model, name: str = ''):
         kwargs_dict = cls.generic_dessia_attributes(model, name=name)
-        kwargs_dict['estimators_'] = [DecisionTreeClassifier._instantiate_dessia(tree)
-                                      for tree in model.estimators_]
+        kwargs_dict['estimators_'] = [DecisionTreeClassifier._instantiate_dessia(tree) for tree in model.estimators_]
         kwargs_dict['n_classes_'] = int(model.n_classes_)
         kwargs_dict['classes_'] = model.classes_.tolist()
         return cls(**kwargs_dict)
