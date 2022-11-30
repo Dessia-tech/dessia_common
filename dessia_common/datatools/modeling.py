@@ -222,8 +222,8 @@ class LinearRegression(BaseModel):
 
 class BaseTree(BaseModel):
 
-    def __init__(self, n_classes: List[int], n_features: int, n_outputs: int, tree_state: Dict[str, Any],
-                 name: str = ''):
+    def __init__(self, n_classes: List[int] = None, n_features: int = None, n_outputs: int = None,
+                 tree_state: Dict[str, Any] = None, name: str = ''):
         self.n_classes = n_classes
         self.n_features = n_features
         self.n_outputs = n_outputs
@@ -365,7 +365,7 @@ class DecisionTreeClassifier(DecisionTreeRegressor):
 
 class RandomForest(BaseModel):
 
-    def __init__(self, n_outputs_: int, estimators_: List[DecisionTreeRegressor] = None, name: str = ''):
+    def __init__(self, n_outputs_: int = None, estimators_: List[DecisionTreeRegressor] = None, name: str = ''):
         self.estimators_ = estimators_
         self.n_outputs_ = n_outputs_
         BaseModel.__init__(self, name=name)

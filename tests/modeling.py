@@ -2,13 +2,14 @@
 Tests for dessia_common.modeling file
 
 """
-import time
 import numpy as npy
 from sklearn import linear_model, tree, ensemble, svm, neural_network
+
 from dessia_common.models import all_cars_no_feat
 from dessia_common.datatools.dataset import Dataset
 from dessia_common.datatools.modeling import StandardScaler, IdentityScaler, LinearRegression, SVR, SVC, MLPRegressor,\
-    DecisionTreeRegressor, DecisionTreeClassifier, RandomForestRegressor, RandomForestClassifier, MLPClassifier
+    DecisionTreeRegressor, DecisionTreeClassifier, RandomForestRegressor, RandomForestClassifier, MLPClassifier,\
+    BaseScaler, BaseModel, BaseTree, RandomForest, SVM, MLP
 
 # Load Data and put it in a Dataset (matrix is automatically computed)
 dataset_example = Dataset(all_cars_no_feat)
@@ -87,87 +88,71 @@ for key, model in skl_models.items():
     params = hyperparameters[key]
     dessia_models[key] = dessia_classes[key].fit_predict(std_inputs, local_outputs, std_inputs[50:100], **params)
     dessia_models[key] = dessia_classes[key].fit(std_inputs, local_outputs, **params)
-    dessia_models[key].score(std_inputs, local_outputs)
+    assert(isinstance(dessia_models[key].score(std_inputs, local_outputs), float))
+    dessia_models[key]._check_platform()
 
+# Tests errors and base objects
+base_scaler = BaseScaler()
+base_model = BaseModel()
+base_tree = BaseTree()
+base_rf = RandomForest()
+base_svm = SVM()
+base_mlp = MLP()
 
+try:
+    base_scaler._skl_class()
+    raise ValueError("_skl_class() should not work for BaseScaler object.")
+except Exception as e:
+    assert (e.args[0] == 'Method _skl_class not implemented for BaseScaler. Please use children.')
 
-# # Dessia models
-# linear_regression = LinearRegression().fit(std_inputs, double_outputs, alpha = 0.1)
-# rf_regressor = RandomForestRegressor(n_estimators=20)
-# rf_classifier = RandomForestClassifier(n_estimators=20)
+try:
+    base_model._skl_class()
+    raise ValueError("_skl_class() should not work for BaseModel object.")
+except Exception as e:
+    assert (e.args[0] == 'Method _skl_class not implemented for BaseModel. Please use children.')
 
+try:
+    base_rf._skl_class()
+    raise ValueError("_skl_class() should not work for RandomForest object.")
+except Exception as e:
+    assert (e.args[0] == 'Method _skl_class not implemented for RandomForest. Please use RandomForestClassifier '\
+            'or RandomForestRegressor.')
 
+try:
+    base_svm._skl_class()
+    raise ValueError("_skl_class() should not work for SVM object.")
+except Exception as e:
+    assert (e.args[0] == 'Method _skl_class not implemented for SVM. Please use SVC or SVR.')
 
-# predicted_data = linear_regression.predict(std_inputs[50:100])
-# linear_regression, pred_dessia = LinearRegression().fit_predict(std_inputs, raw_outputs, std_inputs[50:100], alpha = 0.1)
-# assert(npy.all(pred_dessia == predicted_data))
+try:
+    base_mlp._skl_class()
+    raise ValueError("_skl_class() should not work for MLP object.")
+except Exception as e:
+    assert (e.args[0] == 'Method _skl_class not implemented for MLP. Please use MLPRegressor or MLPClassifier.')
 
-# # Tree, DecisionTree, RandomForest
-# rf_regressor = ensemble.RandomForestRegressor(n_estimators=20)
-# rf_regressor.fit(std_inputs, raw_outputs)
+try:
+    base_model._instantiate_skl()
+    raise ValueError("_instantiate_skl() should not work for BaseModel object.")
+except Exception as e:
+    assert (e.args[0] == 'Method _instantiate_skl not implemented for BaseModel.')
 
-# pred_skl_tree = rf_regressor.estimators_[12].tree_.predict(npy.array(std_inputs[50:100], dtype=npy.float32))
-# pred_dessia_tree = DecisionTreeRegressor._instantiate_dessia(rf_regressor.estimators_[12])
-# assert(npy.all(pred_dessia_tree.predict(std_inputs[50:100]) == pred_skl_tree[:,:,0]))
+try:
+    base_model._instantiate_dessia(None)
+    raise ValueError("_instantiate_dessia() should not work for BaseModel object.")
+except Exception as e:
+    assert (e.args[0] == 'Method _instantiate_dessia not implemented for BaseModel.')
 
+try:
+    base_tree.fit(None, None)
+    raise ValueError("fit() should not work for BaseTree object.")
+except Exception as e:
+    assert (e.args[0] == 'fit method is not supposed to be used in BaseTree and is not implemented.')
 
-# skl_dectree = rf_regressor.estimators_[12]
-# new_tree = tree.DecisionTreeRegressor()
-# new_tree.tree_ = skl_dectree.tree_
-# new_tree.n_outputs_ = skl_dectree.tree_.n_outputs
-# assert(npy.all(new_tree.predict(npy.array(std_inputs[50:100], dtype=npy.float32)) == skl_dectree.predict(npy.array(std_inputs[50:100], dtype=npy.float32))))
-
-# dessia_tree = DecisionTreeRegressor.fit(std_inputs, raw_outputs)
-# test = dessia_tree._instantiate_skl()
-# assert(npy.all(dessia_tree.predict(npy.array(std_inputs[50:100], dtype=npy.float32)) == test.predict(npy.array(std_inputs[50:100], dtype=npy.float32))))
-
-# pp=DecisionTreeRegressor._instantiate_dessia(test)
-# assert(npy.all(pp.predict(npy.array(std_inputs[50:100], dtype=npy.float32)) == test.predict(npy.array(std_inputs[50:100], dtype=npy.float32))))
-
-# labelled_outputs = [npy.random.randint(4) for _ in raw_outputs]
-# dessia_tree = DecisionTreeClassifier.fit(std_inputs, labelled_outputs)
-
-# dessia_forest = RandomForestRegressor.fit(std_inputs, raw_outputs)
-# dessia_forest.predict(std_inputs[50:100])
-
-# dessia_forest = RandomForestClassifier.fit(std_inputs, labelled_outputs)
-# dessia_forest.predict(std_inputs[50:100])
-
-# outputs = [output[0] for output in raw_outputs]
-# dessia_svr = SVR.fit(std_inputs, outputs, kernel='rbf')
-# dessia_svc = SVC.fit(std_inputs, labelled_outputs, kernel='rbf')
-# skl_svr = svm.SVR(kernel='rbf')
-# skl_svr.fit(std_inputs, outputs)
-
-# dessia_svr.predict(std_inputs[50:55])
-# dessia_svc.predict(std_inputs[50:55])
-# skl_svr.predict(std_inputs[50:55])
-
-
-# dessia_mlp = MLPRegressor.fit(std_inputs, outputs, hidden_layer_sizes = (100, 100, 100, 100, 100),
-#                               alpha=100, max_iter = 1000, activation = 'identity', solver='adam', tol=1)
-# skl_mlp = neural_network.MLPRegressor(hidden_layer_sizes = (100, 100, 100, 100, 100), alpha=100, max_iter = 1000,
-#                                       activation = 'identity', solver='adam', tol=1)
-# skl_mlp.fit(std_inputs, outputs)
-
-# dessia_mlp.predict(std_inputs[50:55])
-# skl_mlp.predict(std_inputs[50:55])
-
-# test_dessia_mlp = MLPRegressor._instantiate_dessia(skl_mlp)
-# test_dessia_mlp.predict(std_inputs[50:55])
-
-
-# dessia_mlp = MLPClassifier.fit(std_inputs, labelled_outputs, hidden_layer_sizes = (100, 100, 100, 100, 100),
-#                               alpha=100, max_iter = 1000, activation = 'identity', solver='adam', tol=1)
-# skl_mlp = neural_network.MLPClassifier(hidden_layer_sizes = (100, 100, 100, 100, 100), alpha=100, max_iter = 1000,
-#                                       activation = 'identity', solver='adam', tol=1)
-# skl_mlp.fit(std_inputs, labelled_outputs)
-
-# dessia_mlp.predict(std_inputs[50:55])
-# skl_mlp.predict(std_inputs[50:55])
-
-# test_dessia_mlp = MLPClassifier._instantiate_dessia(skl_mlp)
-# test_dessia_mlp.predict(std_inputs[50:55])
+try:
+    base_tree.fit_predict(None, None, None)
+    raise ValueError("fit_predict() should not work for BaseTree object.")
+except Exception as e:
+    assert (e.args[0] == 'fit_predict method is not supposed to be used in BaseTree and is not implemented.')
 
 
 # t = time.time()
