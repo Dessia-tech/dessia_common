@@ -133,3 +133,8 @@ steps:
     password:
      from_secret: email_password
     from: technical@dessia.tech
+
+volumes:
+  - name: pip_cache
+    host:
+      path: /tmp/cache/drone/pip
