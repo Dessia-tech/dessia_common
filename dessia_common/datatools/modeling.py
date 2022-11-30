@@ -289,7 +289,7 @@ class BaseTree(BaseModel):
 
 class DecisionTreeRegressor(BaseModel):
 
-    def __init__(self, n_outputs_: int, tree_: BaseTree = None, name: str = ''):
+    def __init__(self, n_outputs_: int = None, tree_: BaseTree = None, name: str = ''):
         self.n_outputs_ = n_outputs_
         self.tree_ = tree_
         BaseModel.__init__(self, name=name)
@@ -340,7 +340,8 @@ class DecisionTreeRegressor(BaseModel):
 class DecisionTreeClassifier(DecisionTreeRegressor):
     _standalone_in_db = True
 
-    def __init__(self, n_classes_: int, classes_: List[int], n_outputs_: int, tree_: BaseTree = None, name: str = ''):
+    def __init__(self, n_classes_: int = None, classes_: List[int] = None, n_outputs_: int = None,
+                 tree_: BaseTree = None, name: str = ''):
         self.n_classes_ = n_classes_
         self.classes_ = classes_
         DecisionTreeRegressor.__init__(self, n_outputs_=n_outputs_, tree_=tree_, name=name)
@@ -414,7 +415,7 @@ class RandomForest(BaseModel):
 class RandomForestRegressor(RandomForest):
     _standalone_in_db = True
 
-    def __init__(self, n_outputs_: int, estimators_: List[DecisionTreeRegressor] = None, name: str = ''):
+    def __init__(self, n_outputs_: int = None, estimators_: List[DecisionTreeRegressor] = None, name: str = ''):
         RandomForest.__init__(self, estimators_=estimators_, n_outputs_=n_outputs_, name=name)
 
     @classmethod
@@ -435,7 +436,7 @@ class RandomForestRegressor(RandomForest):
 class RandomForestClassifier(RandomForest):
     _standalone_in_db = True
 
-    def __init__(self, n_classes_: int, classes_: List[int], n_outputs_: int,
+    def __init__(self, n_classes_: int = None, classes_: List[int] = None, n_outputs_: int = None,
                  estimators_: List[DecisionTreeRegressor] = None, name: str = ''):
         self.n_classes_ = n_classes_
         self.classes_ = classes_
