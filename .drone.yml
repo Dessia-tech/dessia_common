@@ -41,6 +41,14 @@ steps:
     - pip3 install -U pip autopep8
     - bash code_pep8.sh
 
+- name: install, test for python3.7
+  image: python:3.7
+  commands:
+  - git fetch --tags
+  - python setup.py install
+  - python scripts/dessia_object.py
+
+
 - name: install, run scripts and build doc
   image: python:3.8
   commands:
