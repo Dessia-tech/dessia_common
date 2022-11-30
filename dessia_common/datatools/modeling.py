@@ -319,23 +319,30 @@ class DecisionTreeRegressor(BaseModel):
         return cls(**cls.generic_dessia_attributes(model, name=name))
 
     @classmethod
+    def _check_criterion(cls, criterion: str):
+        if 'egressor' not in cls.__name__ and criterion == 'squared_error':
+            return 'gini'
+        return criterion
+
+    @classmethod
     def fit(cls, inputs: List[List[float]], outputs: List[List[float]], name: str = '',
             criterion: str = 'squared_error', max_depth: int = None):
-        if cls is not DecisionTreeRegressor and criterion == 'squared_error':
-            criterion = 'gini'
+        criterion = cls._check_criterion(criterion)
         return cls.fit_(inputs, outputs, name=name, criterion=criterion, max_depth=max_depth)
 
     @classmethod
     def fit_predict(cls, inputs: List[List[float]], outputs: List[List[float]], predicted_inputs: List[List[float]],
                     name: str = '', criterion: str = 'squared_error', max_depth: int = None):
+        criterion = cls._check_criterion(criterion)
         return cls.fit_predict_(inputs, outputs, predicted_inputs, name=name, criterion=criterion, max_depth=max_depth)
 
 
 class DecisionTreeClassifier(DecisionTreeRegressor):
     _standalone_in_db = True
 
-    def __init__(self, n_classes_: int, n_outputs_: int, tree_: BaseTree = None, name: str = ''):
+    def __init__(self, n_classes_: int, classes_: List[int], n_outputs_: int, tree_: BaseTree = None, name: str = ''):
         self.n_classes_ = n_classes_
+        self.classes_ = classes_
         DecisionTreeRegressor.__init__(self, n_outputs_=n_outputs_, tree_=tree_, name=name)
 
     @classmethod
@@ -345,12 +352,14 @@ class DecisionTreeClassifier(DecisionTreeRegressor):
     def _instantiate_skl(self):
         model = self.generic_skl_attributes()
         model.n_classes_ = self.n_classes_
+        model.classes_ = npy.array(self.classes_)
         return model
 
     @classmethod
     def _instantiate_dessia(cls, model, name: str = ''):
         kwargs_dict = cls.generic_dessia_attributes(model, name=name)
         kwargs_dict['n_classes_'] = model.n_classes_
+        kwargs_dict['classes_'] = model.classes_.tolist()
         return cls(**kwargs_dict)
 
 
@@ -382,16 +391,22 @@ class RandomForest(BaseModel):
         return kwargs_dict
 
     @classmethod
+    def _check_criterion(cls, criterion: str):
+        if 'egressor' not in cls.__name__ and criterion == 'squared_error':
+            return 'gini'
+        return criterion
+
+    @classmethod
     def fit(cls, inputs: List[List[float]], outputs: List[List[float]], name: str = '',
             n_estimators: int = 100, criterion: str = 'squared_error', max_depth: int = None):
-        if 'Regressor' not in cls.__name__ and criterion == 'squared_error':
-            criterion = 'gini'
+        criterion = cls._check_criterion(criterion)
         return cls.fit_(inputs, outputs, name=name, n_estimators=n_estimators, criterion=criterion, max_depth=max_depth,
                         n_jobs=1)
 
     @classmethod
     def fit_predict(cls, inputs: List[List[float]], outputs: List[List[float]], predicted_inputs: List[List[float]],
                     name: str = '', n_estimators: int = 100, criterion: str = 'squared_error', max_depth: int = None):
+        criterion = cls._check_criterion(criterion)
         return cls.fit_predict_(inputs, outputs, predicted_inputs, name=name, n_estimators=n_estimators,
                                 criterion=criterion, max_depth=max_depth, n_jobs=1)
 
@@ -544,8 +559,8 @@ class SVC(SVM):
                  _gamma: float = 1., _sparse: bool = False, classes_: List[int] = None, name: str = ''):
         self.classes_ = classes_
         SVM.__init__(self, raw_coef_=raw_coef_, _dual_coef_=_dual_coef_, support_vectors_=support_vectors_,
-                    _sparse=_sparse, kernel=kernel, _n_support=_n_support, support_=support_, _intercept_=_intercept_,
-                    _probA=_probA, _probB=_probB, _gamma=_gamma, name=name)
+                     _sparse=_sparse, kernel=kernel, _n_support=_n_support, support_=support_, _intercept_=_intercept_,
+                     _probA=_probA, _probB=_probB, _gamma=_gamma, name=name)
 
     @classmethod
     def _skl_class(cls):
