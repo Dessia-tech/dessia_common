@@ -19,12 +19,17 @@ big_RandDatas_heterogeneous = Dataset(rand_data_large)
 
 # Build ClusteredDatasets
 clustered_cars_without = ClusteredDataset.from_dbscan(all_cars_without_features, eps=40)
-clustered_cars_without_list = ClusteredDataset.list_dbscan(all_cars_no_feat, eps=40)
-assert(clustered_cars_without_list == clustered_cars_without)
-
 clustered_cars_with = ClusteredDataset.from_dbscan(all_cars_with_features, eps=40)
 aggclustest_clustered = ClusteredDataset.from_agglomerative_clustering(big_RandDatas_heterogeneous, n_clusters=10)
 kmeanstest_clustered = ClusteredDataset.from_kmeans(small_RandDatas_heterogeneous, n_clusters=10, scaling=True)
+
+clustered_cars_with_list = ClusteredDataset.list_dbscan(all_cars_no_feat, eps=40)
+aggclustest_clustered_list = ClusteredDataset.list_agglomerative_clustering(rand_data_large, n_clusters=10)
+kmeanstest_clustered_list = ClusteredDataset.list_kmeans(rand_data_small, n_clusters=10, scaling=True)
+assert(clustered_cars_with_list == clustered_cars_without)
+assert(aggclustest_clustered_list == aggclustest_clustered)
+assert(kmeanstest_clustered_list.n_clusters == 10)
+
 
 # Split lists into labelled lists
 split_cars_without = clustered_cars_without.clustered_sublists()
