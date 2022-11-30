@@ -34,12 +34,22 @@ steps:
   - python code_pylint.py
   - python code_pydocstyle.py
 
+  volumes:
+    # Mount pip cache from host
+    - name: pip_cache
+      path: /root/.cache/pip
+
 - name: check pep8 formatting
   image: python:3.8
   commands:
     - git fetch --tags
     - pip3 install -U pip autopep8
     - bash code_pep8.sh
+
+  volumes:
+    # Mount pip cache from host
+    - name: pip_cache
+      path: /root/.cache/pip
 
 - name: install, run scripts and build doc
   image: python:3.8
@@ -57,16 +67,35 @@ steps:
   - coverage report
   - python coverage.py
 
+  volumes:
+    # Mount pip cache from host
+    - name: pip_cache
+      path: /root/.cache/pip
+
 - name: develop
   image: python:3.8
   commands:
   - python setup.py develop
 
+  volumes:
+    # Mount pip cache from host
+    - name: pip_cache
+      path: /root/.cache/pip
+
+
 - name: generate sdist
   image: python:3.8
+  when:
+      branch: master
+
   commands:
   - git fetch --tags
   - python setup.py sdist
+
+  volumes:
+    # Mount pip cache from host
+    - name: pip_cache
+      path: /root/.cache/pip
 
 
 - name: upload to pypi
