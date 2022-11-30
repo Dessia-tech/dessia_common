@@ -9,36 +9,47 @@ from dessia_common.datatools.metrics import covariance, manhattan_distance, eucl
 from dessia_common.datatools.dataset import Dataset
 
 # Tests on common_attributes
+
+
 class Bidon(DessiaObject):
     _vector_features = ['attr1']
+
     def __init__(self, attr1: float = 1.2, name: str = ''):
         self.attr1 = attr1
-        self.attr2 = attr1*2
+        self.attr2 = attr1 * 2
         DessiaObject.__init__(self, name=name)
+
     @property
     def prop1(self):
         return self.attr1 + self.attr2
 
+
 bidon = Bidon()
-bidon_hlist = Dataset([bidon]*10)
+bidon_hlist = Dataset([bidon] * 10)
 bidon_hlist.plot_data()
 assert(bidon_hlist.common_attributes == ['attr1'])
 
 # Tests on common_attributes
+
+
 class Bidon(DessiaObject):
     _vector_features = ['attr1', 'attr2', 'prop1', 'in_to_vector']
+
     def __init__(self, attr1: float = 1.2, name: str = ''):
         self.attr1 = attr1
-        self.attr2 = attr1*2
+        self.attr2 = attr1 * 2
         DessiaObject.__init__(self, name=name)
+
     @property
     def prop1(self):
         return self.attr1 + self.attr2
+
     def to_vector(self):
         return [self.attr1, self.attr2, self.prop1, random.randint(0, 32)]
 
+
 bidon = Bidon()
-bidon_hlist = Dataset([bidon]*10)
+bidon_hlist = Dataset([bidon] * 10)
 bidon_hlist.plot_data()
 assert(bidon_hlist.common_attributes == ['attr1', 'attr2', 'prop1', 'in_to_vector'])
 
@@ -73,7 +84,7 @@ except Exception as e:
 # Test on matrice
 idx = random.randint(0, len(all_cars_without_features) - 1)
 assert(all(item in all_cars_without_features.matrix[idx]
-            for item in [getattr(all_cars_without_features.dessia_objects[idx], attr)
+           for item in [getattr(all_cars_without_features.dessia_objects[idx], attr)
                         for attr in all_cars_without_features.common_attributes]))
 
 # Tests for displays
@@ -93,10 +104,11 @@ assert(int(all_cars_with_features.mean()[3]) == 15)
 assert(int(all_cars_with_features.standard_deviation()[4]) == 845)
 assert(int(all_cars_with_features.variances()[2]) == 1637)
 assert(int(manhattan_distance(all_cars_with_features.matrix[3], all_cars_with_features.matrix[125])) == 1361)
-assert(int(minkowski_distance(all_cars_with_features.matrix[3], all_cars_with_features.matrix[125], mink_power=7.2)) == 1275)
+assert(int(minkowski_distance(all_cars_with_features.matrix[3],
+       all_cars_with_features.matrix[125], mink_power=7.2)) == 1275)
 assert(int(euclidian_distance(all_cars_with_features.matrix[3], all_cars_with_features.matrix[125])) == 1277)
 assert(int(covariance(all_cars_with_features.matrix[3], all_cars_with_features.matrix[125])) == 1155762)
-assert(int(inf_norm([1,2,3,45,4.,4.21515,-12,-0,0,-25214.1511])) == 25214)
+assert(int(inf_norm([1, 2, 3, 45, 4., 4.21515, -12, -0, 0, -25214.1511])) == 25214)
 assert(int(mahalanobis_distance(all_cars_with_features.matrix[3],
                                 all_cars_with_features.matrix[125],
                                 all_cars_with_features.covariance_matrix())) == 2)
@@ -158,7 +170,7 @@ except Exception as e:
            "Datasets")
 
 try:
-    covariance([1,2], [1])
+    covariance([1, 2], [1])
     raise ValueError("covariance should be able to compute on lists of different lengths")
 except Exception as e:
     assert(e.args[0] == "vector_x and vector_y must be the same length to compute covariance.")
