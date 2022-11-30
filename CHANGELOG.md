@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+- modeling.py file in datatools which contains:
+    * StandardScaler, IdentityScaler
+    * Regressions: SVR, RandomForest, MLP, Ridge, DecisionTree
+    * Classifications: SVC, RandomForest, MLP, DecisionTree
+
 ### Fixed
 - Diff Dict is now robust to uneven arguments commutation
 - Fix path deepth when dict misses keys
