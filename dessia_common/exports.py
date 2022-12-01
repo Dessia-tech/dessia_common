@@ -329,7 +329,8 @@ class MarkdownWriter:
         for attr, value in object_.__dict__.items():
             matrix.append([attr,
                            value.__class__.__name__,
-                           (self._value_to_str(value) if not isinstance(value, (list, dict, set)) else ' - ')])
+                           self._value_to_str(value)])
+                           # (self._value_to_str(value) if not isinstance(value, (list, dict, set)) else ' - ')])
         return matrix
 
     def _head_table(self, col_names: List[str]) -> str:
