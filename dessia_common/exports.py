@@ -317,6 +317,8 @@ class MarkdownWriter:
             return self._sequence_to_str(value)
         if isinstance(value, Dict):
             return self._dict_to_str(value)
+        if value is None:
+            return '-'
         return self._object_to_str(value)
 
     def _string_in_table(self, string: str = ''):
