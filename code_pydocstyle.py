@@ -19,9 +19,9 @@ UNWATCHED_ERRORS = [
 
 MAX_ERROR_BY_TYPE = {
     'D100': 1,
-    'D101': 90,
-    'D102': 210,
-    'D103': 68,
+    'D101': 97,
+    'D102': 222,
+    'D103': 70,
     'D104': 1,
     'D105': 1,
     'D106': 1,
@@ -32,7 +32,7 @@ MAX_ERROR_BY_TYPE = {
     'D202': 1,
     'D203': 1,
     'D204': 1,
-    'D205': 73,
+    'D205': 77,
     'D206': 1,
     'D207': 1,
     'D208': 1,
@@ -48,11 +48,11 @@ MAX_ERROR_BY_TYPE = {
     'D301': 1,
     'D302': 1,
 
-    'D400': 301,
+    'D400': 305,
     'D401': 1,
     'D402': 1,
     'D403': 5,
-    'D404': 7,
+    'D404': 8,
     'D405': 1,
     'D406': 1,
     'D407': 1,
@@ -104,7 +104,7 @@ for error_code, number_errors in code_to_number.items():
             print(f'\nYou must lower number of {error_code} to {number_errors} (actual {max_errors})')
 
 if error_detected:
-    raise RuntimeError('Too many errors\nRun pylint dessia_common to get the errors')
+    raise RuntimeError('Too many errors\nRun pydocstyle dessia_common to get the errors')
 
 if error_over_ratchet_limit:
-    raise RuntimeError('Please lower the error limits in code_pylint.py MAX_ERROR_BY_TYPE according to warnings above')
+    raise RuntimeError('Please lower the error limits in code_pydocstyle.py MAX_ERROR_BY_TYPE according to warnings above')
