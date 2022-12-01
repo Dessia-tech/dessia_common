@@ -14,6 +14,8 @@ scripts = ['displays.py',
            'graph.py',
            'jsonschema.py',
            'sampling.py',
+           'markdowns.py',
+           'checks.py',
            # Workflows
            'workflow/blocks.py',
            'workflow/workflow_with_models.py',
@@ -37,6 +39,7 @@ scripts = ['displays.py',
            'utils/serialization.py',
            'utils/helpers.py',
            'utils/types.py',
+           "utils/diff.py"
            'type_matching.py',
            # Unit tests
            'unit_tests.py',

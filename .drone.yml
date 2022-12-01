@@ -4,6 +4,28 @@ type: docker
 name: default
 
 steps:
+- name: merge master on testing
+  image: alpine/git
+  when:
+    event: push 
+    branch: master
+  commands:
+  - git fetch origin testing
+  - git checkout testing
+  - git merge master
+  - git push
+
+- name: merge testing on dev
+  image: alpine/git
+  when:
+    event: push 
+    branch: testing
+  commands:
+  - git fetch origin dev
+  - git checkout dev
+  - git merge testing
+  - git push
+
 - name: check code complexity, docs & code quality
   image: python:3.8
   commands:
@@ -32,8 +54,8 @@ steps:
   - cd ../tests
   - coverage run --source dessia_common ci_tests.py
   - coverage json
-  - python coverage.py
   - coverage report
+  - python coverage.py
 
 - name: develop
   image: python:3.8

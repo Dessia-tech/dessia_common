@@ -6,7 +6,6 @@ dessia_common
 """
 
 import time
-import sys
 import warnings
 import operator
 import math
@@ -20,7 +19,7 @@ from copy import deepcopy, copy
 import inspect
 import json
 
-from typing import List, Dict, Any, Tuple, get_type_hints
+from typing import List, Tuple, get_type_hints
 import traceback as tb
 
 from importlib import import_module
@@ -28,18 +27,22 @@ from ast import literal_eval
 
 import dessia_common.errors
 from dessia_common.utils.diff import data_eq, diff, dict_hash, list_hash
-from dessia_common.utils.serialization import dict_to_object, serialize_dict_with_pointers, serialize_dict,\
-    deserialize_argument, serialize
+from dessia_common.utils.serialization import deserialize_argument, serialize
 from dessia_common.utils.types import full_classname, is_sequence, is_bson_valid, TYPES_FROM_STRING
 from dessia_common.utils.copy import deepcopy_value
-from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotation, JSONSCHEMA_HEADER,\
+from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotation, JSONSCHEMA_HEADER, \
     set_default_value
 from dessia_common.utils.docstrings import parse_docstring, FAILED_DOCSTRING_PARSING
-from dessia_common.exports import XLSXWriter
+
+from dessia_common.base import SerializableObject
+from dessia_common.exports import XLSXWriter, MarkdownWriter, ExportFormat
+
 from dessia_common.typings import JsonSerializable
 from dessia_common import templates
+from dessia_common.checks import CheckList, FailedCheck
 from dessia_common.displays import DisplayObject, DisplaySetting
 from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
+import dessia_common.files as dcf
 
 _FORBIDDEN_ARGNAMES = ['self', 'cls', 'progress_callback', 'return']
 
@@ -67,7 +70,7 @@ def deprecation_warning(name, object_type, use_instead=None):
     return msg
 
 
-class DessiaObject:
+class DessiaObject(SerializableObject):
     """
     Base class for Dessia's platform compatible objects.
     Gathers generic methods and attributes
@@ -106,7 +109,6 @@ class DessiaObject:
     :ivar Any kwargs: Additionnal user metadata
     """
     _standalone_in_db = False
-    _non_serializable_attributes = []
     _non_editable_attributes = []
     _non_data_eq_attributes = ['name']
     _non_data_hash_attributes = ['name']
@@ -126,6 +128,11 @@ class DessiaObject:
         self.name = name
         for property_name, property_value in kwargs.items():
             setattr(self, property_name, property_value)
+
+    def base_dict(self):
+        dict_ = SerializableObject.base_dict(self)
+        dict_['name'] = self.name
+        return dict_
 
     def __hash__(self):
         """
@@ -148,7 +155,17 @@ class DessiaObject:
             return self._data_eq(other_object)
         return object.__eq__(self, other_object)
 
-    def _data_eq(self, other_object):
+    def _data_eq_dict(self):
+        """
+        Returns a dict of what to look at for data eq. Keys in non data eq attributes are removed
+        """
+        return {k: v for k, v in self._serializable_dict().items()
+                if k not in self._non_data_eq_attributes + ['package_version', 'name']}
+
+    def _data_eq(self, other_object) -> bool:
+        """
+        Returns if the object is equal to the other object in the sense of data contained in the objects
+        """
         return data_eq(self, other_object)
 
     def _data_hash(self):
@@ -183,71 +200,6 @@ class DessiaObject:
         Full classname of class like: package.module.submodule.classname
         """
         return full_classname(self)
-
-    def base_dict(self):
-        """
-        A base dict for to_dict: put name, object class and version in a dict
-        """
-        package_name = self.__module__.split('.', maxsplit=1)[0]
-        if package_name in sys.modules:
-            package = sys.modules[package_name]
-            if hasattr(package, '__version__'):
-                package_version = package.__version__
-            else:
-                package_version = None
-        else:
-            package_version = None
-
-        object_class = self.__module__ + '.' + self.__class__.__name__
-        dict_ = {'name': self.name, 'object_class': object_class}
-        if package_version:
-            dict_['package_version'] = package_version
-        return dict_
-
-    def _serializable_dict(self):
-        """
-        Returns a dict of attribute_name, values (still python, not serialized)
-        Keys are filtered with non serializable attributes controls
-        """
-
-        dict_ = {k: v for k, v in self.__dict__.items()
-                 if k not in self._non_serializable_attributes and not k.startswith('_')}
-        return dict_
-
-    def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#') -> JsonSerializable:
-        """
-        Generic to_dict method
-        """
-        if memo is None:
-            memo = {}
-
-        # Default to dict
-        serialized_dict = self.base_dict()
-        dict_ = self._serializable_dict()
-        if use_pointers:
-            serialized_dict.update(serialize_dict_with_pointers(dict_, memo, path)[0])
-        else:
-            serialized_dict.update(serialize_dict(dict_))
-
-        return serialized_dict
-
-    @classmethod
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
-                       pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'DessiaObject':
-        """
-        Generic dict_to_object method
-        """
-        if cls is not DessiaObject:
-            obj = dict_to_object(dict_=dict_, class_=cls, force_generic=force_generic, global_dict=global_dict,
-                                 pointers_memo=pointers_memo, path=path)
-            return obj
-
-        if 'object_class' in dict_:
-            obj = dict_to_object(dict_=dict_, force_generic=force_generic, global_dict=global_dict,
-                                 pointers_memo=pointers_memo, path=path)
-            return obj
-
-        raise NotImplementedError('No object_class in dict')
 
     @classmethod
     def base_jsonschema(cls):
@@ -444,8 +396,27 @@ class DessiaObject:
 
         return cls.dict_to_object(dict_)
 
-    def is_valid(self):
-        return True
+    def check_list(self, level='error'):
+        check_list = CheckList([])
+
+        check_list += self._check_platform(level=level)
+
+        # Type checking: not ready yet
+        # class_argspec = inspect.getfullargspec(self.__class__)
+        # annotations = inspect.signature(self.__init__).parameters
+
+        # for arg in class_argspec.args:
+        #     if arg != 'self':
+        #         if arg in annotations:
+        #             value = self.__dict__[arg]
+        #             # print(annotations[arg], type(annotations[arg]))
+        #             print(annotations[arg].annotation)
+        #             check_list += type_check(value, annotations[arg].annotation.__class__, level=level)
+
+        return check_list
+
+    def is_valid(self, level='error'):
+        return not self.check_list().checks_above_level(level=level)
 
     def copy(self, deep=True, memo=None):
         if deep:
@@ -480,7 +451,7 @@ class DessiaObject:
                 dict_[arg] = deepcopy_value(getattr(self, arg), memo=memo)
         return self.__class__(**dict_)
 
-    def plot_data(self):  # TODO: Should it have a **kwargs argument ?
+    def plot_data(self, **kwargs):
         return []
 
     def plot(self, **kwargs):
@@ -566,38 +537,44 @@ class DessiaObject:
         """
         Render a markdown of the object output type: string
         """
-        return templates.dessia_object_markdown_template.substitute(name=self.name, class_=self.__class__.__name__)
+        md_writer = MarkdownWriter(print_limit=25, table_limit=None)
+        return templates.dessia_object_markdown_template.substitute(name=self.name,
+                                                                    class_=self.__class__.__name__,
+                                                                    table=md_writer.object_table(self))
 
-    def _performance_analysis(self):
+    def performance_analysis(self):
         """
         Prints time of rendering some commons operations (serialization, hash, displays)
         """
+        print(f'### Performance analysis of object {self} ###')
         data_hash_time = time.time()
         self._data_hash()
         data_hash_time = time.time() - data_hash_time
-        print(f'Data hash time: {round(data_hash_time, 3)} seconds')
+        print(f'\t- data hash time: {round(data_hash_time, 3)} seconds')
 
         todict_time = time.time()
         dict_ = self.to_dict()
         todict_time = time.time() - todict_time
-        print(f'to_dict time: {round(todict_time, 3)} seconds')
+        print(f'\t- to_dict time: {round(todict_time, 3)} seconds')
 
         dto_time = time.time()
         self.dict_to_object(dict_)
         dto_time = time.time() - dto_time
-        print(f'dict_to_object time: {round(dto_time, 3)} seconds')
+        print(f'\t- dict_to_object time: {round(dto_time, 3)} seconds')
 
         for display_setting in self.display_settings():
             display_time = time.time()
             self._display_from_selector(display_setting.selector)
             display_time = time.time() - display_time
-            print(f'Generation of display {display_setting.selector} in: {round(display_time, 6)} seconds')
+            print(f'\t- generation of display {display_setting.selector} in: {round(display_time, 6)} seconds')
+        print('\n')
 
-    def _check_platform(self):
+    def _check_platform(self, level='error'):
         """
         Reproduce lifecycle on platform (serialization, display)
         raise an error if something is wrong
         """
+        checks = []
         try:
             dict_ = self.to_dict(use_pointers=True)
         except TypeError:
@@ -607,21 +584,27 @@ class DessiaObject:
         deserialized_object = self.dict_to_object(decoded_json)
         if not deserialized_object._data_eq(self):
             print('data diff: ', self._data_diff(deserialized_object))
-            raise dessia_common.errors.DeserializationError('Object is not equal to itself'
-                                                            ' after serialization/deserialization')
+            # raise dessia_common.errors.DeserializationError('Object is not equal to itself'
+            #                                                 ' after serialization/deserialization')
+            checks.append(FailedCheck('Object is not equal to itself after serialization/deserialization'))
         copied_object = self.copy()
         if not copied_object._data_eq(self):
             try:
                 print('data diff: ', self._data_diff(copied_object))
             except:
                 pass
-            raise dessia_common.errors.CopyError('Object is not equal to itself after copy')
+            checks.append(FailedCheck('Object is not equal to itself after serialization/deserialization'))
+            # raise dessia_common.errors.CopyError('Object is not equal to itself after copy')
 
         valid, hint = is_bson_valid(stringify_dict_keys(dict_))
         if not valid:
-            raise ValueError(hint)
+            # raise ValueError(hint)
+            checks.append(FailedCheck(f'Object is not bson valid {hint}'))
+
         json.dumps(self._displays())
         json.dumps(self._method_jsonschemas)
+
+        return CheckList(checks)
 
     def to_xlsx(self, filepath: str):
         """
@@ -637,10 +620,25 @@ class DessiaObject:
         writer = XLSXWriter(self)
         writer.save_to_stream(stream)
 
-    def _export_formats(self):
-        formats = [{"extension": "json", "method_name": "save_to_stream", "text": True, "args": {}},
-                   {"extension": "xlsx", "method_name": "to_xlsx_stream", "text": False, "args": {}}]
+    def _export_formats(self) -> List[ExportFormat]:
+        formats = [ExportFormat(selector="json", extension="json", method_name="save_to_stream", text=True),
+                   ExportFormat(selector="xlsx", extension="xlsx", method_name="to_xlsx_stream", text=False)]
         return formats
+
+    def save_export_to_file(self, selector, filepath):
+        for export_format in self._export_formats():
+            if export_format.selector == selector:
+                if not filepath.endswith(f".{export_format.extension}"):
+                    filepath += f".{export_format.extension}"
+                    print(f'Renaming filepath to {filepath}')
+                if export_format.text:
+                    with open(filepath, mode="w", encoding="utf-8") as stream:
+                        getattr(self, export_format.method_name)(stream, **export_format.args)
+                else:
+                    with open(filepath, mode="wb") as stream:
+                        getattr(self, export_format.method_name)(stream, **export_format.args)
+                return filepath
+        raise ValueError(f'Export selector not found: {selector}')
 
     def to_vector(self):
         vectored_objects = []
@@ -692,7 +690,6 @@ class PhysicalObject(DessiaObject):
         Exports the CAD of the object to step. Works if the class define a custom volmdlr model
         :param filepath: a str representing a filepath
         """
-        self.volmdlr_volume_model().to_step(filepath=filepath)
         return self.volmdlr_volume_model().to_step(filepath=filepath)
 
     def to_step_stream(self, stream):
@@ -700,6 +697,17 @@ class PhysicalObject(DessiaObject):
         Exports the CAD of the object to a stream in the STEP format. Works if the class define a custom volmdlr model
         """
         return self.volmdlr_volume_model().to_step_stream(stream=stream)
+
+    def to_html_stream(self, stream: dcf.StringFile):
+        """
+        Exports the CAD of the object to a stream in the html format.
+        """
+        model = self.volmdlr_volume_model()
+        babylon_data = model.babylon_data()
+        script = model.babylonjs_script(babylon_data)
+        stream.write(script)
+
+        return stream
 
     def to_stl_stream(self, stream):
         """
@@ -730,10 +738,11 @@ class PhysicalObject(DessiaObject):
     def save_babylonjs_to_file(self, filename: str = None, use_cdn: bool = True, debug: bool = False, **kwargs):
         self.volmdlr_volume_model(**kwargs).save_babylonjs_to_file(filename=filename, use_cdn=use_cdn, debug=debug)
 
-    def _export_formats(self):
+    def _export_formats(self) -> List[ExportFormat]:
         formats = DessiaObject._export_formats(self)
-        formats3d = [{"extension": "step", "method_name": "to_step_stream", "text": True, "args": {}},
-                     {"extension": "stl", "method_name": "to_stl_stream", "text": False, "args": {}}]
+        formats3d = [ExportFormat(selector="step", extension="step", method_name="to_step_stream", text=True),
+                     ExportFormat(selector="stl", extension="stl", method_name="to_stl_stream", text=False),
+                     ExportFormat(selector="html", extension="html", method_name="to_html_stream", text=True)]
         formats.extend(formats3d)
         return formats
 
@@ -1198,13 +1207,13 @@ def enhanced_deep_attr(obj, sequence):
         path = f"#/{'/'.join(sequence)}"
     return get_in_object_from_path(object_=obj, path=path)
 
-        # # Sequence is a string and not a sequence of deep attributes
-        # if '/' in sequence:
-        #     # Is deep attribute reference
-        #     sequence = sequence.split('/')
-        #     return enhanced_deep_attr(obj=obj, sequence=sequence)
-        # # Is direct attribute
-        # return enhanced_get_attr(obj=obj, attr=sequence)
+    # # Sequence is a string and not a sequence of deep attributes
+    # if '/' in sequence:
+    #     # Is deep attribute reference
+    #     sequence = sequence.split('/')
+    #     return enhanced_deep_attr(obj=obj, sequence=sequence)
+    # # Is direct attribute
+    # return enhanced_get_attr(obj=obj, attr=sequence)
     #
     # # Get direct attribute
     # subobj = enhanced_get_attr(obj=obj, attr=sequence[0])
@@ -1333,7 +1342,7 @@ def split_argspecs(argspecs) -> Tuple[int, int]:
 
 
 def get_attribute_names(object_class):
-    attributes = [attribute[0] for attribute in inspect.getmembers(object_class, lambda x:not inspect.isroutine(x))
+    attributes = [attribute[0] for attribute in inspect.getmembers(object_class, lambda x: not inspect.isroutine(x))
                   if not attribute[0].startswith('__')
                   and not attribute[0].endswith('__')
                   and isinstance(attribute[1], (float, int, complex, bool))]

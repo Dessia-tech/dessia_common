@@ -7,10 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Fixed
+- Diff Dict is now robust to uneven arguments commutation
+- Fix path deepth when dict misses keys
+
+## v0.10.2
+
+- non serializable attributes were not working
+- wrong import to sklearn -> scikit-learn
+
+## v0.10.1
+
+### Fixed
+- jsonschema bug
+- time rendering on workflow
+
+## v0.10.0
+
 ### Added
+- Generic save to file
 - Sampler class
 - (De)Serialization handles 'typing.Type'
 - Workflow: handle position in to_dict / dict_to_object process
+- sub_matrix method to Dataset
 
 
 ### Breaking Changes
@@ -24,6 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     * class Sampler is now coded in file sampling.py
     * Metrics function are now coded in file metrics.py
 - Retrocompatibility is supported for the present time, with a big warning
+- pareto methods of datatools are now called with a list of attributes and not anymore a costs matrix
 
 
 ### Changes
@@ -33,6 +53,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - switch is_jsonable to orjson
 
 ### Fixed
+- Workflow: improve to_script
 
 
 ## v0.10.0 [9/26/2022]

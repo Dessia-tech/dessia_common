@@ -4,10 +4,14 @@
 exports for dessia_common
 
 """
+from typing import List, Dict, Any, Sequence, Optional
+
+
 from openpyxl.styles.borders import Border, Side
 from openpyxl.styles import PatternFill, Font
 from openpyxl import Workbook
 import openpyxl.utils
+from dessia_common.utils.types import is_sequence
 from dessia_common.breakdown import breakdown
 
 
@@ -35,6 +39,23 @@ def is_builtins_list(list_):
         if not (is_number(element) or isinstance(element, str)):
             return False
     return True
+
+
+class ExportFormat:
+    def __init__(self, selector: Optional[str], extension: str, method_name: str, text: bool,
+                 export_name: str = "", args: Dict[str, Any] = None):
+        self.selector = selector
+        self.extension = extension
+        self.method_name = method_name
+        self.text = text
+        self.export_name = export_name
+        if args is None:
+            args = {}
+        self.args = args
+
+    def to_dict(self):
+        return {"selector": self.selector, "extension": self.extension, "method_name": self.method_name,
+                "text": self.text, "export_name": self.export_name, "args": self.args}
 
 
 class XLSXWriter:
@@ -253,3 +274,110 @@ class XLSXWriter:
             if width > 0:
                 adjusted_width = min((width + 0.5), max_width)
                 sheet.column_dimensions[column].width = adjusted_width
+
+
+class MarkdownWriter:
+    def __init__(self, print_limit: int = 25, table_limit: int = 12):
+        self.print_limit = print_limit
+        self.table_limit = table_limit
+
+    def _object_titles(self):
+        return ['Attribute', 'Type', 'Value']  # , 'Subvalues']
+
+    def _sequence_to_str(self, value: Sequence):
+        if len(value) == 0:
+            return f"empty {type(value).__name__}"
+
+        printed_string = f"{len(value)} "
+
+        all_class_names = list(set(subvalue.__class__.__name__ for subvalue in value))
+        if len(all_class_names) == 1:
+            printed_string += ''.join([f"{all_class_names[0]}",
+                                       f"{'s' if len(value) > 1 else ''}"])
+        else:
+            str_all_class = str(all_class_names).translate(str(all_class_names).maketrans('', '', "{}'"))
+            printed_string += f"{str_all_class}"
+
+        return printed_string
+
+    def _dict_to_str(self, value: Dict):
+        return self._sequence_to_str(list(value.values()))
+
+    def _object_to_str(self, value) -> str:
+        if hasattr(value, 'name') and value.name:
+            return value.name
+        return 'unnamed'
+
+    def _value_to_str(self, value: Any) -> str:
+        if isinstance(value, (float, int, bool, complex)):
+            return str(round(value, 6))
+        if isinstance(value, str):
+            return (value if value != '' else 'no value')
+        if is_sequence(value):
+            return self._sequence_to_str(value)
+        if isinstance(value, Dict):
+            return self._dict_to_str(value)
+        return self._object_to_str(value)
+
+    def _string_in_table(self, string: str = ''):
+        return string[:self.print_limit] + ('...' if len(string) > self.print_limit else '')
+
+    def _object_matrix(self, object_):
+        matrix = []
+        for attr, value in object_.__dict__.items():
+            matrix.append([attr,
+                           value.__class__.__name__,
+                           (self._value_to_str(value) if not isinstance(value, (list, dict, set)) else ' - ')])
+        return matrix
+
+    def _head_table(self, col_names: List[str]) -> str:
+        cap_names = map(lambda x: x.capitalize(), col_names)
+        return ("| " + " | ".join(cap_names) + " |\n" +
+                "| ------ " * len(col_names) + "|\n")
+
+    def _table_line(self, row: List[Any]) -> str:
+        line = "|"
+        for value in row:
+            line += f" {self._string_in_table(self._value_to_str(value))} |"
+        return line + "\n"
+
+    def _table_rows_from_content(self, content: List[List[Any]]) -> str:
+        string = ''
+        for row in content:
+            string += self._table_line(row)
+        return string
+
+    def _content_table(self, content: List[List[Any]]) -> str:
+        if self.table_limit is None:
+            return self._table_rows_from_content(content)
+
+        table = ''
+        half_table = int(self.table_limit / 2)
+
+        table += self._table_rows_from_content(content[:half_table])
+
+        if self.table_limit > 1:
+            if len(content) > self.table_limit:
+                table += f"| + {len(content) - self.table_limit} unprinted elements | |\n"
+
+            if len(content) > half_table:
+                table += self._table_rows_from_content(content[-half_table:])
+
+        return table
+
+    def print_name(self, object_) -> str:
+        return (object_.name if object_.name != '' else 'with no name')
+
+    def print_class(self, object_) -> str:
+        return object_.__class__.__name__
+
+    def matrix_table(self, matrix: List[List[float]], col_names: List[str]) -> str:
+        return ''.join([self._head_table(col_names),
+                        self._content_table(matrix)])
+
+    def object_table(self, object_) -> str:
+        return self.matrix_table(self._object_matrix(object_),
+                                 self._object_titles())
+
+    def element_details(self, elements: List[Any]) -> str:
+        return self._sequence_to_str(elements)
