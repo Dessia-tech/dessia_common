@@ -81,6 +81,7 @@ dessia_models = {}
 for key, model in skl_models.items():
     dessia_models[key] = dessia_classes[key]._instantiate_dessia(model)
     assert(npy.all(dessia_models[key].predict(std_inputs[50:100]) == model.predict(std_inputs[50:100])))
+    print(dessia_models[key].predict(std_inputs[50:52]))
 
 
 # Test dessia models methods
@@ -119,7 +120,7 @@ try:
     base_model._skl_class()
     raise ValueError("_skl_class() should not work for BaseModel object.")
 except Exception as e:
-    assert (e.args[0] == 'Method _skl_class not implemented for BaseModel. Please use children.')
+    assert (e.args[0] == 'Method _skl_class not implemented for BaseModel.')
 
 try:
     base_rf._skl_class()

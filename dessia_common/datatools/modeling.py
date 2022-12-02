@@ -2,7 +2,7 @@
 Tools and base classes for machine learning methods.
 
 """
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Tuple, Union
 
 import numpy as npy
 from sklearn import preprocessing, linear_model, ensemble, tree, svm, neural_network
@@ -16,10 +16,6 @@ from dessia_common.core import DessiaObject
 class BaseScaler(DessiaObject):
     """
     Base object for handling a scikit-learn Scaler.
-
-    :param name:
-        Name of BaseScaler
-    :type name: `str`, `optional`, defaults to `''`
 
     """
     _rebuild_attributes = []
@@ -38,9 +34,6 @@ class BaseScaler(DessiaObject):
         """
         Instantiate scikit-learn Scaler from BaseScaler object, or children.
 
-        :return: The scikit-learn scaler equivalent to the one stored as DessiaObject in BaseScaler or children.
-        :rtype: `preprocessing` object from scikit-learn
-
         """
         scaler = self._call_skl_scaler()
         for attr in self._rebuild_attributes:
@@ -48,20 +41,9 @@ class BaseScaler(DessiaObject):
         return scaler
 
     @classmethod
-    def instantiate_dessia(cls, scaler, name: str = ''):
+    def instantiate_dessia(cls, scaler, name: str = '') -> 'BaseScaler':
         """
         Instantiate BaseScaler object, or children, from scikit-learn scaler.
-
-        :param scaler:
-            scikit-learn Scaler to copy in the BaseScaler (DessiaObject), to be serialized.
-        :type scaler: `preprocessing` object from scikit-learn
-
-        :param name:
-            Name of BaseScaler
-        :type name: `str`, `optional`, defaults to `''`
-
-        :return: The BaseScaler or children (DessiaObject) equivalent to the scikit-learn Scaler in arguments.
-        :rtype: `BaseScaler`
 
         """
         kwargs = {'name': name}
@@ -74,7 +56,7 @@ class BaseScaler(DessiaObject):
         return cls(**kwargs)
 
     @classmethod
-    def fit(cls, matrix: List[List[float]], name: str = ''):
+    def fit(cls, matrix: List[List[float]], name: str = '') -> 'BaseScaler':
         """
         Fit scaler with data stored in matrix.
 
@@ -94,7 +76,7 @@ class BaseScaler(DessiaObject):
         scaler.fit(matrix)
         return cls.instantiate_dessia(scaler, name)
 
-    def transform(self, matrix: List[List[float]]):
+    def transform(self, matrix: List[List[float]]) -> List[List[float]]:
         """
         Transform the data stored in matrix according to this BaseScaler or children.
 
@@ -110,22 +92,9 @@ class BaseScaler(DessiaObject):
         return scaler.transform(matrix).tolist()
 
     @classmethod
-    def fit_transform(cls, matrix: List[List[float]], name: str = ''):
+    def fit_transform(cls, matrix: List[List[float]], name: str = '') -> Tuple['BaseScaler', List[List[float]]]:
         """
-        Fit scaler with data stored in matrix and transform this data.
-
-        It is the succession of fit and transform methods
-
-        :param matrix:
-            Matrix of data of dimension `n_samples x n_features`
-        :type matrix: List[List[float]]
-
-        :param name:
-            Name of BaseScaler
-        :type name: `str`, `optional`, defaults to `''`
-
-        :return: The BaseScaler or children (DessiaObject) fit on matrix and the scaled matrix
-        :rtype: `BaseScaler`, List[List[float]]
+        Fit scaler with data stored in matrix and transform it. It is the succession of fit and transform methods.
 
         """
         scaler = cls.fit(matrix, name)
@@ -134,9 +103,7 @@ class BaseScaler(DessiaObject):
 
 class StandardScaler(BaseScaler):
     """
-    Data scaler that standardly scale data.
-
-    The operation made by this scaler is `new_X = (X - mean(X))/std(X)`.
+    Data scaler that standardly scale data. The operation made by this scaler is `new_X = (X - mean(X))/std(X)`.
 
     :param mean_:
         List of means
@@ -169,21 +136,6 @@ class IdentityScaler(StandardScaler):
     """
     Data scaler that scales nothing.
 
-    It is implemented to preserve code consistency and readability and may be useful to avoid conditions if data is
-    scaled or not.
-
-    :param mean_:
-        List of means
-    :type mean_: `None`
-
-    :param scale_:
-        List of standard deviations
-    :type scale_: `None`
-
-    :param var_:
-        List of variances
-    :type var_: `None`
-
     """
     def __init__(self, mean_: List[float] = None, scale_: List[float] = None, var_: List[float] = None, name: str = ''):
         StandardScaler.__init__(self, mean_=mean_, scale_=scale_, var_=var_, name=name)
@@ -194,9 +146,7 @@ class IdentityScaler(StandardScaler):
 
 class LabelBinarizer(BaseScaler):
     """
-    Data scaler used in MLPClassifier to standardize class labels.
-
-    It is implemented to allow MLPClassifier to work and to be serializable.
+    Data scaler used in MLPClassifier to standardize class labels. Only implemented for MLPClassifier to work correctly.
 
     :param classes_:
         List of classes to standardize. Can be any int.
@@ -228,9 +178,6 @@ class LabelBinarizer(BaseScaler):
         """
         Instantiate scikit-learn LabelBinarizer from LabelBinarizer object.
 
-        :return: The scikit-learn LabelBinarizer equivalent to the one stored as DessiaObject in LabelBinarizer.
-        :rtype: `LabelBinarizer` object from scikit-learn
-
         """
         scaler = self._call_skl_scaler()
         scaler.classes_ = npy.array(self.classes_)
@@ -243,13 +190,16 @@ class LabelBinarizer(BaseScaler):
 #                                                        M O D E L S
 # ======================================================================================================================
 class BaseModel(DessiaObject):
+    """
+    Base object for handling a scikit-learn models (classifier and regressor).
 
+    """
     def __init__(self, name: str = ''):
         DessiaObject.__init__(self, name=name)
 
     @classmethod
     def _skl_class(cls):
-        raise NotImplementedError('Method _skl_class not implemented for BaseModel. Please use children.')
+        raise NotImplementedError(f'Method _skl_class not implemented for {cls.__name__}.')
 
     def _call_skl_model(self):
         return self._skl_class()()
@@ -262,22 +212,80 @@ class BaseModel(DessiaObject):
         raise NotImplementedError(f'Method _instantiate_dessia not implemented for {cls.__name__}.')
 
     @classmethod
-    def fit_(cls, inputs: List[List[float]], outputs: List[List[float]], name: str = '', **hyperparameters):
+    def fit_(cls, inputs: List[List[float]], outputs: List[List[float]], name: str = '',
+             **hyperparameters) -> 'BaseModel':
+        """
+        Standard method to fit outputs to inputs thanks to a scikit-learn model.
+
+        :param inputs:
+            Matrix of data of dimension `n_samples x n_features`
+        :type inputs: List[List[float]]
+
+        :param outputs:
+            Matrix of data of dimension `n_samples x n_features`
+        :type outputs: List[List[float]]
+
+        :param name:
+            Name of BaseScaler
+        :type name: `str`, `optional`, defaults to `''`
+
+        :param hyperparameters:
+            Hyperparameters of the used scikit-learn object.
+        :type hyperparameters: `dict[str, Any]`, `optional`
+
+        :return: The BaseModel or children (DessiaObject) fit on matrix.
+        :rtype: `BaseModel`
+
+        """
         model = cls._skl_class()(**hyperparameters)
         model.fit(inputs, outputs)
         return cls._instantiate_dessia(model, name)
 
-    def predict(self, inputs: List[List[float]]):
+    def predict(self, inputs: List[List[float]]) -> Union[List[float], List[List[float]]]:
+        """
+        Standard method to predict outputs from inputs with a BaseModel or children.
+
+        :param inputs:
+            Matrix of data of dimension `n_samples x n_features`
+        :type inputs: List[List[float]]
+
+        :return: The predicted values for inputs.
+        :rtype: `BaseModel`
+
+        """
         model = self._instantiate_skl()
         return model.predict(inputs).tolist()
 
     @classmethod
     def fit_predict_(cls, inputs: List[List[float]], outputs: List[List[float]], predicted_inputs: List[List[float]],
-                    name: str = '', **hyperparameters):
+                    name: str = '', **hyperparameters) -> Tuple['BaseModel', Union[List[float], List[List[float]]]]:
+        """
+        Fit outputs to inputs and predict outputs for predicted_inputs. It is the succession of fit and predict methods.
+
+        """
         model = cls.fit_(inputs, outputs, name, **hyperparameters)
         return model, model.predict(predicted_inputs)
 
-    def score(self, inputs: List[List[float]], outputs: List[List[float]]):
+    def score(self, inputs: List[List[float]], outputs: List[List[float]]) -> float:
+        """
+        Compute the score of BaseModel.
+
+        Please be sure to fit the model before computing its score and use test data and not train data.
+        Train data is data used to train the model and shall not be used to evaluate its quality.
+        Test data is data used to test the model and must not be used to train it.
+
+        :param inputs:
+            Matrix of data of dimension `n_samples x n_features`
+        :type inputs: List[List[float]]
+
+        :param outputs:
+            Matrix of data of dimension `n_samples x n_features`
+        :type outputs: List[List[float]]
+
+        :return: The score of BaseModel or children (DessiaObject).
+        :rtype: float
+
+        """
         model = self._instantiate_skl()
         return model.score(inputs, outputs)
 
