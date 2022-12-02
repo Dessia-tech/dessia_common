@@ -151,15 +151,3 @@ try:
     raise ValueError("_instantiate_dessia() should not work for BaseModel object.")
 except Exception as e:
     assert (e.args[0] == 'Method _instantiate_dessia not implemented for BaseModel.')
-
-try:
-    base_tree.fit(None, None)
-    raise ValueError("fit() should not work for BaseTree object.")
-except Exception as e:
-    assert (e.args[0] == 'fit method is not supposed to be used in BaseTree and is not implemented.')
-
-try:
-    base_tree.fit_predict(None, None, None)
-    raise ValueError("fit_predict() should not work for BaseTree object.")
-except Exception as e:
-    assert (e.args[0] == 'fit_predict method is not supposed to be used in BaseTree and is not implemented.')
