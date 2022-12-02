@@ -144,11 +144,11 @@ class StandardScaler(BaseScaler):
 
     :param scale_:
         List of standard deviations
-    :type mean_: `List[float]`, `optional`, defaults to `None`
+    :type scale_: `List[float]`, `optional`, defaults to `None`
 
     :param var_:
         List of variances
-    :type mean_: `List[float]`, `optional`, defaults to `None`
+    :type var_: `List[float]`, `optional`, defaults to `None`
 
     """
     _rebuild_attributes = ['mean_', 'scale_', 'var_']
@@ -178,11 +178,11 @@ class IdentityScaler(StandardScaler):
 
     :param scale_:
         List of standard deviations
-    :type mean_: `None`
+    :type scale_: `None`
 
     :param var_:
         List of variances
-    :type mean_: `None`
+    :type var_: `None`
 
     """
     def __init__(self, mean_: List[float] = None, scale_: List[float] = None, var_: List[float] = None, name: str = ''):
@@ -193,6 +193,24 @@ class IdentityScaler(StandardScaler):
 
 
 class LabelBinarizer(BaseScaler):
+    """
+    Data scaler used in MLPClassifier to standardize class labels.
+
+    It is implemented to allow MLPClassifier to work and to be serializable.
+
+    :param classes_:
+        List of classes to standardize. Can be any int.
+    :type classes_: List[int]
+
+    :param y_type_:
+        Type of output labels.
+    :type y_type_: str
+
+    :param sparse_input_:
+        Specify if the inputs are a sparse matrix or not.
+    :type sparse_input_: bool, defaults to `False`
+
+    """
     _rebuild_attributes = ['classes_', 'y_type_', 'sparse_input_']
 
     def __init__(self, classes_: List[int] = None, y_type_: str = 'multiclass', sparse_input_: bool = False,
@@ -207,11 +225,18 @@ class LabelBinarizer(BaseScaler):
         return preprocessing._label.LabelBinarizer
 
     def instantiate_skl(self):
-        model = self._call_skl_scaler()
-        model.classes_ = npy.array(self.classes_)
-        model.y_type_ = self.y_type_
-        model.sparse_input_ = self.sparse_input_
-        return model
+        """
+        Instantiate scikit-learn LabelBinarizer from LabelBinarizer object.
+
+        :return: The scikit-learn LabelBinarizer equivalent to the one stored as DessiaObject in LabelBinarizer.
+        :rtype: `LabelBinarizer` object from scikit-learn
+
+        """
+        scaler = self._call_skl_scaler()
+        scaler.classes_ = npy.array(self.classes_)
+        scaler.y_type_ = self.y_type_
+        scaler.sparse_input_ = self.sparse_input_
+        return scaler
 
 
 # ======================================================================================================================
