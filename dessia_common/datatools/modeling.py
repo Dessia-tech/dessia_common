@@ -134,20 +134,19 @@ class BaseScaler(DessiaObject):
 
 class StandardScaler(BaseScaler):
     """
-    Data scaler that standardly scale data. The operation made by this scaler is `new_X = (X - mean(X))/std(X)`.
+    Data scaler that standardly scale data.
+
+    The operation made by this scaler is `new_X = (X - mean(X))/std(X)`.
 
     :param mean_:
-        --------
         List of means
     :type mean_: `List[float]`, `optional`, defaults to `None`
 
     :param scale_:
-        --------
         List of standard deviations
     :type mean_: `List[float]`, `optional`, defaults to `None`
 
     :param var_:
-        --------
         List of variances
     :type mean_: `List[float]`, `optional`, defaults to `None`
 
@@ -168,21 +167,20 @@ class StandardScaler(BaseScaler):
 
 class IdentityScaler(StandardScaler):
     """
-    Data scaler that does no scaler. It is implemented to keep code consistency and readability and may be useful to
-    avoid conditions if data is scaled or not.
+    Data scaler that scales nothing.
+
+    It is implemented to preserve code consistency and readability and may be useful to avoid conditions if data is
+    scaled or not.
 
     :param mean_:
-        --------
         List of means
     :type mean_: `None`
 
     :param scale_:
-        --------
         List of standard deviations
     :type mean_: `None`
 
     :param var_:
-        --------
         List of variances
     :type mean_: `None`
 
