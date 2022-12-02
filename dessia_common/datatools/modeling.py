@@ -289,7 +289,7 @@ class BaseModel(DessiaObject):
         return model.score(inputs, outputs)
 
 
-class LinearRegression(BaseModel):
+class Ridge(BaseModel):
     """
     Data scaler that standardly scale data. The operation made by this scaler is `new_X = (X - mean(X))/std(X)`.
 
@@ -366,19 +366,20 @@ class BaseTree(BaseModel):
     @staticmethod
     def _getstate_dessia(model):
         state = model.__getstate__()
-        dessia_state = {'max_depth': int(state['max_depth'])}
-        dessia_state['node_count'] = int(state['node_count'])
-        dessia_state['values'] = state['values'].tolist()
-        dessia_state['nodes'] = {'dtypes': state['nodes'].dtype.descr, 'values': state['nodes'].tolist()}
+        dessia_state = {'max_depth': int(state['max_depth']),
+                        'node_count': int(state['node_count']),
+                        'values': state['values'].tolist(),
+                        'nodes': {'dtypes': state['nodes'].dtype.descr, 'values': state['nodes'].tolist()}
+                        }
         return dessia_state
 
     @staticmethod
     def _setstate_dessia(model, state):
         skl_state = {}
-        skl_state = {'max_depth': int(state['max_depth'])}
-        skl_state['node_count'] = int(state['node_count'])
-        skl_state['values'] = npy.array(state['values'])
-        skl_state['nodes'] = npy.array(state['nodes']['values'], dtype=state['nodes']['dtypes'])
+        skl_state = {'max_depth': int(state['max_depth']),
+                     'node_count': int(state['node_count']),
+                     'values': npy.array(state['values']),
+                     'nodes': npy.array(state['nodes']['values'], dtype=state['nodes']['dtypes'])}
         model.__setstate__(skl_state)
         return model
 
@@ -570,7 +571,7 @@ class RandomForestClassifier(RandomForest):
         return cls(**kwargs)
 
 
-class SVM(BaseModel):
+class SupportVectorMachine(BaseModel):
 
     def __init__(self, kernel: str = 'rbf', raw_coef_: List[List[float]] = None, _dual_coef_: List[List[float]] = None,
                  _intercept_: List[float] = None, support_: List[int] = 1, support_vectors_: List[List[float]] = None,
@@ -591,7 +592,8 @@ class SVM(BaseModel):
 
     @classmethod
     def _skl_class(cls):
-        raise NotImplementedError('Method _skl_class not implemented for SVM. Please use SVC or SVR.')
+        raise NotImplementedError('Method _skl_class not implemented for SupportVectorMachine. Please use '\
+                                  'SupportVectorClassifier or SupportVectorRegressor.')
 
     def _call_skl_model(self):
         return self._skl_class()(kernel=self.kernel)
@@ -636,16 +638,17 @@ class SVM(BaseModel):
         return cls.fit_predict_(inputs, outputs, predicted_inputs, name=name, C=C, kernel=kernel)
 
 
-class SVR(SVM):
+class SupportVectorRegressor(SupportVectorMachine):
     _standalone_in_db = True
 
     def __init__(self, kernel: str = 'rbf', raw_coef_: List[List[float]] = None, _dual_coef_: List[List[float]] = None,
                  _intercept_: List[float] = None, support_: List[int] = 1, support_vectors_: List[List[float]] = None,
                  _n_support: List[int] = None, _probA: List[float] = None, _probB: List[float] = None,
                  _gamma: float = 1., _sparse: bool = False, name: str = ''):
-        SVM.__init__(self, raw_coef_=raw_coef_, _dual_coef_=_dual_coef_, support_vectors_=support_vectors_,
-                     _sparse=_sparse, kernel=kernel, _n_support=_n_support, support_=support_, _intercept_=_intercept_,
-                     _probA=_probA, _probB=_probB, _gamma=_gamma, name=name)
+        SupportVectorMachine.__init__(self, raw_coef_=raw_coef_, _dual_coef_=_dual_coef_,
+                                      support_vectors_=support_vectors_, _sparse=_sparse, kernel=kernel,
+                                      _n_support=_n_support, support_=support_, _intercept_=_intercept_, _probA=_probA,
+                                      _probB=_probB, _gamma=_gamma, name=name)
 
     @classmethod
     def _skl_class(cls):
@@ -659,7 +662,7 @@ class SVR(SVM):
         return cls(**cls.generic_dessia_attributes(model, name=name))
 
 
-class SVC(SVM):
+class SupportVectorClassifier(SupportVectorMachine):
     _standalone_in_db = True
 
     def __init__(self, kernel: str = 'rbf', raw_coef_: List[List[float]] = None, _dual_coef_: List[List[float]] = None,
@@ -667,9 +670,10 @@ class SVC(SVM):
                  _n_support: List[int] = None, _probA: List[float] = None, _probB: List[float] = None,
                  _gamma: float = 1., _sparse: bool = False, classes_: List[int] = None, name: str = ''):
         self.classes_ = classes_
-        SVM.__init__(self, raw_coef_=raw_coef_, _dual_coef_=_dual_coef_, support_vectors_=support_vectors_,
-                     _sparse=_sparse, kernel=kernel, _n_support=_n_support, support_=support_, _intercept_=_intercept_,
-                     _probA=_probA, _probB=_probB, _gamma=_gamma, name=name)
+        SupportVectorMachine.__init__(self, raw_coef_=raw_coef_, _dual_coef_=_dual_coef_,
+                                      support_vectors_=support_vectors_, _sparse=_sparse, kernel=kernel,
+                                      _n_support=_n_support, support_=support_, _intercept_=_intercept_, _probA=_probA,
+                                      _probB=_probB, _gamma=_gamma, name=name)
 
     @classmethod
     def _skl_class(cls):
@@ -687,7 +691,7 @@ class SVC(SVM):
         return cls(**kwargs)
 
 
-class MLP(BaseModel):
+class MultiLayerPerceptron(BaseModel):
 
     def __init__(self, coefs_: List[List[List[float]]] = None, intercepts_: List[List[float]] = None,
                  n_layers_: int = None, activation: str = 'relu', out_activation_: str = 'identity', name: str = ''):
@@ -700,8 +704,8 @@ class MLP(BaseModel):
 
     @classmethod
     def _skl_class(cls):
-        raise NotImplementedError('Method _skl_class not implemented for MLP. Please use MLPRegressor or '\
-                                  'MLPClassifier.')
+        raise NotImplementedError('Method _skl_class not implemented for MultiLayerPerceptron. Please use '\
+                                  'MLPRegressor or MLPClassifier.')
 
     def _call_skl_model(self):
         return self._skl_class()()
@@ -740,13 +744,13 @@ class MLP(BaseModel):
                                 activation=activation, alpha=alpha, solver=solver, max_iter=max_iter, tol=tol)
 
 
-class MLPRegressor(MLP):
+class MLPRegressor(MultiLayerPerceptron):
     _standalone_in_db = True
 
     def __init__(self, coefs_: List[List[List[float]]] = None, intercepts_: List[List[float]] = None,
                  n_layers_: int = None, activation: str = 'relu', out_activation_: str = 'identity', name: str = ''):
-        MLP.__init__(self, coefs_=coefs_, intercepts_=intercepts_, n_layers_=n_layers_, activation=activation,
-                     out_activation_=out_activation_, name=name)
+        MultiLayerPerceptron.__init__(self, coefs_=coefs_, intercepts_=intercepts_, n_layers_=n_layers_,
+                                      activation=activation, out_activation_=out_activation_, name=name)
 
     @classmethod
     def _skl_class(cls):
@@ -760,7 +764,7 @@ class MLPRegressor(MLP):
         return cls(**cls.generic_dessia_attributes(model, name=name))
 
 
-class MLPClassifier(MLP):
+class MLPClassifier(MultiLayerPerceptron):
     _standalone_in_db = True
 
     def __init__(self, coefs_: List[List[List[float]]] = None, intercepts_: List[List[float]] = None,
@@ -768,8 +772,8 @@ class MLPClassifier(MLP):
                  n_outputs_: int = None, _label_binarizer: LabelBinarizer = None,name: str = ''):
         self.n_outputs_ = n_outputs_
         self._label_binarizer = _label_binarizer
-        MLP.__init__(self, coefs_=coefs_, intercepts_=intercepts_, n_layers_=n_layers_, activation=activation,
-                     out_activation_=out_activation_, name=name)
+        MultiLayerPerceptron.__init__(self, coefs_=coefs_, intercepts_=intercepts_, n_layers_=n_layers_,
+                                      activation=activation, out_activation_=out_activation_, name=name)
 
     @classmethod
     def _skl_class(cls):

@@ -7,9 +7,10 @@ from sklearn import linear_model, tree, ensemble, svm, neural_network
 
 from dessia_common.models import all_cars_no_feat
 from dessia_common.datatools.dataset import Dataset
-from dessia_common.datatools.modeling import StandardScaler, IdentityScaler, LinearRegression, SVR, SVC, MLPRegressor,\
-    DecisionTreeRegressor, DecisionTreeClassifier, RandomForestRegressor, RandomForestClassifier, MLPClassifier,\
-    BaseScaler, BaseModel, BaseTree, RandomForest, SVM, MLP
+from dessia_common.datatools.modeling import StandardScaler, IdentityScaler, Ridge, SupportVectorRegressor,\
+    SupportVectorClassifier, MLPRegressor, DecisionTreeRegressor, DecisionTreeClassifier, RandomForestRegressor, \
+        RandomForestClassifier, MLPClassifier, BaseScaler, BaseModel, BaseTree, RandomForest, SupportVectorMachine, \
+            MultiLayerPerceptron
 
 
 # Load Data and put it in a Dataset (matrix is automatically computed)
@@ -38,7 +39,7 @@ svm_hyperparams = {'C': 0.1, 'kernel': 'rbf'}
 mlp_hyperparams = {'hidden_layer_sizes': (100, 100, 100, 100, 100), 'alpha': 100, 'max_iter': 1000, 'solver': 'adam',
                    'activation': 'identity', 'tol': 1.}
 
-hyperparameters = {'linear_regressor': ridge_hyperparams,
+hyperparameters = {'ridge_regressor': ridge_hyperparams,
                    'dt_regressor': dt_hyperparams, 'dt_classifier': dt_hyperparams,
                    'rf_regressor': rf_hyperparams, 'rf_classifier': rf_hyperparams,
                    'svm_regressor': svm_hyperparams, 'svm_classifier': svm_hyperparams,
@@ -47,7 +48,7 @@ hyperparameters = {'linear_regressor': ridge_hyperparams,
 
 # Sklearn models
 skl_models = {}
-skl_models['linear_regressor'] = linear_model.Ridge(**ridge_hyperparams)
+skl_models['ridge_regressor'] = linear_model.Ridge(**ridge_hyperparams)
 skl_models['dt_regressor'] = tree.DecisionTreeRegressor(**dt_hyperparams)
 skl_models['dt_classifier'] = tree.DecisionTreeClassifier(**dt_hyperparams)
 skl_models['rf_regressor'] = ensemble.RandomForestRegressor(**rf_hyperparams)
@@ -70,10 +71,11 @@ for key, model in skl_models.items():
 
 
 # Dessia models
-dessia_classes = {'linear_regressor': LinearRegression, 'dt_regressor': DecisionTreeRegressor,
+dessia_classes = {'ridge_regressor': Ridge, 'dt_regressor': DecisionTreeRegressor,
                  'dt_classifier': DecisionTreeClassifier, 'rf_regressor': RandomForestRegressor,
-                 'rf_classifier': RandomForestClassifier, 'svm_regressor': SVR, 'svm_classifier': SVC,
-                 'mlp_regressor': MLPRegressor, 'mlp_classifier': MLPClassifier}
+                 'rf_classifier': RandomForestClassifier, 'svm_regressor': SupportVectorRegressor,
+                 'svm_classifier': SupportVectorClassifier, 'mlp_regressor': MLPRegressor,
+                 'mlp_classifier': MLPClassifier}
 
 
 # Assert regenerated sklearn models from dessia models make the same predictions as sklearn models from sklearn.fit
@@ -106,8 +108,8 @@ base_scaler = BaseScaler()
 base_model = BaseModel()
 base_tree = BaseTree()
 base_rf = RandomForest()
-base_svm = SVM()
-base_mlp = MLP()
+base_svm = SupportVectorMachine()
+base_mlp = MultiLayerPerceptron()
 
 try:
     base_scaler._skl_class()
@@ -132,13 +134,15 @@ try:
     base_svm._skl_class()
     raise ValueError("_skl_class() should not work for SVM object.")
 except Exception as e:
-    assert (e.args[0] == 'Method _skl_class not implemented for SVM. Please use SVC or SVR.')
+    assert (e.args[0] == 'Method _skl_class not implemented for SupportVectorMachine. Please use '\
+                              'SupportVectorClassifier or SupportVectorRegressor.')
 
 try:
     base_mlp._skl_class()
-    raise ValueError("_skl_class() should not work for MLP object.")
+    raise ValueError("_skl_class() should not work for MultiLayerPerceptron object.")
 except Exception as e:
-    assert (e.args[0] == 'Method _skl_class not implemented for MLP. Please use MLPRegressor or MLPClassifier.')
+    assert (e.args[0] == 'Method _skl_class not implemented for MultiLayerPerceptron. Please use MLPRegressor '\
+            'or MLPClassifier.')
 
 try:
     base_model._instantiate_skl()
