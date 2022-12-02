@@ -81,7 +81,6 @@ dessia_models = {}
 for key, model in skl_models.items():
     dessia_models[key] = dessia_classes[key]._instantiate_dessia(model)
     assert(npy.all(dessia_models[key].predict(std_inputs[50:100]) == model.predict(std_inputs[50:100])))
-    print(dessia_models[key].predict(std_inputs[50:52]))
 
 
 # Test dessia models methods

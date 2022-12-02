@@ -48,11 +48,10 @@ class BaseScaler(DessiaObject):
         """
         kwargs = {'name': name}
         for attr in cls._rebuild_attributes:
-            if hasattr(scaler, attr):
-                if isinstance(getattr(scaler, attr), npy.ndarray):
-                    kwargs[attr] = getattr(scaler, attr).tolist()
-                    continue
-                kwargs[attr] = getattr(scaler, attr)
+            if isinstance(getattr(scaler, attr), npy.ndarray):
+                kwargs[attr] = getattr(scaler, attr).tolist()
+                continue
+            kwargs[attr] = getattr(scaler, attr)
         return cls(**kwargs)
 
     @classmethod
@@ -268,11 +267,11 @@ class BaseModel(DessiaObject):
 
     def score(self, inputs: List[List[float]], outputs: List[List[float]]) -> float:
         """
-        Compute the score of BaseModel.
+        Compute the score of BaseModel or children.
 
         Please be sure to fit the model before computing its score and use test data and not train data.
         Train data is data used to train the model and shall not be used to evaluate its quality.
-        Test data is data used to test the model and must not be used to train it.
+        Test data is data used to test the model and must not be used to train (fit) it.
 
         :param inputs:
             Matrix of data of dimension `n_samples x n_features`
@@ -291,6 +290,22 @@ class BaseModel(DessiaObject):
 
 
 class LinearRegression(BaseModel):
+    """
+    Data scaler that standardly scale data. The operation made by this scaler is `new_X = (X - mean(X))/std(X)`.
+
+    :param mean_:
+        List of means
+    :type mean_: `List[float]`, `optional`, defaults to `None`
+
+    :param scale_:
+        List of standard deviations
+    :type scale_: `List[float]`, `optional`, defaults to `None`
+
+    :param var_:
+        List of variances
+    :type var_: `List[float]`, `optional`, defaults to `None`
+
+    """
     _standalone_in_db = True
 
     def __init__(self, coef_: List[List[float]] = None, intercept_: List[List[float]] = None, name: str = ''):
