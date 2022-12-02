@@ -46,12 +46,8 @@ class BaseScaler(DessiaObject):
         Instantiate BaseScaler object, or children, from scikit-learn scaler.
 
         """
-        kwargs = {'name': name}
-        for attr in cls._rebuild_attributes:
-            if isinstance(getattr(scaler, attr), npy.ndarray):
-                kwargs[attr] = getattr(scaler, attr).tolist()
-                continue
-            kwargs[attr] = getattr(scaler, attr)
+        kwargs = {attr: get_scaler_attr(scaler, attr) for attr in cls._rebuild_attributes}
+        kwargs["name"] = name
         return cls(**kwargs)
 
     @classmethod
@@ -841,3 +837,10 @@ class MLPClassifier(MultiLayerPerceptron):
 #         predicted_outputs = model.fit_predict(scaled_inputs, scaled_outputs)
 #         self.model_ = {key: value for key, value in model.items() if key in self._required_attributes}
 #         return predicted_outputs
+
+
+def get_scaler_attr(scaler, attr: str):
+    scaler_attr = getattr(scaler, attr)
+    if isinstance(scaler_attr, npy.ndarray):
+        return scaler_attr.tolist()
+    return scaler_attr
