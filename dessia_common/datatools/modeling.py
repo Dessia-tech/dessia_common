@@ -34,14 +34,14 @@ class BaseScaler(DessiaObject):
 
     @classmethod
     def instantiate_dessia(cls, scaler, name: str = ''):
-        kwargs_dict = {'name': name}
+        kwargs = {'name': name}
         for attr in cls._rebuild_attributes:
             if hasattr(scaler, attr):
                 if isinstance(getattr(scaler, attr), npy.ndarray):
-                    kwargs_dict[attr] = getattr(scaler, attr).tolist()
+                    kwargs[attr] = getattr(scaler, attr).tolist()
                     continue
-                kwargs_dict[attr] = getattr(scaler, attr)
-        return cls(**kwargs_dict)
+                kwargs[attr] = getattr(scaler, attr)
+        return cls(**kwargs)
 
     @classmethod
     def fit(cls, matrix: List[List[float]], name: str = ''):
@@ -270,12 +270,12 @@ class BaseTree(BaseModel):
 
     @classmethod
     def _instantiate_dessia(cls, model, name: str = ''):
-        kwargs_dict = {'name': name}
-        kwargs_dict['tree_state'] = cls._getstate_dessia(model)
-        kwargs_dict['n_classes'] = model.n_classes.tolist()
-        kwargs_dict['n_features'] = model.n_features
-        kwargs_dict['n_outputs'] = model.n_outputs
-        return cls(**kwargs_dict)
+        kwargs = {'name': name}
+        kwargs['tree_state'] = cls._getstate_dessia(model)
+        kwargs['n_classes'] = model.n_classes.tolist()
+        kwargs['n_features'] = model.n_features
+        kwargs['n_outputs'] = model.n_outputs
+        return cls(**kwargs)
 
     @classmethod
     def fit(cls, inputs: List[List[float]], outputs: List[List[float]], name: str = ''):
@@ -306,10 +306,10 @@ class DecisionTreeRegressor(BaseModel):
 
     @classmethod
     def generic_dessia_attributes(cls, model, name: str = ''):
-        kwargs_dict = {'name': name}
-        kwargs_dict['tree_'] = BaseTree._instantiate_dessia(model.tree_)
-        kwargs_dict['n_outputs_'] = model.n_outputs_
-        return kwargs_dict
+        kwargs = {'name': name}
+        kwargs['tree_'] = BaseTree._instantiate_dessia(model.tree_)
+        kwargs['n_outputs_'] = model.n_outputs_
+        return kwargs
 
     def _instantiate_skl(self):
         return self.generic_skl_attributes()
@@ -358,10 +358,10 @@ class DecisionTreeClassifier(DecisionTreeRegressor):
 
     @classmethod
     def _instantiate_dessia(cls, model, name: str = ''):
-        kwargs_dict = cls.generic_dessia_attributes(model, name=name)
-        kwargs_dict['n_classes_'] = model.n_classes_
-        kwargs_dict['classes_'] = model.classes_.tolist()
-        return cls(**kwargs_dict)
+        kwargs = cls.generic_dessia_attributes(model, name=name)
+        kwargs['n_classes_'] = model.n_classes_
+        kwargs['classes_'] = model.classes_.tolist()
+        return cls(**kwargs)
 
 
 class RandomForest(BaseModel):
@@ -387,9 +387,9 @@ class RandomForest(BaseModel):
 
     @classmethod
     def generic_dessia_attributes(cls, model, name: str = ''):
-        kwargs_dict = {'name': name}
-        kwargs_dict['n_outputs_'] = model.n_outputs_
-        return kwargs_dict
+        kwargs = {'name': name}
+        kwargs['n_outputs_'] = model.n_outputs_
+        return kwargs
 
     @classmethod
     def _check_criterion(cls, criterion: str):
@@ -427,9 +427,9 @@ class RandomForestRegressor(RandomForest):
 
     @classmethod
     def _instantiate_dessia(cls, model, name: str = ''):
-        kwargs_dict = cls.generic_dessia_attributes(model, name=name)
-        kwargs_dict['estimators_'] = [DecisionTreeRegressor._instantiate_dessia(tree) for tree in model.estimators_]
-        return cls(**kwargs_dict)
+        kwargs = cls.generic_dessia_attributes(model, name=name)
+        kwargs['estimators_'] = [DecisionTreeRegressor._instantiate_dessia(tree) for tree in model.estimators_]
+        return cls(**kwargs)
 
 
 class RandomForestClassifier(RandomForest):
@@ -453,11 +453,11 @@ class RandomForestClassifier(RandomForest):
 
     @classmethod
     def _instantiate_dessia(cls, model, name: str = ''):
-        kwargs_dict = cls.generic_dessia_attributes(model, name=name)
-        kwargs_dict['estimators_'] = [DecisionTreeClassifier._instantiate_dessia(tree) for tree in model.estimators_]
-        kwargs_dict['n_classes_'] = int(model.n_classes_)
-        kwargs_dict['classes_'] = model.classes_.tolist()
-        return cls(**kwargs_dict)
+        kwargs = cls.generic_dessia_attributes(model, name=name)
+        kwargs['estimators_'] = [DecisionTreeClassifier._instantiate_dessia(tree) for tree in model.estimators_]
+        kwargs['n_classes_'] = int(model.n_classes_)
+        kwargs['classes_'] = model.classes_.tolist()
+        return cls(**kwargs)
 
 
 class SVM(BaseModel):
@@ -502,19 +502,19 @@ class SVM(BaseModel):
 
     @classmethod
     def generic_dessia_attributes(cls, model, name: str = ''):
-        kwargs_dict = {'name': name}
-        kwargs_dict['kernel'] = model.kernel
-        kwargs_dict['raw_coef_'] = model._get_coef().tolist()
-        kwargs_dict['_dual_coef_'] = model._dual_coef_.tolist()
-        kwargs_dict['_intercept_'] = model._intercept_.tolist()
-        kwargs_dict['support_'] = model.support_.tolist()
-        kwargs_dict['support_vectors_'] = model.support_vectors_.tolist()
-        kwargs_dict['_n_support'] = model._n_support.tolist()
-        kwargs_dict['_probA'] = model._probA.tolist()
-        kwargs_dict['_probB'] = model._probB.tolist()
-        kwargs_dict['_gamma'] = float(model._gamma)
-        kwargs_dict['_sparse'] = model._sparse
-        return kwargs_dict
+        kwargs = {'name': name}
+        kwargs['kernel'] = model.kernel
+        kwargs['raw_coef_'] = model._get_coef().tolist()
+        kwargs['_dual_coef_'] = model._dual_coef_.tolist()
+        kwargs['_intercept_'] = model._intercept_.tolist()
+        kwargs['support_'] = model.support_.tolist()
+        kwargs['support_vectors_'] = model.support_vectors_.tolist()
+        kwargs['_n_support'] = model._n_support.tolist()
+        kwargs['_probA'] = model._probA.tolist()
+        kwargs['_probB'] = model._probB.tolist()
+        kwargs['_gamma'] = float(model._gamma)
+        kwargs['_sparse'] = model._sparse
+        return kwargs
 
     @classmethod
     def fit(cls, inputs: List[List[float]], outputs: List[float], C: float = 1., kernel: str = 'rbf', name: str = ''):
@@ -572,9 +572,9 @@ class SVC(SVM):
 
     @classmethod
     def _instantiate_dessia(cls, model, name: str = ''):
-        kwargs_dict = cls.generic_dessia_attributes(model, name=name)
-        kwargs_dict['classes_'] = model.classes_.tolist()
-        return cls(**kwargs_dict)
+        kwargs = cls.generic_dessia_attributes(model, name=name)
+        kwargs['classes_'] = model.classes_.tolist()
+        return cls(**kwargs)
 
 
 class MLP(BaseModel):
@@ -607,13 +607,13 @@ class MLP(BaseModel):
 
     @classmethod
     def generic_dessia_attributes(cls, model, name: str = ''):
-        kwargs_dict = {'name': name}
-        kwargs_dict['coefs_'] = [coefs_.tolist() for coefs_ in model.coefs_]
-        kwargs_dict['intercepts_'] = [intercepts_.tolist() for intercepts_ in model.intercepts_]
-        kwargs_dict['n_layers_'] = model.n_layers_
-        kwargs_dict['activation'] = model.activation
-        kwargs_dict['out_activation_'] = model.out_activation_
-        return kwargs_dict
+        kwargs = {'name': name}
+        kwargs['coefs_'] = [coefs_.tolist() for coefs_ in model.coefs_]
+        kwargs['intercepts_'] = [intercepts_.tolist() for intercepts_ in model.intercepts_]
+        kwargs['n_layers_'] = model.n_layers_
+        kwargs['activation'] = model.activation
+        kwargs['out_activation_'] = model.out_activation_
+        return kwargs
 
     @classmethod
     def fit(cls, inputs: List[List[float]], outputs: List[float], hidden_layer_sizes: List[int] = None,
@@ -673,10 +673,10 @@ class MLPClassifier(MLP):
 
     @classmethod
     def _instantiate_dessia(cls, model, name: str = ''):
-        kwargs_dict = cls.generic_dessia_attributes(model, name=name)
-        kwargs_dict['n_outputs_'] = model.n_outputs_
-        kwargs_dict['_label_binarizer'] = LabelBinarizer.instantiate_dessia(model._label_binarizer)
-        return cls(**kwargs_dict)
+        kwargs = cls.generic_dessia_attributes(model, name=name)
+        kwargs['n_outputs_'] = model.n_outputs_
+        kwargs['_label_binarizer'] = LabelBinarizer.instantiate_dessia(model._label_binarizer)
+        return cls(**kwargs)
 
 
 # # ====================================================================================================================
