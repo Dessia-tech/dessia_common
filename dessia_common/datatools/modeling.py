@@ -36,7 +36,7 @@ class BaseScaler(DessiaObject):
 
     def instantiate_skl(self):
         """
-        Instantiate scikit-learn scaler from BaseScaler object, or children.
+        Instantiate scikit-learn Scaler from BaseScaler object, or children.
 
         :return: The scikit-learn scaler equivalent to the one stored as DessiaObject in BaseScaler or children.
         :rtype: `preprocessing` object from scikit-learn
@@ -53,14 +53,14 @@ class BaseScaler(DessiaObject):
         Instantiate BaseScaler object, or children, from scikit-learn scaler.
 
         :param scaler:
-            scikit-learn scaler to copy in the BaseScaler (DessiaObject), to be serialized.
+            scikit-learn Scaler to copy in the BaseScaler (DessiaObject), to be serialized.
         :type scaler: `preprocessing` object from scikit-learn
 
         :param name:
             Name of BaseScaler
         :type name: `str`, `optional`, defaults to `''`
 
-        :return: The BaseScaler or children (DessiaObject) equivalent to the scikit-learn scaler in arguments.
+        :return: The BaseScaler or children (DessiaObject) equivalent to the scikit-learn Scaler in arguments.
         :rtype: `BaseScaler`
 
         """
@@ -75,16 +75,59 @@ class BaseScaler(DessiaObject):
 
     @classmethod
     def fit(cls, matrix: List[List[float]], name: str = ''):
+        """
+        Fit scaler with data stored in matrix.
+
+        :param matrix:
+            Matrix of data of dimension `n_samples x n_features`
+        :type matrix: List[List[float]]
+
+        :param name:
+            Name of BaseScaler
+        :type name: `str`, `optional`, defaults to `''`
+
+        :return: The BaseScaler or children (DessiaObject) fit on matrix.
+        :rtype: `BaseScaler`
+
+        """
         scaler = cls._skl_class()()
         scaler.fit(matrix)
         return cls.instantiate_dessia(scaler, name)
 
     def transform(self, matrix: List[List[float]]):
+        """
+        Transform the data stored in matrix according to this BaseScaler or children.
+
+        :param matrix:
+            Matrix of data of dimension `n_samples x n_features`
+        :type matrix: List[List[float]]
+
+        :return: The scaled matrix according to the rules set of scaler.
+        :rtype: List[List[float]]
+
+        """
         scaler = self.instantiate_skl()
         return scaler.transform(matrix).tolist()
 
     @classmethod
     def fit_transform(cls, matrix: List[List[float]], name: str = ''):
+        """
+        Fit scaler with data stored in matrix and transform this data.
+
+        It is the succession of fit and transform methods
+
+        :param matrix:
+            Matrix of data of dimension `n_samples x n_features`
+        :type matrix: List[List[float]]
+
+        :param name:
+            Name of BaseScaler
+        :type name: `str`, `optional`, defaults to `''`
+
+        :return: The BaseScaler or children (DessiaObject) fit on matrix and the scaled matrix
+        :rtype: `BaseScaler`, List[List[float]]
+
+        """
         scaler = cls.fit(matrix, name)
         return scaler, scaler.transform(matrix)
 
