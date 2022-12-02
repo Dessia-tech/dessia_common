@@ -375,7 +375,6 @@ class BaseTree(BaseModel):
 
     @staticmethod
     def _setstate_dessia(model, state):
-        skl_state = {}
         skl_state = {'max_depth': int(state['max_depth']),
                      'node_count': int(state['node_count']),
                      'values': npy.array(state['values']),
@@ -390,11 +389,11 @@ class BaseTree(BaseModel):
 
     @classmethod
     def _instantiate_dessia(cls, model, name: str = ''):
-        kwargs = {'name': name}
-        kwargs['tree_state'] = cls._getstate_dessia(model)
-        kwargs['n_classes'] = model.n_classes.tolist()
-        kwargs['n_features'] = model.n_features
-        kwargs['n_outputs'] = model.n_outputs
+        kwargs = {'name': name,
+                  'tree_state': cls._getstate_dessia(model),
+                  'n_classes': model.n_classes.tolist(),
+                  'n_features': model.n_features,
+                  'n_outputs': model.n_outputs}
         return cls(**kwargs)
 
 
@@ -417,10 +416,9 @@ class DecisionTreeRegressor(BaseModel):
 
     @classmethod
     def generic_dessia_attributes(cls, model, name: str = ''):
-        kwargs = {'name': name}
-        kwargs['tree_'] = BaseTree._instantiate_dessia(model.tree_)
-        kwargs['n_outputs_'] = model.n_outputs_
-        return kwargs
+        return {'name': name,
+                'tree_': BaseTree._instantiate_dessia(model.tree_),
+                'n_outputs_': model.n_outputs_}
 
     def _instantiate_skl(self):
         return self.generic_skl_attributes()
@@ -470,8 +468,8 @@ class DecisionTreeClassifier(DecisionTreeRegressor):
     @classmethod
     def _instantiate_dessia(cls, model, name: str = ''):
         kwargs = cls.generic_dessia_attributes(model, name=name)
-        kwargs['n_classes_'] = model.n_classes_
-        kwargs['classes_'] = model.classes_.tolist()
+        kwargs.update({'n_classes_': model.n_classes_,
+                       'classes_': model.classes_.tolist()})
         return cls(**kwargs)
 
 
@@ -498,9 +496,8 @@ class RandomForest(BaseModel):
 
     @classmethod
     def generic_dessia_attributes(cls, model, name: str = ''):
-        kwargs = {'name': name}
-        kwargs['n_outputs_'] = model.n_outputs_
-        return kwargs
+        return {'name': name,
+                'n_outputs_': model.n_outputs_}
 
     @classmethod
     def _check_criterion(cls, criterion: str):
@@ -565,9 +562,9 @@ class RandomForestClassifier(RandomForest):
     @classmethod
     def _instantiate_dessia(cls, model, name: str = ''):
         kwargs = cls.generic_dessia_attributes(model, name=name)
-        kwargs['estimators_'] = [DecisionTreeClassifier._instantiate_dessia(tree) for tree in model.estimators_]
-        kwargs['n_classes_'] = int(model.n_classes_)
-        kwargs['classes_'] = model.classes_.tolist()
+        kwargs.update({'estimators_': [DecisionTreeClassifier._instantiate_dessia(tree) for tree in model.estimators_],
+                       'n_classes_': int(model.n_classes_),
+                       'classes_': model.classes_.tolist()})
         return cls(**kwargs)
 
 
@@ -614,19 +611,18 @@ class SupportVectorMachine(BaseModel):
 
     @classmethod
     def generic_dessia_attributes(cls, model, name: str = ''):
-        kwargs = {'name': name}
-        kwargs['kernel'] = model.kernel
-        kwargs['raw_coef_'] = model._get_coef().tolist()
-        kwargs['_dual_coef_'] = model._dual_coef_.tolist()
-        kwargs['_intercept_'] = model._intercept_.tolist()
-        kwargs['support_'] = model.support_.tolist()
-        kwargs['support_vectors_'] = model.support_vectors_.tolist()
-        kwargs['_n_support'] = model._n_support.tolist()
-        kwargs['_probA'] = model._probA.tolist()
-        kwargs['_probB'] = model._probB.tolist()
-        kwargs['_gamma'] = float(model._gamma)
-        kwargs['_sparse'] = model._sparse
-        return kwargs
+        return {'name': name,
+                'kernel': model.kernel,
+                'raw_coef_': model._get_coef().tolist(),
+                '_dual_coef_': model._dual_coef_.tolist(),
+                '_intercept_': model._intercept_.tolist(),
+                'support_': model.support_.tolist(),
+                'support_vectors_': model.support_vectors_.tolist(),
+                '_n_support': model._n_support.tolist(),
+                '_probA': model._probA.tolist(),
+                '_probB': model._probB.tolist(),
+                '_gamma': float(model._gamma),
+                '_sparse': model._sparse}
 
     @classmethod
     def fit(cls, inputs: List[List[float]], outputs: List[float], C: float = 1., kernel: str = 'rbf', name: str = ''):
@@ -721,13 +717,12 @@ class MultiLayerPerceptron(BaseModel):
 
     @classmethod
     def generic_dessia_attributes(cls, model, name: str = ''):
-        kwargs = {'name': name}
-        kwargs['coefs_'] = [coefs_.tolist() for coefs_ in model.coefs_]
-        kwargs['intercepts_'] = [intercepts_.tolist() for intercepts_ in model.intercepts_]
-        kwargs['n_layers_'] = model.n_layers_
-        kwargs['activation'] = model.activation
-        kwargs['out_activation_'] = model.out_activation_
-        return kwargs
+        return {'name': name,
+                'coefs_': [coefs_.tolist() for coefs_ in model.coefs_],
+                'intercepts_': [intercepts_.tolist() for intercepts_ in model.intercepts_],
+                'n_layers_': model.n_layers_,
+                'activation': model.activation,
+                'out_activation_': model.out_activation_}
 
     @classmethod
     def fit(cls, inputs: List[List[float]], outputs: List[float], hidden_layer_sizes: List[int] = None,
@@ -788,8 +783,8 @@ class MLPClassifier(MultiLayerPerceptron):
     @classmethod
     def _instantiate_dessia(cls, model, name: str = ''):
         kwargs = cls.generic_dessia_attributes(model, name=name)
-        kwargs['n_outputs_'] = model.n_outputs_
-        kwargs['_label_binarizer'] = LabelBinarizer.instantiate_dessia(model._label_binarizer)
+        kwargs.update({'n_outputs_': model.n_outputs_,
+                       '_label_binarizer': LabelBinarizer.instantiate_dessia(model._label_binarizer)})
         return cls(**kwargs)
 
 
