@@ -14,6 +14,14 @@ from dessia_common.core import DessiaObject
 #                                                     S C A L E R S
 # ======================================================================================================================
 class BaseScaler(DessiaObject):
+    """
+    Base object for handling a scikit-learn Scaler.
+
+    :param name:
+        Name of BaseScaler
+    :type name: `str`, `optional`, defaults to `''`
+
+    """
     _rebuild_attributes = []
 
     def __init__(self, name: str = ''):
@@ -27,6 +35,13 @@ class BaseScaler(DessiaObject):
         return self._skl_class()()
 
     def instantiate_skl(self):
+        """
+        Instantiate scikit-learn scaler from BaseScaler object, or children.
+
+        :return: The scikit-learn scaler equivalent to the one stored as DessiaObject in BaseScaler or children.
+        :rtype: `preprocessing` object from scikit-learn
+
+        """
         scaler = self._call_skl_scaler()
         for attr in self._rebuild_attributes:
             setattr(scaler, attr, getattr(self, attr))
@@ -34,6 +49,21 @@ class BaseScaler(DessiaObject):
 
     @classmethod
     def instantiate_dessia(cls, scaler, name: str = ''):
+        """
+        Instantiate BaseScaler object, or children, from scikit-learn scaler.
+
+        :param scaler:
+            scikit-learn scaler to copy in the BaseScaler (DessiaObject), to be serialized.
+        :type scaler: `preprocessing` object from scikit-learn
+
+        :param name:
+            Name of BaseScaler
+        :type name: `str`, `optional`, defaults to `''`
+
+        :return: The BaseScaler or children (DessiaObject) equivalent to the scikit-learn scaler in arguments.
+        :rtype: `BaseScaler`
+
+        """
         kwargs = {'name': name}
         for attr in cls._rebuild_attributes:
             if hasattr(scaler, attr):
