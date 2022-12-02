@@ -100,7 +100,7 @@ try:
     raise ValueError("ClusteredDataset should be summable")
 except Exception as e:
     assert(e.args[0] == "Addition only defined for Dataset. A specific __add__ method is required for " +
-            "<class 'dessia_common.datatools.cluster.ClusteredDataset'>")
+           "<class 'dessia_common.datatools.cluster.ClusteredDataset'>")
 
 # Exports XLS
 clustered_cars_without.to_xlsx('clus_xls.xlsx')
