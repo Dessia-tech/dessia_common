@@ -1397,7 +1397,7 @@ class MultiLayerPerceptron(Model):
                 'out_activation_': model.out_activation_}
 
     @classmethod
-    def fit(cls, inputs: List[List[float]], outputs: List[float], hidden_layer_sizes: List[int] = [100,],
+    def fit(cls, inputs: List[List[float]], outputs: List[float], hidden_layer_sizes: List[int] = [100],
             activation: str = 'relu', alpha: float = 0.0001, solver: str = 'adam', max_iter: int = 200,
             tol: float = 0.0001, name: str = '') -> 'MultiLayerPerceptron':
         """
@@ -1418,7 +1418,7 @@ class MultiLayerPerceptron(Model):
         :param hidden_layer_sizes:
             Regularization parameter. The strength of the regularization is inversely proportional to C.
             Must be strictly positive. The penalty is a squared l2 penalty.
-        :type hidden_layer_sizes: List[int], `optional`, defaults to `[100,]`
+        :type hidden_layer_sizes: List[int], `optional`, defaults to `[100]`
 
         :param activation:
             Activation function for the hidden layer:
