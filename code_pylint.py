@@ -33,7 +33,7 @@ MAX_ERROR_BY_TYPE = {
                      'trailing-whitespace': 11,
                      'empty-docstring': 1,
                      'missing-module-docstring': 1,
-                     'too-many-arguments': 34,
+                     'too-many-arguments': 35,
                      'too-few-public-methods': 19,  # Not really important
                      'unnecessary-comprehension': 1,
                      'no-value-for-parameter': 2,
