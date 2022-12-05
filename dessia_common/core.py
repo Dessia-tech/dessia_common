@@ -1147,10 +1147,12 @@ class FiltersList(DessiaObject):
         """
         Apply a FiltersList on a list of DessiaObjects.
 
-        :param dobjects_list: List of DessiaObjects to filter
+        :param dobjects_list:
+            List of DessiaObjects to filter
         :type dobjects_list: List[DessiaObject]
 
-        :return: List of filtered values
+        :return:
+            List of filtered values
         :rtype: List[DessiaObject]
 
         :Examples:
@@ -1187,12 +1189,21 @@ def dict_merge(old_dct, merge_dct, add_keys=True, extend_lists=True):
     present in ``merge_dct`` but not ``dct`` should be included in the
     new dict.
 
-    Args:
-        old_dct (dict) onto which the merge is executed
-        merge_dct (dict): dct merged into dct
-        add_keys (bool): whether to add new keys
-        extend_lists (bool) : wether to extend lists if keys are updated
-                              and value is a list
+    :param old_dct:
+        Onto which the merge is executed
+    :type old_dct: dict
+
+    :param merge_dct:
+        dict merged into dict
+    :type merge_dct: dict
+
+    :param add_keys:
+        whether to add new keys
+    :type add_keys: bool, `optional`, defaults to True
+
+    :param extend_lists:
+        wether to extend lists if keys are updated and value is a list
+    :type extend_lists: bool, `optional`, defaults to True
 
     :return: updated dict
 
@@ -1213,6 +1224,10 @@ def dict_merge(old_dct, merge_dct, add_keys=True, extend_lists=True):
 
 
 def stringify_dict_keys(obj):
+    """
+    Stringify dict keys.
+
+    """
     if isinstance(obj, (list, tuple)):
         new_obj = []
         for elt in obj:
@@ -1228,6 +1243,10 @@ def stringify_dict_keys(obj):
 
 
 def getdeepattr(obj, attr):
+    """
+    Get deep attribute of object.
+
+    """
     return reduce(getattr, [obj] + attr.split('.'))
 
 
@@ -1324,6 +1343,10 @@ def concatenate_attributes(prefix, suffix, type_: str = 'str'):
 
 
 def sequence_to_deepattr(sequence):
+    """
+    Convert a list to the corresponding string pointing to deep_attribute.
+
+    """
     healed_sequence = [str(attr) if isinstance(attr, int) else attr for attr in sequence]
     return '/'.join(healed_sequence)
 
@@ -1388,6 +1411,10 @@ def split_argspecs(argspecs) -> Tuple[int, int]:
 
 
 def get_attribute_names(object_class):
+    """
+    Get all attributes of a class which are present in __init__ method or numeric attributes and not in parent class.
+
+    """
     attributes = [attribute[0] for attribute in inspect.getmembers(object_class, lambda x: not inspect.isroutine(x))
                   if not attribute[0].startswith('__')
                   and not attribute[0].endswith('__')
