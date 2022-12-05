@@ -335,7 +335,7 @@ class Ridge(BaseModel):
 
     @classmethod
     def fit(cls, inputs: List[List[float]], outputs: List[List[float]], name: str = '',
-            alpha: float = 1., fit_intercept: bool = True, tol: float = 0.001):
+            alpha: float = 1., fit_intercept: bool = True, tol: float = 0.001) -> 'Ridge':
         """
         Standard method to fit outputs to inputs thanks to Ridge linear model from scikit-learn.
 
@@ -378,7 +378,8 @@ class Ridge(BaseModel):
 
     @classmethod
     def fit_predict(cls, inputs: List[List[float]], outputs: List[List[float]], predicted_inputs: List[List[float]],
-                    name: str = '', alpha: float = 1., fit_intercept: bool = True, tol: float = 0.001):
+                    name: str = '', alpha: float = 1., fit_intercept: bool = True,
+                    tol: float = 0.001) -> Tuple['Ridge', Union[List[float], List[List[float]]]]:
         """
         Fit outputs to inputs and predict outputs for predicted_inputs. It is the succession of fit and predict methods.
 
@@ -424,7 +425,7 @@ class LinearRegression(Ridge):
 
     @classmethod
     def fit(cls, inputs: List[List[float]], outputs: List[List[float]], name: str = '', fit_intercept: bool = True,
-            positive: bool = False):
+            positive: bool = False) -> 'LinearRegression':
         """
         Standard method to fit outputs to inputs thanks to Linear Regression model from scikit-learn.
 
@@ -459,7 +460,8 @@ class LinearRegression(Ridge):
 
     @classmethod
     def fit_predict(cls, inputs: List[List[float]], outputs: List[List[float]], predicted_inputs: List[List[float]],
-                    name: str = '', fit_intercept: bool = True, positive: bool = False):
+                    name: str = '', fit_intercept: bool = True,
+                    positive: bool = False) -> Tuple['LinearRegression', Union[List[float], List[List[float]]]]:
         """
         Fit outputs to inputs and predict outputs for predicted_inputs. It is the succession of fit and predict methods.
 
@@ -471,6 +473,9 @@ class LinearRegression(Ridge):
 class BaseTree(BaseModel):
     """
     Base object for handling a scikit-learn tree._tree.Tree object (Cython).
+
+    Please refer to https://scikit-learn.org/stable/auto_examples/tree/plot_unveil_tree_structure.html for
+    attributes of Tree object and understanding the decision tree structure for basic usage of these attributes.
 
     """
 
@@ -531,6 +536,26 @@ class BaseTree(BaseModel):
 
 
 class DecisionTreeRegressor(BaseModel):
+    """
+    DecisionTree Regressor.
+
+    More information: https://scikit-learn.org/stable/modules/tree.html#tree
+
+    :param n_outputs_:
+        The number of outputs when fit is performed.
+    :type n_outputs_: int, `optional`, defaults to `None`
+
+    :param tree_:
+        The underlying BaseTree object.
+        Please refer to https://scikit-learn.org/stable/auto_examples/tree/plot_unveil_tree_structure.html for
+        attributes of Tree object and understanding the decision tree structure for basic usage of these attributes.
+    :type tree_: BaseTree, `optional`, defaults to `None`
+
+    :param name:
+        Name of DecisionTree Regressor
+    :type name: str, `optional`, defaults to `''`
+
+    """
 
     def __init__(self, n_outputs_: int = None, tree_: BaseTree = None, name: str = ''):
         self.n_outputs_ = n_outputs_
@@ -542,6 +567,10 @@ class DecisionTreeRegressor(BaseModel):
         return tree.DecisionTreeRegressor
 
     def generic_skl_attributes(self):
+        """
+        Generic method (shared between trees) to set scikit-learn model attributes from self attributes.
+
+        """
         model = self._call_skl_model()
         model.n_outputs_ = self.n_outputs_
         model.tree_ = self.tree_._instantiate_skl()
@@ -549,6 +578,10 @@ class DecisionTreeRegressor(BaseModel):
 
     @classmethod
     def generic_dessia_attributes(cls, model, name: str = ''):
+        """
+        Generic method (shared between trees) to set self attributes from scikit-learn model attributes.
+
+        """
         return {'name': name,
                 'tree_': BaseTree._instantiate_dessia(model.tree_),
                 'n_outputs_': model.n_outputs_}
@@ -568,13 +601,53 @@ class DecisionTreeRegressor(BaseModel):
 
     @classmethod
     def fit(cls, inputs: List[List[float]], outputs: List[List[float]], name: str = '',
-            criterion: str = 'squared_error', max_depth: int = None):
+            criterion: str = 'squared_error', max_depth: int = None) -> 'DecisionTreeRegressor':
+        """
+        Standard method to fit outputs to inputs thanks to DecisionTreeRegressor model from scikit-learn.
+
+        More information: https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeRegressor.html
+
+        :param inputs:
+            Matrix of data of dimension `n_samples x n_features`
+        :type inputs: List[List[float]]
+
+        :param outputs:
+            Matrix of data of dimension `n_samples x n_features`
+        :type outputs: List[List[float]]
+
+        :param name:
+            Name of DecisionTreeRegressor model
+        :type name: str, `optional`, defaults to `''`
+
+        :param criterion:
+            The function to measure the quality of a split. Supported criteria are “squared_error” for the mean
+            squared error, which is equal to variance reduction as feature selection criterion and minimizes the L2
+            loss using the mean of each terminal node, “friedman_mse”, which uses mean squared error with Friedman’s
+            improvement score for potential splits, “absolute_error” for the mean absolute error, which minimizes the
+            L1 loss using the median of each terminal node, and “poisson” which uses reduction in Poisson deviance to
+            find splits.
+        :type criterion: str, `optional`, defaults to 'squared_error'
+
+        :param max_depth:
+            The maximum depth of the tree. If `None`, then nodes are expanded until all leaves are pure or until all
+            leaves contain less than min_samples_split samples.
+        :type max_depth: int, `optional`, defaults to `None`
+
+        :return: The DecisionTreeRegressor model fit on inputs and outputs.
+        :rtype: DecisionTreeRegressor
+
+        """
         criterion = cls._check_criterion(criterion)
         return cls.fit_(inputs, outputs, name=name, criterion=criterion, max_depth=max_depth)
 
     @classmethod
     def fit_predict(cls, inputs: List[List[float]], outputs: List[List[float]], predicted_inputs: List[List[float]],
-                    name: str = '', criterion: str = 'squared_error', max_depth: int = None):
+                    name: str = '', criterion: str = 'squared_error',
+                    max_depth: int = None) -> Tuple['DecisionTreeRegressor', Union[List[float], List[List[float]]]]:
+        """
+        Fit outputs to inputs and predict outputs for predicted_inputs. It is the succession of fit and predict methods.
+
+        """
         criterion = cls._check_criterion(criterion)
         return cls.fit_predict_(inputs, outputs, predicted_inputs, name=name, criterion=criterion, max_depth=max_depth)
 
