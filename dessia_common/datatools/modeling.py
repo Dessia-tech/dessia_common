@@ -334,8 +334,8 @@ class Ridge(BaseModel):
         return cls(coef_=model.coef_.tolist(), intercept_=model.intercept_.tolist(), name=name)
 
     @classmethod
-    def fit(cls, inputs: List[List[float]], outputs: List[List[float]], name: str = '',
-            alpha: float = 1., fit_intercept: bool = True, tol: float = 0.001) -> 'Ridge':
+    def fit(cls, inputs: List[List[float]], outputs: List[List[float]], alpha: float = 1., fit_intercept: bool = True,
+            tol: float = 0.001, name: str = '') -> 'Ridge':
         """
         Standard method to fit outputs to inputs thanks to Ridge linear model from scikit-learn.
 
@@ -348,10 +348,6 @@ class Ridge(BaseModel):
         :param outputs:
             Matrix of data of dimension `n_samples x n_features`
         :type outputs: List[List[float]]
-
-        :param name:
-            Name of Ridge model
-        :type name: str, `optional`, defaults to `''`
 
         :param alpha:
             Constant that multiplies the L2 term, controlling regularization strength. alpha must be a non-negative
@@ -370,6 +366,10 @@ class Ridge(BaseModel):
             Precision of the solution.
         :type tol: float, `optional`, defaults to 0.001
 
+        :param name:
+            Name of Ridge model
+        :type name: str, `optional`, defaults to `''`
+
         :return: The Ridge model fit on inputs and outputs.
         :rtype: Ridge
 
@@ -378,8 +378,8 @@ class Ridge(BaseModel):
 
     @classmethod
     def fit_predict(cls, inputs: List[List[float]], outputs: List[List[float]], predicted_inputs: List[List[float]],
-                    name: str = '', alpha: float = 1., fit_intercept: bool = True,
-                    tol: float = 0.001) -> Tuple['Ridge', Union[List[float], List[List[float]]]]:
+                    alpha: float = 1., fit_intercept: bool = True, tol: float = 0.001,
+                    name: str = '') -> Tuple['Ridge', Union[List[float], List[List[float]]]]:
         """
         Fit outputs to inputs and predict outputs for predicted_inputs. It is the succession of fit and predict methods.
 
@@ -424,8 +424,8 @@ class LinearRegression(Ridge):
         return linear_model.LinearRegression
 
     @classmethod
-    def fit(cls, inputs: List[List[float]], outputs: List[List[float]], name: str = '', fit_intercept: bool = True,
-            positive: bool = False) -> 'LinearRegression':
+    def fit(cls, inputs: List[List[float]], outputs: List[List[float]], fit_intercept: bool = True,
+            positive: bool = False, name: str = '') -> 'LinearRegression':
         """
         Standard method to fit outputs to inputs thanks to Linear Regression model from scikit-learn.
 
@@ -439,10 +439,6 @@ class LinearRegression(Ridge):
             Matrix of data of dimension `n_samples x n_features`
         :type outputs: List[List[float]]
 
-        :param name:
-            Name of LinearRegression model
-        :type name: str, `optional`, defaults to `''`
-
         :param fit_intercept:
             Whether to fit the intercept for this model. If set to False, no intercept will be used in calculations
             (i.e. X and Y are expected to be centered).
@@ -452,6 +448,10 @@ class LinearRegression(Ridge):
             When set to True, forces the coefficients to be positive. This option is only supported for dense arrays.
         :type positive: bool, `optional`, defaults to False
 
+        :param name:
+            Name of LinearRegression model
+        :type name: str, `optional`, defaults to `''`
+
         :return: The Linear model fit on inputs and outputs.
         :rtype: LinearRegression
 
@@ -460,8 +460,8 @@ class LinearRegression(Ridge):
 
     @classmethod
     def fit_predict(cls, inputs: List[List[float]], outputs: List[List[float]], predicted_inputs: List[List[float]],
-                    name: str = '', fit_intercept: bool = True,
-                    positive: bool = False) -> Tuple['LinearRegression', Union[List[float], List[List[float]]]]:
+                    fit_intercept: bool = True, positive: bool = False,
+                    name: str = '') -> Tuple['LinearRegression', Union[List[float], List[List[float]]]]:
         """
         Fit outputs to inputs and predict outputs for predicted_inputs. It is the succession of fit and predict methods.
 
@@ -601,8 +601,8 @@ class DecisionTreeRegressor(BaseModel):
         return criterion
 
     @classmethod
-    def fit(cls, inputs: List[List[float]], outputs: List[List[float]], name: str = '',
-            criterion: str = 'squared_error', max_depth: int = None) -> 'DecisionTreeRegressor':
+    def fit(cls, inputs: List[List[float]], outputs: List[List[float]], criterion: str = 'squared_error',
+            max_depth: int = None, name: str = '') -> 'DecisionTreeRegressor':
         """
         Standard method to fit outputs to inputs thanks to DecisionTreeRegressor model from scikit-learn.
 
@@ -615,10 +615,6 @@ class DecisionTreeRegressor(BaseModel):
         :param outputs:
             Matrix of data of dimension `n_samples x n_features`
         :type outputs: List[List[float]]
-
-        :param name:
-            Name of DecisionTreeRegressor model
-        :type name: str, `optional`, defaults to `''`
 
         :param criterion:
             The function to measure the quality of a split. Supported criteria are “squared_error” for the mean
@@ -634,6 +630,10 @@ class DecisionTreeRegressor(BaseModel):
             leaves contain less than min_samples_split samples.
         :type max_depth: int, `optional`, defaults to `None`
 
+        :param name:
+            Name of DecisionTreeRegressor model
+        :type name: str, `optional`, defaults to `''`
+
         :return: The DecisionTreeRegressor model fit on inputs and outputs.
         :rtype: DecisionTreeRegressor
 
@@ -643,8 +643,8 @@ class DecisionTreeRegressor(BaseModel):
 
     @classmethod
     def fit_predict(cls, inputs: List[List[float]], outputs: List[List[float]], predicted_inputs: List[List[float]],
-                    name: str = '', criterion: str = 'squared_error',
-                    max_depth: int = None) -> Tuple['DecisionTreeRegressor', Union[List[float], List[List[float]]]]:
+                    criterion: str = 'squared_error', max_depth: int = None,
+                    name: str = '') -> Tuple['DecisionTreeRegressor', Union[List[float], List[List[float]]]]:
         """
         Fit outputs to inputs and predict outputs for predicted_inputs. It is the succession of fit and predict methods.
 
@@ -766,8 +766,8 @@ class RandomForest(BaseModel):
         return criterion
 
     @classmethod
-    def fit(cls, inputs: List[List[float]], outputs: List[List[float]], name: str = '',
-            n_estimators: int = 100, criterion: str = 'squared_error', max_depth: int = None):
+    def fit(cls, inputs: List[List[float]], outputs: List[List[float]], n_estimators: int = 100,
+            criterion: str = 'squared_error', max_depth: int = None, name: str = '') -> 'RandomForest':
         """
         Standard method to fit outputs to inputs thanks to RandomForest model from scikit-learn.
 
@@ -819,7 +819,8 @@ class RandomForest(BaseModel):
 
     @classmethod
     def fit_predict(cls, inputs: List[List[float]], outputs: List[List[float]], predicted_inputs: List[List[float]],
-                    name: str = '', n_estimators: int = 100, criterion: str = 'squared_error', max_depth: int = None):
+                    n_estimators: int = 100, criterion: str = 'squared_error', max_depth: int = None,
+                    name: str = '') -> Tuple['RandomForest', Union[List[float], List[List[float]]]]:
         """
         Fit outputs to inputs and predict outputs for predicted_inputs. It is the succession of fit and predict methods.
 
@@ -925,6 +926,65 @@ class RandomForestClassifier(RandomForest):
 
 
 class SupportVectorMachine(BaseModel):
+    """
+    Base object for handling a scikit-learn SupportVectorMachine objects.
+
+    Please refer to https://scikit-learn.org/stable/modules/svm.html for more
+    information on SupportVectorMachine object and understanding the SupportVectorMachine for basic usage.
+
+    :param kernel:
+        Specifies the kernel type to be used in the algorithm.
+        Can be one of `[‘linear’, ‘poly’, ‘rbf’, ‘sigmoid’, ‘precomputed’]`. If `None` is given, ‘rbf’ will be used.
+        If a callable is given it is used to pre-compute the kernel matrix from data matrices; that matrix should be
+        an matrix of shape `n_samples x n_samples`
+    :type kernel: str, `optional`, defaults to `'rbf'`
+
+    :param raw_coef_:
+        The number of classes (for single output problems), or a list containing the number of classes for each output
+        (for multi-output problems).
+    :type raw_coef_: List[List[float]], `optional`, defaults to `None`
+
+    :param _dual_coef_:
+        Coefficients of the support vector in the decision function. Shape is `1 x _n_support`.
+    :type _dual_coef_: List[List[float]], `optional`, defaults to `None`
+
+    :param _intercept_:
+        Constants in decision function.
+    :type _intercept_: List[float], `optional`, defaults to `None`
+
+    :param support_:
+        Indices of support vectors.
+    :type support_: List[int], `optional`, defaults to `None`
+
+    :param support_vectors_:
+        Support vectors.
+    :type support_vectors_: List[List[float]], `optional`, defaults to `None`
+
+    :param _n_support:
+        Number of support vectors for each class.
+    :type _n_support: List[int], `optional`, defaults to `None`
+
+    :param _probA:
+        Parameter learned in Platt scaling when `probability=True`.
+        https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html#sklearn.svm.SVC.probA_
+    :type _probA: List[float], `optional`, defaults to `None`
+
+    :param _probB:
+        Parameter learned in Platt scaling when `probability=True`.
+        https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html#sklearn.svm.SVC.probB_
+    :type _probB: List[float], `optional`, defaults to `None`
+
+    :param _gamma:
+        Kernel coefficient for ‘rbf’, ‘poly’ and ‘sigmoid’.
+           - if `gamma='scale'` (default) is passed then it uses `1 / (n_features * X.var())` as value of gamma,
+           - if `‘auto’`, uses `1 / n_features`.
+    :type _gamma: float, `optional`, defaults to `1.`
+
+    :param _sparse:
+        Specify if the inputs are a sparse matrix or not.
+    :type _sparse: bool, `optional`, defaults to `False`
+
+    """
 
     def __init__(self, kernel: str = 'rbf', raw_coef_: List[List[float]] = None, _dual_coef_: List[List[float]] = None,
                  _intercept_: List[float] = None, support_: List[int] = 1, support_vectors_: List[List[float]] = None,
@@ -990,15 +1050,113 @@ class SupportVectorMachine(BaseModel):
 
     @classmethod
     def fit(cls, inputs: List[List[float]], outputs: List[float], C: float = 1., kernel: str = 'rbf', name: str = ''):
+        """
+        Standard method to fit outputs to inputs thanks to SupportVectorMachine model from scikit-learn.
+
+        More information:
+            - Classifier: https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html
+            - Regressor: https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVR.html
+
+        :param inputs:
+            Matrix of data of dimension `n_samples x n_features`
+        :type inputs: List[List[float]]
+
+        :param outputs:
+            Matrix of data of dimension `n_samples x n_features`
+        :type outputs: List[List[float]]
+
+        :param C:
+            Regularization parameter. The strength of the regularization is inversely proportional to C.
+            Must be strictly positive. The penalty is a squared l2 penalty.
+        :type C: float, `optional`, defaults to `1.`
+
+        :param kernel:
+            Specifies the kernel type to be used in the algorithm.
+            Can be one of `[‘linear’, ‘poly’, ‘rbf’, ‘sigmoid’, ‘precomputed’]`. If `None` is given, ‘rbf’ will be used.
+            If a callable is given it is used to pre-compute the kernel matrix from data matrices; that matrix should be
+            an matrix of shape `n_samples x n_samples`
+        :type kernel: str, `optional`, defaults to `'rbf'`
+
+        :param name:
+            Name of SupportVectorRegressor or SupportVectorClassifier model
+        :type name: str, `optional`, defaults to `''`
+
+        :return: The SupportVectorRegressor or SupportVectorClassifier model fit on inputs and outputs.
+        :rtype: SupportVectorMachine
+
+        """
         return cls.fit_(inputs, outputs, name=name, C=C, kernel=kernel)
 
     @classmethod
     def fit_predict(cls, inputs: List[List[float]], outputs: List[float], predicted_inputs: List[List[float]],
                     C: float = 1., kernel: str = 'rbf', name: str = ''):
+        """
+        Fit outputs to inputs and predict outputs for predicted_inputs. It is the succession of fit and predict methods.
+
+        """
         return cls.fit_predict_(inputs, outputs, predicted_inputs, name=name, C=C, kernel=kernel)
 
 
 class SupportVectorRegressor(SupportVectorMachine):
+    """
+    Base object for handling a scikit-learn SupportVectorRegressor objects.
+
+    Please refer to https://scikit-learn.org/stable/modules/svm.html#svm-regression for more
+    information on SupportVectorRegressor object and understanding the SupportVectorRegressor for basic usage.
+
+    :param kernel:
+        Specifies the kernel type to be used in the algorithm.
+        Can be one of `[‘linear’, ‘poly’, ‘rbf’, ‘sigmoid’, ‘precomputed’]`. If `None` is given, ‘rbf’ will be used.
+        If a callable is given it is used to pre-compute the kernel matrix from data matrices; that matrix should be
+        an matrix of shape `n_samples x n_samples`
+    :type kernel: str, `optional`, defaults to `'rbf'`
+
+    :param raw_coef_:
+        The number of classes (for single output problems), or a list containing the number of classes for each output
+        (for multi-output problems).
+    :type raw_coef_: List[List[float]], `optional`, defaults to `None`
+
+    :param _dual_coef_:
+        Coefficients of the support vector in the decision function. Shape is `1 x _n_support`.
+    :type _dual_coef_: List[List[float]], `optional`, defaults to `None`
+
+    :param _intercept_:
+        Constants in decision function.
+    :type _intercept_: List[float], `optional`, defaults to `None`
+
+    :param support_:
+        Indices of support vectors.
+    :type support_: List[int], `optional`, defaults to `None`
+
+    :param support_vectors_:
+        Support vectors.
+    :type support_vectors_: List[List[float]], `optional`, defaults to `None`
+
+    :param _n_support:
+        Number of support vectors for each class.
+    :type _n_support: List[int], `optional`, defaults to `None`
+
+    :param _probA:
+        Parameter learned in Platt scaling when `probability=True`.
+        https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html#sklearn.svm.SVC.probA_
+    :type _probA: List[float], `optional`, defaults to `None`
+
+    :param _probB:
+        Parameter learned in Platt scaling when `probability=True`.
+        https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html#sklearn.svm.SVC.probB_
+    :type _probB: List[float], `optional`, defaults to `None`
+
+    :param _gamma:
+        Kernel coefficient for ‘rbf’, ‘poly’ and ‘sigmoid’.
+           - if `gamma='scale'` (default) is passed then it uses `1 / (n_features * X.var())` as value of gamma,
+           - if `‘auto’`, uses `1 / n_features`.
+    :type _gamma: float, `optional`, defaults to `1.`
+
+    :param _sparse:
+        Specify if the inputs are a sparse matrix or not.
+    :type _sparse: bool, `optional`, defaults to `False`
+
+    """
     _standalone_in_db = True
 
     def __init__(self, kernel: str = 'rbf', raw_coef_: List[List[float]] = None, _dual_coef_: List[List[float]] = None,
@@ -1023,7 +1181,69 @@ class SupportVectorRegressor(SupportVectorMachine):
 
 
 class SupportVectorClassifier(SupportVectorMachine):
-    _standalone_in_db = True
+    """
+    Base object for handling a scikit-learn SupportVectorClassifier objects.
+
+    Please refer to https://scikit-learn.org/stable/modules/svm.html#svm-classification for more
+    information on SupportVectorClassifier object and understanding the SupportVectorClassifier for basic usage.
+
+    :param kernel:
+        Specifies the kernel type to be used in the algorithm.
+        Can be one of `[‘linear’, ‘poly’, ‘rbf’, ‘sigmoid’, ‘precomputed’]`. If `None` is given, ‘rbf’ will be used.
+        If a callable is given it is used to pre-compute the kernel matrix from data matrices; that matrix should be
+        an matrix of shape `n_samples x n_samples`
+    :type kernel: str, `optional`, defaults to `'rbf'`
+
+    :param raw_coef_:
+        The number of classes (for single output problems), or a list containing the number of classes for each output
+        (for multi-output problems).
+    :type raw_coef_: List[List[float]], `optional`, defaults to `None`
+
+    :param _dual_coef_:
+        Coefficients of the support vector in the decision function. Shape is `1 x _n_support`.
+    :type _dual_coef_: List[List[float]], `optional`, defaults to `None`
+
+    :param _intercept_:
+        Constants in decision function.
+    :type _intercept_: List[float], `optional`, defaults to `None`
+
+    :param support_:
+        Indices of support vectors.
+    :type support_: List[int], `optional`, defaults to `None`
+
+    :param support_vectors_:
+        Support vectors.
+    :type support_vectors_: List[List[float]], `optional`, defaults to `None`
+
+    :param _n_support:
+        Number of support vectors for each class.
+    :type _n_support: List[int], `optional`, defaults to `None`
+
+    :param _probA:
+        Parameter learned in Platt scaling when `probability=True`.
+        https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html#sklearn.svm.SVC.probA_
+    :type _probA: List[float], `optional`, defaults to `None`
+
+    :param _probB:
+        Parameter learned in Platt scaling when `probability=True`.
+        https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html#sklearn.svm.SVC.probB_
+    :type _probB: List[float], `optional`, defaults to `None`
+
+    :param _gamma:
+        Kernel coefficient for ‘rbf’, ‘poly’ and ‘sigmoid’.
+           - if `gamma='scale'` (default) is passed then it uses `1 / (n_features * X.var())` as value of gamma,
+           - if `‘auto’`, uses `1 / n_features`.
+    :type _gamma: float, `optional`, defaults to `1.`
+
+    :param _sparse:
+        Specify if the inputs are a sparse matrix or not.
+    :type _sparse: bool, `optional`, defaults to `False`
+
+    :param classes_:
+        The classes labels.
+    :type classes_: List[int], `optional`, defaults to `None`
+
+    """
 
     def __init__(self, kernel: str = 'rbf', raw_coef_: List[List[float]] = None, _dual_coef_: List[List[float]] = None,
                  _intercept_: List[float] = None, support_: List[int] = 1, support_vectors_: List[List[float]] = None,
