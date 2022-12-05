@@ -469,6 +469,10 @@ class LinearRegression(Ridge):
 
 
 class BaseTree(BaseModel):
+    """
+    Base object for handling a scikit-learn tree._tree.Tree object (Cython).
+
+    """
 
     def __init__(self, n_classes: List[int] = None, n_features: int = None, n_outputs: int = None,
                  tree_state: Dict[str, Any] = None, name: str = ''):
