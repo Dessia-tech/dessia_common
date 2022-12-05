@@ -80,7 +80,7 @@ class ClusteredDataset(Dataset):
 
     def to_xlsx_stream(self, stream):
         """
-        Exports the object to an XLSX to a given stream.
+        Export the object to an XLSX to a given stream.
 
         """
         if not isinstance(self.dessia_objects[0], Dataset):
@@ -199,7 +199,7 @@ class ClusteredDataset(Dataset):
 
     def cluster_distances(self, method: str = 'minkowski', **kwargs):
         """
-        Computes all distances between elements of each cluster and their mean.
+        Compute all distances between elements of each cluster and their mean.
 
         Gives an indicator on how clusters are built.
 
@@ -378,14 +378,12 @@ class ClusteredDataset(Dataset):
         :type data: List[DessiaObject]
 
         :param n_clusters:
-            -------
             Number of wished clusters.
 
             Must be `None` if `distance_threshold` is not `None`
         :type n_clusters: `int`, `optional`, defaults to `2`
 
         :param affinity:
-            -------
             Metric used to compute the linkage.
             Can be one of `['euclidean', 'l1', 'l2', 'manhattan', 'cosine', or 'precomputed']`.
 
@@ -396,7 +394,6 @@ class ClusteredDataset(Dataset):
         :type affinity: `str`, `optional`, defaults to `'euclidean'`
 
         :param linkage:
-            --------
             |  Which linkage criterion to use. Can be one of `[‘ward’, ‘complete’, ‘average’, ‘single’]`
             |  The linkage criterion determines which distance to use between sets of observation.
             |  The algorithm will merge the pairs of cluster that minimize this criterion.
@@ -408,13 +405,11 @@ class ClusteredDataset(Dataset):
         :type linkage: `str`, `optional`, defaults to `'ward'`
 
         :param distance_threshold:
-            --------
             The linkage distance above which clusters will not be merged.
             If not `None`, `n_clusters` must be `None`.
         :type distance_threshold: `float`, `optional`, defaults to `None`
 
         :param scaling:
-            --------
             Whether to scale the data or not before clustering.
 
             Formula is `scaled_x = ( x - mean )/standard_deviation`
@@ -433,7 +428,7 @@ class ClusteredDataset(Dataset):
     def from_kmeans(cls, data: Dataset, n_clusters: int = 2, n_init: int = 10, tol: float = 1e-4,
                     scaling: bool = False, name: str = ""):
         """
-        KMeans clustering on Dataset.
+        K-Means clustering on Dataset.
 
         The KMeans algorithm clusters data by trying to separate samples in n groups of equal variance,
         minimizing a criterion known as the inertia or within-cluster sum-of-squares (see below).
@@ -451,24 +446,20 @@ class ClusteredDataset(Dataset):
         :type data: List[DessiaObject]
 
         :param n_clusters:
-            --------
             Number of wished clusters
         :type n_clusters: `int`, `optional`, defaults to `2`
 
         :param n_init:
-            --------
             Number of time the k-means algorithm will be run with different centroid seeds.
             The final results will be the best output of n_init consecutive runs in terms of inertia.
         :type n_init: `int`, `optional`, defaults to `10`
 
         :param tol:
-            --------
             Relative tolerance with regards to Frobenius norm of the difference in the cluster centers of two \
                 consecutive iterations to declare convergence.
         :type tol: `float`, `optional`, defaults to `1e-4`
 
         :param scaling:
-            --------
             Whether to scale the data or not before clustering.
 
             Formula is `scaled_x = ( x - mean )/standard_deviation`
@@ -514,7 +505,6 @@ class ClusteredDataset(Dataset):
         :type min_samples: `int`, `optional`, defaults to 5
 
         :param mink_power:
-            --------
             The power of the Minkowski metric to be used to calculate distance between points. If `None`, then
             `mink_power=2` (equivalent to the Euclidean distance).
         :type mink_power: `float`, `optional`, defaults to `2`
