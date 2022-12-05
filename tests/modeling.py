@@ -9,7 +9,7 @@ from dessia_common.models import all_cars_no_feat
 from dessia_common.datatools.dataset import Dataset
 from dessia_common.datatools.modeling import StandardScaler, IdentityScaler, Ridge, SupportVectorRegressor,\
     SupportVectorClassifier, MLPRegressor, DecisionTreeRegressor, DecisionTreeClassifier, RandomForestRegressor, \
-        RandomForestClassifier, MLPClassifier, Scaler, Model, Tree, RandomForest, SupportVectorMachine, \
+        RandomForestClassifier, MLPClassifier, Scaler, Model, LinearModel, Tree, RandomForest, SupportVectorMachine, \
             MultiLayerPerceptron, LinearRegression
 
 
@@ -121,6 +121,7 @@ for key, model in skl_models.items():
 # Tests errors and base objects
 base_scaler = Scaler()
 base_model = Model()
+base_linear = LinearModel()
 base_tree = Tree()
 base_rf = RandomForest()
 base_svm = SupportVectorMachine()

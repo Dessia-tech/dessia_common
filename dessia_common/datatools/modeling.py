@@ -285,7 +285,49 @@ class Model(DessiaObject):
         return model.score(inputs, outputs)
 
 
-class Ridge(Model):
+class LinearModel(Model):
+    """
+    Abstract class for linear models.
+
+    :param coef_:
+        List of coefficients of the model. Each element (i, j) of coef_ is the slope of the linear model predicting
+        the i-th output from the j-th input.
+    :type coef_: List[List[float]]
+
+    :param intercept_:
+        List of offsets of the model. Each element (i, ) of intercept_ is added to the prediction made with coef_ to
+        compute the i-th element of outputs prediction.
+    :type intercept_: List[float]
+
+    :param name:
+        Name of LinearModel regression
+    :type name: str, `optional`, defaults to `''`
+
+    """
+    _standalone_in_db = True
+
+    def __init__(self, coef_: List[List[float]] = None, intercept_: List[List[float]] = None, name: str = ''):
+        self.coef_ = coef_
+        self.intercept_ = intercept_
+        Model.__init__(self, name=name)
+
+    @classmethod
+    def _skl_class(cls):
+        raise NotImplementedError('Method _skl_class not implemented for LinearModel. Please use '\
+                                  'Ridge or LinearRegression.')
+
+    def _instantiate_skl(self):
+        model = self._call_skl_model()
+        model.coef_ = npy.array(self.coef_)
+        model.intercept_  = npy.array(self.intercept_)
+        return model
+
+    @classmethod
+    def _instantiate_dessia(cls, model, name: str = ''):
+        return cls(coef_=model.coef_.tolist(), intercept_=model.intercept_.tolist(), name=name)
+
+
+class Ridge(LinearModel):
     """
     Ridge regression. It is a linear or least square regression but computed with a regularization term `alpha`.
 
@@ -315,23 +357,11 @@ class Ridge(Model):
     _standalone_in_db = True
 
     def __init__(self, coef_: List[List[float]] = None, intercept_: List[List[float]] = None, name: str = ''):
-        self.coef_ = coef_
-        self.intercept_ = intercept_
-        Model.__init__(self, name=name)
+        LinearModel.__init__(self, coef_=coef_, intercept_=intercept_, name=name)
 
     @classmethod
     def _skl_class(cls):
         return linear_model.Ridge
-
-    def _instantiate_skl(self):
-        model = self._call_skl_model()
-        model.coef_ = npy.array(self.coef_)
-        model.intercept_  = npy.array(self.intercept_)
-        return model
-
-    @classmethod
-    def _instantiate_dessia(cls, model, name: str = ''):
-        return cls(coef_=model.coef_.tolist(), intercept_=model.intercept_.tolist(), name=name)
 
     @classmethod
     def fit(cls, inputs: List[List[float]], outputs: List[List[float]], alpha: float = 1., fit_intercept: bool = True,
@@ -388,7 +418,7 @@ class Ridge(Model):
                                 alpha=alpha, fit_intercept=fit_intercept, tol=tol)
 
 
-class LinearRegression(Ridge):
+class LinearRegression(LinearModel):
     """
     Linear regression.
 
@@ -417,7 +447,7 @@ class LinearRegression(Ridge):
     _standalone_in_db = True
 
     def __init__(self, coef_: List[List[float]] = None, intercept_: List[List[float]] = None, name: str = ''):
-        Ridge.__init__(self, coef_=coef_, intercept_=intercept_, name=name)
+        LinearModel.__init__(self, coef_=coef_, intercept_=intercept_, name=name)
 
     @classmethod
     def _skl_class(cls):
@@ -1286,9 +1316,6 @@ class MultiLayerPerceptron(Model):
     def _skl_class(cls):
         raise NotImplementedError('Method _skl_class not implemented for MultiLayerPerceptron. Please use '\
                                   'MLPRegressor or MLPClassifier.')
-
-    def _call_skl_model(self):
-        return self._skl_class()()
 
     def generic_skl_attributes(self):
         """
