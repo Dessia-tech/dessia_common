@@ -32,6 +32,10 @@ _PYTHON_CLASS_CACHE = {}
 
 
 def full_classname(object_, compute_for: str = 'instance'):
+    """
+    Get full class name of object_ (module + classname).
+
+    """
     if compute_for == 'instance':
         return object_.__class__.__module__ + '.' + object_.__class__.__name__
     if compute_for == 'class':
@@ -45,6 +49,10 @@ def full_classname(object_, compute_for: str = 'instance'):
 
 
 def is_classname_transform(string: str):
+    """
+    Check if string is classname and return class if yes.
+
+    """
     if '.' in string:
         split_string = string.split('.')
         if len(split_string) >= 2:
@@ -58,7 +66,7 @@ def is_classname_transform(string: str):
 
 def is_jsonable(obj):
     """
-    Returns if object can be dumped as it is in a json.
+    Return if object can be dumped as it is in a json.
 
     """
 
