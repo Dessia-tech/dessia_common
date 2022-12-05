@@ -74,7 +74,7 @@ error_over_ratchet_limit = False
 ratchet_limit = 9
 effective_date = date(2022, 11, 28)
 today = date.today()
-weekly_decrease = 5
+weekly_decrease = 0
 
 
 code_to_errors = {}
