@@ -474,8 +474,8 @@ class BaseTree(BaseModel):
     """
     Base object for handling a scikit-learn tree._tree.Tree object (Cython).
 
-    Please refer to https://scikit-learn.org/stable/auto_examples/tree/plot_unveil_tree_structure.html for
-    attributes of Tree object and understanding the decision tree structure for basic usage of these attributes.
+    Please refer to https://scikit-learn.org/stable/auto_examples/tree/plot_unveil_tree_structure.html for more
+    information on attributes of Tree object and understanding the decision tree structure for basic usage.
 
     """
 
@@ -537,7 +537,7 @@ class BaseTree(BaseModel):
 
 class DecisionTreeRegressor(BaseModel):
     """
-    DecisionTree Regressor.
+    Base class for handling scikit-learn DecisionTreeRegressor.
 
     More information: https://scikit-learn.org/stable/modules/tree.html#tree
 
@@ -552,7 +552,7 @@ class DecisionTreeRegressor(BaseModel):
     :type tree_: BaseTree, `optional`, defaults to `None`
 
     :param name:
-        Name of DecisionTree Regressor
+        Name of DecisionTreeRegressor
     :type name: str, `optional`, defaults to `''`
 
     """
@@ -655,7 +655,7 @@ class DecisionTreeRegressor(BaseModel):
 
 class DecisionTreeClassifier(DecisionTreeRegressor):
     """
-    DecisionTree Classifier.
+    Base class for handling scikit-learn DecisionTreeClassifier.
 
     More information: https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeClassifier.html
 
@@ -711,14 +711,29 @@ class DecisionTreeClassifier(DecisionTreeRegressor):
 
 
 class RandomForest(BaseModel):
+    """
+    Base object for handling a scikit-learn RandomForest object.
+
+    Please refer to https://scikit-learn.org/stable/modules/ensemble.html#forest for more information on RandomForest.
+
+    :param n_outputs_:
+        The number of outputs when fit is performed.
+    :type n_outputs_: int, `optional`, defaults to `None`
+
+    :param estimators_:
+        The collection of fitted sub-trees.
+    :type estimators_: List[DecisionTreeRegressor], `optional`, defaults to `None`
+
+    :param name:
+        Name of RandomForest
+    :type name: str, `optional`, defaults to `''`
+
+    """
 
     def __init__(self, n_outputs_: int = None, estimators_: List[DecisionTreeRegressor] = None, name: str = ''):
         self.estimators_ = estimators_
         self.n_outputs_ = n_outputs_
         BaseModel.__init__(self, name=name)
-
-    # def copy(self, deep=True, memo=None):
-    #     return copy(self)
 
     @classmethod
     def _skl_class(cls):
@@ -726,6 +741,10 @@ class RandomForest(BaseModel):
                                   'RandomForestClassifier or RandomForestRegressor.')
 
     def generic_skl_attributes(self):
+        """
+        Generic method (shared between RandomForest) to set scikit-learn model attributes from self attributes.
+
+        """
         model = self._call_skl_model()
         model.estimators_ = [tree._instantiate_skl() for tree in self.estimators_]
         model.n_outputs_ = self.n_outputs_
@@ -733,6 +752,10 @@ class RandomForest(BaseModel):
 
     @classmethod
     def generic_dessia_attributes(cls, model, name: str = ''):
+        """
+        Generic method (shared between RandomForest) to set self attributes from scikit-learn model attributes.
+
+        """
         return {'name': name,
                 'n_outputs_': model.n_outputs_}
 
@@ -745,6 +768,51 @@ class RandomForest(BaseModel):
     @classmethod
     def fit(cls, inputs: List[List[float]], outputs: List[List[float]], name: str = '',
             n_estimators: int = 100, criterion: str = 'squared_error', max_depth: int = None):
+        """
+        Standard method to fit outputs to inputs thanks to RandomForest model from scikit-learn.
+
+        More information:
+            - Classifier: https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html
+            - Regressor: https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestRegressor.html
+
+        :param inputs:
+            Matrix of data of dimension `n_samples x n_features`
+        :type inputs: List[List[float]]
+
+        :param outputs:
+            Matrix of data of dimension `n_samples x n_features`
+        :type outputs: List[List[float]]
+
+        :param name:
+            Name of RandomForestRegressor or RandomForestClassifier model
+        :type name: str, `optional`, defaults to `''`
+
+        :param n_estimators:
+            Number of DecisionTree contained in RandomForestRegressor or RandomForestClassifier
+        :type n_estimators: int, `optional`, defaults to 100
+
+        :param criterion:
+         |  - **Regressor:** The function to measure the quality of a split. Supported criteria are “squared_error” for
+            the mean squared error, which is equal to variance reduction as feature selection criterion and minimizes
+            the L2 loss using the mean of each terminal node, “friedman_mse”, which uses mean squared error with
+            Friedman’s improvement score for potential splits, “absolute_error” for the mean absolute error,
+            which minimizes the L1 loss using the median of each terminal node, and “poisson” which uses reduction in
+            Poisson deviance to find splits.
+
+         |  - **Classifier:** The function to measure the quality of a split. Supported criteria are “gini” for the Gini
+            impurity and “log_loss” and “entropy” both for the Shannon information gain, see Mathematical formulation.
+         |  Note: This parameter is tree-specific.
+        :type criterion: str, `optional`, defaults to 'squared_error'
+
+        :param max_depth:
+            The maximum depth of the tree. If `None`, then nodes are expanded until all leaves are pure or until all
+            leaves contain less than min_samples_split samples.
+        :type max_depth: int, `optional`, defaults to `None`
+
+        :return: The RandomForestRegressor or RandomForestClassifier model fit on inputs and outputs.
+        :rtype: RandomForest
+
+        """
         criterion = cls._check_criterion(criterion)
         return cls.fit_(inputs, outputs, name=name, n_estimators=n_estimators, criterion=criterion, max_depth=max_depth,
                         n_jobs=1)
@@ -752,12 +820,35 @@ class RandomForest(BaseModel):
     @classmethod
     def fit_predict(cls, inputs: List[List[float]], outputs: List[List[float]], predicted_inputs: List[List[float]],
                     name: str = '', n_estimators: int = 100, criterion: str = 'squared_error', max_depth: int = None):
+        """
+        Fit outputs to inputs and predict outputs for predicted_inputs. It is the succession of fit and predict methods.
+
+        """
         criterion = cls._check_criterion(criterion)
         return cls.fit_predict_(inputs, outputs, predicted_inputs, name=name, n_estimators=n_estimators,
                                 criterion=criterion, max_depth=max_depth, n_jobs=1)
 
 
 class RandomForestRegressor(RandomForest):
+    """
+    Base class for handling scikit-learn RandomForestRegressor.
+
+    Please refer to https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestRegressor.html for
+    more information on RandomForestRegressor.
+
+    :param n_outputs_:
+        The number of outputs when fit is performed.
+    :type n_outputs_: int, `optional`, defaults to `None`
+
+    :param estimators_:
+        The collection of fitted sub-trees.
+    :type estimators_: List[DecisionTreeRegressor], `optional`, defaults to `None`
+
+    :param name:
+        Name of RandomForestRegressor
+    :type name: str, `optional`, defaults to `''`
+
+    """
     _standalone_in_db = True
 
     def __init__(self, n_outputs_: int = None, estimators_: List[DecisionTreeRegressor] = None, name: str = ''):
@@ -778,6 +869,34 @@ class RandomForestRegressor(RandomForest):
 
 
 class RandomForestClassifier(RandomForest):
+    """
+    Base class for handling scikit-learn RandomForestClassifier.
+
+    Please refer to https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html for
+    more information on RandomForestClassifier.
+
+    :param n_classes_:
+        The number of classes (for single output problems), or a list containing the number of classes for each output
+        (for multi-output problems).
+    :type n_classes_: Union[int, List[int]], `optional`, defaults to `None`
+
+    :param classes_:
+        The number of outputs when fit is performed.
+    :type classes_: List[int], `optional`, defaults to `None`
+
+    :param n_outputs_:
+        The number of outputs when fit is performed.
+    :type n_outputs_: int, `optional`, defaults to `None`
+
+    :param estimators_:
+        The collection of fitted sub-trees.
+    :type estimators_: List[DecisionTreeClassifier], `optional`, defaults to `None`
+
+    :param name:
+        Name of RandomForestClassifier
+    :type name: str, `optional`, defaults to `''`
+
+    """
     _standalone_in_db = True
 
     def __init__(self, n_classes_: int = None, classes_: List[int] = None, n_outputs_: int = None,
@@ -833,6 +952,10 @@ class SupportVectorMachine(BaseModel):
         return self._skl_class()(kernel=self.kernel)
 
     def generic_skl_attributes(self):
+        """
+        Generic method (shared between SupportVectorMachine) to set scikit-learn model attributes from self attributes.
+
+        """
         model = self._call_skl_model()
         model.raw_coef_ = npy.array(self.raw_coef_)
         model._dual_coef_ = npy.array(self._dual_coef_)
@@ -848,6 +971,10 @@ class SupportVectorMachine(BaseModel):
 
     @classmethod
     def generic_dessia_attributes(cls, model, name: str = ''):
+        """
+        Generic method (shared between SupportVectorMachine) to set self attributes from scikit-learn model attributes.
+
+        """
         return {'name': name,
                 'kernel': model.kernel,
                 'raw_coef_': model._get_coef().tolist(),
@@ -944,6 +1071,10 @@ class MultiLayerPerceptron(BaseModel):
         return self._skl_class()()
 
     def generic_skl_attributes(self):
+        """
+        Generic method (shared between MultiLayerPerceptron) to set scikit-learn model attributes from self attributes.
+
+        """
         model = self._call_skl_model()
         model.coefs_ = [npy.array(coefs_) for coefs_ in self.coefs_]
         model.intercepts_ = [npy.array(intercepts_) for intercepts_ in self.intercepts_]
@@ -954,6 +1085,10 @@ class MultiLayerPerceptron(BaseModel):
 
     @classmethod
     def generic_dessia_attributes(cls, model, name: str = ''):
+        """
+        Generic method (shared between MultiLayerPerceptron) to set self attributes from scikit-learn model attributes.
+
+        """
         return {'name': name,
                 'coefs_': [coefs_.tolist() for coefs_ in model.coefs_],
                 'intercepts_': [intercepts_.tolist() for intercepts_ in model.intercepts_],
