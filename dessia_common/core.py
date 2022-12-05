@@ -1194,8 +1194,7 @@ def dict_merge(old_dct, merge_dct, add_keys=True, extend_lists=True):
         extend_lists (bool) : wether to extend lists if keys are updated
                               and value is a list
 
-    Returns:
-        dict: updated dict
+    :return: updated dict
 
     """
     dct = deepcopy(old_dct)
@@ -1240,6 +1239,7 @@ def enhanced_deep_attr(obj, sequence):
 
     :param obj: Parent object in which recursively find attribute represented by sequence
     :param sequence: List of strings and integers that represents path to deep attribute.
+
     :return: Value of deep attribute
 
     """
