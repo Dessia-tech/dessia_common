@@ -29,12 +29,12 @@ class Dataset(DessiaObject):
     :param dessia_objects:
         --------
         List of DessiaObjects to store in Dataset
-    :type dessia_objects: `List[DessiaObject]`, `optional`, defaults to `None`
+    :type dessia_objects: List[DessiaObject], `optional`, defaults to `None`
 
     :param name:
         --------
         Name of Dataset
-    :type name: `str`, `optional`, defaults to `''`
+    :type name: str, `optional`, defaults to `''`
 
     :Properties:
         * **common_attributes:** (`List[str]`)
@@ -102,8 +102,9 @@ class Dataset(DessiaObject):
 
     def __getitem__(self, key: Any):
         """
-        Custom getitem for Dataset. In addition to work as numpy.arrays of dimension `(n,)`, allows to pick \
-        a sub-Dataset from a list of indexes.
+        Custom getitem for Dataset.
+
+        In addition to work as numpy.arrays of dimension `(n,)`, allows to pick a sub-Dataset from a list of indexes.
 
         """
         if len(self) == 0:
@@ -148,7 +149,7 @@ class Dataset(DessiaObject):
 
     def extend(self, other: 'Dataset'):
         """
-        Update a Dataset by adding b values to it
+        Update a Dataset by adding b values to it.
 
         :param b: Dataset to add to the current Dataset
         :type b: Dataset
@@ -277,7 +278,8 @@ class Dataset(DessiaObject):
 
     def to_markdown(self) -> str:
         """
-        Render a markdown of the object output type: string
+        Render a markdown of the object output type: string.
+
         """
         md_writer = MarkdownWriter(print_limit=25, table_limit=12)
         name = md_writer.print_name(self)
@@ -293,7 +295,7 @@ class Dataset(DessiaObject):
 
     def __len__(self):
         """
-        Length of Dataset is len(Dataset.dessia_objects)
+        Length of Dataset is len(Dataset.dessia_objects).
 
         """
         return len(self.dessia_objects)
@@ -330,7 +332,7 @@ class Dataset(DessiaObject):
     @property
     def matrix(self):
         """
-        Get equivalent matrix of dessia_objects, which is of dimensions `len(dessia_objects) x len(common_attributes)`
+        Get equivalent matrix of dessia_objects, which is of dimensions `len(dessia_objects) x len(common_attributes)`.
 
         """
         if self._matrix is None:
@@ -415,12 +417,12 @@ class Dataset(DessiaObject):
             --------
             The parameter on which to sort the Dataset. Can be an attribute or its index in \
                 `common_attributes`
-        :type key: `int` or `str`
+        :type key: int or str
 
         :param ascend:
             --------
             Whether to sort the Dataset in ascending (`True`) or descending (`False`) order
-        :type key: `bool`, defaults to `True`
+        :type key: bool, defaults to `True`
 
         :return: None
 
@@ -530,19 +532,18 @@ class Dataset(DessiaObject):
 
     def distance_matrix(self, method: str = 'minkowski', **kwargs):
         """
-        Compute the distance matrix of `self.matrix`, i.e. the pairwise distances between all stored elements in \
-        `self.dessia_objects`. Distances are computed with numerical values of `self.matrix`.
+        Compute the distance matrix of `self.matrix`, i.e. the pairwise distances between all dessia_objects.
+
+        Distances are computed with numerical values of `self.matrix`.
 
         :param method:
-            --------
             Method to compute distances.
             Can be one of `[‘braycurtis’, ‘canberra’, ‘chebyshev’, ‘cityblock’, ‘correlation’, ‘cosine’, ‘dice’, \
             ‘euclidean’, ‘hamming’, ‘jaccard’, ‘jensenshannon’, ‘kulczynski1’, ‘mahalanobis’, ‘matching’, ‘minkowski’, \
             ‘rogerstanimoto’, ‘russellrao’, ‘seuclidean’, ‘sokalmichener’, ‘sokalsneath’, ‘sqeuclidean’, ‘yule’]`.
-        :type method: `str`, `optional`, defaults to `'minkowski'`
+        :type method: str, `optional`, defaults to `'minkowski'`
 
         :param **kwargs:
-            --------
             |  Extra arguments to metric: refer to each metric documentation for a list of all possible arguments.
             |  Some possible arguments:
             |     - p : scalar The p-norm to apply for Minkowski, weighted and unweighted. Default: `2`.
@@ -552,7 +553,7 @@ class Dataset(DessiaObject):
             |     - VI : array_like The inverse of the covariance matrix for Mahalanobis. Default: \
                 `inv(cov(vstack([XA, XB].T))).T`
             |     - out : ndarray The output array If not None, the distance matrix Y is stored in this array.
-        :type **kwargs: `dict`, `optional`
+        :type **kwargs: dict, `optional`
 
         :return: the distance matrix of all stored data in self
         :rtype: List[List[float]], `n_samples x n_samples`
@@ -581,8 +582,7 @@ class Dataset(DessiaObject):
 
     def filtering(self, filters_list: FiltersList):
         """
-        Filter a Dataset given a FiltersList.
-        Method filtering apply a FiltersList to the current Dataset.
+        Filter a Dataset given a FiltersList. Method filtering apply a FiltersList to the current Dataset.
 
         :param filters_list:
             FiltersList to apply on current Dataset
@@ -614,6 +614,7 @@ class Dataset(DessiaObject):
     def singular_values(self):
         """
         Computes the Singular Values Decomposition (SVD) of self.matrix.
+
         SVD factorizes self.matrix into two unitary matrices `U` and `Vh`, and a 1-D array `s` of singular values \
             (real, non-negative) such that ``a = U @ S @ Vh``, where S is diagonal such as `s1 > s2 >...> sn`.
 
@@ -652,7 +653,6 @@ class Dataset(DessiaObject):
 
     def plot_data(self):
         """
-        Plot data method.
         Plot a standard scatter matrix of all attributes in common_attributes and a dimensionality plot.
 
         """
@@ -667,7 +667,7 @@ class Dataset(DessiaObject):
                                                    point_style=dimensionality_plot.point_style)
             # Parallel plot
             parallel_plot = self._parallel_plot(data_list)
-            return [parallel_plot, scatter_matrix, dimensionality_plot]
+            return [parallel_plot, scatter_matrix] #, dimensionality_plot]
 
         plot_mono_attr = self._histogram_unic_value(0, name_attr=self.common_attributes[0])
         plot_mono_attr.elements = data_list
@@ -821,7 +821,7 @@ class Dataset(DessiaObject):
     @staticmethod
     def pareto_indexes(costs: List[List[float]]):
         """
-        Find the pareto-efficient points
+        Find the pareto-efficient points.
 
         :return: A (n_points, ) boolean list, indicating whether each point is Pareto efficient
 
@@ -886,12 +886,11 @@ class Dataset(DessiaObject):
 
     def pareto_points(self, costs_attributes: List[str]):
         """
-        Find the pareto-efficient points
+        Find the pareto-efficient points.
 
         :param costs_attributes:
-            -----------
             List of columns' attributes on which costs are stored in current Dataset
-        :type costs_attributes: `List[str]`
+        :type costs_attributes: List[str]
 
         :return: a Dataset containing the selected points
         :rtype: Dataset
@@ -905,16 +904,15 @@ class Dataset(DessiaObject):
         Get successive pareto sheets (i.e. optimal points in a DOE for pre-computed costs).
 
         :param costs_attributes:
-            -----------
             List of columns' attributes on which costs are stored in current Dataset
-        :type costs_attributes: `List[str]
+        :type costs_attributes: List[str]
 
         :param nb_sheets:
             Number of pareto sheets to pick
-        :type nb_sheets: `int`, `optional`, default to `1`
+        :type nb_sheets: int, `optional`, default to `1`
 
         :return: The successive pareto sheets and not selected elements
-        :rtype: `List[Dataset]`, `Dataset`
+        :rtype: List[Dataset], Dataset
 
         """
         checked_costs = self._compute_costs(costs_attributes)
