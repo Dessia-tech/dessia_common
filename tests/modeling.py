@@ -18,6 +18,7 @@ dataset_example = Dataset(all_cars_no_feat)
 inputs = dataset_example.sub_matrix(['displacement', 'horsepower', 'model', 'acceleration', 'cylinders'])
 double_outputs = dataset_example.sub_matrix(['mpg', 'weight'])
 labelled_outputs = [npy.random.randint(4) for _ in double_outputs]
+doubled_labelled_outputs = [[npy.random.randint(4),npy.random.randint(4)] for _ in double_outputs]
 mono_outputs = [output[0] for output in double_outputs]
 
 
@@ -42,6 +43,7 @@ mlp_hyperparams = {'hidden_layer_sizes': (100, 100, 100, 100, 100), 'alpha': 100
 
 hyperparameters = {'ridge_regressor': ridge_hyperparams, 'linearreg_regressor': linearreg_hyperparams,
                    'dt_regressor': dt_hyperparams, 'dt_classifier': dt_hyperparams,
+                   'dt_classifier_doubled': dt_hyperparams,
                    'rf_regressor': rf_hyperparams, 'rf_classifier': rf_hyperparams,
                    'svm_regressor': svm_hyperparams, 'svm_classifier': svm_hyperparams,
                    'mlp_regressor': mlp_hyperparams, 'mlp_classifier': mlp_hyperparams}
@@ -53,6 +55,7 @@ skl_models['ridge_regressor'] = linear_model.Ridge(**ridge_hyperparams)
 skl_models['linearreg_regressor'] = linear_model.LinearRegression(**linearreg_hyperparams)
 skl_models['dt_regressor'] = tree.DecisionTreeRegressor(**dt_hyperparams)
 skl_models['dt_classifier'] = tree.DecisionTreeClassifier(**dt_hyperparams)
+skl_models['dt_classifier_doubled'] = tree.DecisionTreeClassifier(**dt_hyperparams)
 skl_models['rf_regressor'] = ensemble.RandomForestRegressor(**rf_hyperparams)
 skl_models['rf_classifier'] = ensemble.RandomForestClassifier(**rf_hyperparams)
 skl_models['svm_regressor'] = svm.SVR(**svm_hyperparams)
@@ -69,12 +72,15 @@ for key, model in skl_models.items():
             continue
         model.fit(std_inputs, double_outputs)
         continue
+    if 'doubled' in key:
+        model.fit(std_inputs, doubled_labelled_outputs)
+        continue
     model.fit(std_inputs, labelled_outputs)
-
 
 # Dessia models
 dessia_classes = {'ridge_regressor': Ridge, 'linearreg_regressor': LinearRegression,
                   'dt_regressor': DecisionTreeRegressor, 'dt_classifier': DecisionTreeClassifier,
+                  'dt_classifier_doubled': DecisionTreeClassifier,
                   'rf_regressor': RandomForestRegressor, 'rf_classifier': RandomForestClassifier,
                   'svm_regressor': SupportVectorRegressor, 'svm_classifier': SupportVectorClassifier,
                   'mlp_regressor': MLPRegressor, 'mlp_classifier': MLPClassifier}
@@ -96,12 +102,19 @@ for key, model in skl_models.items():
         else:
             local_outputs = double_outputs
     else:
-        local_outputs = labelled_outputs
+        if 'doubled' in key:
+            local_outputs = doubled_labelled_outputs
+        else:
+            local_outputs = labelled_outputs
 
     params = hyperparameters[key]
     dessia_models[key] = dessia_classes[key].fit_predict(std_inputs, local_outputs, std_inputs[50:100], **params)
     dessia_models[key] = dessia_classes[key].fit(std_inputs, local_outputs, **params)
-    assert(isinstance(dessia_models[key].score(std_inputs, local_outputs), float))
+    try:
+        assert(isinstance(dessia_models[key].score(std_inputs, local_outputs), float))
+    except ValueError as e:
+        assert(e.args[0] == 'multiclass-multioutput is not supported' and
+               isinstance(dessia_models[key], DecisionTreeClassifier))
     dessia_models[key]._check_platform()
 
 
@@ -157,3 +170,9 @@ try:
     raise ValueError("_instantiate_dessia() should not work for BaseModel object.")
 except Exception as e:
     assert (e.args[0] == 'Method _instantiate_dessia not implemented for BaseModel.')
+
+
+dt_clf = tree.DecisionTreeClassifier(**dt_hyperparams)
+dt_clf.fit(std_inputs, labelled_outputs)
+dt_dessia = DecisionTreeClassifier.fit_predict(std_inputs, labelled_outputs, std_inputs[50:100])
+

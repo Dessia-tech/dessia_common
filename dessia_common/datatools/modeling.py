@@ -556,6 +556,7 @@ class DecisionTreeRegressor(BaseModel):
     :type name: str, `optional`, defaults to `''`
 
     """
+    _standalone_in_db = True
 
     def __init__(self, n_outputs_: int = None, tree_: BaseTree = None, name: str = ''):
         self.n_outputs_ = n_outputs_
@@ -653,9 +654,37 @@ class DecisionTreeRegressor(BaseModel):
 
 
 class DecisionTreeClassifier(DecisionTreeRegressor):
-    _standalone_in_db = True
+    """
+    DecisionTree Classifier.
 
-    def __init__(self, n_classes_: int = None, classes_: List[int] = None, n_outputs_: int = None,
+    More information: https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeClassifier.html
+
+    :param n_classes_:
+        The number of classes (for single output problems), or a list containing the number of classes for each output
+        (for multi-output problems).
+    :type n_classes_: Union[int, List[int]], `optional`, defaults to `None`
+
+    :param classes_:
+        The number of outputs when fit is performed.
+    :type classes_: List[int], `optional`, defaults to `None`
+
+    :param n_outputs_:
+        The number of outputs when fit is performed.
+    :type n_outputs_: int, `optional`, defaults to `None`
+
+    :param tree_:
+        The underlying BaseTree object.
+        Please refer to https://scikit-learn.org/stable/auto_examples/tree/plot_unveil_tree_structure.html for
+        attributes of Tree object and understanding the decision tree structure for basic usage of these attributes.
+    :type tree_: BaseTree, `optional`, defaults to `None`
+
+    :param name:
+        Name of DecisionTree Regressor
+    :type name: str, `optional`, defaults to `''`
+
+    """
+
+    def __init__(self, n_classes_: Union[int, List[int]] = None, classes_: List[int] = None, n_outputs_: int = None,
                  tree_: BaseTree = None, name: str = ''):
         self.n_classes_ = n_classes_
         self.classes_ = classes_
@@ -674,8 +703,10 @@ class DecisionTreeClassifier(DecisionTreeRegressor):
     @classmethod
     def _instantiate_dessia(cls, model, name: str = ''):
         kwargs = cls.generic_dessia_attributes(model, name=name)
-        kwargs.update({'n_classes_': model.n_classes_,
-                       'classes_': model.classes_.tolist()})
+        kwargs.update({'n_classes_': (model.n_classes_ if isinstance(model.n_classes_, (int, list))
+                                      else model.n_classes_.tolist()),
+                       'classes_': (model.classes_.tolist() if isinstance(model.classes_, npy.ndarray)
+                                    else [klass.tolist() for klass in model.classes_])})
         return cls(**kwargs)
 
 
