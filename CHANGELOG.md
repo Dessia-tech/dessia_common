@@ -14,8 +14,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     * Classifications: SVC, RandomForest, MLP, DecisionTree
 
 ### Fixed
+
 - Diff Dict is now robust to uneven arguments commutation
 - Fix path deepth when dict misses keys
+
+### Performance
+
+- Cache for fullargspec and deserialize sequence as comprehension list
 
 ## v0.10.2
 
