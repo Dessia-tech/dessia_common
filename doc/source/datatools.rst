@@ -37,5 +37,5 @@ Modeling
 
 Modeling objects from sklearn.
 
-.. autoclass:: dessia_common.datatools.modeling
+.. automodule:: dessia_common.datatools.modeling
    :members:

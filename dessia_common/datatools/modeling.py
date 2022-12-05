@@ -61,10 +61,10 @@ class BaseScaler(DessiaObject):
 
         :param name:
             Name of BaseScaler
-        :type name: `str`, `optional`, defaults to `''`
+        :type name: str, `optional`, defaults to `''`
 
         :return: The BaseScaler or children (DessiaObject) fit on matrix.
-        :rtype: `BaseScaler`
+        :rtype: BaseScaler
 
         """
         scaler = cls._skl_class()()
@@ -102,15 +102,15 @@ class StandardScaler(BaseScaler):
 
     :param mean_:
         List of means
-    :type mean_: `List[float]`, `optional`, defaults to `None`
+    :type mean_: List[float], `optional`, defaults to `None`
 
     :param scale_:
         List of standard deviations
-    :type scale_: `List[float]`, `optional`, defaults to `None`
+    :type scale_: List[float], `optional`, defaults to `None`
 
     :param var_:
         List of variances
-    :type var_: `List[float]`, `optional`, defaults to `None`
+    :type var_: List[float], `optional`, defaults to `None`
 
     """
     _rebuild_attributes = ['mean_', 'scale_', 'var_']
@@ -221,15 +221,15 @@ class BaseModel(DessiaObject):
         :type outputs: List[List[float]]
 
         :param name:
-            Name of BaseScaler
-        :type name: `str`, `optional`, defaults to `''`
+            Name of BaseModel
+        :type name: str, `optional`, defaults to `''`
 
         :param hyperparameters:
             Hyperparameters of the used scikit-learn object.
-        :type hyperparameters: `dict[str, Any]`, `optional`
+        :type hyperparameters: dict[str, Any], `optional`
 
         :return: The BaseModel or children (DessiaObject) fit on matrix.
-        :rtype: `BaseModel`
+        :rtype: BaseModel
 
         """
         model = cls._skl_class()(**hyperparameters)
@@ -245,7 +245,7 @@ class BaseModel(DessiaObject):
         :type inputs: List[List[float]]
 
         :return: The predicted values for inputs.
-        :rtype: `BaseModel`
+        :rtype: BaseModel
 
         """
         model = self._instantiate_skl()
@@ -287,19 +287,27 @@ class BaseModel(DessiaObject):
 
 class Ridge(BaseModel):
     """
-    Data scaler that standardly scale data. The operation made by this scaler is `new_X = (X - mean(X))/std(X)`.
+    Ridge regression. It is a linear or least square regression but computed with a regularization term `alpha`.
 
-    :param mean_:
-        List of means
-    :type mean_: `List[float]`, `optional`, defaults to `None`
+    The model searched with this method is of the form `Y = A.X + B`, where `Y` are the ouputs, `X` the inputs, `A` and
+    `B` the matrices of the model.
 
-    :param scale_:
-        List of standard deviations
-    :type scale_: `List[float]`, `optional`, defaults to `None`
+    The function minimized to get the linear model is `|| Y - A.X + B || + alpha.|| A || = 0`. This means setting
+    `alpha` to `0` is equivalent than searching a linear model from a least square regression.
 
-    :param var_:
-        List of variances
-    :type var_: `List[float]`, `optional`, defaults to `None`
+    :param coef_:
+        List of coefficients of the model. Each element (i, j) of coef_ is the slope of the linear model predicting
+        the i-th output from the j-th input.
+    :type coef_: List[List[float]]
+
+    :param intercept_:
+        List of offsets of the model. Each element (i, ) of intercept_ is added to the prediction made with coef_ to
+        compute the i-th element of outputs prediction.
+    :type intercept_: List[float]
+
+    :param name:
+        Name of Ridge regression
+    :type name: str, `optional`, defaults to `''`
 
     """
     _standalone_in_db = True
@@ -326,11 +334,53 @@ class Ridge(BaseModel):
     @classmethod
     def fit(cls, inputs: List[List[float]], outputs: List[List[float]], name: str = '',
             alpha: float = 1., fit_intercept: bool = True, tol: float = 0.001):
+        """
+        Standard method to fit outputs to inputs thanks to Ridge linear model from scikit-learn.
+
+        More information here: https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Ridge.html
+
+        :param inputs:
+            Matrix of data of dimension `n_samples x n_features`
+        :type inputs: List[List[float]]
+
+        :param outputs:
+            Matrix of data of dimension `n_samples x n_features`
+        :type outputs: List[List[float]]
+
+        :param name:
+            Name of Ridge model
+        :type name: str, `optional`, defaults to `''`
+
+        :param alpha:
+            Constant that multiplies the L2 term, controlling regularization strength. alpha must be a non-negative
+            float i.e. in [0, inf[. When alpha = 0, the objective is equivalent to ordinary least squares,
+            solved by the LinearRegression object. For numerical reasons, using `alpha = 0` with the Ridge object is
+            not advised. Instead, you should use the LinearRegression object. If an array is passed, penalties are
+            assumed to be specific to the targets. Hence they must correspond in number.
+        :type alpha: float, `optional`, defaults to 1.
+
+        :param fit_intercept:
+            Whether to fit the intercept for this model. If set to False, no intercept will be used in calculations
+            (i.e. X and Y are expected to be centered).
+        :type fit_intercept: bool, `optional`, defaults to True
+
+        :param tol:
+            Precision of the solution.
+        :type tol: float, `optional`, defaults to 0.001
+
+        :return: The Ridge model fit on inputs and outputs.
+        :rtype: Ridge
+
+        """
         return cls.fit_(inputs, outputs, name=name, alpha=alpha, fit_intercept=fit_intercept, tol=tol)
 
     @classmethod
     def fit_predict(cls, inputs: List[List[float]], outputs: List[List[float]], predicted_inputs: List[List[float]],
                     name: str = '', alpha: float = 1., fit_intercept: bool = True, tol: float = 0.001):
+        """
+        Fit outputs to inputs and predict outputs for predicted_inputs. It is the succession of fit and predict methods.
+
+        """
         return cls.fit_predict_(inputs, outputs, predicted_inputs, name=name,
                                 alpha=alpha, fit_intercept=fit_intercept, tol=tol)
 
