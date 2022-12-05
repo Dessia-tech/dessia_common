@@ -46,15 +46,22 @@ class Generator(DessiaObject):
         DessiaObject.__init__(self, name=name)
 
     def generate(self) -> None:
+        """
+        Generate models.
+
+        """
         submodels = [Submodel(self.parameter * i) for i in range(self.nb_solutions)]
         self.models = [Model(self.parameter + i, submodels[i]) for i in range(self.nb_solutions)]
 
     def long_generation(self, progress_callback=lambda x: None) -> List[Model]:
         """
+        Run a long generation.
+
         This method aims to test:
             * lots of prints to be catched
             * progress update
             * long computation
+
         """
         submodels = [Submodel(self.parameter * i) for i in range(self.nb_solutions)]
         models = [Model(self.parameter + i, submodels[i]) for i in range(self.nb_solutions)]
@@ -78,6 +85,10 @@ class Optimizer(DessiaObject):
         DessiaObject.__init__(self, name=name)
 
     def optimize(self, optimization_value: int = 3) -> None:
+        """
+        Optimize attribute model_to_optimize.
+
+        """
         self.model_to_optimize.value += optimization_value
 
 
@@ -89,6 +100,10 @@ class Component(DessiaObject):
         DessiaObject.__init__(self, name=name)
 
     def power_simulation(self, power_value: dcm.Power):
+        """
+        Run a power simulation.
+
+        """
         return power_value * self.efficiency
 
 
@@ -118,9 +133,17 @@ class System(DessiaObject):
         DessiaObject.__init__(self, name=name)
 
     def output_power(self, input_power: dcm.Power):
+        """
+        Compute output power.
+
+        """
         return input_power * 0.8
 
     def power_simulation(self, usage: SystemUsage):
+        """
+        Run a power simulation.
+
+        """
         output_power = []
         for _, input_power in zip(usage.time, usage.power):
             output_power.append(self.output_power(input_power))
@@ -167,6 +190,10 @@ class Car(DessiaObject):
         self.origin = origin
 
     def to_vector(self):
+        """
+        Get equivalent vector of instance of Car.
+
+        """
         list_formated_car = []
         for feature in self.vector_features():
             list_formated_car.append(getattr(self, feature.lower()))
@@ -209,6 +236,10 @@ class CarWithFeatures(Car):
 
     @classmethod
     def vector_features(cls):
+        """
+        Get list of _vector_features.
+
+        """
         return cls._vector_features
 
 
@@ -327,6 +358,10 @@ class RandDataD4(RandDataD1):
 
     @property
     def test_prop(self):
+        """
+        Factice property for some tests.
+
+        """
         if self._test_prop is None:
             self._test_prop = 3
         return self._test_prop
@@ -350,6 +385,10 @@ class RandDataD5(RandDataD1):
 
     @property
     def test_prop(self):
+        """
+        Factice property for some tests.
+
+        """
         if self._test_prop is None:
             self._test_prop = 3
         return self._test_prop
@@ -374,6 +413,10 @@ class RandDataD6(RandDataD1):
 
     @property
     def test_prop(self):
+        """
+        Factice property for some tests.
+
+        """
         if self._test_prop is None:
             self._test_prop = 3
         return self._test_prop
