@@ -295,6 +295,8 @@ class Ridge(BaseModel):
     The function minimized to get the linear model is `|| Y - A.X + B || + alpha.|| A || = 0`. This means setting
     `alpha` to `0` is equivalent than searching a linear model from a least square regression.
 
+    More information: https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Ridge.html
+
     :param coef_:
         List of coefficients of the model. Each element (i, j) of coef_ is the slope of the linear model predicting
         the i-th output from the j-th input.
@@ -337,7 +339,7 @@ class Ridge(BaseModel):
         """
         Standard method to fit outputs to inputs thanks to Ridge linear model from scikit-learn.
 
-        More information here: https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Ridge.html
+        More information: https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Ridge.html
 
         :param inputs:
             Matrix of data of dimension `n_samples x n_features`
@@ -383,6 +385,87 @@ class Ridge(BaseModel):
         """
         return cls.fit_predict_(inputs, outputs, predicted_inputs, name=name,
                                 alpha=alpha, fit_intercept=fit_intercept, tol=tol)
+
+
+class LinearRegression(Ridge):
+    """
+    Linear regression.
+
+    The model searched with this method is of the form `Y = A.X + B`, where `Y` are the ouputs, `X` the inputs, `A` and
+    `B` the matrices of the model.
+
+    The function minimized to get the linear model is `|| Y - A.X + B || = 0`.
+
+    More information: https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html
+
+    :param coef_:
+        List of coefficients of the model. Each element (i, j) of coef_ is the slope of the linear model predicting
+        the i-th output from the j-th input.
+    :type coef_: List[List[float]]
+
+    :param intercept_:
+        List of offsets of the model. Each element (i, ) of intercept_ is added to the prediction made with coef_ to
+        compute the i-th element of outputs prediction.
+    :type intercept_: List[float]
+
+    :param name:
+        Name of Linear regression
+    :type name: str, `optional`, defaults to `''`
+
+    """
+    _standalone_in_db = True
+
+    def __init__(self, coef_: List[List[float]] = None, intercept_: List[List[float]] = None, name: str = ''):
+        Ridge.__init__(self, coef_=coef_, intercept_=intercept_, name=name)
+
+    @classmethod
+    def _skl_class(cls):
+        return linear_model.LinearRegression
+
+    @classmethod
+    def fit(cls, inputs: List[List[float]], outputs: List[List[float]], name: str = '', fit_intercept: bool = True,
+            positive: bool = False):
+        """
+        Standard method to fit outputs to inputs thanks to Linear Regression model from scikit-learn.
+
+        More information: https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html
+
+        :param inputs:
+            Matrix of data of dimension `n_samples x n_features`
+        :type inputs: List[List[float]]
+
+        :param outputs:
+            Matrix of data of dimension `n_samples x n_features`
+        :type outputs: List[List[float]]
+
+        :param name:
+            Name of LinearRegression model
+        :type name: str, `optional`, defaults to `''`
+
+        :param fit_intercept:
+            Whether to fit the intercept for this model. If set to False, no intercept will be used in calculations
+            (i.e. X and Y are expected to be centered).
+        :type fit_intercept: bool, `optional`, defaults to True
+
+        :param positive:
+            When set to True, forces the coefficients to be positive. This option is only supported for dense arrays.
+        :type positive: bool, `optional`, defaults to False
+
+        :return: The Linear model fit on inputs and outputs.
+        :rtype: LinearRegression
+
+        """
+        return cls.fit_(inputs, outputs, name=name, fit_intercept=fit_intercept, positive=positive)
+
+    @classmethod
+    def fit_predict(cls, inputs: List[List[float]], outputs: List[List[float]], predicted_inputs: List[List[float]],
+                    name: str = '', fit_intercept: bool = True, positive: bool = False):
+        """
+        Fit outputs to inputs and predict outputs for predicted_inputs. It is the succession of fit and predict methods.
+
+        """
+        return cls.fit_predict_(inputs, outputs, predicted_inputs, name=name,
+                                fit_intercept=fit_intercept, positive=positive)
 
 
 class BaseTree(BaseModel):

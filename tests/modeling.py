@@ -10,7 +10,7 @@ from dessia_common.datatools.dataset import Dataset
 from dessia_common.datatools.modeling import StandardScaler, IdentityScaler, Ridge, SupportVectorRegressor,\
     SupportVectorClassifier, MLPRegressor, DecisionTreeRegressor, DecisionTreeClassifier, RandomForestRegressor, \
         RandomForestClassifier, MLPClassifier, BaseScaler, BaseModel, BaseTree, RandomForest, SupportVectorMachine, \
-            MultiLayerPerceptron
+            MultiLayerPerceptron, LinearRegression
 
 
 # Load Data and put it in a Dataset (matrix is automatically computed)
@@ -33,13 +33,14 @@ std_scaler, std_inputs = StandardScaler().fit_transform(inputs)
 
 # Hyperparameters
 ridge_hyperparams = {'alpha': 0.1, 'tol': 0.00001, 'fit_intercept': True}
+linearreg_hyperparams = {'fit_intercept': True, 'positive': False}
 dt_hyperparams = {'max_depth': None}
 rf_hyperparams = {'n_estimators': 40, 'max_depth': None}
 svm_hyperparams = {'C': 0.1, 'kernel': 'rbf'}
 mlp_hyperparams = {'hidden_layer_sizes': (100, 100, 100, 100, 100), 'alpha': 100, 'max_iter': 1000, 'solver': 'adam',
                    'activation': 'identity', 'tol': 1.}
 
-hyperparameters = {'ridge_regressor': ridge_hyperparams,
+hyperparameters = {'ridge_regressor': ridge_hyperparams, 'linearreg_regressor': linearreg_hyperparams,
                    'dt_regressor': dt_hyperparams, 'dt_classifier': dt_hyperparams,
                    'rf_regressor': rf_hyperparams, 'rf_classifier': rf_hyperparams,
                    'svm_regressor': svm_hyperparams, 'svm_classifier': svm_hyperparams,
@@ -49,6 +50,7 @@ hyperparameters = {'ridge_regressor': ridge_hyperparams,
 # Sklearn models
 skl_models = {}
 skl_models['ridge_regressor'] = linear_model.Ridge(**ridge_hyperparams)
+skl_models['linearreg_regressor'] = linear_model.LinearRegression(**linearreg_hyperparams)
 skl_models['dt_regressor'] = tree.DecisionTreeRegressor(**dt_hyperparams)
 skl_models['dt_classifier'] = tree.DecisionTreeClassifier(**dt_hyperparams)
 skl_models['rf_regressor'] = ensemble.RandomForestRegressor(**rf_hyperparams)
@@ -71,11 +73,11 @@ for key, model in skl_models.items():
 
 
 # Dessia models
-dessia_classes = {'ridge_regressor': Ridge, 'dt_regressor': DecisionTreeRegressor,
-                 'dt_classifier': DecisionTreeClassifier, 'rf_regressor': RandomForestRegressor,
-                 'rf_classifier': RandomForestClassifier, 'svm_regressor': SupportVectorRegressor,
-                 'svm_classifier': SupportVectorClassifier, 'mlp_regressor': MLPRegressor,
-                 'mlp_classifier': MLPClassifier}
+dessia_classes = {'ridge_regressor': Ridge, 'linearreg_regressor': LinearRegression,
+                  'dt_regressor': DecisionTreeRegressor, 'dt_classifier': DecisionTreeClassifier,
+                  'rf_regressor': RandomForestRegressor, 'rf_classifier': RandomForestClassifier,
+                  'svm_regressor': SupportVectorRegressor, 'svm_classifier': SupportVectorClassifier,
+                  'mlp_regressor': MLPRegressor, 'mlp_classifier': MLPClassifier}
 
 
 # Assert regenerated sklearn models from dessia models make the same predictions as sklearn models from sklearn.fit
