@@ -507,6 +507,26 @@ class Tree(Model):
     Please refer to https://scikit-learn.org/stable/auto_examples/tree/plot_unveil_tree_structure.html for more
     information on attributes of Tree object and understanding the decision tree structure for basic usage.
 
+    :param n_classes:
+        Number of output classes to predict from data.
+    :type n_classes: List[int], `optional`, defaults to `None`
+
+    :param n_features:
+        Number of features to handle in data.
+    :type n_features: int, `optional`, defaults to `None`
+
+    :param n_outputs:
+        The number of outputs when fit is performed.
+    :type n_outputs: int, `optional`, defaults to `None`
+
+    :param tree_state:
+        All required values to re-instantiate a fully working scikit-learn tree are stored in this parameter.
+    :type tree_state: Dict[str, Any], `optional`, defaults to `None`
+
+    :param name:
+        Name of Tree
+    :type name: str, `optional`, defaults to `''`
+
     """
 
     def __init__(self, n_classes: List[int] = None, n_features: int = None, n_outputs: int = None,
@@ -709,7 +729,7 @@ class DecisionTreeClassifier(DecisionTreeRegressor):
     :type tree_: Tree, `optional`, defaults to `None`
 
     :param name:
-        Name of DecisionTree Regressor
+        Name of DecisionTreeClassifier
     :type name: str, `optional`, defaults to `''`
 
     """
@@ -1079,7 +1099,8 @@ class SupportVectorMachine(Model):
                 '_sparse': model._sparse}
 
     @classmethod
-    def fit(cls, inputs: List[List[float]], outputs: List[float], C: float = 1., kernel: str = 'rbf', name: str = ''):
+    def fit(cls, inputs: List[List[float]], outputs: List[float], C: float = 1., kernel: str = 'rbf',
+            name: str = '') -> 'SupportVectorMachine':
         """
         Standard method to fit outputs to inputs thanks to SupportVectorMachine model from scikit-learn.
 
@@ -1119,7 +1140,8 @@ class SupportVectorMachine(Model):
 
     @classmethod
     def fit_predict(cls, inputs: List[List[float]], outputs: List[float], predicted_inputs: List[List[float]],
-                    C: float = 1., kernel: str = 'rbf', name: str = ''):
+                    C: float = 1., kernel: str = 'rbf',
+                    name: str = '') -> Tuple['SupportVectorMachine', Union[List[float], List[List[float]]]]:
         """
         Fit outputs to inputs and predict outputs for predicted_inputs. It is the succession of fit and predict methods.
 
@@ -1302,6 +1324,37 @@ class SupportVectorClassifier(SupportVectorMachine):
 
 
 class MultiLayerPerceptron(Model):
+    """
+    Base object for handling a scikit-learn MultiLayerPerceptron (dense neural network).
+
+    Please refer to https://scikit-learn.org/stable/modules/neural_networks_supervised.html for more
+    information on MultiLayerPerceptron.
+
+    :param coef_:
+        List of coefficients of the model.
+    :type coef_: List[List[float]], `optional`, defaults to `None`
+
+    :param intercept_:
+        List of offsets of the model.
+    :type intercept_: List[List[float]], `optional`, defaults to `None`
+
+    :param n_layers_:
+        Number of hidden layers contained in the current MultiLayerPerceptron.
+    :type n_layers_: int, `optional`, defaults to `None`
+
+    :param activation:
+        Activation function for hidden layers.
+    :type activation: str, `optional`, defaults to `'relu'`
+
+    :param out_activation_:
+        Activation function for the output layer.
+    :type out_activation_: str, `optional`, defaults to `'identity'`
+
+    :param name:
+        Name of MultiLayerPerceptron
+    :type name: str, `optional`, defaults to `''`
+
+    """
 
     def __init__(self, coefs_: List[List[List[float]]] = None, intercepts_: List[List[float]] = None,
                  n_layers_: int = None, activation: str = 'relu', out_activation_: str = 'identity', name: str = ''):
@@ -1344,21 +1397,116 @@ class MultiLayerPerceptron(Model):
                 'out_activation_': model.out_activation_}
 
     @classmethod
-    def fit(cls, inputs: List[List[float]], outputs: List[float], hidden_layer_sizes: List[int] = None,
+    def fit(cls, inputs: List[List[float]], outputs: List[float], hidden_layer_sizes: List[int] = [100,],
             activation: str = 'relu', alpha: float = 0.0001, solver: str = 'adam', max_iter: int = 200,
-            tol: float = 0.0001, name: str = ''):
+            tol: float = 0.0001, name: str = '') -> 'MultiLayerPerceptron':
+        """
+        Standard method to fit outputs to inputs thanks to MLPRegressor or MLPClassifier models from scikit-learn.
+
+        More information:
+            - Classifier: https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPClassifier.html
+            - Regressor: https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPRegressor.html
+
+        :param inputs:
+            Matrix of data of dimension `n_samples x n_features`
+        :type inputs: List[List[float]]
+
+        :param outputs:
+            Matrix of data of dimension `n_samples x n_features`
+        :type outputs: List[List[float]]
+
+        :param hidden_layer_sizes:
+            Regularization parameter. The strength of the regularization is inversely proportional to C.
+            Must be strictly positive. The penalty is a squared l2 penalty.
+        :type hidden_layer_sizes: List[int], `optional`, defaults to `[100,]`
+
+        :param activation:
+            Activation function for the hidden layer:
+                - `‘identity’`, no-op activation, useful to implement linear bottleneck, returns `f(x) = x`
+                - `‘logistic’`, the logistic sigmoid function, returns `f(x) = 1 / (1 + exp(-x))`.
+                - `‘tanh’`, the hyperbolic tan function, returns `f(x) = tanh(x)`.
+                - `‘relu’`, the rectified linear unit function, returns `f(x) = max(0, x)`
+        :type activation: str, `optional`, defaults to `'relu'`
+
+        :param alpha:
+            Constant that multiplies the L2 term, controlling regularization strength. alpha must be a non-negative
+            float i.e. in [0, inf[.
+        :type alpha: float, `optional`, defaults to `0.0001`
+
+        :param solver:
+            The solver for weight optimization:
+                - `‘lbfgs’` is an optimizer in the family of quasi-Newton methods.
+                - `‘sgd’` refers to stochastic gradient descent.
+                - `‘adam’` refers to a stochastic gradient-based optimizer proposed in https://arxiv.org/abs/1412.6980
+            Note: The default solver ‘adam’ works pretty well on relatively large datasets (with thousands of training
+            samples or more) in terms of both training time and validation score. For small datasets, however,
+            `‘lbfgs’` can converge faster and perform better.
+        :type solver: str, `optional`, defaults to `'adam'`
+
+        :param max_iter:
+            Maximum number of iterations. The solver iterates until convergence (determined by `‘tol’`) or this number
+            of iterations. For stochastic solvers (`‘sgd’`, `‘adam’`), note that this determines the number of epochs
+            (how many times each data point will be used), not the number of gradient steps.
+        :type max_iter: int, `optional`, defaults to `200`
+
+        :param tol:
+            Tolerance for the optimization. When the loss or score is not improving by at least tol for
+            `n_iter_no_change` consecutive iterations, unless `learning_rate` is set to `‘adaptive’`, convergence is
+            considered to be reached and training stops.
+        :type tol: float, `optional`, defaults to `0.0001`
+
+        :return: The MLPRegressor or MLPClassifier model fit on inputs and outputs.
+        :rtype: MultiLayerPerceptron
+
+        """
         return cls.fit_(inputs, outputs, name=name, hidden_layer_sizes=hidden_layer_sizes, activation=activation,
                         alpha=alpha, solver=solver, max_iter=max_iter, tol=tol)
 
     @classmethod
     def fit_predict(cls, inputs: List[List[float]], outputs: List[float], predicted_inputs: List[List[float]],
                     hidden_layer_sizes: List[int] = None, activation: str = 'relu', alpha: float = 0.0001,
-                    solver: str = 'adam', max_iter: int = 200, tol: float = 0.0001, name: str = ''):
+                    solver: str = 'adam', max_iter: int = 200, tol: float = 0.0001,
+                    name: str = '') -> Tuple['MultiLayerPerceptron', Union[List[float], List[List[float]]]]:
+        """
+        Fit outputs to inputs and predict outputs for predicted_inputs. It is the succession of fit and predict methods.
+
+        """
         return cls.fit_predict_(inputs, outputs, predicted_inputs, name=name, hidden_layer_sizes=hidden_layer_sizes,
                                 activation=activation, alpha=alpha, solver=solver, max_iter=max_iter, tol=tol)
 
 
 class MLPRegressor(MultiLayerPerceptron):
+    """
+    Base object for handling a scikit-learn MLPRegressor (dense neural network) object.
+
+    Please refer to https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPRegressor.html for more
+    information on MLPRegressor.
+
+    :param coef_:
+        List of coefficients of the model.
+    :type coef_: List[List[float]], `optional`, defaults to `None`
+
+    :param intercept_:
+        List of offsets of the model.
+    :type intercept_: List[List[float]], `optional`, defaults to `None`
+
+    :param n_layers_:
+        Number of hidden layers contained in the current MLPRegressor.
+    :type n_layers_: int, `optional`, defaults to `None`
+
+    :param activation:
+        Activation function for hidden layers.
+    :type activation: str, `optional`, defaults to `'relu'`
+
+    :param out_activation_:
+        Activation function for the output layer.
+    :type out_activation_: str, `optional`, defaults to `'identity'`
+
+    :param name:
+        Name of MLPRegressor
+    :type name: str, `optional`, defaults to `''`
+
+    """
     _standalone_in_db = True
 
     def __init__(self, coefs_: List[List[List[float]]] = None, intercepts_: List[List[float]] = None,
@@ -1379,11 +1527,50 @@ class MLPRegressor(MultiLayerPerceptron):
 
 
 class MLPClassifier(MultiLayerPerceptron):
+    """
+    Base object for handling a scikit-learn MLPClassifier (dense neural network) object.
+
+    Please refer to https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPClassifier.html for more
+    information on MLPClassifier.
+
+    :param coef_:
+        List of coefficients of the model.
+    :type coef_: List[List[float]], `optional`, defaults to `None`
+
+    :param intercept_:
+        List of offsets of the model.
+    :type intercept_: List[List[float]], `optional`, defaults to `None`
+
+    :param n_layers_:
+        Number of hidden layers contained in the current MLPClassifier.
+    :type n_layers_: int, `optional`, defaults to `None`
+
+    :param activation:
+        Activation function for hidden layers.
+    :type activation: str, `optional`, defaults to `'relu'`
+
+    :param out_activation_:
+        Activation function for the output layer.
+    :type out_activation_: str, `optional`, defaults to `'identity'`
+
+    :param n_outputs_:
+        The number of outputs when fit is performed.
+    :type n_outputs_: int, `optional`, defaults to `None`
+
+    :param _label_binarizer:
+        Data scaler used in MLPClassifier to standardize class labels.
+    :type _label_binarizer: LabelBinarizer, `optional`, defaults to `None`
+
+    :param name:
+        Name of MLPClassifier
+    :type name: str, `optional`, defaults to `''`
+
+    """
     _standalone_in_db = True
 
     def __init__(self, coefs_: List[List[List[float]]] = None, intercepts_: List[List[float]] = None,
                  n_layers_: int = None, activation: str = 'relu', out_activation_: str = 'identity',
-                 n_outputs_: int = None, _label_binarizer: LabelBinarizer = None,name: str = ''):
+                 n_outputs_: int = None, _label_binarizer: LabelBinarizer = None, name: str = ''):
         self.n_outputs_ = n_outputs_
         self._label_binarizer = _label_binarizer
         MultiLayerPerceptron.__init__(self, coefs_=coefs_, intercepts_=intercepts_, n_layers_=n_layers_,

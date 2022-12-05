@@ -140,6 +140,12 @@ except Exception as e:
     assert (e.args[0] == 'Method _skl_class not implemented for Model.')
 
 try:
+    base_linear._skl_class()
+    raise ValueError("_skl_class() should not work for LinearModel object.")
+except Exception as e:
+    assert (e.args[0] == 'Method _skl_class not implemented for LinearModel. Please use Ridge or LinearRegression.')
+
+try:
     base_rf._skl_class()
     raise ValueError("_skl_class() should not work for RandomForest object.")
 except Exception as e:
