@@ -9,7 +9,7 @@ from dessia_common.models import all_cars_no_feat
 from dessia_common.datatools.dataset import Dataset
 from dessia_common.datatools.modeling import StandardScaler, IdentityScaler, Ridge, SupportVectorRegressor,\
     SupportVectorClassifier, MLPRegressor, DecisionTreeRegressor, DecisionTreeClassifier, RandomForestRegressor, \
-        RandomForestClassifier, MLPClassifier, BaseScaler, BaseModel, BaseTree, RandomForest, SupportVectorMachine, \
+        RandomForestClassifier, MLPClassifier, Scaler, Model, Tree, RandomForest, SupportVectorMachine, \
             MultiLayerPerceptron, LinearRegression
 
 
@@ -119,24 +119,24 @@ for key, model in skl_models.items():
 
 
 # Tests errors and base objects
-base_scaler = BaseScaler()
-base_model = BaseModel()
-base_tree = BaseTree()
+base_scaler = Scaler()
+base_model = Model()
+base_tree = Tree()
 base_rf = RandomForest()
 base_svm = SupportVectorMachine()
 base_mlp = MultiLayerPerceptron()
 
 try:
     base_scaler._skl_class()
-    raise ValueError("_skl_class() should not work for BaseScaler object.")
+    raise ValueError("_skl_class() should not work for Scaler object.")
 except Exception as e:
-    assert (e.args[0] == 'Method _skl_class not implemented for BaseScaler. Please use children.')
+    assert (e.args[0] == 'Method _skl_class not implemented for Scaler. Please use children.')
 
 try:
     base_model._skl_class()
-    raise ValueError("_skl_class() should not work for BaseModel object.")
+    raise ValueError("_skl_class() should not work for Model object.")
 except Exception as e:
-    assert (e.args[0] == 'Method _skl_class not implemented for BaseModel.')
+    assert (e.args[0] == 'Method _skl_class not implemented for Model.')
 
 try:
     base_rf._skl_class()
@@ -161,15 +161,15 @@ except Exception as e:
 
 try:
     base_model._instantiate_skl()
-    raise ValueError("_instantiate_skl() should not work for BaseModel object.")
+    raise ValueError("_instantiate_skl() should not work for Model object.")
 except Exception as e:
-    assert (e.args[0] == 'Method _instantiate_skl not implemented for BaseModel.')
+    assert (e.args[0] == 'Method _instantiate_skl not implemented for Model.')
 
 try:
     base_model._instantiate_dessia(None)
-    raise ValueError("_instantiate_dessia() should not work for BaseModel object.")
+    raise ValueError("_instantiate_dessia() should not work for Model object.")
 except Exception as e:
-    assert (e.args[0] == 'Method _instantiate_dessia not implemented for BaseModel.')
+    assert (e.args[0] == 'Method _instantiate_dessia not implemented for Model.')
 
 
 dt_clf = tree.DecisionTreeClassifier(**dt_hyperparams)

@@ -13,7 +13,7 @@ from dessia_common.core import DessiaObject
 # ======================================================================================================================
 #                                                     S C A L E R S
 # ======================================================================================================================
-class BaseScaler(DessiaObject):
+class Scaler(DessiaObject):
     """
     Base object for handling a scikit-learn Scaler.
 
@@ -25,14 +25,14 @@ class BaseScaler(DessiaObject):
 
     @classmethod
     def _skl_class(cls):
-        raise NotImplementedError('Method _skl_class not implemented for BaseScaler. Please use children.')
+        raise NotImplementedError('Method _skl_class not implemented for Scaler. Please use children.')
 
     def _call_skl_scaler(self):
         return self._skl_class()()
 
     def instantiate_skl(self):
         """
-        Instantiate scikit-learn Scaler from BaseScaler object, or children.
+        Instantiate scikit-learn Scaler from Scaler object, or children.
 
         """
         scaler = self._call_skl_scaler()
@@ -41,9 +41,9 @@ class BaseScaler(DessiaObject):
         return scaler
 
     @classmethod
-    def instantiate_dessia(cls, scaler, name: str = '') -> 'BaseScaler':
+    def instantiate_dessia(cls, scaler, name: str = '') -> 'Scaler':
         """
-        Instantiate BaseScaler object, or children, from scikit-learn scaler.
+        Instantiate Scaler object, or children, from scikit-learn scaler.
 
         """
         kwargs = {attr: get_scaler_attr(scaler, attr) for attr in cls._rebuild_attributes}
@@ -51,7 +51,7 @@ class BaseScaler(DessiaObject):
         return cls(**kwargs)
 
     @classmethod
-    def fit(cls, matrix: List[List[float]], name: str = '') -> 'BaseScaler':
+    def fit(cls, matrix: List[List[float]], name: str = '') -> 'Scaler':
         """
         Fit scaler with data stored in matrix.
 
@@ -60,11 +60,11 @@ class BaseScaler(DessiaObject):
         :type matrix: List[List[float]]
 
         :param name:
-            Name of BaseScaler
+            Name of Scaler
         :type name: str, `optional`, defaults to `''`
 
-        :return: The BaseScaler or children (DessiaObject) fit on matrix.
-        :rtype: BaseScaler
+        :return: The Scaler or children (DessiaObject) fit on matrix.
+        :rtype: Scaler
 
         """
         scaler = cls._skl_class()()
@@ -73,7 +73,7 @@ class BaseScaler(DessiaObject):
 
     def transform(self, matrix: List[List[float]]) -> List[List[float]]:
         """
-        Transform the data stored in matrix according to this BaseScaler or children.
+        Transform the data stored in matrix according to this Scaler or children.
 
         :param matrix:
             Matrix of data of dimension `n_samples x n_features`
@@ -87,7 +87,7 @@ class BaseScaler(DessiaObject):
         return scaler.transform(matrix).tolist()
 
     @classmethod
-    def fit_transform(cls, matrix: List[List[float]], name: str = '') -> Tuple['BaseScaler', List[List[float]]]:
+    def fit_transform(cls, matrix: List[List[float]], name: str = '') -> Tuple['Scaler', List[List[float]]]:
         """
         Fit scaler with data stored in matrix and transform it. It is the succession of fit and transform methods.
 
@@ -96,7 +96,7 @@ class BaseScaler(DessiaObject):
         return scaler, scaler.transform(matrix)
 
 
-class StandardScaler(BaseScaler):
+class StandardScaler(Scaler):
     """
     Data scaler that standardly scale data. The operation made by this scaler is `new_X = (X - mean(X))/std(X)`.
 
@@ -120,7 +120,7 @@ class StandardScaler(BaseScaler):
         self.mean_ = mean_
         self.scale_ = scale_
         self.var_ = var_
-        BaseScaler.__init__(self, name=name)
+        Scaler.__init__(self, name=name)
 
     @classmethod
     def _skl_class(cls):
@@ -139,7 +139,7 @@ class IdentityScaler(StandardScaler):
         return self._skl_class()(with_mean = False, with_std = False)
 
 
-class LabelBinarizer(BaseScaler):
+class LabelBinarizer(Scaler):
     """
     Data scaler used in MLPClassifier to standardize class labels. Only implemented for MLPClassifier to work correctly.
 
@@ -163,7 +163,7 @@ class LabelBinarizer(BaseScaler):
         self.classes_ = classes_
         self.y_type_ = y_type_
         self.sparse_input_ = sparse_input_
-        BaseScaler.__init__(self, name=name)
+        Scaler.__init__(self, name=name)
 
     @classmethod
     def _skl_class(cls):
@@ -184,7 +184,7 @@ class LabelBinarizer(BaseScaler):
 # ======================================================================================================================
 #                                                        M O D E L S
 # ======================================================================================================================
-class BaseModel(DessiaObject):
+class Model(DessiaObject):
     """
     Base object for handling a scikit-learn models (classifier and regressor).
 
@@ -208,7 +208,7 @@ class BaseModel(DessiaObject):
 
     @classmethod
     def fit_(cls, inputs: List[List[float]], outputs: List[List[float]], name: str = '',
-             **hyperparameters) -> 'BaseModel':
+             **hyperparameters) -> 'Model':
         """
         Standard method to fit outputs to inputs thanks to a scikit-learn model.
 
@@ -221,15 +221,15 @@ class BaseModel(DessiaObject):
         :type outputs: List[List[float]]
 
         :param name:
-            Name of BaseModel
+            Name of Model
         :type name: str, `optional`, defaults to `''`
 
         :param hyperparameters:
             Hyperparameters of the used scikit-learn object.
         :type hyperparameters: dict[str, Any], `optional`
 
-        :return: The BaseModel or children (DessiaObject) fit on matrix.
-        :rtype: BaseModel
+        :return: The Model or children (DessiaObject) fit on matrix.
+        :rtype: Model
 
         """
         model = cls._skl_class()(**hyperparameters)
@@ -238,14 +238,14 @@ class BaseModel(DessiaObject):
 
     def predict(self, inputs: List[List[float]]) -> Union[List[float], List[List[float]]]:
         """
-        Standard method to predict outputs from inputs with a BaseModel or children.
+        Standard method to predict outputs from inputs with a Model or children.
 
         :param inputs:
             Matrix of data of dimension `n_samples x n_features`
         :type inputs: List[List[float]]
 
         :return: The predicted values for inputs.
-        :rtype: BaseModel
+        :rtype: Model
 
         """
         model = self._instantiate_skl()
@@ -253,7 +253,7 @@ class BaseModel(DessiaObject):
 
     @classmethod
     def fit_predict_(cls, inputs: List[List[float]], outputs: List[List[float]], predicted_inputs: List[List[float]],
-                    name: str = '', **hyperparameters) -> Tuple['BaseModel', Union[List[float], List[List[float]]]]:
+                    name: str = '', **hyperparameters) -> Tuple['Model', Union[List[float], List[List[float]]]]:
         """
         Fit outputs to inputs and predict outputs for predicted_inputs. It is the succession of fit and predict methods.
 
@@ -263,7 +263,7 @@ class BaseModel(DessiaObject):
 
     def score(self, inputs: List[List[float]], outputs: List[List[float]]) -> float:
         """
-        Compute the score of BaseModel or children.
+        Compute the score of Model or children.
 
         Please be sure to fit the model before computing its score and use test data and not train data.
         Train data is data used to train the model and shall not be used to evaluate its quality.
@@ -277,7 +277,7 @@ class BaseModel(DessiaObject):
             Matrix of data of dimension `n_samples x n_features`
         :type outputs: List[List[float]]
 
-        :return: The score of BaseModel or children (DessiaObject).
+        :return: The score of Model or children (DessiaObject).
         :rtype: float
 
         """
@@ -285,7 +285,7 @@ class BaseModel(DessiaObject):
         return model.score(inputs, outputs)
 
 
-class Ridge(BaseModel):
+class Ridge(Model):
     """
     Ridge regression. It is a linear or least square regression but computed with a regularization term `alpha`.
 
@@ -317,7 +317,7 @@ class Ridge(BaseModel):
     def __init__(self, coef_: List[List[float]] = None, intercept_: List[List[float]] = None, name: str = ''):
         self.coef_ = coef_
         self.intercept_ = intercept_
-        BaseModel.__init__(self, name=name)
+        Model.__init__(self, name=name)
 
     @classmethod
     def _skl_class(cls):
@@ -470,7 +470,7 @@ class LinearRegression(Ridge):
                                 fit_intercept=fit_intercept, positive=positive)
 
 
-class BaseTree(BaseModel):
+class Tree(Model):
     """
     Base object for handling a scikit-learn tree._tree.Tree object (Cython).
 
@@ -485,7 +485,7 @@ class BaseTree(BaseModel):
         self.n_features = n_features
         self.n_outputs = n_outputs
         self.tree_state = tree_state
-        BaseModel.__init__(self, name=name)
+        Model.__init__(self, name=name)
 
     def _data_hash(self):
         hash_ = npy.linalg.norm(self.tree_state['values'][0])
@@ -535,7 +535,7 @@ class BaseTree(BaseModel):
         return cls(**kwargs)
 
 
-class DecisionTreeRegressor(BaseModel):
+class DecisionTreeRegressor(Model):
     """
     Base class for handling scikit-learn DecisionTreeRegressor.
 
@@ -546,10 +546,10 @@ class DecisionTreeRegressor(BaseModel):
     :type n_outputs_: int, `optional`, defaults to `None`
 
     :param tree_:
-        The underlying BaseTree object.
+        The underlying Tree object.
         Please refer to https://scikit-learn.org/stable/auto_examples/tree/plot_unveil_tree_structure.html for
         attributes of Tree object and understanding the decision tree structure for basic usage of these attributes.
-    :type tree_: BaseTree, `optional`, defaults to `None`
+    :type tree_: Tree, `optional`, defaults to `None`
 
     :param name:
         Name of DecisionTreeRegressor
@@ -558,10 +558,10 @@ class DecisionTreeRegressor(BaseModel):
     """
     _standalone_in_db = True
 
-    def __init__(self, n_outputs_: int = None, tree_: BaseTree = None, name: str = ''):
+    def __init__(self, n_outputs_: int = None, tree_: Tree = None, name: str = ''):
         self.n_outputs_ = n_outputs_
         self.tree_ = tree_
-        BaseModel.__init__(self, name=name)
+        Model.__init__(self, name=name)
 
     @classmethod
     def _skl_class(cls):
@@ -584,7 +584,7 @@ class DecisionTreeRegressor(BaseModel):
 
         """
         return {'name': name,
-                'tree_': BaseTree._instantiate_dessia(model.tree_),
+                'tree_': Tree._instantiate_dessia(model.tree_),
                 'n_outputs_': model.n_outputs_}
 
     def _instantiate_skl(self):
@@ -673,10 +673,10 @@ class DecisionTreeClassifier(DecisionTreeRegressor):
     :type n_outputs_: int, `optional`, defaults to `None`
 
     :param tree_:
-        The underlying BaseTree object.
+        The underlying Tree object.
         Please refer to https://scikit-learn.org/stable/auto_examples/tree/plot_unveil_tree_structure.html for
         attributes of Tree object and understanding the decision tree structure for basic usage of these attributes.
-    :type tree_: BaseTree, `optional`, defaults to `None`
+    :type tree_: Tree, `optional`, defaults to `None`
 
     :param name:
         Name of DecisionTree Regressor
@@ -685,7 +685,7 @@ class DecisionTreeClassifier(DecisionTreeRegressor):
     """
 
     def __init__(self, n_classes_: Union[int, List[int]] = None, classes_: List[int] = None, n_outputs_: int = None,
-                 tree_: BaseTree = None, name: str = ''):
+                 tree_: Tree = None, name: str = ''):
         self.n_classes_ = n_classes_
         self.classes_ = classes_
         DecisionTreeRegressor.__init__(self, n_outputs_=n_outputs_, tree_=tree_, name=name)
@@ -710,7 +710,7 @@ class DecisionTreeClassifier(DecisionTreeRegressor):
         return cls(**kwargs)
 
 
-class RandomForest(BaseModel):
+class RandomForest(Model):
     """
     Base object for handling a scikit-learn RandomForest object.
 
@@ -733,7 +733,7 @@ class RandomForest(BaseModel):
     def __init__(self, n_outputs_: int = None, estimators_: List[DecisionTreeRegressor] = None, name: str = ''):
         self.estimators_ = estimators_
         self.n_outputs_ = n_outputs_
-        BaseModel.__init__(self, name=name)
+        Model.__init__(self, name=name)
 
     @classmethod
     def _skl_class(cls):
@@ -925,7 +925,7 @@ class RandomForestClassifier(RandomForest):
         return cls(**kwargs)
 
 
-class SupportVectorMachine(BaseModel):
+class SupportVectorMachine(Model):
     """
     Base object for handling a scikit-learn SupportVectorMachine objects.
 
@@ -1001,7 +1001,7 @@ class SupportVectorMachine(BaseModel):
         self._probB = _probB
         self._gamma = _gamma
         self._sparse = _sparse
-        BaseModel.__init__(self, name=name)
+        Model.__init__(self, name=name)
 
     @classmethod
     def _skl_class(cls):
@@ -1271,7 +1271,7 @@ class SupportVectorClassifier(SupportVectorMachine):
         return cls(**kwargs)
 
 
-class MultiLayerPerceptron(BaseModel):
+class MultiLayerPerceptron(Model):
 
     def __init__(self, coefs_: List[List[List[float]]] = None, intercepts_: List[List[float]] = None,
                  n_layers_: int = None, activation: str = 'relu', out_activation_: str = 'identity', name: str = ''):
@@ -1280,7 +1280,7 @@ class MultiLayerPerceptron(BaseModel):
         self.n_layers_ = n_layers_
         self.activation = activation
         self.out_activation_ = out_activation_
-        BaseModel.__init__(self, name=name)
+        Model.__init__(self, name=name)
 
     @classmethod
     def _skl_class(cls):
@@ -1384,7 +1384,7 @@ class MLPClassifier(MultiLayerPerceptron):
 # #                                                    M O D E L E R S
 # # ====================================================================================================================
 # class Modeler(DessiaObject):
-#     def __init__(self, model: BaseModel, scaler: BaseScaler, scaled_inputs: bool = True, scaled_outputs: bool = False,
+#     def __init__(self, model: Model, scaler: Scaler, scaled_inputs: bool = True, scaled_outputs: bool = False,
 #                  name: str = ''):
 #         self.model = model
 #         self.scaler = scaler
@@ -1400,7 +1400,7 @@ class MLPClassifier(MultiLayerPerceptron):
 
 # ##### MODEL ##########
 #     def _initialize_model(self):
-#         return BaseModel()
+#         return Model()
 
 #     def _set_model_attributes(self, model, attributes: Dict[str, float]):
 #         for attr, value in attributes.items():
