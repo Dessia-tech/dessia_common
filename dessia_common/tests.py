@@ -147,7 +147,8 @@ class SystemSimulationList(DessiaObject):
 
 class Car(DessiaObject):
     """
-    Defines a car
+    Defines a car with all its features.
+
     """
     _standalone_in_db = True
     _non_data_hash_attributes = ['name']
@@ -175,6 +176,7 @@ class Car(DessiaObject):
     def from_csv(cls, file: dcf.StringFile, end: int = None, remove_duplicates: bool = False):
         """
         Generates Cars from given .csv file.
+
         """
         array = [row.split(',') for row in file.getvalue().split('\n')][1:-1]
         cars = []
@@ -195,6 +197,10 @@ class Car(DessiaObject):
 
 
 class CarWithFeatures(Car):
+    """
+    Defines a car with all specific features (`'mpg', 'displacement', 'horsepower', 'acceleration', 'weight'`).
+
+    """
     _vector_features = ['mpg', 'displacement', 'horsepower', 'acceleration', 'weight']
 
     def __init__(self, name: str, mpg: float, cylinders: int, displacement: dcm.Distance, horsepower: float,
@@ -208,7 +214,8 @@ class CarWithFeatures(Car):
 
 class RandDataD1(DessiaObject):
     """
-    Creates a dataset from a number of clusters and dimensions
+    Creates a dataset with 1 parameters from a number of clusters and dimensions.
+
     """
     _standalone_in_db = True
     _non_data_hash_attributes = ['name']
@@ -221,11 +228,19 @@ class RandDataD1(DessiaObject):
 
     @classmethod
     def vector_features(cls):
+        """
+        Get list of _vector_features.
+
+        """
         return cls._vector_features
 
     @classmethod
     def create_dataset(cls, nb_clusters: int = 10, nb_points: int = 2500, mean_borns: Tuple[float, float] = (-50., 50),
                        std_borns: Tuple[float, float] = (-2., 2.)):
+        """
+        Create a random dataset with a number of clusters, number of points and means and std into these clusters.
+
+        """
         means_list = []
         std_list = []
         data_list = []
@@ -242,6 +257,10 @@ class RandDataD1(DessiaObject):
 
     @staticmethod
     def set_cluster_sizes(nb_points: int, nb_clusters: int):
+        """
+        Set clusters' sizes in function of total number of points.
+
+        """
         current_nb_points = nb_points
         cluster_sizes = []
         for _ in range(nb_clusters - 1):
@@ -255,12 +274,20 @@ class RandDataD1(DessiaObject):
 
     @staticmethod
     def python_plot(x_label: str, y_label: str, rand_data_list: List[List[float]], **kwargs):
+        """
+        Plot with matplotlib.
+
+        """
         x_coords = [getattr(RandData, x_label) for RandData in rand_data_list]
         y_coords = [getattr(RandData, y_label) for RandData in rand_data_list]
         plt.plot(x_coords, y_coords, **kwargs)
 
 
 class RandDataD2(RandDataD1):
+    """
+    Creates a dataset with 2 parameters from a number of clusters and dimensions.
+
+    """
     _nb_dims = 2
     _vector_features = [f'p_{i+1}' for i in range(2)]
 
@@ -270,6 +297,10 @@ class RandDataD2(RandDataD1):
 
 
 class RandDataD3(RandDataD1):
+    """
+    Creates a dataset with 3 parameters from a number of clusters and dimensions.
+
+    """
     _nb_dims = 3
     _vector_features = [f'p_{i+1}' for i in range(3)]
 
@@ -280,6 +311,10 @@ class RandDataD3(RandDataD1):
 
 
 class RandDataD4(RandDataD1):
+    """
+    Creates a dataset with 4 parameters from a number of clusters and dimensions.
+
+    """
     _nb_dims = 4
     _vector_features = [f'p_{i+1}' for i in range(4)] + ['test_prop']
 
@@ -298,6 +333,10 @@ class RandDataD4(RandDataD1):
 
 
 class RandDataD5(RandDataD1):
+    """
+    Creates a dataset with 5 parameters from a number of clusters and dimensions.
+
+    """
     _nb_dims = 5
     _vector_features = [f'p_{i+1}' for i in range(5)] + ['test_prop']
 
@@ -317,6 +356,10 @@ class RandDataD5(RandDataD1):
 
 
 class RandDataD6(RandDataD1):
+    """
+    Creates a dataset with 6 parameters from a number of clusters and dimensions.
+
+    """
     _nb_dims = 6
     _vector_features = [f'p_{i+1}' for i in range(6)] + ['test_prop']
 
@@ -337,6 +380,10 @@ class RandDataD6(RandDataD1):
 
 
 class RandDataD7(RandDataD1):
+    """
+    Creates a dataset with 7 parameters from a number of clusters and dimensions.
+
+    """
     _nb_dims = 7
     _vector_features = [f'p_{i+1}' for i in range(7)]
     def __init__(self, p_1: float, p_2: float, p_3: float, p_4: float, p_5: float, p_6: float, p_7: float,
@@ -351,6 +398,10 @@ class RandDataD7(RandDataD1):
 
 
 class RandDataD8(RandDataD1):
+    """
+    Creates a dataset with 8 parameters from a number of clusters and dimensions.
+
+    """
     _nb_dims = 8
     _vector_features = [f'p_{i+1}' for i in range(8)]
     def __init__(self, p_1: float, p_2: float, p_3: float, p_4: float, p_5: float, p_6: float, p_7: float, p_8: float,
@@ -366,6 +417,10 @@ class RandDataD8(RandDataD1):
 
 
 class RandDataD9(RandDataD1):
+    """
+    Creates a dataset with 9 parameters from a number of clusters and dimensions.
+
+    """
     _nb_dims = 9
     _vector_features = [f'p_{i+1}' for i in range(9)]
     def __init__(self, p_1: float, p_2: float, p_3: float, p_4: float, p_5: float, p_6: float, p_7: float, p_8: float,
@@ -382,6 +437,10 @@ class RandDataD9(RandDataD1):
 
 
 class RandDataD10(RandDataD1):
+    """
+    Creates a dataset with 10 parameters from a number of clusters and dimensions.
+
+    """
     _nb_dims = 10
     _vector_features = [f'p_{i+1}' for i in range(10)]
 
