@@ -21,9 +21,9 @@ UNWATCHED_ERRORS = [
 MAX_ERROR_BY_TYPE = {
     # http://www.pydocstyle.org/en/stable/error_codes.html
     'D100': 1,
-    'D101': 94,
-    'D102': 211,
-    'D103': 70,
+    'D101': 91,
+    'D102': 210,
+    'D103': 68,
     'D104': 1,
     'D105': 1,
     'D106': 1,
@@ -34,7 +34,7 @@ MAX_ERROR_BY_TYPE = {
     'D202': 1,
     'D203': 1,
     'D204': 1,
-    'D205': 68,
+    'D205': 50,
     'D206': 1,
     'D207': 1,
     'D208': 1,
@@ -50,7 +50,7 @@ MAX_ERROR_BY_TYPE = {
     'D301': 1,
     'D302': 1,
 
-    'D400': 256,
+    'D400': 143,
     'D401': 1,
     'D402': 1,
     'D403': 5,
@@ -73,7 +73,7 @@ MAX_ERROR_BY_TYPE = {
 
 error_detected = False
 error_over_ratchet_limit = False
-ratchet_limit = 500
+ratchet_limit = 9
 effective_date = date(2022, 11, 28)
 today = date.today()
 weekly_decrease = 5

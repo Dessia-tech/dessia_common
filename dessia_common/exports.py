@@ -42,7 +42,8 @@ def is_builtins_list(list_):
 
 
 class ExportFormat:
-    def __init__(self, selector: Optional[str], extension: str, method_name: str, text: bool,
+    def __init__(self, selector: Optional[str], extension: str,
+                 method_name: str, text: bool,
                  export_name: str = "", args: Dict[str, Any] = None):
         self.selector = selector
         self.extension = extension
@@ -54,8 +55,9 @@ class ExportFormat:
         self.args = args
 
     def to_dict(self):
-        return {"selector": self.selector, "extension": self.extension, "method_name": self.method_name,
-                "text": self.text, "export_name": self.export_name, "args": self.args}
+        return {"selector": self.selector, "extension": self.extension,
+                "method_name": self.method_name, "text": self.text,
+                "export_name": self.export_name, "args": self.args}
 
 
 class XLSXWriter:
@@ -281,10 +283,12 @@ class MarkdownWriter:
         self.print_limit = print_limit
         self.table_limit = table_limit
 
-    def _object_titles(self):
+    @staticmethod
+    def _object_titles():
         return ['Attribute', 'Type', 'Value']  # , 'Subvalues']
 
-    def _sequence_to_str(self, value: Sequence):
+    @staticmethod
+    def _sequence_to_str(value: Sequence):
         if len(value) == 0:
             return f"empty {type(value).__name__}"
 
@@ -303,7 +307,8 @@ class MarkdownWriter:
     def _dict_to_str(self, value: Dict):
         return self._sequence_to_str(list(value.values()))
 
-    def _object_to_str(self, value) -> str:
+    @staticmethod
+    def _object_to_str(value) -> str:
         if hasattr(value, 'name') and value.name:
             return value.name
         return 'unnamed'
@@ -330,7 +335,8 @@ class MarkdownWriter:
                            (self._value_to_str(value) if not isinstance(value, (list, dict, set)) else ' - ')])
         return matrix
 
-    def _head_table(self, col_names: List[str]) -> str:
+    @staticmethod
+    def _head_table(col_names: List[str]) -> str:
         cap_names = map(lambda x: x.capitalize(), col_names)
         return ("| " + " | ".join(cap_names) + " |\n" +
                 "| ------ " * len(col_names) + "|\n")
@@ -365,10 +371,12 @@ class MarkdownWriter:
 
         return table
 
-    def print_name(self, object_) -> str:
+    @staticmethod
+    def print_name(object_) -> str:
         return object_.name if object_.name != '' else 'with no name'
 
-    def print_class(self, object_) -> str:
+    @staticmethod
+    def print_class(object_) -> str:
         return object_.__class__.__name__
 
     def matrix_table(self, matrix: List[List[float]], col_names: List[str]) -> str:

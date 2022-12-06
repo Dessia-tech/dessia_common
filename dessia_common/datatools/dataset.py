@@ -750,7 +750,7 @@ class Dataset(DessiaObject):
         return map(list, zip(*sorted(zip(r2_scores, association_list))[::-1])), list(set(constant_attributes))
 
     @staticmethod
-    def _get_attribute_trios(self, sorted_r2, sorted_association):
+    def _get_attribute_trios(sorted_r2, sorted_association):
         attribute_series = []
         picked_attr = set()
         set_association = set(sum(sorted_association, []))
@@ -778,7 +778,7 @@ class Dataset(DessiaObject):
         return ordered_attr
 
     @staticmethod
-    def _new_attributes_trio(self, attribute_serie):
+    def _new_attributes_trio(attribute_serie):
         if len(attribute_serie) < 3:
             return attribute_serie
         mid_index = [attribute_serie.count(attr) for attr in attribute_serie].index(2)
@@ -787,7 +787,7 @@ class Dataset(DessiaObject):
         return [next(remaining_attr), mid_attr, next(remaining_attr)]
 
     @staticmethod
-    def _new_sided_attribute(self, ordered_attr, attribute_serie):
+    def _new_sided_attribute(ordered_attr, attribute_serie):
         for side in [0, -1]:
             if ordered_attr[side] in attribute_serie:
                 nb_instances = attribute_serie.count(ordered_attr[side])

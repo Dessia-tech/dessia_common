@@ -82,5 +82,5 @@ def _check_docstring(element):
         parse_docstring(docstring=docstring,
                         annotations=annotations)
         return True
-    except:
-        raise False
+    except TypeError:
+        return False
