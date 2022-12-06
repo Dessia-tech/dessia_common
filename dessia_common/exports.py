@@ -312,7 +312,7 @@ class MarkdownWriter:
         if isinstance(value, (float, int, bool, complex)):
             return str(round(value, 6))
         if isinstance(value, str):
-            return (value if value != '' else 'no value')
+            return value if value != '' else 'no value'
         if is_sequence(value):
             return self._sequence_to_str(value)
         if isinstance(value, Dict):
@@ -366,7 +366,7 @@ class MarkdownWriter:
         return table
 
     def print_name(self, object_) -> str:
-        return (object_.name if object_.name != '' else 'with no name')
+        return object_.name if object_.name != '' else 'with no name'
 
     def print_class(self, object_) -> str:
         return object_.__class__.__name__

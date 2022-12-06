@@ -453,7 +453,8 @@ class Dataset(DessiaObject):
                 sort_indexes = npy.argsort(self.attribute_values(key))
             self.dessia_objects = [self.dessia_objects[idx] for idx in (sort_indexes if ascend else sort_indexes[::-1])]
             if self._matrix is not None:
-                self._matrix = [self._matrix[idx] for idx in (sort_indexes if ascend else sort_indexes[::-1])]
+                self._matrix = [self._matrix[idx] for idx in
+                                (sort_indexes if ascend else sort_indexes[::-1])]
 
     def mean(self):
         """
@@ -748,6 +749,7 @@ class Dataset(DessiaObject):
         # Returns list of list of associated attributes sorted along their R2 score and constant attributes
         return map(list, zip(*sorted(zip(r2_scores, association_list))[::-1])), list(set(constant_attributes))
 
+    @staticmethod
     def _get_attribute_trios(self, sorted_r2, sorted_association):
         attribute_series = []
         picked_attr = set()
@@ -775,6 +777,7 @@ class Dataset(DessiaObject):
                 ordered_attr = self._new_sided_attribute(ordered_attr, attribute_serie)
         return ordered_attr
 
+    @staticmethod
     def _new_attributes_trio(self, attribute_serie):
         if len(attribute_serie) < 3:
             return attribute_serie
@@ -783,6 +786,7 @@ class Dataset(DessiaObject):
         remaining_attr = iter(set(attribute_serie).difference({mid_attr}))
         return [next(remaining_attr), mid_attr, next(remaining_attr)]
 
+    @staticmethod
     def _new_sided_attribute(self, ordered_attr, attribute_serie):
         for side in [0, -1]:
             if ordered_attr[side] in attribute_serie:
