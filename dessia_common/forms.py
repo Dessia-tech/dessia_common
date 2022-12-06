@@ -67,7 +67,6 @@ class EmbeddedBuiltinsSubobject(PhysicalObject):
 
     :param name: Object's name
     :type name: str
-
     """
     _standalone_in_db = False
 
@@ -132,7 +131,6 @@ class StandaloneBuiltinsSubobject(EmbeddedBuiltinsSubobject):
 
     :param name: Object's name
     :type name: str
-
     """
     _standalone_in_db = True
 
@@ -245,7 +243,6 @@ class StandaloneObject(MovingObject):
 
     :param tuple_arg: A heterogeneous sequence
     :type tuple_arg: tuple
-
     """
     _standalone_in_db = True
     _generic_eq = True
@@ -314,7 +311,6 @@ class StandaloneObject(MovingObject):
         Add a standalone object to object_list.
 
         It doesn't return anything, hence, API will update object when computing from frontend.
-
         """
         self.object_list.append(object_)
 
@@ -323,7 +319,6 @@ class StandaloneObject(MovingObject):
         Add an embedded object to subobject_list.
 
         It doesn't return anything, hence, API will update object when computing from frontend.
-
         """
         self.subobject_list.append(object_)
 
@@ -332,7 +327,6 @@ class StandaloneObject(MovingObject):
         Add value to its standalone subobject floatarg property and returns it.
 
         API should replace standalone_subobject as it is returned.
-
         """
         self.standalone_subobject.floatarg += value
         return self.standalone_subobject
@@ -425,7 +419,6 @@ class StandaloneObject(MovingObject):
     def maldefined_method(self, arg0, arg1=1, arg2: int = 10, arg3=3):
         """
         Define a docstring for testing parsing purpose.
-
         """
         nok_string = "This is a bad coding behavior"
         ok_string = "This could be OK as temporary attr"
@@ -443,7 +436,6 @@ class StandaloneObject(MovingObject):
     def to_markdown(self):
         """
         Write a standard markdown of StandaloneObject.
-
         """
         contents = """
         # Quem Stygios dumque
@@ -530,7 +522,6 @@ class StandaloneObject(MovingObject):
 
         :param raise_error: Wether the computation should raise an error or not at the end
         :type raise_error: bool
-
         """
         starting_time = time.time()
         current_time = time.time()
@@ -602,10 +593,7 @@ DEF_SOWDV = StandaloneObjectWithDefaultValues()
 
 
 class ObjectWithOtherTypings(DessiaObject):
-    """
-    Dummy class to test some typing jsonschemas.
-
-    """
+    """Dummy class to test some typing jsonschemas."""
 
     def __init__(self, undefined_type_attribute: Any, name: str = ""):
         self.undefined_type_attribute = undefined_type_attribute
@@ -657,7 +645,6 @@ class Generator(DessiaObject):
 
     :param name: The name of the Generator. It is not used in object generation
     :type name: str
-
     """
     _standalone_in_db = True
 
@@ -671,7 +658,6 @@ class Generator(DessiaObject):
     def generate(self) -> List[StandaloneObject]:
         """
         Generate a list of Standalone objects.
-
         """
         self.models = [StandaloneObject.generate(self.parameter + i) for i in range(self.nb_solutions)]
         return self.models
@@ -686,7 +672,6 @@ class Optimizer(DessiaObject):
 
     :param name: Name of the optimizer. Will not be used in the optimization process
     :type name: str
-
     """
     _standalone_in_db = True
 
@@ -701,7 +686,6 @@ class Optimizer(DessiaObject):
 
         :param optimization_value: value that will be added to model's intarg attribute
         :type optimization_value: int
-
         """
         self.model_to_optimize.standalone_subobject.intarg += optimization_value
         return self.model_to_optimize.standalone_subobject.intarg

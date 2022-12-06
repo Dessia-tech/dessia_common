@@ -19,7 +19,6 @@ def diff_list(list_a, list_b):
 
     :return: a generator of the difference between each element
     :rtype: generator
-
     """
     return (a - b for a, b in zip(list_a, list_b))
 
@@ -32,7 +31,6 @@ def l1_norm(vector):
 
     :return: the l1-norm
     :rtype: float
-
     """
     return sum(map(abs, vector))
 
@@ -45,7 +43,6 @@ def l2_norm(vector):
 
     :return: the l2-norm
     :rtype: float
-
     """
     # better than numpy for len = 20000, nearly the same for len = 2000
     return sum(x*x for x in vector)**0.5
@@ -62,7 +59,6 @@ def lp_norm(vector, mink_power = 2):
 
     :return: the Minkowski norm
     :rtype: float
-
     """
     return float(npy.linalg.norm(vector, ord=mink_power))
 
@@ -75,7 +71,6 @@ def inf_norm(vector):
 
     :return: maximum value of absolute values in vector
     :rtype: float
-
     """
     return max(abs(coord) for coord in vector)
 
@@ -91,7 +86,6 @@ def manhattan_distance(list_a, list_b):
 
     :return: the l1 distance between the two list
     :rtype: float
-
     """
     # faster than numpy
     return l1_norm(diff_list(list_a, list_b))
@@ -109,7 +103,6 @@ def euclidian_distance(list_a, list_b):
 
     :return: the l2 distance between the two list
     :rtype: float
-
     """
     # faster than numpy for len = 20000, nearly the same for len = 2000
     return l2_norm(diff_list(list_a, list_b))
@@ -129,7 +122,6 @@ def minkowski_distance(list_a, list_b, mink_power = 2):
 
     :return: the Minkowski distance between the two list
     :rtype: float
-
     """
     # faster than sum((a - b)**p for a, b in zip(list_a, list_b))**(1/p)
     return lp_norm(npy.array(list_a)-npy.array(list_b), mink_power=mink_power)
@@ -143,7 +135,6 @@ def mean(vector):
 
     :return: the mean of vector
     :rtype: float
-
     """
     return sum(vector)/len(vector)
 
@@ -156,7 +147,6 @@ def variance(vector):
 
     :return: the variance of vector
     :rtype: float
-
     """
     # faster than euclidian_distance(vector, [mean(vector)] * len(vector))**2 / len(vector)
     return float(npy.var(vector))
@@ -173,7 +163,6 @@ def covariance(vector_x, vector_y):
 
     :return: the covariance between vector_x and vector_y
     :rtype: float
-
     """
     # nearly as fast as numpy
     if len(vector_x) != len(vector_y):
@@ -197,7 +186,6 @@ def covariance_matrix(matrix):
     >>> for row in cov_matrix[:2]: print(row[:2])
     [70.58986267712706, -0.6737370735267286]
     [-0.6737370735267286, 0.011008722272395539]
-
     """
     return npy.cov(matrix, dtype=float).tolist()
 
@@ -210,7 +198,6 @@ def std(vector):
 
     :return: the standard deviation of vector
     :rtype: float
-
     """
     # faster than euclidian_distance(vector, [mean(vector)] * len(vector)) / math.sqrt(len(vector))
     return float(npy.std(vector))
@@ -234,7 +221,6 @@ def mahalanobis_distance(list_a, list_b, cov_matrix):
 
     :return: the Mahalanobis distance between the two list
     :rtype: float
-
     """
     inv_cov_matrix = npy.linalg.pinv(cov_matrix)
     return mahalanobis(list_a, list_b, inv_cov_matrix)
