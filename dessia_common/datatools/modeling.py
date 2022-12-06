@@ -1,6 +1,5 @@
 """
 Tools and base classes for machine learning methods.
-
 """
 from typing import List, Dict, Any, Tuple, Union
 
@@ -14,10 +13,7 @@ from dessia_common.core import DessiaObject
 #                                                     S C A L E R S
 # ======================================================================================================================
 class Scaler(DessiaObject):
-    """
-    Base object for handling a scikit-learn Scaler.
-
-    """
+    """Base object for handling a scikit-learn Scaler."""
     _rebuild_attributes = []
 
     def __init__(self, name: str = ''):
@@ -31,10 +27,7 @@ class Scaler(DessiaObject):
         return self._skl_class()()
 
     def instantiate_skl(self):
-        """
-        Instantiate scikit-learn Scaler from Scaler object, or children.
-
-        """
+        """Instantiate scikit-learn Scaler from Scaler object, or children."""
         scaler = self._call_skl_scaler()
         for attr in self._rebuild_attributes:
             setattr(scaler, attr, getattr(self, attr))
@@ -42,10 +35,7 @@ class Scaler(DessiaObject):
 
     @classmethod
     def instantiate_dessia(cls, scaler, name: str = '') -> 'Scaler':
-        """
-        Instantiate Scaler object, or children, from scikit-learn scaler.
-
-        """
+        """Instantiate Scaler object, or children, from scikit-learn scaler."""
         kwargs = {attr: get_scaler_attr(scaler, attr) for attr in cls._rebuild_attributes}
         kwargs["name"] = name
         return cls(**kwargs)
@@ -65,7 +55,6 @@ class Scaler(DessiaObject):
 
         :return: The Scaler or children (DessiaObject) fit on matrix.
         :rtype: Scaler
-
         """
         scaler = cls._skl_class()()
         scaler.fit(matrix)
@@ -81,7 +70,6 @@ class Scaler(DessiaObject):
 
         :return: The scaled matrix according to the rules set of scaler.
         :rtype: List[List[float]]
-
         """
         scaler = self.instantiate_skl()
         return scaler.transform(matrix).tolist()
@@ -90,7 +78,6 @@ class Scaler(DessiaObject):
     def fit_transform(cls, matrix: List[List[float]], name: str = '') -> Tuple['Scaler', List[List[float]]]:
         """
         Fit scaler with data stored in matrix and transform it. It is the succession of fit and transform methods.
-
         """
         scaler = cls.fit(matrix, name)
         return scaler, scaler.transform(matrix)
@@ -111,7 +98,6 @@ class StandardScaler(Scaler):
     :param var_:
         List of variances
     :type var_: List[float], `optional`, defaults to `None`
-
     """
     _rebuild_attributes = ['mean_', 'scale_', 'var_']
     _standalone_in_db = True
@@ -130,7 +116,6 @@ class StandardScaler(Scaler):
 class IdentityScaler(StandardScaler):
     """
     Data scaler that scales nothing.
-
     """
     def __init__(self, mean_: List[float] = None, scale_: List[float] = None, var_: List[float] = None, name: str = ''):
         StandardScaler.__init__(self, mean_=mean_, scale_=scale_, var_=var_, name=name)
@@ -686,7 +671,6 @@ class DecisionTreeRegressor(Model):
 
         :return: The DecisionTreeRegressor model fit on inputs and outputs.
         :rtype: DecisionTreeRegressor
-
         """
         criterion = cls._check_criterion(criterion)
         return cls.fit_(inputs, outputs, name=name, criterion=criterion, max_depth=max_depth)
@@ -696,8 +680,7 @@ class DecisionTreeRegressor(Model):
                     criterion: str = 'squared_error', max_depth: int = None,
                     name: str = '') -> Tuple['DecisionTreeRegressor', Union[List[float], List[List[float]]]]:
         """
-        Fit outputs to inputs and predict outputs for predicted_inputs. It is the succession of fit and predict methods.
-
+        Succession of fit and predict methods: fit outputs to inputs and predict outputs for predicted_inputs.
         """
         criterion = cls._check_criterion(criterion)
         return cls.fit_predict_(inputs, outputs, predicted_inputs, name=name, criterion=criterion, max_depth=max_depth)
