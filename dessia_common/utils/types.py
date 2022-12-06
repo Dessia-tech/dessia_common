@@ -32,6 +32,10 @@ _PYTHON_CLASS_CACHE = {}
 
 
 def full_classname(object_, compute_for: str = 'instance'):
+    """
+    Get full class name of object_ (module + classname).
+
+    """
     if compute_for == 'instance':
         return object_.__class__.__module__ + '.' + object_.__class__.__name__
     if compute_for == 'class':
@@ -45,6 +49,10 @@ def full_classname(object_, compute_for: str = 'instance'):
 
 
 def is_classname_transform(string: str):
+    """
+    Check if string is classname and return class if yes.
+
+    """
     if '.' in string:
         split_string = string.split('.')
         if len(split_string) >= 2:
@@ -345,7 +353,8 @@ def is_bson_valid(value, allow_nonstring_keys=False) -> Tuple[bool, str]:
 
 def recursive_type(obj):
     """
-    What is the difference with serialize typing?
+    What is the difference with serialize typing (?).
+
     """
 
     if isinstance(obj, tuple(list(TYPING_EQUIVALENCES.keys()) + [dict])):
@@ -368,8 +377,10 @@ def recursive_type(obj):
 def union_is_default_value(typing_: Type) -> bool:
     """
     Union typings can be False positives.
+
     An argument of a function that has a default_value set to None is Optional[T],
     which is an alias for Union[T, NoneType]. This function checks if this is the case.
+
     """
     args = get_args(typing_)
     return len(args) == 2 and type(None) in args
@@ -404,7 +415,8 @@ def typematch(type_: Type, match_against: Type) -> bool:
 
 def complex_first_type_match(type_: Type, match_against: Type) -> bool:
     """
-    Match type when type_ is a complex typing (List, Union, Tuple,...)
+    Match type when type_ is a complex typing (List, Union, Tuple,...).
+
     """
     # Complex typing for the first type_. Cases : List, Tuple, Union
     if not is_typing(match_against):
@@ -443,7 +455,7 @@ def complex_first_type_match(type_: Type, match_against: Type) -> bool:
 
 def heal_type(type_: Type):
     """
-    Inspect type and returns its params
+    Inspect type and returns its params.
 
     For now, only checks wether the type is an 'Optional' / Union[T, NoneType],
     which should be flattened and not considered
@@ -463,7 +475,8 @@ def heal_type(type_: Type):
 
 def particular_typematches(type_: Type, match_against: Type) -> bool:
     """
-    Checks for specific cases of typematches and returns and boolean
+    Checks for specific cases of typematches and returns and boolean.
+
     """
     if type_ is int and match_against is float:
         return True

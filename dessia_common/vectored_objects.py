@@ -15,12 +15,14 @@ from dessia_common import DessiaObject, Parameter, DessiaFilter
 
 class ParetoSettings(DessiaObject):
     """
-    :param minimized_attributes: A dictionary containing the name of a variable as key
-                                 and a boolean for minimization as value.
+    :param minimized_attributes:
+        A dictionary containing the name of a variable as key and a boolean for minimization as value.
     :param enabled: List of strings representing ordered variables names.
     :type enabled: bool
+
     :param name: The name of the block.
     :type name: str
+
     """
     _generic_eq = True
     _ordered_attributes = ['name', 'enabled', 'minimized_attributes']
@@ -46,9 +48,7 @@ class ObjectiveSettings(DessiaObject):
 class Objective(DessiaObject):
     """
     Defines an objective function.
-
-    Order is kept. It means that coefficients are applied to the variables
-    in the same order as they are defined.
+    Order is kept. It means that coefficients are applied to the variables in the same order as they are defined.
     """
     _generic_eq = True
     _standalone_in_db = False
@@ -243,7 +243,8 @@ class Catalog(DessiaObject):
     @classmethod
     def from_csv(cls, file: StringIO, end: int = None, remove_duplicates: bool = False):
         """
-        Generates MBSEs from given .csv file.
+        Generate MBSEs from given .csv file.
+
         """
         array = np.genfromtxt(file, dtype=None, delimiter=',', names=True, encoding=None)
         variables = list(array.dtype.fields.keys())
@@ -258,15 +259,16 @@ class Catalog(DessiaObject):
 
     def export_csv(self, attribute_name: str, indices: List[int], file: str):
         """
-        Exports a reduced list of objects to .csv file
+        Export a reduced list of objects to .csv file.
 
-        :param attribute_name: Name of the attribute
-                               in which the list is stored
+        :param attribute_name: Name of the attribute in which the list is stored
         :type attribute_name: str
-        :param indices: List of integers that represents selected
-                        indices of object in attribute_name sequence
+
+        :param indices: List of integers that represents selected indices of object in attribute_name sequence
         :type indices: [int]
+
         :param file: Target file
+
         """
         attribute = getattr(self, attribute_name)
         lines = [attribute[i] for i in indices]
@@ -276,13 +278,14 @@ class Catalog(DessiaObject):
 
     def parameters(self, variables: List[str]) -> List[Parameter]:
         """
-        Computes Parameter objects from catalog structural data
+        Computes Parameter objects from catalog structural data.
 
-        :param variables: List of string. Names of arguments of which
-                         it should create a parameter.
+        :param variables:
+            List of string. Names of arguments of which it should create a parameter.
         :type variables: [string]
 
         :return: List of Parameter objects
+
         """
         parameters = []
         for variable in variables:
@@ -328,6 +331,7 @@ class Catalog(DessiaObject):
         All put together build_costs method results in a numpy array :
 
         :return: A(n_points, n_costs)
+
         """
         params = list(pareto_settings.minimized_attributes.keys())
         pareto_parameters = self.parameters(params)
@@ -347,7 +351,8 @@ class Catalog(DessiaObject):
     def random_2d(cls, bounds: Dict[str, List[float]], threshold: float,
                   end: float = 500, name='Random Set'):
         """
-        This method is for dev purpose. It can be removed if needed
+        This method is for dev purpose. It can be removed if needed.
+
         """
         array = []
         variables = list(bounds.keys())
@@ -496,7 +501,8 @@ class Catalog(DessiaObject):
 
 def from_csv(filename: str, end: int = None, remove_duplicates: bool = False):
     """
-    Generates MBSEs from given .csv file.
+    Generate MBSEs from given .csv file.
+
     """
     array = np.genfromtxt(filename, dtype=None, delimiter=',', names=True, encoding=None)
     variables = list(array.dtype.fields.keys())
@@ -511,9 +517,11 @@ def from_csv(filename: str, end: int = None, remove_duplicates: bool = False):
 
 def pareto_frontier(costs):
     """
-    Find the pareto-efficient points
+    Find the pareto-efficient points.
+
     :return: A (n_points, ) boolean array, indicating whether each point
              is Pareto efficient
+
     """
     is_efficient = np.ones(costs.shape[0], dtype=bool)
     for index, cost in enumerate(costs):

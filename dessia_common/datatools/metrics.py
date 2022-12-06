@@ -25,7 +25,7 @@ def diff_list(list_a, list_b):
 
 def l1_norm(vector):
     """
-    l1-norm of vector.
+    L1-norm of vector.
 
     :param vector: vector to get norm
     :type vector: List[float]
@@ -38,7 +38,7 @@ def l1_norm(vector):
 
 def l2_norm(vector):
     """
-    l2-norm of vector.
+    L2-norm of vector.
 
     :param vector: vector to get norm
     :type vector: List[float]
@@ -217,8 +217,10 @@ def std(vector):
 
 def mahalanobis_distance(list_a, list_b, cov_matrix):
     """
-    Compute the Mahalanobis distance between list_a and list_b. This method computes distances considering the scale \
-    and the data repartition on each dimension (covariance matrix). It is adviced to use this method to compute \
+    Compute the Mahalanobis distance between list_a and list_b.
+
+    This method computes distances considering the scale
+    and the data repartition on each dimension (covariance matrix). It is adviced to use this method to compute
     distances in spaces constituted of very different dimensions in terms of scale and data repartition.
 
     :param list_a: First list

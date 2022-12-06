@@ -17,7 +17,8 @@ from dessia_common.utils.types import is_sequence
 
 def attrmethod_getter(object_, attr_methods):
     """
-    Float with . in attributes are not handled
+    Float with . in attributes are not handled.
+
     """
     # TODO: escape . inside ()
     for segment in attr_methods.split('.'):
@@ -164,7 +165,8 @@ def breakdown(obj, path=''):
 
 def object_breakdown(obj, path=''):
     """
-    Return breakdown dict of object (no preliminary checks)
+    Return breakdown dict of object (no preliminary checks).
+
     """
     if path:
         path += '.'
@@ -202,17 +204,16 @@ def deep_getsizeof(obj, ids=None):
     """
     Find the memory footprint of a Python object.
 
-    This is a recursive function that drills down a Python object graph
-    like a dictionary holding nested dictionaries with lists of lists
-    and tuples and sets.
+    This is a recursive function that drills down a Python object graph like a dictionary holding nested
+    dictionaries with lists of lists and tuples and sets.
 
-    The sys.getsizeof function does a shallow size of only. It counts each
-    object inside a container as pointer only regardless of how big it
-    really is.
+    The sys.getsizeof function does a shallow size of only. It counts each object inside a container as
+    pointer only regardless of how big it really is.
 
     :param obj: the object
     :param ids:
     :return:
+
     """
 
     if ids is None:
@@ -242,7 +243,8 @@ def deep_getsizeof(obj, ids=None):
 
 def breakdown_analysis(obj):
     """
-    Returns an analysis of the structure of the object
+    Returns an analysis of the structure of the object.
+
     """
     obj_breakdown = object_breakdown(obj)
 

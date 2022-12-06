@@ -73,7 +73,7 @@ MAX_ERROR_BY_TYPE = {
 
 error_detected = False
 error_over_ratchet_limit = False
-ratchet_limit = 9
+ratchet_limit = 500
 effective_date = date(2022, 11, 28)
 today = date.today()
 weekly_decrease = 5
