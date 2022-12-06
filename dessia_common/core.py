@@ -631,11 +631,13 @@ class DessiaObject:
                 pass
             raise dessia_common.errors.CopyError('Object is not equal to itself after copy')
 
+        print("\n=== CHECKING BSON VALIDATY ===")
         valid, hint = is_bson_valid(stringify_dict_keys(dict_))
         if not valid:
             raise ValueError(hint)
         json.dumps(self._displays())
-        json.dumps(self._method_jsonschemas)
+        print("Displays OK")
+
 
     def to_xlsx(self, filepath: str):
         """
