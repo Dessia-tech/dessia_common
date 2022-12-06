@@ -18,7 +18,6 @@ from dessia_common.utils.types import is_sequence
 def attrmethod_getter(object_, attr_methods):
     """
     Float with . in attributes are not handled.
-
     """
     # TODO: escape . inside ()
     for segment in attr_methods.split('.'):
@@ -166,7 +165,6 @@ def breakdown(obj, path=''):
 def object_breakdown(obj, path=''):
     """
     Return breakdown dict of object (no preliminary checks).
-
     """
     if path:
         path += '.'
@@ -213,7 +211,6 @@ def deep_getsizeof(obj, ids=None):
     :param o: the object
     :param ids:
     :return:
-
     """
 
     if ids is None:
@@ -244,7 +241,6 @@ def deep_getsizeof(obj, ids=None):
 def breakdown_analysis(obj):
     """
     Returns an analysis of the structure of the object.
-
     """
     obj_breakdown = object_breakdown(obj)
 
