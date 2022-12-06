@@ -13,9 +13,9 @@ except ImportError:
     pass
 import dessia_common.core as dc
 
+
 class CategorizedList(dc.HeterogeneousList):
     _allowed_methods = ['from_agglomerative_clustering', 'from_kmeans', 'from_dbscan']
-
 
     def __init__(self, dessia_objects: List[dc.DessiaObject] = None, labels: List[int] = None, name: str = ''):
         dc.HeterogeneousList.__init__(self, dessia_objects=dessia_objects, name=name)
@@ -58,7 +58,6 @@ class CategorizedList(dc.HeterogeneousList):
             # (label if label != -1 else "Excluded") plot_data "Excluded" -> NaN
         return _plot_data_list
 
-
     def _point_families(self):
         colormap = plt.cm.get_cmap('hsv', self.n_clusters + 1)(range(self.n_clusters + 1))
         point_families = []
@@ -73,12 +72,10 @@ class CategorizedList(dc.HeterogeneousList):
             point_families.append(plot_data.core.PointFamily(color, points_index))
         return point_families
 
-
     @classmethod
     def from_agglomerative_clustering(cls, data: dc.HeterogeneousList, n_clusters: int = 2,
                                       affinity: str = 'euclidean', linkage: str = 'ward',
                                       distance_threshold: float = None, scaling: bool = False):
-
         """
         Internet doc
         ----------
@@ -149,7 +146,6 @@ class CategorizedList(dc.HeterogeneousList):
     @classmethod
     def from_kmeans(cls, data: dc.HeterogeneousList, n_clusters: int = 2,
                     n_init: int = 10, tol: float = 1e-4, scaling: bool = False):
-
         """
         Internet doc
         ----------
@@ -194,7 +190,6 @@ class CategorizedList(dc.HeterogeneousList):
     @classmethod
     def from_dbscan(cls, data: dc.HeterogeneousList, eps: float = 0.5, min_samples: int = 5, mink_power: float = 2,
                     leaf_size: int = 30, metric: str = "euclidean", scaling: bool = False):
-
         """
         Internet doc
         ----------

@@ -129,7 +129,7 @@ class DessiaObject:
 
     def __hash__(self):
         """
-        Compute a int from object
+        Compute an int from object
         """
         if self._eq_is_data_eq:
             return self._data_hash()
@@ -722,11 +722,22 @@ class PhysicalObject(DessiaObject):
     def babylonjs(self, use_cdn=True, debug=False, **kwargs):
         """
         Show the 3D volmdlr of an object by calling volmdlr_volume_model method
-        and plot in in browser
+        and plot in browser
         """
         self.volmdlr_volume_model(**kwargs).babylonjs(use_cdn=use_cdn, debug=debug)
 
     def save_babylonjs_to_file(self, filename: str = None, use_cdn: bool = True, debug: bool = False, **kwargs):
+        """
+        Saves the 3D volmdlr of an object in a file.
+
+        :param filename: The file's name. Default value is None
+        :type filename: str, optional
+        :param use_cdn: Activates the use of a content delivery network.
+            Default value is True
+        :type use_cdn: bool, optional
+        :param debug: Activates the debug mode. Default value is False
+        :type debug: bool, optional
+        """
         self.volmdlr_volume_model(**kwargs).save_babylonjs_to_file(filename=filename, use_cdn=use_cdn, debug=debug)
 
     def _export_formats(self):
@@ -1048,7 +1059,8 @@ class DessiaFilter(DessiaObject):
 
 
 def dict_merge(old_dct, merge_dct, add_keys=True, extend_lists=True):
-    """ Recursive dict merge. Inspired by :meth:``dict.update()``, instead of
+    """
+    Recursive dict merge. Inspired by :meth:``dict.update()``, instead of
     updating only top-level keys, dict_merge recurses down into dicts nested
     to an arbitrary depth, updating keys. The ``merge_dct`` is merged into
     ``dct``.
@@ -1060,15 +1072,17 @@ def dict_merge(old_dct, merge_dct, add_keys=True, extend_lists=True):
     present in ``merge_dct`` but not ``dct`` should be included in the
     new dict.
 
-    Args:
-        old_dct (dict) onto which the merge is executed
-        merge_dct (dict): dct merged into dct
-        add_keys (bool): whether to add new keys
-        extend_lists (bool) : wether to extend lists if keys are updated
-                              and value is a list
-
-    Returns:
-        dict: updated dict
+    :param old_dct: Onto which the merge is executed
+    :type old_dct: Dict
+    :param merge_dct: Dct merged into dct
+    :type merge_dct: Dict
+    :param add_keys: Whether to add new keys. Default value is True
+    :type add_keys: bool, optional
+    :param extend_lists: Whether to extend lists if keys are updated and
+        value is a list. Default value is True
+    :type extend_lists: bool, optional
+    :return: Updated dict
+    :rtype: Dict
     """
     dct = deepcopy(old_dct)
     if not add_keys:

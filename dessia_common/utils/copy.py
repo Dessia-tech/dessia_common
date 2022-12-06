@@ -10,6 +10,13 @@ from dessia_common.utils.types import is_sequence, is_typing
 
 
 def deepcopy_value(value, memo):
+    """
+    Returns the deepcopy of a value.
+
+    :param value: The value to be deepcopied
+    :param memo: A dictionary linking a path to an object
+    :return: A deepcopy of the value
+    """
 
     if isinstance(value, type) or is_typing(value):  # For class
         return value

@@ -195,7 +195,8 @@ def object_breakdown(obj, path=''):
 
 
 def deep_getsizeof(obj, ids=None):
-    """Find the memory footprint of a Python object
+    """
+    Find the memory footprint of a Python object.
 
     This is a recursive function that drills down a Python object graph
     like a dictionary holding nested dictionaries with lists of lists
@@ -205,7 +206,7 @@ def deep_getsizeof(obj, ids=None):
     object inside a container as pointer only regardless of how big it
     really is.
 
-    :param o: the object
+    :param obj: the object
     :param ids:
     :return:
     """

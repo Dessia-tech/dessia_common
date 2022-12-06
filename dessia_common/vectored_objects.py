@@ -48,7 +48,7 @@ class ObjectiveSettings(DessiaObject):
 
 class Objective(DessiaObject):
     """
-    Defines an objective function
+    Defines an objective function.
 
     Order is kept. It means that coefficients are applied to the variables
     in the same order as they are defined.
@@ -82,7 +82,7 @@ class Objective(DessiaObject):
     @classmethod
     def coefficients_from_angles(cls, angles: List[float]) -> List[float]:
         """
-        compute coefficients from n-1 angles
+        Computes coefficients from n-1 angles.
         """
         n = len(angles) + 1
         matrix = np.identity(n)
@@ -122,7 +122,7 @@ class Objective(DessiaObject):
 
 class Catalog(DessiaObject):
     """
-    Defines a Catalog object that gathers a collection of VectoredObjects
+    Defines a Catalog object that gathers a collection of VectoredObjects.
 
     TODO Update Docstring
     :param objectives: List of objectives to apply to
