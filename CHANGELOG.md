@@ -8,8 +8,82 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 
 ### Fixed
+- Diff Dict is now robust to uneven arguments commutation
+- Fix path deepth when dict misses keys
 
+## v0.10.2
+
+- non serializable attributes were not working
+- wrong import to sklearn -> scikit-learn
+
+## v0.10.1
+
+### Fixed
+- jsonschema bug
+- time rendering on workflow
+
+## v0.10.0
+
+### Added
+- Generic save to file
+- Sampler class
+- (De)Serialization handles 'typing.Type'
+- Workflow: handle position in to_dict / dict_to_object process
+- sub_matrix method to Dataset
+
+
+### Breaking Changes
+- Measures moved to dessia_common.measures
+- HeterogeneousList becomes Dataset
+- CategorizedList becomes ClusteredDataset
+- Change file organization for datatools:
+    * File datatools.py becomes directory datatools
+    * class Dataset is now coded in file dataset.py
+    * class ClusteredDataset is now coded in file cluster.py
+    * class Sampler is now coded in file sampling.py
+    * Metrics function are now coded in file metrics.py
+- Retrocompatibility is supported for the present time, with a big warning
+- pareto methods of datatools are now called with a list of attributes and not anymore a costs matrix
+
+
+### Changes
+- Workflow: improve layout method
+
+### Performance
+- switch is_jsonable to orjson
+
+### Fixed
+- Workflow: improve to_script
+
+
+## v0.10.0 [9/26/2022]
+
+### Added
+- FiltersList class
+- Easy access to Dataset with getitem, len, add, extend, sort
+- filtering method in Dataset that calls a FiltersList
+- Documentation for Dataset (previously HeterogeneousList), ClusteredDataset (previously CategorizedList), DessiaFilter, FiltersList
+- pareto front and parallel plot for Dataset
+- Sort parallel plot axis with correlation coefficient (experimental algorithm that seems to work)
+- Metrics for Dataset (previously HeterogeneousList) and ClusteredDataset (previously CategorizedList)
+- Centroids for ClusteredDataset (previously CategorizedList)
+- Nearly all required tests for all these developments
+
+### Breaking Changes
+- Change attribute "operator" of DessiaFilter to "comparison_operator"
+- Change name of file "cluster.py" to "datatools.py"
+- Move Dataset in "datatools.py"
+
+### Changes
+- Add 'logical_operator="and"' attribute to workflow.block.Filter
+- Improve workflow._data_eq
+
+### Performance
+- DessiaFilters and FiltersList: A priori optimized access to elements so it is really faster than before
+
+### Fixed
 - Excel Export now used proper length of the cell value
+- Fix workflow.copy() issue where a nbv with several pipes became several nbv with one pipe  
 
 ## v0.9.0 [7/20/2022]
 

@@ -8,6 +8,7 @@ Code for breakdowns
 import sys
 from ast import literal_eval
 import collections
+import collections.abc
 import numpy as npy
 
 import dessia_common
@@ -36,7 +37,7 @@ class ExtractionError(Exception):
     pass
 
 
-def extract_from_object(object_, segment):
+def extract_segment_from_object(object_, segment: str):
     if is_sequence(object_):
         try:
             return object_[int(segment)]
@@ -76,21 +77,24 @@ def extract_from_object(object_, segment):
     return getattr(object_, segment)
 
 
-def get_in_object_from_path(object_, path):
+def get_in_object_from_path(object_, path, evaluate_pointers=True):
     segments = path.lstrip('#/').split('/')
     element = object_
     for segment in segments:
         if isinstance(element, dict) and '$ref' in element:
             # Going down in the object and it is a reference
             # Evaluating subreference
-            try:
-                element = get_in_object_from_path(object_, element['$ref'])
-            except RecursionError as err:
-                err_msg = f'Cannot get segment {segment} from path {path} in element {str(element)[:500]}'
-                raise RecursionError(err_msg) from err
+            if evaluate_pointers:
+                try:
+                    element = get_in_object_from_path(object_, element['$ref'])
+                except RecursionError as err:
+                    err_msg = f'Cannot get segment {segment} from path {path} in element {str(element)[:500]}'
+                    raise RecursionError(err_msg) from err
+
         try:
-            element = extract_from_object(element, segment)
+            element = extract_segment_from_object(element, segment)
         except ExtractionError as err:
+
             err_msg = f'Cannot get segment {segment} from path {path} in element {str(element)[:500]}'
             raise ExtractionError(err_msg) from err
 
@@ -227,16 +231,19 @@ def deep_getsizeof(obj, ids=None):
     # if isinstance(o, collections.Mapping):
     #     return r + sum(d(k, ids) + d(v, ids) for k, v in o.items())
 
-    if isinstance(obj, collections.Mapping):
+    if isinstance(obj, collections.abc.Mapping):
         return result + sum(dgso(k, ids) + dgso(v, ids) for k, v in obj.items())
 
-    if isinstance(obj, collections.Container):
+    if isinstance(obj, collections.abc.Container):
         return result + sum(dgso(x, ids) for x in obj.__dict__.values())
 
     return result
 
 
 def breakdown_analysis(obj):
+    """
+    Returns an analysis of the structure of the object
+    """
     obj_breakdown = object_breakdown(obj)
 
     stats = {}

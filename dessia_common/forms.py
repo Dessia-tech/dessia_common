@@ -26,8 +26,9 @@ coding/naming style & convention.
 """
 
 from math import floor, ceil, cos
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Tuple, Union, Any
 from numpy import linspace
+import time
 
 try:
     import volmdlr as vm
@@ -39,30 +40,51 @@ except ImportError:
     pass
 
 from dessia_common import DessiaObject, PhysicalObject, MovingObject
-from dessia_common.typings import InstanceOf, Distance
+from dessia_common.typings import InstanceOf
 from dessia_common.vectored_objects import Catalog
-
+from dessia_common.measures import Distance
+from dessia_common.exports import MarkdownWriter
 
 from dessia_common.files import BinaryFile, StringFile
 
 
-class StandaloneSubobject(PhysicalObject):
-    _standalone_in_db = True
-    _generic_eq = True
+class EmbeddedBuiltinsSubobject(PhysicalObject):
+    """
+    An object that is not standalone and gather builtins types (float, int, bool, str & Distance).
 
-    def __init__(self, floatarg: Distance, name: str = 'Standalone Subobject'):
+    :param distarg: A Distance with units
+    :type distarg: Distance
+    :param floatarg: A float
+    :type floatarg: float
+    :param intarg: An integer
+    :type intarg: int
+    :param boolarg: A boolean
+    :type boolarg: bool
+    :param name: Object's name
+    :type name: str
+    """
+    _standalone_in_db = False
+
+    def __init__(self, distarg: Distance, floatarg: float, intarg: int,
+                 boolarg: bool, name: str = 'Standalone Subobject'):
+        self.distarg = distarg
         self.floatarg = floatarg
+        self.intarg = intarg
+        self.boolarg = boolarg
 
         PhysicalObject.__init__(self, name=name)
 
     @classmethod
-    def generate(cls, seed: int) -> 'StandaloneSubobject':
-        floatarg = Distance(1.7 * seed)
+    def generate(cls, seed: int) -> 'EmbeddedBuiltinsSubobject':
+        floatarg = 0.3
+        distarg = Distance(1.7 * floatarg * seed)
+        intarg = seed
+        boolarg = bool(seed % 2)
         name = 'StandaloneSubobject' + str(seed)
-        return cls(floatarg=floatarg, name=name)
+        return cls(distarg=distarg, floatarg=floatarg, intarg=intarg, boolarg=boolarg, name=name)
 
     @classmethod
-    def generate_many(cls, seed: int) -> List['StandaloneSubobject']:
+    def generate_many(cls, seed: int) -> List['EmbeddedBuiltinsSubobject']:
         subobjects = [cls.generate((i + 1) * 1000) for i in range(seed)]
         return subobjects
 
@@ -74,7 +96,7 @@ class StandaloneSubobject(PhysicalObject):
         crls = p2d.ClosedRoundedLineSegments2D(points=points, radius={})
         return crls
 
-    def plot_data(self):
+    def plot_data(self, **kwargs):
         primitives = [plot_data.Text(comment="Test with text", position_x=0, position_y=0),
                       plot_data.Text(comment="Test with text", position_x=0, position_y=0)]
         primitives_group = plot_data.PrimitiveGroup(primitives=primitives)
@@ -86,48 +108,73 @@ class StandaloneSubobject(PhysicalObject):
         return volumes
 
 
-DEF_SS = StandaloneSubobject.generate(1)
+class StandaloneBuiltinsSubobject(EmbeddedBuiltinsSubobject):
+    """
+    Overwrites EmbeddedBuiltinsObject to make it standalone.
+
+    :param distarg: A Distance with units
+    :type distarg: Distance
+    :param floatarg: A float
+    :type floatarg: float
+    :param intarg: An integer
+    :type intarg: int
+    :param boolarg: A boolean
+    :type boolarg: bool
+    :param name: Object's name
+    :type name: str
+    """
+    _standalone_in_db = True
+
+    def __init__(self, distarg: Distance, floatarg: float, intarg: int,
+                 boolarg: bool, name: str = 'Standalone Subobject'):
+
+        EmbeddedBuiltinsSubobject.__init__(self, distarg=distarg, floatarg=floatarg,
+                                           intarg=intarg, boolarg=boolarg, name=name)
 
 
-class EnhancedStandaloneSubobject(StandaloneSubobject):
-    def __init__(self, floatarg: Distance, boolarg: bool,
-                 name: str = 'Standalone Subobject'):
-        self.boolarg = boolarg
+DEF_EBS = EmbeddedBuiltinsSubobject.generate(1)
+DEF_SBS = StandaloneBuiltinsSubobject.generate(1)
 
-        StandaloneSubobject.__init__(self, floatarg=floatarg, name=name)
+
+class EnhancedStandaloneSubobject(StandaloneBuiltinsSubobject):
+    def __init__(self, floatarg: Distance, name: str = 'Standalone Subobject'):
+        StandaloneBuiltinsSubobject.__init__(self, distarg=floatarg, floatarg=floatarg, intarg=floor(floatarg),
+                                             boolarg=floatarg.is_integer(), name=name)
 
     @classmethod
     def generate(cls, seed: int) -> 'EnhancedStandaloneSubobject':
         floatarg = Distance(1.2 * seed)
-        boolarg = floatarg.is_integer()
         name = 'EnhancedStandaloneSubobject' + str(seed)
-        return cls(floatarg=floatarg, boolarg=boolarg, name=name)
+        return cls(floatarg=floatarg, name=name)
 
 
 DEF_ESS = EnhancedStandaloneSubobject.generate(1)
 
 
-class InheritingStandaloneSubobject(StandaloneSubobject):
-    def __init__(self, floatarg: Distance, strarg: str,
+class InheritingStandaloneSubobject(StandaloneBuiltinsSubobject):
+    def __init__(self, distarg: Distance, floatarg: float, intarg: int, boolarg: bool, strarg: str,
                  name: str = 'Inheriting Standalone Subobject'):
         self.strarg = strarg
 
-        StandaloneSubobject.__init__(self, floatarg=floatarg, name=name)
+        StandaloneBuiltinsSubobject.__init__(self, distarg=distarg, floatarg=floatarg, intarg=intarg,
+                                             boolarg=boolarg, name=name)
 
     @classmethod
     def generate(cls, seed: int) -> 'InheritingStandaloneSubobject':
-        floatarg = Distance(0.7 * seed)
+        distarg = Distance(0.7 * seed)
+        floatarg = 0.1 * seed
         strarg = str(-seed)
+        intarg = seed * 3
+        boolarg = bool(intarg % 2)
         name = 'Inheriting Standalone Subobject' + str(seed)
-        return cls(floatarg=floatarg, strarg=strarg, name=name)
+        return cls(floatarg=floatarg, distarg=distarg, intarg=seed * 3, boolarg=boolarg, strarg=strarg, name=name)
 
 
 DEF_ISS = InheritingStandaloneSubobject.generate(1)
 
 
 class EmbeddedSubobject(DessiaObject):
-    def __init__(self, embedded_list: List[int] = None,
-                 name: str = 'Embedded Subobject'):
+    def __init__(self, embedded_list: List[int] = None, name: str = 'Embedded Subobject'):
         if embedded_list is None:
             self.embedded_list = [1, 2, 3]
         else:
@@ -187,23 +234,20 @@ class StandaloneObject(MovingObject):
     """
     _standalone_in_db = True
     _generic_eq = True
-    _allowed_methods = ['add_standalone_object', 'add_embedded_object',
+    _allowed_methods = ['add_standalone_object', 'add_embedded_object', "count_until",
                         'add_float', 'generate_from_text', 'generate_from_bin']
 
-    def __init__(self, standalone_subobject: StandaloneSubobject, embedded_subobject: EmbeddedSubobject,
+    def __init__(self, standalone_subobject: StandaloneBuiltinsSubobject, embedded_subobject: EmbeddedSubobject,
                  dynamic_dict: Dict[str, bool], float_dict: Dict[str, float], string_dict: Dict[str, str],
-                 tuple_arg: Tuple[str, int], intarg: int, strarg: str,
-                 object_list: List[StandaloneSubobject], subobject_list: List[EmbeddedSubobject],
-                 builtin_list: List[int], union_arg: List[UnionArg],
-                 subclass_arg: InstanceOf[StandaloneSubobject], array_arg: List[List[float]],
+                 tuple_arg: Tuple[str, int], object_list: List[StandaloneBuiltinsSubobject],
+                 subobject_list: List[EmbeddedSubobject], builtin_list: List[int], union_arg: List[UnionArg],
+                 subclass_arg: InstanceOf[StandaloneBuiltinsSubobject], array_arg: List[List[float]],
                  name: str = 'Standalone Object Demo'):
         self.union_arg = union_arg
         self.builtin_list = builtin_list
         self.subobject_list = subobject_list
         self.object_list = object_list
         self.tuple_arg = tuple_arg
-        self.strarg = strarg
-        self.intarg = intarg
         self.dynamic_dict = dynamic_dict
         self.float_dict = float_dict
         self.string_dict = string_dict
@@ -216,30 +260,22 @@ class StandaloneObject(MovingObject):
 
     @classmethod
     def generate(cls, seed: int, name: str = 'Standalone Object Demo') -> 'StandaloneObject':
-        is_even = not bool(seed % 2)
-        standalone_subobject = StandaloneSubobject.generate(seed)
-        embedded_subobject = EmbeddedSubobject.generate(seed)
         dynamic_dict = {'n' + str(i): bool(seed % 2) for i in range(seed)}
         float_dict = {'k' + str(i): seed * 1.09 for i in range(seed)}
         string_dict = {'key' + str(i): 'value' + str(i) for i in range(seed)}
-        tuple_arg = ('value', seed * 3)
-        intarg = seed
-        strarg = str(seed) * floor(seed / 3)
-        object_list = StandaloneSubobject.generate_many(seed)
-        subobject_list = EmbeddedSubobject.generate_many(seed)
         builtin_list = [seed] * seed
         array_arg = [builtin_list] * 3
-        union_arg = [EnhancedEmbeddedSubobject.generate(seed),
-                     EmbeddedSubobject.generate(seed)]
-        if is_even:
-            subclass_arg = StandaloneSubobject.generate(-seed)
+        union_arg = [EnhancedEmbeddedSubobject.generate(seed), EmbeddedSubobject.generate(seed)]
+        if not bool(seed % 2):
+            subclass_arg = StandaloneBuiltinsSubobject.generate(-seed)
         else:
             subclass_arg = InheritingStandaloneSubobject.generate(seed)
-        return cls(standalone_subobject=standalone_subobject, embedded_subobject=embedded_subobject,
-                   dynamic_dict=dynamic_dict, float_dict=float_dict, string_dict=string_dict, tuple_arg=tuple_arg,
-                   intarg=intarg, strarg=strarg, object_list=object_list, subobject_list=subobject_list,
-                   builtin_list=builtin_list, union_arg=union_arg, subclass_arg=subclass_arg,
-                   array_arg=array_arg, name=name)
+        return cls(standalone_subobject=StandaloneBuiltinsSubobject.generate(seed),
+                   embedded_subobject=EmbeddedSubobject.generate(seed),
+                   dynamic_dict=dynamic_dict, float_dict=float_dict, string_dict=string_dict,
+                   tuple_arg=('value', seed * 3), object_list=StandaloneBuiltinsSubobject.generate_many(seed),
+                   subobject_list=EmbeddedSubobject.generate_many(seed), builtin_list=builtin_list, union_arg=union_arg,
+                   subclass_arg=subclass_arg, array_arg=array_arg, name=name)
 
     @classmethod
     def generate_from_bin(cls, stream: BinaryFile):
@@ -258,7 +294,7 @@ class StandaloneObject(MovingObject):
         seed = int(raw_seed.strip())
         return cls.generate(seed=seed, name=my_file_name)
 
-    def add_standalone_object(self, object_: StandaloneSubobject):
+    def add_standalone_object(self, object_: StandaloneBuiltinsSubobject):
         """
         Adds a standalone object to object_list.
         It doesn't return anything, hence, API will update object when
@@ -274,7 +310,7 @@ class StandaloneObject(MovingObject):
         """
         self.subobject_list.append(object_)
 
-    def add_float(self, value: float) -> StandaloneSubobject:
+    def add_float(self, value: float) -> StandaloneBuiltinsSubobject:
         """
         Adds value to its standalone subobject
         floatarg property and returns it.
@@ -283,9 +319,13 @@ class StandaloneObject(MovingObject):
         self.standalone_subobject.floatarg += value
         return self.standalone_subobject
 
+    def append_union_arg(self, object_: UnionArg):
+        self.union_arg.append(object_)
+
     def contour(self):
-        points = [vm.Point2D(self.intarg, self.intarg), vm.Point2D(self.intarg, self.intarg + 1),
-                  vm.Point2D(self.intarg + 1, self.intarg + 1), vm.Point2D(self.intarg + 1, 0)]
+        intarg = self.standalone_subobject.intarg
+        points = [vm.Point2D(intarg, intarg), vm.Point2D(intarg, intarg + 1),
+                  vm.Point2D(intarg + 1, intarg + 1), vm.Point2D(intarg + 1, 0)]
 
         crls = p2d.ClosedRoundedLineSegments2D(points=points, radius={})
         return crls
@@ -308,40 +348,41 @@ class StandaloneObject(MovingObject):
         frame32 = frame22.translation(offset=vm.X3D)
         return [[frame0, frame0], [frame11, frame12], [frame21, frame22], [frame31, frame32]]
 
-    def plot_data(self):
+    @staticmethod
+    def scatter_plot():
         attributes = ['cx', 'cy']
+        tooltip = plot_data.Tooltip(attributes=attributes, name='Tooltips')
+        return plot_data.Scatter(axis=plot_data.Axis(), tooltip=tooltip, x_variable=attributes[0],
+                                 y_variable=attributes[1], name='Scatter Plot')
 
+    def plot_data(self, **kwargs):
         # Contour
         contour = self.standalone_subobject.contour().plot_data()
         primitives_group = plot_data.PrimitiveGroup(primitives=[contour], name='Contour')
 
-        # Scatter Plot
-        bounds = {'x': [0, 6], 'y': [100, 2000]}
-        catalog = Catalog.random_2d(bounds=bounds, threshold=8000)
+        catalog = Catalog.random_2d(bounds={'x': [0, 6], 'y': [100, 2000]}, threshold=8000)
         points = [plot_data.Point2D(cx=v[0], cy=v[1], name='Point' + str(i)) for i, v in enumerate(catalog.array)]
-        axis = plot_data.Axis()
-        tooltip = plot_data.Tooltip(attributes=attributes, name='Tooltips')
-        scatter_plot = plot_data.Scatter(axis=axis, tooltip=tooltip, x_variable=attributes[0],
-                                         y_variable=attributes[1], name='Scatter Plot')
+
+        # Scatter Plot
+        scatterplot = self.scatter_plot()
 
         # Parallel Plot
-        attributes = ['cx', 'cy', 'color_fill', 'color_stroke']
-        parallel_plot = plot_data.ParallelPlot(elements=points, axes=attributes, name='Parallel Plot')
+        parallelplot = plot_data.ParallelPlot(elements=points, axes=['cx', 'cy', 'color_fill', 'color_stroke'],
+                                              name='Parallel Plot')
 
         # Multi Plot
-        objects = [scatter_plot, parallel_plot]
+        objects = [scatterplot, parallelplot]
         sizes = [plot_data.Window(width=560, height=300), plot_data.Window(width=560, height=300)]
-        coords = [(0, 0), (300, 0)]
-        multi_plot = plot_data.MultiplePlots(elements=points, plots=objects, sizes=sizes,
-                                             coords=coords, name='Multiple Plot')
+        multiplot = plot_data.MultiplePlots(elements=points, plots=objects, sizes=sizes,
+                                            coords=[(0, 0), (300, 0)], name='Multiple Plot')
 
-        attribute_names = ['time', 'electric current']
+        attribute_names = ['timestep', 'electric current']
         tooltip = plot_data.Tooltip(attributes=attribute_names)
-        time1 = linspace(0, 20, 20)
-        current1 = [t ** 2 for t in time1]
+        timesteps = linspace(0, 20, 20)
+        current1 = [t ** 2 for t in timesteps]
         elements1 = []
-        for time, current in zip(time1, current1):
-            elements1.append({'time': time, 'electric current': current})
+        for timestep, current in zip(timesteps, current1):
+            elements1.append({'timestep': timestep, 'electric current': current})
 
         # The previous line instantiates a dataset with limited arguments but several customizations are available
         point_style = plot_data.PointStyle(color_fill=plot_data.colors.RED, color_stroke=plot_data.colors.BLACK)
@@ -351,18 +392,17 @@ class StandaloneObject(MovingObject):
                                            point_style=point_style, edge_style=edge_style)
 
         # Now let's create another dataset for the purpose of this exercice
-        time2 = linspace(0, 20, 100)
-        current2 = [100 * (1 + cos(t)) for t in time2]
+        timesteps = linspace(0, 20, 100)
+        current2 = [100 * (1 + cos(t)) for t in timesteps]
         elements2 = []
-        for time, current in zip(time2, current2):
-            elements2.append({'time': time, 'electric current': current})
+        for timestep, current in zip(timesteps, current2):
+            elements2.append({'timestep': timestep, 'electric current': current})
 
         dataset2 = plot_data.Dataset(elements=elements2, name='I2 = f(t)')
 
         graph2d = plot_data.Graph2D(graphs=[custom_dataset, dataset2],
                                     x_variable=attribute_names[0], y_variable=attribute_names[1])
-        return [primitives_group, scatter_plot,
-                parallel_plot, multi_plot, graph2d]
+        return [primitives_group, scatterplot, parallelplot, multiplot, graph2d]
 
     def maldefined_method(self, arg0, arg1=1, arg2: int = 10, arg3=3):
         """
@@ -376,6 +416,10 @@ class StandaloneObject(MovingObject):
         computation = nok_string + 'or' + ok_string
 
         return computation
+
+    # @staticmethod
+    # def method_with_faulty_typing(arg0: Iterator[int]):
+    #     return arg0
 
     def to_markdown(self):
         contents = """
@@ -450,7 +494,31 @@ class StandaloneObject(MovingObject):
         Sua qua ac ire una facit Alcmene coepere
         arduus quae vestigia aliquis; meritorum Dorylas, scindunt.
         """
+        contents += "\n## Attribute Table\n\n"
+        contents += MarkdownWriter(print_limit=25, table_limit=None).object_table(self)
         return contents
+
+    def count_until(self, duration: float, raise_error: bool = False):
+        """
+        A method which duration can be customized to test long execution
+
+        :param duration: Duration of the method in s
+        :type duration: float
+        :param raise_error: Wether the computation should raise an error or not at the end
+        :type raise_error: bool
+        """
+        starting_time = time.time()
+        current_time = time.time()
+        last_duration = round(current_time - starting_time)
+        while current_time - starting_time <= duration:
+            current_time = time.time()
+            current_duration = current_time - starting_time
+            if current_duration > last_duration + 1:
+                last_duration = round(current_time - starting_time)
+                print(round(current_duration))
+
+        if raise_error:
+            raise RuntimeError(f"Evaluation stopped after {duration}s")
 
 
 DEF_SO = StandaloneObject.generate(1)
@@ -459,18 +527,17 @@ DEF_SO = StandaloneObject.generate(1)
 class StandaloneObjectWithDefaultValues(StandaloneObject):
     _non_editable_attributes = ['intarg', 'strarg']
 
-    def __init__(self, standalone_subobject: StandaloneSubobject = DEF_SS,
+    def __init__(self, standalone_subobject: StandaloneBuiltinsSubobject = DEF_SBS,
                  embedded_subobject: EmbeddedSubobject = DEF_ES,
                  dynamic_dict: Dict[str, bool] = None,
                  float_dict: Dict[str, float] = None,
                  string_dict: Dict[str, str] = None,
                  tuple_arg: Tuple[str, int] = ("Default Tuple", 0),
-                 intarg: int = 1, strarg: str = "Default Strarg",
-                 object_list: List[StandaloneSubobject] = None,
+                 object_list: List[StandaloneBuiltinsSubobject] = None,
                  subobject_list: List[EmbeddedSubobject] = None,
                  builtin_list: List[int] = None,
                  union_arg: List[UnionArg] = None,
-                 subclass_arg: InstanceOf[StandaloneSubobject] = DEF_ISS,
+                 subclass_arg: InstanceOf[StandaloneBuiltinsSubobject] = DEF_ISS,
                  array_arg: List[List[float]] = None,
                  name: str = 'Standalone Object Demo'):
         if dynamic_dict is None:
@@ -480,7 +547,7 @@ class StandaloneObjectWithDefaultValues(StandaloneObject):
         if string_dict is None:
             string_dict = {}
         if object_list is None:
-            object_list = [DEF_SS]
+            object_list = [DEF_SBS]
         if subobject_list is None:
             subobject_list = [DEF_ES]
         if builtin_list is None:
@@ -492,13 +559,32 @@ class StandaloneObjectWithDefaultValues(StandaloneObject):
 
         StandaloneObject.__init__(self, standalone_subobject=standalone_subobject,
                                   embedded_subobject=embedded_subobject, dynamic_dict=dynamic_dict,
-                                  float_dict=float_dict, string_dict=string_dict, tuple_arg=tuple_arg, intarg=intarg,
-                                  strarg=strarg, object_list=object_list, subobject_list=subobject_list,
-                                  builtin_list=builtin_list, union_arg=union_arg, subclass_arg=subclass_arg,
-                                  array_arg=array_arg, name=name)
+                                  float_dict=float_dict, string_dict=string_dict, tuple_arg=tuple_arg,
+                                  object_list=object_list, subobject_list=subobject_list, builtin_list=builtin_list,
+                                  union_arg=union_arg, subclass_arg=subclass_arg, array_arg=array_arg, name=name)
 
 
 DEF_SOWDV = StandaloneObjectWithDefaultValues()
+
+# class ObjectWithFaultyTyping(DessiaObject):
+#     """
+#     Dummy class to test faulty typing jsonschema
+#     """
+#     def __init__(self, faulty_attribute: Iterator[int], name: str = ""):
+#         self.faulty_attribute = faulty_attribute
+#
+#         DessiaObject.__init__(self, name=name)
+
+
+class ObjectWithOtherTypings(DessiaObject):
+    """
+    Dummy class to test some typing jsonschemas
+    """
+
+    def __init__(self, undefined_type_attribute: Any, name: str = ""):
+        self.undefined_type_attribute = undefined_type_attribute
+
+        DessiaObject.__init__(self, name=name)
 
 
 class MovingStandaloneObject(MovingObject):
@@ -510,7 +596,7 @@ class MovingStandaloneObject(MovingObject):
 
     @classmethod
     def generate(cls, seed: int):
-        return cls(origin=1.3*seed, name=f"moving_{seed}")
+        return cls(origin=1.3 * seed, name=f"moving_{seed}")
 
     def contour(self):
         points = [vm.Point2D(self.origin, self.origin), vm.Point2D(self.origin, self.origin + 1),
@@ -584,8 +670,8 @@ class Optimizer(DessiaObject):
         :param optimization_value: value that will be added to model's intarg attribute
         :type optimization_value: int
         """
-        self.model_to_optimize.intarg += optimization_value
-        return self.model_to_optimize.intarg
+        self.model_to_optimize.standalone_subobject.intarg += optimization_value
+        return self.model_to_optimize.standalone_subobject.intarg
 
 
 class Container(DessiaObject):

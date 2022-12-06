@@ -42,7 +42,7 @@ suggestion-mode=yes
 
 # Allow loading of arbitrary C extensions. Extensions are imported into the
 # active Python interpreter and may run arbitrary code.
-unsafe-load-any-extension=no
+unsafe-load-any-extension=yes
 
 
 [MESSAGES CONTROL]
@@ -434,7 +434,7 @@ max-returns=6
 max-statements=50
 
 # Minimum number of public methods for a class (see R0903).
-min-public-methods=2
+min-public-methods=1
 
 
 [IMPORTS]

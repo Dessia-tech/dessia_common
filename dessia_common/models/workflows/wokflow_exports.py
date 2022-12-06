@@ -2,9 +2,8 @@
 Script for workflow with exports creationZ
 """
 
-from dessia_common.workflow import InstantiateModel, ModelMethod, TypedVariable,\
-    ModelAttribute, Pipe, Workflow, WorkflowBlock, ForEach, ExportJson, ExportExcel, \
-    Unpacker, Archive, MultiPlot
+from dessia_common.workflow import InstantiateModel, ModelMethod, TypedVariable, ModelAttribute, Pipe, Workflow,\
+    WorkflowBlock, ForEach, Export, Unpacker, Archive, MultiPlot
 from dessia_common.forms import Generator, Optimizer, StandaloneObject
 from dessia_common.typings import MethodType
 
@@ -39,8 +38,11 @@ display_ = MultiPlot(attributes=display_attributes, name='Display')
 
 unpack_results = Unpacker(indices=[0], name="Unpack Results")
 
-export_txt = ExportJson(model_class=Generator, name="Export JSON")
-export_xlsx = ExportExcel(model_class=StandaloneObject, name="Export XLSX")
+txt_method = MethodType(class_=Generator, name="save_to_stream")
+export_txt = Export(method_type=txt_method, text=True, filename="export_json", extension="json", name="Export JSON")
+xlsx_method = MethodType(class_=StandaloneObject, name="to_xlsx_stream")
+export_xlsx = Export(method_type=xlsx_method, text=False, filename="export_xlsx",
+                     extension="xlsx", name="Export XLSX")
 
 zip_export = Archive(number_exports=2, name="Zip")
 

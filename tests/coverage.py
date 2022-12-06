@@ -8,16 +8,15 @@ Created on Wed Sep 29 14:35:47 2021
 
 import json
 
-MIN_MODULE_COVERAGE = 51.
-MIN_GLOBAL_COVERAGE = 78.4
+MIN_MODULE_COVERAGE = 60.
+MIN_GLOBAL_COVERAGE = 80.0
+
 RATCHET_COVERAGE = 3.
 
 untracked_modules = ["dessia_common/templates.py",
                      "dessia_common/utils.py",
                      "dessia_common/optimization.py",
-                     'workflows/forms_simulation.py',
-                     'workflows/vectored_workflow.py',
-                     'models/tests.py']
+                     'workflows/forms_simulation.py']
 
 print("untracked modules:", untracked_modules)
 
@@ -43,8 +42,8 @@ for file_name, data in d['files'].items():
     else:
         # print('Testing if {} is above {}'.format(file_name, MIN_FILE_COVERAGE))
         if data['summary']['percent_covered'] < MIN_MODULE_COVERAGE:
-            raise RuntimeError("Module {file_name} is not covered enough by tests: \
-                               {data['summary']['percent_covered']}% expected minimum {MIN_MODULE_COVERAGE}%")
+            raise RuntimeError(f"Module {file_name} is not covered enough by tests: \
+                                {data['summary']['percent_covered']}% expected minimum {MIN_MODULE_COVERAGE}%")
         min_actual_coverage = min(
             min_actual_coverage, data['summary']['percent_covered'])
 

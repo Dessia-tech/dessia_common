@@ -4,12 +4,35 @@ type: docker
 name: default
 
 steps:
+- name: merge master on testing
+  image: alpine/git
+  when:
+    event: push 
+    branch: master
+  commands:
+  - git fetch origin testing
+  - git checkout testing
+  - git merge master
+  - git push
+
+- name: merge testing on dev
+  image: alpine/git
+  when:
+    event: push 
+    branch: testing
+  commands:
+  - git fetch origin dev
+  - git checkout dev
+  - git merge testing
+  - git push
+
 - name: check code complexity, docs & code quality
   image: python:3.8
   commands:
   - pip install radon pydocstyle pylint
   - ./code_quality.sh
   - python code_pylint.py
+  - python code_pydocstyle.py
 
 - name: check pep8 formatting
   image: python:3.8
@@ -17,7 +40,7 @@ steps:
     - git fetch --tags
     - pip3 install -U pip autopep8
     - bash code_pep8.sh
-        
+
 - name: install, run scripts and build doc
   image: python:3.8
   commands:
@@ -31,8 +54,8 @@ steps:
   - cd ../tests
   - coverage run --source dessia_common ci_tests.py
   - coverage json
-  - python coverage.py 
   - coverage report
+  - python coverage.py
 
 - name: develop
   image: python:3.8
@@ -59,7 +82,7 @@ steps:
 - name: upload_doc_master
   image: appleboy/drone-scp
   when:
-    event: push 
+    event: push
     branch: master
   settings:
     host: austerlitz.dessia.tech

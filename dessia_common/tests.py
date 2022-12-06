@@ -10,7 +10,7 @@ import random
 import numpy as npy
 import matplotlib.pyplot as plt
 from dessia_common import DessiaObject
-import dessia_common.typings as dct
+import dessia_common.measures as dcm
 import dessia_common.files as dcf
 
 
@@ -88,7 +88,7 @@ class Component(DessiaObject):
         self.efficiency = efficiency
         DessiaObject.__init__(self, name=name)
 
-    def power_simulation(self, power_value: dct.Power):
+    def power_simulation(self, power_value: dcm.Power):
         return power_value * self.efficiency
 
 
@@ -102,7 +102,7 @@ class ComponentConnection(DessiaObject):
 class SystemUsage(DessiaObject):
     _standalone_in_db = True
 
-    def __init__(self, time: List[dct.Time], power: List[dct.Power], name: str = ''):
+    def __init__(self, time: List[dcm.Time], power: List[dcm.Power], name: str = ''):
         self.time = time
         self.power = power
         DessiaObject.__init__(self, name=name)
@@ -117,7 +117,7 @@ class System(DessiaObject):
         self.component_connections = component_connections
         DessiaObject.__init__(self, name=name)
 
-    def output_power(self, input_power: dct.Power):
+    def output_power(self, input_power: dcm.Power):
         return input_power * 0.8
 
     def power_simulation(self, usage: SystemUsage):
@@ -130,7 +130,7 @@ class System(DessiaObject):
 class SystemSimulationResult(DessiaObject):
     _standalone_in_db = True
 
-    def __init__(self, system: System, system_usage: SystemUsage, output_power: List[dct.Power], name: str = ''):
+    def __init__(self, system: System, system_usage: SystemUsage, output_power: List[dcm.Power], name: str = ''):
         self.system = system
         self.system_usage = system_usage
         self.output_power = output_power
@@ -152,8 +152,8 @@ class Car(DessiaObject):
     _standalone_in_db = True
     _non_data_hash_attributes = ['name']
 
-    def __init__(self, name: str, mpg: float, cylinders: int, displacement: dct.Distance, horsepower: float,
-                 weight: dct.Mass, acceleration: dct.Time, model: int, origin: str):
+    def __init__(self, name: str, mpg: float, cylinders: int, displacement: dcm.Distance, horsepower: float,
+                 weight: dcm.Mass, acceleration: dcm.Time, model: int, origin: str):
         DessiaObject.__init__(self, name=name)
 
         self.mpg = mpg
@@ -197,8 +197,8 @@ class Car(DessiaObject):
 class CarWithFeatures(Car):
     _vector_features = ['mpg', 'displacement', 'horsepower', 'acceleration', 'weight']
 
-    def __init__(self, name: str, mpg: float, cylinders: int, displacement: dct.Distance, horsepower: float,
-                 weight: dct.Mass, acceleration: dct.Time, model: int, origin: str):
+    def __init__(self, name: str, mpg: float, cylinders: int, displacement: dcm.Distance, horsepower: float,
+                 weight: dcm.Mass, acceleration: dcm.Time, model: int, origin: str):
         Car.__init__(self, name, mpg, cylinders, displacement, horsepower, weight, acceleration, model, origin)
 
     @classmethod
@@ -281,18 +281,25 @@ class RandDataD3(RandDataD1):
 
 class RandDataD4(RandDataD1):
     _nb_dims = 4
-    _vector_features = [f'p_{i+1}' for i in range(4)]
+    _vector_features = [f'p_{i+1}' for i in range(4)] + ['test_prop']
 
     def __init__(self, p_1: float, p_2: float, p_3: float, p_4: float, name: str = ''):
         RandDataD1.__init__(self, p_1, name=name)
         self.p_2 = p_2
         self.p_3 = p_3
         self.p_4 = p_4
+        self._test_prop = None
+
+    @property
+    def test_prop(self):
+        if self._test_prop is None:
+            self._test_prop = 3
+        return self._test_prop
 
 
 class RandDataD5(RandDataD1):
     _nb_dims = 5
-    _vector_features = [f'p_{i+1}' for i in range(5)]
+    _vector_features = [f'p_{i+1}' for i in range(5)] + ['test_prop']
 
     def __init__(self, p_1: float, p_2: float, p_3: float, p_4: float, p_5: float, name: str = ''):
         RandDataD1.__init__(self, p_1, name=name)
@@ -300,11 +307,19 @@ class RandDataD5(RandDataD1):
         self.p_3 = p_3
         self.p_4 = p_4
         self.p_5 = p_5
+        self._test_prop = None
+
+    @property
+    def test_prop(self):
+        if self._test_prop is None:
+            self._test_prop = 3
+        return self._test_prop
 
 
 class RandDataD6(RandDataD1):
     _nb_dims = 6
-    _vector_features = [f'p_{i+1}' for i in range(6)]
+    _vector_features = [f'p_{i+1}' for i in range(6)] + ['test_prop']
+
     def __init__(self, p_1: float, p_2: float, p_3: float, p_4: float, p_5: float, p_6: float, name: str = ''):
         RandDataD1.__init__(self, p_1, name=name)
         self.p_2 = p_2
@@ -312,6 +327,13 @@ class RandDataD6(RandDataD1):
         self.p_4 = p_4
         self.p_5 = p_5
         self.p_6 = p_6
+        self._test_prop = None
+
+    @property
+    def test_prop(self):
+        if self._test_prop is None:
+            self._test_prop = 3
+        return self._test_prop
 
 
 class RandDataD7(RandDataD1):

@@ -4,7 +4,6 @@ templates for dessia_common
 """
 from string import Template
 
-
 dessia_object_markdown_template = Template('''
 # Object $name of class $class_
 
@@ -14,6 +13,12 @@ The good practice is to create a string python template and move the template to
 (like templates.py) to avoid mix python code and markdown, as python syntax conflicts with markdown
 
 You can substitute values with object attributes like the name of the object: $name
+
+# Attributes
+
+Object $name of class $class_ has the following attributes:
+
+$table
 
 ''')
 
@@ -319,4 +324,21 @@ var edges = new vis.DataSet($edges);
 </script>
 </body>
 </html>
+''')
+
+
+dataset_markdown_template = Template('''
+# Dataset $name of $element_details:
+
+$table
+
+## Information:
+
+    This is a standard markdown: https://www.markdownguide.org/cheat-sheet/
+
+    The good practice is to create a string python template and move the template to another python module
+    (like templates.py) to avoid mix python code and markdown, as python syntax conflicts with markdown
+
+    You can substitute values with object attributes like the name of the object: $name
+
 ''')

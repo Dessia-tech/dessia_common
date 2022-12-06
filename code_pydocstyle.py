@@ -4,6 +4,7 @@ from glob import glob
 import random
 from datetime import date
 
+
 file_list = filter(lambda z: not z.endswith("__init__.py"),
                    [y for x in os.walk('./dessia_common')
                     for y in glob(os.path.join(x[0], '*.py'))])
@@ -99,6 +100,7 @@ for error_code, number_errors in code_to_number.items():
                                     key=lambda m: (m.filename, m.line))
             for error in errors_to_show:
                 print(f'{error.filename} line {error.line}: {error.message}')
+
         elif max_errors - ratchet_limit <= number_errors < max_errors:
             print(f'\nYou can lower number of {error_code} to {number_errors + time_decrease} (actual {max_errors + time_decrease})')
         elif number_errors < max_errors - ratchet_limit:

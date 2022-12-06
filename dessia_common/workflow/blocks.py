@@ -7,19 +7,23 @@ Created on Fri Mar 18 18:52:32 2022
 """
 
 import inspect
+import warnings
 
 from zipfile import ZipFile
-import io
 from typing import List, Type, Any, Dict, get_type_hints
 
 import itertools
-from dessia_common.core import DessiaFilter, is_bounded, enhanced_deep_attr, split_argspecs, type_from_annotation
+from dessia_common.core import DessiaFilter, FiltersList, split_argspecs,\
+    type_from_annotation, DessiaObject
 from dessia_common.utils.types import get_python_class_from_class_name, full_classname
 from dessia_common.utils.docstrings import parse_docstring, EMPTY_PARSED_ATTRIBUTE
+from dessia_common.utils.serialization import serialize
 from dessia_common.errors import UntypedArgumentError
 from dessia_common.typings import JsonSerializable, MethodType, ClassMethodType
 from dessia_common.files import StringFile, BinaryFile
 from dessia_common.utils.helpers import concatenate
+from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
+from dessia_common.exports import ExportFormat
 
 from dessia_common.workflow.core import Block, Variable, TypedVariable, TypedVariableWithDefaultValue,\
     set_block_variable_names_from_dict, Workflow, DisplaySetting, DisplayObject
@@ -63,65 +67,8 @@ def output_from_function(function, name: str = "result output"):
     return Variable(name=name)
 
 
-class Display(Block):
-    _displayable_input = 0
-    _non_editable_attributes = ['inputs']
-
-    def __init__(self, inputs: List[Variable] = None, order: int = 0, name: str = ''):
-        """
-        Abstract class for display behaviors
-        """
-        self.order = order
-        if inputs is None:
-            inputs = [Variable(name='Model to Display', memorize=True)]
-        Block.__init__(self, inputs=inputs, outputs=[], name=name)
-
-    def equivalent(self, other):
-        return Block.equivalent(self, other) and self.order == other.order
-
-    def equivalent_hash(self):
-        return self.order
-
-    def display_(self, local_values: Dict[Variable, Any], **kwargs):
-        object_ = local_values[self.inputs[self._displayable_input]]
-        displays = object_._displays(**kwargs)
-        return displays
-
-    def _display_settings(self, block_index: int, local_values: Dict[Variable, Any]) -> List[DisplaySetting]:
-        object_ = local_values[self.inputs[self._displayable_input]]
-        display_settings = []
-        for i, display_setting in enumerate(object_.display_settings()):
-            display_setting.selector = f"display_{block_index}_{i}"
-            display_setting.method = "block_display"
-            display_setting.arguments = {"block_index": block_index, "display_index": i}
-            display_setting.serialize_data = True
-            display_settings.append(display_setting)
-        return display_settings
-
-    def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
-        dict_ = Block.to_dict(self)
-        dict_['order'] = self.order
-        return dict_
-
-    @classmethod
-    @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
-        return cls(order=dict_['order'], name=dict_['name'])
-
-    @staticmethod
-    def evaluate(_):
-        return []
-
-    def _to_script(self) -> ToScriptElement:
-        script = f"Display(inputs=None, order={self.order}, name='{self.name}')"
-
-        imports = [
-            self.full_classname,
-            Variable().full_classname
-        ]
-
-        return ToScriptElement(declaration=script, imports=imports)
+class BlockError(Exception):
+    pass
 
 
 class InstantiateModel(Block):
@@ -132,12 +79,12 @@ class InstantiateModel(Block):
     :type name: str
     """
 
-    def __init__(self, model_class: Type, name: str = ''):
+    def __init__(self, model_class: Type, name: str = '', position=None):
         self.model_class = model_class
         inputs = []
         inputs = set_inputs_from_function(self.model_class.__init__, inputs)
         outputs = [TypedVariable(type_=self.model_class, name='Instanciated object')]
-        Block.__init__(self, inputs, outputs, name=name)
+        Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
         return len(self.model_class.__name__)
@@ -148,7 +95,7 @@ class InstantiateModel(Block):
         return Block.equivalent(self, other) and classname == other_classname
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
-        dict_ = Block.to_dict(self)
+        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         dict_['model_class'] = full_classname(object_=self.model_class, compute_for='class')
         return dict_
 
@@ -162,7 +109,7 @@ class InstantiateModel(Block):
         else:
             classname = dict_['model_class']
         class_ = get_python_class_from_class_name(classname)
-        return cls(class_, name=dict_['name'])
+        return cls(class_, name=dict_['name'], position=dict_.get('position'))
 
     def evaluate(self, values):
         args = {var.name: values[var] for var in self.inputs}
@@ -180,9 +127,9 @@ class InstantiateModel(Block):
                            else EMPTY_PARSED_ATTRIBUTE for i in self.inputs}
         return block_docstring
 
-    def _to_script(self) -> ToScriptElement:
+    def _to_script(self, _) -> ToScriptElement:
         script = f"InstantiateModel(model_class=" \
-                 f"{self.model_class.__name__}, name='{self.name}')"
+                 f"{self.model_class.__name__}, {self.base_script()})"
 
         imports = [
             full_classname(object_=self.model_class, compute_for='class'),
@@ -196,7 +143,7 @@ class ClassMethod(Block):
     Handles static method as well
     """
 
-    def __init__(self, method_type: ClassMethodType[Type], name: str = ''):
+    def __init__(self, method_type: ClassMethodType[Type], name: str = '', position=None):
         self.method_type = method_type
         inputs = []
 
@@ -206,7 +153,7 @@ class ClassMethod(Block):
         self.argument_names = [i.name for i in inputs]
         output_name = f"method result of {method_type.name}"
         output = output_from_function(function=self.method, name=output_name)
-        Block.__init__(self, inputs, [output], name=name)
+        Block.__init__(self, inputs, [output], name=name, position=position)
 
     def equivalent_hash(self):
         classname = self.method_type.class_.__name__
@@ -220,7 +167,7 @@ class ClassMethod(Block):
         return Block.equivalent(self, other) and same_class and same_method
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
-        dict_ = Block.to_dict(self)
+        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         classname = full_classname(object_=self.method_type.class_, compute_for='class')
         method_type_dict = {'class_': classname, 'name': self.method_type.name}
         dict_.update({'method_type': method_type_dict})
@@ -240,7 +187,7 @@ class ClassMethod(Block):
         class_ = get_python_class_from_class_name(classname)
         name = dict_['name']
         method_type = ClassMethodType(class_=class_, name=method_name)
-        return cls(method_type=method_type, name=name)
+        return cls(method_type=method_type, name=name, position=dict_.get('position'))
 
     def evaluate(self, values):
         args = {arg_name: values[var] for arg_name, var in zip(self.argument_names, self.inputs) if var in values}
@@ -256,10 +203,10 @@ class ClassMethod(Block):
                            else EMPTY_PARSED_ATTRIBUTE for i in self.inputs}
         return block_docstring
 
-    def _to_script(self) -> ToScriptElement:
+    def _to_script(self, _) -> ToScriptElement:
         script = f"ClassMethod(method_type=ClassMethodType(" \
                  f"{self.method_type.class_.__name__}, '{self.method_type.name}')" \
-                 f", name='{self.name}')"
+                 f", {self.base_script()})"
 
         imports = [
             full_classname(object_=self.method_type, compute_for='instance'),
@@ -274,11 +221,11 @@ class ModelMethod(Block):
     """
     :param method_type: Represent class and method used.
     :type method_type: MethodType[T]
-    :param name: The name of the block.
+    :param name: Name of the block.
     :type name: str
     """
 
-    def __init__(self, method_type: MethodType[Type], name: str = ''):
+    def __init__(self, method_type: MethodType[Type], name: str = '', position=None):
         self.method_type = method_type
         inputs = [TypedVariable(type_=method_type.class_, name='model at input')]
         method = method_type.get_method()
@@ -295,7 +242,7 @@ class ModelMethod(Block):
         outputs = [return_output, model_output]
         if name == "":
             name = f"Model method: {method_type.name}"
-        Block.__init__(self, inputs, outputs, name=name)
+        Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
         classname = self.method_type.class_.__name__
@@ -309,7 +256,7 @@ class ModelMethod(Block):
         return Block.equivalent(self, other) and same_model and same_method
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
-        dict_ = Block.to_dict(self)
+        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         classname = full_classname(object_=self.method_type.class_, compute_for='class')
         method_type_dict = {'class_': classname, 'name': self.method_type.name}
         dict_.update({'method_type': method_type_dict})
@@ -329,7 +276,7 @@ class ModelMethod(Block):
         class_ = get_python_class_from_class_name(classname)
         name = dict_['name']
         method_type = MethodType(class_=class_, name=method_name)
-        return cls(method_type=method_type, name=name)
+        return cls(method_type=method_type, name=name, position=dict_.get('position'))
 
     def evaluate(self, values):
         args = {arg_name: values[var] for arg_name, var in zip(self.argument_names, self.inputs[1:]) if var in values}
@@ -348,10 +295,10 @@ class ModelMethod(Block):
                            else EMPTY_PARSED_ATTRIBUTE for i in self.inputs}
         return block_docstring
 
-    def _to_script(self) -> ToScriptElement:
+    def _to_script(self, _) -> ToScriptElement:
         script = f"ModelMethod(method_type=MethodType(" \
                  f"{self.method_type.class_.__name__}, '{self.method_type.name}')" \
-                 f", name='{self.name}')"
+                 f", {self.base_script()})"
 
         imports = [
             full_classname(object_=self.method_type, compute_for='instance'),
@@ -362,11 +309,11 @@ class ModelMethod(Block):
 
 
 class Sequence(Block):
-    def __init__(self, number_arguments: int, name: str = ''):
+    def __init__(self, number_arguments: int, name: str = '', position=None):
         self.number_arguments = number_arguments
         inputs = [Variable(name=f"Sequence element {i}") for i in range(self.number_arguments)]
         outputs = [TypedVariable(type_=list, name='sequence')]
-        Block.__init__(self, inputs, outputs, name=name)
+        Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
         return self.number_arguments
@@ -375,7 +322,7 @@ class Sequence(Block):
         return Block.equivalent(self, other) and self.number_arguments == other.number_arguments
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
-        dict_ = Block.to_dict(self)
+        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         dict_['number_arguments'] = self.number_arguments
         return dict_
 
@@ -383,22 +330,22 @@ class Sequence(Block):
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
-        return cls(dict_['number_arguments'], dict_['name'])
+        return cls(dict_['number_arguments'], dict_['name'], position=dict_.get('position'))
 
     def evaluate(self, values):
         return [[values[var] for var in self.inputs]]
 
-    def _to_script(self) -> ToScriptElement:
-        script = f"Sequence(number_arguments={len(self.inputs)}, name='{self.name}')"
+    def _to_script(self, _) -> ToScriptElement:
+        script = f"Sequence(number_arguments={len(self.inputs)}, {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
 
 class Concatenate(Block):
-    def __init__(self, number_arguments: int, name: str = ''):
+    def __init__(self, number_arguments: int, name: str = '', position=None):
         self.number_arguments = number_arguments
         inputs = [Variable(name=f"Sequence element {i}") for i in range(self.number_arguments)]
         outputs = [TypedVariable(type_=list, name='sequence')]
-        Block.__init__(self, inputs, outputs, name=name)
+        Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
         return self.number_arguments
@@ -407,7 +354,7 @@ class Concatenate(Block):
         return Block.equivalent(self, other) and self.number_arguments == other.number_arguments
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
-        dict_ = Block.to_dict(self)
+        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         dict_['number_arguments'] = self.number_arguments
         return dict_
 
@@ -415,11 +362,15 @@ class Concatenate(Block):
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
-        return cls(dict_['number_arguments'], dict_['name'])
+        return cls(dict_['number_arguments'], dict_['name'], position=dict_.get('position'))
 
     def evaluate(self, values: Dict[Variable, Any]):
         list_values = list(values.values())
         return [concatenate(list_values)]
+
+    def _to_script(self, _) -> ToScriptElement:
+        script = f"Concatenate(number_arguments={len(self.inputs)}, {self.base_script()})"
+        return ToScriptElement(declaration=script, imports=[self.full_classname])
 
 
 class WorkflowBlock(Block):
@@ -434,7 +385,7 @@ class WorkflowBlock(Block):
     :type workflow: Workflow
     """
 
-    def __init__(self, workflow: Workflow, name: str = ''):
+    def __init__(self, workflow: Workflow, name: str = '', position=None):
         self.workflow = workflow
         # TODO: configuring port internal connections
         self.input_connections = None
@@ -446,7 +397,7 @@ class WorkflowBlock(Block):
             inputs.append(input_)
 
         outputs = [self.workflow.output.copy()]
-        Block.__init__(self, inputs, outputs, name=name)
+        Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
         return hash(self.workflow)
@@ -457,16 +408,19 @@ class WorkflowBlock(Block):
         return self.workflow == other.workflow
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
-        dict_ = Block.to_dict(self)
-        dict_.update({'workflow': self.workflow.to_dict(use_pointers=use_pointers, memo=memo,
-                                                        path=f'{path}/workflow')})
+        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
+        dict_.update({'workflow': self.workflow.to_dict(use_pointers=use_pointers, memo=memo, path=f'{path}/workflow')})
         return dict_
 
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
-        return cls(workflow=Workflow.dict_to_object(dict_['workflow']), name=dict_['name'])
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'WorkflowBlock':
+        workflow = Workflow.dict_to_object(dict_=dict_["workflow"])
+        # , force_generic = force_generic,
+        # global_dict = global_dict, pointers_memo = pointers_memo,
+        # path = f"{path}/workflow"
+        return cls(workflow=workflow, name=dict_['name'], position=dict_.get('position'))
 
     def evaluate(self, values):
         args = {self.inputs.index(input_): v for input_, v in values.items()}
@@ -485,14 +439,14 @@ class WorkflowBlock(Block):
                     docstring[input_] = block_docstring[input_]
         return docstring
 
-    def _to_script(self) -> ToScriptElement:
-        prefix = 'sub_'
+    def _to_script(self, prefix: str) -> ToScriptElement:
+        prefix = f'{prefix}sub_'
         workflow_script = self.workflow._to_script(prefix)
         script_workflow = f"\n# --- Subworkflow --- \n" \
             f"{workflow_script.declaration}" \
             f"# --- End Subworkflow --- \n"
 
-        script = f"WorkflowBlock(workflow={prefix}workflow, name='{self.name}')"
+        script = f"WorkflowBlock(workflow={prefix}workflow, {self.base_script()})"
 
         imports = workflow_script.imports + [self.full_classname]
         return ToScriptElement(declaration=script, before_declaration=script_workflow, imports=imports)
@@ -509,7 +463,7 @@ class ForEach(Block):
     :type name: str
     """
 
-    def __init__(self, workflow_block: 'WorkflowBlock', iter_input_index: int, name: str = ''):
+    def __init__(self, workflow_block: 'WorkflowBlock', iter_input_index: int, name: str = '', position=None):
         self.workflow_block = workflow_block
         self.iter_input_index = iter_input_index
         self.iter_input = self.workflow_block.inputs[iter_input_index]
@@ -525,7 +479,7 @@ class ForEach(Block):
         output_variable = Variable(name='Foreach output')
         self.output_connections = None  # TODO: configuring port internal connections
         self.input_connections = None
-        Block.__init__(self, inputs, [output_variable], name=name)
+        Block.__init__(self, inputs, [output_variable], name=name, position=position)
 
     def equivalent_hash(self):
         wb_hash = int(self.workflow_block.equivalent_hash() % 10e5)
@@ -537,17 +491,21 @@ class ForEach(Block):
         return Block.equivalent(self, other) and wb_eq and input_eq
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
-        dict_ = Block.to_dict(self)
-        dict_.update({'workflow_block': self.workflow_block.to_dict(), 'iter_input_index': self.iter_input_index})
+        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
+        wb_dict = self.workflow_block.to_dict(use_pointers=use_pointers, memo=memo, path=f"{path}/worklow_block")
+        dict_.update({'workflow_block': wb_dict, 'iter_input_index': self.iter_input_index})
         return dict_
 
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
-        workflow_block = WorkflowBlock.dict_to_object(dict_['workflow_block'])
-        iter_input_index = dict_['iter_input_index']
-        return cls(workflow_block=workflow_block, iter_input_index=iter_input_index, name=dict_['name'])
+        workflow_block = WorkflowBlock.dict_to_object(dict_=dict_['workflow_block'])
+        # , force_generic = force_generic,
+        # global_dict = global_dict, pointers_memo = pointers_memo,
+        # path = f"{path}/workflow_block"
+        return cls(workflow_block=workflow_block, iter_input_index=dict_['iter_input_index'], name=dict_['name'],
+                   position=dict_.get('position'))
 
     def evaluate(self, values):
         values_workflow = {var2: values[var1] for var1, var2 in zip(self.inputs, self.workflow_block.inputs)}
@@ -565,21 +523,22 @@ class ForEach(Block):
             block_docstring[input_] = wb_docstring[workflow_input]
         return block_docstring
 
-    def _to_script(self) -> ToScriptElement:
-        wfblock_script_elements = self.workflow_block._to_script()
+    def _to_script(self, prefix: str) -> ToScriptElement:
+        wfblock_script_elements = self.workflow_block._to_script(prefix)
         wfblock_script = f"{wfblock_script_elements.before_declaration}\n" \
                          f"wfblock = {wfblock_script_elements.declaration}"
-        foreach_script = f"ForEach(workflow_block=wfblock, iter_input_index={self.iter_input_index})"
+        foreach_script = f"ForEach(workflow_block=wfblock, iter_input_index={self.iter_input_index}, " \
+                         f"{self.base_script()})"
 
         imports = wfblock_script_elements.imports + [self.full_classname]
         return ToScriptElement(declaration=foreach_script, before_declaration=wfblock_script, imports=imports)
 
 
 class Unpacker(Block):
-    def __init__(self, indices: List[int], name: str = ''):
+    def __init__(self, indices: List[int], name: str = '', position=None):
         self.indices = indices
         outputs = [Variable(name=f"output_{i}") for i in indices]
-        Block.__init__(self, inputs=[Variable(name="input_sequence")], outputs=outputs, name=name)
+        Block.__init__(self, inputs=[Variable(name="input_sequence")], outputs=outputs, name=name, position=position)
 
     def equivalent(self, other):
         return Block.equivalent(self, other) and self.indices == other.indices
@@ -588,28 +547,28 @@ class Unpacker(Block):
         return len(self.indices)
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
-        dict_ = Block.to_dict(self)
+        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         dict_['indices'] = self.indices
         return dict_
 
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'Unpacker':
-        return cls(dict_['indices'], dict_['name'])
+        return cls(dict_['indices'], dict_['name'], position=dict_.get('position'))
 
     def evaluate(self, values):
         return [values[self.inputs[0]][i] for i in self.indices]
 
-    def _to_script(self) -> ToScriptElement:
-        script = f"Unpacker(indices={self.indices}, name='{self.name}')"
+    def _to_script(self, _) -> ToScriptElement:
+        script = f"Unpacker(indices={self.indices}, {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
 
 class Flatten(Block):
-    def __init__(self, name: str = ''):
+    def __init__(self, name: str = '', position=None):
         inputs = [Variable(name='input_sequence')]
         outputs = [Variable(name='flatten_sequence')]
-        Block.__init__(self, inputs, outputs, name=name)
+        Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
         return 1
@@ -617,7 +576,7 @@ class Flatten(Block):
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'Flatten':
-        return cls(dict_['name'])
+        return cls(dict_['name'], position=dict_.get('position'))
 
     def evaluate(self, values):
         output = []
@@ -625,17 +584,17 @@ class Flatten(Block):
             output.extend(value)
         return [output]
 
-    def _to_script(self) -> ToScriptElement:
-        script = f"Flatten(name='{self.name}')"
+    def _to_script(self, _) -> ToScriptElement:
+        script = f"Flatten({self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
 
 class Product(Block):
-    def __init__(self, number_list: int, name: str = ''):
+    def __init__(self, number_list: int, name: str = '', position=None):
         self.number_list = number_list
         inputs = [Variable(name='list_product_' + str(i)) for i in range(self.number_list)]
         output_variable = Variable(name='Product output')
-        Block.__init__(self, inputs, [output_variable], name=name)
+        Block.__init__(self, inputs, [output_variable], name=name, position=position)
 
     def equivalent_hash(self):
         return self.number_list
@@ -644,7 +603,7 @@ class Product(Block):
         return Block.equivalent(self, other) and self.number_list == other.number_list
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
-        dict_ = Block.to_dict(self)
+        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         dict_['number_list'] = self.number_list
         return dict_
 
@@ -653,7 +612,7 @@ class Product(Block):
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
         number_list = dict_['number_list']
-        return cls(number_list=number_list, name=dict_['name'])
+        return cls(number_list=number_list, name=dict_['name'], position=dict_.get('position'))
 
     def evaluate(self, values):
         """
@@ -663,8 +622,8 @@ class Product(Block):
         output_value = list(itertools.product(*list_product))
         return [output_value]
 
-    def _to_script(self) -> ToScriptElement:
-        script = f"Product(number_list={self.number_list}, name='{self.name}')"
+    def _to_script(self, _) -> ToScriptElement:
+        script = f"Product(number_list={self.number_list}, {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
 
@@ -673,7 +632,7 @@ class Filter(Block):
     :param filters: A list of dictionaries, each corresponding to a value to filter.
                     The dictionary should be as follows :
                     *{'attribute' : Name of attribute to filter (str),
-                      'operator' : choose between gt, lt, get, let (standing for greater than, lower than,
+                      'comparison_operator' : choose between gt, lt, get, let (standing for greater than, lower than,
                                                                     geater or equal than, lower or equal than) (str),
                       'bound' :  the value (float)}*
     :type filters: list[DessiaFilter]
@@ -681,11 +640,12 @@ class Filter(Block):
     :type name: str
     """
 
-    def __init__(self, filters: List[DessiaFilter], name: str = ''):
+    def __init__(self, filters: List[DessiaFilter], logical_operator: str = "and", name: str = '', position=None):
         self.filters = filters
+        self.logical_operator = logical_operator
         inputs = [Variable(name='input_list')]
         outputs = [Variable(name='output_list')]
-        Block.__init__(self, inputs, outputs, name=name)
+        Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent(self, other):
         return Block.equivalent(self, other) and self.filters == other.filters
@@ -695,110 +655,210 @@ class Filter(Block):
         return int(sum(hashes) % 10e5)
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
-        dict_ = Block.to_dict(self)
-        dict_.update({'filters': [f.to_dict() for f in self.filters]})
+        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
+        filters_dict = [f.to_dict(use_pointers=use_pointers, memo=memo, path=f"{path}/filters/{i}")
+                        for i, f in enumerate(self.filters)]
+        dict_.update({"filters": filters_dict, "logical_operator": self.logical_operator})
         return dict_
 
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
-        return cls([DessiaFilter.dict_to_object(d) for d in dict_['filters']], dict_['name'])
+        filters = [DessiaFilter.dict_to_object(dict_=d, force_generic=force_generic, global_dict=global_dict,
+                                               pointers_memo=pointers_memo, path=f"{path}/filters/{i}")
+                   for i, d in enumerate(dict_['filters'])]
+        return cls(filters=filters, logical_operator=dict_["logical_operator"], name=dict_["name"],
+                   position=dict_.get('position'))
 
     def evaluate(self, values):
-        ouput_values = []
-        for object_ in values[self.inputs[0]]:
-            bounded = True
-            i = 0
-            while bounded and i < len(self.filters):
-                filter_ = self.filters[i]
-                value = enhanced_deep_attr(object_, filter_.attribute)
-                bounded = is_bounded(filter_, value)
-                i += 1
-            if bounded:
-                ouput_values.append(object_)
-        return [ouput_values]
+        filters_list = FiltersList(self.filters, self.logical_operator)
+        return [filters_list.apply(values[self.inputs[0]])]
 
-    def _to_script(self) -> ToScriptElement:
+    def _to_script(self, _) -> ToScriptElement:
         filter_variables = [f"DessiaFilter("
-                            f"attribute='{f.attribute}', operator='{f.operator}', bound={f.bound}, name='{f.name}'"
-                            f")" for f in self.filters]
+                            f"attribute='{f.attribute}', comparison_operator='{f.comparison_operator}', "
+                            f"bound={f.bound}, name='{f.name}')" for f in self.filters]
         filters = '[' + ",".join(filter_variables) + ']'
-        script = f"Filter(filters={filters}, name='{self.name}')"
+        script = f"Filter(filters={filters}, logical_operator='{self.logical_operator}', {self.base_script()})"
 
-        imports = [
-            DessiaFilter("", "", 0).full_classname,
-            self.full_classname
-        ]
+        imports = [DessiaFilter("", "", 0).full_classname, self.full_classname]
         return ToScriptElement(declaration=script, imports=imports)
+
+
+class Display(Block):
+    _displayable_input = 0
+    _non_editable_attributes = ['inputs']
+
+    def __init__(self, inputs: List[Variable] = None, order: int = None, name: str = '', position=None):
+        """
+        Abstract class for display behaviors
+        """
+        if order is not None:
+            warnings.warn("Display Block : order argument is deprecated and will be removed in a future version."
+                          "You can safely remove it from your block definition", DeprecationWarning)
+        self.order = order
+        if inputs is None:
+            self.warn_deprecation()
+            inputs = [TypedVariable(type_=DessiaObject, name='Model to Display')]
+        output = TypedVariable(type_=DisplayObject, name="Display Object")
+        Block.__init__(self, inputs=inputs, outputs=[output], name=name, position=position)
+
+        self._type = None
+        self._selector = None
+
+    @staticmethod
+    def warn_deprecation():
+        warnings.warn("Display Block used as a generator for the displays of an object is deprecated."
+                      "ts display behavior will be faulty. Please use the specific block"
+                      "to generate wanted displays (MultiPlot, CadView, PlotData, Markdown)", DeprecationWarning)
+
+    @property
+    def type_(self):
+        if self._type:
+            return self._type
+        if self.__class__ is Display:
+            self.warn_deprecation()
+            return ""
+        raise NotImplementedError(f"type_ attribute is not implemented for block of type '{type(self)}'")
+
+    @property
+    def selector(self):
+        if self._selector:
+            return self._selector
+        if self.__class__ is Display:
+            self.warn_deprecation()
+            return ""
+        raise NotImplementedError(f"selector attribute is not implemented for block of type '{type(self)}'")
+
+    def _display_settings(self, block_index: int) -> DisplaySetting:
+        args = {'block_index': block_index}
+        return DisplaySetting(selector=None, type_=self.type_, method="block_display", serialize_data=True,
+                              arguments=args)
+
+    def evaluate(self, values):
+        object_ = values[self.inputs[0]]
+        settings = object_._display_settings_from_selector(self.selector)
+        data = attrmethod_getter(object_, settings.method)()
+        if settings.serialize_data:
+            data = serialize(data)
+        return [DisplayObject(type_=settings.type, data=data, name=self.name)]
+
+    def _to_script(self, _) -> ToScriptElement:
+        script = f"{self.__class__.__name__}(name='{self.name}')"
+        return ToScriptElement(declaration=script, imports=[self.full_classname])
 
 
 class MultiPlot(Display):
     """
-    :param attributes: A List of all attributes that will be shown inside the ParallelPlot window on DessIA's Platform.
+    Generates a PlotData multiplot which axes will be the given attributes
+    (can be deep attributes with the '/' separator)
+
+    :param attributes: A List of all attributes that will be shown on axes in the ParallelPlot window.
     :type attributes: List[str]
     :param name: The name of the block.
     :type name: str
     """
 
-    def __init__(self, attributes: List[str], order: int = 0, name: str = ''):
+    def __init__(self, attributes: List[str], order: int = None, name: str = '', position=None):
+        if order is not None:
+            warnings.warn("Display Block : order argument is deprecated and will be removed in a future version."
+                          "You can safely remove it from your block definition", DeprecationWarning)
+        self.order = order
         self.attributes = attributes
-        Display.__init__(self, order=order, name=name)
+        Display.__init__(self, inputs=[TypedVariable(List[DessiaObject])], name=name, position=position)
         self.inputs[0].name = 'Input List'
+        self._type = "plot_data"
+        self._selector = None
 
     def equivalent(self, other):
         same_attributes = self.attributes == other.attributes
-        same_order = self.order == other.order
-        return Block.equivalent(self, other) and same_attributes and same_order
+        return Block.equivalent(self, other) and same_attributes
 
     def equivalent_hash(self):
-        return sum(len(a) for a in self.attributes) + self.order
+        return sum(len(a) for a in self.attributes)
 
-    def display_(self, local_values, **kwargs):
+    def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
+        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
+        dict_['attributes'] = self.attributes
+        return dict_
+
+    @classmethod
+    @set_block_variable_names_from_dict
+    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
+        return cls(attributes=dict_['attributes'], name=dict_['name'], position=dict_.get('position'))
+
+    def evaluate(self, values):
         import plot_data
-        reference_path = kwargs.get("reference_path", "")
-        objects = local_values[self.inputs[self._displayable_input]]
-        values = [{a: enhanced_deep_attr(o, a) for a in self.attributes} for o in objects]
-        values2d = [{key: val[key]} for key in self.attributes[:2] for val in values]
+        objects = values[self.inputs[self._displayable_input]]
+        attr_values = [{a: get_in_object_from_path(o, a) for a in self.attributes} for o in objects]
+        values2d = [{key: val[key]} for key in self.attributes[:2] for val in attr_values]
         tooltip = plot_data.Tooltip(name='Tooltip', attributes=self.attributes)
 
         scatterplot = plot_data.Scatter(tooltip=tooltip, x_variable=self.attributes[0], y_variable=self.attributes[1],
                                         elements=values2d, name='Scatter Plot')
 
         parallelplot = plot_data.ParallelPlot(disposition='horizontal', axes=self.attributes,
-                                              rgbs=[(192, 11, 11), (14, 192, 11), (11, 11, 192)], elements=values)
-        objects = [scatterplot, parallelplot]
+                                              rgbs=[(192, 11, 11), (14, 192, 11), (11, 11, 192)], elements=attr_values)
+        plots = [scatterplot, parallelplot]
         sizes = [plot_data.Window(width=560, height=300), plot_data.Window(width=560, height=300)]
-        multiplot = plot_data.MultiplePlots(elements=values, plots=objects, sizes=sizes,
+        multiplot = plot_data.MultiplePlots(elements=attr_values, plots=plots, sizes=sizes,
                                             coords=[(0, 0), (0, 300)], name='Results plot')
-        display_object = DisplayObject(type_="plot_data", data=[multiplot.to_dict()], reference_path=reference_path)
-        return [display_object.to_dict()]
+        return [DisplayObject(type_=self.type_, data=[multiplot.to_dict()])]
 
-    def _display_settings(self, block_index: int, local_values: Dict[Variable, Any] = None) -> List[DisplaySetting]:
-        display_settings = DisplaySetting(selector="display_" + str(block_index), type_="plot_data",
-                                          method="block_display", serialize_data=True,
-                                          arguments={'block_index': block_index, "display_index": 0})
-        return [display_settings]
-
-    def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
-        dict_ = Block.to_dict(self)
-        dict_.update({'attributes': self.attributes, 'order': self.order})
-        return dict_
-
-    @classmethod
-    @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
-        return cls(attributes=dict_['attributes'], order=dict_['order'], name=dict_['name'])
-
-    @staticmethod
-    def evaluate(_):
-        return []
-
-    def _to_script(self) -> ToScriptElement:
-        # attributes: List[str], order: int = 0, name: str = ''):
-        script = f"MultiPlot(attributes={self.attributes}, order={self.order}, name='{self.name}')"
+    def _to_script(self, _) -> ToScriptElement:
+        script = f"MultiPlot(attributes={self.attributes}, {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
+
+
+class CadView(Display):
+    """
+    Generates a DisplayObject that is displayable in 3D Viewer features (BabylonJS, ...)
+
+    :param name: The name of the block.
+    :type name: str
+    """
+
+    def __init__(self, name: str = '', position=None):
+        input_ = TypedVariable(DessiaObject, name="Model to display")
+        Display.__init__(self, inputs=[input_], name=name, position=position)
+
+        self._type = "babylon_data"
+        self._selector = "cad"
+
+
+class Markdown(Display):
+    """
+    Generates the markdown representation of an object
+
+    :param name: Name of the block.
+    :type name: str
+    """
+
+    def __init__(self, name: str = '', position=None):
+        input_ = TypedVariable(DessiaObject, name="Model to display")
+        Display.__init__(self, inputs=[input_], name=name, position=position)
+
+        self._type = "markdown"
+        self._selector = "markdown"
+
+
+class PlotData(Display):
+    """
+    Generates a DisplayObject that is displayable in PlotData features.
+    Uses the the input object's plot_data method.
+
+    :param name: The name of the block.
+    :type name: str
+    """
+
+    def __init__(self, name: str = '', position=None):
+        input_ = TypedVariable(DessiaObject, name="Model to display")
+        Display.__init__(self, inputs=[input_], name=name, position=position)
+
+        self._type = "plot_data"
+        self._selector = "plot_data"
 
 
 class ModelAttribute(Block):
@@ -809,11 +869,11 @@ class ModelAttribute(Block):
     :type name: str
     """
 
-    def __init__(self, attribute_name: str, name: str = ''):
+    def __init__(self, attribute_name: str, name: str = '', position=None):
         self.attribute_name = attribute_name
         inputs = [Variable(name='Model')]
         outputs = [Variable(name='Model attribute')]
-        Block.__init__(self, inputs, outputs, name=name)
+        Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
         return len(self.attribute_name)
@@ -822,7 +882,7 @@ class ModelAttribute(Block):
         return Block.equivalent(self, other) and self.attribute_name == other.attribute_name
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
-        dict_ = Block.to_dict(self)
+        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         dict_.update({'attribute_name': self.attribute_name})
         return dict_
 
@@ -830,13 +890,13 @@ class ModelAttribute(Block):
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
-        return cls(dict_['attribute_name'], dict_['name'])
+        return cls(dict_['attribute_name'], dict_['name'], position=dict_.get('position'))
 
     def evaluate(self, values):
-        return [enhanced_deep_attr(values[self.inputs[0]], self.attribute_name)]
+        return [get_in_object_from_path(values[self.inputs[0]], f'#/{self.attribute_name}')]
 
-    def _to_script(self) -> ToScriptElement:
-        script = f"ModelAttribute(attribute_name='{self.attribute_name}', name='{self.name}')"
+    def _to_script(self, _) -> ToScriptElement:
+        script = f"ModelAttribute(attribute_name='{self.attribute_name}', {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
 
@@ -848,11 +908,11 @@ class SetModelAttribute(Block):
     :type name: str
     """
 
-    def __init__(self, attribute_name: str, name: str = ''):
+    def __init__(self, attribute_name: str, name: str = '', position=None):
         self.attribute_name = attribute_name
         inputs = [Variable(name='Model'), Variable(name=f'Value to insert for attribute {attribute_name}')]
         outputs = [Variable(name=f'Model with changed attribute {attribute_name}')]
-        Block.__init__(self, inputs, outputs, name=name)
+        Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
         return 3 + len(self.attribute_name)
@@ -861,7 +921,7 @@ class SetModelAttribute(Block):
         return Block.equivalent(self, other) and self.attribute_name == other.attribute_name
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
-        dict_ = Block.to_dict(self)
+        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         dict_.update({'attribute_name': self.attribute_name})
         return dict_
 
@@ -869,23 +929,23 @@ class SetModelAttribute(Block):
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
-        return cls(dict_['attribute_name'], dict_['name'])
+        return cls(dict_['attribute_name'], dict_['name'], position=dict_.get('position'))
 
     def evaluate(self, values):
         model = values[self.inputs[0]]
         setattr(model, self.attribute_name, values[self.inputs[1]])
         return [model]
 
-    def _to_script(self) -> ToScriptElement:
-        script = f"SetModelAttribute(attribute_name='{self.attribute_name}', name='{self.name}')"
+    def _to_script(self, _) -> ToScriptElement:
+        script = f"SetModelAttribute(attribute_name='{self.attribute_name}', {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
 
 class Sum(Block):
-    def __init__(self, number_elements: int = 2, name: str = ''):
+    def __init__(self, number_elements: int = 2, name: str = '', position=None):
         self.number_elements = number_elements
         inputs = [Variable(name=f"Sum element {i + 1}") for i in range(number_elements)]
-        Block.__init__(self, inputs=inputs, outputs=[Variable(name='Sum')], name=name)
+        Block.__init__(self, inputs=inputs, outputs=[Variable(name='Sum')], name=name, position=position)
 
     def equivalent_hash(self):
         return self.number_elements
@@ -894,7 +954,7 @@ class Sum(Block):
         return Block.equivalent(self, other) and self.number_elements == other.number_elements
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
-        dict_ = Block.to_dict(self)
+        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         dict_.update({'number_elements': self.number_elements})
         return dict_
 
@@ -902,155 +962,221 @@ class Sum(Block):
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
-        return cls(dict_['number_elements'], dict_['name'])
+        return cls(dict_['number_elements'], dict_['name'], position=dict_.get('position'))
 
     @staticmethod
     def evaluate(values):
         return [sum(values)]
 
-    def _to_script(self) -> ToScriptElement:
-        script = f"Sum(number_elements={self.number_elements}, name='{self.name}')"
+    def _to_script(self, _) -> ToScriptElement:
+        script = f"Sum(number_elements={self.number_elements}, {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
 
 class Substraction(Block):
-    def __init__(self, name: str = ''):
-        Block.__init__(self, [Variable(name='+'), Variable(name='-')], [Variable(name='Substraction')], name=name)
+    def __init__(self, name: str = '', position=None):
+        Block.__init__(self, [Variable(name='+'), Variable(name='-')], [Variable(name='Substraction')], name=name,
+                       position=position)
 
     def evaluate(self, values):
         return [values[self.inputs[0]] - values[self.inputs[1]]]
 
-    def _to_script(self) -> ToScriptElement:
-        script = f"Substraction(name='{self.name}')"
+    def _to_script(self, _) -> ToScriptElement:
+        script = f"Substraction({self.base_script()})"
+        return ToScriptElement(declaration=script, imports=[self.full_classname])
+
+
+class ConcatenateStrings(Block):
+    """
+    Concatenates the n input elements, separate by the separator input, into one string
+
+    :param number_elements: Number of block inputs
+    :type number_elements: int
+    :param separator: Character used to joins the input elements together
+    :type separator: str
+    """
+
+    def __init__(self, number_elements: int = 2, separator: str = "", name: str = ''):
+        self.number_elements = number_elements
+        self.separator = separator
+        inputs = [TypedVariableWithDefaultValue(name=f"Substring {i + 1}", type_=str, default_value="")
+                  for i in range(number_elements)]
+        output = TypedVariable(name="Concatenation", type_=str)
+        Block.__init__(self, inputs=inputs, outputs=[output], name=name)
+
+    def equivalent_hash(self):
+        return self.number_elements + hash(self.separator)
+
+    def equivalent(self, other):
+        same_number = self.number_elements == other.number_elements
+        same_separator = self.separator == other.separator
+        return Block.equivalent(self, other) and same_number and same_separator
+
+    def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
+        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
+        dict_.update({'number_elements': self.number_elements, "separator": self.separator})
+        return dict_
+
+    @classmethod
+    @set_block_variable_names_from_dict
+    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
+        return cls(number_elements=dict_['number_elements'], separator=dict_["separator"], name=dict_['name'])
+
+    def evaluate(self, values):
+        chunks = [values[i] for i in self.inputs]
+        return [self.separator.join(chunks)]
+
+    def _to_script(self, _) -> ToScriptElement:
+        script = f"ConcatenateStrings(number_elements={self.number_elements}, " \
+                 f"separator='{self.separator}', " \
+                 f"name='{self.name}')"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
 
 class Export(Block):
-    def __init__(self, method_type: MethodType, export_name: str = "", name: str = ""):
+    def __init__(self, method_type: MethodType[Type], text: bool, extension: str,
+                 filename: str = "export", name: str = "", position=None):
+        """
+        Block that enables an export of an object calling its configured method.
+        Only Methods that yields streams (and not files) should be used.
+
+        The file generated will be called {filename}.{extension}
+
+        :param method_type: An object that have a class_ input (which is the class of the incoming model)
+            and a name (which is the name of the method that will be called).
+        :type method_type: MethodType[T]
+        :param text: Whether the export is of type text or not
+        :type text: bool
+        :param extension: Extension of the resulting file (ex: json or xlsx)
+        :type extension: str
+        :param filename: Name of the resulting file without its extension
+        :type filename: str
+        :param name: Name of the block.
+        :type name: str
+        """
         self.method_type = method_type
-        if not export_name:
-            export_name = "export"
-        self.export_name = export_name
+        if not filename:
+            filename = "export"
+        self.filename = filename
 
         method = method_type.get_method()
 
-        self.extension = ""
-        self.text = None
+        self.extension = extension
+        self.text = text
 
         output = output_from_function(function=method, name="export_output")
-        Block.__init__(self, inputs=[TypedVariable(type_=method_type.class_)], outputs=[output], name=name)
+        inputs = [TypedVariable(type_=method_type.class_, name="model_to_export"),
+                  TypedVariableWithDefaultValue(type_=str, default_value=filename, name="filename")]
+        Block.__init__(self, inputs=inputs, outputs=[output], name=name, position=position)
+
+    def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#'):
+        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
+        classname = full_classname(object_=self.method_type.class_, compute_for='class')
+        method_type_dict = {'class_': classname, 'name': self.method_type.name}
+        dict_.update({"method_type": method_type_dict, "extension": self.extension,
+                      "text": self.text, "filename": self.filename})
+        return dict_
+
+    @classmethod
+    @set_block_variable_names_from_dict
+    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'Export':
+        class_ = get_python_class_from_class_name(dict_['method_type']['class_'])
+        method_type = MethodType(class_=class_, name=dict_['method_type']['name'])
+        if "export_name" in dict_:
+            # RetroCompat
+            filename = dict_["export_name"]
+        else:
+            filename = dict_["filename"]
+        return cls(method_type=method_type, text=dict_['text'], filename=filename,
+                   extension=dict_["extension"], name=dict_["name"], position=dict_.get('position'))
 
     def evaluate(self, values):
+        filename = f"{values.pop(self.inputs[-1])}.{self.extension}"
         if self.text:
-            stream = StringFile()
+            stream = StringFile(filename)
         else:
-            stream = BinaryFile()
+            stream = BinaryFile(filename)
         getattr(values[self.inputs[0]], self.method_type.name)(stream)
         return [stream]
 
-    def _export_format(self, block_index: int):
+    def _export_format(self, block_index: int) -> ExportFormat:
         args = {"block_index": block_index}
-        return {"extension": self.extension, "method_name": "export", "text": self.text, "args": args}
+        return ExportFormat(selector=None, extension=self.extension, method_name="export", text=self.text,
+                            export_name=self.filename, args=args)
 
-    def _to_script(self) -> ToScriptElement:
+    def _to_script(self, _) -> ToScriptElement:
         script = f"Export(method_type=MethodType(" \
                  f"{full_classname(object_=self.method_type.class_, compute_for='class')}, '{self.method_type.name}')" \
-                 f", name='{self.name}'" \
-                 f", export_name='{self.export_name}')"
+                 f", filename='{self.filename}', extension='{self.extension}'" \
+                 f", text={self.text}, {self.base_script()})"
 
-        imports = [
-            self.full_classname,
-            full_classname(object_=self.method_type, compute_for='instance'),
-            full_classname(object_=self.method_type.class_, compute_for='class'),
-        ]
+        imports = [self.full_classname, full_classname(object_=self.method_type, compute_for='instance'),
+                   full_classname(object_=self.method_type.class_, compute_for='class')]
         return ToScriptElement(declaration=script, imports=imports)
 
 
-class ExportJson(Export):
-    def __init__(self, model_class: Type, export_name: str = "", name: str = ""):
-        self.model_class = model_class
-        method_type = MethodType(class_=model_class, name="save_to_stream")
-
-        Export.__init__(self, method_type=method_type, export_name=export_name, name=name)
-        if not export_name:
-            self.export_name += "_json"
-        self.extension = "json"
-        self.text = True
-
-    def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
-        dict_ = Block.to_dict(self)
-        dict_['model_class'] = full_classname(object_=self.method_type.class_, compute_for='class')
-        return dict_
-
-    @classmethod
-    @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
-        class_ = get_python_class_from_class_name(dict_['model_class'])
-        return cls(class_, name=dict_['name'])
-
-
-class ExportExcel(Export):
-    def __init__(self, model_class: Type, export_name: str = "", name: str = ""):
-        self.model_class = model_class
-        method_type = MethodType(class_=model_class, name="to_xlsx_stream")
-
-        Export.__init__(self, method_type=method_type, export_name=export_name, name=name)
-        if not export_name:
-            self.export_name += "_xlsx"
-        self.extension = "xlsx"
-        self.test = False
-
-    def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
-        dict_ = Block.to_dict(self)
-        dict_['model_class'] = full_classname(object_=self.method_type.class_, compute_for='class')
-        return dict_
-
-    @classmethod
-    @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
-        class_ = get_python_class_from_class_name(dict_['model_class'])
-        return cls(class_, name=dict_['name'])
-
-
 class Archive(Block):
-    def __init__(self, number_exports: int = 1, name=""):
+    def __init__(self, number_exports: int = 1, filename: str = "archive", name: str = "", position=None):
+        """
+        A block that takes n inputs and store them in a archive (ZIP,...)
+
+        :param number_exports: The number of files that will be stored in the archive
+        :type number_exports: int
+        :param filename: Name of the resulting archive file without its extension
+        :type filename: str
+        :param name: Name of the block.
+        :type name: str
+        """
         self.number_exports = number_exports
+        self.filename = filename
+        self.extension = "zip"
+        self.text = False
         inputs = [Variable(name="export_" + str(i)) for i in range(number_exports)]
-        Block.__init__(self, inputs=inputs, outputs=[Variable(name="zip archive")], name=name)
+        inputs.append(TypedVariableWithDefaultValue(type_=str, default_value=filename, name="filename"))
+        Block.__init__(self, inputs=inputs, outputs=[Variable(name="zip archive")], name=name, position=position)
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#'):
-        dict_ = Block.to_dict(self)
-        dict_['number_exports'] = len(self.inputs)
+        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
+        dict_['number_exports'] = len(self.inputs) - 1   # Filename is also a block input
+        dict_["filename"] = self.filename
         return dict_
 
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
-        return cls(number_exports=dict_["number_exports"], name=dict_['name'])
+        if "export_name" in dict_:
+            # RetroCompat
+            filename = dict_["export_name"]
+        else:
+            filename = dict_["filename"]
+        return cls(number_exports=dict_["number_exports"], filename=filename, name=dict_['name'],
+                   position=dict_.get('position'))
 
     def evaluate(self, values):
-        archive = io.BytesIO()
+        name_input = self.inputs[-1]
+        archive_name = f"{values.pop(name_input)}.{self.extension}"
+        archive = BinaryFile(archive_name)
         with ZipFile(archive, 'w') as zip_archive:
-            for i, input_ in enumerate(self.inputs):
+            for input_ in self.inputs[:-1]:  # Filename is last block input
                 value = values[input_]
-                filename = f"file{i}.{value.extension}"
                 if isinstance(value, StringFile):
-                    with zip_archive.open(filename, 'w') as file:
+                    with zip_archive.open(value.filename, 'w') as file:
                         file.write(value.getvalue().encode('utf-8'))
                 elif isinstance(value, BinaryFile):
-                    with zip_archive.open(filename, 'w') as file:
+                    with zip_archive.open(value.filename, 'w') as file:
                         file.write(value.getbuffer())
                 else:
-                    raise ValueError("Archive input is not a file-like object")
+                    raise ValueError(f"Archive input is not a file-like object. Got '{value}' of type {type(value)}")
         return [archive]
 
-    @staticmethod
-    def _export_format(block_index: int):
-        return {"extension": "zip", "method_name": "export", "text": False, "args": {"block_index": block_index}}
+    def _export_format(self, block_index: int) -> ExportFormat:
+        args = {"block_index": block_index}
+        return ExportFormat(selector=None, extension=self.extension, method_name="export", text=self.text,
+                            export_name=self.filename, args=args)
 
-    def _to_script(self) -> ToScriptElement:
-        script = f"Archive(number_exports={self.number_exports}, name='{self.name}')"
+    def _to_script(self, _) -> ToScriptElement:
+        script = f"Archive(number_exports={self.number_exports}, filename='{self.filename}', {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])

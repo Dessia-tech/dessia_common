@@ -3,7 +3,7 @@
 
 
 import dessia_common
-from dessia_common.models.tests import standalone_object
+from dessia_common.forms import DEF_SO
 
 import unittest
 from parameterized import parameterized
@@ -12,7 +12,7 @@ from parameterized import parameterized
 class TestSerialization(unittest.TestCase):
 
     @parameterized.expand([
-        (standalone_object,),
+        (DEF_SO,),
     ])
     def test_objects_serialization_deserialization(self, my_obj):
         d = my_obj.to_dict()

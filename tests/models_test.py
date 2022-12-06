@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Tue Nov  9 16:03:59 2021
 
-@author: steven
 """
 
+import os
 from dessia_common.models import simulation_list, system1
 import dessia_common as dc
 import dessia_common.utils.serialization as dcus
@@ -18,6 +17,10 @@ assert simulation_list_2 == simulation_list
 
 simulation_list_copy = simulation_list.copy()
 assert simulation_list_copy == simulation_list
+diff = simulation_list_copy._data_diff(simulation_list)
+assert diff.is_empty()
+# Let this print to test diff utils __repr__
+print(diff)
 
 simulation_list.jsonschema()
 
@@ -27,6 +30,15 @@ draw_networkx_graph(pointer_graph)
 
 system1._check_platform()
 system1.jsonschema()
+system1.save_export_to_file('xlsx', 'generic_xlsx')
+os.path.isfile('generic_xlsx.xlsx')
+
+check_list = system1.check_list()
+
 system1.save_to_file('system1')
 system1_lff = dc.DessiaObject.load_from_file('system1.json')
 assert system1_lff == system1
+
+memo = {}
+a, memo = dcus.serialize_with_pointers(system1)
+assert memo
