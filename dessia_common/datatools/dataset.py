@@ -82,7 +82,6 @@ class Dataset(DessiaObject):
             Dataset(all_cars_wi_feat)
             >>> Dataset(all_cars_wi_feat).extend(Dataset(all_cars_wi_feat))
             Dataset(all_cars_wi_feat + all_cars_wi_feat)
-
     """
     _standalone_in_db = True
     _vector_features = ["name", "common_attributes"]
@@ -91,7 +90,6 @@ class Dataset(DessiaObject):
     def __init__(self, dessia_objects: List[DessiaObject] = None, name: str = ''):
         """
         See class docstring.
-
         """
         if dessia_objects is None:
             dessia_objects = []
@@ -105,7 +103,6 @@ class Dataset(DessiaObject):
         Custom getitem for Dataset.
 
         In addition to work as numpy.arrays of dimension `(n,)`, allows to pick a sub-Dataset from a list of indexes.
-
         """
         if len(self) == 0:
             return []
@@ -132,7 +129,6 @@ class Dataset(DessiaObject):
     def __add__(self, other: 'Dataset'):
         """
         Allows to merge two Dataset into one by merging their dessia_object into one list.
-
         """
         if self.__class__ != Dataset or other.__class__ != Dataset:
             raise TypeError("Addition only defined for Dataset. A specific __add__ method is required for "
@@ -161,7 +157,6 @@ class Dataset(DessiaObject):
         >>> from dessia_common.models import all_cars_wi_feat
         >>> Dataset(all_cars_wi_feat).extend(Dataset(all_cars_wi_feat))
         Dataset(all_cars_wi_feat + all_cars_wi_feat)
-
         """
         # Not "self.dessia_objects += other.dessia_objects" to take advantage of __add__ algorithm
         self.__dict__.update((self + other).__dict__)
@@ -193,10 +188,7 @@ class Dataset(DessiaObject):
         return new_hlist
 
     def __str__(self):
-        """
-        Print Dataset as a table.
-
-        """
+        """Print Dataset as a table."""
         attr_space = []
 
         prefix = self._write_str_prefix()
@@ -277,10 +269,7 @@ class Dataset(DessiaObject):
         return string
 
     def to_markdown(self) -> str:
-        """
-        Render a markdown of the object output type: string.
-
-        """
+        """Render a markdown of the object output type: string."""
         md_writer = MarkdownWriter(print_limit=25, table_limit=12)
         name = md_writer.print_name(self)
         class_ = md_writer.print_class(self)
@@ -294,18 +283,12 @@ class Dataset(DessiaObject):
         return getattr(dessia_object, attr)
 
     def __len__(self):
-        """
-        Length of Dataset is len(Dataset.dessia_objects).
-
-        """
+        """Length of Dataset is len(Dataset.dessia_objects)."""
         return len(self.dessia_objects)
 
     @property
     def common_attributes(self):
-        """
-        List of common attributes of stored dessia_objects.
-
-        """
+        """List of common attributes of stored dessia_objects."""
         if self._common_attributes is None:
             if len(self) == 0:
                 return []
@@ -333,7 +316,6 @@ class Dataset(DessiaObject):
     def matrix(self):
         """
         Get equivalent matrix of dessia_objects, which is of dimensions `len(dessia_objects) x len(common_attributes)`.
-
         """
         if self._matrix is None:
             matrix = []
@@ -359,7 +341,6 @@ class Dataset(DessiaObject):
         >>> from dessia_common.models import all_cars_wi_feat
         >>> Dataset(all_cars_wi_feat[:10]).attribute_values("weight")
         [3504.0, 3693.0, 3436.0, 3433.0, 3449.0, 4341.0, 4354.0, 4312.0, 4425.0, 3850.0]
-
         """
         if not hasattr(self.dessia_objects[0], attribute):
             if attribute not in self.common_attributes:
@@ -382,7 +363,6 @@ class Dataset(DessiaObject):
         >>> from dessia_common.models import all_cars_wi_feat
         >>> Dataset(all_cars_wi_feat[:10]).column_values(2)
         [130.0, 165.0, 150.0, 150.0, 140.0, 198.0, 220.0, 215.0, 225.0, 190.0]
-
         """
         return [row[index] for row in self.matrix]
 
@@ -404,7 +384,6 @@ class Dataset(DessiaObject):
         >>> print(Dataset(all_cars_wi_feat[:10]).sub_matrix(['displacement', 'horsepower']))
         [[0.307, 130.0], [0.35, 165.0], [0.318, 150.0], [0.304, 150.0], [0.302, 140.0], [0.429, 198.0],
          [0.454, 220.0], [0.44, 215.0], [0.455, 225.0], [0.39, 190.0]]
-
         """
         transposed_submatrix = [self.attribute_values(column_name) for column_name in columns_names]
         return list(map(list, zip(*transposed_submatrix)))
@@ -446,7 +425,6 @@ class Dataset(DessiaObject):
         |               18.0  |             0.307  |             130.0  |            3504.0  |              12.0  |
         |               18.0  |             0.318  |             150.0  |            3436.0  |              11.0  |
         |               15.0  |              0.35  |             165.0  |            3693.0  |              11.5  |
-
         """
         if len(self) != 0:
             if isinstance(key, int):
@@ -471,7 +449,6 @@ class Dataset(DessiaObject):
         >>> example_list = Dataset(all_cars_wi_feat, "mean_example")
         >>> print(example_list.mean())
         [23.051231527093602, 0.1947795566502462, 103.5295566502463, 2979.4137931034484, 15.519704433497521]
-
         """
         return [mean(row) for row in zip(*self.matrix)]
 
@@ -488,7 +465,6 @@ class Dataset(DessiaObject):
         >>> example_list = Dataset(all_cars_wi_feat, "std_example")
         >>> print(example_list.standard_deviation())
         [8.391423956652817, 0.10479316386533469, 40.47072606559397, 845.9605763601298, 2.799904275515381]
-
         """
         return [std(row) for row in zip(*self.matrix)]
 
@@ -505,7 +481,6 @@ class Dataset(DessiaObject):
         >>> example_list = Dataset(all_cars_wi_feat, "var_example")
         >>> print(example_list.variances())
         [70.41599602028683, 0.010981607192906888, 1637.8796682763475, 715649.2967555631, 7.839463952049309]
-
         """
         return [variance(row) for row in zip(*self.matrix)]
 
@@ -527,7 +502,6 @@ class Dataset(DessiaObject):
         [-247.39164142796338, 3.714807148938756, 1641.9238156054248, 28857.60749255002, -77.47638630420236]
         [-5604.189893571734, 82.86881366538952, 28857.60749255002, 717416.332056194, -1021.2202724563649]
         [9.998099130329008, -0.16412268260049875, -77.47638630420236, -1021.2202724563649, 7.8588206531654805]
-
         """
         return covariance_matrix(list(zip(*self.matrix)))
 
@@ -569,7 +543,6 @@ class Dataset(DessiaObject):
         [1.6150355142162274, 0.0, 0.7691239946132247, 0.6216479207905371]
         [1.0996902429379676, 0.7691239946132247, 0.0, 0.7334135920381655]
         [1.3991408510938068, 0.6216479207905371, 0.7334135920381655, 0.0]
-
         """
         kwargs = self._set_distance_kwargs(method, kwargs)
         distances = squareform(pdist(self.matrix, method, **kwargs)).astype(float)
@@ -607,7 +580,6 @@ class Dataset(DessiaObject):
         |               35.0  |             0.072  |              69.0  |            1613.0  |              18.0  |
         |               31.0  |             0.076  |              52.0  |            1649.0  |              16.5  |
         |               46.6  |             0.086  |              65.0  |            2110.0  |              17.9  |
-
         """
         booleans_index = filters_list.get_booleans_index(self.dessia_objects)
         return self._pick_from_boolist(booleans_index)
@@ -634,7 +606,6 @@ class Dataset(DessiaObject):
             **normalized_singular_values**: list of normalized singular values
             **singular_points**: list of points to plot in dimensionality plot. Does not add any information.
         :rtype: Tuple[List[float], List[Dict[str, float]]]
-
         """
         scaled_data = Dataset._scale_data(npy.array(self.matrix) - npy.mean(self.matrix, axis=0))
         _, singular_values, _ = npy.linalg.svd(npy.array(scaled_data).T, full_matrices=False)
@@ -655,7 +626,6 @@ class Dataset(DessiaObject):
     def plot_data(self):
         """
         Plot a standard scatter matrix of all attributes in common_attributes and a dimensionality plot.
-
         """
         data_list = self._plot_data_list()
         if len(self.common_attributes) > 1:
@@ -828,7 +798,6 @@ class Dataset(DessiaObject):
         Find the pareto-efficient points.
 
         :return: A (n_points, ) boolean list, indicating whether each point is Pareto efficient
-
         """
         is_efficient = npy.ones(len(costs), dtype=bool)
         costs_array = (costs - npy.mean(costs, axis=0)) / npy.std(costs, axis=0)
@@ -844,7 +813,6 @@ class Dataset(DessiaObject):
     def pareto_frontiers(len_data: int, costs: List[List[float]]):
         """
         Experimental method to draw the borders of pareto domain.
-
         """
         # Experimental
         checked_costs = Dataset._check_costs(len_data, costs)
@@ -898,7 +866,6 @@ class Dataset(DessiaObject):
 
         :return: a Dataset containing the selected points
         :rtype: Dataset
-
         """
         checked_costs = self._compute_costs(costs_attributes)
         return self[self.__class__.pareto_indexes(checked_costs)]
@@ -917,7 +884,6 @@ class Dataset(DessiaObject):
 
         :return: The successive pareto sheets and not selected elements
         :rtype: List[Dataset], Dataset
-
         """
         checked_costs = self._compute_costs(costs_attributes)
         non_optimal_costs = checked_costs[:]

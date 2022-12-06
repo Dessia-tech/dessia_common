@@ -61,7 +61,6 @@ class ClusteredDataset(Dataset):
     def __init__(self, dessia_objects: List[DessiaObject] = None, labels: List[int] = None, name: str = ''):
         """
         See class docstring.
-
         """
         Dataset.__init__(self, dessia_objects=dessia_objects, name=name)
         if labels is None:
@@ -72,7 +71,6 @@ class ClusteredDataset(Dataset):
     def n_clusters(self):
         """
         Number of clusters in dessia_objects.
-
         """
         unic_labels = set(self.labels)
         unic_labels.discard(-1)
@@ -81,7 +79,6 @@ class ClusteredDataset(Dataset):
     def to_xlsx_stream(self, stream):
         """
         Export the object to an XLSX to a given stream.
-
         """
         if not isinstance(self.dessia_objects[0], Dataset):
             writer = XLSXWriter(self.clustered_sublists())
@@ -143,7 +140,6 @@ class ClusteredDataset(Dataset):
         |    21.0 |              0.2 |           85.0 |     2587.0 |             16.0 |
         |    25.0 |             0.11 |           87.0 |     2672.0 |             17.5 |
         |    21.0 |            0.199 |           90.0 |     2648.0 |             15.0 |
-
         """
         sublists = []
         label_tags = sorted(list(map(str, set(self.labels).difference({-1}))))
@@ -189,7 +185,6 @@ class ClusteredDataset(Dataset):
         >>> means = clist.mean_clusters()
         >>> print(means[0])
         [28.83333333333334, 0.10651785714285714, 79.16666666666667, 2250.3571428571427, 16.075000000000006]
-
         """
         clustered_sublists = self._check_transform_sublists()
         means = []
@@ -236,7 +231,6 @@ class ClusteredDataset(Dataset):
         >>> cluster_distances = clist.cluster_distances()
         >>> print(list(map(int, cluster_distances[6])))
         [180, 62, 162, 47, 347, 161, 160, 67, 164, 206, 114, 138, 97, 159, 124, 139]
-
         """
         clustered_sublists = self._check_transform_sublists()
         kwargs = self._set_distance_kwargs(method, kwargs)
@@ -286,7 +280,6 @@ class ClusteredDataset(Dataset):
         |   Name   |   Mpg   |   Displacement   |   Horsepower   |   Weight   |   Acceleration   |
         ------------------------------------------------------------------------------------------
         |Dodge C...|    26.0 |            0.098 |           79.0 |     2255.0 |             17.7 |
-
         """
         clustered_sublists = self._check_transform_sublists()
         kwargs = self._set_distance_kwargs(method, kwargs)
@@ -315,7 +308,6 @@ class ClusteredDataset(Dataset):
         Plot data method.
 
         If dessia_objects are Dataset, merge all Dataset to plot them in one.
-
         """
         if isinstance(self.dessia_objects[0], Dataset):
             plotted_clist = self._merge_sublists()
@@ -417,7 +409,6 @@ class ClusteredDataset(Dataset):
 
         :return: a ClusteredDataset that knows the data and their labels
         :rtype: ClusteredDataset
-
         """
         skl_cluster = cluster.AgglomerativeClustering(
             n_clusters=n_clusters, affinity=affinity, distance_threshold=distance_threshold, linkage=linkage)
@@ -467,7 +458,6 @@ class ClusteredDataset(Dataset):
 
         :return: a ClusteredDataset that knows the data and their labels
         :rtype: ClusteredDataset
-
         """
         skl_cluster = cluster.KMeans(n_clusters=n_clusters, n_init=n_init, tol=tol)
         skl_cluster = cls.fit_cluster(skl_cluster, data.matrix, scaling)
@@ -530,7 +520,6 @@ class ClusteredDataset(Dataset):
 
         :return: a ClusteredDataset that knows the data and their labels
         :rtype: ClusteredDataset
-
         """
         skl_cluster = cluster.DBSCAN(eps=eps, min_samples=min_samples, p=mink_power, leaf_size=leaf_size, metric=metric)
         skl_cluster = cls.fit_cluster(skl_cluster, data.matrix, scaling)
@@ -558,7 +547,6 @@ class ClusteredDataset(Dataset):
         :return: a ClusteredDataset where each element is labelled with its pareto_sheet. Elements outside a
         pareto_sheet are labelled `n_sheets`
         :rtype: ClusteredDataset
-
         """
         labels = []
         dessia_objects = []
@@ -588,7 +576,6 @@ class ClusteredDataset(Dataset):
 
         :return: a fit sklearn.cluster object
         :rtype: cluster
-
         """
         if scaling:
             scaled_matrix = Dataset._scale_data(matrix)
@@ -603,7 +590,6 @@ class ClusteredDataset(Dataset):
                                       distance_threshold: float = None, scaling: bool = False, name: str = ""):
         """
         Does the same as `from_agglomerative_clustering` method but data is a `List[DessiaObject]` and not a `Dataset`.
-
         """
         return cls.from_agglomerative_clustering(Dataset(data), n_clusters=n_clusters, affinity=affinity,
                                                  linkage=linkage, distance_threshold=distance_threshold,
@@ -614,7 +600,6 @@ class ClusteredDataset(Dataset):
                     scaling: bool = False, name: str = ""):
         """
         Does the same as `from_kmeans` method but data is a `List[DessiaObject]` and not a `Dataset`.
-
         """
         return cls.from_kmeans(Dataset(data), n_clusters=n_clusters, n_init=n_init, tol=tol, scaling=scaling,
                                name=name)
@@ -624,7 +609,6 @@ class ClusteredDataset(Dataset):
                     leaf_size: int = 30, metric: str = "euclidean", scaling: bool = False, name: str = ""):
         """
         Does the same as `from_dbscan` method but data is a `List[DessiaObject]` and not a `Dataset`.
-
         """
         return cls.from_dbscan(Dataset(data), eps=eps, min_samples=min_samples, mink_power=mink_power,
                                leaf_size=leaf_size, metric=metric, scaling=scaling, name=name)
