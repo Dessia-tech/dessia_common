@@ -1551,6 +1551,12 @@ class MLPClassifier(MultiLayerPerceptron):
         return cls(**kwargs)
 
 
+def get_scaler_attr(scaler, attr: str):
+    scaler_attr = getattr(scaler, attr)
+    if isinstance(scaler_attr, npy.ndarray):
+        return scaler_attr.tolist()
+    return scaler_attr
+
 # # ====================================================================================================================
 # #                                                    M O D E L E R S
 # # ====================================================================================================================
@@ -1604,10 +1610,3 @@ class MLPClassifier(MultiLayerPerceptron):
 #         predicted_outputs = model.fit_predict(scaled_inputs, scaled_outputs)
 #         self.model_ = {key: value for key, value in model.items() if key in self._required_attributes}
 #         return predicted_outputs
-
-
-def get_scaler_attr(scaler, attr: str):
-    scaler_attr = getattr(scaler, attr)
-    if isinstance(scaler_attr, npy.ndarray):
-        return scaler_attr.tolist()
-    return scaler_attr
