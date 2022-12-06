@@ -12,7 +12,7 @@ from dessia_common.datatools.modeling import StandardScaler, IdentityScaler, Rid
         RandomForestClassifier, MLPClassifier, Scaler, Model, LinearModel, RandomForest, SupportVectorMachine, \
             MultiLayerPerceptron, LinearRegression
 
-
+# TODO review the way data are generated
 # Load Data and put it in a Dataset (matrix is automatically computed)
 dataset_example = Dataset(all_cars_no_feat)
 inputs = dataset_example.sub_matrix(['displacement', 'horsepower', 'model', 'acceleration', 'cylinders'])
@@ -67,14 +67,14 @@ skl_models = {'ridge_regressor': linear_model.Ridge(**ridge_hyperparams),
 for key, model in skl_models.items():
     if 'regressor' in key:
         if 'svm' in key:
-            model.fit(std_inputs, mono_outputs)
+            model.fit(std_inputs[:-10], mono_outputs[:-10])
             continue
-        model.fit(std_inputs, double_outputs)
+        model.fit(std_inputs[:-10], double_outputs[:-10])
         continue
     if 'doubled' in key:
-        model.fit(std_inputs, doubled_labelled_outputs)
+        model.fit(std_inputs[:-10], doubled_labelled_outputs[:-10])
         continue
-    model.fit(std_inputs, labelled_outputs)
+    model.fit(std_inputs[:-10], labelled_outputs[:-10])
 
 # Dessia models
 dessia_classes = {'ridge_regressor': Ridge, 'linearreg_regressor': LinearRegression,
@@ -89,7 +89,7 @@ dessia_classes = {'ridge_regressor': Ridge, 'linearreg_regressor': LinearRegress
 dessia_models = {}
 for key, model in skl_models.items():
     dessia_models[key] = dessia_classes[key]._instantiate_dessia(model)
-    assert(npy.all(dessia_models[key].predict(std_inputs[50:100]) == model.predict(std_inputs[50:100])))
+    assert(npy.all(dessia_models[key].predict(std_inputs[-10:]) == model.predict(std_inputs[-10:])))
 
 
 # Test dessia models methods
@@ -107,10 +107,11 @@ for key, model in skl_models.items():
             local_outputs = labelled_outputs
 
     params = hyperparameters[key]
-    dessia_models[key], preds = dessia_classes[key].fit_predict(std_inputs, local_outputs, std_inputs[50:100], **params)
-    dessia_models[key] = dessia_classes[key].fit(std_inputs, local_outputs, **params)
+    dessia_models[key], preds = dessia_classes[key].fit_predict(std_inputs[:-10], local_outputs[:-10], std_inputs[-10:],
+                                                                **params)
+    dessia_models[key] = dessia_classes[key].fit(std_inputs[:-10], local_outputs[:-10], **params)
     try:
-        assert(isinstance(dessia_models[key].score(std_inputs, local_outputs), float))
+        assert(isinstance(dessia_models[key].score(std_inputs[-10:], local_outputs[-10:]), float))
     except ValueError as e:
         assert(e.args[0] == 'multiclass-multioutput is not supported' and
                isinstance(dessia_models[key], DecisionTreeClassifier))
@@ -139,7 +140,3 @@ try:
     raise ValueError("_instantiate_dessia() should not work for Model object.")
 except NotImplementedError as e:
     assert isinstance(e, NotImplementedError)
-
-dt_clf = tree.DecisionTreeClassifier(**dt_hyperparams)
-dt_clf.fit(std_inputs, labelled_outputs)
-dt_dessia = DecisionTreeClassifier.fit_predict(std_inputs, labelled_outputs, std_inputs[50:100])

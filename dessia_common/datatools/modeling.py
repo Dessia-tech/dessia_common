@@ -714,6 +714,30 @@ class DecisionTreeClassifier(DecisionTreeRegressor):
                                     else [klass.tolist() for klass in model.classes_])})
         return cls(**kwargs)
 
+    def score(self, inputs: Matrix, outputs: Matrix) -> float:
+        """
+        Compute the score of Model or children.
+
+        Please be sure to fit the model before computing its score and use test data and not train data.
+        Train data is data used to train the model and shall not be used to evaluate its quality.
+        Test data is data used to test the model and must not be used to train (fit) it.
+
+        :param inputs:
+            Matrix of data of dimension `n_samples x n_features`
+        :type inputs: List[List[float]]
+
+        :param outputs:
+            Matrix of data of dimension `n_samples x n_features`
+        :type outputs: List[List[float]]
+
+        :return: The score of Model or children (DessiaObject).
+        :rtype: float
+        """
+        model = self._instantiate_skl()
+        if self.n_outputs_==1:
+            return model.score(inputs, outputs)
+        raise ValueError('multiclass-multioutput is not supported')
+
 
 class RandomForest(Model):
     """
