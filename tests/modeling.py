@@ -9,7 +9,7 @@ from dessia_common.models import all_cars_no_feat
 from dessia_common.datatools.dataset import Dataset
 from dessia_common.datatools.modeling import StandardScaler, IdentityScaler, Ridge, SupportVectorRegressor,\
     SupportVectorClassifier, MLPRegressor, DecisionTreeRegressor, DecisionTreeClassifier, RandomForestRegressor, \
-        RandomForestClassifier, MLPClassifier, Scaler, Model, LinearModel, Tree, RandomForest, SupportVectorMachine, \
+        RandomForestClassifier, MLPClassifier, Scaler, Model, LinearModel, RandomForest, SupportVectorMachine, \
             MultiLayerPerceptron, LinearRegression
 
 
@@ -50,18 +50,17 @@ hyperparameters = {'ridge_regressor': ridge_hyperparams, 'linearreg_regressor': 
 
 
 # Sklearn models
-skl_models = {}
-skl_models['ridge_regressor'] = linear_model.Ridge(**ridge_hyperparams)
-skl_models['linearreg_regressor'] = linear_model.LinearRegression(**linearreg_hyperparams)
-skl_models['dt_regressor'] = tree.DecisionTreeRegressor(**dt_hyperparams)
-skl_models['dt_classifier'] = tree.DecisionTreeClassifier(**dt_hyperparams)
-skl_models['dt_classifier_doubled'] = tree.DecisionTreeClassifier(**dt_hyperparams)
-skl_models['rf_regressor'] = ensemble.RandomForestRegressor(**rf_hyperparams)
-skl_models['rf_classifier'] = ensemble.RandomForestClassifier(**rf_hyperparams)
-skl_models['svm_regressor'] = svm.SVR(**svm_hyperparams)
-skl_models['svm_classifier'] = svm.SVC(**svm_hyperparams)
-skl_models['mlp_regressor'] = neural_network.MLPRegressor(**mlp_hyperparams)
-skl_models['mlp_classifier'] = neural_network.MLPClassifier(**mlp_hyperparams)
+skl_models = {'ridge_regressor': linear_model.Ridge(**ridge_hyperparams),
+              'linearreg_regressor': linear_model.LinearRegression(**linearreg_hyperparams),
+              'dt_regressor': tree.DecisionTreeRegressor(**dt_hyperparams),
+              'dt_classifier': tree.DecisionTreeClassifier(**dt_hyperparams),
+              'dt_classifier_doubled': tree.DecisionTreeClassifier(**dt_hyperparams),
+              'rf_regressor': ensemble.RandomForestRegressor(**rf_hyperparams),
+              'rf_classifier': ensemble.RandomForestClassifier(**rf_hyperparams),
+              'svm_regressor': svm.SVR(**svm_hyperparams),
+              'svm_classifier': svm.SVC(**svm_hyperparams),
+              'mlp_regressor': neural_network.MLPRegressor(**mlp_hyperparams),
+              'mlp_classifier': neural_network.MLPClassifier(**mlp_hyperparams)}
 
 
 # Fit sklearn models
@@ -108,7 +107,7 @@ for key, model in skl_models.items():
             local_outputs = labelled_outputs
 
     params = hyperparameters[key]
-    dessia_models[key] = dessia_classes[key].fit_predict(std_inputs, local_outputs, std_inputs[50:100], **params)
+    dessia_models[key], preds = dessia_classes[key].fit_predict(std_inputs, local_outputs, std_inputs[50:100], **params)
     dessia_models[key] = dessia_classes[key].fit(std_inputs, local_outputs, **params)
     try:
         assert(isinstance(dessia_models[key].score(std_inputs, local_outputs), float))
@@ -119,67 +118,28 @@ for key, model in skl_models.items():
 
 
 # Tests errors and base objects
-base_scaler = Scaler()
-base_model = Model()
-base_linear = LinearModel()
-base_tree = Tree()
-base_rf = RandomForest()
-base_svm = SupportVectorMachine()
-base_mlp = MultiLayerPerceptron()
+base_models = [Scaler(), Model(), LinearModel(), RandomForest(), SupportVectorMachine(), MultiLayerPerceptron()]
+model = Model()
+
+for base_model in base_models:
+    try:
+        base_model._skl_class()
+        raise ValueError(f"_skl_class() should not work for {type(base_model)} object.")
+    except NotImplementedError as e:
+        assert isinstance(e, NotImplementedError)
 
 try:
-    base_scaler._skl_class()
-    raise ValueError("_skl_class() should not work for Scaler object.")
-except Exception as e:
-    assert (e.args[0] == 'Method _skl_class not implemented for Scaler. Please use children.')
-
-try:
-    base_model._skl_class()
-    raise ValueError("_skl_class() should not work for Model object.")
-except Exception as e:
-    assert (e.args[0] == 'Method _skl_class not implemented for Model.')
-
-try:
-    base_linear._skl_class()
-    raise ValueError("_skl_class() should not work for LinearModel object.")
-except Exception as e:
-    assert (e.args[0] == 'Method _skl_class not implemented for LinearModel. Please use Ridge or LinearRegression.')
-
-try:
-    base_rf._skl_class()
-    raise ValueError("_skl_class() should not work for RandomForest object.")
-except Exception as e:
-    assert (e.args[0] == 'Method _skl_class not implemented for RandomForest. Please use RandomForestClassifier '\
-            'or RandomForestRegressor.')
-
-try:
-    base_svm._skl_class()
-    raise ValueError("_skl_class() should not work for SVM object.")
-except Exception as e:
-    assert (e.args[0] == 'Method _skl_class not implemented for SupportVectorMachine. Please use '\
-                              'SupportVectorClassifier or SupportVectorRegressor.')
-
-try:
-    base_mlp._skl_class()
-    raise ValueError("_skl_class() should not work for MultiLayerPerceptron object.")
-except Exception as e:
-    assert (e.args[0] == 'Method _skl_class not implemented for MultiLayerPerceptron. Please use MLPRegressor '\
-            'or MLPClassifier.')
-
-try:
-    base_model._instantiate_skl()
+    model._instantiate_skl()
     raise ValueError("_instantiate_skl() should not work for Model object.")
-except Exception as e:
-    assert (e.args[0] == 'Method _instantiate_skl not implemented for Model.')
+except NotImplementedError as e:
+    assert isinstance(e, NotImplementedError)
 
 try:
-    base_model._instantiate_dessia(None)
+    model._instantiate_dessia(None)
     raise ValueError("_instantiate_dessia() should not work for Model object.")
-except Exception as e:
-    assert (e.args[0] == 'Method _instantiate_dessia not implemented for Model.')
-
+except NotImplementedError as e:
+    assert isinstance(e, NotImplementedError)
 
 dt_clf = tree.DecisionTreeClassifier(**dt_hyperparams)
 dt_clf.fit(std_inputs, labelled_outputs)
 dt_dessia = DecisionTreeClassifier.fit_predict(std_inputs, labelled_outputs, std_inputs[50:100])
-
