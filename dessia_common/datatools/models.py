@@ -188,6 +188,17 @@ class Model(DessiaObject):
         raise NotImplementedError(f'Method _instantiate_dessia not implemented for {cls.__name__}.')
 
     @classmethod
+    def init_for_modeler_(cls, name: str = '',
+                          **hyperparameters: Dict[str, Any]) -> Tuple['Model', Dict[str, Any], str]:
+        """
+        Initialize class of Model with its name and hyperparemeters to fit in Modeler.
+
+        :return: The Model class, the hyperparameters to instantiate it and the future name of instance.
+        :rtype: Tuple['Model', Dict[str, Any], str]
+        """
+        return cls, hyperparameters, name
+
+    @classmethod
     def fit_(cls, inputs: Matrix, outputs: Matrix, name: str = '', **hyperparameters) -> 'Model':
         """
         Standard method to fit outputs to inputs thanks to a scikit-learn model.
@@ -338,6 +349,38 @@ class Ridge(LinearModel):
         return linear_model.Ridge
 
     @classmethod
+    def init_for_modeler(cls, alpha: float = 1., fit_intercept: bool = True, tol: float = 0.001,
+                         name: str = '') -> Tuple['Ridge', Dict[str, Any], str]:
+        """
+        Initialize class Ridge with its name and hyperparemeters to fit in Modeler.
+
+        :param alpha:
+            Constant that multiplies the L2 term, controlling regularization strength. alpha must be a non-negative
+            float i.e. in [0, inf[. When alpha = 0, the objective is equivalent to ordinary least squares,
+            solved by the LinearRegression object. For numerical reasons, using `alpha = 0` with the Ridge object is
+            not advised. Instead, you should use the LinearRegression object. If an array is passed, penalties are
+            assumed to be specific to the targets. Hence they must correspond in number.
+        :type alpha: float, `optional`, defaults to 1.
+
+        :param fit_intercept:
+            Whether to fit the intercept for this model. If set to False, no intercept will be used in calculations
+            (i.e. X and Y are expected to be centered).
+        :type fit_intercept: bool, `optional`, defaults to True
+
+        :param tol:
+            Precision of the solution.
+        :type tol: float, `optional`, defaults to 0.001
+
+        :param name:
+            Name of Ridge model
+        :type name: str, `optional`, defaults to `''`
+
+        :return: The Ridge class, the hyperparameters to instantiate it and the future name of instance.
+        :rtype: Tuple['Ridge', Dict[str, Any], str]
+        """
+        return cls.init_for_modeler_(name=name, alpha=alpha, fit_intercept=fit_intercept, tol=tol)
+
+    @classmethod
     def fit(cls, inputs: Matrix, outputs: Matrix, alpha: float = 1., fit_intercept: bool = True, tol: float = 0.001,
             name: str = '') -> 'Ridge':
         """
@@ -423,6 +466,30 @@ class LinearRegression(LinearModel):
     @classmethod
     def _skl_class(cls):
         return linear_model.LinearRegression
+
+    @classmethod
+    def init_for_modeler(cls, fit_intercept: bool = True, positive: bool = False,
+                         name: str = '') -> Tuple['LinearRegression', Dict[str, Any], str]:
+        """
+        Initialize class LinearRegression with its name and hyperparemeters to fit in Modeler.
+
+        :param fit_intercept:
+            Whether to fit the intercept for this model. If set to False, no intercept will be used in calculations
+            (i.e. X and Y are expected to be centered).
+        :type fit_intercept: bool, `optional`, defaults to True
+
+        :param positive:
+            When set to True, forces the coefficients to be positive. This option is only supported for dense arrays.
+        :type positive: bool, `optional`, defaults to False
+
+        :param name:
+            Name of LinearRegression model
+        :type name: str, `optional`, defaults to `''`
+
+        :return: The LinearRegression model fit on inputs and outputs.
+        :rtype: Tuple['LinearRegression', Dict[str, Any], str]
+        """
+        return cls.init_for_modeler_(name=name, fit_intercept=fit_intercept, positive=positive)
 
     @classmethod
     def fit(cls, inputs: Matrix, outputs: Matrix, fit_intercept: bool = True, positive: bool = False,
@@ -611,6 +678,35 @@ class DecisionTreeRegressor(Model):
         return criterion
 
     @classmethod
+    def init_for_modeler(cls, criterion: str = 'squared_error', max_depth: int = None,
+                         name: str = '') -> Tuple['DecisionTreeRegressor', Dict[str, Any], str]:
+        """
+        Initialize class DecisionTreeRegressor with its name and hyperparemeters to fit in Modeler.
+
+        :param criterion:
+            The function to measure the quality of a split. Supported criteria are “squared_error” for the mean
+            squared error, which is equal to variance reduction as feature selection criterion and minimizes the L2
+            loss using the mean of each terminal node, “friedman_mse”, which uses mean squared error with Friedman’s
+            improvement score for potential splits, “absolute_error” for the mean absolute error, which minimizes the
+            L1 loss using the median of each terminal node, and “poisson” which uses reduction in Poisson deviance to
+            find splits.
+        :type criterion: str, `optional`, defaults to 'squared_error'
+
+        :param max_depth:
+            The maximum depth of the tree. If `None`, then nodes are expanded until all leaves are pure or until all
+            leaves contain less than min_samples_split samples.
+        :type max_depth: int, `optional`, defaults to `None`
+
+        :param name:
+            Name of DecisionTreeRegressor model
+        :type name: str, `optional`, defaults to `''`
+
+        :return: The DecisionTreeRegressor model fit on inputs and outputs.
+        :rtype: Tuple['DecisionTreeRegressor', Dict[str, Any], str]
+        """
+        return cls.init_for_modeler_(name=name, criterion=criterion, max_depth=max_depth)
+
+    @classmethod
     def fit(cls, inputs: Matrix, outputs: Matrix, criterion: str = 'squared_error', max_depth: int = None,
             name: str = '') -> 'DecisionTreeRegressor':
         """
@@ -793,26 +889,10 @@ class RandomForest(Model):
         return criterion
 
     @classmethod
-    def fit(cls, inputs: Matrix, outputs: Matrix, n_estimators: int = 100, criterion: str = 'squared_error',
-            max_depth: int = None, name: str = '') -> 'RandomForest':
+    def init_for_modeler(cls, criterion: str = 'squared_error', max_depth: int = None,
+                         name: str = '') -> Tuple['RandomForest', Dict[str, Any], str]:
         """
-        Standard method to fit outputs to inputs thanks to RandomForest model from scikit-learn.
-
-        More information:
-            - Classifier: https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html
-            - Regressor: https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestRegressor.html
-
-        :param inputs:
-            Matrix of data of dimension `n_samples x n_features`
-        :type inputs: List[List[float]]
-
-        :param outputs:
-            Matrix of data of dimension `n_samples x n_features`
-        :type outputs: List[List[float]]
-
-        :param name:
-            Name of RandomForestRegressor or RandomForestClassifier model
-        :type name: str, `optional`, defaults to `''`
+        Initialize class RandomForest with its name and hyperparemeters to fit in Modeler.
 
         :param n_estimators:
             Number of DecisionTree contained in RandomForestRegressor or RandomForestClassifier
@@ -835,6 +915,59 @@ class RandomForest(Model):
             The maximum depth of the tree. If `None`, then nodes are expanded until all leaves are pure or until all
             leaves contain less than min_samples_split samples.
         :type max_depth: int, `optional`, defaults to `None`
+
+        :param name:
+            Name of RandomForestRegressor or RandomForestClassifier model
+        :type name: str, `optional`, defaults to `''`
+
+        :return: The RandomForest model fit on inputs and outputs.
+        :rtype: Tuple['RandomForest', Dict[str, Any], str]
+        """
+        return cls.init_for_modeler_(name=name, criterion=criterion, max_depth=max_depth)
+
+    @classmethod
+    def fit(cls, inputs: Matrix, outputs: Matrix, n_estimators: int = 100, criterion: str = 'squared_error',
+            max_depth: int = None, name: str = '') -> 'RandomForest':
+        """
+        Standard method to fit outputs to inputs thanks to RandomForest model from scikit-learn.
+
+        More information:
+            - Classifier: https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html
+            - Regressor: https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestRegressor.html
+
+        :param inputs:
+            Matrix of data of dimension `n_samples x n_features`
+        :type inputs: List[List[float]]
+
+        :param outputs:
+            Matrix of data of dimension `n_samples x n_features`
+        :type outputs: List[List[float]]
+
+        :param n_estimators:
+            Number of DecisionTree contained in RandomForestRegressor or RandomForestClassifier
+        :type n_estimators: int, `optional`, defaults to 100
+
+        :param criterion:
+         |  - **Regressor:** The function to measure the quality of a split. Supported criteria are “squared_error” for
+            the mean squared error, which is equal to variance reduction as feature selection criterion and minimizes
+            the L2 loss using the mean of each terminal node, “friedman_mse”, which uses mean squared error with
+            Friedman’s improvement score for potential splits, “absolute_error” for the mean absolute error,
+            which minimizes the L1 loss using the median of each terminal node, and “poisson” which uses reduction in
+            Poisson deviance to find splits.
+
+         |  - **Classifier:** The function to measure the quality of a split. Supported criteria are “gini” for the Gini
+            impurity and “log_loss” and “entropy” both for the Shannon information gain, see Mathematical formulation.
+         |  Note: This parameter is tree-specific.
+        :type criterion: str, `optional`, defaults to 'squared_error'
+
+        :param max_depth:
+            The maximum depth of the tree. If `None`, then nodes are expanded until all leaves are pure or until all
+            leaves contain less than min_samples_split samples.
+        :type max_depth: int, `optional`, defaults to `None`
+
+        :param name:
+            Name of RandomForestRegressor or RandomForestClassifier model
+        :type name: str, `optional`, defaults to `''`
 
         :return: The RandomForestRegressor or RandomForestClassifier model fit on inputs and outputs.
         :rtype: RandomForest
@@ -1067,6 +1200,33 @@ class SupportVectorMachine(Model):
                 '_probB': model._probB.tolist(),
                 '_gamma': float(model._gamma),
                 '_sparse': model._sparse}
+
+    @classmethod
+    def init_for_modeler(cls, C: float = 1., kernel: str = 'rbf',
+                         name: str = '') -> Tuple['SupportVectorMachine', Dict[str, Any], str]:
+        """
+        Initialize class SupportVectorMachine with its name and hyperparemeters to fit in Modeler.
+
+        :param C:
+            Regularization parameter. The strength of the regularization is inversely proportional to C.
+            Must be strictly positive. The penalty is a squared l2 penalty.
+        :type C: float, `optional`, defaults to `1.`
+
+        :param kernel:
+            Specifies the kernel type to be used in the algorithm.
+            Can be one of `[‘linear’, ‘poly’, ‘rbf’, ‘sigmoid’, ‘precomputed’]`. If `None` is given, ‘rbf’ will be used.
+            If a callable is given it is used to pre-compute the kernel matrix from data matrices; that matrix should be
+            an matrix of shape `n_samples x n_samples`
+        :type kernel: str, `optional`, defaults to `'rbf'`
+
+        :param name:
+            Name of SupportVectorRegressor or SupportVectorClassifier model
+        :type name: str, `optional`, defaults to `''`
+
+        :return: The SupportVectorMachine model fit on inputs and outputs.
+        :rtype: Tuple['SupportVectorMachine', Dict[str, Any], str]
+        """
+        return cls.init_for_modeler_(name=name, C=C, kernel=kernel)
 
     @classmethod
     def fit(cls, inputs: Matrix, outputs: Vector, C: float = 1., kernel: str = 'rbf',
@@ -1359,6 +1519,63 @@ class MultiLayerPerceptron(Model):
                 'out_activation_': model.out_activation_}
 
     @classmethod
+    def init_for_modeler(cls, hidden_layer_sizes: List[int] = None, activation: str = 'relu', alpha: float = 0.0001,
+                         solver: str = 'adam', max_iter: int = 200, tol: float = 0.0001,
+                         name: str = '') -> Tuple['MultiLayerPerceptron', Dict[str, Any], str]:
+        """
+        Initialize class MultiLayerPerceptron with its name and hyperparemeters to fit in Modeler.
+
+        :param hidden_layer_sizes:
+            Regularization parameter. The strength of the regularization is inversely proportional to C.
+            Must be strictly positive. The penalty is a squared l2 penalty.
+        :type hidden_layer_sizes: List[int], `optional`, defaults to `None`
+
+        :param activation:
+            Activation function for the hidden layer:
+                - `‘identity’`, no-op activation, useful to implement linear bottleneck, returns `f(x) = x`
+                - `‘logistic’`, the logistic sigmoid function, returns `f(x) = 1 / (1 + exp(-x))`.
+                - `‘tanh’`, the hyperbolic tan function, returns `f(x) = tanh(x)`.
+                - `‘relu’`, the rectified linear unit function, returns `f(x) = max(0, x)`
+        :type activation: str, `optional`, defaults to `'relu'`
+
+        :param alpha:
+            Constant that multiplies the L2 term, controlling regularization strength. alpha must be a non-negative
+            float i.e. in [0, inf[.
+        :type alpha: float, `optional`, defaults to `0.0001`
+
+        :param solver:
+            The solver for weight optimization:
+                - `‘lbfgs’` is an optimizer in the family of quasi-Newton methods.
+                - `‘sgd’` refers to stochastic gradient descent.
+                - `‘adam’` refers to a stochastic gradient-based optimizer proposed in https://arxiv.org/abs/1412.6980
+            Note: The default solver ‘adam’ works pretty well on relatively large datasets (with thousands of training
+            samples or more) in terms of both training time and validation score. For small datasets, however,
+            `‘lbfgs’` can converge faster and perform better.
+        :type solver: str, `optional`, defaults to `'adam'`
+
+        :param max_iter:
+            Maximum number of iterations. The solver iterates until convergence (determined by `‘tol’`) or this number
+            of iterations. For stochastic solvers (`‘sgd’`, `‘adam’`), note that this determines the number of epochs
+            (how many times each data point will be used), not the number of gradient steps.
+        :type max_iter: int, `optional`, defaults to `200`
+
+        :param tol:
+            Tolerance for the optimization. When the loss or score is not improving by at least tol for
+            `n_iter_no_change` consecutive iterations, unless `learning_rate` is set to `‘adaptive’`, convergence is
+            considered to be reached and training stops.
+        :type tol: float, `optional`, defaults to `0.0001`
+
+        :param name:
+            Name of SupportVectorRegressor or SupportVectorClassifier model
+        :type name: str, `optional`, defaults to `''`
+
+        :return: The MultiLayerPerceptron model fit on inputs and outputs.
+        :rtype: Tuple['MultiLayerPerceptron', Dict[str, Any], str]
+        """
+        return cls.init_for_modeler_(name=name, hidden_layer_sizes=hidden_layer_sizes, activation=activation,
+                                     alpha=alpha, solver=solver, max_iter=max_iter, tol=tol)
+
+    @classmethod
     def fit(cls, inputs: Matrix, outputs: Vector, hidden_layer_sizes: List[int] = None,
             activation: str = 'relu', alpha: float = 0.0001, solver: str = 'adam', max_iter: int = 200,
             tol: float = 0.0001, name: str = '') -> 'MultiLayerPerceptron':
@@ -1586,7 +1803,7 @@ def train_test_split(*matrices: List[Matrix], ratio: float = 0.8, shuffled: bool
     The first one is of length `int(len_matrix * ratio)`, the second of length `len_matrix - int(len_matrix * ratio)`.
 
     :param len_matrix:
-        Length of matrix to split
+        Length of matrix to split.
     :type len_matrix: List[List[float]]
 
     :param ratio:
@@ -1595,12 +1812,12 @@ def train_test_split(*matrices: List[Matrix], ratio: float = 0.8, shuffled: bool
     :type ratio: float, `optional`, defaults to 0.8
 
     :param shuffled:
-        Whether to shuffle or not the results
+        Whether to shuffle or not the results.
     :type shuffled: bool, `optional`, defaults to True
 
     :return:
-        A tuple containing all split matrices in the following order: `(train_M1, test_M1, train_M2, test_M2, ...,
-        train_Mn, test_Mn)`.
+        A list containing all split matrices in the following order: `[train_M1, test_M1, train_M2, test_M2, ...,
+        train_Mn, test_Mn]`.
     :rtype: List[List[List[float]]]
     """
     len_matrices = [len(matrix) for matrix in matrices]
@@ -1611,57 +1828,3 @@ def train_test_split(*matrices: List[Matrix], ratio: float = 0.8, shuffled: bool
     train_test_split_matrices = [[[matrix[idx] for idx in ind_train], [matrix[idx] for idx in ind_test]]
                                  for matrix in matrices]
     return sum(train_test_split_matrices, [])
-
-# # ====================================================================================================================
-# #                                                    M O D E L E R S
-# # ====================================================================================================================
-# class Modeler(DessiaObject):
-#     def __init__(self, model: Model, scaler: Scaler, scaled_inputs: bool = True, scaled_outputs: bool = False,
-#                  name: str = ''):
-#         self.model = model
-#         self.scaler = scaler
-#         self.scaled_inputs = scaled_inputs
-#         self.scaled_outputs = scaled_outputs
-#         DessiaObject.__init__(self, name=name)
-
-# ##### SCALE ##########
-#     def _initialize_scaler(self, is_scaled: bool):
-#         if is_scaled:
-#             return StandardScaler()
-#         return IdentityScaler()
-
-# ##### MODEL ##########
-#     def _initialize_model(self):
-#         return Model()
-
-#     def _set_model_attributes(self, model, attributes: Dict[str, float]):
-#         for attr, value in attributes.items():
-#             setattr(model, attr, value)
-#         return model
-
-#     def _instantiate_model(self):
-#         model = self._init_model()
-#         model = self._set_model_attributes(model, self.model_attributes)
-#         model = self._set_model_attributes(model, self.model_)
-#         return model
-
-# ##### MODEL METHODS ##########
-#     def fit(self, inputs: List[List[float]], outputs: List[List[float]]):
-#         input_scaler, scaled_inputs = self._auto_scale(inputs, self.scaled_inputs)
-#         output_scaler, scaled_outputs = self._auto_scale(outputs, self.scaled_outputs)
-#         model = self._instantiate_model()
-#         model.fit(scaled_inputs, scaled_outputs)
-#         self.model_ = {key: value for key, value in model.items() if key in self._required_attributes}
-
-#     def predict(self, inputs: List[List[float]], input_scaler, output_scaler):
-#         scaled_inputs = input_scaler.transform(inputs)
-#         model = self._instantiate_model()
-#         return output_scaler.inverse_transform(model.predict(scaled_inputs))
-
-#     def fit_predict(self, inputs: List[List[float]], outputs: List[List[float]]):
-#         input_scaler, scaled_inputs = self._auto_scale(inputs, self.scaled_inputs)
-#         output_scaler, scaled_outputs = self._auto_scale(outputs, self.scaled_outputs)
-#         model = self._instantiate_model()
-#         predicted_outputs = model.fit_predict(scaled_inputs, scaled_outputs)
-#         self.model_ = {key: value for key, value in model.items() if key in self._required_attributes}
-#         return predicted_outputs

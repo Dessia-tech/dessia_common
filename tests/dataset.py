@@ -9,8 +9,6 @@ from dessia_common.datatools.metrics import covariance, manhattan_distance, eucl
 from dessia_common.datatools.dataset import Dataset
 
 # Tests on common_attributes
-
-
 class Bidon(DessiaObject):
     _vector_features = ['attr1']
 
@@ -30,8 +28,6 @@ bidon_hlist.plot_data()
 assert(bidon_hlist.common_attributes == ['attr1'])
 
 # Tests on common_attributes
-
-
 class Bidon(DessiaObject):
     _vector_features = ['attr1', 'attr2', 'prop1', 'in_to_vector']
 
@@ -46,7 +42,6 @@ class Bidon(DessiaObject):
 
     def to_vector(self):
         return [self.attr1, self.attr2, self.prop1, random.randint(0, 32)]
-
 
 bidon = Bidon()
 bidon_hlist = Dataset([bidon] * 10)
@@ -166,8 +161,7 @@ try:
     all_cars_without_features[[float]]
     raise ValueError("float should not work as __getitem__ object for Dataset")
 except Exception as e:
-    assert(e.args[0] == "key of type <class 'list'> with <class 'type'> elements not implemented for indexing " +
-           "Datasets")
+    assert(e.args[0] == "key of type <class 'list'> with <class 'type'> elements not implemented for indexing Datasets")
 
 try:
     covariance([1, 2], [1])
