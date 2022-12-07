@@ -17,9 +17,13 @@ double_outputs = dataset_example.sub_matrix(['mpg', 'weight'])
 labelled_outputs = [npy.random.randint(4) for _ in double_outputs]
 doubled_labelled_outputs = [[npy.random.randint(4),npy.random.randint(4)] for _ in double_outputs]
 mono_outputs = [output[0] for output in double_outputs]
-models.train_test_split(inputs, double_outputs, ratio=0.7)
 
-
+# Train test split
+inputs_train, inputs_test, outputs_train, outputs_test = models.train_test_split(inputs, double_outputs, ratio=0.7)
+assert(len(inputs_train) + len(inputs_test) == len(inputs))
+assert(len(outputs_train) + len(outputs_test) == len(double_outputs))
+assert(len(inputs_train) == len(outputs_train))
+assert(len(inputs_test) == len(outputs_test))
 
 # Test scalers
 idty_scaler = models.IdentityScaler().fit(dataset_example.matrix)
@@ -140,5 +144,11 @@ try:
     raise ValueError("_instantiate_dessia() should not work for Model object.")
 except NotImplementedError as e:
     assert isinstance(e, NotImplementedError)
+
+try:
+    models.train_test_split(inputs, [[1,2,3], [1,2,3]], ratio=0.7)
+    raise ValueError("train_test_split function should not work with matrices of different sizes.")
+except ValueError as e:
+    assert isinstance(e, ValueError)
 
 
