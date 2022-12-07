@@ -257,7 +257,6 @@ class Pipe(DessiaObject):
     :param output_variable: The output variable of the pipe correpond to the \
     end of the arrow, its hat.
     :type output_variable: Variable
-
     """
     _eq_is_data_eq = False
 
@@ -301,11 +300,11 @@ class Workflow(Block):
 
     :param documentation:
         A long documentation that will be displayed on workflow page (frontend). Can use markdown elements.
+    :type documentation: str
 
     :param name:
         The name of the workflow.
     :type name: str
-
     """
     _standalone_in_db = True
     _allowed_methods = ['run', 'start_run']
@@ -460,8 +459,8 @@ class Workflow(Block):
     def _data_hash(self):
         output_hash = hash(self.variable_indices(self.output))
         base_hash = len(self.blocks) + 11 * len(self.pipes) + 23 * len(self.imposed_variable_values) + output_hash
-        block_hash = int(sum(b.equivalent_hash() for b in self.blocks) % 10e5)
-        return (base_hash + block_hash) % 1000000000
+        block_hash = int(sum(b.equivalent_hash() for b in self.blocks) % 1e6)
+        return (base_hash + block_hash) % 1e9
 
     def _data_eq(self, other_object) -> bool:
         if hash(self) != hash(other_object) or not Block.equivalent(self, other_object):
@@ -1504,7 +1503,6 @@ class WorkflowState(DessiaObject):
     Class for WorkflowState.
 
     This object represents the state of execution of a workflow.
-
     """
     _standalone_in_db = True
     _allowed_methods = ['block_evaluation', 'evaluate_next_block', 'continue_run',
