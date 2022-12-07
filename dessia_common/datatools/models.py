@@ -1565,7 +1565,7 @@ def split_matrix(matrix: Matrix, ratio: float = 0.8) -> Tuple[Matrix, Matrix]:
     """
     Split matrix randomly in two matrices.
 
-    The first one in of length `len(matrix) * ratio`, the second one of length `len(matrix) - len(matrix) * ratio`.
+    The first one is of length `int(len(matrix) * ratio)`, the second one of length `len(matrix) - len(matrix) * ratio`.
 
     :param matrix:
         Matrix to split of shape `n_samples x n_features`
@@ -1578,6 +1578,9 @@ def split_matrix(matrix: Matrix, ratio: float = 0.8) -> Tuple[Matrix, Matrix]:
     ind_train.sort()
     ind_test.sort()
     return [matrix[idx] for idx in ind_train], [matrix[idx] for idx in ind_test]
+
+def train_test_split(*matrices, ratio: float = 0.8) -> List[Matrix]:
+    return
 
 # # ====================================================================================================================
 # #                                                    M O D E L E R S

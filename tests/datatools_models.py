@@ -7,10 +7,7 @@ from sklearn import linear_model, tree, ensemble, svm, neural_network
 
 from dessia_common.models import all_cars_no_feat
 from dessia_common.datatools.dataset import Dataset
-from dessia_common.datatools.modeling import StandardScaler, IdentityScaler, Ridge, SupportVectorRegressor,\
-    SupportVectorClassifier, MLPRegressor, DecisionTreeRegressor, DecisionTreeClassifier, RandomForestRegressor, \
-        RandomForestClassifier, MLPClassifier, Scaler, Model, LinearModel, RandomForest, SupportVectorMachine, \
-            MultiLayerPerceptron, LinearRegression
+import dessia_common.datatools.models as models
 
 # TODO review the way data are generated
 # Load Data and put it in a Dataset (matrix is automatically computed)
@@ -23,13 +20,13 @@ mono_outputs = [output[0] for output in double_outputs]
 
 
 # Test scalers
-idty_scaler = IdentityScaler().fit(dataset_example.matrix)
+idty_scaler = models.IdentityScaler().fit(dataset_example.matrix)
 idty_matrix = idty_scaler.transform(dataset_example.matrix)
-idty_scaler, idty_matrix = IdentityScaler().fit_transform(dataset_example.matrix)
+idty_scaler, idty_matrix = models.IdentityScaler().fit_transform(dataset_example.matrix)
 
-std_scaler = StandardScaler().fit(inputs)
+std_scaler = models.StandardScaler().fit(inputs)
 std_inputs = std_scaler.transform(inputs)
-std_scaler, std_inputs = StandardScaler().fit_transform(inputs)
+std_scaler, std_inputs = models.StandardScaler().fit_transform(inputs)
 
 
 # Hyperparameters
@@ -77,12 +74,12 @@ for key, model in skl_models.items():
     model.fit(std_inputs[:-10], labelled_outputs[:-10])
 
 # Dessia models
-dessia_classes = {'ridge_regressor': Ridge, 'linearreg_regressor': LinearRegression,
-                  'dt_regressor': DecisionTreeRegressor, 'dt_classifier': DecisionTreeClassifier,
-                  'dt_classifier_doubled': DecisionTreeClassifier,
-                  'rf_regressor': RandomForestRegressor, 'rf_classifier': RandomForestClassifier,
-                  'svm_regressor': SupportVectorRegressor, 'svm_classifier': SupportVectorClassifier,
-                  'mlp_regressor': MLPRegressor, 'mlp_classifier': MLPClassifier}
+dessia_classes = {'ridge_regressor': models.Ridge, 'linearreg_regressor': models.LinearRegression,
+                  'dt_regressor': models.DecisionTreeRegressor, 'dt_classifier': models.DecisionTreeClassifier,
+                  'dt_classifier_doubled': models.DecisionTreeClassifier,
+                  'rf_regressor': models.RandomForestRegressor, 'rf_classifier': models.RandomForestClassifier,
+                  'svm_regressor': models.SupportVectorRegressor, 'svm_classifier': models.SupportVectorClassifier,
+                  'mlp_regressor': models.MLPRegressor, 'mlp_classifier': models.MLPClassifier}
 
 
 # Assert regenerated sklearn models from dessia models make the same predictions as sklearn models from sklearn.fit
@@ -114,13 +111,14 @@ for key, model in skl_models.items():
         assert(isinstance(dessia_models[key].score(std_inputs[-10:], local_outputs[-10:]), float))
     except ValueError as e:
         assert(e.args[0] == 'multiclass-multioutput is not supported' and
-               isinstance(dessia_models[key], DecisionTreeClassifier))
+               isinstance(dessia_models[key], models.DecisionTreeClassifier))
     dessia_models[key]._check_platform()
 
 
 # Tests errors and base objects
-base_models = [Scaler(), Model(), LinearModel(), RandomForest(), SupportVectorMachine(), MultiLayerPerceptron()]
-model = Model()
+base_models = [models.Scaler(), models.Model(), models.LinearModel(), models.RandomForest(),
+               models.SupportVectorMachine(), models.MultiLayerPerceptron()]
+model = models.Model()
 
 for base_model in base_models:
     try:
