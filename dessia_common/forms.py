@@ -1,6 +1,6 @@
 """
-This is a module that aims to list all
-possibilities of data formats offered by Dessia.
+Module that aims to list all possibilities of data formats offered by Dessia.
+
 It should be used as a repertory of rules and available typings.
 
 Some general rules :
@@ -23,6 +23,7 @@ Some general rules :
 In addition to types & genericity (brought by DessiaObject),
 this module can also be seen as a template for Dessia's
 coding/naming style & convention.
+
 """
 
 from math import floor, ceil, cos
@@ -54,12 +55,16 @@ class EmbeddedBuiltinsSubobject(PhysicalObject):
 
     :param distarg: A Distance with units
     :type distarg: Distance
+
     :param floatarg: A float
     :type floatarg: float
+
     :param intarg: An integer
     :type intarg: int
+
     :param boolarg: A boolean
     :type boolarg: bool
+
     :param name: Object's name
     :type name: str
     """
@@ -114,12 +119,16 @@ class StandaloneBuiltinsSubobject(EmbeddedBuiltinsSubobject):
 
     :param distarg: A Distance with units
     :type distarg: Distance
+
     :param floatarg: A float
     :type floatarg: float
+
     :param intarg: An integer
     :type intarg: int
+
     :param boolarg: A boolean
     :type boolarg: bool
+
     :param name: Object's name
     :type name: str
     """
@@ -221,14 +230,17 @@ UnionArg = Union[EmbeddedSubobject, EnhancedEmbeddedSubobject]
 
 class StandaloneObject(MovingObject):
     """
-    Dev Object for testing purpose
+    Dev Object for testing purpose.
 
     :param standalone_subobject: A dev subobject that is standalone_in_db
     :type standalone_subobject: StandaloneSubobject
+
     :param embedded_subobject: A dev subobject that isn't standalone_in_db
     :type embedded_subobject: EmbeddedSubobject
+
     :param dynamic_dict: A variable length dict
     :type dynamic_dict: Dict[str, bool]
+
     :param tuple_arg: A heterogeneous sequence
     :type tuple_arg: tuple
     """
@@ -296,25 +308,25 @@ class StandaloneObject(MovingObject):
 
     def add_standalone_object(self, object_: StandaloneBuiltinsSubobject):
         """
-        This methods adds a standalone object to object_list.
-        It doesn't return anything, hence, API will update object when
-        computing from frontend
+        Add a standalone object to object_list.
+
+        It doesn't return anything, hence, API will update object when computing from frontend.
         """
         self.object_list.append(object_)
 
     def add_embedded_object(self, object_: EmbeddedSubobject):
         """
-        This methods adds an embedded object to subobject_list.
-        It doesn't return anything, hence, API will update object
-        when computing from frontend
+        Add an embedded object to subobject_list.
+
+        It doesn't return anything, hence, API will update object when computing from frontend.
         """
         self.subobject_list.append(object_)
 
     def add_float(self, value: float) -> StandaloneBuiltinsSubobject:
         """
-        This methods adds value to its standalone subobject
-        floatarg property and returns it.
-        API should replace standalone_subobject as it is returned
+        Add value to its standalone subobject floatarg property and returns it.
+
+        API should replace standalone_subobject as it is returned.
         """
         self.standalone_subobject.floatarg += value
         return self.standalone_subobject
@@ -406,7 +418,7 @@ class StandaloneObject(MovingObject):
 
     def maldefined_method(self, arg0, arg1=1, arg2: int = 10, arg3=3):
         """
-        Defining a docstring for testing parsing purpose
+        Define a docstring for testing parsing purpose.
         """
         nok_string = "This is a bad coding behavior"
         ok_string = "This could be OK as temporary attr"
@@ -422,6 +434,9 @@ class StandaloneObject(MovingObject):
     #     return arg0
 
     def to_markdown(self):
+        """
+        Write a standard markdown of StandaloneObject.
+        """
         contents = """
         # Quem Stygios dumque
 
@@ -500,10 +515,11 @@ class StandaloneObject(MovingObject):
 
     def count_until(self, duration: float, raise_error: bool = False):
         """
-        A method which duration can be customized to test long execution
+        Test long execution with a customizable duration.
 
         :param duration: Duration of the method in s
         :type duration: float
+
         :param raise_error: Wether the computation should raise an error or not at the end
         :type raise_error: bool
         """
@@ -577,9 +593,7 @@ DEF_SOWDV = StandaloneObjectWithDefaultValues()
 
 
 class ObjectWithOtherTypings(DessiaObject):
-    """
-    Dummy class to test some typing jsonschemas
-    """
+    """Dummy class to test some typing jsonschemas."""
 
     def __init__(self, undefined_type_attribute: Any, name: str = ""):
         self.undefined_type_attribute = undefined_type_attribute
@@ -621,12 +635,14 @@ class MovingStandaloneObject(MovingObject):
 
 class Generator(DessiaObject):
     """
-    A class that allow to generate several StandaloneObjects from different parameters
+    A class that allow to generate several StandaloneObjects from different parameters.
 
     :param parameter: An "offset" for the seed that will be used in generation
     :type parameter: int
+
     :param nb_solutions: The max number of solutions that will be generated
     :type nb_solutions: int
+
     :param name: The name of the Generator. It is not used in object generation
     :type name: str
     """
@@ -641,7 +657,7 @@ class Generator(DessiaObject):
 
     def generate(self) -> List[StandaloneObject]:
         """
-        Generates a list of Standalone objects
+        Generate a list of Standalone objects.
         """
         self.models = [StandaloneObject.generate(self.parameter + i) for i in range(self.nb_solutions)]
         return self.models
@@ -649,10 +665,11 @@ class Generator(DessiaObject):
 
 class Optimizer(DessiaObject):
     """
-    Mock an optimization process
+    Mock an optimization process.
 
     :param model_to_optimize: An object which will be modified (one of its attributes)
     :type model_to_optimize: StandaloneObject
+
     :param name: Name of the optimizer. Will not be used in the optimization process
     :type name: str
     """
@@ -665,7 +682,7 @@ class Optimizer(DessiaObject):
 
     def optimize(self, optimization_value: int = 3) -> int:
         """
-        Sums model value with given one
+        Sum model value with given one.
 
         :param optimization_value: value that will be added to model's intarg attribute
         :type optimization_value: int
