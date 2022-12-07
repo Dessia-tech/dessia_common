@@ -27,13 +27,13 @@ MAX_ERROR_BY_TYPE = {
                      'too-many-locals': 12,  # Reduce by dropping vectored objects
                      'too-many-branches': 13,
                      'wrong-import-order': 0,
-                     'unused-argument': 6,
+                     'unused-argument': 7,
                      'cyclic-import': 14,
                      'no-self-use': 6,
                      'trailing-whitespace': 11,
                      'empty-docstring': 1,
                      'missing-module-docstring': 1,
-                     'too-many-arguments': 19,
+                     'too-many-arguments': 22,
                      'too-few-public-methods': 4,
                      'unnecessary-comprehension': 1,
                      'no-value-for-parameter': 2,
@@ -60,8 +60,6 @@ MAX_ERROR_BY_TYPE = {
                      'use-maxsplit-arg': 1,
                      'duplicate-code': 1,
                      'too-many-lines': 1
-                     # No tolerance errors
-
                      }
 
 print('pylint version: ', __version__)

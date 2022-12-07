@@ -8,8 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 
 ### Fixed
+
 - Diff Dict is now robust to uneven arguments commutation
 - Fix path deepth when dict misses keys
+
+### Performance
+
+- Cache for fullargspec and deserialize sequence as comprehension list
 
 ## v0.10.2
 
@@ -25,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## v0.10.0
 
 ### Added
+- Generic save to file
 - Sampler class
 - (De)Serialization handles 'typing.Type'
 - Workflow: handle position in to_dict / dict_to_object process

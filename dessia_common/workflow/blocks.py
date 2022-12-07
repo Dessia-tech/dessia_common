@@ -23,6 +23,7 @@ from dessia_common.typings import JsonSerializable, MethodType, ClassMethodType
 from dessia_common.files import StringFile, BinaryFile
 from dessia_common.utils.helpers import concatenate
 from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
+from dessia_common.exports import ExportFormat
 
 from dessia_common.workflow.core import Block, Variable, TypedVariable, TypedVariableWithDefaultValue,\
     set_block_variable_names_from_dict, Workflow, DisplaySetting, DisplayObject
@@ -78,7 +79,7 @@ class InstantiateModel(Block):
     :type name: str
     """
 
-    def __init__(self, model_class: Type, name: str = '', position = None):
+    def __init__(self, model_class: Type, name: str = '', position=None):
         self.model_class = model_class
         inputs = []
         inputs = set_inputs_from_function(self.model_class.__init__, inputs)
@@ -142,7 +143,7 @@ class ClassMethod(Block):
     Handles static method as well
     """
 
-    def __init__(self, method_type: ClassMethodType[Type], name: str = '', position = None):
+    def __init__(self, method_type: ClassMethodType[Type], name: str = '', position=None):
         self.method_type = method_type
         inputs = []
 
@@ -438,7 +439,7 @@ class WorkflowBlock(Block):
                     docstring[input_] = block_docstring[input_]
         return docstring
 
-    def _to_script(self, prefix : str) -> ToScriptElement:
+    def _to_script(self, prefix: str) -> ToScriptElement:
         prefix = f'{prefix}sub_'
         workflow_script = self.workflow._to_script(prefix)
         script_workflow = f"\n# --- Subworkflow --- \n" \
@@ -522,7 +523,7 @@ class ForEach(Block):
             block_docstring[input_] = wb_docstring[workflow_input]
         return block_docstring
 
-    def _to_script(self, prefix : str) -> ToScriptElement:
+    def _to_script(self, prefix: str) -> ToScriptElement:
         wfblock_script_elements = self.workflow_block._to_script(prefix)
         wfblock_script = f"{wfblock_script_elements.before_declaration}\n" \
                          f"wfblock = {wfblock_script_elements.declaration}"
@@ -589,7 +590,7 @@ class Flatten(Block):
 
 
 class Product(Block):
-    def __init__(self, number_list: int, name: str = '', position = None):
+    def __init__(self, number_list: int, name: str = '', position=None):
         self.number_list = number_list
         inputs = [Variable(name='list_product_' + str(i)) for i in range(self.number_list)]
         output_variable = Variable(name='Product output')
@@ -639,7 +640,7 @@ class Filter(Block):
     :type name: str
     """
 
-    def __init__(self, filters: List[DessiaFilter], logical_operator: str = "and", name: str = '', position = None):
+    def __init__(self, filters: List[DessiaFilter], logical_operator: str = "and", name: str = '', position=None):
         self.filters = filters
         self.logical_operator = logical_operator
         inputs = [Variable(name='input_list')]
@@ -689,7 +690,7 @@ class Display(Block):
     _displayable_input = 0
     _non_editable_attributes = ['inputs']
 
-    def __init__(self, inputs: List[Variable] = None, order: int = None, name: str = '', position = None):
+    def __init__(self, inputs: List[Variable] = None, order: int = None, name: str = '', position=None):
         """
         Abstract class for display behaviors
         """
@@ -759,7 +760,7 @@ class MultiPlot(Display):
     :type name: str
     """
 
-    def __init__(self, attributes: List[str], order: int = None, name: str = '', position = None):
+    def __init__(self, attributes: List[str], order: int = None, name: str = '', position=None):
         if order is not None:
             warnings.warn("Display Block : order argument is deprecated and will be removed in a future version."
                           "You can safely remove it from your block definition", DeprecationWarning)
@@ -834,6 +835,7 @@ class Markdown(Display):
     :param name: Name of the block.
     :type name: str
     """
+
     def __init__(self, name: str = '', position=None):
         input_ = TypedVariable(DessiaObject, name="Model to display")
         Display.__init__(self, inputs=[input_], name=name, position=position)
@@ -851,7 +853,7 @@ class PlotData(Display):
     :type name: str
     """
 
-    def __init__(self, name: str = '', position = None):
+    def __init__(self, name: str = '', position=None):
         input_ = TypedVariable(DessiaObject, name="Model to display")
         Display.__init__(self, inputs=[input_], name=name, position=position)
 
@@ -867,7 +869,7 @@ class ModelAttribute(Block):
     :type name: str
     """
 
-    def __init__(self, attribute_name: str, name: str = '', position = None):
+    def __init__(self, attribute_name: str, name: str = '', position=None):
         self.attribute_name = attribute_name
         inputs = [Variable(name='Model')]
         outputs = [Variable(name='Model attribute')]
@@ -1099,10 +1101,10 @@ class Export(Block):
         getattr(values[self.inputs[0]], self.method_type.name)(stream)
         return [stream]
 
-    def _export_format(self, block_index: int):
+    def _export_format(self, block_index: int) -> ExportFormat:
         args = {"block_index": block_index}
-        return {"extension": self.extension, "method_name": "export", "text": self.text,
-                "export_name": self.filename, "args": args}
+        return ExportFormat(selector=None, extension=self.extension, method_name="export", text=self.text,
+                            export_name=self.filename, args=args)
 
     def _to_script(self, _) -> ToScriptElement:
         script = f"Export(method_type=MethodType(" \
@@ -1129,6 +1131,8 @@ class Archive(Block):
         """
         self.number_exports = number_exports
         self.filename = filename
+        self.extension = "zip"
+        self.text = False
         inputs = [Variable(name="export_" + str(i)) for i in range(number_exports)]
         inputs.append(TypedVariableWithDefaultValue(type_=str, default_value=filename, name="filename"))
         Block.__init__(self, inputs=inputs, outputs=[Variable(name="zip archive")], name=name, position=position)
@@ -1153,7 +1157,7 @@ class Archive(Block):
 
     def evaluate(self, values):
         name_input = self.inputs[-1]
-        archive_name = f"{values.pop(name_input)}.zip"
+        archive_name = f"{values.pop(name_input)}.{self.extension}"
         archive = BinaryFile(archive_name)
         with ZipFile(archive, 'w') as zip_archive:
             for input_ in self.inputs[:-1]:  # Filename is last block input
@@ -1168,9 +1172,10 @@ class Archive(Block):
                     raise ValueError(f"Archive input is not a file-like object. Got '{value}' of type {type(value)}")
         return [archive]
 
-    def _export_format(self, block_index: int):
-        return {"extension": "zip", "method_name": "export", "text": False,
-                "export_name": self.filename, "args": {"block_index": block_index}}
+    def _export_format(self, block_index: int) -> ExportFormat:
+        args = {"block_index": block_index}
+        return ExportFormat(selector=None, extension=self.extension, method_name="export", text=self.text,
+                            export_name=self.filename, args=args)
 
     def _to_script(self, _) -> ToScriptElement:
         script = f"Archive(number_exports={self.number_exports}, filename='{self.filename}', {self.base_script()})"
