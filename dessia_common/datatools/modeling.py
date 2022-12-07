@@ -2,6 +2,7 @@
 Tools and base classes for machine learning methods.
 """
 from typing import List, Dict, Any, Tuple, Union
+import random
 
 import numpy as npy
 from sklearn import preprocessing, linear_model, ensemble, tree, svm, neural_network
@@ -1552,10 +1553,31 @@ class MLPClassifier(MultiLayerPerceptron):
 
 
 def get_scaler_attr(scaler, attr: str):
+    """
+    Get attribute attr of scikit-learn scaler with an exception for numpy arrays (in order to instantiate a Scaler).
+    """
     scaler_attr = getattr(scaler, attr)
     if isinstance(scaler_attr, npy.ndarray):
         return scaler_attr.tolist()
     return scaler_attr
+
+def split_matrix(matrix: Matrix, ratio: float = 0.8) -> Tuple[Matrix, Matrix]:
+    """
+    Split matrix randomly in two matrices.
+
+    The first one in of length `len(matrix) * ratio`, the second one of length `len(matrix) - len(matrix) * ratio`.
+
+    :param matrix:
+        Matrix to split of shape `n_samples x n_features`
+    :type matrix: List[List[float]]
+    """
+    len_train = int(len(matrix) * ratio)
+    idx_range = range(0, len(matrix))
+    ind_train = random.sample(idx_range, len_train)
+    ind_test = list(set(idx_range).difference(set(ind_train)))
+    ind_train.sort()
+    ind_test.sort()
+    return [matrix[idx] for idx in ind_train], [matrix[idx] for idx in ind_test]
 
 # # ====================================================================================================================
 # #                                                    M O D E L E R S
