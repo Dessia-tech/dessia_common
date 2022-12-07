@@ -17,6 +17,8 @@ double_outputs = dataset_example.sub_matrix(['mpg', 'weight'])
 labelled_outputs = [npy.random.randint(4) for _ in double_outputs]
 doubled_labelled_outputs = [[npy.random.randint(4),npy.random.randint(4)] for _ in double_outputs]
 mono_outputs = [output[0] for output in double_outputs]
+models.train_test_split(inputs, double_outputs, ratio=0.7)
+
 
 
 # Test scalers
@@ -138,3 +140,5 @@ try:
     raise ValueError("_instantiate_dessia() should not work for Model object.")
 except NotImplementedError as e:
     assert isinstance(e, NotImplementedError)
+
+

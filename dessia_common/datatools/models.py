@@ -1561,26 +1561,66 @@ def get_scaler_attr(scaler, attr: str):
         return scaler_attr.tolist()
     return scaler_attr
 
-def split_matrix(matrix: Matrix, ratio: float = 0.8) -> Tuple[Matrix, Matrix]:
+def get_split_indexes(len_matrix: int, ratio: float = 0.8, shuffled: bool = True) -> Tuple[Vector, Vector]:
     """
-    Split matrix randomly in two matrices.
+    Get two lists of indexes to split randomly a matrix in two matrices.
 
-    The first one is of length `int(len(matrix) * ratio)`, the second one of length `len(matrix) - len(matrix) * ratio`.
+    The first one is of length `int(len_matrix * ratio)`, the second of length `len_matrix - int(len_matrix * ratio)`.
 
-    :param matrix:
-        Matrix to split of shape `n_samples x n_features`
-    :type matrix: List[List[float]]
+    :param len_matrix:
+        Length of matrix to split
+    :type len_matrix: List[List[float]]
+
+    :param ratio:
+        Ratio on which to split matrix. If ratio > 1, ind_train will be of length `int(ratio)` and ind_test of
+        length `len_matrix - int(ratio)`.
+    :type ratio: float, `optional`, defaults to 0.8
+
+    :param shuffled:
+        Whether to shuffle or not the results
+    :type shuffled: bool, `optional`, defaults to True
     """
-    len_train = int(len(matrix) * ratio)
-    idx_range = range(0, len(matrix))
+    if ratio > 1:
+        len_train = int(ratio)
+    else:
+        len_train = int(len_matrix * ratio)
+
+    idx_range = range(0, len_matrix)
     ind_train = random.sample(idx_range, len_train)
     ind_test = list(set(idx_range).difference(set(ind_train)))
-    ind_train.sort()
-    ind_test.sort()
-    return [matrix[idx] for idx in ind_train], [matrix[idx] for idx in ind_test]
 
-def train_test_split(*matrices, ratio: float = 0.8) -> List[Matrix]:
-    return
+    if not shuffled:
+        ind_train.sort()
+        ind_test.sort()
+    return ind_train, ind_test
+
+def train_test_split(*matrices, ratio: float = 0.8, shuffled: bool = True) -> List[Matrix]:
+    """
+    Split a list of matrices of the same length into a list of split matrices.
+
+    The first one is of length `int(len_matrix * ratio)`, the second of length `len_matrix - int(len_matrix * ratio)`.
+
+    :param len_matrix:
+        Length of matrix to split
+    :type len_matrix: List[List[float]]
+
+    :param ratio:
+        Ratio on which to split matrix. If ratio > 1, ind_train will be of length `int(ratio)` and ind_test of
+        length `len_matrix - int(ratio)`.
+    :type ratio: float, `optional`, defaults to 0.8
+
+    :param shuffled:
+        Whether to shuffle or not the results
+    :type shuffled: bool, `optional`, defaults to True
+    """
+    len_matrices = [len(matrix) for matrix in matrices]
+    if len(set(len_matrices)) != 1:
+        raise ValueError("matrices are not of the same length in train_test_split.")
+
+    ind_train, ind_test = get_split_indexes(len_matrices[0], ratio=ratio, shuffled=shuffled)
+    train_test_split_matrices = (tuple(([matrix[idx] for idx in ind_train], [matrix[idx] for idx in ind_test]))
+                                 for matrix in matrices)
+    return sum(train_test_split_matrices, ())
 
 # # ====================================================================================================================
 # #                                                    M O D E L E R S
