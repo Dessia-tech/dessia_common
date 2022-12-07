@@ -460,7 +460,7 @@ class Workflow(Block):
         output_hash = hash(self.variable_indices(self.output))
         base_hash = len(self.blocks) + 11 * len(self.pipes) + 23 * len(self.imposed_variable_values) + output_hash
         block_hash = int(sum(b.equivalent_hash() for b in self.blocks) % 1e6)
-        return (base_hash + block_hash) % 1e9
+        return (base_hash + block_hash) % 1000000000
 
     def _data_eq(self, other_object) -> bool:
         if hash(self) != hash(other_object) or not Block.equivalent(self, other_object):
