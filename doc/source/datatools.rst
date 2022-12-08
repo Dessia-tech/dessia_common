@@ -18,7 +18,7 @@ Sampler
 
 A Sampler is an object that allows to generate a DOE from a class and bounds for its attributes.
 
-.. autoclass:: dessia_common.datatools.sampling.Sampler
+.. autoclass:: dessia_common.datatools.sampling.ClassSampler
    :members:
 
 Clustered Dataset
