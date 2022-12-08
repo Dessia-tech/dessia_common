@@ -48,9 +48,7 @@ class ObjectiveSettings(DessiaObject):
 class Objective(DessiaObject):
     """
     Defines an objective function.
-
     Order is kept. It means that coefficients are applied to the variables in the same order as they are defined.
-
     """
     _generic_eq = True
     _standalone_in_db = False
@@ -81,8 +79,7 @@ class Objective(DessiaObject):
     @classmethod
     def coefficients_from_angles(cls, angles: List[float]) -> List[float]:
         """
-        Compute coefficients from n-1 angles.
-
+        Computes coefficients from n-1 angles.
         """
         raise NotImplementedError("This is deprecated and should not be used anymore")
     #     n = len(angles) + 1
@@ -124,7 +121,7 @@ class Objective(DessiaObject):
 
 class Catalog(DessiaObject):
     """
-    Define a Catalog object that gathers a collection of VectoredObjects.
+    Defines a Catalog object that gathers a collection of VectoredObjects.
 
     TODO Update Docstring
     :param objectives: List of objectives to apply to
