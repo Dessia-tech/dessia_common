@@ -84,7 +84,7 @@ def serialize_with_pointers(value, memo=None, path='#'):
     """
     if memo is None:
         memo = {}
-    if isinstance(value, (dc.DessiaObject, dessia_common.core.DessiaObject)):
+    if isinstance(value, DessiaObject):
         if value in memo:
             return {'$ref': memo[value]}, memo
         try:
@@ -384,7 +384,7 @@ def deserialize_argument(type_, argument):
     if type_ is Any:
         # Any type
         return argument
-    if inspect.isclass(type_) and issubclass(type_, (dc.DessiaObject, dessia_common.core.DessiaObject)):
+    if inspect.isclass(type_) and issubclass(type_, DessiaObject):
         # Custom classes
         return type_.dict_to_object(argument)
 
