@@ -24,17 +24,17 @@ MAX_ERROR_BY_TYPE = {
                      'consider-using-f-string': 1,
                      'arguments-differ': 2,
                      'no-member': 3,
-                     'too-many-locals': 12,  # Reduce by dropping vectored objects
+                     'too-many-locals': 10,  # Reduce by dropping vectored objects
                      'too-many-branches': 13,
-                     'wrong-import-order': 1,
+                     'wrong-import-order': 0,
                      'unused-argument': 7,
                      'cyclic-import': 15,
                      'no-self-use': 6,
                      'trailing-whitespace': 11,
                      'empty-docstring': 1,
                      'missing-module-docstring': 1,
-                     'too-many-arguments': 22,
-                     'too-few-public-methods': 19,  # Not really important
+                     'too-many-arguments': 21,
+                     'too-few-public-methods': 4,
                      'unnecessary-comprehension': 1,
                      'no-value-for-parameter': 2,
                      'too-many-return-statements': 10,
