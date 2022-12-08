@@ -1,6 +1,5 @@
 """
-Module that aims to list all possibilities of data formats offered by Dessia.
-
+A module that aims to list all possibilities of data formats offered by Dessia.
 It should be used as a repertory of rules and available typings.
 
 Some general rules :
@@ -308,25 +307,24 @@ class StandaloneObject(MovingObject):
 
     def add_standalone_object(self, object_: StandaloneBuiltinsSubobject):
         """
-        Add a standalone object to object_list.
-
-        It doesn't return anything, hence, API will update object when computing from frontend.
+        Adds a standalone object to object_list.
+        It doesn't return anything, hence, API will update object when
+        computing from frontend.
         """
         self.object_list.append(object_)
 
     def add_embedded_object(self, object_: EmbeddedSubobject):
         """
-        Add an embedded object to subobject_list.
-
-        It doesn't return anything, hence, API will update object when computing from frontend.
+        Adds an embedded object to subobject_list.
+        It doesn't return anything, hence, API will update object
+        when computing from frontend.
         """
         self.subobject_list.append(object_)
 
     def add_float(self, value: float) -> StandaloneBuiltinsSubobject:
         """
-        Add value to its standalone subobject floatarg property and returns it.
-
-        API should replace standalone_subobject as it is returned.
+        Adds value to its standalone subobject floatarg property and returns it.
+        API should replace standalone_subobject as it is returned
         """
         self.standalone_subobject.floatarg += value
         return self.standalone_subobject
