@@ -4,7 +4,7 @@ Tools for copying objects
 
 import copy
 import warnings
-import dessia_common as dc
+from dessia_common.core import DessiaObject
 import dessia_common.files
 from dessia_common.utils.types import is_sequence, is_typing
 
@@ -30,7 +30,7 @@ def deepcopy_value(value, memo):
             copied_value = value.copy()
         return copied_value
 
-    if isinstance(value, dc.DessiaObject):
+    if isinstance(value, DessiaObject):
         memo_value = search_memo(value, memo)
         if memo_value is not None:
             return memo_value

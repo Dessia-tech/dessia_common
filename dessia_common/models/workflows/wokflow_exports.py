@@ -2,8 +2,9 @@
 Script for workflow with exports creationZ
 """
 
-from dessia_common.workflow import InstantiateModel, ModelMethod, TypedVariable, ModelAttribute, Pipe, Workflow,\
-    WorkflowBlock, ForEach, Export, Unpacker, Archive, MultiPlot
+from dessia_common.workflow.core import TypedVariable, Pipe, Workflow
+from dessia_common.workflow.blocks import InstantiateModel, ModelMethod, ModelAttribute, WorkflowBlock, ForEach,\
+    Export, Unpacker, Archive, MultiPlot
 from dessia_common.forms import Generator, Optimizer, StandaloneObject
 from dessia_common.typings import MethodType
 

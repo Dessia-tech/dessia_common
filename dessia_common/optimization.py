@@ -6,28 +6,28 @@ from typing import List
 import cma
 import numpy as npy
 import scipy.optimize
-import dessia_common.core as dc
+from dessia_common.core import DessiaObject
 
 
-class Specifications(dc.DessiaObject):
+class Specifications(DessiaObject):
     def __init__(self, name: str = ''):
-        dc.DessiaObject.__init__(self, name=name)
+        DessiaObject.__init__(self, name=name)
 
 
-class FixedAttributeValue(dc.DessiaObject):
+class FixedAttributeValue(DessiaObject):
     _standalone_in_db = True
 
     def __init__(self, attribute_name: str, value: float, name: str = ''):
-        dc.DessiaObject.__init__(self, name=name)
+        DessiaObject.__init__(self, name=name)
         self.attribute_name = attribute_name
         self.value = value
 
 
-class BoundedAttributeValue(dc.DessiaObject):
+class BoundedAttributeValue(DessiaObject):
     _standalone_in_db = True
 
     def __init__(self, attribute_name: str, min_value: float, max_value: float, number: int = 2, name: str = ''):
-        dc.DessiaObject.__init__(self, name=name)
+        DessiaObject.__init__(self, name=name)
         self.attribute_name = attribute_name
         self.min_value = min_value
         self.max_value = max_value
@@ -41,7 +41,7 @@ class BoundedAttributeValue(dc.DessiaObject):
         return (value - self.min_value) / self.interval_length
 
 
-class Optimizer(dc.DessiaObject):
+class Optimizer(DessiaObject):
     """
     Common parts of optimizers
     """

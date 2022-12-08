@@ -12,7 +12,7 @@ from importlib import import_module
 
 import orjson
 
-import dessia_common as dc
+from dessia_common.core import DessiaObject
 from dessia_common.typings import Subclass, InstanceOf, MethodType, ClassMethodType
 from dessia_common.files import BinaryFile, StringFile
 
@@ -79,7 +79,7 @@ def is_jsonable(obj):
 def is_serializable(obj):
     if is_jsonable(obj):
         return True
-    if isinstance(obj, dc.DessiaObject):
+    if isinstance(obj, DessiaObject):
         dict_ = obj.to_dict()
         return is_jsonable(dict_)
     if isinstance(obj, dict):
@@ -350,7 +350,7 @@ def recursive_type(obj):
 
     if isinstance(obj, tuple(list(TYPING_EQUIVALENCES.keys()) + [dict])):
         type_ = TYPES_STRINGS[type(obj)]
-    elif isinstance(obj, dc.DessiaObject):
+    elif isinstance(obj, DessiaObject):
         type_ = obj.__module__ + '.' + obj.__class__.__name__
     elif hasattr(obj, 'output_type'):
         type_ = obj.output_type

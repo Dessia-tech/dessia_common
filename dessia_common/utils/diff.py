@@ -10,7 +10,8 @@ import math
 from typing import List
 
 import numpy as npy
-import dessia_common as dc
+from dessia_common import FLOAT_TOLERANCE
+from dessia_common.core import DessiaObject
 from dessia_common.utils.types import isinstance_base_types, is_sequence, full_classname
 from dessia_common.files import BinaryFile, StringFile
 
@@ -104,7 +105,7 @@ def diff(value1, value2, path='#'):
         return Diff(diff_values, missing_keys_in_other_object, invalid_types)
 
     if isinstance_base_types(value1):
-        if isinstance(value1, float) and math.isclose(value1, value2, abs_tol=dc.FLOAT_TOLERANCE):
+        if isinstance(value1, float) and math.isclose(value1, value2, abs_tol=FLOAT_TOLERANCE):
             return Diff(diff_values, missing_keys_in_other_object, invalid_types)
         if value1 != value2:
             # diff_values.append((path, value1, value2))
@@ -175,7 +176,7 @@ def data_eq(value1, value2):
         return value1 == value2
 
     if isinstance(value1, npy.float64) or isinstance(value2, npy.float64):
-        return math.isclose(value1, value2, abs_tol=dc.FLOAT_TOLERANCE)
+        return math.isclose(value1, value2, abs_tol=FLOAT_TOLERANCE)
 
     if not isinstance(value2, type(value1))\
             and not isinstance(value1, type(value2)):
@@ -183,7 +184,7 @@ def data_eq(value1, value2):
 
     if isinstance_base_types(value1):
         if isinstance(value1, float):
-            return math.isclose(value1, value2, abs_tol=dc.FLOAT_TOLERANCE)
+            return math.isclose(value1, value2, abs_tol=FLOAT_TOLERANCE)
 
         return value1 == value2
 
@@ -204,8 +205,7 @@ def data_eq(value1, value2):
 
     # Test if _data_eq is customized
     if hasattr(value1, '_data_eq'):
-        custom_method = (value1._data_eq.__code__
-                         is not dc.DessiaObject._data_eq.__code__)
+        custom_method = (value1._data_eq.__code__ is not DessiaObject._data_eq.__code__)
         if custom_method:
             return value1._data_eq(value2)
 

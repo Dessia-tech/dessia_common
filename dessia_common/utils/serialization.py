@@ -13,8 +13,7 @@ from ast import literal_eval
 from typing import get_origin, get_args, Union, Any, BinaryIO, TextIO
 from numpy import int64, float64
 import networkx as nx
-import dessia_common as dc
-import dessia_common.core
+from dessia_common.core import DessiaObject, full_classname
 import dessia_common.errors as dc_err
 from dessia_common.files import StringFile, BinaryFile
 import dessia_common.utils.types as dcty
@@ -48,7 +47,7 @@ def serialize(value):
     Main function for serialization without pointers
     Calls recursively itself serialize_sequence and serialize_dict
     """
-    if isinstance(value, (dc.DessiaObject, dessia_common.core.DessiaObject)):
+    if isinstance(value, DessiaObject):
         try:
             serialized_value = value.to_dict(use_pointers=False)
         except TypeError:
@@ -239,7 +238,7 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
 
     # Create init_dict
     if class_ is not None and hasattr(class_, 'dict_to_object'):
-        different_methods = (class_.dict_to_object.__func__ is not dc.DessiaObject.dict_to_object.__func__)
+        different_methods = (class_.dict_to_object.__func__ is not DessiaObject.dict_to_object.__func__)
         if different_methods and not force_generic:
             try:
                 obj = class_.dict_to_object(dict_, global_dict=global_dict, pointers_memo=pointers_memo, path=path)
@@ -344,7 +343,7 @@ def deserialize_with_typing(type_, argument):
         deserialized_arg = argument
     elif origin is InstanceOf:
         classname = args[0]
-        object_class = dc.full_classname(object_=classname, compute_for='class')
+        object_class = full_classname(object_=classname, compute_for='class')
         class_ = dcty.get_python_class_from_class_name(object_class)
         deserialized_arg = class_.dict_to_object(argument)
     elif type_ == dcty.Type:
@@ -362,7 +361,7 @@ def deserialize_argument(type_, argument):
     if argument is None:
         return None
 
-    if isinstance(argument, dessia_common.DessiaObject):
+    if isinstance(argument, DessiaObject):
         return argument
 
     if dcty.is_typing(type_):
