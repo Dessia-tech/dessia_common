@@ -1,6 +1,5 @@
 """
-A module that aims to list all
-possibilities of data formats offered by Dessia.
+A module that aims to list all possibilities of data formats offered by Dessia.
 It should be used as a repertory of rules and available typings.
 
 Some general rules :
