@@ -349,13 +349,6 @@ class Workflow(Block):
         }
     }
 
-    @property
-    def nodes(self):
-        """
-        Returns the list of nodes of Workflow.
-        """
-        return self.blocks + self.nonblock_variables
-
     def __init__(self, blocks, pipes, output, *, imposed_variable_values=None,
                  detached_variables: List[TypedVariable] = None, description: str = "",
                  documentation: str = "", name: str = ""):
@@ -427,6 +420,16 @@ class Workflow(Block):
 
         self.branch_by_display_selector = self.branch_by_selector(self.display_blocks)
         self.branch_by_export_format = self.branch_by_selector(self.export_blocks)
+
+    @classmethod
+    def generate_empty(cls):
+        """ Generate an empty workflow (mostly used by frontend to compute an init dict). """
+        return cls(blocks=[], pipes=[], output=None)
+
+    @property
+    def nodes(self):
+        """ Return the list of blocks and nonblock_variables (nodes) of the Workflow. """
+        return self.blocks + self.nonblock_variables
 
     def handle_pipe(self, pipe):
         """
@@ -505,9 +508,7 @@ class Workflow(Block):
         return ivvs == other_ivvs
 
     def __deepcopy__(self, memo=None):
-        """
-        Returns the deep copy.
-        """
+        """ Return the deep copy. """
         if memo is None:
             memo = {}
 
@@ -1499,11 +1500,7 @@ class Workflow(Block):
 
 
 class WorkflowState(DessiaObject):
-    """
-    Class for WorkflowState.
-
-    This object represents the state of execution of a workflow.
-    """
+    """ State of execution of a workflow. """
     _standalone_in_db = True
     _allowed_methods = ['block_evaluation', 'evaluate_next_block', 'continue_run',
                         'evaluate_maximum_blocks', 'add_block_input_values']
