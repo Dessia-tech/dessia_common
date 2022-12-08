@@ -57,7 +57,7 @@ class Modeler(DessiaObject):
     #     return model
 
     @classmethod
-    def fit(cls, inputs: List[List[float]], outputs: List[List[float]], class_: Type, hyperparameters: Dict[str, Any],
+    def fit(cls, inputs: Matrix, outputs: Matrix, class_: Type, hyperparameters: Dict[str, Any],
             input_is_scaled: bool = True, output_is_scaled: bool = False, name: str = '') -> 'Modeler':
 
         in_scaler, in_scaled = cls._fit_transform_scaler(cls._initialize_scaler(input_is_scaled), inputs,
