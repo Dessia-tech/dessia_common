@@ -319,6 +319,8 @@ class MarkdownWriter:
             return self._sequence_to_str(value)
         if isinstance(value, Dict):
             return self._dict_to_str(value)
+        if value is None:
+            return ' - '
         return self._object_to_str(value)
 
     def _string_in_table(self, string: str = ''):
@@ -329,7 +331,7 @@ class MarkdownWriter:
         for attr, value in object_.__dict__.items():
             matrix.append([attr,
                            value.__class__.__name__,
-                           (self._value_to_str(value) if not isinstance(value, (list, dict, set)) else ' - ')])
+                           self._value_to_str(value)])
         return matrix
 
     @staticmethod
