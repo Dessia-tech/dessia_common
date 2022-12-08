@@ -8,9 +8,9 @@ import numpy as npy
 from dessia_common.core import DessiaObject
 import dessia_common.datatools.models as models
 
+
 Vector = List[float]
 Matrix = List[Vector]
-
 
 class Modeler(DessiaObject):
     def __init__(self, model: models.Model, input_scaler: models.Scaler, output_scaler: models.Scaler, name: str = ''):
@@ -30,7 +30,7 @@ class Modeler(DessiaObject):
         return scaler.fit(matrix, name=name)
 
     @staticmethod
-    def _transform(scaler: models.Scaler, matrix: Matrix, name: str = '') -> Matrix:
+    def _transform(scaler: models.Scaler, matrix: Matrix) -> Matrix:
         return scaler.transform(matrix)
 
     @staticmethod
@@ -55,13 +55,13 @@ class Modeler(DessiaObject):
     def fit(cls, inputs: List[List[float]], outputs: List[List[float]], class_: Type, hyperparameters: Dict[str, Any],
             input_is_scaled: bool = True, output_is_scaled: bool = False, name: str = '') -> 'Modeler':
 
-        input_scaler, scaled_inputs = cls._fit_transform_scaler(cls._initialize_scaler(input_is_scaled), inputs,
-                                                                name + '_in_scaler')
-        output_scaler, scaled_outputs = cls._fit_transform_scaler(cls._initialize_scaler(output_is_scaled), outputs,
-                                                                  name + '_out_scaler')
+        in_scaler, in_scaled = cls._fit_transform_scaler(cls._initialize_scaler(input_is_scaled), inputs,
+                                                         (name + '_in_scaler' if output_is_scaled else "idty_scale"))
+        out_scaler, out_scaled = cls._fit_transform_scaler(cls._initialize_scaler(output_is_scaled), outputs,
+                                                           (name + '_out_scaler' if output_is_scaled else "idty_scale"))
 
-        model = class_.fit(scaled_inputs, scaled_outputs, **hyperparameters, name=name + '_model')
-        return cls(model=model, input_scaler=input_scaler, output_scaler=output_scaler, name=name)
+        model = class_.fit(in_scaled, out_scaled, **hyperparameters, name=name + '_model')
+        return cls(model=model, input_scaler=in_scaler, output_scaler=out_scaler, name=name)
 
     def predict(self, inputs: List[List[float]], input_scaler, output_scaler):
         scaled_inputs = input_scaler.transform(inputs)
