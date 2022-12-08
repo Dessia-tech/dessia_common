@@ -6,8 +6,9 @@ Created on Wed Jan 12 19:24:11 2022
 @author: steven
 """
 
-from typing import Dict, Any, Tuple, get_type_hints
 from inspect import isclass, ismethod, isfunction
+from typing import Dict, Any, Tuple, get_type_hints
+
 try:
     from typing import TypedDict  # >=3.8
 except ImportError:
