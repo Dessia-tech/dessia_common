@@ -7,6 +7,7 @@ Created on Wed Jan 12 19:24:11 2022
 """
 
 from typing import Dict, Any, Tuple, get_type_hints
+from inspect import isclass, ismethod, isfunction
 try:
     from typing import TypedDict  # >=3.8
 except ImportError:
@@ -72,12 +73,14 @@ def _check_docstring(element):
     if docstring is None:
         print(f'Docstring not found for {element}')
         return False
-    if not callable(element) or isinstance(element, type):
+    if isclass(element):
         # element is an object or a class
         annotations = get_type_hints(element.__init__)
-    else:
+    elif ismethod(element) or isfunction(element):
         # element is a method
         annotations = get_type_hints(element)
+    else:
+        raise NotImplementedError
     try:
         parse_docstring(docstring=docstring,
                         annotations=annotations)
