@@ -146,7 +146,7 @@ class DessiaObject(SerializableObject):
 
     def __hash__(self):
         """
-        Compute a int from object.
+        Computes an int from object
         """
         if self._eq_is_data_eq:
             return self._data_hash()
@@ -739,6 +739,17 @@ class PhysicalObject(DessiaObject):
         self.volmdlr_volume_model(**kwargs).babylonjs(use_cdn=use_cdn, debug=debug)
 
     def save_babylonjs_to_file(self, filename: str = None, use_cdn: bool = True, debug: bool = False, **kwargs):
+        """
+        Saves the 3D volmdlr of an object in a file.
+
+        :param filename: The file's name. Default value is None
+        :type filename: str, optional
+        :param use_cdn: Activates the use of a content delivery network.
+            Default value is True
+        :type use_cdn: bool, optional
+        :param debug: Activates the debug mode. Default value is False
+        :type debug: bool, optional
+        """
         self.volmdlr_volume_model(**kwargs).save_babylonjs_to_file(filename=filename, use_cdn=use_cdn, debug=debug)
 
     def _export_formats(self) -> List[ExportFormat]:
@@ -1126,23 +1137,17 @@ def dict_merge(old_dct, merge_dct, add_keys=True, extend_lists=True):
     present in ``merge_dct`` but not ``dct`` should be included in the
     new dict.
 
-    :param old_dct:
-        Onto which the merge is executed
-    :type old_dct: dict
-
-    :param merge_dct:
-        dict merged into dict
-    :type merge_dct: dict
-
-    :param add_keys:
-        whether to add new keys
-    :type add_keys: bool, `optional`, defaults to True
-
-    :param extend_lists:
-        wether to extend lists if keys are updated and value is a list
-    :type extend_lists: bool, `optional`, defaults to True
-
-    :return: updated dict
+    :param old_dct: Onto which the merge is executed
+    :type old_dct: Dict
+    :param merge_dct: Dct merged into dct
+    :type merge_dct: Dict
+    :param add_keys: Whether to add new keys. Default value is True
+    :type add_keys: bool, optional
+    :param extend_lists: Whether to extend lists if keys are updated and
+        value is a list. Default value is True
+    :type extend_lists: bool, optional
+    :return: Updated dict
+    :rtype: Dict
     """
     dct = deepcopy(old_dct)
     if not add_keys:

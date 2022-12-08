@@ -208,7 +208,7 @@ def deep_getsizeof(obj, ids=None):
     The sys.getsizeof function does a shallow size of only. It counts each object inside a container as
     pointer only regardless of how big it really is.
 
-    :param o: the object
+    :param obj: the object
     :param ids:
     :return:
     """
