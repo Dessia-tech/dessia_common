@@ -64,7 +64,7 @@ def is_classname_transform(string: str):
 
 def is_jsonable(obj):
     """
-    Return if object can be dumped as it is in a json.
+    Returns if object can be dumped as it is in a json
     """
     # First trying with orjson which is more efficient
     try:
@@ -115,7 +115,7 @@ def is_builtin(type_):
 
 def isinstance_base_types(obj):
     """
-    Return True if the object is either a str, a float a int or None.
+    Returns True if the object is either a str, a float an int or None.
     """
     return isinstance(obj, (str, float, int)) or (obj is None)
 
@@ -307,7 +307,7 @@ def deserialize_builtin_typing(serialized_typing):
 
 def is_bson_valid(value, allow_nonstring_keys=False) -> Tuple[bool, str]:
     """
-    Return validity (bool) and a hint (str).
+    Returns validity (bool) and a hint (str).
     """
     if isinstance(value, (int, float, str)):
         return True, ''
@@ -384,7 +384,6 @@ def union_is_default_value(typing_: Type) -> bool:
 def typematch(type_: Type, match_against: Type) -> bool:
     """
     Return wether type_ matches against match_against.
-
     match_against needs to be "wider" than type_, and the check is not bilateral
     """
     # TODO Implement a more intelligent check for Unions : Union[T, U] should match against Union[T, U, V]
@@ -453,9 +452,9 @@ def heal_type(type_: Type):
     Inspect type and returns its params.
 
     For now, only checks wether the type is an 'Optional' / Union[T, NoneType],
-    which should be flattened and not considered
+    which should be flattened and not considered.
 
-    returns the cleaned type, origin and args
+    Returns the cleaned type, origin and args.
     """
     type_origin = get_origin(type_)
     type_args = get_args(type_)

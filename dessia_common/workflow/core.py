@@ -268,7 +268,7 @@ class Pipe(DessiaObject):
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
         """
-        Transform the pipe into a dict.
+        Transforms the pipe into a dict.
         """
         return {'input_variable': self.input_variable, 'output_variable': self.output_variable,
                 'memorize': self.memorize}
