@@ -37,6 +37,11 @@ class Modeler(DessiaObject):
     def _fit_transform_scaler(scaler: models.Scaler, matrix: Matrix, name: str = '') -> Tuple['models.Scaler', Matrix]:
         return scaler.fit_transform(matrix, name=name)
 
+    @staticmethod
+    def _set_scaler_name(modeler_name: str, in_out: str, is_scaled: bool) -> str:
+        name = f"{modeler_name}_"
+        return name + (f"{in_out}_scaler" if is_scaled else "indentity_scaler")
+
     # def _initialize_model(self):
     #     return models.Model()
 
@@ -56,9 +61,9 @@ class Modeler(DessiaObject):
             input_is_scaled: bool = True, output_is_scaled: bool = False, name: str = '') -> 'Modeler':
 
         in_scaler, in_scaled = cls._fit_transform_scaler(cls._initialize_scaler(input_is_scaled), inputs,
-                                                         (name + '_in_scaler' if output_is_scaled else "idty_scale"))
+                                                         cls._set_scaler_name(name, "in", input_is_scaled))
         out_scaler, out_scaled = cls._fit_transform_scaler(cls._initialize_scaler(output_is_scaled), outputs,
-                                                           (name + '_out_scaler' if output_is_scaled else "idty_scale"))
+                                                           cls._set_scaler_name(name, "out", output_is_scaled))
 
         model = class_.fit(in_scaled, out_scaled, **hyperparameters, name=name + '_model')
         return cls(model=model, input_scaler=in_scaler, output_scaler=out_scaler, name=name)

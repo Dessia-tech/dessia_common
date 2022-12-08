@@ -119,7 +119,7 @@ class StandardScaler(Scaler):
 class IdentityScaler(StandardScaler):
     """Data scaler that scales nothing."""
 
-    def __init__(self, mean_: Vector = None, scale_: Vector = None, var_: Vector = None, name: str = ''):
+    def __init__(self, mean_: Vector = None, scale_: Vector = None, var_: Vector = None, name: str = 'identity_scaler'):
         StandardScaler.__init__(self, mean_=mean_, scale_=scale_, var_=var_, name=name)
 
     def _call_skl_scaler(self):
