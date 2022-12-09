@@ -27,7 +27,11 @@ MAX_ERROR_BY_TYPE = {
                      'too-many-locals': 10,  # Reduce by dropping vectored objects
                      'too-many-branches': 13,
                      'unused-argument': 6,
+<<<<<<< HEAD
                      'cyclic-import': 10,
+=======
+                     'cyclic-import': 0, # 0 just to test
+>>>>>>> ffedbc8... fix(cycles): add an abstract class
                      'no-self-use': 6,
                      'trailing-whitespace': 11,
                      'empty-docstring': 1,

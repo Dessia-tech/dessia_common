@@ -6,7 +6,6 @@ Types tools
 """
 from typing import Any, Dict, List, Tuple, Type, Union, get_origin, get_args
 
-# import json
 from collections.abc import Iterator, Sequence
 from importlib import import_module
 
@@ -85,6 +84,7 @@ def is_serializable(obj):
     if is_jsonable(obj):
         return True
     if isinstance(obj, SerializableObject):
+    # if isinstance(obj, CoreDessiaObject):
         dict_ = obj.to_dict()
         return is_jsonable(dict_)
     if isinstance(obj, dict):

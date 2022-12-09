@@ -4,7 +4,7 @@ Tools for copying objects
 
 import copy
 import warnings
-from dessia_common.base import SerializableObject
+from dessia_common.abstract import CoreDessiaObject
 import dessia_common.files
 from dessia_common.utils.types import is_sequence, is_typing
 
@@ -37,7 +37,7 @@ def deepcopy_value(value, memo):
             copied_value = value.copy()
         return copied_value
 
-    if isinstance(value, SerializableObject):
+    if isinstance(value, CoreDessiaObject):
         memo_value = search_memo(value, memo)
         if memo_value is not None:
             return memo_value
