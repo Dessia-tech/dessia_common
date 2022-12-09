@@ -122,16 +122,14 @@ class DessiaObject:
 
     def __init__(self, name: str = '', **kwargs):
         """
-        Generic init of DessiA Object. Only store name in self. To be overload and call in specific class init
+        Generic init of DessiA Object. Only store name in self. To be overload and call in specific class init.
         """
         self.name = name
         for property_name, property_value in kwargs.items():
             setattr(self, property_name, property_value)
 
     def __hash__(self):
-        """
-        Compute a int from object
-        """
+        """ Compute a int from object. """
         if self._eq_is_data_eq:
             return self._data_hash()
         return object.__hash__(self)
