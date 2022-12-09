@@ -553,26 +553,44 @@ class Workflow(Block):
     def copy_pipes(self, copied_workflow: 'Workflow') -> List[Pipe]:
         copied_pipes = []
 
+        is_nbv = {}
         nbv_pipes = []
-        standard_pipes = []
+        # standard_pipes = []
+        # pipes = []
         for pipe in self.pipes:
             upstream_index = self.variable_indices(pipe.input_variable)
-            if isinstance(upstream_index, int):
-                nbv_pipes.append(pipe)
+            is_nbv[pipe] = isinstance(upstream_index, int)
+            nbv_pipes.append(pipe)
+            # pipes.append(pipe)
+            # if isinstance(upstream_index, int):
+            #     nbv_pipes.append(True)
+            # else:
+            #     standard_pipes.append(pipe)
+
+        for i, pipe in enumerate(self.pipes):
+            if is_nbv[pipe]:
+                nbv = pipe.input_variable
+                related_pipes = [pipe for pipe in nbv_pipes if pipe.input_variable == nbv]
+                if related_pipes:
+                    copied_variable = nbv.copy()
+                    for related_pipe in related_pipes:
+                        downstream_index = self.variable_indices(related_pipe.output_variable)
+                        pipe_downstream = copied_workflow.variable_from_index(downstream_index)
+                        copied_pipes.append(Pipe(copied_variable, pipe_downstream))
             else:
-                standard_pipes.append(pipe)
+                copied_pipes.append(self.copy_pipe(copied_workflow, pipe))
 
-        for pipe in standard_pipes:
-            copied_pipes.append(self.copy_pipe(copied_workflow, pipe))
+        # for pipe in standard_pipes:
+        #     copied_pipes.append(self.copy_pipe(copied_workflow, pipe))
 
-        for nbv in self.nonblock_variables:
-            related_pipes = [pipe for pipe in nbv_pipes if pipe.input_variable == nbv]
-            if related_pipes:
-                copied_variable = nbv.copy()
-                for pipe in related_pipes:
-                    downstream_index = self.variable_indices(pipe.output_variable)
-                    pipe_downstream = copied_workflow.variable_from_index(downstream_index)
-                    copied_pipes.append(Pipe(copied_variable, pipe_downstream))
+        # for nbv in self.nonblock_variables:
+        #     related_pipes = [pipe for pipe in nbv_pipes if pipe.input_variable == nbv]
+        #     if related_pipes:
+        #         copied_variable = nbv.copy()
+        #         for pipe in related_pipes:
+        #             downstream_index = self.variable_indices(pipe.output_variable)
+        #             pipe_downstream = copied_workflow.variable_from_index(downstream_index)
+        #             copied_pipes.append(Pipe(copied_variable, pipe_downstream))
 
         return copied_pipes
 
@@ -1608,7 +1626,13 @@ class WorkflowState(DessiaObject):
                     # Check variables progress state
                     return False
 
+        print("Object : ", self.values)
+        print("pipes : ", self.workflow.pipes)
+        print("Other Object : ", other_object.values)
+        print("Other Pipes : ", other_object.workflow.pipes)
         for pipe, other_pipe in zip(self.workflow.pipes, other_object.workflow.pipes):
+            print("pipe : ", pipe,  pipe.to_dict())
+            print("other i : ", other_pipe, other_pipe.to_dict())
             if self.activated_items[pipe] != other_object.activated_items[other_pipe]:
                 # Check pipe progress state
                 return False
