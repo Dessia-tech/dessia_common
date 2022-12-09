@@ -5,6 +5,7 @@ from abc import ABC, abstractmethod
 from typing import Dict, Any
 from dessia_common.typings import JsonSerializable
 
+
 class CoreDessiaObject(ABC):
 
     @abstractmethod
