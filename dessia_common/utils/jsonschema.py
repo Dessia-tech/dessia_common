@@ -9,7 +9,7 @@ import warnings
 import collections
 import collections.abc
 from typing import get_origin, get_args, Union, get_type_hints
-from dessia_common.core import DessiaObject, full_classname, prettyname
+from dessia_common.core import DessiaObject, prettyname
 import dessia_common.utils.types as dc_types
 from dessia_common.files import BinaryFile, StringFile
 from dessia_common.typings import Subclass, MethodType, ClassMethodType, Any
@@ -102,7 +102,7 @@ def default_dict(jsonschema):
 
 
 def jsonschema_union_types(key, args, typing_, jsonschema_element):
-    classnames = [full_classname(object_=a, compute_for='class') for a in args]
+    classnames = [dc_types.full_classname(object_=a, compute_for='class') for a in args]
     standalone_args = [a._standalone_in_db for a in args]
     if all(standalone_args):
         standalone = True
@@ -191,7 +191,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element, order, editable=N
         elif origin is dc_types.InstanceOf:
             # Several possible classes that are subclass of another one
             class_ = args[0]
-            classname = full_classname(object_=class_, compute_for='class')
+            classname = dc_types.full_classname(object_=class_, compute_for='class')
             jsonschema_element[key].update({'type': 'object', 'instance_of': classname,
                                             'standalone_in_db': class_._standalone_in_db})
         elif origin is MethodType or origin is ClassMethodType:
@@ -224,7 +224,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element, order, editable=N
     elif inspect.isclass(typing_) and issubclass(typing_, (BinaryFile, StringFile)):
         jsonschema_element[key].update({'type': 'text', 'is_file': True})
     else:
-        classname = full_classname(object_=typing_, compute_for='class')
+        classname = dc_types.full_classname(object_=typing_, compute_for='class')
         if inspect.isclass(typing_) and issubclass(typing_, DessiaObject):
             # Dessia custom classes
             jsonschema_element[key].update({'type': 'object', 'standalone_in_db': typing_._standalone_in_db})
@@ -261,7 +261,7 @@ def static_dict_jsonschema(typed_dict, title=None):
           "This will most likely lead to non predictable behavior" \
           " or malfunctionning features. \n" \
           "Define a custom non-standalone class for type '{}'\n\n"
-    classname = full_classname(typed_dict, compute_for='class')
+    classname = dc_types.full_classname(typed_dict, compute_for='class')
     warnings.warn(msg.format(classname), DeprecationWarning)
     jsonschema_element = deepcopy(JSONSCHEMA_HEADER)
     jss_properties = jsonschema_element['properties']

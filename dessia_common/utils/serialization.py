@@ -13,7 +13,7 @@ from ast import literal_eval
 from typing import get_origin, get_args, Union, Any, BinaryIO, TextIO
 from numpy import int64, float64
 import networkx as nx
-from dessia_common.core import DessiaObject, full_classname
+from dessia_common.core import DessiaObject
 import dessia_common.errors as dc_err
 from dessia_common.files import StringFile, BinaryFile
 import dessia_common.utils.types as dcty
@@ -343,7 +343,7 @@ def deserialize_with_typing(type_, argument):
         deserialized_arg = argument
     elif origin is InstanceOf:
         classname = args[0]
-        object_class = full_classname(object_=classname, compute_for='class')
+        object_class = dcty.full_classname(object_=classname, compute_for='class')
         class_ = dcty.get_python_class_from_class_name(object_class)
         deserialized_arg = class_.dict_to_object(argument)
     elif type_ == dcty.Type:
