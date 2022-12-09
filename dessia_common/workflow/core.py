@@ -594,9 +594,14 @@ class Workflow(Block):
         Compute all display blocks display_settings.
         """
         display_settings = []
+        path = "#"
         for block in self.display_blocks:
+            for i, input_ in enumerate(block.inputs):
+                incoming_pipe = self.variable_input_pipe(input_)
+                if i == block._displayable_input:
+                    path = f"{path}/values/{self.pipes.index(incoming_pipe)}"
             block_index = self.blocks.index(block)
-            settings = block._display_settings(block_index)
+            settings = block._display_settings(block_index=block_index, path=path)
             if settings is not None:
                 settings.selector = self.block_selectors[block]
                 display_settings.append(settings)
@@ -1802,7 +1807,7 @@ class WorkflowState(DessiaObject):
         # TODO THIS IS A TEMPORARY DIRTY HOTFIX OVERWRITE.
         #  WE SHOULD IMPLEMENT A WAY TO GET RID OF REFERENCE PATH WITH URLS
         track = ""
-        refpath = kwargs.get("reference_path", "")
+        # refpath = kwargs.get("reference_path", "")
         if selector in ["documentation", "workflow"]:
             return self.workflow._display_from_selector(selector)
 
@@ -1813,7 +1818,7 @@ class WorkflowState(DessiaObject):
         display_setting = self._display_settings_from_selector(selector)
         try:
             # Specific hotfix : we propagate reference_path through block_display method
-            display_object, refpath = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
+            display_object = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
             data = display_object.data
         except:
             data = None
@@ -1821,9 +1826,11 @@ class WorkflowState(DessiaObject):
 
         if display_setting.serialize_data:
             data = serialize(data)
-        return DisplayObject(type_=display_setting.type, data=data, reference_path=refpath, traceback=track)
 
-    def block_display(self, block_index: int):
+        path = display_setting.arguments["path"]
+        return DisplayObject(type_=display_setting.type, data=data, reference_path=path, traceback=track)
+
+    def block_display(self, block_index: int, path: str = "#"):
         """
         Compute the display of associated block to use integrate it in the workflow run displays.
         """

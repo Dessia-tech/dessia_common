@@ -731,8 +731,8 @@ class Display(Block):
             return ""
         raise NotImplementedError(f"selector attribute is not implemented for block of type '{type(self)}'")
 
-    def _display_settings(self, block_index: int) -> DisplaySetting:
-        args = {'block_index': block_index}
+    def _display_settings(self, block_index: int, path: str = "#") -> DisplaySetting:
+        args = {"block_index": block_index, "path": path}
         return DisplaySetting(selector=None, type_=self.type_, method="block_display", serialize_data=True,
                               arguments=args)
 
