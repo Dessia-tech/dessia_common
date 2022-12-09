@@ -42,6 +42,7 @@ from dessia_common import templates
 from dessia_common.checks import CheckList, FailedCheck
 from dessia_common.displays import DisplayObject, DisplaySetting
 from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
+import dessia_common.utils.helpers as dch
 import dessia_common.files as dcf
 
 _FORBIDDEN_ARGNAMES = ['self', 'cls', 'progress_callback', 'return']
@@ -145,9 +146,7 @@ class DessiaObject(SerializableObject):
         return dict_
 
     def __hash__(self):
-        """
-        Computes an int from object
-        """
+        """ Compute a int from object. """
         if self._eq_is_data_eq:
             return self._data_hash()
         return object.__hash__(self)
@@ -1301,17 +1300,8 @@ def prettyname(namestr):
     """
     Creates a pretty name from as str.
     """
-    pretty_name = ''
-    if namestr:
-        strings = namestr.split('_')
-        for i, string in enumerate(strings):
-            if len(string) > 1:
-                pretty_name += string[0].upper() + string[1:]
-            else:
-                pretty_name += string
-            if i < len(strings) - 1:
-                pretty_name += ' '
-    return pretty_name
+    warnings.warn("prettyname function has been moved to 'helpers' module. Use it instead", DeprecationWarning)
+    return dch.prettyname(namestr)
 
 
 def inspect_arguments(method, merge=False):

@@ -4,7 +4,7 @@
 Tests for cars data
 """
 import pkg_resources
-from dessia_common import DessiaFilter
+from dessia_common.core import DessiaFilter
 from dessia_common.tests import Car, CarWithFeatures
 from dessia_common.files import StringFile
 

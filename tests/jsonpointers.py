@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 
-import dessia_common
 from dessia_common.forms import DEF_SO
+from dessia_common.core import DessiaObject
 
 import unittest
 from parameterized import parameterized
@@ -16,7 +16,7 @@ class TestSerialization(unittest.TestCase):
     ])
     def test_objects_serialization_deserialization(self, my_obj):
         d = my_obj.to_dict()
-        obj = dessia_common.DessiaObject.dict_to_object(d)
+        obj = DessiaObject.dict_to_object(d)
         assert obj == my_obj
 
 
