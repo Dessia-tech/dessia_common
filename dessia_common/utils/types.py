@@ -12,7 +12,7 @@ from importlib import import_module
 
 import orjson
 
-from dessia_common.core import DessiaObject
+from dessia_common.abstract import CoreDessiaObject
 from dessia_common.typings import Subclass, InstanceOf, MethodType, ClassMethodType
 from dessia_common.files import BinaryFile, StringFile
 
@@ -79,7 +79,7 @@ def is_jsonable(obj):
 def is_serializable(obj):
     if is_jsonable(obj):
         return True
-    if isinstance(obj, DessiaObject):
+    if isinstance(obj, CoreDessiaObject):
         dict_ = obj.to_dict()
         return is_jsonable(dict_)
     if isinstance(obj, dict):

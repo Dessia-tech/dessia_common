@@ -11,7 +11,7 @@ import collections
 import collections.abc
 import numpy as npy
 
-from dessia_common.core import DessiaObject
+from dessia_common.abstract import CoreDessiaObject
 from dessia_common.utils.types import is_sequence
 
 
@@ -170,7 +170,7 @@ def object_breakdown(obj, path=''):
         path += '.'
 
     bd_dict = {}
-    if isinstance(obj, DessiaObject):
+    if isinstance(obj, CoreDessiaObject):
         obj_dict = obj._serializable_dict()
     else:
         if hasattr(obj, '__dict__'):

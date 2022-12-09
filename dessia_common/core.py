@@ -26,6 +26,7 @@ import traceback as tb
 from importlib import import_module
 from ast import literal_eval
 
+from dessia_common.abstract import CoreDessiaObject
 import dessia_common.errors
 from dessia_common.utils.diff import data_eq, diff, dict_hash, list_hash
 from dessia_common.utils.serialization import dict_to_object, serialize_dict_with_pointers, serialize_dict, \
@@ -40,6 +41,7 @@ from dessia_common.typings import JsonSerializable
 from dessia_common import templates
 from dessia_common.displays import DisplayObject, DisplaySetting
 from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
+import dessia_common.utils.helpers as dch
 import dessia_common.files as dcf
 
 _FORBIDDEN_ARGNAMES = ['self', 'cls', 'progress_callback', 'return']
@@ -68,7 +70,7 @@ def deprecation_warning(name, object_type, use_instead=None):
     return msg
 
 
-class DessiaObject:
+class DessiaObject(CoreDessiaObject):
     """
     Base class for Dessia's platform compatible objects.
     Gathers generic methods and attributes
@@ -1312,17 +1314,8 @@ def prettyname(namestr):
     """
     Creates a pretty name from as str
     """
-    pretty_name = ''
-    if namestr:
-        strings = namestr.split('_')
-        for i, string in enumerate(strings):
-            if len(string) > 1:
-                pretty_name += string[0].upper() + string[1:]
-            else:
-                pretty_name += string
-            if i < len(strings) - 1:
-                pretty_name += ' '
-    return pretty_name
+    warnings.warn("prettyname function has been moved to 'helpers' module. Use it instead", DeprecationWarning)
+    return dch.prettyname(namestr)
 
 
 def inspect_arguments(method, merge=False):

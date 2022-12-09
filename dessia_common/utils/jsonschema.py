@@ -9,12 +9,13 @@ import warnings
 import collections
 import collections.abc
 from typing import get_origin, get_args, Union, get_type_hints
-from dessia_common.core import DessiaObject, prettyname
+from dessia_common.abstract import CoreDessiaObject
 import dessia_common.utils.types as dc_types
 from dessia_common.files import BinaryFile, StringFile
 from dessia_common.typings import Subclass, MethodType, ClassMethodType, Any
 from dessia_common.utils.docstrings import FAILED_ATTRIBUTE_PARSING
 from dessia_common.measures import Measure
+from dessia_common.utils.helpers import prettyname
 
 JSONSCHEMA_HEADER = {"definitions": {},
                      "$schema": "http://json-schema.org/draft-07/schema#",
@@ -225,7 +226,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element, order, editable=N
         jsonschema_element[key].update({'type': 'text', 'is_file': True})
     else:
         classname = dc_types.full_classname(object_=typing_, compute_for='class')
-        if inspect.isclass(typing_) and issubclass(typing_, DessiaObject):
+        if inspect.isclass(typing_) and issubclass(typing_, CoreDessiaObject):
             # Dessia custom classes
             jsonschema_element[key].update({'type': 'object', 'standalone_in_db': typing_._standalone_in_db})
         else:
