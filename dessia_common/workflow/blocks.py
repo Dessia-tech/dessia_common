@@ -111,7 +111,7 @@ class InstantiateModel(Block):
         class_ = get_python_class_from_class_name(classname)
         return cls(class_, name=dict_['name'], position=dict_.get('position'))
 
-    def evaluate(self, values):
+    def evaluate(self, values, **kwargs):
         args = {var.name: values[var] for var in self.inputs}
         return [self.model_class(**args)]
 
@@ -189,7 +189,7 @@ class ClassMethod(Block):
         method_type = ClassMethodType(class_=class_, name=method_name)
         return cls(method_type=method_type, name=name, position=dict_.get('position'))
 
-    def evaluate(self, values):
+    def evaluate(self, values, **kwargs):
         args = {arg_name: values[var] for arg_name, var in zip(self.argument_names, self.inputs) if var in values}
         return [self.method(**args)]
 
@@ -278,7 +278,7 @@ class ModelMethod(Block):
         method_type = MethodType(class_=class_, name=method_name)
         return cls(method_type=method_type, name=name, position=dict_.get('position'))
 
-    def evaluate(self, values):
+    def evaluate(self, values, **kwargs):
         args = {arg_name: values[var] for arg_name, var in zip(self.argument_names, self.inputs[1:]) if var in values}
         return [getattr(values[self.inputs[0]], self.method_type.name)(**args), values[self.inputs[0]]]
 
@@ -332,7 +332,7 @@ class Sequence(Block):
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
         return cls(dict_['number_arguments'], dict_['name'], position=dict_.get('position'))
 
-    def evaluate(self, values):
+    def evaluate(self, values, **kwargs):
         return [[values[var] for var in self.inputs]]
 
     def _to_script(self, _) -> ToScriptElement:
@@ -422,7 +422,7 @@ class WorkflowBlock(Block):
         # path = f"{path}/workflow"
         return cls(workflow=workflow, name=dict_['name'], position=dict_.get('position'))
 
-    def evaluate(self, values):
+    def evaluate(self, values, **kwargs):
         args = {self.inputs.index(input_): v for input_, v in values.items()}
         workflow_run = self.workflow.run(args)
         return [workflow_run.output_value]
@@ -507,7 +507,7 @@ class ForEach(Block):
         return cls(workflow_block=workflow_block, iter_input_index=dict_['iter_input_index'], name=dict_['name'],
                    position=dict_.get('position'))
 
-    def evaluate(self, values):
+    def evaluate(self, values, **kwargs):
         values_workflow = {var2: values[var1] for var1, var2 in zip(self.inputs, self.workflow_block.inputs)}
         output_values = []
         for value in values_workflow[self.iter_input]:
@@ -556,7 +556,7 @@ class Unpacker(Block):
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'Unpacker':
         return cls(dict_['indices'], dict_['name'], position=dict_.get('position'))
 
-    def evaluate(self, values):
+    def evaluate(self, values, **kwargs):
         return [values[self.inputs[0]][i] for i in self.indices]
 
     def _to_script(self, _) -> ToScriptElement:
@@ -578,7 +578,7 @@ class Flatten(Block):
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'Flatten':
         return cls(dict_['name'], position=dict_.get('position'))
 
-    def evaluate(self, values):
+    def evaluate(self, values, **kwargs):
         output = []
         for value in values[self.inputs[0]]:
             output.extend(value)
@@ -614,7 +614,7 @@ class Product(Block):
         number_list = dict_['number_list']
         return cls(number_list=number_list, name=dict_['name'], position=dict_.get('position'))
 
-    def evaluate(self, values):
+    def evaluate(self, values, **kwargs):
         """
         Computes the block: use itertools.product
         """
@@ -671,7 +671,7 @@ class Filter(Block):
         return cls(filters=filters, logical_operator=dict_["logical_operator"], name=dict_["name"],
                    position=dict_.get('position'))
 
-    def evaluate(self, values):
+    def evaluate(self, values, **kwargs):
         filters_list = FiltersList(self.filters, self.logical_operator)
         return [filters_list.apply(values[self.inputs[0]])]
 
@@ -736,7 +736,7 @@ class Display(Block):
         return DisplaySetting(selector=None, type_=self.type_, method="block_display", serialize_data=True,
                               arguments=args)
 
-    def evaluate(self, values):
+    def evaluate(self, values, **kwargs):
         object_ = values[self.inputs[0]]
         settings = object_._display_settings_from_selector(self.selector)
         data = attrmethod_getter(object_, settings.method)()
@@ -789,7 +789,7 @@ class MultiPlot(Display):
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
         return cls(attributes=dict_['attributes'], name=dict_['name'], position=dict_.get('position'))
 
-    def evaluate(self, values):
+    def evaluate(self, values, **kwargs):
         import plot_data
         objects = values[self.inputs[self._displayable_input]]
         attr_values = [{a: get_in_object_from_path(o, a) for a in self.attributes} for o in objects]
@@ -892,7 +892,7 @@ class ModelAttribute(Block):
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
         return cls(dict_['attribute_name'], dict_['name'], position=dict_.get('position'))
 
-    def evaluate(self, values):
+    def evaluate(self, values, **kwargs):
         return [get_in_object_from_path(values[self.inputs[0]], f'#/{self.attribute_name}')]
 
     def _to_script(self, _) -> ToScriptElement:
@@ -931,7 +931,7 @@ class SetModelAttribute(Block):
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
         return cls(dict_['attribute_name'], dict_['name'], position=dict_.get('position'))
 
-    def evaluate(self, values):
+    def evaluate(self, values, **kwargs):
         model = values[self.inputs[0]]
         setattr(model, self.attribute_name, values[self.inputs[1]])
         return [model]
@@ -978,7 +978,7 @@ class Substraction(Block):
         Block.__init__(self, [Variable(name='+'), Variable(name='-')], [Variable(name='Substraction')], name=name,
                        position=position)
 
-    def evaluate(self, values):
+    def evaluate(self, values, **kwargs):
         return [values[self.inputs[0]] - values[self.inputs[1]]]
 
     def _to_script(self, _) -> ToScriptElement:
@@ -1023,7 +1023,7 @@ class ConcatenateStrings(Block):
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
         return cls(number_elements=dict_['number_elements'], separator=dict_["separator"], name=dict_['name'])
 
-    def evaluate(self, values):
+    def evaluate(self, values, **kwargs):
         chunks = [values[i] for i in self.inputs]
         return [self.separator.join(chunks)]
 
@@ -1092,7 +1092,7 @@ class Export(Block):
         return cls(method_type=method_type, text=dict_['text'], filename=filename,
                    extension=dict_["extension"], name=dict_["name"], position=dict_.get('position'))
 
-    def evaluate(self, values):
+    def evaluate(self, values, **kwargs):
         filename = f"{values.pop(self.inputs[-1])}.{self.extension}"
         if self.text:
             stream = StringFile(filename)
@@ -1155,7 +1155,7 @@ class Archive(Block):
         return cls(number_exports=dict_["number_exports"], filename=filename, name=dict_['name'],
                    position=dict_.get('position'))
 
-    def evaluate(self, values):
+    def evaluate(self, values, **kwargs):
         name_input = self.inputs[-1]
         archive_name = f"{values.pop(name_input)}.{self.extension}"
         archive = BinaryFile(archive_name)

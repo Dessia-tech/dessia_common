@@ -245,6 +245,12 @@ class Block(DessiaObject):
     def base_script(self) -> str:
         return f"name='{self.name}', position={self.position}"
 
+    def evaluate(self, values, **kwargs):
+        raise NotImplementedError("This method should be implemented in any Block inheriting class.")
+
+    def _to_script(self):
+        raise NotImplementedError("This method should be implemented in any Block inheriting class.")
+
 
 class Pipe(DessiaObject):
     """
@@ -1502,6 +1508,9 @@ class Workflow(Block):
             filename += '.py'
         with open(filename, 'w', encoding='utf-8') as file:
             self.save_script_to_stream(file)
+
+    def evaluate(self, values, **kwargs):
+        raise NotImplementedError("Method 'evaluate' is not implemented for class Workflow.")
 
 
 class WorkflowState(DessiaObject):
