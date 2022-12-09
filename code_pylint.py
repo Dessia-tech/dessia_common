@@ -1,11 +1,11 @@
-'''
+"""
 Read pylint errors to see if number of errors does not exceed specified limits
 v1.2
 
 Changes:
     v1.1: move imports to top
     v1.2: limit to 100 message to avoid overflow, global note check at end, ratchet effects
-'''
+"""
 
 
 import os

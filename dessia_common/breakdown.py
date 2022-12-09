@@ -11,8 +11,8 @@ import collections
 import collections.abc
 import numpy as npy
 
-from dessia_common.base import SerializableObject
-from dessia_common.utils.types import is_sequence
+import dessia_common.base as dcb
+import dessia_common.utils.types as dct
 
 
 def attrmethod_getter(object_, attr_methods):
@@ -38,7 +38,7 @@ class ExtractionError(Exception):
 
 
 def extract_segment_from_object(object_, segment: str):
-    if is_sequence(object_):
+    if dct.is_sequence(object_):
         try:
             return object_[int(segment)]
         except ValueError as err:
@@ -170,7 +170,7 @@ def object_breakdown(obj, path=''):
         path += '.'
 
     bd_dict = {}
-    if isinstance(obj, SerializableObject):
+    if isinstance(obj, dcb.SerializableObject):
         obj_dict = obj._serializable_dict()
     else:
         if hasattr(obj, '__dict__'):

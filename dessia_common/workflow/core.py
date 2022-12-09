@@ -1627,13 +1627,13 @@ class WorkflowState(DessiaObject):
                     # Check variables progress state
                     return False
 
-        print("Object : ", self.values)
-        print("pipes : ", self.workflow.pipes)
-        print("Other Object : ", other_object.values)
-        print("Other Pipes : ", other_object.workflow.pipes)
+        # print("Object : ", self.values)
+        # print("pipes : ", self.workflow.pipes)
+        # print("Other Object : ", other_object.values)
+        # print("Other Pipes : ", other_object.workflow.pipes)
         for pipe, other_pipe in zip(self.workflow.pipes, other_object.workflow.pipes):
-            print("pipe : ", pipe,  pipe.to_dict())
-            print("other i : ", other_pipe, other_pipe.to_dict())
+            # print("pipe : ", pipe,  pipe.to_dict())
+            # print("other i : ", other_pipe, other_pipe.to_dict())
             if self.activated_items[pipe] != other_object.activated_items[other_pipe]:
                 # Check pipe progress state
                 return False
@@ -1882,7 +1882,6 @@ class WorkflowState(DessiaObject):
             block_args[branch_block] = {"path": argpath}
 
         evaluated_blocks = self.evaluate_branch(blocks=branch, block_args=block_args)
-        print(evaluated_blocks)
 
         # reference_path = ""
         # for i, input_ in enumerate(block.inputs):
