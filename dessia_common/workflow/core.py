@@ -600,8 +600,8 @@ class Workflow(Block):
         Compute all display blocks display_settings.
         """
         display_settings = []
-        path = "#"
         for block in self.display_blocks:
+            path = "#"
             for i, input_ in enumerate(block.inputs):
                 incoming_pipe = self.variable_input_pipe(input_)
                 if i == block._displayable_input:
@@ -1825,13 +1825,13 @@ class WorkflowState(DessiaObject):
 
         # Displays for blocks (getting reference path from block_display return)
         display_setting = self._display_settings_from_selector(selector)
-        try:
-            # Specific hotfix : we propagate reference_path through block_display method
-            display_object = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
-            data = display_object.data
-        except:
-            data = None
-            track = tb.format_exc()
+        # try:
+        # Specific hotfix : we propagate reference_path through block_display method
+        display_object = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
+        data = display_object.data
+        # except:
+        #     data = None
+        #     track = tb.format_exc()
 
         if display_setting.serialize_data:
             data = serialize(data)
@@ -1848,19 +1848,28 @@ class WorkflowState(DessiaObject):
 
         selector = self.workflow.block_selectors[block]
         branch = self.workflow.branch_by_display_selector[selector]
-        evaluated_blocks = self.evaluate_branch(branch)
+        block_args = {}
+        for branch_block in branch:
+            if branch_block is block:
+                argpath = path
+            else:
+                argpath = "#"
+            block_args[branch_block] = {"path": argpath}
 
-        reference_path = ""
-        for i, input_ in enumerate(block.inputs):
-            incoming_pipe = self.workflow.variable_input_pipe(input_)
-            if i == block._displayable_input:
-                reference_path = f'values/{self.workflow.pipes.index(incoming_pipe)}'
+        evaluated_blocks = self.evaluate_branch(blocks=branch, block_args=block_args)
+        print(evaluated_blocks)
+
+        # reference_path = ""
+        # for i, input_ in enumerate(block.inputs):
+        #     incoming_pipe = self.workflow.variable_input_pipe(input_)
+        #     if i == block._displayable_input:
+        #         reference_path = f'values/{self.workflow.pipes.index(incoming_pipe)}'
 
         if block not in evaluated_blocks:
             msg = f"Could not reach block at index {block_index}." \
                   f"Has the workflow been run far enough to evaluate this block ?"
             raise WorkflowError(msg)
-        return evaluated_blocks[block][0], reference_path  # Only one output to an Export Block
+        return evaluated_blocks[block][0]  # Only one output to an Export Block
 
     @property
     def progress(self):
@@ -1917,7 +1926,7 @@ class WorkflowState(DessiaObject):
                 something_activated = True
         return evaluated_blocks
 
-    def evaluate_branch(self, blocks: List[Block]):
+    def evaluate_branch(self, blocks: List[Block], block_args: Dict[Block, Any]):
         """
         Evaluate all blocks of a branch, automatically finding the first executable ones.
         """
@@ -1931,7 +1940,8 @@ class WorkflowState(DessiaObject):
         while len(evaluated_blocks) != len(blocks) and i <= len(blocks):
             next_blocks = [b for b in blocks if b in self._activable_blocks() and b not in evaluated_blocks]
             for block in next_blocks:
-                output_values = self._evaluate_block(block)
+                kwargs = block_args[block]
+                output_values = self._evaluate_block(block, **kwargs)
                 evaluated_blocks[block] = output_values
             i += 1
         return evaluated_blocks
@@ -1994,7 +2004,7 @@ class WorkflowState(DessiaObject):
                 return False
         return True
 
-    def _evaluate_block(self, block, progress_callback=lambda x: x, verbose=False):
+    def _evaluate_block(self, block, progress_callback=lambda x: x, verbose=False, **kwargs):
         """
         Evaluate given block.
         """
@@ -2016,7 +2026,7 @@ class WorkflowState(DessiaObject):
             self._activate_variable(variable=input_, value=value)
             local_values[input_] = value
 
-        output_values = block.evaluate(local_values)
+        output_values = block.evaluate(local_values, **kwargs)
         self._activate_block(block=block, output_values=output_values)
 
         # Updating progress
@@ -2076,7 +2086,8 @@ class WorkflowState(DessiaObject):
         block = self.workflow.blocks[block_index]
         selector = self.workflow.block_selectors[block]
         branch = self.workflow.branch_by_export_format[selector]
-        evaluated_blocks = self.evaluate_branch(branch)
+        block_args = {b: {} for b in branch}
+        evaluated_blocks = self.evaluate_branch(blocks=branch, block_args=block_args)
         if block not in evaluated_blocks:
             msg = f"Could not reach block at index {block_index}." \
                   f"Has the workflow been ran far enough to evaluate this block ?"

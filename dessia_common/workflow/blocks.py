@@ -790,20 +790,23 @@ class MultiPlot(Display):
         return cls(attributes=dict_['attributes'], name=dict_['name'], position=dict_.get('position'))
 
     def evaluate(self, values, **kwargs):
+        path = kwargs.get("path", "#")
         import plot_data
         objects = values[self.inputs[self._displayable_input]]
-        attr_values = [{a: get_in_object_from_path(o, a) for a in self.attributes} for o in objects]
-        values2d = [{key: val[key]} for key in self.attributes[:2] for val in attr_values]
+        samples = [plot_data.Sample(values={a: get_in_object_from_path(o, a) for a in self.attributes},
+                                    path=f"{path}/{i}", name=f"Sample {i}") for i, o in enumerate(objects)]
+        samples2d = [plot_data.Sample(values={a: get_in_object_from_path(o, a) for a in self.attributes[:2]},
+                                      path=f"{path}/{i}", name=f"Sample {i}") for i, o in enumerate(objects)]
         tooltip = plot_data.Tooltip(name='Tooltip', attributes=self.attributes)
 
         scatterplot = plot_data.Scatter(tooltip=tooltip, x_variable=self.attributes[0], y_variable=self.attributes[1],
-                                        elements=values2d, name='Scatter Plot')
+                                        elements=samples2d, name='Scatter Plot')
 
         parallelplot = plot_data.ParallelPlot(disposition='horizontal', axes=self.attributes,
-                                              rgbs=[(192, 11, 11), (14, 192, 11), (11, 11, 192)], elements=attr_values)
+                                              rgbs=[(192, 11, 11), (14, 192, 11), (11, 11, 192)], elements=samples)
         plots = [scatterplot, parallelplot]
         sizes = [plot_data.Window(width=560, height=300), plot_data.Window(width=560, height=300)]
-        multiplot = plot_data.MultiplePlots(elements=attr_values, plots=plots, sizes=sizes,
+        multiplot = plot_data.MultiplePlots(elements=samples, plots=plots, sizes=sizes,
                                             coords=[(0, 0), (0, 300)], name='Results plot')
         return [DisplayObject(type_=self.type_, data=[multiplot.to_dict()])]
 

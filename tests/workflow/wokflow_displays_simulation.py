@@ -27,6 +27,6 @@ assert is_jsonable(md_do.data)
 assert len(cad_do.data["meshes"]) == 2
 assert len(pd_do.data) == 5
 assert isinstance(md_do.data, str)
-assert len(md_do.data) == 2520
+assert len(md_do.data) == 3684
 
 print("script workflow_displays_simulation.py has passed")
