@@ -350,7 +350,7 @@ def recursive_type(obj):
 
     if isinstance(obj, tuple(list(TYPING_EQUIVALENCES.keys()) + [dict])):
         type_ = TYPES_STRINGS[type(obj)]
-    elif isinstance(obj, DessiaObject):
+    elif isinstance(obj, CoreDessiaObject):
         type_ = obj.__module__ + '.' + obj.__class__.__name__
     elif hasattr(obj, 'output_type'):
         type_ = obj.output_type

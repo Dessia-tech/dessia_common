@@ -11,7 +11,7 @@ from typing import List
 
 import numpy as npy
 from dessia_common import FLOAT_TOLERANCE
-from dessia_common.core import DessiaObject
+import dessia_common.core as dc
 from dessia_common.utils.types import isinstance_base_types, is_sequence, full_classname
 from dessia_common.files import BinaryFile, StringFile
 
@@ -205,7 +205,7 @@ def data_eq(value1, value2):
 
     # Test if _data_eq is customized
     if hasattr(value1, '_data_eq'):
-        custom_method = (value1._data_eq.__code__ is not DessiaObject._data_eq.__code__)
+        custom_method = (value1._data_eq.__code__ is not dc.DessiaObject._data_eq.__code__)
         if custom_method:
             return value1._data_eq(value2)
 

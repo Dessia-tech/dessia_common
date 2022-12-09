@@ -11,7 +11,7 @@ class CoreDessiaObject(ABC):
         pass
 
     @abstractmethod
-    def dict_to_object(self):
+    def dict_to_object(self, dict_):
         pass
 
     @abstractmethod
@@ -21,5 +21,3 @@ class CoreDessiaObject(ABC):
     @abstractmethod
     def _serializable_dict(self):
         pass
-
-
