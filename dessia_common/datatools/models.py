@@ -77,6 +77,20 @@ class Scaler(DessiaObject):
         scaler = self.instantiate_skl()
         return scaler.transform(matrix).tolist()
 
+    def inverse_transform(self, matrix: Matrix) -> Matrix:
+        """
+        Inverse transform the scaled data stored in matrix according to this Scaler or children.
+
+        :param matrix:
+            Scaled matrix of data of dimension `n_samples x n_features`
+        :type matrix: List[List[float]]
+
+        :return: The raw matrix according to the rules of scaler.
+        :rtype: List[List[float]]
+        """
+        scaler = self.instantiate_skl()
+        return scaler.inverse_transform(matrix).tolist()
+
     @classmethod
     def fit_transform(cls, matrix: Matrix, name: str = '') -> Tuple['Scaler', Matrix]:
         """
