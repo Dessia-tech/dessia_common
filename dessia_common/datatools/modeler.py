@@ -1,12 +1,12 @@
 """
 Librairy for building machine learning modelers from Dataset or Lists using sklearn models handled in models.
 """
-from typing import List, Dict, Any, Tuple, Union, Type
+from typing import List, Dict, Any, Tuple, Type
 
 import numpy as npy
 
 from plot_data.core import Dataset as pl_Dataset
-from plot_data.core import Line2D, Scatter, EdgeStyle, PointFamily, Tooltip, MultiplePlots, PrimitiveGroup, PointStyle, Graph2D
+from plot_data.core import EdgeStyle, Tooltip, MultiplePlots, PointStyle, Graph2D
 from plot_data.colors import BLACK, RED, BLUE
 
 from dessia_common.core import DessiaObject
@@ -40,6 +40,20 @@ class Modeler(DessiaObject):
         class_ = Modeler._set_scaler_class(is_scaled)
         name = Modeler._set_scaler_name(modeler_name, in_out, is_scaled)
         return class_, name
+
+    @staticmethod
+    def _scale_transform_matrices(scaler: models.Scaler, *matrices: Tuple[Matrix]) -> Tuple[Matrix]:
+        scaled_matrices = tuple()
+        for matrix in matrices:
+            scaled_matrices += (scaler.transform(matrix), )
+        return scaled_matrices
+
+    @staticmethod
+    def _scale_inv_transform_matrices(scaler: models.Scaler, *scaled_matrices: Tuple[Matrix]) -> Tuple[Matrix]:
+        unscaled_matrices = tuple()
+        for matrix in scaled_matrices:
+            unscaled_matrices += (scaler.inverse_transform(matrix), )
+        return unscaled_matrices
 
     @classmethod
     def fit_matrix(cls, inputs: Matrix, outputs: Matrix, class_: Type, hyperparameters: Dict[str, Any],
@@ -176,17 +190,40 @@ class Modeler(DessiaObject):
         inputs = dataset.sub_matrix(input_names)
         return self.predict_matrix(inputs)
 
+    # @classmethod seems useless ?
+    # def fit_predict_dataset(cls, dataset: Dataset, input_names: List[str], output_names: List[str],
+    #                         class_: Type, hyperparameters: Dict[str, Any], input_is_scaled: bool = True,
+    #                         output_is_scaled: bool = False, name: str = '') -> Tuple['Modeler', Matrix]: # TODO check type Vector or Matrix. Must be handled in Modeler.
+    #     """
+    #     Fit outputs to inputs and predict outputs of predicted_inputs for Dataset object (fit then predict).
+    #     """
+    #     modeler = cls.fit_dataset(dataset, input_names, output_names, class_, hyperparameters, input_is_scaled,
+    #                               output_is_scaled, name)
+    #     return modeler, modeler.predict_dataset(input_names)
+
     @classmethod
-    def fit_predict_dataset(cls, dataset: Dataset, input_names: List[str], output_names: List[str],
-                            predicted_names: List[str], class_: Type, hyperparameters: Dict[str, Any],
-                            input_is_scaled: bool = True, output_is_scaled: bool = False,
-                            name: str = '') -> Tuple['Modeler', Matrix]: # TODO check type Vector or Matrix. Must be handled in Modeler.
-        """
-        Fit outputs to inputs and predict outputs of predicted_inputs for Dataset object (fit then predict).
-        """
-        modeler = cls.fit_dataset(dataset, input_names, output_names, class_, hyperparameters, input_is_scaled,
-                                  output_is_scaled, name)
-        return modeler, modeler.predict_dataset(predicted_names)
+    def from_dataset_fit_validate(cls, dataset: Dataset, input_names: List[str], output_names: List[str],
+                                  class_: Type, hyperparameters: Dict[str, Any], input_is_scaled: bool = True,
+                                  output_is_scaled: bool = False, ratio: float = 0.8, shuffled: bool = True,
+                                  name: str = '') -> 'Modeler':
+        inputs = dataset.sub_matrix(input_names)
+        outputs = dataset.sub_matrix(output_names)
+        inputs_train, inputs_test, outputs_train, outputs_test = models.train_test_split(inputs, outputs,
+                                                                                         ratio=ratio, shuffled=shuffled)
+        modeler = cls.fit_matrix(inputs_train, outputs_train, class_, hyperparameters,
+                                 input_is_scaled, output_is_scaled)
+        modeler.plot(ref_inputs=inputs_train, ref_outputs=outputs_train, val_inputs=inputs_test,
+                     val_outputs=outputs_test, input_names=input_names, output_names=output_names)
+        return modeler, modeler.score(inputs_test, outputs_test)
+
+
+    def _reference_validation_predict(self, ref_inputs: Matrix, ref_outputs: Matrix,
+                                      val_inputs: Matrix, val_outputs: Matrix) -> Tuple[Matrix]:
+        scaled_ref_inputs, scaled_val_inputs = self._scale_transform_matrices(self.input_scaler, ref_inputs, val_inputs)
+        scaled_ref_predictions = self.model.predict(scaled_ref_inputs)
+        scaled_val_predictions = self.model.predict(scaled_val_inputs)
+
+        return self._scale_inv_transform_matrices(self.output_scaler, scaled_ref_predictions, scaled_val_predictions)
 
     @staticmethod
     def _hack_bisectrice(ref_outputs: Matrix, val_outputs: Matrix, output_names: List[str]):
@@ -212,12 +249,14 @@ class Modeler(DessiaObject):
             plot_data_list.append({attr: input_[col] for col, attr in enumerate(input_names)})
             plot_data_list[-1].update({attr + '_ref': ref_output[col] for col, attr in enumerate(output_names)})
             plot_data_list[-1].update({attr + '_pred': pred_output[col] for col, attr in enumerate(output_names)})
+
         return plot_data_list
 
     def _validation_plot(self, ref_inputs: Matrix, ref_outputs: Matrix, val_inputs: Matrix, val_outputs: Matrix,
                          input_names: List[str], output_names: List[str]):
-        ref_predictions = self.model.predict(ref_inputs)
-        val_predictions = self.model.predict(val_inputs)
+
+        ref_predictions, val_predictions = self._reference_validation_predict(ref_inputs, ref_outputs,
+                                                                              val_inputs, val_outputs)
 
         ref_scatter = self._plot_data_list(ref_inputs, ref_outputs, ref_predictions, input_names, output_names)
         val_scatter = self._plot_data_list(val_inputs, val_outputs, val_predictions, input_names, output_names)
@@ -238,8 +277,8 @@ class Modeler(DessiaObject):
 
         hak_graph = pl_Dataset(elements=hak_scatter,
                                point_style=PointStyle(BLACK, BLACK, 0.1, 1, 'crux'),
-                               edge_style=EdgeStyle(1.,color_stroke=BLACK),
-                               name="Bisectrice", tooltip=Tooltip(tooltip_attributes))
+                               edge_style=EdgeStyle(2.,color_stroke=BLACK),
+                               name="Reference = Predicted", tooltip=Tooltip(tooltip_attributes))
 
         graphs2D = []
         for idx, name in enumerate(output_names):
@@ -250,8 +289,31 @@ class Modeler(DessiaObject):
 
     def plot_data(self, ref_inputs: Matrix = None, ref_outputs: Matrix = None, val_inputs: Matrix = None,
                   val_outputs: Matrix = None, input_names: List[str] = None, output_names: List[str] = None):
+        """
+        Plot data method for Modeler.
+        """
         return [self._validation_plot(ref_inputs, ref_outputs, val_inputs, val_outputs, input_names, output_names)]
 
+    def score(self, inputs: Matrix, outputs: Matrix) -> float:
+        """
+        Compute the score of Modeler.
+
+        Please be sure to fit the model before computing its score and use test data and not train data.
+        Train data is data used to train the model and shall not be used to evaluate its quality.
+        Test data is data used to test the model and must not be used to train (fit) it.
+
+        :param inputs:
+            Matrix of data of dimension `n_samples x n_features`
+        :type inputs: List[List[float]]
+
+        :param outputs:
+            Matrix of data of dimension `n_samples x n_features`
+        :type outputs: List[List[float]]
+
+        :return: The score of Modeler.
+        :rtype: float
+        """
+        return self.model.score(self.input_scaler.transform(inputs), self.output_scaler.transform(outputs))
 
 ## KEPT FOR A FUTURE PLOT DATA THAT HANDLES LINE2D IN SCATTERS
 # @staticmethod
