@@ -6,6 +6,7 @@ from typing import List, Dict, Any, Tuple, Union, Type
 import numpy as npy
 
 from dessia_common.core import DessiaObject
+from dessia_common.datatools.dataset import Dataset
 import dessia_common.datatools.models as models
 
 
@@ -20,63 +21,74 @@ class Modeler(DessiaObject):
         DessiaObject.__init__(self, name=name)
 
     @staticmethod
-    def _initialize_scaler(is_scaled: bool):
+    def _set_scaler_class(is_scaled: bool) -> models.Scaler:
         if is_scaled:
             return models.StandardScaler()
         return models.IdentityScaler()
-
-    @staticmethod
-    def _fit_scaler(scaler: models.Scaler, matrix: Matrix, name: str = '') -> 'models.Scaler':
-        return scaler.fit(matrix, name=name)
-
-    @staticmethod
-    def _transform(scaler: models.Scaler, matrix: Matrix) -> Matrix:
-        return scaler.transform(matrix)
-
-    @staticmethod
-    def _fit_transform_scaler(scaler: models.Scaler, matrix: Matrix, name: str = '') -> Tuple['models.Scaler', Matrix]:
-        return scaler.fit_transform(matrix, name=name)
 
     @staticmethod
     def _set_scaler_name(modeler_name: str, in_out: str, is_scaled: bool) -> str:
         name = f"{modeler_name}_"
         return name + (f"{in_out}_scaler" if is_scaled else "indentity_scaler")
 
-    # def _initialize_model(self):
-    #     return models.Model()
+    @staticmethod
+    def _set_scaler(modeler_name: str, in_out: str, is_scaled: bool) -> models.Scaler:
+        class_ = Modeler._set_scaler_class(is_scaled)
+        name = Modeler._set_scaler_name(modeler_name, in_out, is_scaled)
+        return class_, name
 
-    # def _set_model_attributes(self, model, attributes: Dict[str, float]):
-    #     for attr, value in attributes.items():
-    #         setattr(model, attr, value)
-    #     return model
-
-    # def _instantiate_model(self):
-    #     model = self._init_model()
-    #     model = self._set_model_attributes(model, self.model_attributes)
-    #     model = self._set_model_attributes(model, self.model_)
-    #     return model
+    @staticmethod
+    def _dataset_to_x_y(dataset: Dataset, input_names:List[str], output_names: List[str]):
+        return
 
     @classmethod
-    def fit(cls, inputs: Matrix, outputs: Matrix, class_: Type, hyperparameters: Dict[str, Any],
+    def fit_matrix(cls, inputs: Matrix, outputs: Matrix, class_: Type, hyperparameters: Dict[str, Any],
             input_is_scaled: bool = True, output_is_scaled: bool = False, name: str = '') -> 'Modeler':
 
-        in_scaler, in_scaled = cls._fit_transform_scaler(cls._initialize_scaler(input_is_scaled), inputs,
-                                                         cls._set_scaler_name(name, "in", input_is_scaled))
-        out_scaler, out_scaled = cls._fit_transform_scaler(cls._initialize_scaler(output_is_scaled), outputs,
-                                                           cls._set_scaler_name(name, "out", output_is_scaled))
+        in_scaler_class, input_scaler_name = cls._set_scaler(name, "in", input_is_scaled)
+        out_scaler_class, output_scaler_name = cls._set_scaler(name, "out", output_is_scaled)
 
-        model = class_.fit(in_scaled, out_scaled, **hyperparameters, name=name + '_model')
+        in_scaler, scaled_inputs = in_scaler_class.fit_transform(inputs, input_scaler_name)
+        out_scaler, scaled_outputs = out_scaler_class.fit_transform(outputs, output_scaler_name)
+
+        model = class_.fit(scaled_inputs, scaled_outputs, **hyperparameters, name=name + '_model')
         return cls(model=model, input_scaler=in_scaler, output_scaler=out_scaler, name=name)
 
-    def predict(self, inputs: List[List[float]], input_scaler, output_scaler):
-        scaled_inputs = input_scaler.transform(inputs)
-        model = self._instantiate_model()
-        return output_scaler.inverse_transform(model.predict(scaled_inputs))
+    def predict(self, inputs: List[List[float]]) -> Matrix:
+        scaled_inputs = self.input_scaler.transform(inputs)
+        scaled_outputs = self.model.predict(scaled_inputs)
+        return self.output_scaler.inverse_transform(scaled_outputs)
 
-    def fit_predict(self, inputs: List[List[float]], outputs: List[List[float]]):
-        input_scaler, scaled_inputs = self._auto_scale(inputs, self.scaled_inputs)
-        output_scaler, scaled_outputs = self._auto_scale(outputs, self.scaled_outputs)
-        model = self._instantiate_model()
-        predicted_outputs = model.fit_predict(scaled_inputs, scaled_outputs)
-        self.model_ = {key: value for key, value in model.items() if key in self._required_attributes}
-        return predicted_outputs
+    @classmethod
+    def fit_predict(cls, inputs: Matrix, outputs: Matrix, predicted_outputs: Matrix, class_: Type,
+                    hyperparameters: Dict[str, Any], input_is_scaled: bool = True, output_is_scaled: bool = False,
+                    name: str = '') -> Tuple['Modeler', Matrix]:
+
+        modeler = cls.fit(inputs, outputs, class_, hyperparameters, input_is_scaled, output_is_scaled, name)
+        return modeler, modeler.predict(predicted_outputs)
+
+    @classmethod
+    def fit_dataset(cls, dataset: Dataset, input_names: List[str], output_names: List[str], class_: Type,
+                         hyperparameters: Dict[str, Any], input_is_scaled: bool = True, output_is_scaled: bool = False,
+                         name: str = '') -> 'Modeler':
+        inputs = dataset.sub_matrix(input_names)
+        outputs = dataset.sub_matrix(output_names)
+        return cls.fit(inputs, outputs, class_, hyperparameters, input_is_scaled, output_is_scaled, name)
+
+    def predict_dataset(self, dataset: Dataset, input_names: List[str]) -> Matrix:
+        inputs = dataset.sub_matrix(input_names)
+        return self.predict(inputs)
+
+    @classmethod
+    def fit_predict_dataset(cls, dataset: Dataset, input_names: List[str], output_names: List[str],
+                            predicted_names: List[str], class_: Type, hyperparameters: Dict[str, Any],
+                            input_is_scaled: bool = True, output_is_scaled: bool = False,
+                            name: str = '') -> Tuple['Modeler', Matrix]:
+
+        modeler = cls.fit(dataset, input_names, output_names, class_, hyperparameters, input_is_scaled,
+                          output_is_scaled, name)
+        return modeler, modeler.predict(predicted_names)
+
+
+
+
