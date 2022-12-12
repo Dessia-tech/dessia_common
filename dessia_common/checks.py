@@ -4,7 +4,7 @@
 General checks & checklists.
 """
 
-from dessia_common.base import SerializableObject
+from dessia_common.serialization import SerializableObject
 
 
 LEVEL_TO_INT = {'debug': 0, 'info': 1, 'warning': 2, 'error': 3}
