@@ -24,9 +24,9 @@ MAX_ERROR_BY_TYPE = {
                      'consider-using-f-string': 1,
                      'arguments-differ': 2,
                      'no-member': 3,
-                     'too-many-locals': 12,  # Reduce by dropping vectored objects
+                     'too-many-locals': 10,  # Reduce by dropping vectored objects
                      'too-many-branches': 13,
-                     'wrong-import-order': 1,
+                     'wrong-import-order': 0,
                      'unused-argument': 7,
                      'cyclic-import': 15,
                      'no-self-use': 6,
@@ -34,7 +34,7 @@ MAX_ERROR_BY_TYPE = {
                      'empty-docstring': 1,
                      'missing-module-docstring': 1,
                      'too-many-arguments': 35,
-                     'too-few-public-methods': 19,  # Not really important
+                     'too-few-public-methods': 4,  # Not really important
                      'unnecessary-comprehension': 1,
                      'no-value-for-parameter': 2,
                      'too-many-return-statements': 10,

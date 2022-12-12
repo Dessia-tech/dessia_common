@@ -27,8 +27,9 @@ coding/naming style & convention.
 
 from math import floor, ceil, cos
 from typing import Dict, List, Tuple, Union, Any
-from numpy import linspace
 import time
+import random
+from numpy import linspace
 
 try:
     import volmdlr as vm
@@ -41,7 +42,6 @@ except ImportError:
 
 from dessia_common import DessiaObject, PhysicalObject, MovingObject
 from dessia_common.typings import InstanceOf
-from dessia_common.vectored_objects import Catalog
 from dessia_common.measures import Distance
 from dessia_common.exports import MarkdownWriter
 
@@ -370,8 +370,8 @@ class StandaloneObject(MovingObject):
         contour = self.standalone_subobject.contour().plot_data()
         primitives_group = plot_data.PrimitiveGroup(primitives=[contour], name='Contour')
 
-        catalog = Catalog.random_2d(bounds={'x': [0, 6], 'y': [100, 2000]}, threshold=8000)
-        points = [plot_data.Point2D(cx=v[0], cy=v[1], name='Point' + str(i)) for i, v in enumerate(catalog.array)]
+        points = [plot_data.Point2D(cx=random.randint(0, 600)/100, cy=random.randint(100, 2000)/100,
+                                    name=f"Point{str(i)}") for i in range(500)]
 
         # Scatter Plot
         scatterplot = self.scatter_plot()
