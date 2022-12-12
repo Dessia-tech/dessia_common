@@ -34,7 +34,7 @@ from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotat
     set_default_value
 from dessia_common.utils.docstrings import parse_docstring, FAILED_DOCSTRING_PARSING
 
-from dessia_common.base import SerializableObject
+from dessia_common.serialization import SerializableObject
 from dessia_common.exports import XLSXWriter, MarkdownWriter, ExportFormat
 
 from dessia_common.typings import JsonSerializable
@@ -55,16 +55,13 @@ def deprecated(use_instead=None):
             print('Traceback : ')
             tb.print_stack(limit=2)
             return function(*args, **kwargs)
-
         return wrapper
-
     return decorated
 
 
 def deprecation_warning(name, object_type, use_instead=None):
     warnings.simplefilter('once', DeprecationWarning)
-    msg = f"\n\n{object_type} {name} is deprecated.\n"
-    msg += "It will be removed in a future version.\n"
+    msg = f"\n\n{object_type} {name} is deprecated.\nIt will be removed in a future version.\n"
     if use_instead is not None:
         msg += f"Use {use_instead} instead.\n"
     warnings.warn(msg, DeprecationWarning)
@@ -205,13 +202,6 @@ class DessiaObject(SerializableObject):
 
     def _get_from_path(self, path: str):
         return get_in_object_from_path(self, path)
-
-    @property
-    def full_classname(self):
-        """
-        Full classname of class like: package.module.submodule.classname.
-        """
-        return full_classname(self)
 
     @classmethod
     def base_jsonschema(cls):

@@ -4,6 +4,7 @@
 Types tools
 
 """
+import warnings
 from typing import Any, Dict, List, Tuple, Type, Union, get_origin, get_args
 
 from collections.abc import Iterator, Sequence
@@ -11,7 +12,7 @@ from importlib import import_module
 
 import orjson
 
-from dessia_common.base import SerializableObject
+from dessia_common.abstract import CoreDessiaObject
 from dessia_common.typings import Subclass, InstanceOf, MethodType, ClassMethodType
 from dessia_common.files import BinaryFile, StringFile
 
@@ -35,15 +36,13 @@ def full_classname(object_, compute_for: str = 'instance'):
     Get full class name of object_ (module + classname).
     """
     if compute_for == 'instance':
-        return object_.__class__.__module__ + '.' + object_.__class__.__name__
+        return f"{object_.__class__.__module__}.{object_.__class__.__name__}"
     if compute_for == 'class':
         try:
-            return object_.__module__ + '.' + object_.__name__
+            return f"{object_.__module__}.{object_.__name__}"
         except:
             print(object_)
-
-    msg = 'Cannot compute {} full classname for object {}'
-    raise NotImplementedError(msg.format(compute_for, object_))
+    raise NotImplementedError(f"Cannot compute {compute_for} full classname for object {object_}")
 
 
 def is_classname_transform(string: str):
@@ -81,23 +80,8 @@ def is_jsonable(obj):
 
 
 def is_serializable(obj):
-    if is_jsonable(obj):
-        return True
-    if isinstance(obj, SerializableObject):
-    # if isinstance(obj, CoreDessiaObject):
-        dict_ = obj.to_dict()
-        return is_jsonable(dict_)
-    if isinstance(obj, dict):
-        for key, value in obj.items():
-            if not is_serializable(key) or not is_serializable(value):
-                return False
-        return True
-    if is_sequence(obj):
-        for element in obj:
-            if not is_serializable(element):
-                return False
-        return True
-    return False
+    warnings.warn("is_serializable has been moved to module serialization.py. Please use this one instead",
+                  DeprecationWarning)
 
 
 def is_sequence(obj):
@@ -355,7 +339,7 @@ def recursive_type(obj):
 
     if isinstance(obj, tuple(list(TYPING_EQUIVALENCES.keys()) + [dict])):
         type_ = TYPES_STRINGS[type(obj)]
-    elif isinstance(obj, SerializableObject):
+    elif isinstance(obj, CoreDessiaObject):
         type_ = obj.__module__ + '.' + obj.__class__.__name__
     elif hasattr(obj, 'output_type'):
         type_ = obj.output_type

@@ -27,7 +27,7 @@ MAX_ERROR_BY_TYPE = {
                      'too-many-locals': 10,  # Reduce by dropping vectored objects
                      'too-many-branches': 13,
                      'unused-argument': 6,
-                     'cyclic-import': 2, # 0 just to test
+                     'cyclic-import': 2,  # 0 just to test
                      'no-self-use': 6,
                      'trailing-whitespace': 11,
                      'empty-docstring': 1,

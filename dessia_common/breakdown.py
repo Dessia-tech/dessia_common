@@ -11,7 +11,7 @@ import collections
 import collections.abc
 import numpy as npy
 
-import dessia_common.base as dcb
+import dessia_common.serialization as dcs
 import dessia_common.utils.types as dct
 
 
@@ -170,7 +170,7 @@ def object_breakdown(obj, path=''):
         path += '.'
 
     bd_dict = {}
-    if isinstance(obj, dcb.SerializableObject):
+    if isinstance(obj, dcs.SerializableObject):
         obj_dict = obj._serializable_dict()
     else:
         if hasattr(obj, '__dict__'):
