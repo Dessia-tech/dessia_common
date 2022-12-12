@@ -25,16 +25,12 @@ def is_hashable(value):
 
 
 def is_number(value):
-    """
-    Determine if the value is a int or a float
-    """
+    """Determine if the value is a int or a float."""
     return isinstance(value, (int, float))
 
 
 def is_builtins_list(list_):
-    """
-    Determin if a list is only composed of builtins
-    """
+    """Determin if a list is only composed of builtins."""
     for element in list_:
         if not (is_number(element) or isinstance(element, str)):
             return False
@@ -42,7 +38,8 @@ def is_builtins_list(list_):
 
 
 class ExportFormat:
-    def __init__(self, selector: Optional[str], extension: str, method_name: str, text: bool,
+    def __init__(self, selector: Optional[str], extension: str,
+                 method_name: str, text: bool,
                  export_name: str = "", args: Dict[str, Any] = None):
         self.selector = selector
         self.extension = extension
@@ -54,12 +51,15 @@ class ExportFormat:
         self.args = args
 
     def to_dict(self):
-        return {"selector": self.selector, "extension": self.extension, "method_name": self.method_name,
-                "text": self.text, "export_name": self.export_name, "args": self.args}
+        return {"selector": self.selector, "extension": self.extension,
+                "method_name": self.method_name, "text": self.text,
+                "export_name": self.export_name, "args": self.args}
 
 
 class XLSXWriter:
-
+    """
+    Base class to write a DessiaObject in an excel file.
+    """
     max_column_width = 40
     color_dessIA1 = "263238"
     color_dessIA2 = "537CB0"
@@ -70,10 +70,6 @@ class XLSXWriter:
                          top=Side(style='thin'), bottom=Side(style='thin'))
 
     def __init__(self, object_):
-        """
-        :param object_: an Dessiaobject to write as excel
-        """
-
         self.pattern_color1 = PatternFill(
             fill_type="solid",
             start_color=self.color_dessIA1,
@@ -103,7 +99,7 @@ class XLSXWriter:
 
     def write_class_header_to_row(self, obj_of_class, sheet, row_number):
         """
-        Writes to a sheet the class header: finds columns names from a class
+        Write to a sheet the class header: finds columns names from a class.
         """
         cell = sheet.cell(row=row_number, column=1, value='Path')
         cell.fill = self.pattern_color2
@@ -127,7 +123,7 @@ class XLSXWriter:
 
     def write_value_to_cell(self, value, sheet, row_number, column_number):
         """
-        Write a given value to a cell. Insert it as a link if it is an object
+        Write a given value to a cell. Insert it as a link if it is an object.
         """
         cell_link = None
         if isinstance(value, dict):
@@ -157,7 +153,7 @@ class XLSXWriter:
 
     def write_object_to_row(self, obj, sheet, row_number, path=''):
         """
-        Write on object to a row. Loops on its attributes to write its value in each cell
+        Write on object to a row. Loops on its attributes to write its value in each cell.
         """
         cell = sheet.cell(row=row_number, column=1, value=path)
         cell.border = self.thin_border
@@ -180,7 +176,7 @@ class XLSXWriter:
 
     def write_object_id(self, sheet):
         """
-        Write object id to a given sheet
+        Write object id to a given sheet.
         """
         sheet.title = f'Object {self.object.__class__.__name__}'
 
@@ -219,7 +215,7 @@ class XLSXWriter:
 
     def write(self):
         """
-        Generate the whole file
+        Generate the whole file.
         """
         # name_column_width = 0
         self.write_object_id(self.main_sheet)
@@ -240,7 +236,7 @@ class XLSXWriter:
 
     def save_to_file(self, filepath: str):
         """
-        Save to a filepath (open) and write
+        Save to a filepath (open) and write.
         """
         if not filepath.endswith('.xlsx'):
             filepath += '.xlsx'
@@ -251,14 +247,14 @@ class XLSXWriter:
 
     def save_to_stream(self, stream):
         """
-        Saves the file to a binary stream
+        Saves the file to a binary stream.
         """
         self.workbook.save(stream)
 
     @staticmethod
     def autosize_sheet_columns(sheet, min_width=5, max_width=30):
         """
-        Autosize the sheet columns by analyzing the content. Min and max width must be specified
+        Autosize the sheet columns by analyzing the content. Min and max width must be specified.
         """
         # Autosize columns
         for col in sheet.columns:
@@ -277,14 +273,19 @@ class XLSXWriter:
 
 
 class MarkdownWriter:
+    """
+    Base class to write markdowns.
+    """
     def __init__(self, print_limit: int = 25, table_limit: int = 12):
         self.print_limit = print_limit
         self.table_limit = table_limit
 
-    def _object_titles(self):
+    @staticmethod
+    def _object_titles():
         return ['Attribute', 'Type', 'Value']  # , 'Subvalues']
 
-    def _sequence_to_str(self, value: Sequence):
+    @staticmethod
+    def _sequence_to_str(value: Sequence):
         if len(value) == 0:
             return f"empty {type(value).__name__}"
 
@@ -303,7 +304,8 @@ class MarkdownWriter:
     def _dict_to_str(self, value: Dict):
         return self._sequence_to_str(list(value.values()))
 
-    def _object_to_str(self, value) -> str:
+    @staticmethod
+    def _object_to_str(value) -> str:
         if hasattr(value, 'name') and value.name:
             return value.name
         return 'unnamed'
@@ -312,11 +314,13 @@ class MarkdownWriter:
         if isinstance(value, (float, int, bool, complex)):
             return str(round(value, 6))
         if isinstance(value, str):
-            return (value if value != '' else 'no value')
+            return value if value != '' else 'no value'
         if is_sequence(value):
             return self._sequence_to_str(value)
         if isinstance(value, Dict):
             return self._dict_to_str(value)
+        if value is None:
+            return ' - '
         return self._object_to_str(value)
 
     def _string_in_table(self, string: str = ''):
@@ -327,10 +331,11 @@ class MarkdownWriter:
         for attr, value in object_.__dict__.items():
             matrix.append([attr,
                            value.__class__.__name__,
-                           (self._value_to_str(value) if not isinstance(value, (list, dict, set)) else ' - ')])
+                           self._value_to_str(value)])
         return matrix
 
-    def _head_table(self, col_names: List[str]) -> str:
+    @staticmethod
+    def _head_table(col_names: List[str]) -> str:
         cap_names = map(lambda x: x.capitalize(), col_names)
         return ("| " + " | ".join(cap_names) + " |\n" +
                 "| ------ " * len(col_names) + "|\n")
@@ -365,19 +370,26 @@ class MarkdownWriter:
 
         return table
 
-    def print_name(self, object_) -> str:
-        return (object_.name if object_.name != '' else 'with no name')
+    @staticmethod
+    def print_name(object_) -> str:
+        """Print name of object_."""
+        return object_.name if object_.name != '' else 'with no name'
 
-    def print_class(self, object_) -> str:
+    @staticmethod
+    def print_class(object_) -> str:
+        """Print name of class name of object_."""
         return object_.__class__.__name__
 
     def matrix_table(self, matrix: List[List[float]], col_names: List[str]) -> str:
+        """Print col_names of matrix as a table."""
         return ''.join([self._head_table(col_names),
                         self._content_table(matrix)])
 
     def object_table(self, object_) -> str:
+        """Print object_'s attributes in table."""
         return self.matrix_table(self._object_matrix(object_),
                                  self._object_titles())
 
     def element_details(self, elements: List[Any]) -> str:
+        """Print sequence of elements."""
         return self._sequence_to_str(elements)

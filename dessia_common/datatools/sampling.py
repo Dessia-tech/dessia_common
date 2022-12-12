@@ -14,7 +14,6 @@ from dessia_common.optimization import FixedAttributeValue, BoundedAttributeValu
 
 
 class ClassSampler(DessiaObject):
-
     """
     Base object to build a DOE from a class and choosen limits for all specified sampled_class attributes.
 
@@ -29,7 +28,6 @@ class ClassSampler(DessiaObject):
 
     :param name: Name of Sampler
     :type name: `str`, `optional`, defaults to `''`
-
     """
     _standalone_in_db = True
     _vector_features = []
@@ -66,7 +64,6 @@ class ClassSampler(DessiaObject):
 
         :return: a `Dataset` containing all generated samples of the sampled_class
         :rtype: `Dataset`
-
         """
         instances_numbers = self._get_instances_numbers()
         parameter_grid = self._build_parameter_grid(instances_numbers)
@@ -89,7 +86,6 @@ class ClassSampler(DessiaObject):
 
         :return: a `Dataset` containing all generated samples of the sampled_class
         :rtype: `Dataset`
-
         """
         varying_sampling = pyDOE.lhs(len(self.sampled_attributes), samples=samples, criterion=criterion)
         full_doe = []
@@ -116,7 +112,6 @@ class ClassSampler(DessiaObject):
 
         :return: a `Dataset` containing all generated samples of the sampled_class
         :rtype: `Dataset`
-
         """
         full_doe = []
         fixed_values = [attr.value for attr in self.constant_attributes]
@@ -180,6 +175,5 @@ class ClassSampler(DessiaObject):
         |          |   150.0 |      42 |
         |          |   200.0 |      42 |
         |          |   250.0 |      42 |
-
         """
         return Dataset(self._get_doe(method=method, samples=samples, lhs_criterion=lhs_criterion), name=name)
