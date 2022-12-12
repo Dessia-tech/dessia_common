@@ -27,14 +27,13 @@ from ast import literal_eval
 # from dessia_common.abstract import CoreDessiaObject
 import dessia_common.errors
 from dessia_common.utils.diff import data_eq, diff, dict_hash, list_hash
-from dessia_common.utils.serialization import deserialize_argument, serialize
-from dessia_common.utils.types import full_classname, is_sequence, is_bson_valid, TYPES_FROM_STRING
+from dessia_common.utils.types import is_sequence, is_bson_valid, TYPES_FROM_STRING
 from dessia_common.utils.copy import deepcopy_value
 from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotation, JSONSCHEMA_HEADER, \
     set_default_value
 from dessia_common.utils.docstrings import parse_docstring, FAILED_DOCSTRING_PARSING
 
-from dessia_common.serialization import SerializableObject
+from dessia_common.serialization import SerializableObject, deserialize_argument, serialize
 from dessia_common.exports import XLSXWriter, MarkdownWriter, ExportFormat
 
 from dessia_common.typings import JsonSerializable

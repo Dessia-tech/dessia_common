@@ -9,7 +9,7 @@ from dessia_common.core import DessiaObject
 
 from dessia_common.models.workflows import simulation_workflow
 from dessia_common.models.power_test import components1, component_connections1, usage1
-from dessia_common.utils.serialization import serialize
+from dessia_common.serialization import serialize
 
 simulation_workflow.to_dict(use_pointers=False)
 input_values = {0: components1,
