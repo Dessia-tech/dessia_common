@@ -1,5 +1,5 @@
 """
-Tests for dessia_common.modeling file
+Tests for dessia_common.datatools.models file
 
 """
 import numpy as npy

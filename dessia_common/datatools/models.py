@@ -188,15 +188,14 @@ class Model(DessiaObject):
         raise NotImplementedError(f'Method _instantiate_dessia not implemented for {cls.__name__}.')
 
     @classmethod
-    def init_for_modeler_(cls, name: str = '',
-                          **hyperparameters: Dict[str, Any]) -> Tuple['Model', Dict[str, Any], str]:
+    def init_for_modeler_(cls, **hyperparameters: Dict[str, Any]) -> Tuple['Model', Dict[str, Any], str]:
         """
         Initialize class of Model with its name and hyperparemeters to fit in Modeler.
 
         :return: The Model class, the hyperparameters to instantiate it and the future name of instance.
         :rtype: Tuple['Model', Dict[str, Any], str]
         """
-        return cls, hyperparameters, name
+        return cls, hyperparameters
 
     @classmethod
     def fit_(cls, inputs: Matrix, outputs: Matrix, name: str = '', **hyperparameters) -> 'Model':
@@ -235,7 +234,7 @@ class Model(DessiaObject):
         :type inputs: List[List[float]]
 
         :return: The predicted values for inputs.
-        :rtype: Model
+        :rtype: Union[List[float], List[List[float]]]
         """
         model = self._instantiate_skl()
         return model.predict(inputs).tolist()
@@ -349,8 +348,8 @@ class Ridge(LinearModel):
         return linear_model.Ridge
 
     @classmethod
-    def init_for_modeler(cls, alpha: float = 1., fit_intercept: bool = True, tol: float = 0.001,
-                         name: str = '') -> Tuple['Ridge', Dict[str, Any], str]:
+    def init_for_modeler(cls, alpha: float = 1., fit_intercept: bool = True,
+                         tol: float = 0.001) -> Tuple['Ridge', Dict[str, Any], str]:
         """
         Initialize class Ridge with its name and hyperparemeters to fit in Modeler.
 
@@ -378,7 +377,7 @@ class Ridge(LinearModel):
         :return: The Ridge class, the hyperparameters to instantiate it and the future name of instance.
         :rtype: Tuple['Ridge', Dict[str, Any], str]
         """
-        return cls.init_for_modeler_(name=name, alpha=alpha, fit_intercept=fit_intercept, tol=tol)
+        return cls.init_for_modeler_(alpha=alpha, fit_intercept=fit_intercept, tol=tol)
 
     @classmethod
     def fit(cls, inputs: Matrix, outputs: Matrix, alpha: float = 1., fit_intercept: bool = True, tol: float = 0.001,
@@ -889,7 +888,7 @@ class RandomForest(Model):
         return criterion
 
     @classmethod
-    def init_for_modeler(cls, criterion: str = 'squared_error', max_depth: int = None,
+    def init_for_modeler(cls, n_estimators: int = 100, criterion: str = 'squared_error', max_depth: int = None,
                          name: str = '') -> Tuple['RandomForest', Dict[str, Any], str]:
         """
         Initialize class RandomForest with its name and hyperparemeters to fit in Modeler.
@@ -923,7 +922,7 @@ class RandomForest(Model):
         :return: The RandomForest model fit on inputs and outputs.
         :rtype: Tuple['RandomForest', Dict[str, Any], str]
         """
-        return cls.init_for_modeler_(name=name, criterion=criterion, max_depth=max_depth)
+        return cls.init_for_modeler_(n_estimators=n_estimators, criterion=criterion, max_depth=max_depth)
 
     @classmethod
     def fit(cls, inputs: Matrix, outputs: Matrix, n_estimators: int = 100, criterion: str = 'squared_error',
@@ -1573,7 +1572,7 @@ class MultiLayerPerceptron(Model):
         :rtype: Tuple['MultiLayerPerceptron', Dict[str, Any], str]
         """
         return cls.init_for_modeler_(name=name, hidden_layer_sizes=hidden_layer_sizes, activation=activation,
-                                     alpha=alpha, solver=solver, max_iter=max_iter, tol=tol)
+                                    alpha=alpha, solver=solver, max_iter=max_iter, tol=tol)
 
     @classmethod
     def fit(cls, inputs: Matrix, outputs: Vector, hidden_layer_sizes: List[int] = None,

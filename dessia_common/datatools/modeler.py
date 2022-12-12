@@ -1,5 +1,5 @@
 """
-Librairy for building machine learning models from Dataset or Lists using sklearn models handled in models.
+Librairy for building machine learning modelers from Dataset or Lists using sklearn models handled in models.
 """
 from typing import List, Dict, Any, Tuple, Union, Type
 
@@ -23,8 +23,8 @@ class Modeler(DessiaObject):
     @staticmethod
     def _set_scaler_class(is_scaled: bool) -> models.Scaler:
         if is_scaled:
-            return models.StandardScaler()
-        return models.IdentityScaler()
+            return models.StandardScaler
+        return models.IdentityScaler
 
     @staticmethod
     def _set_scaler_name(modeler_name: str, in_out: str, is_scaled: bool) -> str:
@@ -37,14 +37,43 @@ class Modeler(DessiaObject):
         name = Modeler._set_scaler_name(modeler_name, in_out, is_scaled)
         return class_, name
 
-    @staticmethod
-    def _dataset_to_x_y(dataset: Dataset, input_names:List[str], output_names: List[str]):
-        return
-
     @classmethod
     def fit_matrix(cls, inputs: Matrix, outputs: Matrix, class_: Type, hyperparameters: Dict[str, Any],
-            input_is_scaled: bool = True, output_is_scaled: bool = False, name: str = '') -> 'Modeler':
+                   input_is_scaled: bool = True, output_is_scaled: bool = False, name: str = '') -> 'Modeler':
+        """
+        Method to fit outputs to inputs with a machine learning method from datatools.models objects for matrix data.
 
+        :param inputs:
+            Matrix of data of dimension `n_samples x n_features`
+        :type inputs: List[List[float]]
+
+        :param outputs:
+            Matrix of data of dimension `n_samples x n_features`
+        :type outputs: List[List[float]]
+
+        :param class_:
+            Class of datatools.models objetc to use for fitting, e.g. RandomForestRegressor, LinearRegression,...
+        :type class_: Type
+
+        :param input_is_scaled:
+            Whether to standardize inputs or not with a models.StandardScaler
+        :type input_is_scaled: bool, `optional`, True
+
+        :param output_is_scaled:
+            Whether to standardize outputs or not with a models.StandardScaler
+        :type output_is_scaled: bool, `optional`, False
+
+        :param hyperparameters:
+            Hyperparameters of the used scikit-learn object.
+        :type hyperparameters: dict[str, Any], `optional`
+
+        :param name:
+            Name of Model
+        :type name: str, `optional`, defaults to `''`
+
+        :return: The equivalent Modeler object containing the fitted model and scalers associated to inputs and outputs
+        :rtype: Modeler
+        """
         in_scaler_class, input_scaler_name = cls._set_scaler(name, "in", input_is_scaled)
         out_scaler_class, output_scaler_name = cls._set_scaler(name, "out", output_is_scaled)
 
@@ -54,40 +83,106 @@ class Modeler(DessiaObject):
         model = class_.fit(scaled_inputs, scaled_outputs, **hyperparameters, name=name + '_model')
         return cls(model=model, input_scaler=in_scaler, output_scaler=out_scaler, name=name)
 
-    def predict(self, inputs: List[List[float]]) -> Matrix:
+    def predict_matrix(self, inputs: List[List[float]]) -> Matrix: # TODO check type Vector or Matrix. Must be handled in Modeler.
+        """
+        Method to predict outputs from inputs with the current Modeler for matrix data.
+
+        :param inputs:
+            Matrix of data of dimension `n_samples x n_features`
+        :type inputs: List[List[float]]
+
+        :return: The predicted values for inputs.
+        :rtype: List[List[float]]
+        """
         scaled_inputs = self.input_scaler.transform(inputs)
         scaled_outputs = self.model.predict(scaled_inputs)
         return self.output_scaler.inverse_transform(scaled_outputs)
 
     @classmethod
-    def fit_predict(cls, inputs: Matrix, outputs: Matrix, predicted_outputs: Matrix, class_: Type,
+    def fit_predict_matrix(cls, inputs: Matrix, outputs: Matrix, predicted_outputs: Matrix, class_: Type,
                     hyperparameters: Dict[str, Any], input_is_scaled: bool = True, output_is_scaled: bool = False,
-                    name: str = '') -> Tuple['Modeler', Matrix]:
-
-        modeler = cls.fit(inputs, outputs, class_, hyperparameters, input_is_scaled, output_is_scaled, name)
-        return modeler, modeler.predict(predicted_outputs)
+                    name: str = '') -> Tuple['Modeler', Matrix]: # TODO check type Vector or Matrix. Must be handled in Modeler.
+        """
+        Fit outputs to inputs and predict outputs of predicted_inputs for matrix data (fit then predict).
+        """
+        modeler = cls.fit_matrix(inputs, outputs, class_, hyperparameters, input_is_scaled, output_is_scaled, name)
+        return modeler, modeler.predict_matrix(predicted_outputs)
 
     @classmethod
     def fit_dataset(cls, dataset: Dataset, input_names: List[str], output_names: List[str], class_: Type,
                          hyperparameters: Dict[str, Any], input_is_scaled: bool = True, output_is_scaled: bool = False,
                          name: str = '') -> 'Modeler':
+        """
+        Method to fit outputs to inputs with a machine learning method from datatools.models objects for a Dataset.
+
+        :param dataset:
+            Dataset containing data, both inputs and outputs
+        :type dataset: Dataset
+
+        :param input_names:
+            Names of input features
+        :type inputs: List[str]
+
+        :param output_names:
+            Names of output features
+        :type inputs: List[str]
+
+        :param class_:
+            Class of datatools.models objetc to use for fitting, e.g. RandomForestRegressor, LinearRegression,...
+        :type class_: Type
+
+        :param input_is_scaled:
+            Whether to standardize inputs or not with a models.StandardScaler
+        :type input_is_scaled: bool, `optional`, True
+
+        :param output_is_scaled:
+            Whether to standardize outputs or not with a models.StandardScaler
+        :type output_is_scaled: bool, `optional`, False
+
+        :param hyperparameters:
+            Hyperparameters of the used scikit-learn object.
+        :type hyperparameters: dict[str, Any], `optional`
+
+        :param name:
+            Name of Model
+        :type name: str, `optional`, defaults to `''`
+
+        :return: The equivalent Modeler object containing the fitted model and scalers associated to inputs and outputs
+        :rtype: Modeler
+        """
         inputs = dataset.sub_matrix(input_names)
         outputs = dataset.sub_matrix(output_names)
-        return cls.fit(inputs, outputs, class_, hyperparameters, input_is_scaled, output_is_scaled, name)
+        return cls.fit_matrix(inputs, outputs, class_, hyperparameters, input_is_scaled, output_is_scaled, name)
 
-    def predict_dataset(self, dataset: Dataset, input_names: List[str]) -> Matrix:
+    def predict_dataset(self, dataset: Dataset, input_names: List[str]) -> Matrix: # TODO check type Vector or Matrix. Must be handled in Modeler.
+        """
+        Method to predict outputs from inputs with the current Modeler for Dataset object.
+
+        :param dataset:
+            Dataset containing data, both inputs and outputs
+        :type dataset: Dataset
+
+        :param input_names:
+            Names of input features to predict
+        :type inputs: List[str]
+
+        :return: The predicted values for inputs.
+        :rtype: List[List[float]]
+        """
         inputs = dataset.sub_matrix(input_names)
-        return self.predict(inputs)
+        return self.predict_matrix(inputs)
 
     @classmethod
     def fit_predict_dataset(cls, dataset: Dataset, input_names: List[str], output_names: List[str],
                             predicted_names: List[str], class_: Type, hyperparameters: Dict[str, Any],
                             input_is_scaled: bool = True, output_is_scaled: bool = False,
-                            name: str = '') -> Tuple['Modeler', Matrix]:
-
-        modeler = cls.fit(dataset, input_names, output_names, class_, hyperparameters, input_is_scaled,
-                          output_is_scaled, name)
-        return modeler, modeler.predict(predicted_names)
+                            name: str = '') -> Tuple['Modeler', Matrix]: # TODO check type Vector or Matrix. Must be handled in Modeler.
+        """
+        Fit outputs to inputs and predict outputs of predicted_inputs for Dataset object (fit then predict).
+        """
+        modeler = cls.fit_dataset(dataset, input_names, output_names, class_, hyperparameters, input_is_scaled,
+                                  output_is_scaled, name)
+        return modeler, modeler.predict_dataset(predicted_names)
 
 
 
