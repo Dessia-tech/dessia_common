@@ -6,8 +6,8 @@ from typing import List, Dict, Any, Tuple, Type
 import numpy as npy
 
 from plot_data.core import Dataset as pl_Dataset
-from plot_data.core import EdgeStyle, Tooltip, MultiplePlots, PointStyle, Graph2D
-from plot_data.colors import BLACK, RED, BLUE
+from plot_data.core import EdgeStyle, Tooltip, MultiplePlots, PointStyle, Graph2D, Axis, Scatter
+from plot_data.colors import BLACK, RED, BLUE, GREY
 
 from dessia_common.core import DessiaObject
 from dessia_common.datatools.dataset import Dataset
@@ -212,9 +212,26 @@ class Modeler(DessiaObject):
                                                                                          ratio=ratio, shuffled=shuffled)
         modeler = cls.fit_matrix(inputs_train, outputs_train, class_, hyperparameters,
                                  input_is_scaled, output_is_scaled)
-        modeler.plot(ref_inputs=inputs_train, ref_outputs=outputs_train, val_inputs=inputs_test,
-                     val_outputs=outputs_test, input_names=input_names, output_names=output_names)
-        return modeler, modeler.score(inputs_test, outputs_test)
+
+        graphs = modeler._validation_graphs(inputs_train, outputs_train, inputs_test, outputs_test, input_names,
+                                            output_names)
+
+        return modeler, graphs, modeler.score(inputs_test, outputs_test)
+
+    @classmethod
+    def cross_validation(cls, dataset: Dataset, input_names: List[str], output_names: List[str],
+                         class_: Type, hyperparameters: Dict[str, Any], input_is_scaled: bool = True,
+                         output_is_scaled: bool = False, nb_tests: int = 1, ratio: float = 0.8, shuffled: bool = True,
+                         name: str = '') -> 'Modeler':
+        scores = []
+        all_graphs = []
+        for idx in range(nb_tests):
+            modeler, graphs, score = cls.from_dataset_fit_validate(dataset, input_names, output_names, class_,
+                                                                   hyperparameters, input_is_scaled, output_is_scaled,
+                                                                   ratio, shuffled, name)
+            scores.append({'Index': idx, 'Score': score})
+            all_graphs += graphs
+        return scores, all_graphs
 
 
     def _reference_validation_predict(self, ref_inputs: Matrix, ref_outputs: Matrix,
@@ -252,8 +269,8 @@ class Modeler(DessiaObject):
 
         return plot_data_list
 
-    def _validation_plot(self, ref_inputs: Matrix, ref_outputs: Matrix, val_inputs: Matrix, val_outputs: Matrix,
-                         input_names: List[str], output_names: List[str]):
+    def _validation_graphs(self, ref_inputs: Matrix, ref_outputs: Matrix, val_inputs: Matrix, val_outputs: Matrix,
+                           input_names: List[str], output_names: List[str]):
 
         ref_predictions, val_predictions = self._reference_validation_predict(ref_inputs, ref_outputs,
                                                                               val_inputs, val_outputs)
@@ -281,18 +298,36 @@ class Modeler(DessiaObject):
                                name="Reference = Predicted", tooltip=Tooltip(tooltip_attributes))
 
         graphs2D = []
+        axis_style = EdgeStyle(line_width=1.5, color_stroke=BLACK)
         for idx, name in enumerate(output_names):
-            graphs2D.append(Graph2D(graphs=[ref_graph, val_graph, hak_graph],
+            axis = Axis(nb_points_x=10, nb_points_y=10, axis_style=axis_style, grid_on=True)
+            graphs2D.append(Graph2D(graphs=[ref_graph, val_graph, hak_graph], axis=axis,
                                     x_variable=name + '_ref', y_variable=name + '_pred'))
+        return graphs2D
 
-        return MultiplePlots(plots=graphs2D, initial_view_on=True)
+    def _validation_plot(self, ref_inputs: Matrix, ref_outputs: Matrix, val_inputs: Matrix, val_outputs: Matrix,
+                         input_names: List[str], output_names: List[str]):
+        graphs = self._validation_graphs(ref_inputs, ref_outputs, val_inputs, val_outputs, input_names, output_names)
+        return MultiplePlots(plots=graphs, initial_view_on=True)
 
-    def plot_data(self, ref_inputs: Matrix = None, ref_outputs: Matrix = None, val_inputs: Matrix = None,
-                  val_outputs: Matrix = None, input_names: List[str] = None, output_names: List[str] = None):
+    # def plot_data(self, ref_inputs: Matrix = None, ref_outputs: Matrix = None, val_inputs: Matrix = None,
+    #               val_outputs: Matrix = None, input_names: List[str] = None, output_names: List[str] = None):
+    #     """
+    #     Plot data method for Modeler.
+    #     """
+    #     return [self._validation_plot(ref_inputs, ref_outputs, val_inputs, val_outputs, input_names, output_names)]
+
+    def plot_data(self, dataset: Dataset, input_names: List[str], output_names: List[str], class_: Type,
+                  hyperparameters: Dict[str, Any], input_is_scaled: bool = True, output_is_scaled: bool = False,
+                  nb_tests: int = 1, ratio: float = 0.8, shuffled: bool = True, name: str = ''):
         """
         Plot data method for Modeler.
         """
-        return [self._validation_plot(ref_inputs, ref_outputs, val_inputs, val_outputs, input_names, output_names)]
+        scores, graphs = Modeler.cross_validation(dataset, input_names, output_names, class_, hyperparameters,
+                                                  input_is_scaled, output_is_scaled, nb_tests, ratio, shuffled, name)
+        scatter_scores = Scatter(x_variable='Index', y_variable='Score', tooltip=Tooltip(['Index', 'Score']),
+                                 elements=scores)
+        return [MultiplePlots(elements=scores, plots=[scatter_scores] + graphs, initial_view_on=True)]
 
     def score(self, inputs: Matrix, outputs: Matrix) -> float:
         """
