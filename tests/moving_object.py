@@ -12,6 +12,7 @@ md_data = '# Object Moving Test of class MovingStandaloneObject\n\nThis is a mar
         'following attributes:\n\n| Attribute | Type | Value |\n| ------ | ------ | ------ |\n| origin | int | 0 |'\
         '\n| name | str | Moving Test |'
 
+
 assert disp == [
     {
         'type_': 'markdown',
@@ -79,3 +80,5 @@ assert disp == [
         'name': ''
     }
 ]
+
+print("script 'moving_object.py' has passed")
