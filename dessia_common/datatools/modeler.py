@@ -1,7 +1,7 @@
 """
 Librairy for building machine learning modelers from Dataset or Lists using sklearn models handled in models.
 """
-from typing import List, Dict, Any, Tuple, Type
+from typing import List, Dict, Any, Tuple, Type, Union
 
 import numpy as npy
 
@@ -28,6 +28,21 @@ class Modeler(DessiaObject):
         if not isinstance(scaled_outputs, list):
             return [[value] for value in self.output_scaler.inverse_transform(scaled_outputs)]
         return self.output_scaler.inverse_transform(scaled_outputs)
+
+    @classmethod
+    def _fit(cls, inputs: Matrix, outputs: Matrix, class_: Type, hyperparameters: Dict[str, Any],
+             input_is_scaled: bool = True, output_is_scaled: bool = False, name: str = '') -> 'Modeler':
+        """
+        Private method to fit outputs to inputs with a machine learning method from datatools.models objects.
+        """
+        in_scaler_class, input_scaler_name = models.Scaler.set_in_modeler(name, "in", input_is_scaled)
+        out_scaler_class, output_scaler_name = models.Scaler.set_in_modeler(name, "out", output_is_scaled)
+
+        in_scaler, scaled_inputs = in_scaler_class.fit_transform(inputs, input_scaler_name)
+        out_scaler, scaled_outputs = out_scaler_class.fit_transform(outputs, output_scaler_name)
+
+        model = class_.fit(scaled_inputs, scaled_outputs, **hyperparameters, name=name + '_model')
+        return cls(model=model, input_scaler=in_scaler, output_scaler=out_scaler, name=name)
 
     @classmethod
     def fit_matrix(cls, inputs: Matrix, outputs: Matrix, class_: Type, hyperparameters: Dict[str, Any],
@@ -66,14 +81,11 @@ class Modeler(DessiaObject):
         :return: The equivalent Modeler object containing the fitted model and scalers associated to inputs and outputs
         :rtype: Modeler
         """
-        in_scaler_class, input_scaler_name = models.Scaler.set_in_modeler(name, "in", input_is_scaled)
-        out_scaler_class, output_scaler_name = models.Scaler.set_in_modeler(name, "out", output_is_scaled)
+        return cls._fit(inputs, outputs, class_, hyperparameters, input_is_scaled, output_is_scaled, name)
 
-        in_scaler, scaled_inputs = in_scaler_class.fit_transform(inputs, input_scaler_name)
-        out_scaler, scaled_outputs = out_scaler_class.fit_transform(outputs, output_scaler_name)
-
-        model = class_.fit(scaled_inputs, scaled_outputs, **hyperparameters, name=name + '_model')
-        return cls(model=model, input_scaler=in_scaler, output_scaler=out_scaler, name=name)
+    def _predict(self, inputs: List[List[float]]) -> Union[Vector, Matrix]:
+        scaled_inputs = self.input_scaler.transform(inputs)
+        return self.model.predict(scaled_inputs)
 
     def predict_matrix(self, inputs: List[List[float]]) -> Matrix:
         """
@@ -86,19 +98,24 @@ class Modeler(DessiaObject):
         :return: The predicted values for inputs.
         :rtype: List[List[float]]
         """
-        scaled_inputs = self.input_scaler.transform(inputs)
-        scaled_outputs = self.model.predict(scaled_inputs)
-        return self._format_output(scaled_outputs)
+        return self._format_output(self._predict(inputs))
+
+    @classmethod
+    def _fit_predict(cls, inputs: Matrix, outputs: Matrix, predicted_outputs: Matrix, class_: Type,
+                     hyperparameters: Dict[str, Any], input_is_scaled: bool = True, output_is_scaled: bool = False,
+                     name: str = '') -> Tuple['Modeler', Union[Vector, Matrix]]:
+        modeler = cls._fit(inputs, outputs, class_, hyperparameters, input_is_scaled, output_is_scaled, name)
+        return modeler, modeler._predict(predicted_outputs)
 
     @classmethod
     def fit_predict_matrix(cls, inputs: Matrix, outputs: Matrix, predicted_outputs: Matrix, class_: Type,
-                    hyperparameters: Dict[str, Any], input_is_scaled: bool = True, output_is_scaled: bool = False,
-                    name: str = '') -> Tuple['Modeler', Matrix]: # TODO check type Vector or Matrix. Must be handled in Modeler.
+                           hyperparameters: Dict[str, Any], input_is_scaled: bool = True,
+                           output_is_scaled: bool = False, name: str = '') -> Tuple['Modeler', Matrix]:
         """
         Fit outputs to inputs and predict outputs of predicted_inputs for matrix data (fit then predict).
         """
-        modeler = cls.fit_matrix(inputs, outputs, class_, hyperparameters, input_is_scaled, output_is_scaled, name)
-        return modeler, modeler.predict_matrix(predicted_outputs)
+        return cls._format_output(cls._fit_predict(inputs, outputs, predicted_outputs, class_, hyperparameters,
+                                                   input_is_scaled, output_is_scaled, name))
 
     @classmethod
     def fit_dataset(cls, dataset: Dataset, input_names: List[str], output_names: List[str], class_: Type,
@@ -209,8 +226,8 @@ class Modeler(DessiaObject):
     def _reference_validation_predict(self, ref_inputs: Matrix, ref_outputs: Matrix,
                                       val_inputs: Matrix, val_outputs: Matrix) -> Tuple[Matrix]:
         scaled_ref_inputs, scaled_val_inputs = self.input_scaler.transform_matrices(ref_inputs, val_inputs)
-        scaled_ref_predictions = self.model.predict(scaled_ref_inputs)
-        scaled_val_predictions = self.model.predict(scaled_val_inputs)
+        scaled_ref_predictions = self.predict_matrix(scaled_ref_inputs)
+        scaled_val_predictions = self.predict_matrix(scaled_val_inputs)
 
         return self.output_scaler.inverse_transform_matrices(scaled_ref_predictions, scaled_val_predictions)
 
