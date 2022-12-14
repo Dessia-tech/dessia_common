@@ -7,7 +7,7 @@ import numpy as npy
 
 from plot_data.core import Dataset as pl_Dataset
 from plot_data.core import EdgeStyle, Tooltip, MultiplePlots, PointStyle, Graph2D, Axis, Scatter
-from plot_data.colors import BLACK, RED, BLUE, GREY
+from plot_data.colors import BLACK, RED, BLUE
 
 from dessia_common.core import DessiaObject
 from dessia_common.datatools.dataset import Dataset
@@ -24,36 +24,10 @@ class Modeler(DessiaObject):
         self.output_scaler = output_scaler
         DessiaObject.__init__(self, name=name)
 
-    @staticmethod
-    def _set_scaler_class(is_scaled: bool) -> models.Scaler:
-        if is_scaled:
-            return models.StandardScaler
-        return models.IdentityScaler
-
-    @staticmethod
-    def _set_scaler_name(modeler_name: str, in_out: str, is_scaled: bool) -> str:
-        name = f"{modeler_name}_"
-        return name + (f"{in_out}_scaler" if is_scaled else "indentity_scaler")
-
-    @staticmethod
-    def _set_scaler(modeler_name: str, in_out: str, is_scaled: bool) -> models.Scaler:
-        class_ = Modeler._set_scaler_class(is_scaled)
-        name = Modeler._set_scaler_name(modeler_name, in_out, is_scaled)
-        return class_, name
-
-    @staticmethod
-    def _scale_transform_matrices(scaler: models.Scaler, *matrices: Tuple[Matrix]) -> Tuple[Matrix]:
-        scaled_matrices = tuple()
-        for matrix in matrices:
-            scaled_matrices += (scaler.transform(matrix), )
-        return scaled_matrices
-
-    @staticmethod
-    def _scale_inv_transform_matrices(scaler: models.Scaler, *scaled_matrices: Tuple[Matrix]) -> Tuple[Matrix]:
-        unscaled_matrices = tuple()
-        for matrix in scaled_matrices:
-            unscaled_matrices += (scaler.inverse_transform(matrix), )
-        return unscaled_matrices
+    def _format_output(self, scaled_outputs: Matrix):
+        if not isinstance(scaled_outputs, list):
+            return [[value] for value in self.output_scaler.inverse_transform(scaled_outputs)]
+        return self.output_scaler.inverse_transform(scaled_outputs)
 
     @classmethod
     def fit_matrix(cls, inputs: Matrix, outputs: Matrix, class_: Type, hyperparameters: Dict[str, Any],
@@ -92,8 +66,8 @@ class Modeler(DessiaObject):
         :return: The equivalent Modeler object containing the fitted model and scalers associated to inputs and outputs
         :rtype: Modeler
         """
-        in_scaler_class, input_scaler_name = cls._set_scaler(name, "in", input_is_scaled)
-        out_scaler_class, output_scaler_name = cls._set_scaler(name, "out", output_is_scaled)
+        in_scaler_class, input_scaler_name = models.Scaler.set_in_modeler(name, "in", input_is_scaled)
+        out_scaler_class, output_scaler_name = models.Scaler.set_in_modeler(name, "out", output_is_scaled)
 
         in_scaler, scaled_inputs = in_scaler_class.fit_transform(inputs, input_scaler_name)
         out_scaler, scaled_outputs = out_scaler_class.fit_transform(outputs, output_scaler_name)
@@ -101,7 +75,7 @@ class Modeler(DessiaObject):
         model = class_.fit(scaled_inputs, scaled_outputs, **hyperparameters, name=name + '_model')
         return cls(model=model, input_scaler=in_scaler, output_scaler=out_scaler, name=name)
 
-    def predict_matrix(self, inputs: List[List[float]]) -> Matrix: # TODO check type Vector or Matrix. Must be handled in Modeler.
+    def predict_matrix(self, inputs: List[List[float]]) -> Matrix:
         """
         Method to predict outputs from inputs with the current Modeler for matrix data.
 
@@ -114,7 +88,7 @@ class Modeler(DessiaObject):
         """
         scaled_inputs = self.input_scaler.transform(inputs)
         scaled_outputs = self.model.predict(scaled_inputs)
-        return self.output_scaler.inverse_transform(scaled_outputs)
+        return self._format_output(scaled_outputs)
 
     @classmethod
     def fit_predict_matrix(cls, inputs: Matrix, outputs: Matrix, predicted_outputs: Matrix, class_: Type,
@@ -190,26 +164,24 @@ class Modeler(DessiaObject):
         inputs = dataset.sub_matrix(input_names)
         return self.predict_matrix(inputs)
 
-    # @classmethod seems useless ?
-    # def fit_predict_dataset(cls, dataset: Dataset, input_names: List[str], output_names: List[str],
-    #                         class_: Type, hyperparameters: Dict[str, Any], input_is_scaled: bool = True,
-    #                         output_is_scaled: bool = False, name: str = '') -> Tuple['Modeler', Matrix]: # TODO check type Vector or Matrix. Must be handled in Modeler.
-    #     """
-    #     Fit outputs to inputs and predict outputs of predicted_inputs for Dataset object (fit then predict).
-    #     """
-    #     modeler = cls.fit_dataset(dataset, input_names, output_names, class_, hyperparameters, input_is_scaled,
-    #                               output_is_scaled, name)
-    #     return modeler, modeler.predict_dataset(input_names)
+    @classmethod
+    def fit_predict_dataset(cls, dataset: Dataset, input_names: List[str], output_names: List[str],
+                            class_: Type, hyperparameters: Dict[str, Any], input_is_scaled: bool = True,
+                            output_is_scaled: bool = False, name: str = '') -> Tuple['Modeler', Matrix]: # TODO check type Vector or Matrix. Must be handled in Modeler.
+        """
+        Fit outputs to inputs and predict outputs of predicted_inputs for Dataset object (fit then predict).
+        """
+        modeler = cls.fit_dataset(dataset, input_names, output_names, class_, hyperparameters, input_is_scaled,
+                                  output_is_scaled, name)
+        return modeler, modeler.predict_dataset(input_names)
 
     @classmethod
     def from_dataset_fit_validate(cls, dataset: Dataset, input_names: List[str], output_names: List[str],
                                   class_: Type, hyperparameters: Dict[str, Any], input_is_scaled: bool = True,
-                                  output_is_scaled: bool = False, ratio: float = 0.8, shuffled: bool = True,
-                                  name: str = '') -> 'Modeler':
+                                  output_is_scaled: bool = False, ratio: float = 0.8, name: str = '') -> 'Modeler':
         inputs = dataset.sub_matrix(input_names)
         outputs = dataset.sub_matrix(output_names)
-        inputs_train, inputs_test, outputs_train, outputs_test = models.train_test_split(inputs, outputs,
-                                                                                         ratio=ratio, shuffled=shuffled)
+        inputs_train, inputs_test, outputs_train, outputs_test = models.train_test_split(inputs, outputs, ratio=ratio)
         modeler = cls.fit_matrix(inputs_train, outputs_train, class_, hyperparameters,
                                  input_is_scaled, output_is_scaled)
 
@@ -221,14 +193,14 @@ class Modeler(DessiaObject):
     @classmethod
     def cross_validation(cls, dataset: Dataset, input_names: List[str], output_names: List[str],
                          class_: Type, hyperparameters: Dict[str, Any], input_is_scaled: bool = True,
-                         output_is_scaled: bool = False, nb_tests: int = 1, ratio: float = 0.8, shuffled: bool = True,
+                         output_is_scaled: bool = False, nb_tests: int = 1, ratio: float = 0.8,
                          name: str = '') -> 'Modeler':
         scores = []
         all_graphs = []
         for idx in range(nb_tests):
             modeler, graphs, score = cls.from_dataset_fit_validate(dataset, input_names, output_names, class_,
                                                                    hyperparameters, input_is_scaled, output_is_scaled,
-                                                                   ratio, shuffled, name)
+                                                                   ratio, name)
             scores.append({'Index': idx, 'Score': score})
             all_graphs += graphs
         return scores, all_graphs
@@ -236,24 +208,17 @@ class Modeler(DessiaObject):
 
     def _reference_validation_predict(self, ref_inputs: Matrix, ref_outputs: Matrix,
                                       val_inputs: Matrix, val_outputs: Matrix) -> Tuple[Matrix]:
-        scaled_ref_inputs, scaled_val_inputs = self._scale_transform_matrices(self.input_scaler, ref_inputs, val_inputs)
+        scaled_ref_inputs, scaled_val_inputs = self.input_scaler.transform_matrices(ref_inputs, val_inputs)
         scaled_ref_predictions = self.model.predict(scaled_ref_inputs)
         scaled_val_predictions = self.model.predict(scaled_val_inputs)
 
-        return self._scale_inv_transform_matrices(self.output_scaler, scaled_ref_predictions, scaled_val_predictions)
+        return self.output_scaler.inverse_transform_matrices(scaled_ref_predictions, scaled_val_predictions)
 
     @staticmethod
-    def _hack_bisectrice(ref_outputs: Matrix, val_outputs: Matrix, output_names: List[str]):
-        output_ranges = []
-        for ref_output, val_output in zip(zip(*ref_outputs), zip(*val_outputs)):
-            min_value = min(min(ref_output), min(val_output))
-            max_value = max(max(ref_output), max(val_output))
-            step_range = (max_value - min_value)/20
-            output_ranges.append(npy.arange(min_value, max_value, step_range).tolist())
-
-        bisectrices_points = list(zip(*output_ranges))
+    def _hack_bisectrice(matrix: Matrix, output_names: List[str]):
+        output_ranges = matrix_ranges(matrix)
         hack_bisectrices = []
-        for point in bisectrices_points:
+        for point in zip(*output_ranges):
             hack_bisectrices.append({output_names[0] + '_ref': point[0], output_names[0] + '_pred': point[0]})
             for idx, name in enumerate(output_names):
                 hack_bisectrices[-1].update({name + '_ref': point[idx], name + '_pred': point[idx]})
@@ -277,7 +242,7 @@ class Modeler(DessiaObject):
 
         ref_scatter = self._plot_data_list(ref_inputs, ref_outputs, ref_predictions, input_names, output_names)
         val_scatter = self._plot_data_list(val_inputs, val_outputs, val_predictions, input_names, output_names)
-        hak_scatter = self._hack_bisectrice(ref_outputs, val_outputs, output_names)
+        hak_scatter = self._hack_bisectrice(ref_outputs + val_outputs, output_names)
 
         tooltip_attributes = input_names + sum([[output_name + '_ref', output_name + '_pred']
                                                 for output_name in output_names], [])
@@ -310,24 +275,17 @@ class Modeler(DessiaObject):
         graphs = self._validation_graphs(ref_inputs, ref_outputs, val_inputs, val_outputs, input_names, output_names)
         return MultiplePlots(plots=graphs, initial_view_on=True)
 
-    # def plot_data(self, ref_inputs: Matrix = None, ref_outputs: Matrix = None, val_inputs: Matrix = None,
-    #               val_outputs: Matrix = None, input_names: List[str] = None, output_names: List[str] = None):
-    #     """
-    #     Plot data method for Modeler.
-    #     """
-    #     return [self._validation_plot(ref_inputs, ref_outputs, val_inputs, val_outputs, input_names, output_names)]
-
     def plot_data(self, dataset: Dataset, input_names: List[str], output_names: List[str], class_: Type,
                   hyperparameters: Dict[str, Any], input_is_scaled: bool = True, output_is_scaled: bool = False,
-                  nb_tests: int = 1, ratio: float = 0.8, shuffled: bool = True, name: str = ''):
+                  nb_tests: int = 1, ratio: float = 0.8, name: str = ''):
         """
         Plot data method for Modeler.
         """
         scores, graphs = Modeler.cross_validation(dataset, input_names, output_names, class_, hyperparameters,
-                                                  input_is_scaled, output_is_scaled, nb_tests, ratio, shuffled, name)
+                                                  input_is_scaled, output_is_scaled, nb_tests, ratio, name)
         scatter_scores = Scatter(x_variable='Index', y_variable='Score', tooltip=Tooltip(['Index', 'Score']),
                                  elements=scores)
-        return [MultiplePlots(elements=scores, plots=[scatter_scores] + graphs, initial_view_on=True)]
+        return [scatter_scores] + [MultiplePlots(elements=scores, plots=graphs, initial_view_on=True)]
 
     def score(self, inputs: Matrix, outputs: Matrix) -> float:
         """
@@ -349,6 +307,16 @@ class Modeler(DessiaObject):
         :rtype: float
         """
         return self.model.score(self.input_scaler.transform(inputs), self.output_scaler.transform(outputs))
+
+def matrix_ranges(matrix: Matrix, nb_points: int = 20):
+    matrix_ranges = []
+    for feature_column in zip(*matrix):
+        min_value = min(feature_column)
+        max_value = max(feature_column)
+        step_range = (max_value - min_value)/nb_points
+        matrix_ranges.append(npy.arange(min_value, max_value, step_range).tolist())
+    return matrix_ranges
+
 
 ## KEPT FOR A FUTURE PLOT DATA THAT HANDLES LINE2D IN SCATTERS
 # @staticmethod

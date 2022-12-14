@@ -26,12 +26,29 @@ class Scaler(DessiaObject):
     def _skl_class(cls):
         raise NotImplementedError('Method _skl_class not implemented for Scaler. Please use children.')
 
-    def _call_skl_scaler(self):
+    def _init_empty(self):
         return self._skl_class()()
+
+    @staticmethod
+    def _set_class(is_scaled: bool) -> 'Scaler':
+        if is_scaled:
+            return StandardScaler
+        return IdentityScaler
+
+    @staticmethod
+    def _set_name(modeler_name: str, in_out: str, is_scaled: bool) -> str:
+        name = f"{modeler_name}_"
+        return name + (f"{in_out}_scaler" if is_scaled else "indentity_scaler")
+
+    @classmethod
+    def set_in_modeler(cls, modeler_name: str, in_out: str, is_scaled: bool) -> 'Scaler':
+        class_ = cls._set_class(is_scaled)
+        name = cls._set_name(modeler_name, in_out, is_scaled)
+        return class_, name
 
     def instantiate_skl(self):
         """Instantiate scikit-learn Scaler from Scaler object, or children."""
-        scaler = self._call_skl_scaler()
+        scaler = self._init_empty()
         for attr in self._rebuild_attributes:
             setattr(scaler, attr, getattr(self, attr))
         return scaler
@@ -99,6 +116,18 @@ class Scaler(DessiaObject):
         scaler = cls.fit(matrix, name)
         return scaler, scaler.transform(matrix)
 
+    def transform_matrices(self, *matrices: Tuple[Matrix]) -> Tuple[Matrix]:
+        scaled_matrices = tuple()
+        for matrix in matrices:
+            scaled_matrices += (self.transform(matrix), )
+        return scaled_matrices
+
+    def inverse_transform_matrices(self, *scaled_matrices: Tuple[Matrix]) -> Tuple[Matrix]:
+        unscaled_matrices = tuple()
+        for matrix in scaled_matrices:
+            unscaled_matrices += (self.inverse_transform(matrix), )
+        return unscaled_matrices
+
 
 class StandardScaler(Scaler):
     """
@@ -136,7 +165,7 @@ class IdentityScaler(StandardScaler):
     def __init__(self, mean_: Vector = None, scale_: Vector = None, var_: Vector = None, name: str = 'identity_scaler'):
         StandardScaler.__init__(self, mean_=mean_, scale_=scale_, var_=var_, name=name)
 
-    def _call_skl_scaler(self):
+    def _init_empty(self):
         return self._skl_class()(with_mean = False, with_std = False)
 
 
@@ -171,7 +200,7 @@ class LabelBinarizer(Scaler):
 
     def instantiate_skl(self):
         """Instantiate scikit-learn LabelBinarizer from LabelBinarizer object."""
-        scaler = self._call_skl_scaler()
+        scaler = self._init_empty()
         scaler.classes_ = npy.array(self.classes_)
         scaler.y_type_ = self.y_type_
         scaler.sparse_input_ = self.sparse_input_
