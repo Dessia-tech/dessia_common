@@ -568,7 +568,7 @@ class Workflow(Block):
             # else:
             #     standard_pipes.append(pipe)
 
-        for i, pipe in enumerate(self.pipes):
+        for pipe in self.pipes:
             if is_nbv[pipe]:
                 nbv = pipe.input_variable
                 related_pipes = [pipe for pipe in nbv_pipes if pipe.input_variable == nbv]

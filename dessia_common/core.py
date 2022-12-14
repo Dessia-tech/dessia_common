@@ -604,7 +604,7 @@ class DessiaObject(SerializableObject):
             checks.append(FailedCheck(f'Object is not bson valid {hint}'))
 
         json.dumps(self._displays())
-
+        json.dumps(self._method_jsonschemas)
 
         return CheckList(checks)
 
