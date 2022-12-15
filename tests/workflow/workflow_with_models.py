@@ -26,7 +26,7 @@ pipe2_opt = Pipe(input_variable=optimization.outputs[1], output_variable=model_f
 optimization_blocks = [instanciate_optimizer, optimization, model_fetcher]
 optimization_pipes = [pipe1_opt, pipe2_opt]
 optimization_workflow = Workflow(blocks=optimization_blocks, pipes=optimization_pipes,
-                                    output=model_fetcher.outputs[0], name='Optimization Workflow')
+                                 output=model_fetcher.outputs[0], name='Optimization Workflow')
 
 optimization_workflow_block = WorkflowBlock(workflow=optimization_workflow, name='Workflow Block')
 
