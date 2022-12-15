@@ -304,8 +304,8 @@ class Modeler(DessiaObject):
         inputs, outputs = dataset.to_input_output(input_names, output_names)
         return models.train_test_split(inputs, outputs, ratio=ratio)
 
-    def _to_points(self, inputs_train: Matrix, inputs_test: Matrix, outputs_train: Matrix, outputs_test: Matrix,
-                           input_names: List[str], output_names: List[str]) -> List[pl_Dataset]:
+    def _to_val_points(self, inputs_train: Matrix, inputs_test: Matrix, outputs_train: Matrix, outputs_test: Matrix,
+                       input_names: List[str], output_names: List[str]) -> List[pl_Dataset]:
         score = self._score(inputs_test, outputs_test)
 
         pred_inputs_train = self._predict(inputs_train)
@@ -327,9 +327,9 @@ class Modeler(DessiaObject):
 
         modeler = cls._fit(inputs_train, outputs_train, class_, hyperparameters, input_is_scaled, output_is_scaled)
 
-        pl_samples_train, pl_samples_test, hack_dataset, score = modeler._to_points(inputs_train, inputs_test,
-                                                                                    outputs_train, outputs_test,
-                                                                                    input_names, output_names)
+        pl_samples_train, pl_samples_test, hack_dataset, score = modeler._to_val_points(inputs_train, inputs_test,
+                                                                                        outputs_train, outputs_test,
+                                                                                        input_names, output_names)
 
         ref_pred_names = cls._ref_pred_names(input_names, output_names)
         pl_datasets = modeler._ref_pred_datasets(pl_samples_train, pl_samples_test, tooltip=Tooltip(ref_pred_names))
