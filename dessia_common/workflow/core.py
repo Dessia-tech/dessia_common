@@ -262,7 +262,6 @@ class Pipe(DessiaObject):
 
 class WorkflowError(Exception):
     """ Specific WorkflowError Exception. """
-    pass
 
 
 class Workflow(Block):

@@ -64,7 +64,6 @@ def output_from_function(function, name: str = "result output"):
 
 class BlockError(Exception):
     """ Specific BlockError Exception. """
-    pass
 
 
 class InstantiateModel(Block):
