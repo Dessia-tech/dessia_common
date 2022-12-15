@@ -508,6 +508,7 @@ class Workflow(Block):
         return copied_workflow
 
     def copy_pipe(self, copied_workflow: 'Workflow', pipe: Pipe) -> Pipe:
+        """ Copy a single regular pipe. """
         upstream_index = self.variable_indices(pipe.input_variable)
         if isinstance(upstream_index, int):
             raise dessia_common.errors.CopyError("copy_pipe method cannot handle nonblock-variables. "
@@ -518,62 +519,40 @@ class Workflow(Block):
         pipe_downstream = copied_workflow.variable_from_index(downstream_index)
         return Pipe(pipe_upstream, pipe_downstream)
 
+    def copy_nbv_pipe(self, copied_workflow: 'Workflow', pipe: Pipe, copy_memo: Dict[int, Variable]) -> Pipe:
+        """
+        Copy a pipe where its upstream variable is a NBV.
+
+        This needs special care because if it is not handled properly, NBVs can duplicate,
+        or copied pipes might be unordered.
+        """
+        nbv = pipe.input_variable
+        upstream_index = self.variable_index(nbv)
+        if upstream_index in copy_memo:
+            copied_variable = copy_memo[upstream_index]
+        else:
+            copied_variable = nbv.copy()
+            copy_memo[upstream_index] = copied_variable
+        downstream_index = self.variable_indices(pipe.output_variable)
+        pipe_downstream = copied_workflow.variable_from_index(downstream_index)
+        return Pipe(copied_variable, pipe_downstream)
+
     def copy_pipes(self, copied_workflow: 'Workflow') -> List[Pipe]:
-        copied_pipes = []
-
-        is_nbv = {}
-        nbv_pipes = []
-        # standard_pipes = []
-        # pipes = []
-        for pipe in self.pipes:
-            upstream_index = self.variable_indices(pipe.input_variable)
-            is_nbv[pipe] = isinstance(upstream_index, int)
-            nbv_pipes.append(pipe)
-            # pipes.append(pipe)
-            # if isinstance(upstream_index, int):
-            #     nbv_pipes.append(True)
-            # else:
-            #     standard_pipes.append(pipe)
-
-        for i, pipe in enumerate(self.pipes):
-            if is_nbv[pipe]:
-                nbv = pipe.input_variable
-                related_pipes = [pipe for pipe in nbv_pipes if pipe.input_variable == nbv]
-                if related_pipes:
-                    copied_variable = nbv.copy()
-                    for related_pipe in related_pipes:
-                        downstream_index = self.variable_indices(related_pipe.output_variable)
-                        pipe_downstream = copied_workflow.variable_from_index(downstream_index)
-                        copied_pipes.append(Pipe(copied_variable, pipe_downstream))
-            else:
-                copied_pipes.append(self.copy_pipe(copied_workflow, pipe))
-
-        # for pipe in standard_pipes:
-        #     copied_pipes.append(self.copy_pipe(copied_workflow, pipe))
-
-        # for nbv in self.nonblock_variables:
-        #     related_pipes = [pipe for pipe in nbv_pipes if pipe.input_variable == nbv]
-        #     if related_pipes:
-        #         copied_variable = nbv.copy()
-        #         for pipe in related_pipes:
-        #             downstream_index = self.variable_indices(pipe.output_variable)
-        #             pipe_downstream = copied_workflow.variable_from_index(downstream_index)
-        #             copied_pipes.append(Pipe(copied_variable, pipe_downstream))
-
-        return copied_pipes
+        """ Copy all pipes in workflow. """
+        copy_memo = {}
+        return [self.copy_nbv_pipe(copied_workflow=copied_workflow, pipe=p, copy_memo=copy_memo)
+                if isinstance(self.variable_indices(p.input_variable), int)  # Pipe upstream is NBV
+                else self.copy_pipe(copied_workflow=copied_workflow, pipe=p)
+                for p in self.pipes]
 
     @property
     def display_blocks(self):
-        """
-        Returns list of blocks that can display something (3D, PlotData, Markdown,...)
-        """
+        """ Return list of blocks that can display something (3D, PlotData, Markdown,...). """
         return [b for b in self.blocks if hasattr(b, "_display_settings")]
 
     @property
     def blocks_display_settings(self) -> List[DisplaySetting]:
-        """
-        Computes all display blocks display_settings
-        """
+        """ Computes all display blocks display_settings. """
         display_settings = []
         for block in self.display_blocks:
             block_index = self.blocks.index(block)
@@ -585,32 +564,24 @@ class Workflow(Block):
 
     @staticmethod
     def display_settings() -> List[DisplaySetting]:
-        """
-        Computes the displays settings of the workflow
-        """
+        """ Compute the displays settings of the workflow. """
         display_settings = [DisplaySetting('documentation', 'markdown', 'to_markdown', None),
                             DisplaySetting('workflow', 'workflow', 'to_dict', None)]
         return display_settings
 
     @property
     def export_blocks(self):
-        """
-        Returns list of blocks that can export something (3D, PlotData, Markdown,...)
-        """
+        """ Return list of blocks that can export something (3D, PlotData, Markdown,...). """
         return [b for b in self.blocks if hasattr(b, "_export_format")]
 
     @property
     def blocks_export_formats(self):
-        """
-        Computes all export blocks export_formats
-        """
+        """ Compute all export blocks export_formats. """
         return [b._export_format(i) for i, b in enumerate(self.export_blocks)]
 
     @property
     def display_branches(self):
-        """
-        Return the corresponding branch to each display selector
-        """
+        """ Return the corresponding branch to each display selector. """
         selector_branches = {}
         for display_block in self.display_blocks:
             branch = self.secondary_branch_blocks(display_block)
@@ -620,9 +591,7 @@ class Workflow(Block):
 
     @property
     def export_branches(self):
-        """
-        Return the corresponding branch to each export format
-        """
+        """ Return the corresponding branch to each export format. """
         format_branches = {}
         for export_block in self.export_blocks:
             block_index = self.blocks.index(export_block)
@@ -634,30 +603,22 @@ class Workflow(Block):
         return format_branches
 
     def _export_formats(self):
-        """
-        Reads block to compute available export formats
-        """
+        """ Read block to compute available export formats. """
         export_formats = DessiaObject._export_formats(self)
         export_formats.append({'extension': 'py', 'method_name': 'save_script_to_stream', 'text': True, 'args': {}})
         return export_formats
 
     def to_markdown(self):
-        """
-        Sets workflow documentation as markdown
-        """
+        """ Set workflow documentation as markdown. """
         return self.documentation
 
     def _docstring(self):
-        """
-        Computes documentation of all blocks
-        """
+        """ Compute documentation of all blocks. """
         return [b._docstring() for b in self.blocks]
 
     @property
     def _method_jsonschemas(self):
-        """
-        Compute the run jsonschema (had to be overloaded)
-        """
+        """ Compute the run jsonschema (had to be overloaded). """
         jsonschemas = {'run': deepcopy(JSONSCHEMA_HEADER)}
         jsonschemas['run'].update({'classes': ['dessia_common.workflow.Workflow']})
         properties_dict = jsonschemas['run']['properties']
