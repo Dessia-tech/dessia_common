@@ -9,4 +9,6 @@ assert len(workflow_.nonblock_variables) == len(copied_workflow.nonblock_variabl
 
 assert all([p.input_variable.name == cp.input_variable.name for p, cp in zip(workflow_.pipes, copied_workflow.pipes)])
 
+copied_workflow._check_platform()
+
 print("script 'pipes.py' has passed")

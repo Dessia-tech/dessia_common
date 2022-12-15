@@ -1532,7 +1532,7 @@ class WorkflowState(DessiaObject):
         output = choose_hash(self.output_value)
         input_values = sum(i * choose_hash(v) for (i, v) in self.input_values.items())
         values = len(self.values) * 7
-        return ( workflow + output + input_values + values) % 1000000000
+        return (workflow + output + input_values + values) % 1000000000
 
     def _data_eq(self, other_object: 'WorkflowState'):
         if not (self.__class__.__name__ == other_object.__class__.__name__
@@ -1557,13 +1557,7 @@ class WorkflowState(DessiaObject):
                     # Check variables progress state
                     return False
 
-        print("Object : ", self.values)
-        print("pipes : ", self.workflow.pipes)
-        print("Other Object : ", other_object.values)
-        print("Other Pipes : ", other_object.workflow.pipes)
         for pipe, other_pipe in zip(self.workflow.pipes, other_object.workflow.pipes):
-            print("pipe : ", pipe,  pipe.to_dict())
-            print("other i : ", other_pipe, other_pipe.to_dict())
             if self.activated_items[pipe] != other_object.activated_items[other_pipe]:
                 # Check pipe progress state
                 return False
