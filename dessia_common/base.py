@@ -8,11 +8,12 @@ Created on Tue Nov  8 19:39:07 2022
 
 import sys
 from typing import Dict, Any
+from dessia_common.abstract import CoreDessiaObject
 from dessia_common.typings import JsonSerializable
 from dessia_common.utils.serialization import dict_to_object, serialize_dict_with_pointers, serialize_dict
 
 
-class SerializableObject:
+class SerializableObject(CoreDessiaObject):
     """
     Serialization capabilities of Dessia Object
     """

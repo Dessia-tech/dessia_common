@@ -9,7 +9,7 @@ from typing import List, Tuple
 import random
 import numpy as npy
 import matplotlib.pyplot as plt
-from dessia_common import DessiaObject
+from dessia_common.core import DessiaObject
 import dessia_common.measures as dcm
 import dessia_common.files as dcf
 
