@@ -9,12 +9,14 @@ from typing import List
 from dessia_common.core import DessiaObject
 import dessia_common.optimization as opt
 
+
 class Engine(DessiaObject):
     """
     Dummy and unrealistic engine, only for tests on optimization package.
     Do not use to optimize an engine.
     """
     _vector_features = ['diameter', 'stroke', 'power', 'mass', 'costs']
+
     def __init__(self, n_cyl: int, diameter: float, stroke: float, r_pow_cyl: float = 1., r_diam_strok: float = 1.,
                  name: str = ''):
         DessiaObject.__init__(self, name=name)

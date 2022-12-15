@@ -1,50 +1,53 @@
 import unittest
 
 import dessia_common.typings as dct
-import dessia_common.workflow as wf
+from dessia_common.workflow.core import Pipe, Workflow
+from dessia_common.workflow.blocks import InstantiateModel, ModelMethod, ModelAttribute, WorkflowBlock, ForEach,\
+    Archive, ClassMethod, Sequence, SetModelAttribute, Substraction, Sum, Flatten, Filter, Unpacker, Product,\
+    MultiPlot, Export
 import dessia_common.tests as dctests
 
-from dessia_common import DessiaFilter
+from dessia_common.core import DessiaFilter
 
 
 class WorkflowToScriptTest(unittest.TestCase):
 
     def test_simple_equality(self):
-        instantiate_optimizer = wf.InstantiateModel(model_class=dctests.Optimizer, name='Instantiate Optimizer')
-        optimization = wf.ModelMethod(dct.MethodType(dctests.Optimizer, 'optimize'), name='Optimization')
-        model_fetcher = wf.ModelAttribute(attribute_name='model_to_optimize', name='Model Fetcher')
+        instantiate_optimizer = InstantiateModel(model_class=dctests.Optimizer, name='Instantiate Optimizer')
+        optimization = ModelMethod(dct.MethodType(dctests.Optimizer, 'optimize'), name='Optimization')
+        model_fetcher = ModelAttribute(attribute_name='model_to_optimize', name='Model Fetcher')
         optimization_blocks = [instantiate_optimizer, optimization, model_fetcher]
 
-        pipe1_opt = wf.Pipe(input_variable=instantiate_optimizer.outputs[0], output_variable=optimization.inputs[0])
-        pipe2_opt = wf.Pipe(input_variable=optimization.outputs[1], output_variable=model_fetcher.inputs[0])
+        pipe1_opt = Pipe(input_variable=instantiate_optimizer.outputs[0], output_variable=optimization.inputs[0])
+        pipe2_opt = Pipe(input_variable=optimization.outputs[1], output_variable=model_fetcher.inputs[0])
         optimization_pipes = [pipe1_opt, pipe2_opt]
-        optimization_workflow = wf.Workflow(blocks=optimization_blocks, pipes=optimization_pipes,
-                                            output=model_fetcher.outputs[0], name='Optimization Workflow')
-        optimization_workflow_block = wf.WorkflowBlock(workflow=optimization_workflow, name='Workflow Block')
+        optimization_workflow = Workflow(blocks=optimization_blocks, pipes=optimization_pipes,
+                                         output=model_fetcher.outputs[0], name='Optimization Workflow')
+        optimization_workflow_block = WorkflowBlock(workflow=optimization_workflow, name='Workflow Block')
 
         blocks = [
-            wf.ForEach(optimization_workflow_block, 0, position=(11.11, 22)),
-            wf.Archive(position=(22.22, 33)),
-            wf.ClassMethod(method_type=dct.ClassMethodType(dctests.Car, 'from_csv'), name='car_from_csv', position=(33.33, 44)),
-            wf.InstantiateModel(dctests.Car, name='Instantiate Car', position=(44.44, 55)),
-            wf.ModelAttribute('model_to_optimize', name='Model Fetcher', position=(55.55, 66)),
-            wf.ModelMethod(method_type=dct.MethodType(dctests.Car, 'to_vector'), name='car_to_vector', position=(66.66, 77)),
-            wf.Sequence(3, "sequence_name", position=(77.77, 88)),
-            wf.SetModelAttribute('name', 'name_Name', position=(88.88, 99)),
-            wf.Substraction("substraction_name", position=(99.99, 11.11)),
-            wf.Sum(name="sum_name", position=(22, 11.11)),
-            wf.Flatten('flatten_name', position=(33, 22.22)),
-            wf.Filter([DessiaFilter("attributeFilter", "operatorFilter", bound=3.1415)], position=(44, 33.33)),
-            wf.Unpacker([1, 3], "unpacker_name", position=(55, 44.44)),
-            wf.MultiPlot(['multiplot0', 'multiplot1'], position=(77, 66.66)),
-            wf.Product(4, "product_name", position=(88, 77.77)),
-            wf.Export(method_type=dct.MethodType(dctests.Model, 'save_to_stream'), name='Export', filename="filename",
-                      extension="json", text=True, position=(99, 88.88))
+            ForEach(optimization_workflow_block, 0, position=(11.11, 22)),
+            Archive(position=(22.22, 33)),
+            ClassMethod(method_type=dct.ClassMethodType(dctests.Car, 'from_csv'), name='car_from_csv', position=(33.33, 44)),
+            InstantiateModel(dctests.Car, name='Instantiate Car', position=(44.44, 55)),
+            ModelAttribute('model_to_optimize', name='Model Fetcher', position=(55.55, 66)),
+            ModelMethod(method_type=dct.MethodType(dctests.Car, 'to_vector'), name='car_to_vector', position=(66.66, 77)),
+            Sequence(3, "sequence_name", position=(77.77, 88)),
+            SetModelAttribute('name', 'name_Name', position=(88.88, 99)),
+            Substraction("substraction_name", position=(99.99, 11.11)),
+            Sum(name="sum_name", position=(22, 11.11)),
+            Flatten('flatten_name', position=(33, 22.22)),
+            Filter([DessiaFilter("attributeFilter", "operatorFilter", bound=3.1415)], position=(44, 33.33)),
+            Unpacker([1, 3], "unpacker_name", position=(55, 44.44)),
+            MultiPlot(['multiplot0', 'multiplot1'], position=(77, 66.66)),
+            Product(4, "product_name", position=(88, 77.77)),
+            Export(method_type=dct.MethodType(dctests.Model, 'save_to_stream'), name='Export', filename="filename",
+                   extension="json", text=True, position=(99, 88.88))
         ]
 
-        pipes = [wf.Pipe(blocks[0].outputs[0], blocks[3].inputs[0])]
+        pipes = [Pipe(blocks[0].outputs[0], blocks[3].inputs[0])]
 
-        workflow = wf.Workflow(blocks, pipes, blocks[0].outputs[0], name="script_workflow")
+        workflow = Workflow(blocks, pipes, blocks[0].outputs[0], name="script_workflow")
 
         expected_script_value = "from dessia_common.tests import Optimizer, Car, Model" \
                        "\nfrom dessia_common.workflow.blocks import InstantiateModel, ModelMethod, ModelAttribute, WorkflowBlock, ForEach, Archive, ClassMethod, Sequence, SetModelAttribute, Substraction, Sum, Flatten, Filter, Unpacker, MultiPlot, Product, Export" \
