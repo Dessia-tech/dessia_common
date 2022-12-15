@@ -149,7 +149,7 @@ setup(
         "dectree",
         "openpyxl",
         "parameterized",
-        "matplotlib",
+        "matplotlib<3.6",  # Drop < 3.6 when support for python3.7 will be removed
         "scikit-learn<1.1",  # Drop <1.1 when support for python3.7 will be removed
         "cma"
     ],
