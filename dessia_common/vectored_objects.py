@@ -10,7 +10,7 @@ from io import StringIO
 from typing import List, Dict, Any
 import numpy as np
 import pandas as pd
-from dessia_common import DessiaObject, Parameter, DessiaFilter
+from dessia_common.core import DessiaObject, Parameter, DessiaFilter
 
 
 class ParetoSettings(DessiaObject):

@@ -1,4 +1,4 @@
-from dessia_common.workflow import Workflow, Pipe
+from dessia_common.workflow.core import Workflow, Pipe
 from dessia_common.workflow.blocks import ClassMethod, PlotData, CadView, Markdown
 from dessia_common.typings import ClassMethodType
 from dessia_common.forms import StandaloneObject

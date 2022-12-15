@@ -4,12 +4,12 @@
 Script to test abilities of DessiaObject class
 """
 
-import dessia_common
+from dessia_common.core import DessiaObject
 
 
-class Model(dessia_common.DessiaObject):
+class Model(DessiaObject):
     def __init__(self, a, b, name=''):
-        dessia_common.DessiaObject.__init__(self, a=a, b=b, name=name)
+        DessiaObject.__init__(self, a=a, b=b, name=name)
 
 
 model = Model(2, 3.4, 'name of model')

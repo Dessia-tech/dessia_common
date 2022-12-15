@@ -39,7 +39,7 @@ try:
 except ImportError:
     pass
 
-from dessia_common import DessiaObject, PhysicalObject, MovingObject
+from dessia_common.core import DessiaObject, PhysicalObject, MovingObject
 from dessia_common.typings import InstanceOf
 from dessia_common.vectored_objects import Catalog
 from dessia_common.measures import Distance
