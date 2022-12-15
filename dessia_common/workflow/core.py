@@ -179,15 +179,13 @@ def set_block_variable_names_from_dict(func):
 
 
 class Block(DessiaObject):
+    """ An Abstract block. Do not instantiate alone. """
     _standalone_in_db = False
     _eq_is_data_eq = False
     _non_serializable_attributes = []
 
     def __init__(self, inputs: List[Variable], outputs: List[Variable],
                  position: Tuple[float, float] = None, name: str = ''):
-        """
-        An Abstract block. Do not instantiate alone
-        """
         if position is None:
             self.position = (0, 0)
         else:
@@ -198,8 +196,8 @@ class Block(DessiaObject):
 
     def equivalent_hash(self):
         """
-        Custom hash version of block that does not overwrite __hash__ as we do not want to lose
-        python default equality behavior. Used by workflow module only.
+        Custom hash version that does not overwrite __hash__ as we do not want to lose python default equality behavior.
+        Used by workflow module only.
         """
         return len(self.__class__.__name__)
 
@@ -241,11 +239,11 @@ class Block(DessiaObject):
 
 class Pipe(DessiaObject):
     """
-    :param input_variable: The input varaible of the pipe correspond to the \
-    start of the arrow, its tail.
+    Bind two variables of a Workflow.
+
+    :param input_variable: The input varaible of the pipe correspond to the start of the arrow, its tail.
     :type input_variable: Variable
-    :param output_variable: The output variable of the pipe correpond to the \
-    end of the arrow, its hat.
+    :param output_variable: The output variable of the pipe correpond to the end of the arrow, its hat.
     :type output_variable: Variable
     """
     _eq_is_data_eq = False
@@ -257,14 +255,13 @@ class Pipe(DessiaObject):
         DessiaObject.__init__(self, name=name)
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
-        """
-        transform the pipe into a dict
-        """
+        """ Transform the pipe into a dict. """
         return {'input_variable': self.input_variable, 'output_variable': self.output_variable,
                 'memorize': self.memorize}
 
 
 class WorkflowError(Exception):
+    """ Specific WorkflowError Exception. """
     pass
 
 
