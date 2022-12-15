@@ -6,28 +6,28 @@ from typing import List
 import cma
 import numpy as npy
 import scipy.optimize
-import dessia_common.core as dc
+from dessia_common.core import DessiaObject
 
 
-class Specifications(dc.DessiaObject):
+class Specifications(DessiaObject):
     def __init__(self, name: str = ''):
-        dc.DessiaObject.__init__(self, name=name)
+        DessiaObject.__init__(self, name=name)
 
 
-class FixedAttributeValue(dc.DessiaObject):
+class FixedAttributeValue(DessiaObject):
     _standalone_in_db = True
 
     def __init__(self, attribute_name: str, value: float, name: str = ''):
-        dc.DessiaObject.__init__(self, name=name)
+        DessiaObject.__init__(self, name=name)
         self.attribute_name = attribute_name
         self.value = value
 
 
-class BoundedAttributeValue(dc.DessiaObject):
+class BoundedAttributeValue(DessiaObject):
     _standalone_in_db = True
 
     def __init__(self, attribute_name: str, min_value: float, max_value: float, number: int = 2, name: str = ''):
-        dc.DessiaObject.__init__(self, name=name)
+        DessiaObject.__init__(self, name=name)
         self.attribute_name = attribute_name
         self.min_value = min_value
         self.max_value = max_value
@@ -35,13 +35,21 @@ class BoundedAttributeValue(dc.DessiaObject):
         self.interval_length = max_value - min_value
 
     def dimensionless_to_value(self, dimless_value: float):
+        """
+        Method to compute the value out of the dimensionless one.
+        """
         return self.min_value + dimless_value * self.interval_length
 
     def dimensionless_value(self, value: float):
+        """
+        Method to compute the dimensionless value out of the dimensioned one.
+
+        :param value: the value
+        """
         return (value - self.min_value) / self.interval_length
 
 
-class Optimizer(dc.DessiaObject):
+class Optimizer(DessiaObject):
     """
     Common parts of optimizers
     """
@@ -97,9 +105,15 @@ class InstantiatingModelOptimizer(Optimizer):
         raise NotImplementedError('the method instantiate_model must be overloaded by subclassing class')
 
     def dimensionless_vector_to_vector(self, dl_vector):
+        """
+        Returns the vector from the adimensioned one.
+        """
         return [bound.dimensionless_to_value(dl_xi) for dl_xi, bound in zip(dl_vector, self.optimization_bounds)]
 
     def vector_to_attributes_values(self, vector: List[float]):
+        """
+        Returns a dict of attribute_name: value for each parameter name.
+        """
         attributes = {fp.attribute_name: fp.value for fp in self.fixed_parameters}
 
         for bound, xi in zip(self.optimization_bounds, vector):
@@ -115,14 +129,22 @@ class InstantiatingModelOptimizer(Optimizer):
         raise NotImplementedError('the method objective_from_model must be overloaded by subclassing class')
 
     def scipy_bounds(self):
-        # return [(b.min_value, b.max_value) for b in self.optimization_bounds]
+        """
+        Returns the bounds in the scipy format.
+        """
         return [(0, 1) for b in self.optimization_bounds]
 
     def cma_bounds(self):
+        """
+        Returns the bounds in the CMA format.
+        """
         return [[0] * len(self.optimization_bounds),
                 [1] * len(self.optimization_bounds)]
 
     def optimize_gradient(self, method: str = 'L-BFGS-B', x0: List[float] = None):
+        """
+        Optimize the problem by gradient methods from scipy.
+        """
         if x0 is None:
             x0 = npy.random.random(self.number_parameters)
         bounds = self.scipy_bounds()
@@ -134,6 +156,9 @@ class InstantiatingModelOptimizer(Optimizer):
         return model, result.fun
 
     def optimize_cma(self):
+        """
+        Optimize the problem using the CMA-ES algorithm.
+        """
         x0 = npy.random.random(self.number_parameters)
         bounds = self.cma_bounds()
         xra, fx_opt = cma.fmin(self.objective_from_dimensionless_vector, x0, 0.6, options={'bounds': bounds,
@@ -148,6 +173,9 @@ class InstantiatingModelOptimizer(Optimizer):
         return model, fx_opt
 
     def optimize_cma_then_gradient(self, method: str = 'L-BFGS-B'):
+        """
+        Optimize the problem by combining a first phase of CMA for global optimum search and gradient for polishing.
+        """
         model_cma, fx_cma = self.optimize_cma()
         x0 = npy.array([getattr(model_cma, attr.attribute_name) for attr in self.optimization_bounds])
         model, best_fx = self.optimize_gradient(method=method, x0=x0)

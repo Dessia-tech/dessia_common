@@ -10,12 +10,17 @@ import math
 from typing import List
 
 import numpy as npy
-import dessia_common as dc
+from dessia_common import FLOAT_TOLERANCE
+import dessia_common.core as dc
 from dessia_common.utils.types import isinstance_base_types, is_sequence, full_classname
 from dessia_common.files import BinaryFile, StringFile
 
 
 class DifferentValues:
+    """
+    Contains info on diff different values.
+    """
+
     def __init__(self, path, value1, value2):
         self.path = path
         self.value1 = value1
@@ -26,6 +31,10 @@ class DifferentValues:
 
 
 class MissingAttribute:
+    """
+    Contains info on diff missing attribute.
+    """
+
     def __init__(self, path: str, missing_in_first_object: bool):
         self.path = path
         self.missing_in_first_object = missing_in_first_object
@@ -38,6 +47,10 @@ class MissingAttribute:
 
 
 class DifferentType:
+    """
+    Contains info on diff different types.
+    """
+
     def __init__(self, path: str, value1, value2):
         self.path = path
         self.value1 = value1
@@ -48,6 +61,10 @@ class DifferentType:
 
 
 class Diff:
+    """
+    Contains info on a performed diff analysis between two values.
+    """
+
     def __init__(self, different_values: List[DifferentValues], missing_attributes: List[MissingAttribute],
                  invalid_types: List[DifferentType]):
         self.different_values = different_values
@@ -87,6 +104,7 @@ class Diff:
 def diff(value1, value2, path='#'):
     """
     Main function to get the diff of two objects
+
     :return: a tuple of a list of diff between the objects, missing keys in other object and invalid types
     """
     diff_values = []
@@ -104,7 +122,7 @@ def diff(value1, value2, path='#'):
         return Diff(diff_values, missing_keys_in_other_object, invalid_types)
 
     if isinstance_base_types(value1):
-        if isinstance(value1, float) and math.isclose(value1, value2, abs_tol=dc.FLOAT_TOLERANCE):
+        if isinstance(value1, float) and math.isclose(value1, value2, abs_tol=FLOAT_TOLERANCE):
             return Diff(diff_values, missing_keys_in_other_object, invalid_types)
         if value1 != value2:
             # diff_values.append((path, value1, value2))
@@ -134,6 +152,9 @@ def diff(value1, value2, path='#'):
 
 
 def dict_diff(dict1, dict2, path='#'):
+    """
+    Returns diff between two dicts.
+    """
     diff_object = Diff([], [], [])
 
     dict_ = dict1
@@ -154,6 +175,9 @@ def dict_diff(dict1, dict2, path='#'):
 
 
 def sequence_diff(seq1, seq2, path='#'):
+    """
+    Returns diff between two sequences.
+    """
     seq_diff = Diff([], [], [])
 
     if len(seq1) != len(seq2):
@@ -168,6 +192,9 @@ def sequence_diff(seq1, seq2, path='#'):
 
 
 def data_eq(value1, value2):
+    """
+    Returns if two values are equal on data equality.
+    """
     if is_sequence(value1) and is_sequence(value2):
         return sequence_data_eq(value1, value2)
 
@@ -175,7 +202,7 @@ def data_eq(value1, value2):
         return value1 == value2
 
     if isinstance(value1, npy.float64) or isinstance(value2, npy.float64):
-        return math.isclose(value1, value2, abs_tol=dc.FLOAT_TOLERANCE)
+        return math.isclose(value1, value2, abs_tol=FLOAT_TOLERANCE)
 
     if not isinstance(value2, type(value1))\
             and not isinstance(value1, type(value2)):
@@ -183,7 +210,7 @@ def data_eq(value1, value2):
 
     if isinstance_base_types(value1):
         if isinstance(value1, float):
-            return math.isclose(value1, value2, abs_tol=dc.FLOAT_TOLERANCE)
+            return math.isclose(value1, value2, abs_tol=FLOAT_TOLERANCE)
 
         return value1 == value2
 
@@ -204,8 +231,7 @@ def data_eq(value1, value2):
 
     # Test if _data_eq is customized
     if hasattr(value1, '_data_eq'):
-        custom_method = (value1._data_eq.__code__
-                         is not dc.DessiaObject._data_eq.__code__)
+        custom_method = (value1._data_eq.__code__ is not dc.DessiaObject._data_eq.__code__)
         if custom_method:
             return value1._data_eq(value2)
 
@@ -220,7 +246,9 @@ def data_eq(value1, value2):
 
 
 def dict_data_eq(dict1, dict2):
-
+    """
+    Returns if two dicts are equal on data equality.
+    """
     for key, value in dict1.items():
         if key not in dict2:
             return False
@@ -230,6 +258,9 @@ def dict_data_eq(dict1, dict2):
 
 
 def sequence_data_eq(seq1, seq2):
+    """
+    Returns if two sequences are equal on data equality.
+    """
     if len(seq1) != len(seq2):
         return False
 
@@ -242,6 +273,9 @@ def sequence_data_eq(seq1, seq2):
 
 
 def choose_hash(object_):
+    """
+    Base function to return hash.
+    """
     if is_sequence(object_):
         return list_hash(object_)
     if isinstance(object_, dict):
@@ -252,10 +286,16 @@ def choose_hash(object_):
 
 
 def list_hash(list_):
+    """
+    Returns hash of a list value.
+    """
     return sum(choose_hash(e) for e in list_)
 
 
 def dict_hash(dict_):
+    """
+    Returns hash of a dict value.
+    """
     hash_ = 0
     for key, value in dict_.items():
         hash_ += hash(key) + choose_hash(value)

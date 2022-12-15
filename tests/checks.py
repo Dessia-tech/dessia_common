@@ -1,4 +1,4 @@
-from dessia_common import DessiaObject
+from dessia_common.core import DessiaObject
 # from dessia_common.datatools.dataset import Dataset
 import dessia_common.checks as checks
 

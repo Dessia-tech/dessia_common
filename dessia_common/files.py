@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""Module defining recognized  file types in DC"""
+"""Module defining recognized  file types in DC."""
 
 import io
 import openpyxl
@@ -43,6 +43,7 @@ class BinaryFile(io.BytesIO):
     def __eq__(self, other):
         return isinstance(other, BinaryFile) and self.getbuffer() == other.getbuffer() \
                and self.filename == other.filename
+
 
 class StringFile(io.StringIO):
     """
