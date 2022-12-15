@@ -388,6 +388,12 @@ class Dataset(DessiaObject):
         transposed_submatrix = [self.attribute_values(column_name) for column_name in columns_names]
         return list(map(list, zip(*transposed_submatrix)))
 
+    def to_input_output(self, input_names: List[str], output_names: List[str]) -> List[List[List[float]]]:
+        """
+        Split matrix of Dataset in two matrices inputs and outputs according to input_names and output_names.
+        """
+        return self.sub_matrix(input_names), self.sub_matrix(output_names)
+
     def sort(self, key: Any, ascend: bool = True):  # TODO : Replace numpy with faster algorithms
         """
         Sort the current Dataset along the given key.

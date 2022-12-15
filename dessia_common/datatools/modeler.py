@@ -133,8 +133,7 @@ class Modeler(DessiaObject):
         :return: The equivalent Modeler object containing the fitted model and scalers associated to inputs and outputs
         :rtype: Modeler
         """
-        inputs = dataset.sub_matrix(input_names)
-        outputs = dataset.sub_matrix(output_names)
+        inputs, outputs = dataset.to_input_output(input_names, output_names)
         return cls.fit_matrix(inputs, outputs, class_, hyperparameters, input_is_scaled, output_is_scaled, name)
 
     def _predict(self, inputs: List[List[float]]) -> Union[Vector, Matrix]:
@@ -257,14 +256,12 @@ class Modeler(DessiaObject):
         :return: The score of Modeler.
         :rtype: float
         """
-        inputs = dataset.sub_matrix(input_names)
-        outputs = dataset.sub_matrix(output_names)
+        inputs, outputs = dataset.to_input_output(input_names, output_names)
         return self._score(inputs, outputs)
 
-
-
-    def _pl_samples(self, inputs: Matrix, ref_outputs: Matrix, pred_outputs: Matrix, input_names: List[str],
-                    output_names: List[str]):
+    @staticmethod
+    def _pl_samples(inputs: Matrix, ref_outputs: Matrix, pred_outputs: Matrix, input_names: List[str],
+                    output_names: List[str]) -> List[Dict[str, float]]:
         plot_data_list = []
         for input_, ref_output, pred_output in zip(inputs, ref_outputs, pred_outputs):
             plot_data_list.append({attr: input_[col] for col, attr in enumerate(input_names)})
@@ -272,67 +269,77 @@ class Modeler(DessiaObject):
             plot_data_list[-1].update({attr + '_pred': pred_output[col] for col, attr in enumerate(output_names)})
         return plot_data_list
 
-    def _graph_dataset(self, pl_samples: List[Dict[str, Any]], **kwargs):
+    def _graph_dataset(self, pl_samples: List[Dict[str, Any]], **kwargs) -> pl_Dataset:
         return pl_Dataset(elements=pl_samples, **kwargs)
 
-    def _limit_dataset(self, matrix: Matrix, output_names: List[str], name: str):
-        hak_scatter = self._hack_bisectrice(matrix, output_names)
-        return pl_Dataset(elements=hak_scatter, point_style=LIN_POINT_STYLE, edge_style=STD_LINE, name=name)
+    @staticmethod
+    def _ref_pred_names(input_names: List[str], output_names: List[str]) -> Tooltip:
+        return [[name + '_ref', name + '_pred'] for name in output_names]
 
-    def _ref_val_predict(self, ref_inputs: Matrix, val_inputs: Matrix) -> Tuple[Matrix]:
-        scaled_ref_predictions = self._predict(ref_inputs)
-        scaled_val_predictions = self._predict(val_inputs)
-        return self.output_scaler.inverse_transform_matrices(scaled_ref_predictions, scaled_val_predictions)
-
-    def _ref_val_plot(self, pl_samples: List[Dict[str, Any]], ref_inputs: Matrix, val_inputs: Matrix,
-                      input_names: List[str], tooltip: Tooltip) -> List[pl_Dataset]:
+    def _ref_pred_datasets(self, pl_samples_train: List[Dict[str, float]], pl_samples_test: List[Dict[str, float]],
+                           tooltip: Tooltip) -> List[pl_Dataset]:
         ref_args = {'point_style': REF_POINT_STYLE, 'edge_style': NO_LINE, 'name': 'Train data', 'tooltip': tooltip}
         val_args = {'point_style': VAL_POINT_STYLE, 'edge_style': NO_LINE, 'name': 'Test data', 'tooltip': tooltip}
+        ref_dataset = self._graph_dataset(pl_samples_train, **ref_args)
+        val_dataset = self._graph_dataset(pl_samples_test, **val_args)
+        return [ref_dataset, val_dataset]
 
-        ref_predictions, val_predictions = self._ref_val_predict(ref_inputs, val_inputs)
-        ref_plot = self._graph_dataset(pl_samples, **ref_args)
-        val_plot = self._graph_dataset(pl_samples, **val_args)
-        hak_plot = self._limit_dataset(pl_samples, "Reference = Predicted")
-        return [ref_plot, val_plot, hak_plot]
+    @staticmethod
+    def _hack_bisectrice(output_ranges: List[Vector], output_names: List[str]) -> List[Dict[str, float]]:
+        hack_bisectrices = []
+        for point in zip(*output_ranges):
+            hack_bisectrices.append({output_names[0] + '_ref': point[0], output_names[0] + '_pred': point[0]})
+            for idx, name in enumerate(output_names):
+                hack_bisectrices[-1].update({name + '_ref': point[idx], name + '_pred': point[idx]})
+        return hack_bisectrices
 
-    def _validation_graphs(self, pl_samples: List[Dict[str, Any]], ref_inputs: Matrix, val_inputs: Matrix,
-                           input_names: List[str], output_names: List[str]) -> List[Graph2D]:
-        refpred_names = [[name + '_ref', name + '_pred'] for name in output_names]
-        tooltip = Tooltip(input_names + sum(refpred_names, []))
-        all_graphs = self._ref_val_plot(pl_samples, ref_inputs, val_inputs, input_names, tooltip)
+    @staticmethod
+    def _limit_dataset(output_ranges: List[Vector], output_names: List[str]) -> pl_Dataset:
+        points = Modeler._hack_bisectrice(output_ranges, output_names)
+        return pl_Dataset(points, point_style=LIN_POINT_STYLE, edge_style=STD_LINE, name="Reference = Predicted")
 
-        graphs2D = []
-        for (ref, pred) in refpred_names:
-            graphs2D.append(Graph2D(graphs=all_graphs, axis=axis_style(10, 10), x_variable=ref, y_variable=pred))
-        return graphs2D
+    @staticmethod
+    def _train_test_dataset(dataset: Dataset, input_names: List[str], output_names: List[str],
+                            ratio: float = 0.8) -> List[Matrix]:
+        inputs, outputs = dataset.to_input_output(input_names, output_names)
+        return models.train_test_split(inputs, outputs, ratio=ratio)
 
-    @classmethod # TODO: Make code nice
-    def _dataset_fit_validate(cls, dataset: Dataset, input_names: List[str], output_names: List[str],
-                                  class_: Type, hyperparameters: Dict[str, Any], input_is_scaled: bool = True,
-                                  output_is_scaled: bool = False, ratio: float = 0.8, name: str = '') -> 'Modeler':
-        inputs = dataset.sub_matrix(input_names)
-        outputs = dataset.sub_matrix(output_names)
-        inputs_train, inputs_test, outputs_train, outputs_test = models.train_test_split(inputs, outputs, ratio=ratio)
+    def _to_points(self, inputs_train: Matrix, inputs_test: Matrix, outputs_train: Matrix, outputs_test: Matrix,
+                           input_names: List[str], output_names: List[str]) -> List[pl_Dataset]:
+        score = self._score(inputs_test, outputs_test)
 
-        modeler = cls._fit(inputs_train, outputs_train, class_, hyperparameters, input_is_scaled, output_is_scaled)
+        pred_inputs_train = self._predict(inputs_train)
+        pred_inputs_test = self._predict(inputs_test)
 
-        graphs = modeler._validation_graphs(inputs_train, inputs_test, input_names, output_names)
-
-        return modeler, graphs, modeler._score(inputs_test, outputs_test)
+        pl_samples_train = self._pl_samples(inputs_train, outputs_train, pred_inputs_train, input_names, output_names)
+        pl_samples_test = self._pl_samples(inputs_test, outputs_test, pred_inputs_test, input_names, output_names)
+        output_ranges = matrix_ranges(outputs_train + outputs_test + pred_inputs_train + pred_inputs_test, nb_points=10)
+        hack_dataset = Modeler._limit_dataset(output_ranges, output_names)
+        return pl_samples_train, pl_samples_test, hack_dataset, score
 
     @classmethod
     def from_dataset_fit_validate(cls, dataset: Dataset, input_names: List[str], output_names: List[str],
                                   class_: Type, hyperparameters: Dict[str, Any], input_is_scaled: bool = True,
                                   output_is_scaled: bool = False, ratio: float = 0.8, name: str = '') -> 'Modeler':
-        inputs = dataset.sub_matrix(input_names)
-        outputs = dataset.sub_matrix(output_names)
-        inputs_train, inputs_test, outputs_train, outputs_test = models.train_test_split(inputs, outputs, ratio=ratio)
+
+        inputs_train, inputs_test, outputs_train, outputs_test = cls._train_test_dataset(dataset, input_names,
+                                                                                         output_names, ratio)
 
         modeler = cls._fit(inputs_train, outputs_train, class_, hyperparameters, input_is_scaled, output_is_scaled)
 
-        graphs = modeler._validation_graphs(inputs_train, inputs_test, input_names, output_names)
+        pl_samples_train, pl_samples_test, hack_dataset, score = modeler._to_points(inputs_train, inputs_test,
+                                                                                    outputs_train, outputs_test,
+                                                                                    input_names, output_names)
 
-        return modeler, graphs, modeler._score(inputs_test, outputs_test)
+        ref_pred_names = cls._ref_pred_names(input_names, output_names)
+        pl_datasets = modeler._ref_pred_datasets(pl_samples_train, pl_samples_test, tooltip=Tooltip(ref_pred_names))
+        pl_datasets.append(hack_dataset)
+
+        graphs2D = []
+        for (ref, pred) in ref_pred_names:
+            graphs2D.append(Graph2D(graphs=pl_datasets, axis=axis_style(10, 10), x_variable=ref, y_variable=pred))
+
+        return modeler, graphs2D, score
 
     @classmethod
     def cross_validation(cls, dataset: Dataset, input_names: List[str], output_names: List[str],
@@ -348,21 +355,6 @@ class Modeler(DessiaObject):
             scores.append({'Index': idx, 'Score': score})
             all_graphs += graphs
         return scores, all_graphs
-
-    @staticmethod
-    def _hack_bisectrice(matrix: Matrix, output_names: List[str]):
-        output_ranges = matrix_ranges(matrix)
-        hack_bisectrices = []
-        for point in zip(*output_ranges):
-            hack_bisectrices.append({output_names[0] + '_ref': point[0], output_names[0] + '_pred': point[0]})
-            for idx, name in enumerate(output_names):
-                hack_bisectrices[-1].update({name + '_ref': point[idx], name + '_pred': point[idx]})
-        return hack_bisectrices
-
-    def _validation_plot(self, ref_inputs: Matrix, ref_outputs: Matrix, val_inputs: Matrix, val_outputs: Matrix,
-                         input_names: List[str], output_names: List[str]):
-        graphs = self._validation_graphs(ref_inputs, ref_outputs, val_inputs, val_outputs, input_names, output_names)
-        return MultiplePlots(plots=graphs, initial_view_on=True)
 
     @staticmethod
     def _plot_score(scores: List[Dict[str, Any]]) -> Tuple[List[Dict[str, Any]], List[PointFamily]]:
@@ -385,7 +377,86 @@ class Modeler(DessiaObject):
         scatter_scores = self._plot_score(scores)
         return [scatter_scores] + [MultiplePlots(elements=scores, plots=graphs, initial_view_on=True)]
 
+    def features_importance(self):
+        return
 
+    def features_mrmr(self):
+        return
+
+
+    # def _ref_val_predict(self, ref_inputs: Matrix, val_inputs: Matrix) -> Tuple[Matrix]:
+    #     scaled_ref_predictions = self._predict(ref_inputs)
+    #     scaled_val_predictions = self._predict(val_inputs)
+    #     return self.output_scaler.inverse_transform_matrices(scaled_ref_predictions, scaled_val_predictions)
+
+
+
+    # @staticmethod
+    # def _hack_bisectrice(matrix: Matrix, output_names: List[str]):
+    #     output_ranges = matrix_ranges(matrix)
+    #     hack_bisectrices = []
+    #     for point in zip(*output_ranges):
+    #         hack_bisectrices.append({output_names[0] + '_ref': point[0], output_names[0] + '_pred': point[0]})
+    #         for idx, name in enumerate(output_names):
+    #             hack_bisectrices[-1].update({name + '_ref': point[idx], name + '_pred': point[idx]})
+    #     return hack_bisectrices
+
+    # def _limit_dataset(self, matrix: Matrix, output_names: List[str], name: str) -> pl_Dataset:
+    #     hak_scatter = self._hack_bisectrice(matrix, output_names)
+    #     return pl_Dataset(elements=hak_scatter, point_style=LIN_POINT_STYLE, edge_style=STD_LINE, name=name)
+
+    # def _ref_val_plot(self, pl_samples: List[Dict[str, Any]], ref_inputs: Matrix, val_inputs: Matrix,
+    #                   input_names: List[str], tooltip: Tooltip) -> List[pl_Dataset]:
+    #     ref_args = {'point_style': REF_POINT_STYLE, 'edge_style': NO_LINE, 'name': 'Train data', 'tooltip': tooltip}
+    #     val_args = {'point_style': VAL_POINT_STYLE, 'edge_style': NO_LINE, 'name': 'Test data', 'tooltip': tooltip}
+
+    #     ref_predictions, val_predictions = self._ref_val_predict(ref_inputs, val_inputs)
+    #     ref_plot = self._graph_dataset(pl_samples, **ref_args)
+    #     val_plot = self._graph_dataset(pl_samples, **val_args)
+    #     hak_plot = self._limit_dataset(pl_samples, "Reference = Predicted")
+    #     return [ref_plot, val_plot, hak_plot]
+
+    # def _validation_graphs(self, pl_samples: List[Dict[str, Any]], ref_inputs: Matrix, val_inputs: Matrix,
+    #                        input_names: List[str], output_names: List[str]) -> List[Graph2D]:
+    #     refpred_names = [[name + '_ref', name + '_pred'] for name in output_names]
+    #     tooltip = Tooltip(input_names + sum(refpred_names, []))
+    #     all_graphs = self._ref_val_plot(pl_samples, ref_inputs, val_inputs, input_names, tooltip)
+
+    #     graphs2D = []
+    #     for (ref, pred) in refpred_names:
+    #         graphs2D.append(Graph2D(graphs=all_graphs, axis=axis_style(10, 10), x_variable=ref, y_variable=pred))
+    #     return graphs2D
+
+    # @classmethod # TODO: Make code nice
+    # def _dataset_fit_validate(cls, dataset: Dataset, input_names: List[str], output_names: List[str], class_: Type,
+    #                           hyperparameters: Dict[str, Any], input_is_scaled: bool = True,
+    #                           output_is_scaled: bool = False, ratio: float = 0.8, name: str = '') -> 'Modeler':
+    #     inputs = dataset.sub_matrix(input_names)
+    #     outputs = dataset.sub_matrix(output_names)
+    #     inputs_train, inputs_test, outputs_train, outputs_test = models.train_test_split(inputs, outputs, ratio=ratio)
+
+    #     modeler = cls._fit(inputs_train, outputs_train, class_, hyperparameters, input_is_scaled, output_is_scaled)
+
+    #     graphs = modeler._validation_graphs(inputs_train, inputs_test, input_names, output_names)
+
+    #     return modeler, graphs, modeler._score(inputs_test, outputs_test)
+
+
+    # def _validation_plot(self, ref_inputs: Matrix, ref_outputs: Matrix, val_inputs: Matrix, val_outputs: Matrix,
+    #                      input_names: List[str], output_names: List[str]):
+    #     graphs = self._validation_graphs(ref_inputs, ref_outputs, val_inputs, val_outputs, input_names, output_names)
+    #     return MultiplePlots(plots=graphs, initial_view_on=True)
+
+
+
+
+
+def min_max_range(inf_borns: List[float], sup_borns: List[float], keys: List[str], nb_points: int = 10) -> List[Vector]:
+    ranges = []
+    for inf_born, sup_born in zip(inf_borns, sup_borns):
+        step_range = (sup_born - inf_born)/nb_points
+        ranges.append(npy.arange(inf_born, sup_born, step_range).tolist())
+    return ranges
 
 def matrix_ranges(matrix: Matrix, nb_points: int = 20) -> List[Vector]:
     matrix_ranges = []
