@@ -1,10 +1,8 @@
-from dessia_common.forms import StandaloneObject, StandaloneObjectWithDefaultValues, \
-    ObjectWithOtherTypings
+from dessia_common.forms import StandaloneObject, StandaloneObjectWithDefaultValues, ObjectWithOtherTypings
 from dessia_common.workflow.blocks import ModelMethod, InstantiateModel
 from dessia_common.forms import DEF_SO
 from dessia_common.models.workflows.workflow_from_file_input import workflow_
 import dessia_common.utils.jsonschema as jss
-from dessia_common.measures import Distance
 
 
 # --- Jsonschema computation ---
