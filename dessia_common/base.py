@@ -41,7 +41,8 @@ class SerializableObject(CoreDessiaObject):
 
     def _serializable_dict(self):
         """
-        Returns a dict of attribute_name, values (still python, not serialized)
+        Returns a dict of attribute_name, values (still python, not serialized).
+
         Keys are filtered with non serializable attributes controls
         """
 
@@ -51,7 +52,7 @@ class SerializableObject(CoreDessiaObject):
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#') -> JsonSerializable:
         """
-        Generic to_dict method
+        Generic to_dict method.
         """
         if memo is None:
             memo = {}
@@ -70,7 +71,7 @@ class SerializableObject(CoreDessiaObject):
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
                        pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'SerializableObject':
         """
-        Generic dict_to_object method
+        Generic dict_to_object method.
         """
         if 'object_class' in dict_:
             obj = dict_to_object(dict_=dict_, force_generic=force_generic, global_dict=global_dict,
