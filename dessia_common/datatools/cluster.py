@@ -61,7 +61,6 @@ class ClusteredDataset(Dataset):
     def __init__(self, dessia_objects: List[DessiaObject] = None, labels: List[int] = None, name: str = ''):
         """
         See class docstring.
-
         """
         Dataset.__init__(self, dessia_objects=dessia_objects, name=name)
         if labels is None:
@@ -72,7 +71,6 @@ class ClusteredDataset(Dataset):
     def n_clusters(self):
         """
         Number of clusters in dessia_objects.
-
         """
         unic_labels = set(self.labels)
         unic_labels.discard(-1)
@@ -80,8 +78,7 @@ class ClusteredDataset(Dataset):
 
     def to_xlsx_stream(self, stream):
         """
-        Exports the object to an XLSX to a given stream
-
+        Export the object to an XLSX to a given stream.
         """
         if not isinstance(self.dessia_objects[0], Dataset):
             writer = XLSXWriter(self.clustered_sublists())
@@ -143,7 +140,6 @@ class ClusteredDataset(Dataset):
         |    21.0 |              0.2 |           85.0 |     2587.0 |             16.0 |
         |    25.0 |             0.11 |           87.0 |     2672.0 |             17.5 |
         |    21.0 |            0.199 |           90.0 |     2648.0 |             15.0 |
-
         """
         sublists = []
         label_tags = sorted(list(map(str, set(self.labels).difference({-1}))))
@@ -171,8 +167,10 @@ class ClusteredDataset(Dataset):
 
     def mean_clusters(self):
         """
-        Compute mathematical means of all clusters. Means are computed from the property `matrix`. Each element of \
-        the output is the average values in each dimension in one cluster.
+        Compute mathematical means of all clusters.
+
+        Means are computed from the property `matrix`. Each element of the output is the average values in each
+        dimension in one cluster.
 
         :return: A list of `n_cluster` lists of `n_samples` where each element is the average value in a dimension in \
         one cluster.
@@ -187,7 +185,6 @@ class ClusteredDataset(Dataset):
         >>> means = clist.mean_clusters()
         >>> print(means[0])
         [28.83333333333334, 0.10651785714285714, 79.16666666666667, 2250.3571428571427, 16.075000000000006]
-
         """
         clustered_sublists = self._check_transform_sublists()
         means = []
@@ -197,8 +194,9 @@ class ClusteredDataset(Dataset):
 
     def cluster_distances(self, method: str = 'minkowski', **kwargs):
         """
-        Computes all distances between elements of each cluster and their mean. Gives an indicator on how clusters are \
-        built.
+        Compute all distances between elements of each cluster and their mean.
+
+        Gives an indicator on how clusters are built.
 
         :param method:
             --------
@@ -233,7 +231,6 @@ class ClusteredDataset(Dataset):
         >>> cluster_distances = clist.cluster_distances()
         >>> print(list(map(int, cluster_distances[6])))
         [180, 62, 162, 47, 347, 161, 160, 67, 164, 206, 114, 138, 97, 159, 124, 139]
-
         """
         clustered_sublists = self._check_transform_sublists()
         kwargs = self._set_distance_kwargs(method, kwargs)
@@ -283,7 +280,6 @@ class ClusteredDataset(Dataset):
         |   Name   |   Mpg   |   Displacement   |   Horsepower   |   Weight   |   Acceleration   |
         ------------------------------------------------------------------------------------------
         |Dodge C...|    26.0 |            0.098 |           79.0 |     2255.0 |             17.7 |
-
         """
         clustered_sublists = self._check_transform_sublists()
         kwargs = self._set_distance_kwargs(method, kwargs)
@@ -310,8 +306,8 @@ class ClusteredDataset(Dataset):
     def plot_data(self):
         """
         Plot data method.
-        If dessia_objects are Dataset, merge all Dataset to plot them in one.
 
+        If dessia_objects are Dataset, merge all Dataset to plot them in one.
         """
         if isinstance(self.dessia_objects[0], Dataset):
             plotted_clist = self._merge_sublists()
@@ -345,6 +341,8 @@ class ClusteredDataset(Dataset):
                                       affinity: str = 'euclidean', linkage: str = 'ward',
                                       distance_threshold: float = None, scaling: bool = False, name: str = ""):
         """
+        Agglomerative clustering on Dataset.
+
         Hierarchical clustering is a general family of clustering algorithms that
         build nested clusters by merging or splitting them successively.
         This hierarchy of clusters is represented as a tree (or dendrogram).
@@ -372,14 +370,12 @@ class ClusteredDataset(Dataset):
         :type data: List[DessiaObject]
 
         :param n_clusters:
-            -------
             Number of wished clusters.
 
             Must be `None` if `distance_threshold` is not `None`
         :type n_clusters: `int`, `optional`, defaults to `2`
 
         :param affinity:
-            -------
             Metric used to compute the linkage.
             Can be one of `['euclidean', 'l1', 'l2', 'manhattan', 'cosine', or 'precomputed']`.
 
@@ -390,7 +386,6 @@ class ClusteredDataset(Dataset):
         :type affinity: `str`, `optional`, defaults to `'euclidean'`
 
         :param linkage:
-            --------
             |  Which linkage criterion to use. Can be one of `[‘ward’, ‘complete’, ‘average’, ‘single’]`
             |  The linkage criterion determines which distance to use between sets of observation.
             |  The algorithm will merge the pairs of cluster that minimize this criterion.
@@ -402,13 +397,11 @@ class ClusteredDataset(Dataset):
         :type linkage: `str`, `optional`, defaults to `'ward'`
 
         :param distance_threshold:
-            --------
             The linkage distance above which clusters will not be merged.
             If not `None`, `n_clusters` must be `None`.
         :type distance_threshold: `float`, `optional`, defaults to `None`
 
         :param scaling:
-            --------
             Whether to scale the data or not before clustering.
 
             Formula is `scaled_x = ( x - mean )/standard_deviation`
@@ -416,7 +409,6 @@ class ClusteredDataset(Dataset):
 
         :return: a ClusteredDataset that knows the data and their labels
         :rtype: ClusteredDataset
-
         """
         skl_cluster = cluster.AgglomerativeClustering(
             n_clusters=n_clusters, affinity=affinity, distance_threshold=distance_threshold, linkage=linkage)
@@ -427,6 +419,8 @@ class ClusteredDataset(Dataset):
     def from_kmeans(cls, data: Dataset, n_clusters: int = 2, n_init: int = 10, tol: float = 1e-4,
                     scaling: bool = False, name: str = ""):
         """
+        K-Means clustering on Dataset.
+
         The KMeans algorithm clusters data by trying to separate samples in n groups of equal variance,
         minimizing a criterion known as the inertia or within-cluster sum-of-squares (see below).
         This algorithm requires the number of clusters to be specified. It scales well to large number
@@ -443,24 +437,20 @@ class ClusteredDataset(Dataset):
         :type data: List[DessiaObject]
 
         :param n_clusters:
-            --------
             Number of wished clusters
         :type n_clusters: `int`, `optional`, defaults to `2`
 
         :param n_init:
-            --------
             Number of time the k-means algorithm will be run with different centroid seeds.
             The final results will be the best output of n_init consecutive runs in terms of inertia.
         :type n_init: `int`, `optional`, defaults to `10`
 
         :param tol:
-            --------
             Relative tolerance with regards to Frobenius norm of the difference in the cluster centers of two \
                 consecutive iterations to declare convergence.
         :type tol: `float`, `optional`, defaults to `1e-4`
 
         :param scaling:
-            --------
             Whether to scale the data or not before clustering.
 
             Formula is `scaled_x = ( x - mean )/standard_deviation`
@@ -468,7 +458,6 @@ class ClusteredDataset(Dataset):
 
         :return: a ClusteredDataset that knows the data and their labels
         :rtype: ClusteredDataset
-
         """
         skl_cluster = cluster.KMeans(n_clusters=n_clusters, n_init=n_init, tol=tol)
         skl_cluster = cls.fit_cluster(skl_cluster, data.matrix, scaling)
@@ -478,6 +467,8 @@ class ClusteredDataset(Dataset):
     def from_dbscan(cls, data: Dataset, eps: float = 0.5, min_samples: int = 5, mink_power: float = 2,
                     leaf_size: int = 30, metric: str = "euclidean", scaling: bool = False, name: str = ""):
         """
+        DBSCAN clustering on Dataset.
+
         The DBSCAN algorithm views clusters as areas of high density separated by areas of low density.
         Due to this rather generic view, clusters found by DBSCAN can be any shape, as opposed to k-means
         which assumes that clusters are convex shaped. The central component to the DBSCAN is the concept
@@ -493,42 +484,35 @@ class ClusteredDataset(Dataset):
         :type data: List[DessiaObject]
 
         :param eps:
-            --------
-            The maximum distance between two samples for one to be considered as in the neighborhood \
-            of the other. This is not a maximum bound on the distances of points within a cluster. This is the most \
-            important DBSCAN parameter to choose appropriately for your data set and distance function
+            The maximum distance between two samples for one to be considered as in the neighborhood of the other.
+            This is not a maximum bound on the distances of points within a cluster. This is the most important DBSCAN
+            parameter to choose appropriately for your data set and distance function.
         :type eps: `float`, `optional`, defaults to `0.5`
 
         :param min_samples:
-            --------
-            The number of samples (or total weight) in a neighborhood for a point to be considered as \
-            a core point. This includes the point itself
+            The number of samples (or total weight) in a neighborhood for a point to be considered as a core point.
+            This includes the point itself.
         :type min_samples: `int`, `optional`, defaults to 5
 
         :param mink_power:
-            --------
-            The power of the Minkowski metric to be used to calculate distance between points. \
-            If `None`, then `mink_power=2` (equivalent to the Euclidean distance)
+            The power of the Minkowski metric to be used to calculate distance between points. If `None`, then
+            `mink_power=2` (equivalent to the Euclidean distance).
         :type mink_power: `float`, `optional`, defaults to `2`
 
         :param leaf_size:
-            --------
-            Leaf size passed to BallTree or cKDTree. This can affect the speed of the construction and \
-            query, as well as the memory required to store the tree. The optimal value depends on the nature of the \
-            problem
+            Leaf size passed to BallTree or cKDTree. This can affect the speed of the construction and query, as well
+            as the memory required to store the tree. The optimal value depends on the nature of the problem.
         :type leaf_size: `int`, `optional`, defaults to `30`
 
         :param metric:
-            --------
-            The metric to use when calculating distance between instances in a feature array. If metric is \
-            a string or callable, it must be one of the options allowed by sklearn.metrics.pairwise_distances for its \
-            metric parameter. If metric is `'precomputed'`, X is assumed to be a distance matrix and must be square. \
-            X may be a sparse graph, in which case only `'nonzero'` elements may be considered neighbors for DBSCAN.
+            The metric to use when calculating distance between instances in a feature array. If metric is a string or
+            callable, it must be one of the options allowed by sklearn.metrics.pairwise_distances for its metric
+            parameter. If metric is `'precomputed'`, X is assumed to be a distance matrix and must be square. X may be
+            a sparse graph, in which case only `'nonzero'` elements may be considered neighbors for DBSCAN.
         :type metric: `str`, or `callable`, default to `’euclidean’`
 
 
         :param scaling:
-            --------
             Whether to scale the data or not before clustering.
 
             Formula is `scaled_x = ( x - mean )/standard_deviation`
@@ -536,7 +520,6 @@ class ClusteredDataset(Dataset):
 
         :return: a ClusteredDataset that knows the data and their labels
         :rtype: ClusteredDataset
-
         """
         skl_cluster = cluster.DBSCAN(eps=eps, min_samples=min_samples, p=mink_power, leaf_size=leaf_size, metric=metric)
         skl_cluster = cls.fit_cluster(skl_cluster, data.matrix, scaling)
@@ -545,28 +528,25 @@ class ClusteredDataset(Dataset):
     @classmethod
     def from_pareto_sheets(cls, h_list: Dataset, costs_columns: List[str], nb_sheets: int = 1):
         """
-        Get successive pareto sheets (i.e. optimal points in a DOE for pre-computed costs) and put them in a
-        `ClusteredDataset` where each label is the index of a pareto sheet.
+        Get successive pareto sheets where each label is the index of a pareto sheet put them in a `ClusteredDataset`.
+
+        A pareto sheet is defined as the optimal points in a DOE for a pre-computed costs.
 
         :param h_list:
-            --------
             The Dataset in which to pick optimal points.
         :type h_list: Dataset
 
          :param costs_columns:
-             -----------
              List of columns' indexes or attributes on which costs are stored in current Dataset
          :type costs_columns: `List[str]`
 
         :param nb_sheets:
-            --------
             Number of pareto sheets to pick
         :type nb_sheets: `int`, `optional`, default to `1`
 
-        :return: a ClusteredDataset where each element is labelled with its pareto_sheet. Elements outside a \
+        :return: a ClusteredDataset where each element is labelled with its pareto_sheet. Elements outside a
         pareto_sheet are labelled `n_sheets`
         :rtype: ClusteredDataset
-
         """
         labels = []
         dessia_objects = []
@@ -587,18 +567,15 @@ class ClusteredDataset(Dataset):
         :type data: cluster
 
         :param matrix:
-            --------
             List of data
         :type matrix: `float`, `n_samples x n_features`
 
         :param scaling:
-            --------
             Whether to scale the data or not before clustering.
         :type scaling: `bool`, `optional`, defaults to `False`
 
         :return: a fit sklearn.cluster object
         :rtype: cluster
-
         """
         if scaling:
             scaled_matrix = Dataset._scale_data(matrix)
@@ -612,9 +589,7 @@ class ClusteredDataset(Dataset):
                                       affinity: str = 'euclidean', linkage: str = 'ward',
                                       distance_threshold: float = None, scaling: bool = False, name: str = ""):
         """
-        Does the same as `from_agglomerative_clustering` method but data is a `List[DessiaObject]` and not a \
-        `Dataset`.
-
+        Does the same as `from_agglomerative_clustering` method but data is a `List[DessiaObject]` and not a `Dataset`.
         """
         return cls.from_agglomerative_clustering(Dataset(data), n_clusters=n_clusters, affinity=affinity,
                                                  linkage=linkage, distance_threshold=distance_threshold,
@@ -625,7 +600,6 @@ class ClusteredDataset(Dataset):
                     scaling: bool = False, name: str = ""):
         """
         Does the same as `from_kmeans` method but data is a `List[DessiaObject]` and not a `Dataset`.
-
         """
         return cls.from_kmeans(Dataset(data), n_clusters=n_clusters, n_init=n_init, tol=tol, scaling=scaling,
                                name=name)
@@ -635,7 +609,6 @@ class ClusteredDataset(Dataset):
                     leaf_size: int = 30, metric: str = "euclidean", scaling: bool = False, name: str = ""):
         """
         Does the same as `from_dbscan` method but data is a `List[DessiaObject]` and not a `Dataset`.
-
         """
         return cls.from_dbscan(Dataset(data), eps=eps, min_samples=min_samples, mink_power=mink_power,
                                leaf_size=leaf_size, metric=metric, scaling=scaling, name=name)
