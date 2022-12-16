@@ -11,11 +11,16 @@ Changes:
 import os
 import sys
 import random
+import math
+from datetime import date
 
 from pylint import __version__
 from pylint.lint import Run
 
-MIN_NOTE = 9.17
+MIN_NOTE = 9.30
+
+EFFECTIVE_DATE = date(2022, 12, 16)
+WEEKLY_DECREASE = 0.03
 
 UNWATCHED_ERRORS = ['fixme', 'trailing-whitespace', 'import-error']
 
@@ -27,7 +32,7 @@ MAX_ERROR_BY_TYPE = {
                      'too-many-locals': 10,  # Reduce by dropping vectored objects
                      'too-many-branches': 13,
                      'wrong-import-order': 0,
-                     'unused-argument': 16,
+                     'unused-argument': 9,
                      'cyclic-import': 4,
                      'no-self-use': 6,
                      'trailing-whitespace': 11,
@@ -64,6 +69,8 @@ MAX_ERROR_BY_TYPE = {
 
 print('pylint version: ', __version__)
 
+time_decrease_coeff = 1 - (date.today() - EFFECTIVE_DATE).days / 7. * WEEKLY_DECREASE
+
 f = open(os.devnull, 'w')
 
 old_stdout = sys.stdout
@@ -96,7 +103,10 @@ else:
 
 for error_type, number_errors in stats_by_msg.items():
     if error_type not in UNWATCHED_ERRORS:
-        max_errors = MAX_ERROR_BY_TYPE.get(error_type, 0)
+        base_errors = MAX_ERROR_BY_TYPE.get(error_type, 0)
+        max_errors = math.ceil(base_errors * time_decrease_coeff)
+        time_decrease_effect = base_errors - max_errors
+        # print('time_decrease_effect', time_decrease_effect)
 
         if number_errors > max_errors:
             error_detected = True
@@ -108,7 +118,8 @@ for error_type, number_errors in stats_by_msg.items():
             for message in messages_to_show:
                 print(f'{message.path} line {message.line}: {message.msg}')
         elif number_errors < max_errors:
-            print(f'\nYou can lower number of {error_type} to {number_errors} (actual {max_errors})')
+            print(
+                f'\nYou can lower number of {error_type} to {number_errors+time_decrease_effect} (actual {base_errors})')
 
 
 if error_detected:
