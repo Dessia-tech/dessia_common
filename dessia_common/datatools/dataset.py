@@ -449,8 +449,7 @@ class Dataset(DessiaObject):
                 sort_indexes = npy.argsort(self.attribute_values(key))
             self.dessia_objects = [self.dessia_objects[idx] for idx in (sort_indexes if ascend else sort_indexes[::-1])]
             if self._matrix is not None:
-                self._matrix = [self._matrix[idx] for idx in
-                                (sort_indexes if ascend else sort_indexes[::-1])]
+                self._matrix = [self._matrix[idx] for idx in (sort_indexes if ascend else sort_indexes[::-1])]
 
     def mean(self):
         """

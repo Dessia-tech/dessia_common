@@ -119,6 +119,10 @@ class Modeler(DessiaObject):
             Class of datatools.models objetc to use for fitting, e.g. RandomForestRegressor, LinearRegression,...
         :type class_: Type
 
+        :param hyperparameters:
+            Hyperparameters of the used scikit-learn object.
+        :type hyperparameters: dict[str, Any], `optional`
+
         :param input_is_scaled:
             Whether to standardize inputs or not with a models.StandardScaler
         :type input_is_scaled: bool, `optional`, True
@@ -126,10 +130,6 @@ class Modeler(DessiaObject):
         :param output_is_scaled:
             Whether to standardize outputs or not with a models.StandardScaler
         :type output_is_scaled: bool, `optional`, False
-
-        :param hyperparameters:
-            Hyperparameters of the used scikit-learn object.
-        :type hyperparameters: dict[str, Any], `optional`
 
         :param name:
             Name of Model
@@ -335,7 +335,7 @@ class Modeler(DessiaObject):
     @classmethod
     def _fit_score(cls, inputs_train: Matrix, inputs_test: Matrix, outputs_train: Matrix, outputs_test: Matrix,
                    input_names: List[str], output_names: List[str], class_: Type, hyperparameters: Dict[str, Any],
-                   input_is_scaled: bool, output_is_scaled: bool, ratio: float, name: str) -> 'Modeler':
+                   input_is_scaled: bool, output_is_scaled: bool, name: str) -> 'Modeler':
         """
         Train test split dataset, fit modeler with train matrices and test it with test matrices.
         """
@@ -343,20 +343,77 @@ class Modeler(DessiaObject):
         return modeler, modeler._score(inputs_test, outputs_test)
 
     @classmethod
-    def from_dataset_fit_score(cls, dataset: Dataset, input_names: List[str], output_names: List[str],
-                               class_: Type, hyperparameters: Dict[str, Any], input_is_scaled: bool = True,
+    def from_dataset_fit_score(cls, dataset: Dataset, input_names: List[str], output_names: List[str], class_: Type,
+                               hyperparameters: Dict[str, Any], input_is_scaled: bool = True,
                                output_is_scaled: bool = False, ratio: float = 0.8, name: str = '') -> 'Modeler':
         """
         Train test split dataset, fit modeler with train matrices and score it with test matrices.
         """
         train_test_matrices = dataset.train_test_split(input_names, output_names, ratio)
-        return cls._fit_score(*train_test_matrices, input_names, output_names, class_, hyperparameters,
-                              input_is_scaled, output_is_scaled, name)
+        return cls._fit_score(*train_test_matrices, input_names, output_names, class_, hyperparameters, input_is_scaled,
+                              output_is_scaled, name)
 
     @classmethod
     def cross_validation(cls, dataset: Dataset, input_names: List[str], output_names: List[str], class_: Type,
                          hyperparameters: Dict[str, Any], input_is_scaled: bool = True, output_is_scaled: bool = False,
                          nb_tests: int = 1, ratio: float = 0.8, name: str = ''):
+        """
+        Cross validation for a model of Models and its hyperparameters.
+
+        The purpose of this method is to validate a modelisation process for a specific type of machine learning method,
+        set with specific hyperparameters.
+        The first step of cross validation is to split data into train and test data. Then the model is fitted with
+        train data and scored with test data. Furthermore, train and test inputs are predicted with the model and
+        plotted in a graph that plots these predictions versus reference values. In this plot, the more red points are
+        near the black line, the more the model can predict new data precisely.
+        This process of cross validation is ran nb_tests times. If all of them show a good score and a nice train test
+        plot, then the tested modelisation is validated and can be used in other, but similar, processes for
+        predictions.
+
+        :param dataset:
+            Dataset containing data, both inputs and outputs
+        :type dataset: Dataset
+
+        :param input_names:
+            Names of input features
+        :type inputs: List[str]
+
+        :param output_names:
+            Names of output features
+        :type inputs: List[str]
+
+        :param class_:
+            Class of datatools.models objetc to use for fitting, e.g. RandomForestRegressor, LinearRegression,...
+        :type class_: Type
+
+        :param hyperparameters:
+            Hyperparameters of the used scikit-learn object.
+        :type hyperparameters: dict[str, Any], `optional`
+
+        :param input_is_scaled:
+            Whether to standardize inputs or not with a models.StandardScaler
+        :type input_is_scaled: bool, `optional`, True
+
+        :param output_is_scaled:
+            Whether to standardize outputs or not with a models.StandardScaler
+        :type output_is_scaled: bool, `optional`, False
+
+        :param nb_tests:
+            Number of train test validation to run in cross_validation method
+        :type nb_tests: int, `optional`, defaults to 1
+
+        :param ratio:
+            Ratio on which to split matrix. If ratio > 1, ind_train will be of length `int(ratio)` and ind_test of
+            length `len_matrix - int(ratio)`.
+        :type ratio: float, `optional`, defaults to 0.8
+
+        :param name:
+            Name of Model
+        :type name: str, `optional`, defaults to `''`
+
+        :return: All scores of models and all validation graphs, stored in list of dict to be handled in plot_data
+        :rtype: Tuple[List[Dict[str, float]], List[Dict[str, float]]]
+        """
         scores = []
         all_graphs = []
         for idx in range(nb_tests):
@@ -391,13 +448,22 @@ class Modeler(DessiaObject):
         return [scatter_scores] + [MultiplePlots(elements=scores, plots=graphs, initial_view_on=True)]
 
     def features_importance(self):
+        """
+        Future features_importance method, maybe to put in dataset.
+        """
         return
 
     def features_mrmr(self):
+        """
+        Future features_mrmr method, maybe to put in dataset.
+        """
         return
 
 
 def matrix_ranges(matrix: Matrix, nb_points: int = 20) -> Matrix:
+    """
+    Dessia linspace of nb_points points between extremum of each column of matrix.
+    """
     matrix_ranges = []
     for feature_column in zip(*matrix):
         min_value = min(feature_column)
@@ -407,9 +473,15 @@ def matrix_ranges(matrix: Matrix, nb_points: int = 20) -> Matrix:
     return matrix_ranges
 
 def axis_style(nb_x: int = 10, nb_y: int = 10) -> Axis:
+    """
+    Set axis style for Modeler objects.
+    """
     return Axis(nb_points_x=nb_x, nb_points_y=nb_y, axis_style=STD_LINE, grid_on=True)
 
 def scores_limits(number: int) -> Points:
+    """
+    Draw white points in scatter for it to be plotted between 0 and number on x axis and 0 and 1 on y axis.
+    """
     return [{'Index': -0.05, 'Score': -0.05}, {'Index': number + 0.05, 'Score': 1.05}]
 
 
