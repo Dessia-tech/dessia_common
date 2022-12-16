@@ -497,13 +497,13 @@ def matrix_ranges(matrix: Matrix, nb_points: int = 20) -> Matrix:
     """
     Dessia linspace of nb_points points between extremum of each column of matrix.
     """
-    matrix_ranges = []
+    ranges = []
     for feature_column in zip(*matrix):
         min_value = min(feature_column)
         max_value = max(feature_column)
         step_range = (max_value - min_value)/nb_points
-        matrix_ranges.append(npy.arange(min_value, max_value, step_range).tolist())
-    return matrix_ranges
+        ranges.append(npy.arange(min_value, max_value, step_range).tolist())
+    return ranges
 
 def axis_style(nb_x: int = 10, nb_y: int = 10) -> Axis:
     """

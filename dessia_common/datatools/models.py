@@ -577,550 +577,549 @@ class LinearRegression(LinearModel):
                                 fit_intercept=fit_intercept, positive=positive)
 
 
-# class Tree(Model):
-#     """
-#     Base object for handling a scikit-learn tree._tree.Tree object (Cython).
-
-#     Please refer to https://scikit-learn.org/stable/auto_examples/tree/plot_unveil_tree_structure.html for more
-#     information on attributes of Tree object and understanding the decision tree structure for basic usage.
-
-#     :param n_classes:
-#         Number of output classes to predict from data.
-#     :type n_classes: List[int], `optional`, defaults to `None`
-
-#     :param n_features:
-#         Number of features to handle in data.
-#     :type n_features: int, `optional`, defaults to `None`
-
-#     :param n_outputs:
-#         The number of outputs when fit is performed.
-#     :type n_outputs: int, `optional`, defaults to `None`
-
-#     :param tree_state:
-#         All required values to re-instantiate a fully working scikit-learn tree are stored in this parameter.
-#     :type tree_state: Dict[str, Any], `optional`, defaults to `None`
-
-#     :param name:
-#         Name of Tree
-#     :type name: str, `optional`, defaults to `''`
-#     """
-
-#     def __init__(self, n_classes: List[int] = None, n_features: int = None, n_outputs: int = None,
-#                  tree_state: Dict[str, Any] = None, name: str = ''):
-#         self.n_classes = n_classes
-#         self.n_features = n_features
-#         self.n_outputs = n_outputs
-#         self.tree_state = tree_state
-#         Model.__init__(self, name=name)
-
-#     def _data_hash(self):
-#         hash_ = npy.linalg.norm(self.tree_state['values'][0])
-#         hash_ += sum(self.n_classes)
-#         hash_ += self.n_features
-#         hash_ += self.n_outputs
-#         return int(hash_ % 1e5)
-
-#     @classmethod
-#     def _skl_class(cls):
-#         return tree._tree.Tree
-
-#     def _call_skl_model(self):
-#         return self._skl_class()(self.n_features, npy.array(self.n_classes), self.n_outputs)
-
-#     @staticmethod
-#     def _getstate_dessia(model):
-#         state = model.__getstate__()
-#         dessia_state = {'max_depth': int(state['max_depth']),
-#                         'node_count': int(state['node_count']),
-#                         'values': state['values'].tolist(),
-#                         'nodes': {'dtypes': state['nodes'].dtype.descr, 'values': state['nodes'].tolist()}
-#                         }
-#         return dessia_state
-
-#     @staticmethod
-#     def _setstate_dessia(model, state):
-#         skl_state = {'max_depth': int(state['max_depth']),
-#                      'node_count': int(state['node_count']),
-#                      'values': npy.array(state['values']),
-#                      'nodes': npy.array(state['nodes']['values'], dtype=state['nodes']['dtypes'])}
-#         model.__setstate__(skl_state)
-#         return model
-
-#     def _instantiate_skl(self):
-#         model = self._call_skl_model()
-#         model = self._setstate_dessia(model, self.tree_state)
-#         return model
-
-#     @classmethod
-#     def _instantiate_dessia(cls, model, name: str = ''):
-#         kwargs = {'name': name,
-#                   'tree_state': cls._getstate_dessia(model),
-#                   'n_classes': model.n_classes.tolist(),
-#                   'n_features': model.n_features,
-#                   'n_outputs': model.n_outputs}
-#         return cls(**kwargs)
-
-
-# class DecisionTreeRegressor(Model):
-#     """
-#     Base class for handling scikit-learn DecisionTreeRegressor.
-
-#     More information: https://scikit-learn.org/stable/modules/tree.html#tree
-
-#     :param n_outputs_:
-#         The number of outputs when fit is performed.
-#     :type n_outputs_: int, `optional`, defaults to `None`
-
-#     :param tree_:
-#         The underlying Tree object.
-#         Please refer to https://scikit-learn.org/stable/auto_examples/tree/plot_unveil_tree_structure.html for
-#         attributes of Tree object and understanding the decision tree structure for basic usage of these attributes.
-#     :type tree_: Tree, `optional`, defaults to `None`
-
-#     :param name:
-#         Name of DecisionTreeRegressor
-#     :type name: str, `optional`, defaults to `''`
-#     """
-#     _standalone_in_db = True
-
-#     def __init__(self, n_outputs_: int = None, tree_: Tree = None, name: str = ''):
-#         self.n_outputs_ = n_outputs_
-#         self.tree_ = tree_
-#         Model.__init__(self, name=name)
-
-#     @classmethod
-#     def _skl_class(cls):
-#         return tree.DecisionTreeRegressor
-
-#     def generic_skl_attributes(self):
-#         """Generic method (shared between trees) to set scikit-learn model attributes from self attributes."""
-#         model = self._call_skl_model()
-#         model.n_outputs_ = self.n_outputs_
-#         model.tree_ = self.tree_._instantiate_skl()
-#         return model
-
-#     @classmethod
-#     def generic_dessia_attributes(cls, model, name: str = ''):
-#         """Generic method (shared between trees) to set self attributes from scikit-learn model attributes."""
-#         return {'name': name,
-#                 'tree_': Tree._instantiate_dessia(model.tree_),
-#                 'n_outputs_': model.n_outputs_}
-
-#     def _instantiate_skl(self):
-#         return self.generic_skl_attributes()
-
-#     @classmethod
-#     def _instantiate_dessia(cls, model, name: str = ''):
-#         return cls(**cls.generic_dessia_attributes(model, name=name))
-
-#     @classmethod
-#     def _check_criterion(cls, criterion: str):
-#         if 'egressor' not in cls.__name__ and criterion == 'squared_error':
-#             return 'gini'
-#         return criterion
-
-#     @classmethod
-#     def init_for_modeler(cls, criterion: str = 'squared_error', max_depth: int = None,
-#                          name: str = '') -> Tuple['DecisionTreeRegressor', Dict[str, Any], str]:
-#         """
-#         Initialize class DecisionTreeRegressor with its name and hyperparemeters to fit in Modeler.
-
-#         :param criterion:
-#             The function to measure the quality of a split. Supported criteria are “squared_error” for the mean
-#             squared error, which is equal to variance reduction as feature selection criterion and minimizes the L2
-#             loss using the mean of each terminal node, “friedman_mse”, which uses mean squared error with Friedman’s
-#             improvement score for potential splits, “absolute_error” for the mean absolute error, which minimizes the
-#             L1 loss using the median of each terminal node, and “poisson” which uses reduction in Poisson deviance to
-#             find splits.
-#         :type criterion: str, `optional`, defaults to 'squared_error'
-
-#         :param max_depth:
-#             The maximum depth of the tree. If `None`, then nodes are expanded until all leaves are pure or until all
-#             leaves contain less than min_samples_split samples.
-#         :type max_depth: int, `optional`, defaults to `None`
-
-#         :param name:
-#             Name of DecisionTreeRegressor model
-#         :type name: str, `optional`, defaults to `''`
-
-#         :return: The DecisionTreeRegressor model fit on inputs and outputs.
-#         :rtype: Tuple['DecisionTreeRegressor', Dict[str, Any], str]
-#         """
-#         return cls.init_for_modeler_(name=name, criterion=criterion, max_depth=max_depth)
-
-#     @classmethod
-#     def fit(cls, inputs: Matrix, outputs: Matrix, criterion: str = 'squared_error', max_depth: int = None,
-#             name: str = '') -> 'DecisionTreeRegressor':
-#         """
-#         Standard method to fit outputs to inputs thanks to DecisionTreeRegressor model from scikit-learn.
-
-#         More information: https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeRegressor.html
-
-#         :param inputs:
-#             Matrix of data of dimension `n_samples x n_features`
-#         :type inputs: List[List[float]]
-
-#         :param outputs:
-#             Matrix of data of dimension `n_samples x n_features`
-#         :type outputs: List[List[float]]
-
-#         :param criterion:
-#             The function to measure the quality of a split. Supported criteria are “squared_error” for the mean
-#             squared error, which is equal to variance reduction as feature selection criterion and minimizes the L2
-#             loss using the mean of each terminal node, “friedman_mse”, which uses mean squared error with Friedman’s
-#             improvement score for potential splits, “absolute_error” for the mean absolute error, which minimizes the
-#             L1 loss using the median of each terminal node, and “poisson” which uses reduction in Poisson deviance to
-#             find splits.
-#         :type criterion: str, `optional`, defaults to 'squared_error'
-
-#         :param max_depth:
-#             The maximum depth of the tree. If `None`, then nodes are expanded until all leaves are pure or until all
-#             leaves contain less than min_samples_split samples.
-#         :type max_depth: int, `optional`, defaults to `None`
-
-#         :param name:
-#             Name of DecisionTreeRegressor model
-#         :type name: str, `optional`, defaults to `''`
-
-#         :return: The DecisionTreeRegressor model fit on inputs and outputs.
-#         :rtype: DecisionTreeRegressor
-#         """
-#         criterion = cls._check_criterion(criterion)
-#         return cls.fit_(inputs, outputs, name=name, criterion=criterion, max_depth=max_depth)
-
-#     @classmethod
-#     def fit_predict(cls, inputs: Matrix, outputs: Matrix, predicted_inputs: Matrix, criterion: str = 'squared_error',
-#                     max_depth: int = None, name: str = '') -> Tuple['DecisionTreeRegressor', Union[Vector, Matrix]]:
-#         """
-#         Succession of fit and predict methods: fit outputs to inputs and predict outputs for predicted_inputs.
-#         """
-#         criterion = cls._check_criterion(criterion)
-#         return cls.fit_predict_(inputs, outputs, predicted_inputs, name=name, criterion=criterion, max_depth=max_depth)
-
-
-# class DecisionTreeClassifier(DecisionTreeRegressor):
-#     """
-#     Base class for handling scikit-learn DecisionTreeClassifier.
-
-#     More information: https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeClassifier.html
-
-#     :param n_classes_:
-#         The number of classes (for single output problems), or a list containing the number of classes for each output
-#         (for multi-output problems).
-#     :type n_classes_: Union[int, List[int]], `optional`, defaults to `None`
-
-#     :param classes_:
-#         The number of outputs when fit is performed.
-#     :type classes_: List[int], `optional`, defaults to `None`
-
-#     :param n_outputs_:
-#         The number of outputs when fit is performed.
-#     :type n_outputs_: int, `optional`, defaults to `None`
-
-#     :param tree_:
-#         The underlying Tree object.
-#         Please refer to https://scikit-learn.org/stable/auto_examples/tree/plot_unveil_tree_structure.html for
-#         attributes of Tree object and understanding the decision tree structure for basic usage of these attributes.
-#     :type tree_: Tree, `optional`, defaults to `None`
-
-#     :param name:
-#         Name of DecisionTreeClassifier
-#     :type name: str, `optional`, defaults to `''`
-#     """
-
-#     def __init__(self, n_classes_: Union[int, List[int]] = None, classes_: List[int] = None, n_outputs_: int = None,
-#                  tree_: Tree = None, name: str = ''):
-#         self.n_classes_ = n_classes_
-#         self.classes_ = classes_
-#         DecisionTreeRegressor.__init__(self, n_outputs_=n_outputs_, tree_=tree_, name=name)
-
-#     @classmethod
-#     def _skl_class(cls):
-#         return tree.DecisionTreeClassifier
-
-#     def _instantiate_skl(self):
-#         model = self.generic_skl_attributes()
-#         model.n_classes_ = self.n_classes_
-#         model.classes_ = npy.array(self.classes_)
-#         return model
-
-#     @classmethod
-#     def _instantiate_dessia(cls, model, name: str = ''):
-#         kwargs = cls.generic_dessia_attributes(model, name=name)
-#         kwargs.update({'n_classes_': (model.n_classes_ if isinstance(model.n_classes_, (int, list))
-#                                       else model.n_classes_.tolist()),
-#                        'classes_': (model.classes_.tolist() if isinstance(model.classes_, npy.ndarray)
-#                                     else [klass.tolist() for klass in model.classes_])})
-#         return cls(**kwargs)
-
-#     def score(self, inputs: Matrix, outputs: Matrix) -> float:
-#         """
-#         Compute the score of Model or children.
-
-#         Please be sure to fit the model before computing its score and use test data and not train data.
-#         Train data is data used to train the model and shall not be used to evaluate its quality.
-#         Test data is data used to test the model and must not be used to train (fit) it.
-
-#         :param inputs:
-#             Matrix of data of dimension `n_samples x n_features`
-#         :type inputs: List[List[float]]
-
-#         :param outputs:
-#             Matrix of data of dimension `n_samples x n_features`
-#         :type outputs: List[List[float]]
-
-#         :return: The score of Model or children (DessiaObject).
-#         :rtype: float
-#         """
-#         model = self._instantiate_skl()
-#         if self.n_outputs_==1:
-#             return model.score(inputs, outputs)
-#         raise ValueError('multiclass-multioutput is not supported')
-
-
-# class RandomForest(Model):
-#     """
-#     Base object for handling a scikit-learn RandomForest object.
-
-#     Please refer to https://scikit-learn.org/stable/modules/ensemble.html#forest for more information on RandomForest.
-
-#     :param n_outputs_:
-#         The number of outputs when fit is performed.
-#     :type n_outputs_: int, `optional`, defaults to `None`
-
-#     :param estimators_:
-#         The collection of fitted sub-trees.
-#     :type estimators_: List[DecisionTreeRegressor], `optional`, defaults to `None`
-
-#     :param name:
-#         Name of RandomForest
-#     :type name: str, `optional`, defaults to `''`
-#     """
-
-#     def __init__(self, n_outputs_: int = None, estimators_: List[DecisionTreeRegressor] = None, name: str = ''):
-#         self.estimators_ = estimators_
-#         self.n_outputs_ = n_outputs_
-#         Model.__init__(self, name=name)
-
-#     @classmethod
-#     def _skl_class(cls):
-#         raise NotImplementedError('Method _skl_class not implemented for RandomForest. Please use '\
-#                                   'RandomForestClassifier or RandomForestRegressor.')
-
-#     def generic_skl_attributes(self):
-#         """
-#         Generic method (shared between RandomForest) to set scikit-learn model attributes from self attributes.
-#         """
-#         model = self._call_skl_model()
-#         model.estimators_ = [tree._instantiate_skl() for tree in self.estimators_]
-#         model.n_outputs_ = self.n_outputs_
-#         return model
-
-#     @classmethod
-#     def generic_dessia_attributes(cls, model, name: str = ''):
-#         """
-#         Generic method (shared between RandomForest) to set self attributes from scikit-learn model attributes.
-#         """
-#         return {'name': name,
-#                 'n_outputs_': model.n_outputs_}
-
-#     @classmethod
-#     def _check_criterion(cls, criterion: str):
-#         if 'egressor' not in cls.__name__ and criterion == 'squared_error':
-#             return 'gini'
-#         return criterion
-
-#     @classmethod
-#     def init_for_modeler(cls, n_estimators: int = 100, criterion: str = 'squared_error', max_depth: int = None,
-#                          name: str = '') -> Tuple['RandomForest', Dict[str, Any], str]:
-#         """
-#         Initialize class RandomForest with its name and hyperparemeters to fit in Modeler.
-
-#         :param n_estimators:
-#             Number of DecisionTree contained in RandomForestRegressor or RandomForestClassifier
-#         :type n_estimators: int, `optional`, defaults to 100
-
-#         :param criterion:
-#          |  - **Regressor:** The function to measure the quality of a split. Supported criteria are “squared_error” for
-#             the mean squared error, which is equal to variance reduction as feature selection criterion and minimizes
-#             the L2 loss using the mean of each terminal node, “friedman_mse”, which uses mean squared error with
-#             Friedman’s improvement score for potential splits, “absolute_error” for the mean absolute error,
-#             which minimizes the L1 loss using the median of each terminal node, and “poisson” which uses reduction in
-#             Poisson deviance to find splits.
-
-#          |  - **Classifier:** The function to measure the quality of a split. Supported criteria are “gini” for the Gini
-#             impurity and “log_loss” and “entropy” both for the Shannon information gain, see Mathematical formulation.
-#          |  Note: This parameter is tree-specific.
-#         :type criterion: str, `optional`, defaults to 'squared_error'
-
-#         :param max_depth:
-#             The maximum depth of the tree. If `None`, then nodes are expanded until all leaves are pure or until all
-#             leaves contain less than min_samples_split samples.
-#         :type max_depth: int, `optional`, defaults to `None`
-
-#         :param name:
-#             Name of RandomForestRegressor or RandomForestClassifier model
-#         :type name: str, `optional`, defaults to `''`
-
-#         :return: The RandomForest model fit on inputs and outputs.
-#         :rtype: Tuple['RandomForest', Dict[str, Any], str]
-#         """
-#         return cls.init_for_modeler_(n_estimators=n_estimators, criterion=criterion, max_depth=max_depth)
-
-#     @classmethod
-#     def fit(cls, inputs: Matrix, outputs: Matrix, n_estimators: int = 100, criterion: str = 'squared_error',
-#             max_depth: int = None, name: str = '') -> 'RandomForest':
-#         """
-#         Standard method to fit outputs to inputs thanks to RandomForest model from scikit-learn.
-
-#         More information:
-#             - Classifier: https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html
-#             - Regressor: https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestRegressor.html
-
-#         :param inputs:
-#             Matrix of data of dimension `n_samples x n_features`
-#         :type inputs: List[List[float]]
-
-#         :param outputs:
-#             Matrix of data of dimension `n_samples x n_features`
-#         :type outputs: List[List[float]]
-
-#         :param n_estimators:
-#             Number of DecisionTree contained in RandomForestRegressor or RandomForestClassifier
-#         :type n_estimators: int, `optional`, defaults to 100
-
-#         :param criterion:
-#          |  - **Regressor:** The function to measure the quality of a split. Supported criteria are “squared_error” for
-#             the mean squared error, which is equal to variance reduction as feature selection criterion and minimizes
-#             the L2 loss using the mean of each terminal node, “friedman_mse”, which uses mean squared error with
-#             Friedman’s improvement score for potential splits, “absolute_error” for the mean absolute error,
-#             which minimizes the L1 loss using the median of each terminal node, and “poisson” which uses reduction in
-#             Poisson deviance to find splits.
-
-#          |  - **Classifier:** The function to measure the quality of a split. Supported criteria are “gini” for the Gini
-#             impurity and “log_loss” and “entropy” both for the Shannon information gain, see Mathematical formulation.
-#          |  Note: This parameter is tree-specific.
-#         :type criterion: str, `optional`, defaults to 'squared_error'
-
-#         :param max_depth:
-#             The maximum depth of the tree. If `None`, then nodes are expanded until all leaves are pure or until all
-#             leaves contain less than min_samples_split samples.
-#         :type max_depth: int, `optional`, defaults to `None`
-
-#         :param name:
-#             Name of RandomForestRegressor or RandomForestClassifier model
-#         :type name: str, `optional`, defaults to `''`
-
-#         :return: The RandomForestRegressor or RandomForestClassifier model fit on inputs and outputs.
-#         :rtype: RandomForest
-#         """
-#         criterion = cls._check_criterion(criterion)
-#         return cls.fit_(inputs, outputs, name=name, n_estimators=n_estimators, criterion=criterion, max_depth=max_depth,
-#                         n_jobs=1)
-
-#     @classmethod
-#     def fit_predict(cls, inputs: Matrix, outputs: Matrix, predicted_inputs: Matrix, n_estimators: int = 100,
-#                     criterion: str = 'squared_error', max_depth: int = None,
-#                     name: str = '') -> Tuple['RandomForest', Union[Vector, Matrix]]:
-#         """
-#         Fit outputs to inputs and predict outputs for predicted_inputs. It is the succession of fit and predict methods.
-#         """
-#         criterion = cls._check_criterion(criterion)
-#         return cls.fit_predict_(inputs, outputs, predicted_inputs, name=name, n_estimators=n_estimators,
-#                                 criterion=criterion, max_depth=max_depth, n_jobs=1)
-
-
-# class RandomForestRegressor(RandomForest):
-#     """
-#     Base class for handling scikit-learn RandomForestRegressor.
-
-#     Please refer to https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestRegressor.html for
-#     more information on RandomForestRegressor.
-
-#     :param n_outputs_:
-#         The number of outputs when fit is performed.
-#     :type n_outputs_: int, `optional`, defaults to `None`
-
-#     :param estimators_:
-#         The collection of fitted sub-trees.
-#     :type estimators_: List[DecisionTreeRegressor], `optional`, defaults to `None`
-
-#     :param name:
-#         Name of RandomForestRegressor
-#     :type name: str, `optional`, defaults to `''`
-#     """
-#     _standalone_in_db = True
-
-#     def __init__(self, n_outputs_: int = None, estimators_: List[DecisionTreeRegressor] = None, name: str = ''):
-#         RandomForest.__init__(self, estimators_=estimators_, n_outputs_=n_outputs_, name=name)
-
-#     @classmethod
-#     def _skl_class(cls):
-#         return ensemble.RandomForestRegressor
-
-#     def _instantiate_skl(self):
-#         return self.generic_skl_attributes()
-
-#     @classmethod
-#     def _instantiate_dessia(cls, model, name: str = ''):
-#         kwargs = cls.generic_dessia_attributes(model, name=name)
-#         kwargs['estimators_'] = [DecisionTreeRegressor._instantiate_dessia(tree) for tree in model.estimators_]
-#         return cls(**kwargs)
-
-
-# class RandomForestClassifier(RandomForest):
-#     """
-#     Base class for handling scikit-learn RandomForestClassifier.
-
-#     Please refer to https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html for
-#     more information on RandomForestClassifier.
-
-#     :param n_classes_:
-#         The number of classes (for single output problems), or a list containing the number of classes for each output
-#         (for multi-output problems).
-#     :type n_classes_: Union[int, List[int]], `optional`, defaults to `None`
-
-#     :param classes_:
-#         The number of outputs when fit is performed.
-#     :type classes_: List[int], `optional`, defaults to `None`
-
-#     :param n_outputs_:
-#         The number of outputs when fit is performed.
-#     :type n_outputs_: int, `optional`, defaults to `None`
-
-#     :param estimators_:
-#         The collection of fitted sub-trees.
-#     :type estimators_: List[DecisionTreeClassifier], `optional`, defaults to `None`
-
-#     :param name:
-#         Name of RandomForestClassifier
-#     :type name: str, `optional`, defaults to `''`
-#     """
-#     _standalone_in_db = True
-
-#     def __init__(self, n_classes_: int = None, classes_: List[int] = None, n_outputs_: int = None,
-#                  estimators_: List[DecisionTreeRegressor] = None, name: str = ''):
-#         self.n_classes_ = n_classes_
-#         self.classes_ = classes_
-#         RandomForest.__init__(self, estimators_=estimators_, n_outputs_=n_outputs_, name=name)
-
-#     @classmethod
-#     def _skl_class(cls):
-#         return ensemble.RandomForestClassifier
-
-#     def _instantiate_skl(self):
-#         model = self.generic_skl_attributes()
-#         model.n_classes_ = self.n_classes_
-#         model.classes_ = npy.array(self.classes_)
-#         return model
-
-#     @classmethod
-#     def _instantiate_dessia(cls, model, name: str = ''):
-#         kwargs = cls.generic_dessia_attributes(model, name=name)
-#         kwargs.update({'estimators_': [DecisionTreeClassifier._instantiate_dessia(tree) for tree in model.estimators_],
-#                        'n_classes_': int(model.n_classes_),
-#                        'classes_': model.classes_.tolist()})
-#         return cls(**kwargs)
+class Tree(Model):
+    """
+    Base object for handling a scikit-learn tree._tree.Tree object (Cython).
+
+    Please refer to https://scikit-learn.org/stable/auto_examples/tree/plot_unveil_tree_structure.html for more
+    information on attributes of Tree object and understanding the decision tree structure for basic usage.
+
+    :param n_classes:
+        Number of output classes to predict from data.
+    :type n_classes: List[int], `optional`, defaults to `None`
+
+    :param n_features:
+        Number of features to handle in data.
+    :type n_features: int, `optional`, defaults to `None`
+
+    :param n_outputs:
+        The number of outputs when fit is performed.
+    :type n_outputs: int, `optional`, defaults to `None`
+
+    :param tree_state:
+        All required values to re-instantiate a fully working scikit-learn tree are stored in this parameter.
+    :type tree_state: Dict[str, Any], `optional`, defaults to `None`
+
+    :param name:
+        Name of Tree
+    :type name: str, `optional`, defaults to `''`
+    """
+
+    def __init__(self, n_classes: List[int] = None, n_features: int = None, n_outputs: int = None,
+                 tree_state: Dict[str, Any] = None, name: str = ''):
+        self.n_classes = n_classes
+        self.n_features = n_features
+        self.n_outputs = n_outputs
+        self.tree_state = tree_state
+        Model.__init__(self, name=name)
+
+    def _data_hash(self):
+        hash_ = npy.linalg.norm(self.tree_state['values'][0])
+        hash_ += sum(self.n_classes)
+        hash_ += self.n_features
+        hash_ += self.n_outputs
+        return int(hash_ % 1e5)
+
+    @classmethod
+    def _skl_class(cls):
+        return tree._tree.Tree
+
+    def _call_skl_model(self):
+        return self._skl_class()(self.n_features, npy.array(self.n_classes), self.n_outputs)
+
+    @staticmethod
+    def _getstate_dessia(model):
+        state = model.__getstate__()
+        dessia_state = {'max_depth': int(state['max_depth']),
+                        'node_count': int(state['node_count']),
+                        'values': state['values'].tolist(),
+                        'nodes': {'dtypes': state['nodes'].dtype.descr, 'values': state['nodes'].tolist()}}
+        return dessia_state
+
+    @staticmethod
+    def _setstate_dessia(model, state):
+        skl_state = {'max_depth': int(state['max_depth']),
+                     'node_count': int(state['node_count']),
+                     'values': npy.array(state['values']),
+                     'nodes': npy.array(state['nodes']['values'], dtype=state['nodes']['dtypes'])}
+        model.__setstate__(skl_state)
+        return model
+
+    def _instantiate_skl(self):
+        model = self._call_skl_model()
+        model = self._setstate_dessia(model, self.tree_state)
+        return model
+
+    @classmethod
+    def _instantiate_dessia(cls, model, name: str = ''):
+        kwargs = {'name': name,
+                  'tree_state': cls._getstate_dessia(model),
+                  'n_classes': model.n_classes.tolist(),
+                  'n_features': model.n_features,
+                  'n_outputs': model.n_outputs}
+        return cls(**kwargs)
+
+
+class DecisionTreeRegressor(Model):
+    """
+    Base class for handling scikit-learn DecisionTreeRegressor.
+
+    More information: https://scikit-learn.org/stable/modules/tree.html#tree
+
+    :param n_outputs_:
+        The number of outputs when fit is performed.
+    :type n_outputs_: int, `optional`, defaults to `None`
+
+    :param tree_:
+        The underlying Tree object.
+        Please refer to https://scikit-learn.org/stable/auto_examples/tree/plot_unveil_tree_structure.html for
+        attributes of Tree object and understanding the decision tree structure for basic usage of these attributes.
+    :type tree_: Tree, `optional`, defaults to `None`
+
+    :param name:
+        Name of DecisionTreeRegressor
+    :type name: str, `optional`, defaults to `''`
+    """
+    _standalone_in_db = True
+
+    def __init__(self, n_outputs_: int = None, tree_: Tree = None, name: str = ''):
+        self.n_outputs_ = n_outputs_
+        self.tree_ = tree_
+        Model.__init__(self, name=name)
+
+    @classmethod
+    def _skl_class(cls):
+        return tree.DecisionTreeRegressor
+
+    def generic_skl_attributes(self):
+        """Generic method (shared between trees) to set scikit-learn model attributes from self attributes."""
+        model = self._call_skl_model()
+        model.n_outputs_ = self.n_outputs_
+        model.tree_ = self.tree_._instantiate_skl()
+        return model
+
+    @classmethod
+    def generic_dessia_attributes(cls, model, name: str = ''):
+        """Generic method (shared between trees) to set self attributes from scikit-learn model attributes."""
+        return {'name': name,
+                'tree_': Tree._instantiate_dessia(model.tree_),
+                'n_outputs_': model.n_outputs_}
+
+    def _instantiate_skl(self):
+        return self.generic_skl_attributes()
+
+    @classmethod
+    def _instantiate_dessia(cls, model, name: str = ''):
+        return cls(**cls.generic_dessia_attributes(model, name=name))
+
+    @classmethod
+    def _check_criterion(cls, criterion: str):
+        if 'egressor' not in cls.__name__ and criterion == 'squared_error':
+            return 'gini'
+        return criterion
+
+    @classmethod
+    def init_for_modeler(cls, criterion: str = 'squared_error', max_depth: int = None,
+                         name: str = '') -> Tuple['DecisionTreeRegressor', Dict[str, Any], str]:
+        """
+        Initialize class DecisionTreeRegressor with its name and hyperparemeters to fit in Modeler.
+
+        :param criterion:
+            The function to measure the quality of a split. Supported criteria are “squared_error” for the mean
+            squared error, which is equal to variance reduction as feature selection criterion and minimizes the L2
+            loss using the mean of each terminal node, “friedman_mse”, which uses mean squared error with Friedman’s
+            improvement score for potential splits, “absolute_error” for the mean absolute error, which minimizes the
+            L1 loss using the median of each terminal node, and “poisson” which uses reduction in Poisson deviance to
+            find splits.
+        :type criterion: str, `optional`, defaults to 'squared_error'
+
+        :param max_depth:
+            The maximum depth of the tree. If `None`, then nodes are expanded until all leaves are pure or until all
+            leaves contain less than min_samples_split samples.
+        :type max_depth: int, `optional`, defaults to `None`
+
+        :param name:
+            Name of DecisionTreeRegressor model
+        :type name: str, `optional`, defaults to `''`
+
+        :return: The DecisionTreeRegressor model fit on inputs and outputs.
+        :rtype: Tuple['DecisionTreeRegressor', Dict[str, Any], str]
+        """
+        return cls.init_for_modeler_(name=name, criterion=criterion, max_depth=max_depth)
+
+    @classmethod
+    def fit(cls, inputs: Matrix, outputs: Matrix, criterion: str = 'squared_error', max_depth: int = None,
+            name: str = '') -> 'DecisionTreeRegressor':
+        """
+        Standard method to fit outputs to inputs thanks to DecisionTreeRegressor model from scikit-learn.
+
+        More information: https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeRegressor.html
+
+        :param inputs:
+            Matrix of data of dimension `n_samples x n_features`
+        :type inputs: List[List[float]]
+
+        :param outputs:
+            Matrix of data of dimension `n_samples x n_features`
+        :type outputs: List[List[float]]
+
+        :param criterion:
+            The function to measure the quality of a split. Supported criteria are “squared_error” for the mean
+            squared error, which is equal to variance reduction as feature selection criterion and minimizes the L2
+            loss using the mean of each terminal node, “friedman_mse”, which uses mean squared error with Friedman’s
+            improvement score for potential splits, “absolute_error” for the mean absolute error, which minimizes the
+            L1 loss using the median of each terminal node, and “poisson” which uses reduction in Poisson deviance to
+            find splits.
+        :type criterion: str, `optional`, defaults to 'squared_error'
+
+        :param max_depth:
+            The maximum depth of the tree. If `None`, then nodes are expanded until all leaves are pure or until all
+            leaves contain less than min_samples_split samples.
+        :type max_depth: int, `optional`, defaults to `None`
+
+        :param name:
+            Name of DecisionTreeRegressor model
+        :type name: str, `optional`, defaults to `''`
+
+        :return: The DecisionTreeRegressor model fit on inputs and outputs.
+        :rtype: DecisionTreeRegressor
+        """
+        criterion = cls._check_criterion(criterion)
+        return cls.fit_(inputs, outputs, name=name, criterion=criterion, max_depth=max_depth)
+
+    @classmethod
+    def fit_predict(cls, inputs: Matrix, outputs: Matrix, predicted_inputs: Matrix, criterion: str = 'squared_error',
+                    max_depth: int = None, name: str = '') -> Tuple['DecisionTreeRegressor', Union[Vector, Matrix]]:
+        """
+        Succession of fit and predict methods: fit outputs to inputs and predict outputs for predicted_inputs.
+        """
+        criterion = cls._check_criterion(criterion)
+        return cls.fit_predict_(inputs, outputs, predicted_inputs, name=name, criterion=criterion, max_depth=max_depth)
+
+
+class DecisionTreeClassifier(DecisionTreeRegressor):
+    """
+    Base class for handling scikit-learn DecisionTreeClassifier.
+
+    More information: https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeClassifier.html
+
+    :param n_classes_:
+        The number of classes (for single output problems), or a list containing the number of classes for each output
+        (for multi-output problems).
+    :type n_classes_: Union[int, List[int]], `optional`, defaults to `None`
+
+    :param classes_:
+        The number of outputs when fit is performed.
+    :type classes_: List[int], `optional`, defaults to `None`
+
+    :param n_outputs_:
+        The number of outputs when fit is performed.
+    :type n_outputs_: int, `optional`, defaults to `None`
+
+    :param tree_:
+        The underlying Tree object.
+        Please refer to https://scikit-learn.org/stable/auto_examples/tree/plot_unveil_tree_structure.html for
+        attributes of Tree object and understanding the decision tree structure for basic usage of these attributes.
+    :type tree_: Tree, `optional`, defaults to `None`
+
+    :param name:
+        Name of DecisionTreeClassifier
+    :type name: str, `optional`, defaults to `''`
+    """
+
+    def __init__(self, n_classes_: Union[int, List[int]] = None, classes_: List[int] = None, n_outputs_: int = None,
+                 tree_: Tree = None, name: str = ''):
+        self.n_classes_ = n_classes_
+        self.classes_ = classes_
+        DecisionTreeRegressor.__init__(self, n_outputs_=n_outputs_, tree_=tree_, name=name)
+
+    @classmethod
+    def _skl_class(cls):
+        return tree.DecisionTreeClassifier
+
+    def _instantiate_skl(self):
+        model = self.generic_skl_attributes()
+        model.n_classes_ = self.n_classes_
+        model.classes_ = npy.array(self.classes_)
+        return model
+
+    @classmethod
+    def _instantiate_dessia(cls, model, name: str = ''):
+        kwargs = cls.generic_dessia_attributes(model, name=name)
+        kwargs.update({'n_classes_': (model.n_classes_ if isinstance(model.n_classes_, (int, list))
+                                      else model.n_classes_.tolist()),
+                       'classes_': (model.classes_.tolist() if isinstance(model.classes_, npy.ndarray)
+                                    else [klass.tolist() for klass in model.classes_])})
+        return cls(**kwargs)
+
+    def score(self, inputs: Matrix, outputs: Matrix) -> float:
+        """
+        Compute the score of Model or children.
+
+        Please be sure to fit the model before computing its score and use test data and not train data.
+        Train data is data used to train the model and shall not be used to evaluate its quality.
+        Test data is data used to test the model and must not be used to train (fit) it.
+
+        :param inputs:
+            Matrix of data of dimension `n_samples x n_features`
+        :type inputs: List[List[float]]
+
+        :param outputs:
+            Matrix of data of dimension `n_samples x n_features`
+        :type outputs: List[List[float]]
+
+        :return: The score of Model or children (DessiaObject).
+        :rtype: float
+        """
+        model = self._instantiate_skl()
+        if self.n_outputs_==1:
+            return model.score(inputs, outputs)
+        raise ValueError('multiclass-multioutput is not supported')
+
+
+class RandomForest(Model):
+    """
+    Base object for handling a scikit-learn RandomForest object.
+
+    Please refer to https://scikit-learn.org/stable/modules/ensemble.html#forest for more information on RandomForest.
+
+    :param n_outputs_:
+        The number of outputs when fit is performed.
+    :type n_outputs_: int, `optional`, defaults to `None`
+
+    :param estimators_:
+        The collection of fitted sub-trees.
+    :type estimators_: List[DecisionTreeRegressor], `optional`, defaults to `None`
+
+    :param name:
+        Name of RandomForest
+    :type name: str, `optional`, defaults to `''`
+    """
+
+    def __init__(self, n_outputs_: int = None, estimators_: List[DecisionTreeRegressor] = None, name: str = ''):
+        self.estimators_ = estimators_
+        self.n_outputs_ = n_outputs_
+        Model.__init__(self, name=name)
+
+    @classmethod
+    def _skl_class(cls):
+        raise NotImplementedError('Method _skl_class not implemented for RandomForest. Please use '\
+                                  'RandomForestClassifier or RandomForestRegressor.')
+
+    def generic_skl_attributes(self):
+        """
+        Generic method (shared between RandomForest) to set scikit-learn model attributes from self attributes.
+        """
+        model = self._call_skl_model()
+        model.estimators_ = [tree._instantiate_skl() for tree in self.estimators_]
+        model.n_outputs_ = self.n_outputs_
+        return model
+
+    @classmethod
+    def generic_dessia_attributes(cls, model, name: str = ''):
+        """
+        Generic method (shared between RandomForest) to set self attributes from scikit-learn model attributes.
+        """
+        return {'name': name,
+                'n_outputs_': model.n_outputs_}
+
+    @classmethod
+    def _check_criterion(cls, criterion: str):
+        if 'egressor' not in cls.__name__ and criterion == 'squared_error':
+            return 'gini'
+        return criterion
+
+    @classmethod
+    def init_for_modeler(cls, n_estimators: int = 100, criterion: str = 'squared_error', max_depth: int = None,
+                         name: str = '') -> Tuple['RandomForest', Dict[str, Any], str]:
+        """
+        Initialize class RandomForest with its name and hyperparemeters to fit in Modeler.
+
+        :param n_estimators:
+            Number of DecisionTree contained in RandomForestRegressor or RandomForestClassifier
+        :type n_estimators: int, `optional`, defaults to 100
+
+        :param criterion:
+         |  - **Regressor:** The function to measure the quality of a split. Supported criteria are “squared_error” for
+            the mean squared error, which is equal to variance reduction as feature selection criterion and minimizes
+            the L2 loss using the mean of each terminal node, “friedman_mse”, which uses mean squared error with
+            Friedman’s improvement score for potential splits, “absolute_error” for the mean absolute error,
+            which minimizes the L1 loss using the median of each terminal node, and “poisson” which uses reduction in
+            Poisson deviance to find splits.
+
+         |  - **Classifier:** The function to measure the quality of a split. Supported criteria are “gini” for the Gini
+            impurity and “log_loss” and “entropy” both for the Shannon information gain, see Mathematical formulation.
+         |  Note: This parameter is tree-specific.
+        :type criterion: str, `optional`, defaults to 'squared_error'
+
+        :param max_depth:
+            The maximum depth of the tree. If `None`, then nodes are expanded until all leaves are pure or until all
+            leaves contain less than min_samples_split samples.
+        :type max_depth: int, `optional`, defaults to `None`
+
+        :param name:
+            Name of RandomForestRegressor or RandomForestClassifier model
+        :type name: str, `optional`, defaults to `''`
+
+        :return: The RandomForest model fit on inputs and outputs.
+        :rtype: Tuple['RandomForest', Dict[str, Any], str]
+        """
+        return cls.init_for_modeler_(n_estimators=n_estimators, criterion=criterion, max_depth=max_depth)
+
+    @classmethod
+    def fit(cls, inputs: Matrix, outputs: Matrix, n_estimators: int = 100, criterion: str = 'squared_error',
+            max_depth: int = None, name: str = '') -> 'RandomForest':
+        """
+        Standard method to fit outputs to inputs thanks to RandomForest model from scikit-learn.
+
+        More information:
+            - Classifier: https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html
+            - Regressor: https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestRegressor.html
+
+        :param inputs:
+            Matrix of data of dimension `n_samples x n_features`
+        :type inputs: List[List[float]]
+
+        :param outputs:
+            Matrix of data of dimension `n_samples x n_features`
+        :type outputs: List[List[float]]
+
+        :param n_estimators:
+            Number of DecisionTree contained in RandomForestRegressor or RandomForestClassifier
+        :type n_estimators: int, `optional`, defaults to 100
+
+        :param criterion:
+         |  - **Regressor:** The function to measure the quality of a split. Supported criteria are “squared_error” for
+            the mean squared error, which is equal to variance reduction as feature selection criterion and minimizes
+            the L2 loss using the mean of each terminal node, “friedman_mse”, which uses mean squared error with
+            Friedman’s improvement score for potential splits, “absolute_error” for the mean absolute error,
+            which minimizes the L1 loss using the median of each terminal node, and “poisson” which uses reduction in
+            Poisson deviance to find splits.
+
+         |  - **Classifier:** The function to measure the quality of a split. Supported criteria are “gini” for the Gini
+            impurity and “log_loss” and “entropy” both for the Shannon information gain, see Mathematical formulation.
+         |  Note: This parameter is tree-specific.
+        :type criterion: str, `optional`, defaults to 'squared_error'
+
+        :param max_depth:
+            The maximum depth of the tree. If `None`, then nodes are expanded until all leaves are pure or until all
+            leaves contain less than min_samples_split samples.
+        :type max_depth: int, `optional`, defaults to `None`
+
+        :param name:
+            Name of RandomForestRegressor or RandomForestClassifier model
+        :type name: str, `optional`, defaults to `''`
+
+        :return: The RandomForestRegressor or RandomForestClassifier model fit on inputs and outputs.
+        :rtype: RandomForest
+        """
+        criterion = cls._check_criterion(criterion)
+        return cls.fit_(inputs, outputs, name=name, n_estimators=n_estimators, criterion=criterion, max_depth=max_depth,
+                        n_jobs=1)
+
+    @classmethod
+    def fit_predict(cls, inputs: Matrix, outputs: Matrix, predicted_inputs: Matrix, n_estimators: int = 100,
+                    criterion: str = 'squared_error', max_depth: int = None,
+                    name: str = '') -> Tuple['RandomForest', Union[Vector, Matrix]]:
+        """
+        Fit outputs to inputs and predict outputs for predicted_inputs. It is the succession of fit and predict methods.
+        """
+        criterion = cls._check_criterion(criterion)
+        return cls.fit_predict_(inputs, outputs, predicted_inputs, name=name, n_estimators=n_estimators,
+                                criterion=criterion, max_depth=max_depth, n_jobs=1)
+
+
+class RandomForestRegressor(RandomForest):
+    """
+    Base class for handling scikit-learn RandomForestRegressor.
+
+    Please refer to https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestRegressor.html for
+    more information on RandomForestRegressor.
+
+    :param n_outputs_:
+        The number of outputs when fit is performed.
+    :type n_outputs_: int, `optional`, defaults to `None`
+
+    :param estimators_:
+        The collection of fitted sub-trees.
+    :type estimators_: List[DecisionTreeRegressor], `optional`, defaults to `None`
+
+    :param name:
+        Name of RandomForestRegressor
+    :type name: str, `optional`, defaults to `''`
+    """
+    _standalone_in_db = True
+
+    def __init__(self, n_outputs_: int = None, estimators_: List[DecisionTreeRegressor] = None, name: str = ''):
+        RandomForest.__init__(self, estimators_=estimators_, n_outputs_=n_outputs_, name=name)
+
+    @classmethod
+    def _skl_class(cls):
+        return ensemble.RandomForestRegressor
+
+    def _instantiate_skl(self):
+        return self.generic_skl_attributes()
+
+    @classmethod
+    def _instantiate_dessia(cls, model, name: str = ''):
+        kwargs = cls.generic_dessia_attributes(model, name=name)
+        kwargs['estimators_'] = [DecisionTreeRegressor._instantiate_dessia(tree) for tree in model.estimators_]
+        return cls(**kwargs)
+
+
+class RandomForestClassifier(RandomForest):
+    """
+    Base class for handling scikit-learn RandomForestClassifier.
+
+    Please refer to https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html for
+    more information on RandomForestClassifier.
+
+    :param n_classes_:
+        The number of classes (for single output problems), or a list containing the number of classes for each output
+        (for multi-output problems).
+    :type n_classes_: Union[int, List[int]], `optional`, defaults to `None`
+
+    :param classes_:
+        The number of outputs when fit is performed.
+    :type classes_: List[int], `optional`, defaults to `None`
+
+    :param n_outputs_:
+        The number of outputs when fit is performed.
+    :type n_outputs_: int, `optional`, defaults to `None`
+
+    :param estimators_:
+        The collection of fitted sub-trees.
+    :type estimators_: List[DecisionTreeClassifier], `optional`, defaults to `None`
+
+    :param name:
+        Name of RandomForestClassifier
+    :type name: str, `optional`, defaults to `''`
+    """
+    _standalone_in_db = True
+
+    def __init__(self, n_classes_: int = None, classes_: List[int] = None, n_outputs_: int = None,
+                 estimators_: List[DecisionTreeRegressor] = None, name: str = ''):
+        self.n_classes_ = n_classes_
+        self.classes_ = classes_
+        RandomForest.__init__(self, estimators_=estimators_, n_outputs_=n_outputs_, name=name)
+
+    @classmethod
+    def _skl_class(cls):
+        return ensemble.RandomForestClassifier
+
+    def _instantiate_skl(self):
+        model = self.generic_skl_attributes()
+        model.n_classes_ = self.n_classes_
+        model.classes_ = npy.array(self.classes_)
+        return model
+
+    @classmethod
+    def _instantiate_dessia(cls, model, name: str = ''):
+        kwargs = cls.generic_dessia_attributes(model, name=name)
+        kwargs.update({'estimators_': [DecisionTreeClassifier._instantiate_dessia(tree) for tree in model.estimators_],
+                       'n_classes_': int(model.n_classes_),
+                       'classes_': model.classes_.tolist()})
+        return cls(**kwargs)
 
 
 class SupportVectorMachine(Model):
