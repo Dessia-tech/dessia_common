@@ -1850,13 +1850,13 @@ class WorkflowState(DessiaObject):
 
         # Displays for blocks (getting reference path from block_display return)
         display_setting = self._display_settings_from_selector(selector)
-        # try:
-        # Specific hotfix : we propagate reference_path through block_display method
-        display_object = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
-        data = display_object.data
-        # except:
-        #     data = None
-        #     track = tb.format_exc()
+        try:
+            # Specific hotfix : we propagate reference_path through block_display method
+            display_object = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
+            data = display_object.data
+        except:
+            data = None
+            track = tb.format_exc()
 
         if display_setting.serialize_data:
             data = serialize(data)
