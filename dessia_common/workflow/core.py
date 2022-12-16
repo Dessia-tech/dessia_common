@@ -249,7 +249,7 @@ class Block(DessiaObject):
     def evaluate(self, values, **kwargs):
         raise NotImplementedError("This method should be implemented in any Block inheriting class.")
 
-    def _to_script(self):
+    def _to_script(self, prefix: str):
         raise NotImplementedError("This method should be implemented in any Block inheriting class.")
 
 
