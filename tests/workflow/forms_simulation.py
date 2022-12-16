@@ -1,5 +1,4 @@
-from dessia_common.workflow import WorkflowRun, Workflow
-from dessia_common.forms import StandaloneObject
+from dessia_common.workflow.core import WorkflowRun, Workflow
 import json
 
 from dessia_common.models.workflows import workflow_

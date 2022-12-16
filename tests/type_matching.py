@@ -1,8 +1,8 @@
 from dessia_common.utils.types import typematch
-from dessia_common import DessiaObject, PhysicalObject
+from dessia_common.core import DessiaObject, PhysicalObject
 from dessia_common.forms import StandaloneObject, StandaloneObjectWithDefaultValues
 from typing import List, Tuple, Union, Any, Optional, Dict
-from dessia_common.typings import Measure
+from dessia_common.measures import Measure
 
 # TRIVIAL AND SPECIFIC
 assert typematch(DessiaObject, Any)

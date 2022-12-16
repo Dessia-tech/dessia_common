@@ -2,7 +2,8 @@ import unittest
 
 from dessia_common.forms import StandaloneObjectWithDefaultValues, StandaloneObject
 from dessia_common.typings import MethodType
-from dessia_common.workflow import InstantiateModel, Workflow, WorkflowError, Pipe, ModelMethod
+from dessia_common.workflow.core import Workflow, WorkflowError, Pipe
+from dessia_common.workflow.blocks import InstantiateModel, ModelMethod
 
 
 class WorkflowUnitTest(unittest.TestCase):

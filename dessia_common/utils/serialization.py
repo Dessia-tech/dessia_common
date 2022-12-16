@@ -13,8 +13,7 @@ from ast import literal_eval
 from typing import get_origin, get_args, Union, Any, BinaryIO, TextIO
 from numpy import int64, float64
 import networkx as nx
-import dessia_common as dc
-import dessia_common.core
+import dessia_common.core as dc
 import dessia_common.errors as dc_err
 from dessia_common.files import StringFile, BinaryFile
 import dessia_common.utils.types as dcty
@@ -50,7 +49,7 @@ def serialize(value):
     Main function for serialization without pointers
     Calls recursively itself serialize_sequence and serialize_dict
     """
-    if isinstance(value, (dc.DessiaObject, dessia_common.core.DessiaObject)):
+    if isinstance(value, dc.DessiaObject):
         try:
             serialized_value = value.to_dict(use_pointers=False)
         except TypeError:
@@ -87,7 +86,7 @@ def serialize_with_pointers(value, memo=None, path='#'):
     """
     if memo is None:
         memo = {}
-    if isinstance(value, (dc.DessiaObject, dessia_common.core.DessiaObject)):
+    if isinstance(value, dc.DessiaObject):
         if value in memo:
             return {'$ref': memo[value]}, memo
         try:
@@ -348,7 +347,7 @@ def deserialize_with_typing(type_, argument, global_dict=None, pointers_memo=Non
         deserialized_arg = argument
     elif origin is InstanceOf:
         classname = args[0]
-        object_class = dc.full_classname(object_=classname, compute_for='class')
+        object_class = dcty.full_classname(object_=classname, compute_for='class')
         class_ = dcty.get_python_class_from_class_name(object_class)
 
         deserialized_arg = class_.dict_to_object(argument, global_dict=global_dict,
@@ -369,7 +368,7 @@ def deserialize_argument(type_, argument, global_dict=None, pointers_memo=None, 
     if argument is None:
         return None
 
-    if isinstance(argument, dessia_common.DessiaObject):
+    if isinstance(argument, dc.DessiaObject):
         return argument
 
     if dcty.is_typing(type_):
@@ -392,7 +391,7 @@ def deserialize_argument(type_, argument, global_dict=None, pointers_memo=None, 
     if type_ is Any:
         # Any type
         return argument
-    if inspect.isclass(type_) and issubclass(type_, (dc.DessiaObject, dessia_common.core.DessiaObject)):
+    if inspect.isclass(type_) and issubclass(type_, dc.DessiaObject):
         # Custom classes
         return type_.dict_to_object(argument, global_dict=global_dict, pointers_memo=pointers_memo, path=path)
 
