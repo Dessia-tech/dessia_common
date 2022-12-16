@@ -534,17 +534,14 @@ class Modeler(DessiaObject):
         :return: All scores of models and all validation graphs, stored in list of dict to be handled in plot_data
         :rtype: Tuple[List[Dict[str, float]], List[Graph2D]]
         """
-        model_validations = []
+        validations = []
         for idx in range(nb_tests):
-            train_test_matrices = dataset.train_test_split(input_names, output_names, ratio)
-            modeler, score = cls._fit_score(*train_test_matrices, class_, hyperparameters, input_is_scaled,
-                                            output_is_scaled, name)
-            input_train = train_test_matrices[0]
-            input_test = train_test_matrices[1]
-            model_validations.append(ModelValidation(modeler, *train_test_matrices, modeler._predict(input_train),
-                                                     modeler._predict(input_test), input_names, output_names, score,
-                                                     f'{name}_validation_{idx}'))
-        return model_validations
+            in_train, in_test, out_train, out_test = dataset.train_test_split(input_names, output_names, ratio)
+            modeler = cls._fit(in_train, out_train, class_, hyperparameters, input_is_scaled, output_is_scaled, name)
+
+            validations.append(ModelValidation.create(modeler, in_train, in_test, out_train, out_test, input_names,
+                                                      output_names, f'{name}_validation_{idx}'))
+        return CrossValidation(validations, f'{name}_cross_validation')
 
     @staticmethod
     def _plot_score(scores: Points) -> Graph2D:
@@ -596,6 +593,7 @@ class ModelValidation(DessiaObject):
         self.output_names = output_names
         self.score = score
         DessiaObject.__init__(self, name=name)
+# TODO : this is too heavy
 
     @property
     def _matrix_ranges(self) -> Matrix:
@@ -657,11 +655,26 @@ class ModelValidation(DessiaObject):
             graphs.append(Graph2D(graphs=pl_datasets, axis=axis_style(10, 10), x_variable=ref, y_variable=pred))
         return graphs
 
+    @classmethod
+    def create(cls, mdlr: Modeler, input_train: Matrix, input_test: Matrix, output_train: Matrix, output_test: Matrix,
+               input_names: List[str], output_names: List[str], name: str = '') -> 'ModelValidation':
+        score = mdlr.score_matrix(input_test, output_test)
+        return cls(mdlr, input_train, input_test, output_train, output_test,
+                   mdlr._predict(input_train), mdlr._predict(input_test),
+                   input_names, output_names, score, name)
+
     def plot_data(self):
         return
 
 
+class CrossValidation(DessiaObject):
+    def __init__(self, model_validations: List[ModelValidation], name: str = ''):
+        self.model_validations = model_validations
+        DessiaObject.__init__(self, name=name)
 
+    @property
+    def scores(self) -> Vector:
+        return [model_val.score for model_val in self.model_validations]
 
 
 def matrix_ranges(matrix: Matrix, nb_points: int = 20) -> Matrix:
