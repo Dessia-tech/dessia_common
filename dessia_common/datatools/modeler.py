@@ -6,7 +6,7 @@ from typing import List, Dict, Any, Tuple, Type, Union
 import numpy as npy
 
 from plot_data.core import Dataset as pl_Dataset
-from plot_data.core import EdgeStyle, Tooltip, MultiplePlots, PointStyle, Graph2D, Axis, PointFamily
+from plot_data.core import EdgeStyle, Tooltip, MultiplePlots, PointStyle, Graph2D, Axis
 from plot_data.colors import BLACK, RED, BLUE, WHITE
 
 from dessia_common.core import DessiaObject
@@ -28,6 +28,35 @@ INV_POINT_STYLE = PointStyle(WHITE, WHITE, 0.1, 1, 'crux')
 
 
 class Modeler(DessiaObject):
+    """
+    Object that encapsulate standard processes in machine learning modelisations.
+
+    Modeler object allows to:
+        * fit a model from models
+        * prescale input and output data before fit or predict
+        * score a model from models
+        * validate a modelisation process with cross_validation method
+        * plot performances and predictions of a model stored in Modeler
+        * store a fitted model and associated fitted scalers in a Modeler element that can be re-used in another
+        workflow as an already trained machine learning model
+
+    :param model:
+        Fitted model to make predictions.
+    :type model: models.Modeler
+
+    :param input_scaler:
+        Scaler for input data.
+    :type input_scaler: models.Scaler
+
+    :param output_scaler:
+        caler for output data.
+    :type output_scaler: models.Scaler
+
+    :param name:
+        Name of Modeler.
+    :type name: str, `optional`, defaults to `''`
+    """
+
     def __init__(self, model: models.Model, input_scaler: models.Scaler, output_scaler: models.Scaler, name: str = ''):
         self.model = model
         self.input_scaler = input_scaler
