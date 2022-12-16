@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 """
 __init__ for dessia_common module
+
 """
 
 import pkg_resources
-from .core import *
 
 __version__ = pkg_resources.require("dessia_common")[0].version
 

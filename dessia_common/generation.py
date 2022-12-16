@@ -4,16 +4,16 @@ generation for dessia_common
 """
 from typing import List
 import dectree as dt
-import dessia_common.core as dc
+from dessia_common.core import DessiaObject
 
 
-class Generator(dc.DessiaObject):
+class Generator(DessiaObject):
     """
     Common parts of generator
     """
 
     def __init__(self, name: str = ''):
-        dc.DessiaObject.__init__(self, name=name)
+        DessiaObject.__init__(self, name=name)
 
     def is_model_valid(self, model) -> bool:
         """

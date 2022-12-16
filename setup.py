@@ -134,8 +134,10 @@ setup(
         "dessia_common.utils",
         "dessia_common.models",
         "dessia_common.models.workflows",
+        "dessia_common.datatools"
     ],
     install_requires=[
+        "orjson>=3.8.0",
         "typeguard",
         "networkx",
         "numpy",
@@ -143,6 +145,7 @@ setup(
         "mypy_extensions",
         "scipy",
         "pyDOE",
+        "pyDOE2",
         "dectree",
         "openpyxl",
         "parameterized",

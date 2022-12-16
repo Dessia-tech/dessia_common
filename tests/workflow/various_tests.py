@@ -2,7 +2,8 @@ import unittest
 
 from dessia_common.forms import StandaloneObjectWithDefaultValues, StandaloneObject
 from dessia_common.typings import MethodType
-from dessia_common.workflow import InstantiateModel, Workflow, WorkflowError, Pipe, ModelMethod
+from dessia_common.workflow.core import Workflow, WorkflowError, Pipe
+from dessia_common.workflow.blocks import InstantiateModel, ModelMethod
 
 
 class WorkflowUnitTest(unittest.TestCase):
@@ -41,6 +42,21 @@ class WorkflowTests(WorkflowUnitTest):
             pipes=[],
             output=self.block_0.outputs[0]
         )
+
+    def test_layout(self):
+        wf = Workflow(
+            blocks=[self.block_0, self.block_1],
+            pipes=[],
+            output=self.block_0.outputs[0]
+        )
+        wf.layout()
+
+        wf = Workflow(
+            blocks=[self.block_0, self.block_1],
+            pipes=[Pipe(self.block_0.outputs[0], self.block_1.inputs[0])],
+            output=self.block_0.outputs[0]
+        )
+        wf.layout()
 
 
 class WorkflowDataEq(WorkflowUnitTest):

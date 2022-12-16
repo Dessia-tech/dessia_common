@@ -3,8 +3,5 @@
 """
 Barrel file for workflows
 """
-
-from .core import *
-
-# retrocompatibility: Remove this in the future
+# Retrocompatibility: Remove this in the future
 from .blocks import *

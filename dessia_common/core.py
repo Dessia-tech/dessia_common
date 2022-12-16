@@ -26,20 +26,23 @@ import traceback as tb
 from importlib import import_module
 from ast import literal_eval
 
+from dessia_common.abstract import CoreDessiaObject
 import dessia_common.errors
 from dessia_common.utils.diff import data_eq, diff, dict_hash, list_hash
-from dessia_common.utils.serialization import dict_to_object, serialize_dict_with_pointers, serialize_dict,\
+from dessia_common.utils.serialization import dict_to_object, serialize_dict_with_pointers, serialize_dict, \
     deserialize_argument, serialize
 from dessia_common.utils.types import full_classname, is_sequence, is_bson_valid, TYPES_FROM_STRING
 from dessia_common.utils.copy import deepcopy_value
-from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotation, JSONSCHEMA_HEADER,\
+from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotation, JSONSCHEMA_HEADER, \
     set_default_value
 from dessia_common.utils.docstrings import parse_docstring, FAILED_DOCSTRING_PARSING
-from dessia_common.exports import XLSXWriter
+from dessia_common.exports import XLSXWriter, MarkdownWriter
 from dessia_common.typings import JsonSerializable
 from dessia_common import templates
 from dessia_common.displays import DisplayObject, DisplaySetting
 from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
+import dessia_common.utils.helpers as dch
+import dessia_common.files as dcf
 
 _FORBIDDEN_ARGNAMES = ['self', 'cls', 'progress_callback', 'return']
 
@@ -67,7 +70,7 @@ def deprecation_warning(name, object_type, use_instead=None):
     return msg
 
 
-class DessiaObject:
+class DessiaObject(CoreDessiaObject):
     """
     Base class for Dessia's platform compatible objects.
     Gathers generic methods and attributes
@@ -121,16 +124,14 @@ class DessiaObject:
 
     def __init__(self, name: str = '', **kwargs):
         """
-        Generic init of DessiA Object. Only store name in self. To be overload and call in specific class init
+        Generic init of DessiA Object. Only store name in self. To be overload and call in specific class init.
         """
         self.name = name
         for property_name, property_value in kwargs.items():
             setattr(self, property_name, property_value)
 
     def __hash__(self):
-        """
-        Compute a int from object
-        """
+        """ Compute a int from object. """
         if self._eq_is_data_eq:
             return self._data_hash()
         return object.__hash__(self)
@@ -490,7 +491,7 @@ class DessiaObject:
                 dict_[arg] = deepcopy_value(getattr(self, arg), memo=memo)
         return self.__class__(**dict_)
 
-    def plot_data(self):  # TODO: Should it have a **kwargs argument ?
+    def plot_data(self, **kwargs):
         return []
 
     def plot(self, **kwargs):
@@ -576,7 +577,10 @@ class DessiaObject:
         """
         Render a markdown of the object output type: string
         """
-        return templates.dessia_object_markdown_template.substitute(name=self.name, class_=self.__class__.__name__)
+        md_writer = MarkdownWriter(print_limit=25, table_limit=None)
+        return templates.dessia_object_markdown_template.substitute(name=self.name,
+                                                                    class_=self.__class__.__name__,
+                                                                    table=md_writer.object_table(self))
 
     def _performance_analysis(self):
         """
@@ -702,7 +706,6 @@ class PhysicalObject(DessiaObject):
         Exports the CAD of the object to step. Works if the class define a custom volmdlr model
         :param filepath: a str representing a filepath
         """
-        self.volmdlr_volume_model().to_step(filepath=filepath)
         return self.volmdlr_volume_model().to_step(filepath=filepath)
 
     def to_step_stream(self, stream):
@@ -710,6 +713,17 @@ class PhysicalObject(DessiaObject):
         Exports the CAD of the object to a stream in the STEP format. Works if the class define a custom volmdlr model
         """
         return self.volmdlr_volume_model().to_step_stream(stream=stream)
+
+    def to_html_stream(self, stream: dcf.StringFile):
+        """
+        Exports the CAD of the object to a stream in the html format.
+        """
+        model = self.volmdlr_volume_model()
+        babylon_data = model.babylon_data()
+        script = model.babylonjs_script(babylon_data)
+        stream.write(script)
+
+        return stream
 
     def to_stl_stream(self, stream):
         """
@@ -743,7 +757,8 @@ class PhysicalObject(DessiaObject):
     def _export_formats(self):
         formats = DessiaObject._export_formats(self)
         formats3d = [{"extension": "step", "method_name": "to_step_stream", "text": True, "args": {}},
-                     {"extension": "stl", "method_name": "to_stl_stream", "text": False, "args": {}}]
+                     {"extension": "stl", "method_name": "to_stl_stream", "text": False, "args": {}},
+                     {"extension": "html", "method_name": "to_html_stream", "text": True, "args": {}}]
         formats.extend(formats3d)
         return formats
 
@@ -883,7 +898,7 @@ class DessiaFilter(DessiaObject):
         return self._REAL_OPERATORS[self.comparison_operator]
 
     def _to_lambda(self):
-        return lambda x: (self._comparison_operator()(enhanced_deep_attr(value, self.attribute), self.bound)
+        return lambda x: (self._comparison_operator()(get_in_object_from_path(value, f'#/{self.attribute}'), self.bound)
                           for value in x)
 
     def get_booleans_index(self, values: List[DessiaObject]):
@@ -1117,13 +1132,13 @@ class FiltersList(DessiaObject):
         Examples
         --------
         >>> from dessia_common.core import FiltersList
-        >>> from dessia_common.datatools import HeterogeneousList
+        >>> from dessia_common.datatools.dataset import Dataset
         >>> from dessia_common.models import all_cars_wi_feat
         >>> filters = [DessiaFilter('weight', '<=', 1650.), DessiaFilter('mpg', '>=', 45.)]
         >>> filters_list = FiltersList(filters, logical_operator="xor", name="example")
         >>> filtered_cars = filters_list.apply(all_cars_wi_feat)
-        >>> print(HeterogeneousList(filtered_cars, name="example"))
-        HeterogeneousList example: 3 samples, 5 features
+        >>> print(Dataset(filtered_cars, name="example"))
+        Dataset example: 3 samples, 5 features
         |         Mpg         |    Displacement    |     Horsepower     |       Weight       |    Acceleration    |
         -----------------------------------------------------------------------------------------------------------
         |               35.0  |             0.072  |              69.0  |            1613.0  |              18.0  |
@@ -1299,17 +1314,8 @@ def prettyname(namestr):
     """
     Creates a pretty name from as str
     """
-    pretty_name = ''
-    if namestr:
-        strings = namestr.split('_')
-        for i, string in enumerate(strings):
-            if len(string) > 1:
-                pretty_name += string[0].upper() + string[1:]
-            else:
-                pretty_name += string
-            if i < len(strings) - 1:
-                pretty_name += ' '
-    return pretty_name
+    warnings.warn("prettyname function has been moved to 'helpers' module. Use it instead", DeprecationWarning)
+    return dch.prettyname(namestr)
 
 
 def inspect_arguments(method, merge=False):
@@ -1343,7 +1349,7 @@ def split_argspecs(argspecs) -> Tuple[int, int]:
 
 
 def get_attribute_names(object_class):
-    attributes = [attribute[0] for attribute in inspect.getmembers(object_class, lambda x:not inspect.isroutine(x))
+    attributes = [attribute[0] for attribute in inspect.getmembers(object_class, lambda x: not inspect.isroutine(x))
                   if not attribute[0].startswith('__')
                   and not attribute[0].endswith('__')
                   and isinstance(attribute[1], (float, int, complex, bool))]
