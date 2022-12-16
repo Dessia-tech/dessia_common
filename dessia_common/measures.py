@@ -12,11 +12,17 @@ class Measure(float):
     si_unit = ''
 
     def to_dict(self):
+        """
+        Serializes the object into a dict.
+        """
         return {'object_class': f'{self.__module__}.{self.__class__.__name__}',
                 'value': self.real}
 
     @classmethod
     def dict_to_object(cls, dict_):
+        """
+        Unserializes the dict into an object.
+        """
         class_ = get_python_class_from_class_name(dict_['object_class'])
         return class_(dict_['value'])
 

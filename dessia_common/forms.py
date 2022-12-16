@@ -370,7 +370,7 @@ class StandaloneObject(MovingObject):
         contour = self.standalone_subobject.contour().plot_data()
         primitives_group = plot_data.PrimitiveGroup(primitives=[contour], name='Contour')
 
-        points = [plot_data.Point2D(cx=random.randint(0, 600)/100, cy=random.randint(100, 2000)/100,
+        points = [plot_data.Point2D(cx=random.randint(0, 600) / 100, cy=random.randint(100, 2000) / 100,
                                     name=f"Point{str(i)}") for i in range(500)]
 
         # Scatter Plot

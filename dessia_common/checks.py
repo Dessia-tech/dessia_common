@@ -11,6 +11,9 @@ LEVEL_TO_INT = {'debug': 0, 'info': 1, 'warning': 2, 'error': 3}
 
 
 class PassedCheck(SerializableObject):
+    """
+    Represents the result of a check that has no error.
+    """
     level = 'info'
 
     def __init__(self, message: str):
@@ -37,6 +40,10 @@ class GeometricInconsistance(FailedCheck):
 
 
 class CheckList(SerializableObject):
+    """
+    A list of checks result.
+    """
+
     def __init__(self, checks):
         self.checks = checks
 
@@ -62,6 +69,9 @@ class CheckList(SerializableObject):
 
 
 def is_int(value, level='error'):
+    """
+    Returns if value is a int.
+    """
     if not isinstance(value, int):
         return CheckList([FailedCheck(f'Value {value} is not an int')])
     if level == 'info':
@@ -71,14 +81,7 @@ def is_int(value, level='error'):
 
 def is_float(value, level='error'):
     """
-
-    :param value: DESCRIPTION
-    :type value: TYPE
-    :param level: DESCRIPTION, defaults to 'error'
-    :type level: TYPE, optional
-    :return: DESCRIPTION
-    :rtype: TYPE
-
+    Returns if value is a float.
     """
     if not isinstance(value, float):
         return CheckList([FailedCheck(f'Value {value} is not a float')])
@@ -88,6 +91,9 @@ def is_float(value, level='error'):
 
 
 def is_str(value, level='error'):
+    """
+    Returns if value is a str.
+    """
     if not isinstance(value, str):
         return CheckList([FailedCheck(f'Value {value} is not a str')])
     if level == 'info':
@@ -97,6 +103,8 @@ def is_str(value, level='error'):
 
 def type_check(value, expected_type, level='error'):
     """
+    Type check the value against the expected type.
+
     This is experimental!
     """
     if expected_type is int:
