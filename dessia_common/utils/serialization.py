@@ -58,7 +58,8 @@ def serialize_sequence_with_pointers(seq, memo, path):
     return dcs.serialize_sequence_with_pointers(seq=seq, memo=memo, path=path)
 
 
-def deserialize(serialized_element, sequence_annotation: str = 'List', global_dict=None, pointers_memo=None, path: str = '#'):
+def deserialize(serialized_element, sequence_annotation: str = 'List', global_dict=None,
+                pointers_memo=None, path: str = '#'):
     """
     Main function for deserialization, handle pointers
     """
