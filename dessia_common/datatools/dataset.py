@@ -20,7 +20,10 @@ from dessia_common.core import DessiaObject, DessiaFilter, FiltersList
 from dessia_common.exports import MarkdownWriter
 from dessia_common import templates
 from dessia_common.datatools.metrics import mean, std, variance, covariance_matrix
+from dessia_common.datatools import models
 
+Vector = List[float]
+Matrix = List[Vector]
 
 class Dataset(DessiaObject):
     """
@@ -388,11 +391,18 @@ class Dataset(DessiaObject):
         transposed_submatrix = [self.attribute_values(column_name) for column_name in columns_names]
         return list(map(list, zip(*transposed_submatrix)))
 
-    def to_input_output(self, input_names: List[str], output_names: List[str]) -> List[List[List[float]]]:
+    def to_input_output(self, input_names: List[str], output_names: List[str]) -> List[Matrix]:
         """
         Split matrix of Dataset in two matrices inputs and outputs according to input_names and output_names.
         """
         return self.sub_matrix(input_names), self.sub_matrix(output_names)
+
+    def train_test_split(self, input_names: List[str], output_names: List[str], ratio: float = 0.8) -> List[Matrix]:
+        """
+        Generate input and output train matrices and test matrices from matrix of current Dataset.
+        """
+        inputs, outputs = self.to_input_output(input_names, output_names)
+        return models.train_test_split(inputs, outputs, ratio=ratio)
 
     def sort(self, key: Any, ascend: bool = True):  # TODO : Replace numpy with faster algorithms
         """
@@ -625,7 +635,7 @@ class Dataset(DessiaObject):
         return normalized_singular_values, singular_points
 
     @staticmethod
-    def _scale_data(data_matrix: List[List[float]]):
+    def _scale_data(data_matrix: Matrix) -> Matrix: # TODO : replace it with the models Scaler
         scaled_matrix = preprocessing.StandardScaler().fit_transform(data_matrix)
         return [list(map(float, row.tolist())) for row in scaled_matrix]
 
@@ -790,7 +800,7 @@ class Dataset(DessiaObject):
         return dimensionality_plot
 
     @staticmethod
-    def _check_costs(len_data: int, costs: List[List[float]]):
+    def _check_costs(len_data: int, costs: Matrix) -> Matrix:
         if len(costs) != len_data:
             if len(costs[0]) == len_data:
                 return list(map(list, zip(*costs)))
@@ -799,7 +809,7 @@ class Dataset(DessiaObject):
         return costs
 
     @staticmethod
-    def pareto_indexes(costs: List[List[float]]):
+    def pareto_indexes(costs: Matrix) -> List[bool]:
         """
         Find the pareto-efficient points.
 
@@ -816,7 +826,7 @@ class Dataset(DessiaObject):
         return is_efficient.tolist()
 
     @staticmethod
-    def pareto_frontiers(len_data: int, costs: List[List[float]]):
+    def pareto_frontiers(len_data: int, costs: Matrix):
         """
         Experimental method to draw the borders of pareto domain.
         """
@@ -838,8 +848,7 @@ class Dataset(DessiaObject):
         return pareto_frontiers
 
     @staticmethod
-    def _pareto_frontier_2d(x_dim: int, y_dim: int, pareto_costs: List[List[float]], max_x_dim: float,
-                            super_mini: List[float]):
+    def _pareto_frontier_2d(x_dim: int, y_dim: int, pareto_costs: Matrix, max_x_dim: float, super_mini: Vector):
         # Experimental
         minidx = npy.argmin(pareto_costs[:, y_dim])
         x_coord = pareto_costs[minidx, x_dim]
