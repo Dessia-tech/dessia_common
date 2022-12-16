@@ -6,8 +6,8 @@ import numpy as npy
 from sklearn import linear_model, tree, ensemble, svm, neural_network
 
 from dessia_common.models import all_cars_no_feat
+from dessia_common.datatools import models
 from dessia_common.datatools.dataset import Dataset
-import dessia_common.datatools.models as models
 
 # TODO review the way data are generated
 # Load Data and put it in a Dataset (matrix is automatically computed)
@@ -150,5 +150,3 @@ try:
     raise ValueError("train_test_split function should not work with matrices of different sizes.")
 except ValueError as e:
     assert isinstance(e, ValueError)
-
-

@@ -10,9 +10,8 @@ from plot_data.core import EdgeStyle, Tooltip, MultiplePlots, PointStyle, Graph2
 from plot_data.colors import BLACK, RED, BLUE, WHITE
 
 from dessia_common.core import DessiaObject
+from dessia_common.datatools import models
 from dessia_common.datatools.dataset import Dataset
-import dessia_common.datatools.models as models
-
 
 Vector = List[float]
 Matrix = List[Vector]
@@ -72,17 +71,23 @@ class Modeler(DessiaObject):
         return self.output_scaler.inverse_transform(scaled_outputs)
 
     @classmethod
-    def _fit(cls, inputs: Matrix, outputs: Matrix, class_: Type, hyperparameters: Dict[str, Any],
-             input_is_scaled: bool = True, output_is_scaled: bool = False, name: str = '') -> 'Modeler':
-        """
-        Private method to fit outputs to inputs with a machine learning method from datatools.models objects.
-        """
+    def _compute_scalers(cls, inputs: Matrix, outputs: Matrix, input_is_scaled: bool = True,
+                         output_is_scaled: bool = False, name: str = ''):
         in_scaler_class, input_scaler_name = models.Scaler.set_in_modeler(name, "in", input_is_scaled)
         out_scaler_class, output_scaler_name = models.Scaler.set_in_modeler(name, "out", output_is_scaled)
 
         in_scaler, scaled_inputs = in_scaler_class.fit_transform(inputs, input_scaler_name)
         out_scaler, scaled_outputs = out_scaler_class.fit_transform(outputs, output_scaler_name)
+        return in_scaler, out_scaler, scaled_inputs, scaled_outputs
 
+    @classmethod
+    def _fit(cls, inputs: Matrix, outputs: Matrix, class_: Type, hyperparameters: Dict[str, Any],
+             input_is_scaled: bool = True, output_is_scaled: bool = False, name: str = '') -> 'Modeler':
+        """
+        Private method to fit outputs to inputs with a machine learning method from datatools.models objects.
+        """
+        in_scaler, out_scaler, scaled_inputs, scaled_outputs = cls._compute_scalers(inputs, outputs, input_is_scaled,
+                                                                                    output_is_scaled, name)
         model = class_.fit(scaled_inputs, scaled_outputs, **hyperparameters, name=name + '_model')
         return cls(model=model, input_scaler=in_scaler, output_scaler=out_scaler, name=name)
 
@@ -343,8 +348,7 @@ class Modeler(DessiaObject):
         pl_points_test = self._pl_points(inputs_test, outputs_test, pred_inputs_test, input_names, output_names)
 
         output_ranges = matrix_ranges(outputs_train + outputs_test + pred_inputs_train + pred_inputs_test, nb_points=10)
-        hack_dataset = Modeler._bisectrice_points(output_ranges, output_names)
-        return pl_points_train, pl_points_test, hack_dataset
+        return pl_points_train, pl_points_test, Modeler._bisectrice_points(output_ranges, output_names)
 
     def _build_graphs(self, inputs_train: Matrix, inputs_test: Matrix, outputs_train: Matrix, outputs_test: Matrix,
                       input_names: List[str], output_names: List[str]) -> List[Graph2D]:
@@ -356,25 +360,26 @@ class Modeler(DessiaObject):
         pl_datasets = self._ref_val_datasets(pl_points_train, pl_points_test, tooltip=tooltip)
         pl_datasets.append(hack_dataset)
 
-        graphs2D = []
+        graphs = []
         for (ref, pred) in ref_val_names:
-            graphs2D.append(Graph2D(graphs=pl_datasets, axis=axis_style(10, 10), x_variable=ref, y_variable=pred))
-        return graphs2D
+            graphs.append(Graph2D(graphs=pl_datasets, axis=axis_style(10, 10), x_variable=ref, y_variable=pred))
+        return graphs
 
     @classmethod
     def _fit_score(cls, inputs_train: Matrix, inputs_test: Matrix, outputs_train: Matrix, outputs_test: Matrix,
-                   input_names: List[str], output_names: List[str], class_: Type, hyperparameters: Dict[str, Any],
-                   input_is_scaled: bool, output_is_scaled: bool, name: str) -> 'Modeler':
+                   class_: Type, hyperparameters: Dict[str, Any], input_is_scaled: bool, output_is_scaled: bool,
+                   name: str) -> Tuple['Modeler', float]:
         """
         Train test split dataset, fit modeler with train matrices and test it with test matrices.
         """
-        modeler = cls._fit(inputs_train, outputs_train, class_, hyperparameters, input_is_scaled, output_is_scaled)
-        return modeler, modeler._score(inputs_test, outputs_test)
+        mdlr = cls._fit(inputs_train, outputs_train, class_, hyperparameters, input_is_scaled, output_is_scaled, name)
+        return mdlr, mdlr._score(inputs_test, outputs_test)
 
     @classmethod
     def from_dataset_fit_score(cls, dataset: Dataset, input_names: List[str], output_names: List[str], class_: Type,
                                hyperparameters: Dict[str, Any], input_is_scaled: bool = True,
-                               output_is_scaled: bool = False, ratio: float = 0.8, name: str = '') -> 'Modeler':
+                               output_is_scaled: bool = False, ratio: float = 0.8,
+                               name: str = '') -> Tuple['Modeler', float]:
         """
         Train test split dataset, fit modeler with train matrices and score it with test matrices.
         """
@@ -385,7 +390,7 @@ class Modeler(DessiaObject):
     @classmethod
     def cross_validation(cls, dataset: Dataset, input_names: List[str], output_names: List[str], class_: Type,
                          hyperparameters: Dict[str, Any], input_is_scaled: bool = True, output_is_scaled: bool = False,
-                         nb_tests: int = 1, ratio: float = 0.8, name: str = ''):
+                         nb_tests: int = 1, ratio: float = 0.8, name: str = '') -> Tuple[Points, List[Graph2D]]:
         """
         Cross validation for a model of Models and its hyperparameters.
 
@@ -449,9 +454,8 @@ class Modeler(DessiaObject):
             train_test_matrices = dataset.train_test_split(input_names, output_names, ratio)
             modeler, score = cls._fit_score(*train_test_matrices, input_names, output_names, class_, hyperparameters,
                                             input_is_scaled, output_is_scaled, name)
-            graphs2D = modeler._build_graphs(*train_test_matrices, input_names, output_names)
             scores.append({'Index': idx, 'Score': score})
-            all_graphs += graphs2D
+            all_graphs += modeler._build_graphs(*train_test_matrices, input_names, output_names)
         return scores, all_graphs
 
     @staticmethod
@@ -551,7 +555,3 @@ def scores_limits(number: int) -> Points:
 #                               initial_view_on=True)
 
 #     return multiplot
-
-
-
-

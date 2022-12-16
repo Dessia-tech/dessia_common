@@ -27,13 +27,13 @@ MAX_ERROR_BY_TYPE = {
                      'too-many-locals': 10,  # Reduce by dropping vectored objects
                      'too-many-branches': 13,
                      'wrong-import-order': 0,
-                     'unused-argument': 16,
+                     'unused-argument': 12,
                      'cyclic-import': 4,
                      'no-self-use': 6,
                      'trailing-whitespace': 11,
                      'empty-docstring': 1,
                      'missing-module-docstring': 1,
-                     'too-many-arguments': 35,
+                     'too-many-arguments': 47,
                      'too-few-public-methods': 5,  # Not really important
                      'unnecessary-comprehension': 1,
                      'no-value-for-parameter': 2,
@@ -52,7 +52,7 @@ MAX_ERROR_BY_TYPE = {
                      'consider-using-with': 2,
                      'too-many-nested-blocks': 2,
                      'bad-staticmethod-argument': 1,
-                     'too-many-public-methods': 2,  # Try to lower by splitting DessiaObject and Workflow
+                     'too-many-public-methods': 3,  # Try to lower by splitting DessiaObject and Workflow
                      'consider-using-generator': 1,
                      'too-many-statements': 1,
                      'chained-comparison': 1,
