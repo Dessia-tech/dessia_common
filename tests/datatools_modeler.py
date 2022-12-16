@@ -28,9 +28,9 @@ models_class, hyperparameters = models.RandomForestRegressor.init_for_modeler(n_
 # test_mdlr = Modeler.from_dataset_fit_validate(dataset_example, input_names, output_names, models_class, hyperparameters,
 #                                               True, True, 0.8, True, 'pouet')
 
-Modeler(None,None,None).plot(dataset=dataset_example, input_names=input_names, output_names=output_names, class_=models_class,
-                             hyperparameters=hyperparameters, input_is_scaled=True, output_is_scaled=True, nb_tests=5,
-                             ratio=0.8, name='')
+test = Modeler.cross_validation(dataset=dataset_example, input_names=input_names, output_names=output_names, class_=models_class,
+                                hyperparameters=hyperparameters, input_is_scaled=True, output_is_scaled=True, nb_tests=5,
+                                ratio=0.8, name='')
 
 
 # print(test_mdlr[1])

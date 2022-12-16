@@ -26,6 +26,21 @@ LIN_POINT_STYLE = PointStyle(BLACK, BLACK, 0.1, 1, 'crux')
 INV_POINT_STYLE = PointStyle(WHITE, WHITE, 0.1, 1, 'crux')
 
 
+# class ValidationMatrices(DessiaObject):
+#     def __init__(self, input_train: Matrix, input_test: Matrix, output_train: Matrix, output_test: Matrix,
+#                   pred_train: Matrix, pred_test: Matrix, input_names: List[str], output_names: List[str],
+#                   name: str = ''):
+#         self.input_train = input_train
+#         self.input_test = input_test
+#         self.output_train = output_train
+#         self.output_test = output_test
+#         self.pred_train = pred_train
+#         self.pred_test = pred_test
+#         self.input_names = input_names
+#         self.output_names = output_names
+#         DessiaObject.__init__(self, name=name)
+
+
 class Modeler(DessiaObject):
     """
     Object that encapsulate standard processes in machine learning modelisations.
@@ -298,72 +313,72 @@ class Modeler(DessiaObject):
         inputs, outputs = dataset.to_input_output(input_names, output_names)
         return self._score(inputs, outputs)
 
-    @staticmethod
-    def _pl_points(inputs: Matrix, ref_outputs: Matrix, pred_outputs: Matrix, input_names: List[str],
-                   output_names: List[str]) -> Points:
-        plot_data_list = []
-        for input_, ref_output, pred_output in zip(inputs, ref_outputs, pred_outputs):
-            plot_data_list.append({attr: input_[col] for col, attr in enumerate(input_names)})
-            plot_data_list[-1].update({attr + '_ref': ref_output[col] for col, attr in enumerate(output_names)})
-            plot_data_list[-1].update({attr + '_pred': pred_output[col] for col, attr in enumerate(output_names)})
-        return plot_data_list
+    # @staticmethod
+    # def _points(inputs: Matrix, ref_outputs: Matrix, pred_outputs: Matrix, input_names: List[str],
+    #             output_names: List[str]) -> Points:
+    #     plot_data_list = []
+    #     for input_, ref_output, pred_output in zip(inputs, ref_outputs, pred_outputs):
+    #         plot_data_list.append({attr: input_[col] for col, attr in enumerate(input_names)})
+    #         plot_data_list[-1].update({attr + '_ref': ref_output[col] for col, attr in enumerate(output_names)})
+    #         plot_data_list[-1].update({attr + '_pred': pred_output[col] for col, attr in enumerate(output_names)})
+    #     return plot_data_list
 
-    @staticmethod
-    def _plot_dataset(pl_points: Points, **kwargs) -> pl_Dataset:
-        return pl_Dataset(elements=pl_points, **kwargs)
+    # @staticmethod
+    # def _plot_dataset(points: Points, **kwargs) -> pl_Dataset:
+    #     return pl_Dataset(elements=points, **kwargs)
 
-    @staticmethod
-    def _ref_val_names(input_names: List[str], output_names: List[str]) -> Tooltip:
-        return [[name + '_ref', name + '_pred'] for name in output_names]
+    # @staticmethod
+    # def _ref_val_names(input_names: List[str], output_names: List[str]) -> Tooltip:
+    #     return [[name + '_ref', name + '_pred'] for name in output_names]
 
-    @staticmethod
-    def _ref_val_datasets(pl_points_train: Points, pl_points_test: Points, tooltip: Tooltip) -> List[pl_Dataset]:
-        ref_args = {'point_style': REF_POINT_STYLE, 'edge_style': NO_LINE, 'name': 'Train data', 'tooltip': tooltip}
-        val_args = {'point_style': VAL_POINT_STYLE, 'edge_style': NO_LINE, 'name': 'Test data', 'tooltip': tooltip}
-        ref_dataset = Modeler._plot_dataset(pl_points_train, **ref_args)
-        val_dataset = Modeler._plot_dataset(pl_points_test, **val_args)
-        return [ref_dataset, val_dataset]
+    # @staticmethod
+    # def _ref_val_datasets(points_train: Points, points_test: Points, tooltip: Tooltip) -> List[pl_Dataset]:
+    #     ref_args = {'point_style': REF_POINT_STYLE, 'edge_style': NO_LINE, 'name': 'Train data', 'tooltip': tooltip}
+    #     val_args = {'point_style': VAL_POINT_STYLE, 'edge_style': NO_LINE, 'name': 'Test data', 'tooltip': tooltip}
+    #     ref_dataset = Modeler._plot_dataset(points_train, **ref_args)
+    #     val_dataset = Modeler._plot_dataset(points_test, **val_args)
+    #     return [ref_dataset, val_dataset]
 
-    @staticmethod
-    def _hack_bisectrice(output_ranges: Matrix, output_names: List[str]) -> Points:
-        hack_bisectrices = []
-        for point in zip(*output_ranges):
-            hack_bisectrices.append({output_names[0] + '_ref': point[0], output_names[0] + '_pred': point[0]})
-            for idx, name in enumerate(output_names):
-                hack_bisectrices[-1].update({name + '_ref': point[idx], name + '_pred': point[idx]})
-        return hack_bisectrices
+    # @staticmethod
+    # def _hack_bisectrice(ranges: Matrix, names: List[str]) -> Points:
+    #     hack_bisectrices = []
+    #     for point in zip(*ranges):
+    #         hack_bisectrices.append({names[0] + '_ref': point[0], names[0] + '_pred': point[0]})
+    #         for idx, name in enumerate(names):
+    #             hack_bisectrices[-1].update({name + '_ref': point[idx], name + '_pred': point[idx]})
+    #     return hack_bisectrices
 
-    @staticmethod
-    def _bisectrice_points(output_ranges: Matrix, output_names: List[str]) -> pl_Dataset:
-        points = Modeler._hack_bisectrice(output_ranges, output_names)
-        return pl_Dataset(points, point_style=LIN_POINT_STYLE, edge_style=STD_LINE, name="Reference = Predicted")
+    # @staticmethod
+    # def _bisectrice_points(output_ranges: Matrix, output_names: List[str]) -> pl_Dataset:
+    #     points = Modeler._hack_bisectrice(output_ranges, output_names)
+    #     return pl_Dataset(points, point_style=LIN_POINT_STYLE, edge_style=STD_LINE, name="Reference = Predicted")
 
-    def _to_val_points(self, inputs_train: Matrix, inputs_test: Matrix, outputs_train: Matrix, outputs_test: Matrix,
-                       input_names: List[str], output_names: List[str]) -> List[pl_Dataset]:
+    # def _to_val_points(self, inputs_train: Matrix, inputs_test: Matrix, outputs_train: Matrix, outputs_test: Matrix,
+    #                    input_names: List[str], output_names: List[str]) -> List[pl_Dataset]:
 
-        pred_inputs_train = self._predict(inputs_train)
-        pl_points_train = self._pl_points(inputs_train, outputs_train, pred_inputs_train, input_names, output_names)
+    #     pred_train = self._predict(inputs_train)
+    #     points_train = self._points(inputs_train, outputs_train, pred_train, input_names, output_names)
 
-        pred_inputs_test = self._predict(inputs_test)
-        pl_points_test = self._pl_points(inputs_test, outputs_test, pred_inputs_test, input_names, output_names)
+    #     pred_test = self._predict(inputs_test)
+    #     points_test = self._points(inputs_test, outputs_test, pred_test, input_names, output_names)
 
-        output_ranges = matrix_ranges(outputs_train + outputs_test + pred_inputs_train + pred_inputs_test, nb_points=10)
-        return pl_points_train, pl_points_test, Modeler._bisectrice_points(output_ranges, output_names)
+    #     output_ranges = matrix_ranges(outputs_train + outputs_test + pred_train + pred_test, nb_points=10)
+    #     return points_train, points_test, self._bisectrice_points(output_ranges, output_names)
 
-    def _build_graphs(self, inputs_train: Matrix, inputs_test: Matrix, outputs_train: Matrix, outputs_test: Matrix,
-                      input_names: List[str], output_names: List[str]) -> List[Graph2D]:
-        pl_points_train, pl_points_test, hack_dataset = self._to_val_points(inputs_train, inputs_test, outputs_train,
-                                                                            outputs_test, input_names, output_names)
-        ref_val_names = self._ref_val_names(input_names, output_names)
-        tooltip = Tooltip(input_names + sum(ref_val_names, []))
+    # def _build_graphs(self, inputs_train: Matrix, inputs_test: Matrix, outputs_train: Matrix, outputs_test: Matrix,
+    #                   input_names: List[str], output_names: List[str]) -> List[Graph2D]:
+    #     points_train, points_test, hack_dataset = self._to_val_points(inputs_train, inputs_test, outputs_train,
+    #                                                                         outputs_test, input_names, output_names)
+    #     ref_val_names = self._ref_val_names(input_names, output_names)
+    #     tooltip = Tooltip(input_names + sum(ref_val_names, []))
 
-        pl_datasets = self._ref_val_datasets(pl_points_train, pl_points_test, tooltip=tooltip)
-        pl_datasets.append(hack_dataset)
+    #     pl_datasets = self._ref_val_datasets(points_train, points_test, tooltip=tooltip)
+    #     pl_datasets.append(hack_dataset)
 
-        graphs = []
-        for (ref, pred) in ref_val_names:
-            graphs.append(Graph2D(graphs=pl_datasets, axis=axis_style(10, 10), x_variable=ref, y_variable=pred))
-        return graphs
+    #     graphs = []
+    #     for (ref, pred) in ref_val_names:
+    #         graphs.append(Graph2D(graphs=pl_datasets, axis=axis_style(10, 10), x_variable=ref, y_variable=pred))
+    #     return graphs
 
     @classmethod
     def _fit_score(cls, inputs_train: Matrix, inputs_test: Matrix, outputs_train: Matrix, outputs_test: Matrix,
@@ -387,10 +402,81 @@ class Modeler(DessiaObject):
         return cls._fit_score(*train_test_matrices, input_names, output_names, class_, hyperparameters, input_is_scaled,
                               output_is_scaled, name)
 
+    # @classmethod
+    # def cross_validation(cls, dataset: Dataset, input_names: List[str], output_names: List[str], class_: Type,
+    #                       hyperparameters: Dict[str, Any], input_is_scaled: bool = True, output_is_scaled: bool = False,
+    #                       nb_tests: int = 1, ratio: float = 0.8, name: str = '') -> Tuple[Points, List[Graph2D]]:
+    #     """
+    #     Cross validation for a model of Models and its hyperparameters.
+
+    #     The purpose of this method is to validate a modelisation process for a specific type of machine learning method,
+    #     set with specific hyperparameters.
+    #     The first step of cross validation is to split data into train and test data. Then the model is fitted with
+    #     train data and scored with test data. Furthermore, train and test inputs are predicted with the model and
+    #     plotted in a graph that plots these predictions versus reference values. In this plot, the more red points are
+    #     near the black line, the more the model can predict new data precisely.
+    #     This process of cross validation is ran nb_tests times. If all of them show a good score and a nice train test
+    #     plot, then the tested modelisation is validated and can be used in other, but similar, processes for
+    #     predictions.
+
+    #     :param dataset:
+    #         Dataset containing data, both inputs and outputs
+    #     :type dataset: Dataset
+
+    #     :param input_names:
+    #         Names of input features
+    #     :type inputs: List[str]
+
+    #     :param output_names:
+    #         Names of output features
+    #     :type inputs: List[str]
+
+    #     :param class_:
+    #         Class of datatools.models objetc to use for fitting, e.g. RandomForestRegressor, LinearRegression,...
+    #     :type class_: Type
+
+    #     :param hyperparameters:
+    #         Hyperparameters of the used scikit-learn object.
+    #     :type hyperparameters: dict[str, Any], `optional`
+
+    #     :param input_is_scaled:
+    #         Whether to standardize inputs or not with a models.StandardScaler
+    #     :type input_is_scaled: bool, `optional`, True
+
+    #     :param output_is_scaled:
+    #         Whether to standardize outputs or not with a models.StandardScaler
+    #     :type output_is_scaled: bool, `optional`, False
+
+    #     :param nb_tests:
+    #         Number of train test validation to run in cross_validation method
+    #     :type nb_tests: int, `optional`, defaults to 1
+
+    #     :param ratio:
+    #         Ratio on which to split matrix. If ratio > 1, ind_train will be of length `int(ratio)` and ind_test of
+    #         length `len_matrix - int(ratio)`.
+    #     :type ratio: float, `optional`, defaults to 0.8
+
+    #     :param name:
+    #         Name of Model
+    #     :type name: str, `optional`, defaults to `''`
+
+    #     :return: All scores of models and all validation graphs, stored in list of dict to be handled in plot_data
+    #     :rtype: Tuple[List[Dict[str, float]], List[Graph2D]]
+    #     """
+    #     scores = []
+    #     all_graphs = []
+    #     for idx in range(nb_tests):
+    #         train_test_matrices = dataset.train_test_split(input_names, output_names, ratio)
+    #         modeler, score = cls._fit_score(*train_test_matrices, class_, hyperparameters, input_is_scaled,
+    #                                         output_is_scaled, name)
+    #         scores.append({'Index': idx, 'Score': score})
+    #         all_graphs += modeler._build_graphs(*train_test_matrices, input_names, output_names)
+    #     return scores, all_graphs
+
     @classmethod
     def cross_validation(cls, dataset: Dataset, input_names: List[str], output_names: List[str], class_: Type,
-                         hyperparameters: Dict[str, Any], input_is_scaled: bool = True, output_is_scaled: bool = False,
-                         nb_tests: int = 1, ratio: float = 0.8, name: str = '') -> Tuple[Points, List[Graph2D]]:
+                          hyperparameters: Dict[str, Any], input_is_scaled: bool = True, output_is_scaled: bool = False,
+                          nb_tests: int = 1, ratio: float = 0.8, name: str = '') -> List['ModelValidation']:
         """
         Cross validation for a model of Models and its hyperparameters.
 
@@ -446,17 +532,19 @@ class Modeler(DessiaObject):
         :type name: str, `optional`, defaults to `''`
 
         :return: All scores of models and all validation graphs, stored in list of dict to be handled in plot_data
-        :rtype: Tuple[List[Dict[str, float]], List[Dict[str, float]]]
+        :rtype: Tuple[List[Dict[str, float]], List[Graph2D]]
         """
-        scores = []
-        all_graphs = []
+        model_validations = []
         for idx in range(nb_tests):
             train_test_matrices = dataset.train_test_split(input_names, output_names, ratio)
-            modeler, score = cls._fit_score(*train_test_matrices, input_names, output_names, class_, hyperparameters,
-                                            input_is_scaled, output_is_scaled, name)
-            scores.append({'Index': idx, 'Score': score})
-            all_graphs += modeler._build_graphs(*train_test_matrices, input_names, output_names)
-        return scores, all_graphs
+            modeler, score = cls._fit_score(*train_test_matrices, class_, hyperparameters, input_is_scaled,
+                                            output_is_scaled, name)
+            input_train = train_test_matrices[0]
+            input_test = train_test_matrices[1]
+            model_validations.append(ModelValidation(modeler, *train_test_matrices, modeler._predict(input_train),
+                                                     modeler._predict(input_test), input_names, output_names, score,
+                                                     f'{name}_validation_{idx}'))
+        return model_validations
 
     @staticmethod
     def _plot_score(scores: Points) -> Graph2D:
@@ -491,6 +579,89 @@ class Modeler(DessiaObject):
         Future features_mrmr method, maybe to put in dataset.
         """
         return
+
+
+class ModelValidation(DessiaObject):
+    def __init__(self, modeler: Modeler, input_train: Matrix, input_test: Matrix, output_train: Matrix,
+                 output_test: Matrix, pred_train: Matrix, pred_test: Matrix, input_names: List[str],
+                 output_names: List[str], score: float, name: str = ''):
+        self.modeler = modeler
+        self.input_train = input_train
+        self.input_test = input_test
+        self.output_train = output_train
+        self.output_test = output_test
+        self.pred_train = pred_train
+        self.pred_test = pred_test
+        self.input_names = input_names
+        self.output_names = output_names
+        self.score = score
+        DessiaObject.__init__(self, name=name)
+
+    @property
+    def _matrix_ranges(self) -> Matrix:
+        return matrix_ranges(self.output_train + self.output_test + self.pred_train + self.pred_test, nb_points=10)
+
+    @property
+    def _ref_val_names(self) -> List[str]:
+        return [[name + '_ref', name + '_pred'] for name in self.output_names]
+
+    @property
+    def _tooltip(self) -> Tooltip:
+        return Tooltip(self.input_names + sum(self._ref_val_names, []))
+
+    def _points(self, inputs: Matrix, ref_outputs: Matrix, pred_outputs: Matrix) -> Points:
+        plot_data_list = []
+        for input_, ref_output, pred_output in zip(inputs, ref_outputs, pred_outputs):
+            plot_data_list.append({attr: input_[col] for col, attr in enumerate(self.input_names)})
+            plot_data_list[-1].update({attr + '_ref': ref_output[col] for col, attr in enumerate(self.output_names)})
+            plot_data_list[-1].update({attr + '_pred': pred_output[col] for col, attr in enumerate(self.output_names)})
+        return plot_data_list
+
+    @staticmethod
+    def _plot_dataset(points: Points, **kwargs) -> pl_Dataset:
+        return pl_Dataset(elements=points, **kwargs)
+
+    def _ref_val_datasets(self, points_train: Points, points_test: Points) -> List[pl_Dataset]:
+        ref_args = {'point_style': REF_POINT_STYLE, 'edge_style': NO_LINE, 'name': 'Train data',
+                    'tooltip': self.tooltip}
+        val_args = {'point_style': VAL_POINT_STYLE, 'edge_style': NO_LINE, 'name': 'Test data',
+                    'tooltip': self.tooltip}
+        ref_dataset = Modeler._plot_dataset(points_train, **ref_args)
+        val_dataset = Modeler._plot_dataset(points_test, **val_args)
+        return [ref_dataset, val_dataset]
+
+    def _hack_bisectrice(self) -> Points:
+        hack_bisectrices = []
+        for point in zip(*self._matrix_ranges):
+            hack_bisectrices.append({self.output_names[0] + '_ref': point[0], self.output_names[0] + '_pred': point[0]})
+            for idx, name in enumerate(self.output_names):
+                hack_bisectrices[-1].update({name + '_ref': point[idx], name + '_pred': point[idx]})
+        return hack_bisectrices
+
+    def _bisectrice_points(self) -> pl_Dataset:
+        points = self._hack_bisectrice()
+        return pl_Dataset(points, point_style=LIN_POINT_STYLE, edge_style=STD_LINE, name="Reference = Predicted")
+
+    def _to_val_points(self) -> List[pl_Dataset]:
+        points_train = self._points(self.input_train, self.output_train, self.pred_train)
+        points_test = self._points(self.input_test, self.output_test, self.pred_test)
+        return points_train, points_test, self._bisectrice_points(self._matrix_ranges)
+
+    def _build_graphs(self) -> List[Graph2D]:
+        points_train, points_test, hack_dataset = self._to_val_points()
+        pl_datasets = self._ref_val_datasets(points_train, points_test)
+        pl_datasets.append(hack_dataset)
+
+        graphs = []
+        for (ref, pred) in self._ref_val_names:
+            graphs.append(Graph2D(graphs=pl_datasets, axis=axis_style(10, 10), x_variable=ref, y_variable=pred))
+        return graphs
+
+    def plot_data(self):
+        return
+
+
+
 
 
 def matrix_ranges(matrix: Matrix, nb_points: int = 20) -> Matrix:
