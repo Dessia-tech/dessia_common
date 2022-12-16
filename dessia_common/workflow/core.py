@@ -506,9 +506,9 @@ class Workflow(Block):
     def copy_pipe(self, copied_workflow: 'Workflow', pipe: Pipe) -> Pipe:
         """ Copy a single regular pipe. """
         upstream_index = self.variable_indices(pipe.input_variable)
-        if isinstance(upstream_index, int):
+        if self.is_variable_nbv(pipe.input_variable):
             raise dessia_common.errors.CopyError("copy_pipe method cannot handle nonblock-variables. "
-                                                 "Please consider using copy_pipes")
+                                                 "Please consider using copy_nbv_pipes")
         pipe_upstream = copied_workflow.variable_from_index(upstream_index)
 
         downstream_index = self.variable_indices(pipe.output_variable)
@@ -537,7 +537,7 @@ class Workflow(Block):
         """ Copy all pipes in workflow. """
         copy_memo = {}
         return [self.copy_nbv_pipe(copied_workflow=copied_workflow, pipe=p, copy_memo=copy_memo)
-                if isinstance(self.variable_indices(p.input_variable), int)  # Pipe upstream is NBV
+                if self.is_variable_nbv(p.input_variable)
                 else self.copy_pipe(copied_workflow=copied_workflow, pipe=p)
                 for p in self.pipes]
 
@@ -1014,6 +1014,9 @@ class Workflow(Block):
             return self.nonblock_variables.index(upstream_variable)
         raise WorkflowError(f"Something is wrong with variable {variable.name}")
 
+    def is_variable_nbv(self, variable: Variable) -> bool:
+        return isinstance(self.variable_indices(variable), int)
+
     def block_from_variable(self, variable) -> Block:
         """
         Returns block of which given variable is attached to
@@ -1280,7 +1283,7 @@ class Workflow(Block):
         edges = []
         for pipe in self.pipes:
             input_index = self.variable_indices(pipe.input_variable)
-            if isinstance(input_index, int):
+            if self.is_variable_nbv(pipe.input_variable):
                 node1 = input_index
             else:
                 ib1, is1, ip1 = input_index
@@ -1291,7 +1294,7 @@ class Workflow(Block):
                 node1 = [ib1, ip1]
 
             output_index = self.variable_indices(pipe.output_variable)
-            if isinstance(output_index, int):
+            if self.is_variable_nbv(pipe.output_variable):
                 node2 = output_index
             else:
                 ib2, is2, ip2 = output_index
@@ -1393,13 +1396,13 @@ class Workflow(Block):
         pipes_str = ""
         for ipipe, pipe in enumerate(self.pipes):
             input_index = self.variable_indices(pipe.input_variable)
-            if isinstance(input_index, int):  # NBV handling
+            if self.is_variable_nbv(pipe.input_variable):  # NBV handling
                 input_name = f'{prefix}variable_{input_index}'
             else:
                 input_name = f"{prefix}block_{input_index[0]}.outputs[{input_index[2]}]"
 
             output_index = self.variable_indices(pipe.output_variable)
-            if isinstance(output_index, int):  # NBV handling
+            if self.is_variable_nbv(pipe.output_variable):  # NBV handling
                 output_name = f'{prefix}variable_{output_index}'
             else:
                 output_name = f"{prefix}block_{output_index[0]}.inputs[{output_index[2]}]"
@@ -1417,7 +1420,7 @@ class Workflow(Block):
 
         for key, value in self.imposed_variable_values.items():
             variable_indice = self.variable_indices(key)
-            if isinstance(variable_indice, int):
+            if self.is_variable_nbv(key):
                 variable_str = variable_indice
             else:
                 [block_index, _, variable_index] = variable_indice
