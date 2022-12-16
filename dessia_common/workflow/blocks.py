@@ -364,7 +364,7 @@ class Concatenate(Block):
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
         return cls(dict_['number_arguments'], dict_['name'], position=dict_.get('position'))
 
-    def evaluate(self, values: Dict[Variable, Any]):
+    def evaluate(self, values: Dict[Variable, Any], **kwargs):
         list_values = list(values.values())
         return [concatenate(list_values)]
 
@@ -968,7 +968,7 @@ class Sum(Block):
         return cls(dict_['number_elements'], dict_['name'], position=dict_.get('position'))
 
     @staticmethod
-    def evaluate(values):
+    def evaluate(values, **kwargs):
         return [sum(values)]
 
     def _to_script(self, _) -> ToScriptElement:
