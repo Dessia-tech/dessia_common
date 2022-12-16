@@ -967,8 +967,7 @@ class Sum(Block):
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
         return cls(dict_['number_elements'], dict_['name'], position=dict_.get('position'))
 
-    @staticmethod
-    def evaluate(values, **kwargs):
+    def evaluate(self, values, **kwargs):
         return [sum(values)]
 
     def _to_script(self, _) -> ToScriptElement:
