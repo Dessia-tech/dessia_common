@@ -35,6 +35,9 @@ class Modeler(DessiaObject):
         DessiaObject.__init__(self, name=name)
 
     def _format_output(self, scaled_outputs: Matrix):
+        """
+        Format output to List[List[float]] in any case for code consistency and simplicity.
+        """
         if not isinstance(scaled_outputs, list):
             return [[value] for value in self.output_scaler.inverse_transform(scaled_outputs)]
         return self.output_scaler.inverse_transform(scaled_outputs)
@@ -393,13 +396,6 @@ class Modeler(DessiaObject):
     def features_mrmr(self):
         return
 
-
-def min_max_range(inf_borns: List[float], sup_borns: List[float], keys: List[str], nb_points: int = 10) -> Matrix:
-    ranges = []
-    for inf_born, sup_born in zip(inf_borns, sup_borns):
-        step_range = (sup_born - inf_born)/nb_points
-        ranges.append(npy.arange(inf_born, sup_born, step_range).tolist())
-    return ranges
 
 def matrix_ranges(matrix: Matrix, nb_points: int = 20) -> Matrix:
     matrix_ranges = []
