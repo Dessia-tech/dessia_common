@@ -76,7 +76,7 @@ class Modeler(DessiaObject):
         """
         Format output to List[List[float]] in any case for code consistency and simplicity.
         """
-        if not isinstance(scaled_outputs, list):
+        if not isinstance(scaled_outputs[0], list):
             return [[value] for value in scaled_outputs]
         return scaled_outputs
 
@@ -448,7 +448,7 @@ class ValidationData(DessiaObject):
 class ModelValidation(DessiaObject):
     def __init__(self, modeler: Modeler, validation_data: ValidationData, name: str = ''):
         self.modeler = modeler
-        self.data = validation_data # TODO: Not required ?
+        self.data = validation_data
         self._pred_train = None
         self._pred_test = None
         self._score = None
@@ -614,7 +614,7 @@ def matrix_ranges(matrix: Matrix, nb_points: int = 20) -> Matrix:
         min_value = min(feature_column)
         max_value = max(feature_column)
         step_range = (max_value - min_value)/nb_points
-        ranges.append(npy.arange(min_value, max_value, step_range).tolist())
+        ranges.append(npy.arange(min_value, max_value, step_range).tolist() + [max_value])
     return ranges
 
 def axis_style(nb_x: int = 10, nb_y: int = 10) -> Axis:

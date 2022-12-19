@@ -4,7 +4,7 @@ Tests for dessia_common.datatools.modeler file.
 from dessia_common.models import all_cars_no_feat
 from dessia_common.datatools.dataset import Dataset
 import dessia_common.datatools.models as models
-from dessia_common.datatools.modeler import Modeler, ModelValidation, CrossValidation, ValidationData
+from dessia_common.datatools.modeler import Modeler #, CrossValidation, ValidationData, ModelValidation
 
 # Load Data and put it in a Dataset (matrix is automatically computed)
 dataset_example = Dataset(all_cars_no_feat)
@@ -22,28 +22,32 @@ Ri_class, Ri_hyperparams = models.Ridge.init_for_modeler(alpha=0.01, fit_interce
 LR_class, LR_hyperparams = models.LinearRegression.init_for_modeler(fit_intercept=True, positive=False)
 DR_class, DR_hyperparams = models.DecisionTreeRegressor.init_for_modeler(criterion='squared_error', max_depth=None)
 DC_class, DC_hyperparams = models.DecisionTreeClassifier.init_for_modeler(criterion='gini', max_depth=None)
-RR_class, RR_hyperparams = models.RandomForestRegressor.init_for_modeler(n_estimators=10, criterion='squared_error', max_depth=None)
-RC_class, RC_hyperparams = models.RandomForestClassifier.init_for_modeler(n_estimators=10, criterion='gini', max_depth=None)
-MR_class, MR_hyperparams = models.MLPRegressor.init_for_modeler(hidden_layer_sizes=(20, 20, 20), activation='relu', max_iter=500)
-MC_class, MC_hyperparams = models.MLPClassifier.init_for_modeler(hidden_layer_sizes=(20, 20, 20), activation='relu', max_iter=500)
+RR_class, RR_hyperparams = models.RandomForestRegressor.init_for_modeler(n_estimators=10, criterion='squared_error',
+                                                                         max_depth=None)
+RC_class, RC_hyperparams = models.RandomForestClassifier.init_for_modeler(n_estimators=10, criterion='gini',
+                                                                          max_depth=None)
+MR_class, MR_hyperparams = models.MLPRegressor.init_for_modeler(hidden_layer_sizes=(50, 50, 50), activation='relu',
+                                                                max_iter=500)
+MC_class, MC_hyperparams = models.MLPClassifier.init_for_modeler(hidden_layer_sizes=(50, 50, 50), activation='relu',
+                                                                 max_iter=500)
 
 # Run cross_validation for all models instantiated in a Modeler
-Ri_mdlr, CV_Ri = Modeler.cross_validation(dataset_example, input_names_reg, output_names_reg_solo, Ri_class, Ri_hyperparams,
-                                          True, True, 5, 0.8, "ridge_modeler")
-LR_mdlr, CV_LR = Modeler.cross_validation(dataset_example, input_names_reg, output_names_reg_solo, LR_class, LR_hyperparams,
-                                          True, True, 5, 0.8, "linearregression_modeler")
-DR_mdlr, CV_DR = Modeler.cross_validation(dataset_example, input_names_reg, output_names_reg_solo, DR_class, DR_hyperparams,
-                                          True, True, 3, 0.8, "DTRegressor_modeler")
-DC_mdlr, CV_DC = Modeler.cross_validation(dataset_example, input_names_clf, output_names_clf, DC_class, DC_hyperparams,
-                                          True, False, 3, 0.8, "DTClassifier_modeler")
-RR_mdlr, CV_RR = Modeler.cross_validation(dataset_example, input_names_reg, output_names_reg_solo, RR_class, RR_hyperparams,
-                                          True, True, 3, 0.8, "RFRegressor_modeler")
-RC_mdlr, CV_RC = Modeler.cross_validation(dataset_example, input_names_clf, output_names_clf, RC_class, RC_hyperparams,
-                                          True, False, 3, 0.8, "RF_classifier_modeler")
-MR_mdlr, CV_MR = Modeler.cross_validation(dataset_example, input_names_reg, output_names_reg_solo, MR_class, MR_hyperparams,
-                                          True, True, 3, 0.8, "MLPRegressor_modeler")
-MC_mdlr, CV_MC = Modeler.cross_validation(dataset_example, input_names_clf, output_names_clf, MC_class, MC_hyperparams,
-                                          True, False, 3, 0.8, "MLPClassifier_modeler")
+Ri_mdlr, CV_Ri = Modeler.cross_validation(dataset_example, input_names_reg, output_names_reg_solo, Ri_class,
+                                          Ri_hyperparams, True, True, 3, 0.8, "ridge_modeler")
+LR_mdlr, CV_LR = Modeler.cross_validation(dataset_example, input_names_reg, output_names_reg_solo, LR_class,
+                                          LR_hyperparams, True, True, 3, 0.8, "linearregression_modeler")
+DR_mdlr, CV_DR = Modeler.cross_validation(dataset_example, input_names_reg, output_names_reg_solo, DR_class,
+                                          DR_hyperparams, True, True, 3, 0.8, "DTRegressor_modeler")
+DC_mdlr, CV_DC = Modeler.cross_validation(dataset_example, input_names_clf, output_names_clf, DC_class,
+                                          DC_hyperparams, True, False, 3, 0.8, "DTClassifier_modeler")
+RR_mdlr, CV_RR = Modeler.cross_validation(dataset_example, input_names_reg, output_names_reg_solo, RR_class,
+                                          RR_hyperparams, True, True, 3, 0.8, "RFRegressor_modeler")
+RC_mdlr, CV_RC = Modeler.cross_validation(dataset_example, input_names_clf, output_names_clf, RC_class,
+                                          RC_hyperparams, True, False, 3, 0.8, "RFClassifier_modeler")
+MR_mdlr, CV_MR = Modeler.cross_validation(dataset_example, input_names_reg, output_names_reg_solo, MR_class,
+                                          MR_hyperparams, True, True, 3, 0.8, "MLPRegressor_modeler")
+MC_mdlr, CV_MC = Modeler.cross_validation(dataset_example, input_names_clf, output_names_clf, MC_class,
+                                          MC_hyperparams, True, False, 3, 0.8, "MLPClassifier_modeler")
 
 CV_Ri.plot()
 CV_LR.plot()
@@ -53,14 +57,6 @@ CV_RR.plot()
 CV_RC.plot()
 CV_MR.plot()
 CV_MC.plot()
-
-modeler = Modeler.fit_dataset(dataset_example, input_names, output_names, models_class, hyperparameters, True, True,
-                              "test_modeler")
-
-# validation_data = ValidationData.from_dataset(dataset_example, input_names, output_names)
-test = CrossValidation.from_dataset(modeler, dataset_example, input_names, output_names, 5, 0.8, "validation_test")
-test.plot()
-
 
 # ======================================================================================================================
 #                                            F R O M   M A T R I X

@@ -77,7 +77,8 @@ class Scaler(DessiaObject):
         :rtype: Scaler
         """
         scaler = cls._skl_class()()
-        scaler.fit(matrix)
+        reshaped_matrix = vector_to_2d_matrix(matrix)
+        scaler.fit(reshaped_matrix)
         return cls.instantiate_dessia(scaler, name)
 
     def transform(self, matrix: Matrix) -> Matrix:
@@ -92,7 +93,8 @@ class Scaler(DessiaObject):
         :rtype: List[List[float]]
         """
         scaler = self.instantiate_skl()
-        return scaler.transform(matrix).tolist()
+        reshaped_matrix = vector_to_2d_matrix(matrix)
+        return scaler.transform(reshaped_matrix).tolist()
 
     def inverse_transform(self, matrix: Matrix) -> Matrix:
         """
@@ -106,18 +108,17 @@ class Scaler(DessiaObject):
         :rtype: List[List[float]]
         """
         scaler = self.instantiate_skl()
-        try:
-            return scaler.inverse_transform(matrix).tolist()
-        except:
-            a=1
+        reshaped_matrix = vector_to_2d_matrix(matrix)
+        return scaler.inverse_transform(reshaped_matrix).tolist()
 
     @classmethod
     def fit_transform(cls, matrix: Matrix, name: str = '') -> Tuple['Scaler', Matrix]:
         """
         Fit scaler with data stored in matrix and transform it. It is the succession of fit and transform methods.
         """
-        scaler = cls.fit(matrix, name)
-        return scaler, scaler.transform(matrix)
+        reshaped_matrix = vector_to_2d_matrix(matrix)
+        scaler = cls.fit(reshaped_matrix, name)
+        return scaler, scaler.transform(reshaped_matrix)
 
     def transform_matrices(self, *matrices: Tuple[Matrix]) -> Tuple[Matrix]:
         scaled_matrices = tuple()
@@ -1850,8 +1851,20 @@ def train_test_split(*matrices: List[Matrix], ratio: float = 0.8, shuffled: bool
                                  for matrix in matrices]
     return sum(train_test_split_matrices, [])
 
-def matrix_1d_to_vector(outputs: Matrix) -> Union[Vector, Matrix]:
-    if isinstance(outputs[0], list):
-        if len(outputs[0]) == 1:
-            return sum(outputs, [])
-    return outputs
+def matrix_1d_to_vector(matrix: Matrix) -> Union[Vector, Matrix]:
+    """
+    Transform a List[List[float]] of shape (n, 1) into a List[float] of shape (n,).
+    """
+    if isinstance(matrix[0], list):
+        if len(matrix[0]) == 1:
+            return sum(matrix, [])
+    return matrix
+
+def vector_to_2d_matrix(matrix: Union[Vector, Matrix]) -> Matrix:
+    """
+    Transform a List[float] of shape (n,) into a List[List[float]] of shape (n, 1).
+    """
+    if not isinstance(matrix[0], list):
+        return [[x] for x in matrix]
+    return matrix
+
