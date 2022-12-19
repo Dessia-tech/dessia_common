@@ -641,6 +641,10 @@ class DessiaObject(CoreDessiaObject):
         """
         Exports the object to an XLSX file given by the filepath
         """
+        if not filepath.endswith('.xlsx'):
+            filepath += '.xlsx'
+            print(f'Changing name to {filepath}')
+
         with open(filepath, 'wb') as file:
             self.to_xlsx_stream(file)
 
