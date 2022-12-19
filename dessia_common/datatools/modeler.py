@@ -56,8 +56,8 @@ class Modeler(DessiaObject):
     :type name: str, `optional`, defaults to `''`
     """
 
-    def __init__(self, model: models.Model, input_scaler: models.Scaler, output_scaler: models.Scaler,
-                 class_: Type, hyperparameters: Dict[str, Any], name: str = ''):
+    def __init__(self, model: models.Model, input_scaler: models.Scaler, output_scaler: models.Scaler, class_: Type,
+                 hyperparameters: Dict[str, Any], name: str = ''):
         self.model = model
         self.input_scaler = input_scaler
         self.output_scaler = output_scaler
@@ -601,7 +601,7 @@ class CrossValidation(DessiaObject):
         for idx, validation in enumerate(self.model_validations):
             graphs += validation.build_graphs()[0]
         scores_graph = [self._plot_score()]
-        return scores_graph + graphs#[MultiplePlots(elements=[{"factice_key":0}], plots=graphs, initial_view_on=True)]
+        return scores_graph + [MultiplePlots(elements=[{"factice_key":0}], plots=graphs, initial_view_on=True)]
 
 
 
@@ -628,42 +628,3 @@ def scores_limits(number: int) -> Points:
     Draw white points in scatter for it to be plotted between 0 and number on x axis and 0 and 1 on y axis.
     """
     return [{'Index': -0.05, 'Score': -0.05}, {'Index': number + 0.05, 'Score': 1.05}]
-
-
-## KEPT FOR A FUTURE PLOT DATA THAT HANDLES LINE2D IN SCATTERS
-# @staticmethod
-# TODO: Plot data does not allow to draw shapes on plots...
-# def _ref_pred_bisectrice(ref_outputs: Vector, val_outputs: Vector):
-#     min_output_value = min(min(ref_outputs), min(val_outputs))
-#     max_output_value = max(max(ref_outputs), max(val_outputs))
-#     line_style = EdgeStyle(1., BLACK)
-#     return Line2D([min_output_value, min_output_value], [max_output_value, max_output_value], line_style)
-
-# def _validation_plot(self, ref_inputs: Matrix, ref_outputs: Matrix, val_inputs: Matrix, val_outputs: Matrix,
-#                      input_names: List[str], output_names: List[str]):
-#     ref_predictions = self.model.predict(ref_inputs)
-#     val_predictions = self.model.predict(val_inputs)
-
-#     ref_scatter = self._plot_data_list(ref_inputs, ref_outputs, ref_predictions, input_names, output_names)
-#     val_scatter = self._plot_data_list(val_inputs, val_outputs, val_predictions, input_names, output_names)
-#     # hak_scatter = self._hack_bisectrice(ref_outputs, val_outputs, output_names)
-#     full_scatter = ref_scatter + val_scatter #+ hak_scatter
-
-#     ref_index = list(range(len(ref_inputs)))
-#     val_index = list(range(len(ref_inputs), len(full_scatter))) #- len(hak_scatter)))
-#     # hak_index = list(range(len(hak_scatter), len(full_scatter)))
-
-#     ref_family = PointFamily(BLUE, ref_index, name="Reference predictions")
-#     val_family = PointFamily(RED, val_index, name="Validation predictions")
-#     # hak_family = PointFamily(BLACK, hak_index, name="Bisectrice")
-#     point_families = [ref_family, val_family] #, hak_family]
-
-#     scatters = []
-#     for idx, name in enumerate(output_names):
-#         scatters.append(Scatter(x_variable=name + '_ref', y_variable=name + '_pred',
-#                                 tooltip=Tooltip(list(full_scatter[0].keys()))))
-
-#     multiplot = MultiplePlots(plots=scatters, elements=full_scatter, point_families=point_families,
-#                               initial_view_on=True)
-
-#     return multiplot

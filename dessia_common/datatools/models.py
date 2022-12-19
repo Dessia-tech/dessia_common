@@ -106,7 +106,10 @@ class Scaler(DessiaObject):
         :rtype: List[List[float]]
         """
         scaler = self.instantiate_skl()
-        return scaler.inverse_transform(matrix).tolist()
+        try:
+            return scaler.inverse_transform(matrix).tolist()
+        except:
+            a=1
 
     @classmethod
     def fit_transform(cls, matrix: Matrix, name: str = '') -> Tuple['Scaler', Matrix]:
@@ -998,6 +1001,7 @@ class RandomForest(Model):
         :rtype: RandomForest
         """
         criterion = cls._check_criterion(criterion)
+        outputs = matrix_1d_to_vector(outputs)
         return cls.fit_(inputs, outputs, name=name, n_estimators=n_estimators, criterion=criterion, max_depth=max_depth,
                         n_jobs=1)
 
@@ -1653,6 +1657,7 @@ class MultiLayerPerceptron(Model):
         :return: The MLPRegressor or MLPClassifier model fit on inputs and outputs.
         :rtype: MultiLayerPerceptron
         """
+        outputs = matrix_1d_to_vector(outputs)
         return cls.fit_(inputs, outputs, name=name, hidden_layer_sizes=hidden_layer_sizes, activation=activation,
                         alpha=alpha, solver=solver, max_iter=max_iter, tol=tol)
 
@@ -1844,3 +1849,9 @@ def train_test_split(*matrices: List[Matrix], ratio: float = 0.8, shuffled: bool
     train_test_split_matrices = [[[matrix[idx] for idx in ind_train], [matrix[idx] for idx in ind_test]]
                                  for matrix in matrices]
     return sum(train_test_split_matrices, [])
+
+def matrix_1d_to_vector(outputs: Matrix) -> Union[Vector, Matrix]:
+    if isinstance(outputs[0], list):
+        if len(outputs[0]) == 1:
+            return sum(outputs, [])
+    return outputs
