@@ -17,6 +17,12 @@ output_names = ['mpg', 'weight']
 
 # Tests for matrix
 models_class, hyperparameters = models.RandomForestRegressor.init_for_modeler(n_estimators=60, max_depth=None)
+modeler, cross_validation = Modeler.cross_validation(dataset_example, input_names, output_names, models_class,
+                                                     hyperparameters, True, True, 10, 0.8, "test_modeler")
+cross_validation.plot()
+
+
+
 modeler = Modeler.fit_dataset(dataset_example, input_names, output_names, models_class, hyperparameters, True, True,
                               "test_modeler")
 

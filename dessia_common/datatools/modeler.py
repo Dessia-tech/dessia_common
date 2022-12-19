@@ -6,7 +6,7 @@ from typing import List, Dict, Any, Tuple, Type, Union
 import numpy as npy
 
 from plot_data.core import Dataset as pl_Dataset
-from plot_data.core import EdgeStyle, Tooltip, MultiplePlots, PointStyle, Graph2D, Axis, Scatter
+from plot_data.core import EdgeStyle, Tooltip, MultiplePlots, PointStyle, Graph2D, Axis, Scatter, Window
 from plot_data.colors import BLACK, RED, BLUE, WHITE
 
 from dessia_common.core import DessiaObject
@@ -322,8 +322,8 @@ class Modeler(DessiaObject):
 
     @classmethod
     def cross_validation(cls, dataset: Dataset, input_names: List[str], output_names: List[str], class_: Type,
-                          hyperparameters: Dict[str, Any], input_is_scaled: bool = True, output_is_scaled: bool = False,
-                          nb_tests: int = 1, ratio: float = 0.8, name: str = '') -> List['ModelValidation']:
+                         hyperparameters: Dict[str, Any], input_is_scaled: bool = True, output_is_scaled: bool = False,
+                         nb_tests: int = 1, ratio: float = 0.8, name: str = '') -> List['ModelValidation']:
         """
         Cross validation for a model of Models and its hyperparameters.
 
@@ -381,14 +381,11 @@ class Modeler(DessiaObject):
         :return: All scores of models and all validation graphs, stored in list of dict to be handled in plot_data
         :rtype: Tuple[List[Dict[str, float]], List[Graph2D]]
         """
-        validations = []
-        for idx in range(nb_tests):
-            in_train, in_test, out_train, out_test = dataset.train_test_split(input_names, output_names, ratio)
-            modeler = cls._fit(in_train, out_train, class_, hyperparameters, input_is_scaled, output_is_scaled, name)
-
-            validations.append(ModelValidation.create(modeler, in_train, in_test, out_train, out_test, input_names,
-                                                      output_names, f'{name}_validation_{idx}'))
-        return CrossValidation(validations, f'{name}_cross_validation')
+        modeler = cls.fit_dataset(dataset, input_names, output_names, class_, hyperparameters, input_is_scaled,
+                                  output_is_scaled, name)
+        cross_validation = CrossValidation.from_dataset(modeler, dataset, input_names, output_names, nb_tests, ratio,
+                                                        f"{name}_cross_val")
+        return modeler, cross_validation
 
     def plot_data(self, dataset: Dataset, input_names: List[str], output_names: List[str], class_: Type,
                   hyperparameters: Dict[str, Any], input_is_scaled: bool = True, output_is_scaled: bool = False,
@@ -492,18 +489,12 @@ class ModelValidation(DessiaObject):
             points_list[-1].update({f"{attr}_pred": pred_out[col] for col, attr in enumerate(self.data.output_names)})
         return points_list
 
-    @staticmethod
-    def _plot_dataset(points: Points, **kwargs) -> pl_Dataset:
-        return pl_Dataset(elements=points, **kwargs)
-
     def _ref_val_datasets(self, points_train: Points, points_test: Points) -> List[pl_Dataset]:
         ref_args = {'point_style': REF_POINT_STYLE, 'edge_style': NO_LINE, 'name': 'Train data',
                     'tooltip': self._tooltip}
         val_args = {'point_style': VAL_POINT_STYLE, 'edge_style': NO_LINE, 'name': 'Test data',
                     'tooltip': self._tooltip}
-        ref_dataset = self._plot_dataset(points_train, **ref_args)
-        val_dataset = self._plot_dataset(points_test, **val_args)
-        return [ref_dataset, val_dataset]
+        return [pl_Dataset(elements=points_train, **ref_args), pl_Dataset(elements=points_test, **val_args)]
 
     def _bisectrice_points(self) -> Points:
         hack_bisectrices = []
@@ -559,6 +550,7 @@ class CrossValidation(DessiaObject):
         """
         return [model_val.score for model_val in self.model_validations]
 
+    @property
     def _points_scores(self) -> Points:
         scores = self.scores
         points_scores = []
@@ -566,8 +558,8 @@ class CrossValidation(DessiaObject):
             points_scores.append({'Index': idx, 'Score': score})
         return points_scores
 
-    @staticmethod
-    def _plot_score(scores: Points) -> Graph2D:
+    def _plot_score(self) -> Graph2D:
+        scores = self._points_scores
         nidx = len(scores)
         limits = pl_Dataset(elements=scores_limits(nidx), point_style=INV_POINT_STYLE, edge_style=NO_LINE)
         axis = axis_style(nidx, nidx)
@@ -594,11 +586,10 @@ class CrossValidation(DessiaObject):
         Plot data method for CrossValidation.
         """
         graphs = []
-        for validation in self.model_validations:
+        for idx, validation in enumerate(self.model_validations):
             graphs += validation.build_graphs()[0]
-        points_scores = self._points_scores()
-        scores_graph = [self._plot_score(points_scores)]
-        return scores_graph + [MultiplePlots(elements=points_scores, plots=graphs, initial_view_on=True)]
+        scores_graph = [self._plot_score()]
+        return scores_graph + [MultiplePlots(elements=[{"factice_key":0}], plots=graphs, initial_view_on=True)]
 
 
 
