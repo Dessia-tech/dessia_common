@@ -504,7 +504,7 @@ class ModelValidation(DessiaObject):
                     'tooltip': self._tooltip}
         val_args = {'point_style': VAL_POINT_STYLE, 'edge_style': NO_LINE, 'name': 'Test data',
                     'tooltip': self._tooltip}
-        return [pl_Dataset(elements=points_train, **ref_args), pl_Dataset(elements=points_test, **val_args)]
+        return [pl_Dataset(elements=points_test, **val_args), pl_Dataset(elements=points_train, **ref_args)]
 
     def _bisectrice_points(self) -> Points:
         hack_bisectrices = []
@@ -535,8 +535,8 @@ class ModelValidation(DessiaObject):
         return graphs, points_train + points_test + points_bisectrice
 
     @classmethod
-    def create(cls, modeler: Modeler, dataset: Dataset, input_names: List[str], output_names: List[str],
-               ratio: float = 0.8, name: str = '') -> 'ModelValidation':
+    def from_dataset(cls, modeler: Modeler, dataset: Dataset, input_names: List[str], output_names: List[str],
+                     ratio: float = 0.8, name: str = '') -> 'ModelValidation':
         validation_data = ValidationData.from_dataset(dataset, input_names, output_names, ratio, f"{name}_data")
         trained_mldr = Modeler.fit_matrix(validation_data.input_train, validation_data.output_train, modeler.class_,
                                           modeler.hyperparameters, modeler.in_scaled, modeler.out_scaled, name)
@@ -590,7 +590,7 @@ class CrossValidation(DessiaObject):
         validations = []
         for idx in range(nb_tests):
             name = f"{name}_val_{idx}"
-            validations.append(ModelValidation.create(modeler, dataset, input_names, output_names, ratio, name))
+            validations.append(ModelValidation.from_dataset(modeler, dataset, input_names, output_names, ratio, name))
         return cls(validations, name)
 
     def plot_data(self):
@@ -601,7 +601,7 @@ class CrossValidation(DessiaObject):
         for idx, validation in enumerate(self.model_validations):
             graphs += validation.build_graphs()[0]
         scores_graph = [self._plot_score()]
-        return scores_graph + [MultiplePlots(elements=[{"factice_key":0}], plots=graphs, initial_view_on=True)]
+        return scores_graph + graphs#[MultiplePlots(elements=[{"factice_key":0}], plots=graphs, initial_view_on=True)]
 
 
 
