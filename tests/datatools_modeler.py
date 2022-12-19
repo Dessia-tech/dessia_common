@@ -9,16 +9,18 @@ from dessia_common.datatools.modeler import Modeler, ModelValidation, CrossValid
 # TODO review the way data are generated
 # Load Data and put it in a Dataset (matrix is automatically computed)
 dataset_example = Dataset(all_cars_no_feat)
-input_names = ['displacement', 'horsepower', 'model', 'acceleration', 'cylinders']
+input_names = ['displacement', 'horsepower']#, 'model', 'acceleration', 'cylinders']
 output_names = ['mpg', 'weight']
 # inputs = dataset_example.sub_matrix(input_names)
 # double_outputs = dataset_example.sub_matrix(output_names)
 # inputs_train, inputs_test, outputs_train, outputs_test = models.train_test_split(inputs, double_outputs, ratio=0.7)
 
 # Tests for matrix
-models_class, hyperparameters = models.RandomForestRegressor.init_for_modeler(n_estimators=60, max_depth=None)
+models_class, hyperparameters = models.RandomForestRegressor.init_for_modeler(n_estimators=200, max_depth=None)
+# models_class, hyperparameters = models.Ridge.init_for_modeler(alpha=10, fit_intercept=True, tol=0.1)
+# models_class, hyperparameters = models.MLPRegressor.init_for_modeler(hidden_layer_sizes=(1000,500,500), activation='relu')
 modeler, cross_validation = Modeler.cross_validation(dataset_example, input_names, output_names, models_class,
-                                                     hyperparameters, True, True, 10, 0.8, "test_modeler")
+                                                     hyperparameters, True, True, 3, 0.8, "test_modeler")
 cross_validation.plot()
 
 

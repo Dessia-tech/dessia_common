@@ -56,11 +56,21 @@ class Modeler(DessiaObject):
     :type name: str, `optional`, defaults to `''`
     """
 
-    def __init__(self, model: models.Model, input_scaler: models.Scaler, output_scaler: models.Scaler, name: str = ''):
+    def __init__(self, model: models.Model, input_scaler: models.Scaler, output_scaler: models.Scaler,
+                 class_: Type, hyperparameters: Dict[str, Any], name: str = ''):
         self.model = model
         self.input_scaler = input_scaler
         self.output_scaler = output_scaler
+        self.class_ = class_
+        self.hyperparameters = hyperparameters
+        self.in_scaled = self._is_scaled(self.input_scaler)
+        self.out_scaled = self._is_scaled(self.output_scaler)
         DessiaObject.__init__(self, name=name)
+
+    def _is_scaled(self, scaler: models.Scaler):
+        if isinstance(scaler, models.IdentityScaler):
+            return False
+        return True
 
     def _format_output(self, scaled_outputs: Matrix):
         """
@@ -89,7 +99,7 @@ class Modeler(DessiaObject):
         in_scaler, out_scaler, scaled_inputs, scaled_outputs = cls._compute_scalers(inputs, outputs, input_is_scaled,
                                                                                     output_is_scaled, name)
         model = class_.fit(scaled_inputs, scaled_outputs, **hyperparameters, name=name + '_model')
-        return cls(model=model, input_scaler=in_scaler, output_scaler=out_scaler, name=name)
+        return cls(model, in_scaler, out_scaler, class_, hyperparameters, name)
 
     @classmethod
     def fit_matrix(cls, inputs: Matrix, outputs: Matrix, class_: Type, hyperparameters: Dict[str, Any],
@@ -528,7 +538,9 @@ class ModelValidation(DessiaObject):
     def create(cls, modeler: Modeler, dataset: Dataset, input_names: List[str], output_names: List[str],
                ratio: float = 0.8, name: str = '') -> 'ModelValidation':
         validation_data = ValidationData.from_dataset(dataset, input_names, output_names, ratio, f"{name}_data")
-        return cls(modeler, validation_data, name)
+        trained_mldr = Modeler.fit_matrix(validation_data.input_train, validation_data.output_train, modeler.class_,
+                                          modeler.hyperparameters, modeler.in_scaled, modeler.out_scaled, name)
+        return cls(trained_mldr, validation_data, name)
 
     def plot_data(self):
         """

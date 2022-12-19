@@ -413,10 +413,6 @@ class Ridge(LinearModel):
             Precision of the solution.
         :type tol: float, `optional`, defaults to 0.001
 
-        :param name:
-            Name of Ridge model
-        :type name: str, `optional`, defaults to `''`
-
         :return: The Ridge class, the hyperparameters to instantiate it and the future name of instance.
         :rtype: Tuple['Ridge', Dict[str, Any], str]
         """
@@ -510,8 +506,8 @@ class LinearRegression(LinearModel):
         return linear_model.LinearRegression
 
     @classmethod
-    def init_for_modeler(cls, fit_intercept: bool = True, positive: bool = False,
-                         name: str = '') -> Tuple['LinearRegression', Dict[str, Any], str]:
+    def init_for_modeler(cls, fit_intercept: bool = True,
+                         positive: bool = False) -> Tuple['LinearRegression', Dict[str, Any], str]:
         """
         Initialize class LinearRegression with its name and hyperparemeters to fit in Modeler.
 
@@ -524,14 +520,10 @@ class LinearRegression(LinearModel):
             When set to True, forces the coefficients to be positive. This option is only supported for dense arrays.
         :type positive: bool, `optional`, defaults to False
 
-        :param name:
-            Name of LinearRegression model
-        :type name: str, `optional`, defaults to `''`
-
         :return: The LinearRegression model fit on inputs and outputs.
         :rtype: Tuple['LinearRegression', Dict[str, Any], str]
         """
-        return cls.init_for_modeler_(name=name, fit_intercept=fit_intercept, positive=positive)
+        return cls.init_for_modeler_(fit_intercept=fit_intercept, positive=positive)
 
     @classmethod
     def fit(cls, inputs: Matrix, outputs: Matrix, fit_intercept: bool = True, positive: bool = False,
@@ -719,8 +711,8 @@ class DecisionTreeRegressor(Model):
         return criterion
 
     @classmethod
-    def init_for_modeler(cls, criterion: str = 'squared_error', max_depth: int = None,
-                         name: str = '') -> Tuple['DecisionTreeRegressor', Dict[str, Any], str]:
+    def init_for_modeler(cls, criterion: str = 'squared_error',
+                         max_depth: int = None) -> Tuple['DecisionTreeRegressor', Dict[str, Any], str]:
         """
         Initialize class DecisionTreeRegressor with its name and hyperparemeters to fit in Modeler.
 
@@ -738,14 +730,10 @@ class DecisionTreeRegressor(Model):
             leaves contain less than min_samples_split samples.
         :type max_depth: int, `optional`, defaults to `None`
 
-        :param name:
-            Name of DecisionTreeRegressor model
-        :type name: str, `optional`, defaults to `''`
-
         :return: The DecisionTreeRegressor model fit on inputs and outputs.
         :rtype: Tuple['DecisionTreeRegressor', Dict[str, Any], str]
         """
-        return cls.init_for_modeler_(name=name, criterion=criterion, max_depth=max_depth)
+        return cls.init_for_modeler_(criterion=criterion, max_depth=max_depth)
 
     @classmethod
     def fit(cls, inputs: Matrix, outputs: Matrix, criterion: str = 'squared_error', max_depth: int = None,
@@ -930,8 +918,8 @@ class RandomForest(Model):
         return criterion
 
     @classmethod
-    def init_for_modeler(cls, n_estimators: int = 100, criterion: str = 'squared_error', max_depth: int = None,
-                         name: str = '') -> Tuple['RandomForest', Dict[str, Any], str]:
+    def init_for_modeler(cls, n_estimators: int = 100, criterion: str = 'squared_error',
+                         max_depth: int = None) -> Tuple['RandomForest', Dict[str, Any], str]:
         """
         Initialize class RandomForest with its name and hyperparemeters to fit in Modeler.
 
@@ -956,10 +944,6 @@ class RandomForest(Model):
             The maximum depth of the tree. If `None`, then nodes are expanded until all leaves are pure or until all
             leaves contain less than min_samples_split samples.
         :type max_depth: int, `optional`, defaults to `None`
-
-        :param name:
-            Name of RandomForestRegressor or RandomForestClassifier model
-        :type name: str, `optional`, defaults to `''`
 
         :return: The RandomForest model fit on inputs and outputs.
         :rtype: Tuple['RandomForest', Dict[str, Any], str]
@@ -1243,8 +1227,7 @@ class SupportVectorMachine(Model):
                 '_sparse': model._sparse}
 
     @classmethod
-    def init_for_modeler(cls, C: float = 1., kernel: str = 'rbf',
-                         name: str = '') -> Tuple['SupportVectorMachine', Dict[str, Any], str]:
+    def init_for_modeler(cls, C: float = 1., kernel: str = 'rbf') -> Tuple['SupportVectorMachine', Dict[str, Any], str]:
         """
         Initialize class SupportVectorMachine with its name and hyperparemeters to fit in Modeler.
 
@@ -1260,14 +1243,10 @@ class SupportVectorMachine(Model):
             an matrix of shape `n_samples x n_samples`
         :type kernel: str, `optional`, defaults to `'rbf'`
 
-        :param name:
-            Name of SupportVectorRegressor or SupportVectorClassifier model
-        :type name: str, `optional`, defaults to `''`
-
         :return: The SupportVectorMachine model fit on inputs and outputs.
         :rtype: Tuple['SupportVectorMachine', Dict[str, Any], str]
         """
-        return cls.init_for_modeler_(name=name, C=C, kernel=kernel)
+        return cls.init_for_modeler_(C=C, kernel=kernel)
 
     @classmethod
     def fit(cls, inputs: Matrix, outputs: Vector, C: float = 1., kernel: str = 'rbf',
@@ -1561,8 +1540,8 @@ class MultiLayerPerceptron(Model):
 
     @classmethod
     def init_for_modeler(cls, hidden_layer_sizes: List[int] = None, activation: str = 'relu', alpha: float = 0.0001,
-                         solver: str = 'adam', max_iter: int = 200, tol: float = 0.0001,
-                         name: str = '') -> Tuple['MultiLayerPerceptron', Dict[str, Any], str]:
+                         solver: str = 'adam', max_iter: int = 200,
+                         tol: float = 0.0001) -> Tuple['MultiLayerPerceptron', Dict[str, Any], str]:
         """
         Initialize class MultiLayerPerceptron with its name and hyperparemeters to fit in Modeler.
 
@@ -1606,15 +1585,11 @@ class MultiLayerPerceptron(Model):
             considered to be reached and training stops.
         :type tol: float, `optional`, defaults to `0.0001`
 
-        :param name:
-            Name of SupportVectorRegressor or SupportVectorClassifier model
-        :type name: str, `optional`, defaults to `''`
-
         :return: The MultiLayerPerceptron model fit on inputs and outputs.
         :rtype: Tuple['MultiLayerPerceptron', Dict[str, Any], str]
         """
-        return cls.init_for_modeler_(name=name, hidden_layer_sizes=hidden_layer_sizes, activation=activation,
-                                    alpha=alpha, solver=solver, max_iter=max_iter, tol=tol)
+        return cls.init_for_modeler_(hidden_layer_sizes=hidden_layer_sizes, activation=activation, alpha=alpha,
+                                     solver=solver, max_iter=max_iter, tol=tol)
 
     @classmethod
     def fit(cls, inputs: Matrix, outputs: Vector, hidden_layer_sizes: List[int] = None,
