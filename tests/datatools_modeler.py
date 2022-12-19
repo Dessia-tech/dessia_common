@@ -4,7 +4,7 @@ Tests for dessia_common.datatools.modeler file.
 from dessia_common.models import all_cars_no_feat
 from dessia_common.datatools.dataset import Dataset
 import dessia_common.datatools.models as models
-from dessia_common.datatools.modeler import Modeler
+from dessia_common.datatools.modeler import Modeler, ModelValidation, CrossValidation, ValidationData
 
 # TODO review the way data are generated
 # Load Data and put it in a Dataset (matrix is automatically computed)
@@ -17,7 +17,12 @@ output_names = ['mpg', 'weight']
 
 # Tests for matrix
 models_class, hyperparameters = models.RandomForestRegressor.init_for_modeler(n_estimators=60, max_depth=None)
-# modeler = Modeler.fit_matrix(inputs_train, outputs_train, models_class, hyperparameters, True, True, "test_modeler")
+modeler = Modeler.fit_dataset(dataset_example, input_names, output_names, models_class, hyperparameters, True, True,
+                              "test_modeler")
+
+# validation_data = ValidationData.from_dataset(dataset_example, input_names, output_names)
+test = CrossValidation.from_dataset(modeler, dataset_example, input_names, output_names, 5, 0.8, "validation_test")
+test.plot()
 
 # pp=modeler._plot_data_list(inputs_train, outputs_train, modeler.predict_matrix(inputs_train), input_names, output_names)
 
@@ -28,9 +33,13 @@ models_class, hyperparameters = models.RandomForestRegressor.init_for_modeler(n_
 # test_mdlr = Modeler.from_dataset_fit_validate(dataset_example, input_names, output_names, models_class, hyperparameters,
 #                                               True, True, 0.8, True, 'pouet')
 
-test = Modeler.cross_validation(dataset=dataset_example, input_names=input_names, output_names=output_names, class_=models_class,
-                                hyperparameters=hyperparameters, input_is_scaled=True, output_is_scaled=True, nb_tests=5,
-                                ratio=0.8, name='')
+# test = Modeler.cross_validation(dataset=dataset_example, input_names=input_names, output_names=output_names, class_=models_class,
+#                                 hyperparameters=hyperparameters, input_is_scaled=True, output_is_scaled=True, nb_tests=5,
+#                                 ratio=0.8, name='')
+
+# test = Modeler(None,None,None).plot(dataset=dataset_example, input_names=input_names, output_names=output_names, class_=models_class,
+#                                 hyperparameters=hyperparameters, input_is_scaled=True, output_is_scaled=True, nb_tests=5,
+#                                 ratio=0.8, name='')
 
 
 # print(test_mdlr[1])
