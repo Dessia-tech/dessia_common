@@ -6,7 +6,7 @@ from typing import List, Dict, Any, Tuple, Type, Union
 import numpy as npy
 
 from plot_data.core import Dataset as pl_Dataset
-from plot_data.core import EdgeStyle, Tooltip, MultiplePlots, PointStyle, Graph2D, Axis, Scatter, Window
+from plot_data.core import EdgeStyle, Tooltip, MultiplePlots, PointStyle, Graph2D, Axis
 from plot_data.colors import BLACK, RED, BLUE, WHITE
 
 from dessia_common.core import DessiaObject
