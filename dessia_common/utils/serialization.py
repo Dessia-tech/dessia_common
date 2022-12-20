@@ -21,7 +21,7 @@ from dessia_common.typings import InstanceOf
 from dessia_common.graph import explore_tree_from_leaves  # , cut_tree_final_branches
 from dessia_common.breakdown import get_in_object_from_path
 
-fullargsspec_cache = {}
+_fullargsspec_cache = {}
 
 
 def serialize_dict(dict_):
@@ -247,11 +247,11 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
 
             return obj
 
-        if class_ in fullargsspec_cache:
-            class_argspec = fullargsspec_cache[class_]
+        if class_ in _fullargsspec_cache:
+            class_argspec = _fullargsspec_cache[class_]
         else:
             class_argspec = inspect.getfullargspec(class_)
-            fullargsspec_cache[class_] = class_argspec
+            _fullargsspec_cache[class_] = class_argspec
 
         init_dict = {k: v for k, v in dict_.items() if k in class_argspec.args + class_argspec.kwonlyargs}
         # TOCHECK Class method to generate init_dict ??
