@@ -6,7 +6,7 @@ Created on Wed Jul 21 14:43:53 2021
 @author: steven
 """
 
-from dessia_common import is_bson_valid
+from dessia_common.core import is_bson_valid
 
 
 import unittest

@@ -23,7 +23,7 @@ else:
 
 test_passed = license_should_be_valid
 try:
-    from dessia_common.core import prettyname
+    from dessia_common.utils.helpers import prettyname
     prettyname('aa')
     print('No license error triggered')
 except RuntimeError:

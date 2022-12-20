@@ -10,7 +10,7 @@ from io import StringIO
 from typing import List, Dict, Any
 import numpy as np
 import pandas as pd
-from dessia_common import DessiaObject, Parameter, DessiaFilter
+from dessia_common.core import DessiaObject, Parameter, DessiaFilter
 
 
 class ParetoSettings(DessiaObject):
@@ -420,7 +420,7 @@ class Catalog(DessiaObject):
         # if not success:
         #     raise ValueError("No solutions found")
 
-    def plot_data(self):
+    def plot_data(self, **kwargs):
         raise NotImplementedError("This is deprecated and should not be used anymore")
         # from plot_data.core import Tooltip, TextStyle, SurfaceStyle,\
         #     Scatter, ParallelPlot, PointFamily, MultiplePlots

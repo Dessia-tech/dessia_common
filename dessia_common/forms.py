@@ -39,10 +39,11 @@ try:
 except ImportError:
     pass
 
-from dessia_common import DessiaObject, PhysicalObject, MovingObject
-from dessia_common.typings import InstanceOf, Distance
+from dessia_common.core import DessiaObject, PhysicalObject, MovingObject
+from dessia_common.typings import InstanceOf
 from dessia_common.vectored_objects import Catalog
-
+from dessia_common.measures import Distance
+from dessia_common.exports import MarkdownWriter
 
 from dessia_common.files import BinaryFile, StringFile
 
@@ -75,7 +76,7 @@ class StandaloneSubobject(PhysicalObject):
         crls = p2d.ClosedRoundedLineSegments2D(points=points, radius={})
         return crls
 
-    def plot_data(self):
+    def plot_data(self, **kwargs):
         primitives = [plot_data.Text(comment="Test with text", position_x=0, position_y=0),
                       plot_data.Text(comment="Test with text", position_x=0, position_y=0)]
         primitives_group = plot_data.PrimitiveGroup(primitives=primitives)
@@ -311,7 +312,7 @@ class StandaloneObject(MovingObject):
         return plot_data.Scatter(axis=plot_data.Axis(), tooltip=tooltip, x_variable=attributes[0],
                                  y_variable=attributes[1], name='Scatter Plot')
 
-    def plot_data(self):
+    def plot_data(self, **kwargs):
         # Contour
         contour = self.standalone_subobject.contour().plot_data()
         primitives_group = plot_data.PrimitiveGroup(primitives=[contour], name='Contour')
@@ -450,6 +451,8 @@ class StandaloneObject(MovingObject):
         Sua qua ac ire una facit Alcmene coepere
         arduus quae vestigia aliquis; meritorum Dorylas, scindunt.
         """
+        contents += "\n## Attribute Table\n\n"
+        contents += MarkdownWriter(print_limit=25, table_limit=None).object_table(self)
         return contents
 
     def count_until(self, duration: float, raise_error: bool = False):
@@ -536,6 +539,7 @@ class ObjectWithOtherTypings(DessiaObject):
     """
     Dummy class to test some typing jsonschemas
     """
+
     def __init__(self, undefined_type_attribute: Any, name: str = ""):
         self.undefined_type_attribute = undefined_type_attribute
 
@@ -551,7 +555,7 @@ class MovingStandaloneObject(MovingObject):
 
     @classmethod
     def generate(cls, seed: int):
-        return cls(origin=1.3*seed, name=f"moving_{seed}")
+        return cls(origin=1.3 * seed, name=f"moving_{seed}")
 
     def contour(self):
         points = [vm.Point2D(self.origin, self.origin), vm.Point2D(self.origin, self.origin + 1),

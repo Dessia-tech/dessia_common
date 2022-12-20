@@ -4,14 +4,14 @@ Tests for dessia_common.DessiaFilters/FiltersList class
 import itertools
 from dessia_common.models import all_cars_no_feat, all_cars_wi_feat, rand_data_large
 from dessia_common.core import DessiaFilter, FiltersList
-from dessia_common.datatools import HeterogeneousList
+from dessia_common.datatools.dataset import Dataset
 
 # When attribute _features is not specified in class Car
-all_cars_without_features = HeterogeneousList(all_cars_no_feat)
+all_cars_without_features = Dataset(all_cars_no_feat)
 # When attribute _features is specified in class CarWithFeatures
-all_cars_with_features = HeterogeneousList(all_cars_wi_feat)
+all_cars_with_features = Dataset(all_cars_wi_feat)
 # Auto-generated heterogeneous dataset with nb_clusters clusters of points in nb_dims dimensions
-RandData_heterogeneous = HeterogeneousList(rand_data_large)
+RandData_heterogeneous = Dataset(rand_data_large)
 
 # Filters creation
 weight_val = 2000.
@@ -42,7 +42,7 @@ assert(all(item in all_cars_without_features.filtering(filters_list)
 
 # And with empty result
 filters_list = FiltersList([filter_1, filter_2], logical_operator="and")
-assert(all_cars_without_features.filtering(filters_list) == HeterogeneousList())
+assert(all_cars_without_features.filtering(filters_list) == Dataset())
 
 # Xor
 filter_1 = DessiaFilter('weight', 'le', weight_val)

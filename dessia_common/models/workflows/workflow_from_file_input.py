@@ -2,7 +2,7 @@
 Test Workflow to check good behavior with file inputs
 """
 
-from dessia_common.workflow import Workflow
+from dessia_common.workflow.core import Workflow
 from dessia_common.workflow.blocks import ClassMethod
 from dessia_common.utils.types import ClassMethodType
 from dessia_common.forms import StandaloneObject

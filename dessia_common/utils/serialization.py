@@ -13,8 +13,7 @@ from ast import literal_eval
 from typing import get_origin, get_args, Union, Any, BinaryIO, TextIO
 from numpy import int64, float64
 import networkx as nx
-import dessia_common as dc
-import dessia_common.core
+import dessia_common.core as dc
 import dessia_common.errors as dc_err
 from dessia_common.files import StringFile, BinaryFile
 import dessia_common.utils.types as dcty
@@ -48,7 +47,7 @@ def serialize(value):
     Main function for serialization without pointers
     Calls recursively itself serialize_sequence and serialize_dict
     """
-    if isinstance(value, (dc.DessiaObject, dessia_common.core.DessiaObject)):
+    if isinstance(value, dc.DessiaObject):
         try:
             serialized_value = value.to_dict(use_pointers=False)
         except TypeError:
@@ -85,7 +84,7 @@ def serialize_with_pointers(value, memo=None, path='#'):
     """
     if memo is None:
         memo = {}
-    if isinstance(value, (dc.DessiaObject, dessia_common.core.DessiaObject)):
+    if isinstance(value, dc.DessiaObject):
         if value in memo:
             return {'$ref': memo[value]}, memo
         try:
@@ -96,11 +95,18 @@ def serialize_with_pointers(value, memo=None, path='#'):
             serialized = value.to_dict()
         memo[value] = path
 
+    elif isinstance(value, type):
+        if value in memo:
+            return {'$ref': memo[value]}, memo
+        serialized = dcty.serialize_typing(value)
+        memo[value] = path
+
     elif hasattr(value, 'to_dict'):
         if value in memo:
             return {'$ref': memo[value]}, memo
         serialized = value.to_dict()
         memo[value] = path
+
     elif isinstance(value, dict):
         serialized, memo = serialize_dict_with_pointers(value, memo=memo, path=path)
     elif dcty.is_sequence(value):
@@ -112,7 +118,7 @@ def serialize_with_pointers(value, memo=None, path='#'):
         serialized = serialize(value)
     else:
         if not dcty.is_jsonable(value):
-            msg = f'Element of value {value} is not json serializable'
+            msg = f'Element of value {value} (type: {value.__class__.__name__}) is not json serializable'
             raise dc_err.SerializationError(msg)
         serialized = value
     return serialized, memo
@@ -183,6 +189,10 @@ def deserialize(serialized_element, sequence_annotation: str = 'List',
     if dcty.is_sequence(serialized_element):
         return deserialize_sequence(sequence=serialized_element, annotation=sequence_annotation,
                                     global_dict=global_dict, pointers_memo=pointers_memo, path=path)
+    if isinstance(serialized_element, str):
+        is_class_transformed = dcty.is_classname_transform(serialized_element)
+        if is_class_transformed:
+            return is_class_transformed
     return serialized_element
 
 
@@ -210,8 +220,9 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
     """
     class_argspec = None
 
-    global_dict, pointers_memo = update_pointers_data(global_dict=global_dict, current_dict=dict_,
-                                                      pointers_memo=pointers_memo)
+    if pointers_memo is None or global_dict is None:
+        global_dict, pointers_memo = update_pointers_data(global_dict=global_dict, current_dict=dict_,
+                                                          pointers_memo=pointers_memo)
 
     if '$ref' in dict_:
         try:
@@ -332,9 +343,11 @@ def deserialize_with_typing(type_, argument):
         deserialized_arg = argument
     elif origin is InstanceOf:
         classname = args[0]
-        object_class = dc.full_classname(object_=classname, compute_for='class')
+        object_class = dcty.full_classname(object_=classname, compute_for='class')
         class_ = dcty.get_python_class_from_class_name(object_class)
         deserialized_arg = class_.dict_to_object(argument)
+    elif type_ == dcty.Type:
+        deserialized_arg = dcty.is_classname_transform(argument)
     else:
         msg = "Deserialization of typing {} is not implemented"
         raise NotImplementedError(msg.format(type_))
@@ -347,6 +360,10 @@ def deserialize_argument(type_, argument):
     """
     if argument is None:
         return None
+
+    if isinstance(argument, dc.DessiaObject):
+        return argument
+
     if dcty.is_typing(type_):
         return deserialize_with_typing(type_, argument)
 
@@ -367,9 +384,12 @@ def deserialize_argument(type_, argument):
     if type_ is Any:
         # Any type
         return argument
-    if inspect.isclass(type_) and issubclass(type_, (dc.DessiaObject, dessia_common.core.DessiaObject)):
+    if inspect.isclass(type_) and issubclass(type_, dc.DessiaObject):
         # Custom classes
         return type_.dict_to_object(argument)
+
+    if type_ == dcty.Type:
+        return dcty.is_classname_transform(argument)
 
     raise TypeError(f"Deserialization of ype {type_} is Not Implemented")
 
@@ -430,8 +450,9 @@ def pointer_graph(value):
 
     # refs = []
     refs_by_path = {}
+    references = find_references(value)
 
-    for path, reference in find_references(value):
+    for path, reference in references:
         # refs.append(reference)
         refs_by_path[path] = reference
         # Slitting path & reference to add missing nodes
@@ -462,7 +483,6 @@ def pointer_graph(value):
     graph.add_edges_from(path_edges, path=True)
     graph.add_edges_from(pointer_edges, head_type='circle', color='#008000', path=False)
 
-    references = find_references(value)
     refs_by_path = {r[0]: r[1] for r in references}
     extra_edges = []
     new_paths = {}

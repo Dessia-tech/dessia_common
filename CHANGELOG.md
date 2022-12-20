@@ -5,21 +5,77 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## 0.11.0
+
+### Fixed
+- Workflow pipe order when copy
+- Diff Dict is now robust to uneven arguments commutation
+- Fix path deepth when dict misses keys
+
+### Changed
+- Refactor copy_pipes and nbv checking
+
+## v0.10.2
+
+- non serializable attributes were not working
+- wrong import to sklearn -> scikit-learn
+
+## v0.10.1
+
+### Fixed
+- jsonschema bug
+- time rendering on workflow
+
+## v0.10.0
+
+### Added
+- Sampler class
+- (De)Serialization handles 'typing.Type'
+- Workflow: handle position in to_dict / dict_to_object process
+- sub_matrix method to Dataset
+
+
+### Breaking Changes
+- Measures moved to dessia_common.measures
+- HeterogeneousList becomes Dataset
+- CategorizedList becomes ClusteredDataset
+- Change file organization for datatools:
+    * File datatools.py becomes directory datatools
+    * class Dataset is now coded in file dataset.py
+    * class ClusteredDataset is now coded in file cluster.py
+    * class Sampler is now coded in file sampling.py
+    * Metrics function are now coded in file metrics.py
+- Retrocompatibility is supported for the present time, with a big warning
+- pareto methods of datatools are now called with a list of attributes and not anymore a costs matrix
+
+
+### Changes
+- Workflow: improve layout method
+
+### Performance
+- switch is_jsonable to orjson
+
+### Fixed
+- Workflow: improve to_script
+
+
+## v0.10.0 [9/26/2022]
 
 ### Added
 - FiltersList class
-- Easy access to HeterogeneousList with getitem, len, add, extend, sort
-- filtering method in HeterogeneousList that calls a FiltersList
-- Documentation for HeterogeneousList, CategorizedList, DessiaFilter, FiltersList
-- pareto front and parallel plot for HeterogeneousList
+- Easy access to Dataset with getitem, len, add, extend, sort
+- filtering method in Dataset that calls a FiltersList
+- Documentation for Dataset (previously HeterogeneousList), ClusteredDataset (previously CategorizedList), DessiaFilter, FiltersList
+- pareto front and parallel plot for Dataset
 - Sort parallel plot axis with correlation coefficient (experimental algorithm that seems to work)
+- Metrics for Dataset (previously HeterogeneousList) and ClusteredDataset (previously CategorizedList)
+- Centroids for ClusteredDataset (previously CategorizedList)
 - Nearly all required tests for all these developments
 
 ### Breaking Changes
 - Change attribute "operator" of DessiaFilter to "comparison_operator"
 - Change name of file "cluster.py" to "datatools.py"
-- Move HeterogeneousList in "datatools.py"
+- Move Dataset in "datatools.py"
 
 ### Changes
 - Add 'logical_operator="and"' attribute to workflow.block.Filter

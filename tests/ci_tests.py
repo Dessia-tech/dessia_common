@@ -6,19 +6,22 @@ scripts = ['displays.py',
            'models_test.py',
            'files.py',
            'clustering.py',
-           'heterogeneous_list.py',
-           'heterogeneous_list_pareto.py',
+           'dataset.py',
+           'dataset_pareto.py',
            'filters.py',
            'moving_object.py',
            'optimization.py',
            'graph.py',
            'jsonschema.py',
+           'sampling.py',
+           'markdowns.py',
            # Workflows
            'workflow/blocks.py',
            'workflow/workflow_with_models.py',
            'workflow/to_script.py',
            'workflow/power_simulation.py',
            'workflow/forms_simulation.py',
+           'workflow/pipes.py',
            'workflow/workflow_state_equalities.py',
            'workflow/workflow_diverge_converge.py',
            'workflow/workflow_clustering.py',
@@ -27,6 +30,7 @@ scripts = ['displays.py',
            'workflow/workflow_method_dict.py',
            'workflow/various_tests.py',
            'workflow/workflow_building.py',
+           'workflow/workflow_sampling.py',
            # breakdown
            'breakdown.py',
            # Utils
@@ -35,6 +39,7 @@ scripts = ['displays.py',
            'utils/serialization.py',
            'utils/helpers.py',
            'utils/types.py',
+           "utils/diff.py"
            'type_matching.py',
            # Unit tests
            'unit_tests.py',
@@ -47,4 +52,4 @@ for script_name in scripts:
 
 # This needs to be executed once all "assert-tests" have been run + once all unittests are defined
 if __name__ == '__main__':
-    unittest.main(verbosity=2)
+    unittest.main(verbosity=3)
