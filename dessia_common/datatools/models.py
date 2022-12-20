@@ -1549,7 +1549,7 @@ class MultiLayerPerceptron(Model):
                 'out_activation_': model.out_activation_}
 
     @classmethod
-    def init_for_modeler(cls, hidden_layer_sizes: List[int] = [100], activation: str = 'relu', alpha: float = 0.0001,
+    def init_for_modeler(cls, hidden_layer_sizes: List[int], activation: str = 'relu', alpha: float = 0.0001,
                          solver: str = 'adam', max_iter: int = 200,
                          tol: float = 0.0001) -> Tuple['MultiLayerPerceptron', Dict[str, Any], str]:
         """
@@ -1558,7 +1558,7 @@ class MultiLayerPerceptron(Model):
         :param hidden_layer_sizes:
             Regularization parameter. The strength of the regularization is inversely proportional to C.
             Must be strictly positive. The penalty is a squared l2 penalty.
-        :type hidden_layer_sizes: List[int], `optional`, defaults to `[100]`
+        :type hidden_layer_sizes: List[int]
 
         :param activation:
             Activation function for the hidden layer:
@@ -1602,9 +1602,9 @@ class MultiLayerPerceptron(Model):
                                      solver=solver, max_iter=max_iter, tol=tol)
 
     @classmethod
-    def fit(cls, inputs: Matrix, outputs: Vector, hidden_layer_sizes: List[int] = [100],
-            activation: str = 'relu', alpha: float = 0.0001, solver: str = 'adam', max_iter: int = 200,
-            tol: float = 0.0001, name: str = '') -> 'MultiLayerPerceptron':
+    def fit(cls, inputs: Matrix, outputs: Vector, hidden_layer_sizes: List[int], activation: str = 'relu',
+            alpha: float = 0.0001, solver: str = 'adam', max_iter: int = 200, tol: float = 0.0001,
+            name: str = '') -> 'MultiLayerPerceptron':
         """
         Standard method to fit outputs to inputs thanks to MLPRegressor or MLPClassifier models from scikit-learn.
 
@@ -1623,7 +1623,7 @@ class MultiLayerPerceptron(Model):
         :param hidden_layer_sizes:
             Regularization parameter. The strength of the regularization is inversely proportional to C.
             Must be strictly positive. The penalty is a squared l2 penalty.
-        :type hidden_layer_sizes: List[int], `optional`, defaults to `[100]`
+        :type hidden_layer_sizes: List[int]
 
         :param activation:
             Activation function for the hidden layer:
@@ -1668,10 +1668,9 @@ class MultiLayerPerceptron(Model):
                         alpha=alpha, solver=solver, max_iter=max_iter, tol=tol)
 
     @classmethod
-    def fit_predict(cls, inputs: Matrix, outputs: Vector, predicted_inputs: Matrix,
-                    hidden_layer_sizes: List[int] = [100], activation: str = 'relu', alpha: float = 0.0001,
-                    solver: str = 'adam', max_iter: int = 200, tol: float = 0.0001,
-                    name: str = '') -> Tuple['MultiLayerPerceptron', Union[Vector, Matrix]]:
+    def fit_predict(cls, inputs: Matrix, outputs: Vector, predicted_inputs: Matrix, hidden_layer_sizes: List[int],
+                    activation: str = 'relu', alpha: float = 0.0001, solver: str = 'adam', max_iter: int = 200,
+                    tol: float = 0.0001, name: str = '') -> Tuple['MultiLayerPerceptron', Union[Vector, Matrix]]:
         """
         Fit outputs to inputs and predict outputs for predicted_inputs. It is the succession of fit and predict methods.
         """
