@@ -1008,8 +1008,7 @@ class RandomForest(Model):
         """
         criterion = cls._check_criterion(criterion)
         outputs = matrix_1d_to_vector(outputs)
-        return cls.fit_(inputs, outputs, name=name, n_estimators=n_estimators, criterion=criterion, max_depth=max_depth,
-                        n_jobs=1)
+        return cls.fit_(inputs, outputs, name=name, n_estimators=n_estimators, criterion=criterion, max_depth=max_depth)
 
     @classmethod
     def fit_predict(cls, inputs: Matrix, outputs: Matrix, predicted_inputs: Matrix, n_estimators: int = 100,

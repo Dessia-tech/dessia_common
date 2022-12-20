@@ -20,36 +20,32 @@ input_names_clf = ['displacement', 'horsepower', 'model', 'acceleration', 'mpg',
 output_names_clf = ['cylinders']
 
 # Load class of models with their hyperparameters
-Ri_class, Ri_hyperparams = models.Ridge.init_for_modeler(alpha=0.01, fit_intercept=True, tol=0.01)
-LR_class, LR_hyperparams = models.LinearRegression.init_for_modeler(fit_intercept=True, positive=False)
-DR_class, DR_hyperparams = models.DecisionTreeRegressor.init_for_modeler(criterion='squared_error', max_depth=None)
-DC_class, DC_hyperparams = models.DecisionTreeClassifier.init_for_modeler(criterion='gini', max_depth=None)
-RR_class, RR_hyperparams = models.RandomForestRegressor.init_for_modeler(n_estimators=10, criterion='squared_error',
-                                                                         max_depth=None)
-RC_class, RC_hyperparams = models.RandomForestClassifier.init_for_modeler(n_estimators=10, criterion='gini',
-                                                                          max_depth=None)
-MR_class, MR_hyperparams = models.MLPRegressor.init_for_modeler(hidden_layer_sizes=(50, 50, 50), activation='relu',
-                                                                max_iter=500)
-MC_class, MC_hyperparams = models.MLPClassifier.init_for_modeler(hidden_layer_sizes=(50, 50, 50), activation='relu',
-                                                                 max_iter=500)
+Ri_model = models.Ridge.init_for_modeler(alpha=0.01, fit_intercept=True, tol=0.01)
+LR_model = models.LinearRegression.init_for_modeler(fit_intercept=True, positive=False)
+DR_model = models.DecisionTreeRegressor.init_for_modeler(criterion='squared_error', max_depth=None)
+DC_model = models.DecisionTreeClassifier.init_for_modeler(criterion='gini', max_depth=None)
+RR_model = models.RandomForestRegressor.init_for_modeler(n_estimators=10, criterion='squared_error', max_depth=None)
+RC_model = models.RandomForestClassifier.init_for_modeler(n_estimators=10, criterion='gini', max_depth=None)
+MR_model = models.MLPRegressor.init_for_modeler(hidden_layer_sizes=(50, 50, 50), activation='relu', max_iter=500)
+MC_model = models.MLPClassifier.init_for_modeler(hidden_layer_sizes=(50, 50, 50), activation='relu', max_iter=500)
 
 # Train models and predict data
 Ri_mdlr, Ri_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_reg, output_names_reg_solo,
-                                               Ri_class, Ri_hyperparams, True, True, "ridge_modeler")
+                                               Ri_model, True, True, "ridge_modeler")
 LR_mdlr, LR_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_reg, output_names_reg_solo,
-                                               LR_class, LR_hyperparams, True, True, "linear_regression_modeler")
+                                               LR_model, True, True, "linear_regression_modeler")
 DR_mdlr, DR_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_reg, output_names_reg_solo,
-                                               DR_class, DR_hyperparams, True, True, "DTRegressor_modeler")
+                                               DR_model, True, True, "DTRegressor_modeler")
 DC_mdlr, DC_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_clf, output_names_clf,
-                                               DC_class, DC_hyperparams, True, False, "DTClassifier_modeler")
+                                               DC_model, True, False, "DTClassifier_modeler")
 RR_mdlr, RR_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_reg, output_names_reg_solo,
-                                               RR_class, RR_hyperparams, True, True, "RFRegressor_modeler")
+                                               RR_model, True, True, "RFRegressor_modeler")
 RC_mdlr, RC_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_clf, output_names_clf,
-                                               RC_class, RC_hyperparams, True, False, "RFClassifier_modeler")
+                                               RC_model, True, False, "RFClassifier_modeler")
 MR_mdlr, MR_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_reg, output_names_reg_solo,
-                                               MR_class, MR_hyperparams, True, True, "MLPRegressor_modeler")
+                                               MR_model, True, True, "MLPRegressor_modeler")
 MC_mdlr, MC_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_clf, output_names_clf,
-                                               MC_class, MC_hyperparams, True, False, "MLPClassifier_modeler")
+                                               MC_model, True, False, "MLPClassifier_modeler")
 # TODO: make impossible scaling for classifier (set to False in any case)
 
 # Run cross_validation for all models instantiated in a Modeler
