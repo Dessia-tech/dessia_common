@@ -2,6 +2,7 @@
 Tests for dessia_common.datatools.models file
 
 """
+import time
 import numpy as npy
 from sklearn import linear_model, tree, ensemble, svm, neural_network
 
@@ -91,7 +92,7 @@ dessia_classes = {'ridge_regressor': models.Ridge, 'linearreg_regressor': models
 # Assert regenerated sklearn models from dessia models make the same predictions as sklearn models from sklearn.fit
 dessia_models = {}
 for key, model in skl_models.items():
-    dessia_models[key] = dessia_classes[key]._instantiate_dessia(model)
+    dessia_models[key] = dessia_classes[key]._instantiate_dessia(model, hyperparameters[key])
     assert(npy.all(dessia_models[key].predict(std_inputs[-10:]) == model.predict(std_inputs[-10:])))
 
 
@@ -118,13 +119,15 @@ for key, model in skl_models.items():
     except ValueError as e:
         assert(e.args[0] == 'multiclass-multioutput is not supported' and
                isinstance(dessia_models[key], models.DecisionTreeClassifier))
+    t=time.time()
     dessia_models[key]._check_platform()
+    print(key, time.time()-t)
 
 
 # Tests errors and base objects
-base_models = [models.Scaler(), models.Model(), models.LinearModel(), models.RandomForest(),
-               models.SupportVectorMachine(), models.MultiLayerPerceptron()]
-model = models.Model()
+base_models = [models.Scaler(None), models.Model(None), models.LinearModel(None), models.RandomForest(None),
+               models.SupportVectorMachine(None), models.MultiLayerPerceptron(None)]
+model = models.Model(None)
 
 for base_model in base_models:
     try:
@@ -140,7 +143,7 @@ except NotImplementedError as e:
     assert isinstance(e, NotImplementedError)
 
 try:
-    model._instantiate_dessia(None)
+    model._instantiate_dessia(None, None)
     raise ValueError("_instantiate_dessia() should not work for Model object.")
 except NotImplementedError as e:
     assert isinstance(e, NotImplementedError)

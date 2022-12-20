@@ -4,19 +4,21 @@ Tests for dessia_common.datatools.modeler file.
 from dessia_common.models import all_cars_no_feat
 from dessia_common.datatools.dataset import Dataset
 import dessia_common.datatools.models as models
-from dessia_common.datatools.modeler import Modeler #, CrossValidation, ValidationData, ModelValidation
+from dessia_common.datatools.modeler import Modeler, CrossValidation #, ValidationData, ModelValidation
 
-# Load Data and put it in a Dataset (matrix is automatically computed)
-dataset_example = Dataset(all_cars_no_feat)
+# ======================================================================================================================
+#                                            F R O M   D A T A S E T
+# ======================================================================================================================
+
+# Load data and put it in a Dataset (matrix is automatically computed)
+dataset_for_fit = Dataset(all_cars_no_feat)[:-10]
+dataset_to_pred = Dataset(all_cars_no_feat)[-10:]
 input_names_reg = ['displacement', 'horsepower', 'model', 'acceleration', 'cylinders']
 output_names_reg = ['mpg', 'weight']
 output_names_reg_solo = ['weight']
 input_names_clf = ['displacement', 'horsepower', 'model', 'acceleration', 'mpg', 'weight']
 output_names_clf = ['cylinders']
 
-# ======================================================================================================================
-#                                            F R O M   D A T A S E T
-# ======================================================================================================================
 # Load class of models with their hyperparameters
 Ri_class, Ri_hyperparams = models.Ridge.init_for_modeler(alpha=0.01, fit_intercept=True, tol=0.01)
 LR_class, LR_hyperparams = models.LinearRegression.init_for_modeler(fit_intercept=True, positive=False)
@@ -31,24 +33,36 @@ MR_class, MR_hyperparams = models.MLPRegressor.init_for_modeler(hidden_layer_siz
 MC_class, MC_hyperparams = models.MLPClassifier.init_for_modeler(hidden_layer_sizes=(50, 50, 50), activation='relu',
                                                                  max_iter=500)
 
-# Run cross_validation for all models instantiated in a Modeler
-Ri_mdlr, CV_Ri = Modeler.cross_validation(dataset_example, input_names_reg, output_names_reg_solo, Ri_class,
-                                          Ri_hyperparams, True, True, 3, 0.8, "ridge_modeler")
-LR_mdlr, CV_LR = Modeler.cross_validation(dataset_example, input_names_reg, output_names_reg_solo, LR_class,
-                                          LR_hyperparams, True, True, 3, 0.8, "linearregression_modeler")
-DR_mdlr, CV_DR = Modeler.cross_validation(dataset_example, input_names_reg, output_names_reg_solo, DR_class,
-                                          DR_hyperparams, True, True, 3, 0.8, "DTRegressor_modeler")
-DC_mdlr, CV_DC = Modeler.cross_validation(dataset_example, input_names_clf, output_names_clf, DC_class,
-                                          DC_hyperparams, True, False, 3, 0.8, "DTClassifier_modeler")
-RR_mdlr, CV_RR = Modeler.cross_validation(dataset_example, input_names_reg, output_names_reg_solo, RR_class,
-                                          RR_hyperparams, True, True, 3, 0.8, "RFRegressor_modeler")
-RC_mdlr, CV_RC = Modeler.cross_validation(dataset_example, input_names_clf, output_names_clf, RC_class,
-                                          RC_hyperparams, True, False, 3, 0.8, "RFClassifier_modeler")
-MR_mdlr, CV_MR = Modeler.cross_validation(dataset_example, input_names_reg, output_names_reg_solo, MR_class,
-                                          MR_hyperparams, True, True, 3, 0.8, "MLPRegressor_modeler")
-MC_mdlr, CV_MC = Modeler.cross_validation(dataset_example, input_names_clf, output_names_clf, MC_class,
-                                          MC_hyperparams, True, False, 3, 0.8, "MLPClassifier_modeler")
+# Train models and predict data
+Ri_mdlr, Ri_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_reg, output_names_reg_solo,
+                                               Ri_class, Ri_hyperparams, True, True, "ridge_modeler")
+LR_mdlr, LR_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_reg, output_names_reg_solo,
+                                               LR_class, LR_hyperparams, True, True, "linear_regression_modeler")
+DR_mdlr, DR_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_reg, output_names_reg_solo,
+                                               DR_class, DR_hyperparams, True, True, "DTRegressor_modeler")
+DC_mdlr, DC_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_clf, output_names_clf,
+                                               DC_class, DC_hyperparams, True, False, "DTClassifier_modeler")
+RR_mdlr, RR_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_reg, output_names_reg_solo,
+                                               RR_class, RR_hyperparams, True, True, "RFRegressor_modeler")
+RC_mdlr, RC_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_clf, output_names_clf,
+                                               RC_class, RC_hyperparams, True, False, "RFClassifier_modeler")
+MR_mdlr, MR_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_reg, output_names_reg_solo,
+                                               MR_class, MR_hyperparams, True, True, "MLPRegressor_modeler")
+MC_mdlr, MC_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_clf, output_names_clf,
+                                               MC_class, MC_hyperparams, True, False, "MLPClassifier_modeler")
+# TODO: make impossible scaling for classifier (set to False in any case)
 
+# Run cross_validation for all models instantiated in a Modeler
+CV_Ri = CrossValidation.from_dataset(Ri_mdlr, dataset_for_fit, input_names_reg, output_names_reg_solo, 3, 0.8)
+CV_LR = CrossValidation.from_dataset(LR_mdlr, dataset_for_fit, input_names_reg, output_names_reg_solo, 3, 0.8)
+CV_DR = CrossValidation.from_dataset(DR_mdlr, dataset_for_fit, input_names_reg, output_names_reg_solo, 3, 0.8)
+CV_DC = CrossValidation.from_dataset(DC_mdlr, dataset_for_fit, input_names_clf, output_names_clf, 3, 0.8)
+CV_RR = CrossValidation.from_dataset(RR_mdlr, dataset_for_fit, input_names_reg, output_names_reg_solo, 3, 0.8)
+CV_RC = CrossValidation.from_dataset(RC_mdlr, dataset_for_fit, input_names_clf, output_names_clf, 3, 0.8)
+CV_MR = CrossValidation.from_dataset(MR_mdlr, dataset_for_fit, input_names_reg, output_names_reg_solo, 3, 0.8)
+CV_MC = CrossValidation.from_dataset(MC_mdlr, dataset_for_fit, input_names_clf, output_names_clf, 3, 0.8)
+
+# Plot cross validations
 CV_Ri.plot()
 CV_LR.plot()
 CV_DR.plot()

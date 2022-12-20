@@ -638,7 +638,7 @@ class Dataset(DessiaObject):
         scaled_matrix = preprocessing.StandardScaler().fit_transform(data_matrix)
         return [list(map(float, row.tolist())) for row in scaled_matrix]
 
-    def plot_data(self):
+    def plot_data(self, **_):
         """
         Plot a standard scatter matrix of all attributes in common_attributes and a dimensionality plot.
         """

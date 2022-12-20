@@ -303,7 +303,7 @@ class ClusteredDataset(Dataset):
     def _tooltip_attributes(self):
         return self.common_attributes + ["Cluster Label"]
 
-    def plot_data(self):
+    def plot_data(self, **_):
         """
         Plot data method.
 
