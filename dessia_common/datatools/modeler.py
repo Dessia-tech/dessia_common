@@ -241,7 +241,7 @@ class Modeler(DessiaObject):
         """
         modeler, predictions = cls._fit_predict(inputs, outputs, predicted_outputs, class_, hyperparameters,
                                                 input_is_scaled, output_is_scaled, name)
-        return modeler, cls._format_output(predictions)
+        return modeler, modeler._format_output(predictions)
 
     @classmethod
     def fit_predict_dataset(cls, fit_dataset: Dataset, to_predict_dataset: Dataset, input_names: List[str],
@@ -421,103 +421,57 @@ class Modeler(DessiaObject):
         return
 
 
-
 class ValidationData(DessiaObject):
     def __init__(self, input_train: Matrix, input_test: Matrix, output_train: Matrix, output_test: Matrix,
-                 input_names: List[str], output_names: List[str], name: str = ''):
+                 pred_train: Matrix, pred_test: Matrix,input_names: List[str], output_names: List[str],
+                 name: str = ''):
         self.input_train = input_train
         self.input_test = input_test
         self.output_train = output_train
         self.output_test = output_test
+        self.pred_train = pred_train
+        self.pred_test = pred_test
         self.input_names = input_names
         self.output_names = output_names
         DessiaObject.__init__(self, name=name)
 
-    @classmethod
-    def from_dataset(cls, dataset: Dataset, input_names: List[str], output_names: List[str], ratio: float = 0.8,
-                     name: str = '') -> 'ValidationData':
-        return cls(*dataset.train_test_split(input_names, output_names, ratio), input_names, output_names, name)
+    def _concatenate_outputs(self) -> Matrix:
+        return self.output_train + self.output_test + self.pred_train + self.pred_test
 
-    @classmethod
-    def from_matrix(cls, inputs: Matrix, outputs: Matrix, input_names: List[str], output_names: List[str],
-                    ratio: float = 0.8, name: str = '') -> 'ValidationData':
-        return cls(*models.train_test_split(inputs, outputs, ratio), input_names, output_names, name)
-
-
-
-class ModelValidation(DessiaObject):
-    def __init__(self, modeler: Modeler, validation_data: ValidationData, name: str = ''):
-        self.modeler = modeler
-        self.data = validation_data
-        self._pred_train = None
-        self._pred_test = None
-        self._score = None
-        DessiaObject.__init__(self, name=name)
-# TODO: is this too heavy ?
-
-    def _pred(self, train_or_test: str) -> Matrix:
-        pred_name = f'_pred_{train_or_test}'
-        if getattr(self, pred_name) is None:
-            setattr(self, pred_name, self.modeler.predict_matrix(getattr(self.data, f"input_{train_or_test}")))
-        return getattr(self, pred_name)
-
-    @property
-    def pred_train(self) -> Matrix:
-        return self._pred("train")
-
-    @property
-    def pred_test(self) -> Matrix:
-        return self._pred("test")
-
-    @property
-    def score(self) -> float:
-        if self._score is None:
-            self._score = self.modeler.score_matrix(self.data.input_test, self.data.output_test)
-        return self._score
-
-    @property
-    def concatenate_outputs(self) -> Matrix:
-        return self.data.output_train + self.data.output_test + self.pred_train + self.pred_test
-
-    @property
     def _matrix_ranges(self) -> Matrix:
-        return matrix_ranges(self.concatenate_outputs, nb_points=10)
+        return matrix_ranges(self._concatenate_outputs(), nb_points=10)
 
-    @property
     def _ref_val_names(self) -> List[str]:
-        return [[name + '_ref', name + '_pred'] for name in self.data.output_names]
+        return [[name + '_ref', name + '_pred'] for name in self.output_names]
 
-    @property
     def _tooltip(self) -> Tooltip:
-        return Tooltip(self.data.input_names + sum(self._ref_val_names, []))
+        return Tooltip(self.input_names + sum(self._ref_val_names(), []))
 
     def _points(self, inputs: Matrix, ref_outputs: Matrix, pred_outputs: Matrix) -> Points:
         points_list = []
         for input_, ref_out, pred_out in zip(inputs, ref_outputs, pred_outputs):
-            points_list.append({attr: input_[col] for col, attr in enumerate(self.data.input_names)})
-            points_list[-1].update({f"{attr}_ref": ref_out[col] for col, attr in enumerate(self.data.output_names)})
-            points_list[-1].update({f"{attr}_pred": pred_out[col] for col, attr in enumerate(self.data.output_names)})
+            points_list.append({attr: input_[col] for col, attr in enumerate(self.input_names)})
+            points_list[-1].update({f"{attr}_ref": ref_out[col] for col, attr in enumerate(self.output_names)})
+            points_list[-1].update({f"{attr}_pred": pred_out[col] for col, attr in enumerate(self.output_names)})
         return points_list
 
     def _ref_val_datasets(self, points_train: Points, points_test: Points) -> List[pl_Dataset]:
-        ref_args = {'point_style': REF_POINT_STYLE, 'edge_style': NO_LINE, 'name': 'Train data',
-                    'tooltip': self._tooltip}
-        val_args = {'point_style': VAL_POINT_STYLE, 'edge_style': NO_LINE, 'name': 'Test data',
-                    'tooltip': self._tooltip}
+        tooltip = self._tooltip()
+        ref_args = {'point_style': REF_POINT_STYLE, 'edge_style': NO_LINE, 'name': 'Train data', 'tooltip': tooltip}
+        val_args = {'point_style': VAL_POINT_STYLE, 'edge_style': NO_LINE, 'name': 'Test data', 'tooltip': tooltip}
         return [pl_Dataset(elements=points_test, **val_args), pl_Dataset(elements=points_train, **ref_args)]
 
     def _bisectrice_points(self) -> Points:
         hack_bisectrices = []
-        for point in zip(*self._matrix_ranges):
-            hack_bisectrices.append({f"{self.data.output_names[0]}_ref": point[0],
-                                     f"{self.data.output_names[0]}_pred": point[0]})
-            for idx, name in enumerate(self.data.output_names):
+        for point in zip(*self._matrix_ranges()):
+            hack_bisectrices.append({f"{self.output_names[0]}_ref": point[0], f"{self.output_names[0]}_pred": point[0]})
+            for idx, name in enumerate(self.output_names):
                 hack_bisectrices[-1].update({name + '_ref': point[idx], name + '_pred': point[idx]})
         return hack_bisectrices
 
     def _to_val_points(self) -> List[pl_Dataset]:
-        points_train = self._points(self.data.input_train, self.data.output_train, self.pred_train)
-        points_test = self._points(self.data.input_test, self.data.output_test, self.pred_test)
+        points_train = self._points(self.input_train, self.output_train, self.pred_train)
+        points_test = self._points(self.input_test, self.output_test, self.pred_test)
         return points_train, points_test, self._bisectrice_points()
 
     def build_graphs(self) -> List[Graph2D]:
@@ -530,17 +484,9 @@ class ModelValidation(DessiaObject):
                                       name="Reference = Predicted"))
 
         graphs = []
-        for (ref, pred) in self._ref_val_names:
+        for (ref, pred) in self._ref_val_names():
             graphs.append(Graph2D(graphs=pl_datasets, axis=axis_style(10, 10), x_variable=ref, y_variable=pred))
         return graphs, points_train + points_test + points_bisectrice
-
-    @classmethod
-    def from_dataset(cls, modeler: Modeler, dataset: Dataset, input_names: List[str], output_names: List[str],
-                     ratio: float = 0.8, name: str = '') -> 'ModelValidation':
-        validation_data = ValidationData.from_dataset(dataset, input_names, output_names, ratio, f"{name}_data")
-        trained_mldr = Modeler.fit_matrix(validation_data.input_train, validation_data.output_train, modeler.class_,
-                                          modeler.hyperparameters, modeler.in_scaled, modeler.out_scaled, name)
-        return cls(trained_mldr, validation_data, name)
 
     def plot_data(self):
         """
@@ -550,9 +496,47 @@ class ModelValidation(DessiaObject):
         return [MultiplePlots(elements=elements, plots=graphs, initial_view_on=True)]
 
 
+class ModelValidation(DessiaObject):
+    _non_data_eq_attributes = ['_score']
+
+    def __init__(self, modeler: Modeler, validation_data: ValidationData, name: str = ''):
+        self.modeler = modeler
+        self.data = validation_data
+        self._score = None
+        DessiaObject.__init__(self, name=name)
+# TODO: is this too heavy ?
+
+    @property
+    def score(self) -> float:
+        if self._score is None:
+            self._score = self.modeler.score_matrix(self.data.input_test, self.data.output_test)
+        return self._score
+
+    @classmethod
+    def from_dataset(cls, modeler: Modeler, dataset: Dataset, input_names: List[str], output_names: List[str],
+                     ratio: float = 0.8, name: str = '') -> 'ModelValidation':
+        in_train, in_test, out_train, out_test = dataset.train_test_split(input_names, output_names, ratio)
+        trained_mdlr, pred_test = Modeler.fit_predict_matrix(in_train, out_train, in_test, modeler.class_,
+                                                             modeler.hyperparameters, modeler.in_scaled,
+                                                             modeler.out_scaled, name)
+        pred_train = trained_mdlr.predict_matrix(in_train)
+        validation_data = ValidationData(in_train, in_test, out_train, out_test, pred_train, pred_test, input_names,
+                                         output_names, f"{name}_data")
+        return cls(trained_mdlr, validation_data, name)
+
+    def plot_data(self):
+        """
+        Plot data method for ModelValidation.
+        """
+        return self.data.plot_data()
+
+
 class CrossValidation(DessiaObject):
+    _non_data_eq_attributes = ['_scores']
+
     def __init__(self, model_validations: List[ModelValidation], name: str = ''):
         self.model_validations = model_validations
+        self._scores = None
         DessiaObject.__init__(self, name=name)
 
     @property
@@ -560,7 +544,10 @@ class CrossValidation(DessiaObject):
         """
         List of scores of modeler contained in model_validations.
         """
-        return [model_val.score for model_val in self.model_validations]
+        if self._scores is None:
+            self._scores = [model_val.score for model_val in self.model_validations]
+            return self._scores
+        return self._scores
 
     @property
     def _points_scores(self) -> Points:
@@ -599,7 +586,7 @@ class CrossValidation(DessiaObject):
         """
         graphs = []
         for idx, validation in enumerate(self.model_validations):
-            graphs += validation.build_graphs()[0]
+            graphs += validation.data.build_graphs()[0]
         scores_graph = [self._plot_score()]
         return scores_graph + [MultiplePlots(elements=[{"factice_key":0}], plots=graphs, initial_view_on=True)]
 

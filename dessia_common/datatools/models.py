@@ -96,6 +96,7 @@ class Scaler(DessiaObject):
         reshaped_matrix = vector_to_2d_matrix(matrix)
         return scaler.transform(reshaped_matrix).tolist()
 
+
     def inverse_transform(self, matrix: Matrix) -> Matrix:
         """
         Inverse transform the scaled data stored in matrix according to this Scaler or children.
@@ -1867,4 +1868,5 @@ def vector_to_2d_matrix(matrix: Union[Vector, Matrix]) -> Matrix:
     if not isinstance(matrix[0], list):
         return [[x] for x in matrix]
     return matrix
+
 
