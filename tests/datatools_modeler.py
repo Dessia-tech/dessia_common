@@ -1,6 +1,9 @@
 """
 Tests for dessia_common.datatools.modeler file.
 """
+import matplotlib.pyplot as plt
+
+from dessia_common.utils import helpers
 from dessia_common.models import all_cars_no_feat
 from dessia_common.datatools.dataset import Dataset
 import dessia_common.datatools.models as models
@@ -11,8 +14,8 @@ from dessia_common.datatools.modeler import Modeler, CrossValidation #, Validati
 # ======================================================================================================================
 
 # Load data and put it in a Dataset (matrix is automatically computed)
-dataset_for_fit = Dataset(all_cars_no_feat)[:-10]
-dataset_to_pred = Dataset(all_cars_no_feat)[-10:]
+dataset_for_fit = Dataset(all_cars_no_feat)[:-100]
+dataset_to_pred = Dataset(all_cars_no_feat)[-100:]
 input_names_reg = ['displacement', 'horsepower', 'model', 'acceleration', 'cylinders']
 output_names_reg = ['mpg', 'weight']
 output_names_reg_solo = ['weight']
@@ -42,11 +45,12 @@ RR_mdlr, RR_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred,
                                                 RR_model, True, True, "RFRegressor_modeler")
 RC_mdlr, RC_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_clf, output_names_clf,
                                                 RC_model, True, False, "RFClassifier_modeler")
-MR_mdlr, MR_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_reg, output_names_reg_solo,
+MR_mdlr, MR_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_reg, output_names_reg,
                                                 MR_model, True, True, "MLPRegressor_modeler")
 MC_mdlr, MC_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_clf, output_names_clf,
                                                 MC_model, True, False, "MLPClassifier_modeler")
 # TODO: make impossible scaling for classifier (set to False in any case)
+mdlrs = [Ri_mdlr, LR_mdlr, DR_mdlr, DC_mdlr, RR_mdlr, RC_mdlr, MR_mdlr, MC_mdlr]
 
 # Run cross_validation for all models instantiated in a Modeler
 CV_Ri = CrossValidation.from_dataset(Ri_mdlr, dataset_for_fit, input_names_reg, output_names_reg, 10, 0.8)
@@ -67,13 +71,31 @@ CV_RR.plot()
 CV_RC.plot()
 CV_MR.plot()
 CV_MC.plot()
+cvs = [CV_Ri, CV_LR, CV_DR, CV_DC, CV_RR, CV_RC, CV_MR, CV_MC]
 
-import matplotlib.pyplot as plt
-plt.plot(dataset_for_fit.sub_matrix(output_names_reg_solo), MR_mdlr.predict_dataset(dataset_for_fit, input_names_reg),
-         color='b', linestyle='None', marker='o')
-plt.plot(dataset_to_pred.sub_matrix(output_names_reg_solo), MR_mdlr.predict_dataset(dataset_to_pred, input_names_reg),
-         color='r', linestyle='None', marker='o')
-plt.plot()
+# Visuals to check test and train data are correctly separated in cross validations and modeler stuff
+for mdlr, cv in zip(mdlrs, cvs):
+    if 'lassifier' in type(mdlr.model).__name__:
+        input_names = input_names_clf
+        output_names = output_names_clf
+        idx = 0
+    else:
+        input_names = input_names_reg
+        output_names = output_names_reg
+        idx = 1
+
+    out_train = [x[idx] for x in dataset_for_fit.sub_matrix(output_names)]
+    pred_train = [x[idx] for x in mdlr.predict_dataset(dataset_for_fit, input_names)]
+
+    out_test = [x[idx] for x in dataset_to_pred.sub_matrix(output_names)]
+    pred_test = [x[idx] for x in mdlr.predict_dataset(dataset_to_pred, input_names)]
+
+    plt.figure()
+    plt.plot(out_test, pred_test, color='r', linestyle='None', marker='o')
+    plt.plot(out_train, pred_train, color='b', linestyle='None', marker='o')
+    points = [helpers.minimums(cv.model_validations[0].data._concatenate_outputs())[idx],
+              helpers.maximums(cv.model_validations[0].data._concatenate_outputs())[idx]]
+    plt.plot(points,points, color = 'k')
 
 # ======================================================================================================================
 #                                            F R O M   M A T R I X

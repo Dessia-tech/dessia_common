@@ -467,7 +467,7 @@ class ModelValidation(DessiaObject):
                output_test: Matrix, input_names: List[str], output_names: List[str], ratio: float = 0.8,
                name: str = '') -> 'ModelValidation':
         trained_mdlr_1, pred_test_1 = Modeler.fit_predict_matrix(input_train, output_train, input_test, modeler.model,
-                                                             modeler.in_scaled, modeler.out_scaled, name)
+                                                                 modeler.in_scaled, modeler.out_scaled, name)
         trained_mdlr = Modeler.fit_matrix(input_train, output_train, modeler.model, modeler.in_scaled,
                                           modeler.out_scaled, name)
         pred_test = trained_mdlr.predict_matrix(input_test)
