@@ -32,30 +32,30 @@ MC_model = models.MLPClassifier.init_for_modeler(hidden_layer_sizes=(50, 50, 50)
 # Train models and predict data
 Ri_mdlr, Ri_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_reg, output_names_reg,
                                                Ri_model, True, True, "ridge_modeler")
-LR_mdlr, LR_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_reg, output_names_reg_solo,
-                                               LR_model, True, True, "linear_regression_modeler")
-DR_mdlr, DR_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_reg, output_names_reg_solo,
-                                               DR_model, True, True, "DTRegressor_modeler")
+LR_mdlr, LR_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_reg, output_names_reg,
+                                                LR_model, True, True, "linear_regression_modeler")
+DR_mdlr, DR_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_reg, output_names_reg,
+                                                DR_model, True, True, "DTRegressor_modeler")
 DC_mdlr, DC_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_clf, output_names_clf,
-                                               DC_model, True, False, "DTClassifier_modeler")
-RR_mdlr, RR_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_reg, output_names_reg_solo,
-                                               RR_model, True, True, "RFRegressor_modeler")
+                                                DC_model, True, False, "DTClassifier_modeler")
+RR_mdlr, RR_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_reg, output_names_reg,
+                                                RR_model, True, True, "RFRegressor_modeler")
 RC_mdlr, RC_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_clf, output_names_clf,
-                                               RC_model, True, False, "RFClassifier_modeler")
+                                                RC_model, True, False, "RFClassifier_modeler")
 MR_mdlr, MR_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_reg, output_names_reg_solo,
-                                               MR_model, True, True, "MLPRegressor_modeler")
+                                                MR_model, True, True, "MLPRegressor_modeler")
 MC_mdlr, MC_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_clf, output_names_clf,
-                                               MC_model, True, False, "MLPClassifier_modeler")
+                                                MC_model, True, False, "MLPClassifier_modeler")
 # TODO: make impossible scaling for classifier (set to False in any case)
 
 # Run cross_validation for all models instantiated in a Modeler
-CV_Ri = CrossValidation.from_dataset(Ri_mdlr, dataset_for_fit, input_names_reg, output_names_reg, 3, 0.8)
-CV_LR = CrossValidation.from_dataset(LR_mdlr, dataset_for_fit, input_names_reg, output_names_reg_solo, 3, 0.8)
-CV_DR = CrossValidation.from_dataset(DR_mdlr, dataset_for_fit, input_names_reg, output_names_reg_solo, 3, 0.8)
-CV_DC = CrossValidation.from_dataset(DC_mdlr, dataset_for_fit, input_names_clf, output_names_clf, 3, 0.8)
-CV_RR = CrossValidation.from_dataset(RR_mdlr, dataset_for_fit, input_names_reg, output_names_reg_solo, 3, 0.8)
-CV_RC = CrossValidation.from_dataset(RC_mdlr, dataset_for_fit, input_names_clf, output_names_clf, 3, 0.8)
-CV_MR = CrossValidation.from_dataset(MR_mdlr, dataset_for_fit, input_names_reg, output_names_reg_solo, 3, 0.8)
+CV_Ri = CrossValidation.from_dataset(Ri_mdlr, dataset_for_fit, input_names_reg, output_names_reg, 10, 0.8)
+CV_LR = CrossValidation.from_dataset(LR_mdlr, dataset_for_fit, input_names_reg, output_names_reg, 9, 0.8)
+CV_DR = CrossValidation.from_dataset(DR_mdlr, dataset_for_fit, input_names_reg, output_names_reg, 8, 0.8)
+CV_DC = CrossValidation.from_dataset(DC_mdlr, dataset_for_fit, input_names_clf, output_names_clf, 7, 0.8)
+CV_RR = CrossValidation.from_dataset(RR_mdlr, dataset_for_fit, input_names_reg, output_names_reg, 6, 0.8)
+CV_RC = CrossValidation.from_dataset(RC_mdlr, dataset_for_fit, input_names_clf, output_names_clf, 5, 0.8)
+CV_MR = CrossValidation.from_dataset(MR_mdlr, dataset_for_fit, input_names_reg, output_names_reg, 4, 0.8)
 CV_MC = CrossValidation.from_dataset(MC_mdlr, dataset_for_fit, input_names_clf, output_names_clf, 3, 0.8)
 
 # Plot cross validations

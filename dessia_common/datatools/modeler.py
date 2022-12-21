@@ -1,12 +1,12 @@
 """
 Librairy for building machine learning modelers from Dataset or Lists using sklearn models handled in models.
 """
-from typing import List, Dict, Any, Tuple, Type, Union
+from typing import List, Dict, Tuple, Union
 
 import numpy as npy
 
 from plot_data.core import Dataset as pl_Dataset
-from plot_data.core import EdgeStyle, Tooltip, MultiplePlots, PointStyle, Graph2D, Axis
+from plot_data.core import EdgeStyle, Tooltip, MultiplePlots, PointStyle, Graph2D, Axis, Window
 from plot_data.colors import BLACK, RED, BLUE, WHITE
 
 from dessia_common.core import DessiaObject
@@ -24,9 +24,6 @@ REF_POINT_STYLE = PointStyle(BLUE, BLUE, 0.1, 2., 'circle')
 VAL_POINT_STYLE = PointStyle(RED, RED, 0.1, 2., 'circle')
 LIN_POINT_STYLE = PointStyle(BLACK, BLACK, 0.1, 1, 'crux')
 INV_POINT_STYLE = PointStyle(WHITE, WHITE, 0.1, 1, 'crux')
-WIDTH_CANVAS = 1400
-HEIGHT_CANVAS = 900
-
 
 class Modeler(DessiaObject):
     """
@@ -474,11 +471,11 @@ class ModelValidation(DessiaObject):
         trained_mdlr = Modeler.fit_matrix(input_train, output_train, modeler.model, modeler.in_scaled,
                                           modeler.out_scaled, name)
         pred_test = trained_mdlr.predict_matrix(input_test)
-        print(type(trained_mdlr.model))
-        try:
-            print([[abs(x[0] - y[0]), abs(x[1] - y[1])] for x, y in zip(pred_test, pred_test_1)])
-        except:
-            print([[abs(x[0] - y[0])] for x, y in zip(pred_test, pred_test_1)])
+        # print(type(trained_mdlr.model))
+        # try:
+        #     print([[abs(x[0] - y[0]), abs(x[1] - y[1])] for x, y in zip(pred_test, pred_test_1)])
+        # except:
+        #     print([[abs(x[0] - y[0])] for x, y in zip(pred_test, pred_test_1)])
 
         pred_train = trained_mdlr.predict_matrix(input_train)
         validation_data = ValidationData(input_train, input_test, output_train, output_test, pred_train, pred_test,
@@ -682,13 +679,23 @@ class CrossValidation(DessiaObject):
         Plot data method for CrossValidation.
         """
         graphs = []
-        plot_width = 1400 / len(self.model_validations)
-        height = 900 / len(self.model_validations)
         for idx, validation in enumerate(self.model_validations):
             graphs += validation.data.build_graphs()[0]
         scores_graph = [self._plot_score()]
         return scores_graph + [MultiplePlots(graphs, elements=[{"factice_key":0}], initial_view_on=True)]
 
+    # def plot_data(self, **_):
+    #     WIDTH_CANVAS = 1400
+    #     HEIGHT_CANVAS = 900
+    #     width = WIDTH_CANVAS / len(self.model_validations)
+    #     height = HEIGHT_CANVAS / len(self.model_validations[0].data.output_names)
+    #     coords = []
+    #     graphs = []
+    #     for idx, validation in enumerate(self.model_validations):
+    #         graphs += validation.data.build_graphs()[0]
+    #         coords += [[width * idx, 0], [width * idx, height]]
+    #     scores_graph = [self._plot_score()]
+    #     return scores_graph+[MultiplePlots(graphs,elements=[{"factice_key":0}],coords=coords,initial_view_on=False)]
 
 
 def matrix_ranges(matrix: Matrix, nb_points: int = 20) -> Matrix:
