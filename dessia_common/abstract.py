@@ -1,10 +1,9 @@
 """
 Abstract module that defines a base DessiaObject in order to avoid circular imports.
 """
-from abc import ABC
 
 
-class CoreDessiaObject(ABC):
+class CoreDessiaObject:
     pass
 
     # @abstractmethod
