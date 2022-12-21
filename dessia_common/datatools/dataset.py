@@ -16,6 +16,7 @@ try:
     from plot_data.colors import BLUE, GREY
 except ImportError:
     pass
+from dessia_common.utils import helpers
 from dessia_common.core import DessiaObject, DessiaFilter, FiltersList
 from dessia_common.exports import MarkdownWriter
 from dessia_common import templates
@@ -450,6 +451,20 @@ class Dataset(DessiaObject):
             self.dessia_objects = [self.dessia_objects[idx] for idx in (sort_indexes if ascend else sort_indexes[::-1])]
             if self._matrix is not None:
                 self._matrix = [self._matrix[idx] for idx in (sort_indexes if ascend else sort_indexes[::-1])]
+
+    @property
+    def maximums(self):
+        """
+        Compute maximum values and store it in a list of length n_features.
+        """
+        return helpers.maximums(self.matrix)
+
+    @property
+    def minimums(self):
+        """
+        Compute minimum values and store it in a list of length n_features.
+        """
+        return helpers.minimums(self.matrix)
 
     def mean(self):
         """

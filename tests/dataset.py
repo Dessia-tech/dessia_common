@@ -107,6 +107,8 @@ assert(int(inf_norm([1, 2, 3, 45, 4., 4.21515, -12, -0, 0, -25214.1511])) == 252
 assert(int(mahalanobis_distance(all_cars_with_features.matrix[3],
                                 all_cars_with_features.matrix[125],
                                 all_cars_with_features.covariance_matrix())) == 2)
+assert(all_cars_with_features.maximums == [46.6, 0.455, 230.0, 24.8, 5140.0])
+assert(all_cars_with_features.minimums == [0.0, 0.068, 0.0, 8.0, 1613.0])
 
 # Tests for empty Dataset
 empty_list = Dataset()

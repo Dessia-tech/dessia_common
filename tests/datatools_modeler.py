@@ -30,7 +30,7 @@ MR_model = models.MLPRegressor.init_for_modeler(hidden_layer_sizes=(50, 50, 50),
 MC_model = models.MLPClassifier.init_for_modeler(hidden_layer_sizes=(50, 50, 50), activation='relu', max_iter=500)
 
 # Train models and predict data
-Ri_mdlr, Ri_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_reg, output_names_reg_solo,
+Ri_mdlr, Ri_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_reg, output_names_reg,
                                                Ri_model, True, True, "ridge_modeler")
 LR_mdlr, LR_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_reg, output_names_reg_solo,
                                                LR_model, True, True, "linear_regression_modeler")
@@ -49,7 +49,7 @@ MC_mdlr, MC_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred,
 # TODO: make impossible scaling for classifier (set to False in any case)
 
 # Run cross_validation for all models instantiated in a Modeler
-CV_Ri = CrossValidation.from_dataset(Ri_mdlr, dataset_for_fit, input_names_reg, output_names_reg_solo, 3, 0.8)
+CV_Ri = CrossValidation.from_dataset(Ri_mdlr, dataset_for_fit, input_names_reg, output_names_reg, 3, 0.8)
 CV_LR = CrossValidation.from_dataset(LR_mdlr, dataset_for_fit, input_names_reg, output_names_reg_solo, 3, 0.8)
 CV_DR = CrossValidation.from_dataset(DR_mdlr, dataset_for_fit, input_names_reg, output_names_reg_solo, 3, 0.8)
 CV_DC = CrossValidation.from_dataset(DC_mdlr, dataset_for_fit, input_names_clf, output_names_clf, 3, 0.8)
@@ -67,6 +67,13 @@ CV_RR.plot()
 CV_RC.plot()
 CV_MR.plot()
 CV_MC.plot()
+
+import matplotlib.pyplot as plt
+plt.plot(dataset_for_fit.sub_matrix(output_names_reg_solo), MR_mdlr.predict_dataset(dataset_for_fit, input_names_reg),
+         color='b', linestyle='None', marker='o')
+plt.plot(dataset_to_pred.sub_matrix(output_names_reg_solo), MR_mdlr.predict_dataset(dataset_to_pred, input_names_reg),
+         color='r', linestyle='None', marker='o')
+plt.plot()
 
 # ======================================================================================================================
 #                                            F R O M   M A T R I X

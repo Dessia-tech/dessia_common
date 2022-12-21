@@ -216,7 +216,17 @@ class LabelBinarizer(Scaler):
 #                                                        M O D E L S
 # ======================================================================================================================
 class Model(DessiaObject):
-    """Base object for handling a scikit-learn models (classifier and regressor)."""
+    """
+    Base object for handling a scikit-learn models (classifier and regressor).
+
+    :param params:
+        Hyperparameters of the used scikit-learn object.
+    :type params: dict[str, Any], `optional`
+
+    :param name:
+        Name of LinearModel regression
+    :type name: str, `optional`, defaults to `''`
+    """
 
     def __init__(self, params: Dict[str, Any], name: str = ''):
         self.params = params
@@ -237,14 +247,14 @@ class Model(DessiaObject):
         raise NotImplementedError(f'Method _instantiate_dessia not implemented for {cls.__name__}.')
 
     @classmethod
-    def init_for_modeler_(cls, **hyperparameters: Dict[str, Any]) -> Tuple['Model', Dict[str, Any], str]:
+    def init_for_modeler_(cls, **params: Dict[str, Any]) -> Tuple['Model', Dict[str, Any], str]:
         """
         Initialize class of Model with its name and hyperparemeters to fit in Modeler.
 
         :return: The Model class, the hyperparameters to instantiate it and the future name of instance.
         :rtype: Tuple['Model', Dict[str, Any], str]
         """
-        return cls(params=hyperparameters)
+        return cls(params=params)
 
     @classmethod
     def fit_(cls, inputs: Matrix, outputs: Matrix, name: str = '', **hyperparameters) -> 'Model':
@@ -324,6 +334,10 @@ class LinearModel(Model):
     """
     Abstract class for linear models.
 
+    :param params:
+        Hyperparameters of the used scikit-learn object.
+    :type params: dict[str, Any], `optional`
+
     :param coef_:
         List of coefficients of the model. Each element (i, j) of coef_ is the slope of the linear model predicting
         the i-th output from the j-th input.
@@ -372,6 +386,10 @@ class Ridge(LinearModel):
     `alpha` to `0` is equivalent than searching a linear model from a least square regression.
 
     More information: https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Ridge.html
+
+    :param params:
+        Hyperparameters of the used scikit-learn object.
+    :type params: dict[str, Any], `optional`
 
     :param coef_:
         List of coefficients of the model. Each element (i, j) of coef_ is the slope of the linear model predicting
@@ -487,6 +505,10 @@ class LinearRegression(LinearModel):
     The function minimized to get the linear model is `|| Y - A.X + B || = 0`.
 
     More information: https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html
+
+    :param params:
+        Hyperparameters of the used scikit-learn object.
+    :type params: dict[str, Any], `optional`
 
     :param coef_:
         List of coefficients of the model. Each element (i, j) of coef_ is the slope of the linear model predicting
@@ -664,6 +686,10 @@ class DecisionTreeRegressor(Model):
 
     More information: https://scikit-learn.org/stable/modules/tree.html#tree
 
+    :param params:
+        Hyperparameters of the used scikit-learn object.
+    :type params: dict[str, Any], `optional`
+
     :param n_outputs_:
         The number of outputs when fit is performed.
     :type n_outputs_: int, `optional`, defaults to `None`
@@ -798,6 +824,10 @@ class DecisionTreeClassifier(DecisionTreeRegressor):
 
     More information: https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeClassifier.html
 
+    :param params:
+        Hyperparameters of the used scikit-learn object.
+    :type params: dict[str, Any], `optional`
+
     :param n_classes_:
         The number of classes (for single output problems), or a list containing the number of classes for each output
         (for multi-output problems).
@@ -877,6 +907,10 @@ class RandomForest(Model):
     Base object for handling a scikit-learn RandomForest object.
 
     Please refer to https://scikit-learn.org/stable/modules/ensemble.html#forest for more information on RandomForest.
+
+    :param params:
+        Hyperparameters of the used scikit-learn object.
+    :type params: dict[str, Any], `optional`
 
     :param n_outputs_:
         The number of outputs when fit is performed.
@@ -1029,6 +1063,10 @@ class RandomForestRegressor(RandomForest):
     Please refer to https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestRegressor.html for
     more information on RandomForestRegressor.
 
+    :param params:
+        Hyperparameters of the used scikit-learn object.
+    :type params: dict[str, Any], `optional`
+
     :param n_outputs_:
         The number of outputs when fit is performed.
     :type n_outputs_: int, `optional`, defaults to `None`
@@ -1068,6 +1106,10 @@ class RandomForestClassifier(RandomForest):
 
     Please refer to https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html for
     more information on RandomForestClassifier.
+
+    :param params:
+        Hyperparameters of the used scikit-learn object.
+    :type params: dict[str, Any], `optional`
 
     :param n_classes_:
         The number of classes (for single output problems), or a list containing the number of classes for each output
@@ -1124,12 +1166,9 @@ class SupportVectorMachine(Model):
     Please refer to https://scikit-learn.org/stable/modules/svm.html for more
     information on SupportVectorMachine object and understanding the SupportVectorMachine for basic usage.
 
-    :param kernel:
-        Specifies the kernel type to be used in the algorithm.
-        Can be one of `[‘linear’, ‘poly’, ‘rbf’, ‘sigmoid’, ‘precomputed’]`. If `None` is given, ‘rbf’ will be used.
-        If a callable is given it is used to pre-compute the kernel matrix from data matrices; that matrix should be
-        an matrix of shape `n_samples x n_samples`
-    :type kernel: str, `optional`, defaults to `'rbf'`
+    :param params:
+        Hyperparameters of the used scikit-learn object.
+    :type params: dict[str, Any], `optional`
 
     :param raw_coef_:
         The number of classes (for single output problems), or a list containing the number of classes for each output
@@ -1177,11 +1216,10 @@ class SupportVectorMachine(Model):
     :type _sparse: bool, `optional`, defaults to `False`
     """
 
-    def __init__(self, params: Dict[str, Any], kernel: str = 'rbf', raw_coef_: Matrix = None,
-                 _dual_coef_: Matrix = None, _intercept_: Vector = None, support_: List[int] = 1,
-                 support_vectors_: Matrix = None, _n_support: List[int] = None, _probA: Vector = None,
-                 _probB: Vector = None, _gamma: float = 1., _sparse: bool = False, name: str = ''):
-        self.kernel = kernel
+    def __init__(self, params: Dict[str, Any], raw_coef_: Matrix = None, _dual_coef_: Matrix = None,
+                 _intercept_: Vector = None, support_: List[int] = 1, support_vectors_: Matrix = None,
+                 _n_support: List[int] = None, _probA: Vector = None, _probB: Vector = None, _gamma: float = 1.,
+                 _sparse: bool = False, name: str = ''):
         self.raw_coef_ = raw_coef_
         self._dual_coef_ = _dual_coef_
         self._intercept_ = _intercept_
@@ -1311,12 +1349,9 @@ class SupportVectorRegressor(SupportVectorMachine):
     Please refer to https://scikit-learn.org/stable/modules/svm.html#svm-regression for more
     information on SupportVectorRegressor object and understanding the SupportVectorRegressor for basic usage.
 
-    :param kernel:
-        Specifies the kernel type to be used in the algorithm.
-        Can be one of `[‘linear’, ‘poly’, ‘rbf’, ‘sigmoid’, ‘precomputed’]`. If `None` is given, ‘rbf’ will be used.
-        If a callable is given it is used to pre-compute the kernel matrix from data matrices; that matrix should be
-        an matrix of shape `n_samples x n_samples`
-    :type kernel: str, `optional`, defaults to `'rbf'`
+    :param params:
+        Hyperparameters of the used scikit-learn object.
+    :type params: dict[str, Any], `optional`
 
     :param raw_coef_:
         The number of classes (for single output problems), or a list containing the number of classes for each output
@@ -1365,12 +1400,12 @@ class SupportVectorRegressor(SupportVectorMachine):
     """
     _standalone_in_db = True
 
-    def __init__(self, params: Dict[str, Any], kernel: str = 'rbf', raw_coef_: Matrix = None,
-                 _dual_coef_: Matrix = None, _intercept_: Vector = None, support_: List[int] = 1,
-                 support_vectors_: Matrix = None,  _n_support: List[int] = None, _probA: Vector = None,
-                 _probB: Vector = None, _gamma: float = 1., _sparse: bool = False, name: str = ''):
+    def __init__(self, params: Dict[str, Any], raw_coef_: Matrix = None, _dual_coef_: Matrix = None,
+                 _intercept_: Vector = None, support_: List[int] = 1, support_vectors_: Matrix = None,
+                 _n_support: List[int] = None, _probA: Vector = None, _probB: Vector = None, _gamma: float = 1.,
+                 _sparse: bool = False, name: str = ''):
         SupportVectorMachine.__init__(self, raw_coef_=raw_coef_, _dual_coef_=_dual_coef_,
-                                      support_vectors_=support_vectors_, _sparse=_sparse, kernel=kernel,
+                                      support_vectors_=support_vectors_, _sparse=_sparse,
                                       _n_support=_n_support, support_=support_, _intercept_=_intercept_, _probA=_probA,
                                       _probB=_probB, _gamma=_gamma, params=params, name=name)
 
@@ -1393,12 +1428,9 @@ class SupportVectorClassifier(SupportVectorMachine):
     Please refer to https://scikit-learn.org/stable/modules/svm.html#svm-classification for more
     information on SupportVectorClassifier object and understanding the SupportVectorClassifier for basic usage.
 
-    :param kernel:
-        Specifies the kernel type to be used in the algorithm.
-        Can be one of `[‘linear’, ‘poly’, ‘rbf’, ‘sigmoid’, ‘precomputed’]`. If `None` is given, ‘rbf’ will be used.
-        If a callable is given it is used to pre-compute the kernel matrix from data matrices; that matrix should be
-        an matrix of shape `n_samples x n_samples`
-    :type kernel: str, `optional`, defaults to `'rbf'`
+    :param params:
+        Hyperparameters of the used scikit-learn object.
+    :type params: dict[str, Any], `optional`
 
     :param raw_coef_:
         The number of classes (for single output problems), or a list containing the number of classes for each output
@@ -1450,14 +1482,13 @@ class SupportVectorClassifier(SupportVectorMachine):
     :type classes_: List[int], `optional`, defaults to `None`
     """
 
-    def __init__(self, params: Dict[str, Any], kernel: str = 'rbf', raw_coef_: Matrix = None,
-                 _dual_coef_: Matrix = None, _intercept_: Vector = None, support_: List[int] = 1,
-                 support_vectors_: Matrix = None, _n_support: List[int] = None, _probA: Vector = None,
-                 _probB: Vector = None, _gamma: float = 1., _sparse: bool = False, classes_: List[int] = None,
-                 name: str = ''):
+    def __init__(self, params: Dict[str, Any], raw_coef_: Matrix = None, _dual_coef_: Matrix = None,
+                 _intercept_: Vector = None, support_: List[int] = 1, support_vectors_: Matrix = None,
+                 _n_support: List[int] = None, _probA: Vector = None, _probB: Vector = None, _gamma: float = 1.,
+                 _sparse: bool = False, classes_: List[int] = None, name: str = ''):
         self.classes_ = classes_
         SupportVectorMachine.__init__(self, raw_coef_=raw_coef_, _dual_coef_=_dual_coef_,
-                                      support_vectors_=support_vectors_, _sparse=_sparse, kernel=kernel,
+                                      support_vectors_=support_vectors_, _sparse=_sparse,
                                       _n_support=_n_support, support_=support_, _intercept_=_intercept_, _probA=_probA,
                                       _probB=_probB, _gamma=_gamma, params=params, name=name)
 
@@ -1483,6 +1514,10 @@ class MultiLayerPerceptron(Model):
 
     Please refer to https://scikit-learn.org/stable/modules/neural_networks_supervised.html for more
     information on MultiLayerPerceptron.
+
+    :param params:
+        Hyperparameters of the used scikit-learn object.
+    :type params: dict[str, Any], `optional`
 
     :param coef_:
         List of coefficients of the model.
@@ -1685,6 +1720,10 @@ class MLPRegressor(MultiLayerPerceptron):
     Please refer to https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPRegressor.html for more
     information on MLPRegressor.
 
+    :param params:
+        Hyperparameters of the used scikit-learn object.
+    :type params: dict[str, Any], `optional`
+
     :param coef_:
         List of coefficients of the model.
     :type coef_: List[List[float]], `optional`, defaults to `None`
@@ -1734,6 +1773,10 @@ class MLPClassifier(MultiLayerPerceptron):
 
     Please refer to https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPClassifier.html for more
     information on MLPClassifier.
+
+    :param params:
+        Hyperparameters of the used scikit-learn object.
+    :type params: dict[str, Any], `optional`
 
     :param coef_:
         List of coefficients of the model.

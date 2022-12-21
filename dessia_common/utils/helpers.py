@@ -2,6 +2,7 @@
 Tools for copying objects
 """
 
+from typing import List
 
 def concatenate(values):
     types_set = set(type(value) for value in values)
@@ -36,3 +37,19 @@ def prettyname(name: str) -> str:
             if i < len(strings) - 1:
                 pretty_name += ' '
     return pretty_name
+
+def maximums(matrix: List[List[float]]) -> List[float]:
+    """
+    Compute maximum values and store it in a list of length len(matrix[0]).
+    """
+    if not isinstance(matrix[0], list):
+        return [max(matrix)]
+    return [max(column) for column in zip(*matrix)]
+
+def minimums(matrix: List[List[float]]) -> List[float]:
+    """
+    Compute minimum values and store it in a list of length len(matrix[0]).
+    """
+    if not isinstance(matrix[0], list):
+        return [min(matrix)]
+    return [min(column) for column in zip(*matrix)]
