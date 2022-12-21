@@ -34,7 +34,7 @@ MAX_ERROR_BY_TYPE = {
                      'empty-docstring': 1,
                      'missing-module-docstring': 1,
                      'too-many-arguments': 20,
-                     'too-few-public-methods': 4,
+                     'too-few-public-methods': 5,
                      'unnecessary-comprehension': 1,
                      'no-value-for-parameter': 2,
                      'too-many-return-statements': 10,
