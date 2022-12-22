@@ -2,7 +2,7 @@
 Models for tests.
 """
 
-import dessia_common.tsts
+import dessia_common.tests
 
 components1 = [dessia_common.tests.Component(0.7),
                dessia_common.tests.Component(0.9),
