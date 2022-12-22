@@ -444,14 +444,18 @@ class ValidationData(DessiaObject):
 
 
 class ModelValidation(DessiaObject):
+    """
+    Class to handle a modeler and the ValidationData used to train and test it.
+    """
     _non_data_eq_attributes = ['_score']
+    _standalone_in_db = True
 
     def __init__(self, modeler: Modeler, validation_data: ValidationData, name: str = ''):
         self.modeler = modeler
         self.data = validation_data
         self._score = None
         DessiaObject.__init__(self, name=name)
-# TODO: is this too heavy ?
+# TODO: is this too heavy ? To merge with ValidationData ?
 
     @property
     def score(self) -> float:
@@ -466,17 +470,8 @@ class ModelValidation(DessiaObject):
     def _build(cls, modeler: Modeler, input_train: Matrix, input_test: Matrix, output_train: Matrix,
                output_test: Matrix, input_names: List[str], output_names: List[str], ratio: float = 0.8,
                name: str = '') -> 'ModelValidation':
-        trained_mdlr_1, pred_test_1 = Modeler.fit_predict_matrix(input_train, output_train, input_test, modeler.model,
+        trained_mdlr, pred_test = Modeler.fit_predict_matrix(input_train, output_train, input_test, modeler.model,
                                                                  modeler.in_scaled, modeler.out_scaled, name)
-        trained_mdlr = Modeler.fit_matrix(input_train, output_train, modeler.model, modeler.in_scaled,
-                                          modeler.out_scaled, name)
-        pred_test = trained_mdlr.predict_matrix(input_test)
-        # print(type(trained_mdlr.model))
-        # try:
-        #     print([[abs(x[0] - y[0]), abs(x[1] - y[1])] for x, y in zip(pred_test, pred_test_1)])
-        # except:
-        #     print([[abs(x[0] - y[0])] for x, y in zip(pred_test, pred_test_1)])
-
         pred_train = trained_mdlr.predict_matrix(input_train)
         validation_data = ValidationData(input_train, input_test, output_train, output_test, pred_train, pred_test,
                                          input_names, output_names, f"{name}_data")
@@ -587,6 +582,7 @@ class CrossValidation(DessiaObject):
     predictions.
     """
     _non_data_eq_attributes = ['_scores']
+    _standalone_in_db = True
 
     def __init__(self, model_validations: List[ModelValidation], name: str = ''):
         self.model_validations = model_validations
@@ -684,6 +680,7 @@ class CrossValidation(DessiaObject):
         scores_graph = [self._plot_score()]
         return scores_graph + [MultiplePlots(graphs, elements=[{"factice_key":0}], initial_view_on=True)]
 
+    # Kept in case of a better multiplot
     # def plot_data(self, **_):
     #     WIDTH_CANVAS = 1400
     #     HEIGHT_CANVAS = 900
