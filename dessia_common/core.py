@@ -475,7 +475,7 @@ class DessiaObject(SerializableObject):
         """
         if hasattr(self, 'plot_data'):
             import plot_data
-            for data in self.plot_data(**kwargs):  # TODO solve inconsistence with the plot_data method just above
+            for data in self.plot_data(**kwargs):
                 plot_data.plot_canvas(plot_data_object=data,
                                       canvas_id='canvas',
                                       width=1400, height=900,
