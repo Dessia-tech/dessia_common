@@ -1,9 +1,5 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
-Created on Wed Jan 12 19:24:11 2022
-
-@author: steven
+Module for docstring parsing to platform and Sphinx auto documentation.
 """
 
 from inspect import isclass, ismethod, isfunction
@@ -16,20 +12,25 @@ except ImportError:
 
 
 class ParsedAttribute(TypedDict):
+    """
+    Class to handle a ParsedAttribute.
+    """
     desc: str
     type_: str
     annotation: str
 
 
 class ParsedDocstring(TypedDict):
+    """
+    Class to handle a ParsedDocstring.
+    """
     description: str
     attributes: Dict[str, ParsedAttribute]
 
 
 def parse_docstring(docstring: str, annotations: Dict[str, Any]) -> ParsedDocstring:
     """
-    Parse docstring of given class. Refer to docs to see how docstrings
-    should be built.
+    Parse docstring of given class. Refer to docs to see how docstrings should be built.
     """
     if docstring:
         no_return_docstring = docstring.split(':return:')[0]
@@ -47,6 +48,9 @@ def parse_docstring(docstring: str, annotations: Dict[str, Any]) -> ParsedDocstr
 
 
 def parse_attribute(param, annotations) -> Tuple[str, ParsedAttribute]:
+    """
+    Parse attributes present in docstring in {'desc': str, 'type_': Type, 'annotation': str}.
+    """
     splitted_param = param.split(':type ')
     arg = splitted_param[0]
     typestr = splitted_param[1]
@@ -67,8 +71,7 @@ FAILED_ATTRIBUTE_PARSING = {"desc": 'Attribute documentation parsing failed',
 
 def _check_docstring(element):
     """
-    Returns True if an object, a class or a method have a proper docstring.
-    Otherwise, returns False.
+    Returns True if an object, a class or a method have a proper docstring. Otherwise, returns False.
     """
     docstring = element.__doc__
     if docstring is None:

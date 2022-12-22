@@ -1,12 +1,8 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
-Created on Tue Oct 19 17:19:08 2021
-
-@author: masfaraud
+Models for tests.
 """
 
-import dessia_common.tests
+import dessia_common.tsts
 
 components1 = [dessia_common.tests.Component(0.7),
                dessia_common.tests.Component(0.9),

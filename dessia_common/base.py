@@ -1,9 +1,5 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
-Created on Tue Nov  8 19:39:07 2022
-
-@author: steven
+Base module for Serialization of CoreDessiaObject.
 """
 
 import sys
@@ -15,13 +11,13 @@ from dessia_common.utils.serialization import dict_to_object, serialize_dict_wit
 
 class SerializableObject(CoreDessiaObject):
     """
-    Serialization capabilities of Dessia Object
+    Serialization capabilities of Dessia Object.
     """
     _non_serializable_attributes = []
 
     def base_dict(self):
         """
-        A base dict for to_dict: put name, object class and version in a dict
+        A base dict for to_dict: put name, object class and version in a dict.
         """
         package_name = self.__module__.split('.', maxsplit=1)[0]
         if package_name in sys.modules:
@@ -43,7 +39,7 @@ class SerializableObject(CoreDessiaObject):
         """
         Returns a dict of attribute_name, values (still python, not serialized).
 
-        Keys are filtered with non serializable attributes controls
+        Keys are filtered with non serializable attributes controls.
         """
 
         dict_ = {k: v for k, v in self.__dict__.items()

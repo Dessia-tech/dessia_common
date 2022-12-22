@@ -1,9 +1,5 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
-Created on Fri Mar 18 18:52:32 2022
-
-@author: masfaraud
+Module to define Blocks for workflows.
 """
 
 import inspect
@@ -31,7 +27,9 @@ from dessia_common.workflow.utils import ToScriptElement
 
 
 def set_inputs_from_function(method, inputs=None):
-    """ Inspect given method argspecs and sets block inputs from it. """
+    """
+    Inspect given method argspecs and sets block inputs from it.
+    """
     if inputs is None:
         inputs = []
     args_specs = inspect.getfullargspec(method)
@@ -55,7 +53,9 @@ def set_inputs_from_function(method, inputs=None):
 
 
 def output_from_function(function, name: str = "result output"):
-    """ Inspect given function argspecs and compute block output from it. """
+    """
+    Inspect given function argspecs and compute block output from it.
+    """
     annotations = get_type_hints(function)
     if 'return' in annotations:
         type_ = type_from_annotation(annotations['return'], function.__module__)
@@ -64,7 +64,9 @@ def output_from_function(function, name: str = "result output"):
 
 
 class BlockError(Exception):
-    """ Specific BlockError Exception. """
+    """
+    Specific BlockError Exception.
+    """
 
 
 class InstantiateModel(Block):
