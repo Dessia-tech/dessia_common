@@ -298,6 +298,7 @@ class Model(DessiaObject):
         model = self._instantiate_skl()
         return model.predict(inputs).tolist()
 
+
     @classmethod
     def fit_predict_(cls, inputs: Matrix, outputs: Matrix, predicted_inputs: Matrix, name: str = '',
                      **hyperparameters) -> Tuple['Model', Union[Vector, Matrix]]:
@@ -865,7 +866,10 @@ class DecisionTreeClassifier(DecisionTreeRegressor):
     def _instantiate_skl(self):
         model = self.generic_skl_attributes()
         model.n_classes_ = self.n_classes_
-        model.classes_ = npy.array(self.classes_)
+        if isinstance(self.n_classes_, list):
+            model.classes_ = npy.array([npy.array(class_) for class_ in self.classes_])
+        else:
+            model.classes_ = npy.array(self.classes_)
         return model
 
     @classmethod
