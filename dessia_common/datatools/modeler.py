@@ -5,9 +5,12 @@ from typing import List, Dict, Tuple, Union
 
 import numpy as npy
 
-from plot_data.core import Dataset as pl_Dataset
-from plot_data.core import EdgeStyle, Tooltip, MultiplePlots, PointStyle, Graph2D, Axis
-from plot_data.colors import BLACK, RED, BLUE, WHITE
+try:
+    from plot_data.core import Dataset as pl_Dataset
+    from plot_data.core import EdgeStyle, Tooltip, MultiplePlots, PointStyle, Graph2D, Axis
+    from plot_data.colors import BLACK, RED, BLUE, WHITE
+except ImportError:
+    pass
 
 from dessia_common.core import DessiaObject
 from dessia_common.datatools import models
