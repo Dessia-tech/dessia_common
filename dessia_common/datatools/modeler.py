@@ -675,10 +675,9 @@ class CrossValidation(DessiaObject):
         Plot data method for CrossValidation.
         """
         graphs = []
-        for idx, validation in enumerate(self.model_validations):
+        for validation in self.model_validations:
             graphs += validation.data.build_graphs()[0]
-        scores_graph = [self._plot_score()]
-        return scores_graph + [MultiplePlots(graphs, elements=[{"factice_key":0}], initial_view_on=True)]
+        return [self._plot_score(), MultiplePlots(graphs, elements=[{"factice_key":0}], initial_view_on=True)]
 
     # Kept in case of a better multiplot
     # def plot_data(self, **_):

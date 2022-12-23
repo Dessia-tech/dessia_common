@@ -46,13 +46,13 @@ for output_names in [output_names_reg_solo, output_names_reg]:
     MR_mdlr, MR_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_reg, output_names,
                                                    MR_model, True, True, "MLPRegressor_modeler")
 
-for output_names in [output_names_clf, output_names_clf_solo]:
-    DC_mdlr, DC_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_clf, output_names,
-                                                   DC_model, True, False, "DTClassifier_modeler")
-    RC_mdlr, RC_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_clf, output_names,
-                                                   RC_model, True, False, "RFClassifier_modeler")
-    MC_mdlr, MC_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_clf, output_names,
-                                                   MC_model, True, False, "MLPClassifier_modeler")
+# for output_names in [output_names_clf, output_names_clf_solo]:
+DC_mdlr, DC_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_clf, output_names_clf,
+                                               DC_model, True, False, "DTClassifier_modeler")
+RC_mdlr, RC_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_clf, output_names_clf,
+                                               RC_model, True, False, "RFClassifier_modeler")
+MC_mdlr, MC_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_clf, output_names_clf,
+                                               MC_model, True, False, "MLPClassifier_modeler")
 
 # TODO: make impossible scaling for classifier (set to False in any case)
 mdlrs = [Ri_mdlr, LR_mdlr, DR_mdlr, DC_mdlr, RR_mdlr, RC_mdlr, MR_mdlr, MC_mdlr]
