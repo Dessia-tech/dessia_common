@@ -901,9 +901,9 @@ class DecisionTreeClassifier(DecisionTreeRegressor):
         :rtype: float
         """
         model = self._instantiate_skl()
-        if self.n_outputs_==1:
-            return model.score(inputs, outputs)
-        raise ValueError('multiclass-multioutput is not supported')
+        # if self.n_outputs_ == 1:
+        #     return model.score(inputs, outputs)
+        return model.score(inputs, outputs) #[model.score(inputs, output) for output in zip(*outputs)] #ValueError('multiclass-multioutput is not supported')
 
 
 class RandomForest(Model):
@@ -1166,6 +1166,30 @@ class RandomForestClassifier(RandomForest):
                        'classes_': (model.classes_.tolist() if isinstance(model.classes_, npy.ndarray)
                                     else [klass.tolist() for klass in model.classes_])})
         return cls(**kwargs)
+
+    def score(self, inputs: Matrix, outputs: Matrix) -> float:
+        """
+        Compute the score of Model or children.
+
+        Please be sure to fit the model before computing its score and use test data and not train data.
+        Train data is data used to train the model and shall not be used to evaluate its quality.
+        Test data is data used to test the model and must not be used to train (fit) it.
+
+        :param inputs:
+            Matrix of data of dimension `n_samples x n_features`
+        :type inputs: List[List[float]]
+
+        :param outputs:
+            Matrix of data of dimension `n_samples x n_features`
+        :type outputs: List[List[float]]
+
+        :return: The score of Model or children (DessiaObject).
+        :rtype: float
+        """
+        model = self._instantiate_skl()
+        if len(outputs[0]):
+            a=1
+        return model.score(inputs, outputs)
 
 
 class SupportVectorMachine(Model):
@@ -1846,35 +1870,40 @@ class MLPClassifier(MultiLayerPerceptron):
                        '_label_binarizer': LabelBinarizer.instantiate_dessia(model._label_binarizer)})
         return cls(**kwargs)
 
-    @staticmethod
-    def _binarize_outputs(outputs: Matrix) -> Matrix:
-        if isinstance(outputs[0], list):
-            if len(outputs[0]) > 1:
-                multioutput_binarizer = preprocessing.MultiLabelBinarizer()
-                mono_outputs = multioutput_binarizer.fit_transform(outputs)
-                return multioutput_binarizer, mono_outputs
-            else:
-                return IdentityScaler(), matrix_1d_to_vector(outputs)
-        return IdentityScaler(), outputs
+    # @staticmethod
+    # def _binarize_outputs(outputs: Matrix) -> Matrix:
+    #     if isinstance(outputs[0], list):
+    #         if len(outputs[0]) > 1:
+    #             multioutput_binarizer = preprocessing.MultiLabelBinarizer()
+    #             mono_outputs = multioutput_binarizer.fit_transform(outputs)
+    #             return multioutput_binarizer, mono_outputs
+    #         else:
+    #             return IdentityScaler(), matrix_1d_to_vector(outputs)
+    #     return IdentityScaler(), outputs
 
-    @classmethod
-    def fit(cls, inputs: Matrix, outputs: Vector, hidden_layer_sizes: List[int], activation: str = 'relu',
-            alpha: float = 0.0001, solver: str = 'adam', max_iter: int = 200, tol: float = 0.0001,
-            name: str = '') -> 'MultiLayerPerceptron':
-        multioutput_binarizer, outputs = cls._binarize_outputs(outputs)
-        return cls.fit_(inputs, outputs, name=name, hidden_layer_sizes=hidden_layer_sizes, activation=activation,
-                        alpha=alpha, solver=solver, max_iter=max_iter, tol=tol)
+    # @classmethod
+    # def fit(cls, inputs: Matrix, outputs: Vector, hidden_layer_sizes: List[int], activation: str = 'relu',
+    #         alpha: float = 0.0001, solver: str = 'adam', max_iter: int = 200, tol: float = 0.0001,
+    #         name: str = '') -> 'MultiLayerPerceptron':
+    #     multioutput_binarizer, outputs = cls._binarize_outputs(outputs)
+    #     modeler = cls.fit_(inputs, outputs, name=name, hidden_layer_sizes=hidden_layer_sizes, activation=activation,
+    #                        alpha=alpha, solver=solver, max_iter=max_iter, tol=tol)
+    #     modeler.mulitoutput_binarizer = multioutput_binarizer
+    #     return modeler
 
-    @classmethod
-    def fit_predict(cls, inputs: Matrix, outputs: Vector, predicted_inputs: Matrix, hidden_layer_sizes: List[int],
-                    activation: str = 'relu', alpha: float = 0.0001, solver: str = 'adam', max_iter: int = 200,
-                    tol: float = 0.0001, name: str = '') -> Tuple['MultiLayerPerceptron', Union[Vector, Matrix]]:
-        """
-        Fit outputs to inputs and predict outputs for predicted_inputs. It is the succession of fit and predict methods.
-        """
-        multioutput_binarizer, outputs = cls._binarize_outputs(outputs)
-        return cls.fit_predict_(inputs, outputs, predicted_inputs, name=name, hidden_layer_sizes=hidden_layer_sizes,
-                                activation=activation, alpha=alpha, solver=solver, max_iter=max_iter, tol=tol)
+    # @classmethod
+    # def fit_predict(cls, inputs: Matrix, outputs: Vector, predicted_inputs: Matrix, hidden_layer_sizes: List[int],
+    #                 activation: str = 'relu', alpha: float = 0.0001, solver: str = 'adam', max_iter: int = 200,
+    #                 tol: float = 0.0001, name: str = '') -> Tuple['MultiLayerPerceptron', Union[Vector, Matrix]]:
+    #     """
+    #     Fit outputs to inputs and predict outputs for predicted_inputs. It is the succession of fit and predict methods.
+    #     """
+    #     multioutput_binarizer, b_outputs = cls._binarize_outputs(outputs)
+    #     modeler = cls.fit_(inputs, b_outputs, name=name, hidden_layer_sizes=hidden_layer_sizes, activation=activation,
+    #                        alpha=alpha, solver=solver, max_iter=max_iter, tol=tol)
+    #     modeler.mulitoutput_binarizer = multioutput_binarizer
+    #     return modeler, multioutput_binarizer.inverse_transform(npy.array(modeler.predict(predicted_inputs)))
+
 
 
 def get_scaler_attr(scaler, attr: str):

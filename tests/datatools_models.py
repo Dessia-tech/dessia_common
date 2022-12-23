@@ -52,8 +52,8 @@ hyperparameters = {'ridge_regressor': ridge_hyperparams, 'linearreg_regressor': 
                    'rf_classifier_doubled': rf_hyperparams,
                    'svm_regressor': svm_hyperparams, 'svm_classifier': svm_hyperparams,
                    #'svm_classifier_doubled': svm_hyperparams,
-                   'mlp_regressor': mlp_hyperparams, #'mlp_classifier': mlp_hyperparams,#}
-                   'mlp_classifier_doubled': mlp_hyperparams}
+                   'mlp_regressor': mlp_hyperparams, 'mlp_classifier': mlp_hyperparams}
+                   # 'mlp_classifier_doubled': mlp_hyperparams}
 
 
 # Sklearn models
@@ -69,21 +69,21 @@ skl_models = {'ridge_regressor': linear_model.Ridge(**ridge_hyperparams),
               'svm_classifier': svm.SVC(**svm_hyperparams),
               # 'svm_classifier_doubled': svm.SVC(**svm_hyperparams),
               'mlp_regressor': neural_network.MLPRegressor(**mlp_hyperparams),
-              # 'mlp_classifier': neural_network.MLPClassifier(**mlp_hyperparams),
-              'mlp_classifier_doubled': neural_network.MLPClassifier(**mlp_hyperparams)}
+              'mlp_classifier': neural_network.MLPClassifier(**mlp_hyperparams)}
+              # 'mlp_classifier_doubled': neural_network.MLPClassifier(**mlp_hyperparams)}
 
-# # Fit sklearn models
-# for key, model in skl_models.items():
-#     if 'regressor' in key:
-#         if 'svm' in key:
-#             model.fit(std_inputs[:-10], mono_outputs[:-10])
-#             continue
-#         model.fit(std_inputs[:-10], double_outputs[:-10])
-#         continue
-#     if 'doubled' in key:
-#         model.fit(std_inputs[:-10], doubled_labelled_outputs[:-10])
-#         continue
-#     model.fit(std_inputs[:-10], labelled_outputs[:-10])
+# Fit sklearn models
+for key, model in skl_models.items():
+    if 'regressor' in key:
+        if 'svm' in key:
+            model.fit(std_inputs[:-10], mono_outputs[:-10])
+            continue
+        model.fit(std_inputs[:-10], double_outputs[:-10])
+        continue
+    if 'doubled' in key:
+        model.fit(std_inputs[:-10], doubled_labelled_outputs[:-10])
+        continue
+    model.fit(std_inputs[:-10], labelled_outputs[:-10])
 
 # Dessia models
 dessia_classes = {'ridge_regressor': models.Ridge, 'linearreg_regressor': models.LinearRegression,
@@ -92,14 +92,15 @@ dessia_classes = {'ridge_regressor': models.Ridge, 'linearreg_regressor': models
                   'rf_regressor': models.RandomForestRegressor, 'rf_classifier': models.RandomForestClassifier,
                   'rf_classifier_doubled': models.RandomForestClassifier,
                   'svm_regressor': models.SupportVectorRegressor, 'svm_classifier': models.SupportVectorClassifier,
-                  'mlp_regressor': models.MLPRegressor, 'mlp_classifier': models.MLPClassifier, 'mlp_classifier_doubled': models.MLPClassifier}
+                  'mlp_regressor': models.MLPRegressor, 'mlp_classifier': models.MLPClassifier}
+                   #, 'mlp_classifier_doubled': models.MLPClassifier}
 
 
-# # Assert regenerated sklearn models from dessia models make the same predictions as sklearn models from sklearn.fit
-# dessia_models = {}
-# for key, model in skl_models.items():
-#     dessia_models[key] = dessia_classes[key]._instantiate_dessia(model, hyperparameters[key])
-#     assert(npy.all(dessia_models[key].predict(std_inputs[-10:]) == model.predict(std_inputs[-10:])))
+# Assert regenerated sklearn models from dessia models make the same predictions as sklearn models from sklearn.fit
+dessia_models = {}
+for key, model in skl_models.items():
+    dessia_models[key] = dessia_classes[key]._instantiate_dessia(model, hyperparameters[key])
+    assert(npy.all(dessia_models[key].predict(std_inputs[-10:]) == model.predict(std_inputs[-10:])))
 
 
 # Test dessia models methods
@@ -126,9 +127,9 @@ for key, model in skl_models.items():
         assert(e.args[0] == 'multiclass-multioutput is not supported' and
                isinstance(dessia_models[key], (models.DecisionTreeClassifier, models.MLPClassifier,
                                                models.SupportVectorClassifier, models.RandomForestClassifier)))
-    # t=time.time()
-    # dessia_models[key]._check_platform()
-    # print(key, time.time()-t)
+    t=time.time()
+    dessia_models[key]._check_platform()
+    print(key, time.time()-t)
 
 
 # Tests errors and base objects

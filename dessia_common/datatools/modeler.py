@@ -677,6 +677,9 @@ class CrossValidation(DessiaObject):
         graphs = []
         for validation in self.model_validations:
             graphs += validation.data.build_graphs()[0]
+        if len(self.model_validations[0].data.output_names) >= 1 and \
+            "ssifier" in type(self.model_validations[0].modeler.model).__name__:
+            return [MultiplePlots(graphs, elements=[{"factice_key":0}], initial_view_on=True)]
         return [self._plot_score(), MultiplePlots(graphs, elements=[{"factice_key":0}], initial_view_on=True)]
 
     # Kept in case of a better multiplot

@@ -7,7 +7,7 @@ from dessia_common.utils import helpers
 from dessia_common.models import all_cars_no_feat
 from dessia_common.datatools.dataset import Dataset
 import dessia_common.datatools.models as models
-from dessia_common.datatools.modeler import Modeler, CrossValidation #, ValidationData, ModelValidation
+from dessia_common.datatools.modeler import Modeler, CrossValidation
 
 # ======================================================================================================================
 #                                            F R O M   D A T A S E T
@@ -51,7 +51,7 @@ DC_mdlr, DC_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred,
                                                DC_model, True, False, "DTClassifier_modeler")
 RC_mdlr, RC_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_clf, output_names_clf,
                                                RC_model, True, False, "RFClassifier_modeler")
-MC_mdlr, MC_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_clf, output_names_clf,
+MC_mdlr, MC_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_clf, output_names_clf_solo,
                                                MC_model, True, False, "MLPClassifier_modeler")
 
 # TODO: make impossible scaling for classifier (set to False in any case)
@@ -65,7 +65,7 @@ CV_DC = CrossValidation.from_dataset(DC_mdlr, dataset_for_fit, input_names_clf, 
 CV_RR = CrossValidation.from_dataset(RR_mdlr, dataset_for_fit, input_names_reg, output_names_reg, 6, 0.8)
 CV_RC = CrossValidation.from_dataset(RC_mdlr, dataset_for_fit, input_names_clf, output_names_clf, 5, 0.8)
 CV_MR = CrossValidation.from_dataset(MR_mdlr, dataset_for_fit, input_names_reg, output_names_reg, 4, 0.8)
-CV_MC = CrossValidation.from_dataset(MC_mdlr, dataset_for_fit, input_names_clf, output_names_clf, 3, 0.8)
+CV_MC = CrossValidation.from_dataset(MC_mdlr, dataset_for_fit, input_names_clf, output_names_clf_solo, 3, 0.8)
 
 # Plot cross validations
 CV_Ri.plot()
@@ -82,7 +82,10 @@ cvs = [CV_Ri, CV_LR, CV_DR, CV_DC, CV_RR, CV_RC, CV_MR, CV_MC]
 for mdlr, cv in zip(mdlrs, cvs):
     if 'lassifier' in type(mdlr.model).__name__:
         input_names = input_names_clf
-        output_names = output_names_clf
+        if 'MLP' in type(mdlr.model).__name__:
+            output_names = output_names_clf_solo
+        else:
+            output_names = output_names_clf
         idx = 0
     else:
         input_names = input_names_reg
