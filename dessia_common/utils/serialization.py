@@ -1,8 +1,5 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
-Serialization Tools
-
+Serialization Tools.
 """
 
 import warnings
@@ -26,7 +23,7 @@ fullargsspec_cache = {}
 
 def serialize_dict(dict_):
     """
-    Serialize a dict into a dict (values are serialized)
+    Serialize a dict into a dict (values are serialized).
     """
     serialized_dict = {}
     for key, value in dict_.items():
@@ -36,7 +33,7 @@ def serialize_dict(dict_):
 
 def serialize_sequence(seq):
     """
-    Serialize a sequence (list or sequence) into a list of dicts
+    Serialize a sequence (list or sequence) into a list of dicts.
     """
     serialized_sequence = []
     for value in seq:
@@ -46,8 +43,7 @@ def serialize_sequence(seq):
 
 def serialize(value):
     """
-    Main function for serialization without pointers
-    Calls recursively itself serialize_sequence and serialize_dict
+    Main function for serialization without pointers. Calls recursively itself serialize_sequence and serialize_dict.
     """
     if isinstance(value, dc.DessiaObject):
         try:
@@ -82,7 +78,7 @@ def serialize(value):
 
 def serialize_with_pointers(value, memo=None, path='#'):
     """
-    Main function for serialization with pointers
+    Main function for serialization with pointers.
     """
     if memo is None:
         memo = {}
@@ -128,7 +124,7 @@ def serialize_with_pointers(value, memo=None, path='#'):
 
 def serialize_dict_with_pointers(dict_, memo, path):
     """
-    Serialize a dict recursively with jsonpointers using a memo dict at a given path of the top level object
+    Serialize a dict recursively with jsonpointers using a memo dict at a given path of the top level object.
     """
     serialized_dict = {}
     dict_attrs_keys = []
@@ -159,7 +155,7 @@ def serialize_dict_with_pointers(dict_, memo, path):
 
 def serialize_sequence_with_pointers(seq, memo, path):
     """
-    Serialize a sequence (list or tuple) using jsonpointers
+    Serialize a sequence (list or tuple) using jsonpointers.
     """
     serialized_sequence = []
     for ival, value in enumerate(seq):
@@ -170,10 +166,10 @@ def serialize_sequence_with_pointers(seq, memo, path):
     return serialized_sequence, memo
 
 
-def deserialize(serialized_element, sequence_annotation: str = 'List',
-                global_dict=None, pointers_memo=None, path: str = '#'):
+def deserialize(serialized_element, sequence_annotation: str = 'List', global_dict=None,
+                pointers_memo=None, path: str = '#'):
     """
-    Main function for deserialization, handle pointers
+    Main function for deserialization, handle pointers.
     """
     if pointers_memo is not None:
         if path in pointers_memo:
@@ -198,9 +194,10 @@ def deserialize(serialized_element, sequence_annotation: str = 'List',
     return serialized_element
 
 
-def deserialize_sequence(sequence, annotation=None,
-                         global_dict=None, pointers_memo=None,
-                         path='#'):
+def deserialize_sequence(sequence, annotation=None, global_dict=None, pointers_memo=None, path='#'):
+    """
+    Function to deserialize a sequence.
+    """
     origin, args = dcty.unfold_deep_annotation(typing_=annotation)
     deserialized_sequence = [deserialize(elt, args, global_dict=global_dict, pointers_memo=pointers_memo,
                                          path=f'{path}/{ie}') for ie, elt in enumerate(sequence)]
@@ -214,7 +211,7 @@ def deserialize_sequence(sequence, annotation=None,
 def dict_to_object(dict_, class_=None, force_generic: bool = False,
                    global_dict=None, pointers_memo=None, path='#'):
     """
-    Transform a dict to an object
+    Transform a dict to an object.
     """
     class_argspec = None
 
@@ -281,6 +278,9 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
 
 
 def deserialize_with_type(type_, value):
+    """
+    Deserialize value from its type and its value.
+    """
     if type_ in dcty.TYPES_STRINGS.values():
         return literal_eval(type_)(value)
     if isinstance(type_, str):
@@ -299,7 +299,7 @@ def deserialize_with_type(type_, value):
 
 def deserialize_with_typing(type_, argument, global_dict=None, pointers_memo=None, path='#'):
     """
-    Deserialize an object with a typing info
+    Deserialize an object with a typing info.
     """
     origin = get_origin(type_)
     args = get_args(type_)
@@ -363,7 +363,7 @@ def deserialize_with_typing(type_, argument, global_dict=None, pointers_memo=Non
 
 def deserialize_argument(type_, argument, global_dict=None, pointers_memo=None, path='#'):
     """
-    Deserialize an argument of a function with the type
+    Deserialize an argument of a function with the type.
     """
     if argument is None:
         return None
@@ -403,8 +403,9 @@ def deserialize_argument(type_, argument, global_dict=None, pointers_memo=None, 
 
 def find_references(value, path='#'):
     """
-    Traverse recursively the value to find reference (pointers) in it
-    Calls recursively find_references_sequence and find_references_dict
+    Traverse recursively the value to find reference (pointers) in it.
+
+    Calls recursively find_references_sequence and find_references_dict.
     """
     if isinstance(value, dict):
         return find_references_dict(value, path)
@@ -418,6 +419,9 @@ def find_references(value, path='#'):
 
 
 def find_references_sequence(seq, path):
+    """
+    Compute references for a sequence.
+    """
     if isinstance(seq, str):
         raise ValueError
 
@@ -431,6 +435,9 @@ def find_references_sequence(seq, path):
 
 
 def find_references_dict(dict_, path):
+    """
+    Compute references for a dict.
+    """
     if '$ref' in dict_:
 
         return [(path, dict_['$ref'])]
@@ -446,7 +453,9 @@ def find_references_dict(dict_, path):
 
 def pointer_graph(value):
     """
-    Create a graph of subattributes of an object with edge representing either:
+    Create a graph of subattributes of an object.
+
+    For this function, edge representing either:
      * the hierarchy of an subattribute to an attribute
      * the pointer link between the 2 elements
     """
@@ -524,6 +533,9 @@ def pointer_graph(value):
 
 
 def update_pointers_data(global_dict, current_dict, pointers_memo):
+    """
+    Update data dict from pointer.
+    """
     if global_dict is None or pointers_memo is None:
         global_dict = current_dict
 
@@ -536,7 +548,7 @@ def update_pointers_data(global_dict, current_dict, pointers_memo):
 
 def deserialization_order(dict_):
     """
-    Analyse a dict representing an object and give a deserialization order
+    Analyse a dict representing an object and give a deserialization order.
     """
     graph = pointer_graph(dict_)
     if '#' not in graph.nodes:
@@ -566,9 +578,12 @@ def deserialization_order(dict_):
 
 def dereference_jsonpointers(dict_):  # , global_dict):
     """
-    Analyse the given dict to:
+    Analyse the given dict.
+
+    It searches for:
     - find jsonpointers
     - deserialize them in the right order to respect pointers graph
+
     :returns: a dict with key the path of the item and the value is the python object
     """
     order = deserialization_order(dict_)
@@ -584,7 +599,6 @@ def dereference_jsonpointers(dict_):  # , global_dict):
 
 
 def pointer_graph_elements(value, path='#'):
-
     if isinstance(value, dict):
         return pointer_graph_elements_dict(value, path)
     if dcty.isinstance_base_types(value):
@@ -596,9 +610,6 @@ def pointer_graph_elements(value, path='#'):
 
 
 def pointer_graph_elements_sequence(seq, path='#'):
-    """
-    Compute
-    """
     if isinstance(seq, str):
         raise ValueError
 
@@ -619,7 +630,6 @@ def pointer_graph_elements_sequence(seq, path='#'):
 
 
 def pointer_graph_elements_dict(dict_, path='#'):
-
     if '$ref' in dict_:
         return [path, dict_['$ref']], [(path, dict_['$ref'], True)]
 
@@ -641,7 +651,8 @@ def pointer_graph_elements_dict(dict_, path='#'):
 
 def pointers_analysis(obj):
     """
-    Analyse on object to output stats on pointer use in the object
+    Analyse on object to output stats on pointer use in the object.
+
     :returns: a tuple of 2 dicts: one giving the number of pointer use by class
     """
     if isinstance(obj, dict):

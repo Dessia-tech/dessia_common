@@ -468,7 +468,7 @@ class ModelValidation(DessiaObject):
 
     @classmethod
     def _build(cls, modeler: Modeler, input_train: Matrix, input_test: Matrix, output_train: Matrix,
-               output_test: Matrix, input_names: List[str], output_names: List[str], ratio: float = 0.8,
+               output_test: Matrix, input_names: List[str], output_names: List[str],
                name: str = '') -> 'ModelValidation':
         trained_mdlr, pred_test = Modeler.fit_predict_matrix(input_train, output_train, input_test, modeler.model,
                                                                  modeler.in_scaled, modeler.out_scaled, name)
@@ -519,7 +519,7 @@ class ModelValidation(DessiaObject):
         :rtype: ModelValidation
         """
         in_train, in_test, out_train, out_test = models.train_test_split(inputs, outputs, ratio=ratio)
-        return cls._build(modeler, in_train, in_test, out_train, out_test, input_names, output_names, ratio, name)
+        return cls._build(modeler, in_train, in_test, out_train, out_test, input_names, output_names, name)
 
     @classmethod
     def from_dataset(cls, modeler: Modeler, dataset: Dataset, input_names: List[str], output_names: List[str],
@@ -558,7 +558,7 @@ class ModelValidation(DessiaObject):
         :rtype: ModelValidation
         """
         in_train, in_test, out_train, out_test = dataset.train_test_split(input_names, output_names, ratio)
-        return cls._build(modeler, in_train, in_test, out_train, out_test, input_names, output_names, ratio, name)
+        return cls._build(modeler, in_train, in_test, out_train, out_test, input_names, output_names, name)
 
     def plot_data(self, **_):
         """

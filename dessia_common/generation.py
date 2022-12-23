@@ -1,6 +1,5 @@
 """
-generation for dessia_common
-
+Module for Generation for dessia_common.
 """
 from typing import List
 import dectree as dt
@@ -9,7 +8,7 @@ from dessia_common.core import DessiaObject
 
 class Generator(DessiaObject):
     """
-    Common parts of generator
+    Common parts of generator.
     """
 
     def __init__(self, name: str = ''):
@@ -17,7 +16,7 @@ class Generator(DessiaObject):
 
     def is_model_valid(self, model) -> bool:
         """
-        Checks if Model is valid or not
+        Checks if Model is valid or not.
 
         :param model: Model generated
 
@@ -54,7 +53,7 @@ class TreeGenerator(Generator):
 
     def is_vector_valid(self, vector: List[int]) -> bool:
         """
-        Verifies and Validates the decision tree vector
+        Verifies and Validates the decision tree vector.
 
         :param vector: decision tree node list
         :type vector: List[int]

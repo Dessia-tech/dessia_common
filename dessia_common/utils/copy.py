@@ -1,5 +1,5 @@
 """
-Tools for copying objects
+Tools for copying objects.
 """
 
 import copy
@@ -13,8 +13,12 @@ def deepcopy_value(value, memo):
     """
     Returns the deepcopy of a value.
 
-    :param value: The value to be deepcopied
-    :param memo: A dictionary linking a path to an object
+    :param value:
+        The value to be deepcopied
+
+    :param memo:
+        A dictionary linking a path to an object
+
     :return: A deepcopy of the value
     """
 

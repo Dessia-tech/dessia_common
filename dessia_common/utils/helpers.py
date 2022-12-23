@@ -1,10 +1,12 @@
 """
-Tools for copying objects
+Tools for copying objects.
 """
-
 from typing import List
 
 def concatenate(values):
+    """
+    Concatenate values of class class_ into a class_ containing all concatenated values.
+    """
     types_set = set(type(value) for value in values)
     concatenated_values = None
     if len(types_set) != 1:
@@ -24,7 +26,7 @@ def concatenate(values):
 
 def prettyname(name: str) -> str:
     """
-    Creates a pretty name from as str
+    Creates a pretty name from as str.
     """
     pretty_name = ''
     if name:
