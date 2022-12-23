@@ -353,7 +353,6 @@ class LinearModel(Model):
         Name of LinearModel regression
     :type name: str, `optional`, defaults to `''`
     """
-    _standalone_in_db = True
 
     def __init__(self, params: Dict[str, Any], coef_: Matrix = None, intercept_: Matrix = None, name: str = ''):
         self.coef_ = coef_
@@ -1514,6 +1513,7 @@ class SupportVectorClassifier(SupportVectorMachine):
         The classes labels.
     :type classes_: List[int], `optional`, defaults to `None`
     """
+    _standalone_in_db = True
 
     def __init__(self, params: Dict[str, Any], raw_coef_: Matrix = None, _dual_coef_: Matrix = None,
                  _intercept_: Vector = None, support_: List[int] = 1, support_vectors_: Matrix = None,
