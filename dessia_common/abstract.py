@@ -1,5 +1,5 @@
 """
-Abstract module that defines a base DessiaObject in order to avoid circular imports
+Abstract module that defines a base DessiaObject in order to avoid circular imports.
 """
 
 
