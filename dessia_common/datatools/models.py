@@ -867,7 +867,7 @@ class DecisionTreeClassifier(DecisionTreeRegressor):
         model = self.generic_skl_attributes()
         model.n_classes_ = self.n_classes_
         if isinstance(self.n_classes_, list):
-            model.classes_ = npy.array([npy.array(class_) for class_ in self.classes_])
+            model.classes_ = [npy.array(class_) for class_ in self.classes_]
         else:
             model.classes_ = npy.array(self.classes_)
         return model
@@ -903,7 +903,8 @@ class DecisionTreeClassifier(DecisionTreeRegressor):
         model = self._instantiate_skl()
         # if self.n_outputs_ == 1:
         #     return model.score(inputs, outputs)
-        return model.score(inputs, outputs) #[model.score(inputs, output) for output in zip(*outputs)] #ValueError('multiclass-multioutput is not supported')
+        return model.score(inputs, outputs)
+    #[model.score(inputs, output) for output in zip(*outputs)] #ValueError('multiclass-multioutput is not supported')
 
 
 class RandomForest(Model):
@@ -1152,7 +1153,7 @@ class RandomForestClassifier(RandomForest):
         model = self.generic_skl_attributes()
         model.n_classes_ = self.n_classes_
         if isinstance(self.n_classes_, list):
-            model.classes_ = npy.array([npy.array(class_) for class_ in self.classes_])
+            model.classes_ = [npy.array(class_) for class_ in self.classes_]
         else:
             model.classes_ = npy.array(self.classes_)
         return model
@@ -1160,7 +1161,8 @@ class RandomForestClassifier(RandomForest):
     @classmethod
     def _instantiate_dessia(cls, model, params: Dict[str, Any], name: str = ''):
         kwargs = cls.generic_dessia_attributes(model, params=params, name=name)
-        kwargs.update({'estimators_': [DecisionTreeClassifier._instantiate_dessia(tree, {}) for tree in model.estimators_],
+        kwargs.update({'estimators_': [DecisionTreeClassifier._instantiate_dessia(tree, {})
+                                       for tree in model.estimators_],
                        'n_classes_': (model.n_classes_ if isinstance(model.n_classes_, (int, list))
                                       else model.n_classes_.tolist()),
                        'classes_': (model.classes_.tolist() if isinstance(model.classes_, npy.ndarray)
@@ -1187,8 +1189,6 @@ class RandomForestClassifier(RandomForest):
         :rtype: float
         """
         model = self._instantiate_skl()
-        if len(outputs[0]):
-            a=1
         return model.score(inputs, outputs)
 
 
@@ -1895,9 +1895,6 @@ class MLPClassifier(MultiLayerPerceptron):
     # def fit_predict(cls, inputs: Matrix, outputs: Vector, predicted_inputs: Matrix, hidden_layer_sizes: List[int],
     #                 activation: str = 'relu', alpha: float = 0.0001, solver: str = 'adam', max_iter: int = 200,
     #                 tol: float = 0.0001, name: str = '') -> Tuple['MultiLayerPerceptron', Union[Vector, Matrix]]:
-    #     """
-    #     Fit outputs to inputs and predict outputs for predicted_inputs. It is the succession of fit and predict methods.
-    #     """
     #     multioutput_binarizer, b_outputs = cls._binarize_outputs(outputs)
     #     modeler = cls.fit_(inputs, b_outputs, name=name, hidden_layer_sizes=hidden_layer_sizes, activation=activation,
     #                        alpha=alpha, solver=solver, max_iter=max_iter, tol=tol)

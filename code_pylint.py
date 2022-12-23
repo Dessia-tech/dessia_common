@@ -33,7 +33,7 @@ MAX_ERROR_BY_TYPE = {
                      'trailing-whitespace': 11,
                      'empty-docstring': 1,
                      'missing-module-docstring': 1,
-                     'too-many-arguments': 47,
+                     'too-many-arguments': 53,
                      'too-few-public-methods': 5,  # Not really important
                      'unnecessary-comprehension': 1,
                      'no-value-for-parameter': 2,
@@ -41,7 +41,7 @@ MAX_ERROR_BY_TYPE = {
                      'consider-merging-isinstance': 1,
                      'abstract-method': 6,
                      'import-outside-toplevel': 4,  # TODO : will reduced in a future work (when tests are ready)
-                     'too-many-instance-attributes': 8,
+                     'too-many-instance-attributes': 9,
                      'no-else-raise errors': 5,
                      'consider-iterating-dictionary': 1,
                      'attribute-defined-outside-init': 3,
