@@ -57,6 +57,7 @@ class Modeler(DessiaObject):
         Name of Modeler.
     :type name: str, `optional`, defaults to `''`
     """
+    _standalone_in_db = True
 
     def __init__(self, model: models.Model, input_scaler: models.Scaler, output_scaler: models.Scaler, name: str = ''):
         self.model = model
