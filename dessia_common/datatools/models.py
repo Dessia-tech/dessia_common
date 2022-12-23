@@ -1151,15 +1151,20 @@ class RandomForestClassifier(RandomForest):
     def _instantiate_skl(self):
         model = self.generic_skl_attributes()
         model.n_classes_ = self.n_classes_
-        model.classes_ = npy.array(self.classes_)
+        if isinstance(self.n_classes_, list):
+            model.classes_ = npy.array([npy.array(class_) for class_ in self.classes_])
+        else:
+            model.classes_ = npy.array(self.classes_)
         return model
 
     @classmethod
     def _instantiate_dessia(cls, model, params: Dict[str, Any], name: str = ''):
         kwargs = cls.generic_dessia_attributes(model, params=params, name=name)
         kwargs.update({'estimators_': [DecisionTreeClassifier._instantiate_dessia(tree, {}) for tree in model.estimators_],
-                       'n_classes_': int(model.n_classes_),
-                       'classes_': model.classes_.tolist()})
+                       'n_classes_': (model.n_classes_ if isinstance(model.n_classes_, (int, list))
+                                      else model.n_classes_.tolist()),
+                       'classes_': (model.classes_.tolist() if isinstance(model.classes_, npy.ndarray)
+                                    else [klass.tolist() for klass in model.classes_])})
         return cls(**kwargs)
 
 
@@ -1704,7 +1709,7 @@ class MultiLayerPerceptron(Model):
         """
         outputs = matrix_1d_to_vector(outputs)
         return cls.fit_(inputs, outputs, name=name, hidden_layer_sizes=hidden_layer_sizes, activation=activation,
-                        alpha=alpha, solver=solver, max_iter=max_iter, tol=tol)
+                            alpha=alpha, solver=solver, max_iter=max_iter, tol=tol)
 
     @classmethod
     def fit_predict(cls, inputs: Matrix, outputs: Vector, predicted_inputs: Matrix, hidden_layer_sizes: List[int],

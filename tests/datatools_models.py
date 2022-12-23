@@ -47,10 +47,13 @@ mlp_hyperparams = {'hidden_layer_sizes': (100, 100, 100, 100, 100), 'alpha': 100
 
 hyperparameters = {'ridge_regressor': ridge_hyperparams, 'linearreg_regressor': linearreg_hyperparams,
                    'dt_regressor': dt_hyperparams, 'dt_classifier': dt_hyperparams,
-                   'dt_classifier_doubled': dt_hyperparams,
-                   'rf_regressor': rf_hyperparams, 'rf_classifier': rf_hyperparams,
+                   'dt_classifier_doubled': dt_hyperparams, 'rf_regressor': rf_hyperparams,
+                   'rf_classifier': rf_hyperparams,
+                   'rf_classifier_doubled': rf_hyperparams,
                    'svm_regressor': svm_hyperparams, 'svm_classifier': svm_hyperparams,
+                   #'svm_classifier_doubled': svm_hyperparams,
                    'mlp_regressor': mlp_hyperparams, 'mlp_classifier': mlp_hyperparams}
+                   #, 'mlp_classifier_doubled': mlp_hyperparams}
 
 
 # Sklearn models
@@ -61,11 +64,13 @@ skl_models = {'ridge_regressor': linear_model.Ridge(**ridge_hyperparams),
               'dt_classifier_doubled': tree.DecisionTreeClassifier(**dt_hyperparams),
               'rf_regressor': ensemble.RandomForestRegressor(**rf_hyperparams),
               'rf_classifier': ensemble.RandomForestClassifier(**rf_hyperparams),
+              'rf_classifier_doubled': ensemble.RandomForestClassifier(**rf_hyperparams),
               'svm_regressor': svm.SVR(**svm_hyperparams),
               'svm_classifier': svm.SVC(**svm_hyperparams),
+              # 'svm_classifier_doubled': svm.SVC(**svm_hyperparams),
               'mlp_regressor': neural_network.MLPRegressor(**mlp_hyperparams),
-              'mlp_classifier': neural_network.MLPClassifier(**mlp_hyperparams)}
-
+              'mlp_classifier': neural_network.MLPClassifier(**mlp_hyperparams)}#,
+              #'mlp_classifier_doubled': neural_network.MLPClassifier(**mlp_hyperparams)}
 
 # Fit sklearn models
 for key, model in skl_models.items():
@@ -85,6 +90,7 @@ dessia_classes = {'ridge_regressor': models.Ridge, 'linearreg_regressor': models
                   'dt_regressor': models.DecisionTreeRegressor, 'dt_classifier': models.DecisionTreeClassifier,
                   'dt_classifier_doubled': models.DecisionTreeClassifier,
                   'rf_regressor': models.RandomForestRegressor, 'rf_classifier': models.RandomForestClassifier,
+                  'rf_classifier_doubled': models.RandomForestClassifier,
                   'svm_regressor': models.SupportVectorRegressor, 'svm_classifier': models.SupportVectorClassifier,
                   'mlp_regressor': models.MLPRegressor, 'mlp_classifier': models.MLPClassifier}
 
@@ -118,7 +124,8 @@ for key, model in skl_models.items():
         assert(isinstance(dessia_models[key].score(std_inputs[-10:], local_outputs[-10:]), float))
     except ValueError as e:
         assert(e.args[0] == 'multiclass-multioutput is not supported' and
-               isinstance(dessia_models[key], models.DecisionTreeClassifier))
+               isinstance(dessia_models[key], (models.DecisionTreeClassifier, models.MLPClassifier,
+                                               models.SupportVectorClassifier, models.RandomForestClassifier)))
     t=time.time()
     dessia_models[key]._check_platform()
     print(key, time.time()-t)
