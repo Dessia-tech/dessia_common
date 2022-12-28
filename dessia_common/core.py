@@ -804,7 +804,7 @@ class Parameter(DessiaObject):
         return normalized_value
 
     def original_value(self, normalized_value):
-        """ 'Unnormalize' value to its original value. """
+        """ Unnormalize value to its original value. """
         value = normalized_value * (self.upper_bound - self.lower_bound) + self.lower_bound
         return value
 
