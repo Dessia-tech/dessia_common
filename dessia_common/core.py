@@ -47,26 +47,6 @@ import dessia_common.files as dcf
 _FORBIDDEN_ARGNAMES = ['self', 'cls', 'progress_callback', 'return']
 
 
-def deprecated(use_instead=None):
-    def decorated(function):
-        def wrapper(*args, **kwargs):
-            deprecation_warning(function.__name__, 'Function', use_instead)
-            print('Traceback : ')
-            tb.print_stack(limit=2)
-            return function(*args, **kwargs)
-        return wrapper
-    return decorated
-
-
-def deprecation_warning(name, object_type, use_instead=None):
-    warnings.simplefilter('once', DeprecationWarning)
-    msg = f"\n\n{object_type} {name} is deprecated.\nIt will be removed in a future version.\n"
-    if use_instead is not None:
-        msg += f"Use {use_instead} instead.\n"
-    warnings.warn(msg, DeprecationWarning)
-    return msg
-
-
 class DessiaObject(SerializableObject):
     """
     Base class for Dessia's platform compatible objects.
