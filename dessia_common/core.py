@@ -454,7 +454,7 @@ class DessiaObject(SerializableObject):
                 dict_[arg] = deepcopy_value(getattr(self, arg), memo=memo)
         return self.__class__(**dict_)
 
-    def plot_data(self, _):
+    def plot_data(self, **kwargs):
         return []
 
     def plot(self, **kwargs):
