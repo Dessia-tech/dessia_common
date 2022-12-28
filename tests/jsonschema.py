@@ -202,7 +202,7 @@ assert jss.chose_default(jsonschema["properties"]["name"]) is None
 jsonschema = StandaloneObjectWithDefaultValues.jsonschema()
 
 subobject_default_value = jss.chose_default(jsonschema["properties"]["standalone_subobject"])
-assert subobject_default_value["name"] == "StandaloneSubobject1"
+assert subobject_default_value["name"] == "EmbeddedSubobject1"
 assert subobject_default_value["object_class"] == "dessia_common.forms.StandaloneBuiltinsSubobject"
 assert subobject_default_value["floatarg"] == 0.3
 assert subobject_default_value["distarg"]["value"] == 0.51
