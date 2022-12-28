@@ -21,9 +21,9 @@ UNWATCHED_ERRORS = [
 MAX_ERROR_BY_TYPE = {
     # http://www.pydocstyle.org/en/stable/error_codes.html
     'D100': 1,
-    'D101': 78,
+    'D101': 76,
     'D102': 163,
-    'D103': 59,
+    'D103': 46,
     'D104': 1,
     'D105': 1,
     'D106': 1,
@@ -34,7 +34,7 @@ MAX_ERROR_BY_TYPE = {
     'D202': 1,
     'D203': 1,
     'D204': 1,
-    'D205': 38,
+    'D205': 36,
     'D206': 1,
     'D207': 1,
     'D208': 1,
@@ -50,7 +50,7 @@ MAX_ERROR_BY_TYPE = {
     'D301': 1,
     'D302': 1,
 
-    'D400': 101,
+    'D400': 98,
     'D401': 1,
     'D402': 1,
     'D403': 4,
