@@ -59,6 +59,7 @@ steps:
   - python scripts/dessia_object.py
   - pip install sphinx sphinx-rtd-theme coverage plot-data volmdlr
   - pip show coverage
+  - pip show plot_data
   - cd doc
   - make html
   - cd ../tests
