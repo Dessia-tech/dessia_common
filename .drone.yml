@@ -57,7 +57,8 @@ steps:
   - git fetch --tags
   - python setup.py install
   - python scripts/dessia_object.py
-  - pip install sphinx sphinx-rtd-theme coverage plot-data volmdlr
+  - pip install sphinx sphinx-rtd-theme coverage volmdlr
+  - pip install plot_data --no-cache-dir
   - pip show coverage
   - pip show plot_data
   - cd doc
