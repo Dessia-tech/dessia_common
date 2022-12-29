@@ -32,7 +32,7 @@ from dessia_common.utils.serialization import deserialize_argument, serialize
 from dessia_common.utils.types import full_classname, is_sequence, is_bson_valid, TYPES_FROM_STRING
 from dessia_common.utils.copy import deepcopy_value
 from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotation, JSONSCHEMA_HEADER
-from dessia_common.utils.schemas import set_default_value, SCHEMA_HEADER, ClassSchema
+from dessia_common.utils import schemas
 from dessia_common.utils.docstrings import parse_docstring, FAILED_DOCSTRING_PARSING
 
 from dessia_common.base import SerializableObject
@@ -46,7 +46,13 @@ from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
 import dessia_common.utils.helpers as dch
 import dessia_common.files as dcf
 
-_FORBIDDEN_ARGNAMES = ['self', 'cls', 'progress_callback', 'return']
+
+def __getattr__(name):
+    if name == "_FORBIDDEN_ARGNAMES":
+        warnings.warn("Attribute '_FORBIDDEN_ARGNAMES' is deprecated. Use schemas.RESERVED_ARGNAMES instead",
+                      DeprecationWarning)
+        return schemas.RESERVED_ARGNAMES
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 
 
 def deprecated(use_instead=None):
@@ -215,7 +221,7 @@ class DessiaObject(SerializableObject):
 
     @classmethod
     def base_schema(cls):
-        schema = deepcopy(SCHEMA_HEADER)
+        schema = deepcopy(schemas.SCHEMA_HEADER)
         schema['properties']['name'] = {"type": 'string', "title": "Object Name", "description": "Object name",
                                         "editable": True, "default_value": "Object Name"}
         return schema
@@ -231,7 +237,7 @@ class DessiaObject(SerializableObject):
             warnings.warn("Jsonschema is fully deprecated and you may want to use the new generic schema feature."
                           "Please consider so", DeprecationWarning)
             return cls._jsonschema
-        schema = ClassSchema(cls)
+        schema = schemas.ClassSchema(cls)
         return schema.write()
 
     @classmethod
@@ -269,7 +275,7 @@ class DessiaObject(SerializableObject):
         # Initialize jsonschema
         _jsonschema = deepcopy(JSONSCHEMA_HEADER)
 
-        required_arguments, default_arguments = inspect_arguments(method=init, merge=False)
+        required_arguments, default_arguments = schemas.inspect_arguments(method=init, merge=False)
         _jsonschema['required'] = required_arguments
         _jsonschema['standalone_in_db'] = cls._standalone_in_db
         _jsonschema['description'] = parsed_docstring['description']
@@ -297,7 +303,7 @@ class DessiaObject(SerializableObject):
                                                      parsed_attributes=parsed_attributes)
                 _jsonschema['properties'].update(jss_elt)
                 if name in default_arguments:
-                    default = set_default_value(_jsonschema["properties"]["name"], default_arguments[name])
+                    default = schemas.set_default_value(_jsonschema["properties"]["name"], default_arguments[name])
                     _jsonschema['properties'].update(default)
 
         _jsonschema['classes'] = [cls.__module__ + '.' + cls.__name__]
@@ -330,7 +336,7 @@ class DessiaObject(SerializableObject):
             method = getattr(class_, method_name)
 
             if not isinstance(method, property):
-                required_args, default_args = inspect_arguments(method=method, merge=False)
+                required_args, default_args = schemas.inspect_arguments(method=method, merge=False)
                 annotations = get_type_hints(method)
                 if annotations:
                     jsonschemas[method_name] = deepcopy(JSONSCHEMA_HEADER)
@@ -339,15 +345,15 @@ class DessiaObject(SerializableObject):
                     for i, annotation in enumerate(annotations.items()):
                         # TOCHECK Not actually ordered
                         argname = annotation[0]
-                        if argname not in _FORBIDDEN_ARGNAMES:
+                        if argname not in schemas.RESERVED_ARGNAMES:
                             if argname in required_args:
                                 jsonschemas[method_name]['required'].append(str(i))
                             jsonschema_element = jsonschema_from_annotation(annotation, {}, i)[argname]
 
                             jsonschemas[method_name]['properties'][str(i)] = jsonschema_element
                             if argname in default_args:
-                                default = set_default_value(jsonschemas[method_name]['properties'][str(i)],
-                                                            default_args[argname])
+                                default = schemas.set_default_value(jsonschemas[method_name]['properties'][str(i)],
+                                                                    default_args[argname])
                                 jsonschemas[method_name]['properties'].update(default)
         return jsonschemas
 
@@ -1317,41 +1323,23 @@ def inspect_arguments(method, merge=False):
     Find default value and required arguments of class construction.
 
     Get method arguments and default arguments as sequences while removing forbidden ones (self, cls...).
-    TODO : Could move this to utils.schemas.py. Be aware of :
-     - dessia_platform_backend retrocompat
-     - Cyclic imports
     """
-    argspec = inspect.getfullargspec(method)
-    return split_default_args(argspec=argspec, merge=merge)
+    warnings.warn("Method 'inspect_arguments' have been moved to utils/schemas."
+                  "Use it instead instead", DeprecationWarning)
+    return schemas.inspect_arguments(method=method, merge=merge)
 
 
 def split_default_args(argspec, merge: bool = False):
-    nargs, ndefault_args = split_argspecs(argspec)
-
-    default_arguments = {}
-    arguments = []
-    for iargument, argument in enumerate(argspec.args[1:]):
-        if argument not in _FORBIDDEN_ARGNAMES:
-            if iargument >= nargs - ndefault_args:
-                default_value = argspec.defaults[ndefault_args - nargs + iargument]
-                if merge:
-                    arguments.append((argument, default_value))
-                else:
-                    default_arguments[argument] = default_value
-            else:
-                arguments.append(argument)
-    return arguments, default_arguments
+    warnings.warn("Method 'split_default_args' have been moved to utils/schemas."
+                  "Use it instead instead", DeprecationWarning)
+    return schemas.split_default_args(argspec=argspec, merge=merge)
 
 
 def split_argspecs(argspecs) -> Tuple[int, int]:
     """ Get number of regular arguments as well as arguments with default values. """
-    nargs = len(argspecs.args) - 1
-
-    if argspecs.defaults is not None:
-        ndefault_args = len(argspecs.defaults)
-    else:
-        ndefault_args = 0
-    return nargs, ndefault_args
+    warnings.warn("Method 'split_argspecs' have been moved to utils/schemas."
+                  "Use it instead instead", DeprecationWarning)
+    return schemas.split_argspecs(argspecs=argspecs)
 
 
 def get_attribute_names(object_class):
@@ -1367,6 +1355,5 @@ def get_attribute_names(object_class):
     subclass_numeric_attributes = [name for name, param in subclass_attributes.items()
                                    if any(item in inspect.getmro(param.annotation)
                                           for item in [float, int, bool, complex])]
-    attributes += [attribute for attribute in subclass_numeric_attributes
-                   if attribute not in _FORBIDDEN_ARGNAMES]
+    attributes += [a for a in subclass_numeric_attributes if a not in schemas.RESERVED_ARGNAMES]
     return attributes

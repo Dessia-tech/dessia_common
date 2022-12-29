@@ -8,18 +8,18 @@ import inspect
 import collections
 import collections.abc
 from typing import get_origin, get_args, Union, get_type_hints, Type, Callable, List, Tuple, TypedDict
-import dessia_common as dc
+# import dessia_common.core as dc
 import dessia_common.utils.types as dc_types
+from dessia_common.abstract import CoreDessiaObject
 from dessia_common.files import BinaryFile, StringFile
-from dessia_common.utils.docstrings import parse_docstring, FAILED_DOCSTRING_PARSING, FAILED_ATTRIBUTE_PARSING
 from dessia_common.typings import Subclass, MethodType, ClassMethodType, Any
 from dessia_common.measures import Measure
+from dessia_common.utils.docstrings import parse_docstring, FAILED_DOCSTRING_PARSING, FAILED_ATTRIBUTE_PARSING
+from dessia_common.utils.helpers import prettyname
 
-SCHEMA_HEADER = {"definitions": {},
-                 "$schema": "http://json-schema.org/d_raft-07/schema#",
-                 "type": "object",
-                 "required": [],
-                 "properties": {}}
+SCHEMA_HEADER = {"definitions": {}, "$schema": "http://json-schema.org/d_raft-07/schema#",
+                 "type": "object", "required": [], "properties": {}}
+RESERVED_ARGNAMES = ['self', 'cls', 'progress_callback', 'return']
 
 Issue = TypedDict("Issue", {"attribute": str, "severity": str, "message": str})
 
@@ -75,7 +75,7 @@ class Schema:
                 description = FAILED_ATTRIBUTE_PARSING["desc"]
         else:
             description = ""
-        chunk = schema_chunk(annotation=annotation, title=dc.prettyname(attribute),
+        chunk = schema_chunk(annotation=annotation, title=prettyname(attribute),
                              editable=attribute not in ['return'], description=description)
         if attribute in self.default_arguments:
             chunk = set_default_value(schema_element=chunk, default_value=self.default_arguments[attribute])
@@ -120,6 +120,90 @@ class MethodSchema(Schema):
 
         annotations = get_type_hints(method)
         Schema.__init__(self, annotations=annotations)
+
+
+class SchemaProperty:
+    """ Base class for a schema property. """
+    def __init__(self, annotation):
+        self.annotation = annotation
+
+    def write(self, title: str = "", editable: bool = False, description: str = ""):
+        raise {'title': title, 'editable': editable, 'description': description,
+               'python_typing': dc_types.serialize_typing(self.annotation)}
+
+    def check(self):
+        raise NotImplementedError("Should implement this in any children class")
+
+
+class TupleSchema(SchemaProperty):
+    def __init__(self, annotation):
+        self.args = get_args(annotation)
+
+        self.items_schemas = [get_schema(a) for a in self.args]
+
+        SchemaProperty.__init__(self, annotation=annotation)
+
+    def write(self, title: str = "", editable: bool = False, description: str = ""):
+        chunk = SchemaProperty.write(self)
+        items = []
+        for type_ in self.args:
+            # TODO Should classes other than builtins be allowed here ?
+            items.append({'type': dc_types.TYPING_EQUIVALENCES[type_]})
+        chunk.update({'type': 'array', 'additionalItems': False, 'items': items})
+        return chunk
+
+    def check(self):
+        raise NotImplementedError("Should implement this in any children class")
+
+
+def inspect_arguments(method, merge=False):
+    """
+    Find default value and required arguments of class construction.
+
+    Get method arguments and default arguments as sequences while removing forbidden ones (self, cls...).
+    """
+    argspec = inspect.getfullargspec(method)
+    return split_default_args(argspec=argspec, merge=merge)
+
+
+def split_default_args(argspec, merge: bool = False):
+    nargs, ndefault_args = split_argspecs(argspec)
+
+    default_arguments = {}
+    arguments = []
+    for iargument, argument in enumerate(argspec.args[1:]):
+        if argument not in RESERVED_ARGNAMES:
+            if iargument >= nargs - ndefault_args:
+                default_value = argspec.defaults[ndefault_args - nargs + iargument]
+                if merge:
+                    arguments.append((argument, default_value))
+                else:
+                    default_arguments[argument] = default_value
+            else:
+                arguments.append(argument)
+    return arguments, default_arguments
+
+
+def split_argspecs(argspecs) -> Tuple[int, int]:
+    """ Get number of regular arguments as well as arguments with default values. """
+    nargs = len(argspecs.args) - 1
+
+    if argspecs.defaults is not None:
+        ndefault_args = len(argspecs.defaults)
+    else:
+        ndefault_args = 0
+    return nargs, ndefault_args
+
+
+def get_schema(annotation):
+    if dc_types.is_typing(annotation):
+        return get_typing_schema(annotation)
+
+
+def get_typing_schema(typing_):
+    origin = get_origin(typing_)
+    if origin is tuple:
+        return TupleSchema(annotation=typing_)
 
 
 def default_sequence(array_schema):
@@ -202,7 +286,7 @@ def default_dict(schema):
 
 def schema_union_types(annotation):
     args = get_args(annotation)
-    classnames = [dc.full_classname(object_=a, compute_for='class') for a in args]
+    classnames = [dc_types.full_classname(object_=a, compute_for='class') for a in args]
     standalone_args = [a._standalone_in_db for a in args]
     if all(standalone_args):
         standalone = True
@@ -219,7 +303,7 @@ def schema_from_annotation(annotation, schema_element, order, editable=None, tit
         raise ValueError
 
     if title is None:
-        title = dc.prettyname(key)
+        title = prettyname(key)
     if editable is None:
         editable = key not in ['return']
 
@@ -297,8 +381,8 @@ def schema_from_annotation(annotation, schema_element, order, editable=None, tit
     elif inspect.isclass(typing_) and issubclass(typing_, (BinaryFile, StringFile)):
         schema_element[key].update({'type': 'text', 'is_file': True})
     else:
-        classname = dc.full_classname(object_=typing_, compute_for='class')
-        if inspect.isclass(typing_) and issubclass(typing_, dc.DessiaObject):
+        classname = dc_types.full_classname(object_=typing_, compute_for='class')
+        if inspect.isclass(typing_) and issubclass(typing_, CoreDessiaObject):
             # Dessia custom classes
             schema_element[key].update({'type': 'object', 'standalone_in_db': typing_._standalone_in_db})
         # else:
@@ -327,9 +411,9 @@ def schema_chunk(annotation, title: str, editable: bool, description: str):
         chunk['si_unit'] = annotation.si_unit
     elif inspect.isclass(annotation) and issubclass(annotation, (BinaryFile, StringFile)):
         chunk = {'type': 'text', 'is_file': True}
-    elif inspect.isclass(annotation) and issubclass(annotation, dc.DessiaObject):
+    elif inspect.isclass(annotation) and issubclass(annotation, CoreDessiaObject):
         # Dessia custom classes
-        classname = dc.full_classname(object_=annotation, compute_for='class')
+        classname = dc_types.full_classname(object_=annotation, compute_for='class')
         chunk = {'type': 'object', 'standalone_in_db': annotation._standalone_in_db, "classes": [classname]}
     else:
         raise NotImplementedError(f"Annotation {annotation} is not supported.")
@@ -460,7 +544,7 @@ def dynamic_dict_schema(annotation):
 def instance_of_schema(annotation):
     args = get_args(annotation)
     class_ = args[0]
-    classname = dc.full_classname(object_=class_, compute_for='class')
+    classname = dc_types.full_classname(object_=class_, compute_for='class')
     return {'type': 'object', 'instance_of': classname, 'standalone_in_db': class_._standalone_in_db}
 
 
