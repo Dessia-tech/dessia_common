@@ -32,7 +32,7 @@ from dessia_common.utils.serialization import deserialize_argument, serialize
 from dessia_common.utils.types import full_classname, is_sequence, is_bson_valid, TYPES_FROM_STRING
 from dessia_common.utils.copy import deepcopy_value
 from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotation, JSONSCHEMA_HEADER
-from dessia_common.utils import schemas
+import dessia_common.schemas.core as schemas
 from dessia_common.utils.docstrings import parse_docstring, FAILED_DOCSTRING_PARSING
 
 from dessia_common.base import SerializableObject
@@ -1324,20 +1324,20 @@ def inspect_arguments(method, merge=False):
 
     Get method arguments and default arguments as sequences while removing forbidden ones (self, cls...).
     """
-    warnings.warn("Method 'inspect_arguments' have been moved to utils/schemas."
+    warnings.warn("Method 'inspect_arguments' have been moved to dessia_common/schemas."
                   "Use it instead instead", DeprecationWarning)
     return schemas.inspect_arguments(method=method, merge=merge)
 
 
 def split_default_args(argspec, merge: bool = False):
-    warnings.warn("Method 'split_default_args' have been moved to utils/schemas."
+    warnings.warn("Method 'split_default_args' have been moved to dessia_common/schemas."
                   "Use it instead instead", DeprecationWarning)
     return schemas.split_default_args(argspec=argspec, merge=merge)
 
 
 def split_argspecs(argspecs) -> Tuple[int, int]:
     """ Get number of regular arguments as well as arguments with default values. """
-    warnings.warn("Method 'split_argspecs' have been moved to utils/schemas."
+    warnings.warn("Method 'split_argspecs' have been moved to dessia_common/schemas."
                   "Use it instead instead", DeprecationWarning)
     return schemas.split_argspecs(argspecs=argspecs)
 

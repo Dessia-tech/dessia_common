@@ -1,4 +1,4 @@
-from dessia_common.utils.schemas import schema_chunk
+from dessia_common.schemas.core import schema_chunk
 from typing import List, Tuple, Dict, Type
 from dessia_common.core import DessiaObject
 from dessia_common.measures import Distance

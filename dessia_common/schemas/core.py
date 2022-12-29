@@ -7,7 +7,6 @@ from copy import deepcopy
 import inspect
 import collections
 import collections.abc
-# from typing import get_origin, get_args, Union, get_type_hints, Type, Callable, List, Tuple, TypedDict
 import typing as tp
 import dessia_common.utils.types as dc_types
 from dessia_common.abstract import CoreDessiaObject
@@ -16,6 +15,7 @@ from dessia_common.typings import Subclass, MethodType, ClassMethodType, Any
 from dessia_common.measures import Measure
 from dessia_common.utils.docstrings import parse_docstring, FAILED_DOCSTRING_PARSING, FAILED_ATTRIBUTE_PARSING
 from dessia_common.utils.helpers import prettyname
+import dessia_common.schemas.interfaces as si
 
 SCHEMA_HEADER = {"definitions": {}, "$schema": "http://json-schema.org/d_raft-07/schema#",
                  "type": "object", "required": [], "properties": {}}
@@ -122,23 +122,23 @@ class MethodSchema(Schema):
         Schema.__init__(self, annotations=annotations)
 
 
-class SchemaProperty:
+class Property:
     """ Base class for a schema property. """
     def __init__(self, annotation):
         self.annotation = annotation
 
-    def write(self, title: str = "", editable: bool = False, description: str = ""):
+    def write(self, title: str = "", editable: bool = False, description: str = "") -> si.PropertySchema:
         return {'title': title, 'editable': editable, 'description': description,
-                'python_typing': dc_types.serialize_typing(self.annotation)}
+                'python_typing': dc_types.serialize_typing(self.annotation), "type": None}
 
     def check(self):
         raise NotImplementedError("Should implement this in any children class")
 
 
-class TypingSchema(SchemaProperty):
+class TypingSchema(Property):
     """ Schema class for typing based annotations. """
     def __init__(self, annotation):
-        SchemaProperty.__init__(self, annotation=annotation)
+        Property.__init__(self, annotation=annotation)
 
     @property
     def args(self):
@@ -152,14 +152,13 @@ class TypingSchema(SchemaProperty):
         raise NotImplementedError("Should implement this in any children class")
 
 
-class BuiltinSchema(SchemaProperty):
+class Builtin(Property):
     def __init__(self, annotation):
-        SchemaProperty.__init__(self, annotation=annotation)
+        Property.__init__(self, annotation=annotation)
 
-    def write(self, title: str = "", editable: bool = False, description: str = ""):
-        chunk = SchemaProperty.write(self)
-        chunk.update({"type": dc_types.TYPING_EQUIVALENCES[self.annotation],
-                      "python_typing": dc_types.serialize_typing(self.annotation)})
+    def write(self, title: str = "", editable: bool = False, description: str = "") -> si.PropertySchema:
+        chunk = Property.write(self)
+        chunk["type"] = dc_types.TYPING_EQUIVALENCES[self.annotation]
         return chunk
 
     def check(self):
@@ -173,7 +172,7 @@ class HeterogeneousSequence(TypingSchema):
 
         self.items_schemas = [get_schema(a) for a in self.args]
 
-    def write(self, title: str = "", editable: bool = False, description: str = ""):
+    def write(self, title: str = "", editable: bool = False, description: str = "") -> si.TupleSchema:
         chunk = TypingSchema.write(self)
         items = [sp.write() for sp in self.items_schemas]
         # TODO Should classes other than builtins be allowed here ?
@@ -214,7 +213,7 @@ class Union(TypingSchema):
         standalone_args = [a._standalone_in_db for a in self.args]
         if all(standalone_args):
             self.standalone = True
-        elif not any(standalone_args):²
+        elif not any(standalone_args):
             self.standalone = False
         else:
             self.standalone = None
@@ -276,7 +275,7 @@ def split_argspecs(argspecs) -> tp.Tuple[int, int]:
 
 def get_schema(annotation):
     if annotation in dc_types.TYPING_EQUIVALENCES:
-        return BuiltinSchema(annotation)
+        return Builtin(annotation)
     if dc_types.is_typing(annotation):
         return get_typing_schema(annotation)
     return NotImplementedError(f"No schema defined for annotation '{annotation}'.")
