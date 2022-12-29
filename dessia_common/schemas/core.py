@@ -27,7 +27,7 @@ Issue = tp.TypedDict("Issue", {"attribute": str, "severity": str, "message": str
 class Schema:
     _untreated_argnames = ["self", "return"]
 
-    def __init__(self, annotations, argspec, docstring):
+    def __init__(self, annotations: si.Annotation, argspec, docstring: str):
         self.annotations = annotations
         self.attributes = [a for a in argspec.args if a not in self._untreated_argnames]
 
@@ -65,7 +65,7 @@ class Schema:
                     issues.append({"attribute": attribute, "severity": "error", "message": msg})
         return not any(issues), issues
 
-    def chunk(self, attribute):
+    def chunk(self, attribute: str):
         annotation = self.annotations[attribute]
 
         if self.parsed_attributes is not None and attribute in self.parsed_attributes:
@@ -124,10 +124,10 @@ class MethodSchema(Schema):
 
 class Property:
     """ Base class for a schema property. """
-    def __init__(self, annotation):
+    def __init__(self, annotation: si.Annotation):
         self.annotation = annotation
 
-    def write(self, title: str = "", editable: bool = False, description: str = "") -> si.PropertySchema:
+    def write(self, title: str = "", editable: bool = False, description: str = ""):
         return {'title': title, 'editable': editable, 'description': description,
                 'python_typing': dc_types.serialize_typing(self.annotation), "type": None}
 
@@ -137,7 +137,7 @@ class Property:
 
 class TypingSchema(Property):
     """ Schema class for typing based annotations. """
-    def __init__(self, annotation):
+    def __init__(self, annotation: si.Annotation):
         Property.__init__(self, annotation=annotation)
 
     @property
@@ -153,10 +153,10 @@ class TypingSchema(Property):
 
 
 class Builtin(Property):
-    def __init__(self, annotation):
+    def __init__(self, annotation: si.Annotation):
         Property.__init__(self, annotation=annotation)
 
-    def write(self, title: str = "", editable: bool = False, description: str = "") -> si.PropertySchema:
+    def write(self, title: str = "", editable: bool = False, description: str = ""):
         chunk = Property.write(self)
         chunk["type"] = dc_types.TYPING_EQUIVALENCES[self.annotation]
         return chunk
@@ -167,12 +167,12 @@ class Builtin(Property):
 
 class HeterogeneousSequence(TypingSchema):
     """ Datatype that can be seen as a tuple. Have any amount of arguments but a limited length. """
-    def __init__(self, annotation):
+    def __init__(self, annotation: si.Annotation):
         TypingSchema.__init__(self, annotation=annotation)
 
         self.items_schemas = [get_schema(a) for a in self.args]
 
-    def write(self, title: str = "", editable: bool = False, description: str = "") -> si.TupleSchema:
+    def write(self, title: str = "", editable: bool = False, description: str = ""):
         chunk = TypingSchema.write(self)
         items = [sp.write() for sp in self.items_schemas]
         # TODO Should classes other than builtins be allowed here ?
@@ -188,7 +188,7 @@ class HeterogeneousSequence(TypingSchema):
 
 
 class HomogeneousSequence(TypingSchema):
-    def __init__(self, annotation):
+    def __init__(self, annotation: si.Annotation):
         TypingSchema.__init__(self, annotation=annotation)
 
         self.items_schemas = [get_schema(a) for a in self.args]
@@ -207,7 +207,7 @@ class HomogeneousSequence(TypingSchema):
 
 
 class Union(TypingSchema):
-    def __init__(self, annotation):
+    def __init__(self, annotation: si.Annotation):
         TypingSchema.__init__(self, annotation=annotation)
 
         standalone_args = [a._standalone_in_db for a in self.args]
@@ -234,7 +234,7 @@ class Union(TypingSchema):
         return issues
 
 
-def inspect_arguments(method, merge=False):
+def inspect_arguments(method: tp.Callable, merge: bool = False):
     """
     Find default value and required arguments of class construction.
 
@@ -244,7 +244,7 @@ def inspect_arguments(method, merge=False):
     return split_default_args(argspec=argspec, merge=merge)
 
 
-def split_default_args(argspec, merge: bool = False):
+def split_default_args(argspec: inspect.FullArgSpec, merge: bool = False):
     nargs, ndefault_args = split_argspecs(argspec)
 
     default_arguments = {}
@@ -262,7 +262,7 @@ def split_default_args(argspec, merge: bool = False):
     return arguments, default_arguments
 
 
-def split_argspecs(argspecs) -> tp.Tuple[int, int]:
+def split_argspecs(argspecs: inspect.FullArgSpec) -> tp.Tuple[int, int]:
     """ Get number of regular arguments as well as arguments with default values. """
     nargs = len(argspecs.args) - 1
 
@@ -273,15 +273,15 @@ def split_argspecs(argspecs) -> tp.Tuple[int, int]:
     return nargs, ndefault_args
 
 
-def get_schema(annotation):
+def get_schema(annotation: si.Annotation) -> Property:
     if annotation in dc_types.TYPING_EQUIVALENCES:
         return Builtin(annotation)
     if dc_types.is_typing(annotation):
         return get_typing_schema(annotation)
-    return NotImplementedError(f"No schema defined for annotation '{annotation}'.")
+    raise NotImplementedError(f"No schema defined for annotation '{annotation}'.")
 
 
-def get_typing_schema(typing_):
+def get_typing_schema(typing_) -> Property:
     origin = tp.get_origin(typing_)
     if origin is Union:
         if dc_types.union_is_default_value(typing_):
@@ -289,7 +289,7 @@ def get_typing_schema(typing_):
             # return schema_chunk(annotation=typing_)
             raise NotImplementedError()
         # Types union
-        return schema_union_types(typing_)
+        return Union(typing_)
     if origin is tuple:
         return HeterogeneousSequence(typing_)
     if origin in [list, collections.abc.Iterator]:
