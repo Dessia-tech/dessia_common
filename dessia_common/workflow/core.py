@@ -593,13 +593,13 @@ class Workflow(Block):
         """ Compute all display blocks display_settings. """
         display_settings = []
         for block in self.display_blocks:
-            path = "#"
+            reference_path = "#"
             for i, input_ in enumerate(block.inputs):
                 incoming_pipe = self.variable_input_pipe(input_)
                 if i == block._displayable_input:
-                    path = f"{path}/values/{self.pipes.index(incoming_pipe)}"
+                    reference_path = f"{reference_path}/values/{self.pipes.index(incoming_pipe)}"
             block_index = self.blocks.index(block)
-            settings = block._display_settings(block_index=block_index, path=path)
+            settings = block._display_settings(block_index=block_index, reference_path=reference_path)
             if settings is not None:
                 settings.selector = self.block_selectors[block]
                 display_settings.append(settings)
@@ -1781,9 +1781,7 @@ class WorkflowState(DessiaObject):
         self.add_several_input_values(indices=indices, values=values)
 
     def display_settings(self) -> List[DisplaySetting]:
-        """
-        Compute the displays settings of the objects.
-        """
+        """ Compute the displays settings of the objects. """
         display_settings = [DisplaySetting('workflow-state', 'workflow_state', 'state_display', None)]
 
         # Displayable blocks
@@ -1791,9 +1789,7 @@ class WorkflowState(DessiaObject):
         return display_settings
 
     def _display_from_selector(self, selector: str, **kwargs) -> DisplayObject:
-        """
-        Generate the display from the selector.
-        """
+        """ Generate the display from the selector. """
         # TODO THIS IS A TEMPORARY DIRTY HOTFIX OVERWRITE.
         #  WE SHOULD IMPLEMENT A WAY TO GET RID OF REFERENCE PATH WITH URLS
         track = ""
@@ -1817,13 +1813,11 @@ class WorkflowState(DessiaObject):
         if display_setting.serialize_data:
             data = serialize(data)
 
-        path = display_setting.arguments["path"]
-        return DisplayObject(type_=display_setting.type, data=data, reference_path=path, traceback=track)
+        reference_path = display_setting.arguments["reference_path"]
+        return DisplayObject(type_=display_setting.type, data=data, reference_path=reference_path, traceback=track)
 
-    def block_display(self, block_index: int, path: str = "#"):
-        """
-        Compute the display of associated block to use integrate it in the workflow run displays.
-        """
+    def block_display(self, block_index: int, reference_path: str = "#"):
+        """ Compute the display of associated block to use integrate it in the workflow run displays. """
         self.activate_inputs()
         block = self.workflow.blocks[block_index]
 
@@ -1832,10 +1826,10 @@ class WorkflowState(DessiaObject):
         block_args = {}
         for branch_block in branch:
             if branch_block is block:
-                argpath = path
+                argpath = reference_path
             else:
                 argpath = "#"
-            block_args[branch_block] = {"path": argpath}
+            block_args[branch_block] = {"reference_path": argpath}
 
         evaluated_blocks = self.evaluate_branch(blocks=branch, block_args=block_args)
 
