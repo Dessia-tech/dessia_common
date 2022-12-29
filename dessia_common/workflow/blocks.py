@@ -796,9 +796,9 @@ class MultiPlot(Display):
         import plot_data
         objects = values[self.inputs[self._displayable_input]]
         samples = [plot_data.Sample(values={a: get_in_object_from_path(o, a) for a in self.attributes},
-                                    path=f"{path}/{i}", name=f"Sample {i}") for i, o in enumerate(objects)]
+                                    reference_path=f"{path}/{i}", name=f"Sample {i}") for i, o in enumerate(objects)]
         samples2d = [plot_data.Sample(values={a: get_in_object_from_path(o, a) for a in self.attributes[:2]},
-                                      path=f"{path}/{i}", name=f"Sample {i}") for i, o in enumerate(objects)]
+                                      reference_path=f"{path}/{i}", name=f"Sample {i}") for i, o in enumerate(objects)]
         tooltip = plot_data.Tooltip(name='Tooltip', attributes=self.attributes)
 
         scatterplot = plot_data.Scatter(tooltip=tooltip, x_variable=self.attributes[0], y_variable=self.attributes[1],
