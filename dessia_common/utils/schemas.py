@@ -7,8 +7,8 @@ from copy import deepcopy
 import inspect
 import collections
 import collections.abc
-from typing import get_origin, get_args, Union, get_type_hints, Type, Callable, List, Tuple, TypedDict
-# import dessia_common.core as dc
+# from typing import get_origin, get_args, Union, get_type_hints, Type, Callable, List, Tuple, TypedDict
+import typing as tp
 import dessia_common.utils.types as dc_types
 from dessia_common.abstract import CoreDessiaObject
 from dessia_common.files import BinaryFile, StringFile
@@ -21,7 +21,7 @@ SCHEMA_HEADER = {"definitions": {}, "$schema": "http://json-schema.org/d_raft-07
                  "type": "object", "required": [], "properties": {}}
 RESERVED_ARGNAMES = ['self', 'cls', 'progress_callback', 'return']
 
-Issue = TypedDict("Issue", {"attribute": str, "severity": str, "message": str})
+Issue = tp.TypedDict("Issue", {"attribute": str, "severity": str, "message": str})
 
 
 class Schema:
@@ -42,15 +42,15 @@ class Schema:
 
         self.parsed_attributes = self.parsed_docstring['attributes']
 
-        self.required_arguments, self.default_arguments = dc.split_default_args(argspec=argspec, merge=False)
+        self.required_arguments, self.default_arguments = split_default_args(argspec=argspec, merge=False)
 
-    def annotations_are_valid(self) -> Tuple[bool, List[Issue]]:
+    def annotations_are_valid(self) -> tp.Tuple[bool, tp.List[Issue]]:
         issues = []
         for attribute in self.attributes:
             annotation = self.annotations[attribute]
             if dc_types.is_typing(annotation):
-                origin = get_origin(annotation)
-                args = get_args(annotation)
+                origin = tp.get_origin(annotation)
+                args = tp.get_args(annotation)
                 if origin is dict and len(args) != 2:
                     msg = f"Attribute '{attribute}' is typed as a 'Dict' which requires exactly 2 arguments." \
                           f"Expected Dict[KeyType, ValueType], got {annotation}."
@@ -94,18 +94,18 @@ class Schema:
 
 
 class ClassSchema(Schema):
-    def __init__(self, class_: Type):
+    def __init__(self, class_: tp.Type):
         self.class_ = class_
         self.standalone_in_db = class_._standalone_in_db
         self.python_typing = str(class_)
-        annotations = get_type_hints(class_.__init__)
+        annotations = tp.get_type_hints(class_.__init__)
 
         members = inspect.getfullargspec(self.class_.__init__)
         docstring = class_.__doc__
 
         Schema.__init__(self, annotations=annotations, argspec=members, docstring=docstring)
 
-    def check(self) -> Tuple[bool, List[Issue]]:
+    def check(self) -> tp.Tuple[bool, tp.List[Issue]]:
         issues = []
         for attribute in self.attributes:
             if attribute not in self.annotations:
@@ -115,10 +115,10 @@ class ClassSchema(Schema):
 
 
 class MethodSchema(Schema):
-    def __init__(self, method: Callable):
+    def __init__(self, method: tp.Callable):
         self.method = method
 
-        annotations = get_type_hints(method)
+        annotations = tp.get_type_hints(method)
         Schema.__init__(self, annotations=annotations)
 
 
@@ -128,32 +128,111 @@ class SchemaProperty:
         self.annotation = annotation
 
     def write(self, title: str = "", editable: bool = False, description: str = ""):
-        raise {'title': title, 'editable': editable, 'description': description,
-               'python_typing': dc_types.serialize_typing(self.annotation)}
+        return {'title': title, 'editable': editable, 'description': description,
+                'python_typing': dc_types.serialize_typing(self.annotation)}
 
     def check(self):
         raise NotImplementedError("Should implement this in any children class")
 
 
-class TupleSchema(SchemaProperty):
+class TypingSchema(SchemaProperty):
+    """ Schema class for typing based annotations. """
     def __init__(self, annotation):
-        self.args = get_args(annotation)
+        SchemaProperty.__init__(self, annotation=annotation)
 
-        self.items_schemas = [get_schema(a) for a in self.args]
+    @property
+    def args(self):
+        return tp.get_args(self.annotation)
 
+    @property
+    def origin(self):
+        return tp.get_origin(self.annotation)
+
+    def check(self):
+        raise NotImplementedError("Should implement this in any children class")
+
+
+class BuiltinSchema(SchemaProperty):
+    def __init__(self, annotation):
         SchemaProperty.__init__(self, annotation=annotation)
 
     def write(self, title: str = "", editable: bool = False, description: str = ""):
         chunk = SchemaProperty.write(self)
-        items = []
-        for type_ in self.args:
-            # TODO Should classes other than builtins be allowed here ?
-            items.append({'type': dc_types.TYPING_EQUIVALENCES[type_]})
+        chunk.update({"type": dc_types.TYPING_EQUIVALENCES[self.annotation],
+                      "python_typing": dc_types.serialize_typing(self.annotation)})
+        return chunk
+
+    def check(self):
+        raise NotImplementedError("Should implement this in any children class")
+
+
+class HeterogeneousSequence(TypingSchema):
+    """ Datatype that can be seen as a tuple. Have any amount of arguments but a limited length. """
+    def __init__(self, annotation):
+        TypingSchema.__init__(self, annotation=annotation)
+
+        self.items_schemas = [get_schema(a) for a in self.args]
+
+    def write(self, title: str = "", editable: bool = False, description: str = ""):
+        chunk = TypingSchema.write(self)
+        items = [sp.write() for sp in self.items_schemas]
+        # TODO Should classes other than builtins be allowed here ?
+        # items = []
+        # for type_ in self.args:
+        #
+        #     items.append({'type': dc_types.TYPING_EQUIVALENCES[type_]})
         chunk.update({'type': 'array', 'additionalItems': False, 'items': items})
         return chunk
 
     def check(self):
         raise NotImplementedError("Should implement this in any children class")
+
+
+class HomogeneousSequence(TypingSchema):
+    def __init__(self, annotation):
+        TypingSchema.__init__(self, annotation=annotation)
+
+        self.items_schemas = [get_schema(a) for a in self.args]
+
+    def write(self, title: str = "", editable: bool = False, description: str = ""):
+        if not title:
+            title = 'Items'
+        chunk = TypingSchema.write(self, title=title, editable=editable, description=description)
+        items_schemas = [sp.write(title=title, editable=editable, description=description) for sp in self.items_schemas]
+        chunk.update({'type': 'array', 'python_typing': dc_types.serialize_typing(self.annotation),
+                      "items": items_schemas})
+        return chunk
+
+    def check(self):
+        raise NotImplementedError("Should implement this in any children class")
+
+
+class Union(TypingSchema):
+    def __init__(self, annotation):
+        TypingSchema.__init__(self, annotation=annotation)
+
+        standalone_args = [a._standalone_in_db for a in self.args]
+        if all(standalone_args):
+            self.standalone = True
+        elif not any(standalone_args):²
+            self.standalone = False
+        else:
+            self.standalone = None
+
+    def write(self, title: str = "", editable: bool = False, description: str = ""):
+        chunk = TypingSchema.write(self, title=title, editable=editable, description=description)
+        classnames = [dc_types.full_classname(object_=a, compute_for='class') for a in self.args]
+        chunk.update({'type': 'object', 'classes': classnames, 'standalone_in_db': self.standalone})
+        return chunk
+
+    def check(self):
+        issues = []
+        standalone_args = [a._standalone_in_db for a in self.args]
+        if not all(standalone_args) and any(standalone_args):
+            issue = {"severity": "error",
+                     "message": f"standalone_in_db values for type '{self.annotation}' are not consistent"}
+            issues.append(issue)
+        return issues
 
 
 def inspect_arguments(method, merge=False):
@@ -184,7 +263,7 @@ def split_default_args(argspec, merge: bool = False):
     return arguments, default_arguments
 
 
-def split_argspecs(argspecs) -> Tuple[int, int]:
+def split_argspecs(argspecs) -> tp.Tuple[int, int]:
     """ Get number of regular arguments as well as arguments with default values. """
     nargs = len(argspecs.args) - 1
 
@@ -196,14 +275,27 @@ def split_argspecs(argspecs) -> Tuple[int, int]:
 
 
 def get_schema(annotation):
+    if annotation in dc_types.TYPING_EQUIVALENCES:
+        return BuiltinSchema(annotation)
     if dc_types.is_typing(annotation):
         return get_typing_schema(annotation)
+    return NotImplementedError(f"No schema defined for annotation '{annotation}'.")
 
 
 def get_typing_schema(typing_):
-    origin = get_origin(typing_)
+    origin = tp.get_origin(typing_)
+    if origin is Union:
+        if dc_types.union_is_default_value(typing_):
+            # This is a false Union => Is a default value set to None
+            # return schema_chunk(annotation=typing_)
+            raise NotImplementedError()
+        # Types union
+        return schema_union_types(typing_)
     if origin is tuple:
-        return TupleSchema(annotation=typing_)
+        return HeterogeneousSequence(typing_)
+    if origin in [list, collections.abc.Iterator]:
+        return HomogeneousSequence(typing_)
+    raise NotImplementedError(f"No Schema defined for typing '{typing_}'.")
 
 
 def default_sequence(array_schema):
@@ -285,7 +377,7 @@ def default_dict(schema):
 
 
 def schema_union_types(annotation):
-    args = get_args(annotation)
+    args = tp.get_args(annotation)
     classnames = [dc_types.full_classname(object_=a, compute_for='class') for a in args]
     standalone_args = [a._standalone_in_db for a in args]
     if all(standalone_args):
@@ -324,8 +416,8 @@ def schema_from_annotation(annotation, schema_element, order, editable=None, tit
         schema_element[key]['type'] = dc_types.TYPING_EQUIVALENCES[typing_]
 
     elif dc_types.is_typing(typing_):
-        origin = get_origin(typing_)
-        args = get_args(typing_)
+        origin = tp.get_origin(typing_)
+        args = tp.get_args(typing_)
         if origin is Union:
             if dc_types.union_is_default_value(typing_):
                 # This is a false Union => Is a default value set to None
@@ -396,7 +488,7 @@ def schema_chunk(annotation, title: str, editable: bool, description: str):
     if isinstance(annotation, str):
         raise ValueError
 
-    if annotation in dc_types.TYPING_EQUIVALENCES:
+    if annotation in dc_types.TYPING_EQUIVALENCES:  # TODO DONE
         # Python Built-in type
         chunk = builtin_schema(annotation)
     elif dc_types.is_typing(annotation):
@@ -423,17 +515,17 @@ def schema_chunk(annotation, title: str, editable: bool, description: str):
 
 
 def typing_schema(typing_, title: str, editable: bool, description: str):
-    origin = get_origin(typing_)
+    origin = tp.get_origin(typing_)
     if origin is Union:
         if dc_types.union_is_default_value(typing_):
             # This is a false Union => Is a default value set to None
             return schema_chunk(annotation=typing_, title=title, editable=editable, description=description)
         # Types union
         return schema_union_types(typing_)
-    if origin in [list, collections.abc.Iterator]:
+    if origin in [list, collections.abc.Iterator]:  # TODO DONE
         # Homogenous sequences
         return schema_sequence_recursion(value=typing_, title=title, editable=editable)
-    if origin is tuple:
+    if origin is tuple:  # TODO DONE
         # Heterogenous sequences (tuples)
         return tuple_schema(typing_)
     if origin is dict:
@@ -466,8 +558,8 @@ def schema_sequence_recursion(value, title: str = None, editable: bool = False):
         title = 'Items'
     chunk = {'type': 'array', 'python_typing': dc_types.serialize_typing(value)}
 
-    items_type = get_args(value)[0]
-    if dc_types.is_typing(items_type) and get_origin(items_type) is list:
+    items_type = tp.get_args(value)[0]
+    if dc_types.is_typing(items_type) and tp.get_origin(items_type) is list:
         chunk['items'] = schema_sequence_recursion(value=items_type, title=title, editable=editable)
     else:
         chunk["items"] = schema_chunk(annotation=items_type, title=title, editable=editable, description="")
@@ -508,13 +600,13 @@ def set_default_value(schema_element, default_value):
     #     else:
 
 
-def builtin_schema(annotation):
+def builtin_schema(annotation):  # TODO DONE
     chunk = {"type": dc_types.TYPING_EQUIVALENCES[annotation], 'python_typing': dc_types.serialize_typing(annotation)}
     return chunk
 
 
-def tuple_schema(annotation):
-    args = get_args(annotation)
+def tuple_schema(annotation):  # TODO DONE
+    args = tp.get_args(annotation)
     items = []
     for type_ in args:
         # TODO Should classes other than builtins be allowed here ?
@@ -523,7 +615,7 @@ def tuple_schema(annotation):
 
 
 def dynamic_dict_schema(annotation):
-    args = get_args(annotation)
+    args = tp.get_args(annotation)
     key_type, value_type = args
     if key_type != str:
         # !!! Should we support other types ? Numeric ?
@@ -542,15 +634,15 @@ def dynamic_dict_schema(annotation):
 
 
 def instance_of_schema(annotation):
-    args = get_args(annotation)
+    args = tp.get_args(annotation)
     class_ = args[0]
     classname = dc_types.full_classname(object_=class_, compute_for='class')
     return {'type': 'object', 'instance_of': classname, 'standalone_in_db': class_._standalone_in_db}
 
 
 def method_type_schema(annotation, editable):
-    origin = get_origin(annotation)
-    class_type = get_args(annotation)[0]
+    origin = tp.get_origin(annotation)
+    class_type = tp.get_args(annotation)[0]
     classmethod_ = origin is ClassMethodType
     chunk = schema_chunk(annotation=class_type, title="Class", editable=editable, description="")
     schema = {
