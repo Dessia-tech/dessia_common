@@ -11,13 +11,15 @@ import collections
 import collections.abc
 import numpy as npy
 
-import dessia_common
+from dessia_common.abstract import CoreDessiaObject
 from dessia_common.utils.types import is_sequence
 
 
 def attrmethod_getter(object_, attr_methods):
     """
-    Float with . in attributes are not handled
+    Get method attributes from strings.
+
+    Float with . in attributes are not handled.
     """
     # TODO: escape . inside ()
     for segment in attr_methods.split('.'):
@@ -34,16 +36,17 @@ def attrmethod_getter(object_, attr_methods):
 
 
 class ExtractionError(Exception):
-    pass
+    """ Custom Exception for deep attributes Extraction process. """
 
 
 def extract_segment_from_object(object_, segment: str):
+    """ Try all ways to get an attribute (segment) from an object that can of numerous types. """
     if is_sequence(object_):
         try:
             return object_[int(segment)]
         except ValueError as err:
-            message_error = (f'Cannot extract segment {segment} from object {{str(object_)[:500]}}:'
-                             + 'segment is not a sequence index')
+            message_error = (f"Cannot extract segment {segment} from object {{str(object_)[:500]}}:"
+                             f" segment is not a sequence index")
             raise ExtractionError(message_error) from err
 
     if isinstance(object_, dict):
@@ -56,7 +59,6 @@ def extract_segment_from_object(object_, segment: str):
                 return object_[intifyed_segment]
             if segment in object_:
                 return object_[segment]
-
             raise ExtractionError(f'Cannot extract segment {segment} from object {str(object_)[:200]}')
 
         # should be a tuple
@@ -69,15 +71,14 @@ def extract_segment_from_object(object_, segment: str):
                     subkey = subsegment
                 key.append(subkey)
             return object_[tuple(key)]
-        # else:
-        message_error = f'Cannot extract segment {segment} from object {str(object_)[:500]}'
-        raise ExtractionError(message_error)
+        raise ExtractionError(f"Cannot extract segment {segment} from object {str(object_)[:500]}")
 
     # Finally, it is a regular object
     return getattr(object_, segment)
 
 
 def get_in_object_from_path(object_, path, evaluate_pointers=True):
+    """ Get deep attributes from an object. Argument 'path' represents path to deep attribute. """
     segments = path.lstrip('#/').split('/')
     element = object_
     for segment in segments:
@@ -102,6 +103,7 @@ def get_in_object_from_path(object_, path, evaluate_pointers=True):
 
 
 def merge_breakdown_dicts(dict1, dict2):
+    """ Merge strategy of breakdown dictionnaries. """
     dict3 = dict1.copy()
     for class_name, refs in dict2.items():
         if class_name in dict3:
@@ -119,6 +121,7 @@ def merge_breakdown_dicts(dict1, dict2):
 
 
 def breakdown(obj, path=''):
+    """ Breakdown object as a dict. """
     bd_dict = {}
     if obj is None:
         return bd_dict
@@ -147,15 +150,16 @@ def breakdown(obj, path=''):
         # Put object and break it down
         if path:  # avoid to get root object
             if hasattr(obj, '__dict__'):
-                if obj.__class__.__name__ in bd_dict:
-                    if obj in bd_dict[obj.__class__.__name__]:
-                        if len(path.split('.')) < len(bd_dict[obj.__class__.__name__][obj].split('.')):
-                            bd_dict[obj.__class__.__name__][obj] = path
+                classname = obj.__class__.__name__
+                if classname in bd_dict:
+                    if obj in bd_dict[classname]:
+                        if len(path.split('.')) < len(bd_dict[classname][obj].split('.')):
+                            bd_dict[classname][obj] = path
                     else:
-                        bd_dict[obj.__class__.__name__][obj] = path
+                        bd_dict[classname][obj] = path
                 else:
-                    bd_dict[obj.__class__.__name__] = collections.OrderedDict()
-                    bd_dict[obj.__class__.__name__][obj] = path
+                    bd_dict[classname] = collections.OrderedDict()
+                    bd_dict[classname][obj] = path
 
         bd_dict = merge_breakdown_dicts(bd_dict, object_breakdown(obj, path=path))
 
@@ -163,14 +167,12 @@ def breakdown(obj, path=''):
 
 
 def object_breakdown(obj, path=''):
-    """
-    Return breakdown dict of object (no preliminary checks)
-    """
+    """ Return breakdown dict of object (no preliminary checks). """
     if path:
         path += '.'
 
     bd_dict = {}
-    if isinstance(obj, dessia_common.core.DessiaObject):
+    if isinstance(obj, CoreDessiaObject):
         obj_dict = obj._serializable_dict()
     else:
         if hasattr(obj, '__dict__'):
@@ -199,17 +201,16 @@ def object_breakdown(obj, path=''):
 
 
 def deep_getsizeof(obj, ids=None):
-    """Find the memory footprint of a Python object
+    """
+    Find the memory footprint of a Python object.
 
-    This is a recursive function that drills down a Python object graph
-    like a dictionary holding nested dictionaries with lists of lists
-    and tuples and sets.
+    This is a recursive function that drills down a Python object graph like a dictionary holding nested
+    dictionaries with lists of lists and tuples and sets.
 
-    The sys.getsizeof function does a shallow size of only. It counts each
-    object inside a container as pointer only regardless of how big it
-    really is.
+    The sys.getsizeof function does a shallow size of only. It counts each object inside a container as
+    pointer only regardless of how big it really is.
 
-    :param o: the object
+    :param obj: the object
     :param ids:
     :return:
     """
@@ -240,13 +241,10 @@ def deep_getsizeof(obj, ids=None):
 
 
 def breakdown_analysis(obj):
-    """
-    Returns an analysis of the structure of the object
-    """
+    """ Return an analysis of the structure of the object. """
     obj_breakdown = object_breakdown(obj)
 
-    stats = {}
-    stats['total_size'] = deep_getsizeof(obj)
+    stats = {"total_size": deep_getsizeof(obj)}
 
     number_objs = {}
     size_objs = {}
@@ -256,7 +254,7 @@ def breakdown_analysis(obj):
         number_objs[class_name] = nobjs
         size_objs[class_name] = deep_getsizeof(class_objs)
         meansize_objs[class_name] = size_objs[class_name] / nobjs
-    stats['subobjects_number_by_class'] = number_objs
-    stats['subobjects_size_by_class'] = size_objs
-    stats['subobjects_meansize_by_class'] = meansize_objs
+    stats.update({"subobjects_number_by_class": number_objs,
+                  "subobjects_size_by_class": size_objs,
+                  "subobjects_meansize_by_class": meansize_objs})
     return stats

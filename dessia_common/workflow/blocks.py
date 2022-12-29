@@ -13,11 +13,11 @@ from zipfile import ZipFile
 from typing import List, Type, Any, Dict, get_type_hints
 
 import itertools
-from dessia_common.core import DessiaFilter, FiltersList, split_argspecs,\
-    type_from_annotation, DessiaObject
+from dessia_common.core import DessiaFilter, FiltersList, split_argspecs, type_from_annotation, DessiaObject
 from dessia_common.utils.types import get_python_class_from_class_name, full_classname
 from dessia_common.utils.docstrings import parse_docstring, EMPTY_PARSED_ATTRIBUTE
 from dessia_common.utils.serialization import serialize
+from dessia_common.displays import DisplaySetting
 from dessia_common.errors import UntypedArgumentError
 from dessia_common.typings import JsonSerializable, MethodType, ClassMethodType
 from dessia_common.files import StringFile, BinaryFile
@@ -26,14 +26,12 @@ from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
 from dessia_common.exports import ExportFormat
 
 from dessia_common.workflow.core import Block, Variable, TypedVariable, TypedVariableWithDefaultValue,\
-    set_block_variable_names_from_dict, Workflow, DisplaySetting, DisplayObject
+    set_block_variable_names_from_dict, Workflow, DisplayObject
 from dessia_common.workflow.utils import ToScriptElement
 
 
 def set_inputs_from_function(method, inputs=None):
-    """
-    Inspect given method argspecs and sets block inputs from it
-    """
+    """ Inspect given method argspecs and sets block inputs from it. """
     if inputs is None:
         inputs = []
     args_specs = inspect.getfullargspec(method)
@@ -57,9 +55,7 @@ def set_inputs_from_function(method, inputs=None):
 
 
 def output_from_function(function, name: str = "result output"):
-    """
-    Inspects given function argspecs and compute block output from it
-    """
+    """ Inspect given function argspecs and compute block output from it. """
     annotations = get_type_hints(function)
     if 'return' in annotations:
         type_ = type_from_annotation(annotations['return'], function.__module__)
@@ -68,18 +64,20 @@ def output_from_function(function, name: str = "result output"):
 
 
 class BlockError(Exception):
-    pass
+    """ Specific BlockError Exception. """
 
 
 class InstantiateModel(Block):
     """
+    Instantiate given class during workflow execution.
+
     :param model_class: The class to instanciate.
     :type model_class: Instanciable
     :param name: The name of the block.
     :type name: str
     """
 
-    def __init__(self, model_class: Type, name: str = '', position = None):
+    def __init__(self, model_class: Type, name: str = '', position=None):
         self.model_class = model_class
         inputs = []
         inputs = set_inputs_from_function(self.model_class.__init__, inputs)
@@ -139,11 +137,8 @@ class InstantiateModel(Block):
 
 
 class ClassMethod(Block):
-    """
-    Handles static method as well
-    """
-
-    def __init__(self, method_type: ClassMethodType[Type], name: str = '', position = None):
+    """ Run given classmethod during workflow execution. Handle static method as well. """
+    def __init__(self, method_type: ClassMethodType[Type], name: str = '', position=None):
         self.method_type = method_type
         inputs = []
 
@@ -219,12 +214,13 @@ class ClassMethod(Block):
 
 class ModelMethod(Block):
     """
+    Run given method during workflow execution.
+
     :param method_type: Represent class and method used.
     :type method_type: MethodType[T]
     :param name: Name of the block.
     :type name: str
     """
-
     def __init__(self, method_type: MethodType[Type], name: str = '', position=None):
         self.method_type = method_type
         inputs = [TypedVariable(type_=method_type.class_, name='model at input')]
@@ -309,6 +305,13 @@ class ModelMethod(Block):
 
 
 class Sequence(Block):
+    """
+    Concatenate n inputs into a sequence.
+
+    :param number_arguments: Number of inputs to be concatenated.
+    :param name: Block name.
+    :param position: Position in canvas.
+    """
     def __init__(self, number_arguments: int, name: str = '', position=None):
         self.number_arguments = number_arguments
         inputs = [Variable(name=f"Sequence element {i}") for i in range(self.number_arguments)]
@@ -375,7 +378,8 @@ class Concatenate(Block):
 
 class WorkflowBlock(Block):
     """
-    Wrapper around workflow to put it in a block of another workflow
+    Wrapper around workflow to put it in a block of another workflow.
+
     Even if a workflow is a block, it can't be used directly as it has
     a different behavior
     than a Block in eq and hash which is problematic to handle in dicts
@@ -439,7 +443,7 @@ class WorkflowBlock(Block):
                     docstring[input_] = block_docstring[input_]
         return docstring
 
-    def _to_script(self, prefix : str) -> ToScriptElement:
+    def _to_script(self, prefix: str) -> ToScriptElement:
         prefix = f'{prefix}sub_'
         workflow_script = self.workflow._to_script(prefix)
         script_workflow = f"\n# --- Subworkflow --- \n" \
@@ -454,7 +458,8 @@ class WorkflowBlock(Block):
 
 class ForEach(Block):
     """
-    A block to iterate on an input and perform an parralel for (iterations are not dependant)
+    A block to iterate on an input and perform an parralel for (iterations are not dependant).
+
     :param workflow_block: The WorkflowBlock on which iterate.
     :type workflow_block: WorkflowBlock
     :param iter_input_index: Index of iterable input in worklow_block.inputs
@@ -523,7 +528,7 @@ class ForEach(Block):
             block_docstring[input_] = wb_docstring[workflow_input]
         return block_docstring
 
-    def _to_script(self, prefix : str) -> ToScriptElement:
+    def _to_script(self, prefix: str) -> ToScriptElement:
         wfblock_script_elements = self.workflow_block._to_script(prefix)
         wfblock_script = f"{wfblock_script_elements.before_declaration}\n" \
                          f"wfblock = {wfblock_script_elements.declaration}"
@@ -535,6 +540,7 @@ class ForEach(Block):
 
 
 class Unpacker(Block):
+    """ DeMUX block. """
     def __init__(self, indices: List[int], name: str = '', position=None):
         self.indices = indices
         outputs = [Variable(name=f"output_{i}") for i in indices]
@@ -590,7 +596,7 @@ class Flatten(Block):
 
 
 class Product(Block):
-    def __init__(self, number_list: int, name: str = '', position = None):
+    def __init__(self, number_list: int, name: str = '', position=None):
         self.number_list = number_list
         inputs = [Variable(name='list_product_' + str(i)) for i in range(self.number_list)]
         output_variable = Variable(name='Product output')
@@ -640,7 +646,7 @@ class Filter(Block):
     :type name: str
     """
 
-    def __init__(self, filters: List[DessiaFilter], logical_operator: str = "and", name: str = '', position = None):
+    def __init__(self, filters: List[DessiaFilter], logical_operator: str = "and", name: str = '', position=None):
         self.filters = filters
         self.logical_operator = logical_operator
         inputs = [Variable(name='input_list')]
@@ -687,13 +693,11 @@ class Filter(Block):
 
 
 class Display(Block):
+    """ Abstract block class for display behaviors. """
     _displayable_input = 0
     _non_editable_attributes = ['inputs']
 
-    def __init__(self, inputs: List[Variable] = None, order: int = None, name: str = '', position = None):
-        """
-        Abstract class for display behaviors
-        """
+    def __init__(self, inputs: List[Variable] = None, order: int = None, name: str = '', position=None):
         if order is not None:
             warnings.warn("Display Block : order argument is deprecated and will be removed in a future version."
                           "You can safely remove it from your block definition", DeprecationWarning)
@@ -751,16 +755,14 @@ class Display(Block):
 
 class MultiPlot(Display):
     """
-    Generates a PlotData multiplot which axes will be the given attributes
-    (can be deep attributes with the '/' separator)
+    Generate a Multiplot which axes will be the given attributes. Can be deep attributes with the '/' separator.
 
     :param attributes: A List of all attributes that will be shown on axes in the ParallelPlot window.
     :type attributes: List[str]
     :param name: The name of the block.
     :type name: str
     """
-
-    def __init__(self, attributes: List[str], order: int = None, name: str = '', position = None):
+    def __init__(self, attributes: List[str], order: int = None, name: str = '', position=None):
         if order is not None:
             warnings.warn("Display Block : order argument is deprecated and will be removed in a future version."
                           "You can safely remove it from your block definition", DeprecationWarning)
@@ -814,7 +816,7 @@ class MultiPlot(Display):
 
 class CadView(Display):
     """
-    Generates a DisplayObject that is displayable in 3D Viewer features (BabylonJS, ...)
+    Generate a DisplayObject that is displayable in 3D Viewer features (BabylonJS, ...).
 
     :param name: The name of the block.
     :type name: str
@@ -830,11 +832,12 @@ class CadView(Display):
 
 class Markdown(Display):
     """
-    Generates the markdown representation of an object
+    Generate the markdown representation of an object.
 
     :param name: Name of the block.
     :type name: str
     """
+
     def __init__(self, name: str = '', position=None):
         input_ = TypedVariable(DessiaObject, name="Model to display")
         Display.__init__(self, inputs=[input_], name=name, position=position)
@@ -845,14 +848,14 @@ class Markdown(Display):
 
 class PlotData(Display):
     """
-    Generates a DisplayObject that is displayable in PlotData features.
+    Generate a DisplayObject that is displayable in PlotData features.
     Uses the the input object's plot_data method.
 
     :param name: The name of the block.
     :type name: str
     """
 
-    def __init__(self, name: str = '', position = None):
+    def __init__(self, name: str = '', position=None):
         input_ = TypedVariable(DessiaObject, name="Model to display")
         Display.__init__(self, inputs=[input_], name=name, position=position)
 
@@ -862,13 +865,15 @@ class PlotData(Display):
 
 class ModelAttribute(Block):
     """
+    Fetch attribute of given object during workflow execution.
+
     :param attribute_name: The name of the attribute to select.
     :type attribute_name: str
     :param name: The name of the block.
     :type name: str
     """
 
-    def __init__(self, attribute_name: str, name: str = '', position = None):
+    def __init__(self, attribute_name: str, name: str = '', position=None):
         self.attribute_name = attribute_name
         inputs = [Variable(name='Model')]
         outputs = [Variable(name='Model attribute')]
@@ -987,7 +992,7 @@ class Substraction(Block):
 
 class ConcatenateStrings(Block):
     """
-    Concatenates the n input elements, separate by the separator input, into one string
+    Concatenate the n input elements, separate by the separator input, into one string.
 
     :param number_elements: Number of block inputs
     :type number_elements: int
@@ -1034,26 +1039,26 @@ class ConcatenateStrings(Block):
 
 
 class Export(Block):
+    """
+    Block that enables an export of an object calling its configured method.
+
+    Only Methods that yields streams (and not files) should be used.
+    The file generated will be called {filename}.{extension}
+
+    :param method_type: An object that have a class_ input (which is the class of the incoming model)
+        and a name (which is the name of the method that will be called).
+    :type method_type: MethodType[T]
+    :param text: Whether the export is of type text or not
+    :type text: bool
+    :param extension: Extension of the resulting file (ex: json or xlsx)
+    :type extension: str
+    :param filename: Name of the resulting file without its extension
+    :type filename: str
+    :param name: Name of the block.
+    :type name: str
+    """
     def __init__(self, method_type: MethodType[Type], text: bool, extension: str,
                  filename: str = "export", name: str = "", position=None):
-        """
-        Block that enables an export of an object calling its configured method.
-        Only Methods that yields streams (and not files) should be used.
-
-        The file generated will be called {filename}.{extension}
-
-        :param method_type: An object that have a class_ input (which is the class of the incoming model)
-            and a name (which is the name of the method that will be called).
-        :type method_type: MethodType[T]
-        :param text: Whether the export is of type text or not
-        :type text: bool
-        :param extension: Extension of the resulting file (ex: json or xlsx)
-        :type extension: str
-        :param filename: Name of the resulting file without its extension
-        :type filename: str
-        :param name: Name of the block.
-        :type name: str
-        """
         self.method_type = method_type
         if not filename:
             filename = "export"
@@ -1117,17 +1122,17 @@ class Export(Block):
 
 
 class Archive(Block):
-    def __init__(self, number_exports: int = 1, filename: str = "archive", name: str = "", position=None):
-        """
-        A block that takes n inputs and store them in a archive (ZIP,...)
+    """
+    A block that takes n inputs and store them in a archive (ZIP,...).
 
-        :param number_exports: The number of files that will be stored in the archive
-        :type number_exports: int
-        :param filename: Name of the resulting archive file without its extension
-        :type filename: str
-        :param name: Name of the block.
-        :type name: str
-        """
+    :param number_exports: The number of files that will be stored in the archive
+    :type number_exports: int
+    :param filename: Name of the resulting archive file without its extension
+    :type filename: str
+    :param name: Name of the block.
+    :type name: str
+    """
+    def __init__(self, number_exports: int = 1, filename: str = "archive", name: str = "", position=None):
         self.number_exports = number_exports
         self.filename = filename
         self.extension = "zip"

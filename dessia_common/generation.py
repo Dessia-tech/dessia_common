@@ -4,16 +4,16 @@ generation for dessia_common
 """
 from typing import List
 import dectree as dt
-import dessia_common.core as dc
+from dessia_common.core import DessiaObject
 
 
-class Generator(dc.DessiaObject):
+class Generator(DessiaObject):
     """
     Common parts of generator
     """
 
     def __init__(self, name: str = ''):
-        dc.DessiaObject.__init__(self, name=name)
+        DessiaObject.__init__(self, name=name)
 
     def is_model_valid(self, model) -> bool:
         """
@@ -32,7 +32,7 @@ class Generator(dc.DessiaObject):
 
 class TreeGenerator(Generator):
     """
-    Common parts of generator
+    Common parts of generator.
     """
     _allowed_methods = ['generate']
     _non_serializable_attributes = ['tree']
@@ -44,7 +44,8 @@ class TreeGenerator(Generator):
 
     def model_from_vector(self, vector: List[int]):
         """
-        Generates the physical model from vector node
+        Generates the physical model from vector node.
+
         :param vector: decision tree node vector
         :type vector: List[int]
         :return: model
@@ -65,7 +66,9 @@ class TreeGenerator(Generator):
 
     def number_possibilities_from_vector(self, vector: List[int]):
         """
-        This method is generic but can be overloaded to avoid model instanciation
+        Returns the number of possibilities from the vector.
+
+        This method is generic but can be overloaded to avoid model instanciation.
         """
         model = self.model_from_vector(vector)
         return self.number_possibilities_from_model(model)
@@ -73,18 +76,23 @@ class TreeGenerator(Generator):
 
 class DecisionTreeGenerator(TreeGenerator):
     """
-    Abstract class, to be subclassed by real class
-    This is still experimental and might be buggy
+    Abstract class, to be subclassed by real class.
+
+    This is still experimental and might be buggy.
+
+    :param name: The name of the generator
     """
 
     def __init__(self, name: str = ''):
-        """
-        :param name: The name of the generator
-        """
         tree = dt.DecisionTree()
         TreeGenerator.__init__(self, tree, name=name)
 
     def generate(self, verbose: bool = False):
+        """
+        Generates solutions.
+
+        :rtype: a generator of solutions.
+        """
         model = self.model_from_vector(self.tree.current_node)
 
         self.tree.SetCurrentNodeNumberPossibilities(self.number_possibilities_from_model(model))
@@ -113,7 +121,8 @@ class DecisionTreeGenerator(TreeGenerator):
 
 class RegularDecisionTreeGenerator(TreeGenerator):
     """
-    Abstract class, to be subclassed by real class
+    Abstract class, to be subclassed by real class.
+
     This is still experimental and might be buggy
     """
 
@@ -127,21 +136,9 @@ class RegularDecisionTreeGenerator(TreeGenerator):
                  unique_nodes: bool = False,
                  verbose: bool = False):
         """
+        Generates solutions.
 
-        Parameters
-        ----------
-        sorted_nodes : bool, optional
-            DESCRIPTION. The default is False.
-        unique_nodes : bool, optional
-            DESCRIPTION. The default is False.
-        verbose : bool, optional
-            DESCRIPTION. The default is False.
-
-        Yields
-        ------
-        model : TYPE
-            DESCRIPTION.
-
+        :rtype: a generator of solutions.
         """
         if sorted_nodes:
             if unique_nodes:

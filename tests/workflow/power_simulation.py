@@ -5,12 +5,11 @@
 """
 
 import json
-from dessia_common import DessiaObject
+from dessia_common.core import DessiaObject
 
 from dessia_common.models.workflows import simulation_workflow
 from dessia_common.models.power_test import components1, component_connections1, usage1
 from dessia_common.utils.serialization import serialize
-from dessia_common.breakdown import get_in_object_from_path
 
 simulation_workflow.to_dict(use_pointers=False)
 input_values = {0: components1,
@@ -51,7 +50,7 @@ manual_run._displays()
 manual_run.to_dict(use_pointers=False)
 
 manual_run.jsonschema()
-manual_run._performance_analysis()
+manual_run.performance_analysis()
 
 # Testing that there is no pointer when use_pointers=False
 d = workflow_run.to_dict(use_pointers=False)
