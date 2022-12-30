@@ -206,6 +206,32 @@ class HomogeneousSequence(TypingSchema):
         raise NotImplementedError("Should implement this in any children class")
 
 
+class DynamicDict(TypingSchema):
+    def __init__(self, annotation: si.Annotation):
+        TypingSchema.__init__(self, annotation=annotation)
+
+        self.items_schemas = [get_schema(a) for a in self.args]
+
+    def write(self, title: str = "", editable: bool = False, description: str = ""):
+        key_type, value_type = self.args
+        if key_type != str:
+            # !!! Should we support other types ? Numeric ?
+            raise NotImplementedError('Non strings keys not supported')
+        if value_type not in dc_types.TYPING_EQUIVALENCES:
+            raise ValueError(f'Dicts should have only builtins keys and values, got {value_type}')
+        chunk = TypingSchema.write(self, title=title, editable=editable, description=description)
+        chunk.update({'type': 'object',
+                      'patternProperties': {
+                          '.*': {
+                            'type': dc_types.TYPING_EQUIVALENCES[value_type]
+                          }
+                      }})
+        return chunk
+
+    def check(self):
+        raise NotImplementedError("Should implement this in any children class")
+
+
 class Union(TypingSchema):
     def __init__(self, annotation: si.Annotation):
         TypingSchema.__init__(self, annotation=annotation)
@@ -286,14 +312,15 @@ def get_typing_schema(typing_) -> Property:
     if origin is Union:
         if dc_types.union_is_default_value(typing_):
             # This is a false Union => Is a default value set to None
-            # return schema_chunk(annotation=typing_)
-            raise NotImplementedError()
+            return Property(typing_)
         # Types union
         return Union(typing_)
     if origin is tuple:
         return HeterogeneousSequence(typing_)
     if origin in [list, collections.abc.Iterator]:
         return HomogeneousSequence(typing_)
+    if origin is dict:
+        return DynamicDict(typing_)
     raise NotImplementedError(f"No Schema defined for typing '{typing_}'.")
 
 
@@ -515,11 +542,11 @@ def schema_chunk(annotation, title: str, editable: bool, description: str):
 
 def typing_schema(typing_, title: str, editable: bool, description: str):
     origin = tp.get_origin(typing_)
-    if origin is Union:
-        if dc_types.union_is_default_value(typing_):
+    if origin is Union:  # TODO DONE
+        if dc_types.union_is_default_value(typing_):  # TODO DONE
             # This is a false Union => Is a default value set to None
             return schema_chunk(annotation=typing_, title=title, editable=editable, description=description)
-        # Types union
+        # Types union  # TODO DONE
         return schema_union_types(typing_)
     if origin in [list, collections.abc.Iterator]:  # TODO DONE
         # Homogenous sequences
@@ -613,7 +640,7 @@ def tuple_schema(annotation):  # TODO DONE
     return {'additionalItems': False, 'type': 'array', 'items': items}
 
 
-def dynamic_dict_schema(annotation):
+def dynamic_dict_schema(annotation):  # TODO DONE
     args = tp.get_args(annotation)
     key_type, value_type = args
     if key_type != str:
