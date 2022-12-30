@@ -11,7 +11,7 @@ import typing as tp
 import dessia_common.utils.types as dc_types
 from dessia_common.abstract import CoreDessiaObject
 from dessia_common.files import BinaryFile, StringFile
-from dessia_common.typings import Subclass, MethodType, ClassMethodType, Any
+from dessia_common.typings import Subclass, MethodType, ClassMethodType, Any, InstanceOf
 from dessia_common.measures import Measure
 from dessia_common.utils.docstrings import parse_docstring, FAILED_DOCSTRING_PARSING, FAILED_ATTRIBUTE_PARSING
 from dessia_common.utils.helpers import prettyname
@@ -138,7 +138,7 @@ class Property:
 class TypingSchema(Property):
     """ Schema class for typing based annotations. """
     def __init__(self, annotation: si.Annotation):
-        Property.__init__(self, annotation=annotation)
+        super().__init__(annotation=annotation)
 
     @property
     def args(self):
@@ -154,6 +154,33 @@ class TypingSchema(Property):
 
 class Builtin(Property):
     def __init__(self, annotation: si.Annotation):
+        super().__init__(annotation=annotation)
+
+    def write(self, title: str = "", editable: bool = False, description: str = ""):
+        chunk = Property.write(self)
+        chunk["type"] = dc_types.TYPING_EQUIVALENCES[self.annotation]
+        return chunk
+
+    def check(self):
+        raise NotImplementedError("Should implement this in any children class")
+
+
+class MeasureProperty(Builtin):
+    def __init__(self, annotation: tp.Type):
+        super().__init__(annotation=float)
+
+    def write(self, title: str = "", editable: bool = False, description: str = ""):
+        chunk = super().write(title=title, editable=editable, description=description)
+        chunk["si_unit"] = self.annotation.si_unit
+        return chunk
+
+    def check(self):
+        # Cannot be other than float
+        raise NotImplementedError("Should implement this in any children class")
+
+
+class File(Property):
+    def __init__(self, annotation: tp.Type):
         Property.__init__(self, annotation=annotation)
 
     def write(self, title: str = "", editable: bool = False, description: str = ""):
@@ -165,15 +192,56 @@ class Builtin(Property):
         raise NotImplementedError("Should implement this in any children class")
 
 
+class DessiaObjectProperty(Property):
+    def __init__(self, annotation: tp.Type):
+        Property.__init__(self, annotation=annotation)
+
+    def write(self, title: str = "", editable: bool = False, description: str = ""):
+        chunk = Property.write(self)
+        chunk["type"] = dc_types.TYPING_EQUIVALENCES[self.annotation]
+        return chunk
+
+    def check(self):
+        raise NotImplementedError("Should implement this in any children class")
+
+
+class Union(TypingSchema):
+    def __init__(self, annotation: si.Annotation):
+        super().__init__(annotation=annotation)
+
+        standalone_args = [a._standalone_in_db for a in self.args]
+        if all(standalone_args):
+            self.standalone = True
+        elif not any(standalone_args):
+            self.standalone = False
+        else:
+            self.standalone = None
+
+    def write(self, title: str = "", editable: bool = False, description: str = ""):
+        chunk = super().write(title=title, editable=editable, description=description)
+        classnames = [dc_types.full_classname(object_=a, compute_for='class') for a in self.args]
+        chunk.update({'type': 'object', 'classes': classnames, 'standalone_in_db': self.standalone})
+        return chunk
+
+    def check(self):
+        issues = []
+        standalone_args = [a._standalone_in_db for a in self.args]
+        if not all(standalone_args) and any(standalone_args):
+            issue = {"severity": "error",
+                     "message": f"standalone_in_db values for type '{self.annotation}' are not consistent"}
+            issues.append(issue)
+        return issues
+
+
 class HeterogeneousSequence(TypingSchema):
     """ Datatype that can be seen as a tuple. Have any amount of arguments but a limited length. """
     def __init__(self, annotation: si.Annotation):
-        TypingSchema.__init__(self, annotation=annotation)
+        super().__init__(annotation=annotation)
 
         self.items_schemas = [get_schema(a) for a in self.args]
 
     def write(self, title: str = "", editable: bool = False, description: str = ""):
-        chunk = TypingSchema.write(self)
+        chunk = super().write()
         items = [sp.write() for sp in self.items_schemas]
         # TODO Should classes other than builtins be allowed here ?
         # items = []
@@ -189,14 +257,14 @@ class HeterogeneousSequence(TypingSchema):
 
 class HomogeneousSequence(TypingSchema):
     def __init__(self, annotation: si.Annotation):
-        TypingSchema.__init__(self, annotation=annotation)
+        super().__init__(annotation=annotation)
 
         self.items_schemas = [get_schema(a) for a in self.args]
 
     def write(self, title: str = "", editable: bool = False, description: str = ""):
         if not title:
             title = 'Items'
-        chunk = TypingSchema.write(self, title=title, editable=editable, description=description)
+        chunk = super().write(title=title, editable=editable, description=description)
         items_schemas = [sp.write(title=title, editable=editable, description=description) for sp in self.items_schemas]
         chunk.update({'type': 'array', 'python_typing': dc_types.serialize_typing(self.annotation),
                       "items": items_schemas})
@@ -208,9 +276,7 @@ class HomogeneousSequence(TypingSchema):
 
 class DynamicDict(TypingSchema):
     def __init__(self, annotation: si.Annotation):
-        TypingSchema.__init__(self, annotation=annotation)
-
-        self.items_schemas = [get_schema(a) for a in self.args]
+        super().__init__(annotation=annotation)
 
     def write(self, title: str = "", editable: bool = False, description: str = ""):
         key_type, value_type = self.args
@@ -219,7 +285,7 @@ class DynamicDict(TypingSchema):
             raise NotImplementedError('Non strings keys not supported')
         if value_type not in dc_types.TYPING_EQUIVALENCES:
             raise ValueError(f'Dicts should have only builtins keys and values, got {value_type}')
-        chunk = TypingSchema.write(self, title=title, editable=editable, description=description)
+        chunk = super().write(title=title, editable=editable, description=description)
         chunk.update({'type': 'object',
                       'patternProperties': {
                           '.*': {
@@ -232,32 +298,68 @@ class DynamicDict(TypingSchema):
         raise NotImplementedError("Should implement this in any children class")
 
 
-class Union(TypingSchema):
+class InstanceOfProperty(TypingSchema):
     def __init__(self, annotation: si.Annotation):
-        TypingSchema.__init__(self, annotation=annotation)
-
-        standalone_args = [a._standalone_in_db for a in self.args]
-        if all(standalone_args):
-            self.standalone = True
-        elif not any(standalone_args):
-            self.standalone = False
-        else:
-            self.standalone = None
+        super().__init__(annotation=annotation)
 
     def write(self, title: str = "", editable: bool = False, description: str = ""):
-        chunk = TypingSchema.write(self, title=title, editable=editable, description=description)
-        classnames = [dc_types.full_classname(object_=a, compute_for='class') for a in self.args]
-        chunk.update({'type': 'object', 'classes': classnames, 'standalone_in_db': self.standalone})
+        chunk = super().write(title=title, editable=editable, description=description)
+        class_ = self.args[0]
+        classname = dc_types.full_classname(object_=class_, compute_for='class')
+        chunk.update({'type': 'object', 'instance_of': classname, 'standalone_in_db': class_._standalone_in_db})
         return chunk
 
     def check(self):
-        issues = []
-        standalone_args = [a._standalone_in_db for a in self.args]
-        if not all(standalone_args) and any(standalone_args):
-            issue = {"severity": "error",
-                     "message": f"standalone_in_db values for type '{self.annotation}' are not consistent"}
-            issues.append(issue)
-        return issues
+        raise NotImplementedError("Should implement this in any children class")
+
+
+class SubclassProperty(TypingSchema):
+    def __init__(self, annotation: si.Annotation):
+        super().__init__(annotation=annotation)
+
+    def write(self, title: str = "", editable: bool = False, description: str = ""):
+        raise NotImplementedError("Subclass is not implemented yet")
+
+    def check(self):
+        raise NotImplementedError("Should implement this in any children class")
+
+
+class MethodTypeProperty(TypingSchema):
+    def __init__(self, annotation: si.Annotation):
+        super().__init__(annotation=annotation)
+
+        self.class_ = self.args[0]
+        self.class_schema = get_schema(self.class_)
+
+    def write(self, title: str = "", editable: bool = False, description: str = ""):
+        chunk = super().write(title=title, editable=editable, description=description)
+        classmethod_ = self.origin is ClassMethodType
+        chunk.update({
+            'type': 'object', 'is_method': True, 'classmethod_': classmethod_,
+            'properties': {
+                'class_': self.class_schema,
+                'name': {
+                    'type': 'string'
+                }
+            }
+        })
+        return chunk
+
+    def check(self):
+        raise NotImplementedError("Should implement this in any children class")
+
+
+class ClassProperty(TypingSchema):
+    def __init__(self, annotation: si.Annotation):
+        super().__init__(annotation=annotation)
+
+    def write(self, title: str = "", editable: bool = False, description: str = ""):
+        chunk = super().write(title=title, editable=editable, description=description)
+        chunk.update({'type': 'object', 'is_class': True, 'properties': {'name': {'type': 'string'}}})
+        return chunk
+
+    def check(self):
+        raise NotImplementedError("Should implement this in any children class")
 
 
 def inspect_arguments(method: tp.Callable, merge: bool = False):
@@ -304,6 +406,15 @@ def get_schema(annotation: si.Annotation) -> Property:
         return Builtin(annotation)
     if dc_types.is_typing(annotation):
         return get_typing_schema(annotation)
+    if hasattr(annotation, '__origin__') and annotation.__origin__ is type:
+        # TODO Is this deprecated ? Should be used in 3.8 and not 3.9 ?
+        # return {'type': 'object', 'is_class': True, 'properties': {'name': {'type': 'string'}}}
+        pass
+    if annotation is Any:
+        # chunk = {'type': 'object', 'properties': {'.*': '.*'}}
+        pass
+    if inspect.isclass(annotation):
+        return custom_class_schema(annotation)
     raise NotImplementedError(f"No schema defined for annotation '{annotation}'.")
 
 
@@ -321,7 +432,31 @@ def get_typing_schema(typing_) -> Property:
         return HomogeneousSequence(typing_)
     if origin is dict:
         return DynamicDict(typing_)
+    if origin is Subclass:
+        pass
+    if origin is InstanceOf:
+        return InstanceOfProperty(typing_)
+    if origin in [MethodType, ClassMethodType]:
+        return MethodTypeProperty(typing_)
+    if origin is type:
+        return ClassProperty(typing_)
     raise NotImplementedError(f"No Schema defined for typing '{typing_}'.")
+
+
+def custom_class_schema(annotation: tp.Type) -> Property:
+    if issubclass(annotation, Measure):
+        return MeasureProperty(annotation)
+        # chunk = schema_chunk(annotation=float)
+        # chunk['si_unit'] = annotation.si_unit
+        # return chunk
+    if issubclass(annotation, (BinaryFile, StringFile)):
+        return File(annotation)
+        # return {'type': 'text', 'is_file': True}
+    if issubclass(annotation, CoreDessiaObject):
+        # Dessia custom classes
+        return DessiaObjectProperty(annotation)
+        classname = dc_types.full_classname(object_=annotation, compute_for='class')
+        return {'type': 'object', 'standalone_in_db': annotation._standalone_in_db, "classes": [classname]}
 
 
 def default_sequence(array_schema):
@@ -517,7 +652,7 @@ def schema_chunk(annotation, title: str, editable: bool, description: str):
     if annotation in dc_types.TYPING_EQUIVALENCES:  # TODO DONE
         # Python Built-in type
         chunk = builtin_schema(annotation)
-    elif dc_types.is_typing(annotation):
+    elif dc_types.is_typing(annotation):  # TODO DONE
         chunk = typing_schema(typing_=annotation, title=title, editable=editable, description=description)
     elif hasattr(annotation, '__origin__') and annotation.__origin__ is type:
         # TODO Is this deprecated ? Should be used in 3.8 and not 3.9 ?
@@ -554,10 +689,10 @@ def typing_schema(typing_, title: str, editable: bool, description: str):
     if origin is tuple:  # TODO DONE
         # Heterogenous sequences (tuples)
         return tuple_schema(typing_)
-    if origin is dict:
+    if origin is dict:  # TODO DONE
         # Dynamically created dict structure)
         return dynamic_dict_schema(typing_)
-    if origin is Subclass:
+    if origin is Subclass:  # TODO DONE
         pass
         # warnings.simplefilter('once', DeprecationWarning)
         # msg = "\n\nTyping of attribute '{0}' from class {1} uses Subclass which is deprecated."\
@@ -569,12 +704,12 @@ def typing_schema(typing_, title: str, editable: bool, description: str):
         # classname = full_classname(object_=class_, compute_for='class')
         # schema_element[key].update({'type': 'object', 'instance_of': classname,
         #                                 'standalone_in_db': class_._standalone_in_db})
-    if origin is dc_types.InstanceOf:
+    if origin is dc_types.InstanceOf:  # TODO DONE
         # Several possible classes that are subclass of another one
         return instance_of_schema(typing_)
-    if origin is MethodType or origin is ClassMethodType:
+    if origin is MethodType or origin is ClassMethodType:  # TODO DONE
         return method_type_schema(annotation=typing_, editable=editable)
-    if origin is type:
+    if origin is type:  # TODO DONE
         return class_schema()
     raise NotImplementedError(f"Schema computation of typing {typing_} is not implemented")
 
@@ -659,14 +794,14 @@ def dynamic_dict_schema(annotation):  # TODO DONE
     return schema
 
 
-def instance_of_schema(annotation):
+def instance_of_schema(annotation):  # TODO DONE
     args = tp.get_args(annotation)
     class_ = args[0]
     classname = dc_types.full_classname(object_=class_, compute_for='class')
     return {'type': 'object', 'instance_of': classname, 'standalone_in_db': class_._standalone_in_db}
 
 
-def method_type_schema(annotation, editable):
+def method_type_schema(annotation, editable):  # TODO DONE
     origin = tp.get_origin(annotation)
     class_type = tp.get_args(annotation)[0]
     classmethod_ = origin is ClassMethodType
@@ -683,5 +818,5 @@ def method_type_schema(annotation, editable):
     return schema
 
 
-def class_schema():
+def class_schema():  # TODO DONE
     return {'type': 'object', 'is_class': True, 'properties': {'name': {'type': 'string'}}}
