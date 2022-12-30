@@ -94,7 +94,7 @@ class Schema:
 
 
 class ClassSchema(Schema):
-    def __init__(self, class_: tp.Type):
+    def __init__(self, class_: CoreDessiaObject):
         self.class_ = class_
         self.standalone_in_db = class_._standalone_in_db
         self.python_typing = str(class_)
@@ -124,7 +124,7 @@ class MethodSchema(Schema):
 
 class Property:
     """ Base class for a schema property. """
-    def __init__(self, annotation: si.Annotation):
+    def __init__(self, annotation: tp.Type):
         self.annotation = annotation
 
     def write(self, title: str = "", editable: bool = False, description: str = ""):
@@ -135,9 +135,9 @@ class Property:
         raise NotImplementedError("Should implement this in any children class")
 
 
-class TypingSchema(Property):
+class TypingProperty(Property):
     """ Schema class for typing based annotations. """
-    def __init__(self, annotation: si.Annotation):
+    def __init__(self, annotation: tp.Type):
         super().__init__(annotation=annotation)
 
     @property
@@ -152,8 +152,17 @@ class TypingSchema(Property):
         raise NotImplementedError("Should implement this in any children class")
 
 
+class TypeProperty(Property):
+    """ Schema class for type based annotations (DessiaObject,...). """
+    def __init__(self, annotation: tp.Type):
+        super().__init__(annotation=annotation)
+
+    def check(self):
+        raise NotImplementedError("Should implement this in any children class")
+
+
 class Builtin(Property):
-    def __init__(self, annotation: si.Annotation):
+    def __init__(self, annotation: tp.Type):
         super().__init__(annotation=annotation)
 
     def write(self, title: str = "", editable: bool = False, description: str = ""):
@@ -166,8 +175,8 @@ class Builtin(Property):
 
 
 class MeasureProperty(Builtin):
-    def __init__(self, annotation: tp.Type):
-        super().__init__(annotation=float)
+    def __init__(self, annotation: Measure):
+        super().__init__(annotation=annotation)
 
     def write(self, title: str = "", editable: bool = False, description: str = ""):
         chunk = super().write(title=title, editable=editable, description=description)
@@ -184,9 +193,10 @@ class File(Property):
         Property.__init__(self, annotation=annotation)
 
     def write(self, title: str = "", editable: bool = False, description: str = ""):
-        chunk = Property.write(self)
-        chunk["type"] = dc_types.TYPING_EQUIVALENCES[self.annotation]
-        return chunk
+        # chunk = Property.write(self)
+        # chunk["type"] = dc_types.TYPING_EQUIVALENCES[self.annotation]
+        # return chunk
+        pass
 
     def check(self):
         raise NotImplementedError("Should implement this in any children class")
@@ -197,16 +207,17 @@ class DessiaObjectProperty(Property):
         Property.__init__(self, annotation=annotation)
 
     def write(self, title: str = "", editable: bool = False, description: str = ""):
-        chunk = Property.write(self)
-        chunk["type"] = dc_types.TYPING_EQUIVALENCES[self.annotation]
-        return chunk
+        # chunk = Property.write(self)
+        # chunk["type"] = dc_types.TYPING_EQUIVALENCES[self.annotation]
+        # return chunk
+        pass
 
     def check(self):
         raise NotImplementedError("Should implement this in any children class")
 
 
-class Union(TypingSchema):
-    def __init__(self, annotation: si.Annotation):
+class Union(TypingProperty):
+    def __init__(self, annotation: tp.Type):
         super().__init__(annotation=annotation)
 
         standalone_args = [a._standalone_in_db for a in self.args]
@@ -233,9 +244,9 @@ class Union(TypingSchema):
         return issues
 
 
-class HeterogeneousSequence(TypingSchema):
+class HeterogeneousSequence(TypingProperty):
     """ Datatype that can be seen as a tuple. Have any amount of arguments but a limited length. """
-    def __init__(self, annotation: si.Annotation):
+    def __init__(self, annotation: tp.Type):
         super().__init__(annotation=annotation)
 
         self.items_schemas = [get_schema(a) for a in self.args]
@@ -255,8 +266,8 @@ class HeterogeneousSequence(TypingSchema):
         raise NotImplementedError("Should implement this in any children class")
 
 
-class HomogeneousSequence(TypingSchema):
-    def __init__(self, annotation: si.Annotation):
+class HomogeneousSequence(TypingProperty):
+    def __init__(self, annotation: tp.Type):
         super().__init__(annotation=annotation)
 
         self.items_schemas = [get_schema(a) for a in self.args]
@@ -274,8 +285,8 @@ class HomogeneousSequence(TypingSchema):
         raise NotImplementedError("Should implement this in any children class")
 
 
-class DynamicDict(TypingSchema):
-    def __init__(self, annotation: si.Annotation):
+class DynamicDict(TypingProperty):
+    def __init__(self, annotation: tp.Type):
         super().__init__(annotation=annotation)
 
     def write(self, title: str = "", editable: bool = False, description: str = ""):
@@ -298,8 +309,8 @@ class DynamicDict(TypingSchema):
         raise NotImplementedError("Should implement this in any children class")
 
 
-class InstanceOfProperty(TypingSchema):
-    def __init__(self, annotation: si.Annotation):
+class InstanceOfProperty(TypingProperty):
+    def __init__(self, annotation: tp.Type):
         super().__init__(annotation=annotation)
 
     def write(self, title: str = "", editable: bool = False, description: str = ""):
@@ -313,8 +324,8 @@ class InstanceOfProperty(TypingSchema):
         raise NotImplementedError("Should implement this in any children class")
 
 
-class SubclassProperty(TypingSchema):
-    def __init__(self, annotation: si.Annotation):
+class SubclassProperty(TypingProperty):
+    def __init__(self, annotation: tp.Type):
         super().__init__(annotation=annotation)
 
     def write(self, title: str = "", editable: bool = False, description: str = ""):
@@ -324,8 +335,8 @@ class SubclassProperty(TypingSchema):
         raise NotImplementedError("Should implement this in any children class")
 
 
-class MethodTypeProperty(TypingSchema):
-    def __init__(self, annotation: si.Annotation):
+class MethodTypeProperty(TypingProperty):
+    def __init__(self, annotation: tp.Type):
         super().__init__(annotation=annotation)
 
         self.class_ = self.args[0]
@@ -349,8 +360,8 @@ class MethodTypeProperty(TypingSchema):
         raise NotImplementedError("Should implement this in any children class")
 
 
-class ClassProperty(TypingSchema):
-    def __init__(self, annotation: si.Annotation):
+class ClassProperty(TypingProperty):
+    def __init__(self, annotation: tp.Type):
         super().__init__(annotation=annotation)
 
     def write(self, title: str = "", editable: bool = False, description: str = ""):
@@ -401,7 +412,7 @@ def split_argspecs(argspecs: inspect.FullArgSpec) -> tp.Tuple[int, int]:
     return nargs, ndefault_args
 
 
-def get_schema(annotation: si.Annotation) -> Property:
+def get_schema(annotation: tp.Type) -> Property:
     if annotation in dc_types.TYPING_EQUIVALENCES:
         return Builtin(annotation)
     if dc_types.is_typing(annotation):
