@@ -55,9 +55,9 @@ steps:
   image: alpine/git
   when:
     event: pull_request
+  entrypoint: /bin/sh
   commands:
     - git fetch --all --tags
-    - ls -la
     - ./code_changelog.sh
 
 
