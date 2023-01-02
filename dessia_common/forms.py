@@ -652,7 +652,7 @@ class Container(DessiaObject):
 
 
 class NotStandalone(DessiaObject):
-    def __init__(self, a: List[int], name: str = ""):
+    def __init__(self, a: int, name: str = ""):
         self.a = a
         DessiaObject.__init__(self, name=name)
 
@@ -680,9 +680,9 @@ class MidLevel(DessiaObject):
 
     @classmethod
     def generate_with_references(cls, name: str = "Result Name"):
-        pt1 = NotStandalone(a=[1, 0], name="point 1")
-        pt2 = NotStandalone(a=[1, 0], name="point 2")
-        bottom_level = BottomLevel([pt1, pt2])
+        o1 = NotStandalone(a=1, name="1")
+        o2 = NotStandalone(a=1, name="2")
+        bottom_level = BottomLevel([o1, o2])
         return cls(bottom_level=bottom_level, name=name)
 
 
