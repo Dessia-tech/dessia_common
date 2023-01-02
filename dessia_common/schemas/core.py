@@ -23,6 +23,8 @@ RESERVED_ARGNAMES = ['self', 'cls', 'progress_callback', 'return']
 
 Issue = tp.TypedDict("Issue", {"attribute": str, "severity": str, "message": str})
 
+# DessiaObjectType = tp.TypeVar("DessiaObjectType", bound=CoreDessiaObject)
+
 
 class Schema:
     """
@@ -38,8 +40,10 @@ class Schema:
         self.annotations = annotations
         self.attributes = [a for a in argspec.args if a not in RESERVED_ARGNAMES]
 
-        self.standalone_in_db = None
-        self.python_typing = ""
+        self.property_schemas = [get_schema(annotations[a]) for a in self.attributes]
+
+        # self.standalone_in_db = None
+        # self.python_typing = ""
 
         # Parse docstring
         try:
@@ -87,6 +91,7 @@ class Schema:
         chunk = schema_chunk(annotation=annotation, title=prettyname(attribute),
                              editable=attribute not in ['return'], description=description)
         if attribute in self.default_arguments:
+            # TODO Could use this and Optional proxy in order to inject real default values for mutables
             chunk = set_default_value(schema_element=chunk, default_value=self.default_arguments[attribute])
         return chunk
 
@@ -149,6 +154,10 @@ class Property:
     def __init__(self, annotation: tp.Type):
         self.annotation = annotation
 
+    @property
+    def schema(self):
+        return self
+
     def write(self, title: str = "", editable: bool = False, description: str = ""):
         return {'title': title, 'editable': editable, 'description': description,
                 'python_typing': dc_types.serialize_typing(self.annotation), "type": None}
@@ -169,6 +178,30 @@ class TypingProperty(Property):
     @property
     def origin(self):
         return tp.get_origin(self.annotation)
+
+    def check(self):
+        raise NotImplementedError("Should implement this in any children class")
+
+
+class Optional(TypingProperty):
+    """
+    Schema class for Optional properties.
+
+    Optional is only a catch for arguments that default to None.
+    Arguments with default values other than None are not considered Optionals
+    """
+    def __init__(self, annotation: tp.Type):
+        super().__init__(annotation=annotation)
+
+    @property
+    def schema(self):
+        return get_schema(self.args[0])
+
+    def write(self, title: str = "", editable: bool = False, description: str = ""):
+        default_value = None
+        chunk = self.schema.write(title=title, editable=editable, description=description)
+        chunk["default_value"] = default_value
+        return chunk
 
     def check(self):
         raise NotImplementedError("Should implement this in any children class")
@@ -215,8 +248,12 @@ class File(Property):
 
 
 class DessiaObjectProperty(Property):
-    def __init__(self, annotation: tp.Type):
-        Property.__init__(self, annotation=annotation)
+    def __init__(self, annotation: DessiaObjectType):
+        super().__init__(annotation=annotation)
+
+    @property
+    def schema(self):
+        return ClassSchema(self.annotation)
 
     def write(self, title: str = "", editable: bool = False, description: str = ""):
         chunk = super().write(title=title, editable=editable, description=description)
@@ -441,7 +478,7 @@ def get_typing_schema(typing_) -> Property:
     if origin is Union:
         if dc_types.union_is_default_value(typing_):
             # This is a false Union => Is a default value set to None
-            return Property(typing_)
+            return Optional(typing_)
         # Types union
         return Union(typing_)
     if origin is tuple:
