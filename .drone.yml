@@ -51,6 +51,15 @@ steps:
     - name: pip_cache
       path: /root/.cache/pip
 
+- name: check CHANGELOG.md update
+  image: alpine/git
+  when:
+    event: pull_request
+  commands:
+    - git fetch --tags
+    - bash code_changelog.sh
+
+
 - name: install, run scripts and build doc
   image: python:3.8
   commands:
