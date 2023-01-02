@@ -51,7 +51,7 @@ steps:
     - name: pip_cache
       path: /root/.cache/pip
 
-- name: check CHANGELOG.md update
+- name: check changelog update
   image: alpine/git
   when:
     event: pull_request
