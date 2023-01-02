@@ -52,7 +52,7 @@ steps:
       path: /root/.cache/pip
 
 - name: check changelog update
-  image: python3.8
+  image: python:3.8
   when:
     event: pull_request
   commands:
