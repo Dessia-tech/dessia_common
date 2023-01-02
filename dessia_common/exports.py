@@ -16,7 +16,7 @@ from dessia_common.breakdown import breakdown
 
 
 def is_hashable(value):
-    """Determine whether `value` can be hashed."""
+    """ Determine whether `value` can be hashed. """
     try:
         hash(value)
     except TypeError:
@@ -25,12 +25,12 @@ def is_hashable(value):
 
 
 def is_number(value):
-    """Determine if the value is a int or a float."""
+    """ Determine if the value is a int or a float. """
     return isinstance(value, (int, float))
 
 
 def is_builtins_list(list_):
-    """Determin if a list is only composed of builtins."""
+    """ Determine if a list is only composed of builtins. """
     for element in list_:
         if not (is_number(element) or isinstance(element, str)):
             return False
@@ -38,8 +38,9 @@ def is_builtins_list(list_):
 
 
 class ExportFormat:
-    def __init__(self, selector: Optional[str], extension: str,
-                 method_name: str, text: bool,
+    """ Define which method of an object should be called for each Export """
+
+    def __init__(self, selector: Optional[str], extension: str, method_name: str, text: bool,
                  export_name: str = "", args: Dict[str, Any] = None):
         self.selector = selector
         self.extension = extension
@@ -51,15 +52,13 @@ class ExportFormat:
         self.args = args
 
     def to_dict(self):
-        return {"selector": self.selector, "extension": self.extension,
-                "method_name": self.method_name, "text": self.text,
-                "export_name": self.export_name, "args": self.args}
+        """ Serialization. """
+        return {"selector": self.selector, "extension": self.extension, "method_name": self.method_name,
+                "text": self.text, "export_name": self.export_name, "args": self.args}
 
 
 class XLSXWriter:
-    """
-    Base class to write a DessiaObject in an excel file.
-    """
+    """ Base class to write a DessiaObject in an excel file. """
     max_column_width = 40
     color_dessIA1 = "263238"
     color_dessIA2 = "537CB0"
@@ -98,9 +97,7 @@ class XLSXWriter:
         self.write()
 
     def write_class_header_to_row(self, obj_of_class, sheet, row_number):
-        """
-        Write to a sheet the class header: finds columns names from a class.
-        """
+        """ Write to a sheet the class header: finds columns names from a class. """
         cell = sheet.cell(row=row_number, column=1, value='Path')
         cell.fill = self.pattern_color2
         cell.border = self.thin_border
@@ -122,9 +119,7 @@ class XLSXWriter:
                 i += 1
 
     def write_value_to_cell(self, value, sheet, row_number, column_number):
-        """
-        Write a given value to a cell. Insert it as a link if it is an object.
-        """
+        """ Write a given value to a cell. Insert it as a link if it is an object. """
         cell_link = None
         if isinstance(value, dict):
             str_v = f'Dict of {len(value)} items'
@@ -152,9 +147,7 @@ class XLSXWriter:
         cell.border = self.thin_border
 
     def write_object_to_row(self, obj, sheet, row_number, path=''):
-        """
-        Write on object to a row. Loops on its attributes to write its value in each cell.
-        """
+        """ Write on object to a row. Loops on its attributes to write its value in each cell. """
         cell = sheet.cell(row=row_number, column=1, value=path)
         cell.border = self.thin_border
         if hasattr(obj, 'name'):
@@ -175,9 +168,7 @@ class XLSXWriter:
                 # sheet.column_dimensions[column_name].width = column_width
 
     def write_object_id(self, sheet):
-        """
-        Write object id to a given sheet.
-        """
+        """ Write object id to a given sheet. """
         sheet.title = f'Object {self.object.__class__.__name__}'
 
         sheet['A1'] = 'Module'
@@ -214,9 +205,7 @@ class XLSXWriter:
         sheet['A4'].border = self.thin_border
 
     def write(self):
-        """
-        Generate the whole file.
-        """
+        """ Generate the whole file. """
         # name_column_width = 0
         self.write_object_id(self.main_sheet)
         self.write_class_header_to_row(self.object, self.main_sheet, 3)
@@ -235,9 +224,7 @@ class XLSXWriter:
             self.autosize_sheet_columns(sheet, 5, 30)
 
     def save_to_file(self, filepath: str):
-        """
-        Save to a filepath (open) and write.
-        """
+        """ Save to a filepath (open) and write. """
         if not filepath.endswith('.xlsx'):
             filepath += '.xlsx'
             print(f"Changing name to {filepath}")
@@ -246,16 +233,12 @@ class XLSXWriter:
             self.save_to_stream(file)
 
     def save_to_stream(self, stream):
-        """
-        Saves the file to a binary stream.
-        """
+        """ Saves the file to a binary stream. """
         self.workbook.save(stream)
 
     @staticmethod
     def autosize_sheet_columns(sheet, min_width=5, max_width=30):
-        """
-        Autosize the sheet columns by analyzing the content. Min and max width must be specified.
-        """
+        """ Autosize the sheet columns by analyzing the content. Min and max width must be specified. """
         # Autosize columns
         for col in sheet.columns:
             width = min_width
@@ -273,9 +256,8 @@ class XLSXWriter:
 
 
 class MarkdownWriter:
-    """
-    Base class to write markdowns.
-    """
+    """ Base class to write markdowns. """
+
     def __init__(self, print_limit: int = 25, table_limit: int = 12):
         self.print_limit = print_limit
         self.table_limit = table_limit

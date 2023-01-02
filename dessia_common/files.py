@@ -8,8 +8,7 @@ import openpyxl
 
 
 class BinaryFile(io.BytesIO):
-    """Class for handling binary files with name"""
-
+    """ Class for handling binary files with name. """
     extension = ''
 
     def __init__(self, filename: str = ''):
@@ -46,11 +45,7 @@ class BinaryFile(io.BytesIO):
 
 
 class StringFile(io.StringIO):
-    """
-    Class for handling text files with name.
-
-    Default encoding : utf-8
-    """
+    """ Class that handles text files with name. Default encoding : utf-8. """
     extension = ''
 
     def __init__(self, filename: str = ''):
@@ -58,7 +53,7 @@ class StringFile(io.StringIO):
         self.filename = filename
 
     def copy(self):
-        """ Files deep copy  """
+        """ Files deep copy.  """
         file_copy = self.__class__(self.filename)
         file_copy.write(self.getvalue())
         file_copy.seek(0)
@@ -97,9 +92,7 @@ class StringFile(io.StringIO):
 
 
 class XLSXFile(BinaryFile):
-    """
-    Excel XML.
-    """
+    """ Excel XML. """
     extension = 'xlsx'
 
     @classmethod
@@ -115,23 +108,17 @@ class XLSXFile(BinaryFile):
 
 
 class XLSFile(BinaryFile):
-    """
-    Old Excel format.
-    """
+    """ Old Excel format. """
     extension = 'xls'
 
 
 class XLSMFile(XLSXFile):
-    """
-    Excel XML with macros.
-    """
+    """ Excel XML with macros. """
     extension = 'xlsm'
 
 
 class TextFile(StringFile):
-    """
-    Basic text file.
-    """
+    """ Basic text file """
     extension = 'txt'
 
 
@@ -173,6 +160,6 @@ class MarkdownFile(StringFile):
 
 class JsonFile(StringFile):
     """
-    A .json extended file
+    A .json extended file.
     """
     extension = "json"
