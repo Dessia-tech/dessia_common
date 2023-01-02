@@ -1,5 +1,5 @@
 """
-displays for dessia_common
+Displays for dessia_common
 
 """
 import warnings
@@ -18,8 +18,9 @@ from dessia_common.utils.types import is_sequence
 
 
 class DisplaySetting:
+    """ Describe which method to call to get a display. """
+
     def __init__(self, selector, type_, method, arguments=None, serialize_data: bool = False):
-        """ Describe which method to call to get a display. """
         self.selector = selector
         self.type = type_
         self.method = method
