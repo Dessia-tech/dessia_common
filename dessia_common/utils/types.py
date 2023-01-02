@@ -82,6 +82,10 @@ def is_jsonable(obj):
 
 
 def is_serializable(obj):
+    """
+    Returns if the object provided is serializable.
+
+    """
     if is_jsonable(obj):
         return True
     if isinstance(obj, CoreDessiaObject):
@@ -102,6 +106,8 @@ def is_serializable(obj):
 
 def is_sequence(obj):
     """
+    Return if the object is a sequence (list or tuple).
+
     :param obj: Object to check
     :return: bool. True if object is a sequence but not a string.
                    False otherwise
@@ -110,6 +116,10 @@ def is_sequence(obj):
 
 
 def is_builtin(type_):
+    """
+    Return if the type is a python built in.
+
+    """
     return type_ in TYPING_EQUIVALENCES
 
 
@@ -143,6 +153,9 @@ def unfold_deep_annotation(typing_=None):
 
 
 def is_typing(object_: Any):
+    """
+    Return if the object is a typing.
+    """
     has_module = hasattr(object_, '__module__')
     has_origin = hasattr(object_, '__origin__')
     has_args = hasattr(object_, '__args__')
@@ -150,6 +163,9 @@ def is_typing(object_: Any):
 
 
 def serialize_typing(typing_):
+    """
+    Serialize the typing.
+    """
     if is_typing(typing_):
         return serialize_typing_types(typing_)
     if typing_ in [StringFile, BinaryFile, MethodType, ClassMethodType] or isinstance(typing_, type):

@@ -26,7 +26,7 @@ _fullargsspec_cache = {}
 
 def serialize_dict(dict_):
     """
-    Serialize a dict into a dict (values are serialized)
+    Serialize a dict into a dict (values are serialized).
     """
     serialized_dict = {}
     for key, value in dict_.items():
@@ -36,7 +36,7 @@ def serialize_dict(dict_):
 
 def serialize_sequence(seq):
     """
-    Serialize a sequence (list or sequence) into a list of dicts
+    Serialize a sequence (list or sequence) into a list of dicts.
     """
     serialized_sequence = []
     for value in seq:
@@ -46,8 +46,8 @@ def serialize_sequence(seq):
 
 def serialize(value):
     """
-    Main function for serialization without pointers
-    Calls recursively itself serialize_sequence and serialize_dict
+    Main function for serialization without pointers.
+    Calls recursively itself serialize_sequence and serialize_dict.
     """
     if isinstance(value, dc.DessiaObject):
         try:
@@ -82,7 +82,7 @@ def serialize(value):
 
 def serialize_with_pointers(value, memo=None, path='#'):
     """
-    Main function for serialization with pointers
+    Main function for serialization with pointers.
     """
     if memo is None:
         memo = {}
@@ -128,7 +128,7 @@ def serialize_with_pointers(value, memo=None, path='#'):
 
 def serialize_dict_with_pointers(dict_, memo, path):
     """
-    Serialize a dict recursively with jsonpointers using a memo dict at a given path of the top level object
+    Serialize a dict recursively with jsonpointers using a memo dict at a given path of the top level object.
     """
     serialized_dict = {}
     dict_attrs_keys = []
@@ -159,7 +159,7 @@ def serialize_dict_with_pointers(dict_, memo, path):
 
 def serialize_sequence_with_pointers(seq, memo, path):
     """
-    Serialize a sequence (list or tuple) using jsonpointers
+    Serialize a sequence (list or tuple) using jsonpointers.
     """
     serialized_sequence = []
     for ival, value in enumerate(seq):
@@ -173,7 +173,7 @@ def serialize_sequence_with_pointers(seq, memo, path):
 def deserialize(serialized_element, sequence_annotation: str = 'List',
                 global_dict=None, pointers_memo=None, path: str = '#'):
     """
-    Main function for deserialization, handle pointers
+    Main function for deserialization, handle pointers.
     """
     if pointers_memo is not None:
         if path in pointers_memo:
@@ -214,7 +214,7 @@ def deserialize_sequence(sequence, annotation=None,
 def dict_to_object(dict_, class_=None, force_generic: bool = False,
                    global_dict=None, pointers_memo=None, path='#'):
     """
-    Transform a dict to an object
+    Transform a dict to an object.
     """
     class_argspec = None
 
@@ -281,6 +281,9 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
 
 
 def deserialize_with_type(type_, value):
+    """
+    Deserialize the value with respect to the given type (useull for tuples for example).
+    """
     if type_ in dcty.TYPES_STRINGS.values():
         return literal_eval(type_)(value)
     if isinstance(type_, str):
@@ -299,7 +302,7 @@ def deserialize_with_type(type_, value):
 
 def deserialize_with_typing(type_, argument, global_dict=None, pointers_memo=None, path='#'):
     """
-    Deserialize an object with a typing info
+    Deserialize an object with a typing info.
     """
     origin = get_origin(type_)
     args = get_args(type_)
@@ -363,7 +366,7 @@ def deserialize_with_typing(type_, argument, global_dict=None, pointers_memo=Non
 
 def deserialize_argument(type_, argument, global_dict=None, pointers_memo=None, path='#'):
     """
-    Deserialize an argument of a function with the type
+    Deserialize an argument of a function with the type.
     """
     if argument is None:
         return None

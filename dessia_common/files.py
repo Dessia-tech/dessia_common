@@ -47,8 +47,9 @@ class BinaryFile(io.BytesIO):
 
 class StringFile(io.StringIO):
     """
-    class for handling text files with name
-    default encoding : utf-8
+    Class for handling text files with name.
+
+    Default encoding : utf-8
     """
     extension = ''
 
@@ -97,7 +98,7 @@ class StringFile(io.StringIO):
 
 class XLSXFile(BinaryFile):
     """
-    Excel XML
+    Excel XML.
     """
     extension = 'xlsx'
 
@@ -115,28 +116,29 @@ class XLSXFile(BinaryFile):
 
 class XLSFile(BinaryFile):
     """
-    Old Excel format
+    Old Excel format.
     """
     extension = 'xls'
 
 
 class XLSMFile(XLSXFile):
     """
-    Excel XML with macros
+    Excel XML with macros.
     """
     extension = 'xlsm'
 
 
 class TextFile(StringFile):
     """
-    basic text file
+    Basic text file.
     """
     extension = 'txt'
 
 
 class CSVFile(StringFile):
     """
-    Coma separated values files
+    Coma separated values files.
+
     https://en.wikipedia.org/wiki/Comma-separated_values
     """
     extension = 'csv'
@@ -153,7 +155,8 @@ class CSVFile(StringFile):
 
 class MarkdownFile(StringFile):
     """
-    Markdown file
+    Markdown file.
+
     https://en.wikipedia.org/wiki/Markdown
     """
     extension = 'md'

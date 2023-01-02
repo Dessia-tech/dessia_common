@@ -31,44 +31,77 @@ class Measure(float):
 
 
 class Distance(Measure):
+    """
+    Represent a distance in meters.
+    """
     si_unit = 'm'
 
 
 class Angle(Measure):
+    """
+    Represent an angle in radians.
+    """
     si_unit = 'rad'
 
 
 class Torque(Measure):
+    """
+    Represent a torque in newton-meter.
+    """
     si_unit = 'Nm'
 
 
 class Stress(Measure):
+    """
+    Represent a stress in pascal.
+    """
     si_unit = 'Pa'
 
 
 class Time(Measure):
+    """
+    Represent time in seconds.
+    """
     si_unit = 's'
 
 
 class Speed(Measure):
+    """
+    Represent a speed in meters per second.
+    """
     si_unit = 'm/s'
 
 
 class Acceleration(Measure):
+    """
+    Represent an acceleration in meter per second square.
+    """
     si_unit = 'm/s²'
 
 
 class Mass(Measure):
+    """
+    Represent a mass in kilogram.
+    """
     si_unit = 'kg'
 
 
 class Force(Measure):
+    """
+    Represent a force in newton.
+    """
     si_unit = 'N'
 
 
 class Work(Measure):
+    """
+    Represent a work in joules.
+    """
     si_unit = 'N*m'
 
 
 class Power(Measure):
+    """
+    Represent a power in watts.
+    """
     si_unit = 'N*m/s'

@@ -21,8 +21,8 @@ UNWATCHED_ERRORS = [
 MAX_ERROR_BY_TYPE = {
     # http://www.pydocstyle.org/en/stable/error_codes.html
     'D100': 1,
-    'D101': 80,
-    'D102': 185,
+    'D101': 74,
+    'D102': 172,
     'D103': 59,
     'D104': 1,
     'D105': 1,
@@ -50,7 +50,7 @@ MAX_ERROR_BY_TYPE = {
     'D301': 1,
     'D302': 1,
 
-    'D400': 106,
+    'D400': 93,
     'D401': 1,
     'D402': 1,
     'D403': 4,
@@ -77,7 +77,7 @@ ratchet_limit = 9
 effective_date = date(2022, 11, 28)
 today = date.today()
 weekly_decrease = 5
-time_decrease = (today - effective_date).days//7 * weekly_decrease
+time_decrease = (today - effective_date).days // 7 * weekly_decrease
 
 
 code_to_errors = {}
@@ -102,13 +102,16 @@ for error_code, number_errors in code_to_number.items():
                 print(f'{error.filename} line {error.line}: {error.message}')
 
         elif max_errors - ratchet_limit <= number_errors < max_errors:
-            print(f'\nYou can lower number of {error_code} to {number_errors + time_decrease} (actual {max_errors + time_decrease})')
+            print(
+                f'\nYou can lower number of {error_code} to {number_errors + time_decrease} (actual {max_errors + time_decrease})')
         elif number_errors < max_errors - ratchet_limit:
             error_over_ratchet_limit = True
-            print(f'\nYou MUST lower number of {error_code} to {number_errors + time_decrease} (actual {max_errors + time_decrease})')
+            print(
+                f'\nYou MUST lower number of {error_code} to {number_errors + time_decrease} (actual {max_errors + time_decrease})')
 
 if error_detected:
     raise RuntimeError('Too many errors\nRun pydocstyle dessia_common to get the errors')
 
 if error_over_ratchet_limit:
-    raise RuntimeError('Please lower the error limits in code_pydocstyle.py MAX_ERROR_BY_TYPE according to warnings above')
+    raise RuntimeError(
+        'Please lower the error limits in code_pydocstyle.py MAX_ERROR_BY_TYPE according to warnings above')
