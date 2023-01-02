@@ -58,6 +58,7 @@ steps:
   commands:
     - git fetch --all --tags
     - git branch --show-current
+    - ls -a
     - ./code_changelog.sh
 
 
