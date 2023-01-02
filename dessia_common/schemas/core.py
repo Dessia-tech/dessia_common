@@ -25,11 +25,18 @@ Issue = tp.TypedDict("Issue", {"attribute": str, "severity": str, "message": str
 
 
 class Schema:
-    _untreated_argnames = ["self", "return"]
+    """
+    Abstraction of a Schema.
+
+    It reads the user-defined type hints and then writes into a dict the recursive structure of an object
+    that can be handled by dessia_common.
+    This dictionnary can then be translated as a json to be read by the frontend in order to compute edit forms,
+    for example.
+    """
 
     def __init__(self, annotations: si.Annotation, argspec, docstring: str):
         self.annotations = annotations
-        self.attributes = [a for a in argspec.args if a not in self._untreated_argnames]
+        self.attributes = [a for a in argspec.args if a not in RESERVED_ARGNAMES]
 
         self.standalone_in_db = None
         self.python_typing = ""
@@ -45,6 +52,7 @@ class Schema:
         self.required_arguments, self.default_arguments = split_default_args(argspec=argspec, merge=False)
 
     def annotations_are_valid(self) -> tp.Tuple[bool, tp.List[Issue]]:
+        """ Return wether the class definition is valid or not. """
         issues = []
         for attribute in self.attributes:
             annotation = self.annotations[attribute]
@@ -66,6 +74,7 @@ class Schema:
         return not any(issues), issues
 
     def chunk(self, attribute: str):
+        """ Extract and compute a schema from one of the attributes. """
         annotation = self.annotations[attribute]
 
         if self.parsed_attributes is not None and attribute in self.parsed_attributes:
@@ -83,9 +92,11 @@ class Schema:
 
     @property
     def chunks(self):
+        """ Concatenate schema chunks into a list. """
         return [self.chunk(a) for a in self.attributes]
 
     def write(self):
+        """ Write the whole schema. """
         schema = deepcopy(SCHEMA_HEADER)
         properties = {a: self.chunk(a) for a in self.attributes}
         schema.update({"required": self.required_arguments, "properties": properties,
@@ -94,6 +105,11 @@ class Schema:
 
 
 class ClassSchema(Schema):
+    """
+    Schema of a class.
+
+    Class must be a subclass of DessiaObject. It reads the __init__ annotations.
+    """
     def __init__(self, class_: CoreDessiaObject):
         self.class_ = class_
         self.standalone_in_db = class_._standalone_in_db
@@ -106,6 +122,7 @@ class ClassSchema(Schema):
         Schema.__init__(self, annotations=annotations, argspec=members, docstring=docstring)
 
     def check(self) -> tp.Tuple[bool, tp.List[Issue]]:
+        """ Check. """
         issues = []
         for attribute in self.attributes:
             if attribute not in self.annotations:
@@ -115,6 +132,11 @@ class ClassSchema(Schema):
 
 
 class MethodSchema(Schema):
+    """
+    Schema of a method.
+
+    Given method should be one of a DessiaObject. It reads its annotations.
+    """
     def __init__(self, method: tp.Callable):
         self.method = method
 
