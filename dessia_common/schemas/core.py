@@ -40,7 +40,7 @@ class Schema:
         self.annotations = annotations
         self.attributes = [a for a in argspec.args if a not in RESERVED_ARGNAMES]
 
-        self.property_schemas = [get_schema(annotations[a]) for a in self.attributes]
+        self.property_schemas = {a: get_schema(annotations[a]) for a in self.attributes}
 
         # self.standalone_in_db = None
         # self.python_typing = ""
@@ -54,6 +54,10 @@ class Schema:
         self.parsed_attributes = self.parsed_docstring['attributes']
 
         self.required_arguments, self.default_arguments = split_default_args(argspec=argspec, merge=False)
+
+    @property
+    def editable_attributes(self):
+        return [a for a in self.attributes if a not in RESERVED_ARGNAMES]
 
     def annotations_are_valid(self) -> tp.Tuple[bool, tp.List[Issue]]:
         """ Return wether the class definition is valid or not. """
@@ -79,7 +83,7 @@ class Schema:
 
     def chunk(self, attribute: str):
         """ Extract and compute a schema from one of the attributes. """
-        annotation = self.annotations[attribute]
+        schema = self.property_schemas[attribute]
 
         if self.parsed_attributes is not None and attribute in self.parsed_attributes:
             try:
@@ -88,8 +92,10 @@ class Schema:
                 description = FAILED_ATTRIBUTE_PARSING["desc"]
         else:
             description = ""
-        chunk = schema_chunk(annotation=annotation, title=prettyname(attribute),
-                             editable=attribute not in ['return'], description=description)
+
+        editable = attribute in self.editable_attributes
+        chunk = schema.write(title=prettyname(attribute), editable=editable, description=description)
+
         if attribute in self.default_arguments:
             # TODO Could use this and Optional proxy in order to inject real default values for mutables
             chunk = set_default_value(schema_element=chunk, default_value=self.default_arguments[attribute])
@@ -125,6 +131,11 @@ class ClassSchema(Schema):
         docstring = class_.__doc__
 
         Schema.__init__(self, annotations=annotations, argspec=members, docstring=docstring)
+
+    @property
+    def editable_attributes(self):
+        attributes = super().editable_attributes
+        return [a for a in attributes if a not in self.class_._non_editable_attributes]
 
     def check(self) -> tp.Tuple[bool, tp.List[Issue]]:
         """ Check. """
@@ -278,7 +289,7 @@ class File(Property):
 
 
 class DessiaObjectProperty(Property):
-    def __init__(self, annotation: DessiaObjectType):
+    def __init__(self, annotation: tp.Type):
         super().__init__(annotation=annotation)
 
     @property
@@ -487,6 +498,7 @@ def split_argspecs(argspecs: inspect.FullArgSpec) -> tp.Tuple[int, int]:
 
 
 def get_schema(annotation: tp.Type) -> Property:
+    print(annotation)
     if annotation in dc_types.TYPING_EQUIVALENCES:
         return Builtin(annotation)
     if dc_types.is_typing(annotation):
@@ -505,7 +517,8 @@ def get_schema(annotation: tp.Type) -> Property:
 
 def get_typing_schema(typing_) -> Property:
     origin = tp.get_origin(typing_)
-    if origin is Union:
+    print(origin)
+    if origin is tp.Union:
         if dc_types.union_is_default_value(typing_):
             # This is a false Union => Is a default value set to None
             return Optional(typing_)
