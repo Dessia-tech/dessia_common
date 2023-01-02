@@ -59,6 +59,7 @@ class Variable(DessiaObject):
             self.position = position
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
+        """Serialize the variable with custom logic."""
         dict_ = DessiaObject.base_dict(self)
         dict_.update({'has_default_value': self.has_default_value,
                       'position': self.position})
@@ -87,6 +88,7 @@ class TypedVariable(Variable):
         self.type_ = type_
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
+        """Serializes the object with specific logic."""
         dict_ = super().to_dict(use_pointers, memo, path)
         dict_.update({'type_': serialize_typing(self.type_)})
         return dict_
@@ -98,6 +100,7 @@ class TypedVariable(Variable):
         return cls(type_=type_, name=dict_['name'], position=dict_.get("position"))
 
     def copy(self, deep: bool = False, memo=None):
+        """Copies and gives a new object with no linked data."""
         return TypedVariable(type_=self.type_, name=self.name)
 
     def _get_to_script_elements(self) -> ToScriptElement:
@@ -132,6 +135,7 @@ class TypedVariableWithDefaultValue(TypedVariable):
         self.default_value = default_value
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#'):
+        """Serialize the variable with custom logic."""
         dict_ = super().to_dict(use_pointers, memo, path)
         dict_.update({'default_value': serialize(self.default_value)})
         return dict_
@@ -217,6 +221,7 @@ class Block(DessiaObject):
         return self.__class__.__name__ == other.__class__.__name__
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#'):
+        """Serialize the block with custom logic."""
         dict_ = DessiaObject.base_dict(self)
         dict_['inputs'] = [i.to_dict() for i in self.inputs]
         dict_['outputs'] = [o.to_dict() for o in self.outputs]
@@ -2220,6 +2225,7 @@ def deserialize_pipes(pipes_dict, blocks, nonblock_variables, connected_nbvs):
 
 
 def value_type_check(value, type_):
+    """Check if the value as the specified type."""
     try:  # TODO: Subscripted generics cannot be used...
         if not isinstance(value, type_):
             return False

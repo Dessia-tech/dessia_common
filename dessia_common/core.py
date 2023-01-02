@@ -52,6 +52,9 @@ _fullargsspec_cache = {}
 
 
 def deprecated(use_instead=None):
+    """
+    Our deprecated decorator.
+    """
     def decorated(function):
         def wrapper(*args, **kwargs):
             deprecation_warning(function.__name__, 'Function', use_instead)
@@ -65,6 +68,9 @@ def deprecated(use_instead=None):
 
 
 def deprecation_warning(name, object_type, use_instead=None):
+    """
+    Throw a deprecation warning function.
+    """
     warnings.simplefilter('once', DeprecationWarning)
     msg = f"\n\n{object_type} {name} is deprecated.\n"
     msg += "It will be removed in a future version.\n"

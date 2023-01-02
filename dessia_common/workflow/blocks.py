@@ -96,6 +96,7 @@ class InstantiateModel(Block):
         return Block.equivalent(self, other) and classname == other_classname
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
+        """Serialize the block with custom logic."""
         dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         dict_['model_class'] = full_classname(object_=self.model_class, compute_for='class')
         return dict_
@@ -263,6 +264,7 @@ class ModelMethod(Block):
         return Block.equivalent(self, other) and same_model and same_method
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
+        """Serialize the block with custom logic."""
         dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         classname = full_classname(object_=self.method_type.class_, compute_for='class')
         method_type_dict = {'class_': classname, 'name': self.method_type.name}
@@ -340,6 +342,7 @@ class Sequence(Block):
         return Block.equivalent(self, other) and self.number_arguments == other.number_arguments
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
+        """Serialize the block with custom logic."""
         dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         dict_['number_arguments'] = self.number_arguments
         return dict_
@@ -375,6 +378,7 @@ class Concatenate(Block):
         return Block.equivalent(self, other) and self.number_arguments == other.number_arguments
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
+        """Serialize the block with custom logic."""
         dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         dict_['number_arguments'] = self.number_arguments
         return dict_
@@ -433,6 +437,7 @@ class WorkflowBlock(Block):
         return self.workflow == other.workflow
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
+        """Serialize the block with custom logic."""
         dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         dict_.update({'workflow': self.workflow.to_dict(use_pointers=use_pointers, memo=memo, path=f'{path}/workflow')})
         return dict_
@@ -520,6 +525,7 @@ class ForEach(Block):
         return Block.equivalent(self, other) and wb_eq and input_eq
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
+        """Serialize the block with custom logic."""
         dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         wb_dict = self.workflow_block.to_dict(use_pointers=use_pointers, memo=memo, path=f"{path}/worklow_block")
         dict_.update({'workflow_block': wb_dict, 'iter_input_index': self.iter_input_index})
@@ -581,6 +587,7 @@ class Unpacker(Block):
         return len(self.indices)
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
+        """Serialize the block with custom logic."""
         dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         dict_['indices'] = self.indices
         return dict_
@@ -640,6 +647,7 @@ class Product(Block):
         return Block.equivalent(self, other) and self.number_list == other.number_list
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
+        """Serialize the block with custom logic."""
         dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         dict_['number_list'] = self.number_list
         return dict_
@@ -697,6 +705,7 @@ class Filter(Block):
         return int(sum(hashes) % 10e5)
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
+        """Serialize the block with custom logic."""
         dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         filters_dict = [f.to_dict(use_pointers=use_pointers, memo=memo, path=f"{path}/filters/{i}")
                         for i, f in enumerate(self.filters)]
@@ -821,6 +830,7 @@ class MultiPlot(Display):
         return sum(len(a) for a in self.attributes)
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
+        """Serialize the block with custom logic."""
         dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         dict_['attributes'] = self.attributes
         return dict_
@@ -929,6 +939,7 @@ class ModelAttribute(Block):
         return Block.equivalent(self, other) and self.attribute_name == other.attribute_name
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
+        """Serialize the block with custom logic."""
         dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         dict_.update({'attribute_name': self.attribute_name})
         return dict_
@@ -971,6 +982,7 @@ class SetModelAttribute(Block):
         return Block.equivalent(self, other) and self.attribute_name == other.attribute_name
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
+        """Serialize the block with custom logic."""
         dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         dict_.update({'attribute_name': self.attribute_name})
         return dict_
@@ -1007,6 +1019,7 @@ class Sum(Block):
         return Block.equivalent(self, other) and self.number_elements == other.number_elements
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
+        """Serialize the block with custom logic."""
         dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         dict_.update({'number_elements': self.number_elements})
         return dict_
@@ -1069,6 +1082,7 @@ class ConcatenateStrings(Block):
         return Block.equivalent(self, other) and same_number and same_separator
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
+        """Serialize the block with custom logic."""
         dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         dict_.update({'number_elements': self.number_elements, "separator": self.separator})
         return dict_
@@ -1128,6 +1142,7 @@ class Export(Block):
         Block.__init__(self, inputs=inputs, outputs=[output], name=name, position=position)
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#'):
+        """Serialize the block with custom logic."""
         dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         classname = full_classname(object_=self.method_type.class_, compute_for='class')
         method_type_dict = {'class_': classname, 'name': self.method_type.name}
@@ -1196,6 +1211,7 @@ class Archive(Block):
         Block.__init__(self, inputs=inputs, outputs=[Variable(name="zip archive")], name=name, position=position)
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#'):
+        """Serialize the block with custom logic."""
         dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         dict_['number_exports'] = len(self.inputs) - 1   # Filename is also a block input
         dict_["filename"] = self.filename

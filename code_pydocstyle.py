@@ -22,7 +22,7 @@ MAX_ERROR_BY_TYPE = {
     # http://www.pydocstyle.org/en/stable/error_codes.html
     'D100': 1,
     'D101': 74,
-    'D102': 163,
+    'D102': 148,
     'D103': 46,
     'D104': 1,
     'D105': 1,
@@ -95,7 +95,7 @@ for error_code, number_errors in code_to_number.items():
             print(f'\nFix some {error_code} errors: {number_errors}/{max_errors}')
 
             errors = code_to_errors[error_code]
-            errors_to_show = sorted(random.sample(errors, min(30, len(errors))),
+            errors_to_show = sorted(random.sample(errors, min(50, len(errors))),
                                     key=lambda m: (m.filename, m.line))
             for error in errors_to_show:
                 print(f'{error.filename} line {error.line}: {error.message}')

@@ -47,7 +47,9 @@ def serialize_sequence(seq):
 def serialize(value):
     """
     Main function for serialization without pointers.
-    Calls recursively itself serialize_sequence and serialize_dict.
+
+    Calls recursively itself serialize_sequence and serialize_dict
+
     """
     if isinstance(value, dc.DessiaObject):
         try:
@@ -201,6 +203,11 @@ def deserialize(serialized_element, sequence_annotation: str = 'List',
 def deserialize_sequence(sequence, annotation=None,
                          global_dict=None, pointers_memo=None,
                          path='#'):
+    """
+    Deserialization function for sequences (tuple + list).
+
+    :param path: the path of the sequence in the global dict. Used to search in the pointer memo.
+    """
     origin, args = dcty.unfold_deep_annotation(typing_=annotation)
     deserialized_sequence = [deserialize(elt, args, global_dict=global_dict, pointers_memo=pointers_memo,
                                          path=f'{path}/{ie}') for ie, elt in enumerate(sequence)]
@@ -215,6 +222,8 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
                    global_dict=None, pointers_memo=None, path='#'):
     """
     Transform a dict to an object.
+
+    :param global_dict: The global object to find references into, where # is the root.
     """
     class_argspec = None
 
@@ -282,7 +291,9 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
 
 def deserialize_with_type(type_, value):
     """
-    Deserialize the value with respect to the given type (useull for tuples for example).
+    Deserialization a value enforcing the right type.
+
+    Usefull to deserialize as a tuple and not a list for ex.
     """
     if type_ in dcty.TYPES_STRINGS.values():
         return literal_eval(type_)(value)
@@ -303,6 +314,8 @@ def deserialize_with_type(type_, value):
 def deserialize_with_typing(type_, argument, global_dict=None, pointers_memo=None, path='#'):
     """
     Deserialize an object with a typing info.
+
+    :param path: The path of the argument in global dict.
     """
     origin = get_origin(type_)
     args = get_args(type_)
@@ -367,6 +380,8 @@ def deserialize_with_typing(type_, argument, global_dict=None, pointers_memo=Non
 def deserialize_argument(type_, argument, global_dict=None, pointers_memo=None, path='#'):
     """
     Deserialize an argument of a function with the type.
+
+    :param path: The path of the argument in global dict.
     """
     if argument is None:
         return None
@@ -406,8 +421,11 @@ def deserialize_argument(type_, argument, global_dict=None, pointers_memo=None, 
 
 def find_references(value, path='#'):
     """
-    Traverse recursively the value to find reference (pointers) in it
+    Traverse recursively the value to find reference (pointers) in it.
+
     Calls recursively find_references_sequence and find_references_dict
+
+    :param path: The path of the value in case of a recursive search.
     """
     if isinstance(value, dict):
         return find_references_dict(value, path)
@@ -450,6 +468,7 @@ def find_references_dict(dict_, path):
 def pointer_graph(value):
     """
     Create a graph of subattributes of an object with edge representing either:
+
      * the hierarchy of an subattribute to an attribute
      * the pointer link between the 2 elements
     """
@@ -570,8 +589,10 @@ def deserialization_order(dict_):
 def dereference_jsonpointers(dict_):  # , global_dict):
     """
     Analyse the given dict to:
+
     - find jsonpointers
     - deserialize them in the right order to respect pointers graph
+
     :returns: a dict with key the path of the item and the value is the python object
     """
     order = deserialization_order(dict_)
@@ -644,7 +665,8 @@ def pointer_graph_elements_dict(dict_, path='#'):
 
 def pointers_analysis(obj):
     """
-    Analyse on object to output stats on pointer use in the object
+    Analyse on object to output stats on pointer use in the object.
+
     :returns: a tuple of 2 dicts: one giving the number of pointer use by class
     """
     if isinstance(obj, dict):
