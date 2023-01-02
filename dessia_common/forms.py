@@ -686,18 +686,18 @@ class MidLevel(DessiaObject):
         return cls(bottom_level=bottom_level, name=name)
 
 
-class TopLevel(DessiaObject):
-    _standalone_in_db = True
-    _allowed_methods = ["generate_with_references"]
-
-    def __init__(self, mid_level: MidLevel = None, name: str = ""):
-        self.mid_level = mid_level
-
-        DessiaObject.__init__(self, name=name)
-
-    @classmethod
-    def generate_with_references(cls, name: str = "Top level with references"):
-        mid_level = MidLevel.generate_with_references("Mid level with references")
-        return TopLevel(mid_level=mid_level, name=name)
+# class TopLevel(DessiaObject):
+#     _standalone_in_db = True
+#     _allowed_methods = ["generate_with_references"]
+#
+#     def __init__(self, mid_level: MidLevel = None, name: str = ""):
+#         self.mid_level = mid_level
+#
+#         DessiaObject.__init__(self, name=name)
+#
+#     @classmethod
+#     def generate_with_references(cls, name: str = "Top level with references"):
+#         mid_level = MidLevel.generate_with_references("Mid level with references")
+#         return TopLevel(mid_level=mid_level, name=name)
 
 
