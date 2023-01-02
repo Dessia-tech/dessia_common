@@ -50,6 +50,9 @@ _FORBIDDEN_ARGNAMES = ['self', 'cls', 'progress_callback', 'return']
 
 
 def deprecated(use_instead=None):
+    """
+    Our deprecated decorator.
+    """
     def decorated(function):
         def wrapper(*args, **kwargs):
             deprecation_warning(function.__name__, 'Function', use_instead)
@@ -63,6 +66,9 @@ def deprecated(use_instead=None):
 
 
 def deprecation_warning(name, object_type, use_instead=None):
+    """
+    Throw a deprecation warning function.
+    """
     warnings.simplefilter('once', DeprecationWarning)
     msg = f"\n\n{object_type} {name} is deprecated.\n"
     msg += "It will be removed in a future version.\n"
@@ -767,6 +773,7 @@ class PhysicalObject(DessiaObject):
 
 class MovingObject(PhysicalObject):
     """ A 3D object which display can move down a path from according to defined steps. """
+
     def volmdlr_primitives_step_frames(self):
         """ Return a list of volmdlr primitives to build up volume model. """
         raise NotImplementedError('Object inheriting MovingObject should implement volmdlr_primitives_step_frames')
@@ -780,6 +787,7 @@ class MovingObject(PhysicalObject):
 
 class Parameter(DessiaObject):
     """ A value from a Parameter Set. """
+
     def __init__(self, lower_bound, upper_bound, periodicity=None, name=''):
         DessiaObject.__init__(self, name=name)
         self.lower_bound = lower_bound
@@ -817,6 +825,7 @@ class Parameter(DessiaObject):
 
 class ParameterSet(DessiaObject):
     """ Object that can provide utils features around values Dataset. """
+
     def __init__(self, values, name=''):
         self.values = values
 
