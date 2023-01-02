@@ -42,7 +42,7 @@ steps:
 - name: check pep8 formatting
   image: python:3.8
   commands:
-    - git fetch --all --tags
+    - git fetch --tags
     - pip3 install -U pip autopep8
     - bash code_pep8.sh
 
@@ -56,7 +56,7 @@ steps:
   when:
     event: pull_request
   commands:
-    - git fetch --tags
+    - git fetch --all --tags
     - ./code_changelog.sh
 
 
