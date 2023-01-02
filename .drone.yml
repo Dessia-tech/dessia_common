@@ -57,7 +57,7 @@ steps:
     event: pull_request
   commands:
     - git fetch --tags
-    - bash code_changelog.sh
+    - ./code_changelog.sh
 
 
 - name: install, run scripts and build doc
