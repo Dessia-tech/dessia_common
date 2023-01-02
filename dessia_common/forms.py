@@ -649,3 +649,55 @@ class Container(DessiaObject):
     def generate_from_text_files(cls, files: List[StringFile], name: str = "Generated from text files"):
         models = [StandaloneObject.generate_from_text(file) for file in files]
         return cls(models=models, name=name)
+
+
+class NotStandalone(DessiaObject):
+    def __init__(self, a: List[int], name: str = ""):
+        self.a = a
+        DessiaObject.__init__(self, name=name)
+
+
+class BottomLevel(DessiaObject):
+    _standalone_in_db = True
+
+    def __init__(self, attributes: List[NotStandalone] = None, name: str = ""):
+        if attributes is None:
+            self.attributes = []
+        else:
+            self.attributes = attributes
+
+        DessiaObject.__init__(self, name=name)
+
+
+class MidLevel(DessiaObject):
+    _standalone_in_db = True
+    _allowed_methods = ["generate_with_references"]
+
+    def __init__(self, bottom_level: BottomLevel = None, name: str = ""):
+        self.attribute = bottom_level
+
+        DessiaObject.__init__(self, name=name)
+
+    @classmethod
+    def generate_with_references(cls, name: str = "Result Name"):
+        pt1 = NotStandalone(a=[1, 0], name="point 1")
+        pt2 = NotStandalone(a=[1, 0], name="point 2")
+        bottom_level = BottomLevel([pt1, pt2])
+        return cls(bottom_level=bottom_level, name=name)
+
+
+class TopLevel(DessiaObject):
+    _standalone_in_db = True
+    _allowed_methods = ["generate_with_references"]
+
+    def __init__(self, mid_level: MidLevel = None, name: str = ""):
+        self.mid_level = mid_level
+
+        DessiaObject.__init__(self, name=name)
+
+    @classmethod
+    def generate_with_references(cls, name: str = "Top level with references"):
+        mid_level = MidLevel.generate_with_references("Mid level with references")
+        return TopLevel(mid_level=mid_level, name=name)
+
+
