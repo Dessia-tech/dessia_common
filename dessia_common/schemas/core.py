@@ -185,7 +185,7 @@ class TypingProperty(Property):
 
 class Optional(TypingProperty):
     """
-    Schema class for Optional properties.
+    Proxy Schema class for Optional properties.
 
     Optional is only a catch for arguments that default to None.
     Arguments with default values other than None are not considered Optionals
@@ -205,6 +205,36 @@ class Optional(TypingProperty):
 
     def check(self):
         raise NotImplementedError("Should implement this in any children class")
+
+
+class Annotated(TypingProperty):
+    """
+    Proxy Schema class for annotated type hints.
+
+    Annotated annotations are type hints with more arguments passed, such as value ranges, or probably enums,
+    precision,...
+
+    This could enable quite effective type checking on frontend form.
+
+    Only available with python >= 3.11
+    """
+    _not_implemented_msg = "Annotated type hints are not implemented yet. This needs python 3.11 at least. " \
+                           "Dessia only supports python 3.9 at the moment."
+
+    # TODO Whenever Dessia decides to upgrade to python 3.11
+    def __init__(self, annotation: tp.Type):
+        super().__init__(annotation=annotation)
+        raise NotImplementedError(self._not_implemented_msg)
+
+    @property
+    def schema(self):
+        return get_schema(self.args[0])
+
+    def write(self, title: str = "", editable: bool = False, description: str = ""):
+        raise NotImplementedError(self._not_implemented_msg)
+
+    def check(self):
+        raise NotImplementedError(self._not_implemented_msg)
 
 
 class Builtin(Property):
