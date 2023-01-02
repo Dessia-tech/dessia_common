@@ -152,15 +152,6 @@ class TypingProperty(Property):
         raise NotImplementedError("Should implement this in any children class")
 
 
-class TypeProperty(Property):
-    """ Schema class for type based annotations (DessiaObject,...). """
-    def __init__(self, annotation: tp.Type):
-        super().__init__(annotation=annotation)
-
-    def check(self):
-        raise NotImplementedError("Should implement this in any children class")
-
-
 class Builtin(Property):
     def __init__(self, annotation: tp.Type):
         super().__init__(annotation=annotation)
@@ -175,7 +166,7 @@ class Builtin(Property):
 
 
 class MeasureProperty(Builtin):
-    def __init__(self, annotation: Measure):
+    def __init__(self, annotation: tp.Type[Measure]):
         super().__init__(annotation=annotation)
 
     def write(self, title: str = "", editable: bool = False, description: str = ""):
@@ -193,10 +184,9 @@ class File(Property):
         Property.__init__(self, annotation=annotation)
 
     def write(self, title: str = "", editable: bool = False, description: str = ""):
-        # chunk = Property.write(self)
-        # chunk["type"] = dc_types.TYPING_EQUIVALENCES[self.annotation]
-        # return chunk
-        pass
+        chunk = super().write(title=title, editable=editable, description=description)
+        chunk.update({'type': 'text', 'is_file': True})
+        return chunk
 
     def check(self):
         raise NotImplementedError("Should implement this in any children class")
@@ -207,10 +197,10 @@ class DessiaObjectProperty(Property):
         Property.__init__(self, annotation=annotation)
 
     def write(self, title: str = "", editable: bool = False, description: str = ""):
-        # chunk = Property.write(self)
-        # chunk["type"] = dc_types.TYPING_EQUIVALENCES[self.annotation]
-        # return chunk
-        pass
+        chunk = super().write(title=title, editable=editable, description=description)
+        classname = dc_types.full_classname(object_=self.annotation, compute_for='class')
+        chunk.update({'type': 'object', 'standalone_in_db': self.annotation._standalone_in_db, "classes": [classname]})
+        return chunk
 
     def check(self):
         raise NotImplementedError("Should implement this in any children class")
@@ -254,11 +244,6 @@ class HeterogeneousSequence(TypingProperty):
     def write(self, title: str = "", editable: bool = False, description: str = ""):
         chunk = super().write()
         items = [sp.write() for sp in self.items_schemas]
-        # TODO Should classes other than builtins be allowed here ?
-        # items = []
-        # for type_ in self.args:
-        #
-        #     items.append({'type': dc_types.TYPING_EQUIVALENCES[type_]})
         chunk.update({'type': 'array', 'additionalItems': False, 'items': items})
         return chunk
 
@@ -457,17 +442,12 @@ def get_typing_schema(typing_) -> Property:
 def custom_class_schema(annotation: tp.Type) -> Property:
     if issubclass(annotation, Measure):
         return MeasureProperty(annotation)
-        # chunk = schema_chunk(annotation=float)
-        # chunk['si_unit'] = annotation.si_unit
-        # return chunk
     if issubclass(annotation, (BinaryFile, StringFile)):
         return File(annotation)
-        # return {'type': 'text', 'is_file': True}
     if issubclass(annotation, CoreDessiaObject):
         # Dessia custom classes
         return DessiaObjectProperty(annotation)
-        classname = dc_types.full_classname(object_=annotation, compute_for='class')
-        return {'type': 'object', 'standalone_in_db': annotation._standalone_in_db, "classes": [classname]}
+    raise NotImplementedError(f"No Schema defined for type '{annotation}'.")
 
 
 def default_sequence(array_schema):
@@ -670,12 +650,12 @@ def schema_chunk(annotation, title: str, editable: bool, description: str):
         chunk = {'type': 'object', 'is_class': True, 'properties': {'name': {'type': 'string'}}}
     elif annotation is Any:
         chunk = {'type': 'object', 'properties': {'.*': '.*'}}
-    elif inspect.isclass(annotation) and issubclass(annotation, Measure):
+    elif inspect.isclass(annotation) and issubclass(annotation, Measure):  # TODO DONE
         chunk = schema_chunk(annotation=float, title=title, editable=editable, description=description)
         chunk['si_unit'] = annotation.si_unit
-    elif inspect.isclass(annotation) and issubclass(annotation, (BinaryFile, StringFile)):
+    elif inspect.isclass(annotation) and issubclass(annotation, (BinaryFile, StringFile)):  # TODO DONE
         chunk = {'type': 'text', 'is_file': True}
-    elif inspect.isclass(annotation) and issubclass(annotation, CoreDessiaObject):
+    elif inspect.isclass(annotation) and issubclass(annotation, CoreDessiaObject):  # TODO DONE
         # Dessia custom classes
         classname = dc_types.full_classname(object_=annotation, compute_for='class')
         chunk = {'type': 'object', 'standalone_in_db': annotation._standalone_in_db, "classes": [classname]}
@@ -703,7 +683,7 @@ def typing_schema(typing_, title: str, editable: bool, description: str):
     if origin is dict:  # TODO DONE
         # Dynamically created dict structure)
         return dynamic_dict_schema(typing_)
-    if origin is Subclass:  # TODO DONE
+    if origin is Subclass:
         pass
         # warnings.simplefilter('once', DeprecationWarning)
         # msg = "\n\nTyping of attribute '{0}' from class {1} uses Subclass which is deprecated."\

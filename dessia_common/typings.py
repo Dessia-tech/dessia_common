@@ -10,10 +10,14 @@ T = TypeVar('T')
 
 class Subclass(Generic[T]):
     pass
+#     def __new__(cls, *args, **kwargs) -> T:
+#         raise NotImplementedError("Should not try to instantiate Subclass")
 
 
 class InstanceOf(Generic[T]):
     pass
+#     def __new__(cls, *args, **kwargs) -> T:
+#         raise NotImplementedError("Should not try to instantiate InstanceOf")
 
 
 class MethodType(Generic[T]):
