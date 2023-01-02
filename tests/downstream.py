@@ -1,7 +1,7 @@
 import unittest
 
     
-class BackendBreakingChangeTest(unittest):
+class BackendBreakingChangeTest(unittest.TestCase):
     def test_import_is_working(self):
         """Basic unittest to make sure backend import of DC is working"""
         try:
