@@ -63,22 +63,8 @@ class Schema:
         """ Return wether the class definition is valid or not. """
         issues = []
         for attribute in self.attributes:
-            annotation = self.annotations[attribute]
-            if dc_types.is_typing(annotation):
-                origin = tp.get_origin(annotation)
-                args = tp.get_args(annotation)
-                if origin is dict and len(args) != 2:
-                    msg = f"Attribute '{attribute}' is typed as a 'Dict' which requires exactly 2 arguments." \
-                          f"Expected Dict[KeyType, ValueType], got {annotation}."
-                    issues.append({"attribute": attribute, "severity": "error", "message": msg})
-                if origin is list and len(args) != 1:
-                    msg = f"Attribute '{attribute}' is typed as a 'List' which requires exactly 1 argument." \
-                          f"Expected List[Type], got {annotation}."
-                    issues.append({"attribute": attribute, "severity": "error", "message": msg})
-                if origin is tuple and len(args) == 0:
-                    msg = f"Attribute '{attribute}' is typed as a 'Tuple' which requires at least 1 argument." \
-                          f"Expected Tuple[Type0, Type1, ..., TypeN], got {annotation}."
-                    issues.append({"attribute": attribute, "severity": "error", "message": msg})
+            schema = self.property_schemas[attribute]
+            issues.extend(schema.check(attribute))
         return not any(issues), issues
 
     def chunk(self, attribute: str):
@@ -173,8 +159,13 @@ class Property:
         return {'title': title, 'editable': editable, 'description': description,
                 'python_typing': dc_types.serialize_typing(self.annotation), "type": None}
 
-    def check(self):
-        raise NotImplementedError("Should implement this in any children class")
+    def check(self, attribute: str) -> tp.List[Issue]:
+        """
+        Check validity of Property Type Hint.
+
+        Checks performed : None. TODO ?
+        """
+        return []
 
 
 class TypingProperty(Property):
@@ -190,8 +181,13 @@ class TypingProperty(Property):
     def origin(self):
         return tp.get_origin(self.annotation)
 
-    def check(self):
-        raise NotImplementedError("Should implement this in any children class")
+    def check(self, attribute: str) -> tp.List[Issue]:
+        """
+        Check validity of TypingProperty Type Hint.
+
+        Checks performed : None. TODO ?
+        """
+        return []
 
 
 class Optional(TypingProperty):
@@ -214,8 +210,13 @@ class Optional(TypingProperty):
         chunk["default_value"] = default_value
         return chunk
 
-    def check(self):
-        raise NotImplementedError("Should implement this in any children class")
+    def check(self, attribute: str) -> tp.List[Issue]:
+        """
+        Check validity of Optional proxy Type Hint.
+
+        Checks performed : None TODO ?
+        """
+        return []
 
 
 class Annotated(TypingProperty):
@@ -244,7 +245,12 @@ class Annotated(TypingProperty):
     def write(self, title: str = "", editable: bool = False, description: str = ""):
         raise NotImplementedError(self._not_implemented_msg)
 
-    def check(self):
+    def check(self, attribute: str) -> tp.List[Issue]:
+        """
+        Check validity of DynamicDict Type Hint.
+
+        Checks performed : None. TODO : Arg validity
+        """
         raise NotImplementedError(self._not_implemented_msg)
 
 
@@ -257,8 +263,13 @@ class Builtin(Property):
         chunk["type"] = dc_types.TYPING_EQUIVALENCES[self.annotation]
         return chunk
 
-    def check(self):
-        raise NotImplementedError("Should implement this in any children class")
+    def check(self, attribute: str) -> tp.List[Issue]:
+        """
+        Check validity of Builtin Type Hint.
+
+        Always return no issues
+        """
+        return []
 
 
 class MeasureProperty(Builtin):
@@ -270,9 +281,14 @@ class MeasureProperty(Builtin):
         chunk["si_unit"] = self.annotation.si_unit
         return chunk
 
-    def check(self):
-        # Cannot be other than float
-        raise NotImplementedError("Should implement this in any children class")
+    def check(self, attribute: str) -> tp.List[Issue]:
+        """
+        Check validity of Measure Type Hint.
+
+        Checks performed :
+        - Cannot be other than float. TODO : Is it possible ?
+        """
+        return []
 
 
 class File(Property):
@@ -284,13 +300,19 @@ class File(Property):
         chunk.update({'type': 'text', 'is_file': True})
         return chunk
 
-    def check(self):
-        raise NotImplementedError("Should implement this in any children class")
+    def check(self, attribute: str) -> tp.List[Issue]:
+        """
+        Check validity of File Type Hint.
+
+        Checks performed : None. TODO ?
+        """
+        return []
 
 
-class DessiaObjectProperty(Property):
+class CustomClassProperty(Property):
     def __init__(self, annotation: tp.Type):
         super().__init__(annotation=annotation)
+        self.classname = dc_types.full_classname(object_=self.annotation, compute_for='class')
 
     @property
     def schema(self):
@@ -298,12 +320,23 @@ class DessiaObjectProperty(Property):
 
     def write(self, title: str = "", editable: bool = False, description: str = ""):
         chunk = super().write(title=title, editable=editable, description=description)
-        classname = dc_types.full_classname(object_=self.annotation, compute_for='class')
-        chunk.update({'type': 'object', 'standalone_in_db': self.annotation._standalone_in_db, "classes": [classname]})
+        chunk.update({'type': 'object', 'standalone_in_db': self.annotation._standalone_in_db,
+                      "classes": [self.classname]})
         return chunk
 
-    def check(self):
-        raise NotImplementedError("Should implement this in any children class")
+    def check(self, attribute: str) -> tp.List[Issue]:
+        """
+        Check validity of user custom class Type Hint.
+
+        Checks performed :
+        - Is subclass of DessiaObject TODO
+        """
+        issues = super().check(attribute)
+        if not issubclass(self.annotation, CoreDessiaObject):
+            issue = {"attribute": attribute, "severity": "error",
+                     "message": f"Class '{self.classname}' is not a subclass of DessiaObject"}
+            issues.append(issue)
+        return issues
 
 
 class Union(TypingProperty):
@@ -324,11 +357,17 @@ class Union(TypingProperty):
         chunk.update({'type': 'object', 'classes': classnames, 'standalone_in_db': self.standalone})
         return chunk
 
-    def check(self):
+    def check(self, attribute: str) -> tp.List[Issue]:
+        """
+        Check validity of Union Type Hint.
+
+        Checks performed :
+        - Subobject are all standalone or none of them are. TODO : What happen if args are not DessiaObjects ?
+        """
         issues = []
         standalone_args = [a._standalone_in_db for a in self.args]
         if not all(standalone_args) and any(standalone_args):
-            issue = {"severity": "error",
+            issue = {"attribute": attribute, "severity": "error",
                      "message": f"standalone_in_db values for type '{self.annotation}' are not consistent"}
             issues.append(issue)
         return issues
@@ -347,8 +386,19 @@ class HeterogeneousSequence(TypingProperty):
         chunk.update({'type': 'array', 'additionalItems': False, 'items': items})
         return chunk
 
-    def check(self):
-        raise NotImplementedError("Should implement this in any children class")
+    def check(self, attribute: str) -> tp.List[Issue]:
+        """
+        Check validity of Tuple Type Hint.
+
+        Checks performed :
+        - Annotation has at least one argument, one for each element of the tuple
+        """
+        issues = super().check(attribute)
+        if len(self.args) == 0:
+            msg = f"Attribute '{attribute}' is typed as a 'Tuple' which requires at least 1 argument." \
+                  f"Expected Tuple[Type0, Type1, ..., TypeN], got {self.annotation}."
+            issues.append({"attribute": attribute, "severity": "error", "message": msg})
+        return issues
 
 
 class HomogeneousSequence(TypingProperty):
@@ -366,8 +416,19 @@ class HomogeneousSequence(TypingProperty):
                       "items": items_schemas})
         return chunk
 
-    def check(self):
-        raise NotImplementedError("Should implement this in any children class")
+    def check(self, attribute: str) -> tp.List[Issue]:
+        """
+        Check validity of List Type Hint.
+
+        Checks performed :
+        - Annotation has exactly one argument, which is the type of all the element of the list.
+        """
+        issues = super().check(attribute)
+        if len(self.args) != 1:
+            msg = f"Attribute '{attribute}' is typed as a 'List' which requires exactly 1 argument." \
+                  f"Expected List[Type], got {self.annotation}."
+            issues.append({"attribute": attribute, "severity": "error", "message": msg})
+        return issues
 
 
 class DynamicDict(TypingProperty):
@@ -390,8 +451,21 @@ class DynamicDict(TypingProperty):
                       }})
         return chunk
 
-    def check(self):
-        raise NotImplementedError("Should implement this in any children class")
+    def check(self, attribute: str) -> tp.List[Issue]:
+        """
+        Check validity of DynamicDict Type Hint.
+
+        Checks performed :
+        - Annotation as exactly two arguments, first one for keys, second one for values
+        - Key Type is str TODO
+        - Value Type is simple TODO
+        """
+        issues = super().check(attribute)
+        if len(self.args) != 2:
+            msg = f"Attribute '{attribute}' is typed as a 'Dict' which requires exactly 2 arguments." \
+                  f"Expected Dict[KeyType, ValueType], got {self.annotation}."
+            issues.append({"attribute": attribute, "severity": "error", "message": msg})
+        return issues
 
 
 class InstanceOfProperty(TypingProperty):
@@ -405,8 +479,19 @@ class InstanceOfProperty(TypingProperty):
         chunk.update({'type': 'object', 'instance_of': classname, 'standalone_in_db': class_._standalone_in_db})
         return chunk
 
-    def check(self):
-        raise NotImplementedError("Should implement this in any children class")
+    def check(self, attribute: str) -> tp.List[Issue]:
+        """
+        Check validity of InstanceOf Type Hint.
+
+        Checks performed :
+        - Annotation has exactly one argument, which is the type of the base class.
+        """
+        issues = super().check(attribute)
+        if len(self.args) != 1:
+            msg = f"Attribute '{attribute}' is typed as a 'InstanceOf' which requires exactly 1 argument." \
+                  f"Expected 'InstanceOf[Type]', got '{self.annotation}'."
+            issues.append({"attribute": attribute, "severity": "error", "message": msg})
+        return issues
 
 
 class SubclassProperty(TypingProperty):
@@ -416,8 +501,19 @@ class SubclassProperty(TypingProperty):
     def write(self, title: str = "", editable: bool = False, description: str = ""):
         raise NotImplementedError("Subclass is not implemented yet")
 
-    def check(self):
-        raise NotImplementedError("Should implement this in any children class")
+    def check(self, attribute: str) -> tp.List[Issue]:
+        """
+        Check validity of Subclass Type Hint.
+
+        Checks performed :
+        - Annotation has exactly one argument, which is the type of the base class.
+        """
+        issues = super().check(attribute)
+        if len(self.args) != 1:
+            msg = f"Attribute '{attribute}' is typed as a 'Subclass' which requires exactly 1 argument." \
+                  f"Expected 'Subclass[Type]', got '{self.annotation}'."
+            issues.append({"attribute": attribute, "severity": "error", "message": msg})
+        return issues
 
 
 class MethodTypeProperty(TypingProperty):
@@ -441,8 +537,14 @@ class MethodTypeProperty(TypingProperty):
         })
         return chunk
 
-    def check(self):
-        raise NotImplementedError("Should implement this in any children class")
+    def check(self, attribute: str) -> tp.List[Issue]:
+        """
+        Check validity of MethodType Type Hint.
+
+        Checks performed :
+        - Class has method TODO
+        """
+        return []
 
 
 class ClassProperty(TypingProperty):
@@ -454,8 +556,14 @@ class ClassProperty(TypingProperty):
         chunk.update({'type': 'object', 'is_class': True, 'properties': {'name': {'type': 'string'}}})
         return chunk
 
-    def check(self):
-        raise NotImplementedError("Should implement this in any children class")
+    def check(self, attribute: str) -> tp.List[Issue]:
+        """
+        Check validity of Class Type Hint.
+
+        Checks performed :
+        - Annotation has no argument TODO
+        """
+        return []
 
 
 def inspect_arguments(method: tp.Callable, merge: bool = False):
@@ -548,7 +656,7 @@ def custom_class_schema(annotation: tp.Type) -> Property:
         return File(annotation)
     if issubclass(annotation, CoreDessiaObject):
         # Dessia custom classes
-        return DessiaObjectProperty(annotation)
+        return CustomClassProperty(annotation)
     raise NotImplementedError(f"No Schema defined for type '{annotation}'.")
 
 

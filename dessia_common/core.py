@@ -244,7 +244,7 @@ class DessiaObject(SerializableObject):
                           "Please consider so", DeprecationWarning)
             return cls._jsonschema
         schema = schemas.ClassSchema(cls)
-        return schema.write()
+        return schema
 
     @classmethod
     def jsonschema(cls):
