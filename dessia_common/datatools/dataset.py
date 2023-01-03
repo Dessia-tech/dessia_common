@@ -8,7 +8,7 @@ import itertools
 
 from scipy.spatial.distance import pdist, squareform
 import numpy as npy
-from sklearn import preprocessing, ensemble, inspection
+from sklearn import preprocessing
 
 try:
     from plot_data.core import Scatter, Histogram, MultiplePlots, Tooltip, ParallelPlot, PointFamily, EdgeStyle, Axis, \
@@ -925,39 +925,3 @@ class Dataset(DessiaObject):
             non_optimal_points = list(itertools.compress(non_optimal_points, map(lambda x: not x, pareto_sheet)))
             non_optimal_costs = list(itertools.compress(non_optimal_costs, map(lambda x: not x, pareto_sheet)))
         return pareto_sheets, Dataset(non_optimal_points, self.name)
-
-    def features_importances(self, input_attributes: List[str], output_attributes: List[str]):
-        """
-        Future features_importance method, maybe to put in dataset.
-        """
-        inputs, outputs = self.to_input_output(input_attributes, output_attributes)
-        scaled_inputs = self._scale_data(inputs)
-        input_train, input_test, output_train, output_test = models.train_test_split(scaled_inputs, outputs, ratio=0.8)
-
-        random_forest = ensemble.RandomForestRegressor()
-        random_forest.fit(input_train, output_train)
-
-        result = inspection.permutation_importance(random_forest, input_test, output_test)
-        return result.importances_mean #, result.importances_std TODO: when plot_data is refactored
-
-    def _importances_to_histogram(self, importances: List[float]):
-        bars = [{'feature': importance} for importance in importances]
-        # elements.append({'mass': random.uniform(0, 50),
-        #                  'length': random.uniform(0, 100),
-        #                  'shape': random_shape,
-        #                  'color': random_color
-        #                  })
-        histogram = Histogram(x_variable='feature', elements=bars)
-        return
-
-    def features_mrmr(self):
-        """
-        Future features_mrmr method, maybe to put in dataset.
-        """
-        return
-
-    def _correlation_matrix(self):
-        """
-        Future method to build a correlation matrix of the matrix of Dataset.
-        """
-        return
