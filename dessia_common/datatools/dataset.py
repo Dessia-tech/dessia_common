@@ -925,3 +925,21 @@ class Dataset(DessiaObject):
             non_optimal_points = list(itertools.compress(non_optimal_points, map(lambda x: not x, pareto_sheet)))
             non_optimal_costs = list(itertools.compress(non_optimal_costs, map(lambda x: not x, pareto_sheet)))
         return pareto_sheets, Dataset(non_optimal_points, self.name)
+
+    def features_importance(self):
+        """
+        Future features_importance method, maybe to put in dataset.
+        """
+        return
+
+    def features_mrmr(self):
+        """
+        Future features_mrmr method, maybe to put in dataset.
+        """
+        return
+
+    def _correlation_matrix(self):
+        """
+        Future method to build a correlation matrix of the matrix of Dataset.
+        """
+        return

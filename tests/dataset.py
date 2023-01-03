@@ -1,5 +1,5 @@
 """
-Tests for dessia_common.Dataset class (loadings, check_platform and plots)
+Tests for dessia_common.Dataset class (loadings, check_platform and plots).
 """
 import random
 from dessia_common.core import DessiaObject

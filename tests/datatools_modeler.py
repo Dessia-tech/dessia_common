@@ -78,32 +78,32 @@ CV_MR.plot()
 CV_MC.plot()
 cvs = [CV_Ri, CV_LR, CV_DR, CV_DC, CV_RR, CV_RC, CV_MR, CV_MC]
 
-# Visuals to check test and train data are correctly separated in cross validations and modeler stuff
-for mdlr, cv in zip(mdlrs, cvs):
-    if 'lassifier' in type(mdlr.model).__name__:
-        input_names = input_names_clf
-        if 'MLP' in type(mdlr.model).__name__:
-            output_names = output_names_clf_solo
-        else:
-            output_names = output_names_clf
-        idx = 0
-    else:
-        input_names = input_names_reg
-        output_names = output_names_reg
-        idx = 1
+# # Visuals to check test and train data are correctly separated in cross validations and modeler stuff
+# for mdlr, cv in zip(mdlrs, cvs):
+#     if 'lassifier' in type(mdlr.model).__name__:
+#         input_names = input_names_clf
+#         if 'MLP' in type(mdlr.model).__name__:
+#             output_names = output_names_clf_solo
+#         else:
+#             output_names = output_names_clf
+#         idx = 0
+#     else:
+#         input_names = input_names_reg
+#         output_names = output_names_reg
+#         idx = 1
 
-    out_train = [x[idx] for x in dataset_for_fit.sub_matrix(output_names)]
-    pred_train = [x[idx] for x in mdlr.predict_dataset(dataset_for_fit, input_names)]
+#     out_train = [x[idx] for x in dataset_for_fit.sub_matrix(output_names)]
+#     pred_train = [x[idx] for x in mdlr.predict_dataset(dataset_for_fit, input_names)]
 
-    out_test = [x[idx] for x in dataset_to_pred.sub_matrix(output_names)]
-    pred_test = [x[idx] for x in mdlr.predict_dataset(dataset_to_pred, input_names)]
+#     out_test = [x[idx] for x in dataset_to_pred.sub_matrix(output_names)]
+#     pred_test = [x[idx] for x in mdlr.predict_dataset(dataset_to_pred, input_names)]
 
-    plt.figure()
-    plt.plot(out_test, pred_test, color='r', linestyle='None', marker='x')
-    plt.plot(out_train, pred_train, color='b', linestyle='None', marker='x')
-    points = [helpers.minimums(cv.model_validations[0].data._concatenate_outputs())[idx],
-              helpers.maximums(cv.model_validations[0].data._concatenate_outputs())[idx]]
-    plt.plot(points,points, color = 'k')
+#     plt.figure()
+#     plt.plot(out_test, pred_test, color='r', linestyle='None', marker='x')
+#     plt.plot(out_train, pred_train, color='b', linestyle='None', marker='x')
+#     points = [helpers.minimums(cv.model_validations[0].data._concatenate_outputs())[idx],
+#               helpers.maximums(cv.model_validations[0].data._concatenate_outputs())[idx]]
+#     plt.plot(points,points, color = 'k')
 
 # ======================================================================================================================
 #                                            F R O M   M A T R I X

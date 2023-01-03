@@ -320,18 +320,6 @@ class Modeler(DessiaObject):
         train_test_matrices = dataset.train_test_split(input_names, output_names, ratio)
         return cls._fit_score(*train_test_matrices, model, input_is_scaled, output_is_scaled, name)
 
-    def features_importance(self):
-        """
-        Future features_importance method, maybe to put in dataset.
-        """
-        return
-
-    def features_mrmr(self):
-        """
-        Future features_mrmr method, maybe to put in dataset.
-        """
-        return
-
 
 class ValidationData(DessiaObject):
     """
