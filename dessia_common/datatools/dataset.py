@@ -1,6 +1,5 @@
 """
 Library for building Dataset.
-
 """
 from typing import List, Dict, Any
 from copy import copy
@@ -92,9 +91,6 @@ class Dataset(DessiaObject):
     _non_data_eq_attributes = ["name", "_common_attributes", "_matrix"]
 
     def __init__(self, dessia_objects: List[DessiaObject] = None, name: str = ''):
-        """
-        See class docstring.
-        """
         if dessia_objects is None:
             dessia_objects = []
         self.dessia_objects = dessia_objects
@@ -668,6 +664,9 @@ class Dataset(DessiaObject):
                                                    point_style=dimensionality_plot.point_style)
             # Parallel plot
             parallel_plot = self._parallel_plot(data_list)
+
+            # Features Importances
+            importances = self._importances_to_histogram(input_attributes, importances)
             return [parallel_plot, scatter_matrix] #, dimensionality_plot]
 
         plot_mono_attr = self._histogram_unic_value(0, name_attr=self.common_attributes[0])
@@ -928,7 +927,10 @@ class Dataset(DessiaObject):
 
     def features_importances(self, input_attributes: List[str], output_attributes: List[str]):
         """
-        Future features_importance method, maybe to put in dataset.
+        Features importances of input_attributes to predict output_attributes.
+
+        The method used here is the Permutation Importance method proposed by scikit-learn.
+        More information: https://scikit-learn.org/stable/auto_examples/inspection/plot_permutation_importance.html
         """
         inputs, outputs = self.to_input_output(input_attributes, output_attributes)
         scaled_inputs = self._scale_data(inputs)
@@ -940,15 +942,13 @@ class Dataset(DessiaObject):
         result = inspection.permutation_importance(random_forest, input_test, output_test)
         return result.importances_mean #, result.importances_std TODO: when plot_data is refactored
 
-    def _importances_to_histogram(self, importances: List[float]):
-        bars = [{'feature': importance} for importance in importances]
-        # elements.append({'mass': random.uniform(0, 50),
-        #                  'length': random.uniform(0, 100),
-        #                  'shape': random_shape,
-        #                  'color': random_color
-        #                  })
-        histogram = Histogram(x_variable='feature', elements=bars)
-        return
+    def _importances_to_histogram(self, input_attributes: List[str], importances: List[float]):
+        normed_rounded_importances = [round(importance * 100 / npy.linalg.norm(importances, ord=1))
+                                      for importance in importances]
+        bars = []
+        for attr, number in zip(input_attributes, normed_rounded_importances):
+            bars.append([{'feature': attr}] * (number + 1))
+        return Histogram(x_variable='feature', elements=sum(bars, []))
 
     def features_mrmr(self):
         """

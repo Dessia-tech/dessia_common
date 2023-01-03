@@ -66,13 +66,9 @@ input_attributes = ['displacement', 'horsepower', 'model', 'acceleration', 'cyli
 output_attributes = ['weight']
 importances = all_cars_without_features.features_importances(input_attributes, output_attributes)
 
-all_cars_without_features._importances_to_histogram(importances)
+all_cars_without_features._importances_to_histogram(input_attributes, importances)
 
 
-forest_importances = pd.Series(importances, index=input_attributes)
-fig, ax = plt.subplots()
-forest_importances.plot.bar(ax=ax)
-a
 # Check platform for datasets
 all_cars_with_features._check_platform()
 all_cars_without_features._check_platform()
