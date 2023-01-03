@@ -48,8 +48,13 @@ import dessia_common.files as dcf
 
 _FORBIDDEN_ARGNAMES = ['self', 'cls', 'progress_callback', 'return']
 
+_fullargsspec_cache = {}
+
 
 def deprecated(use_instead=None):
+    """
+    Our deprecated decorator.
+    """
     def decorated(function):
         def wrapper(*args, **kwargs):
             deprecation_warning(function.__name__, 'Function', use_instead)
@@ -63,6 +68,9 @@ def deprecated(use_instead=None):
 
 
 def deprecation_warning(name, object_type, use_instead=None):
+    """
+    Throw a deprecation warning function.
+    """
     warnings.simplefilter('once', DeprecationWarning)
     msg = f"\n\n{object_type} {name} is deprecated.\n"
     msg += "It will be removed in a future version.\n"
@@ -356,8 +364,14 @@ class DessiaObject(SerializableObject):
         """
         Transform serialized argument of a method to python objects ready to use in method evaluation.
         """
-        method_object = getattr(self, method)
-        args_specs = inspect.getfullargspec(method_object)
+        method_full_name = f'{self.full_classname}.{method}'
+        if method_full_name in _fullargsspec_cache:
+            args_specs = _fullargsspec_cache[method_full_name]
+        else:
+            method_object = getattr(self, method)
+            args_specs = inspect.getfullargspec(method_object)
+            _fullargsspec_cache[method_full_name] = args_specs
+
         allowed_args = args_specs.args[1:]
 
         arguments = {}
@@ -442,7 +456,13 @@ class DessiaObject(SerializableObject):
         """
         Generic copy use inits of objects.
         """
-        class_argspec = inspect.getfullargspec(self.__class__)
+        class_name = self.full_classname
+        if class_name in _fullargsspec_cache:
+            class_argspec = _fullargsspec_cache[class_name]
+        else:
+            class_argspec = inspect.getfullargspec(self.__class__)
+            _fullargsspec_cache[class_name] = class_argspec
+
         dict_ = {}
         for arg in class_argspec.args:
             if arg != 'self':
@@ -457,7 +477,13 @@ class DessiaObject(SerializableObject):
         """
         Generic deep copy use inits of objects.
         """
-        class_argspec = inspect.getfullargspec(self.__class__)
+        class_name = self.full_classname
+        if class_name in _fullargsspec_cache:
+            class_argspec = _fullargsspec_cache[class_name]
+        else:
+            class_argspec = inspect.getfullargspec(self.__class__)
+            _fullargsspec_cache[class_name] = class_argspec
+
         if memo is None:
             memo = {}
         dict_ = {}
@@ -624,6 +650,10 @@ class DessiaObject(SerializableObject):
         """
         Exports the object to an XLSX file given by the filepath.
         """
+        if not filepath.endswith('.xlsx'):
+            filepath += '.xlsx'
+            print(f'Changing name to {filepath}')
+
         with open(filepath, 'wb') as file:
             self.to_xlsx_stream(file)
 
@@ -762,18 +792,22 @@ class PhysicalObject(DessiaObject):
 
 
 class MovingObject(PhysicalObject):
+    """ A 3D object which display can move down a path from according to defined steps. """
 
     def volmdlr_primitives_step_frames(self):
-        """Return a list of volmdlr primitives to build up volume model."""
+        """ Return a list of volmdlr primitives to build up volume model. """
         raise NotImplementedError('Object inheriting MovingObject should implement volmdlr_primitives_step_frames')
 
     def volmdlr_volume_model(self, **kwargs):
+        """ Volume model of Moving Object. """
         import volmdlr as vm  # !!! Avoid circular imports, is this OK ?
         return vm.core.MovingVolumeModel(self.volmdlr_primitives(**kwargs),
                                          self.volmdlr_primitives_step_frames(**kwargs))
 
 
 class Parameter(DessiaObject):
+    """ A value from a Parameter Set. """
+
     def __init__(self, lower_bound, upper_bound, periodicity=None, name=''):
         DessiaObject.__init__(self, name=name)
         self.lower_bound = lower_bound
@@ -781,10 +815,11 @@ class Parameter(DessiaObject):
         self.periodicity = periodicity
 
     def random_value(self):
-        """Sample a value within the bounds."""
+        """ Sample a value within the bounds. """
         return random.uniform(self.lower_bound, self.upper_bound)
 
     def are_values_equal(self, value1, value2, tol=1e-2):
+        """ Check equality according to given tolerance. """
         if self.periodicity is not None:
             value1 = value1 % self.periodicity
             value2 = value2 % self.periodicity
@@ -792,20 +827,25 @@ class Parameter(DessiaObject):
         return math.isclose(value1, value2, abs_tol=tol)
 
     def normalize(self, value):
+        """ Translate the value to a [0, 1] interval where 0 are the lower and upper bounds. """
         normalized_value = (value - self.lower_bound) / (self.upper_bound - self.lower_bound)
         return normalized_value
 
     def original_value(self, normalized_value):
+        """ Unnormalize value to its original value. """
         value = normalized_value * (self.upper_bound - self.lower_bound) + self.lower_bound
         return value
 
     def optimizer_bounds(self):
+        """ Compute optimize bounds. """
         if self.periodicity is not None:
-            return (self.lower_bound - 0.5 * self.periodicity, self.upper_bound + 0.5 * self.periodicity)
+            return self.lower_bound - 0.5 * self.periodicity, self.upper_bound + 0.5 * self.periodicity
         return None
 
 
 class ParameterSet(DessiaObject):
+    """ Object that can provide utils features around values Dataset. """
+
     def __init__(self, values, name=''):
         self.values = values
 
@@ -813,11 +853,13 @@ class ParameterSet(DessiaObject):
 
     @property
     def parameters(self):
+        """ Compute parameters from ParameterSet values. """
         parameters = [Parameter(min(v), max(v), name=k) for k, v in self.values.items()]
         return parameters
 
     @property
     def means(self):
+        """ Compute means on all parameters defined in Set"""
         means = {k: sum(v) / len(v) for k, v in self.values.items()}
         return means
 
@@ -1165,9 +1207,7 @@ def dict_merge(old_dct, merge_dct, add_keys=True, extend_lists=True):
 
 
 def stringify_dict_keys(obj):
-    """
-    Stringify dict keys.
-    """
+    """ Stringify dict keys. """
     if isinstance(obj, (list, tuple)):
         new_obj = []
         for elt in obj:
@@ -1183,9 +1223,7 @@ def stringify_dict_keys(obj):
 
 
 def getdeepattr(obj, attr):
-    """
-    Get deep attribute of object.
-    """
+    """ Get deep attribute of object. """
     return reduce(getattr, [obj] + attr.split('.'))
 
 
@@ -1252,8 +1290,8 @@ def enhanced_get_attr(obj, attr):
 
 
 def concatenate_attributes(prefix, suffix, type_: str = 'str'):
-    wrong_prefix_format = 'Attribute prefix is wrongly formatted.'
-    wrong_prefix_format += 'Is of type {}. Should be str or list'
+    """ Concatenate sequence of attributes to a string. """
+    wrong_prefix_format = "Attribute prefix is wrongly formatted. Is of type {}. Should be str or list."
     if type_ == 'str':
         if isinstance(prefix, str):
             return prefix + '/' + str(suffix)
@@ -1267,30 +1305,17 @@ def concatenate_attributes(prefix, suffix, type_: str = 'str'):
         if is_sequence(prefix):
             return prefix + [suffix]
         raise TypeError(wrong_prefix_format.format(type(prefix)))
-
-    wrong_concat_type = 'Type {} for concatenation is not supported.'
-    wrong_concat_type += 'Should be "str" or "sequence"'
-    raise ValueError(wrong_concat_type.format(type_))
-
-
-# def deepattr_to_sequence(deepattr: str):
-#     sequence = deepattr.split('/')
-#     healed_sequence = [a for a in sequence]
-#     return healed_sequence
+    raise ValueError(f"Type {type_} for concatenation is not supported. Should be 'str' or 'sequence'")
 
 
 def sequence_to_deepattr(sequence):
-    """
-    Convert a list to the corresponding string pointing to deep_attribute.
-    """
+    """ Convert a list to the corresponding string pointing to deep_attribute. """
     healed_sequence = [str(attr) if isinstance(attr, int) else attr for attr in sequence]
     return '/'.join(healed_sequence)
 
 
 def type_from_annotation(type_, module):
-    """
-    Clean up a proposed type if there are stringified.
-    """
+    """ Clean up a proposed type if there are stringified. """
     if isinstance(type_, str):
         # Evaluating types
         type_ = TYPES_FROM_STRING.get(type_, default=getattr(import_module(module), type_))
@@ -1298,16 +1323,21 @@ def type_from_annotation(type_, module):
 
 
 def prettyname(namestr):
-    """
-    Creates a pretty name from as str.
-    """
+    """ Create a pretty name from as str. """
     warnings.warn("prettyname function has been moved to 'helpers' module. Use it instead", DeprecationWarning)
     return dch.prettyname(namestr)
 
 
 def inspect_arguments(method, merge=False):
+    """ Get method arguments and default arguments as sequences while removing forbidden ones (self, cls...)."""
     # Find default value and required arguments of class construction
-    argspecs = inspect.getfullargspec(method)
+    method_full_name = f'{method.__module__}.{method.__qualname__}'
+    if method_full_name in _fullargsspec_cache:
+        argspecs = _fullargsspec_cache[method_full_name]
+    else:
+        argspecs = inspect.getfullargspec(method)
+        _fullargsspec_cache[method_full_name] = argspecs
+
     nargs, ndefault_args = split_argspecs(argspecs)
 
     default_arguments = {}
@@ -1326,6 +1356,7 @@ def inspect_arguments(method, merge=False):
 
 
 def split_argspecs(argspecs) -> Tuple[int, int]:
+    """ Get number of regular arguments as well as arguments with default values. """
     nargs = len(argspecs.args) - 1
 
     if argspecs.defaults is not None:
