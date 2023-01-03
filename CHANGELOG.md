@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - cache inspect.fullargspecs calls
 
+### Chores
+- Merge back master to dev
+
 ## 0.11.0
 
 ### Fixed
