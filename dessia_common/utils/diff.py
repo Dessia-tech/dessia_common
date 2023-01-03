@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Wed Nov 24 19:24:53 2021
-
-@author: steven
+Module to compute differences between objects.
 """
 
 import math
@@ -103,7 +101,7 @@ class Diff:
 
 def diff(value1, value2, path='#'):
     """
-    Main function to get the diff of two objects
+    Main function to get the diff of two objects.
 
     :return: a tuple of a list of diff between the objects, missing keys in other object and invalid types
     """

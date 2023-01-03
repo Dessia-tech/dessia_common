@@ -12,8 +12,7 @@ import dessia_common.optimization as opt
 
 class Engine(DessiaObject):
     """
-    Dummy and unrealistic engine, only for tests on optimization package.
-    Do not use to optimize an engine.
+    Dummy and unrealistic engine, only for tests on optimization package. Do not use to optimize an engine.
     """
     _vector_features = ['diameter', 'stroke', 'power', 'mass', 'costs']
 
@@ -57,7 +56,7 @@ class Engine(DessiaObject):
 
 class EngineOptimizer(opt.InstantiatingModelOptimizer):
     """
-    Optimizer for Engine
+    Optimizer for Engine.
     """
 
     def __init__(self, fixed_parameters: List[opt.FixedAttributeValue],
