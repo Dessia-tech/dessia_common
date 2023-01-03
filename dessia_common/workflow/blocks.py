@@ -88,11 +88,15 @@ class InstantiateModel(Block):
         return len(self.model_class.__name__)
 
     def equivalent(self, other):
+        """
+        Returns if the block is equivalent to the other given.
+        """
         classname = self.model_class.__class__.__name__
         other_classname = other.model_class.__class__.__name__
         return Block.equivalent(self, other) and classname == other_classname
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
+        """Serialize the block with custom logic."""
         dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         dict_['model_class'] = full_classname(object_=self.model_class, compute_for='class')
         return dict_
@@ -138,6 +142,7 @@ class InstantiateModel(Block):
 
 class ClassMethod(Block):
     """ Run given classmethod during workflow execution. Handle static method as well. """
+
     def __init__(self, method_type: ClassMethodType[Type], name: str = '', position=None):
         self.method_type = method_type
         inputs = []
@@ -155,6 +160,9 @@ class ClassMethod(Block):
         return len(classname) + 7 * len(self.method_type.name)
 
     def equivalent(self, other: 'ClassMethod'):
+        """
+        Returns if the block is equivalent to the other given.
+        """
         classname = self.method_type.class_.__name__
         other_classname = other.method_type.class_.__name__
         same_class = classname == other_classname
@@ -221,6 +229,7 @@ class ModelMethod(Block):
     :param name: Name of the block.
     :type name: str
     """
+
     def __init__(self, method_type: MethodType[Type], name: str = '', position=None):
         self.method_type = method_type
         inputs = [TypedVariable(type_=method_type.class_, name='model at input')]
@@ -245,6 +254,9 @@ class ModelMethod(Block):
         return len(classname) + 7 * len(self.method_type.name)
 
     def equivalent(self, other: 'ModelMethod'):
+        """
+        Returns if the block is equivalent to the other given.
+        """
         classname = self.method_type.class_.__name__
         other_classname = other.method_type.class_.__name__
         same_model = classname == other_classname
@@ -252,6 +264,7 @@ class ModelMethod(Block):
         return Block.equivalent(self, other) and same_model and same_method
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
+        """Serialize the block with custom logic."""
         dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         classname = full_classname(object_=self.method_type.class_, compute_for='class')
         method_type_dict = {'class_': classname, 'name': self.method_type.name}
@@ -312,6 +325,7 @@ class Sequence(Block):
     :param name: Block name.
     :param position: Position in canvas.
     """
+
     def __init__(self, number_arguments: int, name: str = '', position=None):
         self.number_arguments = number_arguments
         inputs = [Variable(name=f"Sequence element {i}") for i in range(self.number_arguments)]
@@ -322,9 +336,13 @@ class Sequence(Block):
         return self.number_arguments
 
     def equivalent(self, other):
+        """
+        Returns if the block is equivalent to the other given.
+        """
         return Block.equivalent(self, other) and self.number_arguments == other.number_arguments
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
+        """Serialize the block with custom logic."""
         dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         dict_['number_arguments'] = self.number_arguments
         return dict_
@@ -354,9 +372,13 @@ class Concatenate(Block):
         return self.number_arguments
 
     def equivalent(self, other):
+        """
+        Returns if the block is equivalent to the other given.
+        """
         return Block.equivalent(self, other) and self.number_arguments == other.number_arguments
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
+        """Serialize the block with custom logic."""
         dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         dict_['number_arguments'] = self.number_arguments
         return dict_
@@ -407,11 +429,15 @@ class WorkflowBlock(Block):
         return hash(self.workflow)
 
     def equivalent(self, other):
+        """
+        Returns if the block is equivalent to the other given.
+        """
         if not Block.equivalent(self, other):
             return False
         return self.workflow == other.workflow
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
+        """Serialize the block with custom logic."""
         dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         dict_.update({'workflow': self.workflow.to_dict(use_pointers=use_pointers, memo=memo, path=f'{path}/workflow')})
         return dict_
@@ -491,11 +517,15 @@ class ForEach(Block):
         return wb_hash + self.iter_input_index
 
     def equivalent(self, other):
+        """
+        Returns if the block is equivalent to the other given.
+        """
         input_eq = self.iter_input_index == other.iter_input_index
         wb_eq = self.workflow_block.equivalent(other.workflow_block)
         return Block.equivalent(self, other) and wb_eq and input_eq
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
+        """Serialize the block with custom logic."""
         dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         wb_dict = self.workflow_block.to_dict(use_pointers=use_pointers, memo=memo, path=f"{path}/worklow_block")
         dict_.update({'workflow_block': wb_dict, 'iter_input_index': self.iter_input_index})
@@ -541,18 +571,23 @@ class ForEach(Block):
 
 class Unpacker(Block):
     """ DeMUX block. """
+
     def __init__(self, indices: List[int], name: str = '', position=None):
         self.indices = indices
         outputs = [Variable(name=f"output_{i}") for i in indices]
         Block.__init__(self, inputs=[Variable(name="input_sequence")], outputs=outputs, name=name, position=position)
 
     def equivalent(self, other):
+        """
+        Returns if the block is equivalent to the other given.
+        """
         return Block.equivalent(self, other) and self.indices == other.indices
 
     def equivalent_hash(self):
         return len(self.indices)
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
+        """Serialize the block with custom logic."""
         dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         dict_['indices'] = self.indices
         return dict_
@@ -606,9 +641,13 @@ class Product(Block):
         return self.number_list
 
     def equivalent(self, other):
+        """
+        Returns if the block is equivalent to the other given.
+        """
         return Block.equivalent(self, other) and self.number_list == other.number_list
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
+        """Serialize the block with custom logic."""
         dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         dict_['number_list'] = self.number_list
         return dict_
@@ -635,6 +674,8 @@ class Product(Block):
 
 class Filter(Block):
     """
+    A Block to filter some data according to some filters.
+
     :param filters: A list of dictionaries, each corresponding to a value to filter.
                     The dictionary should be as follows :
                     *{'attribute' : Name of attribute to filter (str),
@@ -654,6 +695,9 @@ class Filter(Block):
         Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent(self, other):
+        """
+        Returns if the block is equivalent to the other given.
+        """
         return Block.equivalent(self, other) and self.filters == other.filters
 
     def equivalent_hash(self):
@@ -661,6 +705,7 @@ class Filter(Block):
         return int(sum(hashes) % 10e5)
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
+        """Serialize the block with custom logic."""
         dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         filters_dict = [f.to_dict(use_pointers=use_pointers, memo=memo, path=f"{path}/filters/{i}")
                         for i, f in enumerate(self.filters)]
@@ -762,6 +807,7 @@ class MultiPlot(Display):
     :param name: The name of the block.
     :type name: str
     """
+
     def __init__(self, attributes: List[str], order: int = None, name: str = '', position=None):
         if order is not None:
             warnings.warn("Display Block : order argument is deprecated and will be removed in a future version."
@@ -774,6 +820,9 @@ class MultiPlot(Display):
         self._selector = None
 
     def equivalent(self, other):
+        """
+        Returns if the block is equivalent to the other given.
+        """
         same_attributes = self.attributes == other.attributes
         return Block.equivalent(self, other) and same_attributes
 
@@ -781,6 +830,7 @@ class MultiPlot(Display):
         return sum(len(a) for a in self.attributes)
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
+        """Serialize the block with custom logic."""
         dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         dict_['attributes'] = self.attributes
         return dict_
@@ -883,9 +933,13 @@ class ModelAttribute(Block):
         return len(self.attribute_name)
 
     def equivalent(self, other):
+        """
+        Returns if the block is equivalent to the other given.
+        """
         return Block.equivalent(self, other) and self.attribute_name == other.attribute_name
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
+        """Serialize the block with custom logic."""
         dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         dict_.update({'attribute_name': self.attribute_name})
         return dict_
@@ -922,9 +976,13 @@ class SetModelAttribute(Block):
         return 3 + len(self.attribute_name)
 
     def equivalent(self, other):
+        """
+        Returns if the block is equivalent to the other given.
+        """
         return Block.equivalent(self, other) and self.attribute_name == other.attribute_name
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
+        """Serialize the block with custom logic."""
         dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         dict_.update({'attribute_name': self.attribute_name})
         return dict_
@@ -955,9 +1013,13 @@ class Sum(Block):
         return self.number_elements
 
     def equivalent(self, other):
+        """
+        Returns if the block is equivalent to the other given.
+        """
         return Block.equivalent(self, other) and self.number_elements == other.number_elements
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
+        """Serialize the block with custom logic."""
         dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         dict_.update({'number_elements': self.number_elements})
         return dict_
@@ -1012,11 +1074,15 @@ class ConcatenateStrings(Block):
         return self.number_elements + hash(self.separator)
 
     def equivalent(self, other):
+        """
+        Returns if the block is equivalent to the other given.
+        """
         same_number = self.number_elements == other.number_elements
         same_separator = self.separator == other.separator
         return Block.equivalent(self, other) and same_number and same_separator
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
+        """Serialize the block with custom logic."""
         dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         dict_.update({'number_elements': self.number_elements, "separator": self.separator})
         return dict_
@@ -1057,6 +1123,7 @@ class Export(Block):
     :param name: Name of the block.
     :type name: str
     """
+
     def __init__(self, method_type: MethodType[Type], text: bool, extension: str,
                  filename: str = "export", name: str = "", position=None):
         self.method_type = method_type
@@ -1075,6 +1142,7 @@ class Export(Block):
         Block.__init__(self, inputs=inputs, outputs=[output], name=name, position=position)
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#'):
+        """Serialize the block with custom logic."""
         dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         classname = full_classname(object_=self.method_type.class_, compute_for='class')
         method_type_dict = {'class_': classname, 'name': self.method_type.name}
@@ -1132,6 +1200,7 @@ class Archive(Block):
     :param name: Name of the block.
     :type name: str
     """
+
     def __init__(self, number_exports: int = 1, filename: str = "archive", name: str = "", position=None):
         self.number_exports = number_exports
         self.filename = filename
@@ -1142,6 +1211,7 @@ class Archive(Block):
         Block.__init__(self, inputs=inputs, outputs=[Variable(name="zip archive")], name=name, position=position)
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#'):
+        """Serialize the block with custom logic."""
         dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         dict_['number_exports'] = len(self.inputs) - 1   # Filename is also a block input
         dict_["filename"] = self.filename

@@ -39,6 +39,7 @@ def is_builtins_list(list_):
 
 class ExportFormat:
     """ Define which method of an object should be called for each Export """
+
     def __init__(self, selector: Optional[str], extension: str, method_name: str, text: bool,
                  export_name: str = "", args: Dict[str, Any] = None):
         self.selector = selector
@@ -256,6 +257,7 @@ class XLSXWriter:
 
 class MarkdownWriter:
     """ Base class to write markdowns. """
+
     def __init__(self, print_limit: int = 25, table_limit: int = 12):
         self.print_limit = print_limit
         self.table_limit = table_limit
