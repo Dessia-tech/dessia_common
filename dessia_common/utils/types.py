@@ -1,9 +1,9 @@
 """
 Types tools.
 """
+
 from typing import Any, Dict, List, Tuple, Type, Union, get_origin, get_args
 
-# import json
 from collections.abc import Iterator, Sequence
 from importlib import import_module
 
@@ -29,9 +29,7 @@ _PYTHON_CLASS_CACHE = {}
 
 
 def full_classname(object_, compute_for: str = 'instance'):
-    """
-    Get full class name of object_ (module + classname).
-    """
+    """ Get full class name of object_ (module + classname). """
     if compute_for == 'instance':
         return object_.__class__.__module__ + '.' + object_.__class__.__name__
     if compute_for == 'class':
@@ -45,9 +43,7 @@ def full_classname(object_, compute_for: str = 'instance'):
 
 
 def is_classname_transform(string: str):
-    """
-    Check if string is classname and return class if yes.
-    """
+    """ Check if string is classname and return class if yes. """
     if '.' in string:
         split_string = string.split('.')
         if len(split_string) >= 2:
@@ -60,9 +56,13 @@ def is_classname_transform(string: str):
 
 
 def is_jsonable(obj):
+<<<<<<< HEAD
     """
     Returns if object can be dumped as it is in a json.
     """
+=======
+    """ Return if object can be dumped as it is in a json. """
+>>>>>>> origin/dev
     # First trying with orjson which is more efficient
     try:
         orjson.dumps(obj, option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS).decode('utf-8')
@@ -78,10 +78,15 @@ def is_jsonable(obj):
     #     return False
 
 
+<<<<<<< HEAD
 def is_serializable(obj):
     """
     Check if object is serializable.
     """
+=======
+def is_serializable(obj) -> bool:
+    """ Return True if object is deeply serializable as Dessia's standards, else False"""
+>>>>>>> origin/dev
     if is_jsonable(obj):
         return True
     if isinstance(obj, CoreDessiaObject):
@@ -102,7 +107,11 @@ def is_serializable(obj):
 
 def is_sequence(obj):
     """
+<<<<<<< HEAD
     Check is obj is sequence.
+=======
+    Return True if object is sequence (but not string), else False.
+>>>>>>> origin/dev
 
     :param obj: Object to check
     :return: bool. True if object is a sequence but not a string. False otherwise
@@ -111,23 +120,30 @@ def is_sequence(obj):
 
 
 def is_builtin(type_):
+<<<<<<< HEAD
     """
     Check if type_ is in built-in types.
     """
+=======
+    """ Return True if type_ is a simple python builtin, ie. int, float, bool or str. """
+>>>>>>> origin/dev
     return type_ in TYPING_EQUIVALENCES
 
 
 def isinstance_base_types(obj):
-    """
-    Returns True if the object is either a str, a float an int or None.
-    """
+    """ Return True if the object is either a str, a float an int or None. """
     return isinstance(obj, (str, float, int)) or (obj is None)
 
 
+<<<<<<< HEAD
 def get_python_class_from_class_name(full_class_name):
     """
     Get class Python (type) from class name (str).
     """
+=======
+def get_python_class_from_class_name(full_class_name: str):
+    """ Get python class object corresponging to given classname. """
+>>>>>>> origin/dev
     cached_value = _PYTHON_CLASS_CACHE.get(full_class_name, None)
     if cached_value is not None:
         return cached_value
@@ -142,6 +158,7 @@ def get_python_class_from_class_name(full_class_name):
 
 
 def unfold_deep_annotation(typing_=None):
+    """ Get origin (tuple, list,...) and arguments (type,...) from typing. """
     if is_typing(typing_):
         origin = get_origin(typing_)
         args = get_args(typing_)
@@ -150,9 +167,13 @@ def unfold_deep_annotation(typing_=None):
 
 
 def is_typing(object_: Any):
+<<<<<<< HEAD
     """
     Check if object_ is a typing.
     """
+=======
+    """ Return True if given object can be seen as a typing (has a module, an origin and arguments). """
+>>>>>>> origin/dev
     has_module = hasattr(object_, '__module__')
     has_origin = hasattr(object_, '__origin__')
     has_args = hasattr(object_, '__args__')
@@ -160,9 +181,13 @@ def is_typing(object_: Any):
 
 
 def serialize_typing(typing_):
+<<<<<<< HEAD
     """
     Serialize a typing.
     """
+=======
+    """ Compute a string from a type. """
+>>>>>>> origin/dev
     if is_typing(typing_):
         return serialize_typing_types(typing_)
     if typing_ in [StringFile, BinaryFile, MethodType, ClassMethodType] or isinstance(typing_, type):
@@ -171,9 +196,13 @@ def serialize_typing(typing_):
 
 
 def serialize_typing_types(typing_):
+<<<<<<< HEAD
     """
     Serialize typing as types.
     """
+=======
+    """ Compute a string from typings only. """
+>>>>>>> origin/dev
     origin = get_origin(typing_)
     args = get_args(typing_)
     if origin is Union:
@@ -203,9 +232,13 @@ def serialize_typing_types(typing_):
 
 
 def serialize_union_typing(args):
+<<<<<<< HEAD
     """
     Serialize a Union type.
     """
+=======
+    """ Compute a string from union typings. """
+>>>>>>> origin/dev
     if len(args) == 2 and type(None) in args:
         # This is a false Union => Is a default value set to None
         return serialize_typing(args[0])
@@ -216,9 +249,13 @@ def serialize_union_typing(args):
 
 
 def type_fullname(arg):
+<<<<<<< HEAD
     """
     Get full name of type.
     """
+=======
+    """ Get full classname from a typing. """
+>>>>>>> origin/dev
     if arg.__module__ == 'builtins':
         full_argname = '__builtins__.' + arg.__name__
     else:
@@ -227,9 +264,13 @@ def type_fullname(arg):
 
 
 def type_from_argname(argname):
+<<<<<<< HEAD
     """
     Get type from argname.
     """
+=======
+    """ Try and compute a type from an argument's name. """
+>>>>>>> origin/dev
     splitted_argname = argname.rsplit('.', 1)
     if argname:
         if splitted_argname[0] == '__builtins__':
@@ -243,10 +284,15 @@ def type_from_argname(argname):
 TYPING_FROM_SERIALIZED_NAME = {"List": List, "Tuple": Tuple, "Iterator": Iterator, "Dict": Dict}
 
 
+<<<<<<< HEAD
 def deserialize_typing(serialized_typing):
     """
     Deserialize a typing.
     """
+=======
+def deserialize_typing(serialized_typing: str):
+    """ Compute a typing from a string. """
+>>>>>>> origin/dev
     # TODO : handling recursive deserialization
     if isinstance(serialized_typing, str):
         # TODO other builtins should be implemented
@@ -290,9 +336,13 @@ def deserialize_typing(serialized_typing):
 
 
 def deserialize_tuple_typing(full_argname):
+<<<<<<< HEAD
     """
     Deserialize a tuple of typing.
     """
+=======
+    """ Compute a tuple typing from a string. """
+>>>>>>> origin/dev
     if ', ' in full_argname:
         args = full_argname.split(', ')
         if len(args) == 0:
@@ -309,9 +359,13 @@ def deserialize_tuple_typing(full_argname):
 
 
 def deserialize_file_typing(serialized_typing):
+<<<<<<< HEAD
     """
     Deserialize a file typing.
     """
+=======
+    """ Compute a file typing from a string. """
+>>>>>>> origin/dev
     if serialized_typing == "dessia_common.files.StringFile":
         return StringFile
     if serialized_typing == "dessia_common.files.BinaryFile":
@@ -320,9 +374,13 @@ def deserialize_file_typing(serialized_typing):
 
 
 def deserialize_method_typing(serialized_typing):
+<<<<<<< HEAD
     """
     Deserialize a method typing.
     """
+=======
+    """ Compute a method typing from a string. """
+>>>>>>> origin/dev
     if serialized_typing == "dessia_common.typings.MethodType":
         return MethodType
     if serialized_typing == "dessia_common.typings.ClassMethodType":
@@ -331,9 +389,13 @@ def deserialize_method_typing(serialized_typing):
 
 
 def deserialize_builtin_typing(serialized_typing):
+<<<<<<< HEAD
     """
     Deserialize a built-in typing.
     """
+=======
+    """ Compute a builtin typing from a string. """
+>>>>>>> origin/dev
     if serialized_typing in ['float', 'builtins.float']:
         return float
     if serialized_typing in ['int', 'builtins.int']:
@@ -346,9 +408,7 @@ def deserialize_builtin_typing(serialized_typing):
 
 
 def is_bson_valid(value, allow_nonstring_keys=False) -> Tuple[bool, str]:
-    """
-    Returns validity (bool) and a hint (str).
-    """
+    """ Return bson validity (bool) and a hint (str). """
     if isinstance(value, (int, float, str)):
         return True, ''
 
@@ -389,9 +449,13 @@ def is_bson_valid(value, allow_nonstring_keys=False) -> Tuple[bool, str]:
 
 
 def recursive_type(obj):
+<<<<<<< HEAD
     """
     What is the difference with serialize typing (?).
     """
+=======
+    """ What is the difference with serialize typing (?). """
+>>>>>>> origin/dev
     if isinstance(obj, tuple(list(TYPING_EQUIVALENCES.keys()) + [dict])):
         type_ = TYPES_STRINGS[type(obj)]
     elif isinstance(obj, CoreDessiaObject):
@@ -449,9 +513,7 @@ def typematch(type_: Type, match_against: Type) -> bool:
 
 
 def complex_first_type_match(type_: Type, match_against: Type) -> bool:
-    """
-    Match type when type_ is a complex typing (List, Union, Tuple,...).
-    """
+    """ Match type when type_ is a complex typing (List, Union, Tuple,...). """
     # Complex typing for the first type_. Cases : List, Tuple, Union
     if not is_typing(match_against):
         # Type matching is unilateral and match against should be more open than type_
@@ -508,9 +570,14 @@ def heal_type(type_: Type):
 
 
 def particular_typematches(type_: Type, match_against: Type) -> bool:
+<<<<<<< HEAD
     """
     Checks for specific cases of typematches and returns and boolean.
     """
+=======
+    """ Check for specific cases of typematches and return a boolean. """
+>>>>>>> origin/dev
     if type_ is int and match_against is float:
         return True
+    # Not refactoring this as a one-liner for now, as more cases should be added in the future.
     return False
