@@ -32,7 +32,7 @@ MAX_ERROR_BY_TYPE = {
                      'too-many-locals': 10,  # Reduce by dropping vectored objects
                      'too-many-branches': 13,
                      'wrong-import-order': 0,
-                     'unused-argument': 9,
+                     'unused-argument': 7,
                      'cyclic-import': 4,
                      'no-self-use': 6,
                      'trailing-whitespace': 11,
