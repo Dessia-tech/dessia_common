@@ -1,4 +1,5 @@
-from dessia_common.schemas.core import schema_chunk
+from dessia_common.schemas.core import BuiltinProperty, MeasureProperty,  ClassProperty, MethodTypeProperty,\
+    HeterogeneousSequence, HomogeneousSequence, DynamicDict
 from typing import List, Tuple, Dict, Type
 from dessia_common.core import DessiaObject
 from dessia_common.measures import Distance
@@ -6,85 +7,97 @@ from dessia_common.typings import MethodType, ClassMethodType
 
 
 # Builtins
-float_schema = schema_chunk(annotation=float, title="Float", editable=False, description="Testing bultins : float")
-assert float_schema == {'type': 'number', 'python_typing': 'builtins.float', 'title': 'Float',
-                        'editable': False, 'description': 'Testing bultins : float'}
-int_schema = schema_chunk(annotation=int, title="Integer", editable=False, description="Testing bultins : int")
-assert int_schema == {'type': 'number', 'python_typing': 'builtins.int', 'title': 'Integer',
-                      'editable': False, 'description': 'Testing bultins : int'}
-str_schema = schema_chunk(annotation=str, title="String", editable=False, description="Testing bultins : str")
-assert str_schema == {'type': 'string', 'python_typing': 'builtins.str', 'title': 'String',
-                      'editable': False, 'description': 'Testing bultins : str'}
-bool_schema = schema_chunk(annotation=bool, title="Boolean", editable=False, description="Testing bultins : bool")
-assert bool_schema == {'type': 'boolean', 'python_typing': 'builtins.bool', 'title': 'Boolean',
-                       'editable': False, 'description': 'Testing bultins : bool'}
+schema = BuiltinProperty(float)
+computed_schema = schema.write(title="Float", editable=False, description="Testing bultins : float")
+assert computed_schema == {'type': 'number', 'python_typing': 'builtins.float', 'title': 'Float',
+                           'editable': False, 'description': 'Testing bultins : float'}
+schema = BuiltinProperty(int)
+computed_schema = schema.write(title="Integer", editable=False, description="Testing bultins : int")
+assert computed_schema == {'type': 'number', 'python_typing': 'builtins.int', 'title': 'Integer',
+                           'editable': False, 'description': 'Testing bultins : int'}
+schema = BuiltinProperty(str)
+computed_schema = schema.write(title="String", editable=False, description="Testing bultins : str")
+assert computed_schema == {'type': 'string', 'python_typing': 'builtins.str', 'title': 'String',
+                           'editable': False, 'description': 'Testing bultins : str'}
+schema = BuiltinProperty(bool)
+computed_schema = schema.write(title="Boolean", editable=False, description="Testing bultins : bool")
+assert computed_schema == {'type': 'boolean', 'python_typing': 'builtins.bool', 'title': 'Boolean',
+                           'editable': False, 'description': 'Testing bultins : bool'}
 
 # Measures
-distance_schema = schema_chunk(annotation=Distance, title="Distance", editable=True, description="Float distance")
-assert distance_schema == {'type': 'number', 'python_typing': 'dessia_common.measures.Distance', 'title': 'Distance',
-                           'editable': True, 'description': 'Float distance', 'si_unit': 'm'}
+schema = MeasureProperty(Distance)
+computed_schema = schema.write(title="Distance", editable=True, description="Float distance")
+assert computed_schema == {'type': 'number', 'python_typing': 'dessia_common.measures.Distance',
+                           'title': 'Distance', 'editable': True, 'description': 'Float distance', 'si_unit': 'm'}
 
 # Class
-class_schema = schema_chunk(annotation=Type, title="Some class", editable=True, description="")
-assert class_schema == {'type': 'object', 'is_class': True, 'properties': {'name': {'type': 'string'}},
-                        'title': 'Some class', 'editable': True, 'description': '', 'python_typing': 'typing.Type'}
+schema = ClassProperty(Type)
+computed_schema = schema.write(title="Some class", editable=True, description="")
+assert computed_schema == {'type': 'object', 'is_class': True, 'properties': {'name': {'type': 'string'}},
+                           'title': 'Some class', 'editable': True, 'description': '', 'python_typing': 'typing.Type'}
 
 # Methods
 method_type = MethodType(class_=DessiaObject, name="to_dict")
-method_schema = schema_chunk(annotation=method_type, title="Some method", editable=True, description="to_dict")
-assert class_schema == {'type': 'object', 'is_class': True, 'properties': {'name': {'type': 'string'}},
-                        'title': 'Some class', 'editable': True, 'description': '', 'python_typing': 'typing.Type'}
-
-class_schema = schema_chunk(annotation=Type, title="Some class", editable=True, description="")
-assert class_schema == {'type': 'object', 'is_class': True, 'properties': {'name': {'type': 'string'}},
-                        'title': 'Some class', 'editable': True, 'description': '', 'python_typing': 'typing.Type'}
+schema = MethodTypeProperty(MethodType[DessiaObject])
+computed_schema = schema.write(title="Some method", editable=True, description="to_dict")
+assert computed_schema == {'type': 'object', 'is_class': True, 'properties': {'name': {'type': 'string'}},
+                           'title': 'Some class', 'editable': True, 'description': '', 'python_typing': 'typing.Type'}
 
 # Lists
-try:
-    bare_list = schema_chunk(annotation=List, title="Bare List", editable=True, description="Testing bare List")
-except NotImplementedError:
-    pass
+schema = HomogeneousSequence(List)
+computed_schema = schema.write(title="Bare List", editable=True, description="Testing bare List")
+checked_schema = computed_schema.check("check_schema")
+assert computed_schema == {'title': 'Items', 'editable': False, 'description': '',
+                           'python_typing': 'typing.List', 'type': 'array', 'items': []}
+assert len(checked_schema) == 1
+assert checked_schema[0]["severity"] == "error"
 
-one_arg_list = schema_chunk(annotation=List[int], title="One Arg List", editable=True,
-                            description="Testing List with one arg")
-assert one_arg_list == {'type': 'array', 'python_typing': 'List[__builtins__.int]',
-                        'items': {'type': 'number',
-                                  'python_typing': 'builtins.int',
-                                  'title': 'One Arg List',
-                                  'editable': True,
-                                  'description': ''},
-                        'title': 'One Arg List', 'editable': True, 'description': 'Testing List with one arg'}
+schema = HomogeneousSequence(List[int])
+computed_schema = schema.write(title="One Arg List", editable=True, description="Testing List with one arg")
+checked_schema = computed_schema.check("check_schema")
+assert computed_schema == {'type': 'array', 'python_typing': 'List[__builtins__.int]',
+                           'items': {'type': 'number',
+                                     'python_typing': 'builtins.int',
+                                     'title': 'One Arg List',
+                                     'editable': True,
+                                     'description': ''},
+                           'title': 'One Arg List', 'editable': True, 'description': 'Testing List with one arg'}
+assert len(checked_schema) == 0
 
-deep_list = schema_chunk(annotation=List[List[DessiaObject]], title="Complex Deep List", editable=True,
-                         description="Testin complex deep list")
-assert deep_list == {'type': 'array',
-                     'python_typing': 'List[List[dessia_common.core.DessiaObject]]',
-                     'items': {'type': 'array',
-                               'python_typing': 'List[dessia_common.core.DessiaObject]',
-                               'items': {'type': 'object',
-                                         'standalone_in_db': False,
-                                         'classes': ['dessia_common.core.DessiaObject'],
-                                         'title': 'Complex Deep List',
-                                         'editable': True,
-                                         'description': '',
-                                         'python_typing': 'dessia_common.core.DessiaObject'}},
-                     'title': 'Complex Deep List',
-                     'editable': True,
-                     'description': 'Testin complex deep list'}
+schema = HomogeneousSequence(List[List[DessiaObject]])
+computed_schema = schema.write(title="Complex Deep List", editable=True, description="Testin complex deep list")
+checked_schema = computed_schema.check("check_schema")
+assert computed_schema == {'type': 'array',
+                           'python_typing': 'List[List[dessia_common.core.DessiaObject]]',
+                           'items': {'type': 'array',
+                                     'python_typing': 'List[dessia_common.core.DessiaObject]',
+                                     'items': {'type': 'object',
+                                               'standalone_in_db': False,
+                                               'classes': ['dessia_common.core.DessiaObject'],
+                                               'title': 'Complex Deep List',
+                                               'editable': True,
+                                               'description': '',
+                                               'python_typing': 'dessia_common.core.DessiaObject'}},
+                           'title': 'Complex Deep List',
+                           'editable': True,
+                           'description': 'Testin complex deep list'}
+assert len(checked_schema) == 0
 
 # Tuples
 # TODO Should object be allowed here ?
 # more_arg_tuple = schema_chunk(annotation=Tuple[int, str, DessiaObject], title="More Arg Tuple", editable=True,
 #                               description="Testing Tuple with several args")
-more_arg_tuple = schema_chunk(annotation=Tuple[int, str], title="More Arg Tuple", editable=True,
-                              description="Testing Tuple with several args")
-assert more_arg_tuple == {'additionalItems': False,
-                          'type': 'array',
-                          'items': [{'type': 'number'}, {'type': 'string'}],
-                          'title': 'More Arg Tuple',
-                          'editable': True,
-                          'description': 'Testing Tuple with several args',
-                          'python_typing': 'Tuple[__builtins__.int, __builtins__.str]'}
+schema = HomogeneousSequence(Tuple[int, str])
+computed_schema = schema.write(title="More Arg Tuple", editable=True, description="Testing Tuple with several args")
+checked_schema = computed_schema.check("check_schema")
+assert computed_schema == {'additionalItems': False,
+                           'type': 'array',
+                           'items': [{'type': 'number'}, {'type': 'string'}],
+                           'title': 'More Arg Tuple',
+                           'editable': True,
+                           'description': 'Testing Tuple with several args',
+                           'python_typing': 'Tuple[__builtins__.int, __builtins__.str]'}
+assert len(checked_schema) == 0
 
 
 # Dicts
