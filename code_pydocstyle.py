@@ -4,6 +4,7 @@ from glob import glob
 import random
 from datetime import date
 
+print(f'Pydocstyle version: {pydocstyle.__version__}')
 
 file_list = filter(lambda z: not z.endswith("__init__.py"),
                    [y for x in os.walk('./dessia_common')
