@@ -1,6 +1,5 @@
 """
-templates for dessia_common
-
+Templates for dessia_common.
 """
 from string import Template
 

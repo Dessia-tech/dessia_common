@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Serialization Tools
-
+Serialization Tools.
 """
 
 import warnings
@@ -46,10 +45,7 @@ def serialize_sequence(seq):
 
 def serialize(value):
     """
-    Main function for serialization without pointers.
-
-    Calls recursively itself serialize_sequence and serialize_dict
-
+    Main function for serialization without pointers. Calls recursively itself serialize_sequence and serialize_dict.
     """
     if isinstance(value, dc.DessiaObject):
         try:
@@ -172,8 +168,8 @@ def serialize_sequence_with_pointers(seq, memo, path):
     return serialized_sequence, memo
 
 
-def deserialize(serialized_element, sequence_annotation: str = 'List',
-                global_dict=None, pointers_memo=None, path: str = '#'):
+def deserialize(serialized_element, sequence_annotation: str = 'List', global_dict=None,
+                pointers_memo=None, path: str = '#'):
     """
     Main function for deserialization, handle pointers.
     """
@@ -200,9 +196,7 @@ def deserialize(serialized_element, sequence_annotation: str = 'List',
     return serialized_element
 
 
-def deserialize_sequence(sequence, annotation=None,
-                         global_dict=None, pointers_memo=None,
-                         path='#'):
+def deserialize_sequence(sequence, annotation=None, global_dict=None, pointers_memo=None, path='#'):
     """
     Deserialization function for sequences (tuple + list).
 
@@ -439,6 +433,9 @@ def find_references(value, path='#'):
 
 
 def find_references_sequence(seq, path):
+    """
+    Compute references for a sequence.
+    """
     if isinstance(seq, str):
         raise ValueError
 
@@ -452,6 +449,9 @@ def find_references_sequence(seq, path):
 
 
 def find_references_dict(dict_, path):
+    """
+    Compute references for a dict.
+    """
     if '$ref' in dict_:
 
         return [(path, dict_['$ref'])]
@@ -467,8 +467,9 @@ def find_references_dict(dict_, path):
 
 def pointer_graph(value):
     """
-    Create a graph of subattributes of an object with edge representing either:
+    Create a graph of subattributes of an object.
 
+    For this function, edge representing either:
      * the hierarchy of an subattribute to an attribute
      * the pointer link between the 2 elements
     """
@@ -546,6 +547,9 @@ def pointer_graph(value):
 
 
 def update_pointers_data(global_dict, current_dict, pointers_memo):
+    """
+    Update data dict from pointer.
+    """
     if global_dict is None or pointers_memo is None:
         global_dict = current_dict
 
@@ -558,7 +562,7 @@ def update_pointers_data(global_dict, current_dict, pointers_memo):
 
 def deserialization_order(dict_):
     """
-    Analyse a dict representing an object and give a deserialization order
+    Analyse a dict representing an object and give a deserialization order.
     """
     graph = pointer_graph(dict_)
     if '#' not in graph.nodes:
@@ -588,8 +592,9 @@ def deserialization_order(dict_):
 
 def dereference_jsonpointers(dict_):  # , global_dict):
     """
-    Analyse the given dict to:
+    Analyse the given dict.
 
+    It searches for:
     - find jsonpointers
     - deserialize them in the right order to respect pointers graph
 
@@ -608,7 +613,6 @@ def dereference_jsonpointers(dict_):  # , global_dict):
 
 
 def pointer_graph_elements(value, path='#'):
-
     if isinstance(value, dict):
         return pointer_graph_elements_dict(value, path)
     if dcty.isinstance_base_types(value):
@@ -620,9 +624,6 @@ def pointer_graph_elements(value, path='#'):
 
 
 def pointer_graph_elements_sequence(seq, path='#'):
-    """
-    Compute
-    """
     if isinstance(seq, str):
         raise ValueError
 
@@ -643,7 +644,6 @@ def pointer_graph_elements_sequence(seq, path='#'):
 
 
 def pointer_graph_elements_dict(dict_, path='#'):
-
     if '$ref' in dict_:
         return [path, dict_['$ref']], [(path, dict_['$ref'], True)]
 

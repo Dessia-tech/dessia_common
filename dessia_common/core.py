@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-dessia_common
-
+Module to handle serialization for engineering objects.
 """
 
 import time
@@ -878,7 +877,7 @@ class ParameterSet(DessiaObject):
 
     @property
     def means(self):
-        """ Compute means on all parameters defined in Set"""
+        """ Compute means on all parameters defined in Set. """
         means = {k: sum(v) / len(v) for k, v in self.values.items()}
         return means
 
