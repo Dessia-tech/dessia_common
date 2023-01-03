@@ -59,12 +59,19 @@ class Schema:
     def editable_attributes(self):
         return [a for a in self.attributes if a not in RESERVED_ARGNAMES]
 
-    def annotations_are_valid(self) -> tp.Tuple[bool, tp.List[Issue]]:
-        """ Return wether the class definition is valid or not. """
+    def check(self) -> tp.List[Issue]:
         issues = []
         for attribute in self.attributes:
+            if attribute not in self.annotations:
+                issues.append({"attribute": attribute, "severity": "error",
+                               "message": f"Argument '{attribute}' doesn't define any type."})
             schema = self.property_schemas[attribute]
             issues.extend(schema.check(attribute))
+        return issues
+
+    def annotations_are_valid(self) -> tp.Tuple[bool, tp.List[Issue]]:
+        """ Return wether the class definition is valid or not along with a list of issues. """
+        issues = self.check()
         return not any(issues), issues
 
     def chunk(self, attribute: str):
