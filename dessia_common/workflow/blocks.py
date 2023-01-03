@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Fri Mar 18 18:52:32 2022
-
-@author: masfaraud
+Module to define Blocks for workflows.
 """
 
 import inspect
@@ -31,7 +29,9 @@ from dessia_common.workflow.utils import ToScriptElement
 
 
 def set_inputs_from_function(method, inputs=None):
-    """ Inspect given method argspecs and sets block inputs from it. """
+    """
+    Inspect given method argspecs and sets block inputs from it.
+    """
     if inputs is None:
         inputs = []
     args_specs = inspect.getfullargspec(method)
@@ -55,7 +55,9 @@ def set_inputs_from_function(method, inputs=None):
 
 
 def output_from_function(function, name: str = "result output"):
-    """ Inspect given function argspecs and compute block output from it. """
+    """
+    Inspect given function argspecs and compute block output from it.
+    """
     annotations = get_type_hints(function)
     if 'return' in annotations:
         type_ = type_from_annotation(annotations['return'], function.__module__)
@@ -64,7 +66,9 @@ def output_from_function(function, name: str = "result output"):
 
 
 class BlockError(Exception):
-    """ Specific BlockError Exception. """
+    """
+    Specific BlockError Exception.
+    """
 
 
 class InstantiateModel(Block):
@@ -661,7 +665,7 @@ class Product(Block):
 
     def evaluate(self, values):
         """
-        Computes the block: use itertools.product
+        Computes the block: use itertools.product.
         """
         list_product = [values[var] for var in self.inputs]
         output_value = list(itertools.product(*list_product))
@@ -898,8 +902,7 @@ class Markdown(Display):
 
 class PlotData(Display):
     """
-    Generate a DisplayObject that is displayable in PlotData features.
-    Uses the the input object's plot_data method.
+    Generate a DisplayObject that is displayable in PlotData features. Uses the the input object's plot_data method.
 
     :param name: The name of the block.
     :type name: str
@@ -960,6 +963,8 @@ class ModelAttribute(Block):
 
 class SetModelAttribute(Block):
     """
+    Block to set an attribute value in a workflow.
+
     :param attribute_name: The name of the attribute to set.
     :type attribute_name: str
     :param name: The name of the block.

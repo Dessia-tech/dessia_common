@@ -1,6 +1,5 @@
 """
 Library for sampling data.
-
 """
 from typing import List, Type
 
@@ -59,6 +58,7 @@ class ClassSampler(DessiaObject):
     def full_factorial(self):
         """
         Generate all `DessiaObject` with a Full Factorial sampling and store them in a `Dataset`.
+
         A number to discretize each dimension of the problem must be specified in used `BoundedAttributeValue` and they
         are the only ones to be used for sampling data.
 
@@ -76,11 +76,11 @@ class ClassSampler(DessiaObject):
 
     def lhs(self, samples: int, criterion: str):
         """
-        Generate all `DessiaObject` with a Latin Hypercube Sampling (LHS) and store them in a `Dataset`
+        Generate all `DessiaObject` with a Latin Hypercube Sampling (LHS) and store them in a `Dataset`.
+
         Documentation LHS: https://www.statology.org/latin-hypercube-sampling/
 
         :param samples:
-            --------
             Targert number of `DessiaObject` in the DOE.
         :type samples: `int`
 
@@ -99,14 +99,13 @@ class ClassSampler(DessiaObject):
     def montecarlo(self, samples: int):
         """
         Generate all `DessiaObject` with a Monte-Carlo (random uniform) sampling and store them in a `Dataset`.
-        In other words, it is a random uniform sampling for all dimensions of the problem.
 
+        In other words, it is a random uniform sampling for all dimensions of the problem.
         For example, a two dimensions problem sampled with 100 elements with Monte-Carlo method would result in 100
         samples. Each dimension of each sample would have a random uniform value. Redundancies are allowed with this
         sampling method.
 
         :param samples:
-            --------
             Targert number of `DessiaObject` in the DOE.
         :type samples: `int`
 
@@ -131,21 +130,18 @@ class ClassSampler(DessiaObject):
 
     def make_doe(self, samples: int, method: str = 'fullfact', lhs_criterion: str = 'center', name: str = ''):
         """
-        Generate all `DessiaObject` with the choosen method and store them in a `Dataset`
+        Generate all `DessiaObject` with the choosen method and store them in a `Dataset`.
 
         :param samples:
-            --------
             Targert number of `DessiaObject` in the DOE. Not used for `'fullfact'` method.
         :type samples: `int`
 
         :param method:
-            --------
             Method to generate the DOE.
             Can be one of `[fullfact, lhs, montecarlo]`. For more information, see: https://pythonhosted.org/pyDOE/
         :type method: `str`, `optional`, defaults to `'fullfact'`
 
         :param lhs_criterion:
-            --------
             |  Only used with `'lhs'` method.
             |  A string that tells lhs how to sample the points (default: None, which simply randomizes the points \
             |  within the intervals):
