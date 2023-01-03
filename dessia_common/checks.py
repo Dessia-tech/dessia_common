@@ -24,19 +24,29 @@ class PassedCheck(SerializableObject):
 
 
 class CheckWarning(PassedCheck):
+    """
+    Represents a check warning.
+    """
     level = 'warning'
 
 
 class FailedCheck(PassedCheck):
+    """
+    Represents a failed check.
+    """
     level = 'error'
 
 
 class BadType(FailedCheck):
-    pass
+    """
+    Represents a failed check due to a bad type.
+    """
 
 
 class GeometricInconsistance(FailedCheck):
-    pass
+    """
+    Represents a failed check due to a geometric inconsistency.
+    """
 
 
 class CheckList(SerializableObject):

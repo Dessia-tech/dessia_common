@@ -196,7 +196,9 @@ def deserialize(serialized_element, sequence_annotation: str = 'List', global_di
 
 def deserialize_sequence(sequence, annotation=None, global_dict=None, pointers_memo=None, path='#'):
     """
-    Function to deserialize a sequence.
+    Deserialization function for sequences (tuple + list).
+
+    :param path: the path of the sequence in the global dict. Used to search in the pointer memo.
     """
     origin, args = dcty.unfold_deep_annotation(typing_=annotation)
     deserialized_sequence = [deserialize(elt, args, global_dict=global_dict, pointers_memo=pointers_memo,
@@ -212,6 +214,8 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
                    global_dict=None, pointers_memo=None, path='#'):
     """
     Transform a dict to an object.
+
+    :param global_dict: The global object to find references into, where # is the root.
     """
     class_argspec = None
 
@@ -279,7 +283,9 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
 
 def deserialize_with_type(type_, value):
     """
-    Deserialize value from its type and its value.
+    Deserialization a value enforcing the right type.
+
+    Usefull to deserialize as a tuple and not a tuple for ex.
     """
     if type_ in dcty.TYPES_STRINGS.values():
         return literal_eval(type_)(value)
@@ -299,7 +305,9 @@ def deserialize_with_type(type_, value):
 
 def deserialize_with_typing(type_, argument, global_dict=None, pointers_memo=None, path='#'):
     """
-    Deserialize an object with a typing info.
+    Deserialize an object with a typing info
+
+    :param path: The path of the argument in global dict.
     """
     origin = get_origin(type_)
     args = get_args(type_)
@@ -364,6 +372,8 @@ def deserialize_with_typing(type_, argument, global_dict=None, pointers_memo=Non
 def deserialize_argument(type_, argument, global_dict=None, pointers_memo=None, path='#'):
     """
     Deserialize an argument of a function with the type.
+
+    :param path: The path of the argument in global dict.
     """
     if argument is None:
         return None
@@ -405,7 +415,9 @@ def find_references(value, path='#'):
     """
     Traverse recursively the value to find reference (pointers) in it.
 
-    Calls recursively find_references_sequence and find_references_dict.
+    Calls recursively find_references_sequence and find_references_dict
+
+    :param path: The path of the value in case of a recursive search.
     """
     if isinstance(value, dict):
         return find_references_dict(value, path)

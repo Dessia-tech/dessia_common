@@ -197,6 +197,6 @@ class MarkdownFile(StringFile):
 
 class JsonFile(StringFile):
     """
-    A .json extended file
+    A .json extended file.
     """
     extension = "json"

@@ -17,6 +17,8 @@ from dessia_common.utils.types import is_sequence
 
 
 class DisplaySetting:
+    """ Describe which method to call to get a display. """
+
     def __init__(self, selector, type_, method, arguments=None, serialize_data: bool = False):
         """
         Describe what method to call to get a display.
@@ -38,7 +40,10 @@ class DisplaySetting:
 
     def compose(self, attribute: str, serialize_data: bool = False):
         """
-        When a parent gets the display settings of a child, this method allows to use the attribute name as method name.
+        Handles deep calls to method.
+
+        In case of a parent getting the display settings of a children this methods allow to inject the attribute name
+        to method name
         """
         return DisplaySetting(selector=self.selector, type_=self.type, method=f'{attribute}.{self.method}',
                               arguments=self.arguments, serialize_data=serialize_data)
