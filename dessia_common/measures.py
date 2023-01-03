@@ -9,6 +9,7 @@ from dessia_common.utils.types import get_python_class_from_class_name
 
 # Measures
 class Measure(float):
+    """Abstract base class of measures, do not instantiate directly."""
     si_unit = ''
 
     def to_dict(self):
