@@ -1,5 +1,7 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
-exports for dessia_common.
+Exports for dessia_common.
 """
 from typing import List, Dict, Any, Sequence, Optional
 
