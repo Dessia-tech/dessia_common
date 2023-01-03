@@ -16,8 +16,8 @@ from dessia_common.datatools.modeler import Modeler, CrossValidation
 # Load data and put it in a Dataset (matrix is automatically computed)
 dataset_for_fit = Dataset(all_cars_no_feat)[:-100]
 dataset_to_pred = Dataset(all_cars_no_feat)[-100:]
-input_names_reg = ['displacement', 'horsepower', 'model', 'acceleration', 'cylinders']
-output_names_reg = ['mpg', 'weight']
+input_names_reg = ['displacement']#, 'horsepower', 'model']#, 'acceleration']#, 'cylinders'
+output_names_reg = ['weight'] #'mpg']
 output_names_reg_solo = ['weight']
 input_names_clf = ['displacement', 'horsepower', 'acceleration', 'mpg', 'weight']
 output_names_clf = ['cylinders', 'model']
@@ -58,25 +58,25 @@ MC_mdlr, MC_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred,
 mdlrs = [Ri_mdlr, LR_mdlr, DR_mdlr, DC_mdlr, RR_mdlr, RC_mdlr, MR_mdlr, MC_mdlr]
 
 # Run cross_validation for all models instantiated in a Modeler
-CV_Ri = CrossValidation.from_dataset(Ri_mdlr, dataset_for_fit, input_names_reg, output_names_reg, 10, 0.8)
-CV_LR = CrossValidation.from_dataset(LR_mdlr, dataset_for_fit, input_names_reg, output_names_reg, 9, 0.8)
-CV_DR = CrossValidation.from_dataset(DR_mdlr, dataset_for_fit, input_names_reg, output_names_reg, 8, 0.8)
-CV_DC = CrossValidation.from_dataset(DC_mdlr, dataset_for_fit, input_names_clf, output_names_clf, 7, 0.8)
-CV_RR = CrossValidation.from_dataset(RR_mdlr, dataset_for_fit, input_names_reg, output_names_reg, 6, 0.8)
-CV_RC = CrossValidation.from_dataset(RC_mdlr, dataset_for_fit, input_names_clf, output_names_clf, 5, 0.8)
-CV_MR = CrossValidation.from_dataset(MR_mdlr, dataset_for_fit, input_names_reg, output_names_reg, 4, 0.8)
-CV_MC = CrossValidation.from_dataset(MC_mdlr, dataset_for_fit, input_names_clf, output_names_clf_solo, 3, 0.8)
+# CV_Ri = CrossValidation.from_dataset(Ri_mdlr, dataset_for_fit, input_names_reg, output_names_reg, 10, 0.8)
+# CV_LR = CrossValidation.from_dataset(LR_mdlr, dataset_for_fit, input_names_reg, output_names_reg, 9, 0.8)
+# CV_DR = CrossValidation.from_dataset(DR_mdlr, dataset_for_fit, input_names_reg, output_names_reg, 8, 0.8)
+# CV_DC = CrossValidation.from_dataset(DC_mdlr, dataset_for_fit, input_names_clf, output_names_clf, 7, 0.8)
+CV_RR = CrossValidation.from_dataset(RR_mdlr, dataset_for_fit, input_names_reg, output_names_reg, 20, 0.8)
+# CV_RC = CrossValidation.from_dataset(RC_mdlr, dataset_for_fit, input_names_clf, output_names_clf, 5, 0.8)
+# CV_MR = CrossValidation.from_dataset(MR_mdlr, dataset_for_fit, input_names_reg, output_names_reg, 4, 0.8)
+# CV_MC = CrossValidation.from_dataset(MC_mdlr, dataset_for_fit, input_names_clf, output_names_clf_solo, 3, 0.8)
 
 # Plot cross validations
-CV_Ri.plot()
-CV_LR.plot()
-CV_DR.plot()
-CV_DC.plot()
+# CV_Ri.plot()
+# CV_LR.plot()
+# CV_DR.plot()
+# CV_DC.plot()
 CV_RR.plot()
-CV_RC.plot()
-CV_MR.plot()
-CV_MC.plot()
-cvs = [CV_Ri, CV_LR, CV_DR, CV_DC, CV_RR, CV_RC, CV_MR, CV_MC]
+# CV_RC.plot()
+# CV_MR.plot()
+# CV_MC.plot()
+# cvs = [CV_Ri, CV_LR, CV_DR, CV_DC, CV_RR, CV_RC, CV_MR, CV_MC]
 
 # # Visuals to check test and train data are correctly separated in cross validations and modeler stuff
 # for mdlr, cv in zip(mdlrs, cvs):
