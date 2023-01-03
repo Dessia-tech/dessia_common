@@ -11,18 +11,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - add a check to enforce update of changelog in PR
 
+### Added
+- modeling.py file in datatools which contains:
+    * StandardScaler, IdentityScaler
+    * Regressions: SVR, RandomForest, MLP, Ridge, DecisionTree
+    * Classifications: SVC, RandomForest, MLP, DecisionTree
+- modeler.py file in datatools which allows to :
+    * Handle full machine learning modelization process (scale data, train model and validate), with plots
+
 ### Performance
 
 - Conform doc for many parts of dessia_common
 - 100% coverage for clusters module
 
 ## 0.11.0
-
-### Added
-- modeling.py file in datatools which contains:
-    * StandardScaler, IdentityScaler
-    * Regressions: SVR, RandomForest, MLP, Ridge, DecisionTree
-    * Classifications: SVC, RandomForest, MLP, DecisionTree
 
 ### Fixed
 
@@ -31,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix path deepth when dict misses keys
 
 ### Changed
+
 - Refactor copy_pipes and nbv checking
 
 ### Performance
