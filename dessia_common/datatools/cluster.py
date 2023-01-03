@@ -338,7 +338,7 @@ class ClusteredDataset(Dataset):
 
     @classmethod
     def from_agglomerative_clustering(cls, data: Dataset, n_clusters: int = 2,
-                                      affinity: str = 'euclidean', linkage: str = 'ward',
+                                      metric: str = 'euclidean', linkage: str = 'ward',
                                       distance_threshold: float = None, scaling: bool = False, name: str = ""):
         """
         Agglomerative clustering on Dataset.
@@ -375,7 +375,7 @@ class ClusteredDataset(Dataset):
             Must be `None` if `distance_threshold` is not `None`
         :type n_clusters: `int`, `optional`, defaults to `2`
 
-        :param affinity:
+        :param metric:
             Metric used to compute the linkage.
             Can be one of `['euclidean', 'l1', 'l2', 'manhattan', 'cosine', or 'precomputed']`.
 
@@ -383,7 +383,7 @@ class ClusteredDataset(Dataset):
 
             If `'precomputed'`, a distance matrix (instead of a similarity matrix) is needed as input for the \
                 fit method.
-        :type affinity: `str`, `optional`, defaults to `'euclidean'`
+        :type metric: `str`, `optional`, defaults to `'euclidean'`
 
         :param linkage:
             |  Which linkage criterion to use. Can be one of `[‘ward’, ‘complete’, ‘average’, ‘single’]`
@@ -411,7 +411,7 @@ class ClusteredDataset(Dataset):
         :rtype: ClusteredDataset
         """
         skl_cluster = cluster.AgglomerativeClustering(
-            n_clusters=n_clusters, affinity=affinity, distance_threshold=distance_threshold, linkage=linkage)
+            n_clusters=n_clusters, metric=metric, distance_threshold=distance_threshold, linkage=linkage)
         skl_cluster = cls.fit_cluster(skl_cluster, data.matrix, scaling)
         return cls(data.dessia_objects, skl_cluster.labels_.tolist(), name=name)
 
@@ -586,12 +586,12 @@ class ClusteredDataset(Dataset):
 
     @classmethod
     def list_agglomerative_clustering(cls, data: List[DessiaObject], n_clusters: int = 2,
-                                      affinity: str = 'euclidean', linkage: str = 'ward',
+                                      metric: str = 'euclidean', linkage: str = 'ward',
                                       distance_threshold: float = None, scaling: bool = False, name: str = ""):
         """
         Does the same as `from_agglomerative_clustering` method but data is a `List[DessiaObject]` and not a `Dataset`.
         """
-        return cls.from_agglomerative_clustering(Dataset(data), n_clusters=n_clusters, affinity=affinity,
+        return cls.from_agglomerative_clustering(Dataset(data), n_clusters=n_clusters, metric=metric,
                                                  linkage=linkage, distance_threshold=distance_threshold,
                                                  scaling=scaling, name=name)
 
