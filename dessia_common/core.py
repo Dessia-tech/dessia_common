@@ -400,6 +400,11 @@ class DessiaObject(SerializableObject):
 
     @classmethod
     def load_from_stream(cls, stream):
+        """
+        Load object from a stream file.
+
+        :param filepath: a stream file
+        """
         dict_ = json.loads(stream.read().decode('utf-8'))
         return cls.dict_to_object(dict_)
 
@@ -416,6 +421,9 @@ class DessiaObject(SerializableObject):
         return cls.dict_to_object(dict_)
 
     def check_list(self, level='error'):
+        """
+        Get a list of check_platform results for all attributes of self.
+        """
         check_list = CheckList([])
 
         check_list += self._check_platform(level=level)
@@ -435,9 +443,15 @@ class DessiaObject(SerializableObject):
         return check_list
 
     def is_valid(self, level='error'):
+        """
+        Check if DessiaObject is valid considering its requirements.
+        """
         return not self.check_list().checks_above_level(level=level)
 
     def copy(self, deep=True, memo=None):
+        """
+        Copy a DessiaObject.
+        """
         if deep:
             return deepcopy(self, memo=memo)
         return copy(self)
@@ -471,6 +485,9 @@ class DessiaObject(SerializableObject):
         return self.__class__(**dict_)
 
     def plot_data(self, **kwargs):
+        """
+        Abstract plot_data method for a DessiaObject.
+        """
         return []
 
     def plot(self, **kwargs):
@@ -648,6 +665,9 @@ class DessiaObject(SerializableObject):
         return formats
 
     def save_export_to_file(self, selector, filepath):
+        """
+        Export DessiaObject into specified formats.
+        """
         for export_format in self._export_formats():
             if export_format.selector == selector:
                 if not filepath.endswith(f".{export_format.extension}"):
@@ -663,6 +683,9 @@ class DessiaObject(SerializableObject):
         raise ValueError(f'Export selector not found: {selector}')
 
     def to_vector(self):
+        """
+        Get all values of specified attributes into a list of values (vector).
+        """
         vectored_objects = []
         for feature in self.vector_features():
             vectored_objects.append(getattr(self, feature.lower()))
@@ -674,6 +697,9 @@ class DessiaObject(SerializableObject):
 
     @classmethod
     def vector_features(cls):
+        """
+        Get the list of attributes specified in _vector_features class attribute (in order to build a Dataset).
+        """
         if cls._vector_features is None:
             return list(set(get_attribute_names(cls)).difference(get_attribute_names(DessiaObject)))
         return cls._vector_features
