@@ -2,6 +2,8 @@
 Tests for dessia_common.Dataset class (loadings, check_platform and plots).
 """
 import random
+import pandas as pd
+import matplotlib.pyplot as plt
 from dessia_common.core import DessiaObject
 from dessia_common.models import all_cars_no_feat, all_cars_wi_feat, rand_data_middl
 from dessia_common.datatools.metrics import covariance, manhattan_distance, euclidian_distance, minkowski_distance,\
@@ -58,6 +60,14 @@ RandData_heterogeneous = Dataset(rand_data_middl)
 
 # Compute one common_attributes
 all_cars_without_features.common_attributes
+
+# Compute features importances from RandomForest algorithm
+input_attributes = ['displacement', 'horsepower', 'model', 'acceleration', 'cylinders']
+output_attributes = ['mpg', 'weight']
+importances, std = all_cars_with_features.features_importance(input_attributes, output_attributes)
+forest_importances = pd.Series(importances, index=input_attributes)
+fig, ax = plt.subplots()
+forest_importances.plot.bar(yerr=std, ax=ax)
 
 # Check platform for datasets
 all_cars_with_features._check_platform()

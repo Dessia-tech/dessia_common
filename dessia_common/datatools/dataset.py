@@ -8,7 +8,7 @@ import itertools
 
 from scipy.spatial.distance import pdist, squareform
 import numpy as npy
-from sklearn import preprocessing
+from sklearn import preprocessing, ensemble
 
 try:
     from plot_data.core import Scatter, Histogram, MultiplePlots, Tooltip, ParallelPlot, PointFamily, EdgeStyle, Axis, \
@@ -926,11 +926,19 @@ class Dataset(DessiaObject):
             non_optimal_costs = list(itertools.compress(non_optimal_costs, map(lambda x: not x, pareto_sheet)))
         return pareto_sheets, Dataset(non_optimal_points, self.name)
 
-    def features_importance(self):
+    def features_importance(self, input_attributes: List[str], output_attributes: List[str]):
         """
         Future features_importance method, maybe to put in dataset.
         """
-        return
+        random_forest = ensemble.RandomForestRegressor()
+        inputs = self.sub_matrix(input_attributes)
+        outputs = self.sub_matrix(output_attributes)
+
+        random_forest.fit(inputs, outputs)
+        importances = random_forest.feature_importances_
+        std = npy.std([tree.feature_importances_ for tree in random_forest.estimators_], axis=0)
+
+        return importances, std
 
     def features_mrmr(self):
         """
