@@ -56,7 +56,6 @@ steps:
   when:
     event: pull_request
   commands:
-    - git fetch --all --tags
     - bash code_changelog.sh
 
 
