@@ -4,6 +4,7 @@ from glob import glob
 import random
 from datetime import date
 
+print(f'Pydocstyle version: {pydocstyle.__version__}')
 
 file_list = filter(lambda z: not z.endswith("__init__.py"),
                    [y for x in os.walk('./dessia_common')
@@ -18,57 +19,17 @@ UNWATCHED_ERRORS = [
     'D412', 'D415', 'D418'
 ]
 
+
 MAX_ERROR_BY_TYPE = {
+    # If the error code is not in this dict, then there is no tolerance on the error.
     # http://www.pydocstyle.org/en/stable/error_codes.html
-    'D100': 1,
-    'D101': 76,
-    'D102': 148,
+    'D101': 65,
+    'D102': 129,
     'D103': 46,
-    'D104': 1,
-    'D105': 1,
-    'D106': 1,
-    'D107': 1,
 
-    'D200': 1,
-    'D201': 1,
-    'D202': 1,
-    'D203': 1,
-    'D204': 1,
     'D205': 36,
-    'D206': 1,
-    'D207': 1,
-    'D208': 1,
-    'D209': 1,
-    'D210': 1,
-    'D211': 1,
-    'D212': 1,
-    'D213': 2,
-    'D214': 1,
-    'D215': 1,
 
-    'D300': 1,
-    'D301': 1,
-    'D302': 1,
-
-    'D400': 98,
-    'D401': 1,
-    'D402': 1,
-    'D403': 4,
-    'D404': 1,
-    'D405': 1,
-    'D406': 1,
-    'D407': 1,
-    'D408': 1,
-    'D409': 1,
-    'D410': 1,
-    'D411': 1,
-    'D412': 1,
-    'D413': 8,
-    'D414': 1,
-    'D415': 1,
-    'D416': 1,
-    'D417': 1,
-    'D418': 1,
+    'D400': 93,
 }
 
 error_detected = False
@@ -102,12 +63,12 @@ for error_code, number_errors in code_to_number.items():
                 print(f'{error.filename} line {error.line}: {error.message}')
 
         elif max_errors - ratchet_limit <= number_errors < max_errors:
-            print(
-                f'\nYou can lower number of {error_code} to {number_errors + time_decrease} (actual {max_errors + time_decrease})')
+            print((f'\nYou can lower number of {error_code} to {number_errors + time_decrease}'
+                   + f' (actual {max_errors + time_decrease})'))
         elif number_errors < max_errors - ratchet_limit:
             error_over_ratchet_limit = True
-            print(
-                f'\nYou MUST lower number of {error_code} to {number_errors + time_decrease} (actual {max_errors + time_decrease})')
+            print((f'\nYou MUST lower number of {error_code} to {number_errors + time_decrease}'
+                   + f'(actual {max_errors + time_decrease})'))
 
 if error_detected:
     raise RuntimeError('Too many errors\nRun pydocstyle dessia_common to get the errors')

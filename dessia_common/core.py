@@ -48,6 +48,8 @@ import dessia_common.files as dcf
 
 _FORBIDDEN_ARGNAMES = ['self', 'cls', 'progress_callback', 'return']
 
+_fullargsspec_cache = {}
+
 
 def deprecated(use_instead=None):
     """
@@ -362,8 +364,14 @@ class DessiaObject(SerializableObject):
         """
         Transform serialized argument of a method to python objects ready to use in method evaluation.
         """
-        method_object = getattr(self, method)
-        args_specs = inspect.getfullargspec(method_object)
+        method_full_name = f'{self.full_classname}.{method}'
+        if method_full_name in _fullargsspec_cache:
+            args_specs = _fullargsspec_cache[method_full_name]
+        else:
+            method_object = getattr(self, method)
+            args_specs = inspect.getfullargspec(method_object)
+            _fullargsspec_cache[method_full_name] = args_specs
+
         allowed_args = args_specs.args[1:]
 
         arguments = {}
@@ -448,7 +456,13 @@ class DessiaObject(SerializableObject):
         """
         Generic copy use inits of objects.
         """
-        class_argspec = inspect.getfullargspec(self.__class__)
+        class_name = self.full_classname
+        if class_name in _fullargsspec_cache:
+            class_argspec = _fullargsspec_cache[class_name]
+        else:
+            class_argspec = inspect.getfullargspec(self.__class__)
+            _fullargsspec_cache[class_name] = class_argspec
+
         dict_ = {}
         for arg in class_argspec.args:
             if arg != 'self':
@@ -463,7 +477,13 @@ class DessiaObject(SerializableObject):
         """
         Generic deep copy use inits of objects.
         """
-        class_argspec = inspect.getfullargspec(self.__class__)
+        class_name = self.full_classname
+        if class_name in _fullargsspec_cache:
+            class_argspec = _fullargsspec_cache[class_name]
+        else:
+            class_argspec = inspect.getfullargspec(self.__class__)
+            _fullargsspec_cache[class_name] = class_argspec
+
         if memo is None:
             memo = {}
         dict_ = {}
@@ -1311,7 +1331,13 @@ def prettyname(namestr):
 def inspect_arguments(method, merge=False):
     """ Get method arguments and default arguments as sequences while removing forbidden ones (self, cls...)."""
     # Find default value and required arguments of class construction
-    argspecs = inspect.getfullargspec(method)
+    method_full_name = f'{method.__module__}.{method.__qualname__}'
+    if method_full_name in _fullargsspec_cache:
+        argspecs = _fullargsspec_cache[method_full_name]
+    else:
+        argspecs = inspect.getfullargspec(method)
+        _fullargsspec_cache[method_full_name] = argspecs
+
     nargs, ndefault_args = split_argspecs(argspecs)
 
     default_arguments = {}

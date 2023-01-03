@@ -21,7 +21,7 @@ from dessia_common.typings import InstanceOf
 from dessia_common.graph import explore_tree_from_leaves  # , cut_tree_final_branches
 from dessia_common.breakdown import get_in_object_from_path
 
-fullargsspec_cache = {}
+_fullargsspec_cache = {}
 
 
 def serialize_dict(dict_):
@@ -49,6 +49,7 @@ def serialize(value):
     Main function for serialization without pointers.
 
     Calls recursively itself serialize_sequence and serialize_dict
+
     """
     if isinstance(value, dc.DessiaObject):
         try:
@@ -83,7 +84,7 @@ def serialize(value):
 
 def serialize_with_pointers(value, memo=None, path='#'):
     """
-    Main function for serialization with pointers
+    Main function for serialization with pointers.
     """
     if memo is None:
         memo = {}
@@ -129,7 +130,7 @@ def serialize_with_pointers(value, memo=None, path='#'):
 
 def serialize_dict_with_pointers(dict_, memo, path):
     """
-    Serialize a dict recursively with jsonpointers using a memo dict at a given path of the top level object
+    Serialize a dict recursively with jsonpointers using a memo dict at a given path of the top level object.
     """
     serialized_dict = {}
     dict_attrs_keys = []
@@ -160,7 +161,7 @@ def serialize_dict_with_pointers(dict_, memo, path):
 
 def serialize_sequence_with_pointers(seq, memo, path):
     """
-    Serialize a sequence (list or tuple) using jsonpointers
+    Serialize a sequence (list or tuple) using jsonpointers.
     """
     serialized_sequence = []
     for ival, value in enumerate(seq):
@@ -255,11 +256,11 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False,
 
             return obj
 
-        if class_ in fullargsspec_cache:
-            class_argspec = fullargsspec_cache[class_]
+        if class_ in _fullargsspec_cache:
+            class_argspec = _fullargsspec_cache[class_]
         else:
             class_argspec = inspect.getfullargspec(class_)
-            fullargsspec_cache[class_] = class_argspec
+            _fullargsspec_cache[class_] = class_argspec
 
         init_dict = {k: v for k, v in dict_.items() if k in class_argspec.args + class_argspec.kwonlyargs}
         # TOCHECK Class method to generate init_dict ??
@@ -292,7 +293,7 @@ def deserialize_with_type(type_, value):
     """
     Deserialization a value enforcing the right type.
 
-    Usefull to deserialize as a tuple and not a tuple for ex.
+    Usefull to deserialize as a tuple and not a list for ex.
     """
     if type_ in dcty.TYPES_STRINGS.values():
         return literal_eval(type_)(value)
@@ -312,7 +313,7 @@ def deserialize_with_type(type_, value):
 
 def deserialize_with_typing(type_, argument, global_dict=None, pointers_memo=None, path='#'):
     """
-    Deserialize an object with a typing info
+    Deserialize an object with a typing info.
 
     :param path: The path of the argument in global dict.
     """
