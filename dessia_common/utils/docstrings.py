@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 Module for docstring parsing to platform and Sphinx auto documentation.
 """

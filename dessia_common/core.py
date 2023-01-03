@@ -1,6 +1,7 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 Module to handle serialization for engineering objects.
-
 """
 
 import time
