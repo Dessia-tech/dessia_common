@@ -490,11 +490,12 @@ class DessiaObject(SerializableObject):
         """
         Generic deep copy use inits of objects.
         """
-        if self.__class__ in _fullargsspec_cache:
-            class_argspec = _fullargsspec_cache[self.__class__]
+        class_name = self.full_classname
+        if class_name in _fullargsspec_cache:
+            class_argspec = _fullargsspec_cache[class_name]
         else:
             class_argspec = inspect.getfullargspec(self.__class__)
-            _fullargsspec_cache[self.__class__] = class_argspec
+            _fullargsspec_cache[class_name] = class_argspec
 
         if memo is None:
             memo = {}
@@ -1355,7 +1356,7 @@ def prettyname(namestr):
 def inspect_arguments(method, merge=False):
     """ Get method arguments and default arguments as sequences while removing forbidden ones (self, cls...)."""
     # Find default value and required arguments of class construction
-    method_full_name = f'{method.__class__.__name__}.{method.__name__}'
+    method_full_name = f'{method.__module__}.{method.__qualname__}'
     if method_full_name in _fullargsspec_cache:
         argspecs = _fullargsspec_cache[method_full_name]
     else:
