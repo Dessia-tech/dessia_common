@@ -197,11 +197,11 @@ class TypingProperty(Property):
         return []
 
 
-class Optional(TypingProperty):
+class OptionalProperty(TypingProperty):
     """
-    Proxy Schema class for Optional properties.
+    Proxy Schema class for OptionalProperty properties.
 
-    Optional is only a catch for arguments that default to None.
+    OptionalProperty is only a catch for arguments that default to None.
     Arguments with default values other than None are not considered Optionals
     """
     def __init__(self, annotation: tp.Type):
@@ -219,25 +219,25 @@ class Optional(TypingProperty):
 
     def check(self, attribute: str) -> tp.List[Issue]:
         """
-        Check validity of Optional proxy Type Hint.
+        Check validity of OptionalProperty proxy Type Hint.
 
         Checks performed : None TODO ?
         """
         return []
 
 
-class Annotated(TypingProperty):
+class AnnotatedProperty(TypingProperty):
     """
     Proxy Schema class for annotated type hints.
 
-    Annotated annotations are type hints with more arguments passed, such as value ranges, or probably enums,
+    AnnotatedProperty annotations are type hints with more arguments passed, such as value ranges, or probably enums,
     precision,...
 
     This could enable quite effective type checking on frontend form.
 
     Only available with python >= 3.11
     """
-    _not_implemented_msg = "Annotated type hints are not implemented yet. This needs python 3.11 at least. " \
+    _not_implemented_msg = "AnnotatedProperty type hints are not implemented yet. This needs python 3.11 at least. " \
                            "Dessia only supports python 3.9 at the moment."
 
     # TODO Whenever Dessia decides to upgrade to python 3.11
@@ -261,7 +261,7 @@ class Annotated(TypingProperty):
         raise NotImplementedError(self._not_implemented_msg)
 
 
-class Builtin(Property):
+class BuiltinProperty(Property):
     def __init__(self, annotation: tp.Type):
         super().__init__(annotation=annotation)
 
@@ -272,14 +272,14 @@ class Builtin(Property):
 
     def check(self, attribute: str) -> tp.List[Issue]:
         """
-        Check validity of Builtin Type Hint.
+        Check validity of BuiltinProperty Type Hint.
 
         Always return no issues
         """
         return []
 
 
-class MeasureProperty(Builtin):
+class MeasureProperty(BuiltinProperty):
     def __init__(self, annotation: tp.Type[Measure]):
         super().__init__(annotation=annotation)
 
@@ -298,7 +298,7 @@ class MeasureProperty(Builtin):
         return []
 
 
-class File(Property):
+class FileProperty(Property):
     def __init__(self, annotation: tp.Type):
         Property.__init__(self, annotation=annotation)
 
@@ -309,7 +309,7 @@ class File(Property):
 
     def check(self, attribute: str) -> tp.List[Issue]:
         """
-        Check validity of File Type Hint.
+        Check validity of FileProperty Type Hint.
 
         Checks performed : None. TODO ?
         """
@@ -346,7 +346,7 @@ class CustomClassProperty(Property):
         return issues
 
 
-class Union(TypingProperty):
+class UnionProperty(TypingProperty):
     def __init__(self, annotation: tp.Type):
         super().__init__(annotation=annotation)
 
@@ -366,7 +366,7 @@ class Union(TypingProperty):
 
     def check(self, attribute: str) -> tp.List[Issue]:
         """
-        Check validity of Union Type Hint.
+        Check validity of UnionProperty Type Hint.
 
         Checks performed :
         - Subobject are all standalone or none of them are. TODO : What happen if args are not DessiaObjects ?
@@ -615,7 +615,7 @@ def split_argspecs(argspecs: inspect.FullArgSpec) -> tp.Tuple[int, int]:
 def get_schema(annotation: tp.Type) -> Property:
     print(annotation)
     if annotation in dc_types.TYPING_EQUIVALENCES:
-        return Builtin(annotation)
+        return BuiltinProperty(annotation)
     if dc_types.is_typing(annotation):
         return get_typing_schema(annotation)
     if hasattr(annotation, '__origin__') and annotation.__origin__ is type:
@@ -635,10 +635,10 @@ def get_typing_schema(typing_) -> Property:
     print(origin)
     if origin is tp.Union:
         if dc_types.union_is_default_value(typing_):
-            # This is a false Union => Is a default value set to None
-            return Optional(typing_)
+            # This is a false UnionProperty => Is a default value set to None
+            return OptionalProperty(typing_)
         # Types union
-        return Union(typing_)
+        return UnionProperty(typing_)
     if origin is tuple:
         return HeterogeneousSequence(typing_)
     if origin in [list, collections.abc.Iterator]:
@@ -660,7 +660,7 @@ def custom_class_schema(annotation: tp.Type) -> Property:
     if issubclass(annotation, Measure):
         return MeasureProperty(annotation)
     if issubclass(annotation, (BinaryFile, StringFile)):
-        return File(annotation)
+        return FileProperty(annotation)
     if issubclass(annotation, CoreDessiaObject):
         # Dessia custom classes
         return CustomClassProperty(annotation)
@@ -885,7 +885,7 @@ def schema_chunk(annotation, title: str, editable: bool, description: str):
 
 def typing_schema(typing_, title: str, editable: bool, description: str):
     origin = tp.get_origin(typing_)
-    if origin is Union:  # TODO DONE
+    if origin is tp.Union:  # TODO DONE
         if dc_types.union_is_default_value(typing_):  # TODO DONE
             # This is a false Union => Is a default value set to None
             return schema_chunk(annotation=typing_, title=title, editable=editable, description=description)
