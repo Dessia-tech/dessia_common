@@ -87,16 +87,22 @@ class Optimizer(DessiaObject):
         pass
 
     def cma_bounds(self):
-        pass
+        """
+        Returns the bounds in the CMA format.
+        """
 
     def scipy_minimize_bounds(self):
         pass
 
     def cma_optimization(self):
-        pass
+        """
+        Runs an optimization of the model with CMA method.
+        """
 
     def scipy_minimize_optimization(self):
-        pass
+        """
+        Runs an optimization of the model with scipy gradient method.
+        """
 
 
 class DrivenModelOptimizer(Optimizer):
