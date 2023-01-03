@@ -26,4 +26,3 @@ class CoreDessiaObject(ABC):
     # @abstractmethod
     # def _serializable_dict(self):
     #     pass
-    
