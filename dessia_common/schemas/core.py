@@ -22,6 +22,8 @@ RESERVED_ARGNAMES = ['self', 'cls', 'progress_callback', 'return']
 
 Issue = tp.TypedDict("Issue", {"attribute": str, "severity": str, "message": str})
 
+_fullargsspec_cache = {}
+
 # DessiaObjectType = tp.TypeVar("DessiaObjectType", bound=CoreDessiaObject)
 
 
@@ -648,24 +650,29 @@ class ClassProperty(TypingProperty):
 
 def inspect_arguments(method: tp.Callable, merge: bool = False):
     """ Wrapper around 'split_default_argument' method in order to call it from a method object. """
-    argspec = inspect.getfullargspec(method)
-    return split_default_args(argspec=argspec, merge=merge)
+    method_full_name = f'{method.__module__}.{method.__qualname__}'
+    if method_full_name in _fullargsspec_cache:
+        argspecs = _fullargsspec_cache[method_full_name]
+    else:
+        argspecs = inspect.getfullargspec(method)
+        _fullargsspec_cache[method_full_name] = argspecs
+    return split_default_args(argspec=argspecs, merge=merge)
 
 
-def split_default_args(argspec: inspect.FullArgSpec, merge: bool = False):
+def split_default_args(argspecs: inspect.FullArgSpec, merge: bool = False):
     """
     Find default value and required arguments of class construction.
 
     Get method arguments and default arguments as sequences while removing forbidden ones (self, cls...).
     """
-    nargs, ndefault_args = split_argspecs(argspec)
+    nargs, ndefault_args = split_argspecs(argspecs)
 
     default_arguments = {}
     arguments = []
-    for iargument, argument in enumerate(argspec.args[1:]):
+    for iargument, argument in enumerate(argspecs.args[1:]):
         if argument not in RESERVED_ARGNAMES:
             if iargument >= nargs - ndefault_args:
-                default_value = argspec.defaults[ndefault_args - nargs + iargument]
+                default_value = argspecs.defaults[ndefault_args - nargs + iargument]
                 if merge:
                     arguments.append((argument, default_value))
                 else:

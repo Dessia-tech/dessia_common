@@ -54,6 +54,8 @@ def __getattr__(name):
         return schemas.RESERVED_ARGNAMES
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 
+_fullargsspec_cache = {}
+
 
 def deprecated(use_instead=None):
     """
@@ -381,8 +383,14 @@ class DessiaObject(SerializableObject):
         """
         Transform serialized argument of a method to python objects ready to use in method evaluation.
         """
-        method_object = getattr(self, method)
-        args_specs = inspect.getfullargspec(method_object)
+        method_full_name = f'{self.full_classname}.{method}'
+        if method_full_name in _fullargsspec_cache:
+            args_specs = _fullargsspec_cache[method_full_name]
+        else:
+            method_object = getattr(self, method)
+            args_specs = inspect.getfullargspec(method_object)
+            _fullargsspec_cache[method_full_name] = args_specs
+
         allowed_args = args_specs.args[1:]
 
         arguments = {}
@@ -467,7 +475,13 @@ class DessiaObject(SerializableObject):
         """
         Generic copy use inits of objects.
         """
-        class_argspec = inspect.getfullargspec(self.__class__)
+        class_name = self.full_classname
+        if class_name in _fullargsspec_cache:
+            class_argspec = _fullargsspec_cache[class_name]
+        else:
+            class_argspec = inspect.getfullargspec(self.__class__)
+            _fullargsspec_cache[class_name] = class_argspec
+
         dict_ = {}
         for arg in class_argspec.args:
             if arg != 'self':
@@ -482,7 +496,13 @@ class DessiaObject(SerializableObject):
         """
         Generic deep copy use inits of objects.
         """
-        class_argspec = inspect.getfullargspec(self.__class__)
+        class_name = self.full_classname
+        if class_name in _fullargsspec_cache:
+            class_argspec = _fullargsspec_cache[class_name]
+        else:
+            class_argspec = inspect.getfullargspec(self.__class__)
+            _fullargsspec_cache[class_name] = class_argspec
+
         if memo is None:
             memo = {}
         dict_ = {}
@@ -1338,10 +1358,15 @@ def inspect_arguments(method, merge=False):
     return schemas.inspect_arguments(method=method, merge=merge)
 
 
-def split_default_args(argspec, merge: bool = False):
+def split_default_args(argspecs, merge: bool = False):
+    """
+    Find default value and required arguments of class construction.
+
+    Get method arguments and default arguments as sequences while removing forbidden ones (self, cls...).
+    """
     warnings.warn("Method 'split_default_args' have been moved to dessia_common/schemas."
                   "Use it instead instead", DeprecationWarning)
-    return schemas.split_default_args(argspec=argspec, merge=merge)
+    return schemas.split_default_args(argspecs=argspecs, merge=merge)
 
 
 def split_argspecs(argspecs) -> Tuple[int, int]:
