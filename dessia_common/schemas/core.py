@@ -5,7 +5,6 @@ Schema generation functions
 """
 from copy import deepcopy
 import inspect
-import collections
 import collections.abc
 import typing as tp
 import dessia_common.utils.types as dc_types
@@ -15,7 +14,7 @@ from dessia_common.typings import Subclass, MethodType, ClassMethodType, Any, In
 from dessia_common.measures import Measure
 from dessia_common.utils.docstrings import parse_docstring, FAILED_DOCSTRING_PARSING, FAILED_ATTRIBUTE_PARSING
 from dessia_common.utils.helpers import prettyname
-import dessia_common.schemas.interfaces as si
+from dessia_common.schemas.interfaces import Annotations
 
 SCHEMA_HEADER = {"definitions": {}, "$schema": "http://json-schema.org/d_raft-07/schema#",
                  "type": "object", "required": [], "properties": {}}
@@ -36,14 +35,11 @@ class Schema:
     for example.
     """
 
-    def __init__(self, annotations: si.Annotation, argspec, docstring: str):
+    def __init__(self, annotations: Annotations, argspec: inspect.FullArgSpec, docstring: str):
         self.annotations = annotations
         self.attributes = [a for a in argspec.args if a not in RESERVED_ARGNAMES]
 
         self.property_schemas = {a: get_schema(annotations[a]) for a in self.attributes}
-
-        # self.standalone_in_db = None
-        # self.python_typing = ""
 
         # Parse docstring
         try:
@@ -57,14 +53,16 @@ class Schema:
 
     @property
     def editable_attributes(self):
+        """ Attributes that are not in RESERVED_ARGNAMES. """
         return [a for a in self.attributes if a not in RESERVED_ARGNAMES]
 
     def check(self) -> tp.List[Issue]:
+        """ Browse all properties and list potential issues. """
         issues = []
         for attribute in self.attributes:
             if attribute not in self.annotations:
-                issues.append({"attribute": attribute, "severity": "error",
-                               "message": f"Argument '{attribute}' doesn't define any type."})
+                msg = f"Argument '{attribute}' has no typing."
+                issues.append({"attribute": attribute, "severity": "error", "message": msg})
             schema = self.property_schemas[attribute]
             issues.extend(schema.check(attribute))
         return issues
@@ -127,17 +125,9 @@ class ClassSchema(Schema):
 
     @property
     def editable_attributes(self):
+        """ Attributes that are not in RESERVED_ARGNAMES nor defined as non editable by user. """
         attributes = super().editable_attributes
         return [a for a in attributes if a not in self.class_._non_editable_attributes]
-
-    def check(self) -> tp.Tuple[bool, tp.List[Issue]]:
-        """ Check. """
-        issues = []
-        for attribute in self.attributes:
-            if attribute not in self.annotations:
-                msg = f"Property {attribute} has no typing"
-                issues.append({"attribute": attribute, "severity": "error", "message": msg})
-        return not any(issues), issues
 
 
 class MethodSchema(Schema):
@@ -150,7 +140,9 @@ class MethodSchema(Schema):
         self.method = method
 
         annotations = tp.get_type_hints(method)
-        Schema.__init__(self, annotations=annotations)
+        members = inspect.getfullargspec(method)
+        docstring = method.__doc__
+        Schema.__init__(self, annotations=annotations, argspec=members, docstring=docstring)
 
 
 class Property:
@@ -160,9 +152,11 @@ class Property:
 
     @property
     def schema(self):
+        """ Return a reference to itself. Might be overwritten for proxy such as Optional or Annotated. """
         return self
 
     def write(self, title: str = "", editable: bool = False, description: str = ""):
+        """ Write base schema as a dict. """
         return {'title': title, 'editable': editable, 'description': description,
                 'python_typing': dc_types.serialize_typing(self.annotation), "type": None}
 
@@ -182,10 +176,12 @@ class TypingProperty(Property):
 
     @property
     def args(self):
+        """ Return Typing arguments. """
         return tp.get_args(self.annotation)
 
     @property
     def origin(self):
+        """ Return Typing origin. """
         return tp.get_origin(self.annotation)
 
     def check(self, attribute: str) -> tp.List[Issue]:
@@ -209,9 +205,11 @@ class OptionalProperty(TypingProperty):
 
     @property
     def schema(self):
+        """ Return a reference to its only arg. """
         return get_schema(self.args[0])
 
     def write(self, title: str = "", editable: bool = False, description: str = ""):
+        """ Write Optional as a dict. """
         default_value = None
         chunk = self.schema.write(title=title, editable=editable, description=description)
         chunk["default_value"] = default_value
@@ -247,9 +245,11 @@ class AnnotatedProperty(TypingProperty):
 
     @property
     def schema(self):
+        """ Return a reference to its only arg. """
         return get_schema(self.args[0])
 
     def write(self, title: str = "", editable: bool = False, description: str = ""):
+        """ Write Annotated as a dict. """
         raise NotImplementedError(self._not_implemented_msg)
 
     def check(self, attribute: str) -> tp.List[Issue]:
@@ -262,10 +262,12 @@ class AnnotatedProperty(TypingProperty):
 
 
 class BuiltinProperty(Property):
+    """ Schema class for Builtin type hints. """
     def __init__(self, annotation: tp.Type):
         super().__init__(annotation=annotation)
 
     def write(self, title: str = "", editable: bool = False, description: str = ""):
+        """ Write Builtin as a dict. """
         chunk = Property.write(self)
         chunk["type"] = dc_types.TYPING_EQUIVALENCES[self.annotation]
         return chunk
@@ -280,10 +282,12 @@ class BuiltinProperty(Property):
 
 
 class MeasureProperty(BuiltinProperty):
+    """ Schema class for Measure type hints. """
     def __init__(self, annotation: tp.Type[Measure]):
         super().__init__(annotation=annotation)
 
     def write(self, title: str = "", editable: bool = False, description: str = ""):
+        """ Write Measure as a dict. """
         chunk = super().write(title=title, editable=editable, description=description)
         chunk["si_unit"] = self.annotation.si_unit
         return chunk
@@ -299,10 +303,12 @@ class MeasureProperty(BuiltinProperty):
 
 
 class FileProperty(Property):
+    """ Schema class for File type hints. """
     def __init__(self, annotation: tp.Type):
         Property.__init__(self, annotation=annotation)
 
     def write(self, title: str = "", editable: bool = False, description: str = ""):
+        """ Write File as a dict. """
         chunk = super().write(title=title, editable=editable, description=description)
         chunk.update({'type': 'text', 'is_file': True})
         return chunk
@@ -316,16 +322,19 @@ class FileProperty(Property):
         return []
 
 
-class CustomClassProperty(Property):
+class CustomClass(Property):
+    """ Schema class for CustomClass type hints. """
     def __init__(self, annotation: tp.Type):
         super().__init__(annotation=annotation)
         self.classname = dc_types.full_classname(object_=self.annotation, compute_for='class')
 
     @property
     def schema(self):
+        """ Return a reference to the schema of the annotation. """
         return ClassSchema(self.annotation)
 
     def write(self, title: str = "", editable: bool = False, description: str = ""):
+        """ Write CustomClass as a dict. """
         chunk = super().write(title=title, editable=editable, description=description)
         chunk.update({'type': 'object', 'standalone_in_db': self.annotation._standalone_in_db,
                       "classes": [self.classname]})
@@ -336,7 +345,7 @@ class CustomClassProperty(Property):
         Check validity of user custom class Type Hint.
 
         Checks performed :
-        - Is subclass of DessiaObject TODO
+        - Is subclass of DessiaObject
         """
         issues = super().check(attribute)
         if not issubclass(self.annotation, CoreDessiaObject):
@@ -347,6 +356,7 @@ class CustomClassProperty(Property):
 
 
 class UnionProperty(TypingProperty):
+    """ Schema class for Union type hints. """
     def __init__(self, annotation: tp.Type):
         super().__init__(annotation=annotation)
 
@@ -359,6 +369,7 @@ class UnionProperty(TypingProperty):
             self.standalone = None
 
     def write(self, title: str = "", editable: bool = False, description: str = ""):
+        """ Write Union as a dict. """
         chunk = super().write(title=title, editable=editable, description=description)
         classnames = [dc_types.full_classname(object_=a, compute_for='class') for a in self.args]
         chunk.update({'type': 'object', 'classes': classnames, 'standalone_in_db': self.standalone})
@@ -375,19 +386,24 @@ class UnionProperty(TypingProperty):
         standalone_args = [a._standalone_in_db for a in self.args]
         if not all(standalone_args) and any(standalone_args):
             issue = {"attribute": attribute, "severity": "error",
-                     "message": f"standalone_in_db values for type '{self.annotation}' are not consistent"}
+                     "message": f"standalone_in_db values for type '{self.annotation}' are not consistent."}
             issues.append(issue)
         return issues
 
 
 class HeterogeneousSequence(TypingProperty):
-    """ Datatype that can be seen as a tuple. Have any amount of arguments but a limited length. """
+    """
+    Schema class for Tuple type hints.
+
+    Datatype that can be seen as a tuple. Have any amount of arguments but a limited length.
+    """
     def __init__(self, annotation: tp.Type):
         super().__init__(annotation=annotation)
 
         self.items_schemas = [get_schema(a) for a in self.args]
 
     def write(self, title: str = "", editable: bool = False, description: str = ""):
+        """ Write HeterogeneousSequence as a dict. """
         chunk = super().write()
         items = [sp.write() for sp in self.items_schemas]
         chunk.update({'type': 'array', 'additionalItems': False, 'items': items})
@@ -402,19 +418,25 @@ class HeterogeneousSequence(TypingProperty):
         """
         issues = super().check(attribute)
         if len(self.args) == 0:
-            msg = f"Attribute '{attribute}' is typed as a 'Tuple' which requires at least 1 argument." \
-                  f"Expected Tuple[Type0, Type1, ..., TypeN], got {self.annotation}."
+            msg = f"Attribute '{attribute}' is typed as a 'Tuple' which requires at least 1 argument. " \
+                  f"Expected 'Tuple[T0, T1, ..., Tn]', got '{self.annotation}'."
             issues.append({"attribute": attribute, "severity": "error", "message": msg})
         return issues
 
 
 class HomogeneousSequence(TypingProperty):
+    """
+    Schema class for List type hints.
+
+    Datatype that can be seen as a list. Have only one arguments but an unlimited length.
+    """
     def __init__(self, annotation: tp.Type):
         super().__init__(annotation=annotation)
 
         self.items_schemas = [get_schema(a) for a in self.args]
 
     def write(self, title: str = "", editable: bool = False, description: str = ""):
+        """ Write HomogeneousSequence as a dict. """
         if not title:
             title = 'Items'
         chunk = super().write(title=title, editable=editable, description=description)
@@ -432,17 +454,24 @@ class HomogeneousSequence(TypingProperty):
         """
         issues = super().check(attribute)
         if len(self.args) != 1:
-            msg = f"Attribute '{attribute}' is typed as a 'List' which requires exactly 1 argument." \
-                  f"Expected List[Type], got {self.annotation}."
+            msg = f"Argument '{attribute}' is typed as a 'List' which requires exactly 1 argument. " \
+                  f"Expected 'List[T]', got '{self.annotation}'."
             issues.append({"attribute": attribute, "severity": "error", "message": msg})
         return issues
 
 
 class DynamicDict(TypingProperty):
+    """
+    Schema class for Dict type hints.
+
+    Datatype that can be seen as a dict. Have restricted amount of arguments (one for key, one for values),
+    but an unlimited length.
+    """
     def __init__(self, annotation: tp.Type):
         super().__init__(annotation=annotation)
 
     def write(self, title: str = "", editable: bool = False, description: str = ""):
+        """ Write DynamicDict as a dict. """
         key_type, value_type = self.args
         if key_type != str:
             # !!! Should we support other types ? Numeric ?
@@ -464,22 +493,42 @@ class DynamicDict(TypingProperty):
 
         Checks performed :
         - Annotation as exactly two arguments, first one for keys, second one for values
-        - Key Type is str TODO
-        - Value Type is simple TODO
+        - Key Type is str
+        - Value Type is simple
         """
         issues = super().check(attribute)
+        key_type, value_type = self.args
         if len(self.args) != 2:
-            msg = f"Attribute '{attribute}' is typed as a 'Dict' which requires exactly 2 arguments." \
-                  f"Expected Dict[KeyType, ValueType], got {self.annotation}."
+            msg = f"Argument '{attribute}' is typed as a 'Dict' which requires exactly 2 arguments. " \
+                  f"Expected 'Dict[KeyType, ValueType]', got '{self.annotation}'."
+            issues.append({"attribute": attribute, "severity": "error", "message": msg})
+
+        if not isinstance(key_type, str):
+            # Should we support other types ? Numeric ?
+            msg = f"Argument '{attribute}' is typed as a 'Dict[{key_type}, {value_type}]' " \
+                  f"which requires str as its key type. Expected 'Dict[str, ValueType]', got '{self.annotation}'."
+            issues.append({"attribute": attribute, "severity": "error", "message": msg})
+
+        if value_type not in dc_types.TYPING_EQUIVALENCES:
+            msg = f"Argument '{attribute}' is typed as a 'Dict[{key_type}, {value_type}]' " \
+                  f"which requires a builtin type as its value type. " \
+                  f"Expected 'int', 'float', 'bool' or 'str', got '{value_type}'"
             issues.append({"attribute": attribute, "severity": "error", "message": msg})
         return issues
 
 
 class InstanceOfProperty(TypingProperty):
+    """
+    Schema class for InstanceOf type hints.
+
+    Datatype that can be seen as an union of classes that inherits from the only arg given.
+    Instances of these classes validate against this type.
+    """
     def __init__(self, annotation: tp.Type):
         super().__init__(annotation=annotation)
 
     def write(self, title: str = "", editable: bool = False, description: str = ""):
+        """ Write InstanceOf as a dict. """
         chunk = super().write(title=title, editable=editable, description=description)
         class_ = self.args[0]
         classname = dc_types.full_classname(object_=class_, compute_for='class')
@@ -495,17 +544,24 @@ class InstanceOfProperty(TypingProperty):
         """
         issues = super().check(attribute)
         if len(self.args) != 1:
-            msg = f"Attribute '{attribute}' is typed as a 'InstanceOf' which requires exactly 1 argument." \
-                  f"Expected 'InstanceOf[Type]', got '{self.annotation}'."
+            msg = f"Argument '{attribute}' is typed as a 'InstanceOf' which requires exactly 1 argument. " \
+                  f"Expected 'InstanceOf[T]', got '{self.annotation}'."
             issues.append({"attribute": attribute, "severity": "error", "message": msg})
         return issues
 
 
 class SubclassProperty(TypingProperty):
+    """
+    Schema class for Subclass type hints.
+
+    Datatype that can be seen as an union of classes that inherits from the only arg given.
+    Classes validate against this type.
+    """
     def __init__(self, annotation: tp.Type):
         super().__init__(annotation=annotation)
 
     def write(self, title: str = "", editable: bool = False, description: str = ""):
+        """ Write Subclass as a dict. """
         raise NotImplementedError("Subclass is not implemented yet")
 
     def check(self, attribute: str) -> tp.List[Issue]:
@@ -517,13 +573,18 @@ class SubclassProperty(TypingProperty):
         """
         issues = super().check(attribute)
         if len(self.args) != 1:
-            msg = f"Attribute '{attribute}' is typed as a 'Subclass' which requires exactly 1 argument." \
-                  f"Expected 'Subclass[Type]', got '{self.annotation}'."
+            msg = f"Argument '{attribute}' is typed as a 'Subclass' which requires exactly 1 argument. " \
+                  f"Expected 'Subclass[T]', got '{self.annotation}'."
             issues.append({"attribute": attribute, "severity": "error", "message": msg})
         return issues
 
 
 class MethodTypeProperty(TypingProperty):
+    """
+    Schema class for MethodType and ClassMethodType type hints.
+
+    A specifically instantiated MethodType validated against this type.
+    """
     def __init__(self, annotation: tp.Type):
         super().__init__(annotation=annotation)
 
@@ -531,6 +592,7 @@ class MethodTypeProperty(TypingProperty):
         self.class_schema = get_schema(self.class_)
 
     def write(self, title: str = "", editable: bool = False, description: str = ""):
+        """ Write MethodType as a dict. """
         chunk = super().write(title=title, editable=editable, description=description)
         classmethod_ = self.origin is ClassMethodType
         chunk.update({
@@ -555,10 +617,16 @@ class MethodTypeProperty(TypingProperty):
 
 
 class ClassProperty(TypingProperty):
+    """
+    Schema class for Type type hints.
+
+    Non DessiaObject subclasses validated against this type.
+    """
     def __init__(self, annotation: tp.Type):
         super().__init__(annotation=annotation)
 
     def write(self, title: str = "", editable: bool = False, description: str = ""):
+        """ Write Class as a dict. """
         chunk = super().write(title=title, editable=editable, description=description)
         chunk.update({'type': 'object', 'is_class': True, 'properties': {'name': {'type': 'string'}}})
         return chunk
@@ -568,22 +636,28 @@ class ClassProperty(TypingProperty):
         Check validity of Class Type Hint.
 
         Checks performed :
-        - Annotation has no argument TODO
+        - Annotation has exactly 1 argument
         """
-        return []
+        issues = super().check(attribute)
+        if len(self.args) != 1:
+            msg = f"Argument '{attribute}' is typed as a 'Type' which requires exactly 1 argument." \
+                  f"Expected 'Type[T]', got '{self.annotation}'."
+            issues.append({"attribute": attribute, "severity": "error", "message": msg})
+        return issues
 
 
 def inspect_arguments(method: tp.Callable, merge: bool = False):
-    """
-    Find default value and required arguments of class construction.
-
-    Get method arguments and default arguments as sequences while removing forbidden ones (self, cls...).
-    """
+    """ Wrapper around 'split_default_argument' method in order to call it from a method object. """
     argspec = inspect.getfullargspec(method)
     return split_default_args(argspec=argspec, merge=merge)
 
 
 def split_default_args(argspec: inspect.FullArgSpec, merge: bool = False):
+    """
+    Find default value and required arguments of class construction.
+
+    Get method arguments and default arguments as sequences while removing forbidden ones (self, cls...).
+    """
     nargs, ndefault_args = split_argspecs(argspec)
 
     default_arguments = {}
@@ -613,16 +687,16 @@ def split_argspecs(argspecs: inspect.FullArgSpec) -> tp.Tuple[int, int]:
 
 
 def get_schema(annotation: tp.Type) -> Property:
-    print(annotation)
     if annotation in dc_types.TYPING_EQUIVALENCES:
         return BuiltinProperty(annotation)
     if dc_types.is_typing(annotation):
-        return get_typing_schema(annotation)
+        return typing_schema(annotation)
     if hasattr(annotation, '__origin__') and annotation.__origin__ is type:
         # TODO Is this deprecated ? Should be used in 3.8 and not 3.9 ?
         # return {'type': 'object', 'is_class': True, 'properties': {'name': {'type': 'string'}}}
         pass
     if annotation is Any:
+        # TODO Do we still want to support Any ?
         # chunk = {'type': 'object', 'properties': {'.*': '.*'}}
         pass
     if inspect.isclass(annotation):
@@ -630,9 +704,8 @@ def get_schema(annotation: tp.Type) -> Property:
     raise NotImplementedError(f"No schema defined for annotation '{annotation}'.")
 
 
-def get_typing_schema(typing_) -> Property:
+def typing_schema(typing_) -> Property:
     origin = tp.get_origin(typing_)
-    print(origin)
     if origin is tp.Union:
         if dc_types.union_is_default_value(typing_):
             # This is a false UnionProperty => Is a default value set to None
@@ -663,7 +736,7 @@ def custom_class_schema(annotation: tp.Type) -> Property:
         return FileProperty(annotation)
     if issubclass(annotation, CoreDessiaObject):
         # Dessia custom classes
-        return CustomClassProperty(annotation)
+        return CustomClass(annotation)
     raise NotImplementedError(f"No Schema defined for type '{annotation}'.")
 
 
@@ -745,196 +818,6 @@ def default_dict(schema):
     return dict_
 
 
-def schema_union_types(annotation):
-    args = tp.get_args(annotation)
-    classnames = [dc_types.full_classname(object_=a, compute_for='class') for a in args]
-    standalone_args = [a._standalone_in_db for a in args]
-    if all(standalone_args):
-        standalone = True
-    elif not any(standalone_args):
-        standalone = False
-    else:
-        raise ValueError(f"standalone_in_db values for type '{annotation}' are not consistent")
-    return {'type': 'object', 'classes': classnames, 'standalone_in_db': standalone}
-
-
-def schema_from_annotation(annotation, schema_element, order, editable=None, title=None, parsed_attributes=None):
-    key, typing_ = annotation
-    if isinstance(typing_, str):
-        raise ValueError
-
-    if title is None:
-        title = prettyname(key)
-    if editable is None:
-        editable = key not in ['return']
-
-    if parsed_attributes is not None and key in parsed_attributes:
-        try:
-            description = parsed_attributes[key]['desc']
-        except Exception:
-            description = FAILED_ATTRIBUTE_PARSING["desc"]
-    else:
-        description = ""
-
-    # Compute base entries
-    schema_element[key] = {'title': title, 'editable': editable, 'order': order, 'description': description,
-                           'python_typing': dc_types.serialize_typing(typing_)}
-
-    if typing_ in dc_types.TYPING_EQUIVALENCES:
-        # Python Built-in type
-        schema_element[key]['type'] = dc_types.TYPING_EQUIVALENCES[typing_]
-
-    elif dc_types.is_typing(typing_):
-        origin = tp.get_origin(typing_)
-        args = tp.get_args(typing_)
-        if origin is Union:
-            if dc_types.union_is_default_value(typing_):
-                # This is a false Union => Is a default value set to None
-                ann = (key, args[0])
-                schema_from_annotation(annotation=ann, schema_element=schema_element,
-                                       order=order, editable=editable, title=title)
-            else:
-                # Types union
-                schema_union_types(key, args, typing_, schema_element)
-        elif origin in [list, collections.abc.Iterator]:
-            # Homogenous sequences
-            schema_element[key].update(schema_sequence_recursion(value=typing_, order=order,
-                                                                 title=title, editable=editable))
-        elif origin is tuple:
-            # Heterogenous sequences (tuples)
-            schema_element[key].update(tuple_schema(args))
-        elif origin is dict:
-            # Dynamically created dict structure
-            schema_element[key].update(dynamic_dict_schema(args))
-        elif origin is Subclass:
-            pass
-            # warnings.simplefilter('once', DeprecationWarning)
-            # msg = "\n\nTyping of attribute '{0}' from class {1} uses Subclass which is deprecated."\
-            #       "\n\nUse 'InstanceOf[{2}]' instead of 'Subclass[{2}]'.\n"
-            # arg = args[0].__name__
-            # warnings.warn(msg.format(key, args[0], arg), DeprecationWarning)
-            # # Several possible classes that are subclass of another one
-            # class_ = args[0]
-            # classname = full_classname(object_=class_, compute_for='class')
-            # schema_element[key].update({'type': 'object', 'instance_of': classname,
-            #                                 'standalone_in_db': class_._standalone_in_db})
-        elif origin is dc_types.InstanceOf:
-            # Several possible classes that are subclass of another one
-            schema_element[key].update(instance_of_schema(args))
-        elif origin is MethodType or origin is ClassMethodType:
-            schema_element[key].update(method_type_schema(typing_=typing_, order=order, editable=editable))
-        elif origin is type:
-            schema_element[key].update(class_schema)
-        else:
-            raise NotImplementedError(f"Schema computation of typing {typing_} is not implemented")
-
-    elif hasattr(typing_, '__origin__') and typing_.__origin__ is type:
-        # TODO Is this deprecated ? Should be used in 3.8 and not 3.9 ?
-        schema_element[key].update({'type': 'object', 'is_class': True,
-                                    'properties': {'name': {'type': 'string'}}})
-    elif typing_ is Any:
-        schema_element[key].update({'type': 'object', 'properties': {'.*': '.*'}})
-    elif inspect.isclass(typing_) and issubclass(typing_, Measure):
-        ann = (key, float)
-        schema_element = schema_from_annotation(annotation=ann, schema_element=schema_element,
-                                                order=order, editable=editable, title=title)
-        schema_element[key]['si_unit'] = typing_.si_unit
-    elif inspect.isclass(typing_) and issubclass(typing_, (BinaryFile, StringFile)):
-        schema_element[key].update({'type': 'text', 'is_file': True})
-    else:
-        classname = dc_types.full_classname(object_=typing_, compute_for='class')
-        if inspect.isclass(typing_) and issubclass(typing_, CoreDessiaObject):
-            # Dessia custom classes
-            schema_element[key].update({'type': 'object', 'standalone_in_db': typing_._standalone_in_db})
-        # else:
-            # DEPRECATED : Statically created dict structure
-            # schema_element[key].update(static_dict_schema(typing_))
-        schema_element[key]['classes'] = [classname]
-    return schema_element
-
-
-def schema_chunk(annotation, title: str, editable: bool, description: str):
-    if isinstance(annotation, str):
-        raise ValueError
-
-    if annotation in dc_types.TYPING_EQUIVALENCES:  # TODO DONE
-        # Python Built-in type
-        chunk = builtin_schema(annotation)
-    elif dc_types.is_typing(annotation):  # TODO DONE
-        chunk = typing_schema(typing_=annotation, title=title, editable=editable, description=description)
-    elif hasattr(annotation, '__origin__') and annotation.__origin__ is type:
-        # TODO Is this deprecated ? Should be used in 3.8 and not 3.9 ?
-        chunk = {'type': 'object', 'is_class': True, 'properties': {'name': {'type': 'string'}}}
-    elif annotation is Any:
-        chunk = {'type': 'object', 'properties': {'.*': '.*'}}
-    elif inspect.isclass(annotation) and issubclass(annotation, Measure):  # TODO DONE
-        chunk = schema_chunk(annotation=float, title=title, editable=editable, description=description)
-        chunk['si_unit'] = annotation.si_unit
-    elif inspect.isclass(annotation) and issubclass(annotation, (BinaryFile, StringFile)):  # TODO DONE
-        chunk = {'type': 'text', 'is_file': True}
-    elif inspect.isclass(annotation) and issubclass(annotation, CoreDessiaObject):  # TODO DONE
-        # Dessia custom classes
-        classname = dc_types.full_classname(object_=annotation, compute_for='class')
-        chunk = {'type': 'object', 'standalone_in_db': annotation._standalone_in_db, "classes": [classname]}
-    else:
-        raise NotImplementedError(f"Annotation {annotation} is not supported.")
-    chunk.update({'title': title, 'editable': editable, 'description': description,
-                  'python_typing': dc_types.serialize_typing(annotation)})
-    return chunk
-
-
-def typing_schema(typing_, title: str, editable: bool, description: str):
-    origin = tp.get_origin(typing_)
-    if origin is tp.Union:  # TODO DONE
-        if dc_types.union_is_default_value(typing_):  # TODO DONE
-            # This is a false Union => Is a default value set to None
-            return schema_chunk(annotation=typing_, title=title, editable=editable, description=description)
-        # Types union  # TODO DONE
-        return schema_union_types(typing_)
-    if origin in [list, collections.abc.Iterator]:  # TODO DONE
-        # Homogenous sequences
-        return schema_sequence_recursion(value=typing_, title=title, editable=editable)
-    if origin is tuple:  # TODO DONE
-        # Heterogenous sequences (tuples)
-        return tuple_schema(typing_)
-    if origin is dict:  # TODO DONE
-        # Dynamically created dict structure)
-        return dynamic_dict_schema(typing_)
-    if origin is Subclass:
-        pass
-        # warnings.simplefilter('once', DeprecationWarning)
-        # msg = "\n\nTyping of attribute '{0}' from class {1} uses Subclass which is deprecated."\
-        #       "\n\nUse 'InstanceOf[{2}]' instead of 'Subclass[{2}]'.\n"
-        # arg = args[0].__name__
-        # warnings.warn(msg.format(key, args[0], arg), DeprecationWarning)
-        # # Several possible classes that are subclass of another one
-        # class_ = args[0]
-        # classname = full_classname(object_=class_, compute_for='class')
-        # schema_element[key].update({'type': 'object', 'instance_of': classname,
-        #                                 'standalone_in_db': class_._standalone_in_db})
-    if origin is dc_types.InstanceOf:  # TODO DONE
-        # Several possible classes that are subclass of another one
-        return instance_of_schema(typing_)
-    if origin is MethodType or origin is ClassMethodType:  # TODO DONE
-        return method_type_schema(annotation=typing_, editable=editable)
-    if origin is type:  # TODO DONE
-        return class_schema()
-    raise NotImplementedError(f"Schema computation of typing {typing_} is not implemented")
-
-
-def schema_sequence_recursion(value, title: str = None, editable: bool = False):
-    if title is None:
-        title = 'Items'
-    chunk = {'type': 'array', 'python_typing': dc_types.serialize_typing(value)}
-
-    items_type = tp.get_args(value)[0]
-    if dc_types.is_typing(items_type) and tp.get_origin(items_type) is list:
-        chunk['items'] = schema_sequence_recursion(value=items_type, title=title, editable=editable)
-    else:
-        chunk["items"] = schema_chunk(annotation=items_type, title=title, editable=editable, description="")
-    return chunk
-
-
 def set_default_value(schema_element, default_value):
     datatype = datatype_from_schema(schema_element)
     if default_value is None or datatype in ['builtin', 'heterogeneous_sequence', 'static_dict', 'dynamic_dict']:
@@ -967,64 +850,3 @@ def set_default_value(schema_element, default_value):
     #     object_dict = default_value.to_dict()
     #     schema_element[key]['default_value'] = object_dict
     #     else:
-
-
-def builtin_schema(annotation):  # TODO DONE
-    chunk = {"type": dc_types.TYPING_EQUIVALENCES[annotation], 'python_typing': dc_types.serialize_typing(annotation)}
-    return chunk
-
-
-def tuple_schema(annotation):  # TODO DONE
-    args = tp.get_args(annotation)
-    items = []
-    for type_ in args:
-        # TODO Should classes other than builtins be allowed here ?
-        items.append({'type': dc_types.TYPING_EQUIVALENCES[type_]})
-    return {'additionalItems': False, 'type': 'array', 'items': items}
-
-
-def dynamic_dict_schema(annotation):  # TODO DONE
-    args = tp.get_args(annotation)
-    key_type, value_type = args
-    if key_type != str:
-        # !!! Should we support other types ? Numeric ?
-        raise NotImplementedError('Non strings keys not supported')
-    if value_type not in dc_types.TYPING_EQUIVALENCES:
-        raise ValueError(f'Dicts should have only builtins keys and values, got {value_type}')
-    schema = {
-        'type': 'object',
-        'patternProperties': {
-            '.*': {
-                'type': dc_types.TYPING_EQUIVALENCES[value_type]
-            }
-        }
-    }
-    return schema
-
-
-def instance_of_schema(annotation):  # TODO DONE
-    args = tp.get_args(annotation)
-    class_ = args[0]
-    classname = dc_types.full_classname(object_=class_, compute_for='class')
-    return {'type': 'object', 'instance_of': classname, 'standalone_in_db': class_._standalone_in_db}
-
-
-def method_type_schema(annotation, editable):  # TODO DONE
-    origin = tp.get_origin(annotation)
-    class_type = tp.get_args(annotation)[0]
-    classmethod_ = origin is ClassMethodType
-    chunk = schema_chunk(annotation=class_type, title="Class", editable=editable, description="")
-    schema = {
-        'type': 'object', 'is_method': True, 'classmethod_': classmethod_,
-        'properties': {
-            'class_': chunk,
-            'name': {
-                'type': 'string'
-            }
-        }
-    }
-    return schema
-
-
-def class_schema():  # TODO DONE
-    return {'type': 'object', 'is_class': True, 'properties': {'name': {'type': 'string'}}}
