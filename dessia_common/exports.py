@@ -1,8 +1,5 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
-exports for dessia_common
-
+exports for dessia_common.
 """
 from typing import List, Dict, Any, Sequence, Optional
 
@@ -38,7 +35,7 @@ def is_builtins_list(list_):
 
 
 class ExportFormat:
-    """ Define which method of an object should be called for each Export """
+    """ Define which method of an object should be called for each Export. """
     def __init__(self, selector: Optional[str], extension: str, method_name: str, text: bool,
                  export_name: str = "", args: Dict[str, Any] = None):
         self.selector = selector

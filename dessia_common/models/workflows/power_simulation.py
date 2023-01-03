@@ -1,9 +1,5 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
-Created on Tue Oct 19 17:25:40 2021
-
-@author: masfaraud
+Models for power simulation workflow.
 """
 from dessia_common.workflow.core import Workflow, Pipe
 from dessia_common.workflow.blocks import InstantiateModel, ModelMethod

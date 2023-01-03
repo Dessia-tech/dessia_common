@@ -305,7 +305,7 @@ def deserialize_with_type(type_, value):
 
 def deserialize_with_typing(type_, argument, global_dict=None, pointers_memo=None, path='#'):
     """
-    Deserialize an object with a typing info
+    Deserialize an object with a typing info.
 
     :param path: The path of the argument in global dict.
     """

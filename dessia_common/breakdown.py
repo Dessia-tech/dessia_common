@@ -1,8 +1,5 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
-Code for breakdowns
-
+Code for breakdowns.
 """
 
 import sys

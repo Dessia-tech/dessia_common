@@ -1,7 +1,5 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
-
+Module to handle sizes in specified measurement units.
 """
 
 from dessia_common.utils.types import get_python_class_from_class_name

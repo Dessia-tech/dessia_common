@@ -75,7 +75,7 @@ def is_jsonable(obj):
 
 
 def is_serializable(obj) -> bool:
-    """ Return True if object is deeply serializable as Dessia's standards, else False"""
+    """ Return True if object is deeply serializable as Dessia's standards, else False. """
     if is_jsonable(obj):
         return True
     if isinstance(obj, CoreDessiaObject):
