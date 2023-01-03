@@ -1,7 +1,5 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
-Tests for cars data
+Tests for cars data.
 """
 import pkg_resources
 from dessia_common.core import DessiaFilter

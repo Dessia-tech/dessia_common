@@ -1,7 +1,5 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
-Models for RandData objects data
+Models for RandData objects data.
 """
 
 from dessia_common.tests import RandDataD1, RandDataD2, RandDataD3, RandDataD4, RandDataD5, RandDataD6, RandDataD7,\

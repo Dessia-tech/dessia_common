@@ -1,7 +1,5 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
-General checks & checklists
+General checks & checklists.
 """
 
 from dessia_common.base import SerializableObject

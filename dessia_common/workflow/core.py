@@ -1,8 +1,5 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Gathers all workflow relative features.
-
 """
 import ast
 import time
@@ -1170,6 +1167,8 @@ class Workflow(Block):
 
     def graph_columns(self, graph):
         """
+        Store nodes of a workflow into a list of nodes indexes.
+
         :returns: list[ColumnLayout] where ColumnLayout is list[node_index]
         """
         column_by_node = get_column_by_node(graph)
@@ -1182,6 +1181,8 @@ class Workflow(Block):
 
     def layout(self):
         """
+        Stores a workflow gaph layout.
+
         :returns: list[GraphLayout] where GraphLayout is list[ColumnLayout] and ColumnLayout is list[node_index]
         """
         digraph = self.layout_graph

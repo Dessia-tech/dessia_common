@@ -636,7 +636,7 @@ class Product(Block):
 
     def evaluate(self, values):
         """
-        Computes the block: use itertools.product
+        Computes the block: use itertools.product.
         """
         list_product = [values[var] for var in self.inputs]
         output_value = list(itertools.product(*list_product))
@@ -649,6 +649,8 @@ class Product(Block):
 
 class Filter(Block):
     """
+    Block to filter list of DessiaObject or Dataset.
+
     :param filters: A list of dictionaries, each corresponding to a value to filter.
                     The dictionary should be as follows :
                     *{'attribute' : Name of attribute to filter (str),
@@ -865,8 +867,7 @@ class Markdown(Display):
 
 class PlotData(Display):
     """
-    Generate a DisplayObject that is displayable in PlotData features.
-    Uses the the input object's plot_data method.
+    Generate a DisplayObject that is displayable in PlotData features. Uses the the input object's plot_data method.
 
     :param name: The name of the block.
     :type name: str
@@ -924,6 +925,8 @@ class ModelAttribute(Block):
 
 class SetModelAttribute(Block):
     """
+    Block to set an attribute value in a workflow.
+
     :param attribute_name: The name of the attribute to set.
     :type attribute_name: str
     :param name: The name of the block.
