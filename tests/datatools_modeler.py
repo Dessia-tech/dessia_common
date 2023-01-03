@@ -16,7 +16,7 @@ from dessia_common.datatools.modeler import Modeler, CrossValidation
 # Load data and put it in a Dataset (matrix is automatically computed)
 dataset_for_fit = Dataset(all_cars_no_feat)[:-100]
 dataset_to_pred = Dataset(all_cars_no_feat)[-100:]
-input_names_reg = ['displacement']#, 'horsepower', 'model']#, 'acceleration']#, 'cylinders'
+input_names_reg = ['displacement', 'horsepower', 'acceleration']#, 'model']#, 'cylinders'
 output_names_reg = ['weight'] #'mpg']
 output_names_reg_solo = ['weight']
 input_names_clf = ['displacement', 'horsepower', 'acceleration', 'mpg', 'weight']

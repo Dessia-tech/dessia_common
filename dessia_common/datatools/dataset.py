@@ -930,18 +930,25 @@ class Dataset(DessiaObject):
         """
         Future features_importance method, maybe to put in dataset.
         """
-        random_forest = ensemble.RandomForestRegressor()
         inputs, outputs = self.to_input_output(input_attributes, output_attributes)
         scaled_inputs = self._scale_data(inputs)
         input_train, input_test, output_train, output_test = models.train_test_split(scaled_inputs, outputs, ratio=0.8)
 
-
+        random_forest = ensemble.RandomForestRegressor()
         random_forest.fit(input_train, output_train)
-        # importances = random_forest.feature_importances_
-        # std = npy.std([tree.feature_importances_ for tree in random_forest.estimators_], axis=0)
-        # return importances, std
+
         result = inspection.permutation_importance(random_forest, input_test, output_test)
-        return result.importances_mean, result.importances_std
+        return result.importances_mean #, result.importances_std TODO: when plot_data is refactored
+
+    def _importances_to_histogram(self, importances: List[float]):
+        bars = [{'feature': importance} for importance in importances]
+        # elements.append({'mass': random.uniform(0, 50),
+        #                  'length': random.uniform(0, 100),
+        #                  'shape': random_shape,
+        #                  'color': random_color
+        #                  })
+        histogram = Histogram(x_variable='feature', elements=bars)
+        return
 
     def features_mrmr(self):
         """
