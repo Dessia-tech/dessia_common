@@ -81,9 +81,15 @@ class Optimizer(DessiaObject):
     """
 
     def adimensioned_vector(self, x):
+        """
+        Returns the vector from the adimensioned one.
+        """
         pass
 
     def reduced_vector(self, x):
+        """
+        Minimize value between bounds.
+        """
         pass
 
     def cma_bounds(self):
@@ -92,6 +98,9 @@ class Optimizer(DessiaObject):
         """
 
     def scipy_minimize_bounds(self):
+        """
+        Minimize value between bounds.
+        """
         pass
 
     def cma_optimization(self):
