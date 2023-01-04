@@ -248,6 +248,9 @@ class Block(DessiaObject):
     def base_script(self) -> str:
         return f"name='{self.name}', position={self.position}"
 
+    def is_valid(self) -> bool:
+        return True
+
 
 class Pipe(DessiaObject):
     """
