@@ -248,7 +248,7 @@ class Block(DessiaObject):
     def base_script(self) -> str:
         return f"name='{self.name}', position={self.position}"
 
-    def is_valid(self) -> bool:
+    def is_valid(self, level: str ='error') -> bool:
         return True
 
 
