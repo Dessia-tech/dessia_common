@@ -25,6 +25,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 100% coverage for clusters module
 - cache inspect.fullargspecs calls
 
+
+### Tests
+
+- Add backend backward import tests in order to warn when imports are changed
+
 ### Chores
 - Merge back master to dev
 
