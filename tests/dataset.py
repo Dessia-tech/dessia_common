@@ -65,8 +65,8 @@ all_cars_without_features.common_attributes
 # Compute features importances from RandomForest algorithm
 input_attributes = ['displacement', 'horsepower', 'model', 'acceleration', 'cylinders']
 output_attributes = ['weight']
-importances = all_cars_without_features.features_importances(input_attributes, output_attributes)
 
+importances = all_cars_without_features.features_importances(input_attributes, output_attributes)
 histogram = all_cars_without_features._importances_to_histogram(input_attributes, importances)
 plot_data.plot_canvas(plot_data_object=histogram, debug_mode=True)
 a

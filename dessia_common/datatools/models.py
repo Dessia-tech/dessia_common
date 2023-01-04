@@ -218,14 +218,6 @@ class LabelBinarizer(Scaler):
 class Model(DessiaObject):
     """
     Base object for handling a scikit-learn models (classifier and regressor).
-
-    :param params:
-        Hyperparameters of the used scikit-learn object.
-    :type params: dict[str, Any], `optional`
-
-    :param name:
-        Name of LinearModel regression
-    :type name: str, `optional`, defaults to `''`
     """
 
     def __init__(self, params: Dict[str, Any], name: str = ''):
@@ -250,9 +242,6 @@ class Model(DessiaObject):
     def init_for_modeler_(cls, **params: Dict[str, Any]) -> Tuple['Model', Dict[str, Any], str]:
         """
         Initialize class of Model with its name and hyperparemeters to fit in Modeler.
-
-        :return: The Model class, the hyperparameters to instantiate it and the future name of instance.
-        :rtype: Tuple['Model', Dict[str, Any], str]
         """
         return cls(params=params)
 
@@ -260,25 +249,6 @@ class Model(DessiaObject):
     def fit_(cls, inputs: Matrix, outputs: Matrix, name: str = '', **hyperparameters) -> 'Model':
         """
         Standard method to fit outputs to inputs thanks to a scikit-learn model.
-
-        :param inputs:
-            Matrix of data of dimension `n_samples x n_features`
-        :type inputs: List[List[float]]
-
-        :param outputs:
-            Matrix of data of dimension `n_samples x n_features`
-        :type outputs: List[List[float]]
-
-        :param name:
-            Name of Model
-        :type name: str, `optional`, defaults to `''`
-
-        :param hyperparameters:
-            Hyperparameters of the used scikit-learn object.
-        :type hyperparameters: dict[str, Any], `optional`
-
-        :return: The Model or children (DessiaObject) fit on matrix.
-        :rtype: Model
         """
         model = cls._skl_class()(**hyperparameters)
         model.fit(inputs, outputs)
@@ -334,24 +304,6 @@ class Model(DessiaObject):
 class LinearModel(Model):
     """
     Abstract class for linear models.
-
-    :param params:
-        Hyperparameters of the used scikit-learn object.
-    :type params: dict[str, Any], `optional`
-
-    :param coef_:
-        List of coefficients of the model. Each element (i, j) of coef_ is the slope of the linear model predicting
-        the i-th output from the j-th input.
-    :type coef_: List[List[float]]
-
-    :param intercept_:
-        List of offsets of the model. Each element (i, ) of intercept_ is added to the prediction made with coef_ to
-        compute the i-th element of outputs prediction.
-    :type intercept_: List[float]
-
-    :param name:
-        Name of LinearModel regression
-    :type name: str, `optional`, defaults to `''`
     """
 
     def __init__(self, params: Dict[str, Any], coef_: Matrix = None, intercept_: Matrix = None, name: str = ''):
@@ -716,7 +668,9 @@ class DecisionTreeRegressor(Model):
         return tree.DecisionTreeRegressor
 
     def generic_skl_attributes(self):
-        """Generic method (shared between trees) to set scikit-learn model attributes from self attributes."""
+        """
+        Generic method (shared between trees) to set scikit-learn model attributes from self attributes.
+        """
         model = self._call_skl_model()
         model.n_outputs_ = self.n_outputs_
         model.tree_ = self.tree_._instantiate_skl()
@@ -724,7 +678,9 @@ class DecisionTreeRegressor(Model):
 
     @classmethod
     def generic_dessia_attributes(cls, model, params: Dict[str, Any], name: str = ''):
-        """Generic method (shared between trees) to set self attributes from scikit-learn model attributes."""
+        """
+        Generic method (shared between trees) to set self attributes from scikit-learn model attributes.
+        """
         return {'name': name,
                 'tree_': Tree._instantiate_dessia(model.tree_),
                 'n_outputs_': model.n_outputs_,
@@ -911,22 +867,6 @@ class RandomForest(Model):
     Base object for handling a scikit-learn RandomForest object.
 
     Please refer to https://scikit-learn.org/stable/modules/ensemble.html#forest for more information on RandomForest.
-
-    :param params:
-        Hyperparameters of the used scikit-learn object.
-    :type params: dict[str, Any], `optional`
-
-    :param n_outputs_:
-        The number of outputs when fit is performed.
-    :type n_outputs_: int, `optional`, defaults to `None`
-
-    :param estimators_:
-        The collection of fitted sub-trees.
-    :type estimators_: List[DecisionTreeRegressor], `optional`, defaults to `None`
-
-    :param name:
-        Name of RandomForest
-    :type name: str, `optional`, defaults to `''`
     """
 
     def __init__(self, params: Dict[str, Any], n_outputs_: int = None, estimators_: List[DecisionTreeRegressor] = None,
@@ -1197,55 +1137,6 @@ class SupportVectorMachine(Model):
 
     Please refer to https://scikit-learn.org/stable/modules/svm.html for more
     information on SupportVectorMachine object and understanding the SupportVectorMachine for basic usage.
-
-    :param params:
-        Hyperparameters of the used scikit-learn object.
-    :type params: dict[str, Any], `optional`
-
-    :param raw_coef_:
-        The number of classes (for single output problems), or a list containing the number of classes for each output
-        (for multi-output problems).
-    :type raw_coef_: List[List[float]], `optional`, defaults to `None`
-
-    :param _dual_coef_:
-        Coefficients of the support vector in the decision function. Shape is `1 x _n_support`.
-    :type _dual_coef_: List[List[float]], `optional`, defaults to `None`
-
-    :param _intercept_:
-        Constants in decision function.
-    :type _intercept_: List[float], `optional`, defaults to `None`
-
-    :param support_:
-        Indices of support vectors.
-    :type support_: List[int], `optional`, defaults to `None`
-
-    :param support_vectors_:
-        Support vectors.
-    :type support_vectors_: List[List[float]], `optional`, defaults to `None`
-
-    :param _n_support:
-        Number of support vectors for each class.
-    :type _n_support: List[int], `optional`, defaults to `None`
-
-    :param _probA:
-        Parameter learned in Platt scaling when `probability=True`.
-        https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html#sklearn.svm.SVC.probA_
-    :type _probA: List[float], `optional`, defaults to `None`
-
-    :param _probB:
-        Parameter learned in Platt scaling when `probability=True`.
-        https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html#sklearn.svm.SVC.probB_
-    :type _probB: List[float], `optional`, defaults to `None`
-
-    :param _gamma:
-        Kernel coefficient for ‘rbf’, ‘poly’ and ‘sigmoid’.
-           - if `gamma='scale'` (default) is passed then it uses `1 / (n_features * X.var())` as value of gamma,
-           - if `‘auto’`, uses `1 / n_features`.
-    :type _gamma: float, `optional`, defaults to `1.`
-
-    :param _sparse:
-        Specify if the inputs are a sparse matrix or not.
-    :type _sparse: bool, `optional`, defaults to `False`
     """
 
     def __init__(self, params: Dict[str, Any], raw_coef_: Matrix = None, _dual_coef_: Matrix = None,
@@ -1547,34 +1438,6 @@ class MultiLayerPerceptron(Model):
 
     Please refer to https://scikit-learn.org/stable/modules/neural_networks_supervised.html for more
     information on MultiLayerPerceptron.
-
-    :param params:
-        Hyperparameters of the used scikit-learn object.
-    :type params: dict[str, Any], `optional`
-
-    :param coef_:
-        List of coefficients of the model.
-    :type coef_: List[List[float]], `optional`, defaults to `None`
-
-    :param intercept_:
-        List of offsets of the model.
-    :type intercept_: List[List[float]], `optional`, defaults to `None`
-
-    :param n_layers_:
-        Number of hidden layers contained in the current MultiLayerPerceptron.
-    :type n_layers_: int, `optional`, defaults to `None`
-
-    :param activation:
-        Activation function for hidden layers.
-    :type activation: str, `optional`, defaults to `'relu'`
-
-    :param out_activation_:
-        Activation function for the output layer.
-    :type out_activation_: str, `optional`, defaults to `'identity'`
-
-    :param name:
-        Name of MultiLayerPerceptron
-    :type name: str, `optional`, defaults to `''`
     """
 
     def __init__(self, params: Dict[str, Any], coefs_: List[Matrix] = None, intercepts_: Matrix = None,
@@ -1870,6 +1733,8 @@ class MLPClassifier(MultiLayerPerceptron):
                        '_label_binarizer': LabelBinarizer.instantiate_dessia(model._label_binarizer)})
         return cls(**kwargs)
 
+    # Experimental for multiclass multioutput but does not give good results when binarized label does not exist in
+    # train data.
     # @staticmethod
     # def _binarize_outputs(outputs: Matrix) -> Matrix:
     #     if isinstance(outputs[0], list):
