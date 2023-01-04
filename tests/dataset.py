@@ -1,6 +1,7 @@
 """
 Tests for dessia_common.Dataset class (loadings, check_platform and plots).
 """
+import plot_data
 import random
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -66,8 +67,9 @@ input_attributes = ['displacement', 'horsepower', 'model', 'acceleration', 'cyli
 output_attributes = ['weight']
 importances = all_cars_without_features.features_importances(input_attributes, output_attributes)
 
-all_cars_without_features._importances_to_histogram(input_attributes, importances)
-
+histogram = all_cars_without_features._importances_to_histogram(input_attributes, importances)
+plot_data.plot_canvas(plot_data_object=histogram, debug_mode=True)
+a
 
 # Check platform for datasets
 all_cars_with_features._check_platform()

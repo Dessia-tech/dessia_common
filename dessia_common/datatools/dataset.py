@@ -11,8 +11,8 @@ from sklearn import preprocessing, ensemble, inspection
 
 try:
     from plot_data.core import Scatter, Histogram, MultiplePlots, Tooltip, ParallelPlot, PointFamily, EdgeStyle, Axis, \
-        PointStyle
-    from plot_data.colors import BLUE, GREY
+        PointStyle, SurfaceStyle
+    from plot_data.colors import BLUE, GREY, DARK_BLUE
 except ImportError:
     pass
 from dessia_common.utils import helpers
@@ -666,7 +666,7 @@ class Dataset(DessiaObject):
             parallel_plot = self._parallel_plot(data_list)
 
             # Features Importances
-            importances = self._importances_to_histogram(input_attributes, importances)
+            # importances = self._importances_to_histogram(input_attributes, importances)
             return [parallel_plot, scatter_matrix] #, dimensionality_plot]
 
         plot_mono_attr = self._histogram_unic_value(0, name_attr=self.common_attributes[0])
@@ -943,12 +943,12 @@ class Dataset(DessiaObject):
         return result.importances_mean #, result.importances_std TODO: when plot_data is refactored
 
     def _importances_to_histogram(self, input_attributes: List[str], importances: List[float]):
-        normed_rounded_importances = [round(importance * 100 / npy.linalg.norm(importances, ord=1))
-                                      for importance in importances]
+        normed_importances = importances * 100 / npy.linalg.norm(importances, ord=1)
+        normed_rounded_importances = (round(importance) for importance in normed_importances)
         bars = []
         for attr, number in zip(input_attributes, normed_rounded_importances):
             bars.append([{'feature': attr}] * (number + 1))
-        return Histogram(x_variable='feature', elements=sum(bars, []))
+        return Histogram(x_variable='feature', elements=sum(bars, []), surface_style=SurfaceStyle(DARK_BLUE))
 
     def features_mrmr(self):
         """
