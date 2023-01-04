@@ -82,12 +82,12 @@ class Optimizer(DessiaObject):
 
     def adimensioned_vector(self, x):
         """
-        Returns the vector from the adimensioned one.
+        Returns the adimensioned vector from the real one.
         """
 
     def reduced_vector(self, x):
         """
-        Minimize value between bounds.
+        Get reduced vector of vector x.
         """
 
     def cma_bounds(self):
