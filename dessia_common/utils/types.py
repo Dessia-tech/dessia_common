@@ -56,7 +56,9 @@ def is_classname_transform(string: str):
 
 
 def is_jsonable(obj):
-    """ Return if object can be dumped as it is in a json. """
+    """
+    Returns if object can be dumped as it is in a json.
+    """
     # First trying with orjson which is more efficient
     try:
         orjson.dumps(obj, option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS).decode('utf-8')
@@ -72,13 +74,32 @@ def is_jsonable(obj):
     #     return False
 
 
+def is_serializable(obj) -> bool:
+    """ Return True if object is deeply serializable as Dessia's standards, else False. """
+    if is_jsonable(obj):
+        return True
+    if isinstance(obj, CoreDessiaObject):
+        dict_ = obj.to_dict()
+        return is_jsonable(dict_)
+    if isinstance(obj, dict):
+        for key, value in obj.items():
+            if not is_serializable(key) or not is_serializable(value):
+                return False
+        return True
+    if is_sequence(obj):
+        for element in obj:
+            if not is_serializable(element):
+                return False
+        return True
+    return False
+
+
 def is_sequence(obj):
     """
     Return True if object is sequence (but not string), else False.
 
     :param obj: Object to check
-    :return: bool. True if object is a sequence but not a string.
-                   False otherwise
+    :return: bool. True if object is a sequence but not a string. False otherwise
     """
     return isinstance(obj, Sequence) and not isinstance(obj, str)
 
@@ -355,8 +376,8 @@ def union_is_default_value(typing_: Type) -> bool:
     """
     Union typings can be False positives.
 
-    An argument of a function that has a default_value set to None is Optional[T],
-    which is an alias for Union[T, NoneType]. This function checks if this is the case.
+    An argument of a function that has a default_value set to None is Optional[T], which is an alias for
+    Union[T, NoneType]. This function checks if this is the case.
     """
     args = get_args(typing_)
     return len(args) == 2 and type(None) in args
@@ -431,8 +452,8 @@ def heal_type(type_: Type):
     """
     Inspect type and returns its params.
 
-    For now, only checks wether the type is an 'Optional' / Union[T, NoneType],
-    which should be flattened and not considered.
+    For now, only checks wether the type is an 'Optional' / Union[T, NoneType], which should be flattened and not
+    considered.
 
     Returns the cleaned type, origin and args.
     """

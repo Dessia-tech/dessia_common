@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Wed Jan 12 19:24:11 2022
-
-@author: steven
+Module for docstring parsing to platform and Sphinx auto documentation.
 """
 
 from inspect import isclass, ismethod, isfunction

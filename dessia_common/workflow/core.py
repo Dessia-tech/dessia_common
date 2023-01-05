@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 """
 Gathers all workflow relative features.
-
 """
 import ast
 import time
@@ -59,6 +58,7 @@ class Variable(DessiaObject):
             self.position = position
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
+        """Serialize the variable with custom logic."""
         dict_ = DessiaObject.base_dict(self)
         dict_.update({'has_default_value': self.has_default_value,
                       'position': self.position})
@@ -87,6 +87,7 @@ class TypedVariable(Variable):
         self.type_ = type_
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
+        """Serializes the object with specific logic."""
         dict_ = super().to_dict(use_pointers, memo, path)
         dict_.update({'type_': serialize_typing(self.type_)})
         return dict_
@@ -98,6 +99,7 @@ class TypedVariable(Variable):
         return cls(type_=type_, name=dict_['name'], position=dict_.get("position"))
 
     def copy(self, deep: bool = False, memo=None):
+        """Copies and gives a new object with no linked data."""
         return TypedVariable(type_=self.type_, name=self.name)
 
     def _get_to_script_elements(self) -> ToScriptElement:
@@ -132,6 +134,7 @@ class TypedVariableWithDefaultValue(TypedVariable):
         self.default_value = default_value
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#'):
+        """Serialize the variable with custom logic."""
         dict_ = super().to_dict(use_pointers, memo, path)
         dict_.update({'default_value': serialize(self.default_value)})
         return dict_
@@ -218,6 +221,7 @@ class Block(DessiaObject):
         return self.__class__.__name__ == other.__class__.__name__
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#'):
+        """Serialize the block with custom logic."""
         dict_ = DessiaObject.base_dict(self)
         dict_['inputs'] = [i.to_dict() for i in self.inputs]
         dict_['outputs'] = [o.to_dict() for o in self.outputs]
@@ -250,6 +254,10 @@ class Block(DessiaObject):
 
     def _to_script(self, prefix: str):
         raise NotImplementedError("This method should be implemented in any Block inheriting class.")
+
+    def is_valid(self, level: str ='error') -> bool: # TODO: Change this in further releases
+        return True
+
 
 
 class Pipe(DessiaObject):
@@ -1177,6 +1185,8 @@ class Workflow(Block):
 
     def graph_columns(self, graph):
         """
+        Store nodes of a workflow into a list of nodes indexes.
+
         :returns: list[ColumnLayout] where ColumnLayout is list[node_index]
         """
         column_by_node = get_column_by_node(graph)
@@ -1189,6 +1199,8 @@ class Workflow(Block):
 
     def layout(self):
         """
+        Stores a workflow gaph layout.
+
         :returns: list[GraphLayout] where GraphLayout is list[ColumnLayout] and ColumnLayout is list[node_index]
         """
         digraph = self.layout_graph
@@ -2243,7 +2255,11 @@ def deserialize_pipes(pipes_dict, blocks, nonblock_variables, connected_nbvs):
 
 
 def value_type_check(value, type_):
+<<<<<<< HEAD
     """ Type propagation. """
+=======
+    """Check if the value as the specified type."""
+>>>>>>> origin/dev
     try:  # TODO: Subscripted generics cannot be used...
         if not isinstance(value, type_):
             return False

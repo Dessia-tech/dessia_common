@@ -1,5 +1,6 @@
 """
 A module that aims to list all possibilities of data formats offered by Dessia.
+
 It should be used as a repertory of rules and available typings.
 
 Some general rules :
@@ -148,6 +149,7 @@ DEF_SBS = StandaloneBuiltinsSubobject.generate(1)
 
 class EnhancedStandaloneSubobject(StandaloneBuiltinsSubobject):
     """ Overwrite StandaloneSubobject, principally for InstanceOf and Union typings testing purpose. """
+
     def __init__(self, floatarg: Distance, name: str = 'Standalone Subobject'):
         StandaloneBuiltinsSubobject.__init__(self, distarg=floatarg, floatarg=floatarg, intarg=floor(floatarg),
                                              boolarg=floatarg.is_integer(), name=name)
@@ -165,6 +167,7 @@ DEF_ESS = EnhancedStandaloneSubobject.generate(1)
 
 class InheritingStandaloneSubobject(StandaloneBuiltinsSubobject):
     """ Overwrite StandaloneSubobject, principally for InstanceOf and Union typings testing purpose. """
+
     def __init__(self, distarg: Distance, floatarg: float, intarg: int, boolarg: bool, strarg: str,
                  name: str = 'Inheriting Standalone Subobject'):
         self.strarg = strarg
@@ -189,6 +192,7 @@ DEF_ISS = InheritingStandaloneSubobject.generate(1)
 
 class EmbeddedSubobject(DessiaObject):
     """ EmbeddedSubobject, in order to test non standalone features. """
+
     def __init__(self, embedded_list: List[int] = None, name: str = 'Embedded Subobject'):
         if embedded_list is None:
             self.embedded_list = [1, 2, 3]
@@ -215,6 +219,7 @@ class EmbeddedSubobject(DessiaObject):
 
 class EnhancedEmbeddedSubobject(EmbeddedSubobject):
     """ Overwrite EmbeddedSubobject, principally for InstanceOf and Union typings testing purpose. """
+
     def __init__(self, embedded_list: List[int] = None, embedded_array: List[List[float]] = None,
                  name: str = 'Enhanced Embedded Subobject'):
         self.embedded_array = embedded_array

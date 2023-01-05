@@ -1,10 +1,10 @@
 """
-Tools for copying objects
+Tools for copying objects.
 """
 
 
 def concatenate(values):
-    """ Concatenate inputs. """
+    """ Concatenate values of class class_ into a class_ containing all concatenated values. """
     types_set = set(type(value) for value in values)
     concatenated_values = None
     if len(types_set) != 1:

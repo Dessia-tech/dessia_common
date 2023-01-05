@@ -1,6 +1,5 @@
 """
-forms_workflow tools
-
+Tools for forms of workflows.
 """
 from dessia_common.workflow.core import TypedVariable, TypedVariableWithDefaultValue, Pipe, Workflow
 from dessia_common.workflow.blocks import InstantiateModel, ModelMethod, ModelAttribute, ForEach,\

@@ -1,6 +1,5 @@
 """
-Optimization package for dessia_common
-
+Optimization package for dessia_common.
 """
 from typing import List
 import cma
@@ -10,11 +9,17 @@ from dessia_common.core import DessiaObject
 
 
 class Specifications(DessiaObject):
+    """
+    Base class to define specifications on parameters of any DessiaObject.
+    """
     def __init__(self, name: str = ''):
         DessiaObject.__init__(self, name=name)
 
 
 class FixedAttributeValue(DessiaObject):
+    """
+    Define a fixed attribute value to run a Design Of Experiment (DOE) or an Optimization.
+    """
     _standalone_in_db = True
 
     def __init__(self, attribute_name: str, value: float, name: str = ''):
@@ -24,6 +29,29 @@ class FixedAttributeValue(DessiaObject):
 
 
 class BoundedAttributeValue(DessiaObject):
+    """
+    Define a bounded attribute value to run a Design Of Experiment (DOE) or an Optimization.
+
+    :param attribute_name:
+        Name of attribute to bound.
+    :type attribute_name: str
+
+    :param min_value:
+        Minimum value for this attribute.
+    :type min_value: float
+
+    :param max_value:
+        Maximum value for this attribute.
+    :type max_value: float
+
+    :param number:
+        Number of values to generate betwwen those bounds. Only used for sampling.ClassSampler.full_fact method.
+    :type number: int
+
+    :param name:
+        Name of BoundedAttributeValue.
+    :type name: str, `optional`, defaults to `''`
+    """
     _standalone_in_db = True
 
     def __init__(self, attribute_name: str, min_value: float, max_value: float, number: int = 2, name: str = ''):
@@ -43,39 +71,49 @@ class BoundedAttributeValue(DessiaObject):
     def dimensionless_value(self, value: float):
         """
         Method to compute the dimensionless value out of the dimensioned one.
-
-        :param value: the value
         """
         return (value - self.min_value) / self.interval_length
 
 
 class Optimizer(DessiaObject):
     """
-    Common parts of optimizers
+    Base class for creating an Optimizer.
     """
 
     def adimensioned_vector(self, x):
-        pass
+        """
+        Returns the adimensioned vector from the real one.
+        """
 
     def reduced_vector(self, x):
-        pass
+        """
+        Get reduced vector of vector x.
+        """
 
     def cma_bounds(self):
-        pass
+        """
+        Returns the bounds in the CMA format.
+        """
 
     def scipy_minimize_bounds(self):
-        pass
+        """
+        Minimize value between bounds.
+        """
 
     def cma_optimization(self):
-        pass
+        """
+        Runs an optimization of the model with CMA method.
+        """
 
     def scipy_minimize_optimization(self):
-        pass
+        """
+        Runs an optimization of the model with scipy gradient method.
+        """
 
 
 class DrivenModelOptimizer(Optimizer):
     """
-    Abstract class
+    Abstract class for Optimizer driven with a model.
     """
 
     def __init__(self, model, name: str = ''):
@@ -83,14 +121,16 @@ class DrivenModelOptimizer(Optimizer):
         self.model = model
 
     def get_model_from_vector(self):
+        """
+        Get model from vector.
+        """ #TODO: change docstring
         # modify inplace model from vector
         raise NotImplementedError('the method must be overloaded by subclassing class')
 
 
 class InstantiatingModelOptimizer(Optimizer):
     """
-    Abstract class, to be subclassed by real class
-    Instantiate a new model at each point request
+    Abstract class, to be subclassed by real class. Instantiate a new model at each point request.
     """
 
     def __init__(self, fixed_parameters: List[FixedAttributeValue], optimization_bounds: List[BoundedAttributeValue],
@@ -102,6 +142,9 @@ class InstantiatingModelOptimizer(Optimizer):
         self.number_parameters = len(self.optimization_bounds)
 
     def instantiate_model(self, attributes_values):
+        """
+        Instantiate model to compute cost function of Optimizer.
+        """
         raise NotImplementedError('the method instantiate_model must be overloaded by subclassing class')
 
     def dimensionless_vector_to_vector(self, dl_vector):
@@ -121,11 +164,17 @@ class InstantiatingModelOptimizer(Optimizer):
         return attributes
 
     def objective_from_dimensionless_vector(self, dl_vector):
+        """
+        Compute the real values of objective attributes of object from their optimized dimensionless values.
+        """
         attributes_values = self.vector_to_attributes_values(self.dimensionless_vector_to_vector(dl_vector))
         model = self.instantiate_model(attributes_values)
         return self.objective_from_model(model)
 
     def objective_from_model(self, model, clearance: float = 0.003):
+        """
+        Compute cost of current configuration with model methods.
+        """
         raise NotImplementedError('the method objective_from_model must be overloaded by subclassing class')
 
     def scipy_bounds(self):

@@ -1,6 +1,5 @@
 """
-displays for dessia_common
-
+Displays for dessia_common.
 """
 import warnings
 import webbrowser
@@ -18,8 +17,12 @@ from dessia_common.utils.types import is_sequence
 
 
 class DisplaySetting:
+    """ Describe which method to call to get a display. """
+
     def __init__(self, selector, type_, method, arguments=None, serialize_data: bool = False):
-        """ Describe which method to call to get a display. """
+        """
+        Describe what method to call to get a display.
+        """
         self.selector = selector
         self.type = type_
         self.method = method
@@ -29,7 +32,9 @@ class DisplaySetting:
         self.serialize_data = serialize_data
 
     def to_dict(self):
-        """ Serialization. """
+        """
+        Serialization: make a dict from class instance attributes.
+        """
         return {'selector': self.selector, 'type': self.type, 'method': self.method,
                 'serialize_data': self.serialize_data, 'arguments': self.arguments}
 
@@ -48,9 +53,7 @@ class DisplayObject:
     def __init__(self, type_: str, data: Union[JsonSerializable, List[JsonSerializable], str],
                  reference_path: str = '', traceback: str = '', name: str = ''):
         """
-        Container for display data.
-
-        A traceback can be set if display fails to be generated.
+        Container for data of display. A traceback can be set if display fails to be generated.
         """
         if type_ == "plot_data" and not is_sequence(data):
             warnings.warn("A plot_data DisplayObject must be called with data as a sequence. "
@@ -67,17 +70,23 @@ class DisplayObject:
             self.data_cleaning()
 
     def data_cleaning(self):
-        """ Cleanup tabs in markdown. """
+        """
+        Cleanup tabs in markdown.
+        """
         self.data = inspect.cleandoc(self.data)
 
     def to_dict(self):
-        """ Simple serialization. """
+        """
+        Simple serialization.
+        """
         return {'type_': self.type_, 'data': self.data, 'traceback': self.traceback,
                 'reference_path': self.reference_path, 'name': self.name}
 
 
 def networkx_to_visjs_data(networkx_graph: Graph):
-    """ Compute visjs data to plot from a networkx graph. """
+    """
+    Compute visjs data to plot from a networkx graph.
+    """
     visjs_data = {'name': networkx_graph.name, 'nodes': [], 'edges': []}
 
     pos = kamada_kawai_layout(networkx_graph)
@@ -141,7 +150,9 @@ def networkx_to_visjs_data(networkx_graph: Graph):
 
 
 def draw_networkx_graph(networkx_graph: Graph):
-    """ Draw a networkx graph in a browser using VisJS library. """
+    """
+    Draw a networkx graph in a browser using VisJS library.
+    """
     visjs_data = networkx_to_visjs_data(networkx_graph)
     content = visjs_template.substitute(nodes=json.dumps(visjs_data['nodes']),
                                         edges=json.dumps(visjs_data['edges']),
