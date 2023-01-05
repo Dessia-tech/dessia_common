@@ -2255,11 +2255,11 @@ def deserialize_pipes(pipes_dict, blocks, nonblock_variables, connected_nbvs):
 
 
 def value_type_check(value, type_):
-<<<<<<< HEAD
-    """ Type propagation. """
-=======
-    """Check if the value as the specified type."""
->>>>>>> origin/dev
+    """
+    Type propagation.
+
+    Check if the value as the specified type.
+    """
     try:  # TODO: Subscripted generics cannot be used...
         if not isinstance(value, type_):
             return False
