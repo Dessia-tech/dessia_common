@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### CI
 
 - add a check to enforce update of changelog in PR
+- tutorials/ci_tutorials.py added to check runnability of .ipynb files inside this new folder
 
 ### Performance
 
@@ -149,7 +150,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Physical Object: splitting CAD capabilities from DessiaObject
 - Workflow to script (for a few blocks to begin with)
 - Separate evaluation of displays with display settings feature
-- workflow: port matching 
+- workflow: port matching
 
 ### Changed
 - Enhanced get attr use literal eval to try to get dict keys
@@ -196,7 +197,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Re-instantiate nonblock_variable when copying workflow
 - WorkflowState now serialize its values keys in to_dict
-- deepcopy of workflow 
+- deepcopy of workflow
 
 ### Refactor
 - Separate in utils module
@@ -358,7 +359,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add is_builtin function
 - Raise ValueError if plot_data is not a sequence
 - compute_for argument to full_classname to allow classname computing for class object
-	
+
 ### Fixed
 - dict_to_arguments of workflows have now right signature
 
@@ -454,7 +455,7 @@ _ Rerun method for WorkflowRuns & prerequisite (input_values in __init__ et meth
 ### Changed
 - Export csv to fit vectored_objects removal
 - All set variables in _display_angular config instead of just choice_variables
-- Strategy for scale and custom value scaling 
+- Strategy for scale and custom value scaling
 
 ## [0.3.5]
 ### Changed
@@ -474,7 +475,7 @@ _ Rerun method for WorkflowRuns & prerequisite (input_values in __init__ et meth
 
 ## [0.3.3]
 ## Added
-- WorkflowBlock 
+- WorkflowBlock
 - Type checking in workflow
 - imposed variable values
 
@@ -537,4 +538,3 @@ _ Rerun method for WorkflowRuns & prerequisite (input_values in __init__ et meth
 ### Added
 - Generic eq,
 - Copy volmdlr support
-
