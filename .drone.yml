@@ -7,7 +7,7 @@ steps:
 - name: merge master on testing
   image: alpine/git
   when:
-    event: push 
+    event: push
     branch: master
   commands:
   - git fetch origin testing
@@ -18,7 +18,7 @@ steps:
 - name: merge testing on dev
   image: alpine/git
   when:
-    event: push 
+    event: push
     branch: testing
   commands:
   - git fetch origin dev
@@ -71,6 +71,10 @@ steps:
   - make html
   - cd ../tests
   - coverage run --source dessia_common ci_tests.py
+  - cd ../tutorials
+  - coverage run --source dessia_common ci_tutorials.py
+  - cd ..
+  - coverage combine tests/.coverage tutorials/.coverage
   - coverage json
   - coverage report
   - python coverage.py
