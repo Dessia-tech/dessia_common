@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 0.12.0 (now branch dev)
 
+### Fixed
+- Hot fix for is_valid method of workflow's Block
+
 ### CI
 
 - add a check to enforce update of changelog in PR
@@ -16,6 +19,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Conform doc for many parts of dessia_common
 - 100% coverage for clusters module
 - cache inspect.fullargspecs calls
+
+
+### Tests
+
+- Add backend backward import tests in order to warn when imports are changed
 
 ### Chores
 - Merge back master to dev
