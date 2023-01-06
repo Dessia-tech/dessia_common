@@ -134,8 +134,7 @@ setup(
         "dessia_common.utils",
         "dessia_common.models",
         "dessia_common.models.workflows",
-        "dessia_common.datatools",
-        "dessia_common.datatools.models"
+        "dessia_common.datatools"
     ],
     install_requires=[
         "orjson>=3.8.0",
@@ -154,5 +153,5 @@ setup(
         "scikit-learn",
         "cma"
     ],
-    python_requires=">=3.7",
+    python_requires=">=3.8",
 )
