@@ -84,10 +84,23 @@ assert computed_schema == {'type': 'array',
 assert len(checked_schema) == 0
 
 # Tuples
+schema = HeterogeneousSequence(Tuple)
+computed_schema = schema.write(title="Bare Tuple", editable=True, description="Testing Tuple with no arg")
+checked_schema = computed_schema.check("check_schema")
+assert computed_schema == {'additionalItems': False,
+                           'type': 'array',
+                           'items': [],
+                           'title': 'Bare Tuple',
+                           'editable': True,
+                           'description': 'Testing Tuple with no arg',
+                           'python_typing': 'Tuple'}
+assert len(checked_schema) == 1
+assert checked_schema["severity"] == "error"
+
 # TODO Should object be allowed here ?
 # more_arg_tuple = schema_chunk(annotation=Tuple[int, str, DessiaObject], title="More Arg Tuple", editable=True,
 #                               description="Testing Tuple with several args")
-schema = HomogeneousSequence(Tuple[int, str])
+schema = HeterogeneousSequence(Tuple[int, str])
 computed_schema = schema.write(title="More Arg Tuple", editable=True, description="Testing Tuple with several args")
 checked_schema = computed_schema.check("check_schema")
 assert computed_schema == {'additionalItems': False,
