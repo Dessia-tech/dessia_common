@@ -471,6 +471,7 @@ def find_references(value, path='#'):
 
 
 def find_references_sequence(seq, path):
+    """ Find dc refs recursively in sequence. """
     if isinstance(seq, str):
         raise ValueError
 
@@ -484,6 +485,7 @@ def find_references_sequence(seq, path):
 
 
 def find_references_dict(dict_, path):
+    """ Find dc refs recursively in dict. """
     if '$ref' in dict_:
 
         return [(path, dict_['$ref'])]
@@ -579,6 +581,7 @@ def pointer_graph(value):
 
 
 def update_pointers_data(global_dict, current_dict, pointers_memo):
+    """ Update pointers according to cuccrent dict. """
     if global_dict is None or pointers_memo is None:
         global_dict = current_dict
 
@@ -639,7 +642,7 @@ def dereference_jsonpointers(dict_):  # , global_dict):
 
 
 def pointer_graph_elements(value, path='#'):
-
+    """ Compute graph. """
     if isinstance(value, dict):
         return pointer_graph_elements_dict(value, path)
     if dcty.isinstance_base_types(value):
@@ -651,9 +654,7 @@ def pointer_graph_elements(value, path='#'):
 
 
 def pointer_graph_elements_sequence(seq, path='#'):
-    """
-    Compute
-    """
+    """ Compute graph from sequence. """
     if isinstance(seq, str):
         raise ValueError
 
@@ -674,7 +675,7 @@ def pointer_graph_elements_sequence(seq, path='#'):
 
 
 def pointer_graph_elements_dict(dict_, path='#'):
-
+    """ Compute graph from dict. """
     if '$ref' in dict_:
         return [path, dict_['$ref']], [(path, dict_['$ref'], True)]
 
