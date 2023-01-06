@@ -4,6 +4,7 @@
 Serialization Tools.
 """
 
+import uuid
 import warnings
 import inspect
 import collections
@@ -78,39 +79,55 @@ def serialize(value):
     return serialized_value
 
 
-def serialize_with_pointers(value, memo=None, path='#'):
+def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=None):
     """
     Main function for serialization with pointers.
     """
     if memo is None:
         memo = {}
+    if id_memo is None:
+        id_memo = {}
     if isinstance(value, dc.DessiaObject):
         if value in memo:
             return {'$ref': memo[value]}, memo
         try:
-            serialized = value.to_dict(use_pointers=True, memo=memo, path=path)
+            serialized = value.to_dict(use_pointers=True, memo=memo, path=path, id_memo=id_memo)
 
         except TypeError:
             warnings.warn('specific to_dict should implement use_pointers, memo and path arguments', Warning)
             serialized = value.to_dict()
-        memo[value] = path
+        if id_method:
+            id_ = str(uuid.uuid1())
+            id_memo[id_] = serialized
+            memo[value] = f'#/_references/{id_}'
+        else:
+            memo[value] = path
 
     elif isinstance(value, type):
         if value in memo:
             return {'$ref': memo[value]}, memo
         serialized = dcty.serialize_typing(value)
-        memo[value] = path
+        # memo[value] = path
 
+    # Regular object
     elif hasattr(value, 'to_dict'):
         if value in memo:
             return {'$ref': memo[value]}, memo
         serialized = value.to_dict()
-        memo[value] = path
+
+        if id_method:
+            id_ = uuid.uuid1()
+            id_memo[id_] = serialized
+            memo[value] = f'#/_references/{id_}'
+        else:
+            memo[value] = path
 
     elif isinstance(value, dict):
-        serialized, memo = serialize_dict_with_pointers(value, memo=memo, path=path)
+        serialized, memo = serialize_dict_with_pointers(value, memo=memo, path=path, id_method=id_method,
+                                                        id_memo=id_memo)
     elif dcty.is_sequence(value):
-        serialized, memo = serialize_sequence_with_pointers(value, memo=memo, path=path)
+        serialized, memo = serialize_sequence_with_pointers(value, memo=memo, path=path, id_method=id_method,
+                                                            id_memo=id_memo)
 
     elif isinstance(value, (BinaryFile, StringFile)):
         serialized = value
@@ -121,13 +138,23 @@ def serialize_with_pointers(value, memo=None, path='#'):
             msg = f'Element of value {value} (type: {value.__class__.__name__}) is not json serializable'
             raise dc_err.SerializationError(msg)
         serialized = value
+
+    if path == '#':
+        # adding _references
+        serialized['_references'] = id_memo
+
     return serialized, memo
 
 
-def serialize_dict_with_pointers(dict_, memo, path):
+def serialize_dict_with_pointers(dict_, memo, path, id_method, id_memo):
     """
     Serialize a dict recursively with jsonpointers using a memo dict at a given path of the top level object.
     """
+    if memo is None:
+        memo = {}
+    if id_memo is None:
+        id_memo = {}
+
     serialized_dict = {}
     dict_attrs_keys = []
     seq_attrs_keys = []
@@ -143,26 +170,34 @@ def serialize_dict_with_pointers(dict_, memo, path):
 
     for key in other_keys:
         value_path = f'{path}/{key}'
-        serialized_dict[key], memo = serialize_with_pointers(dict_[key], memo=memo, path=value_path)
+        serialized_dict[key], memo = serialize_with_pointers(dict_[key], memo=memo, path=value_path,
+                                                             id_memo=id_memo)
     # Handle seq & dicts afterwards
     for key in seq_attrs_keys:
         value_path = f'{path}/{key}'
-        serialized_dict[key], memo = serialize_sequence_with_pointers(dict_[key], memo=memo, path=value_path)
+        serialized_dict[key], memo = serialize_sequence_with_pointers(dict_[key], memo=memo, path=value_path,
+                                                                      id_method=id_method, id_memo=id_memo)
 
     for key in dict_attrs_keys:
         value_path = f'{path}/{key}'
-        serialized_dict[key], memo = serialize_dict_with_pointers(dict_[key], memo=memo, path=value_path)
+        serialized_dict[key], memo = serialize_dict_with_pointers(dict_[key], memo=memo, path=value_path,
+                                                                  id_method=id_method, id_memo=id_memo)
+
+    if path == '#':
+        # adding _references
+        serialized_dict['_references'] = id_memo
     return serialized_dict, memo
 
 
-def serialize_sequence_with_pointers(seq, memo, path):
+def serialize_sequence_with_pointers(seq, memo, path, id_method, id_memo):
     """
     Serialize a sequence (list or tuple) using jsonpointers.
     """
     serialized_sequence = []
     for ival, value in enumerate(seq):
         value_path = f'{path}/{ival}'
-        serialized_value, memo = serialize_with_pointers(value, memo=memo, path=value_path)
+        serialized_value, memo = serialize_with_pointers(value, memo=memo, path=value_path, id_method=id_method,
+                                                         id_memo=id_memo)
         serialized_sequence.append(serialized_value)
 
     return serialized_sequence, memo
@@ -683,19 +718,24 @@ def pointers_analysis(obj):
             if path2 in class_from_path:
                 val2_class = class_from_path[path2]
             else:
-                val2 = get_in_object_from_path(obj, path2)
-                val2_class = dcty.full_classname(val2)
-                class_from_path[path2] = val2_class
+                try:
+                    val2 = get_in_object_from_path(obj, path2)
+                    val2_class = dcty.full_classname(val2)
+                    class_from_path[path2] = val2_class
+                except AttributeError:
+                    pass
 
             class_number[val2_class] = class_number.get(val2_class, 0) + 1
 
             if path1 in class_from_path:
                 val1_class = class_from_path[path1]
             else:
-                val1 = get_in_object_from_path(obj, path1)
-                val1_class = dcty.full_classname(val1)
-                # val1_class = val1['object_class']
-                class_from_path[path1] = val1_class
+                try:
+                    val1 = get_in_object_from_path(obj, path1)
+                    val1_class = dcty.full_classname(val1)
+                    class_from_path[path1] = val1_class
+                except AttributeError:
+                    pass
 
             if val1_class != val2_class:
                 if val2_class not in composed_by:

@@ -48,7 +48,8 @@ class SerializableObject(CoreDessiaObject):
                  if k not in self._non_serializable_attributes and not k.startswith('_')}
         return dict_
 
-    def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#') -> JsonSerializable:
+    def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#',
+                id_method=True, id_memo=None) -> JsonSerializable:
         """
         Generic to_dict method.
         """
@@ -59,7 +60,8 @@ class SerializableObject(CoreDessiaObject):
         serialized_dict = self.base_dict()
         dict_ = self._serializable_dict()
         if use_pointers:
-            serialized_dict.update(serialize_dict_with_pointers(dict_, memo, path)[0])
+            serialized_dict.update(serialize_dict_with_pointers(dict_, memo, path, id_method=id_method,
+                                                                id_memo=id_memo)[0])
         else:
             serialized_dict.update(serialize_dict(dict_))
 
