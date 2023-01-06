@@ -15,6 +15,7 @@ from dessia_common.measures import Measure
 from dessia_common.utils.docstrings import parse_docstring, FAILED_DOCSTRING_PARSING, FAILED_ATTRIBUTE_PARSING
 from dessia_common.utils.helpers import prettyname
 from dessia_common.schemas.interfaces import Annotations
+from dessia_common.checks import CheckList, CheckWarning, FailedCheck, PassedCheck
 
 SCHEMA_HEADER = {"definitions": {}, "$schema": "http://json-schema.org/d_raft-07/schema#",
                  "type": "object", "required": [], "properties": {}}
@@ -35,6 +36,9 @@ class Schema:
     that can be handled by dessia_common.
     This dictionnary can then be translated as a json to be read by the frontend in order to compute edit forms,
     for example.
+
+    Right now Schema doesn't inherit from any DessiaObject class (SerializableObject ?), but could, in the future.
+    That is why it implements methods with the same name.
     """
 
     def __init__(self, annotations: Annotations, argspec: inspect.FullArgSpec, docstring: str):
@@ -58,22 +62,6 @@ class Schema:
         """ Attributes that are not in RESERVED_ARGNAMES. """
         return [a for a in self.attributes if a not in RESERVED_ARGNAMES]
 
-    def check(self) -> tp.List[Issue]:
-        """ Browse all properties and list potential issues. """
-        issues = []
-        for attribute in self.attributes:
-            if attribute not in self.annotations:
-                msg = f"Argument '{attribute}' has no typing."
-                issues.append({"attribute": attribute, "severity": "error", "message": msg})
-            schema = self.property_schemas[attribute]
-            issues.extend(schema.check(attribute))
-        return issues
-
-    def annotations_are_valid(self) -> tp.Tuple[bool, tp.List[Issue]]:
-        """ Return wether the class definition is valid or not along with a list of issues. """
-        issues = self.check()
-        return not any(issues), issues
-
     def chunk(self, attribute: str):
         """ Extract and compute a schema from one of the attributes. """
         schema = self.property_schemas[attribute]
@@ -87,7 +75,7 @@ class Schema:
             description = ""
 
         editable = attribute in self.editable_attributes
-        chunk = schema.write(title=prettyname(attribute), editable=editable, description=description)
+        chunk = schema.to_dict(title=prettyname(attribute), editable=editable, description=description)
 
         if attribute in self.default_arguments:
             # TODO Could use this and Optional proxy in order to inject real default values for mutables
@@ -99,13 +87,50 @@ class Schema:
         """ Concatenate schema chunks into a list. """
         return [self.chunk(a) for a in self.attributes]
 
-    def write(self):
+    def to_dict(self):
         """ Write the whole schema. """
         schema = deepcopy(SCHEMA_HEADER)
         properties = {a: self.chunk(a) for a in self.attributes}
         schema.update({"required": self.required_arguments, "properties": properties,
                        "description": self.parsed_docstring["description"]})
         return schema
+
+    @classmethod
+    def dict_to_object(cls, dict_):
+        """
+        Build a schema back from its dict representation.
+
+        TODO  Useful for low_code features ?
+        """
+        raise NotImplementedError("Schema reconstruction is not implemented yet")
+
+    def check_list(self) -> CheckList:
+        """
+        Browse all properties and list potential issues.
+
+        Checks performed for each argument :
+        - Is typed in method definition
+        - Schema specific check
+        """
+        issues = CheckList([])
+
+        for attribute in self.attributes:
+            # Is typed
+            issues += self.attribute_is_annotated(attribute)
+
+            # Specific check
+            schema = self.property_schemas[attribute]
+            issues += schema.check_list(attribute)
+        return issues
+
+    def is_valid(self) -> bool:
+        """ Return wether the class definition is valid or not. """
+        return self.check_list().checks_above_level("error")
+
+    def attribute_is_annotated(self, attribute: str) -> PassedCheck:
+        if attribute not in self.annotations:
+            return FailedCheck(f"Attribute {attribute} has no typing")
+        return PassedCheck(f"Attribute '{attribute}' is annotated")
 
 
 class ClassSchema(Schema):
@@ -131,6 +156,15 @@ class ClassSchema(Schema):
         attributes = super().editable_attributes
         return [a for a in attributes if a not in self.class_._non_editable_attributes]
 
+    @classmethod
+    def dict_to_object(cls, dict_):
+        """
+        Build a schema back from its dict representation.
+
+        TODO  Useful for low_code features ?
+        """
+        raise NotImplementedError("Schema reconstruction is not implemented yet")
+
 
 class MethodSchema(Schema):
     """
@@ -146,6 +180,15 @@ class MethodSchema(Schema):
         docstring = method.__doc__
         Schema.__init__(self, annotations=annotations, argspec=members, docstring=docstring)
 
+    @classmethod
+    def dict_to_object(cls, dict_):
+        """
+        Build a schema back from its dict representation.
+
+        TODO  Useful for low_code features ?
+        """
+        raise NotImplementedError("Schema reconstruction is not implemented yet")
+
 
 class Property:
     """ Base class for a schema property. """
@@ -157,18 +200,27 @@ class Property:
         """ Return a reference to itself. Might be overwritten for proxy such as Optional or Annotated. """
         return self
 
-    def write(self, title: str = "", editable: bool = False, description: str = ""):
+    def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write base schema as a dict. """
         return {'title': title, 'editable': editable, 'description': description,
                 'python_typing': dc_types.serialize_typing(self.annotation), "type": None}
 
-    def check(self, attribute: str) -> tp.List[Issue]:
+    @classmethod
+    def dict_to_object(cls, dict_):
+        """
+        Build a schema back from its dict representation.
+
+        TODO  Useful for low_code features ?
+        """
+        raise NotImplementedError("Schema reconstruction is not implemented yet")
+
+    def check_list(self, attribute: str) -> CheckList:
         """
         Check validity of Property Type Hint.
 
         Checks performed : None. TODO ?
         """
-        return []
+        return CheckList([])
 
 
 class TypingProperty(Property):
@@ -186,13 +238,23 @@ class TypingProperty(Property):
         """ Return Typing origin. """
         return tp.get_origin(self.annotation)
 
-    def check(self, attribute: str) -> tp.List[Issue]:
+    @classmethod
+    def dict_to_object(cls, dict_):
         """
-        Check validity of TypingProperty Type Hint.
+        Build a schema back from its dict representation.
 
-        Checks performed : None. TODO ?
+        TODO  Useful for low_code features ?
         """
-        return []
+        raise NotImplementedError("Schema reconstruction is not implemented yet")
+
+    def has_one_arg(self, attribute: str) -> PassedCheck:
+        """ Annotation should have exactly one argument; """
+        if len(self.args) != 1:
+            pretty_origin = prettyname(self.origin.__name__)
+            msg = f"Argument '{attribute}' is typed as a '{pretty_origin}' which requires exactly 1 argument. " \
+                  f"Expected '{pretty_origin}[T]', got '{self.annotation}'."
+            return FailedCheck(msg)
+        return PassedCheck(f"Argument '{attribute}' has exactly one arg in its definition.")
 
 
 class OptionalProperty(TypingProperty):
@@ -210,20 +272,21 @@ class OptionalProperty(TypingProperty):
         """ Return a reference to its only arg. """
         return get_schema(self.args[0])
 
-    def write(self, title: str = "", editable: bool = False, description: str = ""):
+    def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write Optional as a dict. """
         default_value = None
-        chunk = self.schema.write(title=title, editable=editable, description=description)
+        chunk = self.schema.to_dict(title=title, editable=editable, description=description)
         chunk["default_value"] = default_value
         return chunk
 
-    def check(self, attribute: str) -> tp.List[Issue]:
+    @classmethod
+    def dict_to_object(cls, dict_):
         """
-        Check validity of OptionalProperty proxy Type Hint.
+        Build a schema back from its dict representation.
 
-        Checks performed : None TODO ?
+        TODO  Useful for low_code features ?
         """
-        return []
+        raise NotImplementedError("Schema reconstruction is not implemented yet")
 
 
 class AnnotatedProperty(TypingProperty):
@@ -250,11 +313,20 @@ class AnnotatedProperty(TypingProperty):
         """ Return a reference to its only arg. """
         return get_schema(self.args[0])
 
-    def write(self, title: str = "", editable: bool = False, description: str = ""):
+    def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write Annotated as a dict. """
         raise NotImplementedError(self._not_implemented_msg)
 
-    def check(self, attribute: str) -> tp.List[Issue]:
+    @classmethod
+    def dict_to_object(cls, dict_):
+        """
+        Build a schema back from its dict representation.
+
+        TODO  Useful for low_code features ?
+        """
+        raise NotImplementedError("Schema reconstruction is not implemented yet")
+
+    def check_list(self, attribute: str) -> CheckList:
         """
         Check validity of DynamicDict Type Hint.
 
@@ -268,19 +340,20 @@ class BuiltinProperty(Property):
     def __init__(self, annotation: tp.Type):
         super().__init__(annotation=annotation)
 
-    def write(self, title: str = "", editable: bool = False, description: str = ""):
+    def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write Builtin as a dict. """
-        chunk = Property.write(self)
+        chunk = Property.to_dict(self)
         chunk["type"] = dc_types.TYPING_EQUIVALENCES[self.annotation]
         return chunk
 
-    def check(self, attribute: str) -> tp.List[Issue]:
+    @classmethod
+    def dict_to_object(cls, dict_):
         """
-        Check validity of BuiltinProperty Type Hint.
+        Build a schema back from its dict representation.
 
-        Always return no issues
+        TODO  Useful for low_code features ?
         """
-        return []
+        raise NotImplementedError("Schema reconstruction is not implemented yet")
 
 
 class MeasureProperty(BuiltinProperty):
@@ -288,20 +361,29 @@ class MeasureProperty(BuiltinProperty):
     def __init__(self, annotation: tp.Type[Measure]):
         super().__init__(annotation=annotation)
 
-    def write(self, title: str = "", editable: bool = False, description: str = ""):
+    def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write Measure as a dict. """
-        chunk = super().write(title=title, editable=editable, description=description)
+        chunk = super().to_dict(title=title, editable=editable, description=description)
         chunk["si_unit"] = self.annotation.si_unit
         return chunk
 
-    def check(self, attribute: str) -> tp.List[Issue]:
+    @classmethod
+    def dict_to_object(cls, dict_):
+        """
+        Build a schema back from its dict representation.
+
+        TODO  Useful for low_code features ?
+        """
+        raise NotImplementedError("Schema reconstruction is not implemented yet")
+
+    def check_list(self, attribute: str) -> CheckList:
         """
         Check validity of Measure Type Hint.
 
         Checks performed :
         - Cannot be other than float. TODO : Is it possible ?
         """
-        return []
+        return super(MeasureProperty, self).check_list(attribute)
 
 
 class FileProperty(Property):
@@ -309,19 +391,20 @@ class FileProperty(Property):
     def __init__(self, annotation: tp.Type):
         Property.__init__(self, annotation=annotation)
 
-    def write(self, title: str = "", editable: bool = False, description: str = ""):
+    def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write File as a dict. """
-        chunk = super().write(title=title, editable=editable, description=description)
+        chunk = super().to_dict(title=title, editable=editable, description=description)
         chunk.update({'type': 'text', 'is_file': True})
         return chunk
 
-    def check(self, attribute: str) -> tp.List[Issue]:
+    @classmethod
+    def dict_to_object(cls, dict_):
         """
-        Check validity of FileProperty Type Hint.
+        Build a schema back from its dict representation.
 
-        Checks performed : None. TODO ?
+        TODO  Useful for low_code features ?
         """
-        return []
+        raise NotImplementedError("Schema reconstruction is not implemented yet")
 
 
 class CustomClass(Property):
@@ -335,26 +418,38 @@ class CustomClass(Property):
         """ Return a reference to the schema of the annotation. """
         return ClassSchema(self.annotation)
 
-    def write(self, title: str = "", editable: bool = False, description: str = ""):
+    def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write CustomClass as a dict. """
-        chunk = super().write(title=title, editable=editable, description=description)
+        chunk = super().to_dict(title=title, editable=editable, description=description)
         chunk.update({'type': 'object', 'standalone_in_db': self.annotation._standalone_in_db,
                       "classes": [self.classname]})
         return chunk
 
-    def check(self, attribute: str) -> tp.List[Issue]:
+    @classmethod
+    def dict_to_object(cls, dict_):
+        """
+        Build a schema back from its dict representation.
+
+        TODO  Useful for low_code features ?
+        """
+        raise NotImplementedError("Schema reconstruction is not implemented yet")
+
+    def check_list(self, attribute: str) -> CheckList:
         """
         Check validity of user custom class Type Hint.
 
         Checks performed :
         - Is subclass of DessiaObject
         """
-        issues = super().check(attribute)
-        if not issubclass(self.annotation, CoreDessiaObject):
-            issue = {"attribute": attribute, "severity": "error",
-                     "message": f"Class '{self.classname}' is not a subclass of DessiaObject"}
-            issues.append(issue)
+        issues = super(CustomClass, self).check_list(attribute)
+        issues += CheckList([self.is_dessia_object_typed(attribute)])
         return issues
+
+    def is_dessia_object_typed(self, attribute: str) -> PassedCheck:
+        if not issubclass(self.annotation, CoreDessiaObject):
+            return FailedCheck(f"Attribute '{attribute}' : Class '{self.classname}' is not a subclass of DessiaObject")
+        msg = f"Attribute '{attribute}' : Class '{self.classname}' is properly typed as a subclass of DessiaObject"
+        return PassedCheck(msg)
 
 
 class UnionProperty(TypingProperty):
@@ -370,27 +465,44 @@ class UnionProperty(TypingProperty):
         else:
             self.standalone = None
 
-    def write(self, title: str = "", editable: bool = False, description: str = ""):
+    def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write Union as a dict. """
-        chunk = super().write(title=title, editable=editable, description=description)
+        chunk = super().to_dict(title=title, editable=editable, description=description)
         classnames = [dc_types.full_classname(object_=a, compute_for='class') for a in self.args]
         chunk.update({'type': 'object', 'classes': classnames, 'standalone_in_db': self.standalone})
         return chunk
 
-    def check(self, attribute: str) -> tp.List[Issue]:
+    @classmethod
+    def dict_to_object(cls, dict_):
+        """
+        Build a schema back from its dict representation.
+
+        TODO  Useful for low_code features ?
+        """
+        raise NotImplementedError("Schema reconstruction is not implemented yet")
+
+    def check_list(self, attribute: str) -> CheckList:
         """
         Check validity of UnionProperty Type Hint.
 
         Checks performed :
         - Subobject are all standalone or none of them are. TODO : What happen if args are not DessiaObjects ?
         """
-        issues = []
-        standalone_args = [a._standalone_in_db for a in self.args]
-        if not all(standalone_args) and any(standalone_args):
-            issue = {"attribute": attribute, "severity": "error",
-                     "message": f"standalone_in_db values for type '{self.annotation}' are not consistent."}
-            issues.append(issue)
+        issues = super(UnionProperty, self).check_list(attribute)
+        issues += CheckList([self.classes_are_standalone_consistent(attribute)])
         return issues
+
+    def classes_are_standalone_consistent(self, attribute: str) -> PassedCheck:
+        standalone_args = [a._standalone_in_db for a in self.args]
+        if all(standalone_args):
+            msg = f"Attribute '{attribute}' : All arguments of Union type '{self.annotation}' are standalone in db."
+            return PassedCheck(msg)
+        if not any(standalone_args):
+            msg = f"Attribute '{attribute}' : No arguments of Union type '{self.annotation}' are standalone in db."
+            return PassedCheck(msg)
+        msg = f"Attribute '{attribute}' : 'standalone_in_db' values for arguments of Union type '{self.annotation}'" \
+              f"are not consistent. They should be all standalone in db or none of them should."
+        return FailedCheck(msg)
 
 
 class HeterogeneousSequence(TypingProperty):
@@ -404,26 +516,35 @@ class HeterogeneousSequence(TypingProperty):
 
         self.items_schemas = [get_schema(a) for a in self.args]
 
-    def write(self, title: str = "", editable: bool = False, description: str = ""):
+    def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write HeterogeneousSequence as a dict. """
-        chunk = super().write()
-        items = [sp.write() for sp in self.items_schemas]
+        chunk = super().to_dict()
+        items = [sp.to_dict() for sp in self.items_schemas]
         chunk.update({'type': 'array', 'additionalItems': False, 'items': items})
         return chunk
 
-    def check(self, attribute: str) -> tp.List[Issue]:
+    @classmethod
+    def dict_to_object(cls, dict_):
         """
-        Check validity of Tuple Type Hint.
+        Build a schema back from its dict representation.
 
-        Checks performed :
-        - Annotation has at least one argument, one for each element of the tuple
+        TODO  Useful for low_code features ?
         """
-        issues = super().check(attribute)
+        raise NotImplementedError("Schema reconstruction is not implemented yet")
+
+    def check_list(self, attribute: str) -> CheckList:
+        """ Check validity of Tuple Type Hint. """
+        issues = super().check_list(attribute)
+        issues += CheckList([self.has_enough_args(attribute)])
+        return issues
+
+    def has_enough_args(self, attribute) -> PassedCheck:
+        """ Annotation should have at least one argument, one for each element of the tuple. """
         if len(self.args) == 0:
             msg = f"Attribute '{attribute}' is typed as a 'Tuple' which requires at least 1 argument. " \
                   f"Expected 'Tuple[T0, T1, ..., Tn]', got '{self.annotation}'."
-            issues.append({"attribute": attribute, "severity": "error", "message": msg})
-        return issues
+            return FailedCheck(msg)
+        return PassedCheck(f"Attribute '{attribute}' has several arguments : '{self.annotation}'")
 
 
 class HomogeneousSequence(TypingProperty):
@@ -437,28 +558,29 @@ class HomogeneousSequence(TypingProperty):
 
         self.items_schemas = [get_schema(a) for a in self.args]
 
-    def write(self, title: str = "", editable: bool = False, description: str = ""):
+    def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write HomogeneousSequence as a dict. """
         if not title:
             title = 'Items'
-        chunk = super().write(title=title, editable=editable, description=description)
-        items_schemas = [sp.write(title=title, editable=editable, description=description) for sp in self.items_schemas]
+        chunk = super().to_dict(title=title, editable=editable, description=description)
+        items_schemas = [sp.to_dict(title=title, editable=editable, description=description) for sp in self.items_schemas]
         chunk.update({'type': 'array', 'python_typing': dc_types.serialize_typing(self.annotation),
                       "items": items_schemas})
         return chunk
 
-    def check(self, attribute: str) -> tp.List[Issue]:
+    @classmethod
+    def dict_to_object(cls, dict_):
         """
-        Check validity of List Type Hint.
+        Build a schema back from its dict representation.
 
-        Checks performed :
-        - Annotation has exactly one argument, which is the type of all the element of the list.
+        TODO  Useful for low_code features ?
         """
-        issues = super().check(attribute)
-        if len(self.args) != 1:
-            msg = f"Argument '{attribute}' is typed as a 'List' which requires exactly 1 argument. " \
-                  f"Expected 'List[T]', got '{self.annotation}'."
-            issues.append({"attribute": attribute, "severity": "error", "message": msg})
+        raise NotImplementedError("Schema reconstruction is not implemented yet")
+
+    def check_list(self, attribute: str) -> CheckList:
+        """ Check validity of List Type Hint. """
+        issues = super().check_list(attribute)
+        issues += CheckList([self.has_one_arg(attribute)])
         return issues
 
 
@@ -472,7 +594,7 @@ class DynamicDict(TypingProperty):
     def __init__(self, annotation: tp.Type):
         super().__init__(annotation=annotation)
 
-    def write(self, title: str = "", editable: bool = False, description: str = ""):
+    def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write DynamicDict as a dict. """
         key_type, value_type = self.args
         if key_type != str:
@@ -480,7 +602,7 @@ class DynamicDict(TypingProperty):
             raise NotImplementedError('Non strings keys not supported')
         if value_type not in dc_types.TYPING_EQUIVALENCES:
             raise ValueError(f'Dicts should have only builtins keys and values, got {value_type}')
-        chunk = super().write(title=title, editable=editable, description=description)
+        chunk = super().to_dict(title=title, editable=editable, description=description)
         chunk.update({'type': 'object',
                       'patternProperties': {
                           '.*': {
@@ -489,34 +611,49 @@ class DynamicDict(TypingProperty):
                       }})
         return chunk
 
-    def check(self, attribute: str) -> tp.List[Issue]:
+    @classmethod
+    def dict_to_object(cls, dict_):
         """
-        Check validity of DynamicDict Type Hint.
+        Build a schema back from its dict representation.
 
-        Checks performed :
-        - Annotation as exactly two arguments, first one for keys, second one for values
-        - Key Type is str
-        - Value Type is simple
+        TODO  Useful for low_code features ?
         """
-        issues = super().check(attribute)
-        key_type, value_type = self.args
+        raise NotImplementedError("Schema reconstruction is not implemented yet")
+
+    def check_list(self, attribute: str) -> CheckList:
+        """ Check validity of DynamicDict Type Hint. """
+        issues = super(DynamicDict, self).check_list(attribute)
+        checks = [self.has_two_args(attribute), self.has_string_keys(attribute), self.has_string_keys(attribute)]
+        issues += CheckList(checks)
+        return issues
+
+    def has_two_args(self, attribute: str) -> PassedCheck:
+        """ Annotation should have exactly two arguments, first one for keys, second one for values"""
         if len(self.args) != 2:
             msg = f"Argument '{attribute}' is typed as a 'Dict' which requires exactly 2 arguments. " \
                   f"Expected 'Dict[KeyType, ValueType]', got '{self.annotation}'."
-            issues.append({"attribute": attribute, "severity": "error", "message": msg})
+            return FailedCheck(msg)
+        return PassedCheck(f"Attribute '{attribute}' has two args in its defintion : '{self.annotation}'.")
 
+    def has_string_keys(self, attribute):
+        """ Key Type should be str"""
+        key_type, value_type = self.args
         if not isinstance(key_type, str):
             # Should we support other types ? Numeric ?
             msg = f"Argument '{attribute}' is typed as a 'Dict[{key_type}, {value_type}]' " \
                   f"which requires str as its key type. Expected 'Dict[str, ValueType]', got '{self.annotation}'."
-            issues.append({"attribute": attribute, "severity": "error", "message": msg})
+            return FailedCheck(msg)
+        return PassedCheck(f"Attribute '{attribute}' has str keys : '{self.annotation}'.")
 
+    def has_simple_values(self, attribute):
+        """ Value Type should be simple. """
+        key_type, value_type = self.args
         if value_type not in dc_types.TYPING_EQUIVALENCES:
             msg = f"Argument '{attribute}' is typed as a 'Dict[{key_type}, {value_type}]' " \
                   f"which requires a builtin type as its value type. " \
                   f"Expected 'int', 'float', 'bool' or 'str', got '{value_type}'"
-            issues.append({"attribute": attribute, "severity": "error", "message": msg})
-        return issues
+            return FailedCheck(msg)
+        return PassedCheck(f"Attribute '{attribute}' has simple values : '{self.annotation}'")
 
 
 class InstanceOfProperty(TypingProperty):
@@ -529,26 +666,27 @@ class InstanceOfProperty(TypingProperty):
     def __init__(self, annotation: tp.Type):
         super().__init__(annotation=annotation)
 
-    def write(self, title: str = "", editable: bool = False, description: str = ""):
+    def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write InstanceOf as a dict. """
-        chunk = super().write(title=title, editable=editable, description=description)
+        chunk = super().to_dict(title=title, editable=editable, description=description)
         class_ = self.args[0]
         classname = dc_types.full_classname(object_=class_, compute_for='class')
         chunk.update({'type': 'object', 'instance_of': classname, 'standalone_in_db': class_._standalone_in_db})
         return chunk
 
-    def check(self, attribute: str) -> tp.List[Issue]:
+    @classmethod
+    def dict_to_object(cls, dict_):
         """
-        Check validity of InstanceOf Type Hint.
+        Build a schema back from its dict representation.
 
-        Checks performed :
-        - Annotation has exactly one argument, which is the type of the base class.
+        TODO  Useful for low_code features ?
         """
-        issues = super().check(attribute)
-        if len(self.args) != 1:
-            msg = f"Argument '{attribute}' is typed as a 'InstanceOf' which requires exactly 1 argument. " \
-                  f"Expected 'InstanceOf[T]', got '{self.annotation}'."
-            issues.append({"attribute": attribute, "severity": "error", "message": msg})
+        raise NotImplementedError("Schema reconstruction is not implemented yet")
+
+    def check_list(self, attribute: str) -> CheckList:
+        """ Check validity of InstanceOf Type Hint. """
+        issues = super(InstanceOfProperty, self).check_list(attribute)
+        issues += CheckList([self.has_one_arg(attribute)])
         return issues
 
 
@@ -562,22 +700,28 @@ class SubclassProperty(TypingProperty):
     def __init__(self, annotation: tp.Type):
         super().__init__(annotation=annotation)
 
-    def write(self, title: str = "", editable: bool = False, description: str = ""):
+    def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write Subclass as a dict. """
         raise NotImplementedError("Subclass is not implemented yet")
 
-    def check(self, attribute: str) -> tp.List[Issue]:
+    @classmethod
+    def dict_to_object(cls, dict_):
+        """
+        Build a schema back from its dict representation.
+
+        TODO  Useful for low_code features ?
+        """
+        raise NotImplementedError("Schema reconstruction is not implemented yet")
+
+    def check_list(self, attribute: str) -> CheckList:
         """
         Check validity of Subclass Type Hint.
 
         Checks performed :
         - Annotation has exactly one argument, which is the type of the base class.
         """
-        issues = super().check(attribute)
-        if len(self.args) != 1:
-            msg = f"Argument '{attribute}' is typed as a 'Subclass' which requires exactly 1 argument. " \
-                  f"Expected 'Subclass[T]', got '{self.annotation}'."
-            issues.append({"attribute": attribute, "severity": "error", "message": msg})
+        issues = super(SubclassProperty, self).check_list(attribute)
+        issues += CheckList([self.has_one_arg(attribute)])
         return issues
 
 
@@ -593,9 +737,9 @@ class MethodTypeProperty(TypingProperty):
         self.class_ = self.args[0]
         self.class_schema = get_schema(self.class_)
 
-    def write(self, title: str = "", editable: bool = False, description: str = ""):
+    def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write MethodType as a dict. """
-        chunk = super().write(title=title, editable=editable, description=description)
+        chunk = super().to_dict(title=title, editable=editable, description=description)
         classmethod_ = self.origin is ClassMethodType
         chunk.update({
             'type': 'object', 'is_method': True, 'classmethod_': classmethod_,
@@ -608,14 +752,23 @@ class MethodTypeProperty(TypingProperty):
         })
         return chunk
 
-    def check(self, attribute: str) -> tp.List[Issue]:
+    @classmethod
+    def dict_to_object(cls, dict_):
+        """
+        Build a schema back from its dict representation.
+
+        TODO  Useful for low_code features ?
+        """
+        raise NotImplementedError("Schema reconstruction is not implemented yet")
+
+    def check_list(self, attribute: str) -> CheckList:
         """
         Check validity of MethodType Type Hint.
 
         Checks performed :
         - Class has method TODO
         """
-        return []
+        return CheckList([])
 
 
 class ClassProperty(TypingProperty):
@@ -627,24 +780,30 @@ class ClassProperty(TypingProperty):
     def __init__(self, annotation: tp.Type):
         super().__init__(annotation=annotation)
 
-    def write(self, title: str = "", editable: bool = False, description: str = ""):
+    def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write Class as a dict. """
-        chunk = super().write(title=title, editable=editable, description=description)
+        chunk = super().to_dict(title=title, editable=editable, description=description)
         chunk.update({'type': 'object', 'is_class': True, 'properties': {'name': {'type': 'string'}}})
         return chunk
 
-    def check(self, attribute: str) -> tp.List[Issue]:
+    @classmethod
+    def dict_to_object(cls, dict_):
+        """
+        Build a schema back from its dict representation.
+
+        TODO  Useful for low_code features ?
+        """
+        raise NotImplementedError("Schema reconstruction is not implemented yet")
+
+    def check_list(self, attribute: str) -> CheckList:
         """
         Check validity of Class Type Hint.
 
         Checks performed :
         - Annotation has exactly 1 argument
         """
-        issues = super().check(attribute)
-        if len(self.args) != 1:
-            msg = f"Argument '{attribute}' is typed as a 'Type' which requires exactly 1 argument." \
-                  f"Expected 'Type[T]', got '{self.annotation}'."
-            issues.append({"attribute": attribute, "severity": "error", "message": msg})
+        issues = super(ClassProperty, self).check_list(attribute)
+        issues += CheckList([self.has_one_arg(attribute)])
         return issues
 
 
