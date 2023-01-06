@@ -22,12 +22,18 @@ class PassedCheck(SerializableObject):
     def __repr__(self):
         return f'[{self.level}]: {self.__class__.__name__} {self.message}'
 
+    def copy(self):
+        raise NotImplementedError("Method copy is not implemented for Checks.")
+
 
 class CheckWarning(PassedCheck):
     """
     Represents a check warning.
     """
     level = 'warning'
+
+    def copy(self):
+        raise NotImplementedError("Method copy is not implemented for Checks.")
 
 
 class FailedCheck(PassedCheck):
@@ -36,17 +42,26 @@ class FailedCheck(PassedCheck):
     """
     level = 'error'
 
+    def copy(self):
+        raise NotImplementedError("Method copy is not implemented for Checks.")
+
 
 class BadType(FailedCheck):
     """
     Represents a failed check due to a bad type.
     """
 
+    def copy(self):
+        raise NotImplementedError("Method copy is not implemented for Checks.")
+
 
 class GeometricInconsistance(FailedCheck):
     """
     Represents a failed check due to a geometric inconsistency.
     """
+
+    def copy(self):
+        raise NotImplementedError("Method copy is not implemented for Checks.")
 
 
 class CheckList(SerializableObject):
@@ -76,6 +91,9 @@ class CheckList(SerializableObject):
     def raise_if_above_level(self, level='error'):
         for check in self.checks_above_level(level=level):
             raise ValueError(f'Check: {check} is above level "{level}"')
+
+    def copy(self):
+        raise NotImplementedError("Method copy is not implemented for Checks.")
 
 
 def is_int(value, level='error'):

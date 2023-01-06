@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Hot fix for is_valid method of workflow's Block
 
+### Refactor
+
+- Move ./utils/serialization to ./serialization to avoid cyclic-imports
+
 ### CI
 
 - add a check to enforce update of changelog in PR
