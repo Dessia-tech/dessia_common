@@ -27,19 +27,19 @@ from ast import literal_eval
 # from dessia_common.abstract import CoreDessiaObject
 import dessia_common.errors
 from dessia_common.utils.diff import data_eq, diff, dict_hash, list_hash
-from dessia_common.utils.serialization import deserialize_argument, serialize
+import dessia_common.utils.serialization as dcus
 from dessia_common.utils.types import full_classname, is_sequence, is_bson_valid, TYPES_FROM_STRING
 from dessia_common.utils.copy import deepcopy_value
 from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotation, JSONSCHEMA_HEADER
 import dessia_common.schemas.core as schemas
 from dessia_common.utils.docstrings import parse_docstring, FAILED_DOCSTRING_PARSING
 
-from dessia_common.base import SerializableObject
+import dessia_common.base as dcb
 from dessia_common.exports import XLSXWriter, MarkdownWriter, ExportFormat
 
 from dessia_common.typings import JsonSerializable
 from dessia_common import templates
-from dessia_common.checks import CheckList, FailedCheck
+import dessia_common.checks as dcc
 from dessia_common.displays import DisplayObject, DisplaySetting
 from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
 import dessia_common.utils.helpers as dch
@@ -85,7 +85,7 @@ def deprecation_warning(name, object_type, use_instead=None):
     return msg
 
 
-class DessiaObject(SerializableObject):
+class DessiaObject(dcb.SerializableObject):
     """
     Base class for Dessia's platform compatible objects.
 
@@ -155,7 +155,7 @@ class DessiaObject(SerializableObject):
             setattr(self, property_name, property_value)
 
     def base_dict(self):
-        dict_ = SerializableObject.base_dict(self)
+        dict_ = dcb.SerializableObject.base_dict(self)
         dict_['name'] = self.name
         return dict_
 
@@ -398,7 +398,7 @@ class DessiaObject(SerializableObject):
                 arg_specs = args_specs.annotations[arg]
                 value = dict_[str(i)]
                 try:
-                    deserialized_value = deserialize_argument(arg_specs, value)
+                    deserialized_value = dcus.deserialize_argument(arg_specs, value)
                 except TypeError as err:
                     msg = 'Error in deserialisation of value: '
                     msg += f'{value} of expected type {arg_specs}'
@@ -443,8 +443,8 @@ class DessiaObject(SerializableObject):
 
         return cls.dict_to_object(dict_)
 
-    def check_list(self, level='error'):
-        check_list = CheckList([])
+    def check_list(self, level='error') -> dcc.CheckList:
+        check_list = dcc.CheckList([])
 
         check_list += self._check_platform(level=level)
 
@@ -462,7 +462,7 @@ class DessiaObject(SerializableObject):
 
         return check_list
 
-    def is_valid(self, level='error'):
+    def is_valid(self, level: str = 'error') -> bool:
         return not self.check_list().checks_above_level(level=level)
 
     def copy(self, deep=True, memo=None):
@@ -571,7 +571,7 @@ class DessiaObject(SerializableObject):
             track = tb.format_exc()
 
         if display_setting.serialize_data:
-            data = serialize(data)
+            data = dcus.serialize(data)
         return DisplayObject(type_=display_setting.type, data=data, reference_path=reference_path, traceback=track)
 
     def _display_settings_from_selector(self, selector: str):
@@ -644,25 +644,25 @@ class DessiaObject(SerializableObject):
             print('data diff: ', self._data_diff(deserialized_object))
             # raise dessia_common.errors.DeserializationError('Object is not equal to itself'
             #                                                 ' after serialization/deserialization')
-            checks.append(FailedCheck('Object is not equal to itself after serialization/deserialization'))
+            checks.append(dcc.FailedCheck('Object is not equal to itself after serialization/deserialization'))
         copied_object = self.copy()
         if not copied_object._data_eq(self):
             try:
                 print('data diff: ', self._data_diff(copied_object))
             except:
                 pass
-            checks.append(FailedCheck('Object is not equal to itself after serialization/deserialization'))
+            checks.append(dcc.FailedCheck('Object is not equal to itself after serialization/deserialization'))
             # raise dessia_common.errors.CopyError('Object is not equal to itself after copy')
 
         valid, hint = is_bson_valid(stringify_dict_keys(dict_))
         if not valid:
             # raise ValueError(hint)
-            checks.append(FailedCheck(f'Object is not bson valid {hint}'))
+            checks.append(dcc.FailedCheck(f'Object is not bson valid {hint}'))
 
         json.dumps(self._displays())
         json.dumps(self._method_jsonschemas)
 
-        return CheckList(checks)
+        return dcc.CheckList(checks)
 
     def to_xlsx(self, filepath: str):
         """

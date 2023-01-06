@@ -15,17 +15,13 @@ from dessia_common.measures import Measure
 from dessia_common.utils.docstrings import parse_docstring, FAILED_DOCSTRING_PARSING, FAILED_ATTRIBUTE_PARSING
 from dessia_common.utils.helpers import prettyname
 from dessia_common.schemas.interfaces import Annotations
-from dessia_common.checks import CheckList, CheckWarning, FailedCheck, PassedCheck
+from dessia_common.checks import CheckList, FailedCheck, PassedCheck
 
 SCHEMA_HEADER = {"definitions": {}, "$schema": "http://json-schema.org/d_raft-07/schema#",
                  "type": "object", "required": [], "properties": {}}
 RESERVED_ARGNAMES = ['self', 'cls', 'progress_callback', 'return']
 
-Issue = tp.TypedDict("Issue", {"attribute": str, "severity": str, "message": str})
-
 _fullargsspec_cache = {}
-
-# DessiaObjectType = tp.TypeVar("DessiaObjectType", bound=CoreDessiaObject)
 
 
 class Schema:
@@ -56,6 +52,8 @@ class Schema:
         self.parsed_attributes = self.parsed_docstring['attributes']
 
         self.required_arguments, self.default_arguments = split_default_args(argspec=argspec, merge=False)
+
+        self.check_list().raise_if_above_level("error")
 
     @property
     def editable_attributes(self):
@@ -342,7 +340,7 @@ class BuiltinProperty(Property):
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write Builtin as a dict. """
-        chunk = Property.to_dict(self)
+        chunk = super(BuiltinProperty, self).to_dict(title=title, editable=editable, description=description)
         chunk["type"] = dc_types.TYPING_EQUIVALENCES[self.annotation]
         return chunk
 
@@ -363,8 +361,8 @@ class MeasureProperty(BuiltinProperty):
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write Measure as a dict. """
-        chunk = super().to_dict(title=title, editable=editable, description=description)
-        chunk["si_unit"] = self.annotation.si_unit
+        chunk = Property.to_dict(self, title=title, editable=editable, description=description)
+        chunk.update({"si_unit": self.annotation.si_unit, "type": "number"})
         return chunk
 
     @classmethod
@@ -420,7 +418,7 @@ class CustomClass(Property):
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write CustomClass as a dict. """
-        chunk = super().to_dict(title=title, editable=editable, description=description)
+        chunk = super(CustomClass, self).to_dict(title=title, editable=editable, description=description)
         chunk.update({'type': 'object', 'standalone_in_db': self.annotation._standalone_in_db,
                       "classes": [self.classname]})
         return chunk
@@ -467,7 +465,7 @@ class UnionProperty(TypingProperty):
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write Union as a dict. """
-        chunk = super().to_dict(title=title, editable=editable, description=description)
+        chunk = super(UnionProperty, self).to_dict(title=title, editable=editable, description=description)
         classnames = [dc_types.full_classname(object_=a, compute_for='class') for a in self.args]
         chunk.update({'type': 'object', 'classes': classnames, 'standalone_in_db': self.standalone})
         return chunk
@@ -514,12 +512,12 @@ class HeterogeneousSequence(TypingProperty):
     def __init__(self, annotation: tp.Type):
         super().__init__(annotation=annotation)
 
-        self.items_schemas = [get_schema(a) for a in self.args]
+        self.item_schemas = [get_schema(a) for a in self.args]
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write HeterogeneousSequence as a dict. """
-        chunk = super().to_dict()
-        items = [sp.to_dict() for sp in self.items_schemas]
+        chunk = super(HeterogeneousSequence, self).to_dict(title=title, editable=editable, description=description)
+        items = [sp.to_dict() for sp in self.item_schemas]
         chunk.update({'type': 'array', 'additionalItems': False, 'items': items})
         return chunk
 
@@ -556,16 +554,16 @@ class HomogeneousSequence(TypingProperty):
     def __init__(self, annotation: tp.Type):
         super().__init__(annotation=annotation)
 
-        self.items_schemas = [get_schema(a) for a in self.args]
+        self.item_schemas = [get_schema(a) for a in self.args]
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write HomogeneousSequence as a dict. """
         if not title:
             title = 'Items'
-        chunk = super().to_dict(title=title, editable=editable, description=description)
-        items_schemas = [sp.to_dict(title=title, editable=editable, description=description) for sp in self.items_schemas]
+        chunk = super(HomogeneousSequence, self).to_dict(title=title, editable=editable, description=description)
+        items = [sp.to_dict(title=title, editable=editable, description=description) for sp in self.item_schemas]
         chunk.update({'type': 'array', 'python_typing': dc_types.serialize_typing(self.annotation),
-                      "items": items_schemas})
+                      "items": items[0]})
         return chunk
 
     @classmethod
@@ -602,7 +600,7 @@ class DynamicDict(TypingProperty):
             raise NotImplementedError('Non strings keys not supported')
         if value_type not in dc_types.TYPING_EQUIVALENCES:
             raise ValueError(f'Dicts should have only builtins keys and values, got {value_type}')
-        chunk = super().to_dict(title=title, editable=editable, description=description)
+        chunk = super(DynamicDict, self).to_dict(title=title, editable=editable, description=description)
         chunk.update({'type': 'object',
                       'patternProperties': {
                           '.*': {
@@ -668,7 +666,7 @@ class InstanceOfProperty(TypingProperty):
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write InstanceOf as a dict. """
-        chunk = super().to_dict(title=title, editable=editable, description=description)
+        chunk = super(InstanceOfProperty, self).to_dict(title=title, editable=editable, description=description)
         class_ = self.args[0]
         classname = dc_types.full_classname(object_=class_, compute_for='class')
         chunk.update({'type': 'object', 'instance_of': classname, 'standalone_in_db': class_._standalone_in_db})
@@ -739,12 +737,12 @@ class MethodTypeProperty(TypingProperty):
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write MethodType as a dict. """
-        chunk = super().to_dict(title=title, editable=editable, description=description)
+        chunk = super(MethodTypeProperty, self).to_dict(title=title, editable=editable, description=description)
         classmethod_ = self.origin is ClassMethodType
         chunk.update({
             'type': 'object', 'is_method': True, 'classmethod_': classmethod_,
             'properties': {
-                'class_': self.class_schema,
+                'class_': self.class_schema.to_dict(title=title, editable=editable, description=description),
                 'name': {
                     'type': 'string'
                 }
@@ -782,7 +780,7 @@ class ClassProperty(TypingProperty):
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write Class as a dict. """
-        chunk = super().to_dict(title=title, editable=editable, description=description)
+        chunk = super(ClassProperty, self).to_dict(title=title, editable=editable, description=description)
         chunk.update({'type': 'object', 'is_class': True, 'properties': {'name': {'type': 'string'}}})
         return chunk
 

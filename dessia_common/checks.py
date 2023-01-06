@@ -5,6 +5,7 @@ General checks & checklists.
 """
 
 from dessia_common.base import SerializableObject
+from typing import List
 
 
 LEVEL_TO_INT = {'debug': 0, 'info': 1, 'warning': 2, 'error': 3}
@@ -54,7 +55,7 @@ class CheckList(SerializableObject):
     A list of checks result.
     """
 
-    def __init__(self, checks):
+    def __init__(self, checks: List[PassedCheck]):
         self.checks = checks
 
     def __repr__(self):
@@ -63,22 +64,28 @@ class CheckList(SerializableObject):
             rep += f'Check {check_idx+1}: {check}\n'
         return rep
 
-    def __add__(self, other_checklist):
+    def __add__(self, other_checklist: 'CheckList'):
         return self.__class__(self.checks + other_checklist.checks)
 
-    def checks_above_level(self, level='error'):
+    def __len__(self):
+        return len(self.checks)
+
+    def __getitem__(self, item: int):
+        return self.checks[item]
+
+    def checks_above_level(self, level: str = 'error'):
         checks = []
         for check in self.checks:
             if LEVEL_TO_INT[check.level] >= LEVEL_TO_INT[level]:
                 checks.append(check)
         return checks
 
-    def raise_if_above_level(self, level='error'):
+    def raise_if_above_level(self, level: str = 'error'):
         for check in self.checks_above_level(level=level):
             raise ValueError(f'Check: {check} is above level "{level}"')
 
 
-def is_int(value, level='error'):
+def is_int(value, level: str = 'error'):
     """
     Returns if value is a int.
     """
@@ -89,7 +96,7 @@ def is_int(value, level='error'):
     return CheckList([])
 
 
-def is_float(value, level='error'):
+def is_float(value, level: str = 'error'):
     """
     Returns if value is a float.
     """
@@ -100,7 +107,7 @@ def is_float(value, level='error'):
     return CheckList([])
 
 
-def is_str(value, level='error'):
+def is_str(value, level: str = 'error'):
     """
     Returns if value is a str.
     """
@@ -111,7 +118,7 @@ def is_str(value, level='error'):
     return CheckList([])
 
 
-def type_check(value, expected_type, level='error'):
+def type_check(value, expected_type, level: str = 'error'):
     """
     Type check the value against the expected type.
 
