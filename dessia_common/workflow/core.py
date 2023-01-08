@@ -2186,6 +2186,39 @@ class WorkflowRun(WorkflowState):
         jsonschemas['run_again']['classes'] = ["dessia_common.workflow.WorkflowRun"]
         return jsonschemas
 
+    def to_script(self):
+        """
+        Computes a script representing the workflowrun.
+        """
+        workflow_script = self.workflow.to_script()
+        input_str = ""
+        default_value = ""
+        for j, block in enumerate(self.workflow.blocks):
+            for i, input in enumerate(block.inputs):
+                if not input.has_default_value and not ('block_' + str(j) + '.inputs' + '[' + str(i) + ']') in workflow_script:
+                    input_str += f"workflow.input_index({('block_' + str(j) + '.inputs' + '[' + str(i) + ']')}): value_{str(j)},\n"
+                    default_value += f"\nvalue_{j} = 0"
+        input_str = workflow_script + "\n" + default_value + "\ninput_values = {" + input_str + "}"
+        return input_str + "\n" + "\nworkflow_run = workflow.run(input_values=input_values)"
+
+    def save_script_to_stream(self, stream: io.StringIO):
+        """
+        Save the workflowrun to a python script to a stream
+        """
+        string = self.to_script()
+        stream.seek(0)
+        stream.write(string)
+
+    def save_script_to_file(self, filename: str):
+        """
+        Save the workflowrun to a python script to a file on the disk
+        """
+        if not filename.endswith('.py'):
+            filename += '.py'
+            print(f'Changing filename to {filename}')
+        with open(filename, 'w', encoding='utf-8') as file:
+            self.save_script_to_stream(file)
+
 
 def initialize_workflow(dict_, global_dict, pointers_memo) -> Workflow:
     blocks = [deserialize(serialized_element=d, global_dict=global_dict, pointers_memo=pointers_memo)
