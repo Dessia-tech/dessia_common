@@ -2196,8 +2196,8 @@ class WorkflowRun(WorkflowState):
         for j, block in enumerate(self.workflow.blocks):
             for i, input in enumerate(block.inputs):
                 if not input.has_default_value and not ('block_' + str(j) + '.inputs' + '[' + str(i) + ']') in workflow_script:
-                    input_str += f"workflow.input_index({('block_' + str(j) + '.inputs' + '[' + str(i) + ']')}): value_{str(j)},\n"
-                    default_value += f"\nvalue_{j} = 0"
+                    input_str += f"workflow.input_index({('block_' + str(j) + '.inputs' + '[' + str(i) + ']')}): value_{str(j) + '_' + str(i)},\n"
+                    default_value += f"\nvalue_{j}_{i} = 0"
         input_str = workflow_script + "\n" + default_value + "\ninput_values = {" + input_str + "}"
         return input_str + "\n" + "\nworkflow_run = workflow.run(input_values=input_values)"
 
