@@ -78,9 +78,8 @@ def is_jsonable(obj):
 
 def is_serializable(obj):
     """ Return True if object is deeply serializable as Dessia's standards, else False. """
-    warnings.warn("is_serializable has been moved to module serialization.py. Please use this one instead",
-                  DeprecationWarning)
-    return dcs.is_serializable(obj)
+    msg = "Function is_serializable has been moved to module serialization.py. Please use this one instead."
+    raise NotImplementedError(msg)
 
 
 def is_sequence(obj):
