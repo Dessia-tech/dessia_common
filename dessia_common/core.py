@@ -145,6 +145,7 @@ class DessiaObject(SerializableObject):
             setattr(self, property_name, property_value)
 
     def base_dict(self):
+        """ Base dictn of the object, with just its name. """
         dict_ = SerializableObject.base_dict(self)
         dict_['name'] = self.name
         return dict_
@@ -184,6 +185,7 @@ class DessiaObject(SerializableObject):
         return data_eq(self, other_object)
 
     def _data_hash(self):
+        """ Generic computation of hash based on data. """
         hash_ = 0
         forbidden_keys = (self._non_data_eq_attributes + self._non_data_hash_attributes + ['package_version', 'name'])
         for key, value in self._serializable_dict().items():
