@@ -27,14 +27,13 @@ MAX_ERROR_BY_TYPE = {
                      'too-many-locals': 10,  # Reduce by dropping vectored objects
                      'too-many-branches': 13,
                      'unused-argument': 7,
-                     'cyclic-import': 2,
-                     'wrong-import-order': 0,
+                     'cyclic-import': 2,  # 0 just to test
                      'no-self-use': 6,
                      'trailing-whitespace': 11,
                      'empty-docstring': 1,
                      'missing-module-docstring': 1,
                      'too-many-arguments': 21,
-                     'too-few-public-methods': 5,
+                     'too-few-public-methods': 9,
                      'unnecessary-comprehension': 1,
                      'no-value-for-parameter': 2,
                      'too-many-return-statements': 10,

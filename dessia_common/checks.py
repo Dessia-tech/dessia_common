@@ -4,13 +4,10 @@
 General checks & checklists.
 """
 
-from dessia_common.serialization import SerializableObject
-
-
 LEVEL_TO_INT = {'debug': 0, 'info': 1, 'warning': 2, 'error': 3}
 
 
-class PassedCheck(SerializableObject):
+class PassedCheck:
     """
     Represents the result of a check that has no error.
     """
@@ -49,7 +46,7 @@ class GeometricInconsistance(FailedCheck):
     """
 
 
-class CheckList(SerializableObject):
+class CheckList:
     """
     A list of checks result.
     """

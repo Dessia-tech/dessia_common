@@ -67,7 +67,11 @@ def deserialize(serialized_element, sequence_annotation: str = 'List', global_di
 
 
 def deserialize_sequence(sequence, annotation=None, global_dict=None, pointers_memo=None, path='#'):
-    """ Deserialization function for sequences (tuple + list). """
+    """
+    Deserialization function for sequences (tuple + list).
+
+    :param path: the path of the sequence in the global dict. Used to search in the pointer memo.
+    """
     warnings.warn("Module serialization.py have been moved outside utils. Please use it instead")
     return dcs.deserialize_sequence(sequence=sequence, annotation=annotation, global_dict=global_dict,
                                     pointers_memo=pointers_memo, path=path)
@@ -158,9 +162,7 @@ def pointer_graph(value):
 
 
 def update_pointers_data(global_dict, current_dict, pointers_memo):
-    """
-    Update data dict from pointer.
-    """
+    """ Update data dict from pointer. """
     warnings.warn("Module serialization.py have been moved outside utils. Please use it instead")
     return dcs.update_pointers_data(global_dict=global_dict, current_dict=current_dict, pointers_memo=pointers_memo)
 

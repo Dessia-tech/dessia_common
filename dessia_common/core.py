@@ -118,6 +118,7 @@ class DessiaObject(SerializableObject):
             setattr(self, property_name, property_value)
 
     def base_dict(self):
+        """ Base dict of the object, with just its name. """
         dict_ = SerializableObject.base_dict(self)
         dict_['name'] = self.name
         return dict_
@@ -157,6 +158,7 @@ class DessiaObject(SerializableObject):
         return data_eq(self, other_object)
 
     def _data_hash(self):
+        """ Generic computation of hash based on data. """
         hash_ = 0
         forbidden_keys = (self._non_data_eq_attributes + self._non_data_hash_attributes + ['package_version', 'name'])
         for key, value in self._serializable_dict().items():
@@ -362,6 +364,7 @@ class DessiaObject(SerializableObject):
             self.save_to_stream(file, indent=indent)
 
     def save_to_stream(self, stream, indent: int = 2):
+        """ Write object to a stream. Default is to_dict, as a text like stream. """
         try:
             dict_ = self.to_dict(use_pointers=True)
         except TypeError:
@@ -371,7 +374,11 @@ class DessiaObject(SerializableObject):
 
     @classmethod
     def load_from_stream(cls, stream):
-        """ Generate object from stream using utf-8 encoding. """
+        """
+        Generate object from stream using utf-8 encoding.
+
+        Should be consistent with save_to_stream method.
+        """
         dict_ = json.loads(stream.read().decode('utf-8'))
         return cls.dict_to_object(dict_)
 
@@ -387,10 +394,12 @@ class DessiaObject(SerializableObject):
 
         return cls.dict_to_object(dict_)
 
-    def check_list(self, level='error'):
+    def check_list(self, level: str = 'error', check_platform: bool = True):
+        """ Return a list of potential info, warning and issues on the instance, that might be user custom. """
         check_list = CheckList([])
 
-        check_list += self._check_platform(level=level)
+        if check_platform:
+            check_list += self._check_platform(level=level)
 
         # Type checking: not ready yet
         # class_argspec = inspect.getfullargspec(self.__class__)
@@ -407,6 +416,9 @@ class DessiaObject(SerializableObject):
         return check_list
 
     def is_valid(self, level='error'):
+        """
+        Return whether the object of valid 'above' given level. Default is error, but warnings can be forbidden.
+        """
         return not self.check_list().checks_above_level(level=level)
 
     def copy(self, deep: bool = True, memo=None):
@@ -457,6 +469,11 @@ class DessiaObject(SerializableObject):
         return self.__class__(**dict_)
 
     def plot_data(self, **kwargs):
+        """
+        Base plot_data method. Overwrite this to display 2D or graphs on plateforme.
+
+        Should return a list of plot_data's objects.
+        """
         return []
 
     def plot(self, **kwargs):
@@ -469,8 +486,8 @@ class DessiaObject(SerializableObject):
                                       width=1400, height=900,
                                       debug_mode=False)
         else:
-            msg = 'Class {} does not implement a plot_data method to define what to plot'
-            raise NotImplementedError(msg.format(self.__class__.__name__))
+            msg = f"Class '{self.__class__.__name__}' does not implement a plot_data method to define what to plot"
+            raise NotImplementedError(msg)
 
     def mpl_plot(self, **kwargs):
         """ Plot with matplotlib using plot_data function. """
@@ -485,8 +502,8 @@ class DessiaObject(SerializableObject):
                     ax = data.mpl_plot()
                     axs.append(ax)
         else:
-            msg = 'Class {} does not implement a plot_data method to define what to plot'
-            raise NotImplementedError(msg.format(self.__class__.__name__))
+            msg = f"Class '{self.__class__.__name__}' does not implement a plot_data method to define what to plot"
+            raise NotImplementedError(msg)
 
         return axs
 
@@ -513,6 +530,7 @@ class DessiaObject(SerializableObject):
         return DisplayObject(type_=display_setting.type, data=data, reference_path=reference_path, traceback=track)
 
     def _display_settings_from_selector(self, selector: str):
+        """ Get display settings from given selector. """
         for display_setting in self.display_settings():
             if display_setting.selector == selector:
                 return display_setting

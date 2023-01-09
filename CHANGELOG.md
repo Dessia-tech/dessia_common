@@ -14,6 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Hot fix for is_valid method of workflow's Block
+- Core : add a boolean for platform checking in check_list. Fixes a problem with testing classes not existing
+
+### Refactor
+
+- Move ./utils/serialization to ./serialization to avoid cyclic-imports
 
 ### CI
 
@@ -32,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Chores
 - Merge back master to dev
+- Docs weekly decrease
 
 ## 0.11.0
 
