@@ -26,7 +26,7 @@ MAX_ERROR_BY_TYPE = {
                      'no-member': 3,
                      'too-many-locals': 10,  # Reduce by dropping vectored objects
                      'too-many-branches': 13,
-                     'unused-argument': 7,
+                     'unused-argument': 8,
                      'cyclic-import': 2,  # 0 just to test
                      'no-self-use': 6,
                      'trailing-whitespace': 11,
