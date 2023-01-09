@@ -389,6 +389,7 @@ class DessiaObject(SerializableObject):
             self.save_to_stream(file, indent=indent)
 
     def save_to_stream(self, stream, indent: int = 2):
+        """ Write object to a stream. Default is to_dict, as a text like stream. """
         try:
             dict_ = self.to_dict(use_pointers=True)
         except TypeError:
@@ -398,6 +399,7 @@ class DessiaObject(SerializableObject):
 
     @classmethod
     def load_from_stream(cls, stream):
+        """ Build object from stream. Should be consistent with save_to_stream method. """
         dict_ = json.loads(stream.read().decode('utf-8'))
         return cls.dict_to_object(dict_)
 
@@ -414,6 +416,7 @@ class DessiaObject(SerializableObject):
         return cls.dict_to_object(dict_)
 
     def check_list(self, level='error'):
+        """ Return a list of potential info, warning and issues on the instance, that might be user custom. """
         check_list = CheckList([])
 
         check_list += self._check_platform(level=level)
@@ -433,17 +436,19 @@ class DessiaObject(SerializableObject):
         return check_list
 
     def is_valid(self, level='error'):
+        """
+        Return whether the object of valid 'above' given level. Default is error, but warnings can be forbidden.
+        """
         return not self.check_list().checks_above_level(level=level)
 
     def copy(self, deep=True, memo=None):
+        """ Return a shallow or deep copy of the object depending of the value of given 'deep' argument. """
         if deep:
             return deepcopy(self, memo=memo)
         return copy(self)
 
     def __copy__(self):
-        """
-        Generic copy use inits of objects.
-        """
+        """ Generic copy use inits of objects. """
         class_name = self.full_classname
         if class_name in _fullargsspec_cache:
             class_argspec = _fullargsspec_cache[class_name]
@@ -462,9 +467,7 @@ class DessiaObject(SerializableObject):
         return self.__class__(**dict_)
 
     def __deepcopy__(self, memo=None):
-        """
-        Generic deep copy use inits of objects.
-        """
+        """ Generic deep copy use inits of objects. """
         class_name = self.full_classname
         if class_name in _fullargsspec_cache:
             class_argspec = _fullargsspec_cache[class_name]
@@ -481,12 +484,15 @@ class DessiaObject(SerializableObject):
         return self.__class__(**dict_)
 
     def plot_data(self, **kwargs):
+        """
+        Base plot_data method. Overwrite this to display 2D or graphs on plateforme.
+
+        Should return a list of plot_data's objects.
+        """
         return []
 
     def plot(self, **kwargs):
-        """
-        Generic plot getting plot_data function to plot.
-        """
+        """ Generic plot getting plot_data function to plot. """
         if hasattr(self, 'plot_data'):
             import plot_data
             for data in self.plot_data(**kwargs):  # TODO solve inconsistence with the plot_data method just above
@@ -495,13 +501,11 @@ class DessiaObject(SerializableObject):
                                       width=1400, height=900,
                                       debug_mode=False)
         else:
-            msg = 'Class {} does not implement a plot_data method to define what to plot'
-            raise NotImplementedError(msg.format(self.__class__.__name__))
+            msg = f"Class '{self.__class__.__name__}' does not implement a plot_data method to define what to plot"
+            raise NotImplementedError(msg)
 
     def mpl_plot(self, **kwargs):
-        """
-        Plot with matplotlib using plot_data function.
-        """
+        """ Plot with matplotlib using plot_data function. """
         axs = []
         if hasattr(self, 'plot_data'):
             try:
@@ -513,23 +517,19 @@ class DessiaObject(SerializableObject):
                     ax = data.mpl_plot()
                     axs.append(ax)
         else:
-            msg = 'Class {} does not implement a plot_data method to define what to plot'
-            raise NotImplementedError(msg.format(self.__class__.__name__))
+            msg = f"Class '{self.__class__.__name__}' does not implement a plot_data method to define what to plot"
+            raise NotImplementedError(msg)
 
         return axs
 
     @staticmethod
     def display_settings() -> List[DisplaySetting]:
-        """
-        Returns a list of json describing how to call subdisplays.
-        """
+        """ Returns a list of json describing how to call subdisplays. """
         return [DisplaySetting('markdown', 'markdown', 'to_markdown', None),
                 DisplaySetting('plot_data', 'plot_data', 'plot_data', None, serialize_data=True)]
 
     def _display_from_selector(self, selector: str, **kwargs) -> DisplayObject:
-        """
-        Generate the display from the selector.
-        """
+        """ Generate the display from the selector. """
         reference_path = kwargs.get('reference_path', '')
 
         display_setting = self._display_settings_from_selector(selector)
@@ -545,15 +545,14 @@ class DessiaObject(SerializableObject):
         return DisplayObject(type_=display_setting.type, data=data, reference_path=reference_path, traceback=track)
 
     def _display_settings_from_selector(self, selector: str):
+        """ Get display settings from given selector. """
         for display_setting in self.display_settings():
             if display_setting.selector == selector:
                 return display_setting
         raise ValueError(f"No such selector '{selector}' in display of class '{self.__class__.__name__}'")
 
     def _displays(self, **kwargs) -> List[JsonSerializable]:
-        """
-        Generate displays of the object to be plot in the DessiA Platform.
-        """
+        """ Generate displays of the object to be plot in the DessiA Platform. """
         reference_path = kwargs.get('reference_path', '')
 
         displays = []
@@ -563,18 +562,14 @@ class DessiaObject(SerializableObject):
         return displays
 
     def to_markdown(self) -> str:
-        """
-        Render a markdown of the object output type: string.
-        """
+        """ Render a markdown of the object output type: string. """
         md_writer = MarkdownWriter(print_limit=25, table_limit=None)
         return templates.dessia_object_markdown_template.substitute(name=self.name,
                                                                     class_=self.__class__.__name__,
                                                                     table=md_writer.object_table(self))
 
     def performance_analysis(self):
-        """
-        Prints time of rendering some commons operations (serialization, hash, displays).
-        """
+        """ Print time of rendering some commons operations (serialization, hash, displays). """
         print(f'### Performance analysis of object {self} ###')
         data_hash_time = time.time()
         self._data_hash()
@@ -599,9 +594,7 @@ class DessiaObject(SerializableObject):
         print('\n')
 
     def _check_platform(self, level='error'):
-        """
-        Reproduce lifecycle on platform (serialization, display). Raise an error if something is wrong.
-        """
+        """ Reproduce lifecycle on platform (serialization, display). Raise an error if something is wrong. """
         checks = []
         try:
             dict_ = self.to_dict(use_pointers=True)

@@ -4,7 +4,7 @@ Abstract module that defines a base DessiaObject in order to avoid circular impo
 
 
 class CoreDessiaObject:
-    pass
+    """ Base DessiaObject for checking inheritance purpose (isinstance, issubclass,...). """
 
     # @abstractmethod
     # def to_dict(self):
