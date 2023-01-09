@@ -2196,12 +2196,13 @@ class WorkflowRun(WorkflowState):
         input_str = ""
         default_value = ""
         add_import = ""
+        var_1 = "block_{}.inputs[{}]"
         for j, block in enumerate(self.workflow.blocks):
             for i, input_ in enumerate(block.inputs):
                 if not input_.has_default_value and not \
-                        'block_' + str(j) + '.inputs' + '[' + str(i) + ']' in workflow_script:
+                        var_1.format(j, i) in workflow_script:
                     input_str += f"    workflow.input_index(" \
-                                 f"{('block_' + str(j) + '.inputs' + '[' + str(i) + ']')}):" \
+                                 f"{var_1.format(j, i)}):" \
                                  f" value_{str(j) + '_' + str(i)},\n"
                     default_value += f"\nvalue_{j}_{i} = 0"
                 if not isinstance(input_, (str, float, int)):
