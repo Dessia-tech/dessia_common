@@ -2193,6 +2193,7 @@ class WorkflowRun(WorkflowState):
         # TODO : don't take into account yet TypedVariable.
         # TODO : take into account the type of inputs (type_)
         workflow_script = self.workflow.to_script()
+        workflow_script_import = self.workflow._to_script().imports
         input_str = ""
         default_value = ""
         add_import = ""
@@ -2204,15 +2205,17 @@ class WorkflowRun(WorkflowState):
                     input_str += f"    workflow.input_index(" \
                                  f"{var_1.format(j, i)}):" \
                                  f" value_{str(j) + '_' + str(i)},\n"
-                    default_value += f"\nvalue_{j}_{i} = 0"
-                if not isinstance(input_, (str, float, int)):
-                    try:
-                        module_ = input_._get_to_script_elements().get_import_dict()
-                        key, value = list(module_.items())[0]
-                    except:
-                        pass
-                    if not any(value[0] in lst for lst in (add_import, workflow_script)):
-                        add_import += f"from {key} import {value[0]}\n"
+                    default_value_ = f"\nvalue_{j}_{i} = 0"
+                    if not isinstance(input_, (str, float, int)):
+                        try:
+                            module_ = input_._get_to_script_elements().get_import_dict()
+                            key, value = list(module_.items())[0]
+                            default_value_ = f"\nvalue_{j}_{i} = {value[0]}()"
+                        except:
+                            pass
+                        if not any(value[0] in lst for lst in (add_import, workflow_script_import)):
+                            add_import += f"from {key} import {value[0]}\n"
+                        default_value += default_value_
         for k, nbv in enumerate(self.workflow.nonblock_variables):
             if not nbv.has_default_value:
                 if nbv.type_ == str:
