@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 0.12.0 (now branch dev)
 
+### Added
+- Save WorkflowRun to a python script
+
 ### Fixed
 - Hot fix for is_valid method of workflow's Block
 
