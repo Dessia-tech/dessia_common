@@ -417,11 +417,12 @@ class DessiaObject(SerializableObject):
 
         return cls.dict_to_object(dict_)
 
-    def check_list(self, level='error'):
+    def check_list(self, level: str = 'error', check_platform: bool = True):
         """ Return a list of potential info, warning and issues on the instance, that might be user custom. """
         check_list = CheckList([])
 
-        check_list += self._check_platform(level=level)
+        if check_platform:
+            check_list += self._check_platform(level=level)
 
         # Type checking: not ready yet
         # class_argspec = inspect.getfullargspec(self.__class__)
