@@ -4,7 +4,6 @@
 Types tools.
 """
 
-import warnings
 from typing import Any, Dict, List, Tuple, Type, Union, get_origin, get_args
 
 from collections.abc import Iterator, Sequence
@@ -15,7 +14,6 @@ import orjson
 from dessia_common.abstract import CoreDessiaObject
 from dessia_common.typings import Subclass, InstanceOf, MethodType, ClassMethodType
 from dessia_common.files import BinaryFile, StringFile
-import dessia_common.serialization as dcs
 
 
 TYPING_EQUIVALENCES = {int: 'number', float: 'number', bool: 'boolean', str: 'string'}
