@@ -145,7 +145,7 @@ class DessiaObject(SerializableObject):
             setattr(self, property_name, property_value)
 
     def base_dict(self):
-        """ Base dictn of the object, with just its name. """
+        """ Base dict of the object, with just its name. """
         dict_ = SerializableObject.base_dict(self)
         dict_['name'] = self.name
         return dict_

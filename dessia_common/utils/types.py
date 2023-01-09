@@ -15,6 +15,7 @@ import orjson
 from dessia_common.abstract import CoreDessiaObject
 from dessia_common.typings import Subclass, InstanceOf, MethodType, ClassMethodType
 from dessia_common.files import BinaryFile, StringFile
+import dessia_common.serialization as dcs
 
 
 TYPING_EQUIVALENCES = {int: 'number', float: 'number', bool: 'boolean', str: 'string'}
@@ -79,6 +80,7 @@ def is_serializable(obj):
     """ Return True if object is deeply serializable as Dessia's standards, else False. """
     warnings.warn("is_serializable has been moved to module serialization.py. Please use this one instead",
                   DeprecationWarning)
+    return dcs.is_serializable(obj)
 
 
 def is_sequence(obj):
