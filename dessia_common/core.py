@@ -468,7 +468,7 @@ class DessiaObject(SerializableObject):
                 dict_[arg] = deepcopy_value(getattr(self, arg), memo=memo)
         return self.__class__(**dict_)
 
-    def plot_data(self, **kwargs):
+    def plot_data(self, reference_path: str = "#", **kwargs):
         """
         Base plot_data method. Overwrite this to display 2D or graphs on plateforme.
 
@@ -476,11 +476,11 @@ class DessiaObject(SerializableObject):
         """
         return []
 
-    def plot(self, **kwargs):
+    def plot(self, reference_path: str = "#", **kwargs):
         """ Generic plot getting plot_data function to plot. """
         if hasattr(self, 'plot_data'):
             import plot_data
-            for data in self.plot_data(**kwargs):  # TODO solve inconsistence with the plot_data method just above
+            for data in self.plot_data(reference_path, **kwargs):
                 plot_data.plot_canvas(plot_data_object=data,
                                       canvas_id='canvas',
                                       width=1400, height=900,
@@ -504,21 +504,18 @@ class DessiaObject(SerializableObject):
         else:
             msg = f"Class '{self.__class__.__name__}' does not implement a plot_data method to define what to plot"
             raise NotImplementedError(msg)
-
         return axs
 
     @staticmethod
     def display_settings() -> List[DisplaySetting]:
         """ Return a list of objects describing how to call subdisplays. """
-        return [DisplaySetting('markdown', 'markdown', 'to_markdown', None),
-                DisplaySetting('plot_data', 'plot_data', 'plot_data', None, serialize_data=True)]
+        return [DisplaySetting(selector="markdown", type_="markdown", method="to_markdown"),
+                DisplaySetting(selector="plot_data", type_="plot_data", method="plot_data", serialize_data=True)]
 
-    def _display_from_selector(self, selector: str, **kwargs) -> DisplayObject:
+    def _display_from_selector(self, selector: str) -> DisplayObject:
         """ Generate the display from the selector. """
-        reference_path = kwargs.get('reference_path', '')
-
         display_setting = self._display_settings_from_selector(selector)
-        track = ''
+        track = ""
         try:
             data = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
         except:
@@ -527,6 +524,7 @@ class DessiaObject(SerializableObject):
 
         if display_setting.serialize_data:
             data = serialize(data)
+        reference_path = display_setting.reference_path  # Trying this
         return DisplayObject(type_=display_setting.type, data=data, reference_path=reference_path, traceback=track)
 
     def _display_settings_from_selector(self, selector: str):
@@ -536,22 +534,19 @@ class DessiaObject(SerializableObject):
                 return display_setting
         raise ValueError(f"No such selector '{selector}' in display of class '{self.__class__.__name__}'")
 
-    def _displays(self, **kwargs) -> List[JsonSerializable]:
+    def _displays(self) -> List[JsonSerializable]:
         """ Generate displays of the object to be plot in the DessiA Platform. """
-        reference_path = kwargs.get('reference_path', '')
-
         displays = []
         for display_setting in self.display_settings():
-            display_ = self._display_from_selector(display_setting.selector, reference_path=reference_path)
+            display_ = self._display_from_selector(display_setting.selector)
             displays.append(display_.to_dict())
         return displays
 
     def to_markdown(self) -> str:
         """ Render a markdown of the object output type: string. """
-        md_writer = MarkdownWriter(print_limit=25, table_limit=None)
-        return templates.dessia_object_markdown_template.substitute(name=self.name,
-                                                                    class_=self.__class__.__name__,
-                                                                    table=md_writer.object_table(self))
+        writer = MarkdownWriter(print_limit=25, table_limit=None)
+        template = templates.dessia_object_markdown_template
+        return template.substitute(name=self.name, class_=self.__class__.__name__, table=writer.object_table(self))
 
     def performance_analysis(self):
         """ Print time of rendering some commons operations (serialization, hash, displays). """
@@ -676,7 +671,7 @@ class PhysicalObject(DessiaObject):
                                                method='volmdlr_volume_model().babylon_data', serialize_data=True))
         return display_settings
 
-    def volmdlr_primitives(self):
+    def volmdlr_primitives(self, **kwargs):
         """Return a list of volmdlr primitives to build up volume model."""
         return []
 
@@ -766,8 +761,7 @@ class MovingObject(PhysicalObject):
     def volmdlr_volume_model(self, **kwargs):
         """ Volume model of Moving Object. """
         import volmdlr as vm  # !!! Avoid circular imports, is this OK ?
-        return vm.core.MovingVolumeModel(self.volmdlr_primitives(**kwargs),
-                                         self.volmdlr_primitives_step_frames(**kwargs))
+        return vm.core.MovingVolumeModel(self.volmdlr_primitives(**kwargs), self.volmdlr_primitives_step_frames())
 
 
 class Parameter(DessiaObject):

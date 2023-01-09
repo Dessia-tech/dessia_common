@@ -31,6 +31,16 @@ class DisplaySetting:
         self.arguments = arguments
         self.serialize_data = serialize_data
 
+    @property
+    def reference_path(self) -> str:
+        if self.arguments is None:
+            return "#"
+
+        reference_path = self.arguments.get("reference_path" "#")
+        if reference_path is None:
+            return "#"
+        return reference_path
+
     def to_dict(self):
         """
         Serialization: make a dict from class instance attributes.

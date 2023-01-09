@@ -795,7 +795,7 @@ class Display(Block):
         data = attrmethod_getter(object_, settings.method)()
         if settings.serialize_data:
             data = serialize(data)
-        return [DisplayObject(type_=settings.type, data=data, name=self.name)]
+        return [data]
 
     def _to_script(self, _) -> ToScriptElement:
         script = f"{self.__class__.__name__}(name='{self.name}')"
@@ -866,7 +866,7 @@ class MultiPlot(Display):
         sizes = [plot_data.Window(width=560, height=300), plot_data.Window(width=560, height=300)]
         multiplot = plot_data.MultiplePlots(elements=samples, plots=plots, sizes=sizes,
                                             coords=[(0, 0), (0, 300)], name='Results plot')
-        return [DisplayObject(type_=self.type_, data=[multiplot.to_dict()])]
+        return [[multiplot.to_dict()]]
 
     def _to_script(self, _) -> ToScriptElement:
         script = f"MultiPlot(attributes={self.attributes}, {self.base_script()})"

@@ -255,9 +255,8 @@ class Block(DessiaObject):
     def _to_script(self, prefix: str):
         raise NotImplementedError("This method should be implemented in any Block inheriting class.")
 
-    def is_valid(self, level: str ='error') -> bool: # TODO: Change this in further releases
+    def is_valid(self, level: str = 'error') -> bool: # TODO: Change this in further releases
         return True
-
 
 
 class Pipe(DessiaObject):
@@ -616,9 +615,8 @@ class Workflow(Block):
     @staticmethod
     def display_settings() -> List[DisplaySetting]:
         """ Compute the displays settings of the workflow. """
-        display_settings = [DisplaySetting('documentation', 'markdown', 'to_markdown', None),
-                            DisplaySetting('workflow', 'workflow', 'to_dict', None)]
-        return display_settings
+        return [DisplaySetting(selector='documentation', type_='markdown', method='to_markdown'),
+                DisplaySetting(selector='workflow', type_='workflow', method='to_dict')]
 
     @property
     def export_blocks(self):
@@ -1800,33 +1798,9 @@ class WorkflowState(DessiaObject):
         display_settings.extend(self.workflow.blocks_display_settings)
         return display_settings
 
-    def _display_from_selector(self, selector: str, **kwargs) -> DisplayObject:
-        """ Generate the display from the selector. """
-        # TODO THIS IS A TEMPORARY DIRTY HOTFIX OVERWRITE.
-        #  WE SHOULD IMPLEMENT A WAY TO GET RID OF REFERENCE PATH WITH URLS
-        track = ""
-        # refpath = kwargs.get("reference_path", "")
-        if selector in ["documentation", "workflow"]:
-            return self.workflow._display_from_selector(selector)
-
-        if selector == "workflow-state":
-            return DessiaObject._display_from_selector(self, selector)
-
-        # Displays for blocks (getting reference path from block_display return)
-        display_setting = self._display_settings_from_selector(selector)
-        try:
-            # Specific hotfix : we propagate reference_path through block_display method
-            display_object = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
-            data = display_object.data
-        except:
-            data = None
-            track = tb.format_exc()
-
-        if display_setting.serialize_data:
-            data = serialize(data)
-
-        reference_path = display_setting.arguments["reference_path"]
-        return DisplayObject(type_=display_setting.type, data=data, reference_path=reference_path, traceback=track)
+    # def _display_from_selector(self, selector: str, **kwargs) -> DisplayObject:
+    #     """ Generate the display from the selector. """
+    #     return DessiaObject._display_from_selector(self, selector=selector)
 
     def block_display(self, block_index: int, reference_path: str = "#"):
         """ Compute the display of associated block to use integrate it in the workflow run displays. """
@@ -1844,12 +1818,6 @@ class WorkflowState(DessiaObject):
             block_args[branch_block] = {"reference_path": argpath}
 
         evaluated_blocks = self.evaluate_branch(blocks=branch, block_args=block_args)
-
-        # reference_path = ""
-        # for i, input_ in enumerate(block.inputs):
-        #     incoming_pipe = self.workflow.variable_input_pipe(input_)
-        #     if i == block._displayable_input:
-        #         reference_path = f'values/{self.workflow.pipes.index(incoming_pipe)}'
 
         if block not in evaluated_blocks:
             msg = f"Could not reach block at index {block_index}." \
@@ -2176,7 +2144,6 @@ class WorkflowRun(WorkflowState):
         """
         workflow_settings = self.workflow.display_settings()
         display_settings = WorkflowState.display_settings(self)
-        # TODO : Temporary removing workflow state. We could activate it again when display tree is available
         display_settings.pop(0)
         return workflow_settings + display_settings
 
