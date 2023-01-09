@@ -124,7 +124,7 @@ class SystemUsage(DessiaObject):
 
 
 class System(DessiaObject):
-    """ Mock a system that binds several components and their connection. For example, a battery pack"""
+    """ Mock a system that binds several components and their connection. For example, a battery pack. """
     _standalone_in_db = True
     _dessia_methods = ['power_simulation']
 

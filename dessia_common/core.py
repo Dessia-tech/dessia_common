@@ -27,14 +27,13 @@ from ast import literal_eval
 # from dessia_common.abstract import CoreDessiaObject
 import dessia_common.errors
 from dessia_common.utils.diff import data_eq, diff, dict_hash, list_hash
-from dessia_common.utils.serialization import deserialize_argument, serialize
-from dessia_common.utils.types import full_classname, is_sequence, is_bson_valid, TYPES_FROM_STRING
+from dessia_common.utils.types import is_sequence, is_bson_valid, TYPES_FROM_STRING
 from dessia_common.utils.copy import deepcopy_value
 from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotation, JSONSCHEMA_HEADER, \
     set_default_value
 from dessia_common.utils.docstrings import parse_docstring, FAILED_DOCSTRING_PARSING
 
-from dessia_common.base import SerializableObject
+from dessia_common.serialization import SerializableObject, deserialize_argument, serialize
 from dessia_common.exports import XLSXWriter, MarkdownWriter, ExportFormat
 
 from dessia_common.typings import JsonSerializable
@@ -60,9 +59,7 @@ def deprecated(use_instead=None):
             print('Traceback : ')
             tb.print_stack(limit=2)
             return function(*args, **kwargs)
-
         return wrapper
-
     return decorated
 
 
@@ -71,8 +68,7 @@ def deprecation_warning(name, object_type, use_instead=None):
     Throw a deprecation warning function.
     """
     warnings.simplefilter('once', DeprecationWarning)
-    msg = f"\n\n{object_type} {name} is deprecated.\n"
-    msg += "It will be removed in a future version.\n"
+    msg = f"\n\n{object_type} {name} is deprecated.\nIt will be removed in a future version.\n"
     if use_instead is not None:
         msg += f"Use {use_instead} instead.\n"
     warnings.warn(msg, DeprecationWarning)
@@ -149,6 +145,7 @@ class DessiaObject(SerializableObject):
             setattr(self, property_name, property_value)
 
     def base_dict(self):
+        """ Base dict of the object, with just its name. """
         dict_ = SerializableObject.base_dict(self)
         dict_['name'] = self.name
         return dict_
@@ -188,6 +185,7 @@ class DessiaObject(SerializableObject):
         return data_eq(self, other_object)
 
     def _data_hash(self):
+        """ Generic computation of hash based on data. """
         hash_ = 0
         forbidden_keys = (self._non_data_eq_attributes + self._non_data_hash_attributes + ['package_version', 'name'])
         for key, value in self._serializable_dict().items():
@@ -213,13 +211,6 @@ class DessiaObject(SerializableObject):
 
     def _get_from_path(self, path: str):
         return get_in_object_from_path(self, path)
-
-    @property
-    def full_classname(self):
-        """
-        Full classname of class like: package.module.submodule.classname.
-        """
-        return full_classname(self)
 
     @classmethod
     def base_jsonschema(cls):
@@ -426,11 +417,12 @@ class DessiaObject(SerializableObject):
 
         return cls.dict_to_object(dict_)
 
-    def check_list(self, level='error'):
+    def check_list(self, level: str = 'error', check_platform: bool = True):
         """ Return a list of potential info, warning and issues on the instance, that might be user custom. """
         check_list = CheckList([])
 
-        check_list += self._check_platform(level=level)
+        if check_platform:
+            check_list += self._check_platform(level=level)
 
         # Type checking: not ready yet
         # class_argspec = inspect.getfullargspec(self.__class__)
