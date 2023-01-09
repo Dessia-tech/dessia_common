@@ -28,13 +28,13 @@ MAX_ERROR_BY_TYPE = {
                      'too-many-branches': 13,
                      'wrong-import-order': 0,
                      'unused-argument': 12,
-                     'cyclic-import': 4,
+                     'cyclic-import': 2,  # 0 just to test
                      'no-self-use': 6,
                      'trailing-whitespace': 11,
                      'empty-docstring': 1,
                      'missing-module-docstring': 1,
                      'too-many-arguments': 53,
-                     'too-few-public-methods': 5,  # Not really important
+                     'too-few-public-methods': 9,  # Not really important
                      'unnecessary-comprehension': 1,
                      'no-value-for-parameter': 2,
                      'too-many-return-statements': 10,

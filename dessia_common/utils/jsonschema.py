@@ -25,6 +25,7 @@ JSONSCHEMA_HEADER = {"definitions": {},
 
 
 def default_sequence(array_jsonschema):
+    """ DEPRECATED. Soon to be removed. """
     if dc_types.is_sequence(array_jsonschema['items']):
         # Tuple jsonschema
         if 'default_value' in array_jsonschema:
@@ -34,6 +35,7 @@ def default_sequence(array_jsonschema):
 
 
 def datatype_from_jsonschema(jsonschema):
+    """ DEPRECATED. Soon to be removed. """
     if jsonschema['type'] == 'object':
         if 'classes' in jsonschema:
             if len(jsonschema['classes']) > 1:
@@ -67,6 +69,7 @@ def datatype_from_jsonschema(jsonschema):
 
 
 def chose_default(jsonschema):
+    """ DEPRECATED. Soon to be removed. """
     datatype = datatype_from_jsonschema(jsonschema)
     if datatype in ['heterogeneous_sequence', 'homogeneous_sequence']:
         return default_sequence(jsonschema)
@@ -82,6 +85,7 @@ def chose_default(jsonschema):
 
 
 def default_dict(jsonschema):
+    """ DEPRECATED. Soon to be removed. """
     dict_ = {}
     datatype = datatype_from_jsonschema(jsonschema)
     if datatype in ['standalone_object', 'embedded_object', 'static_dict']:
@@ -103,6 +107,7 @@ def default_dict(jsonschema):
 
 
 def jsonschema_union_types(key, args, typing_, jsonschema_element):
+    """ DEPRECATED. Soon to be removed. """
     classnames = [dc_types.full_classname(object_=a, compute_for='class') for a in args]
     standalone_args = [a._standalone_in_db for a in args]
     if all(standalone_args):
@@ -116,6 +121,7 @@ def jsonschema_union_types(key, args, typing_, jsonschema_element):
 
 def jsonschema_from_annotation(annotation, jsonschema_element, order, editable=None, title=None,
                                parsed_attributes=None):
+    """ DEPRECATED. Soon to be removed. """
     key, typing_ = annotation
     if isinstance(typing_, str):
         raise ValueError
@@ -238,6 +244,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element, order, editable=N
 
 def jsonschema_sequence_recursion(value, order: int, title: str = None,
                                   editable: bool = False):
+    """ DEPRECATED. Soon to be removed. """
     if title is None:
         title = 'Items'
     jsonschema_element = {'type': 'array', 'order': order,
@@ -257,6 +264,7 @@ def jsonschema_sequence_recursion(value, order: int, title: str = None,
 
 
 def static_dict_jsonschema(typed_dict, title=None):
+    """ DEPRECATED. Soon to be removed. """
     warnings.simplefilter('once', DeprecationWarning)
     msg = "\n\nStatic Dict typing is not fully supported.\n" \
           "This will most likely lead to non predictable behavior" \
@@ -287,6 +295,7 @@ def static_dict_jsonschema(typed_dict, title=None):
 
 
 def set_default_value(jsonschema_element, key, default_value):
+    """ DEPRECATED. Soon to be removed. """
     datatype = datatype_from_jsonschema(jsonschema_element[key])
     if default_value is None\
             or datatype in ['builtin', 'heterogeneous_sequence',

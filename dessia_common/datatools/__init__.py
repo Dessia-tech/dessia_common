@@ -1,5 +1,5 @@
 """
-__init__ method for datatools module
+__init__ method for datatools module.
 """
 
 import warnings
