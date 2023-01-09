@@ -14,6 +14,7 @@ import dessia_common.files as dcf
 
 
 class Submodel(DessiaObject):
+    """ Mock a MBSE that is a standalone attribute of Model, for testing purpose. """
     _standalone_in_db = True
 
     def __init__(self, subvalue: int, name: str = ''):
@@ -24,6 +25,7 @@ class Submodel(DessiaObject):
 
 
 class Model(DessiaObject):
+    """ Mock a standalone MBSE for testing purpose. """
     _standalone_in_db = True
 
     def __init__(self, value: int, submodel: Submodel, name: str = ''):
@@ -34,6 +36,7 @@ class Model(DessiaObject):
 
 
 class Generator(DessiaObject):
+    """ Mock a generator of MBSEs for testing purpose. """
     _standalone_in_db = True
     _allowed_methods = ['long_generation']
 
@@ -72,6 +75,7 @@ class Generator(DessiaObject):
 
 
 class Optimizer(DessiaObject):
+    """ Mock an optimizer for testing purpose. """
     _standalone_in_db = True
 
     def __init__(self, model_to_optimize: Model, name: str = ''):
@@ -85,6 +89,7 @@ class Optimizer(DessiaObject):
 
 
 class Component(DessiaObject):
+    """ MBSE to be tested. Mock a real usecase. For example, a module in a battery pack. """
     _standalone_in_db = True
 
     def __init__(self, efficiency, name: str = ''):
@@ -92,11 +97,14 @@ class Component(DessiaObject):
         DessiaObject.__init__(self, name=name)
 
     def power_simulation(self, power_value: dcm.Power):
-        """Run a power simulation."""
+        """ Run a power simulation. """
         return power_value * self.efficiency
 
 
 class ComponentConnection(DessiaObject):
+    """
+    Mock for a link between to components. For example, the electrical wiring between two modules in a battery pack.
+    """
     def __init__(self, input_component: Component, output_component: Component, name: str = ''):
         self.input_component = input_component
         self.output_component = output_component
@@ -104,6 +112,9 @@ class ComponentConnection(DessiaObject):
 
 
 class SystemUsage(DessiaObject):
+    """
+    Mock a simulation result of a system. For example, the response of the battery pack to a certain usecase.
+    """
     _standalone_in_db = True
 
     def __init__(self, time: List[dcm.Time], power: List[dcm.Power], name: str = ''):
@@ -113,6 +124,7 @@ class SystemUsage(DessiaObject):
 
 
 class System(DessiaObject):
+    """ Mock a system that binds several components and their connection. For example, a battery pack"""
     _standalone_in_db = True
     _dessia_methods = ['power_simulation']
 
@@ -122,11 +134,11 @@ class System(DessiaObject):
         DessiaObject.__init__(self, name=name)
 
     def output_power(self, input_power: dcm.Power):
-        """Compute output power."""
+        """ Compute output power. """
         return input_power * 0.8
 
     def power_simulation(self, usage: SystemUsage):
-        """Run a power simulation."""
+        """ Run a power simulation. """
         output_power = []
         for _, input_power in zip(usage.time, usage.power):
             output_power.append(self.output_power(input_power))
@@ -134,6 +146,7 @@ class System(DessiaObject):
 
 
 class SystemSimulationResult(DessiaObject):
+    """ Result wrapper for a System with its usage. """
     _standalone_in_db = True
 
     def __init__(self, system: System, system_usage: SystemUsage, output_power: List[dcm.Power], name: str = ''):
@@ -144,6 +157,7 @@ class SystemSimulationResult(DessiaObject):
 
 
 class SystemSimulationList(DessiaObject):
+    """ Results container for system simulation results. """
     _standalone_in_db = True
 
     def __init__(self, simulations: List[SystemSimulationResult], name: str = ''):
@@ -152,7 +166,7 @@ class SystemSimulationList(DessiaObject):
 
 
 class Car(DessiaObject):
-    """Defines a car with all its features."""
+    """ Defines a car with all its features. """
     _standalone_in_db = True
     _non_data_hash_attributes = ['name']
 
@@ -170,7 +184,7 @@ class Car(DessiaObject):
         self.origin = origin
 
     def to_vector(self):
-        """Get equivalent vector of instance of Car."""
+        """ Get equivalent vector of instance of Car. """
         list_formated_car = []
         for feature in self.vector_features():
             list_formated_car.append(getattr(self, feature.lower()))
@@ -178,7 +192,7 @@ class Car(DessiaObject):
 
     @classmethod
     def from_csv(cls, file: dcf.StringFile, end: int = None, remove_duplicates: bool = False):
-        """Generates Cars from given .csv file."""
+        """ Generates Cars from given .csv file. """
         array = [row.split(',') for row in file.getvalue().split('\n')][1:-1]
         cars = []
         for idx_line, line in enumerate(array):
@@ -209,17 +223,12 @@ class CarWithFeatures(Car):
 
     @classmethod
     def vector_features(cls):
-        """
-        Get list of _vector_features.
-
-        """
+        """ Get list of _vector_features. """
         return cls._vector_features
 
 
 class RandDataD1(DessiaObject):
-    """
-    Creates a dataset with 1 parameters from a number of clusters and dimensions.
-    """
+    """ Creates a dataset with 1 parameters from a number of clusters and dimensions. """
     _standalone_in_db = True
     _non_data_hash_attributes = ['name']
     _nb_dims = 1
