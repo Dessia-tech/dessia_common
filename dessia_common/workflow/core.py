@@ -2203,6 +2203,16 @@ class WorkflowRun(WorkflowState):
                                  f"{('block_' + str(j) + '.inputs' + '[' + str(i) + ']')}):" \
                                  f" value_{str(j) + '_' + str(i)},\n"
                     default_value += f"\nvalue_{j}_{i} = 0"
+        for k, nbv in enumerate(self.workflow.nonblock_variables):
+            if not nbv.has_default_value:
+                if nbv.type_ == str:
+                    default_value += f"\nvalue_nbv_{k} = 'str'"
+                if nbv.type_ == int:
+                    default_value += f"\nvalue_nbv_{k} = 'int'"
+                input_str += f"    workflow.input_index(" \
+                                     f"{('variable_' + str(k))}):" \
+                                     f" value_nbv_{str(k)},\n"
+
         input_str = workflow_script + "\n" + default_value + "\ninput_values = {\n" + input_str + "}"
         return input_str + "\n" + "\nworkflow_run = workflow.run(input_values=input_values)\n"
 
