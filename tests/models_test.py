@@ -7,7 +7,7 @@
 import os
 from dessia_common.models import simulation_list, system1
 from dessia_common.core import DessiaObject
-import dessia_common.utils.serialization as dcus
+import dessia_common.serialization as dcs
 from dessia_common.displays import draw_networkx_graph
 
 d = simulation_list.to_dict()
@@ -24,8 +24,8 @@ print(diff)
 
 simulation_list.jsonschema()
 
-pointer_analysis = dcus.pointers_analysis(simulation_list)
-pointer_graph = dcus.pointer_graph(d)
+pointer_analysis = dcs.pointers_analysis(simulation_list)
+pointer_graph = dcs.pointer_graph(d)
 draw_networkx_graph(pointer_graph)
 
 system1._check_platform()
@@ -40,5 +40,5 @@ system1_lff = DessiaObject.load_from_file('system1.json')
 assert system1_lff == system1
 
 memo = {}
-a, memo = dcus.serialize_with_pointers(system1)
+a, memo = dcs.serialize_with_pointers(system1)
 assert memo

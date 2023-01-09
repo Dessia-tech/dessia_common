@@ -33,15 +33,13 @@ _PYTHON_CLASS_CACHE = {}
 def full_classname(object_, compute_for: str = 'instance'):
     """ Get full class name of object_ (module + classname). """
     if compute_for == 'instance':
-        return object_.__class__.__module__ + '.' + object_.__class__.__name__
+        return f"{object_.__class__.__module__}.{object_.__class__.__name__}"
     if compute_for == 'class':
         try:
-            return object_.__module__ + '.' + object_.__name__
+            return f"{object_.__module__}.{object_.__name__}"
         except:
             print(object_)
-
-    msg = 'Cannot compute {} full classname for object {}'
-    raise NotImplementedError(msg.format(compute_for, object_))
+    raise NotImplementedError(f"Cannot compute {compute_for} full classname for object {object_}")
 
 
 def is_classname_transform(string: str):
@@ -76,24 +74,10 @@ def is_jsonable(obj):
     #     return False
 
 
-def is_serializable(obj) -> bool:
+def is_serializable(obj):
     """ Return True if object is deeply serializable as Dessia's standards, else False. """
-    if is_jsonable(obj):
-        return True
-    if isinstance(obj, CoreDessiaObject):
-        dict_ = obj.to_dict()
-        return is_jsonable(dict_)
-    if isinstance(obj, dict):
-        for key, value in obj.items():
-            if not is_serializable(key) or not is_serializable(value):
-                return False
-        return True
-    if is_sequence(obj):
-        for element in obj:
-            if not is_serializable(element):
-                return False
-        return True
-    return False
+    msg = "Function is_serializable has been moved to module serialization.py. Please use this one instead."
+    raise NotImplementedError(msg)
 
 
 def is_sequence(obj):
