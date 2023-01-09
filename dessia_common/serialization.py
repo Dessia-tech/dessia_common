@@ -1,12 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-<<<<<<< HEAD
-Serialization Tools
-
-=======
 Serialization Tools.
->>>>>>> fix/cyclic-imports
 """
 
 import sys
