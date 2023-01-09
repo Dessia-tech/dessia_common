@@ -2195,6 +2195,7 @@ class WorkflowRun(WorkflowState):
         workflow_script = self.workflow.to_script()
         input_str = ""
         default_value = ""
+        add_import = ""
         for j, block in enumerate(self.workflow.blocks):
             for i, input_ in enumerate(block.inputs):
                 if not input_.has_default_value and not \
@@ -2203,6 +2204,14 @@ class WorkflowRun(WorkflowState):
                                  f"{('block_' + str(j) + '.inputs' + '[' + str(i) + ']')}):" \
                                  f" value_{str(j) + '_' + str(i)},\n"
                     default_value += f"\nvalue_{j}_{i} = 0"
+                if not isinstance(input_, (str, float, int)):
+                    try:
+                        module_ = input_._get_to_script_elements().get_import_dict()
+                        key, value = list(module_.items())[0]
+                    except:
+                        pass
+                    if not any(value[0] in lst for lst in (add_import, workflow_script)):
+                        add_import += f"from {key} import {value[0]}\n"
         for k, nbv in enumerate(self.workflow.nonblock_variables):
             if not nbv.has_default_value:
                 if nbv.type_ == str:
@@ -2213,7 +2222,7 @@ class WorkflowRun(WorkflowState):
                                      f"{('variable_' + str(k))}):" \
                                      f" value_nbv_{str(k)},\n"
 
-        input_str = workflow_script + "\n" + default_value + "\ninput_values = {\n" + input_str + "}"
+        input_str = add_import + workflow_script + "\n" + default_value + "\ninput_values = {\n" + input_str + "}"
         return input_str + "\n" + "\nworkflow_run = workflow.run(input_values=input_values)\n"
 
     def save_script_to_stream(self, stream: io.StringIO):
