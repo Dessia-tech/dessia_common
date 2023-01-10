@@ -7,7 +7,7 @@ import numpy as npy
 
 try:
     from plot_data.core import Dataset as pl_Dataset
-    from plot_data.core import EdgeStyle, Tooltip, MultiplePlots, PointStyle, Graph2D, Axis
+    from plot_data.core import EdgeStyle, Tooltip, MultiplePlots, PointStyle, Graph2D, Axis, Sample
     from plot_data.colors import BLACK, RED, BLUE, WHITE
 except ImportError:
     pass
@@ -319,6 +319,40 @@ class Modeler(DessiaObject):
         """
         train_test_matrices = dataset.train_test_split(input_names, output_names, ratio)
         return cls._fit_score(*train_test_matrices, model, input_is_scaled, output_is_scaled, name)
+
+
+class ModeledDataset(Dataset):
+    _standalone_in_db = True
+
+    def __init__(self, dessia_objects: List[Sample] = None, input_names: List[str] = None,
+                 output_names: List[str] = None, name: str = ''):
+        self.input_names = input_names
+        self.output_names = output_names
+        Dataset.__init__(self, dessia_objects=dessia_objects, name=name)
+        self._common_attributes = input_names + output_names
+
+    @classmethod
+    def from_predicted_dataset(cls, modeler: Modeler, inputs: Matrix, input_names: List[str], output_names: List[str],
+                               name: str = ''):
+        predictions = modeler.predict_matrix(inputs)
+        samples = []
+        for input_, pred in zip(inputs, predictions):
+            samples.append({attr: value for attr, value in zip(input_names, input_)})
+            samples[-1].update({attr: value for attr, value in zip(output_names, pred)})
+        return cls(samples, input_names, output_names)
+
+    @property
+    def matrix(self):
+        """
+        Get equivalent matrix of dessia_objects, which is of dimensions `len(dessia_objects) x len(common_attributes)`.
+        """
+        if self._matrix is None:
+            matrix = []
+            for sample in self.dessia_objects:
+                vector_features, temp_row = list(zip(*[(key, value) for key, value in sample.items()]))
+                matrix.append(list(temp_row[vector_features.index(attr)] for attr in self.common_attributes))
+            self._matrix = matrix
+        return self._matrix
 
 
 class ValidationData(DessiaObject):
