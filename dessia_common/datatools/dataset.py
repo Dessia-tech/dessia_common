@@ -243,8 +243,8 @@ class Dataset(DessiaObject):
                 indentation = 3
             else:
                 indentation = min_col_length - len(attr)
-                odd_incr = int(indentation % 2)
-                indentation = int(indentation / 2)
+            odd_incr = int(indentation % 2)
+            indentation = int(indentation / 2)
 
             name_attr = " " * indentation + " " * odd_incr + f"{attr.capitalize()}" + " " * indentation
             attr_space.append(len(name_attr))
