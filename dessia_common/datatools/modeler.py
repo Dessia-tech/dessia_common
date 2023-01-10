@@ -320,7 +320,7 @@ class Modeler(DessiaObject):
         """
         train_dataset, test_dataset = dataset.train_test_split(input_names, output_names, ratio)
         inputs_train, output_train = train_dataset.to_input_output(input_names, output_names)
-        inputs_test, output_test = train_dataset.to_input_output(input_names, output_names)
+        inputs_test, output_test = test_dataset.to_input_output(input_names, output_names)
         return cls._fit_score(inputs_train, inputs_test, output_train, output_test, model, input_is_scaled,
                               output_is_scaled, name)
 
@@ -359,8 +359,8 @@ class ModeledDataset(Dataset):
     def _printed_attributes(self):
         return self.common_attributes
 
-    def _get_printed_value(self, sample: Sample, attr: str):
-        return sample.values[attr]
+    def _get_printed_value(self, dessia_object: Sample, attr: str):
+        return dessia_object.values[attr]
 
     @classmethod
     def from_predicted_dataset(cls, modeler: Modeler, dataset: Dataset, input_names: List[str], output_names: List[str],
@@ -369,7 +369,7 @@ class ModeledDataset(Dataset):
         samples = []
         for idx, (input_, pred) in enumerate(zip(dataset, predictions)):
             sample = {attr: getattr(input_, attr) for attr in input_names}
-            sample.update({attr: value for attr, value in zip(output_names, pred)})
+            sample.update(dict(zip(output_names, pred)))
             samples.append(Sample(sample, name=f"{name}_{idx}"))
         return cls(samples, input_names, output_names)
 
@@ -381,7 +381,7 @@ class ModeledDataset(Dataset):
         if self._matrix is None:
             matrix = []
             for sample in self:
-                vector_features, temp_row = list(zip(*[(key, value) for key, value in sample.values.items()]))
+                vector_features, temp_row = list(zip(*list(sample.values.items())))
                 matrix.append(list(temp_row[vector_features.index(attr)] for attr in self.common_attributes))
             self._matrix = matrix
         return self._matrix

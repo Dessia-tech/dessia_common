@@ -81,7 +81,7 @@ CV_RR.plot()
 # cvs = [CV_Ri, CV_LR, CV_DR, CV_DC, CV_RR, CV_RC, CV_MR, CV_MC]
 
 modeled_dataset = ModeledDataset.from_predicted_dataset(RR_mdlr, dataset_to_pred, input_names_reg, output_names_reg)
-# modeled_dataset.plot()
+modeled_dataset.plot()
 
 modeled_dict = modeled_dataset.to_dict()
 json_dict = json.dumps(modeled_dict)

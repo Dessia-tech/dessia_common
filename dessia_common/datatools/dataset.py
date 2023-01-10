@@ -403,7 +403,6 @@ class Dataset(DessiaObject):
         """
         Generate train and test Datasets from current Dataset.
         """
-        inputs, outputs = self.to_input_output(input_names, output_names)
         ind_train, ind_test = models.get_split_indexes(len(self), ratio=ratio, shuffled=shuffled)
         return Dataset(self[ind_train], name=self.name + '_train'), Dataset(self[ind_test], name=self.name + '_test')
 
