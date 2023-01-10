@@ -206,23 +206,23 @@ class Modeler(DessiaObject):
         return self.predict_matrix(inputs)
 
     @classmethod
-    def _fit_predict(cls, inputs: Matrix, outputs: Matrix, predicted_outputs: Matrix, model: models.Model,
+    def _fit_predict(cls, inputs: Matrix, outputs: Matrix, predicted_inputs: Matrix, model: models.Model,
                      input_is_scaled: bool = True, output_is_scaled: bool = False,
                      name: str = '') -> Tuple['Modeler', Union[Vector, Matrix]]:
         """
-        Private method to fit outputs to inputs and predict predicted_outputs for a Dataset (fit then predict).
+        Private method to fit outputs to inputs and predict predicted_inputs for a Dataset (fit then predict).
         """
         modeler = cls._fit(inputs, outputs, model, input_is_scaled, output_is_scaled, name)
-        return modeler, modeler._predict(predicted_outputs)
+        return modeler, modeler._predict(predicted_inputs)
 
     @classmethod
-    def fit_predict_matrix(cls, inputs: Matrix, outputs: Matrix, predicted_outputs: Matrix, model: models.Model,
+    def fit_predict_matrix(cls, inputs: Matrix, outputs: Matrix, predicted_inputs: Matrix, model: models.Model,
                            input_is_scaled: bool = True, output_is_scaled: bool = False,
                            name: str = '') -> Tuple['Modeler', Matrix]:
         """
-        Fit outputs to inputs and predict predicted_outputs for matrix data (fit then predict).
+        Fit outputs to inputs and predict predicted_inputs for matrix data (fit then predict).
         """
-        modeler, predictions = cls._fit_predict(inputs, outputs, predicted_outputs, model, input_is_scaled,
+        modeler, predictions = cls._fit_predict(inputs, outputs, predicted_inputs, model, input_is_scaled,
                                                 output_is_scaled, name)
         return modeler, modeler._format_output(predictions)
 
