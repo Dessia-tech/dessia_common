@@ -339,9 +339,10 @@ class ModeledDataset(Dataset):
                                name: str = ''):
         predictions = modeler.predict_dataset(dataset, input_names)
         samples = []
-        for input_, pred in zip(dataset, predictions):
-            samples.append({attr: getattr(input_, attr) for attr in input_names})
-            samples[-1].update({attr: value for attr, value in zip(output_names, pred)})
+        for idx, (input_, pred) in enumerate(zip(dataset, predictions)):
+            sample = {attr: getattr(input_, attr) for attr in input_names}
+            sample.update({attr: value for attr, value in zip(output_names, pred)})
+            samples.append(Sample(sample, name=f"{name}_{idx}"))
         return cls(samples, input_names, output_names)
 
     @property
@@ -351,8 +352,8 @@ class ModeledDataset(Dataset):
         """
         if self._matrix is None:
             matrix = []
-            for sample in self.dessia_objects:
-                vector_features, temp_row = list(zip(*[(key, value) for key, value in sample.items()]))
+            for sample in self:
+                vector_features, temp_row = list(zip(*[(key, value) for key, value in sample.values.items()]))
                 matrix.append(list(temp_row[vector_features.index(attr)] for attr in self.common_attributes))
             self._matrix = matrix
         return self._matrix

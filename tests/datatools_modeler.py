@@ -78,8 +78,7 @@ CV_RR.plot()
 # CV_MC.plot()
 # cvs = [CV_Ri, CV_LR, CV_DR, CV_DC, CV_RR, CV_RC, CV_MR, CV_MC]
 
-modeled_dataset = ModeledDataset.from_predicted_dataset(RR_mdlr, dataset_to_pred.sub_matrix(input_names_reg),
-                                                        input_names_reg, output_names_reg)
+modeled_dataset = ModeledDataset.from_predicted_dataset(RR_mdlr, dataset_to_pred, input_names_reg, output_names_reg)
 modeled_dataset.plot()
 
 # # Visuals to check test and train data are correctly separated in cross validations and modeler stuff
