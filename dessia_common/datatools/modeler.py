@@ -335,12 +335,12 @@ class ModeledDataset(Dataset):
         self._common_attributes = input_names + output_names
 
     @classmethod
-    def from_predicted_dataset(cls, modeler: Modeler, inputs: Matrix, input_names: List[str], output_names: List[str],
+    def from_predicted_dataset(cls, modeler: Modeler, dataset: Dataset, input_names: List[str], output_names: List[str],
                                name: str = ''):
-        predictions = modeler.predict_matrix(inputs)
+        predictions = modeler.predict_dataset(dataset, input_names)
         samples = []
-        for input_, pred in zip(inputs, predictions):
-            samples.append({attr: value for attr, value in zip(input_names, input_)})
+        for input_, pred in zip(dataset, predictions):
+            samples.append({attr: getattr(input_, attr) for attr in input_names})
             samples[-1].update({attr: value for attr, value in zip(output_names, pred)})
         return cls(samples, input_names, output_names)
 
