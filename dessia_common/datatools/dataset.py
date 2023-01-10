@@ -398,12 +398,14 @@ class Dataset(DessiaObject):
         """
         return self.sub_matrix(input_names), self.sub_matrix(output_names)
 
-    def train_test_split(self, input_names: List[str], output_names: List[str], ratio: float = 0.8) -> List[Matrix]:
+    def train_test_split(self, input_names: List[str], output_names: List[str], ratio: float = 0.8,
+                         shuffled: bool = True) -> List[Matrix]:
         """
-        Generate input and output train matrices and test matrices from matrix of current Dataset.
+        Generate train and test Datasets from current Dataset.
         """
         inputs, outputs = self.to_input_output(input_names, output_names)
-        return models.train_test_split(inputs, outputs, ratio=ratio)
+        ind_train, ind_test = models.get_split_indexes(len(self), ratio=ratio, shuffled=shuffled)
+        return Dataset(self[ind_train], name=self.name + '_train'), Dataset(self[ind_test], name=self.name + '_test')
 
     def sort(self, key: Any, ascend: bool = True):  # TODO : Replace numpy with faster algorithms
         """

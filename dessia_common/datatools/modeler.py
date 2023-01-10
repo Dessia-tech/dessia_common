@@ -317,8 +317,11 @@ class Modeler(DessiaObject):
         """
         Train test split dataset, fit modeler with train matrices and score it with test matrices.
         """
-        train_test_matrices = dataset.train_test_split(input_names, output_names, ratio)
-        return cls._fit_score(*train_test_matrices, model, input_is_scaled, output_is_scaled, name)
+        train_dataset, test_dataset = dataset.train_test_split(input_names, output_names, ratio)
+        inputs_train, output_train = train_dataset.to_input_output(input_names, output_names)
+        inputs_test, output_test = train_dataset.to_input_output(input_names, output_names)
+        return cls._fit_score(inputs_train, inputs_test, output_train, output_test, model, input_is_scaled,
+                              output_is_scaled, name)
 
 
 class ModeledDataset(Dataset):
@@ -583,7 +586,9 @@ class ModelValidation(DessiaObject):
          predictions for input, stored in a ValidationData object.
         :rtype: ModelValidation
         """
-        in_train, in_test, out_train, out_test = dataset.train_test_split(input_names, output_names, ratio)
+        train_dataset, test_dataset = dataset.train_test_split(input_names, output_names, ratio)
+        in_train, out_train = train_dataset.to_input_output(input_names, output_names)
+        in_test, out_test = test_dataset.to_input_output(input_names, output_names)
         return cls._build(modeler, in_train, in_test, out_train, out_test, input_names, output_names, name)
 
     def plot_data(self, **_):
