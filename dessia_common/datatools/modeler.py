@@ -13,6 +13,7 @@ except ImportError:
     pass
 
 from dessia_common.core import DessiaObject
+from dessia_common.serialization import serialize_dict
 from dessia_common.datatools import learning_models as models
 from dessia_common.datatools.dataset import Dataset
 
@@ -333,6 +334,27 @@ class ModeledDataset(Dataset):
         self.output_names = output_names
         Dataset.__init__(self, dessia_objects=dessia_objects, name=name)
         self._common_attributes = input_names + output_names
+
+    def to_dict(self):
+        """ Generic to_dict method. """
+        serialized_dict = self.base_dict()
+        dict_ = self._serializable_dict()
+        dict_dessia_objects = []
+        for dobject in dict_['dessia_objects']:
+            dict_dessia_objects.append(dobject.to_dict())
+            for attr in self.common_attributes:
+                dict_dessia_objects[-1].pop(attr)
+        dict_['dessia_objects'] = dict_dessia_objects
+        serialized_dict.update(serialize_dict(dict_))
+        return serialized_dict
+
+    @classmethod
+    def dict_to_object(cls, dict_):
+        """ Generic dict_to_object method. """
+        dessia_objects = []
+        for dobject in dict_['dessia_objects']:
+            dessia_objects.append(Sample(dobject['values'], dobject['reference_path'], dobject['name']))
+        return cls(dessia_objects, dict_['input_names'], dict_['output_names'], dict_['name'])
 
     def _printed_attributes(self):
         return self.common_attributes

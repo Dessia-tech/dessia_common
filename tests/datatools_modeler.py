@@ -1,6 +1,8 @@
 """
 Tests for dessia_common.datatools.modeler file.
 """
+import json
+
 import matplotlib.pyplot as plt
 
 from dessia_common.utils import helpers
@@ -79,7 +81,12 @@ CV_RR.plot()
 # cvs = [CV_Ri, CV_LR, CV_DR, CV_DC, CV_RR, CV_RC, CV_MR, CV_MC]
 
 modeled_dataset = ModeledDataset.from_predicted_dataset(RR_mdlr, dataset_to_pred, input_names_reg, output_names_reg)
-modeled_dataset.plot()
+# modeled_dataset.plot()
+
+modeled_dict = modeled_dataset.to_dict()
+json_dict = json.dumps(modeled_dict)
+decoded_json = json.loads(json_dict)
+deserialized_object = modeled_dataset.dict_to_object(decoded_json)
 
 # # Visuals to check test and train data are correctly separated in cross validations and modeler stuff
 # for mdlr, cv in zip(mdlrs, cvs):
