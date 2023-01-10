@@ -335,7 +335,7 @@ class ModeledDataset(Dataset):
         self._common_attributes = input_names + output_names
 
     def _get_printed_value(self, sample: Sample, attr: str):
-        return sample[attr]
+        return sample.values[attr]
 
     @classmethod
     def from_predicted_dataset(cls, modeler: Modeler, dataset: Dataset, input_names: List[str], output_names: List[str],
