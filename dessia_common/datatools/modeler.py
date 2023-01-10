@@ -334,6 +334,9 @@ class ModeledDataset(Dataset):
         Dataset.__init__(self, dessia_objects=dessia_objects, name=name)
         self._common_attributes = input_names + output_names
 
+    def _printed_attributes(self):
+        return self.common_attributes
+
     def _get_printed_value(self, sample: Sample, attr: str):
         return sample.values[attr]
 
