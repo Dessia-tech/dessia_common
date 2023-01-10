@@ -21,7 +21,7 @@ from dessia_common.core import DessiaObject, DessiaFilter, FiltersList
 from dessia_common.exports import MarkdownWriter
 from dessia_common import templates
 from dessia_common.datatools.metrics import mean, std, variance, covariance_matrix
-from dessia_common.datatools import models
+from dessia_common.datatools import learning_models as models
 
 Vector = List[float]
 Matrix = List[Vector]

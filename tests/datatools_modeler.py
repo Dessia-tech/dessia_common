@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from dessia_common.utils import helpers
 from dessia_common.models import all_cars_no_feat
 from dessia_common.datatools.dataset import Dataset
-import dessia_common.datatools.models as models
+from dessia_common.datatools import learning_models as models
 from dessia_common.datatools.modeler import Modeler, CrossValidation, ModeledDataset
 
 # ======================================================================================================================

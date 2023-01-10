@@ -13,7 +13,7 @@ except ImportError:
     pass
 
 from dessia_common.core import DessiaObject
-from dessia_common.datatools import models
+from dessia_common.datatools import learning_models as models
 from dessia_common.datatools.dataset import Dataset
 
 Vector = List[float]
