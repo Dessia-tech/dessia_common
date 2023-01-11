@@ -81,7 +81,7 @@ class InstantiateModel(Block):
         Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
-        """ Custom hash function. Related to 'equivalent' method """
+        """ Custom hash function. Related to 'equivalent' method. """
         return len(self.model_class.__name__)
 
     def equivalent(self, other):
@@ -157,7 +157,7 @@ class ClassMethod(Block):
         Block.__init__(self, inputs, [output], name=name, position=position)
 
     def equivalent_hash(self):
-        """ Custom hash function. Related to 'equivalent' method """
+        """ Custom hash function. Related to 'equivalent' method. """
         classname = self.method_type.class_.__name__
         return len(classname) + 7 * len(self.method_type.name)
 
@@ -250,7 +250,7 @@ class ModelMethod(Block):
         Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
-        """ Custom hash function. Related to 'equivalent' method """
+        """ Custom hash function. Related to 'equivalent' method. """
         classname = self.method_type.class_.__name__
         return len(classname) + 7 * len(self.method_type.name)
 
@@ -334,7 +334,7 @@ class Sequence(Block):
         Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
-        """ Custom hash function. Related to 'equivalent' method """
+        """ Custom hash function. Related to 'equivalent' method. """
         return self.number_arguments
 
     def equivalent(self, other):
@@ -387,7 +387,7 @@ class Concatenate(Block):
         Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
-        """ Custom hash function. Related to 'equivalent' method """
+        """ Custom hash function. Related to 'equivalent' method. """
         return self.number_arguments
 
     def equivalent(self, other):
@@ -452,7 +452,7 @@ class WorkflowBlock(Block):
         Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
-        """ Custom hash function. Related to 'equivalent' method """
+        """ Custom hash function. Related to 'equivalent' method. """
         return hash(self.workflow)
 
     def equivalent(self, other):
@@ -542,7 +542,7 @@ class ForEach(Block):
         Block.__init__(self, inputs, [output_variable], name=name, position=position)
 
     def equivalent_hash(self):
-        """ Custom hash function. Related to 'equivalent' method """
+        """ Custom hash function. Related to 'equivalent' method. """
         wb_hash = int(self.workflow_block.equivalent_hash() % 10e5)
         return wb_hash + self.iter_input_index
 
@@ -620,7 +620,7 @@ class Unpacker(Block):
         return Block.equivalent(self, other) and self.indices == other.indices
 
     def equivalent_hash(self):
-        """ Custom hash function. Related to 'equivalent' method """
+        """ Custom hash function. Related to 'equivalent' method. """
         return len(self.indices)
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
@@ -666,7 +666,7 @@ class Flatten(Block):
         Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
-        """ Custom hash function. Related to 'equivalent' method """
+        """ Custom hash function. Related to 'equivalent' method. """
         return 1
 
     @classmethod
@@ -701,7 +701,7 @@ class Product(Block):
         Block.__init__(self, inputs, [output_variable], name=name, position=position)
 
     def equivalent_hash(self):
-        """ Custom hash function. Related to 'equivalent' method """
+        """ Custom hash function. Related to 'equivalent' method. """
         return self.number_list
 
     def equivalent(self, other):
@@ -900,7 +900,7 @@ class MultiPlot(Display):
         return Block.equivalent(self, other) and same_attributes
 
     def equivalent_hash(self):
-        """ Custom hash function. Related to 'equivalent' method """
+        """ Custom hash function. Related to 'equivalent' method. """
         return sum(len(a) for a in self.attributes)
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
@@ -1005,7 +1005,7 @@ class ModelAttribute(Block):
         Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
-        """ Custom hash function. Related to 'equivalent' method """
+        """ Custom hash function. Related to 'equivalent' method. """
         return len(self.attribute_name)
 
     def equivalent(self, other):
@@ -1058,7 +1058,7 @@ class SetModelAttribute(Block):
         Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
-        """ Custom hash function. Related to 'equivalent' method """
+        """ Custom hash function. Related to 'equivalent' method. """
         return 3 + len(self.attribute_name)
 
     def equivalent(self, other):
@@ -1112,7 +1112,7 @@ class Sum(Block):
         Block.__init__(self, inputs=inputs, outputs=[Variable(name='Sum')], name=name, position=position)
 
     def equivalent_hash(self):
-        """ Custom hash function. Related to 'equivalent' method """
+        """ Custom hash function. Related to 'equivalent' method. """
         return self.number_elements
 
     def equivalent(self, other):
@@ -1186,7 +1186,7 @@ class ConcatenateStrings(Block):
         Block.__init__(self, inputs=inputs, outputs=[output], name=name, position=position)
 
     def equivalent_hash(self):
-        """ Custom hash function. Related to 'equivalent' method """
+        """ Custom hash function. Related to 'equivalent' method. """
         return self.number_elements + hash(self.separator)
 
     def equivalent(self, other):

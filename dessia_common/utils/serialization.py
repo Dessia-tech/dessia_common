@@ -136,14 +136,13 @@ def find_references(value, path='#'):
 
 
 def find_references_sequence(seq, path):
-    """
-    Compute references for a dict.
-    """
+    """ Compute references for a sequence. """
     warnings.warn("Module serialization.py have been moved outside utils. Please use it instead")
     return dcs.find_references_sequence(seq=seq, path=path)
 
 
 def find_references_dict(dict_, path):
+    """ Compute references for a dict. """
     warnings.warn("Module serialization.py have been moved outside utils. Please use it instead")
     return dcs.find_references_dict(dict_=dict_, path=path)
 
@@ -189,16 +188,19 @@ def dereference_jsonpointers(dict_):
 
 
 def pointer_graph_elements(value, path='#'):
+    """ Compute graph. """
     warnings.warn("Module serialization.py have been moved outside utils. Please use it instead")
     return dcs.pointer_graph_elements(value=value, path=path)
 
 
 def pointer_graph_elements_sequence(seq, path='#'):
+    """ Compute graph from sequence. """
     warnings.warn("Module serialization.py have been moved outside utils. Please use it instead")
     return dcs.pointer_graph_elements_sequence(seq=seq, path=path)
 
 
 def pointer_graph_elements_dict(dict_, path='#'):
+    """ Compute graph from dict. """
     warnings.warn("Module serialization.py have been moved outside utils. Please use it instead")
     return dcs.pointer_graph_elements_dict(dict_=dict_, path=path)
 

@@ -174,6 +174,7 @@ NAME_VARIABLE = TypedVariable(type_=str, name="Result Name")
 
 
 def set_block_variable_names_from_dict(func):
+    """ Inspect func arguments to compute black variable names. """
     def func_wrapper(cls, dict_):
         obj = func(cls, dict_)
         if 'input_names' in dict_:
@@ -2187,6 +2188,7 @@ class WorkflowRun(WorkflowState):
 
 
 def initialize_workflow(dict_, global_dict, pointers_memo) -> Workflow:
+    """ Generate an unfinished workflow in order to get access to instance method before full deserialization. """
     blocks = [deserialize(serialized_element=d, global_dict=global_dict, pointers_memo=pointers_memo)
               for d in dict_["blocks"]]
     if 'nonblock_variables' in dict_:
@@ -2209,6 +2211,7 @@ def initialize_workflow(dict_, global_dict, pointers_memo) -> Workflow:
 
 
 def deserialize_pipes(pipes_dict, blocks, nonblock_variables, connected_nbvs):
+    """ Generate all pipes from a dict. """
     pipes = []
     for source, target in pipes_dict:
         if isinstance(source, int):
@@ -2230,7 +2233,7 @@ def deserialize_pipes(pipes_dict, blocks, nonblock_variables, connected_nbvs):
 
 
 def value_type_check(value, type_):
-    """Check if the value as the specified type."""
+    """ Check if the value as the specified type. """
     try:  # TODO: Subscripted generics cannot be used...
         if not isinstance(value, type_):
             return False
