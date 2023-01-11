@@ -627,7 +627,7 @@ class Dataset(DessiaObject):
         """
         Plot a standard scatter matrix of all attributes in common_attributes and a dimensionality plot.
         """
-        data_list = self._plot_data_list()
+        data_list = self._to_samples()
         if len(self.common_attributes) > 1:
             # Plot a correlation matrix : To develop
             # correlation_matrix = []
@@ -669,13 +669,18 @@ class Dataset(DessiaObject):
     def _tooltip_attributes(self):
         return self.common_attributes
 
-    def _plot_data_list(self):
-        plot_data_list = []
-        for row, dobject in enumerate(self.dessia_objects):
-            sample_values = {attr: self.matrix[row][col] for col, attr in enumerate(self.common_attributes)}
-            reference_path = f"#/dessia_objects/{row}"
-            plot_data_list.append(Sample(sample_values, reference_path, dobject.name))
-        return plot_data_list
+    def _object_to_sample(self, dessia_object: DessiaObject, row: int):
+        sample_values = {attr: self.matrix[row][col] for col, attr in enumerate(self.common_attributes)}
+        reference_path = f"#/dessia_objects/{row}"
+        name = dessia_object.name if dessia_object.name else f"Sample {row}"
+        return sample_values, reference_path, name
+
+    def _to_samples(self):
+        samples = []
+        for row, dessia_object in enumerate(self.dessia_objects):
+            sample_values, reference_path, name = self._object_to_sample(dessia_object, row)
+            samples.append(Sample(sample_values, reference_path, name))
+        return samples
 
     def _point_families(self):
         return [PointFamily(BLUE, list(range(len(self))))]
