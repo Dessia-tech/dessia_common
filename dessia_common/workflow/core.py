@@ -220,7 +220,7 @@ class Block(DessiaObject):
         return self.__class__.__name__ == other.__class__.__name__
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#'):
-        """Serialize the block with custom logic."""
+        """ Serialize the block with custom logic. """
         dict_ = DessiaObject.base_dict(self)
         dict_['inputs'] = [i.to_dict() for i in self.inputs]
         dict_['outputs'] = [o.to_dict() for o in self.outputs]
@@ -231,6 +231,7 @@ class Block(DessiaObject):
         return dict_
 
     def jointjs_data(self):
+        """ Deprecated HTML computation. """
         data = {'block_class': self.__class__.__name__}
         if self.name != '':
             data['name'] = self.name
@@ -239,16 +240,14 @@ class Block(DessiaObject):
         return data
 
     def _docstring(self):
-        """
-        Base function for submodel docstring computing.
-        """
+        """ Base function for submodel docstring computing. """
         block_docstring = {i: EMPTY_PARSED_ATTRIBUTE for i in self.inputs}
         return block_docstring
 
     def base_script(self) -> str:
         return f"name='{self.name}', position={self.position}"
 
-    def is_valid(self, level: str ='error') -> bool: # TODO: Change this in further releases
+    def is_valid(self, level: str = 'error') -> bool:  # TODO: Change this in further releases
         return True
 
 
