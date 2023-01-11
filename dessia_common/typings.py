@@ -8,14 +8,15 @@ T = TypeVar('T')
 
 
 class Subclass(Generic[T]):
-    pass
+    """ Typing that denotes a Subclass of T. """
 
 
 class InstanceOf(Generic[T]):
-    pass
+    """ Typing that denotes a Instance of T. """
 
 
 class MethodType(Generic[T]):
+    """ Typing that denotes a method of class T. """
     def __init__(self, class_: T, name: str):
         self.class_ = class_
         self.name = name
@@ -28,17 +29,20 @@ class MethodType(Generic[T]):
 
 
 class ClassMethodType(MethodType[T]):
+    """ Typing that denotes a classmethod of class T. """
     def __init__(self, class_: T, name: str):
         MethodType.__init__(self, class_=class_, name=name)
 
 
 class AttributeType(Generic[T]):
+    """ Typing that denotes an attribute of class T. """
     def __init__(self, class_: T, name: str):
         self.class_ = class_
         self.name = name
 
 
 class ClassAttributeType(AttributeType[T]):
+    """ Typing that denotes a class attribute of class T. """
     def __init__(self, class_: T, name: str):
         AttributeType.__init__(self, class_=class_, name=name)
 
