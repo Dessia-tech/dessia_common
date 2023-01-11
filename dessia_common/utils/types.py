@@ -122,6 +122,7 @@ def get_python_class_from_class_name(full_class_name):
 
     module_name, class_name = full_class_name.rsplit('.', 1)
     module = import_module(module_name)
+    print("----------------->>> :", module_name)
     class_ = getattr(module, class_name)
 
     # Storing in cache
