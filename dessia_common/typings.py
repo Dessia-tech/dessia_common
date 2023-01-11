@@ -25,6 +25,7 @@ class MethodType(Generic[T]):
         return MethodType(self.class_, self.name)
 
     def get_method(self):
+        """ Helper to get real method from class_ and method name. """
         return getattr(self.class_, self.name)
 
 

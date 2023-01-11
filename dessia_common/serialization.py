@@ -93,6 +93,7 @@ class SerializableObject(CoreDessiaObject):
         return dcty.full_classname(self)
 
     def copy(self):
+        """ Copy object. Not implemented at base level. """
         raise NotImplementedError("Method copy is not implemented for SerializableObject."
                                   "Please inherit from DessiaObject")
 

@@ -763,6 +763,7 @@ class Filter(Block):
         return Block.equivalent(self, other) and self.filters == other.filters
 
     def equivalent_hash(self):
+        """ Custom hash function. Related to 'equivalent' method. """
         hashes = [hash(f) for f in self.filters]
         return int(sum(hashes) % 10e5)
 

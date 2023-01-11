@@ -15,10 +15,7 @@ from dessia_common.files import BinaryFile, StringFile
 
 
 class DifferentValues:
-    """
-    Contains info on diff different values.
-    """
-
+    """ Contains info on diff different values. """
     def __init__(self, path, value1, value2):
         self.path = path
         self.value1 = value1
@@ -29,10 +26,7 @@ class DifferentValues:
 
 
 class MissingAttribute:
-    """
-    Contains info on diff missing attribute.
-    """
-
+    """ Contains info on diff missing attribute. """
     def __init__(self, path: str, missing_in_first_object: bool):
         self.path = path
         self.missing_in_first_object = missing_in_first_object
@@ -45,10 +39,7 @@ class MissingAttribute:
 
 
 class DifferentType:
-    """
-    Contains info on diff different types.
-    """
-
+    """ Contains info on diff different types. """
     def __init__(self, path: str, value1, value2):
         self.path = path
         self.value1 = value1
@@ -59,10 +50,7 @@ class DifferentType:
 
 
 class Diff:
-    """
-    Contains info on a performed diff analysis between two values.
-    """
-
+    """ Contains info on a performed diff analysis between two values. """
     def __init__(self, different_values: List[DifferentValues], missing_attributes: List[MissingAttribute],
                  invalid_types: List[DifferentType]):
         self.different_values = different_values
@@ -70,6 +58,7 @@ class Diff:
         self.invalid_types = invalid_types
 
     def is_empty(self):
+        """ Return True if diff is empty, else False. """
         return (not self.different_values) and (not self.missing_attributes) and (not self.invalid_types)
 
     def __repr__(self):
@@ -150,9 +139,7 @@ def diff(value1, value2, path='#'):
 
 
 def dict_diff(dict1, dict2, path='#'):
-    """
-    Returns diff between two dicts.
-    """
+    """ Returns diff between two dicts. """
     diff_object = Diff([], [], [])
 
     dict_ = dict1
@@ -173,9 +160,7 @@ def dict_diff(dict1, dict2, path='#'):
 
 
 def sequence_diff(seq1, seq2, path='#'):
-    """
-    Returns diff between two sequences.
-    """
+    """ Returns diff between two sequences. """
     seq_diff = Diff([], [], [])
 
     if len(seq1) != len(seq2):
@@ -190,9 +175,7 @@ def sequence_diff(seq1, seq2, path='#'):
 
 
 def data_eq(value1, value2):
-    """
-    Returns if two values are equal on data equality.
-    """
+    """ Returns if two values are equal on data equality. """
     if is_sequence(value1) and is_sequence(value2):
         return sequence_data_eq(value1, value2)
 
@@ -244,9 +227,7 @@ def data_eq(value1, value2):
 
 
 def dict_data_eq(dict1, dict2):
-    """
-    Returns if two dicts are equal on data equality.
-    """
+    """ Returns if two dicts are equal on data equality. """
     for key, value in dict1.items():
         if key not in dict2:
             return False
@@ -256,9 +237,7 @@ def dict_data_eq(dict1, dict2):
 
 
 def sequence_data_eq(seq1, seq2):
-    """
-    Returns if two sequences are equal on data equality.
-    """
+    """ Returns if two sequences are equal on data equality. """
     if len(seq1) != len(seq2):
         return False
 
@@ -271,9 +250,7 @@ def sequence_data_eq(seq1, seq2):
 
 
 def choose_hash(object_):
-    """
-    Base function to return hash.
-    """
+    """ Base function to return hash. """
     if is_sequence(object_):
         return list_hash(object_)
     if isinstance(object_, dict):
@@ -284,16 +261,12 @@ def choose_hash(object_):
 
 
 def list_hash(list_):
-    """
-    Returns hash of a list value.
-    """
+    """ Returns hash of a list value. """
     return sum(choose_hash(e) for e in list_)
 
 
 def dict_hash(dict_):
-    """
-    Returns hash of a dict value.
-    """
+    """ Returns hash of a dict value. """
     hash_ = 0
     for key, value in dict_.items():
         hash_ += hash(key) + choose_hash(value)
