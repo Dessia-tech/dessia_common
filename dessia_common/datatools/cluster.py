@@ -314,13 +314,10 @@ class ClusteredDataset(Dataset):
             return plotted_clist.plot_data()
         return Dataset.plot_data(self)
 
-    def _to_samples(self):
-        samples = []
-        for row, (dessia_object, label) in enumerate(zip(self.dessia_objects, self.labels)):
-            sample_values, reference_path, name = self._object_to_sample(dessia_object, row)
-            sample_values["Cluster Label"] = label
-            samples.append(Sample(sample_values, reference_path, name))
-        return samples
+    def _object_to_sample(self, dessia_object: DessiaObject, row: int):
+        sample_values, reference_path, name = super()._object_to_sample(dessia_object, row)
+        sample_values["Cluster Label"] = self.labels[row]
+        return sample_values, reference_path, name
 
     def _point_families(self):
         colormap = plt.cm.get_cmap('hsv', self.n_clusters + 1)(range(self.n_clusters + 1))
