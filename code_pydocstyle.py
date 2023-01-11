@@ -79,7 +79,7 @@ ratchet_limit = 9
 effective_date = date(2022, 11, 28)
 today = date.today()
 weekly_decrease = 5
-time_decrease = (today - effective_date).days // 7 * weekly_decrease
+time_decrease = int((today - effective_date).days/7. * weekly_decrease)
 
 
 code_to_errors = {}
