@@ -678,8 +678,8 @@ class Dataset(DessiaObject):
     def _to_samples(self):
         samples = []
         for row, dessia_object in enumerate(self.dessia_objects):
-            sample_values, reference_path, name = self._object_to_sample(dessia_object, row)
-            samples.append(Sample(sample_values, reference_path, name))
+            sample_values, reference_path, name = self._object_to_sample(dessia_object=dessia_object, row=row)
+            samples.append(Sample(values=sample_values, reference_path=reference_path, name=name))
         return samples
 
     def _point_families(self):

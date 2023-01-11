@@ -22,46 +22,39 @@ class DeepAttributeError(ExceptionWithTraceback, AttributeError):
     """
     Abstract class for handling deep attribute errors.
     """
-    pass
 
 
 class ModelError(Exception):
     """
     Abstract class for handling model errors.
     """
-    pass
 
 
 class ConsistencyError(Exception):
     """
     Abstract class for handling consistency errors.
     """
-    pass
 
 
 class SerializationError(Exception):
     """
     Abstract class for handling serialization errors.
     """
-    pass
 
 
 class DeserializationError(Exception):
     """
     Abstract class for handling deserialization errors.
     """
-    pass
 
 
 class CopyError(Exception):
     """
     Abstract class for handling copy errors.
     """
-    pass
 
 
 class UntypedArgumentError(Exception):
     """
     Abstract class for handling untyped argument errors.
     """
-    pass
