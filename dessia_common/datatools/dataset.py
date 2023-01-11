@@ -673,7 +673,7 @@ class Dataset(DessiaObject):
         plot_data_list = []
         for row, dobject in enumerate(self.dessia_objects):
             sample_values = {attr: self.matrix[row][col] for col, attr in enumerate(self.common_attributes)}
-            reference_path = f"dessia_objects/{row}"
+            reference_path = f"#/dessia_objects/{row}"
             plot_data_list.append(Sample(sample_values, reference_path, dobject.name))
         return plot_data_list
 

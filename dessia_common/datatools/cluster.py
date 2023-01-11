@@ -319,7 +319,7 @@ class ClusteredDataset(Dataset):
         for row, (dobject, label) in enumerate(zip(self.dessia_objects, self.labels)):
             sample_values = {attr: self.matrix[row][col] for col, attr in enumerate(self.common_attributes)}
             sample_values["Cluster Label"] = label
-            reference_path = f"dessia_objects/{row}"
+            reference_path = f"#/dessia_objects/{row}"
             plot_data_list.append(Sample(sample_values, reference_path, dobject.name))
         return plot_data_list
 
