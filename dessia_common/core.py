@@ -206,14 +206,15 @@ class DessiaObject(SerializableObject):
 
         returns: different values, missing keys in other object
         """
-        # return diff(self, other_object)
         return diff(self, other_object)
 
     def _get_from_path(self, path: str):
+        """ Get object's deep attribute from given path. """
         return get_in_object_from_path(self, path)
 
     @classmethod
     def base_jsonschema(cls):
+        """ Return jsonschema header and base schema. """
         jsonschema = deepcopy(JSONSCHEMA_HEADER)
         jsonschema['properties']['name'] = {
             "type": 'string',
@@ -226,9 +227,7 @@ class DessiaObject(SerializableObject):
 
     @classmethod
     def jsonschema(cls):
-        """
-        Jsonschema of class: transfer python data structure to web standard.
-        """
+        """ Jsonschema of class: transfer python data structure to web standard. """
         if hasattr(cls, '_jsonschema'):
             _jsonschema = cls._jsonschema
             return _jsonschema
@@ -649,11 +648,13 @@ class DessiaObject(SerializableObject):
         writer.save_to_stream(stream)
 
     def _export_formats(self) -> List[ExportFormat]:
+        """ Define export formats for base .json and .xlsx exports. """
         formats = [ExportFormat(selector="json", extension="json", method_name="save_to_stream", text=True),
                    ExportFormat(selector="xlsx", extension="xlsx", method_name="to_xlsx_stream", text=False)]
         return formats
 
-    def save_export_to_file(self, selector, filepath):
+    def save_export_to_file(self, selector: str, filepath: str):
+        """ Generic export from selector to given filepath. Return real location filepath. """
         for export_format in self._export_formats():
             if export_format.selector == selector:
                 if not filepath.endswith(f".{export_format.extension}"):
@@ -669,6 +670,7 @@ class DessiaObject(SerializableObject):
         raise ValueError(f'Export selector not found: {selector}')
 
     def to_vector(self):
+        """ Compute vector from object. """
         vectored_objects = []
         for feature in self.vector_features():
             vectored_objects.append(getattr(self, feature.lower()))
@@ -680,6 +682,7 @@ class DessiaObject(SerializableObject):
 
     @classmethod
     def vector_features(cls):
+        """ Get a list of vector features, or generate a default one. """
         if cls._vector_features is None:
             return list(set(get_attribute_names(cls)).difference(get_attribute_names(DessiaObject)))
         return cls._vector_features
