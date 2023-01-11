@@ -95,6 +95,7 @@ class TypedVariable(Variable):
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'TypedVariable':
+        """Deserializes the object with specific logic."""
         type_ = deserialize_typing(dict_['type_'])
         return cls(type_=type_, name=dict_['name'], position=dict_.get("position"))
 
@@ -142,6 +143,7 @@ class TypedVariableWithDefaultValue(TypedVariable):
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
                        pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'TypedVariableWithDefaultValue':
+        """Deserializes the object with specific logic."""
         type_ = deserialize_typing(dict_['type_'])
         default_value = deserialize(dict_['default_value'], global_dict=global_dict, pointers_memo=pointers_memo)
         return cls(type_=type_, default_value=default_value, name=dict_['name'], position=dict_.get('position'))
@@ -173,7 +175,10 @@ class TypedVariableWithDefaultValue(TypedVariable):
 NAME_VARIABLE = TypedVariable(type_=str, name="Result Name")
 
 
-def set_block_variable_names_from_dict(func):
+def set_block_variable_names_from_dict(func):# TODO: Write a better docstring.
+    """
+    Set block variable names from dict.
+    """
     def func_wrapper(cls, dict_):
         obj = func(cls, dict_)
         if 'input_names' in dict_:
