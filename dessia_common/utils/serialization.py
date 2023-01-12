@@ -134,17 +134,13 @@ def find_references(value, path='#'):
 
 
 def find_references_sequence(seq, path):
-    """
-    Compute references for a sequence.
-    """
+    """ Compute references for a sequence. """
     warnings.warn("Module serialization.py have been moved outside utils. Please use it instead")
     return dcs.find_references_sequence(seq=seq, path=path)
 
 
 def find_references_dict(dict_, path):
-    """
-    Compute references for a dict.
-    """
+    """ Compute references for a dict. """
     warnings.warn("Module serialization.py have been moved outside utils. Please use it instead")
     return dcs.find_references_dict(dict_=dict_, path=path)
 

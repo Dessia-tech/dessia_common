@@ -43,14 +43,12 @@ from dessia_common.workflow.utils import ToScriptElement
 
 
 class Variable(DessiaObject):
+    """ Variable for workflow. """
     _standalone_in_db = False
     _eq_is_data_eq = False
     has_default_value: bool = False
 
     def __init__(self, name: str = '', position=None):
-        """
-        Variable for workflow.
-        """
         DessiaObject.__init__(self, name=name)
         if position is None:
             self.position = (0, 0)
@@ -58,10 +56,9 @@ class Variable(DessiaObject):
             self.position = position
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
-        """Serialize the variable with custom logic."""
+        """ Serialize the variable with custom logic. """
         dict_ = DessiaObject.base_dict(self)
-        dict_.update({'has_default_value': self.has_default_value,
-                      'position': self.position})
+        dict_.update({'has_default_value': self.has_default_value, 'position': self.position})
         return dict_
 
     def _to_script(self) -> ToScriptElement:
@@ -77,17 +74,15 @@ class Variable(DessiaObject):
 
 
 class TypedVariable(Variable):
+    """ Variable for workflow with a typing. """
     has_default_value: bool = False
 
     def __init__(self, type_: Type, name: str = '', position=None):
-        """
-        Variable for workflow with a typing.
-        """
         Variable.__init__(self, name=name, position=position)
         self.type_ = type_
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
-        """Serializes the object with specific logic."""
+        """ Serializes the object with specific logic. """
         dict_ = super().to_dict(use_pointers, memo, path)
         dict_.update({'type_': serialize_typing(self.type_)})
         return dict_
@@ -95,11 +90,16 @@ class TypedVariable(Variable):
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'TypedVariable':
+        """
+        Compute variable from dict.
+
+        TODO Remove this ?
+        """
         type_ = deserialize_typing(dict_['type_'])
         return cls(type_=type_, name=dict_['name'], position=dict_.get("position"))
 
     def copy(self, deep: bool = False, memo=None):
-        """Copies and gives a new object with no linked data."""
+        """ Copies and gives a new object with no linked data. """
         return TypedVariable(type_=self.type_, name=self.name)
 
     def _get_to_script_elements(self) -> ToScriptElement:
@@ -113,28 +113,32 @@ class TypedVariable(Variable):
 
 
 class VariableWithDefaultValue(Variable):
+    """
+    A variable with a default value.
+
+    TODO Isn't this always typed ?
+    """
     has_default_value: bool = True
 
     def __init__(self, default_value: Any, name: str = '', position=None):
-        """
-        A variable with a default value.
-        """
         Variable.__init__(self, name=name, position=position)
         self.default_value = default_value
 
 
 class TypedVariableWithDefaultValue(TypedVariable):
+    """
+    Workflow variables wit a type and a default value.
+
+    TODO Can this be just VariableWithDefaultValue ? Type is induced ?
+    """
     has_default_value: bool = True
 
     def __init__(self, type_: Type, default_value: Any, name: str = '', position=None):
-        """
-        Workflow variables wit a type and a default value.
-        """
         TypedVariable.__init__(self, type_=type_, name=name, position=position)
         self.default_value = default_value
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#'):
-        """Serialize the variable with custom logic."""
+        """ Serialize the variable with custom logic. """
         dict_ = super().to_dict(use_pointers, memo, path)
         dict_.update({'default_value': serialize(self.default_value)})
         return dict_
@@ -142,6 +146,11 @@ class TypedVariableWithDefaultValue(TypedVariable):
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
                        pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'TypedVariableWithDefaultValue':
+        """
+        Compute variable from dict.
+
+        TODO Remove this ?
+        """
         type_ = deserialize_typing(dict_['type_'])
         default_value = deserialize(dict_['default_value'], global_dict=global_dict, pointers_memo=pointers_memo)
         return cls(type_=type_, default_value=default_value, name=dict_['name'], position=dict_.get('position'))
@@ -174,7 +183,7 @@ NAME_VARIABLE = TypedVariable(type_=str, name="Result Name")
 
 
 def set_block_variable_names_from_dict(func):
-    """ Generate block variables names. """
+    """ Inspect func arguments to compute black variable names. """
     def func_wrapper(cls, dict_):
         obj = func(cls, dict_)
         if 'input_names' in dict_:
@@ -221,7 +230,7 @@ class Block(DessiaObject):
         return self.__class__.__name__ == other.__class__.__name__
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#'):
-        """Serialize the block with custom logic."""
+        """ Serialize the block with custom logic. """
         dict_ = DessiaObject.base_dict(self)
         dict_['inputs'] = [i.to_dict() for i in self.inputs]
         dict_['outputs'] = [o.to_dict() for o in self.outputs]
@@ -232,6 +241,7 @@ class Block(DessiaObject):
         return dict_
 
     def jointjs_data(self):
+        """ Deprecated HTML computation. """
         data = {'block_class': self.__class__.__name__}
         if self.name != '':
             data['name'] = self.name
@@ -240,13 +250,12 @@ class Block(DessiaObject):
         return data
 
     def _docstring(self):
-        """
-        Base function for submodel docstring computing.
-        """
+        """ Base function for submodel docstring computing. """
         block_docstring = {i: EMPTY_PARSED_ATTRIBUTE for i in self.inputs}
         return block_docstring
 
     def base_script(self) -> str:
+        """ Generate a chunk of script that denotes the arguments of a base block. """
         return f"name='{self.name}', position={self.position}"
 
     def evaluate(self, values, **kwargs):
@@ -256,6 +265,7 @@ class Block(DessiaObject):
         raise NotImplementedError("This method should be implemented in any Block inheriting class.")
 
     def is_valid(self, level: str = 'error') -> bool: # TODO: Change this in further releases
+        """ Always return True for now. """
         return True
 
 
@@ -833,6 +843,7 @@ class Workflow(Block):
         return {}
 
     def method_dict(self, method_name: str = None, method_jsonschema: Any = None) -> Dict:
+        """ Wrapper method to get dicts of run and start_run methods. """
         if method_name == 'run':
             return self._run_dict()
         if method_name == 'start_run':
@@ -1048,19 +1059,16 @@ class Workflow(Block):
         raise WorkflowError(f"Something is wrong with variable {variable.name}")
 
     def is_variable_nbv(self, variable: Variable) -> bool:
+        """ Return True if variable does not belong to a block. """
         return isinstance(self.variable_indices(variable), int)
 
     def block_from_variable(self, variable) -> Block:
-        """
-        Return block of which given variable is attached to.
-        """
+        """ Return block of which given variable is attached to. """
         iblock, _, _ = self.variable_indices(variable)
         return self.blocks[iblock]
 
     def output_disconnected_elements(self):
-        """
-        Return blocks and variables that are not attached to the output.
-        """
+        """ Return blocks and variables that are not attached to the output. """
         disconnected_elements = []
         ancestors = nx.ancestors(self.graph, self.output)
         for block in self.blocks:
@@ -1168,6 +1176,7 @@ class Workflow(Block):
 
     @property
     def layout_graph(self) -> nx.DiGraph:
+        """ Compute graph layout. """
         graph = nx.DiGraph()
         graph.add_nodes_from(self.nodes)  # does not handle detached_variable
 
@@ -1722,7 +1731,7 @@ class WorkflowState(DessiaObject):
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'WorkflowState':
-
+        """ Compute Workflow State from diven dict. Handles pointers. """
         if pointers_memo is None or global_dict is None:
             global_dict, pointers_memo = update_pointers_data(global_dict=global_dict, current_dict=dict_,
                                                               pointers_memo=pointers_memo)
@@ -1989,9 +1998,7 @@ class WorkflowState(DessiaObject):
         return output_values
 
     def activate_inputs(self, check_all_inputs=False):
-        """
-        Return if all inputs are activated.
-        """
+        """ Return whether all inputs are activated or not. """
         # Input activation
         for index, variable in enumerate(self.workflow.inputs):
             if index in self.input_values:
@@ -2006,10 +2013,8 @@ class WorkflowState(DessiaObject):
                     msg += f": should be instance of {variable.type_}"
                 raise ValueError(msg)
 
-    def to_workflow_run(self, name=''):
-        """
-        Return a WorkflowRun if state is complete.
-        """
+    def to_workflow_run(self, name: str = ""):
+        """ Return a WorkflowRun if state is complete. """
         if self.progress == 1:
             values = {p: self.values[p] for p in self.workflow.pipes if p in self.values}
             return WorkflowRun(workflow=self.workflow, input_values=self.input_values, output_value=self.output_value,
@@ -2018,25 +2023,22 @@ class WorkflowState(DessiaObject):
         raise ValueError('Workflow not completed')
 
     def _export_formats(self):
-        """
-        Read block to compute available export formats.
-        """
+        """ Read block to compute available export formats. """
         export_formats = DessiaObject._export_formats(self)
 
         # Exportable Blocks
         export_formats.extend(self.workflow.blocks_export_formats)
         return export_formats
 
-    def export_format_from_selector(self, selector):
+    def export_format_from_selector(self, selector: str):
+        """ Get WorflowState format from given selector. """
         for export_format in self.workflow.blocks_export_formats:
             if export_format["selector"] == selector:
                 return export_format
         raise ValueError(f"No block defines an export with the selector '{selector}'")
 
     def export(self, stream: Union[BinaryFile, StringFile], block_index: int):
-        """
-        Perform export.
-        """
+        """ Perform export. """
         block = self.workflow.blocks[block_index]
         selector = self.workflow.block_selectors[block]
         branch = self.workflow.branch_by_export_format[selector]
@@ -2056,6 +2058,7 @@ class WorkflowState(DessiaObject):
 
 
 class WorkflowRun(WorkflowState):
+    """ Completed state of a workflow. """
     _standalone_in_db = True
     _allowed_methods = ['run_again']
     _eq_is_data_eq = True
@@ -2102,9 +2105,7 @@ class WorkflowRun(WorkflowState):
                                output_value=output_value, log=log, name=name)
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#'):
-        """
-        Add variable values to super WorkflowState dict.
-        """
+        """ Add variable values to super WorkflowState dict. """
         if memo is None:
             memo = {}  # To make sure we have the good ref for next steps
         dict_ = WorkflowState.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
@@ -2134,6 +2135,7 @@ class WorkflowRun(WorkflowState):
         raise NotImplementedError(f"WorkflowRun : Specific object from path method is not defined for path '{path}'")
 
     def dict_to_arguments(self, dict_: JsonSerializable, method: str):
+        """ Compute run method's args from serialized ones. """
         if method in self._allowed_methods:
             return self.workflow.dict_to_arguments(dict_=dict_, method='run')
         raise NotImplementedError(f"Method {method} not in WorkflowRun allowed methods")
@@ -2148,6 +2150,7 @@ class WorkflowRun(WorkflowState):
         return workflow_settings + display_settings
 
     def method_dict(self, method_name: str = None, method_jsonschema: Any = None):
+        """ Get run again default dict. """
         if method_name is not None and method_name == 'run_again' and method_jsonschema is not None:
             dict_ = serialize_dict(self.input_values)
             for property_, value in method_jsonschema['properties'].items():
@@ -2159,9 +2162,7 @@ class WorkflowRun(WorkflowState):
         return DessiaObject.method_dict(self, method_name=method_name, method_jsonschema=method_jsonschema)
 
     def run_again(self, input_values, progress_callback=None, name=None):
-        """
-        Execute workflow again with given inputs.
-        """
+        """ Execute workflow again with given inputs. """
         return self.workflow.run(input_values=input_values, verbose=False,
                                  progress_callback=progress_callback, name=name)
 
@@ -2200,7 +2201,7 @@ def initialize_workflow(dict_, global_dict, pointers_memo) -> Workflow:
 
 
 def deserialize_pipes(pipes_dict, blocks, nonblock_variables, connected_nbvs):
-    """ Compute pipes from a dict. """
+    """ Generate all pipes from a dict. """
     pipes = []
     for source, target in pipes_dict:
         if isinstance(source, int):
