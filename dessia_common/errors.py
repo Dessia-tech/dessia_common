@@ -1,14 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Module for errors in dessia_common
+Module for errors in dessia_common.
 """
 
-
 class ExceptionWithTraceback(Exception):
-    """
-    Base class with a message and a traceback
-    """
+    """ Base class with a message and a traceback. """
 
     def __init__(self, message, traceback_=''):
         super().__init__(message)
@@ -20,28 +17,28 @@ class ExceptionWithTraceback(Exception):
 
 
 class DeepAttributeError(ExceptionWithTraceback, AttributeError):
-    pass
+    """ Error when trying to reach a deep attribute of an object, but couldn't get it. """
 
 
 class ModelError(Exception):
-    pass
+    """ Error of model. """
 
 
 class ConsistencyError(Exception):
-    pass
+    """ Error of consistency. """
 
 
 class SerializationError(Exception):
-    pass
+    """ Error of serialization. """
 
 
 class DeserializationError(Exception):
-    pass
+    """ Error of deserialization. """
 
 
 class CopyError(Exception):
-    pass
+    """ Error of copy. """
 
 
 class UntypedArgumentError(Exception):
-    pass
+    """ Error of code annotation. """

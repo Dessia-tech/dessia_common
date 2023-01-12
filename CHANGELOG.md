@@ -5,15 +5,51 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.12.0 (now branch dev)
+
+### Fixed
+- Hot fix for is_valid method of workflow's Block
+- Core : add a boolean for platform checking in check_list. Fixes a problem with testing classes not existing
+
+### Refactor
+
+- Move ./utils/serialization to ./serialization to avoid cyclic-imports
+
+### CI
+
+- add a check to enforce update of changelog in PR
+- code_pydocstyle.py checks daily instead of weekly
+
+### Performance
+
+- Conform doc for many parts of dessia_common
+- 100% coverage for clusters module
+- cache inspect.fullargspecs calls
+
+
+### Tests
+
+- Add backend backward import tests in order to warn when imports are changed
+
+### Chores
+- Merge back master to dev
+- Docs weekly decrease
+- Fixed all remaining pydocstyle errors
+
 ## 0.11.0
 
 ### Fixed
+
 - Workflow pipe order when copy
 - Diff Dict is now robust to uneven arguments commutation
 - Fix path deepth when dict misses keys
 
 ### Changed
 - Refactor copy_pipes and nbv checking
+
+### Performance
+
+- Cache for fullargspec and deserialize sequence as comprehension list
 
 ## v0.10.2
 
@@ -29,6 +65,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## v0.10.0
 
 ### Added
+- Generic save to file
 - Sampler class
 - (De)Serialization handles 'typing.Type'
 - Workflow: handle position in to_dict / dict_to_object process

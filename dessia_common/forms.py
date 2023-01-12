@@ -1,6 +1,6 @@
 """
-This is a module that aims to list all
-possibilities of data formats offered by Dessia.
+A module that aims to list all possibilities of data formats offered by Dessia.
+
 It should be used as a repertory of rules and available typings.
 
 Some general rules :
@@ -23,12 +23,14 @@ Some general rules :
 In addition to types & genericity (brought by DessiaObject),
 this module can also be seen as a template for Dessia's
 coding/naming style & convention.
+
 """
 
 from math import floor, ceil, cos
 from typing import Dict, List, Tuple, Union, Any
-from numpy import linspace
 import time
+import random
+from numpy import linspace
 
 try:
     import volmdlr as vm
@@ -41,93 +43,156 @@ except ImportError:
 
 from dessia_common.core import DessiaObject, PhysicalObject, MovingObject
 from dessia_common.typings import InstanceOf
-from dessia_common.vectored_objects import Catalog
 from dessia_common.measures import Distance
 from dessia_common.exports import MarkdownWriter
 
 from dessia_common.files import BinaryFile, StringFile
 
 
-class StandaloneSubobject(PhysicalObject):
-    _standalone_in_db = True
-    _generic_eq = True
+class EmbeddedBuiltinsSubobject(PhysicalObject):
+    """
+    An object that is not standalone and gather builtins types (float, int, bool, str & Distance).
 
-    def __init__(self, floatarg: Distance, name: str = 'Standalone Subobject'):
+    :param distarg: A Distance with units
+    :type distarg: Distance
+
+    :param floatarg: A float
+    :type floatarg: float
+
+    :param intarg: An integer
+    :type intarg: int
+
+    :param boolarg: A boolean
+    :type boolarg: bool
+
+    :param name: Object's name
+    :type name: str
+    """
+    _standalone_in_db = False
+
+    def __init__(self, distarg: Distance, floatarg: float, intarg: int,
+                 boolarg: bool, name: str = 'Standalone Subobject'):
+        self.distarg = distarg
         self.floatarg = floatarg
+        self.intarg = intarg
+        self.boolarg = boolarg
 
         PhysicalObject.__init__(self, name=name)
 
     @classmethod
-    def generate(cls, seed: int) -> 'StandaloneSubobject':
-        floatarg = Distance(1.7 * seed)
-        name = 'StandaloneSubobject' + str(seed)
-        return cls(floatarg=floatarg, name=name)
+    def generate(cls, seed: int) -> 'EmbeddedBuiltinsSubobject':
+        """ Generate an embedded subobject with default values computed from a seed. """
+        floatarg = 0.3
+        distarg = Distance(1.7 * floatarg * seed)
+        intarg = seed
+        boolarg = bool(seed % 2)
+        name = 'EmbeddedSubobject' + str(seed)
+        return cls(distarg=distarg, floatarg=floatarg, intarg=intarg, boolarg=boolarg, name=name)
 
     @classmethod
-    def generate_many(cls, seed: int) -> List['StandaloneSubobject']:
-        subobjects = [cls.generate((i + 1) * 1000) for i in range(seed)]
-        return subobjects
+    def generate_many(cls, seed: int) -> List['EmbeddedBuiltinsSubobject']:
+        """ Generate many embedded subobjects with default values computed from a seed. """
+        return [cls.generate((i + 1) * 1000) for i in range(seed)]
 
     def contour(self):
+        """ Square contour of an embedded subobject, for testing purpose. """
         origin = self.floatarg
         points = [vm.Point2D(origin, origin), vm.Point2D(origin, origin + 1),
                   vm.Point2D(origin + 1, origin + 1), vm.Point2D(origin + 1, origin)]
-
-        crls = p2d.ClosedRoundedLineSegments2D(points=points, radius={})
-        return crls
+        return p2d.ClosedRoundedLineSegments2D(points=points, radius={})
 
     def plot_data(self, **kwargs):
+        """ Bare text, for testing purpose. """
         primitives = [plot_data.Text(comment="Test with text", position_x=0, position_y=0),
                       plot_data.Text(comment="Test with text", position_x=0, position_y=0)]
         primitives_group = plot_data.PrimitiveGroup(primitives=primitives)
         return [primitives_group]
 
     def voldmlr_primitives(self):
+        """ Volmdlr primitives of the squared contour. """
         contour = self.contour()
         volumes = [p3d.ExtrudedProfile(vm.O3D, vm.X3D, vm.Z3D, contour, [], vm.Y3D)]
         return volumes
 
 
-DEF_SS = StandaloneSubobject.generate(1)
+class StandaloneBuiltinsSubobject(EmbeddedBuiltinsSubobject):
+    """
+    Overwrite EmbeddedBuiltinsObject to make it standalone.
+
+    :param distarg: A Distance with units
+    :type distarg: Distance
+
+    :param floatarg: A float
+    :type floatarg: float
+
+    :param intarg: An integer
+    :type intarg: int
+
+    :param boolarg: A boolean
+    :type boolarg: bool
+
+    :param name: Object's name
+    :type name: str
+    """
+    _standalone_in_db = True
+
+    def __init__(self, distarg: Distance, floatarg: float, intarg: int,
+                 boolarg: bool, name: str = 'Standalone Subobject'):
+
+        EmbeddedBuiltinsSubobject.__init__(self, distarg=distarg, floatarg=floatarg,
+                                           intarg=intarg, boolarg=boolarg, name=name)
 
 
-class EnhancedStandaloneSubobject(StandaloneSubobject):
-    def __init__(self, floatarg: Distance, boolarg: bool,
-                 name: str = 'Standalone Subobject'):
-        self.boolarg = boolarg
+DEF_EBS = EmbeddedBuiltinsSubobject.generate(1)
+DEF_SBS = StandaloneBuiltinsSubobject.generate(1)
 
-        StandaloneSubobject.__init__(self, floatarg=floatarg, name=name)
+
+class EnhancedStandaloneSubobject(StandaloneBuiltinsSubobject):
+    """ Overwrite StandaloneSubobject, principally for InstanceOf and Union typings testing purpose. """
+
+    def __init__(self, floatarg: Distance, name: str = 'Standalone Subobject'):
+        StandaloneBuiltinsSubobject.__init__(self, distarg=floatarg, floatarg=floatarg, intarg=floor(floatarg),
+                                             boolarg=floatarg.is_integer(), name=name)
 
     @classmethod
     def generate(cls, seed: int) -> 'EnhancedStandaloneSubobject':
+        """ Generate an enhanced subobject with default values computed from a seed. """
         floatarg = Distance(1.2 * seed)
-        boolarg = floatarg.is_integer()
-        name = 'EnhancedStandaloneSubobject' + str(seed)
-        return cls(floatarg=floatarg, boolarg=boolarg, name=name)
+        name = f"EnhancedStandaloneSubobject{seed}"
+        return cls(floatarg=floatarg, name=name)
 
 
 DEF_ESS = EnhancedStandaloneSubobject.generate(1)
 
 
-class InheritingStandaloneSubobject(StandaloneSubobject):
-    def __init__(self, floatarg: Distance, strarg: str,
+class InheritingStandaloneSubobject(StandaloneBuiltinsSubobject):
+    """ Overwrite StandaloneSubobject, principally for InstanceOf and Union typings testing purpose. """
+
+    def __init__(self, distarg: Distance, floatarg: float, intarg: int, boolarg: bool, strarg: str,
                  name: str = 'Inheriting Standalone Subobject'):
         self.strarg = strarg
 
-        StandaloneSubobject.__init__(self, floatarg=floatarg, name=name)
+        StandaloneBuiltinsSubobject.__init__(self, distarg=distarg, floatarg=floatarg, intarg=intarg,
+                                             boolarg=boolarg, name=name)
 
     @classmethod
     def generate(cls, seed: int) -> 'InheritingStandaloneSubobject':
-        floatarg = Distance(0.7 * seed)
+        """ Generate an inheriting subobject with default values computed from a seed. """
+        distarg = Distance(0.7 * seed)
+        floatarg = 0.1 * seed
         strarg = str(-seed)
+        intarg = seed * 3
+        boolarg = bool(intarg % 2)
         name = 'Inheriting Standalone Subobject' + str(seed)
-        return cls(floatarg=floatarg, strarg=strarg, name=name)
+        return cls(floatarg=floatarg, distarg=distarg, intarg=seed * 3, boolarg=boolarg, strarg=strarg, name=name)
 
 
 DEF_ISS = InheritingStandaloneSubobject.generate(1)
 
 
 class EmbeddedSubobject(DessiaObject):
+    """ EmbeddedSubobject, in order to test non standalone features. """
+
     def __init__(self, embedded_list: List[int] = None, name: str = 'Embedded Subobject'):
         if embedded_list is None:
             self.embedded_list = [1, 2, 3]
@@ -138,6 +203,7 @@ class EmbeddedSubobject(DessiaObject):
 
     @classmethod
     def generate(cls, seed: int) -> 'EmbeddedSubobject':
+        """ Generate an embedded subobject with default values computed from a seed. """
         if not bool(seed % 2):
             embedded_list = list(range(int(seed / 2)))
         else:
@@ -147,12 +213,14 @@ class EmbeddedSubobject(DessiaObject):
 
     @classmethod
     def generate_many(cls, seed: int) -> List['EmbeddedSubobject']:
+        """ Generate many embedded subobjects with default values computed from a seed. """
         return [cls.generate(i) for i in range(ceil(seed / 3))]
 
 
 class EnhancedEmbeddedSubobject(EmbeddedSubobject):
-    def __init__(self, embedded_list: List[int] = None,
-                 embedded_array: List[List[float]] = None,
+    """ Overwrite EmbeddedSubobject, principally for InstanceOf and Union typings testing purpose. """
+
+    def __init__(self, embedded_list: List[int] = None, embedded_array: List[List[float]] = None,
                  name: str = 'Enhanced Embedded Subobject'):
         self.embedded_array = embedded_array
 
@@ -160,9 +228,10 @@ class EnhancedEmbeddedSubobject(EmbeddedSubobject):
 
     @classmethod
     def generate(cls, seed: int) -> 'EnhancedEmbeddedSubobject':
+        """ Generate an embedded subobject with default values computed from a seed. """
         embedded_list = [seed]
         embedded_array = [[seed, seed * 10, seed * 10]] * seed
-        name = 'Embedded Subobject' + str(seed)
+        name = f"Embedded Subobject{seed}"
         return cls(embedded_list=embedded_list, embedded_array=embedded_array, name=name)
 
 
@@ -175,14 +244,17 @@ UnionArg = Union[EmbeddedSubobject, EnhancedEmbeddedSubobject]
 
 class StandaloneObject(MovingObject):
     """
-    Dev Object for testing purpose
+    Standalone Object for testing purpose.
 
     :param standalone_subobject: A dev subobject that is standalone_in_db
     :type standalone_subobject: StandaloneSubobject
+
     :param embedded_subobject: A dev subobject that isn't standalone_in_db
     :type embedded_subobject: EmbeddedSubobject
+
     :param dynamic_dict: A variable length dict
     :type dynamic_dict: Dict[str, bool]
+
     :param tuple_arg: A heterogeneous sequence
     :type tuple_arg: tuple
     """
@@ -191,20 +263,17 @@ class StandaloneObject(MovingObject):
     _allowed_methods = ['add_standalone_object', 'add_embedded_object', "count_until",
                         'add_float', 'generate_from_text', 'generate_from_bin']
 
-    def __init__(self, standalone_subobject: StandaloneSubobject, embedded_subobject: EmbeddedSubobject,
+    def __init__(self, standalone_subobject: StandaloneBuiltinsSubobject, embedded_subobject: EmbeddedSubobject,
                  dynamic_dict: Dict[str, bool], float_dict: Dict[str, float], string_dict: Dict[str, str],
-                 tuple_arg: Tuple[str, int], intarg: int, strarg: str,
-                 object_list: List[StandaloneSubobject], subobject_list: List[EmbeddedSubobject],
-                 builtin_list: List[int], union_arg: List[UnionArg],
-                 subclass_arg: InstanceOf[StandaloneSubobject], array_arg: List[List[float]],
+                 tuple_arg: Tuple[str, int], object_list: List[StandaloneBuiltinsSubobject],
+                 subobject_list: List[EmbeddedSubobject], builtin_list: List[int], union_arg: List[UnionArg],
+                 subclass_arg: InstanceOf[StandaloneBuiltinsSubobject], array_arg: List[List[float]],
                  name: str = 'Standalone Object Demo'):
         self.union_arg = union_arg
         self.builtin_list = builtin_list
         self.subobject_list = subobject_list
         self.object_list = object_list
         self.tuple_arg = tuple_arg
-        self.strarg = strarg
-        self.intarg = intarg
         self.dynamic_dict = dynamic_dict
         self.float_dict = float_dict
         self.string_dict = string_dict
@@ -217,6 +286,7 @@ class StandaloneObject(MovingObject):
 
     @classmethod
     def generate(cls, seed: int, name: str = 'Standalone Object Demo') -> 'StandaloneObject':
+        """ Generate an object with default values computed from a seed. """
         dynamic_dict = {'n' + str(i): bool(seed % 2) for i in range(seed)}
         float_dict = {'k' + str(i): seed * 1.09 for i in range(seed)}
         string_dict = {'key' + str(i): 'value' + str(i) for i in range(seed)}
@@ -224,19 +294,19 @@ class StandaloneObject(MovingObject):
         array_arg = [builtin_list] * 3
         union_arg = [EnhancedEmbeddedSubobject.generate(seed), EmbeddedSubobject.generate(seed)]
         if not bool(seed % 2):
-            subclass_arg = StandaloneSubobject.generate(-seed)
+            subclass_arg = StandaloneBuiltinsSubobject.generate(-seed)
         else:
             subclass_arg = InheritingStandaloneSubobject.generate(seed)
-        return cls(standalone_subobject=StandaloneSubobject.generate(seed),
+        return cls(standalone_subobject=StandaloneBuiltinsSubobject.generate(seed),
                    embedded_subobject=EmbeddedSubobject.generate(seed),
                    dynamic_dict=dynamic_dict, float_dict=float_dict, string_dict=string_dict,
-                   tuple_arg=('value', seed * 3), intarg=seed, strarg=str(seed) * floor(seed / 3),
-                   object_list=StandaloneSubobject.generate_many(seed),
+                   tuple_arg=('value', seed * 3), object_list=StandaloneBuiltinsSubobject.generate_many(seed),
                    subobject_list=EmbeddedSubobject.generate_many(seed), builtin_list=builtin_list, union_arg=union_arg,
                    subclass_arg=subclass_arg, array_arg=array_arg, name=name)
 
     @classmethod
     def generate_from_bin(cls, stream: BinaryFile):
+        """ Generate an object from bin file in order to test frontend forms and backend streams. """
         # User need to decode the binary as he see fit
         my_string = stream.read().decode('utf8')
         my_file_name = stream.filename
@@ -246,48 +316,53 @@ class StandaloneObject(MovingObject):
 
     @classmethod
     def generate_from_text(cls, stream: StringFile):
+        """ Generate an object from text file in order to test frontend forms and backend streams. """
         my_text = stream.getvalue()
         my_file_name = stream.filename
         _, raw_seed = my_text.split(",")
         seed = int(raw_seed.strip())
         return cls.generate(seed=seed, name=my_file_name)
 
-    def add_standalone_object(self, object_: StandaloneSubobject):
+    def add_standalone_object(self, object_: StandaloneBuiltinsSubobject):
         """
-        This methods adds a standalone object to object_list.
-        It doesn't return anything, hence, API will update object when
-        computing from frontend
+        Add a standalone object to object_list.
+
+        It doesn't return anything, hence, API will update object when computing from frontend.
         """
         self.object_list.append(object_)
 
     def add_embedded_object(self, object_: EmbeddedSubobject):
         """
-        This methods adds an embedded object to subobject_list.
-        It doesn't return anything, hence, API will update object
-        when computing from frontend
+        Add an embedded object to subobject_list.
+
+        It doesn't return anything, hence, API will update object when computing from frontend.
         """
         self.subobject_list.append(object_)
 
-    def add_float(self, value: float) -> StandaloneSubobject:
+    def add_float(self, value: float) -> StandaloneBuiltinsSubobject:
         """
-        This methods adds value to its standalone subobject
-        floatarg property and returns it.
+        Add value to its standalone subobject floatarg property and return it.
+
         API should replace standalone_subobject as it is returned
         """
         self.standalone_subobject.floatarg += value
         return self.standalone_subobject
 
     def append_union_arg(self, object_: UnionArg):
+        """ Append an object with corresponding type to union_arg, for testing purpose. """
         self.union_arg.append(object_)
 
     def contour(self):
-        points = [vm.Point2D(self.intarg, self.intarg), vm.Point2D(self.intarg, self.intarg + 1),
-                  vm.Point2D(self.intarg + 1, self.intarg + 1), vm.Point2D(self.intarg + 1, 0)]
+        """ Squared contour. """
+        intarg = self.standalone_subobject.intarg
+        points = [vm.Point2D(intarg, intarg), vm.Point2D(intarg, intarg + 1),
+                  vm.Point2D(intarg + 1, intarg + 1), vm.Point2D(intarg + 1, 0)]
 
         crls = p2d.ClosedRoundedLineSegments2D(points=points, radius={})
         return crls
 
     def volmdlr_primitives(self):
+        """ Volmdlr primitives of a cube. """
         subcube = self.standalone_subobject.voldmlr_primitives()[0]
         contour = self.contour()
         cube = p3d.ExtrudedProfile(plane_origin=vm.Point3D(0, 1, -1), x=vm.X3D, y=vm.Z3D,
@@ -295,6 +370,7 @@ class StandaloneObject(MovingObject):
         return [subcube, cube]
 
     def volmdlr_primitives_step_frames(self):
+        """ Steps to show the cube moving on frontend. """
         frame0 = vm.Frame3D(vm.O3D.copy(), vm.X3D.copy(), vm.Y3D.copy(), vm.Z3D.copy())
         frame11 = frame0.rotation(center=vm.O3D, axis=vm.Y3D, angle=0.7)
         frame21 = frame11.translation(offset=vm.Y3D)
@@ -307,18 +383,20 @@ class StandaloneObject(MovingObject):
 
     @staticmethod
     def scatter_plot():
+        """ Test scatter plots. """
         attributes = ['cx', 'cy']
         tooltip = plot_data.Tooltip(attributes=attributes, name='Tooltips')
         return plot_data.Scatter(axis=plot_data.Axis(), tooltip=tooltip, x_variable=attributes[0],
                                  y_variable=attributes[1], name='Scatter Plot')
 
     def plot_data(self, **kwargs):
+        """ Full plot data definition with lots of graphs and 2Ds. For frontend testing purpose. """
         # Contour
         contour = self.standalone_subobject.contour().plot_data()
         primitives_group = plot_data.PrimitiveGroup(primitives=[contour], name='Contour')
 
-        catalog = Catalog.random_2d(bounds={'x': [0, 6], 'y': [100, 2000]}, threshold=8000)
-        points = [plot_data.Point2D(cx=v[0], cy=v[1], name='Point' + str(i)) for i, v in enumerate(catalog.array)]
+        points = [plot_data.Point2D(cx=random.randint(0, 600) / 100, cy=random.randint(100, 2000) / 100,
+                                    name=f"Point{str(i)}") for i in range(500)]
 
         # Scatter Plot
         scatterplot = self.scatter_plot()
@@ -362,9 +440,7 @@ class StandaloneObject(MovingObject):
         return [primitives_group, scatterplot, parallelplot, multiplot, graph2d]
 
     def maldefined_method(self, arg0, arg1=1, arg2: int = 10, arg3=3):
-        """
-        Defining a docstring for testing parsing purpose
-        """
+        """ Define a docstring for testing parsing purpose. """
         nok_string = "This is a bad coding behavior"
         ok_string = "This could be OK as temporary attr"
         self.maldefined_attr = nok_string
@@ -379,6 +455,7 @@ class StandaloneObject(MovingObject):
     #     return arg0
 
     def to_markdown(self):
+        """ Write a standard markdown of StandaloneObject. """
         contents = """
         # Quem Stygios dumque
 
@@ -457,10 +534,11 @@ class StandaloneObject(MovingObject):
 
     def count_until(self, duration: float, raise_error: bool = False):
         """
-        A method which duration can be customized to test long execution
+        Test long execution with a customizable duration.
 
         :param duration: Duration of the method in s
         :type duration: float
+
         :param raise_error: Wether the computation should raise an error or not at the end
         :type raise_error: bool
         """
@@ -482,20 +560,20 @@ DEF_SO = StandaloneObject.generate(1)
 
 
 class StandaloneObjectWithDefaultValues(StandaloneObject):
+    """ Overwrite StandaloneObject to set default values to it. For frontend's forms testing purpose. """
     _non_editable_attributes = ['intarg', 'strarg']
 
-    def __init__(self, standalone_subobject: StandaloneSubobject = DEF_SS,
+    def __init__(self, standalone_subobject: StandaloneBuiltinsSubobject = DEF_SBS,
                  embedded_subobject: EmbeddedSubobject = DEF_ES,
                  dynamic_dict: Dict[str, bool] = None,
                  float_dict: Dict[str, float] = None,
                  string_dict: Dict[str, str] = None,
                  tuple_arg: Tuple[str, int] = ("Default Tuple", 0),
-                 intarg: int = 1, strarg: str = "Default Strarg",
-                 object_list: List[StandaloneSubobject] = None,
+                 object_list: List[StandaloneBuiltinsSubobject] = None,
                  subobject_list: List[EmbeddedSubobject] = None,
                  builtin_list: List[int] = None,
                  union_arg: List[UnionArg] = None,
-                 subclass_arg: InstanceOf[StandaloneSubobject] = DEF_ISS,
+                 subclass_arg: InstanceOf[StandaloneBuiltinsSubobject] = DEF_ISS,
                  array_arg: List[List[float]] = None,
                  name: str = 'Standalone Object Demo'):
         if dynamic_dict is None:
@@ -505,7 +583,7 @@ class StandaloneObjectWithDefaultValues(StandaloneObject):
         if string_dict is None:
             string_dict = {}
         if object_list is None:
-            object_list = [DEF_SS]
+            object_list = [DEF_SBS]
         if subobject_list is None:
             subobject_list = [DEF_ES]
         if builtin_list is None:
@@ -517,10 +595,9 @@ class StandaloneObjectWithDefaultValues(StandaloneObject):
 
         StandaloneObject.__init__(self, standalone_subobject=standalone_subobject,
                                   embedded_subobject=embedded_subobject, dynamic_dict=dynamic_dict,
-                                  float_dict=float_dict, string_dict=string_dict, tuple_arg=tuple_arg, intarg=intarg,
-                                  strarg=strarg, object_list=object_list, subobject_list=subobject_list,
-                                  builtin_list=builtin_list, union_arg=union_arg, subclass_arg=subclass_arg,
-                                  array_arg=array_arg, name=name)
+                                  float_dict=float_dict, string_dict=string_dict, tuple_arg=tuple_arg,
+                                  object_list=object_list, subobject_list=subobject_list, builtin_list=builtin_list,
+                                  union_arg=union_arg, subclass_arg=subclass_arg, array_arg=array_arg, name=name)
 
 
 DEF_SOWDV = StandaloneObjectWithDefaultValues()
@@ -536,9 +613,7 @@ DEF_SOWDV = StandaloneObjectWithDefaultValues()
 
 
 class ObjectWithOtherTypings(DessiaObject):
-    """
-    Dummy class to test some typing jsonschemas
-    """
+    """ Dummy class to test some typing jsonschemas. """
 
     def __init__(self, undefined_type_attribute: Any, name: str = ""):
         self.undefined_type_attribute = undefined_type_attribute
@@ -547,6 +622,7 @@ class ObjectWithOtherTypings(DessiaObject):
 
 
 class MovingStandaloneObject(MovingObject):
+    """ Overwrite StandaloneObject to make its 3D move. """
     _standalone_in_db = True
 
     def __init__(self, origin: float, name: str = ""):
@@ -555,9 +631,11 @@ class MovingStandaloneObject(MovingObject):
 
     @classmethod
     def generate(cls, seed: int):
+        """ Generate an object with default values from seed. """
         return cls(origin=1.3 * seed, name=f"moving_{seed}")
 
     def contour(self):
+        """ Squared contour. """
         points = [vm.Point2D(self.origin, self.origin), vm.Point2D(self.origin, self.origin + 1),
                   vm.Point2D(self.origin + 1, self.origin + 1), vm.Point2D(self.origin + 1, 0)]
 
@@ -565,12 +643,14 @@ class MovingStandaloneObject(MovingObject):
         return crls
 
     def volmdlr_primitives(self):
+        """ A cube. """
         contour = self.contour()
         volume = p3d.ExtrudedProfile(plane_origin=vm.O3D, x=vm.X3D, y=vm.Z3D, outer_contour2d=contour,
                                      inner_contours2d=[], extrusion_vector=vm.Y3D)
         return [volume]
 
     def volmdlr_primitives_step_frames(self):
+        """ A moving cube. """
         frame1 = vm.Frame3D(vm.O3D.copy(), vm.X3D.copy(), vm.Y3D.copy(), vm.Z3D.copy())
         frame2 = frame1.rotation(center=vm.O3D, axis=vm.Y3D, angle=0.7)
         frame3 = frame2.translation(offset=vm.Y3D)
@@ -580,12 +660,14 @@ class MovingStandaloneObject(MovingObject):
 
 class Generator(DessiaObject):
     """
-    A class that allow to generate several StandaloneObjects from different parameters
+    A class that allow to generate several StandaloneObjects from different parameters.
 
     :param parameter: An "offset" for the seed that will be used in generation
     :type parameter: int
+
     :param nb_solutions: The max number of solutions that will be generated
     :type nb_solutions: int
+
     :param name: The name of the Generator. It is not used in object generation
     :type name: str
     """
@@ -599,19 +681,18 @@ class Generator(DessiaObject):
         DessiaObject.__init__(self, name=name)
 
     def generate(self) -> List[StandaloneObject]:
-        """
-        Generates a list of Standalone objects
-        """
+        """ Generate a list of Standalone objects in order to emulate bots' generators. """
         self.models = [StandaloneObject.generate(self.parameter + i) for i in range(self.nb_solutions)]
         return self.models
 
 
 class Optimizer(DessiaObject):
     """
-    Mock an optimization process
+    Mock an optimization process. Emulates bots Optimizers.
 
     :param model_to_optimize: An object which will be modified (one of its attributes)
     :type model_to_optimize: StandaloneObject
+
     :param name: Name of the optimizer. Will not be used in the optimization process
     :type name: str
     """
@@ -624,16 +705,17 @@ class Optimizer(DessiaObject):
 
     def optimize(self, optimization_value: int = 3) -> int:
         """
-        Sums model value with given one
+        Sum model value with given one.
 
         :param optimization_value: value that will be added to model's intarg attribute
         :type optimization_value: int
         """
-        self.model_to_optimize.intarg += optimization_value
-        return self.model_to_optimize.intarg
+        self.model_to_optimize.standalone_subobject.intarg += optimization_value
+        return self.model_to_optimize.standalone_subobject.intarg
 
 
 class Container(DessiaObject):
+    """ Gather a list of Standalone objects as a container. For 'Catalog' behavior testing purpose. """
     _standalone_in_db = True
     _allowed_methods = ["generate_from_text_files"]
 
@@ -647,5 +729,6 @@ class Container(DessiaObject):
 
     @classmethod
     def generate_from_text_files(cls, files: List[StringFile], name: str = "Generated from text files"):
+        """ Generate catalog from several text files. """
         models = [StandaloneObject.generate_from_text(file) for file in files]
         return cls(models=models, name=name)
