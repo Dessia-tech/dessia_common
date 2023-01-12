@@ -464,6 +464,8 @@ def find_references(value, path='#'):
         return find_references_sequence(value, path)
     if isinstance(value, (BinaryFile, StringFile)):
         return []
+    if isinstance(value, dc.DessiaObject):
+        return []
     raise ValueError(value)
 
 
