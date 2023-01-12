@@ -120,12 +120,12 @@ def get_python_class_from_class_name(full_class_name):
         return cached_value
 
     module_name, class_name = full_class_name.rsplit('.', 1)
-    try:
-        module = import_module(module_name)
-    except:
-        print("----------------->>> :", module_name)
-    class_ = getattr(module, class_name)
+    module = import_module(module_name)
+    print("----------------->>> module_name:", module_name)
+    print("----------------->>> module:", module)
 
+    class_ = getattr(module, class_name)
+    print("----------------->>> class_:", class_)
     # Storing in cache
     _PYTHON_CLASS_CACHE[full_class_name] = class_
     return class_
