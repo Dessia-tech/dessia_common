@@ -16,7 +16,6 @@ from dessia_common.abstract import CoreDessiaObject
 from dessia_common.typings import Subclass, InstanceOf, MethodType, ClassMethodType
 from dessia_common.files import BinaryFile, StringFile
 
-
 TYPING_EQUIVALENCES = {int: 'number', float: 'number', bool: 'boolean', str: 'string'}
 
 TYPES_STRINGS = {int: 'int', float: 'float', bool: 'boolean', str: 'str',
@@ -121,8 +120,10 @@ def get_python_class_from_class_name(full_class_name):
         return cached_value
 
     module_name, class_name = full_class_name.rsplit('.', 1)
-    module = import_module(module_name)
-    print("----------------->>> :", module_name)
+    try:
+        module = import_module(module_name)
+    except:
+        print("----------------->>> :", module_name)
     class_ = getattr(module, class_name)
 
     # Storing in cache
@@ -340,6 +341,7 @@ def is_bson_valid(value, allow_nonstring_keys=False) -> Tuple[bool, str]:
     else:
         return False, f'Unrecognized type: {type(value)}'
     return True, ''
+
 
 # TODO recursive_type and recursive_type functions look weird
 
