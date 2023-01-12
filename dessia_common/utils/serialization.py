@@ -116,7 +116,7 @@ def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=
         serialized = value.to_dict()
 
         if id_method:
-            id_ = uuid.uuid1()
+            id_ = str(uuid.uuid1())
             id_memo[id_] = serialized
             memo[value] = f'#/_references/{id_}'
         else:
