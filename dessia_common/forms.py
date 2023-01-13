@@ -732,3 +732,39 @@ class Container(DessiaObject):
         """ Generate catalog from several text files. """
         models = [StandaloneObject.generate_from_text(file) for file in files]
         return cls(models=models, name=name)
+
+
+
+class NotStandalone(DessiaObject):
+    def __init__(self, a: int, name: str = ""):
+        self.a = a
+        DessiaObject.__init__(self, name=name)
+
+
+class BottomLevel(DessiaObject):
+    _standalone_in_db = True
+
+    def __init__(self, attributes: List[NotStandalone] = None, name: str = ""):
+        if attributes is None:
+            self.attributes = []
+        else:
+            self.attributes = attributes
+
+        DessiaObject.__init__(self, name=name)
+
+
+class MidLevel(DessiaObject):
+    _standalone_in_db = True
+    _allowed_methods = ["generate_with_references"]
+
+    def __init__(self, bottom_level: BottomLevel = None, name: str = ""):
+        self.attribute = bottom_level
+
+        DessiaObject.__init__(self, name=name)
+
+    @classmethod
+    def generate_with_references(cls, name: str = "Result Name"):
+        o1 = NotStandalone(a=1, name="1")
+        o2 = NotStandalone(a=1, name="2")
+        bottom_level = BottomLevel([o1, o2])
+        return cls(bottom_level=bottom_level, name=name)
