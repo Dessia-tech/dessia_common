@@ -21,7 +21,6 @@ from dessia_common.files import StringFile, BinaryFile
 from dessia_common.utils.helpers import concatenate
 from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
 from dessia_common.exports import ExportFormat
-from dessia_common.serialization import serialize
 
 from dessia_common.workflow.core import Block, Variable, TypedVariable, TypedVariableWithDefaultValue,\
     set_block_variable_names_from_dict, Workflow, DisplayObject
