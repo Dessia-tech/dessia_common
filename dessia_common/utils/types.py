@@ -7,6 +7,7 @@ Types tools
 from typing import Any, Dict, List, Tuple, Type, Union, get_origin, get_args
 
 # import json
+import sys
 from collections.abc import Iterator, Sequence
 from importlib import import_module
 
@@ -15,7 +16,6 @@ import orjson
 from dessia_common.abstract import CoreDessiaObject
 from dessia_common.typings import Subclass, InstanceOf, MethodType, ClassMethodType
 from dessia_common.files import BinaryFile, StringFile
-
 
 TYPING_EQUIVALENCES = {int: 'number', float: 'number', bool: 'boolean', str: 'string'}
 
@@ -117,13 +117,15 @@ def isinstance_base_types(obj):
 
 def get_python_class_from_class_name(full_class_name):
     cached_value = _PYTHON_CLASS_CACHE.get(full_class_name, None)
+    # TODO : this is just quick fix, it will be modified soon with another.
+    sys.setrecursionlimit(3000)
     if cached_value is not None:
         return cached_value
 
     module_name, class_name = full_class_name.rsplit('.', 1)
     module = import_module(module_name)
-    class_ = getattr(module, class_name)
 
+    class_ = getattr(module, class_name)
     # Storing in cache
     _PYTHON_CLASS_CACHE[full_class_name] = class_
     return class_
@@ -339,6 +341,7 @@ def is_bson_valid(value, allow_nonstring_keys=False) -> Tuple[bool, str]:
     else:
         return False, f'Unrecognized type: {type(value)}'
     return True, ''
+
 
 # TODO recursive_type and recursive_type functions look weird
 
