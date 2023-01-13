@@ -1602,6 +1602,7 @@ class WorkflowState(DessiaObject):
         """
         if memo is None:
             memo = {}
+        id_memo = {}
 
         if use_pointers:
             workflow_dict = self.workflow.to_dict(path=f'{path}/workflow', memo=memo)
@@ -1618,7 +1619,8 @@ class WorkflowState(DessiaObject):
         for input_, value in self.input_values.items():
             if use_pointers:
                 serialized_v, memo = serialize_with_pointers(value=value, memo=memo,
-                                                             path=f"{path}/input_values/{input_}")
+                                                             path=f"{path}/input_values/{input_}",
+                                                             id_memo=id_memo)
             else:
                 serialized_v = serialize(value)
             input_values[str(input_)] = serialized_v
@@ -1629,7 +1631,8 @@ class WorkflowState(DessiaObject):
         if self.output_value is not None:
             if use_pointers:
                 serialized_output_value, memo = serialize_with_pointers(self.output_value, memo=memo,
-                                                                        path=f'{path}/output_value')
+                                                                        path=f'{path}/output_value',
+                                                                        id_memo = id_memo)
             else:
                 serialized_output_value = serialize(self.output_value)
 
@@ -1643,7 +1646,8 @@ class WorkflowState(DessiaObject):
             if use_pointers:
                 try:
                     serialized_value, memo = serialize_with_pointers(value=value, memo=memo,
-                                                                     path=f"{path}/values/{pipe_index}")
+                                                                     path=f"{path}/values/{pipe_index}",
+                                                                     id_memo=id_memo)
                     values[str(pipe_index)] = serialized_value
                 except SerializationError:
                     warnings.warn(f"unable to serialize {value}, dropping it from workflow state/run values",
@@ -1661,7 +1665,7 @@ class WorkflowState(DessiaObject):
 
         dict_['evaluated_variables_indices'] = [self.workflow.variable_indices(v) for v in self.workflow.variables
                                                 if v in self.activated_items and self.activated_items[v]]
-        dict_["_references"] = memo
+        dict_["_references"] = id_memo
         # Uncomment when refs are handled as dict keys
         # activated_items = {}
         # for key, activated in self.activated_items.items():
