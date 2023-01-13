@@ -7,13 +7,14 @@ import numpy as npy
 
 try:
     from plot_data.core import Dataset as pl_Dataset
-    from plot_data.core import EdgeStyle, Tooltip, MultiplePlots, PointStyle, Graph2D, Axis
+    from plot_data.core import EdgeStyle, Tooltip, MultiplePlots, PointStyle, Graph2D, Axis, Sample
     from plot_data.colors import BLACK, RED, BLUE, WHITE
 except ImportError:
     pass
 
 from dessia_common.core import DessiaObject
-from dessia_common.datatools import models
+from dessia_common.serialization import serialize_dict
+from dessia_common.datatools import learning_models as models
 from dessia_common.datatools.dataset import Dataset
 
 Vector = List[float]
@@ -206,23 +207,23 @@ class Modeler(DessiaObject):
         return self.predict_matrix(inputs)
 
     @classmethod
-    def _fit_predict(cls, inputs: Matrix, outputs: Matrix, predicted_outputs: Matrix, model: models.Model,
+    def _fit_predict(cls, inputs: Matrix, outputs: Matrix, predicted_inputs: Matrix, model: models.Model,
                      input_is_scaled: bool = True, output_is_scaled: bool = False,
                      name: str = '') -> Tuple['Modeler', Union[Vector, Matrix]]:
         """
-        Private method to fit outputs to inputs and predict predicted_outputs for a Dataset (fit then predict).
+        Private method to fit outputs to inputs and predict predicted_inputs for a Dataset (fit then predict).
         """
         modeler = cls._fit(inputs, outputs, model, input_is_scaled, output_is_scaled, name)
-        return modeler, modeler._predict(predicted_outputs)
+        return modeler, modeler._predict(predicted_inputs)
 
     @classmethod
-    def fit_predict_matrix(cls, inputs: Matrix, outputs: Matrix, predicted_outputs: Matrix, model: models.Model,
+    def fit_predict_matrix(cls, inputs: Matrix, outputs: Matrix, predicted_inputs: Matrix, model: models.Model,
                            input_is_scaled: bool = True, output_is_scaled: bool = False,
                            name: str = '') -> Tuple['Modeler', Matrix]:
         """
-        Fit outputs to inputs and predict predicted_outputs for matrix data (fit then predict).
+        Fit outputs to inputs and predict predicted_inputs for matrix data (fit then predict).
         """
-        modeler, predictions = cls._fit_predict(inputs, outputs, predicted_outputs, model, input_is_scaled,
+        modeler, predictions = cls._fit_predict(inputs, outputs, predicted_inputs, model, input_is_scaled,
                                                 output_is_scaled, name)
         return modeler, modeler._format_output(predictions)
 
@@ -317,8 +318,73 @@ class Modeler(DessiaObject):
         """
         Train test split dataset, fit modeler with train matrices and score it with test matrices.
         """
-        train_test_matrices = dataset.train_test_split(input_names, output_names, ratio)
-        return cls._fit_score(*train_test_matrices, model, input_is_scaled, output_is_scaled, name)
+        train_dataset, test_dataset = dataset.train_test_split(input_names, output_names, ratio)
+        inputs_train, output_train = train_dataset.to_input_output(input_names, output_names)
+        inputs_test, output_test = test_dataset.to_input_output(input_names, output_names)
+        return cls._fit_score(inputs_train, inputs_test, output_train, output_test, model, input_is_scaled,
+                              output_is_scaled, name)
+
+
+class ModeledDataset(Dataset):
+    _standalone_in_db = True
+
+    def __init__(self, dessia_objects: List[Sample] = None, input_names: List[str] = None,
+                 output_names: List[str] = None, name: str = ''):
+        self.input_names = input_names
+        self.output_names = output_names
+        Dataset.__init__(self, dessia_objects=dessia_objects, name=name)
+        self._common_attributes = input_names + output_names
+
+    def to_dict(self):
+        """ Generic to_dict method. """
+        serialized_dict = self.base_dict()
+        dict_ = self._serializable_dict()
+        dict_dessia_objects = []
+        for dobject in dict_['dessia_objects']:
+            dict_dessia_objects.append(dobject.to_dict())
+            for attr in self.common_attributes:
+                dict_dessia_objects[-1].pop(attr)
+        dict_['dessia_objects'] = dict_dessia_objects
+        serialized_dict.update(serialize_dict(dict_))
+        return serialized_dict
+
+    @classmethod
+    def dict_to_object(cls, dict_):
+        """ Generic dict_to_object method. """
+        dessia_objects = []
+        for dobject in dict_['dessia_objects']:
+            dessia_objects.append(Sample(dobject['values'], dobject['reference_path'], dobject['name']))
+        return cls(dessia_objects, dict_['input_names'], dict_['output_names'], dict_['name'])
+
+    def _printed_attributes(self):
+        return self.common_attributes
+
+    def _get_printed_value(self, dessia_object: Sample, attr: str):
+        return dessia_object.values[attr]
+
+    @classmethod
+    def from_predicted_dataset(cls, modeler: Modeler, dataset: Dataset, input_names: List[str], output_names: List[str],
+                               name: str = ''):
+        predictions = modeler.predict_dataset(dataset, input_names)
+        samples = []
+        for idx, (input_, pred) in enumerate(zip(dataset, predictions)):
+            sample = {attr: getattr(input_, attr) for attr in input_names}
+            sample.update(dict(zip(output_names, pred)))
+            samples.append(Sample(sample, name=f"{name}_{idx}"))
+        return cls(samples, input_names, output_names)
+
+    @property
+    def matrix(self):
+        """
+        Get equivalent matrix of dessia_objects, which is of dimensions `len(dessia_objects) x len(common_attributes)`.
+        """
+        if self._matrix is None:
+            matrix = []
+            for sample in self:
+                vector_features, temp_row = list(zip(*list(sample.values.items())))
+                matrix.append(list(temp_row[vector_features.index(attr)] for attr in self.common_attributes))
+            self._matrix = matrix
+        return self._matrix
 
 
 class ValidationData(DessiaObject):
@@ -549,7 +615,9 @@ class ModelValidation(DessiaObject):
          predictions for input, stored in a ValidationData object.
         :rtype: ModelValidation
         """
-        in_train, in_test, out_train, out_test = dataset.train_test_split(input_names, output_names, ratio)
+        train_dataset, test_dataset = dataset.train_test_split(input_names, output_names, ratio)
+        in_train, out_train = train_dataset.to_input_output(input_names, output_names)
+        in_test, out_test = test_dataset.to_input_output(input_names, output_names)
         return cls._build(modeler, in_train, in_test, out_train, out_test, input_names, output_names, name)
 
     def plot_data(self, **_):

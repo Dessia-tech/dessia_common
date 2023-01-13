@@ -10,7 +10,7 @@ from sklearn import cluster
 import matplotlib.pyplot as plt
 
 try:
-    from plot_data.core import PointFamily
+    from plot_data.core import PointFamily, Sample
     from plot_data.colors import LIGHTGREY, Color
 except ImportError:
     pass
@@ -316,10 +316,11 @@ class ClusteredDataset(Dataset):
 
     def _plot_data_list(self):
         plot_data_list = []
-        for row, label in enumerate(self.labels):
-            plot_data_list.append({attr: self.matrix[row][col] for col, attr in enumerate(self.common_attributes)})
-            plot_data_list[-1]["Cluster Label"] = label
-            # (label if label != -1 else "Excluded") plot_data "Excluded" -> NaN
+        for row, (dobject, label) in enumerate(zip(self.dessia_objects, self.labels)):
+            sample_values = {attr: self.matrix[row][col] for col, attr in enumerate(self.common_attributes)}
+            sample_values["Cluster Label"] = label
+            reference_path = f"dessia_objects/{row}"
+            plot_data_list.append(Sample(sample_values, reference_path, dobject.name))
         return plot_data_list
 
     def _point_families(self):

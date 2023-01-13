@@ -1,13 +1,15 @@
 """
 Tests for dessia_common.datatools.modeler file.
 """
+import json
+
 import matplotlib.pyplot as plt
 
 from dessia_common.utils import helpers
 from dessia_common.models import all_cars_no_feat
 from dessia_common.datatools.dataset import Dataset
-import dessia_common.datatools.models as models
-from dessia_common.datatools.modeler import Modeler, CrossValidation
+from dessia_common.datatools import learning_models as models
+from dessia_common.datatools.modeler import Modeler, CrossValidation, ModeledDataset
 
 # ======================================================================================================================
 #                                            F R O M   D A T A S E T
@@ -35,27 +37,27 @@ MC_model = models.MLPClassifier.init_for_modeler(hidden_layer_sizes=(50, 50, 50)
 
 # Train models and predict data
 for output_names in [output_names_reg_solo, output_names_reg]:
-    Ri_mdlr, Ri_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_reg, output_names,
-                                                   Ri_model, True, True, "ridge_modeler")
-    LR_mdlr, LR_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_reg, output_names,
-                                                   LR_model, True, True, "linear_regression_modeler")
-    DR_mdlr, DR_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_reg, output_names,
-                                                   DR_model, True, True, "DTRegressor_modeler")
+    # Ri_mdlr, Ri_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_reg, output_names,
+    #                                                Ri_model, True, True, "ridge_modeler")
+    # LR_mdlr, LR_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_reg, output_names,
+    #                                                LR_model, True, True, "linear_regression_modeler")
+    # DR_mdlr, DR_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_reg, output_names,
+    #                                                DR_model, True, True, "DTRegressor_modeler")
     RR_mdlr, RR_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_reg, output_names,
                                                    RR_model, True, True, "RFRegressor_modeler")
-    MR_mdlr, MR_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_reg, output_names,
-                                                   MR_model, True, True, "MLPRegressor_modeler")
+    # MR_mdlr, MR_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_reg, output_names,
+    #                                                MR_model, True, True, "MLPRegressor_modeler")
 
 # for output_names in [output_names_clf, output_names_clf_solo]:
-DC_mdlr, DC_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_clf, output_names_clf,
-                                               DC_model, True, False, "DTClassifier_modeler")
-RC_mdlr, RC_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_clf, output_names_clf,
-                                               RC_model, True, False, "RFClassifier_modeler")
-MC_mdlr, MC_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_clf, output_names_clf_solo,
-                                               MC_model, True, False, "MLPClassifier_modeler")
+# DC_mdlr, DC_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_clf, output_names_clf,
+#                                                DC_model, True, False, "DTClassifier_modeler")
+# RC_mdlr, RC_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_clf, output_names_clf,
+#                                                RC_model, True, False, "RFClassifier_modeler")
+# MC_mdlr, MC_pred = Modeler.fit_predict_dataset(dataset_for_fit, dataset_to_pred, input_names_clf, output_names_clf_solo,
+#                                                MC_model, True, False, "MLPClassifier_modeler")
 
 # TODO: make impossible scaling for classifier (set to False in any case)
-mdlrs = [Ri_mdlr, LR_mdlr, DR_mdlr, DC_mdlr, RR_mdlr, RC_mdlr, MR_mdlr, MC_mdlr]
+# mdlrs = [Ri_mdlr, LR_mdlr, DR_mdlr, DC_mdlr, RR_mdlr, RC_mdlr, MR_mdlr, MC_mdlr]
 
 # Run cross_validation for all models instantiated in a Modeler
 # CV_Ri = CrossValidation.from_dataset(Ri_mdlr, dataset_for_fit, input_names_reg, output_names_reg, 10, 0.8)
@@ -77,6 +79,14 @@ CV_RR.plot()
 # CV_MR.plot()
 # CV_MC.plot()
 # cvs = [CV_Ri, CV_LR, CV_DR, CV_DC, CV_RR, CV_RC, CV_MR, CV_MC]
+
+modeled_dataset = ModeledDataset.from_predicted_dataset(RR_mdlr, dataset_to_pred, input_names_reg, output_names_reg)
+modeled_dataset.plot()
+
+modeled_dict = modeled_dataset.to_dict()
+json_dict = json.dumps(modeled_dict)
+decoded_json = json.loads(json_dict)
+deserialized_object = modeled_dataset.dict_to_object(decoded_json)
 
 # # Visuals to check test and train data are correctly separated in cross validations and modeler stuff
 # for mdlr, cv in zip(mdlrs, cvs):

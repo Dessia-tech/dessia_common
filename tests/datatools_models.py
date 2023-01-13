@@ -7,7 +7,7 @@ import numpy as npy
 from sklearn import linear_model, tree, ensemble, svm, neural_network
 
 from dessia_common.models import all_cars_no_feat
-from dessia_common.datatools import models
+from dessia_common.datatools import learning_models as models
 from dessia_common.datatools.dataset import Dataset
 
 # TODO review the way data are generated

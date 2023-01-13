@@ -11,7 +11,7 @@ from sklearn import preprocessing, ensemble, inspection
 
 try:
     from plot_data.core import Scatter, Histogram, MultiplePlots, Tooltip, ParallelPlot, PointFamily, EdgeStyle, Axis, \
-        PointStyle, SurfaceStyle
+        PointStyle, SurfaceStyle, Sample
     from plot_data.colors import BLUE, GREY, DARK_BLUE
 except ImportError:
     pass
@@ -20,7 +20,7 @@ from dessia_common.core import DessiaObject, DessiaFilter, FiltersList
 from dessia_common.exports import MarkdownWriter
 from dessia_common import templates
 from dessia_common.datatools.metrics import mean, std, variance, covariance_matrix
-from dessia_common.datatools import models
+from dessia_common.datatools import learning_models as models
 
 Vector = List[float]
 Matrix = List[Vector]
@@ -239,8 +239,8 @@ class Dataset(DessiaObject):
                 indentation = 3
             else:
                 indentation = min_col_length - len(attr)
-                odd_incr = int(indentation % 2)
-                indentation = int(indentation / 2)
+            odd_incr = int(indentation % 2)
+            indentation = int(indentation / 2)
 
             name_attr = " " * indentation + " " * odd_incr + f"{attr.capitalize()}" + " " * indentation
             attr_space.append(len(name_attr))
@@ -394,12 +394,13 @@ class Dataset(DessiaObject):
         """
         return self.sub_matrix(input_names), self.sub_matrix(output_names)
 
-    def train_test_split(self, input_names: List[str], output_names: List[str], ratio: float = 0.8) -> List[Matrix]:
+    def train_test_split(self, input_names: List[str], output_names: List[str], ratio: float = 0.8,
+                         shuffled: bool = True) -> List[Matrix]:
         """
-        Generate input and output train matrices and test matrices from matrix of current Dataset.
+        Generate train and test Datasets from current Dataset.
         """
-        inputs, outputs = self.to_input_output(input_names, output_names)
-        return models.train_test_split(inputs, outputs, ratio=ratio)
+        ind_train, ind_test = models.get_split_indexes(len(self), ratio=ratio, shuffled=shuffled)
+        return Dataset(self[ind_train], name=self.name + '_train'), Dataset(self[ind_test], name=self.name + '_test')
 
     def sort(self, key: Any, ascend: bool = True):  # TODO : Replace numpy with faster algorithms
         """
@@ -700,8 +701,10 @@ class Dataset(DessiaObject):
 
     def _plot_data_list(self):
         plot_data_list = []
-        for row, _ in enumerate(self.dessia_objects):
-            plot_data_list.append({attr: self.matrix[row][col] for col, attr in enumerate(self.common_attributes)})
+        for row, dobject in enumerate(self.dessia_objects):
+            sample_values = {attr: self.matrix[row][col] for col, attr in enumerate(self.common_attributes)}
+            reference_path = f"dessia_objects/{row}"
+            plot_data_list.append(Sample(sample_values, reference_path, dobject.name))
         return plot_data_list
 
     def _point_families(self):

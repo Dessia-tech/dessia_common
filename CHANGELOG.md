@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Hot fix for is_valid method of workflow's Block
 - Core : add a boolean for platform checking in check_list. Fixes a problem with testing classes not existing
+- Reference path for datatools Dataset and ClusteredDataset
 
 ### Refactor
 
@@ -18,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### CI
 
 - add a check to enforce update of changelog in PR
+- code_pydocstyle.py checks daily instead of weekly
 
 ### Added
 - modeling.py file in datatools which contains:
@@ -41,6 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Chores
 - Merge back master to dev
 - Docs weekly decrease
+- Fixed all remaining pydocstyle errors
 
 ## 0.11.0
 
