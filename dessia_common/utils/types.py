@@ -123,11 +123,8 @@ def get_python_class_from_class_name(full_class_name):
 
     module_name, class_name = full_class_name.rsplit('.', 1)
     module = import_module(module_name)
-    print("----------------->>> module_name:", module_name)
-    print("----------------->>> module:", module)
 
     class_ = getattr(module, class_name)
-    print("----------------->>> class_:", class_)
     # Storing in cache
     _PYTHON_CLASS_CACHE[full_class_name] = class_
     return class_
