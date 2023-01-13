@@ -7,6 +7,7 @@ Types tools
 from typing import Any, Dict, List, Tuple, Type, Union, get_origin, get_args
 
 # import json
+import sys
 from collections.abc import Iterator, Sequence
 from importlib import import_module
 
@@ -116,6 +117,7 @@ def isinstance_base_types(obj):
 
 def get_python_class_from_class_name(full_class_name):
     cached_value = _PYTHON_CLASS_CACHE.get(full_class_name, None)
+    sys.setrecursionlimit(3000)
     if cached_value is not None:
         return cached_value
 
