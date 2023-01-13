@@ -139,11 +139,10 @@ def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=
             raise dc_err.SerializationError(msg)
         serialized = value
 
-    # if path == '#':
-    #     # adding _references
-    #     serialized['_references'] = id_memo
+    if path == '#':
+        # adding _references
+        serialized['_references'] = id_memo
 
-    serialized['_references'] = id_memo
     return serialized, memo
 
 
