@@ -866,8 +866,6 @@ class Display(Block):
         object_ = values[self.inputs[0]]
         settings = object_._display_settings_from_selector(self.selector)
         data = attrmethod_getter(object_, settings.method)()
-        if settings.serialize_data:
-            data = serialize(data)
         return [DisplayObject(type_=settings.type, data=data, name=self.name)]
 
     def _to_script(self, _) -> ToScriptElement:
