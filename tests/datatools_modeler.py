@@ -74,14 +74,21 @@ CV_RR = CrossValidation.from_dataset(RR_mdlr, dataset_for_fit, input_names_reg, 
 # CV_LR.plot()
 # CV_DR.plot()
 # CV_DC.plot()
-CV_RR.plot()
+# CV_RR.plot()
 # CV_RC.plot()
 # CV_MR.plot()
 # CV_MC.plot()
 # cvs = [CV_Ri, CV_LR, CV_DR, CV_DC, CV_RR, CV_RC, CV_MR, CV_MC]
 
 modeled_dataset = ModeledDataset.from_predicted_dataset(RR_mdlr, dataset_to_pred, input_names_reg, output_names_reg)
+# modeled_dataset.plot()
+
+modeled_dataset, modeler, cross_validation = ModeledDataset.fit_validate_predict(dataset_for_fit, dataset_to_pred,
+                                                                                 MR_model, input_names_reg, output_names,
+                                                                                 True, False, 10, 0.8,
+                                                                                 "test_fit_validate_predict")
 modeled_dataset.plot()
+cross_validation.plot()
 
 modeled_dict = modeled_dataset.to_dict()
 json_dict = json.dumps(modeled_dict)

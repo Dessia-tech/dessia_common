@@ -74,9 +74,7 @@ class Modeler(DessiaObject):
         return True
 
     def _format_output(self, scaled_outputs: Matrix):
-        """
-        Format output to List[List[float]] in any case for code consistency and simplicity.
-        """
+        """ Format output to List[List[float]] in any case for code consistency and simplicity. """
         if not isinstance(scaled_outputs[0], list):
             return [[value] for value in scaled_outputs]
         return scaled_outputs
@@ -94,9 +92,7 @@ class Modeler(DessiaObject):
     @classmethod
     def _fit(cls, inputs: Matrix, outputs: Matrix, model: models.Model, input_is_scaled: bool = True,
              output_is_scaled: bool = False, name: str = '') -> 'Modeler':
-        """
-        Private method to fit outputs to inputs with a machine learning method from datatools.models objects.
-        """
+        """ Private method to fit outputs to inputs with a machine learning method from datatools.models objects. """
         in_scaler, out_scaler, scaled_inputs, scaled_outputs = cls._compute_scalers(inputs, outputs, input_is_scaled,
                                                                                     output_is_scaled, name)
         fit_model = model.fit(scaled_inputs, scaled_outputs, **model.params, name=name + '_model')
@@ -170,9 +166,7 @@ class Modeler(DessiaObject):
         return cls.fit_matrix(inputs, outputs, model, input_is_scaled, output_is_scaled, name)
 
     def _predict(self, inputs: List[List[float]]) -> Union[Vector, Matrix]:
-        """
-        Private method to predict outputs from inputs with self.model.
-        """
+        """ Private method to predict outputs from inputs with self.model. """
         return self.output_scaler.inverse_transform(self.model.predict(self.input_scaler.transform(inputs)))
 
     def predict_matrix(self, inputs: List[List[float]]) -> Matrix:
@@ -210,9 +204,7 @@ class Modeler(DessiaObject):
     def _fit_predict(cls, inputs: Matrix, outputs: Matrix, predicted_inputs: Matrix, model: models.Model,
                      input_is_scaled: bool = True, output_is_scaled: bool = False,
                      name: str = '') -> Tuple['Modeler', Union[Vector, Matrix]]:
-        """
-        Private method to fit outputs to inputs and predict predicted_inputs for a Dataset (fit then predict).
-        """
+        """ rivate method to fit outputs to inputs and predict predicted_inputs for a Dataset (fit then predict). """
         modeler = cls._fit(inputs, outputs, model, input_is_scaled, output_is_scaled, name)
         return modeler, modeler._predict(predicted_inputs)
 
@@ -220,9 +212,7 @@ class Modeler(DessiaObject):
     def fit_predict_matrix(cls, inputs: Matrix, outputs: Matrix, predicted_inputs: Matrix, model: models.Model,
                            input_is_scaled: bool = True, output_is_scaled: bool = False,
                            name: str = '') -> Tuple['Modeler', Matrix]:
-        """
-        Fit outputs to inputs and predict predicted_inputs for matrix data (fit then predict).
-        """
+        """ Fit outputs to inputs and predict predicted_inputs for matrix data (fit then predict). """
         modeler, predictions = cls._fit_predict(inputs, outputs, predicted_inputs, model, input_is_scaled,
                                                 output_is_scaled, name)
         return modeler, modeler._format_output(predictions)
@@ -231,17 +221,13 @@ class Modeler(DessiaObject):
     def fit_predict_dataset(cls, fit_dataset: Dataset, to_predict_dataset: Dataset, input_names: List[str],
                             output_names: List[str], model: models.Model, input_is_scaled: bool = True,
                             output_is_scaled: bool = False, name: str = '') -> Tuple['Modeler', Matrix]:
-        """
-        Fit outputs to inputs and predict outputs of to_predict_dataset (fit then predict).
-        """
+        """ Fit outputs to inputs and predict outputs of to_predict_dataset (fit then predict). """
         modeler = cls.fit_dataset(fit_dataset, input_names, output_names, model, input_is_scaled, output_is_scaled,
                                   name)
         return modeler, modeler.predict_dataset(to_predict_dataset, input_names)
 
     def _score(self, inputs: Matrix, outputs: Matrix) -> float:
-        """
-        Compute the score of Modeler.
-        """
+        """ Compute the score of Modeler. """
         return self.model.score(self.input_scaler.transform(inputs), self.output_scaler.transform(outputs))
 
     def score_matrix(self, inputs: Matrix, outputs: Matrix) -> float:
@@ -295,18 +281,14 @@ class Modeler(DessiaObject):
     def _fit_score(cls, inputs_train: Matrix, inputs_test: Matrix, outputs_train: Matrix, outputs_test: Matrix,
                    model: models.Model, input_is_scaled: bool, output_is_scaled: bool,
                    name: str) -> Tuple['Modeler', float]:
-        """
-        Private method to fit modeler with train matrices and test it with test matrices.
-        """
+        """ Private method to fit modeler with train matrices and test it with test matrices. """
         mdlr = cls._fit(inputs_train, outputs_train, model, input_is_scaled, output_is_scaled, name)
         return mdlr, mdlr._score(inputs_test, outputs_test)
 
     @classmethod
     def from_matrix_fit_score(cls, inputs: Matrix, outputs: Matrix, model: models.Model, input_is_scaled: bool,
                               output_is_scaled: bool, ratio: float = 0.8, name: str = '') -> Tuple['Modeler', float]:
-        """
-        Fit modeler with train matrices and test it with test matrices.
-        """
+        """ Fit modeler with train matrices and test it with test matrices. """
         in_train, in_test, out_train, out_test = models.train_test_split(inputs, outputs, ratio=ratio)
         return cls._fit_score(in_train, in_test, out_train, out_test, model, input_is_scaled,
                               output_is_scaled, name)
@@ -315,9 +297,7 @@ class Modeler(DessiaObject):
     def from_dataset_fit_score(cls, dataset: Dataset, input_names: List[str], output_names: List[str],
                                model: models.Model, input_is_scaled: bool = True, output_is_scaled: bool = False,
                                ratio: float = 0.8, name: str = '') -> Tuple['Modeler', float]:
-        """
-        Train test split dataset, fit modeler with train matrices and score it with test matrices.
-        """
+        """ Train test split dataset, fit modeler with train matrices and score it with test matrices. """
         train_dataset, test_dataset = dataset.train_test_split(input_names, output_names, ratio)
         inputs_train, output_train = train_dataset.to_input_output(input_names, output_names)
         inputs_test, output_test = test_dataset.to_input_output(input_names, output_names)
@@ -326,6 +306,7 @@ class Modeler(DessiaObject):
 
 
 class ModeledDataset(Dataset):
+    """ Class allowing to plot and study data generated from a DOE and its prediction from a modeler modelisation. """
     _standalone_in_db = True
 
     def __init__(self, dessia_objects: List[Sample] = None, input_names: List[str] = None,
@@ -336,7 +317,7 @@ class ModeledDataset(Dataset):
         self._common_attributes = input_names + output_names
 
     def to_dict(self):
-        """ Generic to_dict method. """
+        """ Specific to_dict method. """
         serialized_dict = self.base_dict()
         dict_ = self._serializable_dict()
         dict_dessia_objects = []
@@ -350,7 +331,7 @@ class ModeledDataset(Dataset):
 
     @classmethod
     def dict_to_object(cls, dict_):
-        """ Generic dict_to_object method. """
+        """ Specific dict_to_object method. """
         dessia_objects = []
         for dobject in dict_['dessia_objects']:
             dessia_objects.append(Sample(dobject['values'], dobject['reference_path'], dobject['name']))
@@ -365,6 +346,7 @@ class ModeledDataset(Dataset):
     @classmethod
     def from_predicted_dataset(cls, modeler: Modeler, dataset: Dataset, input_names: List[str], output_names: List[str],
                                name: str = ''):
+        """ Predict new inputs from a a modeler and a dataset of unknown inputs. """
         predictions = modeler.predict_dataset(dataset, input_names)
         samples = []
         for idx, (input_, pred) in enumerate(zip(dataset, predictions)):
@@ -374,10 +356,8 @@ class ModeledDataset(Dataset):
         return cls(samples, input_names, output_names)
 
     @property
-    def matrix(self):
-        """
-        Get equivalent matrix of dessia_objects, which is of dimensions `len(dessia_objects) x len(common_attributes)`.
-        """
+    def matrix(self) -> Matrix:
+        """ Get equivalent matrix of dessia_objects (`len(dessia_objects) x len(common_attributes)`). """
         if self._matrix is None:
             matrix = []
             for sample in self:
@@ -385,6 +365,26 @@ class ModeledDataset(Dataset):
                 matrix.append(list(temp_row[vector_features.index(attr)] for attr in self.common_attributes))
             self._matrix = matrix
         return self._matrix
+
+    @classmethod
+    def fit_validate_predict(self, train_dataset: Dataset, to_predict_dataset: Dataset, model: models.Model,
+                             input_names: List[str], output_names: List[str], input_is_scaled: bool = True,
+                             output_is_scaled: bool = False, nb_tests: int = 5, ratio: float = 0.8, name: str = '') \
+        -> Tuple['ModeledDataset', 'Modeler', 'CrossValidation']:
+        """ Train and validate a modeler with train_dataset and predict to_predict_dataset. """
+        modeler = Modeler.fit_dataset(dataset=train_dataset, input_names=input_names, output_names=output_names,
+                                      model=model, input_is_scaled=input_is_scaled, output_is_scaled=output_is_scaled,
+                                      name=name + "_modeler")
+
+        cross_val = CrossValidation.from_dataset(modeler=modeler, dataset=train_dataset,
+                                                 input_names=input_names, output_names=output_names,
+                                                 nb_tests=nb_tests, ratio=ratio)
+
+        modeled_dataset = ModeledDataset.from_predicted_dataset(modeler=modeler, dataset=to_predict_dataset,
+                                                                input_names=input_names, output_names=output_names,
+                                                                name=name)
+
+        return modeled_dataset, modeler, cross_val
 
 
 class ValidationData(DessiaObject):
@@ -480,9 +480,7 @@ class ValidationData(DessiaObject):
         return points_train, points_test, self._bisectrice_points()
 
     def build_graphs(self) -> List[Graph2D]:
-        """
-        Build elements and graphs for plot_data method.
-        """
+        """ Build elements and graphs for plot_data method. """
         points_train, points_test, points_bisectrice = self._to_val_points()
         pl_datasets = self._ref_val_datasets(points_train, points_test)
         pl_datasets.append(pl_Dataset(points_bisectrice, point_style=LIN_POINT_STYLE, edge_style=STD_LINE,
@@ -494,17 +492,13 @@ class ValidationData(DessiaObject):
         return graphs, points_train + points_test + points_bisectrice
 
     def plot_data(self, **_):
-        """
-        Plot data method for ValidationData.
-        """
+        """ Plot data method for ValidationData. """
         graphs, elements = self.build_graphs()
         return [MultiplePlots(elements=elements, plots=graphs, initial_view_on=True)]
 
 
 class ModelValidation(DessiaObject):
-    """
-    Class to handle a modeler and the ValidationData used to train and test it.
-    """
+    """ Class to handle a modeler and the ValidationData used to train and test it. """
     _non_data_eq_attributes = ['_score']
     _standalone_in_db = True
 
@@ -517,9 +511,7 @@ class ModelValidation(DessiaObject):
 
     @property
     def score(self) -> float:
-        """
-        Score of fitted Modeler stored in attribute modeler.
-        """
+        """ Score of fitted Modeler stored in attribute modeler. """
         if self._score is None:
             self._score = self.modeler.score_matrix(self.data.input_test, self.data.output_test)
         return self._score
@@ -621,9 +613,7 @@ class ModelValidation(DessiaObject):
         return cls._build(modeler, in_train, in_test, out_train, out_test, input_names, output_names, name)
 
     def plot_data(self, **_):
-        """
-        Plot data method for ModelValidation.
-        """
+        """ Plot data method for ModelValidation. """
         return self.data.plot_data()
 
 
@@ -651,9 +641,7 @@ class CrossValidation(DessiaObject):
 
     @property
     def scores(self) -> Vector:
-        """
-        List of scores of modelers contained in model_validations.
-        """
+        """ List of scores of modelers contained in model_validations. """
         if self._scores is None:
             self._scores = [model_val.score for model_val in self.model_validations]
             return self._scores
@@ -682,9 +670,7 @@ class CrossValidation(DessiaObject):
     def from_matrix(cls, modeler: Modeler, inputs: Matrix, outputs: Matrix, input_names: List[str],
                     output_names: List[str], nb_tests: int = 5, ratio: float = 0.8,
                     name: str = '') -> 'CrossValidation':
-        """
-        Cross Validation of modeler from inputs and outputs matrices, given input_names and output_names.
-        """
+        """ Cross Validation of modeler from inputs and outputs matrices, given input_names and output_names. """
         validations = []
         for idx in range(nb_tests):
             name = f"{name}_val_{idx}"
@@ -731,9 +717,7 @@ class CrossValidation(DessiaObject):
         return cls(validations, f"{name}_crossval")
 
     def plot_data(self, **_):
-        """
-        Plot data method for CrossValidation.
-        """
+        """ Plot data method for CrossValidation. """
         graphs = []
         for validation in self.model_validations:
             graphs += validation.data.build_graphs()[0]
@@ -758,9 +742,7 @@ class CrossValidation(DessiaObject):
 
 
 def matrix_ranges(matrix: Matrix, nb_points: int = 20) -> Matrix:
-    """
-    Dessia linspace of nb_points points between extremum of each column of matrix.
-    """
+    """ Dessia linspace of nb_points points between extremum of each column of matrix. """
     ranges = []
     for feature_column in zip(*matrix):
         min_value = min(feature_column)
@@ -770,13 +752,9 @@ def matrix_ranges(matrix: Matrix, nb_points: int = 20) -> Matrix:
     return ranges
 
 def axis_style(nb_x: int = 10, nb_y: int = 10) -> Axis:
-    """
-    Set axis style for Modeler objects.
-    """
+    """ Set axis style for Modeler objects. """
     return Axis(nb_points_x=nb_x, nb_points_y=nb_y, axis_style=STD_LINE, grid_on=True)
 
 def scores_limits(number: int) -> Points:
-    """
-    Draw white points in scatter for it to be plotted between 0 and number on x axis and 0 and 1 on y axis.
-    """
+    """ Draw white points in scatter for it to be plotted between 0 and number on x axis and 0 and 1 on y axis. """
     return [{'Index': -0.05, 'Score': -0.05}, {'Index': number + 0.05, 'Score': 1.05}]
