@@ -826,6 +826,7 @@ class Display(Block):
 
         self._type = None
         self._selector = None
+        self.serialize = False
 
     @staticmethod
     def warn_deprecation():
@@ -835,7 +836,7 @@ class Display(Block):
                       "to generate wanted displays (MultiPlot, CadView, PlotData, Markdown)", DeprecationWarning)
 
     @property
-    def type_(self):
+    def type_(self) -> str:
         """ Get display's type_. """
         if self._type:
             return self._type
@@ -845,7 +846,7 @@ class Display(Block):
         raise NotImplementedError(f"type_ attribute is not implemented for block of type '{type(self)}'")
 
     @property
-    def selector(self):
+    def selector(self) -> str:
         """ Get display's selector. """
         if self._selector:
             return self._selector
@@ -857,8 +858,8 @@ class Display(Block):
     def _display_settings(self, block_index: int) -> DisplaySetting:
         """ Compute block's display settings. """
         args = {'block_index': block_index}
-        return DisplaySetting(selector=None, type_=self.type_, method="block_display", serialize_data=True,
-                              arguments=args)
+        return DisplaySetting(selector=None, type_=self.type_, method="block_display",
+                              serialize_data=self.serialize, arguments=args)
 
     def evaluate(self, values):
         """ Run method defined by selector's display_setting and compute corresponding DisplayObject. """
@@ -894,6 +895,7 @@ class MultiPlot(Display):
         self.inputs[0].name = 'Input List'
         self._type = "plot_data"
         self._selector = None
+        self.serialize = True
 
     def equivalent(self, other):
         """ Return whether if the block is equivalent to the other given. """
@@ -989,6 +991,7 @@ class PlotData(Display):
 
         self._type = "plot_data"
         self._selector = "plot_data"
+        self.serialize = True
 
 
 class ModelAttribute(Block):
