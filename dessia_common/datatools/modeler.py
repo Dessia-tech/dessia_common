@@ -205,7 +205,7 @@ class Modeler(DessiaObject):
     def _fit_predict(cls, inputs: Matrix, outputs: Matrix, predicted_inputs: Matrix, model: models.Model,
                      input_is_scaled: bool = True, output_is_scaled: bool = False,
                      name: str = '') -> Tuple['Modeler', Union[Vector, Matrix]]:
-        """ rivate method to fit outputs to inputs and predict predicted_inputs for a Dataset (fit then predict). """
+        """ Private method to fit outputs to inputs and predict predicted_inputs for a Dataset (fit then predict). """
         modeler = cls._fit(inputs, outputs, model, input_is_scaled, output_is_scaled, name)
         return modeler, modeler._predict(predicted_inputs)
 
@@ -332,8 +332,8 @@ class ModeledDataset(Dataset):
         dessia_objects = []
         for dessia_object in dict_['dessia_objects']:
             dessia_objects.append(Sample(dessia_object['values'],
-                                          dessia_object['reference_path'],
-                                          dessia_object['name']))
+                                         dessia_object['reference_path'],
+                                         dessia_object['name']))
         dict_['dessia_objects'] = dessia_objects
         return cls(dessia_objects, dict_['input_names'], dict_['output_names'], dict_['name'])
 

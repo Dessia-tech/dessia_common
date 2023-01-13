@@ -42,6 +42,7 @@ class Scaler(DessiaObject):
 
     @classmethod
     def set_in_modeler(cls, modeler_name: str, in_out: str, is_scaled: bool) -> 'Scaler':
+        """ Set scaler in modeler. """
         class_ = cls._set_class(is_scaled)
         name = cls._set_name(modeler_name, in_out, is_scaled)
         return class_, name
@@ -122,12 +123,14 @@ class Scaler(DessiaObject):
         return scaler, scaler.transform(reshaped_matrix)
 
     def transform_matrices(self, *matrices: Tuple[Matrix]) -> Tuple[Matrix]:
+        """ Iteratively scale all matrices in argument. """
         scaled_matrices = tuple()
         for matrix in matrices:
             scaled_matrices += (self.transform(matrix), )
         return scaled_matrices
 
     def inverse_transform_matrices(self, *scaled_matrices: Tuple[Matrix]) -> Tuple[Matrix]:
+        """ Iteratively unscale all matrices in argument. """
         unscaled_matrices = tuple()
         for matrix in scaled_matrices:
             unscaled_matrices += (self.inverse_transform(matrix), )
