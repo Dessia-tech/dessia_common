@@ -50,7 +50,6 @@ class CheckList:
     """
     A list of checks result.
     """
-
     def __init__(self, checks):
         self.checks = checks
 
@@ -64,6 +63,7 @@ class CheckList:
         return self.__class__(self.checks + other_checklist.checks)
 
     def checks_above_level(self, level='error'):
+        """ Return True if no check has a level above given one, else False. """
         checks = []
         for check in self.checks:
             if LEVEL_TO_INT[check.level] >= LEVEL_TO_INT[level]:
@@ -71,6 +71,7 @@ class CheckList:
         return checks
 
     def raise_if_above_level(self, level='error'):
+        """ Raise an error if some checks have a level above given one. """
         for check in self.checks_above_level(level=level):
             raise ValueError(f'Check: {check} is above level "{level}"')
 

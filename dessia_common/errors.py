@@ -5,9 +5,7 @@ Module for errors in dessia_common.
 """
 
 class ExceptionWithTraceback(Exception):
-    """
-    Base class with a message and a traceback.
-    """
+    """ Base class with a message and a traceback. """
 
     def __init__(self, message, traceback_=''):
         super().__init__(message)
@@ -19,42 +17,28 @@ class ExceptionWithTraceback(Exception):
 
 
 class DeepAttributeError(ExceptionWithTraceback, AttributeError):
-    """
-    Abstract class for handling deep attribute errors.
-    """
+    """ Error when trying to reach a deep attribute of an object, but couldn't get it. """
 
 
 class ModelError(Exception):
-    """
-    Abstract class for handling model errors.
-    """
+    """ Error of model. """
 
 
 class ConsistencyError(Exception):
-    """
-    Abstract class for handling consistency errors.
-    """
+    """ Error of consistency. """
 
 
 class SerializationError(Exception):
-    """
-    Abstract class for handling serialization errors.
-    """
+    """ Error of serialization. """
 
 
 class DeserializationError(Exception):
-    """
-    Abstract class for handling deserialization errors.
-    """
+    """ Error of deserialization. """
 
 
 class CopyError(Exception):
-    """
-    Abstract class for handling copy errors.
-    """
+    """ Error of copy. """
 
 
 class UntypedArgumentError(Exception):
-    """
-    Abstract class for handling untyped argument errors.
-    """
+    """ Error of code annotation. """
