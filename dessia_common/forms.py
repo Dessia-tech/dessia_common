@@ -306,6 +306,7 @@ class StandaloneObject(MovingObject):
 
     @classmethod
     def generate_with_many_subobjects(cls, seed: int, number: int, name: str = "Populated SO"):
+        """ Generate an object with a lot of subobjects. """
         standalone_object = cls.generate(seed=seed, name=name)
         subobjects = StandaloneBuiltinsSubobject.generate_many(seed=seed*number)
         standalone_object.subclass_arg = subobjects
