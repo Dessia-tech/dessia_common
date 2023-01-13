@@ -5,8 +5,6 @@ from typing import List, Dict, Tuple, Union, Any
 
 import numpy as npy
 
-from dessia_common.typings import JsonSerializable
-
 try:
     from plot_data.core import Dataset as pl_Dataset
     from plot_data.core import EdgeStyle, Tooltip, MultiplePlots, PointStyle, Graph2D, Axis, Sample
@@ -15,6 +13,7 @@ except ImportError:
     pass
 
 from dessia_common.core import DessiaObject
+from dessia_common.typings import JsonSerializable
 from dessia_common.serialization import SerializableObject
 from dessia_common.datatools import learning_models as models
 from dessia_common.datatools.dataset import Dataset
