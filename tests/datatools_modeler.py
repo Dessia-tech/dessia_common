@@ -84,7 +84,7 @@ modeled_dataset = ModeledDataset.from_predicted_dataset(RR_mdlr, dataset_to_pred
 # modeled_dataset.plot()
 
 modeled_dataset, modeler, cross_validation = ModeledDataset.fit_validate_predict(dataset_for_fit, dataset_to_pred,
-                                                                                 MR_model, input_names_reg, output_names,
+                                                                                 DR_model, input_names_reg, output_names,
                                                                                  True, False, 10, 0.8,
                                                                                  "test_fit_validate_predict")
 modeled_dataset.plot()

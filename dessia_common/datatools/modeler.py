@@ -1,9 +1,11 @@
 """
-Librairy for building machine learning modelers from Dataset or Lists using sklearn models handled in models.
+Library for building machine learning modelers from Dataset or Lists using sklearn models handled in models.
 """
-from typing import List, Dict, Tuple, Union
+from typing import List, Dict, Tuple, Union, Any
 
 import numpy as npy
+
+from dessia_common.typings import JsonSerializable
 
 try:
     from plot_data.core import Dataset as pl_Dataset
@@ -13,7 +15,7 @@ except ImportError:
     pass
 
 from dessia_common.core import DessiaObject
-from dessia_common.serialization import serialize_dict
+from dessia_common.serialization import SerializableObject
 from dessia_common.datatools import learning_models as models
 from dessia_common.datatools.dataset import Dataset
 
@@ -316,25 +318,24 @@ class ModeledDataset(Dataset):
         Dataset.__init__(self, dessia_objects=dessia_objects, name=name)
         self._common_attributes = input_names + output_names
 
-    def to_dict(self):
+    def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#') -> JsonSerializable:
         """ Specific to_dict method. """
-        serialized_dict = self.base_dict()
-        dict_ = self._serializable_dict()
-        dict_dessia_objects = []
-        for dobject in dict_['dessia_objects']:
-            dict_dessia_objects.append(dobject.to_dict())
-            for attr in self.common_attributes:
-                dict_dessia_objects[-1].pop(attr)
-        dict_['dessia_objects'] = dict_dessia_objects
-        serialized_dict.update(serialize_dict(dict_))
-        return serialized_dict
+        dict_ = super().to_dict(use_pointers, memo=memo, path=path)
+        for dessia_object in dict_['dessia_objects']:
+            for attr in dessia_object['values']:
+                dessia_object.pop(attr)
+        return dict_
 
     @classmethod
-    def dict_to_object(cls, dict_):
+    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
+                       pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'SerializableObject':
         """ Specific dict_to_object method. """
         dessia_objects = []
-        for dobject in dict_['dessia_objects']:
-            dessia_objects.append(Sample(dobject['values'], dobject['reference_path'], dobject['name']))
+        for dessia_object in dict_['dessia_objects']:
+            dessia_objects.append(Sample(dessia_object['values'],
+                                          dessia_object['reference_path'],
+                                          dessia_object['name']))
+        dict_['dessia_objects'] = dessia_objects
         return cls(dessia_objects, dict_['input_names'], dict_['output_names'], dict_['name'])
 
     def _printed_attributes(self):
@@ -352,7 +353,7 @@ class ModeledDataset(Dataset):
         for idx, (input_, pred) in enumerate(zip(dataset, predictions)):
             sample = {attr: getattr(input_, attr) for attr in input_names}
             sample.update(dict(zip(output_names, pred)))
-            samples.append(Sample(sample, name=f"{name}_{idx}"))
+            samples.append(Sample(sample, reference_path=f"#/dessia_objects/{idx}", name=f"{name}_{idx}"))
         return cls(samples, input_names, output_names)
 
     @property
@@ -367,7 +368,7 @@ class ModeledDataset(Dataset):
         return self._matrix
 
     @classmethod
-    def fit_validate_predict(self, train_dataset: Dataset, to_predict_dataset: Dataset, model: models.Model,
+    def fit_validate_predict(cls, train_dataset: Dataset, to_predict_dataset: Dataset, model: models.Model,
                              input_names: List[str], output_names: List[str], input_is_scaled: bool = True,
                              output_is_scaled: bool = False, nb_tests: int = 5, ratio: float = 0.8, name: str = '') \
         -> Tuple['ModeledDataset', 'Modeler', 'CrossValidation']:
@@ -380,9 +381,8 @@ class ModeledDataset(Dataset):
                                                  input_names=input_names, output_names=output_names,
                                                  nb_tests=nb_tests, ratio=ratio)
 
-        modeled_dataset = ModeledDataset.from_predicted_dataset(modeler=modeler, dataset=to_predict_dataset,
-                                                                input_names=input_names, output_names=output_names,
-                                                                name=name)
+        modeled_dataset = cls.from_predicted_dataset(modeler=modeler, dataset=to_predict_dataset,
+                                                     input_names=input_names, output_names=output_names, name=name)
 
         return modeled_dataset, modeler, cross_val
 
