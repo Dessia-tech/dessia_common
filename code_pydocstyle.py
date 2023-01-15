@@ -23,54 +23,6 @@ UNWATCHED_ERRORS = [
 MAX_ERROR_BY_TYPE = {
     # If the error code is not in this dict, then there is no tolerance on the error.
     # http://www.pydocstyle.org/en/stable/error_codes.html
-    'D100': 1,
-    'D101': 54,
-    'D102': 112,
-    'D103': 37,
-    'D104': 1,
-    'D105': 1,
-    'D106': 1,
-    'D107': 1,
-
-    'D200': 1,
-    'D201': 1,
-    'D202': 1,
-    'D203': 1,
-    'D204': 1,
-    'D205': 24,
-    'D206': 1,
-    'D207': 1,
-    'D208': 1,
-    'D209': 1,
-    'D210': 1,
-    'D211': 1,
-    'D212': 1,
-    'D213': 2,
-    'D214': 1,
-    'D215': 1,
-
-    'D300': 1,
-    'D301': 1,
-    'D302': 1,
-
-    'D401': 1,
-    'D402': 1,
-    'D403': 4,
-    'D404': 1,
-    'D405': 1,
-    'D406': 1,
-    'D407': 1,
-    'D408': 1,
-    'D409': 1,
-    'D410': 1,
-    'D411': 1,
-    'D412': 1,
-    'D413': 8,
-    'D414': 1,
-    'D415': 1,
-    'D416': 1,
-    'D417': 1,
-    'D418': 1,
 }
 
 error_detected = False
@@ -79,7 +31,7 @@ ratchet_limit = 9
 effective_date = date(2022, 11, 28)
 today = date.today()
 weekly_decrease = 5
-time_decrease = (today - effective_date).days // 7 * weekly_decrease
+time_decrease = int((today - effective_date).days/7. * weekly_decrease)
 
 
 code_to_errors = {}

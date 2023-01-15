@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### CI
 
 - add a check to enforce update of changelog in PR
+- code_pydocstyle.py checks daily instead of weekly
 
 ### Performance
 
@@ -36,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Chores
 - Merge back master to dev
 - Docs weekly decrease
+- Fixed all remaining pydocstyle errors
 
 ## 0.11.0
 
