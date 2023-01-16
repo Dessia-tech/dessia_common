@@ -4,14 +4,13 @@
 General checks & checklists.
 """
 
-from dessia_common.base import SerializableObject
 from typing import List
 
 
 LEVEL_TO_INT = {'debug': 0, 'info': 1, 'warning': 2, 'error': 3}
 
 
-class PassedCheck(SerializableObject):
+class PassedCheck:
     """
     Represents the result of a check that has no error.
     """
@@ -50,11 +49,8 @@ class GeometricInconsistance(FailedCheck):
     """
 
 
-class CheckList(SerializableObject):
-    """
-    A list of checks result.
-    """
-
+class CheckList:
+    """ A list of checks result. """
     def __init__(self, checks: List[PassedCheck]):
         self.checks = checks
 
@@ -74,6 +70,7 @@ class CheckList(SerializableObject):
         return self.checks[item]
 
     def checks_above_level(self, level: str = 'error'):
+        """ Return True if no check has a level above given one, else False. """
         checks = []
         for check in self.checks:
             if LEVEL_TO_INT[check.level] >= LEVEL_TO_INT[level]:
@@ -81,6 +78,7 @@ class CheckList(SerializableObject):
         return checks
 
     def raise_if_above_level(self, level: str = 'error'):
+        """ Raise an error if some checks have a level above given one. """
         for check in self.checks_above_level(level=level):
             raise ValueError(f'Check: {check} is above level "{level}"')
 

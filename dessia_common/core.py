@@ -27,14 +27,13 @@ from ast import literal_eval
 # from dessia_common.abstract import CoreDessiaObject
 import dessia_common.errors
 from dessia_common.utils.diff import data_eq, diff, dict_hash, list_hash
-import dessia_common.utils.serialization as dcus
-from dessia_common.utils.types import full_classname, is_sequence, is_bson_valid, TYPES_FROM_STRING
+from dessia_common.utils.types import is_sequence, is_bson_valid, TYPES_FROM_STRING
 from dessia_common.utils.copy import deepcopy_value
 from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotation, JSONSCHEMA_HEADER
 import dessia_common.schemas.core as schemas
 from dessia_common.utils.docstrings import parse_docstring, FAILED_DOCSTRING_PARSING
 
-import dessia_common.base as dcb
+from dessia_common.serialization import SerializableObject, deserialize_argument, serialize
 from dessia_common.exports import XLSXWriter, MarkdownWriter, ExportFormat
 
 from dessia_common.typings import JsonSerializable
@@ -66,9 +65,7 @@ def deprecated(use_instead=None):
             print('Traceback : ')
             tb.print_stack(limit=2)
             return function(*args, **kwargs)
-
         return wrapper
-
     return decorated
 
 
@@ -77,15 +74,14 @@ def deprecation_warning(name, object_type, use_instead=None):
     Throw a deprecation warning function.
     """
     warnings.simplefilter('once', DeprecationWarning)
-    msg = f"\n\n{object_type} {name} is deprecated.\n"
-    msg += "It will be removed in a future version.\n"
+    msg = f"\n\n{object_type} {name} is deprecated.\nIt will be removed in a future version.\n"
     if use_instead is not None:
         msg += f"Use {use_instead} instead.\n"
     warnings.warn(msg, DeprecationWarning)
     return msg
 
 
-class DessiaObject(dcb.SerializableObject):
+class DessiaObject(SerializableObject):
     """
     Base class for Dessia's platform compatible objects.
 
@@ -155,7 +151,8 @@ class DessiaObject(dcb.SerializableObject):
             setattr(self, property_name, property_value)
 
     def base_dict(self):
-        dict_ = dcb.SerializableObject.base_dict(self)
+        """ Base dict of the object, with just its name. """
+        dict_ = SerializableObject.base_dict(self)
         dict_['name'] = self.name
         return dict_
 
@@ -194,6 +191,7 @@ class DessiaObject(dcb.SerializableObject):
         return data_eq(self, other_object)
 
     def _data_hash(self):
+        """ Generic computation of hash based on data. """
         hash_ = 0
         forbidden_keys = (self._non_data_eq_attributes + self._non_data_hash_attributes + ['package_version', 'name'])
         for key, value in self._serializable_dict().items():
@@ -217,17 +215,12 @@ class DessiaObject(dcb.SerializableObject):
         return diff(self, other_object)
 
     def _get_from_path(self, path: str):
+        """ Get object's deep attribute from given path. """
         return get_in_object_from_path(self, path)
-
-    @property
-    def full_classname(self):
-        """
-        Full classname of class like: package.module.submodule.classname.
-        """
-        return full_classname(self)
 
     @classmethod
     def base_schema(cls):
+        """ Return schema header and base schema. """
         schema = deepcopy(schemas.SCHEMA_HEADER)
         schema['properties']['name'] = {"type": 'string', "title": "Object Name", "description": "Object name",
                                         "editable": True, "default_value": "Object Name"}
@@ -235,6 +228,7 @@ class DessiaObject(dcb.SerializableObject):
 
     @classmethod
     def base_jsonschema(cls):
+        """ Return jsonschema header and base schema. """
         warnings.warn("base_jsonschema method is deprecated. Use base_schema instead", DeprecationWarning)
         return cls.base_schema()
 
@@ -249,9 +243,7 @@ class DessiaObject(dcb.SerializableObject):
 
     @classmethod
     def jsonschema(cls):
-        """
-        Jsonschema of class: transfer python data structure to web standard.
-        """
+        """ Jsonschema of class: transfer python data structure to web standard. """
         if hasattr(cls, '_jsonschema'):
             _jsonschema = cls._jsonschema
             return _jsonschema
@@ -398,7 +390,7 @@ class DessiaObject(dcb.SerializableObject):
                 arg_specs = args_specs.annotations[arg]
                 value = dict_[str(i)]
                 try:
-                    deserialized_value = dcus.deserialize_argument(arg_specs, value)
+                    deserialized_value = deserialize_argument(arg_specs, value)
                 except TypeError as err:
                     msg = 'Error in deserialisation of value: '
                     msg += f'{value} of expected type {arg_specs}'
@@ -419,6 +411,7 @@ class DessiaObject(dcb.SerializableObject):
             self.save_to_stream(file, indent=indent)
 
     def save_to_stream(self, stream, indent: int = 2):
+        """ Write object to a stream. Default is to_dict, as a text like stream. """
         try:
             dict_ = self.to_dict(use_pointers=True)
         except TypeError:
@@ -428,6 +421,7 @@ class DessiaObject(dcb.SerializableObject):
 
     @classmethod
     def load_from_stream(cls, stream):
+        """ Build object from stream. Should be consistent with save_to_stream method. """
         dict_ = json.loads(stream.read().decode('utf-8'))
         return cls.dict_to_object(dict_)
 
@@ -443,10 +437,12 @@ class DessiaObject(dcb.SerializableObject):
 
         return cls.dict_to_object(dict_)
 
-    def check_list(self, level='error') -> dcc.CheckList:
+    def check_list(self, level: str = 'error', check_platform: bool = True) -> dcc.CheckList:
+        """ Return a list of potential info, warning and issues on the instance, that might be user custom. """
         check_list = dcc.CheckList([])
 
-        check_list += self._check_platform(level=level)
+        if check_platform:
+            check_list += self._check_platform(level=level)
 
         # Type checking: not ready yet
         # class_argspec = inspect.getfullargspec(self.__class__)
@@ -463,17 +459,21 @@ class DessiaObject(dcb.SerializableObject):
         return check_list
 
     def is_valid(self, level: str = 'error') -> bool:
+        """
+        Return whether the object of valid 'above' given level.
+
+        Default is error, but warnings can be forbidden.
+        """
         return not self.check_list().checks_above_level(level=level)
 
     def copy(self, deep=True, memo=None):
+        """ Return a shallow or deep copy of the object depending of the value of given 'deep' argument. """
         if deep:
             return deepcopy(self, memo=memo)
         return copy(self)
 
     def __copy__(self):
-        """
-        Generic copy use inits of objects.
-        """
+        """ Generic copy use inits of objects. """
         class_name = self.full_classname
         if class_name in _fullargsspec_cache:
             class_argspec = _fullargsspec_cache[class_name]
@@ -492,9 +492,7 @@ class DessiaObject(dcb.SerializableObject):
         return self.__class__(**dict_)
 
     def __deepcopy__(self, memo=None):
-        """
-        Generic deep copy use inits of objects.
-        """
+        """ Generic deep copy use inits of objects. """
         class_name = self.full_classname
         if class_name in _fullargsspec_cache:
             class_argspec = _fullargsspec_cache[class_name]
@@ -511,12 +509,15 @@ class DessiaObject(dcb.SerializableObject):
         return self.__class__(**dict_)
 
     def plot_data(self, **kwargs):
+        """
+        Base plot_data method. Overwrite this to display 2D or graphs on plateforme.
+
+        Should return a list of plot_data's objects.
+        """
         return []
 
     def plot(self, **kwargs):
-        """
-        Generic plot getting plot_data function to plot.
-        """
+        """ Generic plot getting plot_data function to plot. """
         if hasattr(self, 'plot_data'):
             import plot_data
             for data in self.plot_data(**kwargs):  # TODO solve inconsistence with the plot_data method just above
@@ -525,13 +526,11 @@ class DessiaObject(dcb.SerializableObject):
                                       width=1400, height=900,
                                       debug_mode=False)
         else:
-            msg = 'Class {} does not implement a plot_data method to define what to plot'
-            raise NotImplementedError(msg.format(self.__class__.__name__))
+            msg = f"Class '{self.__class__.__name__}' does not implement a plot_data method to define what to plot"
+            raise NotImplementedError(msg)
 
     def mpl_plot(self, **kwargs):
-        """
-        Plot with matplotlib using plot_data function.
-        """
+        """ Plot with matplotlib using plot_data function. """
         axs = []
         if hasattr(self, 'plot_data'):
             try:
@@ -543,23 +542,19 @@ class DessiaObject(dcb.SerializableObject):
                     ax = data.mpl_plot()
                     axs.append(ax)
         else:
-            msg = 'Class {} does not implement a plot_data method to define what to plot'
-            raise NotImplementedError(msg.format(self.__class__.__name__))
+            msg = f"Class '{self.__class__.__name__}' does not implement a plot_data method to define what to plot"
+            raise NotImplementedError(msg)
 
         return axs
 
     @staticmethod
     def display_settings() -> List[DisplaySetting]:
-        """
-        Returns a list of json describing how to call subdisplays.
-        """
+        """ Returns a list of json describing how to call subdisplays. """
         return [DisplaySetting('markdown', 'markdown', 'to_markdown', None),
                 DisplaySetting('plot_data', 'plot_data', 'plot_data', None, serialize_data=True)]
 
     def _display_from_selector(self, selector: str, **kwargs) -> DisplayObject:
-        """
-        Generate the display from the selector.
-        """
+        """ Generate the display from the selector. """
         reference_path = kwargs.get('reference_path', '')
 
         display_setting = self._display_settings_from_selector(selector)
@@ -571,19 +566,18 @@ class DessiaObject(dcb.SerializableObject):
             track = tb.format_exc()
 
         if display_setting.serialize_data:
-            data = dcus.serialize(data)
+            data = serialize(data)
         return DisplayObject(type_=display_setting.type, data=data, reference_path=reference_path, traceback=track)
 
     def _display_settings_from_selector(self, selector: str):
+        """ Get display settings from given selector. """
         for display_setting in self.display_settings():
             if display_setting.selector == selector:
                 return display_setting
         raise ValueError(f"No such selector '{selector}' in display of class '{self.__class__.__name__}'")
 
     def _displays(self, **kwargs) -> List[JsonSerializable]:
-        """
-        Generate displays of the object to be plot in the DessiA Platform.
-        """
+        """ Generate displays of the object to be plot in the DessiA Platform. """
         reference_path = kwargs.get('reference_path', '')
 
         displays = []
@@ -593,18 +587,14 @@ class DessiaObject(dcb.SerializableObject):
         return displays
 
     def to_markdown(self) -> str:
-        """
-        Render a markdown of the object output type: string.
-        """
+        """ Render a markdown of the object output type: string. """
         md_writer = MarkdownWriter(print_limit=25, table_limit=None)
         return templates.dessia_object_markdown_template.substitute(name=self.name,
                                                                     class_=self.__class__.__name__,
                                                                     table=md_writer.object_table(self))
 
     def performance_analysis(self):
-        """
-        Prints time of rendering some commons operations (serialization, hash, displays).
-        """
+        """ Print time of rendering some commons operations (serialization, hash, displays). """
         print(f'### Performance analysis of object {self} ###')
         data_hash_time = time.time()
         self._data_hash()
@@ -629,9 +619,7 @@ class DessiaObject(dcb.SerializableObject):
         print('\n')
 
     def _check_platform(self, level='error'):
-        """
-        Reproduce lifecycle on platform (serialization, display). Raise an error if something is wrong.
-        """
+        """ Reproduce lifecycle on platform (serialization, display). Raise an error if something is wrong. """
         checks = []
         try:
             dict_ = self.to_dict(use_pointers=True)
@@ -683,11 +671,13 @@ class DessiaObject(dcb.SerializableObject):
         writer.save_to_stream(stream)
 
     def _export_formats(self) -> List[ExportFormat]:
+        """ Define export formats for base .json and .xlsx exports. """
         formats = [ExportFormat(selector="json", extension="json", method_name="save_to_stream", text=True),
                    ExportFormat(selector="xlsx", extension="xlsx", method_name="to_xlsx_stream", text=False)]
         return formats
 
-    def save_export_to_file(self, selector, filepath):
+    def save_export_to_file(self, selector: str, filepath: str):
+        """ Generic export from selector to given filepath. Return real location filepath. """
         for export_format in self._export_formats():
             if export_format.selector == selector:
                 if not filepath.endswith(f".{export_format.extension}"):
@@ -703,6 +693,7 @@ class DessiaObject(dcb.SerializableObject):
         raise ValueError(f'Export selector not found: {selector}')
 
     def to_vector(self):
+        """ Compute vector from object. """
         vectored_objects = []
         for feature in self.vector_features():
             vectored_objects.append(getattr(self, feature.lower()))
@@ -714,6 +705,7 @@ class DessiaObject(dcb.SerializableObject):
 
     @classmethod
     def vector_features(cls):
+        """ Get a list of vector features, or generate a default one. """
         if cls._vector_features is None:
             return list(set(get_attribute_names(cls)).difference(get_attribute_names(DessiaObject)))
         return cls._vector_features
