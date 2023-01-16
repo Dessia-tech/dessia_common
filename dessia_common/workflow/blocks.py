@@ -14,7 +14,7 @@ import itertools
 from dessia_common.core import DessiaFilter, FiltersList, split_argspecs, type_from_annotation, DessiaObject
 from dessia_common.utils.types import get_python_class_from_class_name, full_classname
 from dessia_common.utils.docstrings import parse_docstring, EMPTY_PARSED_ATTRIBUTE
-from dessia_common.displays import DisplaySetting
+from dessia_common.displays import DisplaySetting, DisplayObject
 from dessia_common.errors import UntypedArgumentError
 from dessia_common.typings import JsonSerializable, MethodType, ClassMethodType
 from dessia_common.files import StringFile, BinaryFile
@@ -24,7 +24,7 @@ from dessia_common.exports import ExportFormat
 from dessia_common.serialization import serialize
 
 from dessia_common.workflow.core import Block, Variable, TypedVariable, TypedVariableWithDefaultValue,\
-    set_block_variable_names_from_dict, Workflow, DisplayObject
+    set_block_variable_names_from_dict, Workflow
 from dessia_common.workflow.utils import ToScriptElement
 
 
@@ -1146,9 +1146,12 @@ class Sum(Block):
         """
         return cls(dict_['number_elements'], dict_['name'], position=dict_.get('position'))
 
-    @staticmethod
-    def evaluate(values, **kwargs):
-        """ Sum input values. """
+    def evaluate(self, values, **kwargs):
+        """
+        Sum input values.
+
+        TODO : This cannot work, we are summing a dictionnary
+        """
         return [sum(values)]
 
     def _to_script(self, _) -> ToScriptElement:

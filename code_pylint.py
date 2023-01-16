@@ -22,12 +22,12 @@ UNWATCHED_ERRORS = ['fixme', 'trailing-whitespace', 'import-error']
 MAX_ERROR_BY_TYPE = {
                      'protected-access': 38,
                      'consider-using-f-string': 1,
-                     'arguments-differ': 2,
+                     'arguments-differ': 1,
                      'no-member': 3,
                      'too-many-locals': 10,  # Reduce by dropping vectored objects
                      'too-many-branches': 13,
                      'unused-argument': 9,
-                     'cyclic-import': 2,  # 0 just to test
+                     'cyclic-import': 2,
                      'no-self-use': 6,
                      'trailing-whitespace': 11,
                      'empty-docstring': 1,

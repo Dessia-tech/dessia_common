@@ -1356,10 +1356,8 @@ class Workflow(Block):
         data.update({'blocks': blocks, 'nonblock_variables': nonblock_variables, 'edges': edges})
         return data
 
-    def plot(self, **kwargs):
-        """
-        Display workflow in web browser.
-        """
+    def plot(self, reference_path: str = "#", **kwargs):
+        """ Display workflow in web browser. """
         data = json.dumps(self.jointjs_data())
         rendered_template = workflow_template.substitute(workflow_data=data)
 
@@ -1368,10 +1366,8 @@ class Workflow(Block):
             file.write(rendered_template.encode('utf-8'))
         webbrowser.open('file://' + temp_file)
 
-    def is_valid(self, level='error'):
-        """
-        Tell if the workflow is valid by checking type compatibility of pipes inputs/outputs.
-        """
+    def is_valid(self, level: str = "error"):
+        """ Tell if the workflow is valid by checking type compatibility of pipes inputs/outputs. """
         for pipe in self.pipes:
             if hasattr(pipe.input_variable, 'type_') and hasattr(pipe.output_variable, 'type_'):
                 type1 = pipe.input_variable.type_
@@ -1804,10 +1800,6 @@ class WorkflowState(DessiaObject):
         # Displayable blocks
         display_settings.extend(self.workflow.blocks_display_settings)
         return display_settings
-
-    # def _display_from_selector(self, selector: str, **kwargs) -> DisplayObject:
-    #     """ Generate the display from the selector. """
-    #     return DessiaObject._display_from_selector(self, selector=selector)
 
     def block_display(self, block_index: int, reference_path: str = "#"):
         """ Compute the display of associated block to use integrate it in the workflow run displays. """
