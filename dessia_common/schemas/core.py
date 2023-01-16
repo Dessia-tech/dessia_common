@@ -77,7 +77,7 @@ class Schema:
 
         if attribute in self.default_arguments:
             # TODO Could use this and Optional proxy in order to inject real default values for mutables
-            chunk = set_default_value(schema_element=chunk, default_value=self.default_arguments[attribute])
+            chunk["defaut_value"] = schema.default_value()
         return chunk
 
     @property
