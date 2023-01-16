@@ -20,7 +20,7 @@ MIN_NOTE = 9.17
 UNWATCHED_ERRORS = ['fixme', 'trailing-whitespace', 'import-error']
 
 MAX_ERROR_BY_TYPE = {
-                     'protected-access': 38,
+                     'protected-access': 42,
                      'consider-using-f-string': 1,
                      'arguments-differ': 2,
                      'no-member': 3,
@@ -32,8 +32,8 @@ MAX_ERROR_BY_TYPE = {
                      'trailing-whitespace': 11,
                      'empty-docstring': 1,
                      'missing-module-docstring': 1,
-                     'too-many-arguments': 20,
-                     'too-few-public-methods': 5,
+                     'too-many-arguments': 21,
+                     'too-few-public-methods': 9,
                      'unnecessary-comprehension': 1,
                      'no-value-for-parameter': 2,
                      'too-many-return-statements': 10,

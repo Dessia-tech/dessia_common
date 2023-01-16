@@ -126,6 +126,7 @@ class Schema:
         return self.check_list().checks_above_level("error")
 
     def attribute_is_annotated(self, attribute: str) -> PassedCheck:
+        """ Check whether given attribute is annotated in function definition or not. """
         if attribute not in self.annotations:
             return FailedCheck(f"Attribute {attribute} has no typing")
         return PassedCheck(f"Attribute '{attribute}' is annotated")
@@ -212,7 +213,7 @@ class Property:
         """
         raise NotImplementedError("Schema reconstruction is not implemented yet")
 
-    def check_list(self, attribute: str) -> CheckList:
+    def check_list(self, _: str) -> CheckList:
         """
         Check validity of Property Type Hint.
 
@@ -340,7 +341,7 @@ class BuiltinProperty(Property):
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write Builtin as a dict. """
-        chunk = super(BuiltinProperty, self).to_dict(title=title, editable=editable, description=description)
+        chunk = super().to_dict(title=title, editable=editable, description=description)
         chunk["type"] = dc_types.TYPING_EQUIVALENCES[self.annotation]
         return chunk
 
@@ -373,15 +374,6 @@ class MeasureProperty(BuiltinProperty):
         TODO  Useful for low_code features ?
         """
         raise NotImplementedError("Schema reconstruction is not implemented yet")
-
-    def check_list(self, attribute: str) -> CheckList:
-        """
-        Check validity of Measure Type Hint.
-
-        Checks performed :
-        - Cannot be other than float. TODO : Is it possible ?
-        """
-        return super(MeasureProperty, self).check_list(attribute)
 
 
 class FileProperty(Property):
@@ -418,7 +410,7 @@ class CustomClass(Property):
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write CustomClass as a dict. """
-        chunk = super(CustomClass, self).to_dict(title=title, editable=editable, description=description)
+        chunk = super().to_dict(title=title, editable=editable, description=description)
         chunk.update({'type': 'object', 'standalone_in_db': self.annotation._standalone_in_db,
                       "classes": [self.classname]})
         return chunk
@@ -439,11 +431,12 @@ class CustomClass(Property):
         Checks performed :
         - Is subclass of DessiaObject
         """
-        issues = super(CustomClass, self).check_list(attribute)
+        issues = super().check_list(attribute)
         issues += CheckList([self.is_dessia_object_typed(attribute)])
         return issues
 
     def is_dessia_object_typed(self, attribute: str) -> PassedCheck:
+        """ Check whether if typing for given attribute annotates a subclass of DessiaObject or not . """
         if not issubclass(self.annotation, CoreDessiaObject):
             return FailedCheck(f"Attribute '{attribute}' : Class '{self.classname}' is not a subclass of DessiaObject")
         msg = f"Attribute '{attribute}' : Class '{self.classname}' is properly typed as a subclass of DessiaObject"
@@ -465,7 +458,7 @@ class UnionProperty(TypingProperty):
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write Union as a dict. """
-        chunk = super(UnionProperty, self).to_dict(title=title, editable=editable, description=description)
+        chunk = super().to_dict(title=title, editable=editable, description=description)
         classnames = [dc_types.full_classname(object_=a, compute_for='class') for a in self.args]
         chunk.update({'type': 'object', 'classes': classnames, 'standalone_in_db': self.standalone})
         return chunk
@@ -486,11 +479,12 @@ class UnionProperty(TypingProperty):
         Checks performed :
         - Subobject are all standalone or none of them are. TODO : What happen if args are not DessiaObjects ?
         """
-        issues = super(UnionProperty, self).check_list(attribute)
+        issues = super().check_list(attribute)
         issues += CheckList([self.classes_are_standalone_consistent(attribute)])
         return issues
 
     def classes_are_standalone_consistent(self, attribute: str) -> PassedCheck:
+        """ Check whether all class in Union are standalone or none of them are. """
         standalone_args = [a._standalone_in_db for a in self.args]
         if all(standalone_args):
             msg = f"Attribute '{attribute}' : All arguments of Union type '{self.annotation}' are standalone in db."
@@ -516,7 +510,7 @@ class HeterogeneousSequence(TypingProperty):
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write HeterogeneousSequence as a dict. """
-        chunk = super(HeterogeneousSequence, self).to_dict(title=title, editable=editable, description=description)
+        chunk = super().to_dict(title=title, editable=editable, description=description)
         items = [sp.to_dict() for sp in self.item_schemas]
         chunk.update({'type': 'array', 'additionalItems': False, 'items': items})
         return chunk
@@ -560,7 +554,7 @@ class HomogeneousSequence(TypingProperty):
         """ Write HomogeneousSequence as a dict. """
         if not title:
             title = 'Items'
-        chunk = super(HomogeneousSequence, self).to_dict(title=title, editable=editable, description=description)
+        chunk = super().to_dict(title=title, editable=editable, description=description)
         items = [sp.to_dict(title=title, editable=editable, description=description) for sp in self.item_schemas]
         chunk.update({'type': 'array', 'python_typing': dc_types.serialize_typing(self.annotation),
                       "items": items[0]})
@@ -600,7 +594,7 @@ class DynamicDict(TypingProperty):
             raise NotImplementedError('Non strings keys not supported')
         if value_type not in dc_types.TYPING_EQUIVALENCES:
             raise ValueError(f'Dicts should have only builtins keys and values, got {value_type}')
-        chunk = super(DynamicDict, self).to_dict(title=title, editable=editable, description=description)
+        chunk = super().to_dict(title=title, editable=editable, description=description)
         chunk.update({'type': 'object',
                       'patternProperties': {
                           '.*': {
@@ -620,7 +614,7 @@ class DynamicDict(TypingProperty):
 
     def check_list(self, attribute: str) -> CheckList:
         """ Check validity of DynamicDict Type Hint. """
-        issues = super(DynamicDict, self).check_list(attribute)
+        issues = super().check_list(attribute)
         checks = [self.has_two_args(attribute), self.has_string_keys(attribute), self.has_string_keys(attribute)]
         issues += CheckList(checks)
         return issues
@@ -666,7 +660,7 @@ class InstanceOfProperty(TypingProperty):
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write InstanceOf as a dict. """
-        chunk = super(InstanceOfProperty, self).to_dict(title=title, editable=editable, description=description)
+        chunk = super().to_dict(title=title, editable=editable, description=description)
         class_ = self.args[0]
         classname = dc_types.full_classname(object_=class_, compute_for='class')
         chunk.update({'type': 'object', 'instance_of': classname, 'standalone_in_db': class_._standalone_in_db})
@@ -683,7 +677,7 @@ class InstanceOfProperty(TypingProperty):
 
     def check_list(self, attribute: str) -> CheckList:
         """ Check validity of InstanceOf Type Hint. """
-        issues = super(InstanceOfProperty, self).check_list(attribute)
+        issues = super().check_list(attribute)
         issues += CheckList([self.has_one_arg(attribute)])
         return issues
 
@@ -718,7 +712,7 @@ class SubclassProperty(TypingProperty):
         Checks performed :
         - Annotation has exactly one argument, which is the type of the base class.
         """
-        issues = super(SubclassProperty, self).check_list(attribute)
+        issues = super().check_list(attribute)
         issues += CheckList([self.has_one_arg(attribute)])
         return issues
 
@@ -737,7 +731,7 @@ class MethodTypeProperty(TypingProperty):
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write MethodType as a dict. """
-        chunk = super(MethodTypeProperty, self).to_dict(title=title, editable=editable, description=description)
+        chunk = super().to_dict(title=title, editable=editable, description=description)
         classmethod_ = self.origin is ClassMethodType
         chunk.update({
             'type': 'object', 'is_method': True, 'classmethod_': classmethod_,
@@ -780,7 +774,7 @@ class ClassProperty(TypingProperty):
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write Class as a dict. """
-        chunk = super(ClassProperty, self).to_dict(title=title, editable=editable, description=description)
+        chunk = super().to_dict(title=title, editable=editable, description=description)
         chunk.update({'type': 'object', 'is_class': True, 'properties': {'name': {'type': 'string'}}})
         return chunk
 
@@ -800,7 +794,7 @@ class ClassProperty(TypingProperty):
         Checks performed :
         - Annotation has exactly 1 argument
         """
-        issues = super(ClassProperty, self).check_list(attribute)
+        issues = super().check_list(attribute)
         issues += CheckList([self.has_one_arg(attribute)])
         return issues
 
@@ -851,6 +845,7 @@ def split_argspecs(argspecs: inspect.FullArgSpec) -> tp.Tuple[int, int]:
 
 
 def get_schema(annotation: tp.Type) -> Property:
+    """ Get schema Property object from given annotation. """
     if annotation in dc_types.TYPING_EQUIVALENCES:
         return BuiltinProperty(annotation)
     if dc_types.is_typing(annotation):
@@ -868,32 +863,49 @@ def get_schema(annotation: tp.Type) -> Property:
     raise NotImplementedError(f"No schema defined for annotation '{annotation}'.")
 
 
+ORIGIN_TO_SCHEMA_CLASS = {
+    tuple: HeterogeneousSequence, list: HomogeneousSequence, collections.abc.Iterator: HomogeneousSequence,
+    tp.Union: UnionProperty, dict: DynamicDict, InstanceOf: InstanceOfProperty,
+    MethodType: MethodTypeProperty, ClassMethodType: MethodTypeProperty, type: ClassProperty
+}
+
+
 def typing_schema(typing_) -> Property:
+    """ Get schema Property for typing annotations. """
     origin = tp.get_origin(typing_)
-    if origin is tp.Union:
-        if dc_types.union_is_default_value(typing_):
-            # This is a false UnionProperty => Is a default value set to None
-            return OptionalProperty(typing_)
-        # Types union
-        return UnionProperty(typing_)
-    if origin is tuple:
-        return HeterogeneousSequence(typing_)
-    if origin in [list, collections.abc.Iterator]:
-        return HomogeneousSequence(typing_)
-    if origin is dict:
-        return DynamicDict(typing_)
-    if origin is Subclass:
-        pass
-    if origin is InstanceOf:
-        return InstanceOfProperty(typing_)
-    if origin in [MethodType, ClassMethodType]:
-        return MethodTypeProperty(typing_)
-    if origin is type:
-        return ClassProperty(typing_)
-    raise NotImplementedError(f"No Schema defined for typing '{typing_}'.")
+    if origin is tp.Union and dc_types.union_is_default_value(typing_):
+        # This is a false UnionProperty => Is a default value set to None
+        return OptionalProperty(typing_)
+    try:
+        return ORIGIN_TO_SCHEMA_CLASS[origin](typing_)
+    except KeyError:
+        raise NotImplementedError(f"No Schema defined for typing '{typing_}'.")
+
+    # if origin is tp.Union:
+    #     if dc_types.union_is_default_value(typing_):
+    #         # This is a false UnionProperty => Is a default value set to None
+    #         return OptionalProperty(typing_)
+    #     # Types union
+    #     return UnionProperty(typing_)
+    # if origin is tuple:
+    #     return HeterogeneousSequence(typing_)
+    # if origin in [list, collections.abc.Iterator]:
+    #     return HomogeneousSequence(typing_)
+    # if origin is dict:
+    #     return DynamicDict(typing_)
+    # if origin is Subclass:
+    #     pass
+    # if origin is InstanceOf:
+    #     return InstanceOfProperty(typing_)
+    # if origin in [MethodType, ClassMethodType]:
+    #     return MethodTypeProperty(typing_)
+    # if origin is type:
+    #     return ClassProperty(typing_)
+    # raise NotImplementedError(f"No Schema defined for typing '{typing_}'.")
 
 
 def custom_class_schema(annotation: tp.Type) -> Property:
+    """ Get schema Property object for non typing annotations. """
     if issubclass(annotation, Measure):
         return MeasureProperty(annotation)
     if issubclass(annotation, (BinaryFile, StringFile)):
@@ -905,6 +917,7 @@ def custom_class_schema(annotation: tp.Type) -> Property:
 
 
 def default_sequence(array_schema):
+    """ Get default value for array schema. """
     if dc_types.is_sequence(array_schema['items']):
         # Tuple schema
         if 'default_value' in array_schema:
@@ -914,6 +927,7 @@ def default_sequence(array_schema):
 
 
 def datatype_from_schema(schema):
+    """ Get datatype from schema. """
     if schema['type'] == 'object':
         if 'classes' in schema:
             if len(schema['classes']) > 1:
@@ -947,6 +961,7 @@ def datatype_from_schema(schema):
 
 
 def chose_default(schema):
+    """ Get default value from schema. """
     datatype = datatype_from_schema(schema)
     if datatype in ['heterogeneous_sequence', 'homogeneous_sequence']:
         return default_sequence(schema)
@@ -962,6 +977,7 @@ def chose_default(schema):
 
 
 def default_dict(schema):
+    """ Get default value for dict. """
     dict_ = {}
     datatype = datatype_from_schema(schema)
     if datatype in ['standalone_object', 'embedded_object', 'static_dict']:
@@ -983,6 +999,7 @@ def default_dict(schema):
 
 
 def set_default_value(schema_element, default_value):
+    """ Write default value in jsonschema. """
     datatype = datatype_from_schema(schema_element)
     if default_value is None or datatype in ['builtin', 'heterogeneous_sequence', 'static_dict', 'dynamic_dict']:
         schema_element['default_value'] = default_value

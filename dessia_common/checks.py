@@ -11,9 +11,7 @@ LEVEL_TO_INT = {'debug': 0, 'info': 1, 'warning': 2, 'error': 3}
 
 
 class PassedCheck:
-    """
-    Represents the result of a check that has no error.
-    """
+    """ Denote the result of a check that has no error. """
     level = 'info'
 
     def __init__(self, message: str):
@@ -24,29 +22,21 @@ class PassedCheck:
 
 
 class CheckWarning(PassedCheck):
-    """
-    Represents a check warning.
-    """
+    """ Denote a check warning. """
     level = 'warning'
 
 
 class FailedCheck(PassedCheck):
-    """
-    Represents a failed check.
-    """
+    """ Denote a failed check. """
     level = 'error'
 
 
 class BadType(FailedCheck):
-    """
-    Represents a failed check due to a bad type.
-    """
+    """ Denote a failed check due to a bad type. """
 
 
 class GeometricInconsistance(FailedCheck):
-    """
-    Represents a failed check due to a geometric inconsistency.
-    """
+    """ Denote a failed check due to a geometric inconsistency. """
 
 
 class CheckList:
@@ -84,9 +74,7 @@ class CheckList:
 
 
 def is_int(value, level: str = 'error'):
-    """
-    Returns if value is a int.
-    """
+    """ Return if value is a int. """
     if not isinstance(value, int):
         return CheckList([FailedCheck(f'Value {value} is not an int')])
     if level == 'info':
@@ -95,9 +83,7 @@ def is_int(value, level: str = 'error'):
 
 
 def is_float(value, level: str = 'error'):
-    """
-    Returns if value is a float.
-    """
+    """ Return if value is a float. """
     if not isinstance(value, float):
         return CheckList([FailedCheck(f'Value {value} is not a float')])
     if level == 'info':
@@ -106,9 +92,7 @@ def is_float(value, level: str = 'error'):
 
 
 def is_str(value, level: str = 'error'):
-    """
-    Returns if value is a str.
-    """
+    """ Return if value is a str. """
     if not isinstance(value, str):
         return CheckList([FailedCheck(f'Value {value} is not a str')])
     if level == 'info':

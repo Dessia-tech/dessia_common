@@ -20,24 +20,24 @@ import networkx as nx
 import dessia_common.errors
 from dessia_common.graph import get_column_by_node
 from dessia_common.templates import workflow_template
-from dessia_common.core import DessiaObject, is_sequence, JSONSCHEMA_HEADER, jsonschema_from_annotation, \
-    deserialize_argument, set_default_value, DisplaySetting
+from dessia_common.core import DessiaObject
 
-from dessia_common.utils.types import serialize_typing, deserialize_typing, recursive_type, typematch
+from dessia_common.utils.types import serialize_typing, deserialize_typing, recursive_type, typematch, is_sequence
 from dessia_common.utils.copy import deepcopy_value
 from dessia_common.utils.docstrings import FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE
 from dessia_common.utils.diff import choose_hash
 from dessia_common.utils.helpers import prettyname
+from dessia_common.utils.jsonschema import set_default_value, JSONSCHEMA_HEADER, jsonschema_from_annotation
 
 from dessia_common.typings import JsonSerializable, MethodType
 from dessia_common.files import StringFile, BinaryFile
-from dessia_common.displays import DisplayObject
+from dessia_common.displays import DisplayObject, DisplaySetting
 from dessia_common.breakdown import attrmethod_getter, ExtractionError
 from dessia_common.errors import SerializationError
 from dessia_common.warnings import SerializationWarning
 from dessia_common.exports import ExportFormat
 from dessia_common.serialization import deserialize, serialize_with_pointers, serialize, update_pointers_data, \
-    serialize_dict, is_serializable
+    serialize_dict, is_serializable, deserialize_argument
 
 from dessia_common.workflow.utils import ToScriptElement
 
