@@ -125,8 +125,8 @@ setup(
     long_description_content_type='text/markdown',
     keywords=["Dessia", "SDK", "engineering"],
     url="https://github.com/Dessia-tech/dessia-common",
-    author="Steven Masfaraud",
-    author_email="masfaraud@dessia.tech",
+    author="Dessia Technologies SAS",
+    author_email="root@dessia.tech",
     include_package_data=True,
     packages=[
         "dessia_common",
@@ -153,5 +153,5 @@ setup(
         "scikit-learn",
         "cma"
     ],
-    python_requires=">=3.7",
+    python_requires=">=3.8",
 )
