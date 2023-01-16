@@ -297,9 +297,7 @@ def static_dict_jsonschema(typed_dict, title=None):
 def set_default_value(jsonschema_element, key, default_value):
     """ DEPRECATED. Soon to be removed. """
     datatype = datatype_from_jsonschema(jsonschema_element[key])
-    if default_value is None\
-            or datatype in ['builtin', 'heterogeneous_sequence',
-                            'static_dict', 'dynamic_dict']:
+    if default_value is None or datatype in ['builtin', 'heterogeneous_sequence', 'static_dict', 'dynamic_dict']:
         jsonschema_element[key]['default_value'] = default_value
     # elif datatype == 'builtin':
     #     jsonschema_element[key]['default_value'] = default_value
@@ -309,8 +307,7 @@ def set_default_value(jsonschema_element, key, default_value):
         msg = 'Object {} of type {} is not supported as default value'
         type_ = type(default_value)
         raise NotImplementedError(msg.format(default_value, type_))
-    elif datatype in ['standalone_object', 'embedded_object',
-                      'instance_of', 'union']:
+    elif datatype in ['standalone_object', 'embedded_object', 'instance_of', 'union']:
         object_dict = default_value.to_dict()
         jsonschema_element[key]['default_value'] = object_dict
     return jsonschema_element

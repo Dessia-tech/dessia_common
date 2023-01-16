@@ -16,6 +16,7 @@ from dessia_common.utils.docstrings import parse_docstring, FAILED_DOCSTRING_PAR
 from dessia_common.utils.helpers import prettyname
 from dessia_common.schemas.interfaces import Annotations
 from dessia_common.checks import CheckList, FailedCheck, PassedCheck
+from dessia_common.serialization import serialize
 
 SCHEMA_HEADER = {"definitions": {}, "$schema": "http://json-schema.org/d_raft-07/schema#",
                  "type": "object", "required": [], "properties": {}}
@@ -101,6 +102,19 @@ class Schema:
         """
         raise NotImplementedError("Schema reconstruction is not implemented yet")
 
+    def default_dict(self):
+        """ Compute global default dict.
+
+        If a definition default have been set by user, most schemas will return this value (or seriliazed).
+        if not, schemas will compute a default compatible with platform (None most of the time).
+        """
+        dict_ = {}
+        for attribute in self.attributes:
+            schema = self.property_schemas[attribute]
+            definition_default = self.default_arguments.get(attribute, None)
+            dict_[attribute] = schema.default_value(definition_default)
+        return dict_
+
     def check_list(self) -> CheckList:
         """
         Browse all properties and list potential issues.
@@ -113,7 +127,8 @@ class Schema:
 
         for attribute in self.attributes:
             # Is typed
-            issues += self.attribute_is_annotated(attribute)
+            check = self.attribute_is_annotated(attribute)
+            issues += CheckList([check])
 
             # Specific check
             schema = self.property_schemas[attribute]
@@ -140,7 +155,7 @@ class ClassSchema(Schema):
     def __init__(self, class_: CoreDessiaObject):
         self.class_ = class_
         self.standalone_in_db = class_._standalone_in_db
-        self.python_typing = str(class_)
+        self.python_typing = dc_types.full_classname(class_, compute_for="class")
         annotations = tp.get_type_hints(class_.__init__)
 
         members = inspect.getfullargspec(self.class_.__init__)
@@ -162,6 +177,11 @@ class ClassSchema(Schema):
         TODO  Useful for low_code features ?
         """
         raise NotImplementedError("Schema reconstruction is not implemented yet")
+
+    def default_dict(self):
+        dict_ = super().default_dict()
+        dict_["object_class"] = self.python_typing
+        return dict_
 
 
 class MethodSchema(Schema):
@@ -211,6 +231,12 @@ class Property:
         TODO  Useful for low_code features ?
         """
         raise NotImplementedError("Schema reconstruction is not implemented yet")
+
+    def default_value(self, definition_default=None):
+        """ Generic default. Yield user default if defined, else None. """
+        if definition_default:
+            return definition_default
+        return None
 
     def check_list(self, _: str) -> CheckList:
         """
@@ -272,7 +298,7 @@ class OptionalProperty(TypingProperty):
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write Optional as a dict. """
-        default_value = None
+        default_value = self.schema.default_value()
         chunk = self.schema.to_dict(title=title, editable=editable, description=description)
         chunk["default_value"] = default_value
         return chunk
@@ -423,6 +449,10 @@ class CustomClass(Property):
         """
         raise NotImplementedError("Schema reconstruction is not implemented yet")
 
+    def default_value(self, definition_default=None):
+        """ Default value for an object. """
+        return object_default(definition_default=definition_default, class_schema=self.schema)
+
     def check_list(self, attribute: str) -> CheckList:
         """
         Check validity of user custom class Type Hint.
@@ -470,6 +500,10 @@ class UnionProperty(TypingProperty):
         TODO  Useful for low_code features ?
         """
         raise NotImplementedError("Schema reconstruction is not implemented yet")
+
+    def default_value(self, definition_default=None):
+        """ Default value for an object. """
+        return object_default(definition_default)
 
     def check_list(self, attribute: str) -> CheckList:
         """
@@ -523,6 +557,15 @@ class HeterogeneousSequence(TypingProperty):
         """
         raise NotImplementedError("Schema reconstruction is not implemented yet")
 
+    def default_value(self, definition_default=None):
+        """ Default value for a Tuple.
+
+        Return serialized user default if defined, else a Tuple of Nones with the right size.
+        """
+        if definition_default is not None:
+            return serialize(definition_default)
+        return [s.default_value() for s in self.item_schemas]
+
     def check_list(self, attribute: str) -> CheckList:
         """ Check validity of Tuple Type Hint. """
         issues = super().check_list(attribute)
@@ -568,6 +611,10 @@ class HomogeneousSequence(TypingProperty):
         """
         raise NotImplementedError("Schema reconstruction is not implemented yet")
 
+    def default_value(self, definition_default=None):
+        """ Default of a sequnce. . Always return None as default mutable a prohibited. """
+        return None
+
     def check_list(self, attribute: str) -> CheckList:
         """ Check validity of List Type Hint. """
         issues = super().check_list(attribute)
@@ -611,6 +658,10 @@ class DynamicDict(TypingProperty):
         """
         raise NotImplementedError("Schema reconstruction is not implemented yet")
 
+    def default_value(self, definition_default=None):
+        """ Default of a dynamic dict. Always return None as default mutable a prohibited. """
+        return None
+
     def check_list(self, attribute: str) -> CheckList:
         """ Check validity of DynamicDict Type Hint. """
         issues = super().check_list(attribute)
@@ -629,7 +680,7 @@ class DynamicDict(TypingProperty):
     def has_string_keys(self, attribute):
         """ Key Type should be str"""
         key_type, value_type = self.args
-        if not isinstance(key_type, str):
+        if not issubclass(key_type, str):
             # Should we support other types ? Numeric ?
             msg = f"Argument '{attribute}' is typed as a 'Dict[{key_type}, {value_type}]' " \
                   f"which requires str as its key type. Expected 'Dict[str, ValueType]', got '{self.annotation}'."
@@ -657,6 +708,10 @@ class InstanceOfProperty(TypingProperty):
     def __init__(self, annotation: tp.Type):
         super().__init__(annotation=annotation)
 
+    @property
+    def schema(self):
+        return ClassSchema(self.args[0])
+
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write InstanceOf as a dict. """
         chunk = super().to_dict(title=title, editable=editable, description=description)
@@ -673,6 +728,10 @@ class InstanceOfProperty(TypingProperty):
         TODO  Useful for low_code features ?
         """
         raise NotImplementedError("Schema reconstruction is not implemented yet")
+
+    def default_value(self, definition_default=None):
+        """ Default value of an object. """
+        return object_default(definition_default=definition_default, class_schema=self.schema)
 
     def check_list(self, attribute: str) -> CheckList:
         """ Check validity of InstanceOf Type Hint. """
@@ -893,58 +952,73 @@ def custom_class_schema(annotation: tp.Type) -> Property:
     raise NotImplementedError(f"No Schema defined for type '{annotation}'.")
 
 
-def default_sequence(array_schema):
-    """ Get default value for array schema. """
-    if dc_types.is_sequence(array_schema['items']):
-        # Tuple schema
-        if 'default_value' in array_schema:
-            return array_schema['default_value']
-        return [default_dict(v) for v in array_schema['items']]
+# def default_sequence(array_schema):
+#     """ Get default value for array schema. """
+#     if dc_types.is_sequence(array_schema['items']):
+#         # Tuple schema
+#         if 'default_value' in array_schema:
+#             return array_schema['default_value']
+#         return [default_dict(v) for v in array_schema['items']]
+#     return None
+
+
+def object_default(definition_default=None, class_schema: ClassSchema = None):
+    """ Default value of an object.
+
+    Return serialized user default if definition, else None.
+    """
+    if definition_default is not None:
+        return serialize(definition_default)
+    if class_schema is not None:
+        # TODO Should we implement this ? Right now, tests state that the result is None
+        # return class_schema.default_dict()
+        pass
     return None
 
 
-def datatype_from_schema(schema):
-    """ Get datatype from schema. """
-    if schema['type'] == 'object':
-        if 'classes' in schema:
-            if len(schema['classes']) > 1:
-                return 'union'
-            if 'standalone_in_db' in schema:
-                if schema['standalone_in_db']:
-                    return 'standalone_object'
-                return 'embedded_object'
-            # Static dict is deprecated
-            return 'static_dict'
-        if 'instance_of' in schema:
-            return 'instance_of'
-        if 'patternProperties' in schema:
-            return 'dynamic_dict'
-        if 'is_method' in schema and schema['is_method']:
-            return 'embedded_object'
-        if 'is_class' in schema and schema['is_class']:
-            return 'class'
-
-    if schema['type'] == 'array':
-        if 'additionalItems' in schema and not schema['additionalItems']:
-            return 'heterogeneous_sequence'
-        return 'homogeneous_sequence'
-
-    if schema["type"] == "text" and "is_file" in schema and schema["is_file"]:
-        return "file"
-
-    if schema['type'] in ['number', 'string', 'boolean']:
-        return 'builtin'
-    return None
+# def datatype_from_schema(schema):
+#     """ Get datatype from schema. """
+#     if schema['type'] == 'object':
+#         if 'classes' in schema:
+#             if len(schema['classes']) > 1:
+#                 return 'union'
+#             if 'standalone_in_db' in schema:
+#                 if schema['standalone_in_db']:
+#                     return 'standalone_object'
+#                 return 'embedded_object'
+#             # Static dict is deprecated
+#             return 'static_dict'
+#         if 'instance_of' in schema:
+#             return 'instance_of'
+#         if 'patternProperties' in schema:
+#             return 'dynamic_dict'
+#         if 'is_method' in schema and schema['is_method']:
+#             return 'embedded_object'
+#         if 'is_class' in schema and schema['is_class']:
+#             return 'class'
+#
+#     if schema['type'] == 'array':
+#         if 'additionalItems' in schema and not schema['additionalItems']:
+#             return 'heterogeneous_sequence'
+#         return 'homogeneous_sequence'
+#
+#     if schema["type"] == "text" and "is_file" in schema and schema["is_file"]:
+#         return "file"
+#
+#     if schema['type'] in ['number', 'string', 'boolean']:
+#         return 'builtin'
+#     return None
 
 
 def chose_default(schema):
     """ Get default value from schema. """
-    datatype = datatype_from_schema(schema)
-    if datatype in ['heterogeneous_sequence', 'homogeneous_sequence']:
-        return default_sequence(schema)
-    if datatype == 'static_dict':
-        # Deprecated
-        return default_dict(schema)
+    # datatype = datatype_from_schema(schema)
+    datatype = ""
+    # if datatype in ['heterogeneous_sequence', 'homogeneous_sequence']:
+    #     return default_sequence(schema)
+    # if datatype == 'static_dict':
+    #     # Deprecated
+    #     return default_dict(schema)
     if datatype in ['standalone_object', 'embedded_object', 'instance_of', 'union']:
         if 'default_value' in schema:
             return schema['default_value']
@@ -956,7 +1030,8 @@ def chose_default(schema):
 def default_dict(schema):
     """ Get default value for dict. """
     dict_ = {}
-    datatype = datatype_from_schema(schema)
+    # datatype = datatype_from_schema(schema)
+    datatype = ""
     if datatype in ['standalone_object', 'embedded_object', 'static_dict']:
         if 'classes' in schema:
             dict_['object_class'] = schema['classes'][0]
@@ -977,7 +1052,8 @@ def default_dict(schema):
 
 def set_default_value(schema_element, default_value):
     """ Write default value in jsonschema. """
-    datatype = datatype_from_schema(schema_element)
+    # datatype = datatype_from_schema(schema_element)
+    datatype = ""
     if default_value is None or datatype in ['builtin', 'heterogeneous_sequence', 'static_dict', 'dynamic_dict']:
         schema_element['default_value'] = default_value
     # elif datatype == 'builtin':

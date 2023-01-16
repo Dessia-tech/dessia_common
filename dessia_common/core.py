@@ -29,7 +29,7 @@ import dessia_common.errors
 from dessia_common.utils.diff import data_eq, diff, dict_hash, list_hash
 from dessia_common.utils.types import is_sequence, is_bson_valid, TYPES_FROM_STRING
 from dessia_common.utils.copy import deepcopy_value
-from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotation, JSONSCHEMA_HEADER
+from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotation, JSONSCHEMA_HEADER, set_default_value
 import dessia_common.schemas.core as schemas
 from dessia_common.utils.docstrings import parse_docstring, FAILED_DOCSTRING_PARSING
 
@@ -302,7 +302,7 @@ class DessiaObject(SerializableObject):
                                                      parsed_attributes=parsed_attributes)
                 _jsonschema['properties'].update(jss_elt)
                 if name in default_arguments:
-                    default = schemas.set_default_value(_jsonschema["properties"]["name"], default_arguments[name])
+                    default = set_default_value(_jsonschema["properties"], name, default_arguments[name])
                     _jsonschema['properties'].update(default)
 
         _jsonschema['classes'] = [cls.__module__ + '.' + cls.__name__]
@@ -346,8 +346,8 @@ class DessiaObject(SerializableObject):
 
                             jsonschemas[method_name]['properties'][str(i)] = jsonschema_element
                             if argname in default_args:
-                                default = schemas.set_default_value(jsonschemas[method_name]['properties'][str(i)],
-                                                                    default_args[argname])
+                                default = set_default_value(jsonschemas[method_name]['properties'], str(i),
+                                                            default_args[argname])
                                 jsonschemas[method_name]['properties'].update(default)
         return jsonschemas
 
