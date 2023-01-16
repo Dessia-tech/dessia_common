@@ -289,7 +289,7 @@ class ModelMethod(Block):
 
     def evaluate(self, values, **kwargs):
         """ Run given method with arguments that are in values. """
-        arguments = {arg_name: values[var] for arg_name, var in zip(self.argument_names, self.inputs[1:]) if var in values}
+        arguments = {n: values[v] for n, v in zip(self.argument_names, self.inputs[1:]) if v in values}
         return [getattr(values[self.inputs[0]], self.method_type.name)(**arguments), values[self.inputs[0]]]
 
     def package_mix(self):

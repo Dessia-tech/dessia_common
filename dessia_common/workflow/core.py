@@ -14,7 +14,6 @@ import io
 from typing import List, Union, Type, Any, Dict, Tuple, Optional
 from copy import deepcopy
 import warnings
-import traceback as tb
 import networkx as nx
 
 import dessia_common.errors
@@ -31,8 +30,7 @@ from dessia_common.utils.helpers import prettyname
 
 from dessia_common.typings import JsonSerializable, MethodType
 from dessia_common.files import StringFile, BinaryFile
-from dessia_common.displays import DisplayObject
-from dessia_common.breakdown import attrmethod_getter, ExtractionError
+from dessia_common.breakdown import ExtractionError
 from dessia_common.errors import SerializationError
 from dessia_common.warnings import SerializationWarning
 from dessia_common.exports import ExportFormat

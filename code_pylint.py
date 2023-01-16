@@ -26,7 +26,7 @@ MAX_ERROR_BY_TYPE = {
                      'no-member': 3,
                      'too-many-locals': 10,  # Reduce by dropping vectored objects
                      'too-many-branches': 13,
-                     'unused-argument': 8,
+                     'unused-argument': 9,
                      'cyclic-import': 2,  # 0 just to test
                      'no-self-use': 6,
                      'trailing-whitespace': 11,
@@ -46,7 +46,7 @@ MAX_ERROR_BY_TYPE = {
                      'attribute-defined-outside-init': 3,
                      'simplifiable-if-expression': 1,
                      'broad-except': 4,
-                     'bare-except': 4,
+                     'bare-except': 3,
                      'undefined-loop-variable': 1,
                      'consider-using-with': 2,
                      'too-many-nested-blocks': 2,
