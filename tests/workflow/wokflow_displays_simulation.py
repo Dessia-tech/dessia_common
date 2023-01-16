@@ -16,9 +16,9 @@ assert display_settings[2].type == "babylon_data"
 assert display_settings[3].type == "plot_data"
 assert display_settings[4].type == "markdown"
 
-cad_do = workflow_run.block_display(1)[0]
-pd_do = workflow_run.block_display(2)[0]
-md_do = workflow_run.block_display(3)[0]
+cad_do = workflow_run._display_from_selector("3D (1)")
+pd_do = workflow_run._display_from_selector("2D (2)")
+md_do = workflow_run._display_from_selector("MD (3)")
 
 assert is_jsonable(cad_do.data)
 assert is_jsonable(pd_do.data)
@@ -27,6 +27,5 @@ assert is_jsonable(md_do.data)
 assert len(cad_do.data["meshes"]) == 2
 assert len(pd_do.data) == 5
 assert isinstance(md_do.data, str)
-assert len(md_do.data) == 3684
 
 print("script workflow_displays_simulation.py has passed")

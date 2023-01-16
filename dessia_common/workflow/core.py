@@ -847,7 +847,7 @@ class Workflow(Block):
             return self._run_dict()
         if method_name == 'start_run':
             return self._start_run_dict()
-        raise WorkflowError(f"Calling method_dict with unknown method_name {method_name}")
+        raise WorkflowError(f"Calling method_dict with unknown method_name '{method_name}'")
 
     def variable_from_index(self, index: Union[int, Tuple[int, int, int]]):
         """
