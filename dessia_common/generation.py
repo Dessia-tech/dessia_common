@@ -1,6 +1,5 @@
 """
-generation for dessia_common
-
+Module for Generation for dessia_common.
 """
 from typing import List
 import dectree as dt
@@ -9,15 +8,14 @@ from dessia_common.core import DessiaObject
 
 class Generator(DessiaObject):
     """
-    Common parts of generator
+    Common parts of generator.
     """
-
     def __init__(self, name: str = ''):
         DessiaObject.__init__(self, name=name)
 
     def is_model_valid(self, model) -> bool:
         """
-        Checks if Model is valid or not
+        Checks if Model is valid or not.
 
         :param model: Model generated
 
@@ -27,6 +25,7 @@ class Generator(DessiaObject):
         raise NotImplementedError('the method is_model_valid must be overloaded by subclassing class')
 
     def number_possibilities_from_model(self, model):
+        """ Not Implemented. """
         raise NotImplementedError('the method number_possibilities_from_model must be overloaded by subclassing class')
 
 
@@ -54,7 +53,7 @@ class TreeGenerator(Generator):
 
     def is_vector_valid(self, vector: List[int]) -> bool:
         """
-        Verifies and Validates the decision tree vector
+        Verifies and Validates the decision tree vector.
 
         :param vector: decision tree node list
         :type vector: List[int]

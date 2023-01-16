@@ -1,5 +1,6 @@
 """
 A module that aims to list all possibilities of data formats offered by Dessia.
+
 It should be used as a repertory of rules and available typings.
 
 Some general rules :
@@ -304,6 +305,14 @@ class StandaloneObject(MovingObject):
                    subclass_arg=subclass_arg, array_arg=array_arg, name=name)
 
     @classmethod
+    def generate_with_many_subobjects(cls, seed: int, number: int, name: str = "Populated SO"):
+        """ Generate an object with a lot of subobjects. """
+        standalone_object = cls.generate(seed=seed, name=name)
+        subobjects = StandaloneBuiltinsSubobject.generate_many(seed=seed*number)
+        standalone_object.subclass_arg = subobjects
+        return standalone_object
+
+    @classmethod
     def generate_from_bin(cls, stream: BinaryFile):
         """ Generate an object from bin file in order to test frontend forms and backend streams. """
         # User need to decode the binary as he see fit
@@ -394,20 +403,21 @@ class StandaloneObject(MovingObject):
         contour = self.standalone_subobject.contour().plot_data()
         primitives_group = plot_data.PrimitiveGroup(primitives=[contour], name='Contour')
 
-        points = [plot_data.Point2D(cx=random.randint(0, 600) / 100, cy=random.randint(100, 2000) / 100,
-                                    name=f"Point{str(i)}") for i in range(500)]
+        rand = random.randint
+        samples = [plot_data.Sample(values={"cx": rand(0, 600) / 100, "cy": rand(100, 2000) / 100}, name=f"Point{i}")
+                   for i in range(500)]
 
         # Scatter Plot
         scatterplot = self.scatter_plot()
 
         # Parallel Plot
-        parallelplot = plot_data.ParallelPlot(elements=points, axes=['cx', 'cy', 'color_fill', 'color_stroke'],
+        parallelplot = plot_data.ParallelPlot(elements=samples, axes=['cx', 'cy', 'color_fill', 'color_stroke'],
                                               name='Parallel Plot')
 
         # Multi Plot
         objects = [scatterplot, parallelplot]
         sizes = [plot_data.Window(width=560, height=300), plot_data.Window(width=560, height=300)]
-        multiplot = plot_data.MultiplePlots(elements=points, plots=objects, sizes=sizes,
+        multiplot = plot_data.MultiplePlots(elements=samples, plots=objects, sizes=sizes,
                                             coords=[(0, 0), (300, 0)], name='Multiple Plot')
 
         attribute_names = ['timestep', 'electric current']

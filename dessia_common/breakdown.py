@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Code for breakdowns
-
+Code for breakdowns.
 """
 
 import sys
@@ -11,8 +10,8 @@ import collections
 import collections.abc
 import numpy as npy
 
-from dessia_common.abstract import CoreDessiaObject
-from dessia_common.utils.types import is_sequence
+import dessia_common.serialization as dcs
+import dessia_common.utils.types as dct
 
 
 def attrmethod_getter(object_, attr_methods):
@@ -41,7 +40,7 @@ class ExtractionError(Exception):
 
 def extract_segment_from_object(object_, segment: str):
     """ Try all ways to get an attribute (segment) from an object that can of numerous types. """
-    if is_sequence(object_):
+    if dct.is_sequence(object_):
         try:
             return object_[int(segment)]
         except ValueError as err:
@@ -172,7 +171,7 @@ def object_breakdown(obj, path=''):
         path += '.'
 
     bd_dict = {}
-    if isinstance(obj, CoreDessiaObject):
+    if isinstance(obj, dcs.SerializableObject):
         obj_dict = obj._serializable_dict()
     else:
         if hasattr(obj, '__dict__'):

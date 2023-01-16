@@ -1,6 +1,5 @@
 """
-Distances operators for metrics on Datasets
-
+Distances operators for metrics on Datasets.
 """
 
 import numpy as npy
