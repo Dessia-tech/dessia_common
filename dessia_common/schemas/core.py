@@ -43,15 +43,14 @@ class Schema:
 
         self.property_schemas = {a: get_schema(annotations[a]) for a in self.attributes}
 
-        # Parse docstring
-        try:
+        try:  # Parse docstring
             self.parsed_docstring = parse_docstring(docstring=docstring, annotations=annotations)
-        except Exception:
+        except Exception:  # Catching broad exception because we don't want it to break platform if a failure occurs
             self.parsed_docstring = FAILED_DOCSTRING_PARSING
 
         self.parsed_attributes = self.parsed_docstring['attributes']
 
-        self.required_arguments, self.default_arguments = split_default_args(argspec=argspec, merge=False)
+        self.required_arguments, self.default_arguments = split_default_args(argspecs=argspec, merge=False)
 
         self.check_list().raise_if_above_level("error")
 
@@ -67,7 +66,7 @@ class Schema:
         if self.parsed_attributes is not None and attribute in self.parsed_attributes:
             try:
                 description = self.parsed_attributes[attribute]['desc']
-            except Exception:
+            except Exception:  # Catching broad exception because we don't want it to break platform if a failure occurs
                 description = FAILED_ATTRIBUTE_PARSING["desc"]
         else:
             description = ""
@@ -807,7 +806,7 @@ def inspect_arguments(method: tp.Callable, merge: bool = False):
     else:
         argspecs = inspect.getfullargspec(method)
         _fullargsspec_cache[method_full_name] = argspecs
-    return split_default_args(argspec=argspecs, merge=merge)
+    return split_default_args(argspecs=argspecs, merge=merge)
 
 
 def split_default_args(argspecs: inspect.FullArgSpec, merge: bool = False):

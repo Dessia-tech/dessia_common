@@ -74,7 +74,7 @@ def is_jsonable(obj):
     #     return False
 
 
-def is_serializable(obj):
+def is_serializable(_):
     """ Return True if object is deeply serializable as Dessia's standards, else False. """
     msg = "Function is_serializable has been moved to module serialization.py. Please use this one instead."
     raise NotImplementedError(msg)

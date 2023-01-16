@@ -18,4 +18,3 @@ class PropertySchema(tp.TypedDict):
 class TupleSchema(PropertySchema):
     additionalItems: bool
     items: tp.List[PropertySchema]
-

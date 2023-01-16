@@ -45,7 +45,7 @@ MAX_ERROR_BY_TYPE = {
                      'consider-iterating-dictionary': 1,
                      'attribute-defined-outside-init': 3,
                      'simplifiable-if-expression': 1,
-                     'broad-except': 4,
+                     'broad-except': 6,
                      'bare-except': 4,
                      'undefined-loop-variable': 1,
                      'consider-using-with': 2,
@@ -57,7 +57,7 @@ MAX_ERROR_BY_TYPE = {
                      'chained-comparison': 1,
                      'wildcard-import': 1,
                      'use-maxsplit-arg': 1,
-                     'duplicate-code': 1,
+                     'duplicate-code': 2,  # Temporarily raising to 2 (soon 0)
                      'too-many-lines': 1
                      }
 

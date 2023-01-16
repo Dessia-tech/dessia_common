@@ -310,16 +310,11 @@ class DessiaObject(SerializableObject):
         return _jsonschema
 
     def method_schema(self):
-        """
-        TODO
-        """
-        pass
+        """ TODO. """
 
     @property
     def _method_jsonschemas(self):
-        """
-        Generates dynamic jsonschemas for methods of class.
-        """
+        """ Generates dynamic jsonschemas for methods of class. """
         jsonschemas = {}
         class_ = self.__class__
 
