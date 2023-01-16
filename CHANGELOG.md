@@ -25,6 +25,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Conform doc for many parts of dessia_common
 - 100% coverage for clusters module
 - cache inspect.fullargspecs calls
+- Add trivial checks for simple types
+- Avoid redundant serialization in display blocks
 
 
 ### Tests

@@ -15,7 +15,7 @@ from dessia_common.abstract import CoreDessiaObject
 from dessia_common.typings import Subclass, InstanceOf, MethodType, ClassMethodType
 from dessia_common.files import BinaryFile, StringFile
 
-
+SIMPLE_TYPES = [int, str]
 TYPING_EQUIVALENCES = {int: 'number', float: 'number', bool: 'boolean', str: 'string'}
 
 TYPES_STRINGS = {int: 'int', float: 'float', bool: 'boolean', str: 'str',
@@ -80,14 +80,27 @@ def is_serializable(obj):
     raise NotImplementedError(msg)
 
 
-def is_sequence(obj):
+def is_sequence(obj) -> bool:
     """
     Return True if object is sequence (but not string), else False.
 
     :param obj: Object to check
     :return: bool. True if object is a sequence but not a string. False otherwise
     """
+    if is_list(obj) or is_tuple(obj):
+        # Performance improvements for trivial checks
+        return True
     return isinstance(obj, Sequence) and not isinstance(obj, str)
+
+
+def is_list(obj) -> bool:
+    """ Check if given obj is exactly of type list (not instance of). Used mainly for performance. """
+    return obj.__class__ == list
+
+
+def is_tuple(obj) -> bool:
+    """ Check if given obj is exactly of type tuple (not instance of). Used mainly for performance. """
+    return obj.__class__ == tuple
 
 
 def is_builtin(type_):
@@ -95,9 +108,17 @@ def is_builtin(type_):
     return type_ in TYPING_EQUIVALENCES
 
 
+def is_simple(obj):
+    """ Return True if given object is a int or a str or None. Used mainly for performance. """
+    return obj is None or obj.__class__ in SIMPLE_TYPES
+
+
 def isinstance_base_types(obj):
     """ Return True if the object is either a str, a float an int or None. """
-    return isinstance(obj, (str, float, int)) or (obj is None)
+    if is_simple(obj):
+        # Performance improvements for trivial types
+        return True
+    return isinstance(obj, (str, float, int))
 
 
 def get_python_class_from_class_name(full_class_name: str):
