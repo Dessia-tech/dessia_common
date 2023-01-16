@@ -758,7 +758,7 @@ class MidLevel(DessiaObject):
     _allowed_methods = ["generate_with_references"]
 
     def __init__(self, bottom_level: BottomLevel = None, name: str = ""):
-        self.attribute = bottom_level
+        self.bottom_level = bottom_level
 
         DessiaObject.__init__(self, name=name)
 
