@@ -257,6 +257,7 @@ class Block(DessiaObject):
         return f"name='{self.name}', position={self.position}"
 
     def evaluate(self, values, **kwargs):
+        """ Not implemented for abstract block class 'evaluate' method. """
         raise NotImplementedError("This method should be implemented in any Block inheriting class.")
 
     def _to_script(self, prefix: str):
@@ -1504,6 +1505,7 @@ class Workflow(Block):
             self.save_script_to_stream(file)
 
     def evaluate(self, values, **kwargs):
+        """ Not implemented Workflow as Block evaluate method. """
         raise NotImplementedError("Method 'evaluate' is not implemented for class Workflow.")
 
 
