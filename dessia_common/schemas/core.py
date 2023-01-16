@@ -10,7 +10,7 @@ import typing as tp
 import dessia_common.utils.types as dc_types
 from dessia_common.abstract import CoreDessiaObject
 from dessia_common.files import BinaryFile, StringFile
-from dessia_common.typings import Subclass, MethodType, ClassMethodType, Any, InstanceOf
+from dessia_common.typings import MethodType, ClassMethodType, Any, InstanceOf
 from dessia_common.measures import Measure
 from dessia_common.utils.docstrings import parse_docstring, FAILED_DOCSTRING_PARSING, FAILED_ATTRIBUTE_PARSING
 from dessia_common.utils.helpers import prettyname
@@ -877,30 +877,8 @@ def typing_schema(typing_) -> Property:
         return OptionalProperty(typing_)
     try:
         return ORIGIN_TO_SCHEMA_CLASS[origin](typing_)
-    except KeyError:
-        raise NotImplementedError(f"No Schema defined for typing '{typing_}'.")
-
-    # if origin is tp.Union:
-    #     if dc_types.union_is_default_value(typing_):
-    #         # This is a false UnionProperty => Is a default value set to None
-    #         return OptionalProperty(typing_)
-    #     # Types union
-    #     return UnionProperty(typing_)
-    # if origin is tuple:
-    #     return HeterogeneousSequence(typing_)
-    # if origin in [list, collections.abc.Iterator]:
-    #     return HomogeneousSequence(typing_)
-    # if origin is dict:
-    #     return DynamicDict(typing_)
-    # if origin is Subclass:
-    #     pass
-    # if origin is InstanceOf:
-    #     return InstanceOfProperty(typing_)
-    # if origin in [MethodType, ClassMethodType]:
-    #     return MethodTypeProperty(typing_)
-    # if origin is type:
-    #     return ClassProperty(typing_)
-    # raise NotImplementedError(f"No Schema defined for typing '{typing_}'.")
+    except KeyError as exc:
+        raise NotImplementedError(f"No Schema defined for typing '{typing_}'.") from exc
 
 
 def custom_class_schema(annotation: tp.Type) -> Property:
