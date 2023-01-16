@@ -1,11 +1,12 @@
-'''
+"""
 Read pylint errors to see if number of errors does not exceed specified limits
-v1.2
+v1.3
 
 Changes:
     v1.1: move imports to top
     v1.2: limit to 100 message to avoid overflow, global note check at end, ratchet effects
-'''
+    v1.3: time decrease and simplification warning about useless entries in MAX_ERROR_BY_TYPE
+"""
 
 
 import os
@@ -17,75 +18,59 @@ from datetime import date
 from pylint import __version__
 from pylint.lint import Run
 
-MIN_NOTE = 9.30
+MIN_NOTE = 9.6
 
-EFFECTIVE_DATE = date(2022, 12, 16)
-WEEKLY_DECREASE = 0.03
+EFFECTIVE_DATE = date(2023, 1, 15)
+WEEKLY_DECREASE = 0.05
 
-UNWATCHED_ERRORS = ['fixme', 'trailing-whitespace', 'import-error']
+UNWATCHED_ERRORS = ["fixme", "trailing-whitespace", "import-error"]
 
 MAX_ERROR_BY_TYPE = {
-                     'protected-access': 38,
-                     'consider-using-f-string': 1,
-                     'arguments-differ': 2,
-                     'no-member': 3,
-                     'too-many-locals': 10,  # Reduce by dropping vectored objects
-                     'too-many-branches': 13,
-                     'wrong-import-order': 0,
-                     'unused-argument': 7,
-                     'cyclic-import': 4,
-                     'no-self-use': 6,
-                     'trailing-whitespace': 11,
-                     'empty-docstring': 1,
-                     'missing-module-docstring': 1,
-                     'too-many-arguments': 21,
-                     'too-few-public-methods': 5,
-                     'unnecessary-comprehension': 1,
-                     'no-value-for-parameter': 2,
-                     'too-many-return-statements': 10,
-                     'consider-merging-isinstance': 1,
-                     'abstract-method': 6,
-                     'import-outside-toplevel': 4,  # TODO : will reduced in a future work (when tests are ready)
-                     'too-many-instance-attributes': 7,
-                     'no-else-raise errors': 5,
-                     'consider-iterating-dictionary': 1,
-                     'attribute-defined-outside-init': 3,
-                     'simplifiable-if-expression': 1,
-                     'broad-except': 4,
-                     'bare-except': 4,
-                     'undefined-loop-variable': 1,
-                     'consider-using-with': 2,
-                     'too-many-nested-blocks': 2,
-                     'bad-staticmethod-argument': 1,
-                     'too-many-public-methods': 2,  # Try to lower by splitting DessiaObject and Workflow
-                     'consider-using-generator': 1,
-                     'too-many-statements': 1,
-                     'chained-comparison': 1,
-                     'wildcard-import': 1,
-                     'use-maxsplit-arg': 1,
-                     'duplicate-code': 1,
-                     'too-many-lines': 1
-                     }
+    "protected-access": 38,
+    "arguments-differ": 2,
+    "no-member": 3,
+    "too-many-locals": 10,  # Reduce by dropping vectored objects
+    "too-many-branches": 13,
+    "unused-argument": 7,
+    "cyclic-import": 4,
+    "missing-module-docstring": 1,
+    "too-many-arguments": 21,
+    "too-few-public-methods": 5,
+    "too-many-return-statements": 10,
+    "import-outside-toplevel": 4,  # TODO : will reduced in a future work (when tests are ready)
+    "too-many-instance-attributes": 7,
+    "attribute-defined-outside-init": 3,
+    "broad-except": 4,
+    "bare-except": 4,
+    "undefined-loop-variable": 1,
+    "too-many-nested-blocks": 2,
+    "too-many-public-methods": 2,  # Try to lower by splitting DessiaObject and Workflow
+    "too-many-statements": 1,
+    "duplicate-code": 1,
+    "too-many-lines": 1,
+}
 
-print('pylint version: ', __version__)
+ERRORS_WITHOUT_TIME_DECREASE = ["bare-except"]
 
-time_decrease_coeff = 1 - (date.today() - EFFECTIVE_DATE).days / 7. * WEEKLY_DECREASE
+print("pylint version: ", __version__)
 
-f = open(os.devnull, 'w')
+time_decrease_coeff = 1 - (date.today() - EFFECTIVE_DATE).days / 7.0 * WEEKLY_DECREASE
+
+f = open(os.devnull, "w")
 
 old_stdout = sys.stdout
 sys.stdout = f
 
-results = Run(['dessia_common', '--output-format=json', '--reports=no'], do_exit=False)
+results = Run(["dessia_common", "--output-format=json", "--reports=no"], do_exit=False)
 # `exit` is deprecated, use `do_exit` instead
 sys.stdout = old_stdout
 
 PYLINT_OBJECTS = True
-if hasattr(results.linter.stats, 'global_note'):
+if hasattr(results.linter.stats, "global_note"):
     pylint_note = results.linter.stats.global_note
     PYLINT_OBJECT_STATS = True
 else:
-    pylint_note = results.linter.stats['global_note']
+    pylint_note = results.linter.stats["global_note"]
     PYLINT_OBJECT_STATS = False
 
 
@@ -99,38 +84,44 @@ error_over_ratchet_limit = False
 if PYLINT_OBJECT_STATS:
     stats_by_msg = results.linter.stats.by_msg
 else:
-    stats_by_msg = results.linter.stats['by_msg']
+    stats_by_msg = results.linter.stats["by_msg"]
 
 for error_type, number_errors in stats_by_msg.items():
     if error_type not in UNWATCHED_ERRORS:
         base_errors = MAX_ERROR_BY_TYPE.get(error_type, 0)
-        max_errors = math.ceil(base_errors * time_decrease_coeff)
+
+        if error_type in ERRORS_WITHOUT_TIME_DECREASE:
+            max_errors = base_errors
+        else:
+            max_errors = math.ceil(base_errors * time_decrease_coeff)
+
         time_decrease_effect = base_errors - max_errors
         # print('time_decrease_effect', time_decrease_effect)
 
         if number_errors > max_errors:
             error_detected = True
-            print(f'\nFix some {error_type} errors: {number_errors}/{max_errors}')
+            print(f"\nFix some {error_type} errors: {number_errors}/{max_errors}")
 
             messages = extract_messages_by_type(error_type)
-            messages_to_show = sorted(random.sample(messages, min(30, len(messages))),
-                                      key=lambda m: (m.path, m.line))
+            messages_to_show = sorted(random.sample(messages, min(30, len(messages))), key=lambda m: (m.path, m.line))
             for message in messages_to_show:
-                print(f'{message.path} line {message.line}: {message.msg}')
+                print(f"{message.path} line {message.line}: {message.msg}")
         elif number_errors < max_errors:
-            print(
-                f'\nYou can lower number of {error_type} to {number_errors+time_decrease_effect} (actual {base_errors})')
+            print(f"\nYou can lower number of {error_type} to {number_errors+time_decrease_effect}"
+                  f" (actual {base_errors})")
 
+for error_type in MAX_ERROR_BY_TYPE:
+    if error_type not in stats_by_msg:
+        print(f"You can delete {error_type} entry from MAX_ERROR_BY_TYPE dict")
 
 if error_detected:
-    raise RuntimeError('Too many errors\nRun pylint dessia_common to get the errors')
+    raise RuntimeError("Too many errors\nRun pylint dessia_common to get the errors")
 
 if error_over_ratchet_limit:
-    raise RuntimeError('Please lower the error limits in code_pylint.py MAX_ERROR_BY_TYPE according to warnings above')
+    raise RuntimeError("Please lower the error limits in code_pylint.py MAX_ERROR_BY_TYPE according to warnings above")
 
-print('Pylint note: ', pylint_note)
+print("Pylint note: ", pylint_note)
 if pylint_note < MIN_NOTE:
-    raise ValueError(f'Pylint not is too low: {pylint_note}, expected {MIN_NOTE}')
+    raise ValueError(f"Pylint not is too low: {pylint_note}, expected {MIN_NOTE}")
 
-print('You can increase MIN_NOTE in pylint to {} (actual: {})'.format(pylint_note,
-                                                                      MIN_NOTE))
+print("You can increase MIN_NOTE in pylint to {} (actual: {})".format(pylint_note, MIN_NOTE))

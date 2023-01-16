@@ -1107,7 +1107,7 @@ class FiltersList(DessiaObject):
         if logical_operator == 'or':
             return [any(booleans_tuple) for booleans_tuple in zip(*booleans_lists)]
         if logical_operator == 'xor':
-            return [True if sum(booleans_tuple) == 1 else False for booleans_tuple in zip(*booleans_lists)]
+            return [bool(sum(booleans_tuple)) for booleans_tuple in zip(*booleans_lists)]
         raise NotImplementedError(f"'{logical_operator}' str for 'logical_operator' attribute is not a use case")
 
     def get_booleans_index(self, dobjects_list: List[DessiaObject]):
