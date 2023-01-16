@@ -57,7 +57,7 @@ MAX_ERROR_BY_TYPE = {
                      'chained-comparison': 1,
                      'wildcard-import': 1,
                      'use-maxsplit-arg': 1,
-                     'duplicate-code': 2,  # Temporarily raising to 2 (soon 0)
+                     'duplicate-code': 1,
                      'too-many-lines': 1
                      }
 
