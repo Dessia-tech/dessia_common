@@ -492,8 +492,8 @@ class CustomClass(Property):
     def is_dessia_object_typed(self) -> PassedCheck:
         """ Check whether if typing for given attribute annotates a subclass of DessiaObject or not . """
         if not issubclass(self.annotation, CoreDessiaObject):
-            return FailedCheck(f"{self.check_prefix}Class '{self.classname}' is not a subclass of DessiaObject")
-        msg = f"{self.check_prefix}Class '{self.classname}' is properly typed as a subclass of DessiaObject"
+            return FailedCheck(f"{self.check_prefix}Class '{self.classname}' is not a subclass of DessiaObject.")
+        msg = f"{self.check_prefix}Class '{self.classname}' is properly typed as a subclass of DessiaObject."
         return PassedCheck(msg)
 
 
@@ -603,7 +603,7 @@ class HeterogeneousSequence(TypingProperty):
             msg = f"{self.check_prefix}is typed as a 'Tuple' which requires at least 1 argument. " \
                   f"Expected 'Tuple[T0, T1, ..., Tn]', got '{self.annotation}'."
             return FailedCheck(msg)
-        return PassedCheck(f"{self.check_prefix}has at least one argument : '{self.annotation}'")
+        return PassedCheck(f"{self.check_prefix}has at least one argument : '{self.annotation}'.")
 
 
 class HomogeneousSequence(TypingProperty):
@@ -727,9 +727,9 @@ class DynamicDict(TypingProperty):
         if value_type not in dc_types.TYPING_EQUIVALENCES:
             msg = f"{self.check_prefix}is typed as a 'Dict[{key_type}, {value_type}]' " \
                   f"which requires a builtin type as its value type. " \
-                  f"Expected 'int', 'float', 'bool' or 'str', got '{value_type}'"
+                  f"Expected 'int', 'float', 'bool' or 'str', got '{value_type}'."
             return FailedCheck(msg)
-        return PassedCheck(f"{self.check_prefix}has simple values : '{self.annotation}'")
+        return PassedCheck(f"{self.check_prefix}has simple values : '{self.annotation}'.")
 
     def has_no_default(self) -> PassedCheck:
         if self.definition_default is not None:
