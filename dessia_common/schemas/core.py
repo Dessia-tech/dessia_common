@@ -152,7 +152,7 @@ class ClassSchema(Schema):
 
     Class must be a subclass of DessiaObject. It reads the __init__ annotations.
     """
-    def __init__(self, class_: CoreDessiaObject):
+    def __init__(self, class_: tp.Type[CoreDessiaObject]):
         self.class_ = class_
         self.standalone_in_db = class_._standalone_in_db
         self.python_typing = dc_types.full_classname(class_, compute_for="class")
