@@ -2,6 +2,7 @@ from dessia_common.forms import Optimizer, StandaloneObject
 from dessia_common.typings import MethodType
 from dessia_common.workflow.core import Pipe, Workflow
 from dessia_common.workflow.blocks import InstantiateModel, ModelMethod, ModelAttribute
+from dessia_common.utils.serialization import serialize
 
 import unittest
 from parameterized import parameterized
@@ -28,13 +29,15 @@ generated_standalone_object = StandaloneObject.generate(1)
 optimization_workflow3 = optimization_workflow2.copy()
 optimization_workflow3.imposed_variable_values[optimization_workflow3.blocks[0].inputs[0]] = generated_standalone_object
 
+object_dict = serialize(generated_standalone_object)
+
 
 class TestMethodDict(unittest.TestCase):
 
     @parameterized.expand([
         (optimization_workflow, {1: "", 2: 3}),
         (optimization_workflow2, {1: "custom_name", 2: 3}),
-        (optimization_workflow3, {0: generated_standalone_object, 1: "custom_name", 2: 3})
+        (optimization_workflow3, {0: object_dict, 1: "custom_name", 2: 3})
     ])
     def test_method_dict_is_valid(self, workflow, expected_dict):
         self.assertEqual(expected_dict, workflow.method_dict(method_name='run'))
