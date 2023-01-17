@@ -26,6 +26,7 @@ class Generator(DessiaObject):
         raise NotImplementedError('the method is_model_valid must be overloaded by subclassing class')
 
     def number_possibilities_from_model(self, model):
+        """ Not Implemented. """
         raise NotImplementedError('the method number_possibilities_from_model must be overloaded by subclassing class')
 
 

@@ -9,17 +9,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Hot fix for is_valid method of workflow's Block
+- Core : add a boolean for platform checking in check_list. Fixes a problem with testing classes not existing
+
+### Refactor
+
+- Move ./utils/serialization to ./serialization to avoid cyclic-imports
 
 ### CI
 
 - add a check to enforce update of changelog in PR
+- code_pydocstyle.py checks daily instead of weekly
 
 ### Performance
 
 - Conform doc for many parts of dessia_common
 - 100% coverage for clusters module
 - cache inspect.fullargspecs calls
+- Add trivial checks for simple types
+- Avoid redundant serialization in display blocks
 
+### Build
+
+- Update python minimum version to 3.8 (3.7 was not supported in fact)
+- Update scikit learn to minimum 1.2.0 for the parameter metric in Clustering
 
 ### Tests
 
@@ -27,6 +39,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Chores
 - Merge back master to dev
+- Docs weekly decrease
+- Fixed all remaining pydocstyle errors
 
 ## 0.11.0
 
