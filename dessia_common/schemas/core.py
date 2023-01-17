@@ -10,7 +10,7 @@ import typing as tp
 import dessia_common.utils.types as dc_types
 from dessia_common.abstract import CoreDessiaObject
 from dessia_common.files import BinaryFile, StringFile
-from dessia_common.typings import MethodType, ClassMethodType, Any, InstanceOf
+from dessia_common.typings import MethodType, ClassMethodType, Any, InstanceOf, Subclass
 from dessia_common.measures import Measure
 from dessia_common.utils.docstrings import parse_docstring, FAILED_DOCSTRING_PARSING, FAILED_ATTRIBUTE_PARSING
 from dessia_common.utils.helpers import prettyname
@@ -42,8 +42,6 @@ class Schema:
         self.annotations = annotations
         self.attributes = [a for a in argspec.args if a not in RESERVED_ARGNAMES]
 
-        self.property_schemas = {a: get_schema(annotations[a]) for a in self.attributes}
-
         try:  # Parse docstring
             self.parsed_docstring = parse_docstring(docstring=docstring, annotations=annotations)
         except Exception:  # Catching broad exception because we don't want it to break platform if a failure occurs
@@ -52,6 +50,13 @@ class Schema:
         self.parsed_attributes = self.parsed_docstring['attributes']
 
         self.required_arguments, self.default_arguments = split_default_args(argspecs=argspec, merge=False)
+
+        self.property_schemas = {}
+        for attribute in self.attributes:
+            default = self.default_arguments.get(attribute, None)
+            annotation = self.annotations[attribute]
+            schema = get_schema(annotation=annotation, definition_default=default)
+            self.property_schemas[attribute] = schema
 
         self.check_list().raise_if_above_level("error")
 
@@ -75,9 +80,11 @@ class Schema:
         editable = attribute in self.editable_attributes
         chunk = schema.to_dict(title=prettyname(attribute), editable=editable, description=description)
 
-        if attribute in self.default_arguments:
-            # TODO Could use this and Optional proxy in order to inject real default values for mutables
-            chunk["defaut_value"] = schema.default_value()
+        # if attribute in self.default_arguments:
+        #     # TODO Could use this and Optional proxy in order to inject real default values for mutables
+        #     default = self.default_arguments.get(attribute, None)
+        #     print("Default", default)
+        #     chunk["defaut_value"] = schema.default_value(definition_default=default)
         return chunk
 
     @property
@@ -208,10 +215,14 @@ class MethodSchema(Schema):
         raise NotImplementedError("Schema reconstruction is not implemented yet")
 
 
+T = tp.TypeVar("T")
+
+
 class Property:
     """ Base class for a schema property. """
-    def __init__(self, annotation: tp.Type):
+    def __init__(self, annotation: tp.Type[T], definition_default: T = None):
         self.annotation = annotation
+        self.definition_default = definition_default
 
     @property
     def schema(self):
@@ -249,8 +260,8 @@ class Property:
 
 class TypingProperty(Property):
     """ Schema class for typing based annotations. """
-    def __init__(self, annotation: tp.Type):
-        super().__init__(annotation=annotation)
+    def __init__(self, annotation: tp.Type, definition_default=None):
+        super().__init__(annotation=annotation, definition_default=definition_default)
 
     @property
     def args(self):
@@ -288,8 +299,8 @@ class OptionalProperty(TypingProperty):
     OptionalProperty is only a catch for arguments that default to None.
     Arguments with default values other than None are not considered Optionals
     """
-    def __init__(self, annotation: tp.Type):
-        super().__init__(annotation=annotation)
+    def __init__(self, annotation: tp.Type, definition_default=None):
+        super().__init__(annotation=annotation, definition_default=definition_default)
 
     @property
     def schema(self):
@@ -328,8 +339,8 @@ class AnnotatedProperty(TypingProperty):
                            "Dessia only supports python 3.9 at the moment."
 
     # TODO Whenever Dessia decides to upgrade to python 3.11
-    def __init__(self, annotation: tp.Type):
-        super().__init__(annotation=annotation)
+    def __init__(self, annotation: tp.Type, definition_default=None):
+        super().__init__(annotation=annotation, definition_default=definition_default)
         raise NotImplementedError(self._not_implemented_msg)
 
     @property
@@ -359,10 +370,13 @@ class AnnotatedProperty(TypingProperty):
         raise NotImplementedError(self._not_implemented_msg)
 
 
+Builtin = tp.Union[str, bool, float, int]
+
+
 class BuiltinProperty(Property):
     """ Schema class for Builtin type hints. """
-    def __init__(self, annotation: tp.Type):
-        super().__init__(annotation=annotation)
+    def __init__(self, annotation: tp.Type[Builtin], definition_default: Builtin = None):
+        super().__init__(annotation=annotation, definition_default=definition_default)
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write Builtin as a dict. """
@@ -382,8 +396,8 @@ class BuiltinProperty(Property):
 
 class MeasureProperty(BuiltinProperty):
     """ Schema class for Measure type hints. """
-    def __init__(self, annotation: tp.Type[Measure]):
-        super().__init__(annotation=annotation)
+    def __init__(self, annotation: tp.Type[Measure], definition_default: Measure = None):
+        super().__init__(annotation=annotation, definition_default=definition_default)
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write Measure as a dict. """
@@ -401,10 +415,13 @@ class MeasureProperty(BuiltinProperty):
         raise NotImplementedError("Schema reconstruction is not implemented yet")
 
 
+File = tp.Union[StringFile, BinaryFile]
+
+
 class FileProperty(Property):
     """ Schema class for File type hints. """
-    def __init__(self, annotation: tp.Type):
-        Property.__init__(self, annotation=annotation)
+    def __init__(self, annotation: tp.Type[File], definition_default: File = None):
+        super().__init__(annotation=annotation, definition_default=definition_default)
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write File as a dict. """
@@ -424,8 +441,8 @@ class FileProperty(Property):
 
 class CustomClass(Property):
     """ Schema class for CustomClass type hints. """
-    def __init__(self, annotation: tp.Type):
-        super().__init__(annotation=annotation)
+    def __init__(self, annotation: tp.Type[CoreDessiaObject], definition_default: CoreDessiaObject = None):
+        super().__init__(annotation=annotation, definition_default=definition_default)
         self.classname = dc_types.full_classname(object_=self.annotation, compute_for='class')
 
     @property
@@ -474,8 +491,8 @@ class CustomClass(Property):
 
 class UnionProperty(TypingProperty):
     """ Schema class for Union type hints. """
-    def __init__(self, annotation: tp.Type):
-        super().__init__(annotation=annotation)
+    def __init__(self, annotation: tp.Type[tp.Union[T]], definition_default: tp.Union[T] = None):
+        super().__init__(annotation=annotation, definition_default=definition_default)
 
         standalone_args = [a._standalone_in_db for a in self.args]
         if all(standalone_args):
@@ -536,8 +553,8 @@ class HeterogeneousSequence(TypingProperty):
 
     Datatype that can be seen as a tuple. Have any amount of arguments but a limited length.
     """
-    def __init__(self, annotation: tp.Type):
-        super().__init__(annotation=annotation)
+    def __init__(self, annotation: tp.Type[tp.List[T]], definition_default: tp.List[T] = None):
+        super().__init__(annotation=annotation, definition_default=definition_default)
 
         self.item_schemas = [get_schema(a) for a in self.args]
 
@@ -587,8 +604,8 @@ class HomogeneousSequence(TypingProperty):
 
     Datatype that can be seen as a list. Have only one arguments but an unlimited length.
     """
-    def __init__(self, annotation: tp.Type):
-        super().__init__(annotation=annotation)
+    def __init__(self, annotation: tp.Type[tp.Tuple], definition_default: tp.Tuple = None):
+        super().__init__(annotation=annotation, definition_default=definition_default)
 
         self.item_schemas = [get_schema(a) for a in self.args]
 
@@ -629,8 +646,8 @@ class DynamicDict(TypingProperty):
     Datatype that can be seen as a dict. Have restricted amount of arguments (one for key, one for values),
     but an unlimited length.
     """
-    def __init__(self, annotation: tp.Type):
-        super().__init__(annotation=annotation)
+    def __init__(self, annotation: tp.Type[tp.Dict[str, Builtin]], definition_default: tp.Dict[str, Builtin] = None):
+        super().__init__(annotation=annotation, definition_default=definition_default)
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write DynamicDict as a dict. """
@@ -698,6 +715,9 @@ class DynamicDict(TypingProperty):
         return PassedCheck(f"Attribute '{attribute}' has simple values : '{self.annotation}'")
 
 
+BaseClass = tp.TypeVar("BaseClass", bound=CoreDessiaObject)
+
+
 class InstanceOfProperty(TypingProperty):
     """
     Schema class for InstanceOf type hints.
@@ -705,8 +725,8 @@ class InstanceOfProperty(TypingProperty):
     Datatype that can be seen as an union of classes that inherits from the only arg given.
     Instances of these classes validate against this type.
     """
-    def __init__(self, annotation: tp.Type):
-        super().__init__(annotation=annotation)
+    def __init__(self, annotation: tp.Type[InstanceOf[BaseClass]], definition_default: BaseClass = None):
+        super().__init__(annotation=annotation, definition_default=definition_default)
 
     @property
     def schema(self):
@@ -747,8 +767,8 @@ class SubclassProperty(TypingProperty):
     Datatype that can be seen as an union of classes that inherits from the only arg given.
     Classes validate against this type.
     """
-    def __init__(self, annotation: tp.Type):
-        super().__init__(annotation=annotation)
+    def __init__(self, annotation: tp.Type[Subclass[BaseClass]], definition_default: tp.Type[BaseClass] = None):
+        super().__init__(annotation=annotation, definition_default=definition_default)
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write Subclass as a dict. """
@@ -781,8 +801,8 @@ class MethodTypeProperty(TypingProperty):
 
     A specifically instantiated MethodType validated against this type.
     """
-    def __init__(self, annotation: tp.Type):
-        super().__init__(annotation=annotation)
+    def __init__(self, annotation: tp.Type[MethodType], definition_default: MethodType = None):
+        super().__init__(annotation=annotation, definition_default=definition_default)
 
         self.class_ = self.args[0]
         self.class_schema = get_schema(self.class_)
@@ -821,14 +841,17 @@ class MethodTypeProperty(TypingProperty):
         return CheckList([])
 
 
+Class = tp.TypeVar("Class", bound=type)
+
+
 class ClassProperty(TypingProperty):
     """
     Schema class for Type type hints.
 
     Non DessiaObject subclasses validated against this type.
     """
-    def __init__(self, annotation: tp.Type):
-        super().__init__(annotation=annotation)
+    def __init__(self, annotation: tp.Type[Class], definition_default: Class = None):
+        super().__init__(annotation=annotation, definition_default=definition_default)
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write Class as a dict. """
