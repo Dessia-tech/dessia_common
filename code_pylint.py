@@ -102,7 +102,8 @@ for error_type, number_errors in stats_by_msg.items():
         if number_errors > max_errors:
             error_detected = True
             print(
-                f"\nFix some {error_type} errors: {number_errors}/{max_errors} (time effect: {time_decrease_effect} errors)")
+                f"\nFix some {error_type} errors: {number_errors}/{max_errors} "
+                f"(time effect: {time_decrease_effect} errors)")
 
             messages = extract_messages_by_type(error_type)
             messages_to_show = sorted(random.sample(messages, min(30, len(messages))), key=lambda m: (m.path, m.line))
