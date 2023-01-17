@@ -474,9 +474,9 @@ class CustomClass(Property):
         """
         raise NotImplementedError("Schema reconstruction is not implemented yet")
 
-    def default_value(self, definition_default=None):
+    def default_value(self):
         """ Default value for an object. """
-        return object_default(definition_default=definition_default, class_schema=self.schema)
+        return object_default(definition_default=self.definition_default, class_schema=self.schema)
 
     def check_list(self) -> CheckList:
         """
@@ -526,9 +526,9 @@ class UnionProperty(TypingProperty):
         """
         raise NotImplementedError("Schema reconstruction is not implemented yet")
 
-    def default_value(self, definition_default=None):
+    def default_value(self):
         """ Default value for an object. """
-        return object_default(definition_default)
+        return object_default(self.definition_default)
 
     def check_list(self) -> CheckList:
         """
@@ -582,13 +582,13 @@ class HeterogeneousSequence(TypingProperty):
         """
         raise NotImplementedError("Schema reconstruction is not implemented yet")
 
-    def default_value(self, definition_default=None):
+    def default_value(self):
         """ Default value for a Tuple.
 
         Return serialized user default if defined, else a Tuple of Nones with the right size.
         """
-        if definition_default is not None:
-            return serialize(definition_default)
+        if self.definition_default is not None:
+            return serialize(self.definition_default)
         return [s.default_value() for s in self.item_schemas]
 
     def check_list(self) -> CheckList:
@@ -636,7 +636,7 @@ class HomogeneousSequence(TypingProperty):
         """
         raise NotImplementedError("Schema reconstruction is not implemented yet")
 
-    def default_value(self, definition_default=None):
+    def default_value(self):
         """ Default of a sequnce. Always return None as default mutable is prohibited. """
         return None
 
@@ -692,7 +692,7 @@ class DynamicDict(TypingProperty):
         """
         raise NotImplementedError("Schema reconstruction is not implemented yet")
 
-    def default_value(self, definition_default=None):
+    def default_value(self):
         """ Default of a dynamic dict. Always return None as default mutable is prohibited. """
         return None
 
@@ -775,9 +775,9 @@ class InstanceOfProperty(TypingProperty):
         """
         raise NotImplementedError("Schema reconstruction is not implemented yet")
 
-    def default_value(self, definition_default=None):
+    def default_value(self) -> BaseClass:
         """ Default value of an object. """
-        return object_default(definition_default=definition_default, class_schema=self.schema)
+        return object_default(definition_default=self.definition_default, class_schema=self.schema)
 
     def check_list(self) -> CheckList:
         """ Check validity of InstanceOf Type Hint. """
