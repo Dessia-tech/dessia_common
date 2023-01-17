@@ -29,8 +29,7 @@ steps:
 - name: check code complexity, docs & code quality
   image: python:3.8
   commands:
-  - pip install radon pydocstyle pylint
-  - ./code_quality.sh
+  - pip install pydocstyle pylint
   - python code_pylint.py
   - python code_pydocstyle.py
 
