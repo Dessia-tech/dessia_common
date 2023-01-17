@@ -742,6 +742,7 @@ def pointer_graph_elements_dict(dict_, path='#'):
 def pointers_analysis(obj):
     """
     Analyse on object to output stats on pointer use in the object.
+    Maybe useless now that we use uuids
 
     :returns: a tuple of 2 dicts: one giving the number of pointer use by class
     """
@@ -764,9 +765,10 @@ def pointers_analysis(obj):
                     val2_class = dcty.full_classname(val2)
                     class_from_path[path2] = val2_class
                 except AttributeError:
-                    pass
+                    val2_class = None
 
-            class_number[val2_class] = class_number.get(val2_class, 0) + 1
+            if val2_class:
+                class_number[val2_class] = class_number.get(val2_class, 0) + 1
 
             if path1 in class_from_path:
                 val1_class = class_from_path[path1]
@@ -776,13 +778,13 @@ def pointers_analysis(obj):
                     val1_class = dcty.full_classname(val1)
                     class_from_path[path1] = val1_class
                 except AttributeError:
-                    pass
+                    val1_class = None
 
             if val1_class != val2_class:
                 if val2_class not in composed_by:
                     composed_by[val2_class] = {}
 
-                if val1_class not in composed_by[val2_class]:
+                if val1_class and val1_class not in composed_by[val2_class]:
                     composed_by[val2_class][val1_class] = 1
                 else:
                     composed_by[val2_class][val1_class] += 1
