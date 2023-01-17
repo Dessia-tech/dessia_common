@@ -1110,7 +1110,7 @@ class Export(Block):
 
     def _to_script(self, _) -> ToScriptElement:
         script = f"Export(method_type=MethodType(" \
-                 f"{full_classname(object_=self.method_type.class_, compute_for='class')}, '{self.method_type.name}')" \
+                 f"{self.method_type.class_.__name__}, '{self.method_type.name}')" \
                  f", filename='{self.filename}', extension='{self.extension}'" \
                  f", text={self.text}, {self.base_script()})"
 
