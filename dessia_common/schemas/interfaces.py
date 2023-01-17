@@ -4,7 +4,9 @@ Type Checking interfaces for schemas
 import typing as tp
 
 
-Annotations = tp.Dict[str, tp.Type]
+T = tp.TypeVar("T")
+
+Annotations = tp.Dict[str, tp.Type[T]]
 
 
 class PropertySchema(tp.TypedDict):

@@ -18,7 +18,7 @@ class PassedCheck:
         self.message = message
 
     def __repr__(self):
-        return f'[{self.level}]: {self.__class__.__name__} {self.message}'
+        return f'[{self.level.upper()}: {self.__class__.__name__}] - {self.message}'
 
 
 class CheckWarning(PassedCheck):
@@ -47,7 +47,7 @@ class CheckList:
     def __repr__(self):
         rep = f'Check list containing {len(self.checks)} checks:\n'
         for check_idx, check in enumerate(self.checks):
-            rep += f'Check {check_idx+1}: {check}\n'
+            rep += f'Check {check_idx+1} {check}\n'
         return rep
 
     def __add__(self, other_checklist: 'CheckList'):

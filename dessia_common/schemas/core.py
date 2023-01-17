@@ -14,7 +14,7 @@ from dessia_common.typings import MethodType, ClassMethodType, Any, InstanceOf, 
 from dessia_common.measures import Measure
 from dessia_common.utils.docstrings import parse_docstring, FAILED_DOCSTRING_PARSING, FAILED_ATTRIBUTE_PARSING
 from dessia_common.utils.helpers import prettyname
-from dessia_common.schemas.interfaces import Annotations
+from dessia_common.schemas.interfaces import Annotations, T
 from dessia_common.checks import CheckList, FailedCheck, PassedCheck, CheckWarning
 from dessia_common.serialization import serialize
 
@@ -55,7 +55,7 @@ class Schema:
         for attribute in self.attributes:
             default = self.default_arguments.get(attribute, None)
             annotation = self.annotations[attribute]
-            schema = get_schema(annotation=annotation, definition_default=default)
+            schema = get_schema(annotation=annotation, attribute=attribute, definition_default=default)
             self.property_schemas[attribute] = schema
 
         self.check_list().raise_if_above_level("error")
@@ -84,7 +84,7 @@ class Schema:
         #     # TODO Could use this and Optional proxy in order to inject real default values for mutables
         #     default = self.default_arguments.get(attribute, None)
         #     print("Default", default)
-        #     chunk["defaut_value"] = schema.default_value(definition_default=default)
+        #     chunk["default_value"] = schema.default_value(definition_default=default)
         return chunk
 
     @property
@@ -112,15 +112,10 @@ class Schema:
     def default_dict(self):
         """ Compute global default dict.
 
-        If a definition default have been set by user, most schemas will return this value (or seriliazed).
+        If a definition default have been set by user, most schemas will return this value (or serialized).
         if not, schemas will compute a default compatible with platform (None most of the time).
         """
-        dict_ = {}
-        for attribute in self.attributes:
-            schema = self.property_schemas[attribute]
-            definition_default = self.default_arguments.get(attribute, None)
-            dict_[attribute] = schema.default_value(definition_default)
-        return dict_
+        return {a: self.property_schemas[a].default_value() for a in self.attributes}
 
     def check_list(self) -> CheckList:
         """
@@ -139,18 +134,18 @@ class Schema:
 
             # Specific check
             schema = self.property_schemas[attribute]
-            issues += schema.check_list(attribute)
+            issues += schema.check_list()
         return issues
 
     def is_valid(self) -> bool:
-        """ Return wether the class definition is valid or not. """
+        """ Return whether the class definition is valid or not. """
         return self.check_list().checks_above_level("error")
 
     def attribute_is_annotated(self, attribute: str) -> PassedCheck:
         """ Check whether given attribute is annotated in function definition or not. """
         if attribute not in self.annotations:
-            return FailedCheck(f"Attribute {attribute} has no typing")
-        return PassedCheck(f"Attribute '{attribute}' is annotated")
+            return FailedCheck(f"Attribute '{attribute}' : has no typing")
+        return PassedCheck(f"Attribute '{attribute}' : is annotated")
 
 
 class ClassSchema(Schema):
@@ -215,19 +210,21 @@ class MethodSchema(Schema):
         raise NotImplementedError("Schema reconstruction is not implemented yet")
 
 
-T = tp.TypeVar("T")
-
-
 class Property:
     """ Base class for a schema property. """
-    def __init__(self, annotation: tp.Type[T], definition_default: T = None):
+    def __init__(self, annotation: tp.Type[T], attribute: str, definition_default: T = None):
         self.annotation = annotation
+        self.attribute = attribute
         self.definition_default = definition_default
 
     @property
     def schema(self):
         """ Return a reference to itself. Might be overwritten for proxy such as Optional or Annotated. """
         return self
+
+    @property
+    def check_prefix(self) -> str:
+        return f"Attribute '{self.attribute}' : "
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write base schema as a dict. """
@@ -247,7 +244,7 @@ class Property:
         """ Generic default. Yield user default if defined, else None. """
         return self.definition_default
 
-    def check_list(self, _: str) -> CheckList:
+    def check_list(self) -> CheckList:
         """
         Check validity of Property Type Hint.
 
@@ -258,8 +255,8 @@ class Property:
 
 class TypingProperty(Property):
     """ Schema class for typing based annotations. """
-    def __init__(self, annotation: tp.Type[T], definition_default: T = None):
-        super().__init__(annotation=annotation, definition_default=definition_default)
+    def __init__(self, annotation: tp.Type[T], attribute: str, definition_default: T = None):
+        super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
     @property
     def args(self):
@@ -280,14 +277,14 @@ class TypingProperty(Property):
         """
         raise NotImplementedError("Schema reconstruction is not implemented yet")
 
-    def has_one_arg(self, attribute: str) -> PassedCheck:
+    def has_one_arg(self) -> PassedCheck:
         """ Annotation should have exactly one argument; """
         if len(self.args) != 1:
             pretty_origin = prettyname(self.origin.__name__)
-            msg = f"Argument '{attribute}' is typed as a '{pretty_origin}' which requires exactly 1 argument. " \
+            msg = f"{self.check_prefix}is typed as a '{pretty_origin}' which requires exactly 1 argument. " \
                   f"Expected '{pretty_origin}[T]', got '{self.annotation}'."
             return FailedCheck(msg)
-        return PassedCheck(f"Argument '{attribute}' has exactly one arg in its definition.")
+        return PassedCheck(f"{self.check_prefix}has exactly one arg in its definition.")
 
 
 class OptionalProperty(TypingProperty):
@@ -297,13 +294,13 @@ class OptionalProperty(TypingProperty):
     OptionalProperty is only a catch for arguments that default to None.
     Arguments with default values other than None are not considered Optionals
     """
-    def __init__(self, annotation: tp.Type[T], definition_default: T = None):
-        super().__init__(annotation=annotation, definition_default=definition_default)
+    def __init__(self, annotation: tp.Type[T], attribute: str, definition_default: T = None):
+        super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
     @property
     def schema(self):
         """ Return a reference to its only arg. """
-        return get_schema(self.args[0])
+        return get_schema(annotation=self.args[0], attribute=self.attribute, definition_default=self.definition_default)
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write Optional as a dict. """
@@ -337,14 +334,14 @@ class AnnotatedProperty(TypingProperty):
                            "Dessia only supports python 3.9 at the moment."
 
     # TODO Whenever Dessia decides to upgrade to python 3.11
-    def __init__(self, annotation: tp.Type[T], definition_default: T = None):
-        super().__init__(annotation=annotation, definition_default=definition_default)
+    def __init__(self, annotation: tp.Type[T], attribute: str, definition_default: T = None):
+        super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
         raise NotImplementedError(self._not_implemented_msg)
 
     @property
     def schema(self):
         """ Return a reference to its only arg. """
-        return get_schema(self.args[0])
+        return get_schema(annotation=self.args[0], attribute=self.attribute, definition_default=self.definition_default)
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write Annotated as a dict. """
@@ -359,7 +356,7 @@ class AnnotatedProperty(TypingProperty):
         """
         raise NotImplementedError("Schema reconstruction is not implemented yet")
 
-    def check_list(self, attribute: str) -> CheckList:
+    def check_list(self) -> CheckList:
         """
         Check validity of DynamicDict Type Hint.
 
@@ -373,8 +370,8 @@ Builtin = tp.Union[str, bool, float, int]
 
 class BuiltinProperty(Property):
     """ Schema class for Builtin type hints. """
-    def __init__(self, annotation: tp.Type[Builtin], definition_default: Builtin = None):
-        super().__init__(annotation=annotation, definition_default=definition_default)
+    def __init__(self, annotation: tp.Type[Builtin], attribute: str, definition_default: Builtin = None):
+        super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write Builtin as a dict. """
@@ -394,8 +391,8 @@ class BuiltinProperty(Property):
 
 class MeasureProperty(BuiltinProperty):
     """ Schema class for Measure type hints. """
-    def __init__(self, annotation: tp.Type[Measure], definition_default: Measure = None):
-        super().__init__(annotation=annotation, definition_default=definition_default)
+    def __init__(self, annotation: tp.Type[Measure], attribute: str, definition_default: Measure = None):
+        super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write Measure as a dict. """
@@ -418,8 +415,8 @@ File = tp.Union[StringFile, BinaryFile]
 
 class FileProperty(Property):
     """ Schema class for File type hints. """
-    def __init__(self, annotation: tp.Type[File], definition_default: File = None):
-        super().__init__(annotation=annotation, definition_default=definition_default)
+    def __init__(self, annotation: tp.Type[File], attribute: str, definition_default: File = None):
+        super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write File as a dict. """
@@ -436,23 +433,24 @@ class FileProperty(Property):
         """
         raise NotImplementedError("Schema reconstruction is not implemented yet")
 
-    def check_list(self, attribute: str) -> CheckList:
-        issues = super().check_list(attribute)
-        issues += CheckList([self.has_no_default(attribute)])
+    def check_list(self) -> CheckList:
+        issues = super().check_list()
+        issues += CheckList([self.has_no_default()])
         return issues
 
-    def has_no_default(self, attribute: str) -> PassedCheck:
+    def has_no_default(self) -> PassedCheck:
         if self.definition_default is not None:
-            msg = f"Attribute '{attribute}' : File input defines a default value, whereas it is not supported."
+            msg = f"{self.check_prefix}File input defines a default value, whereas it is not supported."
             return CheckWarning(msg)
-        msg = f"Attribute '{attribute}' : File input doesn't define a default value, as it should."
+        msg = f"{self.check_prefix}File input doesn't define a default value, as it should."
         return PassedCheck(msg)
 
 
 class CustomClass(Property):
     """ Schema class for CustomClass type hints. """
-    def __init__(self, annotation: tp.Type[CoreDessiaObject], definition_default: CoreDessiaObject = None):
-        super().__init__(annotation=annotation, definition_default=definition_default)
+    def __init__(self, annotation: tp.Type[CoreDessiaObject], attribute: str,
+                 definition_default: CoreDessiaObject = None):
+        super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
         self.classname = dc_types.full_classname(object_=self.annotation, compute_for='class')
 
     @property
@@ -480,29 +478,29 @@ class CustomClass(Property):
         """ Default value for an object. """
         return object_default(definition_default=definition_default, class_schema=self.schema)
 
-    def check_list(self, attribute: str) -> CheckList:
+    def check_list(self) -> CheckList:
         """
         Check validity of user custom class Type Hint.
 
         Checks performed :
         - Is subclass of DessiaObject
         """
-        issues = super().check_list(attribute)
-        issues += CheckList([self.is_dessia_object_typed(attribute)])
+        issues = super().check_list()
+        issues += CheckList([self.is_dessia_object_typed()])
         return issues
 
-    def is_dessia_object_typed(self, attribute: str) -> PassedCheck:
+    def is_dessia_object_typed(self) -> PassedCheck:
         """ Check whether if typing for given attribute annotates a subclass of DessiaObject or not . """
         if not issubclass(self.annotation, CoreDessiaObject):
-            return FailedCheck(f"Attribute '{attribute}' : Class '{self.classname}' is not a subclass of DessiaObject")
-        msg = f"Attribute '{attribute}' : Class '{self.classname}' is properly typed as a subclass of DessiaObject"
+            return FailedCheck(f"{self.check_prefix}Class '{self.classname}' is not a subclass of DessiaObject")
+        msg = f"{self.check_prefix}Class '{self.classname}' is properly typed as a subclass of DessiaObject"
         return PassedCheck(msg)
 
 
 class UnionProperty(TypingProperty):
     """ Schema class for Union type hints. """
-    def __init__(self, annotation: tp.Type[tp.Union[T]], definition_default: tp.Union[T] = None):
-        super().__init__(annotation=annotation, definition_default=definition_default)
+    def __init__(self, annotation: tp.Type[tp.Union[T]], attribute: str, definition_default: tp.Union[T] = None):
+        super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
         standalone_args = [a._standalone_in_db for a in self.args]
         if all(standalone_args):
@@ -532,27 +530,27 @@ class UnionProperty(TypingProperty):
         """ Default value for an object. """
         return object_default(definition_default)
 
-    def check_list(self, attribute: str) -> CheckList:
+    def check_list(self) -> CheckList:
         """
         Check validity of UnionProperty Type Hint.
 
         Checks performed :
         - Subobject are all standalone or none of them are. TODO : What happen if args are not DessiaObjects ?
         """
-        issues = super().check_list(attribute)
-        issues += CheckList([self.classes_are_standalone_consistent(attribute)])
+        issues = super().check_list()
+        issues += CheckList([self.classes_are_standalone_consistent()])
         return issues
 
-    def classes_are_standalone_consistent(self, attribute: str) -> PassedCheck:
+    def classes_are_standalone_consistent(self) -> PassedCheck:
         """ Check whether all class in Union are standalone or none of them are. """
         standalone_args = [a._standalone_in_db for a in self.args]
         if all(standalone_args):
-            msg = f"Attribute '{attribute}' : All arguments of Union type '{self.annotation}' are standalone in db."
+            msg = f"{self.check_prefix}All arguments of Union type '{self.annotation}' are standalone in db."
             return PassedCheck(msg)
         if not any(standalone_args):
-            msg = f"Attribute '{attribute}' : No arguments of Union type '{self.annotation}' are standalone in db."
+            msg = f"{self.check_prefix}No arguments of Union type '{self.annotation}' are standalone in db."
             return PassedCheck(msg)
-        msg = f"Attribute '{attribute}' : 'standalone_in_db' values for arguments of Union type '{self.annotation}'" \
+        msg = f"{self.check_prefix}'standalone_in_db' values for arguments of Union type '{self.annotation}'" \
               f"are not consistent. They should be all standalone in db or none of them should."
         return FailedCheck(msg)
 
@@ -563,10 +561,10 @@ class HeterogeneousSequence(TypingProperty):
 
     Datatype that can be seen as a tuple. Have any amount of arguments but a limited length.
     """
-    def __init__(self, annotation: tp.Type[tp.List[T]], definition_default: tp.List[T] = None):
-        super().__init__(annotation=annotation, definition_default=definition_default)
+    def __init__(self, annotation: tp.Type[tp.List[T]], attribute: str, definition_default: tp.List[T] = None):
+        super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
-        self.item_schemas = [get_schema(a) for a in self.args]
+        self.item_schemas = [get_schema(annotation=a, attribute=f"{attribute}/{i}") for i, a in enumerate(self.args)]
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write HeterogeneousSequence as a dict. """
@@ -593,31 +591,31 @@ class HeterogeneousSequence(TypingProperty):
             return serialize(definition_default)
         return [s.default_value() for s in self.item_schemas]
 
-    def check_list(self, attribute: str) -> CheckList:
+    def check_list(self) -> CheckList:
         """ Check validity of Tuple Type Hint. """
-        issues = super().check_list(attribute)
-        issues += CheckList([self.has_enough_args(attribute)])
+        issues = super().check_list()
+        issues += CheckList([self.has_enough_args()])
         return issues
 
-    def has_enough_args(self, attribute) -> PassedCheck:
+    def has_enough_args(self) -> PassedCheck:
         """ Annotation should have at least one argument, one for each element of the tuple. """
         if len(self.args) == 0:
-            msg = f"Attribute '{attribute}' is typed as a 'Tuple' which requires at least 1 argument. " \
+            msg = f"{self.check_prefix}is typed as a 'Tuple' which requires at least 1 argument. " \
                   f"Expected 'Tuple[T0, T1, ..., Tn]', got '{self.annotation}'."
             return FailedCheck(msg)
-        return PassedCheck(f"Attribute '{attribute}' has several arguments : '{self.annotation}'")
+        return PassedCheck(f"{self.check_prefix}has at least one argument : '{self.annotation}'")
 
 
 class HomogeneousSequence(TypingProperty):
     """
     Schema class for List type hints.
 
-    Datatype that can be seen as a list. Have only one arguments but an unlimited length.
+    Datatype that can be seen as a list. Have only one argument but an unlimited length.
     """
-    def __init__(self, annotation: tp.Type[tp.Tuple], definition_default: tp.Tuple = None):
-        super().__init__(annotation=annotation, definition_default=definition_default)
+    def __init__(self, annotation: tp.Type[tp.Tuple], attribute: str, definition_default: tp.Tuple = None):
+        super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
-        self.item_schemas = [get_schema(a) for a in self.args]
+        self.item_schemas = [get_schema(annotation=a, attribute=f"{attribute}/{i}") for i, a in enumerate(self.args)]
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write HomogeneousSequence as a dict. """
@@ -639,21 +637,21 @@ class HomogeneousSequence(TypingProperty):
         raise NotImplementedError("Schema reconstruction is not implemented yet")
 
     def default_value(self, definition_default=None):
-        """ Default of a sequnce. . Always return None as default mutable a prohibited. """
+        """ Default of a sequnce. Always return None as default mutable is prohibited. """
         return None
 
-    def check_list(self, attribute: str) -> CheckList:
+    def check_list(self) -> CheckList:
         """ Check validity of List Type Hint. """
-        issues = super().check_list(attribute)
-        issues += CheckList([self.has_one_arg(attribute), self.has_no_default(attribute)])
+        issues = super().check_list()
+        issues += CheckList([self.has_one_arg(), self.has_no_default()])
         return issues
 
-    def has_no_default(self, attribute: str) -> PassedCheck:
+    def has_no_default(self) -> PassedCheck:
         if self.definition_default is not None:
-            msg = f"Attribute '{attribute}' : Mutable List input defines a default value other than None," \
+            msg = f"{self.check_prefix}Mutable List input defines a default value other than None," \
                   f"which will lead to unexpected behavior and therefore, is not supported."
             return FailedCheck(msg)
-        msg = f"Attribute '{attribute}' : Mutable List input define a default value as None, as it should."
+        msg = f"{self.check_prefix}Mutable List doesn't define a default value other than None."
         return PassedCheck(msg)
 
 
@@ -664,8 +662,9 @@ class DynamicDict(TypingProperty):
     Datatype that can be seen as a dict. Have restricted amount of arguments (one for key, one for values),
     but an unlimited length.
     """
-    def __init__(self, annotation: tp.Type[tp.Dict[str, Builtin]], definition_default: tp.Dict[str, Builtin] = None):
-        super().__init__(annotation=annotation, definition_default=definition_default)
+    def __init__(self, annotation: tp.Type[tp.Dict[str, Builtin]], attribute: str,
+                 definition_default: tp.Dict[str, Builtin] = None):
+        super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write DynamicDict as a dict. """
@@ -694,51 +693,50 @@ class DynamicDict(TypingProperty):
         raise NotImplementedError("Schema reconstruction is not implemented yet")
 
     def default_value(self, definition_default=None):
-        """ Default of a dynamic dict. Always return None as default mutable a prohibited. """
+        """ Default of a dynamic dict. Always return None as default mutable is prohibited. """
         return None
 
-    def check_list(self, attribute: str) -> CheckList:
+    def check_list(self) -> CheckList:
         """ Check validity of DynamicDict Type Hint. """
-        issues = super().check_list(attribute)
-        checks = [self.has_two_args(attribute), self.has_string_keys(attribute),
-                  self.has_string_keys(attribute), self.has_no_default(attribute)]
+        issues = super().check_list()
+        checks = [self.has_two_args(), self.has_string_keys(), self.has_simple_values(), self.has_no_default()]
         issues += CheckList(checks)
         return issues
 
-    def has_two_args(self, attribute: str) -> PassedCheck:
+    def has_two_args(self) -> PassedCheck:
         """ Annotation should have exactly two arguments, first one for keys, second one for values"""
         if len(self.args) != 2:
-            msg = f"Argument '{attribute}' is typed as a 'Dict' which requires exactly 2 arguments. " \
+            msg = f"{self.check_prefix}is typed as a 'Dict' which requires exactly 2 arguments. " \
                   f"Expected 'Dict[KeyType, ValueType]', got '{self.annotation}'."
             return FailedCheck(msg)
-        return PassedCheck(f"Attribute '{attribute}' has two args in its defintion : '{self.annotation}'.")
+        return PassedCheck(f"{self.check_prefix}has two args in its definition : '{self.annotation}'.")
 
-    def has_string_keys(self, attribute):
+    def has_string_keys(self):
         """ Key Type should be str"""
         key_type, value_type = self.args
         if not issubclass(key_type, str):
             # Should we support other types ? Numeric ?
-            msg = f"Argument '{attribute}' is typed as a 'Dict[{key_type}, {value_type}]' " \
+            msg = f"{self.check_prefix}is typed as a 'Dict[{key_type}, {value_type}]' " \
                   f"which requires str as its key type. Expected 'Dict[str, ValueType]', got '{self.annotation}'."
             return FailedCheck(msg)
-        return PassedCheck(f"Attribute '{attribute}' has str keys : '{self.annotation}'.")
+        return PassedCheck(f"{self.check_prefix}has str keys : '{self.annotation}'.")
 
-    def has_simple_values(self, attribute):
+    def has_simple_values(self):
         """ Value Type should be simple. """
         key_type, value_type = self.args
         if value_type not in dc_types.TYPING_EQUIVALENCES:
-            msg = f"Argument '{attribute}' is typed as a 'Dict[{key_type}, {value_type}]' " \
+            msg = f"{self.check_prefix}is typed as a 'Dict[{key_type}, {value_type}]' " \
                   f"which requires a builtin type as its value type. " \
                   f"Expected 'int', 'float', 'bool' or 'str', got '{value_type}'"
             return FailedCheck(msg)
-        return PassedCheck(f"Attribute '{attribute}' has simple values : '{self.annotation}'")
+        return PassedCheck(f"{self.check_prefix}has simple values : '{self.annotation}'")
 
-    def has_no_default(self, attribute: str) -> PassedCheck:
+    def has_no_default(self) -> PassedCheck:
         if self.definition_default is not None:
-            msg = f"Attribute '{attribute}' : Mutable Dict input defines a default value other than None," \
+            msg = f"{self.check_prefix}Mutable Dict input defines a default value other than None," \
                   f"which will lead to unexpected behavior and therefore, is not supported."
             return FailedCheck(msg)
-        msg = f"Attribute '{attribute}' : Mutable Dict input define a default value as None, as it should."
+        msg = f"{self.check_prefix}Mutable Dict doesn't define a default value other than None."
         return PassedCheck(msg)
 
 
@@ -749,11 +747,12 @@ class InstanceOfProperty(TypingProperty):
     """
     Schema class for InstanceOf type hints.
 
-    Datatype that can be seen as an union of classes that inherits from the only arg given.
+    Datatype that can be seen as a union of classes that inherits from the only arg given.
     Instances of these classes validate against this type.
     """
-    def __init__(self, annotation: tp.Type[InstanceOf[BaseClass]], definition_default: BaseClass = None):
-        super().__init__(annotation=annotation, definition_default=definition_default)
+    def __init__(self, annotation: tp.Type[InstanceOf[BaseClass]], attribute: str,
+                 definition_default: BaseClass = None):
+        super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
     @property
     def schema(self):
@@ -780,10 +779,10 @@ class InstanceOfProperty(TypingProperty):
         """ Default value of an object. """
         return object_default(definition_default=definition_default, class_schema=self.schema)
 
-    def check_list(self, attribute: str) -> CheckList:
+    def check_list(self) -> CheckList:
         """ Check validity of InstanceOf Type Hint. """
-        issues = super().check_list(attribute)
-        issues += CheckList([self.has_one_arg(attribute)])
+        issues = super().check_list()
+        issues += CheckList([self.has_one_arg()])
         return issues
 
 
@@ -791,11 +790,12 @@ class SubclassProperty(TypingProperty):
     """
     Schema class for Subclass type hints.
 
-    Datatype that can be seen as an union of classes that inherits from the only arg given.
+    Datatype that can be seen as a union of classes that inherits from the only arg given.
     Classes validate against this type.
     """
-    def __init__(self, annotation: tp.Type[Subclass[BaseClass]], definition_default: tp.Type[BaseClass] = None):
-        super().__init__(annotation=annotation, definition_default=definition_default)
+    def __init__(self, annotation: tp.Type[Subclass[BaseClass]], attribute: str,
+                 definition_default: tp.Type[BaseClass] = None):
+        super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write Subclass as a dict. """
@@ -810,15 +810,15 @@ class SubclassProperty(TypingProperty):
         """
         raise NotImplementedError("Schema reconstruction is not implemented yet")
 
-    def check_list(self, attribute: str) -> CheckList:
+    def check_list(self) -> CheckList:
         """
         Check validity of Subclass Type Hint.
 
         Checks performed :
         - Annotation has exactly one argument, which is the type of the base class.
         """
-        issues = super().check_list(attribute)
-        issues += CheckList([self.has_one_arg(attribute)])
+        issues = super().check_list()
+        issues += CheckList([self.has_one_arg()])
         return issues
 
 
@@ -828,11 +828,12 @@ class MethodTypeProperty(TypingProperty):
 
     A specifically instantiated MethodType validated against this type.
     """
-    def __init__(self, annotation: tp.Type[MethodType], definition_default: MethodType = None):
-        super().__init__(annotation=annotation, definition_default=definition_default)
+    def __init__(self, annotation: tp.Type[MethodType], attribute: str, definition_default: MethodType = None):
+        super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
         self.class_ = self.args[0]
-        self.class_schema = get_schema(self.class_)
+        self.class_schema = get_schema(annotation=self.class_, attribute=attribute,
+                                       definition_default=definition_default)
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write MethodType as a dict. """
@@ -858,7 +859,7 @@ class MethodTypeProperty(TypingProperty):
         """
         raise NotImplementedError("Schema reconstruction is not implemented yet")
 
-    def check_list(self, attribute: str) -> CheckList:
+    def check_list(self) -> CheckList:
         """
         Check validity of MethodType Type Hint.
 
@@ -873,12 +874,12 @@ Class = tp.TypeVar("Class", bound=type)
 
 class ClassProperty(TypingProperty):
     """
-    Schema class for Type type hints.
+    Schema class for 'Type' type hints.
 
     Non DessiaObject subclasses validated against this type.
     """
-    def __init__(self, annotation: tp.Type[Class], definition_default: Class = None):
-        super().__init__(annotation=annotation, definition_default=definition_default)
+    def __init__(self, annotation: tp.Type[Class], attribute: str, definition_default: Class = None):
+        super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write Class as a dict. """
@@ -895,15 +896,15 @@ class ClassProperty(TypingProperty):
         """
         raise NotImplementedError("Schema reconstruction is not implemented yet")
 
-    def check_list(self, attribute: str) -> CheckList:
+    def check_list(self) -> CheckList:
         """
         Check validity of Class Type Hint.
 
         Checks performed :
         - Annotation has exactly 1 argument
         """
-        issues = super().check_list(attribute)
-        issues += CheckList([self.has_one_arg(attribute)])
+        issues = super().check_list()
+        issues += CheckList([self.has_one_arg()])
         return issues
 
 
@@ -952,12 +953,12 @@ def split_argspecs(argspecs: inspect.FullArgSpec) -> tp.Tuple[int, int]:
     return nargs, ndefault_args
 
 
-def get_schema(annotation: tp.Type) -> Property:
+def get_schema(annotation: tp.Type[T], attribute: str, definition_default: tp.Optional[T] = None) -> Property:
     """ Get schema Property object from given annotation. """
     if annotation in dc_types.TYPING_EQUIVALENCES:
-        return BuiltinProperty(annotation)
+        return BuiltinProperty(annotation=annotation, attribute=attribute, definition_default=definition_default)
     if dc_types.is_typing(annotation):
-        return typing_schema(annotation)
+        return typing_schema(typing_=annotation, attribute=attribute, definition_default=definition_default)
     if hasattr(annotation, '__origin__') and annotation.__origin__ is type:
         # TODO Is this deprecated ? Should be used in 3.8 and not 3.9 ?
         # return {'type': 'object', 'is_class': True, 'properties': {'name': {'type': 'string'}}}
@@ -967,7 +968,7 @@ def get_schema(annotation: tp.Type) -> Property:
         # chunk = {'type': 'object', 'properties': {'.*': '.*'}}
         pass
     if inspect.isclass(annotation):
-        return custom_class_schema(annotation)
+        return custom_class_schema(annotation=annotation, attribute=attribute, definition_default=definition_default)
     raise NotImplementedError(f"No schema defined for annotation '{annotation}'.")
 
 
@@ -978,27 +979,27 @@ ORIGIN_TO_SCHEMA_CLASS = {
 }
 
 
-def typing_schema(typing_) -> Property:
+def typing_schema(typing_: tp.Type[T], attribute: str, definition_default: T = None) -> Property:
     """ Get schema Property for typing annotations. """
     origin = tp.get_origin(typing_)
     if origin is tp.Union and dc_types.union_is_default_value(typing_):
         # This is a false UnionProperty => Is a default value set to None
-        return OptionalProperty(typing_)
+        return OptionalProperty(annotation=typing_, attribute=attribute, definition_default=definition_default)
     try:
-        return ORIGIN_TO_SCHEMA_CLASS[origin](typing_)
+        return ORIGIN_TO_SCHEMA_CLASS[origin](typing_, attribute, definition_default)
     except KeyError as exc:
         raise NotImplementedError(f"No Schema defined for typing '{typing_}'.") from exc
 
 
-def custom_class_schema(annotation: tp.Type) -> Property:
+def custom_class_schema(annotation: tp.Type[T], attribute: str, definition_default: T = None) -> Property:
     """ Get schema Property object for non typing annotations. """
     if issubclass(annotation, Measure):
-        return MeasureProperty(annotation)
+        return MeasureProperty(annotation=annotation, attribute=attribute, definition_default=definition_default)
     if issubclass(annotation, (BinaryFile, StringFile)):
-        return FileProperty(annotation)
+        return FileProperty(annotation=annotation, attribute=attribute, definition_default=definition_default)
     if issubclass(annotation, CoreDessiaObject):
         # Dessia custom classes
-        return CustomClass(annotation)
+        return CustomClass(annotation=annotation, attribute=attribute, definition_default=definition_default)
     raise NotImplementedError(f"No Schema defined for type '{annotation}'.")
 
 
