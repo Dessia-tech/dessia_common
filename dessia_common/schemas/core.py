@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Schema generation functions
-"""
+""" Schema generation functions. """
 from copy import deepcopy
 import inspect
 import collections.abc
@@ -110,7 +108,8 @@ class Schema:
         raise NotImplementedError("Schema reconstruction is not implemented yet")
 
     def default_dict(self):
-        """ Compute global default dict.
+        """
+        Compute global default dict.
 
         If a definition default have been set by user, most schemas will return this value (or serialized).
         if not, schemas will compute a default compatible with platform (None most of the time).
@@ -181,6 +180,7 @@ class ClassSchema(Schema):
         raise NotImplementedError("Schema reconstruction is not implemented yet")
 
     def default_dict(self):
+        """ Compute class default dict. Add object_class to base one. """
         dict_ = super().default_dict()
         dict_["object_class"] = self.python_typing
         return dict_
@@ -224,6 +224,7 @@ class Property:
 
     @property
     def check_prefix(self) -> str:
+        """ Shortcut for Check message prefixes. """
         return f"Attribute '{self.attribute}' : "
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
@@ -278,7 +279,7 @@ class TypingProperty(Property):
         raise NotImplementedError("Schema reconstruction is not implemented yet")
 
     def has_one_arg(self) -> PassedCheck:
-        """ Annotation should have exactly one argument; """
+        """ Annotation should have exactly one argument. """
         if len(self.args) != 1:
             pretty_origin = prettyname(self.origin.__name__)
             msg = f"{self.check_prefix}is typed as a '{pretty_origin}' which requires exactly 1 argument. " \
@@ -434,11 +435,18 @@ class FileProperty(Property):
         raise NotImplementedError("Schema reconstruction is not implemented yet")
 
     def check_list(self) -> CheckList:
+        """
+        Check validity of File Type Hint.
+
+        Checks performed :
+        - Doesn't define any default value.
+        """
         issues = super().check_list()
         issues += CheckList([self.has_no_default()])
         return issues
 
     def has_no_default(self) -> PassedCheck:
+        """ Check if the user definition doesn't have any default value, as it is not supported for files. """
         if self.definition_default is not None:
             msg = f"{self.check_prefix}File input defines a default value, whereas it is not supported."
             return CheckWarning(msg)
@@ -583,7 +591,8 @@ class HeterogeneousSequence(TypingProperty):
         raise NotImplementedError("Schema reconstruction is not implemented yet")
 
     def default_value(self):
-        """ Default value for a Tuple.
+        """
+        Default value for a Tuple.
 
         Return serialized user default if defined, else a Tuple of Nones with the right size.
         """
@@ -647,6 +656,7 @@ class HomogeneousSequence(TypingProperty):
         return issues
 
     def has_no_default(self) -> PassedCheck:
+        """ Check if List doesn't define a default value that is other than None. """
         if self.definition_default is not None:
             msg = f"{self.check_prefix}Mutable List input defines a default value other than None," \
                   f"which will lead to unexpected behavior and therefore, is not supported."
@@ -704,7 +714,7 @@ class DynamicDict(TypingProperty):
         return issues
 
     def has_two_args(self) -> PassedCheck:
-        """ Annotation should have exactly two arguments, first one for keys, second one for values"""
+        """ Annotation should have exactly two arguments, first one for keys, second one for values. """
         if len(self.args) != 2:
             msg = f"{self.check_prefix}is typed as a 'Dict' which requires exactly 2 arguments. " \
                   f"Expected 'Dict[KeyType, ValueType]', got '{self.annotation}'."
@@ -712,7 +722,7 @@ class DynamicDict(TypingProperty):
         return PassedCheck(f"{self.check_prefix}has two args in its definition : '{self.annotation}'.")
 
     def has_string_keys(self):
-        """ Key Type should be str"""
+        """ Key Type should be str. """
         key_type, value_type = self.args
         if not issubclass(key_type, str):
             # Should we support other types ? Numeric ?
@@ -732,6 +742,7 @@ class DynamicDict(TypingProperty):
         return PassedCheck(f"{self.check_prefix}has simple values : '{self.annotation}'.")
 
     def has_no_default(self) -> PassedCheck:
+        """ Check if Dict doesn't define a default value that is other than None. """
         if self.definition_default is not None:
             msg = f"{self.check_prefix}Mutable Dict input defines a default value other than None," \
                   f"which will lead to unexpected behavior and therefore, is not supported."
@@ -756,6 +767,7 @@ class InstanceOfProperty(TypingProperty):
 
     @property
     def schema(self):
+        """ Get Schema of base class. """
         return ClassSchema(self.args[0])
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
@@ -1004,7 +1016,8 @@ def custom_class_schema(annotation: tp.Type[T], attribute: str, definition_defau
 
 
 def object_default(definition_default=None, class_schema: ClassSchema = None):
-    """ Default value of an object.
+    """
+    Default value of an object.
 
     Return serialized user default if definition, else None.
     """

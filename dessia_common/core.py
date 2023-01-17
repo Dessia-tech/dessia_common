@@ -235,6 +235,7 @@ class DessiaObject(SerializableObject):
 
     @classmethod
     def schema(cls):
+        """ Get new version of schema for this class. """
         if hasattr(cls, '_jsonschema'):
             warnings.warn("Jsonschema is fully deprecated and you may want to use the new generic schema feature."
                           "Please consider so", DeprecationWarning)
