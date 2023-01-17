@@ -15,7 +15,7 @@ from dessia_common.measures import Measure
 from dessia_common.utils.docstrings import parse_docstring, FAILED_DOCSTRING_PARSING, FAILED_ATTRIBUTE_PARSING
 from dessia_common.utils.helpers import prettyname
 from dessia_common.schemas.interfaces import Annotations
-from dessia_common.checks import CheckList, FailedCheck, PassedCheck
+from dessia_common.checks import CheckList, FailedCheck, PassedCheck, CheckWarning
 from dessia_common.serialization import serialize
 
 SCHEMA_HEADER = {"definitions": {}, "$schema": "http://json-schema.org/d_raft-07/schema#",
@@ -243,11 +243,9 @@ class Property:
         """
         raise NotImplementedError("Schema reconstruction is not implemented yet")
 
-    def default_value(self, definition_default=None):
+    def default_value(self):
         """ Generic default. Yield user default if defined, else None. """
-        if definition_default:
-            return definition_default
-        return None
+        return self.definition_default
 
     def check_list(self, _: str) -> CheckList:
         """
@@ -260,7 +258,7 @@ class Property:
 
 class TypingProperty(Property):
     """ Schema class for typing based annotations. """
-    def __init__(self, annotation: tp.Type, definition_default=None):
+    def __init__(self, annotation: tp.Type[T], definition_default: T = None):
         super().__init__(annotation=annotation, definition_default=definition_default)
 
     @property
@@ -299,7 +297,7 @@ class OptionalProperty(TypingProperty):
     OptionalProperty is only a catch for arguments that default to None.
     Arguments with default values other than None are not considered Optionals
     """
-    def __init__(self, annotation: tp.Type, definition_default=None):
+    def __init__(self, annotation: tp.Type[T], definition_default: T = None):
         super().__init__(annotation=annotation, definition_default=definition_default)
 
     @property
@@ -339,7 +337,7 @@ class AnnotatedProperty(TypingProperty):
                            "Dessia only supports python 3.9 at the moment."
 
     # TODO Whenever Dessia decides to upgrade to python 3.11
-    def __init__(self, annotation: tp.Type, definition_default=None):
+    def __init__(self, annotation: tp.Type[T], definition_default: T = None):
         super().__init__(annotation=annotation, definition_default=definition_default)
         raise NotImplementedError(self._not_implemented_msg)
 
@@ -437,6 +435,18 @@ class FileProperty(Property):
         TODO  Useful for low_code features ?
         """
         raise NotImplementedError("Schema reconstruction is not implemented yet")
+
+    def check_list(self, attribute: str) -> CheckList:
+        issues = super().check_list(attribute)
+        issues += CheckList([self.has_no_default(attribute)])
+        return issues
+
+    def has_no_default(self, attribute: str) -> PassedCheck:
+        if self.definition_default is not None:
+            msg = f"Attribute '{attribute}' : File input defines a default value, whereas it is not supported."
+            return CheckWarning(msg)
+        msg = f"Attribute '{attribute}' : File input doesn't define a default value, as it should."
+        return PassedCheck(msg)
 
 
 class CustomClass(Property):
@@ -635,8 +645,16 @@ class HomogeneousSequence(TypingProperty):
     def check_list(self, attribute: str) -> CheckList:
         """ Check validity of List Type Hint. """
         issues = super().check_list(attribute)
-        issues += CheckList([self.has_one_arg(attribute)])
+        issues += CheckList([self.has_one_arg(attribute), self.has_no_default(attribute)])
         return issues
+
+    def has_no_default(self, attribute: str) -> PassedCheck:
+        if self.definition_default is not None:
+            msg = f"Attribute '{attribute}' : Mutable List input defines a default value other than None," \
+                  f"which will lead to unexpected behavior and therefore, is not supported."
+            return FailedCheck(msg)
+        msg = f"Attribute '{attribute}' : Mutable List input define a default value as None, as it should."
+        return PassedCheck(msg)
 
 
 class DynamicDict(TypingProperty):
@@ -682,7 +700,8 @@ class DynamicDict(TypingProperty):
     def check_list(self, attribute: str) -> CheckList:
         """ Check validity of DynamicDict Type Hint. """
         issues = super().check_list(attribute)
-        checks = [self.has_two_args(attribute), self.has_string_keys(attribute), self.has_string_keys(attribute)]
+        checks = [self.has_two_args(attribute), self.has_string_keys(attribute),
+                  self.has_string_keys(attribute), self.has_no_default(attribute)]
         issues += CheckList(checks)
         return issues
 
@@ -713,6 +732,14 @@ class DynamicDict(TypingProperty):
                   f"Expected 'int', 'float', 'bool' or 'str', got '{value_type}'"
             return FailedCheck(msg)
         return PassedCheck(f"Attribute '{attribute}' has simple values : '{self.annotation}'")
+
+    def has_no_default(self, attribute: str) -> PassedCheck:
+        if self.definition_default is not None:
+            msg = f"Attribute '{attribute}' : Mutable Dict input defines a default value other than None," \
+                  f"which will lead to unexpected behavior and therefore, is not supported."
+            return FailedCheck(msg)
+        msg = f"Attribute '{attribute}' : Mutable Dict input define a default value as None, as it should."
+        return PassedCheck(msg)
 
 
 BaseClass = tp.TypeVar("BaseClass", bound=CoreDessiaObject)
