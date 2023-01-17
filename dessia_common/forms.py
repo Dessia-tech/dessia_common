@@ -744,7 +744,7 @@ class Container(DessiaObject):
 
 
 class NotStandalone(DessiaObject):
-    """A simple non-standalone class"""
+    """A simple non-standalone class."""
 
     def __init__(self, attribute: int, name: str = ""):
         self.attribute = attribute
@@ -752,7 +752,7 @@ class NotStandalone(DessiaObject):
 
 
 class BottomLevel(DessiaObject):
-    """A simple class at the bottom of the data structure"""
+    """A simple class at the bottom of the data structure."""
     _standalone_in_db = True
 
     def __init__(self, attributes: List[NotStandalone] = None, name: str = ""):
@@ -765,7 +765,7 @@ class BottomLevel(DessiaObject):
 
 
 class MidLevel(DessiaObject):
-    """A simple class at the mid level of the data structure"""
+    """A simple class at the mid level of the data structure."""
     _standalone_in_db = True
     _allowed_methods = ["generate_with_references"]
 
@@ -776,7 +776,7 @@ class MidLevel(DessiaObject):
 
     @classmethod
     def generate_with_references(cls, name: str = "Result Name"):
-        """A fake class generator"""
+        """A fake class generator."""
         object1 = NotStandalone(attribute=1, name="1")
         object2 = NotStandalone(attribute=1, name="2")
         bottom_level = BottomLevel([object1, object2])
