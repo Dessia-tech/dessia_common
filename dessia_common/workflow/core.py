@@ -823,7 +823,7 @@ class Workflow(Block):
         for input_index, input_ in enumerate(copied_workflow.inputs):
             variable_index = copied_workflow.variables.index(input_)
             if variable_index in copied_ivv.keys():
-                dict_[input_index] = copied_ivv[variable_index]
+                dict_[input_index] = serialize(copied_ivv[variable_index])
             elif isinstance(input_, TypedVariableWithDefaultValue):
                 dict_[input_index] = serialize(input_.default_value)
 
