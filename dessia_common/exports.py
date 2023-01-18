@@ -256,7 +256,7 @@ class XLSXWriter:
 class MarkdownWriter:
     """ Base class to write markdowns. """
 
-    def __init__(self, print_limit: int = 25, table_limit: int = 12):
+    def __init__(self, print_limit: int = 25, table_limit: Optional[int] = 12):
         self.print_limit = print_limit
         self.table_limit = table_limit
 

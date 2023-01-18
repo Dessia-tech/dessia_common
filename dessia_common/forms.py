@@ -101,7 +101,7 @@ class EmbeddedBuiltinsSubobject(PhysicalObject):
                   vm.Point2D(origin + 1, origin + 1), vm.Point2D(origin + 1, origin)]
         return p2d.ClosedRoundedLineSegments2D(points=points, radius={})
 
-    def plot_data(self, **kwargs):
+    def plot_data(self, reference_path: str = "#", **kwargs):
         """ Bare text, for testing purpose. """
         primitives = [plot_data.Text(comment="Test with text", position_x=0, position_y=0),
                       plot_data.Text(comment="Test with text", position_x=0, position_y=0)]
@@ -369,7 +369,7 @@ class StandaloneObject(MovingObject):
         crls = p2d.ClosedRoundedLineSegments2D(points=points, radius={})
         return crls
 
-    def volmdlr_primitives(self):
+    def volmdlr_primitives(self, **kwargs):
         """ Volmdlr primitives of a cube. """
         subcube = self.standalone_subobject.voldmlr_primitives()[0]
         contour = self.contour()
@@ -397,7 +397,7 @@ class StandaloneObject(MovingObject):
         return plot_data.Scatter(axis=plot_data.Axis(), tooltip=tooltip, x_variable=attributes[0],
                                  y_variable=attributes[1], name='Scatter Plot')
 
-    def plot_data(self, **kwargs):
+    def plot_data(self, reference_path: str = "#", **kwargs):
         """ Full plot data definition with lots of graphs and 2Ds. For frontend testing purpose. """
         # Contour
         contour = self.standalone_subobject.contour().plot_data()
@@ -448,7 +448,7 @@ class StandaloneObject(MovingObject):
                                     x_variable=attribute_names[0], y_variable=attribute_names[1])
         return [primitives_group, scatterplot, parallelplot, multiplot, graph2d]
 
-    def maldefined_method(self, arg0, arg1=1, arg2: int = 10, arg3=3):
+    def ill_defined_method(self, arg0, arg1=1, arg2: int = 10, arg3=3):
         """ Define a docstring for testing parsing purpose. """
         nok_string = "This is a bad coding behavior"
         ok_string = "This could be OK as temporary attr"
@@ -458,10 +458,6 @@ class StandaloneObject(MovingObject):
         computation = nok_string + 'or' + ok_string
 
         return computation
-
-    # @staticmethod
-    # def method_with_faulty_typing(arg0: Iterator[int]):
-    #     return arg0
 
     def to_markdown(self):
         """ Write a standard markdown of StandaloneObject. """
@@ -651,7 +647,7 @@ class MovingStandaloneObject(MovingObject):
         crls = p2d.ClosedRoundedLineSegments2D(points=points, radius={})
         return crls
 
-    def volmdlr_primitives(self):
+    def volmdlr_primitives(self, **kwargs):
         """ A cube. """
         contour = self.contour()
         volume = p3d.ExtrudedProfile(plane_origin=vm.O3D, x=vm.X3D, y=vm.Z3D, outer_contour2d=contour,

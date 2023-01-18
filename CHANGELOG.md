@@ -9,10 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## 0.12.0 (now branch dev)
 
 ### Changed
-- serialization (to_dict) use some uuids instead of paths for references.
+
+- Reference path is now given all the way down to plot_data
 
 ### Fixed
 
+- serialization (to_dict) use some uuids instead of paths for references.
 - Workflow : Serialize Imposed Variable Values
 - Workflow : to_script Export now write only class name instead of full_classname
 - Hot fix for is_valid method of workflow's Block

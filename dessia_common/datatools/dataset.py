@@ -623,10 +623,8 @@ class Dataset(DessiaObject):
         scaled_matrix = preprocessing.StandardScaler().fit_transform(data_matrix)
         return [list(map(float, row.tolist())) for row in scaled_matrix]
 
-    def plot_data(self):
-        """
-        Plot a standard scatter matrix of all attributes in common_attributes and a dimensionality plot.
-        """
+    def plot_data(self, reference_path: str = "#", **kwargs):
+        """ Plot a standard scatter matrix of all attributes in common_attributes and a dimensionality plot. """
         data_list = self._plot_data_list()
         if len(self.common_attributes) > 1:
             # Plot a correlation matrix : To develop

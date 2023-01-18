@@ -1,6 +1,5 @@
+
 from dessia_common.forms import EmbeddedSubobject, StandaloneObject, EnhancedEmbeddedSubobject, DEF_SO
-from dessia_common.core import DessiaObject
-from dessia_common.models.forms import standalone_object
 from dessia_common.utils.types import full_classname
 
 subobject_classname = full_classname(object_=EmbeddedSubobject, compute_for='class')

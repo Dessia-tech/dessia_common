@@ -14,7 +14,6 @@ import io
 from typing import List, Union, Type, Any, Dict, Tuple, Optional
 from copy import deepcopy
 import warnings
-import traceback as tb
 import networkx as nx
 
 import dessia_common.errors
@@ -31,8 +30,7 @@ from dessia_common.utils.helpers import prettyname
 
 from dessia_common.typings import JsonSerializable, MethodType
 from dessia_common.files import StringFile, BinaryFile
-from dessia_common.displays import DisplayObject
-from dessia_common.breakdown import attrmethod_getter, ExtractionError
+from dessia_common.breakdown import ExtractionError
 from dessia_common.errors import SerializationError
 from dessia_common.warnings import SerializationWarning
 from dessia_common.exports import ExportFormat
@@ -258,7 +256,14 @@ class Block(DessiaObject):
         """ Generate a chunk of script that denotes the arguments of a base block. """
         return f"name='{self.name}', position={self.position}"
 
-    def is_valid(self, level: str = 'error') -> bool:  # TODO: Change this in further releases
+    def evaluate(self, values, **kwargs):
+        """ Not implemented for abstract block class 'evaluate' method. """
+        raise NotImplementedError("This method should be implemented in any Block inheriting class.")
+
+    def _to_script(self, prefix: str):
+        raise NotImplementedError("This method should be implemented in any Block inheriting class.")
+
+    def is_valid(self, level: str = 'error') -> bool: # TODO: Change this in further releases
         """ Always return True for now. """
         return True
 
@@ -604,8 +609,13 @@ class Workflow(Block):
         """ Compute all display blocks display_settings. """
         display_settings = []
         for block in self.display_blocks:
+            reference_path = "#"
+            for i, input_ in enumerate(block.inputs):
+                incoming_pipe = self.variable_input_pipe(input_)
+                if i == block._displayable_input:
+                    reference_path = f"{reference_path}/values/{self.pipes.index(incoming_pipe)}"
             block_index = self.blocks.index(block)
-            settings = block._display_settings(block_index)
+            settings = block._display_settings(block_index=block_index, reference_path=reference_path)
             if settings is not None:
                 settings.selector = self.block_selectors[block]
                 display_settings.append(settings)
@@ -614,9 +624,8 @@ class Workflow(Block):
     @staticmethod
     def display_settings() -> List[DisplaySetting]:
         """ Compute the displays settings of the workflow. """
-        display_settings = [DisplaySetting('documentation', 'markdown', 'to_markdown', None),
-                            DisplaySetting('workflow', 'workflow', 'to_dict', None)]
-        return display_settings
+        return [DisplaySetting(selector='documentation', type_='markdown', method='to_markdown'),
+                DisplaySetting(selector='workflow', type_='workflow', method='to_dict')]
 
     @property
     def export_blocks(self):
@@ -1348,10 +1357,8 @@ class Workflow(Block):
         data.update({'blocks': blocks, 'nonblock_variables': nonblock_variables, 'edges': edges})
         return data
 
-    def plot(self, **kwargs):
-        """
-        Display workflow in web browser.
-        """
+    def plot(self, reference_path: str = "#", **kwargs):
+        """ Display workflow in web browser. """
         data = json.dumps(self.jointjs_data())
         rendered_template = workflow_template.substitute(workflow_data=data)
 
@@ -1360,10 +1367,8 @@ class Workflow(Block):
             file.write(rendered_template.encode('utf-8'))
         webbrowser.open('file://' + temp_file)
 
-    def is_valid(self, level='error'):
-        """
-        Tell if the workflow is valid by checking type compatibility of pipes inputs/outputs.
-        """
+    def is_valid(self, level: str = "error"):
+        """ Tell if the workflow is valid by checking type compatibility of pipes inputs/outputs. """
         for pipe in self.pipes:
             if hasattr(pipe.input_variable, 'type_') and hasattr(pipe.output_variable, 'type_'):
                 type1 = pipe.input_variable.type_
@@ -1498,6 +1503,10 @@ class Workflow(Block):
             filename += '.py'
         with open(filename, 'w', encoding='utf-8') as file:
             self.save_script_to_stream(file)
+
+    def evaluate(self, values, **kwargs):
+        """ Not implemented Workflow as Block evaluate method. """
+        raise NotImplementedError("Method 'evaluate' is not implemented for class Workflow.")
 
 
 class WorkflowState(DessiaObject):
@@ -1791,65 +1800,35 @@ class WorkflowState(DessiaObject):
         self.add_several_input_values(indices=indices, values=values)
 
     def display_settings(self) -> List[DisplaySetting]:
-        """
-        Compute the displays settings of the objects.
-        """
+        """ Compute the displays settings of the objects. """
         display_settings = [DisplaySetting('workflow-state', 'workflow_state', 'state_display', None)]
 
         # Displayable blocks
         display_settings.extend(self.workflow.blocks_display_settings)
         return display_settings
 
-    def _display_from_selector(self, selector: str, **kwargs) -> DisplayObject:
-        """
-        Generate the display from the selector.
-        """
-        # TODO THIS IS A TEMPORARY DIRTY HOTFIX OVERWRITE.
-        #  WE SHOULD IMPLEMENT A WAY TO GET RID OF REFERENCE PATH WITH URLS
-        track = ""
-        refpath = kwargs.get("reference_path", "")
-        if selector in ["documentation", "workflow"]:
-            return self.workflow._display_from_selector(selector)
-
-        if selector == "workflow-state":
-            return DessiaObject._display_from_selector(self, selector)
-
-        # Displays for blocks (getting reference path from block_display return)
-        display_setting = self._display_settings_from_selector(selector)
-        try:
-            # Specific hotfix : we propagate reference_path through block_display method
-            display_object, refpath = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
-            data = display_object.data
-        except:
-            data = None
-            track = tb.format_exc()
-
-        if display_setting.serialize_data:
-            data = serialize(data)
-        return DisplayObject(type_=display_setting.type, data=data, reference_path=refpath, traceback=track)
-
-    def block_display(self, block_index: int):
-        """
-        Compute the display of associated block to use integrate it in the workflow run displays.
-        """
+    def block_display(self, block_index: int, reference_path: str = "#"):
+        """ Compute the display of associated block to use integrate it in the workflow run displays. """
         self.activate_inputs()
         block = self.workflow.blocks[block_index]
 
         selector = self.workflow.block_selectors[block]
         branch = self.workflow.branch_by_display_selector[selector]
-        evaluated_blocks = self.evaluate_branch(branch)
+        block_args = {}
+        for branch_block in branch:
+            if branch_block is block:
+                argpath = reference_path
+            else:
+                argpath = "#"
+            block_args[branch_block] = {"reference_path": argpath}
 
-        reference_path = ""
-        for i, input_ in enumerate(block.inputs):
-            incoming_pipe = self.workflow.variable_input_pipe(input_)
-            if i == block._displayable_input:
-                reference_path = f'values/{self.workflow.pipes.index(incoming_pipe)}'
+        evaluated_blocks = self.evaluate_branch(blocks=branch, block_args=block_args)
 
         if block not in evaluated_blocks:
             msg = f"Could not reach block at index {block_index}." \
                   f"Has the workflow been run far enough to evaluate this block ?"
             raise WorkflowError(msg)
-        return evaluated_blocks[block][0], reference_path  # Only one output to an Export Block
+        return evaluated_blocks[block][0]  # Only one output to an Export Block
 
     @property
     def progress(self):
@@ -1906,7 +1885,7 @@ class WorkflowState(DessiaObject):
                 something_activated = True
         return evaluated_blocks
 
-    def evaluate_branch(self, blocks: List[Block]):
+    def evaluate_branch(self, blocks: List[Block], block_args: Dict[Block, Any]):
         """
         Evaluate all blocks of a branch, automatically finding the first executable ones.
         """
@@ -1920,7 +1899,8 @@ class WorkflowState(DessiaObject):
         while len(evaluated_blocks) != len(blocks) and i <= len(blocks):
             next_blocks = [b for b in blocks if b in self._activable_blocks() and b not in evaluated_blocks]
             for block in next_blocks:
-                output_values = self._evaluate_block(block)
+                kwargs = block_args[block]
+                output_values = self._evaluate_block(block, **kwargs)
                 evaluated_blocks[block] = output_values
             i += 1
         return evaluated_blocks
@@ -1983,7 +1963,7 @@ class WorkflowState(DessiaObject):
                 return False
         return True
 
-    def _evaluate_block(self, block, progress_callback=lambda x: x, verbose=False):
+    def _evaluate_block(self, block, progress_callback=lambda x: x, verbose=False, **kwargs):
         """
         Evaluate given block.
         """
@@ -2005,7 +1985,7 @@ class WorkflowState(DessiaObject):
             self._activate_variable(variable=input_, value=value)
             local_values[input_] = value
 
-        output_values = block.evaluate(local_values)
+        output_values = block.evaluate(local_values, **kwargs)
         self._activate_block(block=block, output_values=output_values)
 
         # Updating progress
@@ -2058,7 +2038,8 @@ class WorkflowState(DessiaObject):
         block = self.workflow.blocks[block_index]
         selector = self.workflow.block_selectors[block]
         branch = self.workflow.branch_by_export_format[selector]
-        evaluated_blocks = self.evaluate_branch(branch)
+        block_args = {b: {} for b in branch}
+        evaluated_blocks = self.evaluate_branch(blocks=branch, block_args=block_args)
         if block not in evaluated_blocks:
             msg = f"Could not reach block at index {block_index}." \
                   f"Has the workflow been ran far enough to evaluate this block ?"
@@ -2161,7 +2142,6 @@ class WorkflowRun(WorkflowState):
         """
         workflow_settings = self.workflow.display_settings()
         display_settings = WorkflowState.display_settings(self)
-        # TODO : Temporary removing workflow state. We could activate it again when display tree is available
         display_settings.pop(0)
         return workflow_settings + display_settings
 
@@ -2194,7 +2174,7 @@ class WorkflowRun(WorkflowState):
 
 
 def initialize_workflow(dict_, global_dict, pointers_memo) -> Workflow:
-    """ Generate an unfinished workflow in order to get access to instance method before full deserialization. """
+    """ Generate blocks, pipes, detached_variables and output from a serialized state. """
     blocks = [deserialize(serialized_element=d, global_dict=global_dict, pointers_memo=pointers_memo)
               for d in dict_["blocks"]]
     if 'nonblock_variables' in dict_:
@@ -2239,7 +2219,11 @@ def deserialize_pipes(pipes_dict, blocks, nonblock_variables, connected_nbvs):
 
 
 def value_type_check(value, type_):
-    """ Check if the value as the specified type. """
+    """
+    Type propagation.
+
+    Check if the value as the specified type.
+    """
     try:  # TODO: Subscripted generics cannot be used...
         if not isinstance(value, type_):
             return False

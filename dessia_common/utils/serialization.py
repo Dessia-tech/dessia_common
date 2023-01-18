@@ -6,7 +6,6 @@ Serialization Tools.
 
 
 import warnings
-
 import dessia_common.serialization as dcs
 
 
@@ -56,7 +55,6 @@ def serialize_sequence_with_pointers(seq, memo, path, id_method, id_memo):
     """
     warnings.warn("Module serialization.py have been moved outside utils. Please use it instead")
     return dcs.serialize_sequence_with_pointers(seq=seq, memo=memo, path=path, id_method=id_method, id_memo=id_memo)
-
 
 def deserialize(serialized_element, sequence_annotation: str = 'List', global_dict=None,
                 pointers_memo=None, path: str = '#'):
@@ -188,19 +186,19 @@ def dereference_jsonpointers(dict_):
 
 
 def pointer_graph_elements(value, path='#'):
-    """ Compute graph. """
+    """ Compute pointer graph. """
     warnings.warn("Module serialization.py have been moved outside utils. Please use it instead")
     return dcs.pointer_graph_elements(value=value, path=path)
 
 
 def pointer_graph_elements_sequence(seq, path='#'):
-    """ Compute graph from sequence. """
+    """ Compute pointer sequence graph. """
     warnings.warn("Module serialization.py have been moved outside utils. Please use it instead")
     return dcs.pointer_graph_elements_sequence(seq=seq, path=path)
 
 
 def pointer_graph_elements_dict(dict_, path='#'):
-    """ Compute graph from dict. """
+    """ Compute pointer dict graph. """
     warnings.warn("Module serialization.py have been moved outside utils. Please use it instead")
     return dcs.pointer_graph_elements_dict(dict_=dict_, path=path)
 
