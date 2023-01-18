@@ -385,6 +385,7 @@ class Workflow(Block):
             self.handle_pipe(pipe)
 
         self._utd_graph = False
+        self._cached_graph = None
 
         inputs = [v for v in self.variables if v not in self.imposed_variable_values
                   and len(nx.ancestors(self.graph, v)) == 0]

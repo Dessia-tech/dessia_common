@@ -26,29 +26,29 @@ WEEKLY_DECREASE = 0.03
 UNWATCHED_ERRORS = ["fixme", "trailing-whitespace", "import-error"]
 
 MAX_ERROR_BY_TYPE = {
-    "protected-access": 38,
-    "arguments-differ": 2,
-    "no-member": 3,
-    "too-many-locals": 10,  # Reduce by dropping vectored objects
-    "too-many-branches": 13,
-    "unused-argument": 7,
-    "cyclic-import": 4,
-    "missing-module-docstring": 1,
-    "too-many-arguments": 21,
-    "too-few-public-methods": 9,
-    "too-many-return-statements": 10,
-    "import-outside-toplevel": 4,  # TODO : will reduced in a future work (when tests are ready)
-    "too-many-instance-attributes": 7,
-    "attribute-defined-outside-init": 3,
-    "broad-except": 4,
-    "bare-except": 4,
-    "too-many-nested-blocks": 2,
-    "too-many-public-methods": 2,  # Try to lower by splitting DessiaObject and Workflow
-    "too-many-statements": 1,
-    "duplicate-code": 1,
-    "too-many-lines": 1,
-    "abstract-method": 6,
-    "undefined-loop-variable": 1,
+    # "protected-access": 38,
+    # "arguments-differ": 2,
+    # "no-member": 3,
+    # "too-many-locals": 10,  # Reduce by dropping vectored objects
+    # "too-many-branches": 13,
+    # "unused-argument": 7,
+    # "cyclic-import": 4,
+    # "missing-module-docstring": 1,
+    # "too-many-arguments": 21,
+    # "too-few-public-methods": 9,
+    # "too-many-return-statements": 10,
+    # "import-outside-toplevel": 4,  # TODO : will reduced in a future work (when tests are ready)
+    # "too-many-instance-attributes": 7,
+    # "attribute-defined-outside-init": 3,
+    # "broad-except": 4,
+    # "bare-except": 4,
+    # "too-many-nested-blocks": 2,
+    # "too-many-public-methods": 2,  # Try to lower by splitting DessiaObject and Workflow
+    # "too-many-statements": 1,
+    # "duplicate-code": 1,
+    # "too-many-lines": 1,
+    # "abstract-method": 6,
+    # "undefined-loop-variable": 1,
 }
 
 ERRORS_WITHOUT_TIME_DECREASE = ["bare-except"]

@@ -448,21 +448,6 @@ class StandaloneObject(MovingObject):
                                     x_variable=attribute_names[0], y_variable=attribute_names[1])
         return [primitives_group, scatterplot, parallelplot, multiplot, graph2d]
 
-    def maldefined_method(self, arg0, arg1=1, arg2: int = 10, arg3=3):
-        """ Define a docstring for testing parsing purpose. """
-        nok_string = "This is a bad coding behavior"
-        ok_string = "This could be OK as temporary attr"
-        self.maldefined_attr = nok_string
-        self._ok_attribute = ok_string
-
-        computation = nok_string + 'or' + ok_string
-
-        return computation
-
-    # @staticmethod
-    # def method_with_faulty_typing(arg0: Iterator[int]):
-    #     return arg0
-
     def to_markdown(self):
         """ Write a standard markdown of StandaloneObject. """
         contents = """
