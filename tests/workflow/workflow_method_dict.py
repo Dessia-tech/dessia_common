@@ -54,7 +54,3 @@ class TestMethodDict(unittest.TestCase):
         self.assertIn("package_version", object_value)
         self.assertEqual(object_value["tuple_arg"], ["value", 3])
         self.assertEqual(object_value["intarg"], 1)
-
-
-if __name__ == '__main__':
-    unittest.main()
