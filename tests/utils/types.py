@@ -70,5 +70,6 @@ class TestIsJsonable(unittest.TestCase):
     def test_jsonable(self, obj, jsonable):
         self.assertEqual(is_jsonable(obj), jsonable)
 
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)
