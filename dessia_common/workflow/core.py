@@ -14,7 +14,6 @@ import io
 from typing import List, Union, Type, Any, Dict, Tuple, Optional
 from copy import deepcopy
 import warnings
-import traceback as tb
 import networkx as nx
 
 import dessia_common.errors
@@ -22,29 +21,26 @@ from dessia_common.graph import get_column_by_node
 from dessia_common.templates import workflow_template
 from dessia_common.core import DessiaObject, is_sequence, JSONSCHEMA_HEADER, jsonschema_from_annotation, \
     deserialize_argument, set_default_value, DisplaySetting
-
-from dessia_common.utils.types import serialize_typing, deserialize_typing, recursive_type, typematch
-from dessia_common.utils.copy import deepcopy_value
-from dessia_common.utils.docstrings import FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE
-from dessia_common.utils.diff import choose_hash
-from dessia_common.utils.helpers import prettyname
-
 from dessia_common.typings import JsonSerializable, MethodType
 from dessia_common.files import StringFile, BinaryFile
-from dessia_common.displays import DisplayObject
-from dessia_common.breakdown import attrmethod_getter, ExtractionError
+from dessia_common.breakdown import ExtractionError
 from dessia_common.errors import SerializationError
 from dessia_common.warnings import SerializationWarning
 from dessia_common.exports import ExportFormat
 from dessia_common.serialization import deserialize, serialize_with_pointers, serialize, update_pointers_data, \
     serialize_dict, is_serializable
 
+from dessia_common.utils.types import serialize_typing, deserialize_typing, recursive_type, typematch
+from dessia_common.utils.copy import deepcopy_value
+from dessia_common.utils.docstrings import FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE
+from dessia_common.utils.diff import choose_hash
+from dessia_common.utils.helpers import prettyname
 from dessia_common.workflow.utils import ToScriptElement
 
 
 class Variable(DessiaObject):
     """ Variable for workflow. """
-    _standalone_in_db = False
+
     _eq_is_data_eq = False
     has_default_value: bool = False
 
@@ -75,6 +71,7 @@ class Variable(DessiaObject):
 
 class TypedVariable(Variable):
     """ Variable for workflow with a typing. """
+
     has_default_value: bool = False
 
     def __init__(self, type_: Type, name: str = '', position=None):
@@ -90,11 +87,7 @@ class TypedVariable(Variable):
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'TypedVariable':
-        """
-        Compute variable from dict.
-
-        TODO Remove this ?
-        """
+        """ TODO Remove this ? Compute variable from dict. """
         type_ = deserialize_typing(dict_['type_'])
         return cls(type_=type_, name=dict_['name'], position=dict_.get("position"))
 
@@ -113,11 +106,8 @@ class TypedVariable(Variable):
 
 
 class VariableWithDefaultValue(Variable):
-    """
-    A variable with a default value.
+    """ TODO Isn't this always typed ? A variable with a default value. """
 
-    TODO Isn't this always typed ?
-    """
     has_default_value: bool = True
 
     def __init__(self, default_value: Any, name: str = '', position=None):
@@ -131,6 +121,7 @@ class TypedVariableWithDefaultValue(TypedVariable):
 
     TODO Can this be just VariableWithDefaultValue ? Type is induced ?
     """
+
     has_default_value: bool = True
 
     def __init__(self, type_: Type, default_value: Any, name: str = '', position=None):
@@ -146,11 +137,7 @@ class TypedVariableWithDefaultValue(TypedVariable):
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
                        pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'TypedVariableWithDefaultValue':
-        """
-        Compute variable from dict.
-
-        TODO Remove this ?
-        """
+        """ TODO Remove this ? Compute variable from dict. """
         type_ = deserialize_typing(dict_['type_'])
         default_value = deserialize(dict_['default_value'], global_dict=global_dict, pointers_memo=pointers_memo)
         return cls(type_=type_, default_value=default_value, name=dict_['name'], position=dict_.get('position'))
@@ -160,11 +147,7 @@ class TypedVariableWithDefaultValue(TypedVariable):
         Copy a TypedVariableWithDefaultValue.
 
         :param deep: DESCRIPTION, defaults to False
-        :type deep: bool, optional
-
         :param memo: a memo to use, defaults to None
-        :type memo: TYPE, optional
-
         :return: The copied object
         """
         if memo is None:
@@ -199,7 +182,7 @@ def set_block_variable_names_from_dict(func):
 
 class Block(DessiaObject):
     """ An Abstract block. Do not instantiate alone. """
-    _standalone_in_db = False
+
     _eq_is_data_eq = False
     _non_serializable_attributes = []
 
@@ -232,8 +215,7 @@ class Block(DessiaObject):
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#', id_method=True, id_memo=None):
         """ Serialize the block with custom logic. """
         dict_ = DessiaObject.base_dict(self)
-        dict_['inputs'] = [i.to_dict() for i in self.inputs]
-        dict_['outputs'] = [o.to_dict() for o in self.outputs]
+        dict_.update({"inputs": [i.to_dict() for i in self.inputs], "outputs": [o.to_dict() for o in self.outputs]})
         if self.position is not None:
             dict_['position'] = list(self.position)
         else:
@@ -258,7 +240,14 @@ class Block(DessiaObject):
         """ Generate a chunk of script that denotes the arguments of a base block. """
         return f"name='{self.name}', position={self.position}"
 
-    def is_valid(self, level: str = 'error') -> bool:  # TODO: Change this in further releases
+    def evaluate(self, values, **kwargs):
+        """ Not implemented for abstract block class 'evaluate' method. """
+        raise NotImplementedError("This method should be implemented in any Block inheriting class.")
+
+    def _to_script(self, prefix: str):
+        raise NotImplementedError("This method should be implemented in any Block inheriting class.")
+
+    def is_valid(self, level: str = 'error') -> bool: # TODO: Change this in further releases
         """ Always return True for now. """
         return True
 
@@ -268,10 +257,9 @@ class Pipe(DessiaObject):
     Bind two variables of a Workflow.
 
     :param input_variable: The input varaible of the pipe correspond to the start of the arrow, its tail.
-    :type input_variable: Variable
     :param output_variable: The output variable of the pipe correpond to the end of the arrow, its hat.
-    :type output_variable: Variable
     """
+
     _eq_is_data_eq = False
 
     def __init__(self, input_variable: Variable, output_variable: Variable, name: str = ''):
@@ -294,72 +282,18 @@ class Workflow(Block):
     """
     Class Block of Workflows.
 
-    :param blocks:
-        A List with all the Blocks used by the Worklow.
-    :type blocks: List[Block]
-
-    :param pipes:
-        A List of Pipe objects.
-    :type pipes: List[Pipe]
-
-    :param imposed_variable_values:
-        A dictionary of imposed variable values.
-    :type imposed_variable_values: Dict
-
-    :param description:
-        A short description that will be displayed on workflow card (frontend). Should be shorter than 100 chars
-    :type description: str
-
-    :param documentation:
-        A long documentation that will be displayed on workflow page (frontend). Can use markdown elements.
-    :type documentation: str
-
-    :param name:
-        The name of the workflow.
-    :type name: str
+    :param blocks: A List with all the Blocks used by the Worklow.
+    :param pipes: A List of Pipe objects.
+    :param imposed_variable_values: A dictionary of imposed variable values.
+    :param description: A short description that will be displayed on workflow card (frontend).
+        Should be shorter than 100 chars
+    :param documentation: A long documentation that will be displayed on workflow page (frontend).
+        Can use markdown elements.
+    :param name: The name of the workflow.
     """
+
     _standalone_in_db = True
     _allowed_methods = ['run', 'start_run']
-    _eq_is_data_eq = True
-    _jsonschema = {
-        "definitions": {}, "$schema": "http://json-schema.org/draft-07/schema#", "type": "object", "title": "Workflow",
-        "required": ["blocks", "pipes", "outputs"], "python_typing": 'dessia_common.workflow.core.Workflow',
-        "classes": ["dessia_common.workflow.core.Workflow"], "standalone_in_db": True,
-        "properties": {
-            "blocks": {
-                "type": "array", "order": 0, "editable": True,
-                "python_typing": "SubclassOf[dessia_common.workflow.Block]",
-                "items": {"type": "object", "editable": True,
-                          "classes": ["dessia_common.workflow.InstanciateModel", "dessia_common.workflow.ModelMethod",
-                                      "dessia_common.workflow.ForEach", "dessia_common.workflow.ModelAttribute",
-                                      "dessia_common.workflow.Function", "dessia_common.workflow.Sequence",
-                                      "dessia_common.workflow.ForEach", "dessia_common.workflow.Unpacker",
-                                      "dessia_common.workflow.Flatten", "dessia_common.workflow.Filter",
-                                      "dessia_common.workflow.ParallelPlot", "dessia_common.workflow.Sum",
-                                      "dessia_common.workflow.Substraction"]},
-            },
-            "pipes": {
-                "type": "array", "order": 1, "editable": True, "python_typing": "List[dessia_common.workflow.Pipe]",
-                "items": {
-                    'type': 'objects', 'classes': ["dessia_common.workflow.Pipe"],
-                    "python_type": "dessia_common.workflow.Pipe", "editable": True
-                }
-            },
-            "outputs": {
-                "type": "array", "order": 2, "python_typing": "List[dessia_common.workflow.Variable]",
-                'items': {
-                    'type': 'array', 'items': {'type': 'number'},
-                    'python_typing': "dessia_common.workflow.Variable"
-                }
-            },
-            "description": {"type": "string", "title": "Description", "editable": True,
-                            "default_value": "", "python_typing": "builtins.str"},
-            "documentation": {"type": "string", "title": "Documentation", "editable": True,
-                              "default_value": "", "python_typing": "builtins.str"},
-            "name": {'type': 'string', 'title': 'Name', 'editable': True, 'order': 3,
-                     'default_value': '', 'python_typing': 'builtins.str'}
-        }
-    }
 
     def __init__(self, blocks, pipes, output, *, imposed_variable_values=None,
                  detached_variables: List[TypedVariable] = None, description: str = "",
@@ -389,8 +323,6 @@ class Workflow(Block):
 
         inputs = [v for v in self.variables if v not in self.imposed_variable_values
                   and len(nx.ancestors(self.graph, v)) == 0]
-        # if not hasattr(variable, 'type_'):
-        #     raise WorkflowError('Workflow as an untyped input variable: {}'.format(variable.name))
 
         self.description = description
         self.documentation = documentation
@@ -445,9 +377,7 @@ class Workflow(Block):
         return self.blocks + self.nonblock_variables
 
     def handle_pipe(self, pipe):
-        """
-        Perform some initialization action on a pipe and its variables.
-        """
+        """ Perform some initialization action on a pipe and its variables. """
         upstream_var = pipe.input_variable
         downstream_var = pipe.output_variable
         if upstream_var not in self.variables:
@@ -460,9 +390,7 @@ class Workflow(Block):
             self.nonblock_variables.append(downstream_var)
 
     def handle_block(self, block):
-        """
-        Perform some initialization action on a block and its variables.
-        """
+        """ Perform some initialization action on a block and its variables. """
         if isinstance(block, Workflow):
             raise ValueError("Using workflow as blocks is forbidden, use WorkflowBlock wrapper instead")
         self.variables.extend(block.inputs)
@@ -482,8 +410,7 @@ class Workflow(Block):
         if hash(self) != hash(other_object) or not Block.equivalent(self, other_object):
             return False
 
-        # TODO: temp , reuse graph to handle block order!!!!
-        for block1, block2 in zip(self.blocks, other_object.blocks):
+        for block1, block2 in zip(self.blocks, other_object.blocks):  # TODO: temp, reuse graph to handle block order!
             if not block1.equivalent(block2):
                 return False
 
@@ -510,21 +437,16 @@ class Workflow(Block):
     def _equivalent_imposed_variables_values(self, other_wf) -> bool:
         ivvs = set()
         other_ivvs = set()
-        for imposed_key, other_imposed_key in zip(self.imposed_variable_values.keys(),
-                                                  other_wf.imposed_variable_values.keys()):
-            variable_index = self.variable_index(imposed_key)
-            ivvs.add((variable_index, self.imposed_variable_values[imposed_key]))
+        for key, other_key in zip(self.imposed_variable_values.keys(), other_wf.imposed_variable_values.keys()):
+            variable_index = self.variable_index(key)
+            ivvs.add((variable_index, self.imposed_variable_values[key]))
 
-            other_variable_index = other_wf.variable_index(other_imposed_key)
-            other_ivvs.add((other_variable_index, other_wf.imposed_variable_values[other_imposed_key]))
-
+            other_variable_index = other_wf.variable_index(other_key)
+            other_ivvs.add((other_variable_index, other_wf.imposed_variable_values[other_key]))
         return ivvs == other_ivvs
 
     def __deepcopy__(self, memo=None):
         """ Return the deep copy. """
-        if memo is None:
-            memo = {}
-
         blocks = [b.__deepcopy__() for b in self.blocks]
         output_adress = self.variable_indices(self.output)
         if output_adress is None:
@@ -553,7 +475,6 @@ class Workflow(Block):
             raise dessia_common.errors.CopyError("copy_pipe method cannot handle nonblock-variables. "
                                                  "Please consider using copy_nbv_pipes")
         pipe_upstream = copied_workflow.variable_from_index(upstream_index)
-
         downstream_index = self.variable_indices(pipe.output_variable)
         pipe_downstream = copied_workflow.variable_from_index(downstream_index)
         return Pipe(pipe_upstream, pipe_downstream)
@@ -581,13 +502,10 @@ class Workflow(Block):
         copy_memo = {}
         return [self.copy_nbv_pipe(copied_workflow=copied_workflow, pipe=p, copy_memo=copy_memo)
                 if self.is_variable_nbv(p.input_variable)
-                else self.copy_pipe(copied_workflow=copied_workflow, pipe=p)
-                for p in self.pipes]
+                else self.copy_pipe(copied_workflow=copied_workflow, pipe=p) for p in self.pipes]
 
     def branch_by_selector(self, blocks: List[Block]):
-        """
-        Return the corresponding branch to each display or export selector.
-        """
+        """ Return the corresponding branch to each display or export selector. """
         selector_branches = {}
         for block in blocks:
             branch = self.secondary_branch_blocks(block)
@@ -605,8 +523,13 @@ class Workflow(Block):
         """ Compute all display blocks display_settings. """
         display_settings = []
         for block in self.display_blocks:
+            reference_path = "#"
+            for i, input_ in enumerate(block.inputs):
+                incoming_pipe = self.variable_input_pipe(input_)
+                if i == block._displayable_input:
+                    reference_path = f"{reference_path}/values/{self.pipes.index(incoming_pipe)}"
             block_index = self.blocks.index(block)
-            settings = block._display_settings(block_index)
+            settings = block._display_settings(block_index=block_index, reference_path=reference_path)
             if settings is not None:
                 settings.selector = self.block_selectors[block]
                 display_settings.append(settings)
@@ -615,9 +538,8 @@ class Workflow(Block):
     @staticmethod
     def display_settings() -> List[DisplaySetting]:
         """ Compute the displays settings of the workflow. """
-        display_settings = [DisplaySetting('documentation', 'markdown', 'to_markdown', None),
-                            DisplaySetting('workflow', 'workflow', 'to_dict', None)]
-        return display_settings
+        return [DisplaySetting(selector='documentation', type_='markdown', method='to_markdown'),
+                DisplaySetting(selector='workflow', type_='workflow', method='to_dict')]
 
     @property
     def export_blocks(self):
@@ -703,13 +625,10 @@ class Workflow(Block):
         return jsonschemas
 
     def to_dict(self, use_pointers=True, memo=None, path='#', id_method=True, id_memo=None):
-        """
-        Compute a dict from the object content.
-        """
+        """ Compute a dict from the object content. """
         if memo is None:
             memo = {}
 
-        # self.refresh_blocks_positions()
         dict_ = Block.to_dict(self)
         dict_['object_class'] = 'dessia_common.workflow.core.Workflow'  # TO force migrating from dessia_common.workflow
         blocks = [b.to_dict() for b in self.blocks]
@@ -739,9 +658,7 @@ class Workflow(Block):
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'Workflow':
-        """
-        Recompute the object from a dict.
-        """
+        """ Recompute the object from a dict. """
         if pointers_memo is None or global_dict is None:
             global_dict, pointers_memo = update_pointers_data(global_dict=global_dict, current_dict=dict_,
                                                               pointers_memo=pointers_memo)
@@ -774,16 +691,13 @@ class Workflow(Block):
 
         description = dict_.get("description", "")
         documentation = dict_.get("documentation", "")
-
         return cls(blocks=workflow.blocks, pipes=workflow.pipes, output=workflow.output,
                    imposed_variable_values=imposed_variable_values, description=description,
                    documentation=documentation, name=dict_["name"])
 
     def dict_to_arguments(self, dict_: JsonSerializable, method: str, global_dict=None,
                           pointers_memo=None, path='#'):
-        """
-        Process a json of arguments and deserialize them.
-        """
+        """ Process a json of arguments and deserialize them. """
         dict_ = {int(k): v for k, v in dict_.items()}  # serialisation set keys as strings
         if method in self._allowed_methods:
             name = None
@@ -808,7 +722,6 @@ class Workflow(Block):
 
     def _run_dict(self) -> Dict:
         dict_ = {}
-
         copied_ivv = {}
         for variable, value in self.imposed_variable_values.items():
             variable_index = self.variables.index(variable)
@@ -824,10 +737,9 @@ class Workflow(Block):
         for input_index, input_ in enumerate(copied_workflow.inputs):
             variable_index = copied_workflow.variables.index(input_)
             if variable_index in copied_ivv:
-                dict_[input_index] = copied_ivv[variable_index]
+                dict_[input_index] = serialize(copied_ivv[variable_index])
             elif isinstance(input_, TypedVariableWithDefaultValue):
                 dict_[input_index] = serialize(input_.default_value)
-
         return dict_
 
     def _start_run_dict(self) -> Dict:
@@ -842,22 +754,15 @@ class Workflow(Block):
         raise WorkflowError(f"Calling method_dict with unknown method_name '{method_name}'")
 
     def variable_from_index(self, index: Union[int, Tuple[int, int, int]]):
-        """
-        Index elements are, in order : (Block index : int, Port side (0: input, 1: output), Port index : int).
-        """
+        """ Index elements are, in order : (Block index : int, Port side (0: input, 1: output), Port index : int). """
         if isinstance(index, int):
-            variable = self.nonblock_variables[index]
-        else:
-            if not index[1]:
-                variable = self.blocks[index[0]].inputs[index[2]]
-            else:
-                variable = self.blocks[index[0]].outputs[index[2]]
-        return variable
+            return self.nonblock_variables[index]
+        if not index[1]:
+            return self.blocks[index[0]].inputs[index[2]]
+        return self.blocks[index[0]].outputs[index[2]]
 
     def _get_graph(self):
-        """
-        Cached property for graph.
-        """
+        """ Cached property for graph. """
         if not self._utd_graph:
             self._cached_graph = self._graph()
             self._utd_graph = True
@@ -866,9 +771,7 @@ class Workflow(Block):
     graph = property(_get_graph)
 
     def _graph(self):
-        """
-        Compute the networkx graph of the workflow.
-        """
+        """ Compute the networkx graph of the workflow. """
         graph = nx.DiGraph()
         graph.add_nodes_from(self.variables)
         graph.add_nodes_from(self.blocks)
@@ -884,9 +787,7 @@ class Workflow(Block):
 
     @property
     def runtime_blocks(self):
-        """
-        Return blocks that are upstream for output.
-        """
+        """ Return blocks that are upstream for output. """
         # TODO Check what's happening when output is null (incomplete workflow)
         output_block = self.block_from_variable(self.output)
         output_upstreams = self.upstream_blocks(output_block)
@@ -910,7 +811,6 @@ class Workflow(Block):
         It stops looking for blocks when it reaches the main branch, and memorize the connected pipe
 
         :param block: Block that is the target of the secondary branch
-        :type block: Block
         """
         upstream_blocks = self.upstream_blocks(block)
         branch_blocks = [block]
@@ -934,7 +834,7 @@ class Workflow(Block):
 
     def pipe_from_variable_indices(self, upstream_indices: Union[int, Tuple[int, int, int]],
                                    downstream_indices: Union[int, Tuple[int, int, int]]) -> Pipe:
-        """Get a pipe from the global indices of its attached variables."""
+        """ Get a pipe from the global indices of its attached variables. """
         for pipe in self.pipes:
             if self.variable_indices(pipe.input_variable) == upstream_indices \
                     and self.variable_indices(pipe.output_variable) == downstream_indices:
@@ -944,11 +844,11 @@ class Workflow(Block):
 
     def pipe_variable_indices(self, pipe: Pipe) -> Tuple[Union[int, Tuple[int, int, int]],
                                                          Union[int, Tuple[int, int, int]]]:
-        """Return the global indices of a pipe's attached variables."""
+        """ Return the global indices of a pipe's attached variables. """
         return self.variable_indices(pipe.input_variable), self.variable_indices(pipe.output_variable)
 
     def variable_input_pipe(self, variable: Variable) -> Optional[Pipe]:
-        """Get the incoming pipe for a variable. If variable is not connected, returns None."""
+        """ Get the incoming pipe for a variable. If variable is not connected, returns None. """
         incoming_pipes = [p for p in self.pipes if p.output_variable == variable]
         if incoming_pipes:  # Inputs can only be connected to one pipe
             incoming_pipe = incoming_pipes[0]
@@ -956,13 +856,11 @@ class Workflow(Block):
         return None
 
     def variable_output_pipes(self, variable: Variable) -> List[Optional[Pipe]]:
-        """Compute all pipes going out a given variable."""
+        """ Compute all pipes going out a given variable. """
         return [p for p in self.pipes if p.input_variable == variable]
 
     def pipes_between_blocks(self, upstream_block: Block, downstream_block: Block):
-        """
-        Compute all the pipes linking two blocks.
-        """
+        """ Compute all the pipes linking two blocks. """
         pipes = []
         for outgoing_pipe in self.block_outgoing_pipes(upstream_block):
             if outgoing_pipe is not None and outgoing_pipe in self.block_incoming_pipes(downstream_block):
@@ -970,22 +868,18 @@ class Workflow(Block):
         return pipes
 
     def block_incoming_pipes(self, block: Block) -> List[Optional[Pipe]]:
-        """Get incoming pipes for every block variable."""
+        """ Get incoming pipes for every block variable. """
         return [self.variable_input_pipe(i) for i in block.inputs]
 
     def block_outgoing_pipes(self, block: Block) -> List[Pipe]:
-        """
-        Return all block outgoing pipes.
-        """
+        """ Return all block outgoing pipes. """
         outgoing_pipes = []
         for output in block.outputs:
             outgoing_pipes.extend(self.variable_output_pipes(output))
         return outgoing_pipes
 
     def upstream_blocks(self, block: Block) -> List[Block]:
-        """
-        Return a list of given block's upstream blocks.
-        """
+        """ Return a list of given block's upstream blocks. """
         # Setting a dict here to foresee a future use. Might be unnecessary
         upstream_variables = {"available": [], "nonblock": [], "wired": []}
         input_upstreams = [self.upstream_variable(i) for i in block.inputs]
@@ -1000,9 +894,7 @@ class Workflow(Block):
         return list(set(upstream_blocks))
 
     def get_upstream_nbv(self, variable: Variable) -> Variable:
-        """
-        If given variable has an upstream nonblock_variable, return it otherwise return given variable itself.
-        """
+        """ If given variable has an upstream nonblock_variable, return it otherwise return given variable itself. """
         if not self.nonblock_variables:
             return variable
         upstream_variable = self.upstream_variable(variable)
@@ -1072,31 +964,23 @@ class Workflow(Block):
         return disconnected_elements
 
     def index(self, variable):
-        """
-        Deprecated, will be remove in version 0.8.0.
-        """
+        """ Deprecated, will be remove in version 0.8.0. """
         warnings.warn("index method is deprecated, use input_index instead", DeprecationWarning)
         return self.input_index(variable)
 
     def input_index(self, variable: Variable) -> Optional[int]:
-        """
-        If variable is a workflow input, returns its index.
-        """
+        """ If variable is a workflow input, returns its index. """
         upstream_variable = self.get_upstream_nbv(variable)
         if upstream_variable in self.inputs:
             return self.inputs.index(upstream_variable)
         return None
 
     def variable_index(self, variable: Variable) -> int:
-        """
-        Return variable index in variables sequence.
-        """
+        """ Return variable index in variables sequence. """
         return self.variables.index(variable)
 
     def block_inputs_global_indices(self, block_index: int) -> List[int]:
-        """
-        Return given block inputs global indices in inputs sequence.
-        """
+        """ Return given block inputs global indices in inputs sequence. """
         block = self.blocks[block_index]
         indices = [self.input_index(i) for i in block.inputs]
         return [i for i in indices if i is not None]
@@ -1178,7 +1062,6 @@ class Workflow(Block):
                 input_node = self.block_from_variable(pipe.input_variable)
             output_block = self.block_from_variable(pipe.output_variable)
             graph.add_edge(input_node, output_block)
-
         return graph
 
     def graph_columns(self, graph):
@@ -1192,7 +1075,6 @@ class Workflow(Block):
         for node, column_index in column_by_node.items():
             node_index = self.nodes.index(node)
             nodes_by_column[column_index] = nodes_by_column.get(column_index, []) + [node_index]
-
         return list(nodes_by_column.values())
 
     def layout(self):
@@ -1204,13 +1086,10 @@ class Workflow(Block):
         digraph = self.layout_graph
         graph = digraph.to_undirected()
         connected_components = nx.connected_components(graph)
-
         return [self.graph_columns(digraph.subgraph(cc)) for cc in list(connected_components)]
 
     def plot_graph(self):
-        """
-        Plot graph by means of networking and matplotlib.
-        """
+        """ Plot graph by means of networking and matplotlib. """
         pos = nx.kamada_kawai_layout(self.graph)
         nx.draw_networkx_nodes(self.graph, pos, self.blocks, node_shape='s', node_color='grey')
         nx.draw_networkx_nodes(self.graph, pos, self.variables, node_color='b')
@@ -1226,11 +1105,8 @@ class Workflow(Block):
         nx.draw_networkx_labels(self.graph, pos, labels)
 
     def run(self, input_values, verbose=False, progress_callback=lambda x: None, name=None):
-        """
-        Full run of a workflow. Yields a WorkflowRun.
-        """
+        """ Full run of a workflow. Yields a WorkflowRun. """
         log = ''
-
         state = self.start_run(input_values)
         state.activate_inputs(check_all_inputs=True)
 
@@ -1258,13 +1134,11 @@ class Workflow(Block):
         return state.to_workflow_run(name=name)
 
     def start_run(self, input_values=None, name: str = None):
-        """Partial run of a workflow. Yields a WorkflowState."""
+        """ Partial run of a workflow. Yields a WorkflowState. """
         return WorkflowState(self, input_values=input_values, name=name)
 
     def jointjs_layout(self, min_horizontal_spacing=300, min_vertical_spacing=200, max_height=800, max_length=1500):
-        """
-        Deprecated workflow layout. Used only in jointjs_data method.
-        """
+        """ Deprecated workflow layout. Used only in jointjs_data method. """
         coordinates = {}
         elements_by_distance = {}
         if self.output:
@@ -1292,7 +1166,6 @@ class Workflow(Block):
             max_distance = 3  # TODO: this is an awfull quick fix
 
         horizontal_spacing = max(min_horizontal_spacing, max_length / max_distance)
-
         for i, distance in enumerate(sorted(elements_by_distance.keys())[::-1]):
             vertical_spacing = min(min_vertical_spacing, max_height / len(elements_by_distance[distance]))
             for j, element in enumerate(elements_by_distance[distance]):
@@ -1300,9 +1173,7 @@ class Workflow(Block):
         return coordinates
 
     def jointjs_data(self):
-        """
-        Compute the data needed for jointjs ploting.
-        """
+        """ Compute the data needed for jointjs ploting. """
         coordinates = self.jointjs_layout()
         blocks = []
         for block in self.blocks:
@@ -1340,19 +1211,14 @@ class Workflow(Block):
                 if is2:
                     block = self.blocks[ib2]
                     ip2 += len(block.inputs)
-
                 node2 = [ib2, ip2]
-
             edges.append([node1, node2])
-
         data = Block.jointjs_data(self)
         data.update({'blocks': blocks, 'nonblock_variables': nonblock_variables, 'edges': edges})
         return data
 
-    def plot(self, **kwargs):
-        """
-        Display workflow in web browser.
-        """
+    def plot(self, reference_path: str = "#", **kwargs):
+        """ Display workflow in web browser. """
         data = json.dumps(self.jointjs_data())
         rendered_template = workflow_template.substitute(workflow_data=data)
 
@@ -1361,10 +1227,8 @@ class Workflow(Block):
             file.write(rendered_template.encode('utf-8'))
         webbrowser.open('file://' + temp_file)
 
-    def is_valid(self, level='error'):
-        """
-        Tell if the workflow is valid by checking type compatibility of pipes inputs/outputs.
-        """
+    def is_valid(self, level: str = "error"):
+        """ Tell if the workflow is valid by checking type compatibility of pipes inputs/outputs. """
         for pipe in self.pipes:
             if hasattr(pipe.input_variable, 'type_') and hasattr(pipe.output_variable, 'type_'):
                 type1 = pipe.input_variable.type_
@@ -1382,9 +1246,7 @@ class Workflow(Block):
         return True
 
     def package_mix(self) -> Dict[str, float]:
-        """
-        Compute a structure showing percentages of packages used.
-        """
+        """ Compute a structure showing percentages of packages used. """
         package_mix = {}
         for block in self.blocks:
             if hasattr(block, 'package_mix'):
@@ -1393,7 +1255,6 @@ class Workflow(Block):
                         package_mix[package_name] += fraction
                     else:
                         package_mix[package_name] = fraction
-
         # Adimension
         fraction_sum = sum(package_mix.values())
         return {pn: f / fraction_sum for pn, f in package_mix.items()}
@@ -1468,41 +1329,37 @@ class Workflow(Block):
         return ToScriptElement(declaration=full_script, imports=imports, imports_as_is=imports_as_is)
 
     def to_script(self) -> str:
-        """
-        Compute a script representing the workflow.
-        """
+        """ Compute a script representing the workflow. """
         workflow_output_index = self.variable_indices(self.output)
         if workflow_output_index is None:
             raise ValueError("A workflow output must be set")
 
         self_script = self._to_script()
         self_script.imports.append(self.full_classname)
-
         script_imports = self_script.imports_to_str()
-
         return f"{script_imports}\n" \
                f"{self_script.declaration}"
 
     def save_script_to_stream(self, stream: io.StringIO):
-        """
-        Save the workflow to a python script to a stream.
-        """
-        string = self.to_script()
+        """ Save the workflow to a python script to a stream. """
         stream.seek(0)
-        stream.write(string)
+        stream.write(self.to_script())
 
     def save_script_to_file(self, filename: str):
-        """
-        Save the workflow to a python script to a file on the disk.
-        """
+        """ Save the workflow to a python script to a file on the disk. """
         if not filename.endswith('.py'):
             filename += '.py'
         with open(filename, 'w', encoding='utf-8') as file:
             self.save_script_to_stream(file)
 
+    def evaluate(self, values, **kwargs):
+        """ Not implemented Workflow as Block evaluate method. """
+        raise NotImplementedError("Method 'evaluate' is not implemented for class Workflow.")
+
 
 class WorkflowState(DessiaObject):
     """ State of execution of a workflow. """
+
     _standalone_in_db = True
     _allowed_methods = ['block_evaluation', 'evaluate_next_block', 'continue_run',
                         'evaluate_maximum_blocks', 'add_block_input_values']
@@ -1560,11 +1417,9 @@ class WorkflowState(DessiaObject):
             else:
                 raise ValueError(f"WorkflowState Copy Error : item {item} cannot be activated")
             activated_items[copied_item] = value
-        workflow_state = self.__class__(workflow=workflow, input_values=input_values, activated_items=activated_items,
-                                        values=values, start_time=self.start_time, end_time=self.end_time,
-                                        output_value=deepcopy_value(value=self.output_value, memo=memo),
-                                        log=self.log, name=self.name)
-        return workflow_state
+        return self.__class__(workflow=workflow, input_values=input_values, activated_items=activated_items, values=values,
+                              start_time=self.start_time, end_time=self.end_time,
+                              output_value=deepcopy_value(value=self.output_value, memo=memo), log=self.log, name=self.name)
 
     def _data_hash(self):
         workflow = hash(self.workflow)
@@ -1600,7 +1455,6 @@ class WorkflowState(DessiaObject):
             if self.activated_items[pipe] != other_object.activated_items[other_pipe]:
                 # Check pipe progress state
                 return False
-
             if self.activated_items[pipe] and pipe in self.values:
                 if self.values[pipe] != other_object.values[other_pipe]:
                     # Check variable values for evaluated ones
@@ -1608,9 +1462,7 @@ class WorkflowState(DessiaObject):
         return True
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#', id_method=True, id_memo=None):
-        """
-        Transform object into a dict.
-        """
+        """ Transform object into a dict. """
         if memo is None:
             memo = {}
         id_memo = {}
@@ -1635,7 +1487,6 @@ class WorkflowState(DessiaObject):
             else:
                 serialized_v = serialize(value)
             input_values[str(input_)] = serialized_v
-
         dict_['input_values'] = input_values
 
         # Output value: priority for reference before values
@@ -1646,7 +1497,6 @@ class WorkflowState(DessiaObject):
                                                                         id_memo=id_memo)
             else:
                 serialized_output_value = serialize(self.output_value)
-
             dict_.update({'output_value': serialized_output_value,
                           'output_value_type': recursive_type(self.output_value)})
 
@@ -1677,12 +1527,6 @@ class WorkflowState(DessiaObject):
         dict_['evaluated_variables_indices'] = [self.workflow.variable_indices(v) for v in self.workflow.variables
                                                 if v in self.activated_items and self.activated_items[v]]
         dict_["_references"] = id_memo
-        # Uncomment when refs are handled as dict keys
-        # activated_items = {}
-        # for key, activated in self.activated_items.items():
-        #     s_key, memo = serialize_with_pointers(key, memo=memo, path=f'{path}/activated_items/{key}')
-        #     print('s_key', s_key)
-        #     activated_items[s_key] = activated
         return dict_
 
     def state_display(self):
@@ -1692,7 +1536,6 @@ class WorkflowState(DessiaObject):
         TODO This doesn't compute display at all. It probably was the reason of display failure. Copy/Paste problem ?
         """
         memo = {}
-
         workflow_dict = self.workflow.to_dict(path='#/workflow', memo=memo)
 
         dict_ = self.base_dict()
@@ -1756,19 +1599,16 @@ class WorkflowState(DessiaObject):
             else:
                 var_indices.append(variable_indices)
         activated_items.update({v: workflow.variable_indices(v) in var_indices for v in workflow.variables})
-
         return cls(workflow=workflow, input_values=input_values, activated_items=activated_items,
                    values=values, start_time=dict_['start_time'], end_time=dict_['end_time'],
                    output_value=output_value, log=dict_['log'], name=dict_['name'])
 
     def add_input_value(self, input_index: int, value):
-        """Add a value for given input."""
+        """ Add a value for given input. """
         self._activate_input(input_=self.workflow.inputs[input_index], value=value)
 
     def add_several_input_values(self, indices: List[int], values):
-        """
-        Add several values for given inputs.
-        """
+        """ Add several values for given inputs. """
         for index in indices:
             input_ = self.workflow.inputs[index]
             if index not in values:
@@ -1784,78 +1624,47 @@ class WorkflowState(DessiaObject):
             self.add_input_value(input_index=index, value=value)
 
     def add_block_input_values(self, block_index: int, values):
-        """
-        Add inputs values for given block.
-        """
+        """ Add inputs values for given block. """
         values = {int(k): v for k, v in values.items()}  # serialisation set keys as strings
         indices = self.workflow.block_inputs_global_indices(block_index)
         self.add_several_input_values(indices=indices, values=values)
 
     def display_settings(self) -> List[DisplaySetting]:
-        """
-        Compute the displays settings of the objects.
-        """
+        """ Compute the displays settings of the objects. """
         display_settings = [DisplaySetting('workflow-state', 'workflow_state', 'state_display', None)]
 
         # Displayable blocks
         display_settings.extend(self.workflow.blocks_display_settings)
         return display_settings
 
-    def _display_from_selector(self, selector: str, **kwargs) -> DisplayObject:
-        """
-        Generate the display from the selector.
-        """
-        # TODO THIS IS A TEMPORARY DIRTY HOTFIX OVERWRITE.
-        #  WE SHOULD IMPLEMENT A WAY TO GET RID OF REFERENCE PATH WITH URLS
-        track = ""
-        refpath = kwargs.get("reference_path", "")
-        if selector in ["documentation", "workflow"]:
-            return self.workflow._display_from_selector(selector)
-
-        if selector == "workflow-state":
-            return DessiaObject._display_from_selector(self, selector)
-
-        # Displays for blocks (getting reference path from block_display return)
-        display_setting = self._display_settings_from_selector(selector)
-        try:
-            # Specific hotfix : we propagate reference_path through block_display method
-            display_object, refpath = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
-            data = display_object.data
-        except:
-            data = None
-            track = tb.format_exc()
-
-        if display_setting.serialize_data:
-            data = serialize(data)
-        return DisplayObject(type_=display_setting.type, data=data, reference_path=refpath, traceback=track)
-
-    def block_display(self, block_index: int):
-        """
-        Compute the display of associated block to use integrate it in the workflow run displays.
-        """
+    def block_display(self, block_index: int, reference_path: str = "#"):
+        """ Compute the display of associated block to use integrate it in the workflow run displays. """
         self.activate_inputs()
         block = self.workflow.blocks[block_index]
 
         selector = self.workflow.block_selectors[block]
         branch = self.workflow.branch_by_display_selector[selector]
-        evaluated_blocks = self.evaluate_branch(branch)
+        block_args = {}
+        for branch_block in branch:
+            if branch_block is block:
+                argpath = reference_path
+            else:
+                argpath = "#"
+            block_args[branch_block] = {"reference_path": argpath}
 
-        reference_path = ""
-        for i, input_ in enumerate(block.inputs):
-            incoming_pipe = self.workflow.variable_input_pipe(input_)
-            if i == block._displayable_input:
-                reference_path = f'values/{self.workflow.pipes.index(incoming_pipe)}'
-
+        evaluated_blocks = self.evaluate_branch(blocks=branch, block_args=block_args)
         if block not in evaluated_blocks:
             msg = f"Could not reach block at index {block_index}." \
                   f"Has the workflow been run far enough to evaluate this block ?"
             raise WorkflowError(msg)
-        return evaluated_blocks[block][0], reference_path  # Only one output to an Export Block
+        return evaluated_blocks[block][0]  # Only one output to an Export Block
 
     @property
     def progress(self):
         """
-        Return the current progress, a float between 0 (nothing evaluated), to 1. (every computational block evaluated).
+        Return the current progress.
+
+        Return a float between 0 (nothing evaluated), to 1 (every computational block evaluated).
         """
         evaluated_blocks = [self.activated_items[b] for b in self.workflow.runtime_blocks]
         progress = sum(evaluated_blocks) / len(evaluated_blocks)
@@ -1864,9 +1673,7 @@ class WorkflowState(DessiaObject):
         return progress
 
     def block_evaluation(self, block_index: int, progress_callback=lambda x: None) -> bool:
-        """
-        Select a block to evaluate.
-        """
+        """ Select a block to evaluate. """
         block = self.workflow.blocks[block_index]
         self.activate_inputs()
         if block in self._activable_blocks():
@@ -1876,9 +1683,7 @@ class WorkflowState(DessiaObject):
         return False
 
     def evaluate_next_block(self, progress_callback=lambda x: None) -> Optional[Block]:
-        """
-        Evaluate a block.
-        """
+        """ Evaluate a block. """
         self.activate_inputs()
         blocks = self._activable_blocks()
         if blocks:
@@ -1889,9 +1694,7 @@ class WorkflowState(DessiaObject):
         return None
 
     def continue_run(self, progress_callback=lambda x: None, export: bool = False):
-        """
-        Evaluate all possible blocks.
-        """
+        """ Evaluate all possible blocks. """
         self.activate_inputs()
 
         evaluated_blocks = []
@@ -1906,11 +1709,9 @@ class WorkflowState(DessiaObject):
                     progress_callback(self.progress)
                 something_activated = True
         return evaluated_blocks
-
-    def evaluate_branch(self, blocks: List[Block]):
-        """
-        Evaluate all blocks of a branch, automatically finding the first executable ones.
-        """
+        
+    def evaluate_branch(self, blocks: List[Block], block_args: Dict[Block, Any]):
+        """ Evaluate all blocks of a branch, automatically finding the first executable ones. """
         self.activate_inputs()
 
         if not any((b in self._activable_blocks() for b in blocks)):
@@ -1921,23 +1722,20 @@ class WorkflowState(DessiaObject):
         while len(evaluated_blocks) != len(blocks) and i <= len(blocks):
             next_blocks = [b for b in blocks if b in self._activable_blocks() and b not in evaluated_blocks]
             for block in next_blocks:
-                output_values = self._evaluate_block(block)
+                kwargs = block_args[block]
+                output_values = self._evaluate_block(block, **kwargs)
                 evaluated_blocks[block] = output_values
             i += 1
         return evaluated_blocks
 
     def _activate_pipe(self, pipe: Pipe, value):
-        """
-        Set the pipe value and activate its downstream variable.
-        """
+        """ Set the pipe value and activate its downstream variable. """
         self.values[pipe] = value
         self.activated_items[pipe] = True
         self._activate_variable(variable=pipe.output_variable, value=value)
 
     def _activate_block(self, block: Block, output_values):
-        """
-        Activate all block outputs.
-        """
+        """ Activate all block outputs. """
         # Unpacking result of evaluation
         output_items = zip(block.outputs, output_values)
         for output, output_value in output_items:
@@ -1945,9 +1743,7 @@ class WorkflowState(DessiaObject):
         self.activated_items[block] = True
 
     def _activate_variable(self, variable: Variable, value):
-        """
-        Activate the given variable with its value and propagate activation to its outgoing pipe.
-        """
+        """ Activate the given variable with its value and propagate activation to its outgoing pipe. """
         outgoing_pipes = self.workflow.variable_output_pipes(variable)
         if self.workflow.output == variable:
             self.output_value = value
@@ -1956,11 +1752,7 @@ class WorkflowState(DessiaObject):
         self.activated_items[variable] = True
 
     def _activate_input(self, input_: TypedVariable, value):  # Inputs must always be Typed
-        """
-        Typecheck, activate the variable and propagate the value to its pipe.
-        """
-        # Type checking
-        value_type_check(value, input_.type_)
+        """ Typecheck, activate the variable and propagate the value to its pipe. """
         input_index = self.workflow.input_index(input_)
         self.input_values[input_index] = value
         self._activate_variable(variable=input_, value=value)
@@ -1969,25 +1761,19 @@ class WorkflowState(DessiaObject):
             self._activate_pipe(pipe=pipe, value=value)
 
     def _activable_blocks(self):
-        """
-        Return a list of all activable blocks, ie blocks that have all inputs ready for evaluation.
-        """
+        """ Return a list of all activable blocks, ie blocks that have all inputs ready for evaluation. """
         return [b for b in self.workflow.blocks if self._block_activable_by_inputs(b)
                 and (not self.activated_items[b] or b not in self.workflow.runtime_blocks)]
 
     def _block_activable_by_inputs(self, block: Block):
-        """
-        Return wether a block has all its inputs active and can be activated.
-        """
+        """ Return wether a block has all its inputs active and can be activated. """
         for function_input in block.inputs:
             if not self.activated_items[function_input]:
                 return False
         return True
 
-    def _evaluate_block(self, block, progress_callback=lambda x: x, verbose=False):
-        """
-        Evaluate given block.
-        """
+    def _evaluate_block(self, block, progress_callback=lambda x: x, verbose=False, **kwargs):
+        """ Evaluate given block. """
         if verbose:
             log_line = f"Evaluating block {block.name}"
             self.log += log_line + '\n'
@@ -2006,7 +1792,7 @@ class WorkflowState(DessiaObject):
             self._activate_variable(variable=input_, value=value)
             local_values[input_] = value
 
-        output_values = block.evaluate(local_values)
+        output_values = block.evaluate(local_values, **kwargs)
         self._activate_block(block=block, output_values=output_values)
 
         # Updating progress
@@ -2016,7 +1802,6 @@ class WorkflowState(DessiaObject):
 
     def activate_inputs(self, check_all_inputs=False):
         """ Return whether all inputs are activated or not. """
-        # Input activation
         for index, variable in enumerate(self.workflow.inputs):
             if index in self.input_values:
                 self._activate_input(input_=variable, value=self.input_values[index])
@@ -2059,7 +1844,8 @@ class WorkflowState(DessiaObject):
         block = self.workflow.blocks[block_index]
         selector = self.workflow.block_selectors[block]
         branch = self.workflow.branch_by_export_format[selector]
-        evaluated_blocks = self.evaluate_branch(branch)
+        block_args = {b: {} for b in branch}
+        evaluated_blocks = self.evaluate_branch(blocks=branch, block_args=block_args)
         if block not in evaluated_blocks:
             msg = f"Could not reach block at index {block_index}." \
                   f"Has the workflow been ran far enough to evaluate this block ?"
@@ -2075,37 +1861,9 @@ class WorkflowState(DessiaObject):
 
 class WorkflowRun(WorkflowState):
     """ Completed state of a workflow. """
+
     _standalone_in_db = True
     _allowed_methods = ['run_again']
-    _eq_is_data_eq = True
-    _jsonschema = {
-        "definitions": {}, "$schema": "http://json-schema.org/draft-07/schema#", "type": "object",
-        "standalone_in_db": True, "title": "WorkflowRun Base Schema", "required": [],
-        "python_typing": 'dessia_common.workflow.WorkflowRun', "classes": ["dessia_common.workflow.core.WorkflowRun"],
-        "properties": {
-            "workflow": {"type": "object", "title": "Workflow", "python_typing": "dessia_common.workflow.Workflow",
-                         "classes": ["dessia_common.workflow.Workflow"], "order": 0,
-                         "editable": False, "description": "Workflow"},
-            'output_value': {"type": "object", "classes": "Any", "title": "Values",
-                             "description": "Input and output values", "editable": False,
-                             "order": 1, "python_typing": "Any"},
-            'input_values': {
-                'type': 'object', 'order': 2, 'editable': False,
-                'title': 'Input Values', "python_typing": "Dict[str, Any]",
-                'patternProperties': {
-                    '.*': {'type': "object", 'classes': 'Any'}
-                }
-            },
-            'start_time': {"type": "number", "title": "Start Time", "editable": False, "python_typing": "builtins.int",
-                           "description": "Start time of simulation", "order": 4},
-            'end_time': {"type": "number", "title": "End Time", "editable": False, "python_typing": "builtins.int",
-                         "description": "End time of simulation", "order": 5},
-            'log': {"type": "string", "title": "Log", "editable": False, 'python_typing': 'builtins.str',
-                    "description": "Log", "order": 6},
-            "name": {'type': 'string', 'title': 'Name', 'editable': True, 'order': 7,
-                     'default_value': '', 'python_typing': 'builtins.str'}
-        }
-    }
 
     def __init__(self, workflow: Workflow, input_values, output_value, values,
                  activated_items: Dict[Union[Pipe, Block, Variable], bool],
@@ -2158,11 +1916,12 @@ class WorkflowRun(WorkflowState):
 
     def display_settings(self) -> List[DisplaySetting]:
         """
-        Compute WorkflowRun display settings by getting WorkflowState ones and instering Workflow display settings.
+        Compute WorkflowRun display settings.
+
+        Concatenate WorkflowState display_settings and instering Workflow ones.
         """
         workflow_settings = self.workflow.display_settings()
         display_settings = WorkflowState.display_settings(self)
-        # TODO : Temporary removing workflow state. We could activate it again when display tree is available
         display_settings.pop(0)
         return workflow_settings + display_settings
 
@@ -2195,7 +1954,7 @@ class WorkflowRun(WorkflowState):
 
 
 def initialize_workflow(dict_, global_dict, pointers_memo) -> Workflow:
-    """ Generate an unfinished workflow in order to get access to instance method before full deserialization. """
+    """ Generate blocks, pipes, detached_variables and output from a serialized state. """
     blocks = [deserialize(serialized_element=d, global_dict=global_dict, pointers_memo=pointers_memo)
               for d in dict_["blocks"]]
     if 'nonblock_variables' in dict_:
@@ -2205,7 +1964,6 @@ def initialize_workflow(dict_, global_dict, pointers_memo) -> Workflow:
         nonblock_variables = []
 
     connected_nbvs = {v: False for v in nonblock_variables}
-
     pipes = deserialize_pipes(pipes_dict=dict_['pipes'], blocks=blocks, nonblock_variables=nonblock_variables,
                               connected_nbvs=connected_nbvs)
 
@@ -2234,16 +1992,5 @@ def deserialize_pipes(pipes_dict, blocks, nonblock_variables, connected_nbvs):
         else:
             ib2, _, ip2 = target
             variable2 = blocks[ib2].inputs[ip2]
-
         pipes.append(Pipe(variable1, variable2))
     return pipes
-
-
-def value_type_check(value, type_):
-    """ Check if the value as the specified type. """
-    try:  # TODO: Subscripted generics cannot be used...
-        if not isinstance(value, type_):
-            return False
-    except TypeError:
-        pass
-    return True

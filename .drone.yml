@@ -7,7 +7,7 @@ steps:
 - name: merge master on testing
   image: alpine/git
   when:
-    event: push 
+    event: push
     branch: master
   commands:
   - git fetch origin testing
@@ -18,7 +18,7 @@ steps:
 - name: merge testing on dev
   image: alpine/git
   when:
-    event: push 
+    event: push
     branch: testing
   commands:
   - git fetch origin dev
@@ -63,13 +63,19 @@ steps:
   commands:
   - git fetch --tags
   - python setup.py install
-  - python scripts/dessia_object.py
-  - pip install sphinx sphinx-rtd-theme coverage plot-data volmdlr
+#  - python scripts/dessia_object.py
+  - pip install sphinx sphinx-rtd-theme coverage volmdlr nbformat nbconvert
+  - pip install plot_data --no-cache-dir
   - pip show coverage
+  - pip show plot_data
   - cd doc
   - make html
   - cd ../tests
   - coverage run --source dessia_common ci_tests.py
+  - cd ../tutorials
+  - coverage run --source dessia_common ci_tutorials.py
+  - cd ..
+  - coverage combine tests/.coverage tutorials/.coverage
   - coverage json
   - coverage report
   - python coverage.py

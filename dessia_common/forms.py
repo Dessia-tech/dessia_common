@@ -54,20 +54,12 @@ class EmbeddedBuiltinsSubobject(PhysicalObject):
     An object that is not standalone and gather builtins types (float, int, bool, str & Distance).
 
     :param distarg: A Distance with units
-    :type distarg: Distance
-
     :param floatarg: A float
-    :type floatarg: float
-
     :param intarg: An integer
-    :type intarg: int
-
     :param boolarg: A boolean
-    :type boolarg: bool
-
     :param name: Object's name
-    :type name: str
     """
+
     _standalone_in_db = False
 
     def __init__(self, distarg: Distance, floatarg: float, intarg: int,
@@ -101,7 +93,7 @@ class EmbeddedBuiltinsSubobject(PhysicalObject):
                   vm.Point2D(origin + 1, origin + 1), vm.Point2D(origin + 1, origin)]
         return p2d.ClosedRoundedLineSegments2D(points=points, radius={})
 
-    def plot_data(self, **kwargs):
+    def plot_data(self, reference_path: str = "#", **kwargs):
         """ Bare text, for testing purpose. """
         primitives = [plot_data.Text(comment="Test with text", position_x=0, position_y=0),
                       plot_data.Text(comment="Test with text", position_x=0, position_y=0)]
@@ -120,20 +112,12 @@ class StandaloneBuiltinsSubobject(EmbeddedBuiltinsSubobject):
     Overwrite EmbeddedBuiltinsObject to make it standalone.
 
     :param distarg: A Distance with units
-    :type distarg: Distance
-
     :param floatarg: A float
-    :type floatarg: float
-
     :param intarg: An integer
-    :type intarg: int
-
     :param boolarg: A boolean
-    :type boolarg: bool
-
     :param name: Object's name
-    :type name: str
     """
+
     _standalone_in_db = True
 
     def __init__(self, distarg: Distance, floatarg: float, intarg: int,
@@ -247,17 +231,11 @@ class StandaloneObject(MovingObject):
     Standalone Object for testing purpose.
 
     :param standalone_subobject: A dev subobject that is standalone_in_db
-    :type standalone_subobject: StandaloneSubobject
-
     :param embedded_subobject: A dev subobject that isn't standalone_in_db
-    :type embedded_subobject: EmbeddedSubobject
-
     :param dynamic_dict: A variable length dict
-    :type dynamic_dict: Dict[str, bool]
-
     :param tuple_arg: A heterogeneous sequence
-    :type tuple_arg: tuple
     """
+
     _standalone_in_db = True
     _generic_eq = True
     _allowed_methods = ['add_standalone_object', 'add_embedded_object', "count_until",
@@ -369,7 +347,7 @@ class StandaloneObject(MovingObject):
         crls = p2d.ClosedRoundedLineSegments2D(points=points, radius={})
         return crls
 
-    def volmdlr_primitives(self):
+    def volmdlr_primitives(self, **kwargs):
         """ Volmdlr primitives of a cube. """
         subcube = self.standalone_subobject.voldmlr_primitives()[0]
         contour = self.contour()
@@ -397,7 +375,7 @@ class StandaloneObject(MovingObject):
         return plot_data.Scatter(axis=plot_data.Axis(), tooltip=tooltip, x_variable=attributes[0],
                                  y_variable=attributes[1], name='Scatter Plot')
 
-    def plot_data(self, **kwargs):
+    def plot_data(self, reference_path: str = "#", **kwargs):
         """ Full plot data definition with lots of graphs and 2Ds. For frontend testing purpose. """
         # Contour
         contour = self.standalone_subobject.contour().plot_data()
@@ -531,10 +509,7 @@ class StandaloneObject(MovingObject):
         Test long execution with a customizable duration.
 
         :param duration: Duration of the method in s
-        :type duration: float
-
         :param raise_error: Wether the computation should raise an error or not at the end
-        :type raise_error: bool
         """
         starting_time = time.time()
         current_time = time.time()
@@ -555,6 +530,7 @@ DEF_SO = StandaloneObject.generate(1)
 
 class StandaloneObjectWithDefaultValues(StandaloneObject):
     """ Overwrite StandaloneObject to set default values to it. For frontend's forms testing purpose. """
+
     _non_editable_attributes = ['intarg', 'strarg']
 
     def __init__(self, standalone_subobject: StandaloneBuiltinsSubobject = DEF_SBS,
@@ -617,6 +593,7 @@ class ObjectWithOtherTypings(DessiaObject):
 
 class MovingStandaloneObject(MovingObject):
     """ Overwrite StandaloneObject to make its 3D move. """
+
     _standalone_in_db = True
 
     def __init__(self, origin: float, name: str = ""):
@@ -636,7 +613,7 @@ class MovingStandaloneObject(MovingObject):
         crls = p2d.ClosedRoundedLineSegments2D(points=points, radius={})
         return crls
 
-    def volmdlr_primitives(self):
+    def volmdlr_primitives(self, **kwargs):
         """ A cube. """
         contour = self.contour()
         volume = p3d.ExtrudedProfile(plane_origin=vm.O3D, x=vm.X3D, y=vm.Z3D, outer_contour2d=contour,
@@ -657,14 +634,10 @@ class Generator(DessiaObject):
     A class that allow to generate several StandaloneObjects from different parameters.
 
     :param parameter: An "offset" for the seed that will be used in generation
-    :type parameter: int
-
     :param nb_solutions: The max number of solutions that will be generated
-    :type nb_solutions: int
-
     :param name: The name of the Generator. It is not used in object generation
-    :type name: str
     """
+
     _standalone_in_db = True
 
     def __init__(self, parameter: int, nb_solutions: int = 25, models: List[StandaloneObject] = None, name: str = ''):
@@ -685,11 +658,9 @@ class Optimizer(DessiaObject):
     Mock an optimization process. Emulates bots Optimizers.
 
     :param model_to_optimize: An object which will be modified (one of its attributes)
-    :type model_to_optimize: StandaloneObject
-
     :param name: Name of the optimizer. Will not be used in the optimization process
-    :type name: str
     """
+
     _standalone_in_db = True
 
     def __init__(self, model_to_optimize: StandaloneObject, name: str = ''):
@@ -702,7 +673,6 @@ class Optimizer(DessiaObject):
         Sum model value with given one.
 
         :param optimization_value: value that will be added to model's intarg attribute
-        :type optimization_value: int
         """
         self.model_to_optimize.standalone_subobject.intarg += optimization_value
         return self.model_to_optimize.standalone_subobject.intarg
@@ -710,6 +680,7 @@ class Optimizer(DessiaObject):
 
 class Container(DessiaObject):
     """ Gather a list of Standalone objects as a container. For 'Catalog' behavior testing purpose. """
+
     _standalone_in_db = True
     _allowed_methods = ["generate_from_text_files"]
 
@@ -729,7 +700,7 @@ class Container(DessiaObject):
 
 
 class NotStandalone(DessiaObject):
-    """A simple non-standalone class."""
+    """ A simple non-standalone class. """
 
     def __init__(self, attribute: int, name: str = ""):
         self.attribute = attribute
@@ -737,7 +708,8 @@ class NotStandalone(DessiaObject):
 
 
 class BottomLevel(DessiaObject):
-    """A simple class at the bottom of the data structure."""
+    """ A simple class at the bottom of the data structure. """
+
     _standalone_in_db = True
 
     def __init__(self, attributes: List[NotStandalone] = None, name: str = ""):
@@ -750,7 +722,8 @@ class BottomLevel(DessiaObject):
 
 
 class MidLevel(DessiaObject):
-    """A simple class at the mid level of the data structure."""
+    """ A simple class at the mid level of the data structure. """
+
     _standalone_in_db = True
     _allowed_methods = ["generate_with_references"]
 
@@ -761,7 +734,7 @@ class MidLevel(DessiaObject):
 
     @classmethod
     def generate_with_references(cls, name: str = "Result Name"):
-        """A fake class generator."""
+        """ A fake class generator. """
         object1 = NotStandalone(attribute=1, name="1")
         object2 = NotStandalone(attribute=1, name="2")
         bottom_level = BottomLevel([object1, object2])
