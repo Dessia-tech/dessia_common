@@ -85,7 +85,7 @@ class WorkflowToScriptTest(unittest.TestCase):
                        "\nblock_12 = Unpacker(indices=[1, 3], name='unpacker_name', position=(55, 44.44))" \
                        "\nblock_13 = MultiPlot(attributes=['multiplot0', 'multiplot1'], name='', position=(77, 66.66))" \
                        "\nblock_14 = Product(number_list=4, name='product_name', position=(88, 77.77))" \
-                       "\nblock_15 = Export(method_type=MethodType(dessia_common.tests.Model, 'save_to_stream'), filename='filename', extension='json', text=True, name='Export', position=(99, 88.88))" \
+                       "\nblock_15 = Export(method_type=MethodType(Model, 'save_to_stream'), filename='filename', extension='json', text=True, name='Export', position=(99, 88.88))" \
                        "\nblocks = [block_0, block_1, block_2, block_3, block_4, block_5, block_6, block_7, block_8, block_9, block_10, block_11, block_12, block_13, block_14, block_15]" \
                        "\n\n" \
                        "\npipe_0 = Pipe(block_0.outputs[0], block_3.inputs[0])" \
