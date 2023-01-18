@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 0.12.0 (now branch dev)
 
+### Changed
+- serialization (to_dict) use some uuids instead of paths for references.
+
 ### Fixed
 
 - Workflow : Serialize Imposed Variable Values
@@ -32,6 +35,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add trivial checks for simple types
 - Avoid redundant serialization in display blocks
 
+### Build
+
+- Update python minimum version to 3.8 (3.7 was not supported in fact)
+- Update scikit learn to minimum 1.2.0 for the parameter metric in Clustering
 
 ### Tests
 
