@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Algebra functions
+Algebra functions.
 """
 from functools import reduce
 
 
 def number2factor(number):
     """
-    Temporary function : Add to some tools package
-    Finds all the ways to combine elements
+    Temporary function : Add to some tools package. Finds all the ways to combine elements.
     """
     factor_range = range(1, int(number ** 0.5) + 1)
 
@@ -28,8 +27,7 @@ def number2factor(number):
 
 def number3factor(number, complete=True):
     """
-    Temporary function : Add to some tools package
-    Finds all the ways to combine elements
+    Temporary function : Add to some tools package. Finds all the ways to combine elements.
     """
     factor_range = range(1, int(number ** 0.5) + 1)
 
@@ -50,8 +48,9 @@ def number3factor(number, complete=True):
 
 
 def get_incomplete_factors(number, factors):
+    # TODO: Write a better docstring.
     """
-    TODO
+    Temporary function : Add to some tools package.
     """
     grids = []
     sets = []

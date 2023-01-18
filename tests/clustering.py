@@ -1,6 +1,5 @@
 """
 Cluster.py package testing.
-
 """
 import json
 from dessia_common.models import all_cars_no_feat, all_cars_wi_feat, rand_data_small, rand_data_large
@@ -19,12 +18,17 @@ big_RandDatas_heterogeneous = Dataset(rand_data_large)
 
 # Build ClusteredDatasets
 clustered_cars_without = ClusteredDataset.from_dbscan(all_cars_without_features, eps=40)
-clustered_cars_without_list = ClusteredDataset.list_dbscan(all_cars_no_feat, eps=40)
-assert(clustered_cars_without_list == clustered_cars_without)
-
 clustered_cars_with = ClusteredDataset.from_dbscan(all_cars_with_features, eps=40)
 aggclustest_clustered = ClusteredDataset.from_agglomerative_clustering(big_RandDatas_heterogeneous, n_clusters=10)
 kmeanstest_clustered = ClusteredDataset.from_kmeans(small_RandDatas_heterogeneous, n_clusters=10, scaling=True)
+
+clustered_cars_with_list = ClusteredDataset.list_dbscan(all_cars_no_feat, eps=40)
+aggclustest_clustered_list = ClusteredDataset.list_agglomerative_clustering(rand_data_large, n_clusters=10)
+kmeanstest_clustered_list = ClusteredDataset.list_kmeans(rand_data_small, n_clusters=10, scaling=True)
+assert(clustered_cars_with_list == clustered_cars_without)
+assert(aggclustest_clustered_list == aggclustest_clustered)
+assert(kmeanstest_clustered_list.n_clusters == 10)
+
 
 # Split lists into labelled lists
 split_cars_without = clustered_cars_without.clustered_sublists()
@@ -39,7 +43,7 @@ assert(clustered_cars_with.cluster_real_centroids('minkowski')[0].to_vector()[1]
 # Test print
 clustered_cars_without.labels[0] = 15000
 clustered_cars_without.labels[1] = -1
-clustered_cars_without.labels[2:100] = [999999]*len(clustered_cars_without[2:100])
+clustered_cars_without.labels[2:100] = [999999] * len(clustered_cars_without[2:100])
 print(clustered_cars_without)
 hlist = Dataset(all_cars_wi_feat, name="cars")
 clist = ClusteredDataset.from_agglomerative_clustering(hlist, n_clusters=10, name="cars")
@@ -95,7 +99,7 @@ try:
     raise ValueError("ClusteredDataset should be summable")
 except Exception as e:
     assert(e.args[0] == "Addition only defined for Dataset. A specific __add__ method is required for " +
-            "<class 'dessia_common.datatools.cluster.ClusteredDataset'>")
+           "<class 'dessia_common.datatools.cluster.ClusteredDataset'>")
 
 # Exports XLS
 clustered_cars_without.to_xlsx('clus_xls.xlsx')

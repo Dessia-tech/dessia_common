@@ -1,6 +1,5 @@
 """
 Library for sampling data.
-
 """
 from typing import List, Type
 
@@ -11,6 +10,7 @@ import pyDOE2 as pyDOE
 from dessia_common.core import DessiaObject
 from dessia_common.datatools.dataset import Dataset
 from dessia_common.optimization import FixedAttributeValue, BoundedAttributeValue
+
 
 class ClassSampler(DessiaObject):
     """
@@ -27,7 +27,6 @@ class ClassSampler(DessiaObject):
 
     :param name: Name of Sampler
     :type name: `str`, `optional`, defaults to `''`
-
     """
     _standalone_in_db = True
     _vector_features = []
@@ -59,12 +58,12 @@ class ClassSampler(DessiaObject):
     def full_factorial(self):
         """
         Generate all `DessiaObject` with a Full Factorial sampling and store them in a `Dataset`.
+
         A number to discretize each dimension of the problem must be specified in used `BoundedAttributeValue` and they
         are the only ones to be used for sampling data.
 
         :return: a `Dataset` containing all generated samples of the sampled_class
         :rtype: `Dataset`
-
         """
         instances_numbers = self._get_instances_numbers()
         parameter_grid = self._build_parameter_grid(instances_numbers)
@@ -77,17 +76,16 @@ class ClassSampler(DessiaObject):
 
     def lhs(self, samples: int, criterion: str):
         """
-        Generate all `DessiaObject` with a Latin Hypercube Sampling (LHS) and store them in a `Dataset`
+        Generate all `DessiaObject` with a Latin Hypercube Sampling (LHS) and store them in a `Dataset`.
+
         Documentation LHS: https://www.statology.org/latin-hypercube-sampling/
 
         :param samples:
-            --------
             Targert number of `DessiaObject` in the DOE.
         :type samples: `int`
 
         :return: a `Dataset` containing all generated samples of the sampled_class
         :rtype: `Dataset`
-
         """
         varying_sampling = pyDOE.lhs(len(self.sampled_attributes), samples=samples, criterion=criterion)
         full_doe = []
@@ -101,20 +99,18 @@ class ClassSampler(DessiaObject):
     def montecarlo(self, samples: int):
         """
         Generate all `DessiaObject` with a Monte-Carlo (random uniform) sampling and store them in a `Dataset`.
-        In other words, it is a random uniform sampling for all dimensions of the problem.
 
+        In other words, it is a random uniform sampling for all dimensions of the problem.
         For example, a two dimensions problem sampled with 100 elements with Monte-Carlo method would result in 100
         samples. Each dimension of each sample would have a random uniform value. Redundancies are allowed with this
         sampling method.
 
         :param samples:
-            --------
             Targert number of `DessiaObject` in the DOE.
         :type samples: `int`
 
         :return: a `Dataset` containing all generated samples of the sampled_class
         :rtype: `Dataset`
-
         """
         full_doe = []
         fixed_values = [attr.value for attr in self.constant_attributes]
@@ -134,21 +130,18 @@ class ClassSampler(DessiaObject):
 
     def make_doe(self, samples: int, method: str = 'fullfact', lhs_criterion: str = 'center', name: str = ''):
         """
-        Generate all `DessiaObject` with the choosen method and store them in a `Dataset`
+        Generate all `DessiaObject` with the choosen method and store them in a `Dataset`.
 
         :param samples:
-            --------
             Targert number of `DessiaObject` in the DOE. Not used for `'fullfact'` method.
         :type samples: `int`
 
         :param method:
-            --------
             Method to generate the DOE.
             Can be one of `[fullfact, lhs, montecarlo]`. For more information, see: https://pythonhosted.org/pyDOE/
         :type method: `str`, `optional`, defaults to `'fullfact'`
 
         :param lhs_criterion:
-            --------
             |  Only used with `'lhs'` method.
             |  A string that tells lhs how to sample the points (default: None, which simply randomizes the points \
             |  within the intervals):
@@ -165,7 +158,7 @@ class ClassSampler(DessiaObject):
         :rtype: `Dataset`
 
         :Examples:
-        >>> from dessia_common.datatools.sampling import Sampler
+        >>> from dessia_common.datatools.sampling import ClassSampler
         >>> from dessia_common.tests import RandDataD2
         >>> sampled_attr = [BoundedAttributeValue('p_1', 150, 250, 3)]
         >>> constant_attr = [FixedAttributeValue('p_2', 42)]
@@ -178,6 +171,5 @@ class ClassSampler(DessiaObject):
         |          |   150.0 |      42 |
         |          |   200.0 |      42 |
         |          |   250.0 |      42 |
-
         """
         return Dataset(self._get_doe(method=method, samples=samples, lhs_criterion=lhs_criterion), name=name)
