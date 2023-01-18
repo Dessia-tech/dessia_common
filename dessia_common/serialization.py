@@ -94,11 +94,6 @@ class SerializableObject(CoreDessiaObject):
         """ Full classname of class like: package.module.submodule.classname. """
         return dcty.full_classname(self)
 
-    def copy(self):
-        """ Copy object. Not implemented at base level. """
-        raise NotImplementedError("Method copy is not implemented for SerializableObject."
-                                  "Please inherit from DessiaObject")
-
 
 def serialize_dict(dict_):
     """ Serialize a dict into a dict (values are serialized). """

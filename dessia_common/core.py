@@ -24,7 +24,6 @@ import traceback as tb
 from importlib import import_module
 from ast import literal_eval
 
-# from dessia_common.abstract import CoreDessiaObject
 import dessia_common.errors
 from dessia_common.utils.diff import data_eq, diff, dict_hash, list_hash
 from dessia_common.utils.types import is_sequence, is_bson_valid, TYPES_FROM_STRING
@@ -47,32 +46,6 @@ import dessia_common.files as dcf
 _FORBIDDEN_ARGNAMES = ['self', 'cls', 'progress_callback', 'return']
 
 _fullargsspec_cache = {}
-
-
-def deprecated(use_instead=None):
-    """
-    Our deprecated decorator.
-    """
-    def decorated(function):
-        def wrapper(*args, **kwargs):
-            deprecation_warning(function.__name__, 'Function', use_instead)
-            print('Traceback : ')
-            tb.print_stack(limit=2)
-            return function(*args, **kwargs)
-        return wrapper
-    return decorated
-
-
-def deprecation_warning(name, object_type, use_instead=None):
-    """
-    Throw a deprecation warning function.
-    """
-    warnings.simplefilter('once', DeprecationWarning)
-    msg = f"\n\n{object_type} {name} is deprecated.\nIt will be removed in a future version.\n"
-    if use_instead is not None:
-        msg += f"Use {use_instead} instead.\n"
-    warnings.warn(msg, DeprecationWarning)
-    return msg
 
 
 class DessiaObject(SerializableObject):
@@ -388,7 +361,11 @@ class DessiaObject(SerializableObject):
 
     @classmethod
     def load_from_stream(cls, stream):
-        """ Build object from stream. Should be consistent with save_to_stream method. """
+        """
+        Generate object from stream using utf-8 encoding.
+
+        Should be consistent with save_to_stream method.
+        """
         dict_ = json.loads(stream.read().decode('utf-8'))
         return cls.dict_to_object(dict_)
 
@@ -429,8 +406,13 @@ class DessiaObject(SerializableObject):
         """ Return whether the object of valid 'above' given level. Default is error, but warnings can be forbidden. """
         return not self.check_list().checks_above_level(level=level)
 
-    def copy(self, deep=True, memo=None):
-        """ Return a shallow or deep copy of the object depending of the value of given 'deep' argument. """
+    def copy(self, deep: bool = True, memo=None):
+        """
+        Copy object.
+
+        :param deep: If False, perform a shallow copy. If True, perform a deepcopy.
+        :param memo: A dict that keep track of references.
+        """
         if deep:
             return deepcopy(self, memo=memo)
         return copy(self)
@@ -471,7 +453,7 @@ class DessiaObject(SerializableObject):
                 dict_[arg] = deepcopy_value(getattr(self, arg), memo=memo)
         return self.__class__(**dict_)
 
-    def plot_data(self, **kwargs):
+    def plot_data(self, reference_path: str = "#", **kwargs):
         """
         Base plot_data method. Overwrite this to display 2D or graphs on plateforme.
 
@@ -479,11 +461,11 @@ class DessiaObject(SerializableObject):
         """
         return []
 
-    def plot(self, **kwargs):
+    def plot(self, reference_path: str = "#", **kwargs):
         """ Generic plot getting plot_data function to plot. """
         if hasattr(self, 'plot_data'):
             import plot_data
-            for data in self.plot_data(**kwargs):  # TODO solve inconsistence with the plot_data method just above
+            for data in self.plot_data(reference_path, **kwargs):
                 plot_data.plot_canvas(plot_data_object=data,
                                       canvas_id='canvas',
                                       width=1400, height=900,
@@ -507,21 +489,18 @@ class DessiaObject(SerializableObject):
         else:
             msg = f"Class '{self.__class__.__name__}' does not implement a plot_data method to define what to plot"
             raise NotImplementedError(msg)
-
         return axs
 
     @staticmethod
     def display_settings() -> List[DisplaySetting]:
-        """ Returns a list of json describing how to call subdisplays. """
-        return [DisplaySetting('markdown', 'markdown', 'to_markdown', None),
-                DisplaySetting('plot_data', 'plot_data', 'plot_data', None, serialize_data=True)]
+        """ Return a list of objects describing how to call subdisplays. """
+        return [DisplaySetting(selector="markdown", type_="markdown", method="to_markdown"),
+                DisplaySetting(selector="plot_data", type_="plot_data", method="plot_data", serialize_data=True)]
 
-    def _display_from_selector(self, selector: str, **kwargs) -> DisplayObject:
+    def _display_from_selector(self, selector: str) -> DisplayObject:
         """ Generate the display from the selector. """
-        reference_path = kwargs.get('reference_path', '')
-
         display_setting = self._display_settings_from_selector(selector)
-        track = ''
+        track = ""
         try:
             data = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
         except:
@@ -530,6 +509,7 @@ class DessiaObject(SerializableObject):
 
         if display_setting.serialize_data:
             data = serialize(data)
+        reference_path = display_setting.reference_path  # Trying this
         return DisplayObject(type_=display_setting.type, data=data, reference_path=reference_path, traceback=track)
 
     def _display_settings_from_selector(self, selector: str):
@@ -539,22 +519,19 @@ class DessiaObject(SerializableObject):
                 return display_setting
         raise ValueError(f"No such selector '{selector}' in display of class '{self.__class__.__name__}'")
 
-    def _displays(self, **kwargs) -> List[JsonSerializable]:
+    def _displays(self) -> List[JsonSerializable]:
         """ Generate displays of the object to be plot in the DessiA Platform. """
-        reference_path = kwargs.get('reference_path', '')
-
         displays = []
         for display_setting in self.display_settings():
-            display_ = self._display_from_selector(display_setting.selector, reference_path=reference_path)
+            display_ = self._display_from_selector(display_setting.selector)
             displays.append(display_.to_dict())
         return displays
 
     def to_markdown(self) -> str:
         """ Render a markdown of the object output type: string. """
-        md_writer = MarkdownWriter(print_limit=25, table_limit=None)
-        return templates.dessia_object_markdown_template.substitute(name=self.name,
-                                                                    class_=self.__class__.__name__,
-                                                                    table=md_writer.object_table(self))
+        writer = MarkdownWriter(print_limit=25, table_limit=None)
+        template = templates.dessia_object_markdown_template
+        return template.substitute(name=self.name, class_=self.__class__.__name__, table=writer.object_table(self))
 
     def performance_analysis(self):
         """ Print time of rendering some commons operations (serialization, hash, displays). """
@@ -616,7 +593,7 @@ class DessiaObject(SerializableObject):
         return CheckList(checks)
 
     def to_xlsx(self, filepath: str):
-        """ Exports the object to an XLSX file given by the filepath. """
+        """ Export the object to an XLSX file given by the filepath. """
         if not filepath.endswith('.xlsx'):
             filepath += '.xlsx'
             print(f'Changing name to {filepath}')
@@ -625,12 +602,12 @@ class DessiaObject(SerializableObject):
             self.to_xlsx_stream(file)
 
     def to_xlsx_stream(self, stream):
-        """ Exports the object to an XLSX to a given stream. """
+        """ Export the object to an XLSX to a given stream. """
         writer = XLSXWriter(self)
         writer.save_to_stream(stream)
 
     def _export_formats(self) -> List[ExportFormat]:
-        """ Define export formats for base .json and .xlsx exports. """
+        """ Return a list of objects describing how to call generic exports (.json, .xlsx). """
         formats = [ExportFormat(selector="json", extension="json", method_name="save_to_stream", text=True),
                    ExportFormat(selector="xlsx", extension="xlsx", method_name="to_xlsx_stream", text=False)]
         return formats
@@ -671,7 +648,7 @@ class DessiaObject(SerializableObject):
 
 
 class PhysicalObject(DessiaObject):
-    """Represent an object with CAD capabilities."""
+    """ Represent an object with CAD capabilities. """
 
     @staticmethod
     def display_settings():
@@ -681,7 +658,7 @@ class PhysicalObject(DessiaObject):
                                                method='volmdlr_volume_model().babylon_data', serialize_data=True))
         return display_settings
 
-    def volmdlr_primitives(self):
+    def volmdlr_primitives(self, **kwargs):
         """ Return a list of volmdlr primitives to build up volume model. """
         return []
 
@@ -752,6 +729,7 @@ class PhysicalObject(DessiaObject):
         self.volmdlr_volume_model(**kwargs).save_babylonjs_to_file(filename=filename, use_cdn=use_cdn, debug=debug)
 
     def _export_formats(self) -> List[ExportFormat]:
+        """ Return a list of objects describing how to call 3D exports. """
         formats = DessiaObject._export_formats(self)
         formats3d = [ExportFormat(selector="step", extension="step", method_name="to_step_stream", text=True),
                      ExportFormat(selector="stl", extension="stl", method_name="to_stl_stream", text=False),
@@ -770,8 +748,7 @@ class MovingObject(PhysicalObject):
     def volmdlr_volume_model(self, **kwargs):
         """ Volume model of Moving Object. """
         import volmdlr as vm  # !!! Avoid circular imports, is this OK ?
-        return vm.core.MovingVolumeModel(self.volmdlr_primitives(**kwargs),
-                                         self.volmdlr_primitives_step_frames(**kwargs))
+        return vm.core.MovingVolumeModel(self.volmdlr_primitives(**kwargs), self.volmdlr_primitives_step_frames())
 
 
 class Parameter(DessiaObject):
