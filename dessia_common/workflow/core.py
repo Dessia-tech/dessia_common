@@ -1417,9 +1417,10 @@ class WorkflowState(DessiaObject):
             else:
                 raise ValueError(f"WorkflowState Copy Error : item {item} cannot be activated")
             activated_items[copied_item] = value
-        return self.__class__(workflow=workflow, input_values=input_values, activated_items=activated_items, values=values,
-                              start_time=self.start_time, end_time=self.end_time,
-                              output_value=deepcopy_value(value=self.output_value, memo=memo), log=self.log, name=self.name)
+        return self.__class__(workflow=workflow, input_values=input_values, activated_items=activated_items,
+                              values=values, start_time=self.start_time, end_time=self.end_time,
+                              output_value=deepcopy_value(value=self.output_value, memo=memo),
+                              log=self.log, name=self.name)
 
     def _data_hash(self):
         workflow = hash(self.workflow)

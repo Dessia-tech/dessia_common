@@ -276,7 +276,7 @@ class DessiaObject(SerializableObject):
 
         for method_name in valid_method_names:
             method = getattr(class_, method_name)
-            jsonschemas[method_name] = method_jsonschema(method)
+            jsonschemas[method_name] = compute_method_jsonschema(method)
         return jsonschemas
 
     def method_dict(self, method_name=None, method_jsonschema=None):
@@ -1309,7 +1309,7 @@ def get_attribute_names(object_class):
     return attributes
 
 
-def method_jsonschema(method):
+def compute_method_jsonschema(method):
     jsonschema = {}
     if not isinstance(method, property):
         required_args, default_args = inspect_arguments(method=method, merge=False)

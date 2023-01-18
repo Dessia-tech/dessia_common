@@ -70,6 +70,21 @@ class TreeGenerator(Generator):
         model = self.model_from_vector(vector)
         return self.number_possibilities_from_model(model)
 
+    def is_model_valid(self, model) -> bool:
+        """
+        Checks if Model is valid or not.
+
+        :param model: Model generated
+
+        :return: True if valid and False othewise
+        :rtype: bool
+        """
+        raise NotImplementedError('the method is_model_valid must be overloaded by subclassing class')
+
+    def number_possibilities_from_model(self, model):
+        """ Not Implemented. """
+        raise NotImplementedError('the method number_possibilities_from_model must be overloaded by subclassing class')
+
 
 class DecisionTreeGenerator(TreeGenerator):
     """
@@ -115,6 +130,31 @@ class DecisionTreeGenerator(TreeGenerator):
 
             self.tree.NextNode(valid)
 
+    def model_from_vector(self, vector: List[int]):
+        """
+        Generates the physical model from vector node.
+
+        :param vector: decision tree node vector
+        :type vector: List[int]
+        :return: model
+        """
+        raise NotImplementedError('the method model_from_vector must be overloaded by subclassing class')
+
+    def is_model_valid(self, model) -> bool:
+        """
+        Checks if Model is valid or not.
+
+        :param model: Model generated
+
+        :return: True if valid and False othewise
+        :rtype: bool
+        """
+        raise NotImplementedError('the method is_model_valid must be overloaded by subclassing class')
+
+    def number_possibilities_from_model(self, model):
+        """ Not Implemented. """
+        raise NotImplementedError('the method number_possibilities_from_model must be overloaded by subclassing class')
+
 
 class RegularDecisionTreeGenerator(TreeGenerator):
     """
@@ -129,9 +169,7 @@ class RegularDecisionTreeGenerator(TreeGenerator):
         tree = dt.RegularDecisionTree(number_possibilities)
         TreeGenerator.__init__(self, tree=tree, name=name)
 
-    def generate(self, sorted_nodes: bool = False,
-                 unique_nodes: bool = False,
-                 verbose: bool = False):
+    def generate(self, sorted_nodes: bool = False, unique_nodes: bool = False, verbose: bool = False):
         """
         Generates solutions.
 
@@ -164,3 +202,28 @@ class RegularDecisionTreeGenerator(TreeGenerator):
                     yield model
 
             next_node_function(valid)
+
+    def model_from_vector(self, vector: List[int]):
+        """
+        Generates the physical model from vector node.
+
+        :param vector: decision tree node vector
+        :type vector: List[int]
+        :return: model
+        """
+        raise NotImplementedError('the method model_from_vector must be overloaded by subclassing class')
+
+    def is_model_valid(self, model) -> bool:
+        """
+        Checks if Model is valid or not.
+
+        :param model: Model generated
+
+        :return: True if valid and False othewise
+        :rtype: bool
+        """
+        raise NotImplementedError('the method is_model_valid must be overloaded by subclassing class')
+
+    def number_possibilities_from_model(self, model):
+        """ Not Implemented. """
+        raise NotImplementedError('the method number_possibilities_from_model must be overloaded by subclassing class')
