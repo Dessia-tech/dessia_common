@@ -18,6 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - serialization (to_dict) use some uuids instead of paths for references.
 
 ### Fixed
+
+- Workflow : Serialize Imposed Variable Values
+- Workflow : to_script Export now write only class name instead of full_classname
 - Hot fix for is_valid method of workflow's Block
 - Core : add a boolean for platform checking in check_list. Fixes a problem with testing classes not existing
 
@@ -51,6 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Merge back master to dev
 - Docs weekly decrease
 - Fixed all remaining pydocstyle errors
+
 
 ## 0.11.0
 
