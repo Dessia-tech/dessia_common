@@ -7,8 +7,7 @@ from datetime import date
 print(f"Pydocstyle version: {pydocstyle.__version__}")
 
 file_list = filter(lambda z: not z.endswith("__init__.py"),
-                   [y for x in os.walk("./dessia_common")
-                    for y in glob(os.path.join(x[0], "*.py"))])
+                   [y for x in os.walk("./dessia_common") for y in glob(os.path.join(x[0], "*.py"))])
 
 UNWATCHED_ERRORS = [
     # Do not watch these errors
@@ -69,5 +68,5 @@ if error_detected:
     raise RuntimeError("Too many errors\nRun pydocstyle dessia_common to get the errors")
 
 if error_over_ratchet_limit:
-    raise RuntimeError(
-        "Please lower the error limits in code_pydocstyle.py MAX_ERROR_BY_TYPE according to warnings above")
+    msg = "Please lower the error limits in code_pydocstyle.py MAX_ERROR_BY_TYPE according to warnings above"
+    raise RuntimeError(msg)
