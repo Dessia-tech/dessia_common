@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-""" Module for docstring parsing to platform and Sphinx auto documentation. """
+"""
+Module for docstring parsing to platform and Sphinx auto documentation.
+"""
 
 from inspect import isclass, ismethod, isfunction
 from typing import Dict, Any, Tuple, get_type_hints
-from dessia_common.serialization import serialize
+from dessia_common.utils.types import serialize_typing
 
 try:
     from typing import TypedDict  # >=3.8
@@ -50,9 +52,11 @@ def parse_docstring(docstring: str, annotations: Dict[str, Any]) -> ParsedDocstr
 
 def parse_attribute(param, annotations) -> Tuple[str, ParsedAttribute]:
     """ Extract attribute from user-defined docstring. """
+    if ":type" in param:
+        param = param.split(":type ")[0]
     argname, argdesc = param.split(":", maxsplit=1)
     annotation = annotations[argname]
-    parsed_attribute = {'desc': argdesc.strip(), 'type_': serialize(annotation), 'annotation': str(annotation)}
+    parsed_attribute = {'desc': argdesc.strip(), 'type_': serialize_typing(annotation), 'annotation': str(annotation)}
     return argname, parsed_attribute
 
 
