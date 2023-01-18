@@ -213,7 +213,6 @@ def deep_getsizeof(obj, ids=None):
     :param ids:
     :return:
     """
-
     if ids is None:
         ids = set()
 

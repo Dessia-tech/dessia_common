@@ -96,6 +96,7 @@ class DessiaObject(SerializableObject):
     :ivar str name: Name of object.
     :ivar Any kwargs: Additionnal user metadata
     """
+
     _standalone_in_db = False
     _non_editable_attributes = []
     _non_data_eq_attributes = ['name']
@@ -110,9 +111,6 @@ class DessiaObject(SerializableObject):
     _whitelist_attributes = []
 
     def __init__(self, name: str = '', **kwargs):
-        """
-        Generic init of DessiA Object. Only store name in self. To be overload and call in specific class init.
-        """
         self.name = name
         for property_name, property_value in kwargs.items():
             setattr(self, property_name, property_value)
@@ -145,16 +143,12 @@ class DessiaObject(SerializableObject):
         return object.__eq__(self, other_object)
 
     def _data_eq_dict(self):
-        """
-        Returns a dict of what to look at for data eq. Keys in non data eq attributes are removed.
-        """
+        """ Returns a dict of what to look at for data eq. Keys in non data eq attributes are removed. """
         return {k: v for k, v in self._serializable_dict().items()
                 if k not in self._non_data_eq_attributes + ['package_version', 'name']}
 
     def _data_eq(self, other_object) -> bool:
-        """
-        Returns if the object is equal to the other object in the sense of data contained in the objects.
-        """
+        """ Returns if the object is equal to the other object in the sense of data contained in the objects. """
         return data_eq(self, other_object)
 
     def _data_hash(self):
@@ -268,9 +262,7 @@ class DessiaObject(SerializableObject):
 
     @property
     def _method_jsonschemas(self):
-        """
-        Generates dynamic jsonschemas for methods of class.
-        """
+        """ Generates dynamic jsonschemas for methods of class. """
         jsonschemas = {}
         class_ = self.__class__
 
@@ -309,9 +301,7 @@ class DessiaObject(SerializableObject):
         return jsonschemas
 
     def method_dict(self, method_name=None, method_jsonschema=None):
-        """
-        Return a jsonschema of a method arguments.
-        """
+        """ Return a jsonschema of a method arguments. """
         if method_name is None and method_jsonschema is None:
             msg = 'No method name nor jsonschema provided'
             raise NotImplementedError(msg)
@@ -323,9 +313,7 @@ class DessiaObject(SerializableObject):
         return dict_
 
     def dict_to_arguments(self, dict_, method):
-        """
-        Transform serialized argument of a method to python objects ready to use in method evaluation.
-        """
+        """ Transform serialized argument of a method to python objects ready to use in method evaluation. """
         method_full_name = f'{self.full_classname}.{method}'
         if method_full_name in _fullargsspec_cache:
             args_specs = _fullargsspec_cache[method_full_name]
@@ -415,9 +403,7 @@ class DessiaObject(SerializableObject):
         return check_list
 
     def is_valid(self, level='error'):
-        """
-        Return whether the object of valid 'above' given level. Default is error, but warnings can be forbidden.
-        """
+        """ Return whether the object of valid 'above' given level. Default is error, but warnings can be forbidden. """
         return not self.check_list().checks_above_level(level=level)
 
     def copy(self, deep: bool = True, memo=None):
@@ -666,18 +652,18 @@ class PhysicalObject(DessiaObject):
 
     @staticmethod
     def display_settings():
-        """Returns a list of json describing how to call subdisplays."""
+        """ Returns a list of json describing how to call subdisplays. """
         display_settings = DessiaObject.display_settings()
         display_settings.append(DisplaySetting(selector='cad', type_='babylon_data',
                                                method='volmdlr_volume_model().babylon_data', serialize_data=True))
         return display_settings
 
     def volmdlr_primitives(self, **kwargs):
-        """Return a list of volmdlr primitives to build up volume model."""
+        """ Return a list of volmdlr primitives to build up volume model. """
         return []
 
     def volmdlr_volume_model(self, **kwargs):
-        """Gives the volmdlr VolumeModel."""
+        """ Gives the volmdlr VolumeModel. """
         import volmdlr as vm  # !!! Avoid circular imports, is this OK ?
         return vm.core.VolumeModel(self.volmdlr_primitives(**kwargs))
 
@@ -691,12 +677,14 @@ class PhysicalObject(DessiaObject):
 
     def to_step_stream(self, stream):
         """
-        Exports the CAD of the object to a stream in the STEP format. Works if the class define a custom volmdlr model.
+        Export object CAD to given stream in .stp format.
+
+        Works if the class define a custom volmdlr model.
         """
         return self.volmdlr_volume_model().to_step_stream(stream=stream)
 
     def to_html_stream(self, stream: dcf.StringFile):
-        """Exports the CAD of the object to a stream in the html format."""
+        """ Exports Object CAD to given stream in the .html format. """
         model = self.volmdlr_volume_model()
         babylon_data = model.babylon_data()
         script = model.babylonjs_script(babylon_data)
@@ -705,9 +693,7 @@ class PhysicalObject(DessiaObject):
         return stream
 
     def to_stl_stream(self, stream):
-        """
-        Exports the CAD of the object to STL to a given stream.
-        """
+        """ Export Object CAD to given stream in .stl format. """
         return self.volmdlr_volume_model().to_stl_stream(stream=stream)
 
     def to_stl(self, filepath):
@@ -725,7 +711,7 @@ class PhysicalObject(DessiaObject):
     #     return DessiaObject._displays(self, **kwargs)
 
     def babylonjs(self, use_cdn=True, debug=False, **kwargs):
-        """Show the 3D volmdlr of an object by calling volmdlr_volume_model method and plot in in browser."""
+        """ Show the 3D volmdlr of an object by calling volmdlr_volume_model method and plot in in browser. """
         self.volmdlr_volume_model(**kwargs).babylonjs(use_cdn=use_cdn, debug=debug)
 
     def save_babylonjs_to_file(self, filename: str = None, use_cdn: bool = True, debug: bool = False, **kwargs):
@@ -852,6 +838,7 @@ class DessiaFilter(DessiaObject):
         * equal: ==, eq
         * different: !=, ne
     """
+
     _REAL_OPERATORS = {'>': operator.gt, '<': operator.lt, '>=': operator.ge, '<=': operator.le, '==': operator.eq,
                        '!=': operator.ne, 'gt': operator.gt, 'lt': operator.lt, 'ge': operator.ge, 'le': operator.le,
                        'eq': operator.eq, 'ne': operator.ne, 'gte': operator.ge, 'lte': operator.le}
@@ -984,6 +971,7 @@ class FiltersList(DessiaObject):
 
     :Logical operators: `'and'`, `'or'`, `'xor'`
     """
+
     _standalone_in_db = True
 
     def __init__(self, filters: List[DessiaFilter], logical_operator: str = 'and', name: str = ''):
@@ -1327,9 +1315,7 @@ def split_argspecs(argspecs) -> Tuple[int, int]:
 
 
 def get_attribute_names(object_class):
-    """
-    Get all attributes of a class which are present in __init__ method or numeric attributes and not in parent class.
-    """
+    """ Get all attributes of a class which are present in __init__ or numeric attributes and not in parent class. """
     attributes = [attribute[0] for attribute in inspect.getmembers(object_class, lambda x: not inspect.isroutine(x))
                   if not attribute[0].startswith('__')
                   and not attribute[0].endswith('__')
