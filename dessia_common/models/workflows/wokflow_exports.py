@@ -1,5 +1,5 @@
 """
-Script for workflow with exports creationZ
+Script for workflow with exports creationZ.
 """
 
 from dessia_common.workflow.core import TypedVariable, Pipe, Workflow

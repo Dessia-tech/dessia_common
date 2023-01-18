@@ -2,7 +2,7 @@ from dessia_common.forms import Optimizer, StandaloneObject
 from dessia_common.typings import MethodType
 from dessia_common.workflow.core import Pipe, Workflow
 from dessia_common.workflow.blocks import InstantiateModel, ModelMethod, ModelAttribute
-from dessia_common.utils.serialization import serialize
+from dessia_common.serialization import serialize
 
 import unittest
 from parameterized import parameterized
@@ -37,20 +37,21 @@ class TestMethodDict(unittest.TestCase):
     @parameterized.expand([
         (optimization_workflow, {1: "", 2: 3}),
         (optimization_workflow2, {1: "custom_name", 2: 3}),
+        (optimization_workflow3, {0: object_dict, 1: "custom_name", 2: 3})
     ])
     def test_method_dict_is_valid(self, workflow, expected_dict):
         self.assertEqual(expected_dict, workflow.method_dict(method_name='run'))
 
-    @parameterized.expand([
-        (optimization_workflow3, {0: object_dict, 1: "custom_name", 2: 3})
-    ])
-    def test_method_dict_serialize_ivv(self, workflow, expected_dict):
-        run_dict = workflow.method_dict(method_name='run')
-        object_value = run_dict[0]
-        self.assertTrue(len(object_value.keys()) == 17)
-        self.assertIn("name", object_value)
-        self.assertIn("object_class", object_value)
-        self.assertIn("standalone_subobject", object_value)
-        self.assertIn("package_version", object_value)
-        self.assertEqual(object_value["tuple_arg"], ["value", 3])
-        self.assertEqual(object_value["intarg"], 1)
+    # @parameterized.expand([
+    #     (optimization_workflow3, {0: object_dict, 1: "custom_name", 2: 3})
+    # ])
+    # def test_method_dict_serialize_ivv(self, workflow, expected_dict):
+        # run_dict = workflow.method_dict(method_name='run')
+        # computed_dict = run_dict[0]
+        # self.assertTrue(len(computed_dict.keys()) == 15)
+        # self.assertIn("name", computed_dict)
+        # self.assertIn("object_class", computed_dict)
+        # self.assertIn("standalone_subobject", computed_dict)
+        # self.assertIn("package_version", computed_dict)
+        # self.assertEqual(computed_dict["tuple_arg"], ["value", 3])
+        # self.assertEqual(computed_dict["standalone_subobject"]["intarg"], 1)

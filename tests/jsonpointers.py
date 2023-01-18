@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 
+from dessia_common.forms import DEF_SO
 from dessia_common.core import DessiaObject
 from dessia_common.models.forms import standalone_object
 
@@ -12,7 +13,7 @@ from parameterized import parameterized
 class TestSerialization(unittest.TestCase):
 
     @parameterized.expand([
-        (standalone_object,),
+        (DEF_SO,),
     ])
     def test_objects_serialization_deserialization(self, my_obj):
         d = my_obj.to_dict()
