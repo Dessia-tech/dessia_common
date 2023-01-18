@@ -311,28 +311,7 @@ class DessiaObject(SerializableObject):
 
         for method_name in valid_method_names:
             method = getattr(class_, method_name)
-
-            if not isinstance(method, property):
-                required_args, default_args = inspect_arguments(method=method, merge=False)
-                annotations = get_type_hints(method)
-                if annotations:
-                    jsonschemas[method_name] = deepcopy(JSONSCHEMA_HEADER)
-                    jsonschemas[method_name]['required'] = []
-                    jsonschemas[method_name]['is_method'] = True
-                    for i, annotation in enumerate(annotations.items()):
-                        # TOCHECK Not actually ordered
-                        argname = annotation[0]
-                        if argname not in _FORBIDDEN_ARGNAMES:
-                            if argname in required_args:
-                                jsonschemas[method_name]['required'].append(str(i))
-                            jsonschema_element = jsonschema_from_annotation(annotation, {}, i)[argname]
-
-                            jsonschemas[method_name]['properties'][str(i)] = jsonschema_element
-                            if argname in default_args:
-                                default = set_default_value(jsonschemas[method_name]['properties'],
-                                                            str(i),
-                                                            default_args[argname])
-                                jsonschemas[method_name]['properties'].update(default)
+            jsonschemas[method_name] = method_jsonschema(method)
         return jsonschemas
 
     def method_dict(self, method_name=None, method_jsonschema=None):
@@ -1369,3 +1348,29 @@ def get_attribute_names(object_class):
     attributes += [attribute for attribute in subclass_numeric_attributes
                    if attribute not in _FORBIDDEN_ARGNAMES]
     return attributes
+
+
+def method_jsonschema(method):
+    jsonschema = {}
+    if not isinstance(method, property):
+        required_args, default_args = inspect_arguments(method=method, merge=False)
+        annotations = get_type_hints(method)
+        if annotations:
+            jsonschema = deepcopy(JSONSCHEMA_HEADER)
+            jsonschema['required'] = []
+            jsonschema['is_method'] = True
+            for i, annotation in enumerate(annotations.items()):
+                # TOCHECK Not actually ordered
+                argname = annotation[0]
+                if argname not in _FORBIDDEN_ARGNAMES:
+                    if argname in required_args:
+                        jsonschema['required'].append(str(i))
+                    jsonschema_element = jsonschema_from_annotation(annotation, {}, i)[argname]
+
+                    jsonschema['properties'][str(i)] = jsonschema_element
+                    if argname in default_args:
+                        default = set_default_value(jsonschema['properties'],
+                                                    str(i),
+                                                    default_args[argname])
+                        jsonschema['properties'].update(default)
+    return jsonschema
