@@ -5,12 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
 ## 0.12.0 (now branch dev)
 
 ### Changed
 - serialization (to_dict) use some uuids instead of paths for references.
 
 ### Fixed
+
+- Workflow : Serialize Imposed Variable Values
+- Workflow : to_script Export now write only class name instead of full_classname
 - Hot fix for is_valid method of workflow's Block
 - Core : add a boolean for platform checking in check_list. Fixes a problem with testing classes not existing
 
@@ -44,6 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Merge back master to dev
 - Docs weekly decrease
 - Fixed all remaining pydocstyle errors
+
 
 ## 0.11.0
 
