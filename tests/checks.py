@@ -4,6 +4,7 @@ import dessia_common.checks as checks
 
 class Battery(DessiaObject):
     """ Mock a battery. """
+
     def __init__(self, capacity: float, number_cells: int, name: str = ''):
 
         DessiaObject.__init__(self, name=name)
@@ -40,6 +41,7 @@ assert raised
 
 class ElectricChar2(DessiaObject):
     """ Mock a system using a battery. """
+
     def __init__(self, battery: Battery, brand: str, model: str, price: int, autonomy: int, name: str = ''):
 
         DessiaObject.__init__(self, name=name)
