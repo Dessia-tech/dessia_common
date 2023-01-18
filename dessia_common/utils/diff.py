@@ -16,6 +16,7 @@ from dessia_common.files import BinaryFile, StringFile
 
 class DifferentValues:
     """ Contains info on diff different values. """
+
     def __init__(self, path, value1, value2):
         self.path = path
         self.value1 = value1
@@ -27,6 +28,7 @@ class DifferentValues:
 
 class MissingAttribute:
     """ Contains info on diff missing attribute. """
+
     def __init__(self, path: str, missing_in_first_object: bool):
         self.path = path
         self.missing_in_first_object = missing_in_first_object
@@ -40,6 +42,7 @@ class MissingAttribute:
 
 class DifferentType:
     """ Contains info on diff different types. """
+
     def __init__(self, path: str, value1, value2):
         self.path = path
         self.value1 = value1
@@ -51,6 +54,7 @@ class DifferentType:
 
 class Diff:
     """ Contains info on a performed diff analysis between two values. """
+
     def __init__(self, different_values: List[DifferentValues], missing_attributes: List[MissingAttribute],
                  invalid_types: List[DifferentType]):
         self.different_values = different_values

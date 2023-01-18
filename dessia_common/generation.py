@@ -10,6 +10,7 @@ class Generator(DessiaObject):
     """
     Common parts of generator.
     """
+
     def __init__(self, name: str = ''):
         DessiaObject.__init__(self, name=name)
 

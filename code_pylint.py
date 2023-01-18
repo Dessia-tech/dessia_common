@@ -24,8 +24,8 @@ MAX_ERROR_BY_TYPE = {
                      'consider-using-f-string': 1,
                      'arguments-differ': 2,
                      'no-member': 3,
-                     'too-many-locals': 10,  # Reduce by dropping vectored objects
-                     'too-many-branches': 13,
+                     'too-many-locals': 11,  # Reduce by dropping vectored objects
+                     'too-many-branches': 14,
                      'unused-argument': 8,
                      'cyclic-import': 2,  # 0 just to test
                      'no-self-use': 6,

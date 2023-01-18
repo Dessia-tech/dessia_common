@@ -40,7 +40,10 @@ class GeometricInconsistance(FailedCheck):
 
 
 class CheckList:
-    """ A list of checks result. """
+    """
+    A list of checks result.
+    """
+
     def __init__(self, checks: List[PassedCheck]):
         self.checks = checks
 
