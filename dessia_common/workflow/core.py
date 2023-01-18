@@ -53,7 +53,7 @@ class Variable(DessiaObject):
         else:
             self.position = position
 
-    def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
+    def to_dict(self, use_pointers=True, memo=None, path: str = '#', id_method=True, id_memo=None):
         """ Serialize the variable with custom logic. """
         dict_ = DessiaObject.base_dict(self)
         dict_.update({'has_default_value': self.has_default_value, 'position': self.position})
@@ -79,7 +79,7 @@ class TypedVariable(Variable):
         Variable.__init__(self, name=name, position=position)
         self.type_ = type_
 
-    def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
+    def to_dict(self, use_pointers=True, memo=None, path: str = '#', id_method=True, id_memo=None):
         """ Serializes the object with specific logic. """
         dict_ = super().to_dict(use_pointers, memo, path)
         dict_.update({'type_': serialize_typing(self.type_)})
@@ -135,7 +135,7 @@ class TypedVariableWithDefaultValue(TypedVariable):
         TypedVariable.__init__(self, type_=type_, name=name, position=position)
         self.default_value = default_value
 
-    def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#'):
+    def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#', id_method=True, id_memo=None):
         """ Serialize the variable with custom logic. """
         dict_ = super().to_dict(use_pointers, memo, path)
         dict_.update({'default_value': serialize(self.default_value)})
@@ -227,7 +227,7 @@ class Block(DessiaObject):
         """
         return self.__class__.__name__ == other.__class__.__name__
 
-    def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#'):
+    def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#', id_method=True, id_memo=None):
         """ Serialize the block with custom logic. """
         dict_ = DessiaObject.base_dict(self)
         dict_['inputs'] = [i.to_dict() for i in self.inputs]
@@ -285,7 +285,7 @@ class Pipe(DessiaObject):
         self.memorize = False
         DessiaObject.__init__(self, name=name)
 
-    def to_dict(self, use_pointers=True, memo=None, path: str = '#'):
+    def to_dict(self, use_pointers=True, memo=None, path: str = '#', id_method=True, id_memo=None):
         """ Transform the pipe into a dict. """
         return {'input_variable': self.input_variable, 'output_variable': self.output_variable,
                 'memorize': self.memorize}
@@ -710,7 +710,7 @@ class Workflow(Block):
         jsonschemas['start_run']['required'] = []
         return jsonschemas
 
-    def to_dict(self, use_pointers=True, memo=None, path='#'):
+    def to_dict(self, use_pointers=True, memo=None, path='#', id_method=True, id_memo=None):
         """
         Compute a dict from the object content.
         """
@@ -832,7 +832,7 @@ class Workflow(Block):
         for input_index, input_ in enumerate(copied_workflow.inputs):
             variable_index = copied_workflow.variables.index(input_)
             if variable_index in copied_ivv.keys():
-                dict_[input_index] = copied_ivv[variable_index]
+                dict_[input_index] = serialize(copied_ivv[variable_index])
             elif isinstance(input_, TypedVariableWithDefaultValue):
                 dict_[input_index] = serialize(input_.default_value)
 
@@ -1615,12 +1615,13 @@ class WorkflowState(DessiaObject):
                     return False
         return True
 
-    def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#'):
+    def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#', id_method=True, id_memo=None):
         """
         Transform object into a dict.
         """
         if memo is None:
             memo = {}
+        id_memo = {}
 
         if use_pointers:
             workflow_dict = self.workflow.to_dict(path=f'{path}/workflow', memo=memo)
@@ -1637,7 +1638,8 @@ class WorkflowState(DessiaObject):
         for input_, value in self.input_values.items():
             if use_pointers:
                 serialized_v, memo = serialize_with_pointers(value=value, memo=memo,
-                                                             path=f"{path}/input_values/{input_}")
+                                                             path=f"{path}/input_values/{input_}",
+                                                             id_memo=id_memo)
             else:
                 serialized_v = serialize(value)
             input_values[str(input_)] = serialized_v
@@ -1648,7 +1650,8 @@ class WorkflowState(DessiaObject):
         if self.output_value is not None:
             if use_pointers:
                 serialized_output_value, memo = serialize_with_pointers(self.output_value, memo=memo,
-                                                                        path=f'{path}/output_value')
+                                                                        path=f'{path}/output_value',
+                                                                        id_memo=id_memo)
             else:
                 serialized_output_value = serialize(self.output_value)
 
@@ -1662,7 +1665,8 @@ class WorkflowState(DessiaObject):
             if use_pointers:
                 try:
                     serialized_value, memo = serialize_with_pointers(value=value, memo=memo,
-                                                                     path=f"{path}/values/{pipe_index}")
+                                                                     path=f"{path}/values/{pipe_index}",
+                                                                     id_memo=id_memo)
                     values[str(pipe_index)] = serialized_value
                 except SerializationError:
                     warnings.warn(f"unable to serialize {value}, dropping it from workflow state/run values",
@@ -1680,7 +1684,7 @@ class WorkflowState(DessiaObject):
 
         dict_['evaluated_variables_indices'] = [self.workflow.variable_indices(v) for v in self.workflow.variables
                                                 if v in self.activated_items and self.activated_items[v]]
-
+        dict_["_references"] = id_memo
         # Uncomment when refs are handled as dict keys
         # activated_items = {}
         # for key, activated in self.activated_items.items():
@@ -2096,7 +2100,7 @@ class WorkflowRun(WorkflowState):
                                activated_items=activated_items, values=filtered_values, start_time=start_time,
                                output_value=output_value, log=log, name=name)
 
-    def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#'):
+    def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#', id_method=True, id_memo=None):
         """ Add variable values to super WorkflowState dict. """
         if memo is None:
             memo = {}  # To make sure we have the good ref for next steps

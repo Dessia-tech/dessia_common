@@ -4,6 +4,7 @@
 Serialization Tools.
 """
 
+
 import warnings
 import dessia_common.serialization as dcs
 
@@ -32,29 +33,28 @@ def serialize(value):
     return dcs.serialize(value)
 
 
-def serialize_with_pointers(value, memo=None, path='#'):
+def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=None):
     """
     Main function for serialization with pointers.
     """
     warnings.warn("Module serialization.py have been moved outside utils. Please use it instead")
-    return dcs.serialize_with_pointers(value=value, memo=memo, path=path)
+    return dcs.serialize_with_pointers(value=value, memo=memo, path=path, id_method=id_method, id_memo=id_memo)
 
 
-def serialize_dict_with_pointers(dict_, memo, path):
+def serialize_dict_with_pointers(dict_, memo, path, id_method, id_memo):
     """
     Serialize a dict recursively with jsonpointers using a memo dict at a given path of the top level object.
     """
     warnings.warn("Module serialization.py have been moved outside utils. Please use it instead")
-    return dcs.serialize_dict_with_pointers(dict_=dict_, memo=memo, path=path)
+    return dcs.serialize_dict_with_pointers(dict_=dict_, memo=memo, path=path, id_method=id_method, id_memo=id_memo)
 
 
-def serialize_sequence_with_pointers(seq, memo, path):
+def serialize_sequence_with_pointers(seq, memo, path, id_method, id_memo):
     """
     Serialize a sequence (list or tuple) using jsonpointers.
     """
     warnings.warn("Module serialization.py have been moved outside utils. Please use it instead")
-    return dcs.serialize_sequence_with_pointers(seq=seq, memo=memo, path=path)
-
+    return dcs.serialize_sequence_with_pointers(seq=seq, memo=memo, path=path, id_method=id_method, id_memo=id_memo)
 
 def deserialize(serialized_element, sequence_annotation: str = 'List', global_dict=None,
                 pointers_memo=None, path: str = '#'):
