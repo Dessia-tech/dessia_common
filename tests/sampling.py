@@ -5,7 +5,7 @@ sampling.py package testing.
 
 import json
 from typing import Type
-from dessia_common.utils.serialization import deserialize_argument
+from dessia_common.serialization import deserialize_argument
 from dessia_common.tests import RandDataD6
 from dessia_common.datatools.sampling import ClassSampler
 from dessia_common.optimization import FixedAttributeValue, BoundedAttributeValue

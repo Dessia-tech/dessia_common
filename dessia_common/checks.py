@@ -4,16 +4,12 @@
 General checks & checklists.
 """
 
-from dessia_common.base import SerializableObject
-
-
 LEVEL_TO_INT = {'debug': 0, 'info': 1, 'warning': 2, 'error': 3}
 
 
-class PassedCheck(SerializableObject):
-    """
-    Represents the result of a check that has no error.
-    """
+class PassedCheck:
+    """ Represents the result of a check that has no error. """
+
     level = 'info'
 
     def __init__(self, message: str):
@@ -24,35 +20,27 @@ class PassedCheck(SerializableObject):
 
 
 class CheckWarning(PassedCheck):
-    """
-    Represents a check warning.
-    """
+    """ Represents a check warning. """
+
     level = 'warning'
 
 
 class FailedCheck(PassedCheck):
-    """
-    Represents a failed check.
-    """
+    """ Represents a failed check. """
+
     level = 'error'
 
 
 class BadType(FailedCheck):
-    """
-    Represents a failed check due to a bad type.
-    """
+    """ Represents a failed check due to a bad type. """
 
 
 class GeometricInconsistance(FailedCheck):
-    """
-    Represents a failed check due to a geometric inconsistency.
-    """
+    """ Represents a failed check due to a geometric inconsistency. """
 
 
-class CheckList(SerializableObject):
-    """
-    A list of checks result.
-    """
+class CheckList:
+    """ A list of checks result. """
 
     def __init__(self, checks):
         self.checks = checks
@@ -67,6 +55,7 @@ class CheckList(SerializableObject):
         return self.__class__(self.checks + other_checklist.checks)
 
     def checks_above_level(self, level='error'):
+        """ Return True if no check has a level above given one, else False. """
         checks = []
         for check in self.checks:
             if LEVEL_TO_INT[check.level] >= LEVEL_TO_INT[level]:
@@ -74,14 +63,13 @@ class CheckList(SerializableObject):
         return checks
 
     def raise_if_above_level(self, level='error'):
+        """ Raise an error if some checks have a level above given one. """
         for check in self.checks_above_level(level=level):
             raise ValueError(f'Check: {check} is above level "{level}"')
 
 
 def is_int(value, level='error'):
-    """
-    Returns if value is a int.
-    """
+    """ Returns if value is a int. """
     if not isinstance(value, int):
         return CheckList([FailedCheck(f'Value {value} is not an int')])
     if level == 'info':
@@ -90,9 +78,7 @@ def is_int(value, level='error'):
 
 
 def is_float(value, level='error'):
-    """
-    Returns if value is a float.
-    """
+    """ Returns if value is a float. """
     if not isinstance(value, float):
         return CheckList([FailedCheck(f'Value {value} is not a float')])
     if level == 'info':
@@ -101,9 +87,7 @@ def is_float(value, level='error'):
 
 
 def is_str(value, level='error'):
-    """
-    Returns if value is a str.
-    """
+    """ Returns if value is a str. """
     if not isinstance(value, str):
         return CheckList([FailedCheck(f'Value {value} is not a str')])
     if level == 'info':

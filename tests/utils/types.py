@@ -2,7 +2,8 @@ import unittest
 
 from parameterized import parameterized
 
-from dessia_common.utils.types import deserialize_typing, serialize_typing, MethodType, ClassMethodType, InstanceOf, is_jsonable
+from dessia_common.utils.types import deserialize_typing, serialize_typing, MethodType, ClassMethodType, InstanceOf,\
+    is_jsonable
 from dessia_common.files import BinaryFile, StringFile
 from typing import List, Tuple, Type, Dict
 from dessia_common.forms import StandaloneObject

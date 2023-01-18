@@ -20,9 +20,6 @@ class DisplaySetting:
     """ Describe which method to call to get a display. """
 
     def __init__(self, selector, type_, method, arguments=None, serialize_data: bool = False):
-        """
-        Describe what method to call to get a display.
-        """
         self.selector = selector
         self.type = type_
         self.method = method
@@ -31,10 +28,23 @@ class DisplaySetting:
         self.arguments = arguments
         self.serialize_data = serialize_data
 
+    @property
+    def reference_path(self) -> str:
+        """
+        Get reference path or set it to its default value if not defined.
+
+        Experimental.
+        """
+        if self.arguments is None:
+            return "#"
+
+        reference_path = self.arguments.get("reference_path", "#")
+        if reference_path is None:
+            return "#"
+        return reference_path
+
     def to_dict(self):
-        """
-        Serialization: make a dict from class instance attributes.
-        """
+        """ Serialization: make a dict from class instance attributes. """
         return {'selector': self.selector, 'type': self.type, 'method': self.method,
                 'serialize_data': self.serialize_data, 'arguments': self.arguments}
 
@@ -42,19 +52,18 @@ class DisplaySetting:
         """
         Handles deep calls to method.
 
-        In case of a parent getting the display settings of a children this methods allow to inject the attribute name
-        to method name
+        In case of a parent getting the display settings of a children this methods allow
+        to inject the attribute name to method name.
         """
         return DisplaySetting(selector=self.selector, type_=self.type, method=f'{attribute}.{self.method}',
                               arguments=self.arguments, serialize_data=serialize_data)
 
 
 class DisplayObject:
+    """ Container for data of display. A traceback can be set if display fails to be generated. """
+
     def __init__(self, type_: str, data: Union[JsonSerializable, List[JsonSerializable], str],
                  reference_path: str = '', traceback: str = '', name: str = ''):
-        """
-        Container for data of display. A traceback can be set if display fails to be generated.
-        """
         if type_ == "plot_data" and not is_sequence(data):
             warnings.warn("A plot_data DisplayObject must be called with data as a sequence. "
                           "Please return a list of PlotData objects as the result of plot_data method. "
@@ -70,23 +79,17 @@ class DisplayObject:
             self.data_cleaning()
 
     def data_cleaning(self):
-        """
-        Cleanup tabs in markdown.
-        """
+        """ Cleanup tabs in markdown. """
         self.data = inspect.cleandoc(self.data)
 
     def to_dict(self):
-        """
-        Simple serialization.
-        """
+        """ Simple serialization. """
         return {'type_': self.type_, 'data': self.data, 'traceback': self.traceback,
                 'reference_path': self.reference_path, 'name': self.name}
 
 
 def networkx_to_visjs_data(networkx_graph: Graph):
-    """
-    Compute visjs data to plot from a networkx graph.
-    """
+    """ Compute visjs data to plot from a networkx graph. """
     visjs_data = {'name': networkx_graph.name, 'nodes': [], 'edges': []}
 
     pos = kamada_kawai_layout(networkx_graph)
@@ -150,9 +153,7 @@ def networkx_to_visjs_data(networkx_graph: Graph):
 
 
 def draw_networkx_graph(networkx_graph: Graph):
-    """
-    Draw a networkx graph in a browser using VisJS library.
-    """
+    """ Draw a networkx graph in a browser using VisJS library. """
     visjs_data = networkx_to_visjs_data(networkx_graph)
     content = visjs_template.substitute(nodes=json.dumps(visjs_data['nodes']),
                                         edges=json.dumps(visjs_data['edges']),

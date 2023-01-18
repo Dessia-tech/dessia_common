@@ -64,9 +64,11 @@ steps:
   commands:
   - git fetch --tags
   - python setup.py install
-  - python scripts/dessia_object.py
-  - pip install sphinx sphinx-rtd-theme coverage plot-data volmdlr nbformat nbconvert
+#  - python scripts/dessia_object.py
+  - pip install sphinx sphinx-rtd-theme coverage volmdlr nbformat nbconvert
+  - pip install plot_data --no-cache-dir
   - pip show coverage
+  - pip show plot_data
   - cd doc
   - make html
   - cd ../tests

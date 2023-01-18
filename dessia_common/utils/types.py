@@ -6,6 +6,7 @@ Types tools.
 
 from typing import Any, Dict, List, Tuple, Type, Union, get_origin, get_args
 
+import sys
 from collections.abc import Iterator, Sequence
 from importlib import import_module
 
@@ -15,7 +16,7 @@ from dessia_common.abstract import CoreDessiaObject
 from dessia_common.typings import Subclass, InstanceOf, MethodType, ClassMethodType
 from dessia_common.files import BinaryFile, StringFile
 
-
+SIMPLE_TYPES = [int, str]
 TYPING_EQUIVALENCES = {int: 'number', float: 'number', bool: 'boolean', str: 'string'}
 
 TYPES_STRINGS = {int: 'int', float: 'float', bool: 'boolean', str: 'str',
@@ -33,15 +34,13 @@ _PYTHON_CLASS_CACHE = {}
 def full_classname(object_, compute_for: str = 'instance'):
     """ Get full class name of object_ (module + classname). """
     if compute_for == 'instance':
-        return object_.__class__.__module__ + '.' + object_.__class__.__name__
+        return f"{object_.__class__.__module__}.{object_.__class__.__name__}"
     if compute_for == 'class':
         try:
-            return object_.__module__ + '.' + object_.__name__
+            return f"{object_.__module__}.{object_.__name__}"
         except:
             print(object_)
-
-    msg = 'Cannot compute {} full classname for object {}'
-    raise NotImplementedError(msg.format(compute_for, object_))
+    raise NotImplementedError(f"Cannot compute {compute_for} full classname for object {object_}")
 
 
 def is_classname_transform(string: str):
@@ -76,34 +75,33 @@ def is_jsonable(obj):
     #     return False
 
 
-def is_serializable(obj) -> bool:
+def is_serializable(_):
     """ Return True if object is deeply serializable as Dessia's standards, else False. """
-    if is_jsonable(obj):
-        return True
-    if isinstance(obj, CoreDessiaObject):
-        dict_ = obj.to_dict()
-        return is_jsonable(dict_)
-    if isinstance(obj, dict):
-        for key, value in obj.items():
-            if not is_serializable(key) or not is_serializable(value):
-                return False
-        return True
-    if is_sequence(obj):
-        for element in obj:
-            if not is_serializable(element):
-                return False
-        return True
-    return False
+    msg = "Function is_serializable has been moved to module serialization.py. Please use this one instead."
+    raise NotImplementedError(msg)
 
 
-def is_sequence(obj):
+def is_sequence(obj) -> bool:
     """
     Return True if object is sequence (but not string), else False.
 
     :param obj: Object to check
     :return: bool. True if object is a sequence but not a string. False otherwise
     """
+    if is_list(obj) or is_tuple(obj):
+        # Performance improvements for trivial checks
+        return True
     return isinstance(obj, Sequence) and not isinstance(obj, str)
+
+
+def is_list(obj) -> bool:
+    """ Check if given obj is exactly of type list (not instance of). Used mainly for performance. """
+    return obj.__class__ == list
+
+
+def is_tuple(obj) -> bool:
+    """ Check if given obj is exactly of type tuple (not instance of). Used mainly for performance. """
+    return obj.__class__ == tuple
 
 
 def is_builtin(type_):
@@ -111,21 +109,31 @@ def is_builtin(type_):
     return type_ in TYPING_EQUIVALENCES
 
 
+def is_simple(obj):
+    """ Return True if given object is a int or a str or None. Used mainly for performance. """
+    return obj is None or obj.__class__ in SIMPLE_TYPES
+
+
 def isinstance_base_types(obj):
     """ Return True if the object is either a str, a float an int or None. """
-    return isinstance(obj, (str, float, int)) or (obj is None)
+    if is_simple(obj):
+        # Performance improvements for trivial types
+        return True
+    return isinstance(obj, (str, float, int))
 
 
 def get_python_class_from_class_name(full_class_name: str):
     """ Get python class object corresponging to given classname. """
     cached_value = _PYTHON_CLASS_CACHE.get(full_class_name, None)
+    # TODO : this is just quick fix, it will be modified soon with another.
+    sys.setrecursionlimit(3000)
     if cached_value is not None:
         return cached_value
 
     module_name, class_name = full_class_name.rsplit('.', 1)
     module = import_module(module_name)
-    class_ = getattr(module, class_name)
 
+    class_ = getattr(module, class_name)
     # Storing in cache
     _PYTHON_CLASS_CACHE[full_class_name] = class_
     return class_
@@ -351,6 +359,7 @@ def is_bson_valid(value, allow_nonstring_keys=False) -> Tuple[bool, str]:
     else:
         return False, f'Unrecognized type: {type(value)}'
     return True, ''
+
 
 # TODO recursive_type and recursive_type functions look weird
 
