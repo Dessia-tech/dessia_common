@@ -111,6 +111,8 @@ class TypedVariable(Variable):
             print(self.type_)
             if self.type_._name == "List":
                 script.declaration += f", type_={self.type_._name}[{self.type_.__args__[0].__name__}]"
+        if "builtins" not in serialize_typing(self.type_):
+            script.imports.append(serialize_typing(self.type_))
         return script
 
 
