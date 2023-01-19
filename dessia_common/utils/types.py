@@ -87,9 +87,14 @@ def is_sequence(obj) -> bool:
     :param obj: Object to check
     :return: bool. True if object is a sequence but not a string. False otherwise
     """
+    # if not hasattr(obj, "__len__") or not hasattr(obj, "__getitem__"):
+    #     return False
+
     if is_list(obj) or is_tuple(obj):
+        # print("IS EASY LIST", obj)
         # Performance improvements for trivial checks
         return True
+    # print("sequence", obj)
     return isinstance(obj, Sequence) and not isinstance(obj, str)
 
 

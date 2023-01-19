@@ -27,7 +27,7 @@ from ast import literal_eval
 # from dessia_common.abstract import CoreDessiaObject
 import dessia_common.errors
 from dessia_common.utils.diff import data_eq, diff, dict_hash, list_hash
-from dessia_common.utils.types import is_sequence, is_bson_valid, TYPES_FROM_STRING
+from dessia_common.utils.types import is_sequence, is_bson_valid, TYPES_FROM_STRING, is_list, is_tuple
 from dessia_common.utils.copy import deepcopy_value
 from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotation, JSONSCHEMA_HEADER, \
     set_default_value
@@ -606,13 +606,15 @@ class DessiaObject(SerializableObject):
             dict_ = self.to_dict()
         json_dict = json.dumps(dict_)
         end = time.time()
-        print(f"Serialized in {end - start}s.\n\nDeseriliazing...")
+        serialize_duration = end - start
+        print(f"Serialized in {serialize_duration}s.\n\nDeseriliazing...")
 
         start = time.time()
         decoded_json = json.loads(json_dict)
         deserialized_object = self.dict_to_object(decoded_json)
         end = time.time()
-        print(f"Deserialized in {end - start}s.\n\nChecking equality...")
+        deserialize_duration = end - start
+        print(f"Deserialized in {deserialize_duration}s.\n\nChecking equality...")
 
         start = time.time()
         if not deserialized_object._data_eq(self):
@@ -620,12 +622,14 @@ class DessiaObject(SerializableObject):
             checks.append(FailedCheck('Object is not equal to itself after serialization/deserialization'))
             # checks.append(FailedCheck('Object is not equal to itself after serialization/deserialization'))
         end = time.time()
-        print(f"Checked in {end - start}s.\n\nCopying...")
+        sereq_duration = end - start
+        print(f"Checked in {sereq_duration}s.\n\nCopying...")
 
         start = time.time()
         copied_object = self.copy()
         end = time.time()
-        print(f"Copied in {end - start}s.\n\nChecking equality...")
+        copy_duration = end - start
+        print(f"Copied in {copy_duration}s.\n\nChecking equality...")
 
         start = time.time()
         if not copied_object._data_eq(self):
@@ -635,25 +639,32 @@ class DessiaObject(SerializableObject):
                 pass
             checks.append(FailedCheck('Object is not equal to itself after copy'))
         end = time.time()
-        print(f"Checked in {end - start}s.\n\nChecking BSON validity...")
+        copyeq_duration = end - start
+        print(f"Checked in {copyeq_duration}s.\n\nChecking BSON validity...")
 
         start = time.time()
         valid, hint = is_bson_valid(stringify_dict_keys(dict_))
         if not valid:
             checks.append(FailedCheck(f'Object is not bson valid {hint}'))
         end = time.time()
-        print(f"Checked in {end - start}s.\n\nChecking displays...")
+        bson_validity_duration = end - start
+        print(f"Checked in {bson_validity_duration}s.\n\nChecking displays...")
 
         start = time.time()
         json.dumps(self._displays())
         end = time.time()
-        print(f"Checked in {end - start}s.\n\nChecking method jsonschemas...")
+        display_duration = end -start
+        print(f"Checked in {display_duration}s.\n\nChecking method jsonschemas...")
 
         start = time.time()
         json.dumps(self._method_jsonschemas)
         end = time.time()
-        print(f"Checked in {end - start}s.")
+        mjss_duration = end -start
+        print(f"Checked in {mjss_duration}s.")
 
+        total_duration = serialize_duration + deserialize_duration + sereq_duration + copy_duration\
+                         + copyeq_duration + bson_validity_duration + display_duration + mjss_duration
+        print(f"Total duration : {total_duration}")
         return CheckList(checks)
 
     def to_xlsx(self, filepath: str):
