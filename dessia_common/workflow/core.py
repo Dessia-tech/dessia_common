@@ -105,10 +105,12 @@ class TypedVariable(Variable):
     def _get_to_script_elements(self) -> ToScriptElement:
         script = super()._get_to_script_elements()
 
-        script.declaration += f", type_={self.type_.__name__}"
-
-        if "builtins" not in serialize_typing(self.type_):
-            script.imports.append(serialize_typing(self.type_))
+        try:
+            script.declaration += f", type_={self.type_.__name__}"
+        except AttributeError:
+            print(self.type_)
+            if self.type_._name == "List":
+                script.declaration += f", type_={self.type_._name}[{self.type_.__args__[0].__name__}]"
         return script
 
 
