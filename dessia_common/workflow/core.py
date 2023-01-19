@@ -113,6 +113,8 @@ class TypedVariable(Variable):
                 script.declaration += f", type_={self.type_._name}[{self.type_.__args__[0].__name__}]"
         if "builtins" not in serialize_typing(self.type_):
             script.imports.append(serialize_typing(self.type_))
+            import_list_elm = serialize_typing(self.type_).split('[')[1].replace(']', '')
+            script.imports.append(import_list_elm)
         return script
 
 
