@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Serialization Tools.
-"""
+""" Serialization Tools. """
 
 import uuid
 import sys

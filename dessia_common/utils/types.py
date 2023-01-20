@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Types tools.
-"""
+""" Types tools. """
 
 from typing import Any, Dict, List, Tuple, Type, Union, get_origin, get_args
 
@@ -57,9 +55,7 @@ def is_classname_transform(string: str):
 
 
 def is_jsonable(obj):
-    """
-    Returns if object can be dumped as it is in a json.
-    """
+    """ Returns if object can be dumped as it is in a json. """
     # First trying with orjson which is more efficient
     try:
         orjson.dumps(obj, option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS).decode('utf-8')

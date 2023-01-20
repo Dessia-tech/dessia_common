@@ -1,6 +1,4 @@
-"""
-Module for Generation for dessia_common.
-"""
+""" Module for Generation for dessia_common. """
 from typing import List
 import dectree as dt
 from dessia_common.core import DessiaObject

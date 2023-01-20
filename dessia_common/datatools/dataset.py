@@ -83,6 +83,7 @@ class Dataset(DessiaObject):
             >>> Dataset(all_cars_wi_feat).extend(Dataset(all_cars_wi_feat))
             Dataset(all_cars_wi_feat + all_cars_wi_feat)
     """
+
     _standalone_in_db = True
     _vector_features = ["name", "common_attributes"]
     _non_data_eq_attributes = ["name", "_common_attributes", "_matrix"]
@@ -310,8 +311,10 @@ class Dataset(DessiaObject):
 
     @property
     def matrix(self):
-        """
-        Get equivalent matrix of dessia_objects, which is of dimensions `len(dessia_objects) x len(common_attributes)`.
+        """ 
+        Get equivalent matrix of dessia_objects.
+        
+        Dimensions: `len(dessia_objects) x len(common_attributes)`. 
         """
         if self._matrix is None:
             matrix = []
@@ -814,9 +817,7 @@ class Dataset(DessiaObject):
 
     @staticmethod
     def pareto_frontiers(len_data: int, costs: List[List[float]]):
-        """
-        Experimental method to draw the borders of pareto domain.
-        """
+        """ Experimental method to draw the borders of pareto domain. """
         # Experimental
         checked_costs = Dataset._check_costs(len_data, costs)
         pareto_indexes = Dataset.pareto_indexes(checked_costs)
