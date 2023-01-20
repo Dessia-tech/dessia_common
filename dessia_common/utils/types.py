@@ -6,6 +6,7 @@ Types tools.
 
 from typing import Any, Dict, List, Tuple, Type, Union, get_origin, get_args
 
+import sys
 from collections.abc import Iterator, Sequence
 from importlib import import_module
 
@@ -15,7 +16,7 @@ from dessia_common.abstract import CoreDessiaObject
 from dessia_common.typings import Subclass, InstanceOf, MethodType, ClassMethodType
 from dessia_common.files import BinaryFile, StringFile
 
-
+SIMPLE_TYPES = [int, str]
 TYPING_EQUIVALENCES = {int: 'number', float: 'number', bool: 'boolean', str: 'string'}
 
 TYPES_STRINGS = {int: 'int', float: 'float', bool: 'boolean', str: 'str',
@@ -74,20 +75,33 @@ def is_jsonable(obj):
     #     return False
 
 
-def is_serializable(obj):
+def is_serializable(_):
     """ Return True if object is deeply serializable as Dessia's standards, else False. """
     msg = "Function is_serializable has been moved to module serialization.py. Please use this one instead."
     raise NotImplementedError(msg)
 
 
-def is_sequence(obj):
+def is_sequence(obj) -> bool:
     """
     Return True if object is sequence (but not string), else False.
 
     :param obj: Object to check
     :return: bool. True if object is a sequence but not a string. False otherwise
     """
+    if is_list(obj) or is_tuple(obj):
+        # Performance improvements for trivial checks
+        return True
     return isinstance(obj, Sequence) and not isinstance(obj, str)
+
+
+def is_list(obj) -> bool:
+    """ Check if given obj is exactly of type list (not instance of). Used mainly for performance. """
+    return obj.__class__ == list
+
+
+def is_tuple(obj) -> bool:
+    """ Check if given obj is exactly of type tuple (not instance of). Used mainly for performance. """
+    return obj.__class__ == tuple
 
 
 def is_builtin(type_):
@@ -95,21 +109,31 @@ def is_builtin(type_):
     return type_ in TYPING_EQUIVALENCES
 
 
+def is_simple(obj):
+    """ Return True if given object is a int or a str or None. Used mainly for performance. """
+    return obj is None or obj.__class__ in SIMPLE_TYPES
+
+
 def isinstance_base_types(obj):
     """ Return True if the object is either a str, a float an int or None. """
-    return isinstance(obj, (str, float, int)) or (obj is None)
+    if is_simple(obj):
+        # Performance improvements for trivial types
+        return True
+    return isinstance(obj, (str, float, int))
 
 
 def get_python_class_from_class_name(full_class_name: str):
     """ Get python class object corresponging to given classname. """
     cached_value = _PYTHON_CLASS_CACHE.get(full_class_name, None)
+    # TODO : this is just quick fix, it will be modified soon with another.
+    sys.setrecursionlimit(3000)
     if cached_value is not None:
         return cached_value
 
     module_name, class_name = full_class_name.rsplit('.', 1)
     module = import_module(module_name)
-    class_ = getattr(module, class_name)
 
+    class_ = getattr(module, class_name)
     # Storing in cache
     _PYTHON_CLASS_CACHE[full_class_name] = class_
     return class_
@@ -335,6 +359,7 @@ def is_bson_valid(value, allow_nonstring_keys=False) -> Tuple[bool, str]:
     else:
         return False, f'Unrecognized type: {type(value)}'
     return True, ''
+
 
 # TODO recursive_type and recursive_type functions look weird
 
