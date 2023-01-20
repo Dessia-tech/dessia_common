@@ -22,8 +22,8 @@ UNWATCHED_ERRORS = [
 MAX_ERROR_BY_TYPE = {
     # If the error code is not in this dict, then there is no tolerance on the error.
     # http://www.pydocstyle.org/en/stable/error_codes.html
-    "D200": 135,
-    "D204": 70
+    "D200": 50,
+    "D204": 52
 }
 
 error_detected = False
