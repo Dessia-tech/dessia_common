@@ -275,7 +275,6 @@ class ClusteredDataset(Dataset):
         ------------------------------------------------------------------------------------------
         |Dodge C...|    26.0 |            0.098 |           79.0 |     2255.0 |             17.7 |
         """
-
         clustered_sublists = self._check_transform_sublists()
         kwargs = self._set_distance_kwargs(method, kwargs)
         labels = clustered_sublists.labels
