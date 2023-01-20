@@ -587,73 +587,33 @@ class DessiaObject(SerializableObject):
     def _check_platform(self, level='error'):
         """ Reproduce lifecycle on platform (serialization, display). Raise an error if something is wrong. """
         checks = []
-        print("Serializing...")
-        start = time.time()
         try:
             dict_ = self.to_dict(use_pointers=True)
         except TypeError:
             dict_ = self.to_dict()
         json_dict = json.dumps(dict_)
-        end = time.time()
-        serialize_duration = end - start
-        print(f"Serialized in {serialize_duration}s.\n\nDeseriliazing...")
 
-        start = time.time()
         decoded_json = json.loads(json_dict)
         deserialized_object = self.dict_to_object(decoded_json)
-        end = time.time()
-        deserialize_duration = end - start
-        print(f"Deserialized in {deserialize_duration}s.\n\nChecking equality...")
 
-        start = time.time()
         if not deserialized_object._data_eq(self):
             print('data diff: ', self._data_diff(deserialized_object))
             checks.append(FailedCheck('Object is not equal to itself after serialization/deserialization'))
-            # checks.append(FailedCheck('Object is not equal to itself after serialization/deserialization'))
-        end = time.time()
-        sereq_duration = end - start
-        print(f"Checked in {sereq_duration}s.\n\nCopying...")
 
-        start = time.time()
         copied_object = self.copy()
-        end = time.time()
-        copy_duration = end - start
-        print(f"Copied in {copy_duration}s.\n\nChecking equality...")
-
-        start = time.time()
         if not copied_object._data_eq(self):
             try:
                 print('data diff: ', self._data_diff(copied_object))
             except:
                 pass
             checks.append(FailedCheck('Object is not equal to itself after copy'))
-        end = time.time()
-        copyeq_duration = end - start
-        print(f"Checked in {copyeq_duration}s.\n\nChecking BSON validity...")
 
-        start = time.time()
         valid, hint = is_bson_valid(stringify_dict_keys(dict_))
         if not valid:
             checks.append(FailedCheck(f'Object is not bson valid {hint}'))
-        end = time.time()
-        bson_validity_duration = end - start
-        print(f"Checked in {bson_validity_duration}s.\n\nChecking displays...")
 
-        start = time.time()
         json.dumps(self._displays())
-        end = time.time()
-        display_duration = end -start
-        print(f"Checked in {display_duration}s.\n\nChecking method jsonschemas...")
-
-        start = time.time()
         json.dumps(self._method_jsonschemas)
-        end = time.time()
-        mjss_duration = end -start
-        print(f"Checked in {mjss_duration}s.")
-
-        total_duration = serialize_duration + deserialize_duration + sereq_duration + copy_duration\
-                         + copyeq_duration + bson_validity_duration + display_duration + mjss_duration
-        print(f"Total duration : {total_duration}")
         return CheckList(checks)
 
     def to_xlsx(self, filepath: str):
