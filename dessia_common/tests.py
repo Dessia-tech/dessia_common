@@ -105,6 +105,7 @@ class ComponentConnection(DessiaObject):
     """
     Mock for a link between to components. For example, the electrical wiring between two modules in a battery pack.
     """
+
     def __init__(self, input_component: Component, output_component: Component, name: str = ''):
         self.input_component = input_component
         self.output_component = output_component
