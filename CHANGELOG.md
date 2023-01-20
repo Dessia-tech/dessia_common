@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Change sequence hash to check only first and last element recursively
 - Add pre-checks for non list-like element in is_sequence function
 
+### Chore
+
+- Tag for release candidate
+
 
 ## 0.12.0 (now branch dev)
 
