@@ -108,8 +108,8 @@ class TypedVariable(Variable):
         try:
             script.declaration += f", type_={self.type_.__name__}"
         except AttributeError:
-            if self.type_._name == "List":
-                script.declaration += f", type_={self.type_._name}[{self.type_.__args__[0].__name__}]"
+            if self.type_.__origin__ is list:
+                script.declaration += f", type_=List[{self.type_.__args__[0].__name__}]"
         if "builtins" not in serialize_typing(self.type_):
             script.imports.append(serialize_typing(self.type_))
             if "List" in serialize_typing(self.type_):
