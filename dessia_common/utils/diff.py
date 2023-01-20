@@ -9,7 +9,7 @@ from typing import List
 
 import numpy as npy
 from dessia_common import FLOAT_TOLERANCE
-import dessia_common.core as dc
+# import dessia_common.core as dc
 from dessia_common.utils.types import isinstance_base_types, is_sequence, full_classname
 from dessia_common.files import BinaryFile, StringFile
 
@@ -174,56 +174,56 @@ def sequence_diff(seq1, seq2, path='#'):
     return seq_diff
 
 
-def data_eq(value1, value2):
-    """ Returns if two values are equal on data equality. """
-    if is_sequence(value1) and is_sequence(value2):
-        return sequence_data_eq(value1, value2)
-
-    if isinstance(value1, npy.int64) or isinstance(value2, npy.int64):
-        return value1 == value2
-
-    if isinstance(value1, npy.float64) or isinstance(value2, npy.float64):
-        return math.isclose(value1, value2, abs_tol=FLOAT_TOLERANCE)
-
-    if not isinstance(value2, type(value1))\
-            and not isinstance(value1, type(value2)):
-        return False
-
-    if isinstance_base_types(value1):
-        if isinstance(value1, float):
-            return math.isclose(value1, value2, abs_tol=FLOAT_TOLERANCE)
-
-        return value1 == value2
-
-    if isinstance(value1, dict):
-        return dict_data_eq(value1, value2)
-
-    if isinstance(value1, (BinaryFile, StringFile)):
-        return value1 == value2
-
-    if isinstance(value1, type):
-        return full_classname(value1) == full_classname(value2)
-
-    # Else: its an object
-
-    if full_classname(value1) != full_classname(value2):
-        # print('full classname !=')
-        return False
-
-    # Test if _data_eq is customized
-    if hasattr(value1, '_data_eq'):
-        custom_method = (value1._data_eq.__code__ is not dc.DessiaObject._data_eq.__code__)
-        if custom_method:
-            return value1._data_eq(value2)
-
-    # Not custom, use generic implementation
-    eq_dict = value1._serializable_dict()
-    if 'name' in eq_dict:
-        del eq_dict['name']
-
-    other_eq_dict = value2._serializable_dict()
-
-    return dict_data_eq(eq_dict, other_eq_dict)
+# def data_eq(value1, value2):
+#     """ Returns if two values are equal on data equality. """
+#     if is_sequence(value1) and is_sequence(value2):
+#         return sequence_data_eq(value1, value2)
+#
+#     if isinstance(value1, npy.int64) or isinstance(value2, npy.int64):
+#         return value1 == value2
+#
+#     if isinstance(value1, npy.float64) or isinstance(value2, npy.float64):
+#         return math.isclose(value1, value2, abs_tol=FLOAT_TOLERANCE)
+#
+#     if not isinstance(value2, type(value1))\
+#             and not isinstance(value1, type(value2)):
+#         return False
+#
+#     if isinstance_base_types(value1):
+#         if isinstance(value1, float):
+#             return math.isclose(value1, value2, abs_tol=FLOAT_TOLERANCE)
+#
+#         return value1 == value2
+#
+#     if isinstance(value1, dict):
+#         return dict_data_eq(value1, value2)
+#
+#     if isinstance(value1, (BinaryFile, StringFile)):
+#         return value1 == value2
+#
+#     if isinstance(value1, type):
+#         return full_classname(value1) == full_classname(value2)
+#
+#     # Else: its an object
+#
+#     if full_classname(value1) != full_classname(value2):
+#         # print('full classname !=')
+#         return False
+#
+#     # Test if _data_eq is customized
+#     if hasattr(value1, '_data_eq'):
+#         custom_method = (value1._data_eq.__code__ is not dc.DessiaObject._data_eq.__code__)
+#         if custom_method:
+#             return value1._data_eq(value2)
+#
+#     # Not custom, use generic implementation
+#     eq_dict = value1._serializable_dict()
+#     if 'name' in eq_dict:
+#         del eq_dict['name']
+#
+#     other_eq_dict = value2._serializable_dict()
+#
+#     return dict_data_eq(eq_dict, other_eq_dict)
 
 
 def dict_data_eq(dict1, dict2):
@@ -252,7 +252,7 @@ def sequence_data_eq(seq1, seq2):
 def choose_hash(object_):
     """ Base function to return hash. """
     if is_sequence(object_):
-        return list_hash(object_)
+        return sequence_hash(object_)
     if isinstance(object_, dict):
         return dict_hash(object_)
     if isinstance(object_, str):
@@ -260,9 +260,20 @@ def choose_hash(object_):
     return hash(object_)
 
 
-def list_hash(list_):
-    """ Returns hash of a list value. """
-    return sum(choose_hash(e) for e in list_)
+def sequence_hash(sequence):
+    """
+    Return hash of a sequence value.
+
+    Only check for first and last elements hashes if defined for performance purpose.
+    It also looks that previous sequence hash method was lest efficient as the sum of all hashes in sequence
+    returned less unique values for normally different sequences.
+    """
+    if not sequence:
+        return 0
+    hash_ = len(sequence)*choose_hash(sequence[0])
+    if len(sequence) > 1:
+        hash_ += 5381*choose_hash(sequence[-1])
+    return hash_
 
 
 def dict_hash(dict_):

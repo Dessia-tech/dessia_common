@@ -24,10 +24,9 @@ import traceback as tb
 from importlib import import_module
 from ast import literal_eval
 
-# from dessia_common.abstract import CoreDessiaObject
 import dessia_common.errors
-from dessia_common.utils.diff import data_eq, diff, dict_hash, list_hash
-from dessia_common.utils.types import is_sequence, is_bson_valid, TYPES_FROM_STRING, is_list, is_tuple
+from dessia_common.utils.diff import data_eq, diff, choose_hash
+from dessia_common.utils.types import is_sequence, is_bson_valid, TYPES_FROM_STRING
 from dessia_common.utils.copy import deepcopy_value
 from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotation, JSONSCHEMA_HEADER, \
     set_default_value
@@ -186,18 +185,8 @@ class DessiaObject(SerializableObject):
 
     def _data_hash(self):
         """ Generic computation of hash based on data. """
-        hash_ = 0
         forbidden_keys = (self._non_data_eq_attributes + self._non_data_hash_attributes + ['package_version', 'name'])
-        for key, value in self._serializable_dict().items():
-            if key not in forbidden_keys:
-                if is_sequence(value):
-                    hash_ += list_hash(value)
-                elif isinstance(value, dict):
-                    hash_ += dict_hash(value)
-                elif isinstance(value, str):
-                    hash_ += sum(ord(v) for v in value)
-                else:
-                    hash_ += hash(value)
+        hash_ = sum(choose_hash(v) for k, v in self._serializable_dict().items() if k not in forbidden_keys)
         return int(hash_ % 1e5)
 
     def _data_diff(self, other_object):
