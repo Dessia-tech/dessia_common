@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Module to compute differences between objects.
-"""
+""" Module to compute differences between objects. """
 
 import math
 from typing import List

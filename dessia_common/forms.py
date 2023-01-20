@@ -23,7 +23,6 @@ Some general rules :
 In addition to types & genericity (brought by DessiaObject),
 this module can also be seen as a template for Dessia's
 coding/naming style & convention.
-
 """
 
 from math import floor, ceil, cos

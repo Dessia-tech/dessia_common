@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Module to handle serialization for engineering objects.
-"""
+""" Module to handle serialization for engineering objects. """
 
 import time
 import warnings
@@ -403,7 +401,7 @@ class DessiaObject(SerializableObject):
         return check_list
 
     def is_valid(self, level='error'):
-        """ Return whether the object of valid 'above' given level. Default is error, but warnings can be forbidden. """
+        """ Return whether the object of valid 'above' given level. Default is error, but warning can be forbidden. """
         return not self.check_list().checks_above_level(level=level)
 
     def copy(self, deep: bool = True, memo=None):

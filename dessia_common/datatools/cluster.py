@@ -59,9 +59,7 @@ class ClusteredDataset(Dataset):
     _allowed_methods = ['from_agglomerative_clustering', 'from_kmeans', 'from_dbscan', 'from_pareto_sheets']
 
     def __init__(self, dessia_objects: List[DessiaObject] = None, labels: List[int] = None, name: str = ''):
-        """
-        See class docstring.
-        """
+        """ See class docstring. """
         Dataset.__init__(self, dessia_objects=dessia_objects, name=name)
         if labels is None:
             labels = [0] * len(self)
@@ -69,17 +67,13 @@ class ClusteredDataset(Dataset):
 
     @property
     def n_clusters(self):
-        """
-        Number of clusters in dessia_objects.
-        """
+        """ Number of clusters in dessia_objects. """
         unic_labels = set(self.labels)
         unic_labels.discard(-1)
         return len(unic_labels)
 
     def to_xlsx_stream(self, stream):
-        """
-        Export the object to an XLSX to a given stream.
-        """
+        """ Export the object to an XLSX to a given stream. """
         if not isinstance(self.dessia_objects[0], Dataset):
             writer = XLSXWriter(self.clustered_sublists())
         else:
@@ -281,6 +275,7 @@ class ClusteredDataset(Dataset):
         ------------------------------------------------------------------------------------------
         |Dodge C...|    26.0 |            0.098 |           79.0 |     2255.0 |             17.7 |
         """
+
         clustered_sublists = self._check_transform_sublists()
         kwargs = self._set_distance_kwargs(method, kwargs)
         labels = clustered_sublists.labels
@@ -588,9 +583,7 @@ class ClusteredDataset(Dataset):
     def list_agglomerative_clustering(cls, data: List[DessiaObject], n_clusters: int = 2,
                                       metric: str = 'euclidean', linkage: str = 'ward',
                                       distance_threshold: float = None, scaling: bool = False, name: str = ""):
-        """
-        Does the same as `from_agglomerative_clustering` method but data is a `List[DessiaObject]` and not a `Dataset`.
-        """
+        """ Does the same as `from_agglomerative_clustering` method but data is a `List[DessiaObject]`. """
         return cls.from_agglomerative_clustering(Dataset(data), n_clusters=n_clusters, metric=metric,
                                                  linkage=linkage, distance_threshold=distance_threshold,
                                                  scaling=scaling, name=name)
@@ -598,18 +591,14 @@ class ClusteredDataset(Dataset):
     @classmethod
     def list_kmeans(cls, data: List[DessiaObject], n_clusters: int = 2, n_init: int = 10, tol: float = 1e-4,
                     scaling: bool = False, name: str = ""):
-        """
-        Does the same as `from_kmeans` method but data is a `List[DessiaObject]` and not a `Dataset`.
-        """
+        """ Does the same as `from_kmeans` method but data is a `List[DessiaObject]`. """
         return cls.from_kmeans(Dataset(data), n_clusters=n_clusters, n_init=n_init, tol=tol, scaling=scaling,
                                name=name)
 
     @classmethod
     def list_dbscan(cls, data: List[DessiaObject], eps: float = 0.5, min_samples: int = 5, mink_power: float = 2,
                     leaf_size: int = 30, metric: str = "euclidean", scaling: bool = False, name: str = ""):
-        """
-        Does the same as `from_dbscan` method but data is a `List[DessiaObject]` and not a `Dataset`.
-        """
+        """ Does the same as `from_dbscan` method but data is a `List[DessiaObject]`. """
         return cls.from_dbscan(Dataset(data), eps=eps, min_samples=min_samples, mink_power=mink_power,
                                leaf_size=leaf_size, metric=metric, scaling=scaling, name=name)
 

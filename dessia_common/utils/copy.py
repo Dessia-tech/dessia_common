@@ -1,6 +1,4 @@
-"""
-Tools for copying objects.
-"""
+""" Tools for copying objects. """
 
 import copy
 import warnings
