@@ -311,7 +311,11 @@ class Dataset(DessiaObject):
 
     @property
     def matrix(self):
-        """ Get equivalent matrix of dessia_objects, which is of dimensions `len(dessia_objects) x len(common_attributes)`. """
+        """ 
+        Get equivalent matrix of dessia_objects.
+        
+        Dimensions: `len(dessia_objects) x len(common_attributes)`. 
+        """
         if self._matrix is None:
             matrix = []
             for dessia_object in self.dessia_objects:
