@@ -186,6 +186,7 @@ NAME_VARIABLE = TypedVariable(type_=str, name="Result Name")
 
 def set_block_variable_names_from_dict(func):
     """ Inspect func arguments to compute black variable names. """
+
     def func_wrapper(cls, dict_):
         obj = func(cls, dict_)
         if 'input_names' in dict_:
@@ -196,6 +197,7 @@ def set_block_variable_names_from_dict(func):
             for output_name, output_ in output_items:
                 output_.name = output_name
         return obj
+
     return func_wrapper
 
 
@@ -268,7 +270,7 @@ class Block(DessiaObject):
     def _to_script(self, prefix: str):
         raise NotImplementedError("This method should be implemented in any Block inheriting class.")
 
-    def is_valid(self, level: str = 'error') -> bool: # TODO: Change this in further releases
+    def is_valid(self, level: str = 'error') -> bool:  # TODO: Change this in further releases
         """ Always return True for now. """
         return True
 
@@ -1830,7 +1832,7 @@ class WorkflowState(DessiaObject):
                     progress_callback(self.progress)
                 something_activated = True
         return evaluated_blocks
-        
+
     def evaluate_branch(self, blocks: List[Block], block_args: Dict[Block, Any]):
         """ Evaluate all blocks of a branch, automatically finding the first executable ones. """
         self.activate_inputs()
@@ -2151,7 +2153,7 @@ class WorkflowRun(WorkflowState):
                             if input_.type_.__args__[0].__name__ == 'BinaryFile':
                                 default_value += for_each_file.format(j, i, j, i)
                                 default_value_ = f"\nvalue_{j}_{i} = list_files_{j}_{i}"
-                                if not "os" in add_import:
+                                if "os" not in add_import:
                                     add_import += "import os\n"
                                     add_import += "import io\n"
                     default_value += default_value_
