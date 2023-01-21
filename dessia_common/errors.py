@@ -4,6 +4,7 @@
 Module for errors in dessia_common.
 """
 
+
 class ExceptionWithTraceback(Exception):
     """ Base class with a message and a traceback. """
 

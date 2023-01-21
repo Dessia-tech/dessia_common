@@ -303,7 +303,7 @@ class ClusteredDataset(Dataset):
     def _tooltip_attributes(self):
         return self.common_attributes + ["Cluster Label"]
 
-    def plot_data(self):
+    def plot_data(self, reference_path: str = "#", **kwargs):
         """
         Plot data method.
 
@@ -311,8 +311,8 @@ class ClusteredDataset(Dataset):
         """
         if isinstance(self.dessia_objects[0], Dataset):
             plotted_clist = self._merge_sublists()
-            return plotted_clist.plot_data()
-        return Dataset.plot_data(self)
+            return plotted_clist.plot_data(reference_path=reference_path, **kwargs)
+        return Dataset.plot_data(self, reference_path=reference_path, **kwargs)
 
     def _plot_data_list(self):
         _plot_data_list = []

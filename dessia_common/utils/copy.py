@@ -21,7 +21,6 @@ def deepcopy_value(value, memo):
 
     :return: A deepcopy of the value
     """
-
     if isinstance(value, type) or is_typing(value):  # For class
         return value
 
@@ -80,9 +79,7 @@ def deepcopy_value(value, memo):
 
 
 def deepcopy_dict(dict_value, memo):
-    """
-    Deepcopies a dict.
-    """
+    """ Deepcopies a dict. """
     memo_value = search_memo(dict_value, memo)
     if memo_value is not None:
         return memo_value
@@ -96,9 +93,7 @@ def deepcopy_dict(dict_value, memo):
 
 
 def deepcopy_sequence(seq_value, memo):
-    """
-    Deepcopies a sequence.
-    """
+    """ Deepcopies a sequence. """
     memo_value = search_memo(seq_value, memo)
     if memo_value is not None:
         return memo_value
@@ -111,9 +106,7 @@ def deepcopy_sequence(seq_value, memo):
 
 
 def search_memo(value, memo):
-    """
-    Search in given memo.
-    """
+    """ Search in given memo. """
     for key in memo.keys():
         if isinstance(value, type(key)) and value == key:
             return memo[value]
