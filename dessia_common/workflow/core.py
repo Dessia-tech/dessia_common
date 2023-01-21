@@ -2109,14 +2109,21 @@ class WorkflowRun(WorkflowState):
         """
         Computes a script representing the workflowrun.
         """
-        # TODO : don't take into account yet TypedVariable.
-        # TODO : take into account the type of inputs (type_)
+        # TODO : Use self instead of workflow !!
         workflow_script = self.workflow.to_script()
         workflow_script_import = self.workflow._to_script().imports
         input_str = ""
         default_value = ""
         add_import = ""
         var = "block_{}.inputs[{}]"
+        types = ["str", "int", "float"]
+        for_each_file = "\nlist_files_{}_{} = []\n" \
+                        "for filename in os.listdir('Dir_file'):\n" \
+                        "\tf = os.path.join('Dir_file', filename)\n" \
+                        "\tfile_bin = io.FileIO(f, 'r')\n" \
+                        "\tlist_files_{}_{}.append(file_bin)\n"
+
+        # Add Block input
         for j, block in enumerate(self.workflow.blocks):
             for i, input_ in enumerate(block.inputs):
                 if not input_.has_default_value and not \
@@ -2125,16 +2132,31 @@ class WorkflowRun(WorkflowState):
                                  f"{var.format(j, i)}):" \
                                  f" value_{str(j) + '_' + str(i)},\n"
                     default_value_ = f"\nvalue_{j}_{i} = 0"
-                    if not isinstance(input_, (str, float, int)):
-                        try:
+                    try:
+                        if input_.type_.__name__ not in types:
                             module_ = input_._get_to_script_elements().get_import_dict()
                             key, value = list(module_.items())[0]
                             default_value_ = f"\nvalue_{j}_{i} = {value[0]}()"
-                        except:
-                            pass
-                        if not any(value[0] in lst for lst in (add_import, workflow_script_import)):
-                            add_import += f"from {key} import {value[0]}\n"
-                        default_value += default_value_
+                            if not any(value[0] in lst for lst in (add_import, workflow_script_import)):
+                                add_import += f"from {key} import {value[0]}\n"
+                        else:
+                            if input_.type_ is str:
+                                default_value_ = f"\nvalue_{j}_{i} = 'str'"
+                            elif input_.type_ is float or input_.type_ is int:
+                                default_value_ = f"\nvalue_{j}_{i} = 0"
+
+                    # Input has list of objects or files
+                    except AttributeError:
+                        if input_.type_.__origin__ is list:
+                            if input_.type_.__args__[0].__name__ == 'BinaryFile':
+                                default_value += for_each_file.format(j, i, j, i)
+                                default_value_ = f"\nvalue_{j}_{i} = list_files_{j}_{i}"
+                                if not "os" in add_import:
+                                    add_import += "import os\n"
+                                    add_import += "import io\n"
+                    default_value += default_value_
+
+        # Add NBV input
         for k, nbv in enumerate(self.workflow.nonblock_variables):
             if not nbv.has_default_value:
                 if nbv.type_ == str:
@@ -2142,8 +2164,8 @@ class WorkflowRun(WorkflowState):
                 if nbv.type_ == int:
                     default_value += f"\nvalue_nbv_{k} = 'int'"
                 input_str += f"    workflow.input_index(" \
-                                     f"{('variable_' + str(k))}):" \
-                                     f" value_nbv_{str(k)},\n"
+                             f"{('variable_' + str(k))}):" \
+                             f" value_nbv_{str(k)},\n"
 
         input_str = add_import + workflow_script + "\n" + default_value + "\ninput_values = {\n" + input_str + "}"
         return input_str + "\n" + "\nworkflow_run = workflow.run(input_values=input_values)\n"
