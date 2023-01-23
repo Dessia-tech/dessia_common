@@ -314,10 +314,10 @@ class Dataset(DessiaObject):
 
     @property
     def matrix(self):
-        """ 
+        """
         Get equivalent matrix of dessia_objects.
-        
-        Dimensions: `len(dessia_objects) x len(common_attributes)`. 
+
+        Dimensions: `len(dessia_objects) x len(common_attributes)`.
         """
         if self._matrix is None:
             matrix = []
@@ -396,8 +396,7 @@ class Dataset(DessiaObject):
         """
         return self.sub_matrix(input_names), self.sub_matrix(output_names)
 
-    def train_test_split(self, input_names: List[str], output_names: List[str], ratio: float = 0.8,
-                         shuffled: bool = True) -> List[Matrix]:
+    def train_test_split(self, ratio: float = 0.8, shuffled: bool = True) -> List[Matrix]:
         """
         Generate train and test Datasets from current Dataset.
         """
