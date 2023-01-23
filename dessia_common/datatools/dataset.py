@@ -1,6 +1,4 @@
-"""
-Library for building Dataset.
-"""
+""" Library for building Dataset. """
 from typing import List, Dict, Any
 from copy import copy
 import itertools
@@ -86,6 +84,7 @@ class Dataset(DessiaObject):
             >>> Dataset(all_cars_wi_feat).extend(Dataset(all_cars_wi_feat))
             Dataset(all_cars_wi_feat + all_cars_wi_feat)
     """
+
     _standalone_in_db = True
     _vector_features = ["name", "common_attributes"]
     _non_data_eq_attributes = ["name", "_common_attributes", "_matrix"]
@@ -127,9 +126,7 @@ class Dataset(DessiaObject):
         raise NotImplementedError(f"key of type {type(key)} not implemented for indexing Datasets")
 
     def __add__(self, other: 'Dataset'):
-        """
-        Allows to merge two Dataset into one by merging their dessia_object into one list.
-        """
+        """ Allows to merge two Dataset into one by merging their dessia_object into one list. """
         if self.__class__ != Dataset or other.__class__ != Dataset:
             raise TypeError("Addition only defined for Dataset. A specific __add__ method is required for "
                             f"{self.__class__}")
@@ -188,7 +185,7 @@ class Dataset(DessiaObject):
         return new_hlist
 
     def __str__(self):
-        """Print Dataset as a table."""
+        """ Print Dataset as a table. """
         attr_space = []
 
         prefix = self._write_str_prefix()
@@ -315,7 +312,9 @@ class Dataset(DessiaObject):
     @property
     def matrix(self):
         """
-        Get equivalent matrix of dessia_objects, which is of dimensions `len(dessia_objects) x len(common_attributes)`.
+        Get equivalent matrix of dessia_objects.
+
+        Dimensions: `len(dessia_objects) x len(common_attributes)`.
         """
         if self._matrix is None:
             matrix = []
@@ -394,8 +393,7 @@ class Dataset(DessiaObject):
         """
         return self.sub_matrix(input_names), self.sub_matrix(output_names)
 
-    def train_test_split(self, input_names: List[str], output_names: List[str], ratio: float = 0.8,
-                         shuffled: bool = True) -> List[Matrix]:
+    def train_test_split(self, ratio: float = 0.8, shuffled: bool = True) -> List[Matrix]:
         """
         Generate train and test Datasets from current Dataset.
         """
@@ -650,11 +648,9 @@ class Dataset(DessiaObject):
         scaled_matrix = preprocessing.StandardScaler().fit_transform(data_matrix)
         return [list(map(float, row.tolist())) for row in scaled_matrix]
 
-    def plot_data(self, **_):
-        """
-        Plot a standard scatter matrix of all attributes in common_attributes and a dimensionality plot.
-        """
-        data_list = self._plot_data_list()
+    def plot_data(self, reference_path: str = "#", **kwargs):
+        """ Plot a standard scatter matrix of all attributes in common_attributes and a dimensionality plot. """
+        data_list = self._to_samples(reference_path)
         if len(self.common_attributes) > 1:
             # Plot a correlation matrix : To develop
             # correlation_matrix = []
@@ -699,13 +695,20 @@ class Dataset(DessiaObject):
     def _tooltip_attributes(self):
         return self.common_attributes
 
-    def _plot_data_list(self):
-        plot_data_list = []
-        for row, dobject in enumerate(self.dessia_objects):
-            sample_values = {attr: self.matrix[row][col] for col, attr in enumerate(self.common_attributes)}
-            reference_path = f"dessia_objects/{row}"
-            plot_data_list.append(Sample(sample_values, reference_path, dobject.name))
-        return plot_data_list
+    def _object_to_sample(self, dessia_object: DessiaObject, reference_path: str, row: int):
+        sample_values = {attr: self.matrix[row][col] for col, attr in enumerate(self.common_attributes)}
+        full_reference_path = f"{reference_path}/dessia_objects/{row}"
+        name = dessia_object.name if dessia_object.name else f"Sample {row}"
+        return sample_values, full_reference_path, name
+
+    def _to_samples(self, reference_path: str):
+        samples = []
+        for row, dessia_object in enumerate(self.dessia_objects):
+            sample_values, full_reference_path, name = self._object_to_sample(dessia_object=dessia_object,
+                                                                              reference_path=reference_path,
+                                                                              row=row)
+            samples.append(Sample(values=sample_values, reference_path=full_reference_path, name=name))
+        return samples
 
     def _point_families(self):
         return [PointFamily(BLUE, list(range(len(self))))]
@@ -842,10 +845,8 @@ class Dataset(DessiaObject):
         return is_efficient.tolist()
 
     @staticmethod
-    def pareto_frontiers(len_data: int, costs: Matrix):
-        """
-        Experimental method to draw the borders of pareto domain.
-        """
+    def pareto_frontiers(len_data: int, costs: List[List[float]]):
+        """ Experimental method to draw the borders of pareto domain. """
         # Experimental
         checked_costs = Dataset._check_costs(len_data, costs)
         pareto_indexes = Dataset.pareto_indexes(checked_costs)

@@ -4,7 +4,6 @@
 
 from dessia_common.forms import DEF_SO
 from dessia_common.core import DessiaObject
-from dessia_common.models.forms import standalone_object
 
 import unittest
 from parameterized import parameterized

@@ -1,6 +1,4 @@
-"""
-Script for workflow with exports creationZ.
-"""
+""" Script for workflow with exports creationZ. """
 
 from dessia_common.workflow.core import TypedVariable, Pipe, Workflow
 from dessia_common.workflow.blocks import InstantiateModel, ModelMethod, ModelAttribute, WorkflowBlock, ForEach,\

@@ -1,15 +1,12 @@
-"""
-Module for Generation for dessia_common.
-"""
+""" Module for Generation for dessia_common. """
 from typing import List
 import dectree as dt
 from dessia_common.core import DessiaObject
 
 
 class Generator(DessiaObject):
-    """
-    Common parts of generator.
-    """
+    """ Common parts of generator. """
+
     def __init__(self, name: str = ''):
         DessiaObject.__init__(self, name=name)
 
@@ -30,9 +27,8 @@ class Generator(DessiaObject):
 
 
 class TreeGenerator(Generator):
-    """
-    Common parts of generator.
-    """
+    """ Common parts of generator. """
+
     _allowed_methods = ['generate']
     _non_serializable_attributes = ['tree']
     _non_data_eq_attributes = ['tree']

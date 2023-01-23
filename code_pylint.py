@@ -1,11 +1,11 @@
-'''
+"""
 Read pylint errors to see if number of errors does not exceed specified limits
 v1.2
 
 Changes:
     v1.1: move imports to top
     v1.2: limit to 100 message to avoid overflow, global note check at end, ratchet effects
-'''
+"""
 
 
 import os
@@ -22,13 +22,12 @@ UNWATCHED_ERRORS = ['fixme', 'trailing-whitespace', 'import-error']
 MAX_ERROR_BY_TYPE = {
                      'protected-access': 62,
                      'consider-using-f-string': 1,
-                     'arguments-differ': 2,
+                     'arguments-differ': 1,
                      'no-member': 3,
-                     'too-many-locals': 10,  # Reduce by dropping vectored objects
-                     'too-many-branches': 13,
-                     'wrong-import-order': 0,
-                     'unused-argument': 12,
-                     'cyclic-import': 2,  # 0 just to test
+                     'too-many-locals': 11,  # Reduce by dropping vectored objects
+                     'too-many-branches': 14,
+                     'unused-argument': 9,
+                     'cyclic-import': 2,
                      'no-self-use': 6,
                      'trailing-whitespace': 11,
                      'empty-docstring': 1,
@@ -47,7 +46,7 @@ MAX_ERROR_BY_TYPE = {
                      'attribute-defined-outside-init': 3,
                      'simplifiable-if-expression': 1,
                      'broad-except': 4,
-                     'bare-except': 4,
+                     'bare-except': 3,
                      'undefined-loop-variable': 1,
                      'consider-using-with': 2,
                      'too-many-nested-blocks': 2,

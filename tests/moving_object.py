@@ -18,14 +18,14 @@ assert disp == [
         'type_': 'markdown',
         'data': md_data,
         'traceback': '',
-        'reference_path': '',
+        'reference_path': "#",
         'name': ''
     },
     {
         'type_': 'plot_data',
         'data': [],
         'traceback': '',
-        'reference_path': '',
+        'reference_path': "#",
         'name': ''
     },
     {
@@ -76,7 +76,7 @@ assert disp == [
             ]
         },
         'traceback': '',
-        'reference_path': '',
+        'reference_path': "#",
         'name': ''
     }
 ]
