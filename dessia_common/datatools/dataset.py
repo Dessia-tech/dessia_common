@@ -1,6 +1,4 @@
-"""
-Library for building Dataset.
-"""
+""" Library for building Dataset. """
 from typing import List, Dict, Any
 from copy import copy
 import itertools

@@ -14,6 +14,7 @@ except ImportError:
 
 class ParsedAttribute(TypedDict):
     """ Parsed description of a docstring attribute. """
+
     desc: str
     type_: str
     annotation: str
@@ -21,6 +22,7 @@ class ParsedAttribute(TypedDict):
 
 class ParsedDocstring(TypedDict):
     """ Parsed description of a docstring. """
+
     description: str
     attributes: Dict[str, ParsedAttribute]
 

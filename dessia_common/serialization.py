@@ -25,6 +25,7 @@ fullargsspec_cache = {}
 
 class SerializableObject(CoreDessiaObject):
     """ Serialization capabilities of Dessia Object. """
+
     _non_serializable_attributes = []
 
     def base_dict(self):

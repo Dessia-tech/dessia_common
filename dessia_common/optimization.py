@@ -7,17 +7,15 @@ from dessia_common.core import DessiaObject
 
 
 class Specifications(DessiaObject):
-    """
-    Base class to define specifications on parameters of any DessiaObject.
-    """
+    """ Base class to define specifications on parameters of any DessiaObject. """
+
     def __init__(self, name: str = ''):
         DessiaObject.__init__(self, name=name)
 
 
 class FixedAttributeValue(DessiaObject):
-    """
-    Define a fixed attribute value to run a Design Of Experiment (DOE) or an Optimization.
-    """
+    """ Define a fixed attribute value to run a Design Of Experiment (DOE) or an Optimization. """
+
     _standalone_in_db = True
 
     def __init__(self, attribute_name: str, value: float, name: str = ''):
@@ -50,6 +48,7 @@ class BoundedAttributeValue(DessiaObject):
         Name of BoundedAttributeValue.
     :type name: str, `optional`, defaults to `''`
     """
+
     _standalone_in_db = True
 
     def __init__(self, attribute_name: str, min_value: float, max_value: float, number: int = 2, name: str = ''):
