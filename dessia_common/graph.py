@@ -1,15 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Graph helpers.
-"""
+""" Graph helpers. """
 import networkx as nx
 
 
 def explore_tree_from_leaves(graph):
-    """
-    Explore a tree from leaves to top.
-    """
+    """ Explore a tree from leaves to top. """
     if not nx.is_directed_acyclic_graph(graph):
         raise NotImplementedError('Cycles in jsonpointers not handled')
 
@@ -17,9 +13,7 @@ def explore_tree_from_leaves(graph):
 
 
 def cut_tree_final_branches(graph: nx.DiGraph):
-    """
-    Cut final branches of a decision tree.
-    """ # TODO: Check this
+    """ Cut final branches of a decision tree. """ # TODO: Check this
     number_node_removed = 1
     while number_node_removed:
         nodes_to_delete = []
@@ -42,9 +36,7 @@ def cut_tree_final_branches(graph: nx.DiGraph):
 
 
 def extract_region(networkx_graph: nx.Graph, nodes, distance: int = 5):
-    """
-    Extract all nodes that are at distance from node.
-    """
+    """ Extract all nodes that are at distance from node. """
     region_nodes = nodes[:]
     for node in nodes:
         if node not in networkx_graph:
@@ -61,9 +53,7 @@ def extract_region(networkx_graph: nx.Graph, nodes, distance: int = 5):
 
 
 def get_longest_path(graph: nx.DiGraph, begin, end):
-    """
-    Get longest path of graph.
-    """
+    """ Get longest path of graph. """
     return list(nx.shortest_simple_paths(graph, begin, end))[-1]
 
 
@@ -87,9 +77,7 @@ def get_paths_from_to(graph: nx.DiGraph, origins, destinations):
 
 
 def get_column_by_node(graph: nx.DiGraph):
-    """
-    Get column values corresponding to each node and store it in a dict containing the column_index of each node.
-    """
+    """ Get column values corresponding to nodes and store it in a dict containing the column_index of each node. """
     longest_path = nx.dag_longest_path(graph)
     end_of_path = longest_path[-1]
 

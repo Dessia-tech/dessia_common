@@ -1,6 +1,4 @@
-"""
-Templates for dessia_common.
-"""
+""" Templates for dessia_common. """
 from string import Template
 
 dessia_object_markdown_template = Template('''

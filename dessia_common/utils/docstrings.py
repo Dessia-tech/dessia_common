@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Module for docstring parsing to platform and Sphinx auto documentation.
-"""
+""" Module for docstring parsing to platform and Sphinx auto documentation. """
 
 from inspect import isclass, ismethod, isfunction
 from typing import Dict, Any, Tuple, get_type_hints

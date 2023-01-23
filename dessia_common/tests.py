@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Test module for dessia_common.
-"""
+""" Test module for dessia_common. """
 from time import sleep
 from typing import List, Tuple
 import random
@@ -37,6 +35,7 @@ class Model(DessiaObject):
 
 class Generator(DessiaObject):
     """ Mock a generator of MBSEs for testing purpose. """
+
     _standalone_in_db = True
     _allowed_methods = ['long_generation']
 
@@ -76,6 +75,7 @@ class Generator(DessiaObject):
 
 class Optimizer(DessiaObject):
     """ Mock an optimizer for testing purpose. """
+
     _standalone_in_db = True
 
     def __init__(self, model_to_optimize: Model, name: str = ''):
@@ -90,6 +90,7 @@ class Optimizer(DessiaObject):
 
 class Component(DessiaObject):
     """ MBSE to be tested. Mock a real usecase. For example, a module in a battery pack. """
+
     _standalone_in_db = True
 
     def __init__(self, efficiency, name: str = ''):
@@ -102,9 +103,7 @@ class Component(DessiaObject):
 
 
 class ComponentConnection(DessiaObject):
-    """
-    Mock for a link between to components. For example, the electrical wiring between two modules in a battery pack.
-    """
+    """ Mock for a link between to components, e.g. the electrical wiring between two modules in a battery pack. """
 
     def __init__(self, input_component: Component, output_component: Component, name: str = ''):
         self.input_component = input_component
@@ -113,9 +112,7 @@ class ComponentConnection(DessiaObject):
 
 
 class SystemUsage(DessiaObject):
-    """
-    Mock a simulation result of a system. For example, the response of the battery pack to a certain usecase.
-    """
+    """  Mock a simulation result of a system, e.g. the response of the battery pack to a certain usecase. """
     _standalone_in_db = True
 
     def __init__(self, time: List[dcm.Time], power: List[dcm.Power], name: str = ''):
@@ -213,9 +210,8 @@ class Car(DessiaObject):
 
 
 class CarWithFeatures(Car):
-    """
-    Defines a car with all specific features (`'mpg', 'displacement', 'horsepower', 'acceleration', 'weight'`).
-    """
+    """ Defines a car with all specific features (`'mpg', 'displacement', 'horsepower', 'acceleration', 'weight'`). """
+
     _vector_features = ['mpg', 'displacement', 'horsepower', 'acceleration', 'weight']
 
     def __init__(self, name: str, mpg: float, cylinders: int, displacement: dcm.Distance, horsepower: float,
@@ -230,6 +226,7 @@ class CarWithFeatures(Car):
 
 class RandDataD1(DessiaObject):
     """ Creates a dataset with 1 parameters from a number of clusters and dimensions. """
+
     _standalone_in_db = True
     _non_data_hash_attributes = ['name']
     _nb_dims = 1
@@ -247,9 +244,7 @@ class RandDataD1(DessiaObject):
     @classmethod
     def create_dataset(cls, nb_clusters: int = 10, nb_points: int = 2500, mean_borns: Tuple[float, float] = (-50., 50),
                        std_borns: Tuple[float, float] = (-2., 2.)):
-        """
-        Create a random dataset with a number of clusters, number of points and means and std into these clusters.
-        """
+        """ Create a random dataset with a number of clusters, number of points, means and std per cluster. """        
         means_list = []
         std_list = []
         data_list = []
@@ -266,7 +261,7 @@ class RandDataD1(DessiaObject):
 
     @staticmethod
     def set_cluster_sizes(nb_points: int, nb_clusters: int):
-        """Set clusters' sizes in function of total number of points."""
+        """ Set clusters' sizes in function of total number of points. """
         current_nb_points = nb_points
         cluster_sizes = []
         for _ in range(nb_clusters - 1):
@@ -287,7 +282,8 @@ class RandDataD1(DessiaObject):
 
 
 class RandDataD2(RandDataD1):
-    """Creates a dataset with 2 parameters from a number of clusters and dimensions."""
+    """ Creates a dataset with 2 parameters from a number of clusters and dimensions. """
+
     _nb_dims = 2
     _vector_features = [f'p_{i+1}' for i in range(2)]
 
@@ -297,7 +293,8 @@ class RandDataD2(RandDataD1):
 
 
 class RandDataD3(RandDataD1):
-    """Creates a dataset with 3 parameters from a number of clusters and dimensions."""
+    """ Creates a dataset with 3 parameters from a number of clusters and dimensions. """
+
     _nb_dims = 3
     _vector_features = [f'p_{i+1}' for i in range(3)]
 
@@ -308,7 +305,8 @@ class RandDataD3(RandDataD1):
 
 
 class RandDataD4(RandDataD1):
-    """Creates a dataset with 4 parameters from a number of clusters and dimensions."""
+    """ Creates a dataset with 4 parameters from a number of clusters and dimensions. """
+
     _nb_dims = 4
     _vector_features = [f'p_{i+1}' for i in range(4)] + ['test_prop']
 
@@ -328,7 +326,8 @@ class RandDataD4(RandDataD1):
 
 
 class RandDataD5(RandDataD1):
-    """Creates a dataset with 5 parameters from a number of clusters and dimensions."""
+    """ Creates a dataset with 5 parameters from a number of clusters and dimensions. """
+
     _nb_dims = 5
     _vector_features = [f'p_{i+1}' for i in range(5)] + ['test_prop']
 
@@ -349,7 +348,8 @@ class RandDataD5(RandDataD1):
 
 
 class RandDataD6(RandDataD1):
-    """Creates a dataset with 6 parameters from a number of clusters and dimensions."""
+    """ Creates a dataset with 6 parameters from a number of clusters and dimensions. """
+
     _nb_dims = 6
     _vector_features = [f'p_{i+1}' for i in range(6)] + ['test_prop']
 
@@ -364,14 +364,15 @@ class RandDataD6(RandDataD1):
 
     @property
     def test_prop(self):
-        """Factice property for some tests. """
+        """ Factice property for some tests. """
         if self._test_prop is None:
             self._test_prop = 3
         return self._test_prop
 
 
 class RandDataD7(RandDataD1):
-    """Creates a dataset with 7 parameters from a number of clusters and dimensions."""
+    """ Creates a dataset with 7 parameters from a number of clusters and dimensions. """
+
     _nb_dims = 7
     _vector_features = [f'p_{i+1}' for i in range(7)]
     def __init__(self, p_1: float, p_2: float, p_3: float, p_4: float, p_5: float, p_6: float, p_7: float,
@@ -386,7 +387,8 @@ class RandDataD7(RandDataD1):
 
 
 class RandDataD8(RandDataD1):
-    """Creates a dataset with 8 parameters from a number of clusters and dimensions."""
+    """ Creates a dataset with 8 parameters from a number of clusters and dimensions. """
+
     _nb_dims = 8
     _vector_features = [f'p_{i+1}' for i in range(8)]
     def __init__(self, p_1: float, p_2: float, p_3: float, p_4: float, p_5: float, p_6: float, p_7: float, p_8: float,
@@ -402,7 +404,8 @@ class RandDataD8(RandDataD1):
 
 
 class RandDataD9(RandDataD1):
-    """Creates a dataset with 9 parameters from a number of clusters and dimensions."""
+    """ Creates a dataset with 9 parameters from a number of clusters and dimensions. """
+
     _nb_dims = 9
     _vector_features = [f'p_{i+1}' for i in range(9)]
     def __init__(self, p_1: float, p_2: float, p_3: float, p_4: float, p_5: float, p_6: float, p_7: float, p_8: float,
@@ -419,7 +422,8 @@ class RandDataD9(RandDataD1):
 
 
 class RandDataD10(RandDataD1):
-    """Creates a dataset with 10 parameters from a number of clusters and dimensions."""
+    """ Creates a dataset with 10 parameters from a number of clusters and dimensions. """
+    
     _nb_dims = 10
     _vector_features = [f'p_{i+1}' for i in range(10)]
 
