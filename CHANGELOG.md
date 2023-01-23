@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Change dict hash to check only first and last element recursively
 - Refactor search_memo function to improve copy performance
 - Add pre-checks for non list-like element in is_sequence function
+- For is_serializable, not using pointers while trying to_dict
 
 ### Chore
 
