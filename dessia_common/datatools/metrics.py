@@ -1,6 +1,4 @@
-"""
-Distances operators for metrics on Datasets.
-"""
+""" Distances operators for metrics on Datasets. """
 
 import numpy as npy
 from scipy.spatial.distance import mahalanobis
@@ -91,7 +89,8 @@ def manhattan_distance(list_a, list_b):
 
 def euclidian_distance(list_a, list_b):
     """
-    Compute the euclidian distance between list_a and list_b, i.e. the l2-norm of difference between list_a and list_b.\
+    Compute the euclidian distance between list_a and list_b, i.e. the l2-norm of difference between list_a and list_b.
+
     It is the natural distance of 3D space.
 
     :param list_a: First list

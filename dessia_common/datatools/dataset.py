@@ -86,14 +86,13 @@ class Dataset(DessiaObject):
             >>> Dataset(all_cars_wi_feat).extend(Dataset(all_cars_wi_feat))
             Dataset(all_cars_wi_feat + all_cars_wi_feat)
     """
+
     _standalone_in_db = True
     _vector_features = ["name", "common_attributes"]
     _non_data_eq_attributes = ["name", "_common_attributes", "_matrix"]
 
     def __init__(self, dessia_objects: List[DessiaObject] = None, name: str = ''):
-        """
-        See class docstring.
-        """
+        """ See class docstring. """
         if dessia_objects is None:
             dessia_objects = []
         self.dessia_objects = dessia_objects
@@ -130,9 +129,7 @@ class Dataset(DessiaObject):
         raise NotImplementedError(f"key of type {type(key)} not implemented for indexing Datasets")
 
     def __add__(self, other: 'Dataset'):
-        """
-        Allows to merge two Dataset into one by merging their dessia_object into one list.
-        """
+        """ Allows to merge two Dataset into one by merging their dessia_object into one list. """
         if self.__class__ != Dataset or other.__class__ != Dataset:
             raise TypeError("Addition only defined for Dataset. A specific __add__ method is required for "
                             f"{self.__class__}")
@@ -317,8 +314,10 @@ class Dataset(DessiaObject):
 
     @property
     def matrix(self):
-        """
-        Get equivalent matrix of dessia_objects, which is of dimensions `len(dessia_objects) x len(common_attributes)`.
+        """ 
+        Get equivalent matrix of dessia_objects.
+        
+        Dimensions: `len(dessia_objects) x len(common_attributes)`. 
         """
         if self._matrix is None:
             matrix = []
@@ -653,10 +652,8 @@ class Dataset(DessiaObject):
         scaled_matrix = preprocessing.StandardScaler().fit_transform(data_matrix)
         return [list(map(float, row.tolist())) for row in scaled_matrix]
 
-    def plot_data(self, **_):
-        """
-        Plot a standard scatter matrix of all attributes in common_attributes and a dimensionality plot.
-        """
+    def plot_data(self, reference_path: str = "#", **kwargs):
+        """ Plot a standard scatter matrix of all attributes in common_attributes and a dimensionality plot. """
         data_list = self._plot_data_list()
         if len(self.common_attributes) > 1:
             # Plot a correlation matrix : To develop
@@ -842,10 +839,8 @@ class Dataset(DessiaObject):
         return is_efficient.tolist()
 
     @staticmethod
-    def pareto_frontiers(len_data: int, costs: Matrix):
-        """
-        Experimental method to draw the borders of pareto domain.
-        """
+    def pareto_frontiers(len_data: int, costs: List[List[float]]):
+        """ Experimental method to draw the borders of pareto domain. """
         # Experimental
         checked_costs = Dataset._check_costs(len_data, costs)
         pareto_indexes = Dataset.pareto_indexes(checked_costs)
