@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Performance
 
 - Change sequence hash to check only first and last element recursively
+- Change dict hash to check only first and last element recursively
+- Refactor search_memo function to improve copy performance
 - Add pre-checks for non list-like element in is_sequence function
 
 ### Chore

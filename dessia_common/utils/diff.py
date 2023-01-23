@@ -302,7 +302,9 @@ def dict_hash(dict_):
         return hash_
 
     # Recursively compute hash of first and last element for performance purpose
-    hash_ += len(dict_) * choose_hash(dict_[sorted_keys[0]])
+    first_key = sorted_keys[0]
+    hash_ += len(dict_) * choose_hash(dict_[first_key])
     if len(dict_) > 1:
-        hash_ += 313 * choose_hash(dict_[sorted_keys[-1]])
+        last_key = sorted_keys[-1]
+        hash_ += 313 * choose_hash(dict_[last_key])
     return hash_
