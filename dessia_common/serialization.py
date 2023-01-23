@@ -797,7 +797,7 @@ def is_serializable(obj):
     if dcty.is_jsonable(obj):
         return True
     if isinstance(obj, SerializableObject):
-        dict_ = obj.to_dict()
+        dict_ = obj.to_dict(use_pointers=False)
         return dcty.is_jsonable(dict_)
     if isinstance(obj, dict):
         for key, value in obj.items():
