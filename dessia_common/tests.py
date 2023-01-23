@@ -13,6 +13,7 @@ import dessia_common.files as dcf
 
 class Submodel(DessiaObject):
     """ Mock a MBSE that is a standalone attribute of Model, for testing purpose. """
+
     _standalone_in_db = True
 
     def __init__(self, subvalue: int, name: str = ''):
@@ -24,6 +25,7 @@ class Submodel(DessiaObject):
 
 class Model(DessiaObject):
     """ Mock a standalone MBSE for testing purpose. """
+
     _standalone_in_db = True
 
     def __init__(self, value: int, submodel: Submodel, name: str = ''):
@@ -113,6 +115,7 @@ class ComponentConnection(DessiaObject):
 
 class SystemUsage(DessiaObject):
     """  Mock a simulation result of a system, e.g. the response of the battery pack to a certain usecase. """
+
     _standalone_in_db = True
 
     def __init__(self, time: List[dcm.Time], power: List[dcm.Power], name: str = ''):
@@ -123,6 +126,7 @@ class SystemUsage(DessiaObject):
 
 class System(DessiaObject):
     """ Mock a system that binds several components and their connection. For example, a battery pack. """
+
     _standalone_in_db = True
     _dessia_methods = ['power_simulation']
 
@@ -145,6 +149,7 @@ class System(DessiaObject):
 
 class SystemSimulationResult(DessiaObject):
     """ Result wrapper for a System with its usage. """
+
     _standalone_in_db = True
 
     def __init__(self, system: System, system_usage: SystemUsage, output_power: List[dcm.Power], name: str = ''):
@@ -156,6 +161,7 @@ class SystemSimulationResult(DessiaObject):
 
 class SystemSimulationList(DessiaObject):
     """ Results container for system simulation results. """
+
     _standalone_in_db = True
 
     def __init__(self, simulations: List[SystemSimulationResult], name: str = ''):
@@ -165,6 +171,7 @@ class SystemSimulationList(DessiaObject):
 
 class Car(DessiaObject):
     """ Defines a car with all its features. """
+
     _standalone_in_db = True
     _non_data_hash_attributes = ['name']
 
@@ -244,7 +251,7 @@ class RandDataD1(DessiaObject):
     @classmethod
     def create_dataset(cls, nb_clusters: int = 10, nb_points: int = 2500, mean_borns: Tuple[float, float] = (-50., 50),
                        std_borns: Tuple[float, float] = (-2., 2.)):
-        """ Create a random dataset with a number of clusters, number of points, means and std per cluster. """        
+        """ Create a random dataset with a number of clusters, number of points, means and std per cluster. """
         means_list = []
         std_list = []
         data_list = []
@@ -423,7 +430,7 @@ class RandDataD9(RandDataD1):
 
 class RandDataD10(RandDataD1):
     """ Creates a dataset with 10 parameters from a number of clusters and dimensions. """
-    
+
     _nb_dims = 10
     _vector_features = [f'p_{i+1}' for i in range(10)]
 

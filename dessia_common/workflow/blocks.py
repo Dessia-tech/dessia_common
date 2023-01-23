@@ -817,6 +817,7 @@ class Filter(Block):
 
 class Display(Block):
     """ Abstract block class for display behaviors. """
+
     _displayable_input = 0
     _non_editable_attributes = ['inputs']
 
