@@ -649,16 +649,18 @@ class CrossValidation(DessiaObject):
             return self._scores
         return self._scores
 
-    @property
-    def _points_scores(self) -> Points:
+    def _points_scores(self, reference_path: str) -> Points:
         scores = self.scores
-        points_scores = []
+        samples_scores = []
         for idx, score in enumerate(scores):
-            points_scores.append({'Index': idx, 'Score': score})
-        return points_scores
+            values = {'Index': idx, 'Score': score}
+            full_reference_path = f"{reference_path}/model_validations/{idx}"
+            name = f"model_validation_{idx}"
+            samples_scores.append(Sample(values=values, reference_path=full_reference_path, name=name))
+        return samples_scores
 
-    def _plot_score(self) -> Graph2D:
-        scores = self._points_scores
+    def _plot_score(self, reference_path: str) -> Graph2D:
+        scores = self._points_scores(reference_path)
         nidx = len(scores)
         limits = pl_Dataset(elements=scores_limits(nidx), point_style=INV_POINT_STYLE, edge_style=NO_LINE)
         axis = axis_style(nidx, nidx)
@@ -722,11 +724,12 @@ class CrossValidation(DessiaObject):
         """ Plot data method for CrossValidation. """
         graphs = []
         for idx, validation in enumerate(self.model_validations):
-            graphs += validation.data.build_graphs(reference_path=f"{reference_path}/{idx}")[0]
+            graphs += validation.data.build_graphs(reference_path=f"{reference_path}/model_validations/{idx}")[0]
         if len(self.model_validations[0].data.output_names) >= 1 and \
             "ssifier" in type(self.model_validations[0].modeler.model).__name__:
             return [MultiplePlots(graphs, elements=[{"factice_key":0}], initial_view_on=True)]
-        return [self._plot_score(), MultiplePlots(graphs, elements=[{"factice_key":0}], initial_view_on=True)]
+        return [self._plot_score(reference_path=reference_path),
+                MultiplePlots(graphs, elements=[{"factice_key":0}], initial_view_on=True)]
 
     # Kept in case of a better multiplot
     # def plot_data(self, **_):
