@@ -1,7 +1,4 @@
-"""
-Library for building clusters on Dataset or List.
-
-"""
+""" Library for building clusters on Dataset or List. """
 from typing import List
 
 from scipy.spatial.distance import cdist
@@ -54,8 +51,8 @@ class ClusteredDataset(Dataset):
             Number of clusters in dessia_objects
 
     **Built-in methods**: See :func:`~Dataset`
-
     """
+
     _allowed_methods = ['from_agglomerative_clustering', 'from_kmeans', 'from_dbscan', 'from_pareto_sheets']
 
     def __init__(self, dessia_objects: List[DessiaObject] = None, labels: List[int] = None, name: str = ''):

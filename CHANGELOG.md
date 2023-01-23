@@ -62,6 +62,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Docs weekly decrease
 - Fixed all remaining pydocstyle errors
 - Docs new rules
+- More docs
 
 
 ## 0.11.0

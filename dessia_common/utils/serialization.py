@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Serialization Tools.
-"""
+""" Serialization Tools. """
 
 
 import warnings
@@ -10,9 +8,7 @@ import dessia_common.serialization as dcs
 
 
 def serialize_dict(dict_):
-    """
-    Serialize a dict into a dict (values are serialized).
-    """
+    """ Serialize a dict into a dict (values are serialized). """
     warnings.warn("Module serialization.py have been moved outside utils. Please use it instead")
     return dcs.serialize_dict(dict_)
 

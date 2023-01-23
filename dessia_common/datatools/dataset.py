@@ -1,7 +1,4 @@
-"""
-Library for building Dataset.
-
-"""
+""" Library for building Dataset. """
 from typing import List, Dict, Any
 from copy import copy
 import itertools
@@ -311,10 +308,10 @@ class Dataset(DessiaObject):
 
     @property
     def matrix(self):
-        """ 
+        """
         Get equivalent matrix of dessia_objects.
-        
-        Dimensions: `len(dessia_objects) x len(common_attributes)`. 
+
+        Dimensions: `len(dessia_objects) x len(common_attributes)`.
         """
         if self._matrix is None:
             matrix = []
