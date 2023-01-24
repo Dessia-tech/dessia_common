@@ -10,13 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Chore
 
-- Toggle some D2xx errors 
+- Tag for release candidate
+- Toggle some D2xx errors
 
 ### CI
 
 - tutorials/ci_tutorials.py added to check runnability of .ipynb files inside this new folder
 
 ## 0.12.0
+
 
 ### Changed
 
