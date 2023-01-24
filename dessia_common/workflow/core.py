@@ -9,7 +9,7 @@ import json
 import webbrowser
 
 import io
-from typing import List, Union, Type, Any, Dict, Tuple, Optional
+from typing import List, Union, Type, Any, Dict, Tuple, Optional, TypeVar
 from copy import deepcopy
 import warnings
 import networkx as nx
@@ -46,7 +46,7 @@ class Variable(DessiaObject):
     _eq_is_data_eq = False
     has_default_value: bool = False
 
-    def __init__(self, name: str = '', position=None):
+    def __init__(self, name: str = '', position: Tuple[float, float] = None):
         DessiaObject.__init__(self, name=name)
         if position is None:
             self.position = (0, 0)
@@ -76,7 +76,7 @@ class TypedVariable(Variable):
 
     has_default_value: bool = False
 
-    def __init__(self, type_: Type, name: str = '', position=None):
+    def __init__(self, type_: Type[Any], name: str = '', position: Tuple[float, float] = None):
         Variable.__init__(self, name=name, position=position)
         self.type_ = type_
 
@@ -120,9 +120,13 @@ class VariableWithDefaultValue(Variable):
 
     has_default_value: bool = True
 
-    def __init__(self, default_value: Any, name: str = '', position=None):
+    def __init__(self, default_value: Any, name: str = '', position: Tuple[float, float] = None):
+        warnings.warn("VariableWithDefaultValue is deprecated and shouldn't be used anymore. ")
         Variable.__init__(self, name=name, position=position)
         self.default_value = default_value
+
+
+T = TypeVar("T")
 
 
 class TypedVariableWithDefaultValue(TypedVariable):
@@ -134,7 +138,7 @@ class TypedVariableWithDefaultValue(TypedVariable):
 
     has_default_value: bool = True
 
-    def __init__(self, type_: Type, default_value: Any, name: str = '', position=None):
+    def __init__(self, type_: Type[T], default_value: T, name: str = '', position: Tuple[float, float] = None):
         TypedVariable.__init__(self, type_=type_, name=name, position=position)
         self.default_value = default_value
 

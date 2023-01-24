@@ -569,7 +569,7 @@ class HeterogeneousSequence(TypingProperty):
 
     Datatype that can be seen as a tuple. Have any amount of arguments but a limited length.
     """
-    def __init__(self, annotation: tp.Type[tp.List[T]], attribute: str, definition_default: tp.List[T] = None):
+    def __init__(self, annotation: tp.Type[tp.Tuple], attribute: str, definition_default: tp.Tuple = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
         self.item_schemas = [get_schema(annotation=a, attribute=f"{attribute}/{i}") for i, a in enumerate(self.args)]
@@ -621,7 +621,7 @@ class HomogeneousSequence(TypingProperty):
 
     Datatype that can be seen as a list. Have only one argument but an unlimited length.
     """
-    def __init__(self, annotation: tp.Type[tp.Tuple], attribute: str, definition_default: tp.Tuple = None):
+    def __init__(self, annotation: tp.Type[tp.List[T]], attribute: str, definition_default: tp.List[T] = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
         self.item_schemas = [get_schema(annotation=a, attribute=f"{attribute}/{i}") for i, a in enumerate(self.args)]
@@ -920,6 +920,11 @@ class ClassProperty(TypingProperty):
         return issues
 
 
+class GenericTypeProperty(Property):
+    def __init__(self, annotation: tp.Type[tp.TypeVar], attribute: str, definition_default: tp.TypeVar):
+        super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
+
+
 def inspect_arguments(method: tp.Callable, merge: bool = False):
     """ Wrapper around 'split_default_argument' method in order to call it from a method object. """
     method_full_name = f'{method.__module__}.{method.__qualname__}'
@@ -981,7 +986,9 @@ def get_schema(annotation: tp.Type[T], attribute: str, definition_default: tp.Op
         pass
     if inspect.isclass(annotation):
         return custom_class_schema(annotation=annotation, attribute=attribute, definition_default=definition_default)
-    raise NotImplementedError(f"No schema defined for annotation '{annotation}'.")
+    if isinstance(annotation, tp.TypeVar):
+        return
+    raise NotImplementedError(f"No schema defined for attribute '{attribute}' annotated '{annotation}'.")
 
 
 ORIGIN_TO_SCHEMA_CLASS = {
