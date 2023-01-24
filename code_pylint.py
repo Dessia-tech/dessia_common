@@ -20,11 +20,7 @@ MIN_NOTE = 9.17
 UNWATCHED_ERRORS = ['fixme', 'trailing-whitespace', 'import-error']
 
 MAX_ERROR_BY_TYPE = {
-<<<<<<< HEAD
                      'protected-access': 42,
-=======
-                     'protected-access': 37,
->>>>>>> origin/dev
                      'consider-using-f-string': 1,
                      'arguments-differ': 1,
                      'no-member': 3,
@@ -49,13 +45,8 @@ MAX_ERROR_BY_TYPE = {
                      'consider-iterating-dictionary': 1,
                      'attribute-defined-outside-init': 3,
                      'simplifiable-if-expression': 1,
-<<<<<<< HEAD
-                     'broad-except': 6,
-                     'bare-except': 4,
-=======
                      'broad-except': 4,
                      'bare-except': 3,
->>>>>>> origin/dev
                      'undefined-loop-variable': 1,
                      'consider-using-with': 2,
                      'too-many-nested-blocks': 2,
