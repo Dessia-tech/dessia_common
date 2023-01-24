@@ -9,7 +9,7 @@ from sklearn import preprocessing
 
 try:
     from plot_data.core import Scatter, Histogram, MultiplePlots, Tooltip, ParallelPlot, PointFamily, EdgeStyle, Axis, \
-        PointStyle
+        PointStyle, Sample
     from plot_data.colors import BLUE, GREY
 except ImportError:
     pass
@@ -182,7 +182,7 @@ class Dataset(DessiaObject):
         return new_hlist
 
     def __str__(self):
-        """Print Dataset as a table."""
+        """ Print Dataset as a table. """
         attr_space = []
 
         prefix = self._write_str_prefix()
@@ -621,7 +621,7 @@ class Dataset(DessiaObject):
 
     def plot_data(self, reference_path: str = "#", **kwargs):
         """ Plot a standard scatter matrix of all attributes in common_attributes and a dimensionality plot. """
-        data_list = self._plot_data_list()
+        data_list = self._to_samples(reference_path=reference_path)
         if len(self.common_attributes) > 1:
             # Plot a correlation matrix : To develop
             # correlation_matrix = []
@@ -663,11 +663,15 @@ class Dataset(DessiaObject):
     def _tooltip_attributes(self):
         return self.common_attributes
 
-    def _plot_data_list(self):
-        plot_data_list = []
-        for row, _ in enumerate(self.dessia_objects):
-            plot_data_list.append({attr: self.matrix[row][col] for col, attr in enumerate(self.common_attributes)})
-        return plot_data_list
+    def _object_to_sample(self, dessia_object: DessiaObject, row: int, reference_path: str = '#'):
+        sample_values = {attr: self.matrix[row][col] for col, attr in enumerate(self.common_attributes)}
+        reference_path = f"{reference_path}/dessia_objects/{row}"
+        name = dessia_object.name if dessia_object.name else f"Sample {row}"
+        return Sample(values=sample_values, reference_path=reference_path, name=name)
+
+    def _to_samples(self, reference_path: str = '#'):
+        return [self._object_to_sample(dessia_object=dessia_object, row=row, reference_path=reference_path)
+                for row, dessia_object in enumerate(self.dessia_objects)]
 
     def _point_families(self):
         return [PointFamily(BLUE, list(range(len(self))))]

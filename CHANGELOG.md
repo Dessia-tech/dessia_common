@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Workflow : to_script Export now write only class name instead of full_classname
 - Hot fix for is_valid method of workflow's Block
 - Core : add a boolean for platform checking in check_list. Fixes a problem with testing classes not existing
+- Reference path for datatools Dataset and ClusteredDataset
 
 ### Refactor
 
