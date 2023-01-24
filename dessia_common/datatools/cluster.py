@@ -7,7 +7,7 @@ from sklearn import cluster
 import matplotlib.pyplot as plt
 
 try:
-    from plot_data.core import PointFamily, Sample
+    from plot_data.core import PointFamily
     from plot_data.colors import LIGHTGREY, Color
 except ImportError:
     pass
