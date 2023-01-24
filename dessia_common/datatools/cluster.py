@@ -305,8 +305,8 @@ class ClusteredDataset(Dataset):
             return plotted_clist.plot_data(reference_path=reference_path, **kwargs)
         return Dataset.plot_data(self, reference_path=reference_path, **kwargs)
 
-    def _object_to_sample(self, dessia_object: DessiaObject, reference_path: str, row: int):
-        new_sample = super()._object_to_sample(dessia_object=dessia_object, reference_path=reference_path, row=row)
+    def _object_to_sample(self, dessia_object: DessiaObject, row: int, reference_path: str = '#'):
+        new_sample = super()._object_to_sample(dessia_object=dessia_object, row=row, reference_path=reference_path)
         new_sample.values["Cluster Label"] = self.labels[row]
         return new_sample
 
