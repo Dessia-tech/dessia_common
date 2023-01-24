@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Types tools.
-"""
+""" Types tools. """
 
 from typing import Any, Dict, List, Tuple, Type, Union, get_origin, get_args
 
+import sys
 from collections.abc import Iterator, Sequence
 from importlib import import_module
 
@@ -56,9 +55,7 @@ def is_classname_transform(string: str):
 
 
 def is_jsonable(obj):
-    """
-    Returns if object can be dumped as it is in a json.
-    """
+    """ Returns if object can be dumped as it is in a json. """
     # First trying with orjson which is more efficient
     try:
         orjson.dumps(obj, option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS).decode('utf-8')
@@ -124,13 +121,15 @@ def isinstance_base_types(obj):
 def get_python_class_from_class_name(full_class_name: str):
     """ Get python class object corresponging to given classname. """
     cached_value = _PYTHON_CLASS_CACHE.get(full_class_name, None)
+    # TODO : this is just quick fix, it will be modified soon with another.
+    sys.setrecursionlimit(3000)
     if cached_value is not None:
         return cached_value
 
     module_name, class_name = full_class_name.rsplit('.', 1)
     module = import_module(module_name)
-    class_ = getattr(module, class_name)
 
+    class_ = getattr(module, class_name)
     # Storing in cache
     _PYTHON_CLASS_CACHE[full_class_name] = class_
     return class_
@@ -356,6 +355,7 @@ def is_bson_valid(value, allow_nonstring_keys=False) -> Tuple[bool, str]:
     else:
         return False, f'Unrecognized type: {type(value)}'
     return True, ''
+
 
 # TODO recursive_type and recursive_type functions look weird
 

@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Serialization Tools.
-"""
+""" Serialization Tools. """
 
 import uuid
 import sys
@@ -27,6 +25,7 @@ fullargsspec_cache = {}
 
 class SerializableObject(CoreDessiaObject):
     """ Serialization capabilities of Dessia Object. """
+
     _non_serializable_attributes = []
 
     def base_dict(self):
@@ -52,16 +51,13 @@ class SerializableObject(CoreDessiaObject):
 
         Keys are filtered with non serializable attributes controls.
         """
-
         dict_ = {k: v for k, v in self.__dict__.items()
                  if k not in self._non_serializable_attributes and not k.startswith('_')}
         return dict_
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#',
                 id_method=True, id_memo=None) -> JsonSerializable:
-        """
-        Generic to_dict method.
-        """
+        """ Generic to_dict method. """
         if memo is None:
             memo = {}
 
@@ -96,11 +92,6 @@ class SerializableObject(CoreDessiaObject):
     def full_classname(self):
         """ Full classname of class like: package.module.submodule.classname. """
         return dcty.full_classname(self)
-
-    def copy(self):
-        """ Copy object. Not implemented at base level. """
-        raise NotImplementedError("Method copy is not implemented for SerializableObject."
-                                  "Please inherit from DessiaObject")
 
 
 def serialize_dict(dict_):
@@ -151,9 +142,7 @@ def serialize(value):
 
 
 def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=None):
-    """
-    Main function for serialization with pointers.
-    """
+    """ Main function for serialization with pointers. """
     if memo is None:
         memo = {}
     if id_memo is None:
@@ -218,9 +207,7 @@ def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=
 
 
 def serialize_dict_with_pointers(dict_, memo, path, id_method, id_memo):
-    """
-    Serialize a dict recursively with jsonpointers using a memo dict at a given path of the top level object.
-    """
+    """ Serialize a dict recursively with jsonpointers using a memo dict at a given path of the top level object. """
     if memo is None:
         memo = {}
     if id_memo is None:
@@ -261,9 +248,7 @@ def serialize_dict_with_pointers(dict_, memo, path, id_method, id_memo):
 
 
 def serialize_sequence_with_pointers(seq, memo, path, id_method, id_memo):
-    """
-    Serialize a sequence (list or tuple) using jsonpointers.
-    """
+    """ Serialize a sequence (list or tuple) using jsonpointers. """
     serialized_sequence = []
     for ival, value in enumerate(seq):
         value_path = f'{path}/{ival}'
@@ -551,7 +536,6 @@ def pointer_graph(value):
      * the hierarchy of an subattribute to an attribute
      * the pointer link between the 2 elements
     """
-
     nodes = set()
     path_edges = set()
     pointer_edges = set()

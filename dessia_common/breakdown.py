@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Code for breakdowns.
-"""
+""" Code for breakdowns. """
 
 import sys
 from ast import literal_eval
@@ -213,7 +211,6 @@ def deep_getsizeof(obj, ids=None):
     :param ids:
     :return:
     """
-
     if ids is None:
         ids = set()
 

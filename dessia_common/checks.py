@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-General checks & checklists.
-"""
+""" General checks & checklists. """
 
 from typing import List
 
@@ -12,6 +10,7 @@ LEVEL_TO_INT = {'debug': 0, 'info': 1, 'warning': 2, 'error': 3}
 
 class PassedCheck:
     """ Denote the result of a check that has no error. """
+
     level = 'info'
 
     def __init__(self, message: str):
@@ -23,11 +22,13 @@ class PassedCheck:
 
 class CheckWarning(PassedCheck):
     """ Denote a check warning. """
+
     level = 'warning'
 
 
 class FailedCheck(PassedCheck):
     """ Denote a failed check. """
+
     level = 'error'
 
 
@@ -40,9 +41,7 @@ class GeometricInconsistance(FailedCheck):
 
 
 class CheckList:
-    """
-    A list of checks result.
-    """
+    """ A list of checks result. """
 
     def __init__(self, checks: List[PassedCheck]):
         self.checks = checks
