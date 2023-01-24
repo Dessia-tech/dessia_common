@@ -171,6 +171,7 @@ def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=
             id_ = str(uuid.uuid1())
             id_memo[id_] = serialized
             memo[value] = f'#/_references/{id_}'
+            serialized = {'$ref': memo[value]}
         else:
             memo[value] = path
 
@@ -190,6 +191,7 @@ def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=
             id_ = str(uuid.uuid1())
             id_memo[id_] = serialized
             memo[value] = f'#/_references/{id_}'
+            serialized = {'$ref': memo[value]}
         else:
             memo[value] = path
 
