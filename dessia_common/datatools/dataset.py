@@ -667,16 +667,11 @@ class Dataset(DessiaObject):
         sample_values = {attr: self.matrix[row][col] for col, attr in enumerate(self.common_attributes)}
         full_reference_path = f"{reference_path}/dessia_objects/{row}"
         name = dessia_object.name if dessia_object.name else f"Sample {row}"
-        return sample_values, full_reference_path, name
+        return Sample(values=sample_values, reference_path=full_reference_path, name=name)
 
     def _to_samples(self, reference_path: str):
-        samples = []
-        for row, dessia_object in enumerate(self.dessia_objects):
-            sample_values, full_reference_path, name = self._object_to_sample(dessia_object=dessia_object,
-                                                                              reference_path=reference_path,
-                                                                              row=row)
-            samples.append(Sample(values=sample_values, reference_path=full_reference_path, name=name))
-        return samples
+        return [self._object_to_sample(dessia_object=dessia_object, reference_path=reference_path, row=row)
+                for row, dessia_object in enumerate(self.dessia_objects)]
 
     def _point_families(self):
         return [PointFamily(BLUE, list(range(len(self))))]

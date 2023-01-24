@@ -7,7 +7,7 @@ from sklearn import cluster
 import matplotlib.pyplot as plt
 
 try:
-    from plot_data.core import PointFamily
+    from plot_data.core import PointFamily, Sample
     from plot_data.colors import LIGHTGREY, Color
 except ImportError:
     pass
@@ -306,11 +306,9 @@ class ClusteredDataset(Dataset):
         return Dataset.plot_data(self, reference_path=reference_path, **kwargs)
 
     def _object_to_sample(self, dessia_object: DessiaObject, reference_path: str, row: int):
-        sample_values, full_reference_path, name = super()._object_to_sample(dessia_object=dessia_object,
-                                                                             reference_path=reference_path,
-                                                                             row=row)
-        sample_values["Cluster Label"] = self.labels[row]
-        return sample_values, full_reference_path, name
+        new_sample = super()._object_to_sample(dessia_object=dessia_object, reference_path=reference_path, row=row)
+        new_sample.values["Cluster Label"] = self.labels[row]
+        return new_sample
 
     def _point_families(self):
         colormap = plt.cm.get_cmap('hsv', self.n_clusters + 1)(range(self.n_clusters + 1))
