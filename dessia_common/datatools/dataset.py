@@ -665,9 +665,9 @@ class Dataset(DessiaObject):
 
     def _object_to_sample(self, dessia_object: DessiaObject, row: int, reference_path: str = '#'):
         sample_values = {attr: self.matrix[row][col] for col, attr in enumerate(self.common_attributes)}
-        full_reference_path = f"{reference_path}/dessia_objects/{row}"
+        reference_path = f"{reference_path}/dessia_objects/{row}"
         name = dessia_object.name if dessia_object.name else f"Sample {row}"
-        return Sample(values=sample_values, reference_path=full_reference_path, name=name)
+        return Sample(values=sample_values, reference_path=reference_path, name=name)
 
     def _to_samples(self, reference_path: str = '#'):
         return [self._object_to_sample(dessia_object=dessia_object, row=row, reference_path=reference_path)
