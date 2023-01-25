@@ -1959,7 +1959,7 @@ class WorkflowState(DessiaObject):
         Typecheck, activate the variable and propagate the value to its pipe.
         """
         # Type checking
-        value_type_check(value, input_.type_)
+        value_type_check(value=value, variable=input_)
         input_index = self.workflow.input_index(input_)
         self.input_values[input_index] = value
         self._activate_variable(variable=input_, value=value)
@@ -2238,11 +2238,11 @@ def deserialize_pipes(pipes_dict, blocks, nonblock_variables, connected_nbvs):
     return pipes
 
 
-def value_type_check(value, type_):
+def value_type_check(value, variable):
     """ Check if the value as the specified type. """
     try:  # TODO: Subscripted generics cannot be used...
-        if not isinstance(value, type_):
+        if not isinstance(value, variable.type_):
             return False
-    except TypeError:
+    except (TypeError, AttributeError):
         pass
     return True

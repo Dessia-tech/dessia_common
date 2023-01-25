@@ -130,7 +130,7 @@ def get_python_class_from_class_name(full_class_name: str):
     """ Get python class object corresponging to given classname. """
     cached_value = _PYTHON_CLASS_CACHE.get(full_class_name, None)
     # TODO : this is just quick fix, it will be modified soon with another.
-    sys.setrecursionlimit(3000)
+    # sys.setrecursionlimit(3000)
     if cached_value is not None:
         return cached_value
 
