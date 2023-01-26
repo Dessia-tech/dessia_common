@@ -11,8 +11,9 @@ assert hash(workflow_) == hash(deserialized_workflow)
 parameter_input = workflow_.blocks[0].inputs[0]
 integer_input = workflow_.nonblock_variables[0]
 string_input = workflow_.nonblock_variables[1]
+n_solutions = 100
 input_values = {workflow_.input_index(parameter_input): 5,
-                workflow_.input_index(integer_input): 2,
+                workflow_.input_index(integer_input): n_solutions,
                 workflow_.input_index(string_input): "Test"}
 workflow_run = workflow_.run(input_values=input_values, verbose=True, name='Dev Objects')
 
@@ -69,7 +70,7 @@ try:
 except AttributeError:
     pass
 
-assert workflow_run._get_from_path("#/values/0") == 2
+assert workflow_run._get_from_path("#/values/0") == n_solutions
 
 # assert len(workflow_run._get_from_path("#/values/6")) == 2
 # assert isinstance(workflow_run._get_from_path("#/values/6/0"), StandaloneObject)
