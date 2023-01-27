@@ -24,9 +24,9 @@ class ToScriptElement:
         """
         script_imports = ""
         for module, class_list in self.get_import_dict().items():
-            if "List" in module:
+            if "[" in module:
+                class_list = [module.split('[')[0]]
                 module = "typing"
-                class_list = ['List']
             script_imports += f"from {module} import {', '.join(class_list)}\n"
 
         for import_as_is in self.imports_as_is:

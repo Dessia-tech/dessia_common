@@ -23,7 +23,7 @@ from dessia_common.templates import workflow_template
 from dessia_common.core import DessiaObject, is_sequence, JSONSCHEMA_HEADER, jsonschema_from_annotation, \
     deserialize_argument, set_default_value, DisplaySetting
 
-from dessia_common.utils.types import serialize_typing, deserialize_typing, recursive_type, typematch
+from dessia_common.utils.types import serialize_typing, deserialize_typing, recursive_type, typematch, is_typing
 from dessia_common.utils.copy import deepcopy_value
 from dessia_common.utils.docstrings import FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE
 from dessia_common.utils.diff import choose_hash
@@ -101,21 +101,25 @@ class TypedVariable(Variable):
     def copy(self, deep: bool = False, memo=None):
         """ Copies and gives a new object with no linked data. """
         return TypedVariable(type_=self.type_, name=self.name)
-
-    def _get_to_script_elements(self) -> ToScriptElement:
-        script = super()._get_to_script_elements()
-
+    
+    def get_script_elements(self, script) -> ToScriptElement:
+        """     """
         try:
             script.declaration += f", type_={self.type_.__name__}"
         except AttributeError:
-            if self.type_.__origin__ is list:
-                script.declaration += f", type_=List[{self.type_.__args__[0].__name__}]"
+            if is_typing(self.type_):
+                script.declaration += f", type_={serialize_typing(self.type_).split('[')[0]}[{self.type_.__args__[0].__name__}]"
+                script.imports.append(f"{self.type_.__args__[0].__module__}.{self.type_.__args__[0].__name__}")
         if "builtins" not in serialize_typing(self.type_):
             script.imports.append(serialize_typing(self.type_))
-            if "List" in serialize_typing(self.type_):
-                import_list_elm = serialize_typing(self.type_).split('[')[1].replace(']', '')
-                script.imports.append(import_list_elm)
         return script
+
+    def _get_to_script_elements(self) -> ToScriptElement:
+        """     """
+        script = super()._get_to_script_elements()
+        script_ = self.get_script_elements(script)
+
+        return script_
 
 
 class VariableWithDefaultValue(Variable):
