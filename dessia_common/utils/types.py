@@ -154,6 +154,7 @@ def is_typing(object_: Any):
 
 def serialize_typing(typing_):
     """ Compute a string from a type. """
+
     if is_typing(typing_):
         return serialize_typing_types(typing_)
     if typing_ in [StringFile, BinaryFile, MethodType, ClassMethodType] or isinstance(typing_, type):
@@ -217,9 +218,7 @@ def type_from_argname(argname):
     if argname:
         if splitted_argname[0] == '__builtins__':
             argname = f"builtins.{splitted_argname[1]}"
-        # if splitted_argname[0] != '__builtins__':
         return get_python_class_from_class_name(argname)
-        # return literal_eval(splitted_argname[1])
     return Any
 
 

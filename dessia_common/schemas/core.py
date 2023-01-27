@@ -223,6 +223,10 @@ class Property:
         return self
 
     @property
+    def serialized(self):
+        return str(self.annotation)
+
+    @property
     def check_prefix(self) -> str:
         """ Shortcut for Check message prefixes. """
         return f"Attribute '{self.attribute}' : "
@@ -269,6 +273,19 @@ class TypingProperty(Property):
         """ Return Typing origin. """
         return tp.get_origin(self.annotation)
 
+    @property
+    def args_schemas(self) -> tp.List[Property]:
+        """ Get schema for each arg. """
+        print(self.attribute, self.args)
+        return [get_schema(annotation=a, attribute=f"{self.attribute}/{i}") for i, a in enumerate(self.args)]
+
+    @property
+    def serialized(self):
+        serialized = self.origin.__name__
+        if self.args:
+            serialized = f"{serialized}[{', '.join([dc_types.type_fullname(a) for a in self.args])}]"
+        return serialized
+
     @classmethod
     def dict_to_object(cls, dict_):
         """
@@ -288,7 +305,33 @@ class TypingProperty(Property):
         return PassedCheck(f"{self.check_prefix}has exactly one arg in its definition.")
 
 
-class OptionalProperty(TypingProperty):
+class ProxyProperty(TypingProperty):
+    """
+    Schema Class for Proxies.
+
+    Proxies are just intermediate types which actual schemas if its args. For example OptionalProperty proxy.
+    """
+    def __init__(self, annotation: tp.Type[T], attribute: str, definition_default: T = None):
+        super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
+
+    @property
+    def args(self):
+        try:
+            return self.schema.args
+        except AttributeError:
+            return None
+
+    @property
+    def schema(self):
+        """ Return a reference to its only arg. """
+        return get_schema(annotation=self.args[0], attribute=self.attribute, definition_default=self.definition_default)
+
+    @property
+    def serialized(self) -> str:
+        return self.schema.serialized
+
+
+class OptionalProperty(ProxyProperty):
     """
     Proxy Schema class for OptionalProperty properties.
 
@@ -297,11 +340,6 @@ class OptionalProperty(TypingProperty):
     """
     def __init__(self, annotation: tp.Type[T], attribute: str, definition_default: T = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
-
-    @property
-    def schema(self):
-        """ Return a reference to its only arg. """
-        return get_schema(annotation=self.args[0], attribute=self.attribute, definition_default=self.definition_default)
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write Optional as a dict. """
@@ -320,7 +358,7 @@ class OptionalProperty(TypingProperty):
         raise NotImplementedError("Schema reconstruction is not implemented yet")
 
 
-class AnnotatedProperty(TypingProperty):
+class AnnotatedProperty(ProxyProperty):
     """
     Proxy Schema class for annotated type hints.
 
@@ -338,11 +376,6 @@ class AnnotatedProperty(TypingProperty):
     def __init__(self, annotation: tp.Type[T], attribute: str, definition_default: T = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
         raise NotImplementedError(self._not_implemented_msg)
-
-    @property
-    def schema(self):
-        """ Return a reference to its only arg. """
-        return get_schema(annotation=self.args[0], attribute=self.attribute, definition_default=self.definition_default)
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write Annotated as a dict. """
@@ -397,7 +430,7 @@ class MeasureProperty(BuiltinProperty):
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write Measure as a dict. """
-        chunk = Property.to_dict(self, title=title, editable=editable, description=description)
+        chunk = super().to_dict(title=title, editable=editable, description=description)
         chunk.update({"si_unit": self.annotation.si_unit, "type": "number"})
         return chunk
 
@@ -465,6 +498,10 @@ class CustomClass(Property):
     def schema(self):
         """ Return a reference to the schema of the annotation. """
         return ClassSchema(self.annotation)
+
+    @property
+    def serialized(self) -> str:
+        return self.classname
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write CustomClass as a dict. """
@@ -987,7 +1024,7 @@ def get_schema(annotation: tp.Type[T], attribute: str, definition_default: tp.Op
     if inspect.isclass(annotation):
         return custom_class_schema(annotation=annotation, attribute=attribute, definition_default=definition_default)
     if isinstance(annotation, tp.TypeVar):
-        return
+        return GenericTypeProperty(annotation=annotation, attribute=attribute, definition_default=definition_default)
     raise NotImplementedError(f"No schema defined for attribute '{attribute}' annotated '{annotation}'.")
 
 
