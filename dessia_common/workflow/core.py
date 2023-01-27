@@ -108,7 +108,8 @@ class TypedVariable(Variable):
             script.declaration += f", type_={self.type_.__name__}"
         except AttributeError:
             if is_typing(self.type_):
-                script.declaration += f", type_={serialize_typing(self.type_).split('[')[0]}[{self.type_.__args__[0].__name__}]"
+                script.declaration += f", type_={serialize_typing(self.type_).split('[')[0]}" \
+                                      f"[{self.type_.__args__[0].__name__}]"
                 script.imports.append(f"{self.type_.__args__[0].__module__}.{self.type_.__args__[0].__name__}")
         if "builtins" not in serialize_typing(self.type_):
             script.imports.append(serialize_typing(self.type_))
