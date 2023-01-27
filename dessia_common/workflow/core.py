@@ -103,7 +103,11 @@ class TypedVariable(Variable):
         return TypedVariable(type_=self.type_, name=self.name)
     
     def get_script_elements(self, script) -> ToScriptElement:
-        """     """
+        """
+        Update elements of the script representing the workflow.
+
+        return ToSriptElement
+        """
         try:
             script.declaration += f", type_={self.type_.__name__}"
         except AttributeError:
@@ -116,7 +120,11 @@ class TypedVariable(Variable):
         return script
 
     def _get_to_script_elements(self) -> ToScriptElement:
-        """     """
+        """
+        Compute elements of the script representing the workflow.
+
+        return ToSriptElement
+        """
         script = super()._get_to_script_elements()
         script_ = self.get_script_elements(script)
 
