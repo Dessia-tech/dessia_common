@@ -1,6 +1,4 @@
-"""
-Displays for dessia_common.
-"""
+""" Displays for dessia_common. """
 import warnings
 import webbrowser
 import os

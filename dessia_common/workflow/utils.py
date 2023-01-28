@@ -1,16 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Utilities for workflows.
-"""
+""" Utilities for workflows. """
 
 from typing import List, Dict
 
 
 class ToScriptElement:
-    """
-    Class meant to improve to_script readability.
-    """
+    """ Class meant to improve to_script readability. """
+
     def __init__(self, declaration: str, before_declaration: str = None,
                  imports: List[str] = None, imports_as_is: List[str] = None):
         self.before_declaration = before_declaration
@@ -19,9 +16,7 @@ class ToScriptElement:
         self.imports_as_is = imports_as_is
 
     def imports_to_str(self) -> str:
-        """
-        Import a script as str.
-        """
+        """  Import a script as str. """
         script_imports = ""
         for module, class_list in self.get_import_dict().items():
             script_imports += f"from {module} import {', '.join(class_list)}\n"
@@ -34,9 +29,7 @@ class ToScriptElement:
         return script_imports
 
     def get_import_dict(self) -> Dict[str, List[str]]:
-        """
-        Get imported modules of script into a dict.
-        """
+        """ Get imported modules of script into a dict. """
         imports_dict: Dict[str, List[str]] = {}
         for import_ in self.imports:
             module = '.'.join(import_.split('.')[:-1])

@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Serialization Tools.
-"""
+""" Serialization Tools. """
 
 import uuid
 import sys
@@ -27,6 +25,7 @@ fullargsspec_cache = {}
 
 class SerializableObject(CoreDessiaObject):
     """ Serialization capabilities of Dessia Object. """
+
     _non_serializable_attributes = []
 
     def base_dict(self):

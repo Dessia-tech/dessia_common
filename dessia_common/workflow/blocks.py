@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Module to define Blocks for workflows.
-"""
+""" Module to define Blocks for workflows. """
 
 import inspect
 import warnings
@@ -819,6 +817,7 @@ class Filter(Block):
 
 class Display(Block):
     """ Abstract block class for display behaviors. """
+
     _displayable_input = 0
     _non_editable_attributes = ['inputs']
 

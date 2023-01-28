@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Module for docstring parsing to platform and Sphinx auto documentation.
-"""
+""" Module for docstring parsing to platform and Sphinx auto documentation. """
 
 from inspect import isclass, ismethod, isfunction
 from typing import Dict, Any, Tuple, get_type_hints
@@ -16,6 +14,7 @@ except ImportError:
 
 class ParsedAttribute(TypedDict):
     """ Parsed description of a docstring attribute. """
+
     desc: str
     type_: str
     annotation: str
@@ -23,6 +22,7 @@ class ParsedAttribute(TypedDict):
 
 class ParsedDocstring(TypedDict):
     """ Parsed description of a docstring. """
+
     description: str
     attributes: Dict[str, ParsedAttribute]
 

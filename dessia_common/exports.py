@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Exports for dessia_common.
-"""
+""" Exports for dessia_common. """
 from typing import List, Dict, Any, Sequence, Optional
 
 
@@ -38,6 +36,7 @@ def is_builtins_list(list_):
 
 class ExportFormat:
     """ Define which method of an object should be called for each Export. """
+    
     def __init__(self, selector: Optional[str], extension: str, method_name: str, text: bool,
                  export_name: str = "", args: Dict[str, Any] = None):
         self.selector = selector
@@ -57,6 +56,7 @@ class ExportFormat:
 
 class XLSXWriter:
     """ Base class to write a DessiaObject in an excel file. """
+
     max_column_width = 40
     color_dessIA1 = "263238"
     color_dessIA2 = "537CB0"
