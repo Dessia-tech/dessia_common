@@ -102,7 +102,7 @@ class TypedVariable(Variable):
         """ Copies and gives a new object with no linked data. """
         return TypedVariable(type_=self.type_, name=self.name)
     
-    def get_script_elements(self, script) -> ToScriptElement:
+    def get_script_elements(self, script: ToScriptElement) -> ToScriptElement:
         """
         Update elements of the script representing the workflow.
 
