@@ -112,11 +112,19 @@ class TypedVariable(Variable):
             script.declaration += f", type_={self.type_.__name__}"
         except AttributeError:
             if is_typing(self.type_):
+                args = self.type_.__args__
+                if len(args) == 1:
+                    args = self.type_.__args__[0].__name__
+                elif len(args) == 2:
+                    args = f"{args[0].__name__}, {args[0].__name__}"
                 script.declaration += f", type_={serialize_typing(self.type_).split('[')[0]}" \
-                                      f"[{self.type_.__args__[0].__name__}]"
+                                      f"[{args}]"
                 script.imports.append(f"{self.type_.__args__[0].__module__}.{self.type_.__args__[0].__name__}")
-        if "builtins" not in serialize_typing(self.type_):
-            script.imports.append(serialize_typing(self.type_))
+        if "builtins" not in serialize_typing(self.type_) or "Dict" in serialize_typing(self.type_):
+            try:
+                script.imports.append(f"{self.type_.__module__}.{(self.type_.__origin__.__name__.capitalize())}")
+            except AttributeError:
+                script.imports.append(serialize_typing(self.type_))
         return script
 
     def _get_to_script_elements(self) -> ToScriptElement:
