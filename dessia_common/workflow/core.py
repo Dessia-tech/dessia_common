@@ -108,6 +108,7 @@ class TypedVariable(Variable):
 
         return ToSriptElement
         """
+        types = ["Dict", "Tuple"]
         try:
             script.declaration += f", type_={self.type_.__name__}"
         except AttributeError:
@@ -120,7 +121,7 @@ class TypedVariable(Variable):
                 script.declaration += f", type_={serialize_typing(self.type_).split('[')[0]}" \
                                       f"[{args}]"
                 script.imports.append(f"{self.type_.__args__[0].__module__}.{self.type_.__args__[0].__name__}")
-        if "builtins" not in serialize_typing(self.type_) or "Dict" in serialize_typing(self.type_):
+        if "builtins" not in serialize_typing(self.type_) or any(type_ in serialize_typing(self.type_) for type_ in types):
             try:
                 script.imports.append(f"{self.type_.__module__}.{(self.type_.__origin__.__name__.capitalize())}")
             except AttributeError:
