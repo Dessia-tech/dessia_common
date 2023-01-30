@@ -419,14 +419,17 @@ class Workflow(Block):
 
     @cached_property
     def file_inputs(self):
+        """ Get all inputs that are files. """
         return list(filter(lambda x: issubclass(x.type_, (StringFile, BinaryFile)), self.inputs))
 
     @cached_property
     def has_file_inputs(self) -> bool:
+        """ Return True if there is any file input. """
         return any(self.file_inputs)
 
     @cached_property
     def memorized_pipes(self) -> List[Pipe]:
+        """ Get pipes that are memorized. """
         return [p for p in self.pipes if p.memorize]
 
     def handle_pipe(self, pipe):
@@ -586,6 +589,7 @@ class Workflow(Block):
                 for p in self.pipes]
 
     def selector_name(self, block: Block) -> str:
+        """ Compute name for selector. """
         name = block.name
         if name:
             return name
