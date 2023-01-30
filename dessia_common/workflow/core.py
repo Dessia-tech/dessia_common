@@ -9,7 +9,7 @@ import datetime
 import tempfile
 import json
 import webbrowser
-
+from functools import cached_property
 import io
 from typing import List, Union, Type, Any, Dict, Tuple, Optional
 from copy import deepcopy
@@ -388,8 +388,6 @@ class Workflow(Block):
 
         inputs = [v for v in self.variables if v not in self.imposed_variable_values
                   and len(nx.ancestors(self.graph, v)) == 0]
-        # if not hasattr(variable, 'type_'):
-        #     raise WorkflowError('Workflow as an untyped input variable: {}'.format(variable.name))
 
         self.description = description
         self.documentation = documentation
@@ -398,37 +396,13 @@ class Workflow(Block):
         self.output = output
         if output is not None:
             outputs.append(output)
-            found_output = False
-            i = 0
-            while not found_output and i < len(self.blocks):
-                found_output = output in self.blocks[i].outputs
-                i += 1
-            if not found_output:
-                raise WorkflowError("workflow's output is not in any block's outputs")
+            self._find_output_block(output)
 
-        found_name = False
-        i = 0
-        all_nbvs = self.nonblock_variables + self.detached_variables
-        while not found_name and i < len(all_nbvs):
-            variable = all_nbvs[i]
-            found_name = variable.name == "Result Name"
-            i += 1
-        if not found_name:
-            self.detached_variables.insert(0, NAME_VARIABLE)
+        self._find_name()
 
         Block.__init__(self, inputs=inputs, outputs=outputs, name=name)
 
-        self.block_selectors = {}
-        for i, block in enumerate(self.blocks):
-            name = block.name
-            if not name:
-                if block in self.display_blocks:
-                    name = block.type_
-                elif block in self.export_blocks:
-                    name = block.extension
-                else:
-                    name = "Block"
-            self.block_selectors[block] = f"{name} ({i})"
+        self.block_selectors = {b: f"{self.selector_name(b)} ({i})" for i, b in enumerate(self.blocks)}
 
         self.branch_by_display_selector = self.branch_by_selector(self.display_blocks)
         self.branch_by_export_format = self.branch_by_selector(self.export_blocks)
@@ -443,10 +417,20 @@ class Workflow(Block):
         """ Return the list of blocks and nonblock_variables (nodes) of the Workflow. """
         return self.blocks + self.nonblock_variables
 
+    @cached_property
+    def file_inputs(self):
+        return list(filter(lambda x: issubclass(x.type_, (StringFile, BinaryFile)), self.inputs))
+
+    @cached_property
+    def has_file_inputs(self) -> bool:
+        return any(self.file_inputs)
+
+    @cached_property
+    def memorized_pipes(self) -> List[Pipe]:
+        return [p for p in self.pipes if p.memorize]
+
     def handle_pipe(self, pipe):
-        """
-        Perform some initialization action on a pipe and its variables.
-        """
+        """ Perform some initialization action on a pipe and its variables. """
         upstream_var = pipe.input_variable
         downstream_var = pipe.output_variable
         if upstream_var not in self.variables:
@@ -459,9 +443,7 @@ class Workflow(Block):
             self.nonblock_variables.append(downstream_var)
 
     def handle_block(self, block):
-        """
-        Perform some initialization action on a block and its variables.
-        """
+        """ Perform some initialization action on a block and its variables. """
         if isinstance(block, Workflow):
             raise ValueError("Using workflow as blocks is forbidden, use WorkflowBlock wrapper instead")
         self.variables.extend(block.inputs)
@@ -492,6 +474,26 @@ class Workflow(Block):
         if not self._equivalent_imposed_variables_values(other_object):
             return False
         return True
+
+    def _find_output_block(self, output: Variable):
+        found_output = False
+        i = 0
+        while not found_output and i < len(self.blocks):
+            found_output = output in self.blocks[i].outputs
+            i += 1
+        if not found_output:
+            raise WorkflowError("workflow's output is not in any block's outputs")
+
+    def _find_name(self):
+        found_name = False
+        i = 0
+        all_nbvs = self.nonblock_variables + self.detached_variables
+        while not found_name and i < len(all_nbvs):
+            variable = all_nbvs[i]
+            found_name = variable.name == "Result Name"
+            i += 1
+        if not found_name:
+            self.detached_variables.insert(0, NAME_VARIABLE)
 
     def _equivalent_pipes(self, other_wf) -> bool:
         pipes = []
@@ -582,6 +584,16 @@ class Workflow(Block):
                 if self.is_variable_nbv(p.input_variable)
                 else self.copy_pipe(copied_workflow=copied_workflow, pipe=p)
                 for p in self.pipes]
+
+    def selector_name(self, block: Block) -> str:
+        name = block.name
+        if name:
+            return name
+        if block in self.display_blocks:
+            return block.type_
+        if block in self.export_blocks:
+            return block.extension
+        return "Block"
 
     def branch_by_selector(self, blocks: List[Block]):
         """
@@ -2113,8 +2125,11 @@ class WorkflowRun(WorkflowState):
             end_time = time.time()
         self.end_time = end_time
         self.execution_time = end_time - start_time
-        filtered_values = {p: v for p, v in values.items() if is_serializable(v) and p.memorize}
-        filtered_input_values = {k: v for k, v in input_values.items() if is_serializable(v)}
+        filtered_input_values = input_values
+        if workflow.has_file_inputs:
+            filtered_input_values = {p: input_values[p] for p in workflow.pipes
+                                     if p.input_variable not in workflow.file_inputs}
+        filtered_values = {p: values[p] for p in workflow.memorized_pipes if is_serializable(values[p])}
         WorkflowState.__init__(self, workflow=workflow, input_values=filtered_input_values,
                                activated_items=activated_items, values=filtered_values, start_time=start_time,
                                output_value=output_value, log=log, name=name)
