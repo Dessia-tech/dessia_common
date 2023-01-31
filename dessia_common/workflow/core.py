@@ -73,6 +73,7 @@ class Variable(DessiaObject):
         return ToScriptElement(declaration=declaration, imports=[], imports_as_is=[])
 
     def is_file_type(self):
+        """ Not implemented yet. Should be implemented when all variable have types necessarily"""
         msg = f"File checking is not implemented for untyped workflow Variable named '{self.name}'.\n" \
               f"If this variable is a workflow input, variable should be typed " \
               f"and of type TypedVariable or TypedVariableWithDefaultValues"
