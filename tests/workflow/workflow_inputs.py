@@ -36,3 +36,5 @@ file_input_indices = [workflow.input_index(i) for i in workflow.file_inputs]
 
 assert file_input_indices == [3, 17]
 assert workflow.is_variable_nbv(workflow.file_inputs[1])
+
+

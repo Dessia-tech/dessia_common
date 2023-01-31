@@ -6,7 +6,7 @@ with open('../../dessia_common/models/data/seed_file.csv') as stream:
     string_file.write(stream.read())
     inputs = {0: string_file}
     workflow_run = workflow_.run(input_values=inputs)
-    assert workflow_run.output_value.intarg == 7
+    assert workflow_run.output_value.standalone_subobject.intarg == 7
 
 assert workflow_._method_jsonschemas == {
     'run': {

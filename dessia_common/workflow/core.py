@@ -1254,9 +1254,7 @@ class Workflow(Block):
         nx.draw_networkx_labels(self.graph, pos, labels)
 
     def run(self, input_values, verbose=False, progress_callback=lambda x: None, name=None):
-        """
-        Full run of a workflow. Yields a WorkflowRun.
-        """
+        """ Full run of a workflow. Yields a WorkflowRun. """
         log = ''
 
         state = self.start_run(input_values)
@@ -1658,8 +1656,7 @@ class WorkflowState(DessiaObject):
         for input_, value in self.input_values.items():
             if use_pointers:
                 serialized_v, memo = serialize_with_pointers(value=value, memo=memo,
-                                                             path=f"{path}/input_values/{input_}",
-                                                             id_memo=id_memo)
+                                                             path=f"{path}/input_values/{input_}", id_memo=id_memo)
             else:
                 serialized_v = serialize(value)
             input_values[str(input_)] = serialized_v
@@ -2144,8 +2141,8 @@ class WorkflowRun(WorkflowState):
         self.execution_time = end_time - start_time
         filtered_input_values = input_values
         if workflow.has_file_inputs:
-            filtered_input_values = {p: input_values[p] for p in workflow.pipes
-                                     if p.input_variable not in workflow.file_inputs}
+            filtered_input_values = {i: v for i, v in input_values.items()
+                                     if workflow.inputs[i] not in workflow.file_inputs}
         filtered_values = {p: values[p] for p in workflow.memorized_pipes if is_serializable(values[p])}
         WorkflowState.__init__(self, workflow=workflow, input_values=filtered_input_values,
                                activated_items=activated_items, values=filtered_values, start_time=start_time,
