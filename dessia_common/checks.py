@@ -50,6 +50,7 @@ class CheckList:
     """
     A list of checks result.
     """
+
     def __init__(self, checks):
         self.checks = checks
 

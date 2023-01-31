@@ -308,7 +308,7 @@ class StandaloneObject(MovingObject):
     def generate_with_many_subobjects(cls, seed: int, number: int, name: str = "Populated SO"):
         """ Generate an object with a lot of subobjects. """
         standalone_object = cls.generate(seed=seed, name=name)
-        subobjects = StandaloneBuiltinsSubobject.generate_many(seed=seed*number)
+        subobjects = StandaloneBuiltinsSubobject.generate_many(seed=seed * number)
         standalone_object.subclass_arg = subobjects
         return standalone_object
 
@@ -741,3 +741,43 @@ class Container(DessiaObject):
         """ Generate catalog from several text files. """
         models = [StandaloneObject.generate_from_text(file) for file in files]
         return cls(models=models, name=name)
+
+
+class NotStandalone(DessiaObject):
+    """A simple non-standalone class."""
+
+    def __init__(self, attribute: int, name: str = ""):
+        self.attribute = attribute
+        DessiaObject.__init__(self, name=name)
+
+
+class BottomLevel(DessiaObject):
+    """A simple class at the bottom of the data structure."""
+    _standalone_in_db = True
+
+    def __init__(self, attributes: List[NotStandalone] = None, name: str = ""):
+        if attributes is None:
+            self.attributes = []
+        else:
+            self.attributes = attributes
+
+        DessiaObject.__init__(self, name=name)
+
+
+class MidLevel(DessiaObject):
+    """A simple class at the mid level of the data structure."""
+    _standalone_in_db = True
+    _allowed_methods = ["generate_with_references"]
+
+    def __init__(self, bottom_level: BottomLevel = None, name: str = ""):
+        self.bottom_level = bottom_level
+
+        DessiaObject.__init__(self, name=name)
+
+    @classmethod
+    def generate_with_references(cls, name: str = "Result Name"):
+        """A fake class generator."""
+        object1 = NotStandalone(attribute=1, name="1")
+        object2 = NotStandalone(attribute=1, name="2")
+        bottom_level = BottomLevel([object1, object2])
+        return cls(bottom_level=bottom_level, name=name)
