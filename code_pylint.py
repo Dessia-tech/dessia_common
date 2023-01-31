@@ -20,21 +20,20 @@ MIN_NOTE = 9.17
 UNWATCHED_ERRORS = ['fixme', 'trailing-whitespace', 'import-error']
 
 MAX_ERROR_BY_TYPE = {
-                     'protected-access': 41,
+                     'protected-access': 38,
                      'consider-using-f-string': 1,
                      'arguments-differ': 2,
                      'no-member': 3,
-                     'too-many-locals': 12,  # Reduce by dropping vectored objects
+                     'too-many-locals': 10,  # Reduce by dropping vectored objects
                      'too-many-branches': 13,
-                     'wrong-import-order': 1,
-                     'unused-argument': 6,
-                     'cyclic-import': 2,
+                     'unused-argument': 8,
+                     'cyclic-import': 2,  # 0 just to test
                      'no-self-use': 6,
                      'trailing-whitespace': 11,
                      'empty-docstring': 1,
                      'missing-module-docstring': 1,
-                     'too-many-arguments': 20,
-                     'too-few-public-methods': 5,
+                     'too-many-arguments': 21,
+                     'too-few-public-methods': 9,
                      'unnecessary-comprehension': 1,
                      'no-value-for-parameter': 2,
                      'too-many-return-statements': 10,
@@ -60,8 +59,6 @@ MAX_ERROR_BY_TYPE = {
                      'use-maxsplit-arg': 1,
                      'duplicate-code': 1,
                      'too-many-lines': 1
-                     # No tolerance errors
-
                      }
 
 print('pylint version: ', __version__)

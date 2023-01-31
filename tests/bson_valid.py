@@ -25,5 +25,3 @@ class TestBsonValid(unittest.TestCase):
         valid, hint = is_bson_valid(self.value, allow_nonstring_keys=True)
         # print(hint)
         self.assertEqual(valid, self.expected_result)
-
-
