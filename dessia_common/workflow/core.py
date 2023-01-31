@@ -23,7 +23,7 @@ from dessia_common.templates import workflow_template
 from dessia_common.core import DessiaObject, is_sequence, JSONSCHEMA_HEADER, jsonschema_from_annotation, \
     deserialize_argument, set_default_value, DisplaySetting
 
-from dessia_common.utils.types import serialize_typing, deserialize_typing, recursive_type, typematch
+from dessia_common.utils.types import serialize_typing, deserialize_typing, recursive_type, typematch, is_typing
 from dessia_common.utils.copy import deepcopy_value
 from dessia_common.utils.docstrings import FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE
 from dessia_common.utils.diff import choose_hash
@@ -72,6 +72,12 @@ class Variable(DessiaObject):
         declaration = f"name='{self.name}', position={self.position}"
         return ToScriptElement(declaration=declaration, imports=[], imports_as_is=[])
 
+    def is_file_type(self):
+        msg = f"File checking is not implemented for untyped workflow Variable named '{self.name}'.\n" \
+              f"If this variable is a workflow input, variable should be typed " \
+              f"and of type TypedVariable or TypedVariableWithDefaultValues"
+        return NotImplementedError(msg)
+
 
 class TypedVariable(Variable):
     """ Variable for workflow with a typing. """
@@ -110,6 +116,12 @@ class TypedVariable(Variable):
         if "builtins" not in serialize_typing(self.type_):
             script.imports.append(serialize_typing(self.type_))
         return script
+
+    def is_file_type(self) -> bool:
+        """ Return whether a variable is of type File given its type_ attribute. """
+        if is_typing(self.type_) or not isinstance(self.type_, type):
+            return False
+        return issubclass(self.type_, (StringFile, BinaryFile))
 
 
 class VariableWithDefaultValue(Variable):
@@ -420,7 +432,7 @@ class Workflow(Block):
     @cached_property
     def file_inputs(self):
         """ Get all inputs that are files. """
-        return list(filter(lambda x: issubclass(x.type_, (StringFile, BinaryFile)), self.inputs))
+        return [i for i in self.inputs if i.is_file_type()]
 
     @cached_property
     def has_file_inputs(self) -> bool:
