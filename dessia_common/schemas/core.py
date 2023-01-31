@@ -234,7 +234,7 @@ class Property:
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write base schema as a dict. """
         return {'title': title, 'editable': editable, 'description': description,
-                'python_typing': dc_types.serialize_typing(self.annotation), "type": None}
+                'python_typing': self.serialized, "type": None}
 
     @classmethod
     def dict_to_object(cls, dict_):
@@ -276,14 +276,13 @@ class TypingProperty(Property):
     @property
     def args_schemas(self) -> tp.List[Property]:
         """ Get schema for each arg. """
-        print(self.attribute, self.args)
         return [get_schema(annotation=a, attribute=f"{self.attribute}/{i}") for i, a in enumerate(self.args)]
 
     @property
     def serialized(self):
         serialized = self.origin.__name__
         if self.args:
-            serialized = f"{serialized}[{', '.join([dc_types.type_fullname(a) for a in self.args])}]"
+            serialized = f"{serialized}[{', '.join([s.serialized for s in self.args_schemas])}]"
         return serialized
 
     @classmethod
@@ -407,6 +406,10 @@ class BuiltinProperty(Property):
     def __init__(self, annotation: tp.Type[Builtin], attribute: str, definition_default: Builtin = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
+    @property
+    def serialized(self) -> str:
+        return self.annotation.__name__
+
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write Builtin as a dict. """
         chunk = super().to_dict(title=title, editable=editable, description=description)
@@ -428,9 +431,13 @@ class MeasureProperty(BuiltinProperty):
     def __init__(self, annotation: tp.Type[Measure], attribute: str, definition_default: Measure = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
+    @property
+    def serialized(self) -> str:
+        return dc_types.full_classname(object_=self.annotation, compute_for="class")
+
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write Measure as a dict. """
-        chunk = super().to_dict(title=title, editable=editable, description=description)
+        chunk = Property.to_dict(self, title=title, editable=editable, description=description)
         chunk.update({"si_unit": self.annotation.si_unit, "type": "number"})
         return chunk
 
@@ -492,7 +499,6 @@ class CustomClass(Property):
     def __init__(self, annotation: tp.Type[CoreDessiaObject], attribute: str,
                  definition_default: CoreDessiaObject = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
-        self.classname = dc_types.full_classname(object_=self.annotation, compute_for='class')
 
     @property
     def schema(self):
@@ -501,13 +507,13 @@ class CustomClass(Property):
 
     @property
     def serialized(self) -> str:
-        return self.classname
+        return dc_types.full_classname(object_=self.annotation, compute_for='class')
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write CustomClass as a dict. """
         chunk = super().to_dict(title=title, editable=editable, description=description)
         chunk.update({'type': 'object', 'standalone_in_db': self.annotation._standalone_in_db,
-                      "classes": [self.classname]})
+                      "classes": [self.serialized]})
         return chunk
 
     @classmethod
@@ -558,8 +564,7 @@ class UnionProperty(TypingProperty):
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write Union as a dict. """
         chunk = super().to_dict(title=title, editable=editable, description=description)
-        classnames = [dc_types.full_classname(object_=a, compute_for='class') for a in self.args]
-        chunk.update({'type': 'object', 'classes': classnames, 'standalone_in_db': self.standalone})
+        chunk.update({'type': 'object', 'classes': [self.serialized], 'standalone_in_db': self.standalone})
         return chunk
 
     @classmethod
@@ -614,7 +619,7 @@ class HeterogeneousSequence(TypingProperty):
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write HeterogeneousSequence as a dict. """
         chunk = super().to_dict(title=title, editable=editable, description=description)
-        items = [sp.to_dict() for sp in self.item_schemas]
+        items = [sp.to_dict(title=f"{title}/{i}", editable=editable) for i, sp in enumerate(self.item_schemas)]
         chunk.update({'type': 'array', 'additionalItems': False, 'items': items})
         return chunk
 
@@ -668,9 +673,8 @@ class HomogeneousSequence(TypingProperty):
         if not title:
             title = 'Items'
         chunk = super().to_dict(title=title, editable=editable, description=description)
-        items = [sp.to_dict(title=title, editable=editable, description=description) for sp in self.item_schemas]
-        chunk.update({'type': 'array', 'python_typing': dc_types.serialize_typing(self.annotation),
-                      "items": items[0]})
+        items = [sp.to_dict(title=f"{title}/{i}", editable=editable) for i, sp in enumerate(self.item_schemas)]
+        chunk.update({'type': 'array', "items": items[0]})
         return chunk
 
     @classmethod
@@ -811,8 +815,7 @@ class InstanceOfProperty(TypingProperty):
         """ Write InstanceOf as a dict. """
         chunk = super().to_dict(title=title, editable=editable, description=description)
         class_ = self.args[0]
-        classname = dc_types.full_classname(object_=class_, compute_for='class')
-        chunk.update({'type': 'object', 'instance_of': classname, 'standalone_in_db': class_._standalone_in_db})
+        chunk.update({'type': 'object', 'instance_of': self.serialized, 'standalone_in_db': class_._standalone_in_db})
         return chunk
 
     @classmethod
