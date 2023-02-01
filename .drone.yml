@@ -154,7 +154,7 @@ steps:
     event: push
   settings:
     host: magenta.dessia.tech
-    target: /var/www/cdn/volmdlr/coverage/${DRONE_BRANCH}
+    target: /var/www/cdn/dessia_common/coverage/${DRONE_BRANCH}
     source: htmlcov/*
     strip_components: 1
     username: drone
