@@ -214,7 +214,7 @@ def data_eq(value1, value2):
 
     # Test if _data_eq is customized
     if hasattr(value1, '_data_eq'):
-        custom_method = (value1._data_eq.__code__ is not dc.DessiaObject._data_eq.__code__)
+        custom_method = value1._data_eq.__code__ is not dc.DessiaObject._data_eq.__code__
         if custom_method:
             return value1._data_eq(value2)
 
