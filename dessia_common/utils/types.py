@@ -14,8 +14,7 @@ from dessia_common.files import BinaryFile, StringFile
 SIMPLE_TYPES = [int, str]
 TYPING_EQUIVALENCES = {int: 'number', float: 'number', bool: 'boolean', str: 'string'}
 
-TYPES_STRINGS = {int: 'int', float: 'float', bool: 'boolean', str: 'str',
-                 list: 'list', tuple: 'tuple', dict: 'dict'}
+TYPES_STRINGS = {int: 'int', float: 'float', bool: 'boolean', str: 'str', list: 'list', tuple: 'tuple', dict: 'dict'}
 
 SEQUENCE_TYPINGS = ['List', 'Sequence', 'Iterable']
 
@@ -151,7 +150,6 @@ def is_typing(object_: Any):
 
 def serialize_typing(typing_):
     """ Compute a string from a type. """
-
     if is_typing(typing_):
         return serialize_typing_types(typing_)
     if typing_ in [StringFile, BinaryFile, MethodType, ClassMethodType] or isinstance(typing_, type):

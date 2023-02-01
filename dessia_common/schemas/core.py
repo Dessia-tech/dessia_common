@@ -5,6 +5,7 @@ from copy import deepcopy
 import inspect
 import collections.abc
 import typing as tp
+from functools import cached_property
 import dessia_common.utils.types as dc_types
 from dessia_common.abstract import CoreDessiaObject
 from dessia_common.files import BinaryFile, StringFile
@@ -98,15 +99,6 @@ class Schema:
                        "description": self.parsed_docstring["description"]})
         return schema
 
-    @classmethod
-    def dict_to_object(cls, dict_):
-        """
-        Build a schema back from its dict representation.
-
-        TODO  Useful for low_code features ?
-        """
-        raise NotImplementedError("Schema reconstruction is not implemented yet")
-
     def default_dict(self):
         """
         Compute global default dict.
@@ -170,15 +162,6 @@ class ClassSchema(Schema):
         attributes = super().editable_attributes
         return [a for a in attributes if a not in self.class_._non_editable_attributes]
 
-    @classmethod
-    def dict_to_object(cls, dict_):
-        """
-        Build a schema back from its dict representation.
-
-        TODO  Useful for low_code features ?
-        """
-        raise NotImplementedError("Schema reconstruction is not implemented yet")
-
     def default_dict(self):
         """ Compute class default dict. Add object_class to base one. """
         dict_ = super().default_dict()
@@ -200,15 +183,6 @@ class MethodSchema(Schema):
         docstring = method.__doc__
         Schema.__init__(self, annotations=annotations, argspec=members, docstring=docstring)
 
-    @classmethod
-    def dict_to_object(cls, dict_):
-        """
-        Build a schema back from its dict representation.
-
-        TODO  Useful for low_code features ?
-        """
-        raise NotImplementedError("Schema reconstruction is not implemented yet")
-
 
 class Property:
     """ Base class for a schema property. """
@@ -222,8 +196,9 @@ class Property:
         """ Return a reference to itself. Might be overwritten for proxy such as Optional or Annotated. """
         return self
 
-    @property
-    def serialized(self):
+    @cached_property
+    def serialized(self) -> str:
+        """ Stringified annotation. """
         return str(self.annotation)
 
     @property
@@ -235,15 +210,6 @@ class Property:
         """ Write base schema as a dict. """
         return {'title': title, 'editable': editable, 'description': description,
                 'python_typing': self.serialized, "type": None}
-
-    @classmethod
-    def dict_to_object(cls, dict_):
-        """
-        Build a schema back from its dict representation.
-
-        TODO  Useful for low_code features ?
-        """
-        raise NotImplementedError("Schema reconstruction is not implemented yet")
 
     def default_value(self):
         """ Generic default. Yield user default if defined, else None. """
@@ -278,21 +244,13 @@ class TypingProperty(Property):
         """ Get schema for each arg. """
         return [get_schema(annotation=a, attribute=f"{self.attribute}/{i}") for i, a in enumerate(self.args)]
 
-    @property
-    def serialized(self):
+    @cached_property
+    def serialized(self) -> str:
+        """ Recursively stringify annotation. """
         serialized = self.origin.__name__
         if self.args:
             serialized = f"{serialized}[{', '.join([s.serialized for s in self.args_schemas])}]"
         return serialized
-
-    @classmethod
-    def dict_to_object(cls, dict_):
-        """
-        Build a schema back from its dict representation.
-
-        TODO  Useful for low_code features ?
-        """
-        raise NotImplementedError("Schema reconstruction is not implemented yet")
 
     def has_one_arg(self) -> PassedCheck:
         """ Annotation should have exactly one argument. """
@@ -325,8 +283,9 @@ class ProxyProperty(TypingProperty):
         """ Return a reference to its only arg. """
         return get_schema(annotation=self.args[0], attribute=self.attribute, definition_default=self.definition_default)
 
-    @property
+    @cached_property
     def serialized(self) -> str:
+        """ Stringify under-proxy-annotation. """
         return self.schema.serialized
 
 
@@ -346,15 +305,6 @@ class OptionalProperty(ProxyProperty):
         chunk = self.schema.to_dict(title=title, editable=editable, description=description)
         chunk["default_value"] = default_value
         return chunk
-
-    @classmethod
-    def dict_to_object(cls, dict_):
-        """
-        Build a schema back from its dict representation.
-
-        TODO  Useful for low_code features ?
-        """
-        raise NotImplementedError("Schema reconstruction is not implemented yet")
 
 
 class AnnotatedProperty(ProxyProperty):
@@ -380,15 +330,6 @@ class AnnotatedProperty(ProxyProperty):
         """ Write Annotated as a dict. """
         raise NotImplementedError(self._not_implemented_msg)
 
-    @classmethod
-    def dict_to_object(cls, dict_):
-        """
-        Build a schema back from its dict representation.
-
-        TODO  Useful for low_code features ?
-        """
-        raise NotImplementedError("Schema reconstruction is not implemented yet")
-
     def check_list(self) -> CheckList:
         """
         Check validity of DynamicDict Type Hint.
@@ -406,8 +347,9 @@ class BuiltinProperty(Property):
     def __init__(self, annotation: tp.Type[Builtin], attribute: str, definition_default: Builtin = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
-    @property
+    @cached_property
     def serialized(self) -> str:
+        """ Builtin name. """
         return self.annotation.__name__
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
@@ -416,23 +358,15 @@ class BuiltinProperty(Property):
         chunk["type"] = dc_types.TYPING_EQUIVALENCES[self.annotation]
         return chunk
 
-    @classmethod
-    def dict_to_object(cls, dict_):
-        """
-        Build a schema back from its dict representation.
-
-        TODO  Useful for low_code features ?
-        """
-        raise NotImplementedError("Schema reconstruction is not implemented yet")
-
 
 class MeasureProperty(BuiltinProperty):
     """ Schema class for Measure type hints. """
     def __init__(self, annotation: tp.Type[Measure], attribute: str, definition_default: Measure = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
-    @property
+    @cached_property
     def serialized(self) -> str:
+        """ Full class name. """
         return dc_types.full_classname(object_=self.annotation, compute_for="class")
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
@@ -440,15 +374,6 @@ class MeasureProperty(BuiltinProperty):
         chunk = Property.to_dict(self, title=title, editable=editable, description=description)
         chunk.update({"si_unit": self.annotation.si_unit, "type": "number"})
         return chunk
-
-    @classmethod
-    def dict_to_object(cls, dict_):
-        """
-        Build a schema back from its dict representation.
-
-        TODO  Useful for low_code features ?
-        """
-        raise NotImplementedError("Schema reconstruction is not implemented yet")
 
 
 File = tp.Union[StringFile, BinaryFile]
@@ -464,15 +389,6 @@ class FileProperty(Property):
         chunk = super().to_dict(title=title, editable=editable, description=description)
         chunk.update({'type': 'text', 'is_file': True})
         return chunk
-
-    @classmethod
-    def dict_to_object(cls, dict_):
-        """
-        Build a schema back from its dict representation.
-
-        TODO  Useful for low_code features ?
-        """
-        raise NotImplementedError("Schema reconstruction is not implemented yet")
 
     def check_list(self) -> CheckList:
         """
@@ -505,8 +421,9 @@ class CustomClass(Property):
         """ Return a reference to the schema of the annotation. """
         return ClassSchema(self.annotation)
 
-    @property
+    @cached_property
     def serialized(self) -> str:
+        """ Full class name. """
         return dc_types.full_classname(object_=self.annotation, compute_for='class')
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
@@ -515,15 +432,6 @@ class CustomClass(Property):
         chunk.update({'type': 'object', 'standalone_in_db': self.annotation._standalone_in_db,
                       "classes": [self.serialized]})
         return chunk
-
-    @classmethod
-    def dict_to_object(cls, dict_):
-        """
-        Build a schema back from its dict representation.
-
-        TODO  Useful for low_code features ?
-        """
-        raise NotImplementedError("Schema reconstruction is not implemented yet")
 
     def default_value(self):
         """ Default value for an object. """
@@ -543,8 +451,8 @@ class CustomClass(Property):
     def is_dessia_object_typed(self) -> PassedCheck:
         """ Check whether if typing for given attribute annotates a subclass of DessiaObject or not . """
         if not issubclass(self.annotation, CoreDessiaObject):
-            return FailedCheck(f"{self.check_prefix}Class '{self.classname}' is not a subclass of DessiaObject.")
-        msg = f"{self.check_prefix}Class '{self.classname}' is properly typed as a subclass of DessiaObject."
+            return FailedCheck(f"{self.check_prefix}Class '{self.serialized}' is not a subclass of DessiaObject.")
+        msg = f"{self.check_prefix}Class '{self.serialized}' is properly typed as a subclass of DessiaObject."
         return PassedCheck(msg)
 
 
@@ -566,15 +474,6 @@ class UnionProperty(TypingProperty):
         chunk = super().to_dict(title=title, editable=editable, description=description)
         chunk.update({'type': 'object', 'classes': [self.serialized], 'standalone_in_db': self.standalone})
         return chunk
-
-    @classmethod
-    def dict_to_object(cls, dict_):
-        """
-        Build a schema back from its dict representation.
-
-        TODO  Useful for low_code features ?
-        """
-        raise NotImplementedError("Schema reconstruction is not implemented yet")
 
     def default_value(self):
         """ Default value for an object. """
@@ -623,15 +522,6 @@ class HeterogeneousSequence(TypingProperty):
         chunk.update({'type': 'array', 'additionalItems': False, 'items': items})
         return chunk
 
-    @classmethod
-    def dict_to_object(cls, dict_):
-        """
-        Build a schema back from its dict representation.
-
-        TODO  Useful for low_code features ?
-        """
-        raise NotImplementedError("Schema reconstruction is not implemented yet")
-
     def default_value(self):
         """
         Default value for a Tuple.
@@ -639,8 +529,8 @@ class HeterogeneousSequence(TypingProperty):
         Return serialized user default if defined, else a Tuple of Nones with the right size.
         """
         if self.definition_default is not None:
-            return serialize(self.definition_default)
-        return [s.default_value() for s in self.item_schemas]
+            return self.definition_default
+        return tuple(s.default_value() for s in self.item_schemas)
 
     def check_list(self) -> CheckList:
         """ Check validity of Tuple Type Hint. """
@@ -676,15 +566,6 @@ class HomogeneousSequence(TypingProperty):
         items = [sp.to_dict(title=f"{title}/{i}", editable=editable) for i, sp in enumerate(self.item_schemas)]
         chunk.update({'type': 'array', "items": items[0]})
         return chunk
-
-    @classmethod
-    def dict_to_object(cls, dict_):
-        """
-        Build a schema back from its dict representation.
-
-        TODO  Useful for low_code features ?
-        """
-        raise NotImplementedError("Schema reconstruction is not implemented yet")
 
     def default_value(self):
         """ Default of a sequnce. Always return None as default mutable is prohibited. """
@@ -733,15 +614,6 @@ class DynamicDict(TypingProperty):
                           }
                       }})
         return chunk
-
-    @classmethod
-    def dict_to_object(cls, dict_):
-        """
-        Build a schema back from its dict representation.
-
-        TODO  Useful for low_code features ?
-        """
-        raise NotImplementedError("Schema reconstruction is not implemented yet")
 
     def default_value(self):
         """ Default of a dynamic dict. Always return None as default mutable is prohibited. """
@@ -818,15 +690,6 @@ class InstanceOfProperty(TypingProperty):
         chunk.update({'type': 'object', 'instance_of': self.serialized, 'standalone_in_db': class_._standalone_in_db})
         return chunk
 
-    @classmethod
-    def dict_to_object(cls, dict_):
-        """
-        Build a schema back from its dict representation.
-
-        TODO  Useful for low_code features ?
-        """
-        raise NotImplementedError("Schema reconstruction is not implemented yet")
-
     def default_value(self) -> BaseClass:
         """ Default value of an object. """
         return object_default(definition_default=self.definition_default, class_schema=self.schema)
@@ -852,15 +715,6 @@ class SubclassProperty(TypingProperty):
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write Subclass as a dict. """
         raise NotImplementedError("Subclass is not implemented yet")
-
-    @classmethod
-    def dict_to_object(cls, dict_):
-        """
-        Build a schema back from its dict representation.
-
-        TODO  Useful for low_code features ?
-        """
-        raise NotImplementedError("Schema reconstruction is not implemented yet")
 
     def check_list(self) -> CheckList:
         """
@@ -902,15 +756,6 @@ class MethodTypeProperty(TypingProperty):
         })
         return chunk
 
-    @classmethod
-    def dict_to_object(cls, dict_):
-        """
-        Build a schema back from its dict representation.
-
-        TODO  Useful for low_code features ?
-        """
-        raise NotImplementedError("Schema reconstruction is not implemented yet")
-
     def check_list(self) -> CheckList:
         """
         Check validity of MethodType Type Hint.
@@ -938,15 +783,6 @@ class ClassProperty(TypingProperty):
         chunk = super().to_dict(title=title, editable=editable, description=description)
         chunk.update({'type': 'object', 'is_class': True, 'properties': {'name': {'type': 'string'}}})
         return chunk
-
-    @classmethod
-    def dict_to_object(cls, dict_):
-        """
-        Build a schema back from its dict representation.
-
-        TODO  Useful for low_code features ?
-        """
-        raise NotImplementedError("Schema reconstruction is not implemented yet")
 
     def check_list(self) -> CheckList:
         """
