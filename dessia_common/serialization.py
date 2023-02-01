@@ -291,7 +291,7 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False, global_dict=
 
     # Create init_dict
     if class_ is not None and hasattr(class_, 'dict_to_object'):
-        different_methods = (class_.dict_to_object.__func__ is not SerializableObject.dict_to_object.__func__)
+        different_methods = class_.dict_to_object.__func__ is not SerializableObject.dict_to_object.__func__
         if different_methods and not force_generic:
             try:
                 obj = class_.dict_to_object(dict_, global_dict=global_dict, pointers_memo=pointers_memo, path=path)
