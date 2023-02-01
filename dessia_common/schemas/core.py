@@ -1075,3 +1075,9 @@ def object_default(definition_default=None, class_schema: ClassSchema = None):
         # return class_schema.default_dict()
         pass
     return None
+
+
+def serialize_annotation(annotation, attribute: str = "") -> str:
+    """ Make use of schema to serialized annotations. """
+    schema = get_schema(annotation=annotation, attribute=attribute)
+    return schema.serialized

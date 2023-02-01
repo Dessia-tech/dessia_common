@@ -1,15 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """ Types tools. """
-
-from typing import Any, Dict, List, Tuple, Type, Union, get_origin, get_args
-
+import warnings
 import sys
 from collections.abc import Iterator, Sequence
 from importlib import import_module
-
 import orjson
-
+from typing import Any, Dict, List, Tuple, Type, Union, get_origin, get_args
 from dessia_common.abstract import CoreDessiaObject
 from dessia_common.typings import Subclass, InstanceOf, MethodType, ClassMethodType
 from dessia_common.files import BinaryFile, StringFile
@@ -193,7 +190,8 @@ def serialize_typing_types(typing_):
 
 
 def serialize_union_typing(args):
-    """ Compute a string from union typings. """
+    """ DEPRECATED. Compute a string from union typings. """
+    warnings.warn("This is deprecrated and will be removed in a future version. Use Schemas serialization instead")
     if len(args) == 2 and type(None) in args:
         # This is a false Union => Is a default value set to None
         return serialize_typing(args[0])
@@ -204,7 +202,8 @@ def serialize_union_typing(args):
 
 
 def type_fullname(arg):
-    """ Get full classname from a typing. """
+    """ DEPRECATED. Get full classname from a typing. """
+    warnings.warn("This is deprecrated and will be removed in a future version. Use Schemas serialization instead")
     if arg.__module__ == 'builtins':
         full_argname = '__builtins__.' + arg.__name__
     else:
@@ -421,7 +420,7 @@ def complex_first_type_match(type_: Type, match_against: Type) -> bool:
     """ Match type when type_ is a complex typing (List, Union, Tuple,...). """
     # Complex typing for the first type_. Cases : List, Tuple, Union
     if not is_typing(match_against):
-        # Type matching is unilateral and match against should be more open than type_
+        # Type matching is unilateral and match against should be wider than type_
         return False
 
     # Inspecting and healing types
