@@ -116,12 +116,18 @@ class TypedVariable(Variable):
                 args = get_args(self.type_)
                 # TODO : fix this (len(args)!!)
                 if len(args) == 1:
-                    args = args[0].__name__
+                    try:
+                        args_sub = args[0].__name__
+                    except AttributeError:
+                        args_sub = f"{get_origin(args[0]).__name__.capitalize()}[{get_args(args[0])[0].__name__}]"
                 elif len(args) != 1:
-                    args = f"{args[0].__name__}, {args[0].__name__}"
+                    args_sub = f"{args[0].__name__}, {args[0].__name__}"
                 script.declaration += f", type_={serialize_typing(self.type_).split('[')[0]}" \
-                                      f"[{args}]"
-                script.imports.append(f"{self.type_.__args__[0].__module__}.{self.type_.__args__[0].__name__}")
+                                      f"[{args_sub}]"
+                try:
+                    script.imports.append(f"{args[0].__module__}.{args[0].__name__}")
+                except AttributeError:
+                    script.imports.append(f"{args[0].__module__}.{args[0].__origin__.__name__.capitalize()}")
         if "builtins" not in serialize_typing(self.type_) or any(type_ in serialize_typing(self.type_)
                                                                  for type_ in types):
             try:
