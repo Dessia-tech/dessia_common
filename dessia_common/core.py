@@ -30,10 +30,8 @@ from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotat
     set_default_value
 import dessia_common.schemas.core as schemas
 from dessia_common.utils.docstrings import parse_docstring, FAILED_DOCSTRING_PARSING
-
 from dessia_common.serialization import SerializableObject, deserialize_argument, serialize
 from dessia_common.exports import XLSXWriter, MarkdownWriter, ExportFormat
-
 from dessia_common.typings import JsonSerializable
 from dessia_common import templates
 import dessia_common.checks as dcc
@@ -185,22 +183,18 @@ class DessiaObject(SerializableObject):
         return get_in_object_from_path(self, path)
 
     @classmethod
-    def base_schema(cls):
-        """ Return schema header and base schema. """
+    def base_jsonschema(cls):
+        """ Return jsonschema header and base schema. """
+        warnings.warn("base_jsonschema method is deprecated and will be removed in a future version",
+                      DeprecationWarning)
         schema = deepcopy(schemas.SCHEMA_HEADER)
         schema['properties']['name'] = {"type": 'string', "title": "Object Name", "description": "Object name",
                                         "editable": True, "default_value": "Object Name"}
         return schema
 
     @classmethod
-    def base_jsonschema(cls):
-        """ Return jsonschema header and base schema. """
-        warnings.warn("base_jsonschema method is deprecated. Use base_schema instead", DeprecationWarning)
-        return cls.base_schema()
-
-    @classmethod
     def schema(cls):
-        """ Get new version of schema for this class. """
+        """ Schema of class: transfer python data structure to web standard. """
         if hasattr(cls, '_jsonschema'):
             warnings.warn("Jsonschema is fully deprecated and you may want to use the new generic schema feature."
                           "Please consider so", DeprecationWarning)
@@ -211,6 +205,7 @@ class DessiaObject(SerializableObject):
     @classmethod
     def jsonschema(cls):
         """ Jsonschema of class: transfer python data structure to web standard. """
+        warnings.warn("base_jsonschema method is deprecated. Use schema instead", DeprecationWarning)
         if hasattr(cls, '_jsonschema'):
             _jsonschema = cls._jsonschema
             return _jsonschema
@@ -276,12 +271,22 @@ class DessiaObject(SerializableObject):
         _jsonschema['whitelist_attributes'] = cls._whitelist_attributes
         return _jsonschema
 
-    def method_schema(self):
-        """ TODO. """
+    @property
+    def method_schemas(self):
+        """ Generate dynamic schemas for methods of class. """
+        class_ = self.__class__
+        valid_method_names = [m for m in dir(class_) if not m.startswith('_') and m in class_._allowed_methods]
+        jsonschemas = {}
+        for method_name in valid_method_names:
+            method = getattr(class_, method_name)
+            schema = schemas.MethodSchema(method)
+            jsonschemas[method_name] = schema.to_dict()
+        return jsonschemas
 
     @property
     def _method_jsonschemas(self):
         """ Generates dynamic jsonschemas for methods of class. """
+        warnings.warn("method_jsonschema method is deprecated. Use method_schema instead", DeprecationWarning)
         jsonschemas = {}
         class_ = self.__class__
 

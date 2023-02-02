@@ -17,7 +17,7 @@ from dessia_common.schemas.interfaces import Annotations, T
 from dessia_common.checks import CheckList, FailedCheck, PassedCheck, CheckWarning
 from dessia_common.serialization import serialize
 
-SCHEMA_HEADER = {"definitions": {}, "$schema": "http://json-schema.org/d_raft-07/schema#",
+SCHEMA_HEADER = {"definitions": {}, "$schema": "http://json-schema.org/draft-07/schema#",
                  "type": "object", "required": [], "properties": {}}
 RESERVED_ARGNAMES = ['self', 'cls', 'progress_callback', 'return']
 
