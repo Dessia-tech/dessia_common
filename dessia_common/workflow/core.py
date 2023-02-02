@@ -37,7 +37,7 @@ from dessia_common.errors import SerializationError
 from dessia_common.warnings import SerializationWarning
 from dessia_common.exports import ExportFormat
 from dessia_common.serialization import deserialize, serialize_with_pointers, serialize, update_pointers_data, \
-    serialize_dict, is_serializable
+    serialize_dict  # , is_serializable
 
 from dessia_common.workflow.utils import ToScriptElement
 
@@ -2143,7 +2143,8 @@ class WorkflowRun(WorkflowState):
         if workflow.has_file_inputs:
             filtered_input_values = {i: v for i, v in input_values.items()
                                      if workflow.inputs[i] not in workflow.file_inputs}
-        filtered_values = {p: values[p] for p in workflow.memorized_pipes if is_serializable(values[p])}
+        # filtered_values = {p: values[p] for p in workflow.memorized_pipes if is_serializable(values[p])}
+        filtered_values = {p: values[p] for p in workflow.memorized_pipes}
         WorkflowState.__init__(self, workflow=workflow, input_values=filtered_input_values,
                                activated_items=activated_items, values=filtered_values, start_time=start_time,
                                output_value=output_value, log=log, name=name)

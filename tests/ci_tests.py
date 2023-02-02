@@ -33,6 +33,7 @@ scripts = ['displays.py',
            'workflow/workflow_building.py',
            'workflow/workflow_sampling.py',
            "workflow/workflow_inputs.py",
+           "workflow/file_inputs.py",
            # Breakdown
            'breakdown.py',
            # Utils
