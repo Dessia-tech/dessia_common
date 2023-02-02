@@ -11,7 +11,7 @@ import json
 import webbrowser
 
 import io
-from typing import List, Union, Type, Any, Dict, Tuple, Optional
+from typing import List, Union, Type, Any, Dict, Tuple, Optional, get_origin, get_args
 from copy import deepcopy
 import warnings
 import traceback as tb
@@ -113,18 +113,19 @@ class TypedVariable(Variable):
             script.declaration += f", type_={self.type_.__name__}"
         except AttributeError:
             if is_typing(self.type_):
-                args = self.type_.__args__
+                args = get_args(self.type_)
+                # TODO : fix this (len(args)!!)
                 if len(args) == 1:
                     args = self.type_.__args__[0].__name__
                 elif len(args) == 2:
                     args = f"{args[0].__name__}, {args[0].__name__}"
                 script.declaration += f", type_={serialize_typing(self.type_).split('[')[0]}" \
                                       f"[{args}]"
-                script.imports.append(f"{self.type_.__args__[0].__module__}.{self.type_.__args__[0].__name__}")
+                script.imports.append(f"{args[0].__module__}.{args[0].__name__}")
         if "builtins" not in serialize_typing(self.type_) or any(type_ in serialize_typing(self.type_)
                                                                  for type_ in types):
             try:
-                script.imports.append(f"{self.type_.__module__}.{(self.type_.__origin__.__name__.capitalize())}")
+                script.imports.append(f"{self.type_.__module__}.{get_origin(self.type_).__name__.capitalize()}")
             except AttributeError:
                 script.imports.append(serialize_typing(self.type_))
         return script
