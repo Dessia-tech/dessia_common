@@ -18,6 +18,7 @@ import dessia_common.errors
 from dessia_common.graph import get_column_by_node
 from dessia_common.templates import workflow_template
 from dessia_common.core import DessiaObject
+from dessia_common.schemas.core import get_schema, MethodSchema
 
 from dessia_common.utils.types import serialize_typing, deserialize_typing, recursive_type, typematch, is_sequence
 from dessia_common.utils.copy import deepcopy_value
@@ -52,6 +53,9 @@ class Variable(DessiaObject):
             self.position = (0, 0)
         else:
             self.position = position
+
+        self.default_value = None
+        self.type_ = None
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#', id_method=True, id_memo=None):
         """ Serialize the variable with custom logic. """
@@ -308,73 +312,18 @@ class Workflow(Block):
     """
     Class Block of Workflows.
 
-    :param blocks:
-        A List with all the Blocks used by the Worklow.
-    :type blocks: List[Block]
-
-    :param pipes:
-        A List of Pipe objects.
-    :type pipes: List[Pipe]
-
-    :param imposed_variable_values:
-        A dictionary of imposed variable values.
-    :type imposed_variable_values: Dict
-
-    :param description:
-        A short description that will be displayed on workflow card (frontend). Should be shorter than 100 chars
-    :type description: str
-
-    :param documentation:
-        A long documentation that will be displayed on workflow page (frontend). Can use markdown elements.
-    :type documentation: str
-
-    :param name:
-        The name of the workflow.
-    :type name: str
+    :param blocks: A List with all the Blocks used by the Worklow.
+    :param pipes: A List of Pipe objects.
+    :param imposed_variable_values: A dictionary of imposed variable values.
+    :param description: A short description that will be displayed on workflow card (frontend).
+        Should be shorter than 100 chars
+    :param documentation: A long documentation that will be displayed on workflow page (frontend).
+        Can use markdown elements.
+    :param name: The name of the workflow.
     """
 
     _standalone_in_db = True
     _allowed_methods = ['run', 'start_run']
-    _eq_is_data_eq = True
-    _jsonschema = {
-        "definitions": {}, "$schema": "http://json-schema.org/draft-07/schema#", "type": "object", "title": "Workflow",
-        "required": ["blocks", "pipes", "outputs"], "python_typing": 'dessia_common.workflow.core.Workflow',
-        "classes": ["dessia_common.workflow.core.Workflow"], "standalone_in_db": True,
-        "properties": {
-            "blocks": {
-                "type": "array", "order": 0, "editable": True,
-                "python_typing": "SubclassOf[dessia_common.workflow.Block]",
-                "items": {"type": "object", "editable": True,
-                          "classes": ["dessia_common.workflow.InstanciateModel", "dessia_common.workflow.ModelMethod",
-                                      "dessia_common.workflow.ForEach", "dessia_common.workflow.ModelAttribute",
-                                      "dessia_common.workflow.Function", "dessia_common.workflow.Sequence",
-                                      "dessia_common.workflow.ForEach", "dessia_common.workflow.Unpacker",
-                                      "dessia_common.workflow.Flatten", "dessia_common.workflow.Filter",
-                                      "dessia_common.workflow.ParallelPlot", "dessia_common.workflow.Sum",
-                                      "dessia_common.workflow.Substraction"]},
-            },
-            "pipes": {
-                "type": "array", "order": 1, "editable": True, "python_typing": "List[dessia_common.workflow.Pipe]",
-                "items": {
-                    'type': 'objects', 'classes': ["dessia_common.workflow.Pipe"],
-                    "python_type": "dessia_common.workflow.Pipe", "editable": True
-                }
-            },
-            "outputs": {
-                "type": "array", "order": 2, "python_typing": "List[dessia_common.workflow.Variable]",
-                'items': {
-                    'type': 'array', 'items': {'type': 'number'},
-                    'python_typing': "dessia_common.workflow.Variable"
-                }
-            },
-            "description": {"type": "string", "title": "Description", "editable": True,
-                            "default_value": "", "python_typing": "builtins.str"},
-            "documentation": {"type": "string", "title": "Documentation", "editable": True,
-                              "default_value": "", "python_typing": "builtins.str"},
-            "name": {'type': 'string', 'title': 'Name', 'editable': True, 'order': 3,
-                     'default_value': '', 'python_typing': 'builtins.str'}
-        }
-    }
 
     def __init__(self, blocks, pipes, output, *, imposed_variable_values=None,
                  detached_variables: List[TypedVariable] = None, description: str = "",
@@ -403,8 +352,6 @@ class Workflow(Block):
 
         inputs = [v for v in self.variables if v not in self.imposed_variable_values
                   and len(nx.ancestors(self.graph, v)) == 0]
-        # if not hasattr(variable, 'type_'):
-        #     raise WorkflowError('Workflow as an untyped input variable: {}'.format(variable.name))
 
         self.description = description
         self.documentation = documentation
@@ -710,6 +657,38 @@ class Workflow(Block):
 
         jsonschemas['run'].update({'required': required_inputs, 'method': True,
                                    'python_typing': serialize_typing(MethodType)})
+        jsonschemas['start_run'] = deepcopy(jsonschemas['run'])
+        jsonschemas['start_run']['required'] = []
+        return jsonschemas
+
+    @property
+    def method_schemas(self):
+        jsonschemas = {"run": deepcopy(JSONSCHEMA_HEADER)}
+        jsonschemas["run"]["classes"] = ["dessia_common.workflow.core.Workflow"]
+        properties = {}
+        required = []
+        for i, input_ in enumerate(self.inputs + self.detached_variables):
+            default_ = input_.default_value
+            print(input_.name, input_.default_value)
+            if not input_.has_default_value:
+                required.append(str(i))
+            schema = get_schema(annotation=input_.type_, attribute=str(i), definition_default=default_)
+
+            description = None
+            if input_ not in self.nonblock_variables and input_ not in self.detached_variables:
+                input_block = self.block_from_variable(input_)
+                try:
+                    block_docstring = input_block._docstring()
+                    if input_ in block_docstring:
+                        description = block_docstring[input_]
+                except Exception:
+                    description = FAILED_ATTRIBUTE_PARSING
+            editable = input_ not in self.imposed_variable_values
+            print(schema.default_value())
+            properties[str(i)] = schema.to_dict(title=input_.name, editable=editable, description=description)
+            # print(schema.to_dict())
+        jsonschemas['run'].update({'required': required, 'method': True, "properties": properties,
+                                   'python_typing': "dessia_common.typings.MethodType"})
         jsonschemas['start_run'] = deepcopy(jsonschemas['run'])
         jsonschemas['start_run']['required'] = []
         return jsonschemas
@@ -1283,7 +1262,7 @@ class Workflow(Block):
             # TOCHECK Is it necessary to add is_workflow_input/output for outputs/inputs ??
             block_data = block.jointjs_data()
             inputs = [{'name': i.name, 'is_workflow_input': i in self.inputs,
-                       'has_default_value': hasattr(i, 'default_value')} for i in block.inputs]
+                       'has_default_value': i.has_default_value} for i in block.inputs]
             outputs = [{'name': o.name, 'is_workflow_output': o in self.outputs} for o in block.outputs]
             block_data.update({'inputs': inputs, 'outputs': outputs, 'position': coordinates[block]})
             blocks.append(block_data)
@@ -1336,19 +1315,17 @@ class Workflow(Block):
     def is_valid(self, level: str = "error"):
         """ Tell if the workflow is valid by checking type compatibility of pipes inputs/outputs. """
         for pipe in self.pipes:
-            if hasattr(pipe.input_variable, 'type_') and hasattr(pipe.output_variable, 'type_'):
-                type1 = pipe.input_variable.type_
-                type2 = pipe.output_variable.type_
-                if type1 != type2:
-                    try:
-                        issubclass(pipe.input_variable.type_, pipe.output_variable.type_)
-                    except TypeError as error:  # TODO: need of a real typing check
-                        consistent = True
-                        if not consistent:
-                            raise TypeError(f"Inconsistent pipe type from pipe input {pipe.input_variable.name}"
-                                            f"to pipe output {pipe.output_variable.name}: "
-                                            f"{pipe.input_variable.type_} incompatible with"
-                                            f"{pipe.output_variable.type_}") from error
+            upstream = pipe.input_variable.type_
+            downstream = pipe.output_variable.type_
+            if upstream.type_ != downstream.type_:
+                try:
+                    issubclass(upstream.type_.type_, downstream.type_)
+                except TypeError as error:  # TODO: need of a real typing check
+                    consistent = True
+                    if not consistent:
+                        raise TypeError(f"Inconsistent pipe type from pipe input '{upstream.name}'"
+                                        f"to pipe output '{downstream.name}': "
+                                        f"'{upstream.type_}' incompatible with '{downstream.type_}'") from error
         return True
 
     def package_mix(self) -> Dict[str, float]:
@@ -1738,9 +1715,9 @@ class WorkflowState(DessiaObject):
                 if self.activated_items[input_] and index in self.input_values:
                     value = self.input_values[index]
                 else:
-                    msg = f"Value {input_.name} of index {index} in inputs has no value"
+                    msg = f"Value '{input_.name}' of index '{index}' in inputs has no value."
                     if isinstance(input_, TypedVariable):
-                        msg += f": should be instance of {input_.type_}"
+                        msg += f" Should be instance of '{input_.type_}'."
                     raise ValueError(msg)
             else:
                 value = values[index]
@@ -1934,7 +1911,7 @@ class WorkflowState(DessiaObject):
                 self._activate_input(input_=variable, value=self.input_values[index])
             elif variable in self.workflow.imposed_variable_values:
                 self._activate_input(input_=variable, value=self.workflow.imposed_variable_values[variable])
-            elif hasattr(variable, 'default_value'):
+            elif variable.has_default_value:
                 self._activate_input(input_=variable, value=variable.default_value)
             elif check_all_inputs:
                 msg = f"Value {variable.name} of index {index} in inputs has no value"
@@ -1992,34 +1969,6 @@ class WorkflowRun(WorkflowState):
     _standalone_in_db = True
     _allowed_methods = ['run_again']
     _eq_is_data_eq = True
-    _jsonschema = {
-        "definitions": {}, "$schema": "http://json-schema.org/draft-07/schema#", "type": "object",
-        "standalone_in_db": True, "title": "WorkflowRun Base Schema", "required": [],
-        "python_typing": 'dessia_common.workflow.WorkflowRun', "classes": ["dessia_common.workflow.core.WorkflowRun"],
-        "properties": {
-            "workflow": {"type": "object", "title": "Workflow", "python_typing": "dessia_common.workflow.Workflow",
-                         "classes": ["dessia_common.workflow.Workflow"], "order": 0,
-                         "editable": False, "description": "Workflow"},
-            'output_value': {"type": "object", "classes": "Any", "title": "Values",
-                             "description": "Input and output values", "editable": False,
-                             "order": 1, "python_typing": "Any"},
-            'input_values': {
-                'type': 'object', 'order': 2, 'editable': False,
-                'title': 'Input Values', "python_typing": "Dict[str, Any]",
-                'patternProperties': {
-                    '.*': {'type': "object", 'classes': 'Any'}
-                }
-            },
-            'start_time': {"type": "number", "title": "Start Time", "editable": False, "python_typing": "builtins.int",
-                           "description": "Start time of simulation", "order": 4},
-            'end_time': {"type": "number", "title": "End Time", "editable": False, "python_typing": "builtins.int",
-                         "description": "End time of simulation", "order": 5},
-            'log': {"type": "string", "title": "Log", "editable": False, 'python_typing': 'builtins.str',
-                    "description": "Log", "order": 6},
-            "name": {'type': 'string', 'title': 'Name', 'editable': True, 'order': 7,
-                     'default_value': '', 'python_typing': 'builtins.str'}
-        }
-    }
 
     def __init__(self, workflow: Workflow, input_values, output_value, values,
                  activated_items: Dict[Union[Pipe, Block, Variable], bool],
