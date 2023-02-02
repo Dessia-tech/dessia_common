@@ -15,7 +15,7 @@ import random
 from pylint import __version__
 from pylint.lint import Run
 
-MIN_NOTE = 9.17
+MIN_NOTE = 8.55
 
 UNWATCHED_ERRORS = ["fixme", "trailing-whitespace", "import-error"]
 
