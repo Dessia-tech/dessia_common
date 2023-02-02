@@ -49,7 +49,7 @@ scripts = [
     "utils/serialization.py",
     "utils/helpers.py",
     "utils/types.py",
-    "utils/diff.py"
+    "utils/diff.py",
     "type_matching.py",
 
     # Unit tests
