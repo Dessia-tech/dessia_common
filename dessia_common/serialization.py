@@ -160,6 +160,7 @@ def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=
             id_ = str(uuid.uuid1())
             id_memo[id_] = serialized
             memo[value] = f'#/_references/{id_}'
+            serialized = {'$ref': memo[value]}
         else:
             memo[value] = path
 
@@ -179,6 +180,7 @@ def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=
             id_ = str(uuid.uuid1())
             id_memo[id_] = serialized
             memo[value] = f'#/_references/{id_}'
+            serialized = {'$ref': memo[value]}
         else:
             memo[value] = path
 
@@ -781,7 +783,7 @@ def is_serializable(obj):
     if dcty.is_jsonable(obj):
         return True
     if isinstance(obj, SerializableObject):
-        dict_ = obj.to_dict()
+        dict_ = obj.to_dict(use_pointers=False)
         return dcty.is_jsonable(dict_)
     if isinstance(obj, dict):
         for key, value in obj.items():

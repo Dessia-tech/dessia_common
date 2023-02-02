@@ -2,6 +2,7 @@ from dessia_common.forms import MovingStandaloneObject
 
 mso = MovingStandaloneObject(origin=0, name="Moving Test")
 
+mso._check_platform()
 disp = mso._displays()
 
 # md_data = '# Object Moving Test of class MovingStandaloneObject\n\nThis is a markdown file' \
@@ -81,4 +82,4 @@ disp = mso._displays()
 #     }
 # ]
 
-# print("script 'moving_object.py' has passed")
+print("script 'moving_object.py' has passed")
