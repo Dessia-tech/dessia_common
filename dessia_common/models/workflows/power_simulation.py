@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Models for power simulation workflow.
-"""
+""" Models for power simulation workflow. """
 from dessia_common.workflow.core import Workflow, Pipe
 from dessia_common.workflow.blocks import InstantiateModel, ModelMethod
 import dessia_common.typings as dct

@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Module to define Blocks for workflows.
-"""
+""" Module to define Blocks for workflows. """
 
 import inspect
 import warnings
@@ -14,7 +12,7 @@ import itertools
 from dessia_common.core import DessiaFilter, FiltersList, split_argspecs, type_from_annotation, DessiaObject
 from dessia_common.utils.types import get_python_class_from_class_name, full_classname
 from dessia_common.utils.docstrings import parse_docstring, EMPTY_PARSED_ATTRIBUTE
-from dessia_common.displays import DisplaySetting
+from dessia_common.displays import DisplaySetting, DisplayObject
 from dessia_common.errors import UntypedArgumentError
 from dessia_common.typings import JsonSerializable, MethodType, ClassMethodType
 from dessia_common.files import StringFile, BinaryFile
@@ -23,7 +21,7 @@ from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
 from dessia_common.exports import ExportFormat
 
 from dessia_common.workflow.core import Block, Variable, TypedVariable, TypedVariableWithDefaultValue,\
-    set_block_variable_names_from_dict, Workflow, DisplayObject
+    set_block_variable_names_from_dict, Workflow
 from dessia_common.workflow.utils import ToScriptElement
 
 
@@ -109,10 +107,10 @@ class InstantiateModel(Block):
         class_ = get_python_class_from_class_name(classname)
         return cls(class_, name=dict_['name'], position=dict_.get('position'))
 
-    def evaluate(self, values):
+    def evaluate(self, values, **kwargs):
         """ Instantiate a model of given class with arguments that are in values. """
-        args = {var.name: values[var] for var in self.inputs}
-        return [self.model_class(**args)]
+        arguments = {var.name: values[var] for var in self.inputs}
+        return [self.model_class(**arguments)]
 
     def package_mix(self):
         """ Add block contribution to workflow's package_mix. """
@@ -195,10 +193,10 @@ class ClassMethod(Block):
         method_type = ClassMethodType(class_=class_, name=method_name)
         return cls(method_type=method_type, name=name, position=dict_.get('position'))
 
-    def evaluate(self, values):
+    def evaluate(self, values, **kwargs):
         """ Run given classmethod with arguments that are in values. """
-        args = {arg_name: values[var] for arg_name, var in zip(self.argument_names, self.inputs) if var in values}
-        return [self.method(**args)]
+        arguments = {arg_name: values[var] for arg_name, var in zip(self.argument_names, self.inputs) if var in values}
+        return [self.method(**arguments)]
 
     def _docstring(self):
         """ Parse given method's docstring. """
@@ -289,10 +287,10 @@ class ModelMethod(Block):
         method_type = MethodType(class_=class_, name=method_name)
         return cls(method_type=method_type, name=name, position=dict_.get('position'))
 
-    def evaluate(self, values):
+    def evaluate(self, values, **kwargs):
         """ Run given method with arguments that are in values. """
-        args = {arg_name: values[var] for arg_name, var in zip(self.argument_names, self.inputs[1:]) if var in values}
-        return [getattr(values[self.inputs[0]], self.method_type.name)(**args), values[self.inputs[0]]]
+        arguments = {n: values[v] for n, v in zip(self.argument_names, self.inputs[1:]) if v in values}
+        return [getattr(values[self.inputs[0]], self.method_type.name)(**arguments), values[self.inputs[0]]]
 
     def package_mix(self):
         """ Add block contribution to workflow's package_mix. """
@@ -365,7 +363,7 @@ class Sequence(Block):
         """
         return cls(dict_['number_arguments'], dict_['name'], position=dict_.get('position'))
 
-    def evaluate(self, values):
+    def evaluate(self, values, **kwargs):
         """ Pack values into a sequence. """
         return [[values[var] for var in self.inputs]]
 
@@ -419,7 +417,7 @@ class Concatenate(Block):
         """
         return cls(dict_['number_arguments'], dict_['name'], position=dict_.get('position'))
 
-    def evaluate(self, values: Dict[Variable, Any]):
+    def evaluate(self, values: Dict[Variable, Any], **kwargs):
         """ Concatenate elements that are in values. """
         list_values = list(values.values())
         return [concatenate(list_values)]
@@ -484,10 +482,10 @@ class WorkflowBlock(Block):
         workflow = Workflow.dict_to_object(dict_=dict_["workflow"])
         return cls(workflow=workflow, name=dict_['name'], position=dict_.get('position'))
 
-    def evaluate(self, values):
+    def evaluate(self, values, **kwargs):
         """ Format subworkflow arguments and run it. """
-        args = {self.inputs.index(input_): v for input_, v in values.items()}
-        workflow_run = self.workflow.run(args)
+        arguments = {self.inputs.index(input_): v for input_, v in values.items()}
+        workflow_run = self.workflow.run(arguments)
         return [workflow_run.output_value]
 
     def package_mix(self):
@@ -578,7 +576,7 @@ class ForEach(Block):
         return cls(workflow_block=workflow_block, iter_input_index=dict_['iter_input_index'], name=dict_['name'],
                    position=dict_.get('position'))
 
-    def evaluate(self, values):
+    def evaluate(self, values, **kwargs):
         """ Loop on input list and run subworkflow on each. """
         values_workflow = {var2: values[var1] for var1, var2 in zip(self.inputs, self.workflow_block.inputs)}
         output_values = []
@@ -650,7 +648,7 @@ class Unpacker(Block):
         """
         return cls(dict_['indices'], dict_['name'], position=dict_.get('position'))
 
-    def evaluate(self, values):
+    def evaluate(self, values, **kwargs):
         """ Unpack input list elements into n outputs. """
         return [values[self.inputs[0]][i] for i in self.indices]
 
@@ -687,7 +685,7 @@ class Flatten(Block):
         """
         return cls(dict_['name'], position=dict_.get('position'))
 
-    def evaluate(self, values):
+    def evaluate(self, values, **kwargs):
         """ Extract the first element of a list and flatten it. """
         output = []
         for value in values[self.inputs[0]]:
@@ -739,7 +737,7 @@ class Product(Block):
         number_list = dict_['number_list']
         return cls(number_list=number_list, name=dict_['name'], position=dict_.get('position'))
 
-    def evaluate(self, values):
+    def evaluate(self, values, **kwargs):
         """ Compute the block: use itertools.product. """
         list_product = [values[var] for var in self.inputs]
         output_value = list(itertools.product(*list_product))
@@ -800,7 +798,7 @@ class Filter(Block):
         return cls(filters=filters, logical_operator=dict_["logical_operator"], name=dict_["name"],
                    position=dict_.get('position'))
 
-    def evaluate(self, values):
+    def evaluate(self, values, **kwargs):
         """ Apply given filters to input list. """
         filters_list = FiltersList(self.filters, self.logical_operator)
         return [filters_list.apply(values[self.inputs[0]])]
@@ -819,6 +817,7 @@ class Filter(Block):
 
 class Display(Block):
     """ Abstract block class for display behaviors. """
+
     _displayable_input = 0
     _non_editable_attributes = ['inputs']
 
@@ -865,18 +864,17 @@ class Display(Block):
             return ""
         raise NotImplementedError(f"selector attribute is not implemented for block of type '{type(self)}'")
 
-    def _display_settings(self, block_index: int) -> DisplaySetting:
+    def _display_settings(self, block_index: int, reference_path: str = "#") -> DisplaySetting:
         """ Compute block's display settings. """
-        args = {'block_index': block_index}
+        arguments = {"block_index": block_index, "reference_path": reference_path}
         return DisplaySetting(selector=None, type_=self.type_, method="block_display",
-                              serialize_data=self.serialize, arguments=args)
+                              serialize_data=self.serialize, arguments=arguments)
 
-    def evaluate(self, values):
+    def evaluate(self, values, **kwargs):
         """ Run method defined by selector's display_setting and compute corresponding DisplayObject. """
         object_ = values[self.inputs[0]]
         settings = object_._display_settings_from_selector(self.selector)
-        data = attrmethod_getter(object_, settings.method)()
-        return [DisplayObject(type_=settings.type, data=data, name=self.name)]
+        return [attrmethod_getter(object_, settings.method)()]
 
     def _to_script(self, _) -> ToScriptElement:
         """ Write block config into a chunk of script. """
@@ -932,24 +930,29 @@ class MultiPlot(Display):
         """
         return cls(attributes=dict_['attributes'], name=dict_['name'], position=dict_.get('position'))
 
-    def evaluate(self, values):
+    def evaluate(self, values, **kwargs):
         """ Create MultiPlot from block configuration. Handle reference path. """
+        reference_path = kwargs.get("reference_path", "#")
         import plot_data
         objects = values[self.inputs[self._displayable_input]]
-        attr_values = [{a: get_in_object_from_path(o, a) for a in self.attributes} for o in objects]
-        values2d = [{key: val[key]} for key in self.attributes[:2] for val in attr_values]
+        samples = [plot_data.Sample(values={a: get_in_object_from_path(o, a) for a in self.attributes},
+                                    reference_path=f"{reference_path}/{i}", name=f"Sample {i}")
+                   for i, o in enumerate(objects)]
+        samples2d = [plot_data.Sample(values={a: get_in_object_from_path(o, a) for a in self.attributes[:2]},
+                                      reference_path=f"{reference_path}/{i}", name=f"Sample {i}")
+                     for i, o in enumerate(objects)]
         tooltip = plot_data.Tooltip(name='Tooltip', attributes=self.attributes)
 
         scatterplot = plot_data.Scatter(tooltip=tooltip, x_variable=self.attributes[0], y_variable=self.attributes[1],
-                                        elements=values2d, name='Scatter Plot')
+                                        elements=samples2d, name='Scatter Plot')
 
         parallelplot = plot_data.ParallelPlot(disposition='horizontal', axes=self.attributes,
-                                              rgbs=[(192, 11, 11), (14, 192, 11), (11, 11, 192)], elements=attr_values)
+                                              rgbs=[(192, 11, 11), (14, 192, 11), (11, 11, 192)], elements=samples)
         plots = [scatterplot, parallelplot]
         sizes = [plot_data.Window(width=560, height=300), plot_data.Window(width=560, height=300)]
-        multiplot = plot_data.MultiplePlots(elements=attr_values, plots=plots, sizes=sizes,
+        multiplot = plot_data.MultiplePlots(elements=samples, plots=plots, sizes=sizes,
                                             coords=[(0, 0), (0, 300)], name='Results plot')
-        return [DisplayObject(type_=self.type_, data=[multiplot.to_dict()])]
+        return [[multiplot.to_dict()]]
 
     def _to_script(self, _) -> ToScriptElement:
         """ Write block config into a chunk of script. """
@@ -1050,7 +1053,7 @@ class ModelAttribute(Block):
         """
         return cls(dict_['attribute_name'], dict_['name'], position=dict_.get('position'))
 
-    def evaluate(self, values):
+    def evaluate(self, values, **kwargs):
         """ Get input object's deep attribute. """
         return [get_in_object_from_path(values[self.inputs[0]], f'#/{self.attribute_name}')]
 
@@ -1104,7 +1107,7 @@ class SetModelAttribute(Block):
         """
         return cls(dict_['attribute_name'], dict_['name'], position=dict_.get('position'))
 
-    def evaluate(self, values):
+    def evaluate(self, values, **kwargs):
         """ Set input object's deep attribute with input value. """
         model = values[self.inputs[0]]
         setattr(model, self.attribute_name, values[self.inputs[1]])
@@ -1159,9 +1162,12 @@ class Sum(Block):
         """
         return cls(dict_['number_elements'], dict_['name'], position=dict_.get('position'))
 
-    @staticmethod
-    def evaluate(values):
-        """ Sum input values. """
+    def evaluate(self, values, **kwargs):
+        """
+        Sum input values.
+
+        TODO : This cannot work, we are summing a dictionnary
+        """
         return [sum(values)]
 
     def _to_script(self, _) -> ToScriptElement:
@@ -1177,7 +1183,7 @@ class Substraction(Block):
         Block.__init__(self, [Variable(name='+'), Variable(name='-')], [Variable(name='Substraction')], name=name,
                        position=position)
 
-    def evaluate(self, values):
+    def evaluate(self, values, **kwargs):
         """ Substract input values. """
         return [values[self.inputs[0]] - values[self.inputs[1]]]
 
@@ -1237,7 +1243,7 @@ class ConcatenateStrings(Block):
         """
         return cls(number_elements=dict_['number_elements'], separator=dict_["separator"], name=dict_['name'])
 
-    def evaluate(self, values):
+    def evaluate(self, values, **kwargs):
         """ Concatenate input strings with configured separator. """
         chunks = [values[i] for i in self.inputs]
         return [self.separator.join(chunks)]
@@ -1306,7 +1312,7 @@ class Export(Block):
         return cls(method_type=method_type, text=dict_['text'], filename=filename,
                    extension=dict_["extension"], name=dict_["name"], position=dict_.get('position'))
 
-    def evaluate(self, values):
+    def evaluate(self, values, **kwargs):
         """ Generate to-be-exported stream from corresponding method. """
         filename = f"{values.pop(self.inputs[-1])}.{self.extension}"
         if self.text:
@@ -1318,9 +1324,9 @@ class Export(Block):
 
     def _export_format(self, block_index: int) -> ExportFormat:
         """ Compute block's export format. """
-        args = {"block_index": block_index}
+        arguments = {"block_index": block_index}
         return ExportFormat(selector=None, extension=self.extension, method_name="export", text=self.text,
-                            export_name=self.filename, args=args)
+                            export_name=self.filename, args=arguments)
 
     def _to_script(self, _) -> ToScriptElement:
         """ Write block config into a chunk of script. """
@@ -1377,7 +1383,7 @@ class Archive(Block):
         return cls(number_exports=dict_["number_exports"], filename=filename, name=dict_['name'],
                    position=dict_.get('position'))
 
-    def evaluate(self, values):
+    def evaluate(self, values, **kwargs):
         """ Generate archive stream for input streams. """
         name_input = self.inputs[-1]
         archive_name = f"{values.pop(name_input)}.{self.extension}"
@@ -1397,9 +1403,9 @@ class Archive(Block):
 
     def _export_format(self, block_index: int) -> ExportFormat:
         """ Compute block's export formats. """
-        args = {"block_index": block_index}
+        arguments = {"block_index": block_index}
         return ExportFormat(selector=None, extension=self.extension, method_name="export", text=self.text,
-                            export_name=self.filename, args=args)
+                            export_name=self.filename, args=arguments)
 
     def _to_script(self, _) -> ToScriptElement:
         """ Write block config into a chunk of script. """
