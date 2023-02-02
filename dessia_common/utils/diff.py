@@ -209,7 +209,6 @@ def data_eq(value1, value2):
         return full_classname(value1) == full_classname(value2)
 
     # Else: its an object
-
     if full_classname(value1) != full_classname(value2):
         # print('full classname !=')
         return False
@@ -221,11 +220,11 @@ def data_eq(value1, value2):
             return value1._data_eq(value2)
 
     # Not custom, use generic implementation
-    eq_dict = value1._serializable_dict()
+    eq_dict = value1._data_eq_dict()
     if 'name' in eq_dict:
         del eq_dict['name']
 
-    other_eq_dict = value2._serializable_dict()
+    other_eq_dict = value2._data_eq_dict()
 
     return dict_data_eq(eq_dict, other_eq_dict)
 
