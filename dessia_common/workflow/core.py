@@ -117,11 +117,11 @@ class TypedVariable(Variable):
                 # TODO : fix this (len(args)!!)
                 if len(args) == 1:
                     args = self.type_.__args__[0].__name__
-                elif len(args) == 2:
+                elif len(args) != 1:
                     args = f"{args[0].__name__}, {args[0].__name__}"
                 script.declaration += f", type_={serialize_typing(self.type_).split('[')[0]}" \
                                       f"[{args}]"
-                script.imports.append(f"{args[0].__module__}.{args[0].__name__}")
+                script.imports.append(f"{self.type_.__args__[0].__module__}.{self.type_.__args__[0].__name__}")
         if "builtins" not in serialize_typing(self.type_) or any(type_ in serialize_typing(self.type_)
                                                                  for type_ in types):
             try:
