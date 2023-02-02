@@ -27,9 +27,9 @@ steps:
   - git push
 
 - name: check code complexity, docs & code quality
-  image: python:3.8
+  image: dessia/python-ci:3.8
   commands:
-  - pip install pydocstyle pylint==2.16.0
+  - pip install pydocstyle==6.3.0 pylint==2.16.1 pyenchant==3.2.2
   - python code_pylint.py
   - python code_pydocstyle.py
 

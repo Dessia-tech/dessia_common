@@ -1965,14 +1965,14 @@ class WorkflowState(DessiaObject):
 
     def _activable_blocks(self):
         """
-        Return a list of all activable blocks, ie blocks that have all inputs ready for evaluation.
+        Return a list of all activable blocks, IE blocks that have all inputs ready for evaluation.
         """
         return [b for b in self.workflow.blocks if self._block_activable_by_inputs(b)
                 and (not self.activated_items[b] or b not in self.workflow.runtime_blocks)]
 
     def _block_activable_by_inputs(self, block: Block):
         """
-        Return wether a block has all its inputs active and can be activated.
+        Return whether a block has all its inputs active and can be activated.
         """
         for function_input in block.inputs:
             if not self.activated_items[function_input]:
