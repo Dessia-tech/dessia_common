@@ -116,7 +116,7 @@ class TypedVariable(Variable):
                 args = get_args(self.type_)
                 # TODO : fix this (len(args)!!)
                 if len(args) == 1:
-                    args = self.type_.__args__[0].__name__
+                    args = args[0].__name__
                 elif len(args) != 1:
                     args = f"{args[0].__name__}, {args[0].__name__}"
                 script.declaration += f", type_={serialize_typing(self.type_).split('[')[0]}" \
