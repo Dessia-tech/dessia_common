@@ -1,7 +1,4 @@
-"""
-Library for building clusters on Dataset or List.
-
-"""
+""" Library for building clusters on Dataset or List. """
 from typing import List
 
 from scipy.spatial.distance import cdist
@@ -54,14 +51,12 @@ class ClusteredDataset(Dataset):
             Number of clusters in dessia_objects
 
     **Built-in methods**: See :func:`~Dataset`
-
     """
+
     _allowed_methods = ['from_agglomerative_clustering', 'from_kmeans', 'from_dbscan', 'from_pareto_sheets']
 
     def __init__(self, dessia_objects: List[DessiaObject] = None, labels: List[int] = None, name: str = ''):
-        """
-        See class docstring.
-        """
+        """ See class docstring. """
         Dataset.__init__(self, dessia_objects=dessia_objects, name=name)
         if labels is None:
             labels = [0] * len(self)
@@ -69,17 +64,13 @@ class ClusteredDataset(Dataset):
 
     @property
     def n_clusters(self):
-        """
-        Number of clusters in dessia_objects.
-        """
+        """ Number of clusters in dessia_objects. """
         unic_labels = set(self.labels)
         unic_labels.discard(-1)
         return len(unic_labels)
 
     def to_xlsx_stream(self, stream):
-        """
-        Export the object to an XLSX to a given stream.
-        """
+        """ Export the object to an XLSX to a given stream. """
         if not isinstance(self.dessia_objects[0], Dataset):
             writer = XLSXWriter(self.clustered_sublists())
         else:
@@ -303,7 +294,7 @@ class ClusteredDataset(Dataset):
     def _tooltip_attributes(self):
         return self.common_attributes + ["Cluster Label"]
 
-    def plot_data(self):
+    def plot_data(self, reference_path: str = "#", **kwargs):
         """
         Plot data method.
 
@@ -311,16 +302,13 @@ class ClusteredDataset(Dataset):
         """
         if isinstance(self.dessia_objects[0], Dataset):
             plotted_clist = self._merge_sublists()
-            return plotted_clist.plot_data()
-        return Dataset.plot_data(self)
+            return plotted_clist.plot_data(reference_path=reference_path, **kwargs)
+        return Dataset.plot_data(self, reference_path=reference_path, **kwargs)
 
-    def _plot_data_list(self):
-        _plot_data_list = []
-        for row, label in enumerate(self.labels):
-            _plot_data_list.append({attr: self.matrix[row][col] for col, attr in enumerate(self.common_attributes)})
-            _plot_data_list[-1]["Cluster Label"] = label
-            # (label if label != -1 else "Excluded") plot_data "Excluded" -> NaN
-        return _plot_data_list
+    def _object_to_sample(self, dessia_object: DessiaObject, row: int, reference_path: str = '#'):
+        sample = super()._object_to_sample(dessia_object=dessia_object, row=row, reference_path=reference_path)
+        sample.values["Cluster Label"] = self.labels[row]
+        return sample
 
     def _point_families(self):
         colormap = plt.cm.get_cmap('hsv', self.n_clusters + 1)(range(self.n_clusters + 1))
@@ -588,9 +576,7 @@ class ClusteredDataset(Dataset):
     def list_agglomerative_clustering(cls, data: List[DessiaObject], n_clusters: int = 2,
                                       metric: str = 'euclidean', linkage: str = 'ward',
                                       distance_threshold: float = None, scaling: bool = False, name: str = ""):
-        """
-        Does the same as `from_agglomerative_clustering` method but data is a `List[DessiaObject]` and not a `Dataset`.
-        """
+        """ Does the same as `from_agglomerative_clustering` method but data is a `List[DessiaObject]`. """
         return cls.from_agglomerative_clustering(Dataset(data), n_clusters=n_clusters, metric=metric,
                                                  linkage=linkage, distance_threshold=distance_threshold,
                                                  scaling=scaling, name=name)
@@ -598,18 +584,14 @@ class ClusteredDataset(Dataset):
     @classmethod
     def list_kmeans(cls, data: List[DessiaObject], n_clusters: int = 2, n_init: int = 10, tol: float = 1e-4,
                     scaling: bool = False, name: str = ""):
-        """
-        Does the same as `from_kmeans` method but data is a `List[DessiaObject]` and not a `Dataset`.
-        """
+        """ Does the same as `from_kmeans` method but data is a `List[DessiaObject]`. """
         return cls.from_kmeans(Dataset(data), n_clusters=n_clusters, n_init=n_init, tol=tol, scaling=scaling,
                                name=name)
 
     @classmethod
     def list_dbscan(cls, data: List[DessiaObject], eps: float = 0.5, min_samples: int = 5, mink_power: float = 2,
                     leaf_size: int = 30, metric: str = "euclidean", scaling: bool = False, name: str = ""):
-        """
-        Does the same as `from_dbscan` method but data is a `List[DessiaObject]` and not a `Dataset`.
-        """
+        """ Does the same as `from_dbscan` method but data is a `List[DessiaObject]`. """
         return cls.from_dbscan(Dataset(data), eps=eps, min_samples=min_samples, mink_power=mink_power,
                                leaf_size=leaf_size, metric=metric, scaling=scaling, name=name)
 

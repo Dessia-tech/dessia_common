@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Module to handle serialization for engineering objects.
-"""
+""" Module to handle serialization for engineering objects. """
 
 import time
 import warnings
@@ -46,32 +44,6 @@ import dessia_common.files as dcf
 _FORBIDDEN_ARGNAMES = ['self', 'cls', 'progress_callback', 'return']
 
 _fullargsspec_cache = {}
-
-
-def deprecated(use_instead=None):
-    """
-    Our deprecated decorator.
-    """
-    def decorated(function):
-        def wrapper(*args, **kwargs):
-            deprecation_warning(function.__name__, 'Function', use_instead)
-            print('Traceback : ')
-            tb.print_stack(limit=2)
-            return function(*args, **kwargs)
-        return wrapper
-    return decorated
-
-
-def deprecation_warning(name, object_type, use_instead=None):
-    """
-    Throw a deprecation warning function.
-    """
-    warnings.simplefilter('once', DeprecationWarning)
-    msg = f"\n\n{object_type} {name} is deprecated.\nIt will be removed in a future version.\n"
-    if use_instead is not None:
-        msg += f"Use {use_instead} instead.\n"
-    warnings.warn(msg, DeprecationWarning)
-    return msg
 
 
 class DessiaObject(SerializableObject):
@@ -122,6 +94,7 @@ class DessiaObject(SerializableObject):
     :ivar str name: Name of object.
     :ivar Any kwargs: Additionnal user metadata
     """
+
     _standalone_in_db = False
     _non_editable_attributes = []
     _non_data_eq_attributes = ['name']
@@ -136,9 +109,6 @@ class DessiaObject(SerializableObject):
     _whitelist_attributes = []
 
     def __init__(self, name: str = '', **kwargs):
-        """
-        Generic init of DessiA Object. Only store name in self. To be overload and call in specific class init.
-        """
         self.name = name
         for property_name, property_value in kwargs.items():
             setattr(self, property_name, property_value)
@@ -171,16 +141,12 @@ class DessiaObject(SerializableObject):
         return object.__eq__(self, other_object)
 
     def _data_eq_dict(self):
-        """
-        Returns a dict of what to look at for data eq. Keys in non data eq attributes are removed.
-        """
+        """ Returns a dict of what to look at for data eq. Keys in non data eq attributes are removed. """
         return {k: v for k, v in self._serializable_dict().items()
                 if k not in self._non_data_eq_attributes + ['package_version', 'name']}
 
     def _data_eq(self, other_object) -> bool:
-        """
-        Returns if the object is equal to the other object in the sense of data contained in the objects.
-        """
+        """ Returns if the object is equal to the other object in the sense of data contained in the objects. """
         return data_eq(self, other_object)
 
     def _data_hash(self):
@@ -284,9 +250,7 @@ class DessiaObject(SerializableObject):
 
     @property
     def _method_jsonschemas(self):
-        """
-        Generates dynamic jsonschemas for methods of class.
-        """
+        """ Generates dynamic jsonschemas for methods of class. """
         jsonschemas = {}
         class_ = self.__class__
 
@@ -325,9 +289,7 @@ class DessiaObject(SerializableObject):
         return jsonschemas
 
     def method_dict(self, method_name=None, method_jsonschema=None):
-        """
-        Return a jsonschema of a method arguments.
-        """
+        """ Return a jsonschema of a method arguments. """
         if method_name is None and method_jsonschema is None:
             msg = 'No method name nor jsonschema provided'
             raise NotImplementedError(msg)
@@ -339,9 +301,7 @@ class DessiaObject(SerializableObject):
         return dict_
 
     def dict_to_arguments(self, dict_, method):
-        """
-        Transform serialized argument of a method to python objects ready to use in method evaluation.
-        """
+        """ Transform serialized argument of a method to python objects ready to use in method evaluation. """
         method_full_name = f'{self.full_classname}.{method}'
         if method_full_name in _fullargsspec_cache:
             args_specs = _fullargsspec_cache[method_full_name]
@@ -389,7 +349,11 @@ class DessiaObject(SerializableObject):
 
     @classmethod
     def load_from_stream(cls, stream):
-        """ Build object from stream. Should be consistent with save_to_stream method. """
+        """
+        Generate object from stream using utf-8 encoding.
+
+        Should be consistent with save_to_stream method.
+        """
         dict_ = json.loads(stream.read().decode('utf-8'))
         return cls.dict_to_object(dict_)
 
@@ -427,13 +391,16 @@ class DessiaObject(SerializableObject):
         return check_list
 
     def is_valid(self, level='error'):
-        """
-        Return whether the object of valid 'above' given level. Default is error, but warnings can be forbidden.
-        """
+        """ Return whether the object of valid 'above' given level. Default is error, but warning can be forbidden. """
         return not self.check_list().checks_above_level(level=level)
 
-    def copy(self, deep=True, memo=None):
-        """ Return a shallow or deep copy of the object depending of the value of given 'deep' argument. """
+    def copy(self, deep: bool = True, memo=None):
+        """
+        Copy object.
+
+        :param deep: If False, perform a shallow copy. If True, perform a deepcopy.
+        :param memo: A dict that keep track of references.
+        """
         if deep:
             return deepcopy(self, memo=memo)
         return copy(self)
@@ -474,7 +441,7 @@ class DessiaObject(SerializableObject):
                 dict_[arg] = deepcopy_value(getattr(self, arg), memo=memo)
         return self.__class__(**dict_)
 
-    def plot_data(self, **kwargs):
+    def plot_data(self, reference_path: str = "#", **kwargs):
         """
         Base plot_data method. Overwrite this to display 2D or graphs on plateforme.
 
@@ -482,11 +449,11 @@ class DessiaObject(SerializableObject):
         """
         return []
 
-    def plot(self, **kwargs):
+    def plot(self, reference_path: str = "#", **kwargs):
         """ Generic plot getting plot_data function to plot. """
         if hasattr(self, 'plot_data'):
             import plot_data
-            for data in self.plot_data(**kwargs):  # TODO solve inconsistence with the plot_data method just above
+            for data in self.plot_data(reference_path, **kwargs):
                 plot_data.plot_canvas(plot_data_object=data,
                                       canvas_id='canvas',
                                       width=1400, height=900,
@@ -510,21 +477,18 @@ class DessiaObject(SerializableObject):
         else:
             msg = f"Class '{self.__class__.__name__}' does not implement a plot_data method to define what to plot"
             raise NotImplementedError(msg)
-
         return axs
 
     @staticmethod
     def display_settings() -> List[DisplaySetting]:
-        """ Returns a list of json describing how to call subdisplays. """
-        return [DisplaySetting('markdown', 'markdown', 'to_markdown', None),
-                DisplaySetting('plot_data', 'plot_data', 'plot_data', None, serialize_data=True)]
+        """ Return a list of objects describing how to call subdisplays. """
+        return [DisplaySetting(selector="markdown", type_="markdown", method="to_markdown"),
+                DisplaySetting(selector="plot_data", type_="plot_data", method="plot_data", serialize_data=True)]
 
-    def _display_from_selector(self, selector: str, **kwargs) -> DisplayObject:
+    def _display_from_selector(self, selector: str) -> DisplayObject:
         """ Generate the display from the selector. """
-        reference_path = kwargs.get('reference_path', '')
-
         display_setting = self._display_settings_from_selector(selector)
-        track = ''
+        track = ""
         try:
             data = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
         except:
@@ -533,6 +497,7 @@ class DessiaObject(SerializableObject):
 
         if display_setting.serialize_data:
             data = serialize(data)
+        reference_path = display_setting.reference_path  # Trying this
         return DisplayObject(type_=display_setting.type, data=data, reference_path=reference_path, traceback=track)
 
     def _display_settings_from_selector(self, selector: str):
@@ -542,22 +507,19 @@ class DessiaObject(SerializableObject):
                 return display_setting
         raise ValueError(f"No such selector '{selector}' in display of class '{self.__class__.__name__}'")
 
-    def _displays(self, **kwargs) -> List[JsonSerializable]:
+    def _displays(self) -> List[JsonSerializable]:
         """ Generate displays of the object to be plot in the DessiA Platform. """
-        reference_path = kwargs.get('reference_path', '')
-
         displays = []
         for display_setting in self.display_settings():
-            display_ = self._display_from_selector(display_setting.selector, reference_path=reference_path)
+            display_ = self._display_from_selector(display_setting.selector)
             displays.append(display_.to_dict())
         return displays
 
     def to_markdown(self) -> str:
         """ Render a markdown of the object output type: string. """
-        md_writer = MarkdownWriter(print_limit=25, table_limit=None)
-        return templates.dessia_object_markdown_template.substitute(name=self.name,
-                                                                    class_=self.__class__.__name__,
-                                                                    table=md_writer.object_table(self))
+        writer = MarkdownWriter(print_limit=25, table_limit=None)
+        template = templates.dessia_object_markdown_template
+        return template.substitute(name=self.name, class_=self.__class__.__name__, table=writer.object_table(self))
 
     def performance_analysis(self):
         """ Print time of rendering some commons operations (serialization, hash, displays). """
@@ -617,9 +579,7 @@ class DessiaObject(SerializableObject):
         return CheckList(checks)
 
     def to_xlsx(self, filepath: str):
-        """
-        Exports the object to an XLSX file given by the filepath.
-        """
+        """ Export the object to an XLSX file given by the filepath. """
         if not filepath.endswith('.xlsx'):
             filepath += '.xlsx'
             print(f'Changing name to {filepath}')
@@ -628,14 +588,12 @@ class DessiaObject(SerializableObject):
             self.to_xlsx_stream(file)
 
     def to_xlsx_stream(self, stream):
-        """
-        Exports the object to an XLSX to a given stream.
-        """
+        """ Export the object to an XLSX to a given stream. """
         writer = XLSXWriter(self)
         writer.save_to_stream(stream)
 
     def _export_formats(self) -> List[ExportFormat]:
-        """ Define export formats for base .json and .xlsx exports. """
+        """ Return a list of objects describing how to call generic exports (.json, .xlsx). """
         formats = [ExportFormat(selector="json", extension="json", method_name="save_to_stream", text=True),
                    ExportFormat(selector="xlsx", extension="xlsx", method_name="to_xlsx_stream", text=False)]
         return formats
@@ -676,22 +634,22 @@ class DessiaObject(SerializableObject):
 
 
 class PhysicalObject(DessiaObject):
-    """Represent an object with CAD capabilities."""
+    """ Represent an object with CAD capabilities. """
 
     @staticmethod
     def display_settings():
-        """Returns a list of json describing how to call subdisplays."""
+        """ Returns a list of json describing how to call subdisplays. """
         display_settings = DessiaObject.display_settings()
         display_settings.append(DisplaySetting(selector='cad', type_='babylon_data',
                                                method='volmdlr_volume_model().babylon_data', serialize_data=True))
         return display_settings
 
-    def volmdlr_primitives(self):
-        """Return a list of volmdlr primitives to build up volume model."""
+    def volmdlr_primitives(self, **kwargs):
+        """ Return a list of volmdlr primitives to build up volume model. """
         return []
 
     def volmdlr_volume_model(self, **kwargs):
-        """Gives the volmdlr VolumeModel."""
+        """ Gives the volmdlr VolumeModel. """
         import volmdlr as vm  # !!! Avoid circular imports, is this OK ?
         return vm.core.VolumeModel(self.volmdlr_primitives(**kwargs))
 
@@ -705,12 +663,14 @@ class PhysicalObject(DessiaObject):
 
     def to_step_stream(self, stream):
         """
-        Exports the CAD of the object to a stream in the STEP format. Works if the class define a custom volmdlr model.
+        Export object CAD to given stream in .stp format.
+
+        Works if the class define a custom volmdlr model.
         """
         return self.volmdlr_volume_model().to_step_stream(stream=stream)
 
     def to_html_stream(self, stream: dcf.StringFile):
-        """Exports the CAD of the object to a stream in the html format."""
+        """ Exports Object CAD to given stream in the .html format. """
         model = self.volmdlr_volume_model()
         babylon_data = model.babylon_data()
         script = model.babylonjs_script(babylon_data)
@@ -719,9 +679,7 @@ class PhysicalObject(DessiaObject):
         return stream
 
     def to_stl_stream(self, stream):
-        """
-        Exports the CAD of the object to STL to a given stream.
-        """
+        """ Export Object CAD to given stream in .stl format. """
         return self.volmdlr_volume_model().to_stl_stream(stream=stream)
 
     def to_stl(self, filepath):
@@ -739,7 +697,7 @@ class PhysicalObject(DessiaObject):
     #     return DessiaObject._displays(self, **kwargs)
 
     def babylonjs(self, use_cdn=True, debug=False, **kwargs):
-        """Show the 3D volmdlr of an object by calling volmdlr_volume_model method and plot in in browser."""
+        """ Show the 3D volmdlr of an object by calling volmdlr_volume_model method and plot in in browser. """
         self.volmdlr_volume_model(**kwargs).babylonjs(use_cdn=use_cdn, debug=debug)
 
     def save_babylonjs_to_file(self, filename: str = None, use_cdn: bool = True, debug: bool = False, **kwargs):
@@ -757,6 +715,7 @@ class PhysicalObject(DessiaObject):
         self.volmdlr_volume_model(**kwargs).save_babylonjs_to_file(filename=filename, use_cdn=use_cdn, debug=debug)
 
     def _export_formats(self) -> List[ExportFormat]:
+        """ Return a list of objects describing how to call 3D exports. """
         formats = DessiaObject._export_formats(self)
         formats3d = [ExportFormat(selector="step", extension="step", method_name="to_step_stream", text=True),
                      ExportFormat(selector="stl", extension="stl", method_name="to_stl_stream", text=False),
@@ -775,8 +734,7 @@ class MovingObject(PhysicalObject):
     def volmdlr_volume_model(self, **kwargs):
         """ Volume model of Moving Object. """
         import volmdlr as vm  # !!! Avoid circular imports, is this OK ?
-        return vm.core.MovingVolumeModel(self.volmdlr_primitives(**kwargs),
-                                         self.volmdlr_primitives_step_frames(**kwargs))
+        return vm.core.MovingVolumeModel(self.volmdlr_primitives(**kwargs), self.volmdlr_primitives_step_frames())
 
 
 class Parameter(DessiaObject):
@@ -866,6 +824,7 @@ class DessiaFilter(DessiaObject):
         * equal: ==, eq
         * different: !=, ne
     """
+
     _REAL_OPERATORS = {'>': operator.gt, '<': operator.lt, '>=': operator.ge, '<=': operator.le, '==': operator.eq,
                        '!=': operator.ne, 'gt': operator.gt, 'lt': operator.lt, 'ge': operator.ge, 'le': operator.le,
                        'eq': operator.eq, 'ne': operator.ne, 'gte': operator.ge, 'lte': operator.le}
@@ -998,6 +957,7 @@ class FiltersList(DessiaObject):
 
     :Logical operators: `'and'`, `'or'`, `'xor'`
     """
+
     _standalone_in_db = True
 
     def __init__(self, filters: List[DessiaFilter], logical_operator: str = 'and', name: str = ''):
@@ -1341,9 +1301,7 @@ def split_argspecs(argspecs) -> Tuple[int, int]:
 
 
 def get_attribute_names(object_class):
-    """
-    Get all attributes of a class which are present in __init__ method or numeric attributes and not in parent class.
-    """
+    """ Get all attributes of a class which are present in __init__ or numeric attributes and not in parent class. """
     attributes = [attribute[0] for attribute in inspect.getmembers(object_class, lambda x: not inspect.isroutine(x))
                   if not attribute[0].startswith('__')
                   and not attribute[0].endswith('__')
