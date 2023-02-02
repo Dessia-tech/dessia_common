@@ -264,12 +264,12 @@ class TypingProperty(Property):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
     @property
-    def args(self):
+    def args(self) -> tp.Tuple[tp.Type[T], ...]:
         """ Return Typing arguments. """
         return tp.get_args(self.annotation)
 
     @property
-    def origin(self):
+    def origin(self) -> tp.Type:
         """ Return Typing origin. """
         return tp.get_origin(self.annotation)
 
@@ -313,17 +313,13 @@ class ProxyProperty(TypingProperty):
     def __init__(self, annotation: tp.Type[T], attribute: str, definition_default: T = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
-    @property
-    def args(self):
-        try:
-            return self.schema.args
-        except AttributeError:
-            return None
+        self.annotation = self.args[0]
 
     @property
     def schema(self):
         """ Return a reference to its only arg. """
-        return get_schema(annotation=self.args[0], attribute=self.attribute, definition_default=self.definition_default)
+        return get_schema(annotation=self.annotation, attribute=self.attribute,
+                          definition_default=self.definition_default)
 
     @property
     def serialized(self) -> str:
@@ -414,6 +410,8 @@ class BuiltinProperty(Property):
         """ Write Builtin as a dict. """
         chunk = super().to_dict(title=title, editable=editable, description=description)
         chunk["type"] = dc_types.TYPING_EQUIVALENCES[self.annotation]
+        if self.default_value() is not None:
+            chunk["default_value"] = self.default_value()
         return chunk
 
     @classmethod

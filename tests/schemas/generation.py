@@ -1,6 +1,6 @@
 from dessia_common.schemas.core import BuiltinProperty, MeasureProperty,  ClassProperty, MethodTypeProperty,\
-    HeterogeneousSequence, HomogeneousSequence, DynamicDict
-from typing import List, Tuple, Dict, Type
+    HeterogeneousSequence, HomogeneousSequence, DynamicDict, OptionalProperty
+from typing import List, Tuple, Dict, Type, Optional
 from dessia_common.forms import StandaloneObject
 from dessia_common.measures import Distance
 from dessia_common.typings import MethodType
@@ -105,6 +105,10 @@ assert computed_schema == {'type': 'array',
                            'editable': True,
                            'description': 'Testing complex deep list'}
 assert not checked_schema.checks_above_level("error")
+
+schema = OptionalProperty(annotation=Optional[List[int]], attribute="optional_list", definition_default=None)
+assert schema.args == (int,)
+computed_schema = schema.to_dict(title="Optional List", editable=True, description="List with default value")
 
 # Tuples
 schema = HeterogeneousSequence(annotation=Tuple, attribute="bare_tuple")
