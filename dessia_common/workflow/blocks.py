@@ -9,14 +9,15 @@ from zipfile import ZipFile
 from typing import List, Type, Any, Dict, Tuple, get_type_hints
 
 import itertools
-from dessia_common.core import DessiaFilter, FiltersList, split_argspecs, type_from_annotation, DessiaObject
-from dessia_common.utils.types import get_python_class_from_class_name, full_classname
+from dessia_common.core import DessiaFilter, FiltersList, type_from_annotation, DessiaObject
+from dessia_common.schemas.core import split_argspecs
+from dessia_common.utils.types import get_python_class_from_class_name
 from dessia_common.utils.docstrings import parse_docstring, EMPTY_PARSED_ATTRIBUTE
 from dessia_common.displays import DisplaySetting, DisplayObject
 from dessia_common.errors import UntypedArgumentError
 from dessia_common.typings import JsonSerializable, MethodType, ClassMethodType
 from dessia_common.files import StringFile, BinaryFile
-from dessia_common.utils.helpers import concatenate
+from dessia_common.utils.helpers import concatenate, full_classname
 from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
 from dessia_common.exports import ExportFormat
 

@@ -1,19 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """ Types tools. """
-import warnings
 import sys
 from collections.abc import Iterator, Sequence
 from importlib import import_module
 from typing import Any, Dict, List, Tuple, Type, Union, get_origin, get_args
 import orjson
 from dessia_common.abstract import CoreDessiaObject
-from dessia_common.typings import Subclass, InstanceOf, MethodType, ClassMethodType
+from dessia_common.typings import InstanceOf, MethodType, ClassMethodType
 from dessia_common.files import BinaryFile, StringFile
-from dessia_common.schemas.core import get_schema
+from dessia_common.schemas.core import get_schema, TYPING_EQUIVALENCES, union_is_default_value
 
 SIMPLE_TYPES = [int, str]
-TYPING_EQUIVALENCES = {int: 'number', float: 'number', bool: 'boolean', str: 'string'}
 
 TYPES_STRINGS = {int: 'int', float: 'float', bool: 'boolean', str: 'str', list: 'list', tuple: 'tuple', dict: 'dict'}
 
@@ -24,18 +22,6 @@ TYPES_FROM_STRING = {'unicode': str, 'str': str, 'float': float, 'int': int, 'bo
 SERIALIZED_BUILTINS = ['float', 'builtins.float', 'int', 'builtins.int', 'str', 'builtins.str', 'bool', 'builtins.bool']
 
 _PYTHON_CLASS_CACHE = {}
-
-
-def full_classname(object_, compute_for: str = 'instance'):
-    """ Get full class name of object_ (module + classname). """
-    if compute_for == 'instance':
-        return f"{object_.__class__.__module__}.{object_.__class__.__name__}"
-    if compute_for == 'class':
-        try:
-            return f"{object_.__module__}.{object_.__name__}"
-        except:
-            print(object_)
-    raise NotImplementedError(f"Cannot compute {compute_for} full classname for object {object_}")
 
 
 def is_classname_transform(string: str):
@@ -316,17 +302,6 @@ def recursive_type(obj):
     else:
         raise NotImplementedError(obj)
     return type_
-
-
-def union_is_default_value(typing_: Type) -> bool:
-    """
-    Union typings can be False positives.
-
-    An argument of a function that has a default_value set to None is Optional[T], which is an alias for
-    Union[T, NoneType]. This function checks if this is the case.
-    """
-    args = get_args(typing_)
-    return len(args) == 2 and type(None) in args
 
 
 def typematch(type_: Type, match_against: Type) -> bool:

@@ -17,8 +17,7 @@ class Measure(float):
 
     def to_dict(self):
         """ Serializes the object into a dict. """
-        return {'object_class': f'{self.__module__}.{self.__class__.__name__}',
-                'value': self.real}
+        return {'object_class': f'{self.__module__}.{self.__class__.__name__}', 'value': self.real}
 
     @classmethod
     def dict_to_object(cls, dict_):

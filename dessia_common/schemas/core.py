@@ -7,6 +7,7 @@ import collections.abc
 import typing as tp
 from functools import cached_property
 import dessia_common.utils.types as dc_types
+from dessia_common.utils.helpers import full_classname
 from dessia_common.abstract import CoreDessiaObject
 from dessia_common.files import BinaryFile, StringFile
 from dessia_common.typings import MethodType, ClassMethodType, InstanceOf, Subclass
@@ -19,6 +20,7 @@ from dessia_common.checks import CheckList, FailedCheck, PassedCheck, CheckWarni
 SCHEMA_HEADER = {"definitions": {}, "$schema": "http://json-schema.org/draft-07/schema#",
                  "type": "object", "required": [], "properties": {}}
 RESERVED_ARGNAMES = ['self', 'cls', 'progress_callback', 'return']
+TYPING_EQUIVALENCES = {int: 'number', float: 'number', bool: 'boolean', str: 'string'}
 
 _fullargsspec_cache = {}
 
@@ -151,7 +153,7 @@ class ClassSchema(Schema):
     def __init__(self, class_: tp.Type[CoreDessiaObject]):
         self.class_ = class_
         self.standalone_in_db = class_._standalone_in_db
-        self.python_typing = dc_types.full_classname(class_, compute_for="class")
+        self.python_typing = full_classname(class_, compute_for="class")
         annotations = tp.get_type_hints(class_.__init__)
 
         members = inspect.getfullargspec(self.class_.__init__)
@@ -371,7 +373,7 @@ class BuiltinProperty(Property):
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write Builtin as a dict. """
         chunk = super().to_dict(title=title, editable=editable, description=description)
-        chunk["type"] = dc_types.TYPING_EQUIVALENCES[self.annotation]
+        chunk["type"] = TYPING_EQUIVALENCES[self.annotation]
         if self.default_value() is not None:
             chunk["default_value"] = self.default_value()
         return chunk
@@ -386,7 +388,7 @@ class MeasureProperty(BuiltinProperty):
     @cached_property
     def serialized(self) -> str:
         """ Full class name. """
-        return dc_types.full_classname(object_=self.annotation, compute_for="class")
+        return full_classname(object_=self.annotation, compute_for="class")
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write Measure as a dict. """
@@ -407,7 +409,7 @@ class FileProperty(Property):
     @property
     def serialized(self) -> str:
         """ Return file classname. """
-        return dc_types.full_classname(object_=self.annotation, compute_for="class")
+        return full_classname(object_=self.annotation, compute_for="class")
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write File as a dict. """
@@ -450,7 +452,7 @@ class CustomClass(Property):
     @cached_property
     def serialized(self) -> str:
         """ Full class name. """
-        return dc_types.full_classname(object_=self.annotation, compute_for='class')
+        return full_classname(object_=self.annotation, compute_for='class')
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write CustomClass as a dict. """
@@ -634,13 +636,13 @@ class DynamicDict(TypingProperty):
         if key_type != str:
             # !!! Should we support other types ? Numeric ?
             raise NotImplementedError('Non strings keys not supported')
-        if value_type not in dc_types.TYPING_EQUIVALENCES:
+        if value_type not in TYPING_EQUIVALENCES:
             raise ValueError(f'Dicts should have only builtins keys and values, got {value_type}')
         chunk = super().to_dict(title=title, editable=editable, description=description)
         chunk.update({'type': 'object',
                       'patternProperties': {
                           '.*': {
-                            'type': dc_types.TYPING_EQUIVALENCES[value_type]
+                            'type': TYPING_EQUIVALENCES[value_type]
                           }
                       }})
         return chunk
@@ -677,7 +679,7 @@ class DynamicDict(TypingProperty):
     def has_simple_values(self):
         """ Value Type should be simple. """
         key_type, value_type = self.args
-        if value_type not in dc_types.TYPING_EQUIVALENCES:
+        if value_type not in TYPING_EQUIVALENCES:
             msg = f"{self.check_prefix}is typed as a 'Dict[{key_type}, {value_type}]' " \
                   f"which requires a builtin type as its value type. " \
                   f"Expected 'int', 'float', 'bool' or 'str', got '{value_type}'."
@@ -889,7 +891,7 @@ def split_argspecs(argspecs: inspect.FullArgSpec) -> tp.Tuple[int, int]:
 
 def get_schema(annotation: tp.Type[T], attribute: str = "", definition_default: tp.Optional[T] = None) -> Property:
     """ Get schema Property object from given annotation. """
-    if annotation in dc_types.TYPING_EQUIVALENCES:
+    if annotation in TYPING_EQUIVALENCES:
         return BuiltinProperty(annotation=annotation, attribute=attribute, definition_default=definition_default)
     if dc_types.is_typing(annotation):
         return typing_schema(typing_=annotation, attribute=attribute, definition_default=definition_default)
@@ -913,7 +915,7 @@ ORIGIN_TO_SCHEMA_CLASS = {
 def typing_schema(typing_: tp.Type[T], attribute: str, definition_default: T = None) -> Property:
     """ Get schema Property for typing annotations. """
     origin = tp.get_origin(typing_)
-    if origin is tp.Union and dc_types.union_is_default_value(typing_):
+    if origin is tp.Union and union_is_default_value(typing_):
         # This is a false UnionProperty => Is a default value set to None
         return OptionalProperty(annotation=typing_, attribute=attribute, definition_default=definition_default)
     try:
@@ -941,7 +943,7 @@ def object_default(definition_default: CoreDessiaObject = None, class_schema: Cl
     Return serialized user default if definition, else None.
     """
     if definition_default is not None:
-        return definition_default.to_dict()
+        return definition_default.to_dict(use_pointers=False)
     if class_schema is not None:
         # TODO Should we implement this ? Right now, tests state that the result is None
         # return class_schema.default_dict()
@@ -953,3 +955,14 @@ def serialize_annotation(annotation, attribute: str = "") -> str:
     """ Make use of schema to serialized annotations. """
     schema = get_schema(annotation=annotation, attribute=attribute)
     return schema.serialized
+
+
+def union_is_default_value(typing_: tp.Type) -> bool:
+    """
+    Union typings can be False positives.
+
+    An argument of a function that has a default_value set to None is Optional[T], which is an alias for
+    Union[T, NoneType]. This function checks if this is the case.
+    """
+    args = tp.get_args(typing_)
+    return len(args) == 2 and type(None) in args

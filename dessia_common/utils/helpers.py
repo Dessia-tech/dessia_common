@@ -1,4 +1,12 @@
-""" Tools for copying objects. """
+"""
+Tools for objects handling.
+
+As a rule of thumb, functions should be placed here if:
+- They can be widely used in dessia_common
+- They don't have any requirements or imports
+
+That way, we can avoid cyclic imports.
+"""
 
 
 def concatenate(values):
@@ -33,3 +41,15 @@ def prettyname(name: str) -> str:
             if i < len(strings) - 1:
                 pretty_name += ' '
     return pretty_name
+
+
+def full_classname(object_, compute_for: str = 'instance'):
+    """ Get full class name of object_ (module + classname). """
+    if compute_for == 'instance':
+        return f"{object_.__class__.__module__}.{object_.__class__.__name__}"
+    if compute_for == 'class':
+        try:
+            return f"{object_.__module__}.{object_.__name__}"
+        except:
+            print(object_)
+    raise NotImplementedError(f"Cannot compute '{compute_for}' full classname for object '{object_}'")

@@ -15,10 +15,12 @@ import networkx as nx
 import dessia_common.errors as dc_err
 from dessia_common.files import StringFile, BinaryFile
 import dessia_common.utils.types as dcty
+from dessia_common.utils.helpers import full_classname
 from dessia_common.abstract import CoreDessiaObject
 from dessia_common.typings import InstanceOf, JsonSerializable
 from dessia_common.graph import explore_tree_from_leaves  # , cut_tree_final_branches
 from dessia_common.breakdown import get_in_object_from_path
+from dessia_common.schemas.core import TYPING_EQUIVALENCES
 
 fullargsspec_cache = {}
 
@@ -91,7 +93,7 @@ class SerializableObject(CoreDessiaObject):
     @property
     def full_classname(self):
         """ Full classname of class like: package.module.submodule.classname. """
-        return dcty.full_classname(self)
+        return full_classname(self)
 
 
 def serialize_dict(dict_):
@@ -430,7 +432,7 @@ def deserialize_with_typing(type_, argument, global_dict=None, pointers_memo=Non
         deserialized_arg = argument
     elif origin is InstanceOf:
         classname = args[0]
-        object_class = dcty.full_classname(object_=classname, compute_for='class')
+        object_class = full_classname(object_=classname, compute_for='class')
         class_ = dcty.get_python_class_from_class_name(object_class)
 
         deserialized_arg = class_.dict_to_object(argument, global_dict=global_dict,
@@ -458,7 +460,7 @@ def deserialize_argument(type_, argument, global_dict=None, pointers_memo=None, 
     if type_ in [TextIO, BinaryIO] or isinstance(argument, (StringFile, BinaryFile)):
         return argument
 
-    if type_ in dcty.TYPING_EQUIVALENCES:
+    if type_ in TYPING_EQUIVALENCES:
         if isinstance(argument, type_):
             return argument
         if isinstance(argument, int) and type_ == float:
@@ -748,7 +750,7 @@ def pointers_analysis(obj):
             else:
                 try:
                     val2 = get_in_object_from_path(obj, path2)
-                    val2_class = dcty.full_classname(val2)
+                    val2_class = full_classname(val2)
                     class_from_path[path2] = val2_class
                 except AttributeError:
                     val2_class = None
@@ -761,7 +763,7 @@ def pointers_analysis(obj):
             else:
                 try:
                     val1 = get_in_object_from_path(obj, path1)
-                    val1_class = dcty.full_classname(val1)
+                    val1_class = full_classname(val1)
                     class_from_path[path1] = val1_class
                 except AttributeError:
                     val1_class = None

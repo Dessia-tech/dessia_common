@@ -8,7 +8,8 @@ from typing import List
 import numpy as npy
 from dessia_common import FLOAT_TOLERANCE
 import dessia_common.core as dc
-from dessia_common.utils.types import isinstance_base_types, is_sequence, full_classname
+from dessia_common.utils.types import isinstance_base_types, is_sequence
+from dessia_common.utils.helpers import full_classname
 from dessia_common.files import BinaryFile, StringFile
 
 

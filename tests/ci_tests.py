@@ -14,7 +14,6 @@ scripts = [
     "moving_object.py",
     "optimization.py",
     "graph.py",
-    "jsonschema.py",
     "sampling.py",
     "markdowns.py",
     "checks.py",
