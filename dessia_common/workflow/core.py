@@ -1571,6 +1571,7 @@ class WorkflowState(DessiaObject):
 
     @property
     def method_schemas(self):
+        """ Empty schemas for WorkflowState because not directl used. """
         return {}
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#', id_method=True, id_memo=None):
@@ -2081,6 +2082,7 @@ class WorkflowRun(WorkflowState):
 
     @property
     def method_schemas(self):
+        """ Copy old method_jsonschema behavior. Probably to be refactored. """
         schemas = {"run_again": self.workflow.method_schemas.pop('run')}
         schemas["run_again"].update({"classes": ["dessia_common.workflow.core.WorkflowRun"], "required": []})
         return schemas
