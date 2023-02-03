@@ -8,9 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 0.13.0
 
-### Chore
 
-- Toggle some D2xx errors 
+### Fix
+- Do not take into account non-eq attributes
 
 ### CI
 
@@ -25,8 +25,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add pre-checks for non list-like element in is_sequence function
 - For is_serializable, not using pointers while trying to_dict
 
+
 ### Chore
 
+- Toggle some D2xx errors
 - Tag for release candidate
 
 
