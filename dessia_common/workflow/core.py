@@ -1571,7 +1571,7 @@ class WorkflowState(DessiaObject):
 
     @property
     def method_schemas(self):
-        """ Empty schemas for WorkflowState because not directl used. """
+        """ Empty schemas for WorkflowState because not directly used. """
         return {}
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#', id_method=True, id_memo=None):
