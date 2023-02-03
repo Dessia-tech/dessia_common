@@ -28,7 +28,7 @@ from dessia_common.utils.types import is_sequence, is_bson_valid, TYPES_FROM_STR
 from dessia_common.utils.copy import deepcopy_value
 from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotation, JSONSCHEMA_HEADER,\
     set_default_value
-import dessia_common.schemas.core as schemas
+import dessia_common.schemas.core as dcs
 from dessia_common.utils.docstrings import parse_docstring, FAILED_DOCSTRING_PARSING
 from dessia_common.serialization import SerializableObject, deserialize_argument, serialize
 from dessia_common.exports import XLSXWriter, MarkdownWriter, ExportFormat
@@ -45,7 +45,7 @@ def __getattr__(name):
     if name == "_FORBIDDEN_ARGNAMES":
         warnings.warn("Attribute '_FORBIDDEN_ARGNAMES' is deprecated. Use schemas.RESERVED_ARGNAMES instead",
                       DeprecationWarning)
-        return schemas.RESERVED_ARGNAMES
+        return dcs.RESERVED_ARGNAMES
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 
 _fullargsspec_cache = {}
@@ -177,7 +177,7 @@ class DessiaObject(SerializableObject):
         """ Return jsonschema header and base schema. """
         warnings.warn("base_jsonschema method is deprecated and will be removed in a future version",
                       DeprecationWarning)
-        schema = deepcopy(schemas.SCHEMA_HEADER)
+        schema = deepcopy(dcs.SCHEMA_HEADER)
         schema['properties']['name'] = {"type": 'string', "title": "Object Name", "description": "Object name",
                                         "editable": True, "default_value": "Object Name"}
         return schema
@@ -189,7 +189,7 @@ class DessiaObject(SerializableObject):
             warnings.warn("Jsonschema is fully deprecated and you may want to use the new generic schema feature."
                           "Please consider so", DeprecationWarning)
             return cls._jsonschema
-        schema = schemas.ClassSchema(cls)
+        schema = dcs.ClassSchema(cls)
         return schema
 
     @classmethod
@@ -226,7 +226,7 @@ class DessiaObject(SerializableObject):
         # Initialize jsonschema
         _jsonschema = deepcopy(JSONSCHEMA_HEADER)
 
-        required_arguments, default_arguments = schemas.inspect_arguments(method=init, merge=False)
+        required_arguments, default_arguments = dcs.inspect_arguments(method=init, merge=False)
         _jsonschema['required'] = required_arguments
         _jsonschema['standalone_in_db'] = cls._standalone_in_db
         _jsonschema['description'] = parsed_docstring['description']
@@ -266,12 +266,12 @@ class DessiaObject(SerializableObject):
         """ Generate dynamic schemas for methods of class. """
         class_ = self.__class__
         valid_method_names = [m for m in dir(class_) if not m.startswith('_') and m in class_._allowed_methods]
-        jsonschemas = {}
+        schemas = {}
         for method_name in valid_method_names:
             method = getattr(class_, method_name)
-            schema = schemas.MethodSchema(method)
-            jsonschemas[method_name] = schema.to_dict()
-        return jsonschemas
+            schema = dcs.MethodSchema(method)
+            schemas[method_name] = schema.to_dict()
+        return schemas
 
     @property
     def _method_jsonschemas(self):
@@ -292,7 +292,7 @@ class DessiaObject(SerializableObject):
             method = getattr(class_, method_name)
 
             if not isinstance(method, property):
-                required_args, default_args = schemas.inspect_arguments(method=method, merge=False)
+                required_args, default_args = dcs.inspect_arguments(method=method, merge=False)
                 annotations = get_type_hints(method)
                 if annotations:
                     jsonschemas[method_name] = deepcopy(JSONSCHEMA_HEADER)
@@ -301,7 +301,7 @@ class DessiaObject(SerializableObject):
                     for i, annotation in enumerate(annotations.items()):
                         # TOCHECK Not actually ordered
                         argname = annotation[0]
-                        if argname not in schemas.RESERVED_ARGNAMES:
+                        if argname not in dcs.RESERVED_ARGNAMES:
                             if argname in required_args:
                                 jsonschemas[method_name]['required'].append(str(i))
                             jsonschema_element = jsonschema_from_annotation(annotation, {}, i)[argname]
@@ -600,11 +600,10 @@ class DessiaObject(SerializableObject):
 
         valid, hint = is_bson_valid(stringify_dict_keys(dict_))
         if not valid:
-            # raise ValueError(hint)
             checks.append(dcc.FailedCheck(f'Object is not bson valid {hint}'))
 
         json.dumps(self._displays())
-        json.dumps(self._method_jsonschemas)
+        json.dumps(self.method_schemas)
 
         return dcc.CheckList(checks)
 
@@ -720,12 +719,6 @@ class PhysicalObject(DessiaObject):
         """
         return self.volmdlr_volume_model().to_stl(filepath=filepath)
 
-    # def _displays(self, **kwargs):
-    #     """
-    #     Compute the list of displays
-    #     """
-    #     return DessiaObject._displays(self, **kwargs)
-
     def babylonjs(self, use_cdn=True, debug=False, **kwargs):
         """ Show the 3D volmdlr of an object by calling volmdlr_volume_model method and plot in in browser. """
         self.volmdlr_volume_model(**kwargs).babylonjs(use_cdn=use_cdn, debug=debug)
@@ -736,8 +729,7 @@ class PhysicalObject(DessiaObject):
 
         :param filename: The file's name. Default value is None
         :type filename: str, optional
-        :param use_cdn: Activates the use of a content delivery network.
-            Default value is True
+        :param use_cdn: Activates the use of a content delivery network. Default value is True
         :type use_cdn: bool, optional
         :param debug: Activates the debug mode. Default value is False
         :type debug: bool, optional
@@ -830,20 +822,16 @@ class DessiaFilter(DessiaObject):
     """
     Base class for filters working on lists of DessiaObjects (List[DessiaObject]).
 
-    :param attribute:
-        Name of attribute on which to filter
+    :param attribute: Name of attribute on which to filter
     :type attribute: str
 
-    :param comparison_operator:
-        Comparison operator
+    :param comparison_operator: Comparison operator
     :type comparison_operator: str
 
-    :param bound:
-        The bound value to compare `'attribute'` of DessiaObjects of a list with `'comparison_operator'`
+    :param bound: The bound value to compare `'attribute'` of DessiaObjects of a list with `'comparison_operator'`
     :type bound: float
 
-    :param name:
-        Name of filter
+    :param name: Name of filter
     :type name: `str`, `optional`, defaults to `''`
 
     :Comparison operators:
@@ -899,8 +887,7 @@ class DessiaFilter(DessiaObject):
         """
         Get the boolean indexing of a filtered list.
 
-        :param values:
-            List of DessiaObjects to filter
+        :param values: List of DessiaObjects to filter
         :type values: List[DessiaObject]
 
         :return: `list of length `len(values)` where elements are `True` if kept by the filter, otherwise `False`.
@@ -921,8 +908,7 @@ class DessiaFilter(DessiaObject):
         """
         Transform a boolean list to an index list.
 
-        :param booleans_list:
-            list of length `len(values)` where elements are `True` if kept, otherwise `False`.
+        :param booleans_list: list of length `len(values)` where elements are `True` if kept, otherwise `False`.
         :type booleans_list: List[int]
 
         :return: list of kept indexes
@@ -945,12 +931,10 @@ class DessiaFilter(DessiaObject):
         """
         Apply a Dessia Filter on a list of DessiaObjects.
 
-        :param values:
-            List of DessiaObjects to filter
+        :param values: List of DessiaObjects to filter
         :type values: List[DessiaObject]
 
-        :param booleans_list:
-            list of length `len(values)` where elements are `True` if kept, otherwise `False`.
+        :param booleans_list: list of length `len(values)` where elements are `True` if kept, otherwise `False`.
         :type booleans_list: List[List[bool]]
 
         :return: List of filtered values
@@ -973,16 +957,13 @@ class FiltersList(DessiaObject):
     """
     Combine several filters stored as a list of DessiaFilters with a logical operator.
 
-    :param filters:
-        List of DessiaFilters to combine
+    :param filters: List of DessiaFilters to combine
     :type filters: List[DessiaFilter]
 
-    :param logical_operator:
-        Logical operator to combine filters
+    :param logical_operator: Logical operator to combine filters
     :type logical_operator: str
 
-    :param name:
-        Name of FiltersList
+    :param name: Name of FiltersList
     :type name: `str`, `optional`, defaults to `''`
 
     :Logical operators: `'and'`, `'or'`, `'xor'`
@@ -1016,16 +997,13 @@ class FiltersList(DessiaObject):
         """
         Compute a FilersList from a pre-built list of DessiaFilter.
 
-        :param filters:
-            List of DessiaFilters to combine
+        :param filters: List of DessiaFilters to combine
         :type filters: List[DessiaFilter]
 
-        :param logical_operator:
-            Logical operator to combine filters (`'and'`, `'or'` or `'xor'`)
+        :param logical_operator: Logical operator to combine filters (`'and'`, `'or'` or `'xor'`)
         :type logical_operator: `str`, `optional`, defaults to `'and'`
 
-        :param name:
-            Name of FiltersList
+        :param name: Name of FiltersList
         :type name: `str`, `optional`, defaults to `''`
 
         :return: A new instantiated list of DessiaFilter
@@ -1047,12 +1025,10 @@ class FiltersList(DessiaObject):
         """
         Combine a list of `n` booleans indexes with the logical operator into a simple booleans index.
 
-        :param booleans_lists:
-            List of `n` booleans indexes
+        :param booleans_lists: List of `n` booleans indexes
         :type booleans_lists: List[List[bool]]
 
-        :param logical_operator:
-            Logical operator to combine filters (`'or'`, `'and'` or `'xor'`)
+        :param logical_operator: Logical operator to combine filters (`'or'`, `'and'` or `'xor'`)
         :type logical_operator: `str`, `optional`, defaults to 'and'
 
         :raises NotImplementedError: If logical_operator is not one of `'and'`, `'or'`, `'xor'`, raises an error
@@ -1158,7 +1134,6 @@ def dict_merge(old_dct, merge_dct, add_keys=True, extend_lists=True):
     dct = deepcopy(old_dct)
     if not add_keys:
         merge_dct = {k: merge_dct[k] for k in set(dct).intersection(set(merge_dct))}
-
     for key, value in merge_dct.items():
         if isinstance(dct.get(key), dict) and isinstance(value, collections.abc.Mapping):
             dct[key] = dict_merge(dct[key], merge_dct[key], add_keys=add_keys, extend_lists=extend_lists)
@@ -1166,7 +1141,6 @@ def dict_merge(old_dct, merge_dct, add_keys=True, extend_lists=True):
             dct[key].extend(value)
         else:
             dct[key] = value
-
     return dct
 
 
@@ -1208,21 +1182,6 @@ def enhanced_deep_attr(obj, sequence):
     else:
         path = f"#/{'/'.join(sequence)}"
     return get_in_object_from_path(object_=obj, path=path)
-
-    # # Sequence is a string and not a sequence of deep attributes
-    # if '/' in sequence:
-    #     # Is deep attribute reference
-    #     sequence = sequence.split('/')
-    #     return enhanced_deep_attr(obj=obj, sequence=sequence)
-    # # Is direct attribute
-    # return enhanced_get_attr(obj=obj, attr=sequence)
-    #
-    # # Get direct attribute
-    # subobj = enhanced_get_attr(obj=obj, attr=sequence[0])
-    # if len(sequence) > 1:
-    #     # Recursively get deep attributes
-    #     subobj = enhanced_deep_attr(obj=subobj, sequence=sequence[1:])
-    # return subobj
 
 
 def enhanced_get_attr(obj, attr):
@@ -1300,7 +1259,7 @@ def inspect_arguments(method, merge=False):
     """
     warnings.warn("Method 'inspect_arguments' have been moved to dessia_common/schemas."
                   "Use it instead instead", DeprecationWarning)
-    return schemas.inspect_arguments(method=method, merge=merge)
+    return dcs.inspect_arguments(method=method, merge=merge)
 
 
 def split_default_args(argspecs, merge: bool = False):
@@ -1311,14 +1270,14 @@ def split_default_args(argspecs, merge: bool = False):
     """
     warnings.warn("Method 'split_default_args' have been moved to dessia_common/schemas."
                   "Use it instead instead", DeprecationWarning)
-    return schemas.split_default_args(argspecs=argspecs, merge=merge)
+    return dcs.split_default_args(argspecs=argspecs, merge=merge)
 
 
 def split_argspecs(argspecs) -> Tuple[int, int]:
     """ Get number of regular arguments as well as arguments with default values. """
     warnings.warn("Method 'split_argspecs' have been moved to dessia_common/schemas."
                   "Use it instead instead", DeprecationWarning)
-    return schemas.split_argspecs(argspecs=argspecs)
+    return dcs.split_argspecs(argspecs=argspecs)
 
 
 def get_attribute_names(object_class):
@@ -1332,5 +1291,5 @@ def get_attribute_names(object_class):
     subclass_numeric_attributes = [name for name, param in subclass_attributes.items()
                                    if any(item in inspect.getmro(param.annotation)
                                           for item in [float, int, bool, complex])]
-    attributes += [a for a in subclass_numeric_attributes if a not in schemas.RESERVED_ARGNAMES]
+    attributes += [a for a in subclass_numeric_attributes if a not in dcs.RESERVED_ARGNAMES]
     return attributes
