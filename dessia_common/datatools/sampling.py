@@ -132,8 +132,7 @@ class ClassSampler(DessiaObject):
         """
         Generate all `DessiaObject` with the choosen method and store them in a `Dataset`.
 
-        :param samples:
-            Targert number of `DessiaObject` in the DOE. Not used for `'fullfact'` method.
+        :param samples: Targets number of `DessiaObject` in the DOE. Not used for `'fullfact'` method.
         :type samples: `int`
 
         :param method:

@@ -5,10 +5,10 @@ It should be used as a repertory of rules and available typings.
 
 Some general rules :
 
-- Lists are homogeneous, ie, they should not
+- Lists are homogeneous, IE, they should not
   contain several types of elements
     ex : List[int], List[str], List[CustomClass], ...
-- Tuples can, therefore, be used as heterogenous sequences,
+- Tuples can, therefore, be used as heterogeneous sequences,
   thanks to the fact that they are immutables.
     ex : Tuple[str, int, CustomClass] is a tuple like this :
         t = ('tuple', 1, custom_class_object)
@@ -458,10 +458,6 @@ class StandaloneObject(MovingObject):
         computation = nok_string + 'or' + ok_string
 
         return computation
-
-    # @staticmethod
-    # def method_with_faulty_typing(arg0: Iterator[int]):
-    #     return arg0
 
     def to_markdown(self):
         """ Write a standard markdown of StandaloneObject. """

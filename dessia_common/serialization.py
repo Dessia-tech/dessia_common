@@ -291,7 +291,7 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False, global_dict=
 
     # Create init_dict
     if class_ is not None and hasattr(class_, 'dict_to_object'):
-        different_methods = (class_.dict_to_object.__func__ is not SerializableObject.dict_to_object.__func__)
+        different_methods = class_.dict_to_object.__func__ is not SerializableObject.dict_to_object.__func__
         if different_methods and not force_generic:
             try:
                 obj = class_.dict_to_object(dict_, global_dict=global_dict, pointers_memo=pointers_memo, path=path)
@@ -394,7 +394,7 @@ def deserialize_with_typing(type_, argument, global_dict=None, pointers_memo=Non
             deserialized_arg = iter(deserialized_arg)
 
     elif origin is tuple:
-        # Heterogenous sequences (tuples)
+        # Heterogeneous sequences (tuples)
         deserialized_arg = tuple(deserialize_argument(t, arg) for (t, arg) in zip(args, argument))
     elif origin is dict:
         # Dynamic dict
@@ -622,7 +622,7 @@ def deserialization_order(dict_):
 
 def dereference_jsonpointers(dict_):  # , global_dict):
     """
-    Analyse given dict.
+    Analyses given dict.
 
      Useful in order to:
     - find jsonpointers

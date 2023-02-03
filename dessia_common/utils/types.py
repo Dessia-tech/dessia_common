@@ -58,7 +58,7 @@ def is_classname_transform(string: str):
 
 def is_jsonable(obj):
     """
-    Returns if object can be dumped as it is in a json.
+    Returns if object can be dumped as it is in a JSON.
     """
     # First trying with orjson which is more efficient
     try:
@@ -196,7 +196,7 @@ def serialize_typing_types(typing_):
 
 
 def serialize_union_typing(args):
-    """ Compute a string from union typings. """
+    """ Compute a string from union typing. """
     if len(args) == 2 and type(None) in args:
         # This is a false Union => Is a default value set to None
         return serialize_typing(args[0])
