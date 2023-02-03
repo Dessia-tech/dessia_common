@@ -261,14 +261,13 @@ class DessiaObject(SerializableObject):
         _jsonschema['whitelist_attributes'] = cls._whitelist_attributes
         return _jsonschema
 
-    @property
-    def method_schemas(self):
+    @classmethod
+    def method_schemas(cls):
         """ Generate dynamic schemas for methods of class. """
-        class_ = self.__class__
-        valid_method_names = [m for m in dir(class_) if not m.startswith('_') and m in class_._allowed_methods]
+        valid_method_names = [m for m in dir(cls) if not m.startswith('_') and m in cls._allowed_methods]
         schemas = {}
         for method_name in valid_method_names:
-            method = getattr(class_, method_name)
+            method = getattr(cls, method_name)
             schema = dcs.MethodSchema(method)
             schemas[method_name] = schema.to_dict()
         return schemas

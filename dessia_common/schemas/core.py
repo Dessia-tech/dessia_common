@@ -183,6 +183,16 @@ class MethodSchema(Schema):
         docstring = method.__doc__
         Schema.__init__(self, annotations=annotations, argspec=members, docstring=docstring)
 
+        self.required_arguments = [str(self.attributes.index(a)) for a in self.required_arguments]
+
+    def to_dict(self):
+        """ Write the whole schema. """
+        schema = deepcopy(SCHEMA_HEADER)
+        properties = {str(i): self.chunk(a) for i, a in enumerate(self.attributes)}
+        schema.update({"required": self.required_arguments, "properties": properties,
+                       "description": self.parsed_docstring["description"]})
+        return schema
+
 
 class Property:
     """ Base class for a schema property. """
@@ -381,6 +391,10 @@ class FileProperty(Property):
     """ Schema class for File type hints. """
     def __init__(self, annotation: tp.Type[File], attribute: str, definition_default: File = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
+
+    @property
+    def serialized(self) -> str:
+        return dc_types.full_classname(object_=self.annotation, compute_for="class")
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write File as a dict. """
