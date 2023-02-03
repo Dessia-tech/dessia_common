@@ -264,6 +264,24 @@ class Block(DessiaObject):
         block_docstring = {i: EMPTY_PARSED_ATTRIBUTE for i in self.inputs}
         return block_docstring
 
+    def parse_input_doc(self, input_: Variable):
+        """ Parse block docstring to get input documentation. """
+        try:
+            docstring = self._docstring()
+            if input_ in docstring:
+                return docstring[input_]
+        except Exception:
+            # Broad except to avoid error 500 on doc computing
+            return FAILED_ATTRIBUTE_PARSING
+        return None
+
+    def input_name(self, input_: Variable):
+        """ Compute input name by concatenating block name in front. """
+        name = input_.name
+        if self.name:
+            name = f"{self.name} - {name}"
+        return prettyname(name)
+
     def base_script(self) -> str:
         """ Generate a chunk of script that denotes the arguments of a base block. """
         return f"name='{self.name}', position={self.position}"
@@ -663,37 +681,35 @@ class Workflow(Block):
 
     @property
     def method_schemas(self):
-        jsonschemas = {"run": deepcopy(JSONSCHEMA_HEADER)}
-        jsonschemas["run"]["classes"] = ["dessia_common.workflow.core.Workflow"]
         properties = {}
         required = []
         for i, input_ in enumerate(self.inputs + self.detached_variables):
+            # Default value
             default_ = input_.default_value
-            print(input_.name, input_.default_value)
             if not input_.has_default_value:
                 required.append(str(i))
             schema = get_schema(annotation=input_.type_, attribute=str(i), definition_default=default_)
 
+            # Title & Description
             description = None
+            title = prettyname(input_.name)
             if input_ not in self.nonblock_variables and input_ not in self.detached_variables:
-                input_block = self.block_from_variable(input_)
-                try:
-                    block_docstring = input_block._docstring()
-                    if input_ in block_docstring:
-                        description = block_docstring[input_]
-                except Exception:
-                    description = FAILED_ATTRIBUTE_PARSING
+                block = self.block_from_variable(input_)
+                description = block.parse_input_doc(input_)
+                title = block.input_name(input_)
             editable = input_ not in self.imposed_variable_values
-            print(schema.default_value())
-            properties[str(i)] = schema.to_dict(title=input_.name, editable=editable, description=description)
-            # print(schema.to_dict())
-        jsonschemas['run'].update({'required': required, 'method': True, "properties": properties,
-                                   'python_typing': "dessia_common.typings.MethodType"})
-        jsonschemas['start_run'] = deepcopy(jsonschemas['run'])
-        jsonschemas['start_run']['required'] = []
-        return jsonschemas
+            properties[str(i)] = schema.to_dict(title=title, editable=editable, description=description)
 
-    def to_dict(self, use_pointers=True, memo=None, path='#', id_method=True, id_memo=None):
+        schemas = {}
+        for method_name in ["run", "start_run"]:
+            schemas[method_name] = deepcopy(JSONSCHEMA_HEADER)
+            schemas[method_name].update({"required": required, "method": True, "properties": properties,
+                                         "python_typing": "dessia_common.typings.MethodType",
+                                         "classes": "dessia_common.workflow.core.Workflow"})
+        schemas["start_run"]["required"] = []
+        return schemas
+
+    def to_dict(self, use_pointers=True, memo=None, path="#", id_method=True, id_memo=None):
         """ Compute a dict from the object content. """
         if memo is None:
             memo = {}
