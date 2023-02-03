@@ -148,6 +148,7 @@ class ClassSchema(Schema):
 
     Class must be a subclass of DessiaObject. It reads the __init__ annotations.
     """
+
     def __init__(self, class_: tp.Type[CoreDessiaObject]):
         self.class_ = class_
         self.standalone_in_db = class_._standalone_in_db
@@ -178,6 +179,7 @@ class MethodSchema(Schema):
 
     Given method should be one of a DessiaObject. It reads its annotations.
     """
+
     def __init__(self, method: tp.Callable):
         self.method = method
 
@@ -199,6 +201,7 @@ class MethodSchema(Schema):
 
 class Property:
     """ Base class for a schema property. """
+
     def __init__(self, annotation: tp.Type[T], attribute: str, definition_default: T = None):
         self.annotation = annotation
         self.attribute = attribute
@@ -239,6 +242,7 @@ class Property:
 
 class TypingProperty(Property):
     """ Schema class for typing based annotations. """
+
     def __init__(self, annotation: tp.Type[T], attribute: str, definition_default: T = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
@@ -281,6 +285,7 @@ class ProxyProperty(TypingProperty):
 
     Proxies are just intermediate types which actual schemas if its args. For example OptionalProperty proxy.
     """
+
     def __init__(self, annotation: tp.Type[T], attribute: str, definition_default: T = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
@@ -305,6 +310,7 @@ class OptionalProperty(ProxyProperty):
     OptionalProperty is only a catch for arguments that default to None.
     Arguments with default values other than None are not considered Optionals
     """
+
     def __init__(self, annotation: tp.Type[T], attribute: str, definition_default: T = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
@@ -327,6 +333,7 @@ class AnnotatedProperty(ProxyProperty):
 
     Only available with python >= 3.11
     """
+
     _not_implemented_msg = "AnnotatedProperty type hints are not implemented yet. This needs python 3.11 at least. " \
                            "Dessia only supports python 3.9 at the moment."
 
@@ -353,6 +360,7 @@ Builtin = tp.Union[str, bool, float, int]
 
 class BuiltinProperty(Property):
     """ Schema class for Builtin type hints. """
+
     def __init__(self, annotation: tp.Type[Builtin], attribute: str, definition_default: Builtin = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
@@ -372,6 +380,7 @@ class BuiltinProperty(Property):
 
 class MeasureProperty(BuiltinProperty):
     """ Schema class for Measure type hints. """
+
     def __init__(self, annotation: tp.Type[Measure], attribute: str, definition_default: Measure = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
@@ -392,11 +401,13 @@ File = tp.Union[StringFile, BinaryFile]
 
 class FileProperty(Property):
     """ Schema class for File type hints. """
+
     def __init__(self, annotation: tp.Type[File], attribute: str, definition_default: File = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
     @property
     def serialized(self) -> str:
+        """ Return file classname. """
         return dc_types.full_classname(object_=self.annotation, compute_for="class")
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
@@ -427,6 +438,7 @@ class FileProperty(Property):
 
 class CustomClass(Property):
     """ Schema class for CustomClass type hints. """
+
     def __init__(self, annotation: tp.Type[CoreDessiaObject], attribute: str,
                  definition_default: CoreDessiaObject = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
@@ -473,6 +485,7 @@ class CustomClass(Property):
 
 class UnionProperty(TypingProperty):
     """ Schema class for Union type hints. """
+
     def __init__(self, annotation: tp.Type[tp.Union[T]], attribute: str, definition_default: tp.Union[T] = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
@@ -525,6 +538,7 @@ class HeterogeneousSequence(TypingProperty):
 
     Datatype that can be seen as a tuple. Have any amount of arguments but a limited length.
     """
+
     def __init__(self, annotation: tp.Type[tp.Tuple], attribute: str, definition_default: tp.Tuple = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
@@ -568,6 +582,7 @@ class HomogeneousSequence(TypingProperty):
 
     Datatype that can be seen as a list. Have only one argument but an unlimited length.
     """
+
     def __init__(self, annotation: tp.Type[tp.List[T]], attribute: str, definition_default: tp.List[T] = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
@@ -609,6 +624,7 @@ class DynamicDict(TypingProperty):
     Datatype that can be seen as a dict. Have restricted amount of arguments (one for key, one for values),
     but an unlimited length.
     """
+
     def __init__(self, annotation: tp.Type[tp.Dict[str, Builtin]], attribute: str,
                  definition_default: tp.Dict[str, Builtin] = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
@@ -689,6 +705,7 @@ class InstanceOfProperty(TypingProperty):
     Datatype that can be seen as a union of classes that inherits from the only arg given.
     Instances of these classes validate against this type.
     """
+
     def __init__(self, annotation: tp.Type[InstanceOf[BaseClass]], attribute: str,
                  definition_default: BaseClass = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
@@ -723,6 +740,7 @@ class SubclassProperty(TypingProperty):
     Datatype that can be seen as a union of classes that inherits from the only arg given.
     Classes validate against this type.
     """
+
     def __init__(self, annotation: tp.Type[Subclass[BaseClass]], attribute: str,
                  definition_default: tp.Type[BaseClass] = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
@@ -749,6 +767,7 @@ class MethodTypeProperty(TypingProperty):
 
     A specifically instantiated MethodType validated against this type.
     """
+
     def __init__(self, annotation: tp.Type[MethodType], attribute: str, definition_default: MethodType = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
@@ -790,6 +809,7 @@ class ClassProperty(TypingProperty):
 
     Non DessiaObject subclasses validated against this type.
     """
+
     def __init__(self, annotation: tp.Type[Class], attribute: str, definition_default: Class = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
@@ -812,6 +832,7 @@ class ClassProperty(TypingProperty):
 
 
 class GenericTypeProperty(Property):
+    """ Meta Property for Types. """
     def __init__(self, annotation: tp.Type[tp.TypeVar], attribute: str, definition_default: tp.TypeVar):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 

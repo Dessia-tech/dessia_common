@@ -9,6 +9,7 @@ Annotations = tp.Dict[str, tp.Type[T]]
 
 class PropertySchema(tp.TypedDict):
     """ Typing for properties. Experimental. """
+
     title: str
     editable: bool
     description: str
@@ -18,5 +19,6 @@ class PropertySchema(tp.TypedDict):
 
 class TupleSchema(PropertySchema):
     """ Typing for Tuple Schemas. Experimental. """
+
     additionalItems: bool
     items: tp.List[PropertySchema]

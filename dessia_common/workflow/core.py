@@ -681,6 +681,7 @@ class Workflow(Block):
 
     @property
     def method_schemas(self):
+        """ New support of method schemas. """
         properties = {}
         required = []
         for i, input_ in enumerate(self.inputs + self.detached_variables):
