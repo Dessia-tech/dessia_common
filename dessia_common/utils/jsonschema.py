@@ -148,7 +148,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element, order, editable=N
         # Python Built-in type
         jsonschema_element[key]['type'] = TYPING_EQUIVALENCES[typing_]
 
-    elif dc_types.is_typing(typing_):
+    elif is_typing(typing_):
         origin = get_origin(typing_)
         args = get_args(typing_)
         if origin is Union:
@@ -252,7 +252,7 @@ def jsonschema_sequence_recursion(value, order: int, title: str = None,
                           'python_typing': dc_types.serialize_typing(value)}
 
     items_type = get_args(value)[0]
-    if dc_types.is_typing(items_type) and get_origin(items_type) is list:
+    if is_typing(items_type) and get_origin(items_type) is list:
         jss = jsonschema_sequence_recursion(value=items_type, order=0,
                                             title=title, editable=editable)
         jsonschema_element['items'] = jss
@@ -329,6 +329,7 @@ def set_default_value(jsonschema_element, key, default_value):
     #     jsonschema_element[key]['default_value'] = object_dict
     #     else:
 
+
 def union_is_default_value(typing_) -> bool:
     """
     Union typings can be False positives.
@@ -338,3 +339,11 @@ def union_is_default_value(typing_) -> bool:
     """
     args = get_args(typing_)
     return len(args) == 2 and type(None) in args
+
+
+def is_typing(object_: Any):
+    """ Return True if given object can be seen as a typing (has a module, an origin and arguments). """
+    has_module = hasattr(object_, '__module__')
+    has_origin = hasattr(object_, '__origin__')
+    has_args = hasattr(object_, '__args__')
+    return has_module and has_origin and has_args

@@ -20,7 +20,7 @@ from dessia_common.abstract import CoreDessiaObject
 from dessia_common.typings import InstanceOf, JsonSerializable
 from dessia_common.graph import explore_tree_from_leaves  # , cut_tree_final_branches
 from dessia_common.breakdown import get_in_object_from_path
-from dessia_common.schemas.core import TYPING_EQUIVALENCES
+from dessia_common.schemas.core import TYPING_EQUIVALENCES, is_typing
 
 fullargsspec_cache = {}
 
@@ -129,7 +129,7 @@ def serialize(value):
         serialized_value = int(value)
     elif isinstance(value, float64):
         serialized_value = float(value)
-    elif isinstance(value, type) or dcty.is_typing(value):
+    elif isinstance(value, type) or is_typing(value):
         return dcty.serialize_typing(value)
     elif hasattr(value, 'to_dict'):
         to_dict_method = getattr(value, 'to_dict', None)
@@ -454,7 +454,7 @@ def deserialize_argument(type_, argument, global_dict=None, pointers_memo=None, 
     if isinstance(argument, SerializableObject):
         return argument
 
-    if dcty.is_typing(type_):
+    if is_typing(type_):
         return deserialize_with_typing(type_, argument)
 
     if type_ in [TextIO, BinaryIO] or isinstance(argument, (StringFile, BinaryFile)):

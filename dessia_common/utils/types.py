@@ -124,14 +124,6 @@ def unfold_deep_annotation(typing_=None):
     return None, None
 
 
-def is_typing(object_: Any):
-    """ Return True if given object can be seen as a typing (has a module, an origin and arguments). """
-    has_module = hasattr(object_, '__module__')
-    has_origin = hasattr(object_, '__origin__')
-    has_args = hasattr(object_, '__args__')
-    return has_module and has_origin and has_args
-
-
 def serialize_typing(typing_):
     """ Compute a string from a type. """
     schema = get_schema(annotation=typing_)

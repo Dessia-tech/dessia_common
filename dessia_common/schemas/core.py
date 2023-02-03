@@ -6,7 +6,6 @@ import inspect
 import collections.abc
 import typing as tp
 from functools import cached_property
-import dessia_common.utils.types as dc_types
 from dessia_common.utils.helpers import full_classname
 from dessia_common.abstract import CoreDessiaObject
 from dessia_common.files import BinaryFile, StringFile
@@ -893,7 +892,7 @@ def get_schema(annotation: tp.Type[T], attribute: str = "", definition_default: 
     """ Get schema Property object from given annotation. """
     if annotation in TYPING_EQUIVALENCES:
         return BuiltinProperty(annotation=annotation, attribute=attribute, definition_default=definition_default)
-    if dc_types.is_typing(annotation):
+    if is_typing(annotation):
         return typing_schema(typing_=annotation, attribute=attribute, definition_default=definition_default)
     if hasattr(annotation, '__origin__') and annotation.__origin__ is type:
         # Type is not considered a Typing as it has no args
@@ -910,6 +909,14 @@ ORIGIN_TO_SCHEMA_CLASS = {
     tp.Union: UnionProperty, dict: DynamicDict, InstanceOf: InstanceOfProperty,
     MethodType: MethodTypeProperty, ClassMethodType: MethodTypeProperty, type: ClassProperty
 }
+
+
+def is_typing(object_) -> bool:
+    """ Return True if given object can be seen as a typing (has a module, an origin and arguments). """
+    has_module = hasattr(object_, '__module__')
+    has_origin = hasattr(object_, '__origin__')
+    has_args = hasattr(object_, '__args__')
+    return has_module and has_origin and has_args
 
 
 def typing_schema(typing_: tp.Type[T], attribute: str, definition_default: T = None) -> Property:
