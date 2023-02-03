@@ -12,9 +12,9 @@ import dessia_common.utils.types as dc_types
 from dessia_common.utils.helpers import full_classname
 from dessia_common.files import BinaryFile, StringFile
 from dessia_common.typings import Subclass, MethodType, ClassMethodType, Any
-from dessia_common.utils.docstrings import FAILED_ATTRIBUTE_PARSING
 from dessia_common.measures import Measure
 from dessia_common.utils.helpers import prettyname
+from dessia_common.schemas.core import FAILED_ATTRIBUTE_PARSING, is_typing, serialize_typing
 
 JSONSCHEMA_HEADER = {"definitions": {},
                      "$schema": "http://json-schema.org/draft-07/schema#",
@@ -142,7 +142,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element, order, editable=N
 
     # Compute base entries
     jsonschema_element[key] = {'title': title, 'editable': editable, 'order': order, 'description': description,
-                               'python_typing': dc_types.serialize_typing(typing_)}
+                               'python_typing': serialize_typing(typing_)}
 
     if typing_ in TYPING_EQUIVALENCES:
         # Python Built-in type
@@ -249,7 +249,7 @@ def jsonschema_sequence_recursion(value, order: int, title: str = None,
     if title is None:
         title = 'Items'
     jsonschema_element = {'type': 'array', 'order': order,
-                          'python_typing': dc_types.serialize_typing(value)}
+                          'python_typing': serialize_typing(value)}
 
     items_type = get_args(value)[0]
     if is_typing(items_type) and get_origin(items_type) is list:
@@ -329,21 +329,3 @@ def set_default_value(jsonschema_element, key, default_value):
     #     jsonschema_element[key]['default_value'] = object_dict
     #     else:
 
-
-def union_is_default_value(typing_) -> bool:
-    """
-    Union typings can be False positives.
-
-    An argument of a function that has a default_value set to None is Optional[T], which is an alias for
-    Union[T, NoneType]. This function checks if this is the case.
-    """
-    args = get_args(typing_)
-    return len(args) == 2 and type(None) in args
-
-
-def is_typing(object_: Any):
-    """ Return True if given object can be seen as a typing (has a module, an origin and arguments). """
-    has_module = hasattr(object_, '__module__')
-    has_origin = hasattr(object_, '__origin__')
-    has_args = hasattr(object_, '__args__')
-    return has_module and has_origin and has_args

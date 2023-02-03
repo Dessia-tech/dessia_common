@@ -11,7 +11,6 @@ from dessia_common.abstract import CoreDessiaObject
 from dessia_common.files import BinaryFile, StringFile
 from dessia_common.typings import MethodType, ClassMethodType, InstanceOf, Subclass
 from dessia_common.measures import Measure
-from dessia_common.utils.docstrings import parse_docstring, FAILED_DOCSTRING_PARSING, FAILED_ATTRIBUTE_PARSING
 from dessia_common.utils.helpers import prettyname
 from dessia_common.schemas.interfaces import Annotations, T
 from dessia_common.checks import CheckList, FailedCheck, PassedCheck, CheckWarning
@@ -890,6 +889,8 @@ def split_argspecs(argspecs: inspect.FullArgSpec) -> tp.Tuple[int, int]:
 
 def get_schema(annotation: tp.Type[T], attribute: str = "", definition_default: tp.Optional[T] = None) -> Property:
     """ Get schema Property object from given annotation. """
+    if annotation is None or inspect.isclass(annotation) and issubclass(annotation, type(None)):
+        return GenericTypeProperty(annotation=annotation, attribute=attribute, definition_default=definition_default)
     if annotation in TYPING_EQUIVALENCES:
         return BuiltinProperty(annotation=annotation, attribute=attribute, definition_default=definition_default)
     if is_typing(annotation):
@@ -899,7 +900,7 @@ def get_schema(annotation: tp.Type[T], attribute: str = "", definition_default: 
         return ClassProperty(annotation=annotation, attribute=attribute, definition_default=definition_default)
     if inspect.isclass(annotation):
         return custom_class_schema(annotation=annotation, attribute=attribute, definition_default=definition_default)
-    if isinstance(annotation, tp.TypeVar):
+    if isinstance(annotation, tp.TypeVar) or isinstance(annotation):
         return GenericTypeProperty(annotation=annotation, attribute=attribute, definition_default=definition_default)
     raise NotImplementedError(f"No schema defined for attribute '{attribute}' annotated '{annotation}'.")
 
@@ -958,9 +959,9 @@ def object_default(definition_default: CoreDessiaObject = None, class_schema: Cl
     return None
 
 
-def serialize_annotation(annotation, attribute: str = "") -> str:
+def serialize_typing(typing_, attribute: str = "") -> str:
     """ Make use of schema to serialized annotations. """
-    schema = get_schema(annotation=annotation, attribute=attribute)
+    schema = get_schema(annotation=typing_, attribute=attribute)
     return schema.serialized
 
 
@@ -973,3 +974,78 @@ def union_is_default_value(typing_: tp.Type) -> bool:
     """
     args = tp.get_args(typing_)
     return len(args) == 2 and type(None) in args
+
+
+class ParsedAttribute(tp.TypedDict):
+    """ Parsed description of a docstring attribute. """
+
+    desc: str
+    type_: str
+    annotation: str
+
+
+class ParsedDocstring(tp.TypedDict):
+    """ Parsed description of a docstring. """
+
+    description: str
+    attributes: tp.Dict[str, ParsedAttribute]
+
+
+def parse_class_docstring(class_) -> ParsedDocstring:
+    """ Helper to get parse docstring from a class. """
+    docstring = class_.__doc__
+    annotations = tp.get_type_hints(class_.__init__)
+    return parse_docstring(docstring=docstring, annotations=annotations)
+
+
+def parse_docstring(docstring: str, annotations: tp.Dict[str, tp.Any]) -> ParsedDocstring:
+    """ Parse user-defined docstring of given class. Refer to docs to see how docstrings should be built. """
+    if docstring:
+        no_return_docstring = docstring.split(':return:')[0]
+        splitted_docstring = no_return_docstring.split(':param ')
+        parsed_docstring = {"description": splitted_docstring[0].strip()}
+        params = splitted_docstring[1:]
+        args = {}
+        for param in params:
+            argname, parsed_attribute = parse_attribute(param, annotations)
+            args[argname] = parsed_attribute
+        parsed_docstring.update({'attributes': args})
+        return parsed_docstring
+    return {'description': "", 'attributes': {}}
+
+
+def parse_attribute(param, annotations) -> tp.Tuple[str, ParsedAttribute]:
+    """ Extract attribute from user-defined docstring. """
+    if ":type" in param:
+        param = param.split(":type ")[0]
+    argname, argdesc = param.split(":", maxsplit=1)
+    annotation = annotations[argname]
+    parsed_attribute = {'desc': argdesc.strip(), 'type_': serialize_typing(annotation), 'annotation': str(annotation)}
+    return argname, parsed_attribute
+
+
+EMPTY_PARSED_ATTRIBUTE = {"desc": "", "type": "", "annotation": ""}
+FAILED_DOCSTRING_PARSING = {'description': 'Docstring parsing failed', 'attributes': {}}
+FAILED_ATTRIBUTE_PARSING = {"desc": 'Attribute documentation parsing failed',
+                            "type": "", "annotation": ""}
+
+
+def _check_docstring(element):
+    """ Return True if an object, a class or a method have a proper docstring. Otherwise, return False. """
+    docstring = element.__doc__
+    if docstring is None:
+        print(f'Docstring not found for {element}')
+        return False
+    if inspect.isclass(element):
+        # element is an object or a class
+        annotations = tp.get_type_hints(element.__init__)
+    elif inspect.ismethod(element) or inspect.isfunction(element):
+        # element is a method
+        annotations = tp.get_type_hints(element)
+    else:
+        raise NotImplementedError
+    try:
+        parse_docstring(docstring=docstring, annotations=annotations)
+        return True
+    except TypeError:
+        return False

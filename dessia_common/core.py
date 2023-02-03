@@ -29,7 +29,6 @@ from dessia_common.utils.copy import deepcopy_value
 from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotation, JSONSCHEMA_HEADER,\
     set_default_value
 import dessia_common.schemas.core as dcs
-from dessia_common.utils.docstrings import parse_docstring, FAILED_DOCSTRING_PARSING
 from dessia_common.serialization import SerializableObject, deserialize_argument, serialize
 from dessia_common.exports import XLSXWriter, MarkdownWriter, ExportFormat
 from dessia_common.typings import JsonSerializable
@@ -218,9 +217,9 @@ class DessiaObject(SerializableObject):
         # Parse docstring
         try:
             docstring = cls.__doc__
-            parsed_docstring = parse_docstring(docstring=docstring, annotations=annotations)
+            parsed_docstring = dcs.parse_docstring(docstring=docstring, annotations=annotations)
         except Exception:
-            parsed_docstring = FAILED_DOCSTRING_PARSING
+            parsed_docstring = dcs.FAILED_DOCSTRING_PARSING
         parsed_attributes = parsed_docstring['attributes']
 
         # Initialize jsonschema

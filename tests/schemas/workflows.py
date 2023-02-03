@@ -15,7 +15,7 @@ assert run_schema["properties"]["2"] == {
     "type": "number", "default_value": 3,
     "description": {
         "desc": "value that will be added to model's intarg attribute",
-        "type_": "builtins.int",
+        "type_": "int",
         "annotation": "<class 'int'>"
     }
 }

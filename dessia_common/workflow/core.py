@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """ Gathers all workflow relative features. """
 import ast
+import inspect
 import time
 import datetime
 import tempfile
@@ -18,18 +19,17 @@ import dessia_common.errors
 from dessia_common.graph import get_column_by_node
 from dessia_common.templates import workflow_template
 from dessia_common.core import DessiaObject
-from dessia_common.schemas.core import get_schema
+from dessia_common.schemas.core import get_schema, FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE, serialize_typing
 
-from dessia_common.utils.types import serialize_typing, deserialize_typing, recursive_type, typematch, is_sequence
+from dessia_common.utils.types import deserialize_typing, recursive_type, typematch, is_sequence
 from dessia_common.utils.copy import deepcopy_value
-from dessia_common.utils.docstrings import FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE
 from dessia_common.utils.diff import choose_hash
 from dessia_common.utils.helpers import prettyname
 from dessia_common.utils.jsonschema import set_default_value, JSONSCHEMA_HEADER, jsonschema_from_annotation
 
 from dessia_common.typings import JsonSerializable, MethodType
 from dessia_common.files import StringFile, BinaryFile
-from dessia_common.displays import DisplaySetting
+from dessia_common.displays import DisplaySetting, DisplayObject
 from dessia_common.breakdown import ExtractionError
 from dessia_common.errors import SerializationError
 from dessia_common.warnings import SerializationWarning
@@ -87,7 +87,12 @@ class TypedVariable(Variable):
     def to_dict(self, use_pointers=True, memo=None, path: str = '#', id_method=True, id_memo=None):
         """ Serializes the object with specific logic. """
         dict_ = super().to_dict(use_pointers, memo, path)
-        dict_.update({'type_': serialize_typing(self.type_)})
+        if inspect.isclass(self.type_) and issubclass(self.type_, DisplayObject):
+            # QUICKFIX
+            serialized = "dessia_common.displays.DisplayObject"
+        else:
+            serialized = serialize_typing(self.type_)
+        dict_.update({'type_': serialized})
         return dict_
 
     @classmethod
