@@ -1,9 +1,9 @@
-from dessia_common.forms import StandaloneObject
+from dessia_common.forms import DEF_SO
 
-schemas = StandaloneObject.method_schemas()
+schemas = DEF_SO.method_schemas
 
 assert len(schemas) == 6
-assert set(StandaloneObject._allowed_methods) == set(schemas.keys())
+assert set(DEF_SO._allowed_methods) == set(schemas.keys())
 
 count_until_schema = schemas["count_until"]
 assert count_until_schema["type"] == "object"

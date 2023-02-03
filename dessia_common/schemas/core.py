@@ -836,6 +836,12 @@ class GenericTypeProperty(Property):
     def __init__(self, annotation: tp.Type[tp.TypeVar], attribute: str, definition_default: tp.TypeVar):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
+    def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
+        """ Write Type as a dict. """
+        chunk = super().to_dict(title=title, editable=editable, description=description)
+        chunk.update({'type': 'object', 'is_class': True, 'properties': {'name': {'type': 'string'}}})
+        return chunk
+
 
 def inspect_arguments(method: tp.Callable, merge: bool = False):
     """ Wrapper around 'split_default_argument' method in order to call it from a method object. """
@@ -889,9 +895,8 @@ def get_schema(annotation: tp.Type[T], attribute: str, definition_default: tp.Op
     if dc_types.is_typing(annotation):
         return typing_schema(typing_=annotation, attribute=attribute, definition_default=definition_default)
     if hasattr(annotation, '__origin__') and annotation.__origin__ is type:
-        # TODO Is this deprecated ? Should be used in 3.8 and not 3.9 ?
-        # return {'type': 'object', 'is_class': True, 'properties': {'name': {'type': 'string'}}}
-        pass
+        # Type is not considered a Typing as it has no args
+        return ClassProperty(annotation=annotation, attribute=attribute, definition_default=definition_default)
     if annotation is Any:
         # TODO Do we still want to support Any ?
         # chunk = {'type': 'object', 'properties': {'.*': '.*'}}

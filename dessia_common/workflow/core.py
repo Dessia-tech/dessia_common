@@ -341,6 +341,7 @@ class Workflow(Block):
     """
 
     _standalone_in_db = True
+    _eq_is_data_eq = True
     _allowed_methods = ['run', 'start_run']
 
     def __init__(self, blocks, pipes, output, *, imposed_variable_values=None,
@@ -1568,6 +1569,10 @@ class WorkflowState(DessiaObject):
                     return False
         return True
 
+    @property
+    def method_schemas(self):
+        return {}
+
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#', id_method=True, id_memo=None):
         """ Transform object into a dict. """
         if memo is None:
@@ -2073,6 +2078,12 @@ class WorkflowRun(WorkflowState):
         jsonschemas = {"run_again": workflow_jsonschemas.pop('run')}
         jsonschemas['run_again']['classes'] = ["dessia_common.workflow.WorkflowRun"]
         return jsonschemas
+
+    @property
+    def method_schemas(self):
+        schemas = {"run_again": self.workflow.method_schemas.pop('run')}
+        schemas["run_again"].update({"classes": ["dessia_common.workflow.core.WorkflowRun"], "required": []})
+        return schemas
 
 
 def initialize_workflow(dict_, global_dict, pointers_memo) -> Workflow:

@@ -25,7 +25,6 @@ arguments = simulation_workflow.dict_to_arguments(arguments, 'run')
 
 workflow_run2 = DessiaObject.dict_to_object(workflow_run.to_dict())
 workflow_run._check_platform()
-workflow_run.jsonschema()
 workflow_run.to_dict(use_pointers=False)
 
 manual_run = simulation_workflow.start_run({0: components1, 1: component_connections1})
