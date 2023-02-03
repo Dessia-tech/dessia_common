@@ -56,6 +56,7 @@ time_decrease_coeff = 1 - (date.today() - EFFECTIVE_DATE).days / 7.0 * WEEKLY_DE
 
 f = open(os.devnull, "w")
 
+
 old_stdout = sys.stdout
 sys.stdout = f
 
