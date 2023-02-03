@@ -5,8 +5,8 @@ import warnings
 import sys
 from collections.abc import Iterator, Sequence
 from importlib import import_module
-import orjson
 from typing import Any, Dict, List, Tuple, Type, Union, get_origin, get_args
+import orjson
 from dessia_common.abstract import CoreDessiaObject
 from dessia_common.typings import Subclass, InstanceOf, MethodType, ClassMethodType
 from dessia_common.files import BinaryFile, StringFile
@@ -58,13 +58,6 @@ def is_jsonable(obj):
         return True
     except Exception:
         return False
-
-    # # If an error occurs try with json
-    # try:
-    #     json.dumps(obj)
-    #     return True
-    # except TypeError:
-    #     return False
 
 
 def is_serializable(_):

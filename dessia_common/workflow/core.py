@@ -18,7 +18,7 @@ import dessia_common.errors
 from dessia_common.graph import get_column_by_node
 from dessia_common.templates import workflow_template
 from dessia_common.core import DessiaObject
-from dessia_common.schemas.core import get_schema, MethodSchema
+from dessia_common.schemas.core import get_schema
 
 from dessia_common.utils.types import serialize_typing, deserialize_typing, recursive_type, typematch, is_sequence
 from dessia_common.utils.copy import deepcopy_value

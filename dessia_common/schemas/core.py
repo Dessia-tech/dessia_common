@@ -35,6 +35,9 @@ class Schema:
 
     Right now Schema doesn't inherit from any DessiaObject class (SerializableObject ?), but could, in the future.
     That is why it implements methods with the same name.
+
+    TODO We might want to define our 'own argspecs', in order to fully support workflow natively.
+     We could translate inspect argspecs into a dessia_common pseudo-language.
     """
 
     def __init__(self, annotations: Annotations, argspec: inspect.FullArgSpec, docstring: str):
