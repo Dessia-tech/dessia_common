@@ -10,6 +10,7 @@ import orjson
 from dessia_common.abstract import CoreDessiaObject
 from dessia_common.typings import Subclass, InstanceOf, MethodType, ClassMethodType
 from dessia_common.files import BinaryFile, StringFile
+from dessia_common.schemas.core import get_schema
 
 SIMPLE_TYPES = [int, str]
 TYPING_EQUIVALENCES = {int: 'number', float: 'number', bool: 'boolean', str: 'string'}
@@ -147,63 +148,8 @@ def is_typing(object_: Any):
 
 def serialize_typing(typing_):
     """ Compute a string from a type. """
-    if is_typing(typing_):
-        return serialize_typing_types(typing_)
-    if typing_ in [StringFile, BinaryFile, MethodType, ClassMethodType] or isinstance(typing_, type):
-        return full_classname(typing_, compute_for='class')
-    return str(typing_)
-
-
-def serialize_typing_types(typing_):
-    """ Compute a string from typings only. """
-    origin = get_origin(typing_)
-    args = get_args(typing_)
-    if origin is Union:
-        return serialize_union_typing(args)
-    if origin is list:
-        return f"List[{type_fullname(args[0])}]"
-    if origin is tuple:
-        argnames = ', '.join([type_fullname(a) for a in args])
-        return f'Tuple[{argnames}]'
-    # if origin is Iterator:
-    #     return f"Iterator[{type_fullname(args[0])}]"
-    if origin is dict:
-        key_type = type_fullname(args[0])
-        value_type = type_fullname(args[1])
-        return f'Dict[{key_type}, {value_type}]'
-    if origin is InstanceOf:
-        return f'InstanceOf[{type_fullname(args[0])}]'
-    if origin is Subclass:
-        return f'Subclass[{type_fullname(args[0])}]'
-    if origin is MethodType:
-        return f'MethodType[{type_fullname(args[0])}]'
-    if origin is ClassMethodType:
-        return f'ClassMethodType[{type_fullname(args[0])}]'
-    if origin is type:
-        return "typing.Type"
-    raise NotImplementedError(f"Serialization of typing {typing_} is not implemented")
-
-
-def serialize_union_typing(args):
-    """ DEPRECATED. Compute a string from union typings. """
-    warnings.warn("This is deprecrated and will be removed in a future version. Use Schemas serialization instead")
-    if len(args) == 2 and type(None) in args:
-        # This is a false Union => Is a default value set to None
-        return serialize_typing(args[0])
-
-    # Types union
-    argnames = ', '.join([type_fullname(a) for a in args])
-    return f'Union[{argnames}]'
-
-
-def type_fullname(arg):
-    """ DEPRECATED. Get full classname from a typing. """
-    warnings.warn("This is deprecrated and will be removed in a future version. Use Schemas serialization instead")
-    if arg.__module__ == 'builtins':
-        full_argname = '__builtins__.' + arg.__name__
-    else:
-        full_argname = serialize_typing(arg)
-    return full_argname
+    schema = get_schema(annotation=typing_)
+    return schema.serialized
 
 
 def type_from_argname(argname):

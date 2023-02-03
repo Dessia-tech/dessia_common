@@ -15,7 +15,6 @@ from dessia_common.utils.docstrings import parse_docstring, FAILED_DOCSTRING_PAR
 from dessia_common.utils.helpers import prettyname
 from dessia_common.schemas.interfaces import Annotations, T
 from dessia_common.checks import CheckList, FailedCheck, PassedCheck, CheckWarning
-from dessia_common.serialization import serialize
 
 SCHEMA_HEADER = {"definitions": {}, "$schema": "http://json-schema.org/draft-07/schema#",
                  "type": "object", "required": [], "properties": {}}
@@ -888,7 +887,7 @@ def split_argspecs(argspecs: inspect.FullArgSpec) -> tp.Tuple[int, int]:
     return nargs, ndefault_args
 
 
-def get_schema(annotation: tp.Type[T], attribute: str, definition_default: tp.Optional[T] = None) -> Property:
+def get_schema(annotation: tp.Type[T], attribute: str = "", definition_default: tp.Optional[T] = None) -> Property:
     """ Get schema Property object from given annotation. """
     if annotation in dc_types.TYPING_EQUIVALENCES:
         return BuiltinProperty(annotation=annotation, attribute=attribute, definition_default=definition_default)
@@ -935,14 +934,14 @@ def custom_class_schema(annotation: tp.Type[T], attribute: str, definition_defau
     raise NotImplementedError(f"No Schema defined for type '{annotation}'.")
 
 
-def object_default(definition_default=None, class_schema: ClassSchema = None):
+def object_default(definition_default: CoreDessiaObject = None, class_schema: ClassSchema = None):
     """
     Default value of an object.
 
     Return serialized user default if definition, else None.
     """
     if definition_default is not None:
-        return serialize(definition_default)
+        return definition_default.to_dict()
     if class_schema is not None:
         # TODO Should we implement this ? Right now, tests state that the result is None
         # return class_schema.default_dict()
