@@ -333,7 +333,7 @@ class Sequence(Block):
     def __init__(self, number_arguments: int, name: str = '', position: Tuple[float, float] = None):
         self.number_arguments = number_arguments
         inputs = [Variable(name=f"Sequence element {i}") for i in range(self.number_arguments)]
-        outputs = [TypedVariable(type_=list[T], name='sequence')]
+        outputs = [TypedVariable(type_=List[T], name='sequence')]
         Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
@@ -387,7 +387,7 @@ class Concatenate(Block):
     def __init__(self, number_arguments: int = 2, name: str = '', position: Tuple[float, float] = None):
         self.number_arguments = number_arguments
         inputs = [Variable(name=f"Sequence element {i}") for i in range(self.number_arguments)]
-        outputs = [TypedVariable(type_=list[T], name='sequence')]
+        outputs = [TypedVariable(type_=List[T], name='sequence')]
         Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):

@@ -36,7 +36,7 @@ MAX_ERROR_BY_TYPE = {
                      'too-few-public-methods': 9,
                      'unnecessary-comprehension': 1,
                      'no-value-for-parameter': 2,
-                     'too-many-return-statements': 10,
+                     'too-many-return-statements': 9,
                      'consider-merging-isinstance': 1,
                      'abstract-method': 6,
                      'import-outside-toplevel': 4,  # TODO : will reduced in a future work (when tests are ready)

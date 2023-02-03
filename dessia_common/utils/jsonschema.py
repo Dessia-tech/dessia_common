@@ -328,4 +328,3 @@ def set_default_value(jsonschema_element, key, default_value):
     #     object_dict = default_value.to_dict()
     #     jsonschema_element[key]['default_value'] = object_dict
     #     else:
-
