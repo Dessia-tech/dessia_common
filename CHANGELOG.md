@@ -6,16 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## 0.14.0
+
+### Refactor
+- Refactor the whole jsonschema generation process. It now uses Oriented Object algorithms. Most of jsonschema module is now deprecated
+- method_schemas method is, thus, a classmethod
+
+
 ## 0.13.0
 
-### Chore
 
-<<<<<<< HEAD
 - Tag for release candidate
 - Toggle some D2xx errors
-=======
-- Toggle some D2xx errors 
->>>>>>> origin/dev
+
+### Fix
+
+- Do not take into account non-eq attributes
 
 ### CI
 
@@ -30,8 +36,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add pre-checks for non list-like element in is_sequence function
 - For is_serializable, not using pointers while trying to_dict
 
+
 ### Chore
 
+- Toggle some D2xx errors
 - Tag for release candidate
 
 
