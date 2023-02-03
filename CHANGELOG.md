@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Refactor
 - Refactor the whole jsonschema generation process. It now uses Oriented Object algorithms. Most of jsonschema module is now deprecated
-- method_schemas method is, thus, a classmethod
+- Remove Any support in schemas
 
 
 ## 0.13.0

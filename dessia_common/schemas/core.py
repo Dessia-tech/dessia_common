@@ -9,7 +9,7 @@ from functools import cached_property
 import dessia_common.utils.types as dc_types
 from dessia_common.abstract import CoreDessiaObject
 from dessia_common.files import BinaryFile, StringFile
-from dessia_common.typings import MethodType, ClassMethodType, Any, InstanceOf, Subclass
+from dessia_common.typings import MethodType, ClassMethodType, InstanceOf, Subclass
 from dessia_common.measures import Measure
 from dessia_common.utils.docstrings import parse_docstring, FAILED_DOCSTRING_PARSING, FAILED_ATTRIBUTE_PARSING
 from dessia_common.utils.helpers import prettyname
@@ -897,10 +897,6 @@ def get_schema(annotation: tp.Type[T], attribute: str, definition_default: tp.Op
     if hasattr(annotation, '__origin__') and annotation.__origin__ is type:
         # Type is not considered a Typing as it has no args
         return ClassProperty(annotation=annotation, attribute=attribute, definition_default=definition_default)
-    if annotation is Any:
-        # TODO Do we still want to support Any ?
-        # chunk = {'type': 'object', 'properties': {'.*': '.*'}}
-        pass
     if inspect.isclass(annotation):
         return custom_class_schema(annotation=annotation, attribute=attribute, definition_default=definition_default)
     if isinstance(annotation, tp.TypeVar):
