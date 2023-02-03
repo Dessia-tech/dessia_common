@@ -353,7 +353,7 @@ class DessiaObject(SerializableObject):
         check_list = CheckList([])
 
         if check_platform:
-            check_list += self._check_platform(level=level)
+            check_list += self.check_platform(level=level)
 
         # Type checking: not ready yet
         # class_argspec = inspect.getfullargspec(self.__class__)
@@ -526,6 +526,9 @@ class DessiaObject(SerializableObject):
         print('\n')
 
     def _check_platform(self, level='error'):
+        return self.check_platform().raise_if_above_level(level=level)
+
+    def check_platform(self, level='error'):
         """ Reproduce lifecycle on platform (serialization, display). Raise an error if something is wrong. """
         checks = []
         try:
