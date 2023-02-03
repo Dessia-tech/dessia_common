@@ -20,8 +20,11 @@ scripts = [
     "checks.py",
 
     # Schemas
-    "schemas/generation.py",
     "schemas/default_values.py",
+    "schemas/classes.py",
+    "schemas/methods.py",
+    "schemas/workflows.py",
+
 
     # Workflows
     "workflow/blocks.py",
