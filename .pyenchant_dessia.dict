@@ -7,3 +7,11 @@ dataset
 dectree
 JSON
 rtype
+numpy
+dict
+frontend
+docstring
+matplotlib
+deserialization
+serializable
+visjs

@@ -394,7 +394,7 @@ def deserialize_with_typing(type_, argument, global_dict=None, pointers_memo=Non
             deserialized_arg = iter(deserialized_arg)
 
     elif origin is tuple:
-        # Heterogenous sequences (tuples)
+        # Heterogeneous sequences (tuples)
         deserialized_arg = tuple(deserialize_argument(t, arg) for (t, arg) in zip(args, argument))
     elif origin is dict:
         # Dynamic dict
@@ -622,7 +622,7 @@ def deserialization_order(dict_):
 
 def dereference_jsonpointers(dict_):  # , global_dict):
     """
-    Analyse given dict.
+    Analyses given dict.
 
      Useful in order to:
     - find jsonpointers

@@ -638,7 +638,7 @@ class Dataset(DessiaObject):
                                                    point_style=dimensionality_plot.point_style)
             # Parallel plot
             parallel_plot = self._parallel_plot(data_list)
-            return [parallel_plot, scatter_matrix] #, dimensionality_plot]
+            return [parallel_plot, scatter_matrix]  # , dimensionality_plot]
 
         plot_mono_attr = self._histogram_unic_value(0, name_attr=self.common_attributes[0])
         plot_mono_attr.elements = data_list
@@ -795,7 +795,7 @@ class Dataset(DessiaObject):
     @staticmethod
     def pareto_indexes(costs: List[List[float]]):
         """
-        Find the pareto-efficient points.
+        Find the Pareto-efficient points.
 
         :return: A (n_points, ) boolean list, indicating whether each point is Pareto efficient
         """
@@ -812,7 +812,7 @@ class Dataset(DessiaObject):
     @staticmethod
     def pareto_frontiers(len_data: int, costs: List[List[float]]):
         """
-        Experimental method to draw the borders of pareto domain.
+        Experimental method to draw the borders of Pareto domain.
         """
         # Experimental
         checked_costs = Dataset._check_costs(len_data, costs)
@@ -858,7 +858,7 @@ class Dataset(DessiaObject):
 
     def pareto_points(self, costs_attributes: List[str]):
         """
-        Find the pareto-efficient points.
+        Find the Pareto-efficient points.
 
         :param costs_attributes:
             List of columns' attributes on which costs are stored in current Dataset
@@ -872,17 +872,15 @@ class Dataset(DessiaObject):
 
     def pareto_sheets(self, costs_attributes: List[str], nb_sheets: int = 1):
         """
-        Get successive pareto sheets (i.e. optimal points in a DOE for pre-computed costs).
+        Get successive Pareto sheets (i.e. optimal points in a DOE for pre-computed costs).
 
-        :param costs_attributes:
-            List of columns' attributes on which costs are stored in current Dataset
+        :param costs_attributes: List of columns' attributes on which costs are stored in current Dataset
         :type costs_attributes: List[str]
 
-        :param nb_sheets:
-            Number of pareto sheets to pick
+        :param nb_sheets: Number of Pareto sheets to pick
         :type nb_sheets: int, `optional`, default to `1`
 
-        :return: The successive pareto sheets and not selected elements
+        :return: The successive Pareto sheets and not selected elements
         :rtype: List[Dataset], Dataset
         """
         checked_costs = self._compute_costs(costs_attributes)

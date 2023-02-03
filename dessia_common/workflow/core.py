@@ -781,7 +781,7 @@ class Workflow(Block):
     def dict_to_arguments(self, dict_: JsonSerializable, method: str, global_dict=None,
                           pointers_memo=None, path='#'):
         """
-        Process a json of arguments and deserialize them.
+        Process a JSON of arguments and deserialize them.
         """
         dict_ = {int(k): v for k, v in dict_.items()}  # serialisation set keys as strings
         if method in self._allowed_methods:
@@ -904,7 +904,7 @@ class Workflow(Block):
 
     def secondary_branch_blocks(self, block: Block) -> List[Block]:
         """
-        Compute the necessary upstreams blocks to run a part of a workflow that leads to the given block.
+        Compute the necessary upstream blocks to run a part of a workflow that leads to the given block.
 
         It stops looking for blocks when it reaches the main branch, and memorize the connected pipe
 
@@ -1300,7 +1300,7 @@ class Workflow(Block):
 
     def jointjs_data(self):
         """
-        Compute the data needed for jointjs ploting.
+        Compute the data needed for jointjs plotting.
         """
         coordinates = self.jointjs_layout()
         blocks = []
