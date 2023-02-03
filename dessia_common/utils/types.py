@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """ Types tools. """
-import sys
 from collections.abc import Iterator, Sequence
-from importlib import import_module
 from typing import Any, Dict, List, Tuple, Type, Union, get_origin, get_args
 import orjson
 from dessia_common.abstract import CoreDessiaObject
 from dessia_common.typings import InstanceOf, MethodType, ClassMethodType
 from dessia_common.files import BinaryFile, StringFile
-from dessia_common.schemas.core import get_schema, TYPING_EQUIVALENCES, union_is_default_value
+from dessia_common.schemas.core import get_schema, TYPING_EQUIVALENCES, union_is_default_value, is_typing
+from dessia_common.utils.helpers import get_python_class_from_class_name
 
 SIMPLE_TYPES = [int, str]
 
@@ -20,8 +19,6 @@ SEQUENCE_TYPINGS = ['List', 'Sequence', 'Iterable']
 TYPES_FROM_STRING = {'unicode': str, 'str': str, 'float': float, 'int': int, 'bool': bool}
 
 SERIALIZED_BUILTINS = ['float', 'builtins.float', 'int', 'builtins.int', 'str', 'builtins.str', 'bool', 'builtins.bool']
-
-_PYTHON_CLASS_CACHE = {}
 
 
 def is_classname_transform(string: str):
@@ -96,23 +93,6 @@ def isinstance_base_types(obj):
         # Performance improvements for trivial types
         return True
     return isinstance(obj, (str, float, int))
-
-
-def get_python_class_from_class_name(full_class_name: str):
-    """ Get python class object corresponging to given classname. """
-    cached_value = _PYTHON_CLASS_CACHE.get(full_class_name, None)
-    # TODO : this is just quick fix, it will be modified soon with another.
-    sys.setrecursionlimit(3000)
-    if cached_value is not None:
-        return cached_value
-
-    module_name, class_name = full_class_name.rsplit('.', 1)
-    module = import_module(module_name)
-
-    class_ = getattr(module, class_name)
-    # Storing in cache
-    _PYTHON_CLASS_CACHE[full_class_name] = class_
-    return class_
 
 
 def unfold_deep_annotation(typing_=None):

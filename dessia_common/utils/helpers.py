@@ -8,6 +8,11 @@ As a rule of thumb, functions should be placed here if:
 That way, we can avoid cyclic imports.
 """
 
+import sys
+from importlib import import_module
+
+_PYTHON_CLASS_CACHE = {}
+
 
 def concatenate(values):
     """ Concatenate values of class class_ into a class_ containing all concatenated values. """
@@ -53,3 +58,20 @@ def full_classname(object_, compute_for: str = 'instance'):
         except:
             print(object_)
     raise NotImplementedError(f"Cannot compute '{compute_for}' full classname for object '{object_}'")
+
+
+def get_python_class_from_class_name(full_class_name: str):
+    """ Get python class object corresponging to given classname. """
+    cached_value = _PYTHON_CLASS_CACHE.get(full_class_name, None)
+    # TODO : this is just quick fix, it will be modified soon with another.
+    sys.setrecursionlimit(3000)
+    if cached_value is not None:
+        return cached_value
+
+    module_name, class_name = full_class_name.rsplit('.', 1)
+    module = import_module(module_name)
+
+    class_ = getattr(module, class_name)
+    # Storing in cache
+    _PYTHON_CLASS_CACHE[full_class_name] = class_
+    return class_

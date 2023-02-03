@@ -15,7 +15,7 @@ import networkx as nx
 import dessia_common.errors as dc_err
 from dessia_common.files import StringFile, BinaryFile
 import dessia_common.utils.types as dcty
-from dessia_common.utils.helpers import full_classname
+from dessia_common.utils.helpers import full_classname, get_python_class_from_class_name
 from dessia_common.abstract import CoreDessiaObject
 from dessia_common.typings import InstanceOf, JsonSerializable
 from dessia_common.graph import explore_tree_from_leaves  # , cut_tree_final_branches
@@ -318,7 +318,7 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False, global_dict=
             raise RuntimeError(f"Pointer {dict_['$ref']} not in memo, at path {path}") from err
 
     if class_ is None and 'object_class' in dict_:
-        class_ = dcty.get_python_class_from_class_name(dict_['object_class'])
+        class_ = get_python_class_from_class_name(dict_['object_class'])
 
     # Create init_dict
     if class_ is not None and hasattr(class_, 'dict_to_object'):
@@ -371,7 +371,7 @@ def deserialize_with_type(type_, value):
     if type_ in dcty.TYPES_STRINGS.values():
         return literal_eval(type_)(value)
     if isinstance(type_, str):
-        class_ = dcty.get_python_class_from_class_name(type_)
+        class_ = get_python_class_from_class_name(type_)
         if inspect.isclass(class_):
             return class_.dict_to_object(value)
         raise NotImplementedError(f'Cannot get class from name {type_}')
@@ -433,7 +433,7 @@ def deserialize_with_typing(type_, argument, global_dict=None, pointers_memo=Non
     elif origin is InstanceOf:
         classname = args[0]
         object_class = full_classname(object_=classname, compute_for='class')
-        class_ = dcty.get_python_class_from_class_name(object_class)
+        class_ = get_python_class_from_class_name(object_class)
 
         deserialized_arg = class_.dict_to_object(argument, global_dict=global_dict,
                                                  pointers_memo=pointers_memo, path=path)

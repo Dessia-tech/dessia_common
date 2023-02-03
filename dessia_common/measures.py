@@ -6,7 +6,7 @@ Defines physic quantities called measures.
 It is an overloading of float, and usefull in platform forms to have access to units conversion.
 """
 
-from dessia_common.utils.types import get_python_class_from_class_name
+from dessia_common.utils.helpers import get_python_class_from_class_name
 
 
 # Measures
