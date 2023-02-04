@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 0.13.0
 
+
+### Fix
+- Do not take into account non-eq attributes
+
+### CI
+
+- tutorials/ci_tutorials.py added to check runnability of .ipynb files inside this new folder
+- automatic upload of coverage
+
 ### Performance
 
 - Change sequence hash to check only first and last element recursively
@@ -16,23 +25,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add pre-checks for non list-like element in is_sequence function
 - For is_serializable, not using pointers while trying to_dict
 
+
 ### Chore
 
+- Toggle some D2xx errors
 - Tag for release candidate
 
 
-## 0.12.0 (now branch dev)
+## 0.12.0
 
 ### Changed
-- serialization (to_dict) use some uuids instead of paths for references.
+
+- Reference path is now given all the way down to plot_data
 
 ### Fixed
 
+- serialization (to_dict) use some uuids instead of paths for references.
 - Workflow : Serialize Imposed Variable Values
 - Workflow : to_script Export now write only class name instead of full_classname
 - Hot fix for is_valid method of workflow's Block
 - Core : add a boolean for platform checking in check_list. Fixes a problem with testing classes not existing
-- Workflow : to_script write list that contains objects 
+- Reference path for datatools Dataset and ClusteredDataset
 
 ### Refactor
 
@@ -64,6 +77,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Merge back master to dev
 - Docs weekly decrease
 - Fixed all remaining pydocstyle errors
+- Docs new rules
+- More docs
 
 
 ## 0.11.0
@@ -187,7 +202,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Physical Object: splitting CAD capabilities from DessiaObject
 - Workflow to script (for a few blocks to begin with)
 - Separate evaluation of displays with display settings feature
-- workflow: port matching 
+- workflow: port matching
 
 ### Changed
 - Enhanced get attr use literal eval to try to get dict keys
@@ -234,7 +249,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Re-instantiate nonblock_variable when copying workflow
 - WorkflowState now serialize its values keys in to_dict
-- deepcopy of workflow 
+- deepcopy of workflow
 
 ### Refactor
 - Separate in utils module
@@ -396,7 +411,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add is_builtin function
 - Raise ValueError if plot_data is not a sequence
 - compute_for argument to full_classname to allow classname computing for class object
-	
+
 ### Fixed
 - dict_to_arguments of workflows have now right signature
 
@@ -492,7 +507,7 @@ _ Rerun method for WorkflowRuns & prerequisite (input_values in __init__ et meth
 ### Changed
 - Export csv to fit vectored_objects removal
 - All set variables in _display_angular config instead of just choice_variables
-- Strategy for scale and custom value scaling 
+- Strategy for scale and custom value scaling
 
 ## [0.3.5]
 ### Changed
@@ -512,7 +527,7 @@ _ Rerun method for WorkflowRuns & prerequisite (input_values in __init__ et meth
 
 ## [0.3.3]
 ## Added
-- WorkflowBlock 
+- WorkflowBlock
 - Type checking in workflow
 - imposed variable values
 
@@ -575,4 +590,3 @@ _ Rerun method for WorkflowRuns & prerequisite (input_values in __init__ et meth
 ### Added
 - Generic eq,
 - Copy volmdlr support
-

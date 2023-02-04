@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Module to compute differences between objects.
-"""
+""" Module to compute differences between objects. """
 
 import math
 from typing import List
@@ -209,23 +207,22 @@ def data_eq(value1, value2):
         return full_classname(value1) == full_classname(value2)
 
     # Else: its an object
-
     if full_classname(value1) != full_classname(value2):
         # print('full classname !=')
         return False
 
     # Test if _data_eq is customized
     if hasattr(value1, '_data_eq'):
-        custom_method = (value1._data_eq.__code__ is not dc.DessiaObject._data_eq.__code__)
+        custom_method = value1._data_eq.__code__ is not dc.DessiaObject._data_eq.__code__
         if custom_method:
             return value1._data_eq(value2)
 
     # Not custom, use generic implementation
-    eq_dict = value1._serializable_dict()
+    eq_dict = value1._data_eq_dict()
     if 'name' in eq_dict:
         del eq_dict['name']
 
-    other_eq_dict = value2._serializable_dict()
+    other_eq_dict = value2._data_eq_dict()
 
     return dict_data_eq(eq_dict, other_eq_dict)
 

@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Module for docstring parsing to platform and Sphinx auto documentation.
-"""
+""" Module for docstring parsing to platform and Sphinx auto documentation. """
 
 from inspect import isclass, ismethod, isfunction
 from typing import Dict, Any, Tuple, get_type_hints
+from dessia_common.utils.types import serialize_typing
 
 try:
     from typing import TypedDict  # >=3.8
@@ -15,6 +14,7 @@ except ImportError:
 
 class ParsedAttribute(TypedDict):
     """ Parsed description of a docstring attribute. """
+
     desc: str
     type_: str
     annotation: str
@@ -22,8 +22,16 @@ class ParsedAttribute(TypedDict):
 
 class ParsedDocstring(TypedDict):
     """ Parsed description of a docstring. """
+
     description: str
     attributes: Dict[str, ParsedAttribute]
+
+
+def parse_class_docstring(class_) -> ParsedDocstring:
+    """ Helper to get parse docstring from a class. """
+    docstring = class_.__doc__
+    annotations = get_type_hints(class_.__init__)
+    return parse_docstring(docstring=docstring, annotations=annotations)
 
 
 def parse_docstring(docstring: str, annotations: Dict[str, Any]) -> ParsedDocstring:
@@ -37,7 +45,6 @@ def parse_docstring(docstring: str, annotations: Dict[str, Any]) -> ParsedDocstr
         for param in params:
             argname, parsed_attribute = parse_attribute(param, annotations)
             args[argname] = parsed_attribute
-            # TODO Should be serialize typing ?
         parsed_docstring.update({'attributes': args})
         return parsed_docstring
     return {'description': "", 'attributes': {}}
@@ -45,15 +52,11 @@ def parse_docstring(docstring: str, annotations: Dict[str, Any]) -> ParsedDocstr
 
 def parse_attribute(param, annotations) -> Tuple[str, ParsedAttribute]:
     """ Extract attribute from user-defined docstring. """
-    splitted_param = param.split(':type ')
-    arg = splitted_param[0]
-    typestr = splitted_param[1]
-    argname, argdesc = arg.split(":", maxsplit=1)
-    argtype = typestr.split(argname + ":")[-1]
+    if ":type" in param:
+        param = param.split(":type ")[0]
+    argname, argdesc = param.split(":", maxsplit=1)
     annotation = annotations[argname]
-    parsed_attribute = {'desc': argdesc.strip(),
-                        'type_': argtype.strip(),
-                        'annotation': str(annotation)}
+    parsed_attribute = {'desc': argdesc.strip(), 'type_': serialize_typing(annotation), 'annotation': str(annotation)}
     return argname, parsed_attribute
 
 
