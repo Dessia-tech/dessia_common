@@ -1,6 +1,4 @@
-"""
-Displays for dessia_common.
-"""
+""" Displays for dessia_common. """
 import warnings
 import webbrowser
 import os
@@ -20,9 +18,6 @@ class DisplaySetting:
     """ Describe which method to call to get a display. """
 
     def __init__(self, selector, type_, method, arguments=None, serialize_data: bool = False):
-        """
-        Describe what method to call to get a display.
-        """
         self.selector = selector
         self.type = type_
         self.method = method
@@ -31,10 +26,23 @@ class DisplaySetting:
         self.arguments = arguments
         self.serialize_data = serialize_data
 
+    @property
+    def reference_path(self) -> str:
+        """
+        Get reference path or set it to its default value if not defined.
+
+        Experimental.
+        """
+        if self.arguments is None:
+            return "#"
+
+        reference_path = self.arguments.get("reference_path", "#")
+        if reference_path is None:
+            return "#"
+        return reference_path
+
     def to_dict(self):
-        """
-        Serialization: make a dict from class instance attributes.
-        """
+        """ Serialization: make a dict from class instance attributes. """
         return {'selector': self.selector, 'type': self.type, 'method': self.method,
                 'serialize_data': self.serialize_data, 'arguments': self.arguments}
 
@@ -42,8 +50,8 @@ class DisplaySetting:
         """
         Handles deep calls to method.
 
-        In case of a parent getting the display settings of a children this methods allow to inject the attribute name
-        to method name
+        In case of a parent getting the display settings of a children this methods allow
+        to inject the attribute name to method name.
         """
         return DisplaySetting(selector=self.selector, type_=self.type, method=f'{attribute}.{self.method}',
                               arguments=self.arguments, serialize_data=serialize_data)

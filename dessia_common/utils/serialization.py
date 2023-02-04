@@ -1,68 +1,50 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Serialization Tools.
-"""
+""" Serialization Tools. """
 
 
 import warnings
-
 import dessia_common.serialization as dcs
 
 
 def serialize_dict(dict_):
-    """
-    Serialize a dict into a dict (values are serialized).
-    """
+    """ Serialize a dict into a dict (values are serialized). """
     warnings.warn("Module serialization.py have been moved outside utils. Please use it instead")
     return dcs.serialize_dict(dict_)
 
 
 def serialize_sequence(seq):
-    """
-    Serialize a sequence (list or sequence) into a list of dicts.
-    """
+    """ Serialize a sequence (list or sequence) into a list of dicts. """
     warnings.warn("Module serialization.py have been moved outside utils. Please use it instead")
     return dcs.serialize_sequence(seq)
 
 
 def serialize(value):
-    """
-    Main function for serialization without pointers. Calls recursively itself serialize_sequence and serialize_dict.
-    """
+    """ Main function for serialization without pointers. Calls recursively itself. """
     warnings.warn("Module serialization.py have been moved outside utils. Please use it instead")
     return dcs.serialize(value)
 
 
 def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=None):
-    """
-    Main function for serialization with pointers.
-    """
+    """ Main function for serialization with pointers. """
     warnings.warn("Module serialization.py have been moved outside utils. Please use it instead")
     return dcs.serialize_with_pointers(value=value, memo=memo, path=path, id_method=id_method, id_memo=id_memo)
 
 
 def serialize_dict_with_pointers(dict_, memo, path, id_method, id_memo):
-    """
-    Serialize a dict recursively with jsonpointers using a memo dict at a given path of the top level object.
-    """
+    """ Serialize a dict recursively with jsonpointers using a memo dict at a given path of the top level object. """
     warnings.warn("Module serialization.py have been moved outside utils. Please use it instead")
     return dcs.serialize_dict_with_pointers(dict_=dict_, memo=memo, path=path, id_method=id_method, id_memo=id_memo)
 
 
 def serialize_sequence_with_pointers(seq, memo, path, id_method, id_memo):
-    """
-    Serialize a sequence (list or tuple) using jsonpointers.
-    """
+    """ Serialize a sequence (list or tuple) using jsonpointers. """
     warnings.warn("Module serialization.py have been moved outside utils. Please use it instead")
     return dcs.serialize_sequence_with_pointers(seq=seq, memo=memo, path=path, id_method=id_method, id_memo=id_memo)
 
-
 def deserialize(serialized_element, sequence_annotation: str = 'List', global_dict=None,
                 pointers_memo=None, path: str = '#'):
-    """
-    Main function for deserialization, handle pointers.
-    """
+    """ Main function for deserialization, handle pointers. """
     warnings.warn("Module serialization.py have been moved outside utils. Please use it instead")
     return dcs.deserialize(serialized_element=serialized_element, sequence_annotation=sequence_annotation,
                            global_dict=global_dict, pointers_memo=pointers_memo, path=path)
@@ -166,9 +148,7 @@ def update_pointers_data(global_dict, current_dict, pointers_memo):
 
 
 def deserialization_order(dict_):
-    """
-    Analyse a dict representing an object and give a deserialization order.
-    """
+    """ Analyse a dict representing an object and give a deserialization order. """
     warnings.warn("Module serialization.py have been moved outside utils. Please use it instead")
     return dcs.deserialization_order(dict_)
 
@@ -188,19 +168,19 @@ def dereference_jsonpointers(dict_):
 
 
 def pointer_graph_elements(value, path='#'):
-    """ Compute graph. """
+    """ Compute pointer graph. """
     warnings.warn("Module serialization.py have been moved outside utils. Please use it instead")
     return dcs.pointer_graph_elements(value=value, path=path)
 
 
 def pointer_graph_elements_sequence(seq, path='#'):
-    """ Compute graph from sequence. """
+    """ Compute pointer sequence graph. """
     warnings.warn("Module serialization.py have been moved outside utils. Please use it instead")
     return dcs.pointer_graph_elements_sequence(seq=seq, path=path)
 
 
 def pointer_graph_elements_dict(dict_, path='#'):
-    """ Compute graph from dict. """
+    """ Compute pointer dict graph. """
     warnings.warn("Module serialization.py have been moved outside utils. Please use it instead")
     return dcs.pointer_graph_elements_dict(dict_=dict_, path=path)
 

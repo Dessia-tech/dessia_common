@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Models for tests.
-"""
+""" Models for tests. """
 
 import dessia_common.tests
 

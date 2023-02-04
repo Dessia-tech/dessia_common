@@ -1,3 +1,4 @@
+
 from dessia_common.forms import EmbeddedSubobject, StandaloneObject, EnhancedEmbeddedSubobject, DEF_SO
 from dessia_common.utils.types import full_classname
 

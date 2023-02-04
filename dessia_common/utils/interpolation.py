@@ -1,16 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Interpolation tools.
-"""
+""" Interpolation tools. """
 
 from typing import List
 
 def istep_from_value_on_list(list_: List[float], value: float,
                              extrapolate=False):
-    """
-    Return the float index of a value in a list of objects.
-    """
+    """ Return the float index of a value in a list of objects. """
     for ipoint, (point1, point2) in enumerate(zip(list_[:-1], list_[1:])):
         point1_s, point2_s = sorted((point1, point2))
         if point1_s <= value <= point2_s:
@@ -34,9 +30,7 @@ def istep_from_value_on_list(list_: List[float], value: float,
 
 
 def interpolate_from_istep(objects, istep: float):
-    """
-    Return the interpolated object from a float index and a list of objects.
-    """
+    """ Return the interpolated object from a float index and a list of objects. """
     n_objects = len(objects)
     if (istep < 0) or (istep > n_objects - 1):
         raise ValueError('Extrapolating is not supported')
