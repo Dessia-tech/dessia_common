@@ -37,17 +37,17 @@ assert computed_schema == {'type': 'number', 'python_typing': 'dessia_common.mea
 
 # Class
 schema = ClassProperty(annotation=Type, attribute="custom_class")
-assert schema.serialized == "type"
+assert schema.serialized == "Type"
 computed_schema = schema.to_dict(title="Some class", editable=True, description="")
 assert computed_schema == {'type': 'object', 'is_class': True, 'properties': {'name': {'type': 'string'}},
-                           'title': 'Some class', 'editable': True, 'description': '', 'python_typing': 'type'}
+                           'title': 'Some class', 'editable': True, 'description': '', 'python_typing': 'Type'}
 
 schema = ClassProperty(annotation=Type[StandaloneObject], attribute="custom_class")
 computed_schema = schema.to_dict(title="Some class", editable=True, description="")
-assert schema.serialized == "type[dessia_common.forms.StandaloneObject]"
+assert schema.serialized == "Type[dessia_common.forms.StandaloneObject]"
 assert computed_schema == {'type': 'object', 'is_class': True, 'properties': {'name': {'type': 'string'}},
                            'title': 'Some class', 'editable': True, 'description': '',
-                           'python_typing': 'type[dessia_common.forms.StandaloneObject]'}
+                           'python_typing': 'Type[dessia_common.forms.StandaloneObject]'}
 
 # Methods
 method_type = MethodType(class_=StandaloneObject, name="to_dict")
@@ -73,7 +73,7 @@ assert computed_schema == {'type': 'object', 'is_method': True, 'title': 'Some m
 # Lists
 schema = HomogeneousSequence(annotation=List, attribute="bare_list")
 checked_schema = schema.check_list()
-assert schema.serialized == "list"
+assert schema.serialized == "List"
 assert checked_schema.checks_above_level("error")
 assert len(checked_schema) == 2
 assert checked_schema[0].level == "error"
@@ -81,8 +81,8 @@ assert checked_schema[0].level == "error"
 schema = HomogeneousSequence(annotation=List[int], attribute="integer_list")
 computed_schema = schema.to_dict(title="One Arg List", editable=True, description="Testing List with one arg")
 checked_schema = schema.check_list()
-assert schema.serialized == "list[int]"
-assert computed_schema == {'type': 'array', 'python_typing': 'list[int]',
+assert schema.serialized == "List[int]"
+assert computed_schema == {'type': 'array', 'python_typing': 'List[int]',
                            'items': {'type': 'number',
                                      'python_typing': 'int',
                                      'title': 'One Arg List/0',
@@ -92,16 +92,16 @@ assert computed_schema == {'type': 'array', 'python_typing': 'list[int]',
 assert not checked_schema.checks_above_level("error")
 
 schema = HomogeneousSequence(annotation=List[List[StandaloneObject]], attribute="nested_list")
-computed_schema = schema.to_dict(title="Complex Deep List", editable=True, description="Testing complex deep list")
+computed_schema = schema.to_dict(title="Complex Deep List", editable=True, description="Testing complex deep List")
 checked_schema = schema.check_list()
-assert schema.serialized == "list[list[dessia_common.forms.StandaloneObject]]"
+assert schema.serialized == "List[List[dessia_common.forms.StandaloneObject]]"
 assert computed_schema == {'type': 'array',
-                           'python_typing': 'list[list[dessia_common.forms.StandaloneObject]]',
+                           'python_typing': 'List[List[dessia_common.forms.StandaloneObject]]',
                            'items': {'type': 'array',
                                      'title': 'Complex Deep List/0',
                                      'editable': True,
                                      'description': '',
-                                     'python_typing': 'list[dessia_common.forms.StandaloneObject]',
+                                     'python_typing': 'List[dessia_common.forms.StandaloneObject]',
                                      'items': {'type': 'object',
                                                'standalone_in_db': True,
                                                'classes': ['dessia_common.forms.StandaloneObject'],
@@ -111,7 +111,7 @@ assert computed_schema == {'type': 'array',
                                                'python_typing': 'dessia_common.forms.StandaloneObject'}},
                            'title': 'Complex Deep List',
                            'editable': True,
-                           'description': 'Testing complex deep list'}
+                           'description': 'Testing complex deep List'}
 assert not checked_schema.checks_above_level("error")
 
 schema = OptionalProperty(annotation=Optional[List[int]], attribute="optional_list", definition_default=None)
@@ -122,14 +122,14 @@ computed_schema = schema.to_dict(title="Optional List", editable=True, descripti
 schema = HeterogeneousSequence(annotation=Tuple, attribute="bare_tuple")
 computed_schema = schema.to_dict(title="Bare Tuple", editable=True, description="Testing Tuple with no arg")
 checked_schema = schema.check_list()
-assert schema.serialized == "tuple"
+assert schema.serialized == "Tuple"
 assert computed_schema == {'additionalItems': False,
                            'type': 'array',
                            'items': [],
                            'title': 'Bare Tuple',
                            'editable': True,
                            'description': 'Testing Tuple with no arg',
-                           'python_typing': 'tuple'}
+                           'python_typing': 'Tuple'}
 assert checked_schema.checks_above_level("error")
 assert len(checked_schema) == 1
 assert checked_schema[0].level == "error"
@@ -140,7 +140,7 @@ assert checked_schema[0].level == "error"
 schema = HeterogeneousSequence(annotation=Tuple[int, str], attribute="two_element_tuple")
 computed_schema = schema.to_dict(title="More Arg Tuple", editable=True, description="Testing Tuple with several args")
 checked_schema = schema.check_list()
-assert schema.serialized == "tuple[int, str]"
+assert schema.serialized == "Tuple[int, str]"
 assert computed_schema == {'additionalItems': False,
                            'type': 'array',
                            'items': [{'title': 'More Arg Tuple/0', 'editable': True, 'description': '',
@@ -150,7 +150,7 @@ assert computed_schema == {'additionalItems': False,
                            'title': 'More Arg Tuple',
                            'editable': True,
                            'description': 'Testing Tuple with several args',
-                           'python_typing': 'tuple[int, str]'}
+                           'python_typing': 'Tuple[int, str]'}
 assert not checked_schema.checks_above_level("error")
 
 
@@ -158,23 +158,23 @@ assert not checked_schema.checks_above_level("error")
 schema = DynamicDict(annotation=Dict[str, int], attribute="dictionnary")
 computed_schema = schema.to_dict(title="Dual Arg Dict", editable=True, description="Testing Dict with two args")
 checked_schema = schema.check_list()
-assert schema.serialized == "dict[str, int]"
+assert schema.serialized == "Dict[str, int]"
 assert computed_schema == {'type': 'object',
                            'patternProperties': {'.*': {'type': 'number'}},
                            'title': 'Dual Arg Dict',
                            'editable': True,
                            'description': 'Testing Dict with two args',
-                           'python_typing': 'dict[str, int]'}
+                           'python_typing': 'Dict[str, int]'}
 
 schema = DynamicDict(annotation=Dict[int, int], attribute="wrong_key_type_dict")
 checked_schema = schema.check_list()
-assert schema.serialized == "dict[int, int]"
+assert schema.serialized == "Dict[int, int]"
 # computed_schema = schema.to_dict(title="Dual Arg Dict", editable=True, description="Testing Dict with two args")
 assert len(checked_schema.checks_above_level("error")) == 1
 
 schema = DynamicDict(annotation=Dict[str, Dict[str, StandaloneObject]], attribute="nested_dict")
 checked_schema = schema.check_list()
-assert schema.serialized == "dict[str, dict[str, dessia_common.forms.StandaloneObject]]"
+assert schema.serialized == "Dict[str, Dict[str, dessia_common.forms.StandaloneObject]]"
 # computed_schema = schema.to_dict(title="Deep Dict", editable=True, description="Testing Dict deeply")
 assert len(checked_schema.checks_above_level("error")) == 1
 

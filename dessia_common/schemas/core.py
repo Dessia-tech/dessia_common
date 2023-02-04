@@ -5,7 +5,8 @@ import re
 from copy import deepcopy
 import inspect
 import collections.abc
-import typing as tp
+from typing import Tuple, Dict, List, Type, get_args, get_origin, get_type_hints, Callable, Union,\
+    TypeVar, TypedDict, Optional, Any
 from functools import cached_property
 from dessia_common.utils.helpers import full_classname, get_python_class_from_class_name
 from dessia_common.abstract import CoreDessiaObject
@@ -29,7 +30,7 @@ class Schema:
     """
     Abstraction of a Schema.
 
-    It reads the user-defined type hints and then writes into a dict the recursive structure of an object
+    It reads the user-defined type hints and then writes into a Dict the recursive structure of an object
     that can be handled by dessia_common.
     This dictionnary can then be translated as a json to be read by the frontend in order to compute edit forms,
     for example.
@@ -92,7 +93,7 @@ class Schema:
 
     @property
     def chunks(self):
-        """ Concatenate schema chunks into a list. """
+        """ Concatenate schema chunks into a List. """
         return [self.chunk(a) for a in self.attributes]
 
     def to_dict(self):
@@ -105,7 +106,7 @@ class Schema:
 
     def default_dict(self):
         """
-        Compute global default dict.
+        Compute global default Dict.
 
         If a definition default have been set by user, most schemas will return this value (or serialized).
         if not, schemas will compute a default compatible with platform (None most of the time).
@@ -114,7 +115,7 @@ class Schema:
 
     def check_list(self) -> CheckList:
         """
-        Browse all properties and list potential issues.
+        Browse all properties and List potential issues.
 
         Checks performed for each argument :
         - Is typed in method definition
@@ -150,11 +151,11 @@ class ClassSchema(Schema):
     Class must be a subclass of DessiaObject. It reads the __init__ annotations.
     """
 
-    def __init__(self, class_: tp.Type[CoreDessiaObject]):
+    def __init__(self, class_: Type[CoreDessiaObject]):
         self.class_ = class_
         self.standalone_in_db = class_._standalone_in_db
         self.python_typing = full_classname(class_, compute_for="class")
-        annotations = tp.get_type_hints(class_.__init__)
+        annotations = get_type_hints(class_.__init__)
 
         members = inspect.getfullargspec(self.class_.__init__)
         docstring = class_.__doc__
@@ -168,7 +169,7 @@ class ClassSchema(Schema):
         return [a for a in attributes if a not in self.class_._non_editable_attributes]
 
     def default_dict(self):
-        """ Compute class default dict. Add object_class to base one. """
+        """ Compute class default Dict. Add object_class to base one. """
         dict_ = super().default_dict()
         dict_["object_class"] = self.python_typing
         return dict_
@@ -181,10 +182,10 @@ class MethodSchema(Schema):
     Given method should be one of a DessiaObject. It reads its annotations.
     """
 
-    def __init__(self, method: tp.Callable):
+    def __init__(self, method: Callable):
         self.method = method
 
-        annotations = tp.get_type_hints(method)
+        annotations = get_type_hints(method)
         members = inspect.getfullargspec(method)
         docstring = method.__doc__
         Schema.__init__(self, annotations=annotations, argspec=members, docstring=docstring)
@@ -203,7 +204,7 @@ class MethodSchema(Schema):
 class Property:
     """ Base class for a schema property. """
 
-    def __init__(self, annotation: tp.Type[T], attribute: str, definition_default: T = None):
+    def __init__(self, annotation: Type[T], attribute: str, definition_default: T = None):
         self.annotation = annotation
         self.attribute = attribute
         self.definition_default = definition_default
@@ -229,7 +230,7 @@ class Property:
         return f"Attribute '{self.attribute}' : "
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
-        """ Write base schema as a dict. """
+        """ Write base schema as a Dict. """
         return {'title': title, 'editable': editable, 'description': description,
                 'python_typing': self.serialized, "type": None}
 
@@ -251,21 +252,21 @@ class TypingProperty(Property):
 
     SERIALIZED_REGEXP = r"([^\[\]]*)\[(.*)\]"
 
-    def __init__(self, annotation: tp.Type[T], attribute: str, definition_default: T = None):
+    def __init__(self, annotation: Type[T], attribute: str, definition_default: T = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
     @property
-    def args(self) -> tp.Tuple[tp.Type[T], ...]:
+    def args(self) -> Tuple[Type[T], ...]:
         """ Return Typing arguments. """
-        return tp.get_args(self.annotation)
+        return get_args(self.annotation)
 
     @property
-    def origin(self) -> tp.Type:
+    def origin(self) -> Type:
         """ Return Typing origin. """
-        return tp.get_origin(self.annotation)
+        return get_origin(self.annotation)
 
     @property
-    def args_schemas(self) -> tp.List[Property]:
+    def args_schemas(self) -> List[Property]:
         """ Get schema for each arg. """
         return [get_schema(annotation=a, attribute=f"{self.attribute}/{i}") for i, a in enumerate(self.args)]
 
@@ -273,6 +274,8 @@ class TypingProperty(Property):
     def serialized(self) -> str:
         """ Recursively stringify annotation. """
         serialized = self.origin.__name__
+        if serialized in ["list", "dict", "tuple", "type"]:
+            serialized = self.origin.__name__.capitalize()
         if self.args:
             serialized = f"{serialized}[{', '.join([s.serialized for s in self.args_schemas])}]"
         return serialized
@@ -298,7 +301,7 @@ class TypingProperty(Property):
         return ""
 
     @classmethod
-    def _args_from_serialized(cls, serialized: str) -> tuple[tp.Type[T]]:
+    def _args_from_serialized(cls, serialized: str) -> Tuple[Type[T]]:
         """ Deserialize args. """
         rawargs = cls._raw_args_from_serialized(serialized)
         args = extract_args(rawargs)
@@ -326,7 +329,7 @@ class ProxyProperty(TypingProperty):
     Proxies are just intermediate types which actual schemas if its args. For example OptionalProperty proxy.
     """
 
-    def __init__(self, annotation: tp.Type[T], attribute: str, definition_default: T = None):
+    def __init__(self, annotation: Type[T], attribute: str, definition_default: T = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
         self.annotation = self.args[0]
@@ -356,11 +359,11 @@ class OptionalProperty(ProxyProperty):
     Arguments with default values other than None are not considered Optionals
     """
 
-    def __init__(self, annotation: tp.Type[T], attribute: str, definition_default: T = None):
+    def __init__(self, annotation: Type[T], attribute: str, definition_default: T = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
-        """ Write Optional as a dict. """
+        """ Write Optional as a Dict. """
         default_value = self.schema.default_value()
         chunk = self.schema.to_dict(title=title, editable=editable, description=description)
         chunk["default_value"] = default_value
@@ -388,7 +391,7 @@ class AnnotatedProperty(ProxyProperty):
                            "Dessia only supports python 3.9 at the moment."
 
     # TODO Whenever Dessia decides to upgrade to python 3.11
-    def __init__(self, annotation: tp.Type[T], attribute: str, definition_default: T = None):
+    def __init__(self, annotation: Type[T], attribute: str, definition_default: T = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
         raise NotImplementedError(self._not_implemented_msg)
 
@@ -398,7 +401,7 @@ class AnnotatedProperty(ProxyProperty):
         raise NotImplementedError(cls._not_implemented_msg)
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
-        """ Write Annotated as a dict. """
+        """ Write Annotated as a Dict. """
         raise NotImplementedError(self._not_implemented_msg)
 
     def check_list(self) -> CheckList:
@@ -410,13 +413,13 @@ class AnnotatedProperty(ProxyProperty):
         raise NotImplementedError(self._not_implemented_msg)
 
 
-Builtin = tp.Union[str, bool, float, int]
+Builtin = Union[str, bool, float, int]
 
 
 class BuiltinProperty(Property):
     """ Schema class for Builtin type hints. """
 
-    def __init__(self, annotation: tp.Type[Builtin], attribute: str, definition_default: Builtin = None):
+    def __init__(self, annotation: Type[Builtin], attribute: str, definition_default: Builtin = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
     @cached_property
@@ -430,7 +433,7 @@ class BuiltinProperty(Property):
         return TYPES_FROM_STRING[serialized]
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
-        """ Write Builtin as a dict. """
+        """ Write Builtin as a Dict. """
         chunk = super().to_dict(title=title, editable=editable, description=description)
         chunk["type"] = TYPING_EQUIVALENCES[self.annotation]
         if self.default_value() is not None:
@@ -441,7 +444,7 @@ class BuiltinProperty(Property):
 class MeasureProperty(BuiltinProperty):
     """ Schema class for Measure type hints. """
 
-    def __init__(self, annotation: tp.Type[Measure], attribute: str, definition_default: Measure = None):
+    def __init__(self, annotation: Type[Measure], attribute: str, definition_default: Measure = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
     @cached_property
@@ -455,19 +458,19 @@ class MeasureProperty(BuiltinProperty):
         return Property.annotation_from_serialized(serialized)
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
-        """ Write Measure as a dict. """
+        """ Write Measure as a Dict. """
         chunk = Property.to_dict(self, title=title, editable=editable, description=description)
         chunk.update({"si_unit": self.annotation.si_unit, "type": "number"})
         return chunk
 
 
-File = tp.Union[StringFile, BinaryFile]
+File = Union[StringFile, BinaryFile]
 
 
 class FileProperty(Property):
     """ Schema class for File type hints. """
 
-    def __init__(self, annotation: tp.Type[File], attribute: str, definition_default: File = None):
+    def __init__(self, annotation: Type[File], attribute: str, definition_default: File = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
     @property
@@ -476,7 +479,7 @@ class FileProperty(Property):
         return full_classname(object_=self.annotation, compute_for="class")
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
-        """ Write File as a dict. """
+        """ Write File as a Dict. """
         chunk = super().to_dict(title=title, editable=editable, description=description)
         chunk.update({'type': 'text', 'is_file': True})
         return chunk
@@ -504,7 +507,7 @@ class FileProperty(Property):
 class CustomClass(Property):
     """ Schema class for CustomClass type hints. """
 
-    def __init__(self, annotation: tp.Type[CoreDessiaObject], attribute: str,
+    def __init__(self, annotation: Type[CoreDessiaObject], attribute: str,
                  definition_default: CoreDessiaObject = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
@@ -519,7 +522,7 @@ class CustomClass(Property):
         return full_classname(object_=self.annotation, compute_for='class')
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
-        """ Write CustomClass as a dict. """
+        """ Write CustomClass as a Dict. """
         chunk = super().to_dict(title=title, editable=editable, description=description)
         chunk.update({'type': 'object', 'standalone_in_db': self.annotation._standalone_in_db,
                       "classes": [self.serialized]})
@@ -551,7 +554,7 @@ class CustomClass(Property):
 class UnionProperty(TypingProperty):
     """ Schema class for Union type hints. """
 
-    def __init__(self, annotation: tp.Type[tp.Union[T]], attribute: str, definition_default: tp.Union[T] = None):
+    def __init__(self, annotation: Type[Union[T]], attribute: str, definition_default: Union[T] = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
         standalone_args = [a._standalone_in_db for a in self.args]
@@ -565,10 +568,10 @@ class UnionProperty(TypingProperty):
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
         """ Deserialize Union annotation. """
-        return tp.Union[TypingProperty._args_from_serialized(serialized)]
+        return Union[TypingProperty._args_from_serialized(serialized)]
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
-        """ Write Union as a dict. """
+        """ Write Union as a Dict. """
         chunk = super().to_dict(title=title, editable=editable, description=description)
         chunk.update({'type': 'object', 'classes': [self.serialized], 'standalone_in_db': self.standalone})
         return chunk
@@ -606,10 +609,10 @@ class HeterogeneousSequence(TypingProperty):
     """
     Schema class for Tuple type hints.
 
-    Datatype that can be seen as a tuple. Have any amount of arguments but a limited length.
+    Datatype that can be seen as a Tuple. Have any amount of arguments but a limited length.
     """
 
-    def __init__(self, annotation: tp.Type[tp.Tuple], attribute: str, definition_default: tp.Tuple = None):
+    def __init__(self, annotation: Type[Tuple], attribute: str, definition_default: Tuple = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
         self.item_schemas = [get_schema(annotation=a, attribute=f"{attribute}/{i}") for i, a in enumerate(self.args)]
@@ -621,11 +624,11 @@ class HeterogeneousSequence(TypingProperty):
         if ",..." in rawargs:
             arg = rawargs.split(",...")[0]
             subtype = deserialize_annotation(arg)
-            return tuple[subtype, ...]
-        return tuple[TypingProperty._args_from_serialized(serialized)]
+            return Tuple[subtype, ...]
+        return Tuple[TypingProperty._args_from_serialized(serialized)]
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
-        """ Write HeterogeneousSequence as a dict. """
+        """ Write HeterogeneousSequence as a Dict. """
         chunk = super().to_dict(title=title, editable=editable, description=description)
         items = [sp.to_dict(title=f"{title}/{i}", editable=editable) for i, sp in enumerate(self.item_schemas)]
         chunk.update({'type': 'array', 'additionalItems': False, 'items': items})
@@ -648,7 +651,7 @@ class HeterogeneousSequence(TypingProperty):
         return issues
 
     def has_enough_args(self) -> PassedCheck:
-        """ Annotation should have at least one argument, one for each element of the tuple. """
+        """ Annotation should have at least one argument, one for each element of the Tuple. """
         if len(self.args) == 0:
             msg = f"{self.check_prefix}is typed as a 'Tuple' which requires at least 1 argument. " \
                   f"Expected 'Tuple[T0, T1, ..., Tn]', got '{self.annotation}'."
@@ -660,10 +663,10 @@ class HomogeneousSequence(TypingProperty):
     """
     Schema class for List type hints.
 
-    Datatype that can be seen as a list. Have only one argument but an unlimited length.
+    Datatype that can be seen as a List. Have only one argument but an unlimited length.
     """
 
-    def __init__(self, annotation: tp.Type[tp.List[T]], attribute: str, definition_default: tp.List[T] = None):
+    def __init__(self, annotation: Type[List[T]], attribute: str, definition_default: List[T] = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
         self.item_schemas = [get_schema(annotation=a, attribute=f"{attribute}/{i}") for i, a in enumerate(self.args)]
@@ -671,10 +674,10 @@ class HomogeneousSequence(TypingProperty):
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
         """ Deserialize List annotation. """
-        return list[TypingProperty._args_from_serialized(serialized)]
+        return List[TypingProperty._args_from_serialized(serialized)]
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
-        """ Write HomogeneousSequence as a dict. """
+        """ Write HomogeneousSequence as a Dict. """
         if not title:
             title = 'Items'
         chunk = super().to_dict(title=title, editable=editable, description=description)
@@ -706,21 +709,21 @@ class DynamicDict(TypingProperty):
     """
     Schema class for Dict type hints.
 
-    Datatype that can be seen as a dict. Have restricted amount of arguments (one for key, one for values),
+    Datatype that can be seen as a Dict. Have restricted amount of arguments (one for key, one for values),
     but an unlimited length.
     """
 
-    def __init__(self, annotation: tp.Type[tp.Dict[str, Builtin]], attribute: str,
-                 definition_default: tp.Dict[str, Builtin] = None):
+    def __init__(self, annotation: Type[Dict[str, Builtin]], attribute: str,
+                 definition_default: Dict[str, Builtin] = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
-        """ Deserialize dict annotation. """
-        return dict[TypingProperty._args_from_serialized(serialized)]
+        """ Deserialize Dict annotation. """
+        return Dict[TypingProperty._args_from_serialized(serialized)]
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
-        """ Write DynamicDict as a dict. """
+        """ Write DynamicDict as a Dict. """
         key_type, value_type = self.args
         if key_type != str:
             # !!! Should we support other types ? Numeric ?
@@ -737,7 +740,7 @@ class DynamicDict(TypingProperty):
         return chunk
 
     def default_value(self):
-        """ Default of a dynamic dict. Always return None as default mutable is prohibited. """
+        """ Default of a dynamic Dict. Always return None as default mutable is prohibited. """
         return None
 
     def check_list(self) -> CheckList:
@@ -785,7 +788,7 @@ class DynamicDict(TypingProperty):
         return PassedCheck(msg)
 
 
-BaseClass = tp.TypeVar("BaseClass", bound=CoreDessiaObject)
+BaseClass = TypeVar("BaseClass", bound=CoreDessiaObject)
 
 
 class InstanceOfProperty(TypingProperty):
@@ -796,7 +799,7 @@ class InstanceOfProperty(TypingProperty):
     Instances of these classes validate against this type.
     """
 
-    def __init__(self, annotation: tp.Type[InstanceOf[BaseClass]], attribute: str,
+    def __init__(self, annotation: Type[InstanceOf[BaseClass]], attribute: str,
                  definition_default: BaseClass = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
@@ -811,7 +814,7 @@ class InstanceOfProperty(TypingProperty):
         return ClassSchema(self.args[0])
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
-        """ Write InstanceOf as a dict. """
+        """ Write InstanceOf as a Dict. """
         chunk = super().to_dict(title=title, editable=editable, description=description)
         class_ = self.args[0]
         chunk.update({'type': 'object', 'instance_of': self.serialized, 'standalone_in_db': class_._standalone_in_db})
@@ -836,8 +839,8 @@ class SubclassProperty(TypingProperty):
     Classes validate against this type.
     """
 
-    def __init__(self, annotation: tp.Type[Subclass[BaseClass]], attribute: str,
-                 definition_default: tp.Type[BaseClass] = None):
+    def __init__(self, annotation: Type[Subclass[BaseClass]], attribute: str,
+                 definition_default: Type[BaseClass] = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
     @classmethod
@@ -846,7 +849,7 @@ class SubclassProperty(TypingProperty):
         return Subclass[TypingProperty._args_from_serialized(serialized)]
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
-        """ Write Subclass as a dict. """
+        """ Write Subclass as a Dict. """
         raise NotImplementedError("Subclass is not implemented yet")
 
     def check_list(self) -> CheckList:
@@ -868,7 +871,7 @@ class MethodTypeProperty(TypingProperty):
     A specifically instantiated MethodType validated against this type.
     """
 
-    def __init__(self, annotation: tp.Type[MethodType], attribute: str, definition_default: MethodType = None):
+    def __init__(self, annotation: Type[MethodType], attribute: str, definition_default: MethodType = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
         self.class_ = self.args[0]
@@ -884,7 +887,7 @@ class MethodTypeProperty(TypingProperty):
         return ClassMethodType[TypingProperty._args_from_serialized(serialized)]
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
-        """ Write MethodType as a dict. """
+        """ Write MethodType as a Dict. """
         chunk = super().to_dict(title=title, editable=editable, description=description)
         classmethod_ = self.origin is ClassMethodType
         chunk.update({
@@ -908,7 +911,7 @@ class MethodTypeProperty(TypingProperty):
         return CheckList([])
 
 
-Class = tp.TypeVar("Class", bound=type)
+Class = TypeVar("Class", bound=type)
 
 
 class ClassProperty(TypingProperty):
@@ -918,7 +921,7 @@ class ClassProperty(TypingProperty):
     Non DessiaObject subclasses validated against this type.
     """
 
-    def __init__(self, annotation: tp.Type[Class], attribute: str, definition_default: Class = None):
+    def __init__(self, annotation: Type[Class], attribute: str, definition_default: Class = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
     @classmethod
@@ -926,11 +929,11 @@ class ClassProperty(TypingProperty):
         """ Deserialize Type annotation. Support undefined and defined arg. """
         args = TypingProperty._args_from_serialized(serialized)
         if args:
-            return tp.Type[args]
-        return tp.Type
+            return Type[args]
+        return Type
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
-        """ Write Class as a dict. """
+        """ Write Class as a Dict. """
         chunk = super().to_dict(title=title, editable=editable, description=description)
         chunk.update({'type': 'object', 'is_class': True, 'properties': {'name': {'type': 'string'}}})
         return chunk
@@ -950,7 +953,8 @@ class ClassProperty(TypingProperty):
 class GenericTypeProperty(Property):
     """ Meta Property for Types. """
 
-    def __init__(self, annotation: tp.Type[tp.TypeVar], attribute: str, definition_default: tp.TypeVar):
+
+    def __init__(self, annotation: Type[TypeVar], attribute: str, definition_default: TypeVar):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
     @classmethod
@@ -959,13 +963,13 @@ class GenericTypeProperty(Property):
         raise NotImplementedError("Annotation deserialization not implemented for Generic Types")
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
-        """ Write Type as a dict. """
+        """ Write Type as a Dict. """
         chunk = super().to_dict(title=title, editable=editable, description=description)
         chunk.update({'type': 'object', 'is_class': True, 'properties': {'name': {'type': 'string'}}})
         return chunk
 
 
-def inspect_arguments(method: tp.Callable, merge: bool = False):
+def inspect_arguments(method: Callable, merge: bool = False):
     """ Wrapper around 'split_default_argument' method in order to call it from a method object. """
     method_full_name = f'{method.__module__}.{method.__qualname__}'
     if method_full_name in _fullargsspec_cache:
@@ -999,7 +1003,7 @@ def split_default_args(argspecs: inspect.FullArgSpec, merge: bool = False):
     return arguments, default_arguments
 
 
-def split_argspecs(argspecs: inspect.FullArgSpec) -> tp.Tuple[int, int]:
+def split_argspecs(argspecs: inspect.FullArgSpec) -> Tuple[int, int]:
     """ Get number of regular arguments as well as arguments with default values. """
     nargs = len(argspecs.args) - 1
 
@@ -1010,7 +1014,7 @@ def split_argspecs(argspecs: inspect.FullArgSpec) -> tp.Tuple[int, int]:
     return nargs, ndefault_args
 
 
-def get_schema(annotation: tp.Type[T], attribute: str = "", definition_default: tp.Optional[T] = None) -> Property:
+def get_schema(annotation: Type[T], attribute: str = "", definition_default: Optional[T] = None) -> Property:
     """ Get schema Property object from given annotation. """
     if annotation is None or inspect.isclass(annotation) and issubclass(annotation, type(None)):
         return GenericTypeProperty(annotation=annotation, attribute=attribute, definition_default=definition_default)
@@ -1023,26 +1027,26 @@ def get_schema(annotation: tp.Type[T], attribute: str = "", definition_default: 
         return ClassProperty(annotation=annotation, attribute=attribute, definition_default=definition_default)
     if inspect.isclass(annotation):
         return custom_class_schema(annotation=annotation, attribute=attribute, definition_default=definition_default)
-    if isinstance(annotation, tp.TypeVar):
+    if isinstance(annotation, TypeVar):
         return GenericTypeProperty(annotation=annotation, attribute=attribute, definition_default=definition_default)
     raise NotImplementedError(f"No schema defined for attribute '{attribute}' annotated '{annotation}'.")
 
 
 ORIGIN_TO_SCHEMA_CLASS = {
-    tuple: HeterogeneousSequence, list: HomogeneousSequence, collections.abc.Iterator: HomogeneousSequence,
-    tp.Union: UnionProperty, dict: DynamicDict, InstanceOf: InstanceOfProperty,
-    MethodType: MethodTypeProperty, ClassMethodType: MethodTypeProperty, tp.Type: ClassProperty
+    Tuple: HeterogeneousSequence, List: HomogeneousSequence, collections.abc.Iterator: HomogeneousSequence,
+    Union: UnionProperty, Dict: DynamicDict, InstanceOf: InstanceOfProperty,
+    MethodType: MethodTypeProperty, ClassMethodType: MethodTypeProperty, Type: ClassProperty
 }
 
 SERIALIZED_TO_SCHEMA_CLASS = {
     "int": BuiltinProperty, "float": BuiltinProperty, "bool": BuiltinProperty, "str": BuiltinProperty,
-    "tuple": HeterogeneousSequence, "list": HomogeneousSequence, "Iterator": HomogeneousSequence,
-    "Union": UnionProperty, "dict": DynamicDict, "InstanceOf": InstanceOfProperty, "Subclass": SubclassProperty,
+    "Tuple": HeterogeneousSequence, "List": HomogeneousSequence, "Iterator": HomogeneousSequence,
+    "Union": UnionProperty, "Dict": DynamicDict, "InstanceOf": InstanceOfProperty, "Subclass": SubclassProperty,
     "MethodType": MethodTypeProperty, "ClassMethodType": MethodTypeProperty, "Type": ClassProperty
 }
 
 
-def deserialize_annotation(serialized: str) -> tp.Type[T]:
+def deserialize_annotation(serialized: str) -> Type[T]:
     """ From a string denoting an annotation, get deserialize value. """
     if "[" in serialized:
         return TypingProperty.annotation_from_serialized(serialized)
@@ -1059,10 +1063,10 @@ def is_typing(object_) -> bool:
     return has_module and has_origin and has_args
 
 
-def typing_schema(typing_: tp.Type[T], attribute: str, definition_default: T = None) -> Property:
+def typing_schema(typing_: Type[T], attribute: str, definition_default: T = None) -> Property:
     """ Get schema Property for typing annotations. """
-    origin = tp.get_origin(typing_)
-    if origin is tp.Union and union_is_default_value(typing_):
+    origin = get_origin(typing_)
+    if origin is Union and union_is_default_value(typing_):
         # This is a false UnionProperty => Is a default value set to None
         return OptionalProperty(annotation=typing_, attribute=attribute, definition_default=definition_default)
     try:
@@ -1071,7 +1075,7 @@ def typing_schema(typing_: tp.Type[T], attribute: str, definition_default: T = N
         raise NotImplementedError(f"No Schema defined for typing '{typing_}'.") from exc
 
 
-def custom_class_schema(annotation: tp.Type[T], attribute: str, definition_default: T = None) -> Property:
+def custom_class_schema(annotation: Type[T], attribute: str, definition_default: T = None) -> Property:
     """ Get schema Property object for non typing annotations. """
     if issubclass(annotation, Measure):
         return MeasureProperty(annotation=annotation, attribute=attribute, definition_default=definition_default)
@@ -1104,18 +1108,18 @@ def serialize_typing(typing_, attribute: str = "") -> str:
     return schema.serialized
 
 
-def union_is_default_value(typing_: tp.Type) -> bool:
+def union_is_default_value(typing_: Type) -> bool:
     """
     Union typings can be False positives.
 
     An argument of a function that has a default_value set to None is Optional[T], which is an alias for
     Union[T, NoneType]. This function checks if this is the case.
     """
-    args = tp.get_args(typing_)
+    args = get_args(typing_)
     return len(args) == 2 and type(None) in args
 
 
-def extract_args(string: str) -> list[str]:
+def extract_args(string: str) -> List[str]:
     """
     Extract first level arguments from serialized typing.
 
@@ -1142,7 +1146,7 @@ def extract_args(string: str) -> list[str]:
     return args
 
 
-class ParsedAttribute(tp.TypedDict):
+class ParsedAttribute(TypedDict):
     """ Parsed description of a docstring attribute. """
 
     desc: str
@@ -1150,21 +1154,21 @@ class ParsedAttribute(tp.TypedDict):
     annotation: str
 
 
-class ParsedDocstring(tp.TypedDict):
+class ParsedDocstring(TypedDict):
     """ Parsed description of a docstring. """
 
     description: str
-    attributes: tp.Dict[str, ParsedAttribute]
+    attributes: Dict[str, ParsedAttribute]
 
 
 def parse_class_docstring(class_) -> ParsedDocstring:
     """ Helper to get parse docstring from a class. """
     docstring = class_.__doc__
-    annotations = tp.get_type_hints(class_.__init__)
+    annotations = get_type_hints(class_.__init__)
     return parse_docstring(docstring=docstring, annotations=annotations)
 
 
-def parse_docstring(docstring: str, annotations: tp.Dict[str, tp.Any]) -> ParsedDocstring:
+def parse_docstring(docstring: str, annotations: Dict[str, Any]) -> ParsedDocstring:
     """ Parse user-defined docstring of given class. Refer to docs to see how docstrings should be built. """
     if docstring:
         no_return_docstring = docstring.split(':return:')[0]
@@ -1180,7 +1184,7 @@ def parse_docstring(docstring: str, annotations: tp.Dict[str, tp.Any]) -> Parsed
     return {'description': "", 'attributes': {}}
 
 
-def parse_attribute(param, annotations) -> tp.Tuple[str, ParsedAttribute]:
+def parse_attribute(param, annotations) -> Tuple[str, ParsedAttribute]:
     """ Extract attribute from user-defined docstring. """
     if ":type" in param:
         param = param.split(":type ")[0]
@@ -1204,10 +1208,10 @@ def _check_docstring(element):
         return False
     if inspect.isclass(element):
         # element is an object or a class
-        annotations = tp.get_type_hints(element.__init__)
+        annotations = get_type_hints(element.__init__)
     elif inspect.ismethod(element) or inspect.isfunction(element):
         # element is a method
-        annotations = tp.get_type_hints(element)
+        annotations = get_type_hints(element)
     else:
         raise NotImplementedError
     try:
