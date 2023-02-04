@@ -275,6 +275,7 @@ class TypingProperty(Property):
         """ Recursively stringify annotation. """
         serialized = self.origin.__name__
         if serialized in ["list", "dict", "tuple", "type"]:
+            # TODO Dirty quickfix. Find a generic way to automatize this
             serialized = self.origin.__name__.capitalize()
         if self.args:
             serialized = f"{serialized}[{', '.join([s.serialized for s in self.args_schemas])}]"
@@ -1033,9 +1034,9 @@ def get_schema(annotation: Type[T], attribute: str = "", definition_default: Opt
 
 
 ORIGIN_TO_SCHEMA_CLASS = {
-    Tuple: HeterogeneousSequence, List: HomogeneousSequence, collections.abc.Iterator: HomogeneousSequence,
-    Union: UnionProperty, Dict: DynamicDict, InstanceOf: InstanceOfProperty,
-    MethodType: MethodTypeProperty, ClassMethodType: MethodTypeProperty, Type: ClassProperty
+    tuple: HeterogeneousSequence, list: HomogeneousSequence, collections.abc.Iterator: HomogeneousSequence,
+    Union: UnionProperty, dict: DynamicDict, InstanceOf: InstanceOfProperty,
+    MethodType: MethodTypeProperty, ClassMethodType: MethodTypeProperty, type: ClassProperty
 }
 
 SERIALIZED_TO_SCHEMA_CLASS = {
