@@ -220,6 +220,7 @@ class Property:
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
+        """ Simple get class from its name. """
         return get_python_class_from_class_name(serialized)
 
     @property
@@ -277,16 +278,19 @@ class TypingProperty(Property):
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
+        """ Split Typing and Args and delegate deserialization to specific classes. """
         typename = cls.type_from_serialized(serialized)
         schema_class = SERIALIZED_TO_SCHEMA_CLASS[typename]
         return schema_class.annotation_from_serialized(serialized)
 
     @classmethod
     def type_from_serialized(cls, serialized: str) -> str:
+        """ Get Typing from serialized value. """
         return re.match(cls.SERIALIZED_REGEXP, serialized).group(1)
 
     @classmethod
     def _raw_args_from_serialized(cls, serialized: str) -> str:
+        """ Get args as str from serialized value. """
         if "[" in serialized and "]" in serialized:
             args = re.match(cls.SERIALIZED_REGEXP, serialized).group(2)
             return args.replace(" ", "")
@@ -294,12 +298,14 @@ class TypingProperty(Property):
 
     @classmethod
     def _args_from_serialized(cls, serialized: str) -> tuple[tp.Type[T]]:
+        """ Deserialize args. """
         rawargs = cls._raw_args_from_serialized(serialized)
         args = extract_args(rawargs)
         return tuple([deserialize_annotation(a) for a in args])
 
     @classmethod
     def unfold_serialized_annotation(cls, serialized: str):
+        """ Get Typing and Args as strings. """
         return re.match(cls.SERIALIZED_REGEXP, serialized).groups()
 
     def has_one_arg(self) -> PassedCheck:
@@ -337,6 +343,7 @@ class ProxyProperty(TypingProperty):
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
+        """ Deserialize Proxy annotation. """
         raise NotImplementedError(f"Cannot deserialize annotation '{serialized}' as Proxy.")
 
 
@@ -360,9 +367,8 @@ class OptionalProperty(ProxyProperty):
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
+        """ Deserialize Optional annotation. """
         raise NotImplementedError("Optional deser not implemented yet. ")
-        # _, inside = cls.unfold_serialized_annotation(serialized)
-        # return deserialize_annotation(inside)
 
 
 class AnnotatedProperty(ProxyProperty):
@@ -387,6 +393,7 @@ class AnnotatedProperty(ProxyProperty):
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
+        """ Deserialize Annotated annotation. """
         raise NotImplementedError(cls._not_implemented_msg)
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
@@ -418,6 +425,7 @@ class BuiltinProperty(Property):
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
+        """ Get real Type from types dictionnary. """
         return TYPES_FROM_STRING[serialized]
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
@@ -442,7 +450,8 @@ class MeasureProperty(BuiltinProperty):
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
-        return Property.annotation_from_serialized(cls, serialized)
+        """ Deserialize as annotation custom class. """
+        return Property.annotation_from_serialized(serialized)
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write Measure as a dict. """
@@ -554,6 +563,7 @@ class UnionProperty(TypingProperty):
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
+        """ Deserialize Union annotation. """
         return tp.Union[TypingProperty._args_from_serialized(serialized)]
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
@@ -605,6 +615,7 @@ class HeterogeneousSequence(TypingProperty):
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
+        """ Deserialize Tuple annotation with undefined length support. """
         rawargs = cls._raw_args_from_serialized(serialized)
         if ",..." in rawargs:
             arg = rawargs.split(",...")[0]
@@ -658,6 +669,7 @@ class HomogeneousSequence(TypingProperty):
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
+        """ Deserialize List annotation. """
         return list[TypingProperty._args_from_serialized(serialized)]
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
@@ -703,6 +715,7 @@ class DynamicDict(TypingProperty):
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
+        """ Deserialize dict annotation. """
         return dict[TypingProperty._args_from_serialized(serialized)]
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
@@ -788,6 +801,7 @@ class InstanceOfProperty(TypingProperty):
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
+        """ Deserialize InstanceOf annotation. """
         return InstanceOf[TypingProperty._args_from_serialized(serialized)]
 
     @property
@@ -827,6 +841,7 @@ class SubclassProperty(TypingProperty):
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
+        """ Deserialize Subclass annotation. """
         return Subclass[TypingProperty._args_from_serialized(serialized)]
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
@@ -861,6 +876,7 @@ class MethodTypeProperty(TypingProperty):
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
+        """ Deserialize Methods annotation. Support Class and Instance methods. """
         type_ = TypingProperty.type_from_serialized(serialized)
         if type_ == "MethodType":
             return MethodType[TypingProperty._args_from_serialized(serialized)]
@@ -906,6 +922,7 @@ class ClassProperty(TypingProperty):
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
+        """ Deserialize Type annotation. Support undefined and defined arg. """
         args = TypingProperty._args_from_serialized(serialized)
         if args:
             return tp.Type[args]
@@ -936,6 +953,7 @@ class GenericTypeProperty(Property):
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
+        """ Deserialize Generic Type annotation. """
         raise NotImplementedError("Annotation deserialization not implemented for Generic Types")
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
@@ -1096,6 +1114,12 @@ def union_is_default_value(typing_: tp.Type) -> bool:
 
 
 def extract_args(string: str) -> list[str]:
+    """
+    Extract first level arguments from serialized typing.
+
+    This function does not split by commas when we are down to second level annotations
+    and has been preferred to regexp for this reason.
+    """
     opened_brackets = 0
     closed_brackets = 0
     current_arg = ""
@@ -1114,7 +1138,6 @@ def extract_args(string: str) -> list[str]:
     if current_arg:
         args.append(current_arg)
     return args
-
 
 
 class ParsedAttribute(tp.TypedDict):
