@@ -38,7 +38,7 @@ print(f'[Coverage] You can increase MIN_MODULE_COVERAGE to maximum {global_cover
 min_actual_coverage = 100
 for file_name, data in d['files'].items():
     print(file_name, data['summary']['percent_covered'], '%')
-    # print('/'.join(file_name.split('/')[-2:]))
+    print('/'.join(file_name.split('/')[-2:]))
     if '/'.join(file_name.split('/')[-2:]) in untracked_modules:
         print(file_name, '-> in untrack list')
     else:
