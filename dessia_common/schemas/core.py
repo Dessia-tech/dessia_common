@@ -954,7 +954,6 @@ class ClassProperty(TypingProperty):
 class GenericTypeProperty(Property):
     """ Meta Property for Types. """
 
-
     def __init__(self, annotation: Type[TypeVar], attribute: str, definition_default: TypeVar):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
