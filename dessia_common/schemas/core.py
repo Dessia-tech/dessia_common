@@ -248,6 +248,7 @@ class Property:
 
 class TypingProperty(Property):
     """ Schema class for typing based annotations. """
+
     SERIALIZED_REGEXP = r"([^\[\]]*)\[(.*)\]"
 
     def __init__(self, annotation: tp.Type[T], attribute: str, definition_default: T = None):
@@ -948,6 +949,7 @@ class ClassProperty(TypingProperty):
 
 class GenericTypeProperty(Property):
     """ Meta Property for Types. """
+
     def __init__(self, annotation: tp.Type[tp.TypeVar], attribute: str, definition_default: tp.TypeVar):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
