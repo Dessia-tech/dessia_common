@@ -60,6 +60,7 @@ MAX_ERROR_BY_TYPE = {
                      'use-maxsplit-arg': 1,
                      'duplicate-code': 1,
                      'too-many-lines': 1
+                     "unsubscriptable-object" : 6
                      }
 
 print('pylint version: ', __version__)
