@@ -24,7 +24,7 @@ from ast import literal_eval
 
 import dessia_common.errors
 from dessia_common.utils.diff import data_eq, diff, choose_hash
-from dessia_common.utils.types import is_sequence, is_bson_valid, TYPES_FROM_STRING
+from dessia_common.utils.types import is_sequence, is_bson_valid
 from dessia_common.utils.copy import deepcopy_value
 from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotation, JSONSCHEMA_HEADER,\
     set_default_value
@@ -1243,7 +1243,7 @@ def type_from_annotation(type_, module):
     """ Clean up a proposed type if there are stringified. """
     if isinstance(type_, str):
         # Evaluating types
-        type_ = TYPES_FROM_STRING.get(type_, default=getattr(import_module(module), type_))
+        type_ = dcs.TYPES_FROM_STRING.get(type_, default=getattr(import_module(module), type_))
     return type_
 
 

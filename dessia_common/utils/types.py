@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """ Types tools. """
+
 from collections.abc import Iterator, Sequence
 from typing import Any, Dict, List, Tuple, Type, Union, get_origin, get_args
 import orjson
@@ -15,8 +16,6 @@ SIMPLE_TYPES = [int, str]
 TYPES_STRINGS = {int: 'int', float: 'float', bool: 'boolean', str: 'str', list: 'list', tuple: 'tuple', dict: 'dict'}
 
 SEQUENCE_TYPINGS = ['List', 'Sequence', 'Iterable']
-
-TYPES_FROM_STRING = {'unicode': str, 'str': str, 'float': float, 'int': int, 'bool': bool}
 
 SERIALIZED_BUILTINS = ['float', 'builtins.float', 'int', 'builtins.int', 'str', 'builtins.str', 'bool', 'builtins.bool']
 

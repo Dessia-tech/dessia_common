@@ -12,16 +12,17 @@ from dessia_common.schemas.core import serialize_typing
 class TestTypingSerializationValid(unittest.TestCase):
     # Some special cases above still use asserts
     @parameterized.expand([
-        (List[StandaloneObject], 'List[dessia_common.forms.StandaloneObject]'),
-        (List[int], 'List[__builtins__.int]'),
+        (List[StandaloneObject], 'list[dessia_common.forms.StandaloneObject]'),
+        (List[int], 'list[int]'),
         # Nested Sequence
-        (List[List[StandaloneObject]], 'List[List[dessia_common.forms.StandaloneObject]]'),
-        (List[List[List[StandaloneObject]]], 'List[List[List[dessia_common.forms.StandaloneObject]]]'),
+        (List[List[StandaloneObject]], 'list[list[dessia_common.forms.StandaloneObject]]'),
+        (List[List[List[StandaloneObject]]], 'list[list[list[dessia_common.forms.StandaloneObject]]]'),
 
         # Dictionnaries
-        (Dict[int, StandaloneObject], 'Dict[__builtins__.int, dessia_common.forms.StandaloneObject]'),
+        (Dict[int, StandaloneObject], 'dict[int, dessia_common.forms.StandaloneObject]'),
+
         # Types
-        (Type, 'typing.Type'),
+        (Type, 'type'),
         (InstanceOf[StandaloneObject], 'InstanceOf[dessia_common.forms.StandaloneObject]'),
         (MethodType, 'dessia_common.typings.MethodType'),
         (ClassMethodType, 'dessia_common.typings.ClassMethodType'),
@@ -38,7 +39,7 @@ class TestTypingSerializationValid(unittest.TestCase):
         # Sequences
         test_typing = Tuple[int, StandaloneObject]
         serialized_typing = serialize_typing(test_typing)
-        assert serialized_typing == 'Tuple[__builtins__.int, dessia_common.forms.StandaloneObject]'
+        assert serialized_typing == 'tuple[int, dessia_common.forms.StandaloneObject]'
         try:
             deserialized_typing = deserialize_typing(serialized_typing)
         except TypeError:
