@@ -125,13 +125,16 @@ class TypedVariable(Variable):
                 script.declaration += f", type_={serialize_typing(self.type_).split('[')[0]}" \
                                       f"[{args_sub}]"
                 try:
-                    script.imports.append(f"{args[0].__module__}.{args[0].__name__}")
+                    if args[0].__module__ != 'builtins':
+                        script.imports.append(f"{args[0].__module__}.{args[0].__name__}")
                 except AttributeError:
                     script.imports.append(f"{args[0].__module__}.{args[0].__origin__.__name__.capitalize()}")
         if "builtins" not in serialize_typing(self.type_) or any(type_ in serialize_typing(self.type_)
                                                                  for type_ in types):
             try:
-                script.imports.append(f"{self.type_.__module__}.{get_origin(self.type_).__name__.capitalize()}")
+                module = get_origin(self.type_).__name__
+                module = module[0].upper() + module[1:]
+                script.imports.append(f"{self.type_.__module__}.{module}")
             except AttributeError:
                 script.imports.append(serialize_typing(self.type_))
         return script
