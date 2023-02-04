@@ -220,7 +220,7 @@ class Property:
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
-        raise NotImplementedError(f"Cannot generically deserialize annotation '{serialized}'.")
+        return get_python_class_from_class_name(serialized)
 
     @property
     def check_prefix(self) -> str:
@@ -247,7 +247,7 @@ class Property:
 
 class TypingProperty(Property):
     """ Schema class for typing based annotations. """
-    SERIALIZED_REGEXP = r"([a-zA-Z\_\.]*)\[(.*)\]"
+    SERIALIZED_REGEXP = r"([^\[\]]*)\[(.*)\]"
 
     def __init__(self, annotation: tp.Type[T], attribute: str, definition_default: T = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
@@ -278,6 +278,23 @@ class TypingProperty(Property):
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
         raise NotImplementedError(f"Cannot deserialize annotation '{serialized}' as typing.")
+
+    @classmethod
+    def type_from_serialized(cls, serialized: str) -> str:
+        return re.match(cls.SERIALIZED_REGEXP, serialized).group(1)
+
+    @classmethod
+    def _raw_args_from_serialized(cls, serialized: str) -> str:
+        if "[" in serialized and "]" in serialized:
+            args = re.match(cls.SERIALIZED_REGEXP, serialized).group(2)
+            return args.replace(" ", "")
+        return ""
+
+    @classmethod
+    def _args_from_serialized(cls, serialized: str) -> tuple[tp.Type[T]]:
+        rawargs = cls._raw_args_from_serialized(serialized)
+        args = extract_args(rawargs)
+        return tuple([deserialize_annotation(a) for a in args])
 
     @classmethod
     def unfold_serialized_annotation(cls, serialized: str):
@@ -341,7 +358,9 @@ class OptionalProperty(ProxyProperty):
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
-        raise NotImplementedError(f"Cannot generically deserialize annotation '{serialized}'.")
+        raise NotImplementedError("Optional deser not implemented yet. ")
+        # _, inside = cls.unfold_serialized_annotation(serialized)
+        # return deserialize_annotation(inside)
 
 
 class AnnotatedProperty(ProxyProperty):
@@ -363,6 +382,10 @@ class AnnotatedProperty(ProxyProperty):
     def __init__(self, annotation: tp.Type[T], attribute: str, definition_default: T = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
         raise NotImplementedError(self._not_implemented_msg)
+
+    @classmethod
+    def annotation_from_serialized(cls, serialized: str):
+        raise NotImplementedError(cls._not_implemented_msg)
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write Annotated as a dict. """
@@ -414,6 +437,10 @@ class MeasureProperty(BuiltinProperty):
     def serialized(self) -> str:
         """ Full class name. """
         return full_classname(object_=self.annotation, compute_for="class")
+
+    @classmethod
+    def annotation_from_serialized(cls, serialized: str):
+        return Property.annotation_from_serialized(cls, serialized)
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write Measure as a dict. """
@@ -523,6 +550,10 @@ class UnionProperty(TypingProperty):
         else:
             self.standalone = None
 
+    @classmethod
+    def annotation_from_serialized(cls, serialized: str):
+        return tp.Union[TypingProperty._args_from_serialized(serialized)]
+
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write Union as a dict. """
         chunk = super().to_dict(title=title, editable=editable, description=description)
@@ -572,18 +603,12 @@ class HeterogeneousSequence(TypingProperty):
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
-        _, inside = TypingProperty.unfold_serialized_annotation(serialized)
-        inside = inside.replace(" ", "")
-        if ",..." in inside:
-            arg = inside.split(",...")[0]
+        rawargs = cls._raw_args_from_serialized(serialized)
+        if ",..." in rawargs:
+            arg = rawargs.split(",...")[0]
             subtype = deserialize_annotation(arg)
             return tuple[subtype, ...]
-
-        args = inside.split(",")
-        subtypes = []
-        for arg in args:
-            subtypes.append(deserialize_annotation(arg))
-        return tuple[tuple(subtypes)]
+        return tuple[TypingProperty._args_from_serialized(serialized)]
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write HeterogeneousSequence as a dict. """
@@ -631,9 +656,7 @@ class HomogeneousSequence(TypingProperty):
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
-        inside = re.match(cls.SERIALIZED_REGEXP, serialized).group(2)
-        schema_class = deserialize_annotation(inside)
-        return schema_class.annotation_from_serialized(inside)
+        return list[TypingProperty._args_from_serialized(serialized)]
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write HomogeneousSequence as a dict. """
@@ -675,6 +698,10 @@ class DynamicDict(TypingProperty):
     def __init__(self, annotation: tp.Type[tp.Dict[str, Builtin]], attribute: str,
                  definition_default: tp.Dict[str, Builtin] = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
+
+    @classmethod
+    def annotation_from_serialized(cls, serialized: str):
+        return dict[TypingProperty._args_from_serialized(serialized)]
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write DynamicDict as a dict. """
@@ -757,6 +784,10 @@ class InstanceOfProperty(TypingProperty):
                  definition_default: BaseClass = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
+    @classmethod
+    def annotation_from_serialized(cls, serialized: str):
+        return InstanceOf[TypingProperty._args_from_serialized(serialized)]
+
     @property
     def schema(self):
         """ Get Schema of base class. """
@@ -792,6 +823,10 @@ class SubclassProperty(TypingProperty):
                  definition_default: tp.Type[BaseClass] = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
+    @classmethod
+    def annotation_from_serialized(cls, serialized: str):
+        return Subclass[TypingProperty._args_from_serialized(serialized)]
+
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write Subclass as a dict. """
         raise NotImplementedError("Subclass is not implemented yet")
@@ -821,6 +856,13 @@ class MethodTypeProperty(TypingProperty):
         self.class_ = self.args[0]
         self.class_schema = get_schema(annotation=self.class_, attribute=attribute,
                                        definition_default=definition_default)
+
+    @classmethod
+    def annotation_from_serialized(cls, serialized: str):
+        type_ = TypingProperty.type_from_serialized(serialized)
+        if type_ == "MethodType":
+            return MethodType[TypingProperty._args_from_serialized(serialized)]
+        return ClassMethodType[TypingProperty._args_from_serialized(serialized)]
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write MethodType as a dict. """
@@ -860,6 +902,13 @@ class ClassProperty(TypingProperty):
     def __init__(self, annotation: tp.Type[Class], attribute: str, definition_default: Class = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
+    @classmethod
+    def annotation_from_serialized(cls, serialized: str):
+        args = TypingProperty._args_from_serialized(serialized)
+        if args:
+            return tp.Type[args]
+        return tp.Type
+
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write Class as a dict. """
         chunk = super().to_dict(title=title, editable=editable, description=description)
@@ -882,6 +931,10 @@ class GenericTypeProperty(Property):
     """ Meta Property for Types. """
     def __init__(self, annotation: tp.Type[tp.TypeVar], attribute: str, definition_default: tp.TypeVar):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
+
+    @classmethod
+    def annotation_from_serialized(cls, serialized: str):
+        raise NotImplementedError("Annotation deserialization not implemented for Generic Types")
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write Type as a dict. """
@@ -962,15 +1015,15 @@ ORIGIN_TO_SCHEMA_CLASS = {
 SERIALIZED_TO_SCHEMA_CLASS = {
     "int": BuiltinProperty, "float": BuiltinProperty, "bool": BuiltinProperty, "str": BuiltinProperty,
     "tuple": HeterogeneousSequence, "list": HomogeneousSequence, "Iterator": HomogeneousSequence,
-    "Union": UnionProperty, "dict": DynamicDict, "InstanceOf": InstanceOfProperty,
-    "MethodType": MethodTypeProperty, "ClassMethodType": MethodTypeProperty, "type": ClassProperty
+    "Union": UnionProperty, "dict": DynamicDict, "InstanceOf": InstanceOfProperty, "Subclass": SubclassProperty,
+    "MethodType": MethodTypeProperty, "ClassMethodType": MethodTypeProperty, "Type": ClassProperty
 }
 
 
-def deserialize_annotation(serialized: str):
+def deserialize_annotation(serialized: str) -> tp.Type[T]:
     """ From a string denoting an annotation, get deserialize value. """
     if "[" in serialized:
-        outside, _ = TypingProperty.unfold_serialized_annotation(serialized)
+        outside = TypingProperty.type_from_serialized(serialized)
         return SERIALIZED_TO_SCHEMA_CLASS[outside].annotation_from_serialized(serialized)
     if serialized in SERIALIZED_TO_SCHEMA_CLASS:
         return SERIALIZED_TO_SCHEMA_CLASS[serialized].annotation_from_serialized(serialized)
@@ -1039,6 +1092,28 @@ def union_is_default_value(typing_: tp.Type) -> bool:
     """
     args = tp.get_args(typing_)
     return len(args) == 2 and type(None) in args
+
+
+def extract_args(string: str) -> list[str]:
+    opened_brackets = 0
+    closed_brackets = 0
+    current_arg = ""
+    args = []
+    for character in string.replace(" ", ""):
+        if character == "[":
+            opened_brackets += 1
+        if character == "]":
+            closed_brackets += 1
+        split_by_comma = closed_brackets == opened_brackets
+        if split_by_comma and character == ",":
+            args.append(current_arg)
+            current_arg = ""
+        else:
+            current_arg += character
+    if current_arg:
+        args.append(current_arg)
+    return args
+
 
 
 class ParsedAttribute(tp.TypedDict):
