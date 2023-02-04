@@ -277,7 +277,9 @@ class TypingProperty(Property):
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
-        raise NotImplementedError(f"Cannot deserialize annotation '{serialized}' as typing.")
+        typename = cls.type_from_serialized(serialized)
+        schema_class = SERIALIZED_TO_SCHEMA_CLASS[typename]
+        return schema_class.annotation_from_serialized(serialized)
 
     @classmethod
     def type_from_serialized(cls, serialized: str) -> str:
@@ -1023,8 +1025,7 @@ SERIALIZED_TO_SCHEMA_CLASS = {
 def deserialize_annotation(serialized: str) -> tp.Type[T]:
     """ From a string denoting an annotation, get deserialize value. """
     if "[" in serialized:
-        outside = TypingProperty.type_from_serialized(serialized)
-        return SERIALIZED_TO_SCHEMA_CLASS[outside].annotation_from_serialized(serialized)
+        return TypingProperty.annotation_from_serialized(serialized)
     if serialized in SERIALIZED_TO_SCHEMA_CLASS:
         return SERIALIZED_TO_SCHEMA_CLASS[serialized].annotation_from_serialized(serialized)
     return get_python_class_from_class_name(serialized)

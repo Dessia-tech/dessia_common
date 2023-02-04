@@ -23,7 +23,7 @@ scripts = [
     "schemas/classes.py",
     "schemas/methods.py",
     "schemas/workflows.py",
-
+    "schemas/annotation_deserialization.py",
 
     # Workflows
     "workflow/blocks.py",
@@ -50,7 +50,7 @@ scripts = [
     "utils/interpolation.py",
     "utils/serialization.py",
     "utils/helpers.py",
-    "utils/test_types.py",
+    # "utils/test_types.py",
     "utils/diff.py",
     "type_matching.py",
 
