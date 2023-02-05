@@ -1299,6 +1299,7 @@ def get_attribute_names(object_class):
 
 
 def compute_method_jsonschema(method):
+    """Computes the JSON schema out of a method from its arguments."""
     jsonschema = {}
     if not isinstance(method, property):
         required_args, default_args = inspect_arguments(method=method, merge=False)
