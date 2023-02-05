@@ -196,7 +196,7 @@ def serialize_typing_types(typing_):
 
 
 def serialize_union_typing(args):
-    """ Compute a string from union typings. """
+    """ Compute a string from union typing. """
     if len(args) == 2 and type(None) in args:
         # This is a false Union => Is a default value set to None
         return serialize_typing(args[0])
@@ -323,7 +323,7 @@ def deserialize_builtin_typing(serialized_typing):
 
 
 def is_bson_valid(value, allow_nonstring_keys=False) -> Tuple[bool, str]:
-    """ Return bson validity (bool) and a hint (str). """
+    """ Return BSON validity (bool) and a hint (str). """
     if isinstance(value, (int, float, str)):
         return True, ''
 
@@ -480,7 +480,7 @@ def heal_type(type_: Type):
 
 
 def particular_typematches(type_: Type, match_against: Type) -> bool:
-    """ Check for specific cases of typematches and return a boolean. """
+    """ Check for specific cases of typematches and return a Boolean. """
     if type_ is int and match_against is float:
         return True
     # Not refactoring this as a one-liner for now, as more cases should be added in the future.

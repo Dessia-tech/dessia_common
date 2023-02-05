@@ -518,7 +518,7 @@ class WorkflowBlock(Block):
 
 class ForEach(Block):
     """
-    A block to iterate on an input and perform an parralel for (iterations are not dependant).
+    A block to iterate on an input and perform an parallel for (iterations are not dependant).
 
     :param workflow_block: The WorkflowBlock on which iterate.
     :param iter_input_index: Index of iterable input in worklow_block.inputs
