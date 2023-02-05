@@ -429,7 +429,7 @@ class StandaloneObject(MovingObject):
         """ Define a docstring for testing parsing purpose. """
         nok_string = "This is a bad coding behavior"
         ok_string = "This could be OK as temporary attr"
-        arg0, arg1, arg2 = (arg0, arg2, arg1)
+        arg0, arg1, arg2 = (arg1, arg2, arg0)
         self.maldefined_attr = nok_string
         self._ok_attribute = ok_string
 
