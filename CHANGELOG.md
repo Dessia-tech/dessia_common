@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Refactor search_memo function to improve copy performance
 - Add pre-checks for non list-like element in is_sequence function
 - For is_serializable, not using pointers while trying to_dict
+- Refactor workflow run values for serializability checks
 
 
 ### Chore

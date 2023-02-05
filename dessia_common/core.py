@@ -53,7 +53,7 @@ class DessiaObject(SerializableObject):
     Gathers generic methods and attributes
 
     :cvar bool _standalone_in_db:
-        Indicates wether class objects should be independant in database or not.
+        Indicates wether class objects should be independent in database or not.
         If False, object will only exist inside its parent.
 
     :cvar bool _eq_is_data_eq:
