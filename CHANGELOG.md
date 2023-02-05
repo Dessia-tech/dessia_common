@@ -43,6 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Reference path is now given all the way down to plot_data
+- DessiaObject kwargs in init are deprecated
 
 ### Fixed
 
