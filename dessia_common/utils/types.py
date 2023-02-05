@@ -84,6 +84,10 @@ def is_sequence(obj) -> bool:
     :param obj: Object to check
     :return: bool. True if object is a sequence but not a string. False otherwise
     """
+    if not hasattr(obj, "__len__") or not hasattr(obj, "__getitem__"):
+        # Performance improvements for trivial checks
+        return False
+
     if is_list(obj) or is_tuple(obj):
         # Performance improvements for trivial checks
         return True
@@ -192,7 +196,7 @@ def serialize_typing_types(typing_):
 
 
 def serialize_union_typing(args):
-    """ Compute a string from union typings. """
+    """ Compute a string from union typing. """
     if len(args) == 2 and type(None) in args:
         # This is a false Union => Is a default value set to None
         return serialize_typing(args[0])

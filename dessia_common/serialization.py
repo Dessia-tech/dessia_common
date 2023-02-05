@@ -160,6 +160,7 @@ def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=
             id_ = str(uuid.uuid1())
             id_memo[id_] = serialized
             memo[value] = f'#/_references/{id_}'
+            serialized = {'$ref': memo[value]}
         else:
             memo[value] = path
 
@@ -179,6 +180,7 @@ def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=
             id_ = str(uuid.uuid1())
             id_memo[id_] = serialized
             memo[value] = f'#/_references/{id_}'
+            serialized = {'$ref': memo[value]}
         else:
             memo[value] = path
 
@@ -318,7 +320,7 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False, global_dict=
 
     # Create init_dict
     if class_ is not None and hasattr(class_, 'dict_to_object'):
-        different_methods = (class_.dict_to_object.__func__ is not SerializableObject.dict_to_object.__func__)
+        different_methods = class_.dict_to_object.__func__ is not SerializableObject.dict_to_object.__func__
         if different_methods and not force_generic:
             try:
                 obj = class_.dict_to_object(dict_, global_dict=global_dict, pointers_memo=pointers_memo, path=path)
@@ -421,7 +423,7 @@ def deserialize_with_typing(type_, argument, global_dict=None, pointers_memo=Non
             deserialized_arg = iter(deserialized_arg)
 
     elif origin is tuple:
-        # Heterogenous sequences (tuples)
+        # Heterogeneous sequences (tuples)
         deserialized_arg = tuple(deserialize_argument(t, arg) for (t, arg) in zip(args, argument))
     elif origin is dict:
         # Dynamic dict
@@ -650,7 +652,7 @@ def deserialization_order(dict_):
 
 def dereference_jsonpointers(dict_):  # , global_dict):
     """
-    Analyse given dict.
+    Analyses given dict.
 
      Useful in order to:
     - find jsonpointers
@@ -781,7 +783,7 @@ def is_serializable(obj):
     if dcty.is_jsonable(obj):
         return True
     if isinstance(obj, SerializableObject):
-        dict_ = obj.to_dict()
+        dict_ = obj.to_dict(use_pointers=False)
         return dcty.is_jsonable(dict_)
     if isinstance(obj, dict):
         for key, value in obj.items():

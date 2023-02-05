@@ -5,16 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.13.0
+
+### CI
+
+- fixing versions of pylint and pydocstyle to avoid uncontrolled new errors
 
 ## 0.13.0
 
-### Chore
 
-- Toggle some D2xx errors 
+### Fix
+- Do not take into account non-eq attributes
 
 ### CI
 
 - tutorials/ci_tutorials.py added to check runnability of .ipynb files inside this new folder
+- automatic upload of coverage
+
+### Performance
+
+- Change sequence hash to check only first and last element recursively
+- Change dict hash to check only first and last element recursively
+- Refactor search_memo function to improve copy performance
+- Add pre-checks for non list-like element in is_sequence function
+- For is_serializable, not using pointers while trying to_dict
+
+
+### Chore
+
+- Toggle some D2xx errors
+- Tag for release candidate
+
 
 ## 0.12.0
 
