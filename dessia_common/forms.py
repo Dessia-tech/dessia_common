@@ -5,10 +5,10 @@ It should be used as a repertory of rules and available typings.
 
 Some general rules :
 
-- Lists are homogeneous, ie, they should not
+- Lists are homogeneous, IE, they should not
   contain several types of elements
     ex : List[int], List[str], List[CustomClass], ...
-- Tuples can, therefore, be used as heterogenous sequences,
+- Tuples can, therefore, be used as heterogeneous sequences,
   thanks to the fact that they are immutables.
     ex : Tuple[str, int, CustomClass] is a tuple like this :
         t = ('tuple', 1, custom_class_object)
@@ -429,6 +429,7 @@ class StandaloneObject(MovingObject):
         """ Define a docstring for testing parsing purpose. """
         nok_string = "This is a bad coding behavior"
         ok_string = "This could be OK as temporary attr"
+        arg0, arg1, arg2 = (arg0, arg2, arg1)
         self.maldefined_attr = nok_string
         self._ok_attribute = ok_string
 
