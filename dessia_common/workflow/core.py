@@ -290,7 +290,7 @@ class Pipe(DessiaObject):
 
     :param input_variable: The input varaible of the pipe correspond to the start of the arrow, its tail.
     :type input_variable: Variable
-    :param output_variable: The output variable of the pipe correpond to the end of the arrow, its hat.
+    :param output_variable: The output variable of the pipe correspond to the end of the arrow, its hat.
     :type output_variable: Variable
     """
 
