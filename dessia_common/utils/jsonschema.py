@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-JsonSchema generation functions.
-"""
+""" JsonSchema generation functions. """
 from copy import deepcopy
 import inspect
 import warnings
@@ -311,7 +309,7 @@ def set_default_value(jsonschema_element, key, default_value):
         raise NotImplementedError(msg.format(default_value, type_))
     elif datatype in ['standalone_object', 'embedded_object',
                       'instance_of', 'union']:
-        object_dict = default_value.to_dict()
+        object_dict = default_value.to_dict(use_pointers=False)
         jsonschema_element[key]['default_value'] = object_dict
     return jsonschema_element
     # if isinstance(default_value, tuple(TYPING_EQUIVALENCES.keys())) \

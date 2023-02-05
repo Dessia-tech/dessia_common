@@ -1,6 +1,4 @@
-"""
-Library for sampling data.
-"""
+""" Library for sampling data. """
 from typing import List, Type
 
 import random
@@ -28,6 +26,7 @@ class ClassSampler(DessiaObject):
     :param name: Name of Sampler
     :type name: `str`, `optional`, defaults to `''`
     """
+
     _standalone_in_db = True
     _vector_features = []
 
@@ -132,8 +131,7 @@ class ClassSampler(DessiaObject):
         """
         Generate all `DessiaObject` with the choosen method and store them in a `Dataset`.
 
-        :param samples:
-            Targert number of `DessiaObject` in the DOE. Not used for `'fullfact'` method.
+        :param samples: Targets number of `DessiaObject` in the DOE. Not used for `'fullfact'` method.
         :type samples: `int`
 
         :param method:

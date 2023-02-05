@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Module to compute differences between objects.
-"""
+""" Module to compute differences between objects. """
 
 import math
 from typing import List
@@ -209,23 +207,22 @@ def data_eq(value1, value2):
         return full_classname(value1) == full_classname(value2)
 
     # Else: its an object
-
     if full_classname(value1) != full_classname(value2):
         # print('full classname !=')
         return False
 
     # Test if _data_eq is customized
     if hasattr(value1, '_data_eq'):
-        custom_method = (value1._data_eq.__code__ is not dc.DessiaObject._data_eq.__code__)
+        custom_method = value1._data_eq.__code__ is not dc.DessiaObject._data_eq.__code__
         if custom_method:
             return value1._data_eq(value2)
 
     # Not custom, use generic implementation
-    eq_dict = value1._serializable_dict()
+    eq_dict = value1._data_eq_dict()
     if 'name' in eq_dict:
         del eq_dict['name']
 
-    other_eq_dict = value2._serializable_dict()
+    other_eq_dict = value2._data_eq_dict()
 
     return dict_data_eq(eq_dict, other_eq_dict)
 
@@ -256,7 +253,7 @@ def sequence_data_eq(seq1, seq2):
 def choose_hash(object_):
     """ Base function to return hash. """
     if is_sequence(object_):
-        return list_hash(object_)
+        return sequence_hash(object_)
     if isinstance(object_, dict):
         return dict_hash(object_)
     if isinstance(object_, str):
@@ -264,14 +261,47 @@ def choose_hash(object_):
     return hash(object_)
 
 
-def list_hash(list_):
-    """ Returns hash of a list value. """
-    return sum(choose_hash(e) for e in list_)
+def sequence_hash(sequence):
+    """
+    Return hash of a sequence value.
+
+    Only checks for first and last elements hashes if defined for performance purpose.
+    It also looks that previous sequence hash method was lest efficient as the sum of all hashes in sequence
+    returned less unique values for normally different sequences.
+    """
+    if not sequence:
+        return 0
+
+    # Recursively compute hash of first and last element for performance purpose
+    hash_ = len(sequence)*choose_hash(sequence[0])
+    if len(sequence) > 1:
+        hash_ += 5381*choose_hash(sequence[-1])
+    return hash_
 
 
 def dict_hash(dict_):
-    """ Returns hash of a dict value. """
+    """
+    Returns hash of a dict value.
+
+    If keys are orderable, only checks for first and last elements hashes if defined for performance purpose.
+    """
+    if not dict_:
+        return 0
+
     hash_ = 0
-    for key, value in dict_.items():
-        hash_ += hash(key) + choose_hash(value)
+    try:
+        # Try and sort keys in order to get first and last elements.
+        sorted_keys = sorted(dict_.keys())
+    except TypeError:
+        # Old less performant hash for non orderable keys.
+        for key, value in dict_.items():
+            hash_ += hash(key) + choose_hash(value)
+        return hash_
+
+    # Recursively compute hash of first and last element for performance purpose
+    first_key = sorted_keys[0]
+    hash_ += len(dict_) * choose_hash(dict_[first_key])
+    if len(dict_) > 1:
+        last_key = sorted_keys[-1]
+        hash_ += 313 * choose_hash(dict_[last_key])
     return hash_

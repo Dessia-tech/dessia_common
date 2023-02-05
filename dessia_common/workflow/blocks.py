@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Module to define Blocks for workflows.
-"""
+""" Module to define Blocks for workflows. """
 
 import inspect
 import warnings
@@ -520,7 +518,7 @@ class WorkflowBlock(Block):
 
 class ForEach(Block):
     """
-    A block to iterate on an input and perform an parralel for (iterations are not dependant).
+    A block to iterate on an input and perform an parallel for (iterations are not dependant).
 
     :param workflow_block: The WorkflowBlock on which iterate.
     :param iter_input_index: Index of iterable input in worklow_block.inputs
@@ -819,6 +817,7 @@ class Filter(Block):
 
 class Display(Block):
     """ Abstract block class for display behaviors. """
+
     _displayable_input = 0
     _non_editable_attributes = ['inputs']
 

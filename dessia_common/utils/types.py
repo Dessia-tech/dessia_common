@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Types tools.
-"""
+""" Types tools. """
 
 from typing import Any, Dict, List, Tuple, Type, Union, get_origin, get_args
 
@@ -57,9 +55,7 @@ def is_classname_transform(string: str):
 
 
 def is_jsonable(obj):
-    """
-    Returns if object can be dumped as it is in a json.
-    """
+    """ Returns if object can be dumped as it is in a json. """
     # First trying with orjson which is more efficient
     try:
         orjson.dumps(obj, option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS).decode('utf-8')
@@ -88,6 +84,10 @@ def is_sequence(obj) -> bool:
     :param obj: Object to check
     :return: bool. True if object is a sequence but not a string. False otherwise
     """
+    if not hasattr(obj, "__len__") or not hasattr(obj, "__getitem__"):
+        # Performance improvements for trivial checks
+        return False
+
     if is_list(obj) or is_tuple(obj):
         # Performance improvements for trivial checks
         return True
@@ -196,7 +196,7 @@ def serialize_typing_types(typing_):
 
 
 def serialize_union_typing(args):
-    """ Compute a string from union typings. """
+    """ Compute a string from union typing. """
     if len(args) == 2 and type(None) in args:
         # This is a false Union => Is a default value set to None
         return serialize_typing(args[0])
@@ -323,7 +323,7 @@ def deserialize_builtin_typing(serialized_typing):
 
 
 def is_bson_valid(value, allow_nonstring_keys=False) -> Tuple[bool, str]:
-    """ Return bson validity (bool) and a hint (str). """
+    """ Return BSON validity (bool) and a hint (str). """
     if isinstance(value, (int, float, str)):
         return True, ''
 
@@ -480,7 +480,7 @@ def heal_type(type_: Type):
 
 
 def particular_typematches(type_: Type, match_against: Type) -> bool:
-    """ Check for specific cases of typematches and return a boolean. """
+    """ Check for specific cases of typematches and return a Boolean. """
     if type_ is int and match_against is float:
         return True
     # Not refactoring this as a one-liner for now, as more cases should be added in the future.

@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Module defining recognized  file types in DC.
-"""
+""" Module defining recognized  file types in DC. """
 import io
 import openpyxl
 
