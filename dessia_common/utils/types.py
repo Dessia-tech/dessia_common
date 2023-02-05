@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Types tools.
-"""
+""" Types tools. """
 
 from typing import Any, Dict, List, Tuple, Type, Union, get_origin, get_args
 
@@ -57,9 +55,7 @@ def is_classname_transform(string: str):
 
 
 def is_jsonable(obj):
-    """
-    Returns if object can be dumped as it is in a json.
-    """
+    """ Returns if object can be dumped as it is in a json. """
     # First trying with orjson which is more efficient
     try:
         orjson.dumps(obj, option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS).decode('utf-8')
@@ -75,7 +71,7 @@ def is_jsonable(obj):
     #     return False
 
 
-def is_serializable(obj):
+def is_serializable(_):
     """ Return True if object is deeply serializable as Dessia's standards, else False. """
     msg = "Function is_serializable has been moved to module serialization.py. Please use this one instead."
     raise NotImplementedError(msg)
@@ -200,7 +196,7 @@ def serialize_typing_types(typing_):
 
 
 def serialize_union_typing(args):
-    """ Compute a string from union typings. """
+    """ Compute a string from union typing. """
     if len(args) == 2 and type(None) in args:
         # This is a false Union => Is a default value set to None
         return serialize_typing(args[0])

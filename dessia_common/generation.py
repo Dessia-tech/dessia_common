@@ -1,15 +1,11 @@
-"""
-Module for Generation for dessia_common.
-"""
+""" Module for Generation for dessia_common. """
 from typing import List
 import dectree as dt
 from dessia_common.core import DessiaObject
 
 
 class Generator(DessiaObject):
-    """
-    Common parts of generator.
-    """
+    """ Common parts of generator. """
 
     def __init__(self, name: str = ''):
         DessiaObject.__init__(self, name=name)
@@ -31,9 +27,8 @@ class Generator(DessiaObject):
 
 
 class TreeGenerator(Generator):
-    """
-    Common parts of generator.
-    """
+    """ Common parts of generator. """
+
     _allowed_methods = ['generate']
     _non_serializable_attributes = ['tree']
     _non_data_eq_attributes = ['tree']
@@ -112,7 +107,7 @@ class DecisionTreeGenerator(TreeGenerator):
                     print('number possibilities', number_possibilities)
                 self.tree.SetCurrentNodeNumberPossibilities(number_possibilities)
 
-            # TODO create a function in dectreee to know if a leaf
+            # TODO create a function in dectree to know if a leaf
             if valid and (number_possibilities == 0):
                 yield model
 
@@ -162,7 +157,7 @@ class RegularDecisionTreeGenerator(TreeGenerator):
                 if verbose:
                     print('node model validity:', valid)
 
-                # TODO create a function in dectreee to know if a leaf
+                # TODO create a function in dectree to know if a leaf
                 if valid and self.tree.current_depth == self.leaves_depth:
                     yield model
 
