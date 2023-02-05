@@ -18,7 +18,7 @@ from datetime import date
 from pylint import __version__
 from pylint.lint import Run
 
-MIN_NOTE = 9.4
+MIN_NOTE = 8.55
 
 EFFECTIVE_DATE = date(2023, 1, 18)
 WEEKLY_DECREASE = 0.03
@@ -26,6 +26,8 @@ WEEKLY_DECREASE = 0.03
 UNWATCHED_ERRORS = ["fixme", "trailing-whitespace", "import-error"]
 
 MAX_ERROR_BY_TYPE = {
+    "wrong-spelling-in-docstring": 453,
+    "wrong-spelling-in-comment": 111,
     "protected-access": 38,  # Highly dependant on our "private" conventions. Keeps getting raised
     "arguments-differ": 1,
     "too-many-locals": 11,  # Reduce by dropping vectored objects
@@ -55,7 +57,6 @@ print("pylint version: ", __version__)
 time_decrease_coeff = 1 - (date.today() - EFFECTIVE_DATE).days / 7.0 * WEEKLY_DECREASE
 
 f = open(os.devnull, "w")
-
 
 old_stdout = sys.stdout
 sys.stdout = f

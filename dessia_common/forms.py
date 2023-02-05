@@ -5,10 +5,10 @@ It should be used as a repertory of rules and available typings.
 
 Some general rules :
 
-- Lists are homogeneous, ie, they should not
+- Lists are homogeneous, IE, they should not
   contain several types of elements
     ex : List[int], List[str], List[CustomClass], ...
-- Tuples can, therefore, be used as heterogenous sequences,
+- Tuples can, therefore, be used as heterogeneous sequences,
   thanks to the fact that they are immutables.
     ex : Tuple[str, int, CustomClass] is a tuple like this :
         t = ('tuple', 1, custom_class_object)
@@ -425,6 +425,18 @@ class StandaloneObject(MovingObject):
                                     x_variable=attribute_names[0], y_variable=attribute_names[1])
         return [primitives_group, scatterplot, parallelplot, multiplot, graph2d]
 
+    def ill_defined_method(self, arg0, arg1=1, arg2: int = 10, arg3=3):
+        """ Define a docstring for testing parsing purpose. """
+        nok_string = "This is a bad coding behavior"
+        ok_string = "This could be OK as temporary attr"
+        arg0, arg1, arg2 = (arg1, arg2, arg0)
+        self.maldefined_attr = nok_string
+        self._ok_attribute = ok_string
+
+        computation = nok_string + 'or' + ok_string
+
+        return computation
+        
     def to_markdown(self):
         """ Write a standard markdown of StandaloneObject. """
         contents = """

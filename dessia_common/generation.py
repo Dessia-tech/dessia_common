@@ -122,7 +122,7 @@ class DecisionTreeGenerator(TreeGenerator):
                     print('number possibilities', number_possibilities)
                 self.tree.SetCurrentNodeNumberPossibilities(number_possibilities)
 
-            # TODO create a function in dectreee to know if a leaf
+            # TODO create a function in dectree to know if a leaf
             if valid and (number_possibilities == 0):
                 yield model
 
@@ -195,7 +195,7 @@ class RegularDecisionTreeGenerator(TreeGenerator):
                 if verbose:
                     print('node model validity:', valid)
 
-                # TODO create a function in dectreee to know if a leaf
+                # TODO create a function in dectree to know if a leaf
                 if valid and self.tree.current_depth == self.leaves_depth:
                     yield model
 
