@@ -20,7 +20,8 @@ from dessia_common.templates import workflow_template
 from dessia_common.core import DessiaObject, is_sequence, JSONSCHEMA_HEADER, jsonschema_from_annotation, \
     deserialize_argument, set_default_value, DisplaySetting
 
-from dessia_common.utils.types import serialize_typing, deserialize_typing, recursive_type, typematch, is_typing
+from dessia_common.utils.types import (serialize_typing, deserialize_typing, recursive_type,
+                                       typematch is_typing, is_dessia_file)
 from dessia_common.utils.copy import deepcopy_value
 from dessia_common.utils.docstrings import FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE
 from dessia_common.utils.diff import choose_hash
@@ -2060,7 +2061,7 @@ class WorkflowRun(WorkflowState):
             filtered_input_values = {i: v for i, v in input_values.items()
                                      if workflow.inputs[i] not in workflow.file_inputs}
         # filtered_values = {p: values[p] for p in workflow.memorized_pipes if is_serializable(values[p])}
-        filtered_values = {p: values[p] for p in workflow.memorized_pipes}
+        filtered_values = {p: values[p] for p in workflow.memorized_pipes if not is_dessia_file(values[p])}
         WorkflowState.__init__(self, workflow=workflow, input_values=filtered_input_values,
                                activated_items=activated_items, values=filtered_values, start_time=start_time,
                                output_value=output_value, log=log, name=name)
