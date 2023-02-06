@@ -9,7 +9,7 @@ import json
 import webbrowser
 from functools import cached_property
 import io
-from typing import List, Union, Type, Any, Dict, Tuple, Optional
+from typing import List, Union, Type, Any, Dict, Tuple, Optional, get_args
 from copy import deepcopy
 import warnings
 import networkx as nx
@@ -119,7 +119,11 @@ class TypedVariable(Variable):
 
     def is_file_type(self) -> bool:
         """ Return whether a variable is of type File given its type_ attribute. """
-        if is_typing(self.type_) or not isinstance(self.type_, type):
+        if is_typing(self.type_):
+            # Handling List[BinaryFile or StringFile]
+            return get_args(t)[0] in [BinaryFile, StringFile]
+
+        if not isinstance(self.type_, type):
             return False
         return issubclass(self.type_, (StringFile, BinaryFile))
 
