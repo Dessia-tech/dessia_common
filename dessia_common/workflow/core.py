@@ -21,7 +21,7 @@ from dessia_common.core import DessiaObject, is_sequence, JSONSCHEMA_HEADER, jso
     deserialize_argument, set_default_value, DisplaySetting
 
 from dessia_common.utils.types import (serialize_typing, deserialize_typing, recursive_type,
-                                       typematch is_typing, is_dessia_file)
+                                       typematch, is_typing, is_dessia_file)
 from dessia_common.utils.copy import deepcopy_value
 from dessia_common.utils.docstrings import FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE
 from dessia_common.utils.diff import choose_hash
