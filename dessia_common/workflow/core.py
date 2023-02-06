@@ -1573,13 +1573,17 @@ class WorkflowState(DessiaObject):
         if not (self.__class__.__name__ == other_object.__class__.__name__
                 and self.progress == other_object.progress
                 and self.workflow == other_object.workflow
-                and self.input_values.keys() == other_object.input_values.keys()
+                # and self.input_values.keys() == other_object.input_values.keys()
                 and self.output_value == other_object.output_value):
             return False
 
-        for index, value in self.input_values.items():
-            if value != other_object.input_values[index]:
-                return False
+        for index in set(list(self.input_values.keys()) + list(other_object.input_values.keys())):
+            value1 = self.input_values.get(index, None)
+            value2 = other_object.input_values.get(index, None)
+            if value1 != value2:
+                # Rechecking if input is file, in which case we tolerate different values
+                if not self.workflow.inputs[index].is_file_type():
+                    return False
 
         for block, other_block in zip(self.workflow.blocks, other_object.workflow.blocks):
             if self.activated_items[block] != other_object.activated_items[other_block]:
@@ -1597,10 +1601,13 @@ class WorkflowState(DessiaObject):
                 # Check pipe progress state
                 return False
 
-            if self.activated_items[pipe] and pipe in self.values:
-                if self.values[pipe] != other_object.values[other_pipe]:
-                    # Check variable values for evaluated ones
-                    return False
+            # Not comparing values, to avoid comparing cleaned values
+            # if self.activated_items[pipe] and pipe in self.values:
+            #     # Not comparing values if ther
+            #     if not is_dessia_file(self.values[pipe]) and not is_dessia_file(other_object.values[other_pipe]):
+            #         if self.values[pipe] != other_object.values[other_pipe]:
+            #             # Check variable values for evaluated ones
+            #             return False
         return True
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#', id_method=True, id_memo=None):
@@ -1621,13 +1628,15 @@ class WorkflowState(DessiaObject):
         dict_['object_class'] = 'dessia_common.workflow.core.WorkflowState'
 
         input_values = {}
-        for input_, value in self.input_values.items():
-            if use_pointers:
-                serialized_v, memo = serialize_with_pointers(value=value, memo=memo,
-                                                             path=f"{path}/input_values/{input_}", id_memo=id_memo)
-            else:
-                serialized_v = serialize(value)
-            input_values[str(input_)] = serialized_v
+        for input_number, value in self.input_values.items():
+            if self.workflow.inputs[input_number] not in self.workflow.file_inputs:
+                if use_pointers:
+                    serialized_v, memo = serialize_with_pointers(value=value, memo=memo,
+                                                                 path=f"{path}/input_values/{input_number}",
+                                                                 id_memo=id_memo)
+                else:
+                    serialized_v = serialize(value)
+                input_values[str(input_number)] = serialized_v
 
         dict_['input_values'] = input_values
 
@@ -1642,22 +1651,22 @@ class WorkflowState(DessiaObject):
 
             dict_.update({'output_value': serialized_output_value,
                           'output_value_type': recursive_type(self.output_value)})
-
         # Values
         values = {}
         for pipe, value in self.values.items():
-            pipe_index = self.workflow.pipes.index(pipe)
-            if use_pointers:
-                try:
-                    serialized_value, memo = serialize_with_pointers(value=value, memo=memo,
-                                                                     path=f"{path}/values/{pipe_index}",
-                                                                     id_memo=id_memo)
-                    values[str(pipe_index)] = serialized_value
-                except SerializationError:
-                    warnings.warn(f"unable to serialize {value}, dropping it from workflow state/run values",
-                                  SerializationWarning)
-            else:
-                values[str(pipe_index)] = serialize(value)
+            if not is_dessia_file(value) and pipe in self.workflow.memorized_pipes:
+                pipe_index = self.workflow.pipes.index(pipe)
+                if use_pointers:
+                    try:
+                        serialized_value, memo = serialize_with_pointers(value=value, memo=memo,
+                                                                         path=f"{path}/values/{pipe_index}",
+                                                                         id_memo=id_memo)
+                        values[str(pipe_index)] = serialized_value
+                    except SerializationError:
+                        warnings.warn(f"unable to serialize {value}, dropping it from workflow state/run values",
+                                      SerializationWarning)
+                else:
+                    values[str(pipe_index)] = serialize(value)
         dict_['values'] = values
 
         # In the future comment these below and rely only on activated items
@@ -2056,14 +2065,15 @@ class WorkflowRun(WorkflowState):
             end_time = time.time()
         self.end_time = end_time
         self.execution_time = end_time - start_time
-        filtered_input_values = input_values
-        if workflow.has_file_inputs:
-            filtered_input_values = {i: v for i, v in input_values.items()
-                                     if workflow.inputs[i] not in workflow.file_inputs}
+        # filtered_input_values = input_values
+        # if workflow.has_file_inputs:
+        #     filtered_input_values = {i: v for i, v in input_values.items()
+        #                              if workflow.inputs[i] not in workflow.file_inputs}
         # filtered_values = {p: values[p] for p in workflow.memorized_pipes if is_serializable(values[p])}
-        filtered_values = {p: values[p] for p in workflow.memorized_pipes if not is_dessia_file(values[p])}
-        WorkflowState.__init__(self, workflow=workflow, input_values=filtered_input_values,
-                               activated_items=activated_items, values=filtered_values, start_time=start_time,
+        filtered_values = {p: values[p] for p in workflow.memorized_pipes}
+        WorkflowState.__init__(self, workflow=workflow, input_values=input_values,
+                               activated_items=activated_items, values=filtered_values,
+                               start_time=start_time, end_time=end_time,
                                output_value=output_value, log=log, name=name)
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#', id_method=True, id_memo=None):
