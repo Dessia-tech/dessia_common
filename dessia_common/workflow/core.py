@@ -121,7 +121,7 @@ class TypedVariable(Variable):
         """ Return whether a variable is of type File given its type_ attribute. """
         if is_typing(self.type_):
             # Handling List[BinaryFile or StringFile]
-            return get_args(t)[0] in [BinaryFile, StringFile]
+            return get_args(self.type_)[0] in [BinaryFile, StringFile]
 
         if not isinstance(self.type_, type):
             return False
