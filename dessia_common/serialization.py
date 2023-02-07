@@ -148,23 +148,27 @@ def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=
         memo = {}
     if id_memo is None:
         id_memo = {}
+
     if isinstance(value, SerializableObject):
         if value in memo:
-            return {'$ref': memo[value]}, memo
+            path_value, serialized_value, id_ = memo[value]
+            id_memo[id_] = serialized_value
+            return {'$ref': path_value}, memo
         try:
             serialized = value.to_dict(use_pointers=True, memo=memo, path=path, id_memo=id_memo)
 
         except TypeError:
-            warnings.warn('specific to_dict should implement use_pointers, memo and path arguments', Warning)
+            warnings.warn('specific to_dict should implement use_pointers, memo, path and id_memo arguments', Warning)
             serialized = value.to_dict()
         if id_method:
             id_ = str(uuid.uuid1())
-            id_memo[id_] = serialized
-            memo[value] = f'#/_references/{id_}'
+            path_value = f"#/_references/{id_}"
+            memo[value] = path_value, serialized, id_
             if value._standalone_in_db:
-                serialized = {'$ref': memo[value]}
+                id_memo[id_] = serialized
+                serialized = {'$ref': path_value}
         else:
-            memo[value] = path
+            memo[value] = path, serialized, None
 
     elif isinstance(value, type):
         if value in memo:
@@ -175,16 +179,16 @@ def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=
     # Regular object
     elif hasattr(value, 'to_dict'):
         if value in memo:
-            return {'$ref': memo[value]}, memo
+            return {'$ref': memo[value][0]}, memo
         serialized = value.to_dict()
 
         if id_method:
             id_ = str(uuid.uuid1())
-            id_memo[id_] = serialized
-            memo[value] = f'#/_references/{id_}'
-            serialized = {'$ref': memo[value]}
+            path_value = f"#/_references/{id_}"
+            memo[value] = path_value, serialized, id_
+            serialized = {'$ref': path_value}
         else:
-            memo[value] = path
+            memo[value] = path, serialized, None
 
     elif isinstance(value, dict):
         serialized, memo = serialize_dict_with_pointers(value, memo=memo, path=path, id_method=id_method,
@@ -203,7 +207,7 @@ def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=
             raise dc_err.SerializationError(msg)
         serialized = value
 
-    if path == '#':
+    if path == '#' and id_method:
         # adding _references
         serialized['_references'] = id_memo
 
