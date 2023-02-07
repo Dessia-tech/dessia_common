@@ -26,6 +26,7 @@ fullargsspec_cache = {}
 class SerializableObject(CoreDessiaObject):
     """ Serialization capabilities of Dessia Object. """
 
+    _standalone_in_db = False
     _non_serializable_attributes = []
 
     def base_dict(self):
@@ -160,7 +161,8 @@ def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=
             id_ = str(uuid.uuid1())
             id_memo[id_] = serialized
             memo[value] = f'#/_references/{id_}'
-            serialized = {'$ref': memo[value]}
+            if value._standalone_in_db:
+                serialized = {'$ref': memo[value]}
         else:
             memo[value] = path
 
