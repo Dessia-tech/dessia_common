@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - tutorials/ci_tutorials.py added to check runnability of .ipynb files inside this new folder
 
+### Fixed
+
+- fix str of Dataset
+
 ## 0.12.0
 
 ### Changed
