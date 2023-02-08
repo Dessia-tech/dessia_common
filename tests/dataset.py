@@ -51,6 +51,7 @@ class Bidon(DessiaObject):
 bidon = Bidon()
 bidon_hlist = Dataset([bidon] * 10)
 bidon_hlist.plot_data()
+print(bidon_hlist)
 assert(bidon_hlist.common_attributes == ['attr1', 'attr2', 'prop1', 'in_to_vector'])
 
 # When attribute _features is not specified in class Car
