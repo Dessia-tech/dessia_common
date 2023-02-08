@@ -13,7 +13,7 @@ serialized_union = 'Union[{}, {}]'.format(subobject_classname, enhanced_classnam
 assert DEF_SO._get_from_path("#/standalone_subobject/floatarg") == 0.3
 assert DEF_SO._get_from_path("#/embedded_subobject/embedded_list/2") == 3
 assert DEF_SO._get_from_path("#/object_list/0/floatarg") == 0.3
-assert DEF_SO._get_from_path("#/standalone_subobject/name") == "StandaloneSubobject1"
+assert DEF_SO._get_from_path("#/standalone_subobject/name") == "EmbeddedSubobject1"
 assert DEF_SO._get_from_path("name") == "Standalone Object Demo"
 
 # Test to_dict/dict_to_object

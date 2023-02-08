@@ -305,13 +305,10 @@ class ClusteredDataset(Dataset):
             return plotted_clist.plot_data(reference_path=reference_path, **kwargs)
         return Dataset.plot_data(self, reference_path=reference_path, **kwargs)
 
-    def _plot_data_list(self):
-        _plot_data_list = []
-        for row, label in enumerate(self.labels):
-            _plot_data_list.append({attr: self.matrix[row][col] for col, attr in enumerate(self.common_attributes)})
-            _plot_data_list[-1]["Cluster Label"] = label
-            # (label if label != -1 else "Excluded") plot_data "Excluded" -> NaN
-        return _plot_data_list
+    def _object_to_sample(self, dessia_object: DessiaObject, row: int, reference_path: str = '#'):
+        sample = super()._object_to_sample(dessia_object=dessia_object, row=row, reference_path=reference_path)
+        sample.values["Cluster Label"] = self.labels[row]
+        return sample
 
     def _point_families(self):
         colormap = plt.cm.get_cmap('hsv', self.n_clusters + 1)(range(self.n_clusters + 1))

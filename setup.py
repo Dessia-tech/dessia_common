@@ -30,7 +30,6 @@ def version_from_git_describe(version):
     if "-" in version:
         version, number_commits_ahead, commit_hash = version.split("-")
         number_commits_ahead = int(number_commits_ahead)
-    # print('number_commits_ahead', number_commits_ahead)
 
     split_versions = version.split(".")
     if "post" in split_versions[-1]:
@@ -50,7 +49,7 @@ def version_from_git_describe(version):
                     split_versions.extend(["0", "0"])
                 split_versions[-1] = str(int(split_versions[-1]) + 1)
                 future_version = ".".join(split_versions)
-                return "{}.dev{}".format(future_version, number_commits_ahead)
+                return "{}.dev{}+{}".format(future_version, number_commits_ahead, commit_hash)
             else:
                 return ".".join(split_versions)
     if number_commits_ahead > 0:
@@ -73,6 +72,7 @@ assert version_from_git_describe("v0.0.1-25-gaf0bf53") == "0.0.2.dev25+gaf0bf53"
 assert version_from_git_describe("v0.1-15-zsdgaz") == "0.1.1.dev15+zsdgaz"
 assert version_from_git_describe("v1") == "1"
 assert version_from_git_describe("v1-3-aqsfjbo") == "1.0.1.dev3+aqsfjbo"
+assert version_from_git_describe("v0.13rc0") == "0.13rc0"
 
 
 def get_version():
