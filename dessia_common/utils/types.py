@@ -122,6 +122,11 @@ def isinstance_base_types(obj):
     return isinstance(obj, (str, float, int))
 
 
+def is_dessia_file(obj):
+    """Return if the object inherits from dessia files."""
+    return isinstance(obj, (BinaryFile, StringFile))
+
+
 def get_python_class_from_class_name(full_class_name: str):
     """ Get python class object corresponging to given classname. """
     cached_value = _PYTHON_CLASS_CACHE.get(full_class_name, None)
