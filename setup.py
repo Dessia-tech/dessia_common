@@ -50,7 +50,7 @@ def version_from_git_describe(version):
                     split_versions.extend(["0", "0"])
                 split_versions[-1] = str(int(split_versions[-1]) + 1)
                 future_version = ".".join(split_versions)
-                return "{}.dev{}".format(future_version, number_commits_ahead)
+                return "{}.dev{}+{}".format(future_version, number_commits_ahead, commit_hash)
             else:
                 return ".".join(split_versions)
     if number_commits_ahead > 0:
