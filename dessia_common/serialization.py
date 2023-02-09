@@ -66,7 +66,7 @@ class SerializableObject(CoreDessiaObject):
         serialized_dict = self.base_dict()
         dict_ = self._serializable_dict()
         if use_pointers:
-            serialized_dict.update(serialize_dict_with_pointers(dict_, memo, path, id_method=id_method,
+            serialized_dict.update(serialize_dict_with_pointers(dict_, memo=memo, path=path, id_method=id_method,
                                                                 id_memo=id_memo)[0])
         else:
             serialized_dict.update(serialize_dict(dict_))
@@ -172,6 +172,8 @@ def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=
 
     elif isinstance(value, type):
         if value in memo:
+            path_value, serialized_value, id_ = memo[value]
+            id_memo[id_] = serialized_value
             return {'$ref': memo[value]}, memo
         serialized = dcty.serialize_typing(value)
         # memo[value] = path
@@ -179,14 +181,15 @@ def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=
     # Regular object
     elif hasattr(value, 'to_dict'):
         if value in memo:
-            return {'$ref': memo[value][0]}, memo
+            path_value, serialized_value, id_ = memo[value]
+            id_memo[id_] = serialized_value
+            return {'$ref': path}, memo
         serialized = value.to_dict()
 
         if id_method:
             id_ = str(uuid.uuid1())
             path_value = f"#/_references/{id_}"
             memo[value] = path_value, serialized, id_
-            serialized = {'$ref': path_value}
         else:
             memo[value] = path, serialized, None
 
@@ -617,7 +620,11 @@ def pointer_graph(value):
 
 
 def update_pointers_data(global_dict, current_dict, pointers_memo):
-    """ Update pointers according to cuccrent dict. """
+    """
+    Update pointers according to current dict.
+    
+    :returns: the global dict and a pointer memo
+    """
     if global_dict is None or pointers_memo is None:
         global_dict = current_dict
 
