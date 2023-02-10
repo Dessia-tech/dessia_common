@@ -1618,7 +1618,8 @@ class WorkflowState(DessiaObject):
         """ Transform object into a dict. """
         if memo is None:
             memo = {}
-        id_memo = {}
+        if id_memo is None:
+            id_memo = {}
 
         if use_pointers:
             workflow_dict = self.workflow.to_dict(path=f'{path}/workflow', memo=memo)
@@ -2084,7 +2085,8 @@ class WorkflowRun(WorkflowState):
         """ Add variable values to super WorkflowState dict. """
         if memo is None:
             memo = {}  # To make sure we have the good ref for next steps
-        dict_ = WorkflowState.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
+        dict_ = WorkflowState.to_dict(self, use_pointers=use_pointers, memo=memo, path=path,
+                                      id_method=id_method, id_memo=id_memo)
 
         # To force migrating from dessia_common.workflow
         dict_['object_class'] = 'dessia_common.workflow.core.WorkflowRun'
