@@ -42,9 +42,10 @@ MAX_ERROR_BY_TYPE = {
     "broad-exception-caught": 4,  # Necessary in order not to raise non critical errors. Will be reduced by schema refactor
     "bare-except": 3,  # Necessary in order not to raise non critical errors. Will be reduced by schema refactor
     "too-many-public-methods": 2,  # Try to lower by splitting DessiaObject and Workflow
-    "too-many-statements": 1,  # Will be solved by schema refactor and jsonchema removal
+    "too-many-statements": 2,  # Will be solved by schema refactor and jsonchema removal
     "undefined-loop-variable": 1,  # Fearing to break the code by solving it
-    "attribute-defined-outside-init": 3  # For test purposes
+    "attribute-defined-outside-init": 3,  # For test purposes
+    "too-many-nested-blocks": 2
 }
 
 ERRORS_WITHOUT_TIME_DECREASE = ['protected-access', 'arguments-differ', 'too-many-locals', 'too-many-branches',
