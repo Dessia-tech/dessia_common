@@ -436,7 +436,7 @@ class StandaloneObject(MovingObject):
         computation = nok_string + 'or' + ok_string
 
         return computation
-
+        
     def to_markdown(self):
         """ Write a standard markdown of StandaloneObject. """
         contents = """
