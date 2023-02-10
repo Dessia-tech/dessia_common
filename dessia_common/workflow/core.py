@@ -706,7 +706,7 @@ class Workflow(Block):
         parsed_attributes = {}
         for i, input_ in enumerate(self.inputs + self.detached_variables):
             current_dict = {}
-            if isinstance(input_, TypedVariable) or isinstance(input_, TypedVariableWithDefaultValue):
+            if isinstance(input_, (TypedVariable, TypedVariableWithDefaultValue)):
                 annotation = (str(i), input_.type_)
             else:
                 annotation = (str(i), Any)
@@ -754,7 +754,7 @@ class Workflow(Block):
 
         # self.refresh_blocks_positions()
         dict_ = Block.to_dict(self)
-        dict_['object_class'] = 'dessia_common.workflow.core.Workflow'  # TO force migrating from dessia_common.workflow
+        dict_['object_class'] = 'dessia_common.workflow.core.Workflow'  # Force migrating from dessia_common.workflow
         blocks = [b.to_dict() for b in self.blocks]
 
         pipes = [self.pipe_variable_indices(p) for p in self.pipes]
@@ -862,7 +862,7 @@ class Workflow(Block):
 
         for input_index, input_ in enumerate(copied_workflow.inputs):
             variable_index = copied_workflow.variables.index(input_)
-            if variable_index in copied_ivv.keys():
+            if variable_index in copied_ivv:
                 dict_[input_index] = serialize(copied_ivv[variable_index])
             elif isinstance(input_, TypedVariableWithDefaultValue):
                 dict_[input_index] = serialize(input_.default_value)
@@ -1208,7 +1208,7 @@ class Workflow(Block):
             node_index = self.nodes.index(node)
             nodes_by_column[column_index] = nodes_by_column.get(column_index, []) + [node_index]
 
-        return [column_list for column_list in nodes_by_column.values()]
+        return list(nodes_by_column.values())
 
     def layout(self):
         """

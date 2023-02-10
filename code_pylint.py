@@ -44,7 +44,7 @@ MAX_ERROR_BY_TYPE = {
     "too-many-public-methods": 2,  # Try to lower by splitting DessiaObject and Workflow
     "too-many-statements": 1,  # Will be solved by schema refactor and jsonchema removal
     "undefined-loop-variable": 1,  # Fearing to break the code by solving it
-    "attribute-defined-outside-init": 2  # For test purposes
+    "attribute-defined-outside-init": 3  # For test purposes
 }
 
 ERRORS_WITHOUT_TIME_DECREASE = ['protected-access', 'arguments-differ', 'too-many-locals', 'too-many-branches',

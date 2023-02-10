@@ -698,12 +698,6 @@ class PhysicalObject(DessiaObject):
         """
         return self.volmdlr_volume_model().to_stl(filepath=filepath)
 
-    # def _displays(self, **kwargs):
-    #     """
-    #     Compute the list of displays
-    #     """
-    #     return DessiaObject._displays(self, **kwargs)
-
     def babylonjs(self, use_cdn=True, debug=False, **kwargs):
         """ Show the 3D volmdlr of an object by calling volmdlr_volume_model method and plot in in browser. """
         self.volmdlr_volume_model(**kwargs).babylonjs(use_cdn=use_cdn, debug=debug)
@@ -870,8 +864,8 @@ class DessiaFilter(DessiaObject):
         return self._REAL_OPERATORS[self.comparison_operator]
 
     def _to_lambda(self):
-        return lambda x: (self._comparison_operator()(get_in_object_from_path(value, f'#/{self.attribute}'), self.bound)
-                          for value in x)
+        return lambda x: (self._comparison_operator()(get_in_object_from_path(value, f'#/{self.attribute}'),
+                                                      self.bound) for value in x)
 
     def get_booleans_index(self, values: List[DessiaObject]):
         """
@@ -1049,7 +1043,7 @@ class FiltersList(DessiaObject):
         if logical_operator == 'or':
             return [any(booleans_tuple) for booleans_tuple in zip(*booleans_lists)]
         if logical_operator == 'xor':
-            return [True if sum(booleans_tuple) == 1 else False for booleans_tuple in zip(*booleans_lists)]
+            return [bool(sum(booleans_tuple)) for booleans_tuple in zip(*booleans_lists)]
         raise NotImplementedError(f"'{logical_operator}' str for 'logical_operator' attribute is not a use case")
 
     def get_booleans_index(self, dobjects_list: List[DessiaObject]):
