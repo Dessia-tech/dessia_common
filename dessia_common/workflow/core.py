@@ -215,7 +215,7 @@ class Block(DessiaObject):
 
     def equivalent_hash(self):
         """
-        Custom hash of block that doesn't overwrite __hash__ as we do not want to lose python default equality behavior.
+        Custom hash of block that doesn't overwrite __hash__ as we don't want to lose python default equality behavior.
 
         Used by workflow module only.
         """
@@ -671,7 +671,7 @@ class Workflow(Block):
             memo = {}
 
         dict_ = Block.to_dict(self)
-        dict_['object_class'] = 'dessia_common.workflow.core.Workflow'  # TO force migrating from dessia_common.workflow
+        dict_['object_class'] = 'dessia_common.workflow.core.Workflow'  # Force migrating from dessia_common.workflow
         blocks = [b.to_dict() for b in self.blocks]
 
         pipes = [self.pipe_variable_indices(p) for p in self.pipes]

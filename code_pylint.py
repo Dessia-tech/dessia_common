@@ -26,8 +26,8 @@ WEEKLY_DECREASE = 0.03
 UNWATCHED_ERRORS = ["fixme", "trailing-whitespace", "import-error"]
 
 MAX_ERROR_BY_TYPE = {
-    "wrong-spelling-in-docstring": 453,
-    "wrong-spelling-in-comment": 111,
+    "wrong-spelling-in-docstring": 412,
+    "wrong-spelling-in-comment": 100,
     "protected-access": 38,  # Highly dependant on our "private" conventions. Keeps getting raised
     "arguments-differ": 1,
     "too-many-locals": 11,  # Reduce by dropping vectored objects
