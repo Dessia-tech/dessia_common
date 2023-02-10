@@ -58,7 +58,7 @@ class Generator(DessiaObject):
         Run a long generation.
 
         This method aims to test:
-            * lots of prints to be catched
+            * lots of prints to be caught
             * progress update
             * long computation
         """

@@ -416,7 +416,7 @@ def deserialize_with_typing(type_, argument, global_dict=None, pointers_memo=Non
                 # This is not the right class, we should go see the parent
                 classes.remove(children_class)
     elif origin in [list, collections.abc.Iterator]:
-        # Homogenous sequences (lists)
+        # Homogeneous sequences (lists)
         sequence_subtype = args[0]
         deserialized_arg = [deserialize_argument(sequence_subtype, arg) for arg in argument]
         if origin is collections.abc.Iterator:

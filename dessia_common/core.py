@@ -92,7 +92,7 @@ class DessiaObject(SerializableObject):
     :cvar List[str] _whitelist_attributes: List[str]
 
     :ivar str name: Name of object.
-    :ivar Any kwargs: Additionnal user metadata
+    :ivar Any kwargs: Additional user metadata
     """
 
     _standalone_in_db = False
@@ -135,7 +135,7 @@ class DessiaObject(SerializableObject):
         """
         Generic equality of two objects.
 
-        Behavior can be controled by class attribute _eq_is_data_eq to tell if we must use python equality (based on
+        Behavior can be controlled by class attribute _eq_is_data_eq to tell if we must use python equality (based on
         memory addresses) (_eq_is_data_eq = False) or a data equality (True).
         """
         if self._eq_is_data_eq:
