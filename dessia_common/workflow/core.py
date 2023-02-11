@@ -9,7 +9,7 @@ import json
 import webbrowser
 from functools import cached_property
 import io
-from typing import List, Union, Type, Any, Dict, Tuple, Optional, get_args, get_args
+from typing import List, Union, Type, Any, Dict, Tuple, Optional, get_args, get_origin
 from copy import deepcopy
 import warnings
 import networkx as nx
