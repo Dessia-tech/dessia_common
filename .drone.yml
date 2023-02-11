@@ -66,6 +66,9 @@ steps:
   image: python:3.8
   when:
     event: pull_request
+    branch:
+      - master
+      - dev
   commands:
     - bash code_changelog.sh
 

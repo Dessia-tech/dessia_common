@@ -39,7 +39,7 @@ assert variable_match == match_dict
 
 # Check WorkflowRun
 # Assert to_dict, dict_to_object, hashes, eqs
-dict_ = workflow_run.to_dict(use_pointers=False)
+dict_ = workflow_run.to_dict()
 object_ = WorkflowRun.dict_to_object(dict_=dict_)
 
 assert hash(workflow_run) == hash(object_)
