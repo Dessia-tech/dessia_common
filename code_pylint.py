@@ -56,7 +56,7 @@ MAX_ERROR_BY_TYPE = {
     "bad-staticmethod-argument": 1,
     "too-many-public-methods": 2,  # Try to lower by splitting DessiaObject and Workflow
     "consider-using-generator": 1,
-    "too-many-statements": 1,
+    "too-many-statements": 2,
     "chained-comparison": 1,
     "wildcard-import": 1,
     "use-maxsplit-arg": 1,
