@@ -77,7 +77,7 @@ def deserialize_with_type(type_, value):
     """
     Deserialization a value enforcing the right type.
 
-    Usefull to deserialize as a tuple and not a list for ex.
+    Useful to deserialize as a tuple and not a list for ex.
     """
     warnings.warn("Module serialization.py have been moved outside utils. Please use it instead")
     return dcs.deserialize_with_type(type_=type_, value=value)

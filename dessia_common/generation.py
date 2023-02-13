@@ -16,7 +16,7 @@ class Generator(DessiaObject):
 
         :param model: Model generated
 
-        :return: True if valid and False othewise
+        :return: True if valid and False otherwise
         :rtype: bool
         """
         raise NotImplementedError('the method is_model_valid must be overloaded by subclassing class')
@@ -63,7 +63,7 @@ class TreeGenerator(Generator):
         """
         Returns the number of possibilities from the vector.
 
-        This method is generic but can be overloaded to avoid model instanciation.
+        This method is generic but can be overloaded to avoid model instantiation.
         """
         model = self.model_from_vector(vector)
         return self.number_possibilities_from_model(model)

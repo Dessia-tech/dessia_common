@@ -4,7 +4,8 @@ import copy
 import warnings
 from dessia_common.abstract import CoreDessiaObject
 import dessia_common.files
-from dessia_common.utils.types import is_sequence, is_typing
+from dessia_common.utils.types import is_sequence
+from dessia_common.schemas.core import is_typing
 
 
 def deepcopy_value(value, memo):

@@ -3,10 +3,10 @@
 """
 Defines physic quantities called measures.
 
-It is an overloading of float, and usefull in platform forms to have access to units conversion.
+It is an overloading of float, and useful in platform forms to have access to units conversion.
 """
 
-from dessia_common.utils.types import get_python_class_from_class_name
+from dessia_common.utils.helpers import get_python_class_from_class_name
 
 
 # Measures
@@ -17,8 +17,7 @@ class Measure(float):
 
     def to_dict(self):
         """ Serializes the object into a dict. """
-        return {'object_class': f'{self.__module__}.{self.__class__.__name__}',
-                'value': self.real}
+        return {'object_class': f'{self.__module__}.{self.__class__.__name__}', 'value': self.real}
 
     @classmethod
     def dict_to_object(cls, dict_):
