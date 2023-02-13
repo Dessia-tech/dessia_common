@@ -97,10 +97,10 @@ class ClusteredDataset(Dataset):
         prefix += (f"{len(self)} samples, {len(self.common_attributes)} features, {self.n_clusters} clusters")
         return prefix
 
-    def _get_printed_value(self, dessia_object_idx: int, attr: str):
+    def _get_printed_value(self, index: int, attr: str):
         if attr not in ["label"]:
-            return super()._get_printed_value(dessia_object_idx, attr)
-        return self.labels[dessia_object_idx]
+            return super()._get_printed_value(index, attr)
+        return self.labels[index]
 
     def clustered_sublists(self):
         """
