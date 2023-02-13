@@ -94,6 +94,11 @@ def isinstance_base_types(obj):
     return isinstance(obj, (str, float, int))
 
 
+def is_dessia_file(obj):
+    """Return if the object inherits from dessia files."""
+    return isinstance(obj, (BinaryFile, StringFile))
+
+
 def unfold_deep_annotation(typing_=None):
     """ Get origin (tuple, list,...) and arguments (type,...) from typing. """
     if is_typing(typing_):
@@ -215,7 +220,7 @@ def deserialize_builtin_typing(serialized_typing):
 
 
 def is_bson_valid(value, allow_nonstring_keys=False) -> Tuple[bool, str]:
-    """ Return bson validity (bool) and a hint (str). """
+    """ Return BSON validity (bool) and a hint (str). """
     if isinstance(value, (int, float, str)):
         return True, ''
 
@@ -361,7 +366,7 @@ def heal_type(type_: Type):
 
 
 def particular_typematches(type_: Type, match_against: Type) -> bool:
-    """ Check for specific cases of typematches and return a boolean. """
+    """ Check for specific cases of typematches and return a Boolean. """
     if type_ is int and match_against is float:
         return True
     # Not refactoring this as a one-liner for now, as more cases should be added in the future.

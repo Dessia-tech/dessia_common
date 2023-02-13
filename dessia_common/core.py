@@ -57,7 +57,7 @@ class DessiaObject(SerializableObject):
     Gathers generic methods and attributes
 
     :cvar bool _standalone_in_db:
-        Indicates wether class objects should be independant in database or not.
+        Indicates wether class objects should be independent in database or not.
         If False, object will only exist inside its parent.
 
     :cvar bool _eq_is_data_eq:
@@ -99,7 +99,6 @@ class DessiaObject(SerializableObject):
     :ivar Any kwargs: Additionnal user metadata
     """
 
-    _standalone_in_db = False
     _non_editable_attributes = []
     _non_data_eq_attributes = ['name']
     _non_data_hash_attributes = ['name']
@@ -114,6 +113,12 @@ class DessiaObject(SerializableObject):
 
     def __init__(self, name: str = '', **kwargs):
         self.name = name
+        if kwargs:
+            warnings.warn(('Providing attributes to DessiaObject __init__ to be stored in self is deprecated\n'
+                           + 'Please store your attributes by yourself in your init'),
+                          DeprecationWarning)
+
+        # The code below has shown to be unefficient and should be remove in future version (0.16?)
         for property_name, property_value in kwargs.items():
             setattr(self, property_name, property_value)
 

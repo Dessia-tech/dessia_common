@@ -39,10 +39,9 @@ steps:
     from: technical@dessia.tech
 
 - name: check code complexity, docs & code quality
-  image: python:3.8
+  image: dessia/python-ci:3.9
   commands:
-  - pip install radon pydocstyle pylint
-  - ./code_quality.sh
+  - pip install pydocstyle==6.3.0 pylint==2.16.1 pyenchant==3.2.2
   - python code_pylint.py
   - python code_pydocstyle.py
 
@@ -67,6 +66,9 @@ steps:
   image: python:3.8
   when:
     event: pull_request
+    branch:
+      - master
+      - dev
   commands:
     - bash code_changelog.sh
 
