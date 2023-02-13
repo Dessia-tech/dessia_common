@@ -16,7 +16,9 @@ RATCHET_COVERAGE = 3.
 untracked_modules = ["dessia_common/templates.py",
                      "dessia_common/utils.py",
                      "dessia_common/optimization.py",
-                     'workflows/forms_simulation.py']
+                     'workflows/forms_simulation.py',
+                     "utils/jsonschema.py"
+                     ]
 
 print("untracked modules:", untracked_modules)
 
@@ -36,7 +38,6 @@ print(f'[Coverage] You can increase MIN_MODULE_COVERAGE to maximum {global_cover
 min_actual_coverage = 100
 for file_name, data in d['files'].items():
     print(file_name, data['summary']['percent_covered'], '%')
-    # print('/'.join(file_name.split('/')[-2:]))
     if '/'.join(file_name.split('/')[-2:]) in untracked_modules:
         print(file_name, '-> in untrack list')
     else:

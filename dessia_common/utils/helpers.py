@@ -1,4 +1,17 @@
-""" Tools for copying objects. """
+"""
+Tools for objects handling.
+
+As a rule of thumb, functions should be placed here if:
+- They can be widely used in dessia_common
+- They don't have any requirements or imports
+
+That way, we can avoid cyclic imports.
+"""
+
+import sys
+from importlib import import_module
+
+_PYTHON_CLASS_CACHE = {}
 
 
 def concatenate(values):
@@ -33,3 +46,32 @@ def prettyname(name: str) -> str:
             if i < len(strings) - 1:
                 pretty_name += ' '
     return pretty_name
+
+
+def full_classname(object_, compute_for: str = 'instance'):
+    """ Get full class name of object_ (module + classname). """
+    if compute_for == 'instance':
+        return f"{object_.__class__.__module__}.{object_.__class__.__name__}"
+    if compute_for == 'class':
+        try:
+            return f"{object_.__module__}.{object_.__name__}"
+        except:
+            print(object_)
+    raise NotImplementedError(f"Cannot compute '{compute_for}' full classname for object '{object_}'")
+
+
+def get_python_class_from_class_name(full_class_name: str):
+    """ Get python class object corresponging to given classname. """
+    cached_value = _PYTHON_CLASS_CACHE.get(full_class_name, None)
+    # TODO : this is just quick fix, it will be modified soon with another.
+    sys.setrecursionlimit(3000)
+    if cached_value is not None:
+        return cached_value
+
+    module_name, class_name = full_class_name.rsplit('.', 1)
+    module = import_module(module_name)
+
+    class_ = getattr(module, class_name)
+    # Storing in cache
+    _PYTHON_CLASS_CACHE[full_class_name] = class_
+    return class_
