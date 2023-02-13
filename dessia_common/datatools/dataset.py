@@ -651,7 +651,7 @@ class Dataset(DessiaObject):
 
     def plot_data(self, reference_path: str = "#", **kwargs):
         """ Plot a standard scatter matrix of all attributes in common_attributes and a dimensionality plot. """
-        data_list = self._to_samples(reference_path)
+        data_list = self._to_samples(reference_path=reference_path)
         if len(self.common_attributes) > 1:
             # Plot a correlation matrix : To develop
             # correlation_matrix = []
@@ -662,7 +662,7 @@ class Dataset(DessiaObject):
                                                    point_style=dimensionality_plot.point_style)
             # Parallel plot
             parallel_plot = self._parallel_plot(data_list)
-            return [parallel_plot, scatter_matrix] #, dimensionality_plot]
+            return [parallel_plot, scatter_matrix]  # , dimensionality_plot]
 
         plot_mono_attr = self._histogram_unic_value(0, name_attr=self.common_attributes[0])
         plot_mono_attr.elements = data_list
@@ -693,20 +693,15 @@ class Dataset(DessiaObject):
     def _tooltip_attributes(self):
         return self.common_attributes
 
-    def _object_to_sample(self, dessia_object: DessiaObject, reference_path: str, row: int):
+    def _object_to_sample(self, dessia_object: DessiaObject, row: int, reference_path: str = '#'):
         sample_values = {attr: self.matrix[row][col] for col, attr in enumerate(self.common_attributes)}
-        full_reference_path = f"{reference_path}/dessia_objects/{row}"
+        reference_path = f"{reference_path}/dessia_objects/{row}"
         name = dessia_object.name if dessia_object.name else f"Sample {row}"
-        return sample_values, full_reference_path, name
+        return Sample(values=sample_values, reference_path=reference_path, name=name)
 
-    def _to_samples(self, reference_path: str):
-        samples = []
-        for row, dessia_object in enumerate(self.dessia_objects):
-            sample_values, full_reference_path, name = self._object_to_sample(dessia_object=dessia_object,
-                                                                              reference_path=reference_path,
-                                                                              row=row)
-            samples.append(Sample(values=sample_values, reference_path=full_reference_path, name=name))
-        return samples
+    def _to_samples(self, reference_path: str = '#'):
+        return [self._object_to_sample(dessia_object=dessia_object, row=row, reference_path=reference_path)
+                for row, dessia_object in enumerate(self.dessia_objects)]
 
     def _point_families(self):
         return [PointFamily(BLUE, list(range(len(self))))]
@@ -828,7 +823,7 @@ class Dataset(DessiaObject):
     @staticmethod
     def pareto_indexes(costs: Matrix) -> List[bool]:
         """
-        Find the pareto-efficient points.
+        Find the Pareto-efficient points.
 
         :return: A (n_points, ) boolean list, indicating whether each point is Pareto efficient
         """
@@ -844,8 +839,7 @@ class Dataset(DessiaObject):
 
     @staticmethod
     def pareto_frontiers(len_data: int, costs: List[List[float]]):
-        """ Experimental method to draw the borders of pareto domain. """
-        # Experimental
+        """ Experimental method to draw the borders of Pareto domain. """
         checked_costs = Dataset._check_costs(len_data, costs)
         pareto_indexes = Dataset.pareto_indexes(checked_costs)
         pareto_costs = npy.array(list(itertools.compress(checked_costs, pareto_indexes)))
@@ -888,7 +882,7 @@ class Dataset(DessiaObject):
 
     def pareto_points(self, costs_attributes: List[str]):
         """
-        Find the pareto-efficient points.
+        Find the Pareto-efficient points.
 
         :param costs_attributes:
             List of columns' attributes on which costs are stored in current Dataset
@@ -902,17 +896,15 @@ class Dataset(DessiaObject):
 
     def pareto_sheets(self, costs_attributes: List[str], nb_sheets: int = 1):
         """
-        Get successive pareto sheets (i.e. optimal points in a DOE for pre-computed costs).
+        Get successive Pareto sheets (i.e. optimal points in a DOE for pre-computed costs).
 
-        :param costs_attributes:
-            List of columns' attributes on which costs are stored in current Dataset
+        :param costs_attributes: List of columns' attributes on which costs are stored in current Dataset
         :type costs_attributes: List[str]
 
-        :param nb_sheets:
-            Number of pareto sheets to pick
+        :param nb_sheets: Number of Pareto sheets to pick
         :type nb_sheets: int, `optional`, default to `1`
 
-        :return: The successive pareto sheets and not selected elements
+        :return: The successive Pareto sheets and not selected elements
         :rtype: List[Dataset], Dataset
         """
         checked_costs = self._compute_costs(costs_attributes)

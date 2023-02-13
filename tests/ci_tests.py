@@ -34,7 +34,9 @@ scripts = ['displays.py',
            'workflow/various_tests.py',
            'workflow/workflow_building.py',
            'workflow/workflow_sampling.py',
-           # breakdown
+           "workflow/workflow_inputs.py",
+           "workflow/file_inputs.py",
+           # Breakdown
            'breakdown.py',
            # Utils
            'utils/algebra.py',
@@ -42,7 +44,7 @@ scripts = ['displays.py',
            'utils/serialization.py',
            'utils/helpers.py',
            'utils/types.py',
-           "utils/diff.py"
+           "utils/diff.py",
            'type_matching.py',
            # Unit tests
            'unit_tests.py',

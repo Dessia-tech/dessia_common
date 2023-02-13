@@ -26,6 +26,7 @@ fullargsspec_cache = {}
 class SerializableObject(CoreDessiaObject):
     """ Serialization capabilities of Dessia Object. """
 
+    _standalone_in_db = False
     _non_serializable_attributes = []
 
     def base_dict(self):
@@ -65,7 +66,7 @@ class SerializableObject(CoreDessiaObject):
         serialized_dict = self.base_dict()
         dict_ = self._serializable_dict()
         if use_pointers:
-            serialized_dict.update(serialize_dict_with_pointers(dict_, memo, path, id_method=id_method,
+            serialized_dict.update(serialize_dict_with_pointers(dict_, memo=memo, path=path, id_method=id_method,
                                                                 id_memo=id_memo)[0])
         else:
             serialized_dict.update(serialize_dict(dict_))
@@ -147,24 +148,32 @@ def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=
         memo = {}
     if id_memo is None:
         id_memo = {}
+
     if isinstance(value, SerializableObject):
         if value in memo:
-            return {'$ref': memo[value]}, memo
+            path_value, serialized_value, id_ = memo[value]
+            id_memo[id_] = serialized_value
+            return {'$ref': path_value}, memo
         try:
             serialized = value.to_dict(use_pointers=True, memo=memo, path=path, id_memo=id_memo)
 
         except TypeError:
-            warnings.warn('specific to_dict should implement use_pointers, memo and path arguments', Warning)
+            warnings.warn('specific to_dict should implement use_pointers, memo, path and id_memo arguments', Warning)
             serialized = value.to_dict()
         if id_method:
             id_ = str(uuid.uuid1())
-            id_memo[id_] = serialized
-            memo[value] = f'#/_references/{id_}'
+            path_value = f"#/_references/{id_}"
+            memo[value] = path_value, serialized, id_
+            if value._standalone_in_db:
+                id_memo[id_] = serialized
+                serialized = {'$ref': path_value}
         else:
-            memo[value] = path
+            memo[value] = path, serialized, None
 
     elif isinstance(value, type):
         if value in memo:
+            path_value, serialized_value, id_ = memo[value]
+            id_memo[id_] = serialized_value
             return {'$ref': memo[value]}, memo
         serialized = dcty.serialize_typing(value)
         # memo[value] = path
@@ -172,15 +181,17 @@ def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=
     # Regular object
     elif hasattr(value, 'to_dict'):
         if value in memo:
-            return {'$ref': memo[value]}, memo
+            path_value, serialized_value, id_ = memo[value]
+            id_memo[id_] = serialized_value
+            return {'$ref': path}, memo
         serialized = value.to_dict()
 
         if id_method:
             id_ = str(uuid.uuid1())
-            id_memo[id_] = serialized
-            memo[value] = f'#/_references/{id_}'
+            path_value = f"#/_references/{id_}"
+            memo[value] = path_value, serialized, id_
         else:
-            memo[value] = path
+            memo[value] = path, serialized, None
 
     elif isinstance(value, dict):
         serialized, memo = serialize_dict_with_pointers(value, memo=memo, path=path, id_method=id_method,
@@ -199,7 +210,7 @@ def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=
             raise dc_err.SerializationError(msg)
         serialized = value
 
-    if path == '#':
+    if path == '#' and id_method:
         # adding _references
         serialized['_references'] = id_memo
 
@@ -318,7 +329,7 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False, global_dict=
 
     # Create init_dict
     if class_ is not None and hasattr(class_, 'dict_to_object'):
-        different_methods = (class_.dict_to_object.__func__ is not SerializableObject.dict_to_object.__func__)
+        different_methods = class_.dict_to_object.__func__ is not SerializableObject.dict_to_object.__func__
         if different_methods and not force_generic:
             try:
                 obj = class_.dict_to_object(dict_, global_dict=global_dict, pointers_memo=pointers_memo, path=path)
@@ -421,7 +432,7 @@ def deserialize_with_typing(type_, argument, global_dict=None, pointers_memo=Non
             deserialized_arg = iter(deserialized_arg)
 
     elif origin is tuple:
-        # Heterogenous sequences (tuples)
+        # Heterogeneous sequences (tuples)
         deserialized_arg = tuple(deserialize_argument(t, arg) for (t, arg) in zip(args, argument))
     elif origin is dict:
         # Dynamic dict
@@ -609,7 +620,11 @@ def pointer_graph(value):
 
 
 def update_pointers_data(global_dict, current_dict, pointers_memo):
-    """ Update pointers according to cuccrent dict. """
+    """
+    Update pointers according to current dict.
+    
+    :returns: the global dict and a pointer memo
+    """
     if global_dict is None or pointers_memo is None:
         global_dict = current_dict
 
@@ -650,7 +665,7 @@ def deserialization_order(dict_):
 
 def dereference_jsonpointers(dict_):  # , global_dict):
     """
-    Analyse given dict.
+    Analyses given dict.
 
      Useful in order to:
     - find jsonpointers
@@ -781,7 +796,7 @@ def is_serializable(obj):
     if dcty.is_jsonable(obj):
         return True
     if isinstance(obj, SerializableObject):
-        dict_ = obj.to_dict()
+        dict_ = obj.to_dict(use_pointers=False)
         return dcty.is_jsonable(dict_)
     if isinstance(obj, dict):
         for key, value in obj.items():
