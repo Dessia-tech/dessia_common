@@ -208,7 +208,7 @@ class Dataset(DessiaObject):
             return self.common_attributes
         return ['name'] + self.common_attributes
 
-    def _print_objects_slice(self, key: slice, attr_space: int):
+    def _print_objects_slice(self, key: slice, attr_space: List[int]):
         string = ""
         for index in range(len(self[key])):
             string += "\n"
@@ -220,7 +220,7 @@ class Dataset(DessiaObject):
         prefix += f"{len(self)} samples, {len(self.common_attributes)} features"
         return prefix
 
-    def _print_titles(self, attr_space: int):
+    def _print_titles(self, attr_space: List[int]):
         min_col_length = 16
         printed_attributes = self._printed_attributes()
         string = ""
@@ -241,7 +241,7 @@ class Dataset(DessiaObject):
             string += "|" + name_attr + end_bar
         return string
 
-    def _print_object(self, index: int, attr_space: int):
+    def _print_object(self, index: int, attr_space: List[int]):
         printed_attributes = self._printed_attributes()
         string = ""
         for idx, attr in enumerate(printed_attributes):
