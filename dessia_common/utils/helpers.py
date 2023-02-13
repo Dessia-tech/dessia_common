@@ -9,6 +9,7 @@ That way, we can avoid cyclic imports.
 """
 
 import sys
+from typing import List
 from importlib import import_module
 
 _PYTHON_CLASS_CACHE = {}

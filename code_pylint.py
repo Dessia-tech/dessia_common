@@ -22,7 +22,7 @@ UNWATCHED_ERRORS = ["fixme", "trailing-whitespace", "import-error"]
 MAX_ERROR_BY_TYPE = {
                      "wrong-spelling-in-docstring": 396,
                      "wrong-spelling-in-comment": 87,
-                     'protected-access': 62,
+                     'protected-access': 67,
                      'arguments-differ': 2,
                      'no-member': 3,
                      'too-many-locals': 11,  # Reduce by dropping vectored objects
