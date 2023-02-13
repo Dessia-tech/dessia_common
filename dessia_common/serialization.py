@@ -15,10 +15,12 @@ import networkx as nx
 import dessia_common.errors as dc_err
 from dessia_common.files import StringFile, BinaryFile
 import dessia_common.utils.types as dcty
+from dessia_common.utils.helpers import full_classname, get_python_class_from_class_name
 from dessia_common.abstract import CoreDessiaObject
 from dessia_common.typings import InstanceOf, JsonSerializable
-from dessia_common.graph import explore_tree_from_leaves  # , cut_tree_final_branches
+from dessia_common.graph import explore_tree_from_leaves
 from dessia_common.breakdown import get_in_object_from_path
+from dessia_common.schemas.core import TYPING_EQUIVALENCES, is_typing, serialize_typing
 
 fullargsspec_cache = {}
 
@@ -92,7 +94,7 @@ class SerializableObject(CoreDessiaObject):
     @property
     def full_classname(self):
         """ Full classname of class like: package.module.submodule.classname. """
-        return dcty.full_classname(self)
+        return full_classname(self)
 
 
 def serialize_dict(dict_):
@@ -128,8 +130,8 @@ def serialize(value):
         serialized_value = int(value)
     elif isinstance(value, float64):
         serialized_value = float(value)
-    elif isinstance(value, type) or dcty.is_typing(value):
-        return dcty.serialize_typing(value)
+    elif isinstance(value, type) or is_typing(value):
+        return serialize_typing(value)
     elif hasattr(value, 'to_dict'):
         to_dict_method = getattr(value, 'to_dict', None)
         if callable(to_dict_method):
@@ -156,7 +158,6 @@ def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=
             return {'$ref': path_value}, memo
         try:
             serialized = value.to_dict(use_pointers=True, memo=memo, path=path, id_memo=id_memo)
-
         except TypeError:
             warnings.warn('specific to_dict should implement use_pointers, memo, path and id_memo arguments', Warning)
             serialized = value.to_dict()
@@ -171,12 +172,12 @@ def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=
             memo[value] = path, serialized, None
 
     elif isinstance(value, type):
+        # TODO Why do we serialize types with pointers ? These are only just strings.
         if value in memo:
             path_value, serialized_value, id_ = memo[value]
             id_memo[id_] = serialized_value
             return {'$ref': memo[value]}, memo
-        serialized = dcty.serialize_typing(value)
-        # memo[value] = path
+        serialized = serialize_typing(value)
 
     # Regular object
     elif hasattr(value, 'to_dict'):
@@ -325,7 +326,7 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False, global_dict=
             raise RuntimeError(f"Pointer {dict_['$ref']} not in memo, at path {path}") from err
 
     if class_ is None and 'object_class' in dict_:
-        class_ = dcty.get_python_class_from_class_name(dict_['object_class'])
+        class_ = get_python_class_from_class_name(dict_['object_class'])
 
     # Create init_dict
     if class_ is not None and hasattr(class_, 'dict_to_object'):
@@ -378,7 +379,7 @@ def deserialize_with_type(type_, value):
     if type_ in dcty.TYPES_STRINGS.values():
         return literal_eval(type_)(value)
     if isinstance(type_, str):
-        class_ = dcty.get_python_class_from_class_name(type_)
+        class_ = get_python_class_from_class_name(type_)
         if inspect.isclass(class_):
             return class_.dict_to_object(value)
         raise NotImplementedError(f'Cannot get class from name {type_}')
@@ -439,8 +440,8 @@ def deserialize_with_typing(type_, argument, global_dict=None, pointers_memo=Non
         deserialized_arg = argument
     elif origin is InstanceOf:
         classname = args[0]
-        object_class = dcty.full_classname(object_=classname, compute_for='class')
-        class_ = dcty.get_python_class_from_class_name(object_class)
+        object_class = full_classname(object_=classname, compute_for='class')
+        class_ = get_python_class_from_class_name(object_class)
 
         deserialized_arg = class_.dict_to_object(argument, global_dict=global_dict,
                                                  pointers_memo=pointers_memo, path=path)
@@ -461,13 +462,13 @@ def deserialize_argument(type_, argument, global_dict=None, pointers_memo=None, 
     if isinstance(argument, SerializableObject):
         return argument
 
-    if dcty.is_typing(type_):
+    if is_typing(type_):
         return deserialize_with_typing(type_, argument)
 
     if type_ in [TextIO, BinaryIO] or isinstance(argument, (StringFile, BinaryFile)):
         return argument
 
-    if type_ in dcty.TYPING_EQUIVALENCES:
+    if type_ in TYPING_EQUIVALENCES:
         if isinstance(argument, type_):
             return argument
         if isinstance(argument, int) and type_ == float:
@@ -761,7 +762,7 @@ def pointers_analysis(obj):
             else:
                 try:
                     val2 = get_in_object_from_path(obj, path2)
-                    val2_class = dcty.full_classname(val2)
+                    val2_class = full_classname(val2)
                     class_from_path[path2] = val2_class
                 except AttributeError:
                     val2_class = None
@@ -774,7 +775,7 @@ def pointers_analysis(obj):
             else:
                 try:
                     val1 = get_in_object_from_path(obj, path1)
-                    val1_class = dcty.full_classname(val1)
+                    val1_class = full_classname(val1)
                     class_from_path[path1] = val1_class
                 except AttributeError:
                     val1_class = None
