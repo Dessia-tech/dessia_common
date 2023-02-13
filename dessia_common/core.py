@@ -389,7 +389,7 @@ class DessiaObject(SerializableObject):
     @classmethod
     def load_from_file(cls, filepath: str):
         """
-        Load object from a json file.
+        Load object from a JSON file.
 
         :param filepath: either a string reprensenting the filepath or a stream
         """
@@ -674,7 +674,7 @@ class PhysicalObject(DessiaObject):
 
     @staticmethod
     def display_settings():
-        """ Returns a list of json describing how to call subdisplays. """
+        """ Returns a list of DisplaySettings objects describing how to call subdisplays. """
         display_settings = DessiaObject.display_settings()
         display_settings.append(DisplaySetting(selector='cad', type_='babylon_data',
                                                method='volmdlr_volume_model().babylon_data', serialize_data=True))
@@ -1002,7 +1002,7 @@ class FiltersList(DessiaObject):
     @classmethod
     def from_filters_list(cls, filters: List[DessiaFilter], logical_operator: str = 'and', name: str = ''):
         """
-        Compute a FilersList from a pre-built list of DessiaFilter.
+        Compute a FilersList from an already built list of DessiaFilter.
 
         :param filters: List of DessiaFilters to combine
         :type filters: List[DessiaFilter]
