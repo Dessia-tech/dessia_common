@@ -95,7 +95,6 @@ class DessiaObject(SerializableObject):
     :ivar Any kwargs: Additionnal user metadata
     """
 
-    _standalone_in_db = False
     _non_editable_attributes = []
     _non_data_eq_attributes = ['name']
     _non_data_hash_attributes = ['name']
