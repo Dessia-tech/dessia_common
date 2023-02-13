@@ -1,4 +1,5 @@
 backend
+BinaryFile
 bool
 classmethod
 config
@@ -26,6 +27,7 @@ schemas
 scipy
 serializable
 sklearn
+StringFile
 traceback
 uuid
 uuids

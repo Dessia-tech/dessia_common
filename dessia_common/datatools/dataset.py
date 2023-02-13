@@ -652,7 +652,6 @@ class Dataset(DessiaObject):
         return scatter_matrix
 
     def _histogram_unic_value(self, idx_col: int, name_attr: str):
-        # unic_values = set((getattr(dobject, line) for dobject in self.dessia_objects))
         unic_values = set((row_matrix[idx_col] for row_matrix in self.matrix))
         if len(unic_values) == 1:  # TODO (plot_data linspace axis between two same values)
             plot_obj = Scatter(x_variable=name_attr, y_variable=name_attr)

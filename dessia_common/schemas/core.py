@@ -1023,7 +1023,7 @@ def get_schema(annotation: Type[T], attribute: str = "", definition_default: Opt
     if is_typing(annotation):
         return typing_schema(typing_=annotation, attribute=attribute, definition_default=definition_default)
     if hasattr(annotation, '__origin__') and annotation.__origin__ is type:
-        # Type is not considered a Typing as it has no args
+        # Type is not considered a Typing as it has no arguments
         return ClassProperty(annotation=annotation, attribute=attribute, definition_default=definition_default)
     if inspect.isclass(annotation):
         return custom_class_schema(annotation=annotation, attribute=attribute, definition_default=definition_default)

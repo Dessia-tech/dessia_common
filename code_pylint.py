@@ -26,44 +26,27 @@ WEEKLY_DECREASE = 0.03
 UNWATCHED_ERRORS = ["fixme", "trailing-whitespace", "import-error"]
 
 MAX_ERROR_BY_TYPE = {
-    "wrong-spelling-in-docstring": 389,
+    "wrong-spelling-in-docstring": 338,
     "wrong-spelling-in-comment": 86,
     "protected-access": 43,  # Highly dependant on our "private" conventions. Keeps getting raised
     "arguments-differ": 1,
-    "no-member": 3,
     "too-many-locals": 10,  # Reduce by dropping vectored objects
     "too-many-branches": 13,  # Huge refactor needed. Will be reduced by schema refactor
     "unused-argument": 6,  # Some abstract functions have unused arguments (plot_data). Hence cannot decrease
     "cyclic-import": 2,  # Still work to do on Specific based DessiaObject
-    "no-self-use": 6,
     "too-many-arguments": 21,  # Huge refactor needed
     "too-few-public-methods": 9,  # Abstract classes (Errors, Checks,...)
-    "unnecessary-comprehension": 1,
-    "no-value-for-parameter": 2,
     "too-many-return-statements": 8,  # Huge refactor needed. Will be reduced by schema refactor
-    "abstract-method": 6,
     "import-outside-toplevel": 4,  # TODO : will reduced in a future work (when tests are ready)
     "too-many-instance-attributes": 7,  # Huge refactor needed (workflow, etc...)
-    "no-else-raise errors": 5,
-    "consider-iterating-dictionary": 1,
-    "simplifiable-if-expression": 1,
     "broad-exception-caught": 7,  # Necessary in order not to raise non critical errors. Will be reduced by schema refactor
-    "broad-except": 4,
     "bare-except": 3,  # Necessary in order not to raise non critical errors. Will be reduced by schema refactor
     "too-many-public-methods": 2,  # Try to lower by splitting DessiaObject and Workflow
     "too-many-statements": 2,  # Will be solved by schema refactor and jsonchema removal
     "undefined-loop-variable": 1,  # Fearing to break the code by solving it
     "attribute-defined-outside-init": 3,  # For test purposes
     "too-many-nested-blocks": 2,
-    "consider-using-with": 2,
-    "bad-staticmethod-argument": 1,
     "consider-using-generator": 1,
-    "chained-comparison": 1,
-    "wildcard-import": 1,
-    "use-maxsplit-arg": 1,
-    "duplicate-code": 1,
-    "too-many-lines": 1,
-    "unsubscriptable-object": 6
 }
 
 ERRORS_WITHOUT_TIME_DECREASE = ['protected-access', 'arguments-differ', 'too-many-locals', 'too-many-branches',

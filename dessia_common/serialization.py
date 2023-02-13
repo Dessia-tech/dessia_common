@@ -278,14 +278,7 @@ def deserialize(serialized_element, sequence_annotation: str = 'List',
             return pointers_memo[path]
 
     if isinstance(serialized_element, dict):
-        # try:
         return dict_to_object(serialized_element, global_dict=global_dict, pointers_memo=pointers_memo, path=path)
-        # except TypeError:
-        #     warnings.warn(f'specific dict_to_object of class {serialized_element.__class__.__name__}'
-        #                   ' should implement global_dict and'
-        #                   ' pointers_memo arguments',
-        #                   Warning)
-        #     return dict_to_object(serialized_element)
     if dcty.is_sequence(serialized_element):
         return deserialize_sequence(sequence=serialized_element, annotation=sequence_annotation,
                                     global_dict=global_dict, pointers_memo=pointers_memo, path=path)
