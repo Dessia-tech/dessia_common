@@ -24,24 +24,28 @@ from ast import literal_eval
 
 import dessia_common.errors
 from dessia_common.utils.diff import data_eq, diff, choose_hash
-from dessia_common.utils.types import is_sequence, is_bson_valid, TYPES_FROM_STRING
+from dessia_common.utils.types import is_sequence, is_bson_valid
 from dessia_common.utils.copy import deepcopy_value
-from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotation, JSONSCHEMA_HEADER, \
+from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotation, JSONSCHEMA_HEADER,\
     set_default_value
-from dessia_common.utils.docstrings import parse_docstring, FAILED_DOCSTRING_PARSING
-
+import dessia_common.schemas.core as dcs
 from dessia_common.serialization import SerializableObject, deserialize_argument, serialize
 from dessia_common.exports import XLSXWriter, MarkdownWriter, ExportFormat
-
 from dessia_common.typings import JsonSerializable
 from dessia_common import templates
-from dessia_common.checks import CheckList, FailedCheck
+import dessia_common.checks as dcc
 from dessia_common.displays import DisplayObject, DisplaySetting
 from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
 import dessia_common.utils.helpers as dch
 import dessia_common.files as dcf
 
-_FORBIDDEN_ARGNAMES = ['self', 'cls', 'progress_callback', 'return']
+
+def __getattr__(name):
+    if name == "_FORBIDDEN_ARGNAMES":
+        warnings.warn("Attribute '_FORBIDDEN_ARGNAMES' is deprecated. Use schemas.RESERVED_ARGNAMES instead",
+                      DeprecationWarning)
+        return dcs.RESERVED_ARGNAMES
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 
 _fullargsspec_cache = {}
 
@@ -95,7 +99,6 @@ class DessiaObject(SerializableObject):
     :ivar Any kwargs: Additional user metadata
     """
 
-    _standalone_in_db = False
     _non_editable_attributes = []
     _non_data_eq_attributes = ['name']
     _non_data_hash_attributes = ['name']
@@ -176,19 +179,27 @@ class DessiaObject(SerializableObject):
     @classmethod
     def base_jsonschema(cls):
         """ Return jsonschema header and base schema. """
-        jsonschema = deepcopy(JSONSCHEMA_HEADER)
-        jsonschema['properties']['name'] = {
-            "type": 'string',
-            "title": "Object Name",
-            "description": "Object name",
-            "editable": True,
-            "default_value": "Object Name"
-        }
-        return jsonschema
+        warnings.warn("base_jsonschema method is deprecated and will be removed in a future version",
+                      DeprecationWarning)
+        schema = deepcopy(dcs.SCHEMA_HEADER)
+        schema['properties']['name'] = {"type": 'string', "title": "Object Name", "description": "Object name",
+                                        "editable": True, "default_value": "Object Name"}
+        return schema
+
+    @classmethod
+    def schema(cls):
+        """ Schema of class: transfer python data structure to web standard. """
+        if hasattr(cls, '_jsonschema'):
+            warnings.warn("Jsonschema is fully deprecated and you may want to use the new generic schema feature."
+                          "Please consider so", DeprecationWarning)
+            return cls._jsonschema
+        schema = dcs.ClassSchema(cls)
+        return schema
 
     @classmethod
     def jsonschema(cls):
         """ Jsonschema of class: transfer python data structure to web standard. """
+        warnings.warn("base_jsonschema method is deprecated. Use schema instead", DeprecationWarning)
         if hasattr(cls, '_jsonschema'):
             _jsonschema = cls._jsonschema
             return _jsonschema
@@ -211,15 +222,15 @@ class DessiaObject(SerializableObject):
         # Parse docstring
         try:
             docstring = cls.__doc__
-            parsed_docstring = parse_docstring(docstring=docstring, annotations=annotations)
+            parsed_docstring = dcs.parse_docstring(docstring=docstring, annotations=annotations)
         except Exception:
-            parsed_docstring = FAILED_DOCSTRING_PARSING
+            parsed_docstring = dcs.FAILED_DOCSTRING_PARSING
         parsed_attributes = parsed_docstring['attributes']
 
         # Initialize jsonschema
         _jsonschema = deepcopy(JSONSCHEMA_HEADER)
 
-        required_arguments, default_arguments = inspect_arguments(method=init, merge=False)
+        required_arguments, default_arguments = dcs.inspect_arguments(method=init, merge=False)
         _jsonschema['required'] = required_arguments
         _jsonschema['standalone_in_db'] = cls._standalone_in_db
         _jsonschema['description'] = parsed_docstring['description']
@@ -247,7 +258,7 @@ class DessiaObject(SerializableObject):
                                                      parsed_attributes=parsed_attributes)
                 _jsonschema['properties'].update(jss_elt)
                 if name in default_arguments:
-                    default = set_default_value(_jsonschema['properties'], name, default_arguments[name])
+                    default = set_default_value(_jsonschema["properties"], name, default_arguments[name])
                     _jsonschema['properties'].update(default)
 
         _jsonschema['classes'] = [cls.__module__ + '.' + cls.__name__]
@@ -255,8 +266,21 @@ class DessiaObject(SerializableObject):
         return _jsonschema
 
     @property
+    def method_schemas(self):  # TODO This should be a classmethod, but is a property to avoid collision with workflow.
+        """ Generate dynamic schemas for methods of class. """
+        cls = self.__class__
+        valid_method_names = [m for m in dir(cls) if not m.startswith('_') and m in cls._allowed_methods]
+        schemas = {}
+        for method_name in valid_method_names:
+            method = getattr(cls, method_name)
+            schema = dcs.MethodSchema(method)
+            schemas[method_name] = schema.to_dict()
+        return schemas
+
+    @property
     def _method_jsonschemas(self):
         """ Generates dynamic jsonschemas for methods of class. """
+        warnings.warn("method_jsonschema method is deprecated. Use method_schema instead", DeprecationWarning)
         jsonschemas = {}
         class_ = self.__class__
 
@@ -272,7 +296,7 @@ class DessiaObject(SerializableObject):
             method = getattr(class_, method_name)
 
             if not isinstance(method, property):
-                required_args, default_args = inspect_arguments(method=method, merge=False)
+                required_args, default_args = dcs.inspect_arguments(method=method, merge=False)
                 annotations = get_type_hints(method)
                 if annotations:
                     jsonschemas[method_name] = deepcopy(JSONSCHEMA_HEADER)
@@ -281,15 +305,14 @@ class DessiaObject(SerializableObject):
                     for i, annotation in enumerate(annotations.items()):
                         # TOCHECK Not actually ordered
                         argname = annotation[0]
-                        if argname not in _FORBIDDEN_ARGNAMES:
+                        if argname not in dcs.RESERVED_ARGNAMES:
                             if argname in required_args:
                                 jsonschemas[method_name]['required'].append(str(i))
                             jsonschema_element = jsonschema_from_annotation(annotation, {}, i)[argname]
 
                             jsonschemas[method_name]['properties'][str(i)] = jsonschema_element
                             if argname in default_args:
-                                default = set_default_value(jsonschemas[method_name]['properties'],
-                                                            str(i),
+                                default = set_default_value(jsonschemas[method_name]['properties'], str(i),
                                                             default_args[argname])
                                 jsonschemas[method_name]['properties'].update(default)
         return jsonschemas
@@ -375,9 +398,9 @@ class DessiaObject(SerializableObject):
 
         return cls.dict_to_object(dict_)
 
-    def check_list(self, level: str = 'error', check_platform: bool = True):
+    def check_list(self, level: str = 'error', check_platform: bool = True) -> dcc.CheckList:
         """ Return a list of potential info, warning and issues on the instance, that might be user custom. """
-        check_list = CheckList([])
+        check_list = dcc.CheckList([])
 
         if check_platform:
             check_list += self.check_platform(level=level)
@@ -396,8 +419,12 @@ class DessiaObject(SerializableObject):
 
         return check_list
 
-    def is_valid(self, level='error'):
-        """ Return whether the object of valid 'above' given level. Default is error, but warning can be forbidden. """
+    def is_valid(self, level: str = 'error') -> bool:
+        """
+        Return whether the object of valid 'above' given level.
+
+        Default is error, but warnings can be forbidden.
+        """
         return not self.check_list().checks_above_level(level=level)
 
     def copy(self, deep: bool = True, memo=None):
@@ -569,23 +596,23 @@ class DessiaObject(SerializableObject):
 
         if not deserialized_object._data_eq(self):
             print('data diff: ', self._data_diff(deserialized_object))
-            checks.append(FailedCheck('Object is not equal to itself after serialization/deserialization'))
-
+            checks.append(dcc.FailedCheck('Object is not equal to itself after serialization/deserialization'))
         copied_object = self.copy()
         if not copied_object._data_eq(self):
             try:
                 print('data diff: ', self._data_diff(copied_object))
             except:
                 pass
-            checks.append(FailedCheck('Object is not equal to itself after copy'))
+            checks.append(dcc.FailedCheck('Object is not equal to itself after copy.'))
 
         valid, hint = is_bson_valid(stringify_dict_keys(dict_))
         if not valid:
-            checks.append(FailedCheck(f'Object is not bson valid {hint}'))
+            checks.append(dcc.FailedCheck(f'Object is not bson valid {hint}'))
 
         json.dumps(self._displays())
-        json.dumps(self._method_jsonschemas)
-        return CheckList(checks)
+        json.dumps(self.method_schemas)
+
+        return dcc.CheckList(checks)
 
     def to_xlsx(self, filepath: str):
         """ Export the object to an XLSX file given by the filepath. """
@@ -699,12 +726,6 @@ class PhysicalObject(DessiaObject):
         """
         return self.volmdlr_volume_model().to_stl(filepath=filepath)
 
-    # def _displays(self, **kwargs):
-    #     """
-    #     Compute the list of displays
-    #     """
-    #     return DessiaObject._displays(self, **kwargs)
-
     def babylonjs(self, use_cdn=True, debug=False, **kwargs):
         """ Show the 3D volmdlr of an object by calling volmdlr_volume_model method and plot in in browser. """
         self.volmdlr_volume_model(**kwargs).babylonjs(use_cdn=use_cdn, debug=debug)
@@ -715,8 +736,7 @@ class PhysicalObject(DessiaObject):
 
         :param filename: The file's name. Default value is None
         :type filename: str, optional
-        :param use_cdn: Activates the use of a content delivery network.
-            Default value is True
+        :param use_cdn: Activates the use of a content delivery network. Default value is True
         :type use_cdn: bool, optional
         :param debug: Activates the debug mode. Default value is False
         :type debug: bool, optional
@@ -809,20 +829,16 @@ class DessiaFilter(DessiaObject):
     """
     Base class for filters working on lists of DessiaObjects (List[DessiaObject]).
 
-    :param attribute:
-        Name of attribute on which to filter
+    :param attribute: Name of attribute on which to filter
     :type attribute: str
 
-    :param comparison_operator:
-        Comparison operator
+    :param comparison_operator: Comparison operator
     :type comparison_operator: str
 
-    :param bound:
-        The bound value to compare `'attribute'` of DessiaObjects of a list with `'comparison_operator'`
+    :param bound: The bound value to compare `'attribute'` of DessiaObjects of a list with `'comparison_operator'`
     :type bound: float
 
-    :param name:
-        Name of filter
+    :param name: Name of filter
     :type name: `str`, `optional`, defaults to `''`
 
     :Comparison operators:
@@ -878,8 +894,7 @@ class DessiaFilter(DessiaObject):
         """
         Get the boolean indexing of a filtered list.
 
-        :param values:
-            List of DessiaObjects to filter
+        :param values: List of DessiaObjects to filter
         :type values: List[DessiaObject]
 
         :return: `list of length `len(values)` where elements are `True` if kept by the filter, otherwise `False`.
@@ -900,8 +915,7 @@ class DessiaFilter(DessiaObject):
         """
         Transform a boolean list to an index list.
 
-        :param booleans_list:
-            list of length `len(values)` where elements are `True` if kept, otherwise `False`.
+        :param booleans_list: list of length `len(values)` where elements are `True` if kept, otherwise `False`.
         :type booleans_list: List[int]
 
         :return: list of kept indexes
@@ -924,12 +938,10 @@ class DessiaFilter(DessiaObject):
         """
         Apply a Dessia Filter on a list of DessiaObjects.
 
-        :param values:
-            List of DessiaObjects to filter
+        :param values: List of DessiaObjects to filter
         :type values: List[DessiaObject]
 
-        :param booleans_list:
-            list of length `len(values)` where elements are `True` if kept, otherwise `False`.
+        :param booleans_list: list of length `len(values)` where elements are `True` if kept, otherwise `False`.
         :type booleans_list: List[List[bool]]
 
         :return: List of filtered values
@@ -952,16 +964,13 @@ class FiltersList(DessiaObject):
     """
     Combine several filters stored as a list of DessiaFilters with a logical operator.
 
-    :param filters:
-        List of DessiaFilters to combine
+    :param filters: List of DessiaFilters to combine
     :type filters: List[DessiaFilter]
 
-    :param logical_operator:
-        Logical operator to combine filters
+    :param logical_operator: Logical operator to combine filters
     :type logical_operator: str
 
-    :param name:
-        Name of FiltersList
+    :param name: Name of FiltersList
     :type name: `str`, `optional`, defaults to `''`
 
     :Logical operators: `'and'`, `'or'`, `'xor'`
@@ -995,16 +1004,13 @@ class FiltersList(DessiaObject):
         """
         Compute a FilersList from a pre-built list of DessiaFilter.
 
-        :param filters:
-            List of DessiaFilters to combine
+        :param filters: List of DessiaFilters to combine
         :type filters: List[DessiaFilter]
 
-        :param logical_operator:
-            Logical operator to combine filters (`'and'`, `'or'` or `'xor'`)
+        :param logical_operator: Logical operator to combine filters (`'and'`, `'or'` or `'xor'`)
         :type logical_operator: `str`, `optional`, defaults to `'and'`
 
-        :param name:
-            Name of FiltersList
+        :param name: Name of FiltersList
         :type name: `str`, `optional`, defaults to `''`
 
         :return: A new instantiated list of DessiaFilter
@@ -1026,12 +1032,10 @@ class FiltersList(DessiaObject):
         """
         Combine a list of `n` booleans indexes with the logical operator into a simple booleans index.
 
-        :param booleans_lists:
-            List of `n` booleans indexes
+        :param booleans_lists: List of `n` booleans indexes
         :type booleans_lists: List[List[bool]]
 
-        :param logical_operator:
-            Logical operator to combine filters (`'or'`, `'and'` or `'xor'`)
+        :param logical_operator: Logical operator to combine filters (`'or'`, `'and'` or `'xor'`)
         :type logical_operator: `str`, `optional`, defaults to 'and'
 
         :raises NotImplementedError: If logical_operator is not one of `'and'`, `'or'`, `'xor'`, raises an error
@@ -1137,7 +1141,6 @@ def dict_merge(old_dct, merge_dct, add_keys=True, extend_lists=True):
     dct = deepcopy(old_dct)
     if not add_keys:
         merge_dct = {k: merge_dct[k] for k in set(dct).intersection(set(merge_dct))}
-
     for key, value in merge_dct.items():
         if isinstance(dct.get(key), dict) and isinstance(value, collections.abc.Mapping):
             dct[key] = dict_merge(dct[key], merge_dct[key], add_keys=add_keys, extend_lists=extend_lists)
@@ -1145,7 +1148,6 @@ def dict_merge(old_dct, merge_dct, add_keys=True, extend_lists=True):
             dct[key].extend(value)
         else:
             dct[key] = value
-
     return dct
 
 
@@ -1187,21 +1189,6 @@ def enhanced_deep_attr(obj, sequence):
     else:
         path = f"#/{'/'.join(sequence)}"
     return get_in_object_from_path(object_=obj, path=path)
-
-    # # Sequence is a string and not a sequence of deep attributes
-    # if '/' in sequence:
-    #     # Is deep attribute reference
-    #     sequence = sequence.split('/')
-    #     return enhanced_deep_attr(obj=obj, sequence=sequence)
-    # # Is direct attribute
-    # return enhanced_get_attr(obj=obj, attr=sequence)
-    #
-    # # Get direct attribute
-    # subobj = enhanced_get_attr(obj=obj, attr=sequence[0])
-    # if len(sequence) > 1:
-    #     # Recursively get deep attributes
-    #     subobj = enhanced_deep_attr(obj=subobj, sequence=sequence[1:])
-    # return subobj
 
 
 def enhanced_get_attr(obj, attr):
@@ -1261,7 +1248,7 @@ def type_from_annotation(type_, module):
     """ Clean up a proposed type if there are stringified. """
     if isinstance(type_, str):
         # Evaluating types
-        type_ = TYPES_FROM_STRING.get(type_, default=getattr(import_module(module), type_))
+        type_ = dcs.TYPES_FROM_STRING.get(type_, default=getattr(import_module(module), type_))
     return type_
 
 
@@ -1272,41 +1259,32 @@ def prettyname(namestr):
 
 
 def inspect_arguments(method, merge=False):
-    """ Get method arguments and default arguments as sequences while removing forbidden ones (self, cls...)."""
-    # Find default value and required arguments of class construction
-    method_full_name = f'{method.__module__}.{method.__qualname__}'
-    if method_full_name in _fullargsspec_cache:
-        argspecs = _fullargsspec_cache[method_full_name]
-    else:
-        argspecs = inspect.getfullargspec(method)
-        _fullargsspec_cache[method_full_name] = argspecs
+    """
+    Find default value and required arguments of class construction.
 
-    nargs, ndefault_args = split_argspecs(argspecs)
+    Get method arguments and default arguments as sequences while removing forbidden ones (self, cls...).
+    """
+    warnings.warn("Method 'inspect_arguments' have been moved to dessia_common/schemas."
+                  "Use it instead instead", DeprecationWarning)
+    return dcs.inspect_arguments(method=method, merge=merge)
 
-    default_arguments = {}
-    arguments = []
-    for iargument, argument in enumerate(argspecs.args[1:]):
-        if argument not in _FORBIDDEN_ARGNAMES:
-            if iargument >= nargs - ndefault_args:
-                default_value = argspecs.defaults[ndefault_args - nargs + iargument]
-                if merge:
-                    arguments.append((argument, default_value))
-                else:
-                    default_arguments[argument] = default_value
-            else:
-                arguments.append(argument)
-    return arguments, default_arguments
+
+def split_default_args(argspecs, merge: bool = False):
+    """
+    Find default value and required arguments of class construction.
+
+    Get method arguments and default arguments as sequences while removing forbidden ones (self, cls...).
+    """
+    warnings.warn("Method 'split_default_args' have been moved to dessia_common/schemas."
+                  "Use it instead instead", DeprecationWarning)
+    return dcs.split_default_args(argspecs=argspecs, merge=merge)
 
 
 def split_argspecs(argspecs) -> Tuple[int, int]:
     """ Get number of regular arguments as well as arguments with default values. """
-    nargs = len(argspecs.args) - 1
-
-    if argspecs.defaults is not None:
-        ndefault_args = len(argspecs.defaults)
-    else:
-        ndefault_args = 0
-    return nargs, ndefault_args
+    warnings.warn("Method 'split_argspecs' have been moved to dessia_common/schemas."
+                  "Use it instead instead", DeprecationWarning)
+    return dcs.split_argspecs(argspecs=argspecs)
 
 
 def get_attribute_names(object_class):
@@ -1320,6 +1298,5 @@ def get_attribute_names(object_class):
     subclass_numeric_attributes = [name for name, param in subclass_attributes.items()
                                    if any(item in inspect.getmro(param.annotation)
                                           for item in [float, int, bool, complex])]
-    attributes += [attribute for attribute in subclass_numeric_attributes
-                   if attribute not in _FORBIDDEN_ARGNAMES]
+    attributes += [a for a in subclass_numeric_attributes if a not in dcs.RESERVED_ARGNAMES]
     return attributes
