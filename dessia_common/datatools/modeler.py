@@ -317,7 +317,8 @@ class ModeledDataset(Dataset):
         Dataset.__init__(self, dessia_objects=dessia_objects, name=name)
         self._common_attributes = input_names + output_names
 
-    def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#') -> JsonSerializable:
+    def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#', id_method=True,
+                id_memo=None) -> JsonSerializable:
         """ Specific to_dict method. """
         dict_ = super().to_dict(use_pointers, memo=memo, path=path)
         for dessia_object in dict_['dessia_objects']:

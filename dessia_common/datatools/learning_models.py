@@ -626,7 +626,7 @@ class Tree(Model):
         return model
 
     @classmethod
-    def _instantiate_dessia(cls, model, name: str = ''):
+    def _instantiate_dessia(cls, model, params: Dict[str, Any], name: str = ''):
         kwargs = {'name': name,
                   'tree_state': cls._getstate_dessia(model),
                   'n_classes': model.n_classes.tolist(),
