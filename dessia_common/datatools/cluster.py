@@ -104,7 +104,7 @@ class ClusteredDataset(Dataset):
 
     def clustered_sublists(self):
         """
-        Split a ClusteredDataset of labelled DessiaObjects into aClusteredDatasetet of labelled Datasets.
+        Split a ClusteredDataset of labeled DessiaObjects into a ClusteredDatasetet of labeled Datasets.
 
         :return: A ClusteredDataset of length n_cluster that store each cluster in a Dataset. Labels are \
             the labels of each cluster, i.e. stored Dataset
@@ -516,24 +516,21 @@ class ClusteredDataset(Dataset):
     @classmethod
     def from_pareto_sheets(cls, h_list: Dataset, costs_columns: List[str], nb_sheets: int = 1):
         """
-        Get successive pareto sheets where each label is the index of a pareto sheet put them in a `ClusteredDataset`.
+        Get successive Pareto sheets where each label is the index of a Pareto sheet put them in a `ClusteredDataset`.
 
-        A pareto sheet is defined as the optimal points in a DOE for a pre-computed costs.
+        A Pareto sheet is defined as the optimal points in a DOE for a pre-computed costs.
 
-        :param h_list:
-            The Dataset in which to pick optimal points.
+        :param h_list: The Dataset in which to pick optimal points.
         :type h_list: Dataset
 
-         :param costs_columns:
-             List of columns' indexes or attributes on which costs are stored in current Dataset
+         :param costs_columns: List of columns' indexes or attributes on which costs are stored in current Dataset
          :type costs_columns: `List[str]`
 
-        :param nb_sheets:
-            Number of pareto sheets to pick
+        :param nb_sheets: Number of Pareto sheets to pick
         :type nb_sheets: `int`, `optional`, default to `1`
 
-        :return: a ClusteredDataset where each element is labelled with its pareto_sheet. Elements outside a
-        pareto_sheet are labelled `n_sheets`
+        :return: a ClusteredDataset where each element is labeled with its pareto_sheet. Elements outside a
+        pareto_sheet are labeled `n_sheets`
         :rtype: ClusteredDataset
         """
         labels = []

@@ -219,7 +219,7 @@ def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=
 
 
 def serialize_dict_with_pointers(dict_, memo, path, id_method, id_memo):
-    """ Serialize a dict recursively with jsonpointers using a memo dict at a given path of the top level object. """
+    """ Serialize a dict recursively with JSON pointers using a memo dict at a given path of the top level object. """
     if memo is None:
         memo = {}
     if id_memo is None:
@@ -426,7 +426,7 @@ def deserialize_with_typing(type_, argument, global_dict=None, pointers_memo=Non
                 # This is not the right class, we should go see the parent
                 classes.remove(children_class)
     elif origin in [list, collections.abc.Iterator]:
-        # Homogenous sequences (lists)
+        # Homogeneous sequences (lists)
         sequence_subtype = args[0]
         deserialized_arg = [deserialize_argument(sequence_subtype, arg) for arg in argument]
         if origin is collections.abc.Iterator:
