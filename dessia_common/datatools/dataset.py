@@ -210,9 +210,9 @@ class Dataset(DessiaObject):
 
     def _print_objects_slice(self, key: slice, attr_space: int):
         string = ""
-        for dessia_object_idx in range(len(self[key])):
+        for index in range(len(self[key])):
             string += "\n"
-            string += self._print_object(dessia_object_idx, attr_space)
+            string += self._print_object(index, attr_space)
         return string
 
     def _write_str_prefix(self):
@@ -241,7 +241,7 @@ class Dataset(DessiaObject):
             string += "|" + name_attr + end_bar
         return string
 
-    def _print_object(self, dessia_object_idx: int, attr_space: int):
+    def _print_object(self, index: int, attr_space: int):
         printed_attributes = self._printed_attributes()
         string = ""
         for idx, attr in enumerate(printed_attributes):
@@ -249,7 +249,7 @@ class Dataset(DessiaObject):
             if idx == len(printed_attributes) - 1:
                 end_bar = "|"
 
-            attr_value = self._get_printed_value(dessia_object_idx, attr)
+            attr_value = self._get_printed_value(index, attr)
 
             string += "|" + " " * max((attr_space[idx] - len(str(attr_value)) - 1), 1)
             string += f"{attr_value}"[:attr_space[idx] - 4]
@@ -273,12 +273,11 @@ class Dataset(DessiaObject):
         return templates.dataset_markdown_template.substitute(name=name, class_=class_, element_details=element_details,
                                                               table=table)
 
-    def _get_printed_value(self, dessia_object_idx: int, attr: str):
-        # return getattr(dessia_object, attr)
+    def _get_printed_value(self, index: int, attr: str):
         try:
-            return getattr(self[dessia_object_idx], attr)
+            return getattr(self[index], attr)
         except AttributeError:
-            return self.matrix[dessia_object_idx][self.common_attributes.index(attr)]
+            return self.matrix[index][self.common_attributes.index(attr)]
 
     def __len__(self):
         """Length of Dataset is len(Dataset.dessia_objects)."""
