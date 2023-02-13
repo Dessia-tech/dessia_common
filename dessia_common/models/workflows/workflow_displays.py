@@ -1,3 +1,5 @@
+""" Workflow script that shows how to use displays. """
+
 from dessia_common.workflow.core import Workflow, Pipe
 from dessia_common.workflow.blocks import ClassMethod, PlotData, CadView, Markdown
 from dessia_common.typings import ClassMethodType

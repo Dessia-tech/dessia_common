@@ -684,7 +684,7 @@ class Workflow(Block):
         parsed_attributes = {}
         for i, input_ in enumerate(self.inputs + self.detached_variables):
             current_dict = {}
-            if isinstance(input_, TypedVariable) or isinstance(input_, TypedVariableWithDefaultValue):
+            if isinstance(input_, TypedVariable):
                 annotation = (str(i), input_.type_)
             else:
                 annotation = (str(i), Any)

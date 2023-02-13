@@ -18,7 +18,7 @@ import dessia_common.utils.types as dcty
 from dessia_common.utils.helpers import full_classname, get_python_class_from_class_name
 from dessia_common.abstract import CoreDessiaObject
 from dessia_common.typings import InstanceOf, JsonSerializable
-from dessia_common.graph import explore_tree_from_leaves  # , cut_tree_final_branches
+from dessia_common.graph import explore_tree_from_leaves
 from dessia_common.breakdown import get_in_object_from_path
 from dessia_common.schemas.core import TYPING_EQUIVALENCES, is_typing, serialize_typing
 
@@ -158,7 +158,6 @@ def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=
             return {'$ref': path_value}, memo
         try:
             serialized = value.to_dict(use_pointers=True, memo=memo, path=path, id_memo=id_memo)
-
         except TypeError:
             warnings.warn('specific to_dict should implement use_pointers, memo, path and id_memo arguments', Warning)
             serialized = value.to_dict()
@@ -173,12 +172,12 @@ def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=
             memo[value] = path, serialized, None
 
     elif isinstance(value, type):
+        # TODO Why do we serialize types with pointers ? These are only just strings.
         if value in memo:
             path_value, serialized_value, id_ = memo[value]
             id_memo[id_] = serialized_value
             return {'$ref': memo[value]}, memo
         serialized = serialize_typing(value)
-        # memo[value] = path
 
     # Regular object
     elif hasattr(value, 'to_dict'):

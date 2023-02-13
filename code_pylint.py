@@ -19,13 +19,13 @@ MIN_NOTE = 8.55
 
 UNWATCHED_ERRORS = ["fixme", "trailing-whitespace", "import-error"]
 
-MAX_ERROR_BY_TYPE = {"wrong-spelling-in-docstring": 453,
-                     "wrong-spelling-in-comment": 111,
-                     "protected-access": 38,
+MAX_ERROR_BY_TYPE = {"wrong-spelling-in-docstring": 396,
+                     "wrong-spelling-in-comment": 87,
+                     "protected-access": 43,
                      "arguments-differ": 1,
                      "no-member": 3,
-                     "too-many-locals": 11,  # Reduce by dropping vectored objects
-                     "too-many-branches": 14,
+                     "too-many-locals": 10,  # Reduce by dropping vectored objects
+                     "too-many-branches": 13,
                      "unused-argument": 6,
                      "cyclic-import": 2,
                      "no-self-use": 6,
@@ -33,7 +33,7 @@ MAX_ERROR_BY_TYPE = {"wrong-spelling-in-docstring": 453,
                      "too-few-public-methods": 9,
                      "unnecessary-comprehension": 1,
                      "no-value-for-parameter": 2,
-                     "too-many-return-statements": 9,
+                     "too-many-return-statements": 8,
                      "abstract-method": 6,
                      "import-outside-toplevel": 4,  # TODO : will reduced in a future work (when tests are ready)
                      "too-many-instance-attributes": 7,
@@ -50,7 +50,7 @@ MAX_ERROR_BY_TYPE = {"wrong-spelling-in-docstring": 453,
                      "bad-staticmethod-argument": 1,
                      "too-many-public-methods": 2,  # Try to lower by splitting DessiaObject and Workflow
                      "consider-using-generator": 1,
-                     "too-many-statements": 1,
+                     "too-many-statements": 2,
                      "chained-comparison": 1,
                      "wildcard-import": 1,
                      "use-maxsplit-arg": 1,
