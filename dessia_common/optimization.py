@@ -99,7 +99,7 @@ class DrivenModelOptimizer(Optimizer):
 
     def get_model_from_vector(self):
         """ Get model from vector. """ #TODO: change docstring
-        # modify inplace model from vector
+        # modify in-place model from vector
         raise NotImplementedError('the method must be overloaded by subclassing class')
 
 

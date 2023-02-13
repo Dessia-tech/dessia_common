@@ -80,8 +80,7 @@ def get_in_object_from_path(object_, path, evaluate_pointers=True):
     element = object_
     for segment in segments:
         if isinstance(element, dict) and '$ref' in element:
-            # Going down in the object and it is a reference
-            # Evaluating subreference
+            # Going down in the object and it is a reference : evaluating sub-reference
             if evaluate_pointers:
                 try:
                     element = get_in_object_from_path(object_, element['$ref'])

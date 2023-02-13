@@ -161,7 +161,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element, order, editable=N
                 # Types union
                 jsonschema_union_types(key, args, typing_, jsonschema_element)
         elif origin in [list, collections.abc.Iterator]:
-            # Homogenous sequences
+            # Homogeneous sequences
             jsonschema_element[key].update(jsonschema_sequence_recursion(value=typing_, order=order,
                                                                          title=title, editable=editable))
         elif origin is tuple:
@@ -186,16 +186,6 @@ def jsonschema_from_annotation(annotation, jsonschema_element, order, editable=N
                                             }})
         elif origin is Subclass:
             pass
-            # warnings.simplefilter('once', DeprecationWarning)
-            # msg = "\n\nTyping of attribute '{0}' from class {1} uses Subclass which is deprecated."\
-            #       "\n\nUse 'InstanceOf[{2}]' instead of 'Subclass[{2}]'.\n"
-            # arg = args[0].__name__
-            # warnings.warn(msg.format(key, args[0], arg), DeprecationWarning)
-            # # Several possible classes that are subclass of another one
-            # class_ = args[0]
-            # classname = dc.full_classname(object_=class_, compute_for='class')
-            # jsonschema_element[key].update({'type': 'object', 'instance_of': classname,
-            #                                 'standalone_in_db': class_._standalone_in_db})
         elif origin is dc_types.InstanceOf:
             # Several possible classes that are subclass of another one
             class_ = args[0]
@@ -300,10 +290,6 @@ def set_default_value(jsonschema_element, key, default_value):
     datatype = datatype_from_jsonschema(jsonschema_element[key])
     if default_value is None or datatype in ['builtin', 'heterogeneous_sequence', 'static_dict', 'dynamic_dict']:
         jsonschema_element[key]['default_value'] = default_value
-    # elif datatype == 'builtin':
-    #     jsonschema_element[key]['default_value'] = default_value
-    # elif datatype == 'heterogeneous_sequence':
-    #     jsonschema_element[key]['default_value'] = default_value
     elif datatype == 'homogeneous_sequence':
         msg = 'Object {} of type {} is not supported as default value'
         type_ = type(default_value)
@@ -312,19 +298,3 @@ def set_default_value(jsonschema_element, key, default_value):
         object_dict = default_value.to_dict(use_pointers=False)
         jsonschema_element[key]['default_value'] = object_dict
     return jsonschema_element
-    # if isinstance(default_value, tuple(TYPING_EQUIVALENCES.keys())) \
-    #         or default_value is None:
-    #     jsonschema_element[key]['default_value'] = default_value
-    # elif is_sequence(default_value):
-    #     if datatype == 'heterogeneous_sequence':
-    #         jsonschema_element[key]['default_value'] = default_value
-    #     else:
-    #         msg = 'Object {} of type {} is not supported as default value'
-    #         type_ = type(default_value)
-    #         raise NotImplementedError(msg.format(default_value, type_))
-    # else:
-    #     if datatype in ['standalone_object', 'embedded_object',
-    #                     'subclass', 'union']:
-    #     object_dict = default_value.to_dict()
-    #     jsonschema_element[key]['default_value'] = object_dict
-    #     else:

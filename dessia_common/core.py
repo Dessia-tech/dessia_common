@@ -118,7 +118,7 @@ class DessiaObject(SerializableObject):
                            + 'Please store your attributes by yourself in your init'),
                           DeprecationWarning)
 
-        # The code below has shown to be unefficient and should be remove in future version (0.16?)
+        # The code below has shown to be inefficient and should be remove in future version (0.16?)
         for property_name, property_value in kwargs.items():
             setattr(self, property_name, property_value)
 
@@ -404,19 +404,6 @@ class DessiaObject(SerializableObject):
 
         if check_platform:
             check_list += self.check_platform(level=level)
-
-        # Type checking: not ready yet
-        # class_argspec = inspect.getfullargspec(self.__class__)
-        # annotations = inspect.signature(self.__init__).parameters
-
-        # for arg in class_argspec.args:
-        #     if arg != 'self':
-        #         if arg in annotations:
-        #             value = self.__dict__[arg]
-        #             # print(annotations[arg], type(annotations[arg]))
-        #             print(annotations[arg].annotation)
-        #             check_list += type_check(value, annotations[arg].annotation.__class__, level=level)
-
         return check_list
 
     def is_valid(self, level: str = 'error') -> bool:
@@ -887,8 +874,8 @@ class DessiaFilter(DessiaObject):
         return self._REAL_OPERATORS[self.comparison_operator]
 
     def _to_lambda(self):
-        return lambda x: (self._comparison_operator()(get_in_object_from_path(value, f'#/{self.attribute}'), self.bound)
-                          for value in x)
+        return lambda x: (self._comparison_operator()(get_in_object_from_path(value, f'#/{self.attribute}'),
+                                                      self.bound) for value in x)
 
     def get_booleans_index(self, values: List[DessiaObject]):
         """
@@ -1054,7 +1041,7 @@ class FiltersList(DessiaObject):
         if logical_operator == 'or':
             return [any(booleans_tuple) for booleans_tuple in zip(*booleans_lists)]
         if logical_operator == 'xor':
-            return [True if sum(booleans_tuple) == 1 else False for booleans_tuple in zip(*booleans_lists)]
+            return [bool(sum(booleans_tuple)) for booleans_tuple in zip(*booleans_lists)]
         raise NotImplementedError(f"'{logical_operator}' str for 'logical_operator' attribute is not a use case")
 
     def get_booleans_index(self, dobjects_list: List[DessiaObject]):
