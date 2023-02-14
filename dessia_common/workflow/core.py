@@ -820,8 +820,7 @@ class Workflow(Block):
                    imposed_variable_values=imposed_variable_values, description=description,
                    documentation=documentation, name=dict_["name"])
 
-    def dict_to_arguments(self, dict_: JsonSerializable, method: str, global_dict=None,
-                          pointers_memo=None, path='#'):
+    def dict_to_arguments(self, dict_: JsonSerializable, method: str, global_dict=None, pointers_memo=None, path='#'):
         """ Process a JSON of arguments and deserialize them. """
         dict_ = {int(k): v for k, v in dict_.items()}  # serialisation set keys as strings
         if method in self._allowed_methods:
@@ -1929,7 +1928,11 @@ class WorkflowState(DessiaObject):
             self._activate_pipe(pipe=pipe, value=value)
 
     def _activable_blocks(self):
-        """ Return a list of all activable blocks, IE blocks that have all inputs ready for evaluation. """
+        """
+        Return a list of all activable blocks.
+
+        Activable blocks are blocks that have all inputs ready for evaluation.
+        """
         return [b for b in self.workflow.blocks if self._block_activable_by_inputs(b)
                 and (not self.activated_items[b] or b not in self.workflow.runtime_blocks)]
 
@@ -2070,11 +2073,6 @@ class WorkflowRun(WorkflowState):
             end_time = time.time()
         self.end_time = end_time
         self.execution_time = end_time - start_time
-        # filtered_input_values = input_values
-        # if workflow.has_file_inputs:
-        #     filtered_input_values = {i: v for i, v in input_values.items()
-        #                              if workflow.inputs[i] not in workflow.file_inputs}
-        # filtered_values = {p: values[p] for p in workflow.memorized_pipes if is_serializable(values[p])}
         filtered_values = {p: values[p] for p in workflow.memorized_pipes}
         WorkflowState.__init__(self, workflow=workflow, input_values=input_values,
                                activated_items=activated_items, values=filtered_values,
