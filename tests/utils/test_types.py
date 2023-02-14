@@ -58,7 +58,7 @@
 #         assert serialized_typing == 'typing.Type'
 #         deserialized_typing = deserialize_typing(serialized_typing)
 #         assert not deserialized_typing == test_typing
-#
+
 #
 # class TestIsJsonable(unittest.TestCase):
 #     # Some special cases above still use asserts
@@ -72,5 +72,4 @@
 #         self.assertEqual(is_jsonable(obj), jsonable)
 #
 #
-# if __name__ == '__main__':
-#     unittest.main(verbosity=2)
+

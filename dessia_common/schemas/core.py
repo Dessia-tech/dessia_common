@@ -616,7 +616,12 @@ class HeterogeneousSequence(TypingProperty):
     def __init__(self, annotation: Type[Tuple], attribute: str, definition_default: Tuple = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
-        self.item_schemas = [get_schema(annotation=a, attribute=f"{attribute}/{i}") for i, a in enumerate(self.args)]
+        self.additional_items = Ellipsis in self.args
+        if self.additional_items:
+            self.item_schemas = [get_schema(annotation=self.args[0], attribute=f"{attribute}/0")]
+        else:
+            self.item_schemas = [get_schema(annotation=a, attribute=f"{attribute}/{i}")
+                                 for i, a in enumerate(self.args)]
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
@@ -648,7 +653,7 @@ class HeterogeneousSequence(TypingProperty):
     def check_list(self) -> CheckList:
         """ Check validity of Tuple Type Hint. """
         issues = super().check_list()
-        issues += CheckList([self.has_enough_args()])
+        issues += CheckList([self.has_enough_args(), self.ellipsis_has_exactly_two_args()])
         return issues
 
     def has_enough_args(self) -> PassedCheck:
@@ -656,6 +661,18 @@ class HeterogeneousSequence(TypingProperty):
         if len(self.args) == 0:
             msg = f"{self.check_prefix}is typed as a 'Tuple' which requires at least 1 argument. " \
                   f"Expected 'Tuple[T0, T1, ..., Tn]', got '{self.annotation}'."
+            return FailedCheck(msg)
+        return PassedCheck(f"{self.check_prefix}has at least one argument : '{self.annotation}'.")
+
+    def ellipsis_has_exactly_two_args(self) -> PassedCheck:
+        """
+        Tuple can be ellipsed (Tuple[T, ...]), meaning that it contains any number of element.
+
+        In this case it MUST have exactly two arguments.
+        """
+        if self.additional_items and len(self.args) != 2:
+            msg = f"{self.check_prefix}is typed as an ellipsed 'Tuple' which requires at exactaly 2 arguments. " \
+                  f"Expected 'Tuple[T, ...]', got '{self.annotation}'."
             return FailedCheck(msg)
         return PassedCheck(f"{self.check_prefix}has at least one argument : '{self.annotation}'.")
 
@@ -1006,7 +1023,6 @@ def split_default_args(argspecs: inspect.FullArgSpec, merge: bool = False):
 def split_argspecs(argspecs: inspect.FullArgSpec) -> Tuple[int, int]:
     """ Get number of regular arguments as well as arguments with default values. """
     nargs = len(argspecs.args) - 1
-
     if argspecs.defaults is not None:
         ndefault_args = len(argspecs.defaults)
     else:
@@ -1137,11 +1153,16 @@ def extract_args(string: str) -> List[str]:
             closed_brackets += 1
         split_by_comma = closed_brackets == opened_brackets
         if split_by_comma and character == ",":
+            # We are a first level, because we closed as much brackets as we have opened
+            # Current arg is complete, we append it to args sequence and reset current_args
             args.append(current_arg)
             current_arg = ""
         else:
+            # We are at a deeper level, because all opened brackets haven't been closed.
+            # We build current arg
             current_arg += character
     if current_arg:
+        # Append last argument to args sequence
         args.append(current_arg)
     return args
 

@@ -96,7 +96,7 @@ class TypedVariable(Variable):
         """ Serializes the object with specific logic. """
         dict_ = super().to_dict(use_pointers, memo, path)
         if inspect.isclass(self.type_) and issubclass(self.type_, DisplayObject):
-            # QUICKFIX
+            # TODO QUICKFIX
             serialized = "dessia_common.displays.DisplayObject"
         else:
             serialized = serialize_typing(self.type_)
@@ -720,7 +720,7 @@ class Workflow(Block):
                 properties_dict[str(i)] = current_dict[str(i)]
 
         jsonschemas['run'].update({'required': required_inputs, 'method': True,
-                                   'python_typing': serialize_typing(MethodType)})
+                                   'python_typing': "dessia_common.typings.MethodType"})
         jsonschemas['start_run'] = deepcopy(jsonschemas['run'])
         jsonschemas['start_run']['required'] = []
         return jsonschemas

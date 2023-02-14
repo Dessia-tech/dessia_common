@@ -23,7 +23,6 @@ scripts = [
     "schemas/classes.py",
     "schemas/methods.py",
     "schemas/workflows.py",
-    "schemas/annotation_deserialization.py",
 
     # Workflows
     "workflow/blocks.py",
@@ -58,7 +57,10 @@ scripts = [
 
     # Unit tests
     "unit_tests.py",
-    "bson_valid.py"
+    "bson_valid.py",
+
+    # Schema Unit Tests
+    "schemas/test_annotation_serialization.py"
 ]
 
 for script_name in scripts:
