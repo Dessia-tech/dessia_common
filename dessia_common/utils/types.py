@@ -55,7 +55,7 @@ def is_classname_transform(string: str):
 
 
 def is_jsonable(obj):
-    """ Returns if object can be dumped as it is in a JSON. """
+    """ Returns if the object can be dumped as it is in a JSON. """
     # First trying with orjson which is more efficient
     try:
         orjson.dumps(obj, option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS).decode('utf-8')

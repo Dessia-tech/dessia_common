@@ -32,7 +32,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Toggle some D2xx errors
 - Tag for release candidate
 
-
 ### Fixed
 
 - fix str of Dataset
