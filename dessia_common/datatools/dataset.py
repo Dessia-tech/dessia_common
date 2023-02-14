@@ -825,7 +825,6 @@ class Dataset(DessiaObject):
                     frontier_2d = Dataset._pareto_frontier_2d(x_dim, y_dim, pareto_costs,
                                                               npy.max(array_costs[:, x_dim]), super_mini)
                     pareto_frontiers.append(frontier_2d)
-
         return pareto_frontiers
 
     @staticmethod
