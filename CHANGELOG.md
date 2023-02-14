@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - tutorials/ci_tutorials.py added to check runnability of .ipynb files inside this new folder
 - automatic upload of coverage
+- fixing versions of pylint and pydocstyle to avoid uncontrolled new errors
 
 ### Performance
 
@@ -36,7 +37,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Toggle some D2xx errors
 - Tag for release candidate
-
 
 ### Fixed
 

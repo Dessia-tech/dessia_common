@@ -1929,7 +1929,7 @@ class WorkflowState(DessiaObject):
             self._activate_pipe(pipe=pipe, value=value)
 
     def _activable_blocks(self):
-        """ Return a list of all activable blocks, IE blocks that have all inputs ready for evaluation. """
+        """ Returns a list of all activable blocks, IE blocks that have all inputs ready for evaluation. """
         return [b for b in self.workflow.blocks if self._block_activable_by_inputs(b)
                 and (not self.activated_items[b] or b not in self.workflow.runtime_blocks)]
 
