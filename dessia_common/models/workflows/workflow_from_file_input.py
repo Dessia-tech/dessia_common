@@ -1,6 +1,4 @@
-"""
-Test Workflow to check good behavior with file inputs.
-"""
+""" Test Workflow to check good behavior with file inputs. """
 
 from dessia_common.workflow.core import Workflow
 from dessia_common.workflow.blocks import ClassMethod

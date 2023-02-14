@@ -1,7 +1,4 @@
-"""
-Library for building Dataset.
-
-"""
+""" Library for building Dataset. """
 from typing import List, Dict, Any
 from copy import copy
 import itertools
@@ -12,7 +9,7 @@ from sklearn import preprocessing
 
 try:
     from plot_data.core import Scatter, Histogram, MultiplePlots, Tooltip, ParallelPlot, PointFamily, EdgeStyle, Axis, \
-        PointStyle
+        PointStyle, Sample
     from plot_data.colors import BLUE, GREY
 except ImportError:
     pass
@@ -83,14 +80,13 @@ class Dataset(DessiaObject):
             >>> Dataset(all_cars_wi_feat).extend(Dataset(all_cars_wi_feat))
             Dataset(all_cars_wi_feat + all_cars_wi_feat)
     """
+
     _standalone_in_db = True
     _vector_features = ["name", "common_attributes"]
     _non_data_eq_attributes = ["name", "_common_attributes", "_matrix"]
 
     def __init__(self, dessia_objects: List[DessiaObject] = None, name: str = ''):
-        """
-        See class docstring.
-        """
+        """ See class docstring. """
         if dessia_objects is None:
             dessia_objects = []
         self.dessia_objects = dessia_objects
@@ -127,9 +123,7 @@ class Dataset(DessiaObject):
         raise NotImplementedError(f"key of type {type(key)} not implemented for indexing Datasets")
 
     def __add__(self, other: 'Dataset'):
-        """
-        Allows to merge two Dataset into one by merging their dessia_object into one list.
-        """
+        """ Allows to merge two Dataset into one by merging their dessia_object into one list. """
         if self.__class__ != Dataset or other.__class__ != Dataset:
             raise TypeError("Addition only defined for Dataset. A specific __add__ method is required for "
                             f"{self.__class__}")
@@ -188,7 +182,7 @@ class Dataset(DessiaObject):
         return new_hlist
 
     def __str__(self):
-        """Print Dataset as a table."""
+        """ Print Dataset as a table. """
         attr_space = []
 
         prefix = self._write_str_prefix()
@@ -214,11 +208,11 @@ class Dataset(DessiaObject):
             return self.common_attributes
         return ['name'] + self.common_attributes
 
-    def _print_objects_slice(self, key: slice, attr_space: int):
+    def _print_objects_slice(self, key: slice, attr_space: List[int]):
         string = ""
-        for dessia_object in self.dessia_objects[key]:
+        for index in range(len(self[key])):
             string += "\n"
-            string += self._print_object(dessia_object, attr_space)
+            string += self._print_object(index, attr_space)
         return string
 
     def _write_str_prefix(self):
@@ -226,7 +220,7 @@ class Dataset(DessiaObject):
         prefix += f"{len(self)} samples, {len(self.common_attributes)} features"
         return prefix
 
-    def _print_titles(self, attr_space: int):
+    def _print_titles(self, attr_space: List[int]):
         min_col_length = 16
         printed_attributes = self._printed_attributes()
         string = ""
@@ -247,7 +241,7 @@ class Dataset(DessiaObject):
             string += "|" + name_attr + end_bar
         return string
 
-    def _print_object(self, dessia_object: DessiaObject, attr_space: int):
+    def _print_object(self, index: int, attr_space: List[int]):
         printed_attributes = self._printed_attributes()
         string = ""
         for idx, attr in enumerate(printed_attributes):
@@ -255,7 +249,7 @@ class Dataset(DessiaObject):
             if idx == len(printed_attributes) - 1:
                 end_bar = "|"
 
-            attr_value = self._get_printed_value(dessia_object, attr)
+            attr_value = self._get_printed_value(index, attr)
 
             string += "|" + " " * max((attr_space[idx] - len(str(attr_value)) - 1), 1)
             string += f"{attr_value}"[:attr_space[idx] - 4]
@@ -279,8 +273,11 @@ class Dataset(DessiaObject):
         return templates.dataset_markdown_template.substitute(name=name, class_=class_, element_details=element_details,
                                                               table=table)
 
-    def _get_printed_value(self, dessia_object: DessiaObject, attr: str):
-        return getattr(dessia_object, attr)
+    def _get_printed_value(self, index: int, attr: str):
+        try:
+            return getattr(self[index], attr)
+        except AttributeError:
+            return self.matrix[index][self.common_attributes.index(attr)]
 
     def __len__(self):
         """Length of Dataset is len(Dataset.dessia_objects)."""
@@ -315,7 +312,9 @@ class Dataset(DessiaObject):
     @property
     def matrix(self):
         """
-        Get equivalent matrix of dessia_objects, which is of dimensions `len(dessia_objects) x len(common_attributes)`.
+        Get equivalent matrix of dessia_objects.
+
+        Dimensions: `len(dessia_objects) x len(common_attributes)`.
         """
         if self._matrix is None:
             matrix = []
@@ -623,11 +622,9 @@ class Dataset(DessiaObject):
         scaled_matrix = preprocessing.StandardScaler().fit_transform(data_matrix)
         return [list(map(float, row.tolist())) for row in scaled_matrix]
 
-    def plot_data(self):
-        """
-        Plot a standard scatter matrix of all attributes in common_attributes and a dimensionality plot.
-        """
-        data_list = self._plot_data_list()
+    def plot_data(self, reference_path: str = "#", **kwargs):
+        """ Plot a standard scatter matrix of all attributes in common_attributes and a dimensionality plot. """
+        data_list = self._to_samples(reference_path=reference_path)
         if len(self.common_attributes) > 1:
             # Plot a correlation matrix : To develop
             # correlation_matrix = []
@@ -669,11 +666,15 @@ class Dataset(DessiaObject):
     def _tooltip_attributes(self):
         return self.common_attributes
 
-    def _plot_data_list(self):
-        plot_data_list = []
-        for row, _ in enumerate(self.dessia_objects):
-            plot_data_list.append({attr: self.matrix[row][col] for col, attr in enumerate(self.common_attributes)})
-        return plot_data_list
+    def _object_to_sample(self, dessia_object: DessiaObject, row: int, reference_path: str = '#'):
+        sample_values = {attr: self.matrix[row][col] for col, attr in enumerate(self.common_attributes)}
+        reference_path = f"{reference_path}/dessia_objects/{row}"
+        name = dessia_object.name if dessia_object.name else f"Sample {row}"
+        return Sample(values=sample_values, reference_path=reference_path, name=name)
+
+    def _to_samples(self, reference_path: str = '#'):
+        return [self._object_to_sample(dessia_object=dessia_object, row=row, reference_path=reference_path)
+                for row, dessia_object in enumerate(self.dessia_objects)]
 
     def _point_families(self):
         return [PointFamily(BLUE, list(range(len(self))))]
@@ -811,10 +812,7 @@ class Dataset(DessiaObject):
 
     @staticmethod
     def pareto_frontiers(len_data: int, costs: List[List[float]]):
-        """
-        Experimental method to draw the borders of Pareto domain.
-        """
-        # Experimental
+        """ Experimental method to draw the borders of Pareto domain. """
         checked_costs = Dataset._check_costs(len_data, costs)
         pareto_indexes = Dataset.pareto_indexes(checked_costs)
         pareto_costs = npy.array(list(itertools.compress(checked_costs, pareto_indexes)))
@@ -828,7 +826,6 @@ class Dataset(DessiaObject):
                     frontier_2d = Dataset._pareto_frontier_2d(x_dim, y_dim, pareto_costs,
                                                               npy.max(array_costs[:, x_dim]), super_mini)
                     pareto_frontiers.append(frontier_2d)
-
         return pareto_frontiers
 
     @staticmethod
