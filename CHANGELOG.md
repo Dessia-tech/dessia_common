@@ -52,6 +52,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tag for release candidate
 
 
+### Fixed
+
+- fix str of Dataset
+
 ## 0.12.0
 
 
