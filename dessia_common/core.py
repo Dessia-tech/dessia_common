@@ -448,7 +448,7 @@ class DessiaObject(SerializableObject):
 
     def plot_data(self, reference_path: str = "#", **kwargs):
         """
-        Base plot_data method. Overwrite this to display 2D or graphs on plateforme.
+        Base plot_data method. Overwrite this to display 2D or graphs on platform.
 
         Should return a list of plot_data's objects.
         """
