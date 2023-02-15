@@ -276,9 +276,9 @@ class TypingProperty(Property):
         serialized = self.origin.__name__
         if serialized in ["list", "dict", "tuple", "type"]:
             # TODO Dirty quickfix. Find a generic way to automatize this
-            serialized = self.origin.__name__.capitalize()
+            serialized = serialized.capitalize()
         if self.args:
-            serialized = f"{serialized}[{', '.join([s.serialized for s in self.args_schemas])}]"
+            return compute_typing_schema_serialization(serialized_typing=serialized, args_schemas=self.args_schemas)
         return serialized
 
     @classmethod
@@ -566,6 +566,11 @@ class UnionProperty(TypingProperty):
         else:
             self.standalone = None
 
+    @property
+    def serialized(self) -> str:
+        """ Generic serialization with 'Union' enforced, because Union annotation has no __name__ attribute. """
+        return compute_typing_schema_serialization(serialized_typing="Union", args_schemas=self.args_schemas)
+
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
         """ Deserialize Union annotation. """
@@ -617,11 +622,24 @@ class HeterogeneousSequence(TypingProperty):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
         self.additional_items = Ellipsis in self.args
+
+    @property
+    def args_schemas(self) -> List[Property]:
+        """
+        If length is undefined (additional_items is True), then we only have one possible argument type.
+
+        Otherwise, each argument is ordered and strictly defined by its type
+        """
         if self.additional_items:
-            self.item_schemas = [get_schema(annotation=self.args[0], attribute=f"{attribute}/0")]
-        else:
-            self.item_schemas = [get_schema(annotation=a, attribute=f"{attribute}/{i}")
-                                 for i, a in enumerate(self.args)]
+            return [get_schema(annotation=self.args[0], attribute=f"{self.attribute}/0")]
+        return [get_schema(annotation=a, attribute=f"{self.attribute}/{i}") for i, a in enumerate(self.args)]
+
+    @property
+    def serialized(self) -> str:
+        """ If additional items, concatenate ellipsis. """
+        if self.additional_items:
+            return f"Tuple[{self.args_schemas[0].serialized}, ...]"
+        return super().serialized
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
@@ -636,8 +654,8 @@ class HeterogeneousSequence(TypingProperty):
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write HeterogeneousSequence as a Dict. """
         chunk = super().to_dict(title=title, editable=editable, description=description)
-        items = [sp.to_dict(title=f"{title}/{i}", editable=editable) for i, sp in enumerate(self.item_schemas)]
-        chunk.update({'type': 'array', 'additionalItems': False, 'items': items})
+        items = [sp.to_dict(title=f"{title}/{i}", editable=editable) for i, sp in enumerate(self.args_schemas)]
+        chunk.update({'type': 'array', 'additionalItems': self.additional_items, 'items': items})
         return chunk
 
     def default_value(self):
@@ -648,7 +666,7 @@ class HeterogeneousSequence(TypingProperty):
         """
         if self.definition_default is not None:
             return self.definition_default
-        return tuple(s.default_value() for s in self.item_schemas)
+        return tuple(s.default_value() for s in self.args_schemas)
 
     def check_list(self) -> CheckList:
         """ Check validity of Tuple Type Hint. """
@@ -674,7 +692,7 @@ class HeterogeneousSequence(TypingProperty):
             msg = f"{self.check_prefix}is typed as an ellipsed 'Tuple' which requires at exactaly 2 arguments. " \
                   f"Expected 'Tuple[T, ...]', got '{self.annotation}'."
             return FailedCheck(msg)
-        return PassedCheck(f"{self.check_prefix}has at least one argument : '{self.annotation}'.")
+        return PassedCheck(f"{self.check_prefix}is not an ill-defined ellipsed tuple : '{self.annotation}'.")
 
 
 class HomogeneousSequence(TypingProperty):
@@ -687,8 +705,6 @@ class HomogeneousSequence(TypingProperty):
     def __init__(self, annotation: Type[List[T]], attribute: str, definition_default: List[T] = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
-        self.item_schemas = [get_schema(annotation=a, attribute=f"{attribute}/{i}") for i, a in enumerate(self.args)]
-
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
         """ Deserialize List annotation. """
@@ -699,7 +715,7 @@ class HomogeneousSequence(TypingProperty):
         if not title:
             title = 'Items'
         chunk = super().to_dict(title=title, editable=editable, description=description)
-        items = [sp.to_dict(title=f"{title}/{i}", editable=editable) for i, sp in enumerate(self.item_schemas)]
+        items = [sp.to_dict(title=f"{title}/{i}", editable=editable) for i, sp in enumerate(self.args_schemas)]
         chunk.update({'type': 'array', "items": items[0]})
         return chunk
 
@@ -1116,6 +1132,11 @@ def object_default(definition_default: CoreDessiaObject = None, class_schema: Cl
         # return class_schema.default_dict()
         pass
     return None
+
+
+def compute_typing_schema_serialization(serialized_typing: str, args_schemas: List[Property]) -> str:
+    """ Build final typing serialized string. """
+    return f"{serialized_typing}[{', '.join([s.serialized for s in args_schemas])}]"
 
 
 def serialize_typing(typing_, attribute: str = "") -> str:

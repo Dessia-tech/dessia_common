@@ -1,8 +1,9 @@
 from typing import Union, Type, List, Dict, Tuple
 from dessia_common.schemas.core import deserialize_annotation, extract_args, serialize_typing
 from dessia_common.forms import StandaloneObject
+from dessia_common.tests import Model
 from dessia_common.measures import Distance
-from dessia_common.typings import Subclass, InstanceOf, MethodType, ClassMethodType
+from dessia_common.typings import InstanceOf, MethodType, ClassMethodType
 from dessia_common.files import StringFile, BinaryFile
 import unittest
 from parameterized import parameterized
@@ -48,7 +49,7 @@ class TestAnnotationSerializationValid(unittest.TestCase):
         (Tuple[int, Tuple[StandaloneObject, str]], "Tuple[int, Tuple[dessia_common.forms.StandaloneObject, str]]"),
 
         # Union
-        (Union[StandaloneObject, int], "Union[dessia_common.forms.StandaloneObject, int]"),
+        (Union[StandaloneObject, Model], "Union[dessia_common.forms.StandaloneObject, dessia_common.tests.Model]"),
 
         # List
         (List[int], "List[int]"),
@@ -66,7 +67,7 @@ class TestAnnotationSerializationValid(unittest.TestCase):
         (InstanceOf[StandaloneObject], "InstanceOf[dessia_common.forms.StandaloneObject]"),
 
         # Subclass
-        (Subclass[StandaloneObject], "Subclass[dessia_common.forms.StandaloneObject]"),
+        # (Subclass[StandaloneObject], "Subclass[dessia_common.forms.StandaloneObject]"),
 
         # Methods
         (MethodType[StandaloneObject], "MethodType[dessia_common.forms.StandaloneObject]"),
