@@ -1,5 +1,5 @@
 from typing import Union, Type, List, Dict, Tuple
-from dessia_common.schemas.core import deserialize_annotation, extract_args, serialize_typing
+from dessia_common.schemas.core import deserialize_annotation, extract_args, serialize_annotation
 from dessia_common.forms import StandaloneObject
 from dessia_common.tests import Model
 from dessia_common.measures import Distance
@@ -82,7 +82,7 @@ class TestAnnotationSerializationValid(unittest.TestCase):
         (BinaryFile, "dessia_common.files.BinaryFile")
     ])
     def test_annotation_serialization_process(self, annotation, expected_serialized):
-        serialized = serialize_typing(annotation)
+        serialized = serialize_annotation(annotation)
         self.assertEqual(serialized, expected_serialized)
 
         deserialized = deserialize_annotation(serialized)

@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """ Schema generation functions. """
 import re
+import warnings
 from copy import deepcopy
 import inspect
 import collections.abc
@@ -1078,6 +1079,11 @@ SERIALIZED_TO_SCHEMA_CLASS = {
 }
 
 
+def serialize_annotation(annotation: Type[T], attribute: str = "") -> str:
+    schema = get_schema(annotation=annotation, attribute=attribute)
+    return schema.serialized
+
+
 def deserialize_annotation(serialized: str) -> Type[T]:
     """ From a string denoting an annotation, get deserialize value. """
     if "[" in serialized:
@@ -1141,8 +1147,9 @@ def compute_typing_schema_serialization(serialized_typing: str, args_schemas: Li
 
 def serialize_typing(typing_, attribute: str = "") -> str:
     """ Make use of schema to serialized annotations. """
-    schema = get_schema(annotation=typing_, attribute=attribute)
-    return schema.serialized
+    warnings.warn("Function serialize_typing have been renamed serialize_annotation. Please use it instead.",
+                  DeprecationWarning)
+    return serialize_annotation(annotation=typing_, attribute=attribute)
 
 
 def union_is_default_value(typing_: Type) -> bool:
@@ -1232,7 +1239,8 @@ def parse_attribute(param, annotations) -> Tuple[str, ParsedAttribute]:
         param = param.split(":type ")[0]
     argname, argdesc = param.split(":", maxsplit=1)
     annotation = annotations[argname]
-    parsed_attribute = {'desc': argdesc.strip(), 'type_': serialize_typing(annotation), 'annotation': str(annotation)}
+    parsed_attribute = {'desc': argdesc.strip(), 'type_': serialize_annotation(annotation),
+                        'annotation': str(annotation)}
     return argname, parsed_attribute
 
 

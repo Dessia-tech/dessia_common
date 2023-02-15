@@ -20,7 +20,7 @@ from dessia_common.abstract import CoreDessiaObject
 from dessia_common.typings import InstanceOf, JsonSerializable
 from dessia_common.graph import explore_tree_from_leaves
 from dessia_common.breakdown import get_in_object_from_path
-from dessia_common.schemas.core import TYPING_EQUIVALENCES, is_typing, serialize_typing
+from dessia_common.schemas.core import TYPING_EQUIVALENCES, is_typing, serialize_annotation
 
 fullargsspec_cache = {}
 
@@ -131,7 +131,7 @@ def serialize(value):
     elif isinstance(value, float64):
         serialized_value = float(value)
     elif isinstance(value, type) or is_typing(value):
-        return serialize_typing(value)
+        return serialize_annotation(value)
     elif hasattr(value, 'to_dict'):
         to_dict_method = getattr(value, 'to_dict', None)
         if callable(to_dict_method):
@@ -177,7 +177,7 @@ def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=
             path_value, serialized_value, id_ = memo[value]
             id_memo[id_] = serialized_value
             return {'$ref': memo[value]}, memo
-        serialized = serialize_typing(value)
+        serialized = serialize_annotation(value)
 
     # Regular object
     elif hasattr(value, 'to_dict'):

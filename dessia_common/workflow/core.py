@@ -19,8 +19,8 @@ import dessia_common.errors
 from dessia_common.graph import get_column_by_node
 from dessia_common.templates import workflow_template
 from dessia_common.core import DessiaObject
-from dessia_common.schemas.core import get_schema, FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE, serialize_typing,\
-    is_typing
+from dessia_common.schemas.core import get_schema, FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE,\
+    serialize_annotation, is_typing
 
 from dessia_common.utils.types import deserialize_typing, recursive_type, typematch, is_sequence, is_dessia_file
 from dessia_common.utils.copy import deepcopy_value
@@ -99,7 +99,7 @@ class TypedVariable(Variable):
             # TODO QUICKFIX
             serialized = "dessia_common.displays.DisplayObject"
         else:
-            serialized = serialize_typing(self.type_)
+            serialized = serialize_annotation(self.type_)
         dict_.update({'type_': serialized})
         return dict_
 
@@ -123,8 +123,8 @@ class TypedVariable(Variable):
 
         script.declaration += f", type_={self.type_.__name__}"
 
-        if "builtins" not in serialize_typing(self.type_):
-            script.imports.append(serialize_typing(self.type_))
+        if "builtins" not in serialize_annotation(self.type_):
+            script.imports.append(serialize_annotation(self.type_))
         return script
 
     def is_file_type(self) -> bool:
