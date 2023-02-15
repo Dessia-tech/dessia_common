@@ -58,12 +58,11 @@ class Schema:
 
         self.property_schemas = {}
         for attribute in self.attributes:
-            default = self.default_arguments.get(attribute, None)
-            annotation = self.annotations[attribute]
-            schema = get_schema(annotation=annotation, attribute=attribute, definition_default=default)
-            self.property_schemas[attribute] = schema
-
-        self.check_list().raise_if_above_level("error")
+            if attribute in self.annotations:
+                default = self.default_arguments.get(attribute, None)
+                annotation = self.annotations[attribute]
+                schema = get_schema(annotation=annotation, attribute=attribute, definition_default=default)
+                self.property_schemas[attribute] = schema
 
     @property
     def editable_attributes(self):
@@ -72,7 +71,7 @@ class Schema:
 
     def chunk(self, attribute: str):
         """ Extract and compute a schema from one of the attributes. """
-        schema = self.property_schemas[attribute]
+        schema = self.property_schemas.get(attribute, None)
 
         if self.parsed_attributes is not None and attribute in self.parsed_attributes:
             try:
@@ -83,14 +82,15 @@ class Schema:
             description = ""
 
         editable = attribute in self.editable_attributes
-        chunk = schema.to_dict(title=prettyname(attribute), editable=editable, description=description)
+        if schema is not None:
+            return schema.to_dict(title=prettyname(attribute), editable=editable, description=description)
 
         # if attribute in self.default_arguments:
         #     # TODO Could use this and Optional proxy in order to inject real default values for mutables
         #     default = self.default_arguments.get(attribute, None)
         #     print("Default", default)
         #     chunk["default_value"] = schema.default_value(definition_default=default)
-        return chunk
+        return {}
 
     @property
     def chunks(self):
@@ -126,12 +126,13 @@ class Schema:
 
         for attribute in self.attributes:
             # Is typed
-            check = self.attribute_is_annotated(attribute)
-            issues += CheckList([check])
+            is_typed_check = self.attribute_is_annotated(attribute)
+            issues += CheckList([is_typed_check])
 
-            # Specific check
-            schema = self.property_schemas[attribute]
-            issues += schema.check_list()
+            if is_typed_check.level != "error":
+                # Specific check
+                schema = self.property_schemas[attribute]
+                issues += schema.check_list()
         return issues
 
     def is_valid(self) -> bool:
