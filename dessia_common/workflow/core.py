@@ -28,7 +28,7 @@ from dessia_common.utils.diff import choose_hash
 from dessia_common.utils.helpers import prettyname
 from dessia_common.utils.jsonschema import set_default_value, JSONSCHEMA_HEADER, jsonschema_from_annotation
 
-from dessia_common.typings import JsonSerializable, MethodType
+from dessia_common.typings import JsonSerializable
 from dessia_common.files import StringFile, BinaryFile
 from dessia_common.displays import DisplaySetting, DisplayObject
 from dessia_common.breakdown import ExtractionError
