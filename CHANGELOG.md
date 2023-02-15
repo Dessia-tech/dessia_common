@@ -5,13 +5,8 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 0.14.0 [now dev]
 
-### CI
-
-- fixing versions of pylint and pydocstyle to avoid uncontrolled new errors
-
-## 0.14.0
+## Unreleased => 0.14.0
 
 ### Refactor
 
@@ -22,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 0.13.0
 
+### Chore
 
 - Tag for release candidate
 - Toggle some D2xx errors
@@ -34,6 +30,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - tutorials/ci_tutorials.py added to check runnability of .ipynb files inside this new folder
 - automatic upload of coverage
+- spellcheck with pyenchant integrated to pylint
+- fixing versions of pylint and pydocstyle to avoid uncontrolled new errors
 
 ### Performance
 
@@ -50,6 +48,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Toggle some D2xx errors
 - Tag for release candidate
 
+### Fixed
+
+- fix str of Dataset
 
 ## 0.12.0
 
@@ -76,6 +77,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - add a check to enforce update of changelog in PR
 - code_pydocstyle.py checks daily instead of weekly
+- Add a time decrease effect for pylint
 
 ### Added
 - modeling.py file in datatools which contains:

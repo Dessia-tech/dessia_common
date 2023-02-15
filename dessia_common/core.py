@@ -96,7 +96,7 @@ class DessiaObject(SerializableObject):
     :cvar List[str] _whitelist_attributes: List[str]
 
     :ivar str name: Name of object.
-    :ivar Any kwargs: Additionnal user metadata
+    :ivar Any kwargs: Additional user metadata
     """
 
     _non_editable_attributes = []
@@ -118,7 +118,7 @@ class DessiaObject(SerializableObject):
                            + 'Please store your attributes by yourself in your init'),
                           DeprecationWarning)
 
-        # The code below has shown to be unefficient and should be remove in future version (0.16?)
+        # The code below has shown to be inefficient and should be remove in future version (0.16?)
         for property_name, property_value in kwargs.items():
             setattr(self, property_name, property_value)
 
@@ -138,7 +138,7 @@ class DessiaObject(SerializableObject):
         """
         Generic equality of two objects.
 
-        Behavior can be controled by class attribute _eq_is_data_eq to tell if we must use python equality (based on
+        Behavior can be controlled by class attribute _eq_is_data_eq to tell if we must use python equality (based on
         memory addresses) (_eq_is_data_eq = False) or a data equality (True).
         """
         if self._eq_is_data_eq:
@@ -389,7 +389,7 @@ class DessiaObject(SerializableObject):
     @classmethod
     def load_from_file(cls, filepath: str):
         """
-        Load object from a json file.
+        Load object from a JSON file.
 
         :param filepath: either a string reprensenting the filepath or a stream
         """
@@ -404,19 +404,6 @@ class DessiaObject(SerializableObject):
 
         if check_platform:
             check_list += self.check_platform(level=level)
-
-        # Type checking: not ready yet
-        # class_argspec = inspect.getfullargspec(self.__class__)
-        # annotations = inspect.signature(self.__init__).parameters
-
-        # for arg in class_argspec.args:
-        #     if arg != 'self':
-        #         if arg in annotations:
-        #             value = self.__dict__[arg]
-        #             # print(annotations[arg], type(annotations[arg]))
-        #             print(annotations[arg].annotation)
-        #             check_list += type_check(value, annotations[arg].annotation.__class__, level=level)
-
         return check_list
 
     def is_valid(self, level: str = 'error') -> bool:
@@ -476,7 +463,7 @@ class DessiaObject(SerializableObject):
 
     def plot_data(self, reference_path: str = "#", **kwargs):
         """
-        Base plot_data method. Overwrite this to display 2D or graphs on plateforme.
+        Base plot_data method. Overwrite this to display 2D or graphs on platform.
 
         Should return a list of plot_data's objects.
         """
@@ -674,7 +661,7 @@ class PhysicalObject(DessiaObject):
 
     @staticmethod
     def display_settings():
-        """ Returns a list of json describing how to call subdisplays. """
+        """ Returns a list of DisplaySettings objects describing how to call subdisplays. """
         display_settings = DessiaObject.display_settings()
         display_settings.append(DisplaySetting(selector='cad', type_='babylon_data',
                                                method='volmdlr_volume_model().babylon_data', serialize_data=True))
@@ -887,8 +874,8 @@ class DessiaFilter(DessiaObject):
         return self._REAL_OPERATORS[self.comparison_operator]
 
     def _to_lambda(self):
-        return lambda x: (self._comparison_operator()(get_in_object_from_path(value, f'#/{self.attribute}'), self.bound)
-                          for value in x)
+        return lambda x: (self._comparison_operator()(get_in_object_from_path(value, f'#/{self.attribute}'),
+                                                      self.bound) for value in x)
 
     def get_booleans_index(self, values: List[DessiaObject]):
         """
@@ -1002,7 +989,7 @@ class FiltersList(DessiaObject):
     @classmethod
     def from_filters_list(cls, filters: List[DessiaFilter], logical_operator: str = 'and', name: str = ''):
         """
-        Compute a FilersList from a pre-built list of DessiaFilter.
+        Compute a FilersList from an already built list of DessiaFilter.
 
         :param filters: List of DessiaFilters to combine
         :type filters: List[DessiaFilter]
@@ -1054,7 +1041,7 @@ class FiltersList(DessiaObject):
         if logical_operator == 'or':
             return [any(booleans_tuple) for booleans_tuple in zip(*booleans_lists)]
         if logical_operator == 'xor':
-            return [True if sum(booleans_tuple) == 1 else False for booleans_tuple in zip(*booleans_lists)]
+            return [bool(sum(booleans_tuple)) for booleans_tuple in zip(*booleans_lists)]
         raise NotImplementedError(f"'{logical_operator}' str for 'logical_operator' attribute is not a use case")
 
     def get_booleans_index(self, dobjects_list: List[DessiaObject]):

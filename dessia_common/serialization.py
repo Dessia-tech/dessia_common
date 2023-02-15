@@ -219,7 +219,7 @@ def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=
 
 
 def serialize_dict_with_pointers(dict_, memo, path, id_method, id_memo):
-    """ Serialize a dict recursively with jsonpointers using a memo dict at a given path of the top level object. """
+    """ Serialize a dict recursively with JSON pointers using a memo dict at a given path of the top level object. """
     if memo is None:
         memo = {}
     if id_memo is None:
@@ -278,14 +278,7 @@ def deserialize(serialized_element, sequence_annotation: str = 'List',
             return pointers_memo[path]
 
     if isinstance(serialized_element, dict):
-        # try:
         return dict_to_object(serialized_element, global_dict=global_dict, pointers_memo=pointers_memo, path=path)
-        # except TypeError:
-        #     warnings.warn(f'specific dict_to_object of class {serialized_element.__class__.__name__}'
-        #                   ' should implement global_dict and'
-        #                   ' pointers_memo arguments',
-        #                   Warning)
-        #     return dict_to_object(serialized_element)
     if dcty.is_sequence(serialized_element):
         return deserialize_sequence(sequence=serialized_element, annotation=sequence_annotation,
                                     global_dict=global_dict, pointers_memo=pointers_memo, path=path)
@@ -426,7 +419,7 @@ def deserialize_with_typing(type_, argument, global_dict=None, pointers_memo=Non
                 # This is not the right class, we should go see the parent
                 classes.remove(children_class)
     elif origin in [list, collections.abc.Iterator]:
-        # Homogenous sequences (lists)
+        # Homogeneous sequences (lists)
         sequence_subtype = args[0]
         deserialized_arg = [deserialize_argument(sequence_subtype, arg) for arg in argument]
         if origin is collections.abc.Iterator:

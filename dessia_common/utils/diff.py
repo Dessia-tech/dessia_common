@@ -209,7 +209,6 @@ def data_eq(value1, value2):
 
     # Else: its an object
     if full_classname(value1) != full_classname(value2):
-        # print('full classname !=')
         return False
 
     # Test if _data_eq is customized
@@ -294,7 +293,7 @@ def dict_hash(dict_):
         # Try and sort keys in order to get first and last elements.
         sorted_keys = sorted(dict_.keys())
     except TypeError:
-        # Old less performant hash for non orderable keys.
+        # Old less efficient hash for non orderable keys.
         for key, value in dict_.items():
             hash_ += hash(key) + choose_hash(value)
         return hash_

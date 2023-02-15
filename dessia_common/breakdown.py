@@ -80,8 +80,7 @@ def get_in_object_from_path(object_, path, evaluate_pointers=True):
     element = object_
     for segment in segments:
         if isinstance(element, dict) and '$ref' in element:
-            # Going down in the object and it is a reference
-            # Evaluating subreference
+            # Going down in the object and it is a reference : evaluating sub-reference
             if evaluate_pointers:
                 try:
                     element = get_in_object_from_path(object_, element['$ref'])
@@ -100,7 +99,7 @@ def get_in_object_from_path(object_, path, evaluate_pointers=True):
 
 
 def merge_breakdown_dicts(dict1, dict2):
-    """ Merge strategy of breakdown dictionnaries. """
+    """ Merge strategy of breakdown dictionaries. """
     dict3 = dict1.copy()
     for class_name, refs in dict2.items():
         if class_name in dict3:

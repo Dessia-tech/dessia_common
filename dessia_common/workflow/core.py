@@ -763,7 +763,7 @@ class Workflow(Block):
 
         # self.refresh_blocks_positions()
         dict_ = Block.to_dict(self)
-        dict_['object_class'] = 'dessia_common.workflow.core.Workflow'  # TO force migrating from dessia_common.workflow
+        dict_['object_class'] = 'dessia_common.workflow.core.Workflow'  # Force migrating from dessia_common.workflow
         blocks = [b.to_dict() for b in self.blocks]
 
         pipes = [self.pipe_variable_indices(p) for p in self.pipes]
@@ -829,8 +829,7 @@ class Workflow(Block):
                    imposed_variable_values=imposed_variable_values, description=description,
                    documentation=documentation, name=dict_["name"])
 
-    def dict_to_arguments(self, dict_: JsonSerializable, method: str, global_dict=None,
-                          pointers_memo=None, path='#'):
+    def dict_to_arguments(self, dict_: JsonSerializable, method: str, global_dict=None, pointers_memo=None, path='#'):
         """ Process a JSON of arguments and deserialize them. """
         dict_ = {int(k): v for k, v in dict_.items()}  # serialisation set keys as strings
         if method in self._allowed_methods:
@@ -871,7 +870,7 @@ class Workflow(Block):
 
         for input_index, input_ in enumerate(copied_workflow.inputs):
             variable_index = copied_workflow.variables.index(input_)
-            if variable_index in copied_ivv.keys():
+            if variable_index in copied_ivv:
                 dict_[input_index] = serialize(copied_ivv[variable_index])
             elif isinstance(input_, TypedVariableWithDefaultValue):
                 dict_[input_index] = serialize(input_.default_value)
@@ -1217,7 +1216,7 @@ class Workflow(Block):
             node_index = self.nodes.index(node)
             nodes_by_column[column_index] = nodes_by_column.get(column_index, []) + [node_index]
 
-        return [column_list for column_list in nodes_by_column.values()]
+        return list(nodes_by_column.values())
 
     def layout(self):
         """
@@ -1941,7 +1940,11 @@ class WorkflowState(DessiaObject):
             self._activate_pipe(pipe=pipe, value=value)
 
     def _activable_blocks(self):
-        """ Return a list of all activable blocks, IE blocks that have all inputs ready for evaluation. """
+        """
+        Returns a list of all activable blocks.
+
+        Activable blocks are blocks that have all inputs ready for evaluation.
+        """
         return [b for b in self.workflow.blocks if self._block_activable_by_inputs(b)
                 and (not self.activated_items[b] or b not in self.workflow.runtime_blocks)]
 
@@ -2054,11 +2057,6 @@ class WorkflowRun(WorkflowState):
             end_time = time.time()
         self.end_time = end_time
         self.execution_time = end_time - start_time
-        # filtered_input_values = input_values
-        # if workflow.has_file_inputs:
-        #     filtered_input_values = {i: v for i, v in input_values.items()
-        #                              if workflow.inputs[i] not in workflow.file_inputs}
-        # filtered_values = {p: values[p] for p in workflow.memorized_pipes if is_serializable(values[p])}
         filtered_values = {p: values[p] for p in workflow.memorized_pipes}
         WorkflowState.__init__(self, workflow=workflow, input_values=input_values,
                                activated_items=activated_items, values=filtered_values,

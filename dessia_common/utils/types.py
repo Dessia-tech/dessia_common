@@ -34,7 +34,7 @@ def is_classname_transform(string: str):
 
 
 def is_jsonable(obj):
-    """ Returns if object can be dumped as it is in a json. """
+    """ Returns if the object can be dumped as it is in a JSON. """
     # First trying with orjson which is more efficient
     try:
         orjson.dumps(obj, option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS).decode('utf-8')
@@ -156,8 +156,6 @@ def deserialize_typing(serialized_typing: str):
             return List[type_from_argname(full_argname)]
         if toptype == 'Tuple':
             return deserialize_tuple_typing(full_argname)
-        # if toptype == "Iterator":
-        #     return Iterator[type_from_argname(full_argname)]
         if toptype == 'Dict':
             args = full_argname.split(', ')
             key_type = type_from_argname(args[0])
@@ -165,8 +163,6 @@ def deserialize_typing(serialized_typing: str):
             return Dict[key_type, value_type]
         if toptype == "InstanceOf":
             return InstanceOf[type_from_argname(full_argname)]
-        # if toptype == "Subclass":
-        #     return InstanceOf[type_from_argname(full_argname)]
         return get_python_class_from_class_name(serialized_typing)
     raise NotImplementedError(f'{serialized_typing} of type {type(serialized_typing)}')
 

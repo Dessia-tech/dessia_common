@@ -236,8 +236,8 @@ class XLSXWriter:
 
     @staticmethod
     def autosize_sheet_columns(sheet, min_width=5, max_width=30):
-        """ Autosize the sheet columns by analyzing the content. Min and max width must be specified. """
-        # Autosize columns
+        """ Auto-size the sheet columns by analyzing the content. Min and max width must be specified. """
+        # Auto-size columns
         for col in sheet.columns:
             width = min_width
             column = col[1].column_letter  # Get the column name

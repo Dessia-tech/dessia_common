@@ -58,13 +58,13 @@ class Generator(DessiaObject):
         Run a long generation.
 
         This method aims to test:
-            * lots of prints to be catched
+            * lots of prints to be caught
             * progress update
             * long computation
         """
         submodels = [Submodel(self.parameter * i) for i in range(self.nb_solutions)]
         models = [Model(self.parameter + i, submodels[i]) for i in range(self.nb_solutions)]
-        # Delay to simulate long generateion
+        # Delay to simulate long generation
         print('Beginning a long generation...')
         for i in range(500):
             print(f'Loop n°{i+1} / 500')
