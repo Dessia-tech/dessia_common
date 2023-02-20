@@ -3,7 +3,7 @@
 """
 A simple workflow composed of functions
 """
-
+import json
 import dessia_common.typings as dct
 from dessia_common.workflow.core import Pipe, Workflow, WorkflowRun
 from dessia_common.workflow.blocks import InstantiateModel, ModelMethod, ModelAttribute, WorkflowBlock, ForEach,\
@@ -74,7 +74,7 @@ demo_workflow_run._check_platform()
 
 # Assert deserialization
 demo_workflow_dict = demo_workflow.to_dict()
-import json
+
 demo_workflow_json = json.dumps(demo_workflow_dict)
 dict_from_json = json.loads(demo_workflow_json)
 deserialized_demo_workflow = Workflow.dict_to_object(dict_from_json)

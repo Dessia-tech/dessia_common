@@ -99,6 +99,20 @@ def get_in_object_from_path(object_, path, evaluate_pointers=True):
     return element
 
 
+def set_in_object_from_path(object_, path, value, evaluate_pointers=True):
+    """ Get deep attributes from an object. Argument 'path' represents path to deep attribute. """
+    reduced_path = '/'.join(path.lstrip('#/').split('/')[:-1])
+    last_segment = path.split('/')[-1]
+    last_object = get_in_object_from_path(object_, reduced_path)
+
+    if dct.is_sequence(last_object):
+        last_object[int(last_segment)] = value
+    elif isinstance(last_object, dict):
+        last_object[last_segment] = value
+    else:
+        setattr(last_object, last_segment, value)
+
+
 def merge_breakdown_dicts(dict1, dict2):
     """ Merge strategy of breakdown dictionnaries. """
     dict3 = dict1.copy()
