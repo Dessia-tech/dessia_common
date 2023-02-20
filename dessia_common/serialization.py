@@ -259,7 +259,7 @@ def add_references(dict_, memo, id_memo):
     # adding _references
     dict_['_references'] = id_memo
 
-    for obj, (ref_path, serialized, id_, object_path) in memo.items():
+    for _, serialized, id_, object_path in memo.values():
         if not object_path.startswith('#/_references') and id_ in id_memo:
 
             if '$ref' not in serialized:

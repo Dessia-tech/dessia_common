@@ -44,6 +44,8 @@ scripts = ['displays.py',
            'utils/types.py',
            "utils/diff.py",
            'type_matching.py',
+           # Data structures
+           "data-structures/1.py",
            # Unit tests
            'unit_tests.py',
            'bson_valid.py'

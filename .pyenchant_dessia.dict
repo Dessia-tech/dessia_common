@@ -17,4 +17,4 @@ serializable
 deserialize
 visjs
 config
-visjs
+builtins
