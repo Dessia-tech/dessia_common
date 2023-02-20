@@ -868,7 +868,7 @@ class Display(Block):
         """ Compute block's display settings. """
         arguments = {"block_index": block_index, "reference_path": reference_path}
         return DisplaySetting(selector=None, type_=self.type_, method="block_display",
-                              serialize_data=self.serialize, arguments=arguments)
+                              serialize_data=self.serialize, arguments=arguments, load_by_default=True)
 
     def evaluate(self, values, **kwargs):
         """ Run method defined by selector's display_setting and compute corresponding DisplayObject. """
