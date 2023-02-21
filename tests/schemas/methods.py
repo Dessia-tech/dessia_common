@@ -8,7 +8,7 @@ assert set(DEF_SO._allowed_methods) == set(schemas.keys())
 count_until_schema = schemas["count_until"]
 assert count_until_schema["type"] == "object"
 assert count_until_schema["required"] == ["0"]
-assert count_until_schema["description"] == "Test long execution with a customizable duration."
+assert count_until_schema["description"] == "Test long execution with a user-input duration."
 assert len(count_until_schema["properties"]) == 2
 assert count_until_schema["properties"]["0"] == {"title": "Duration", "editable": True, "python_typing": "float",
                                                  "description": "Duration of the method in s", "type": "number"}
