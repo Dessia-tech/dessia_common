@@ -29,7 +29,6 @@ scripts = ['displays.py',
            'workflow/workflow_filtering.py',
            'workflow/workflow_pareto.py',
            'workflow/workflow_method_dict.py',
-           'workflow/various_tests.py',
            'workflow/workflow_building.py',
            'workflow/workflow_sampling.py',
            "workflow/workflow_inputs.py",
@@ -49,6 +48,7 @@ scripts = ['displays.py',
            'unit_tests.py',
            'bson_valid.py'
            "workflow/test_workflow_displays"
+           "workflow/various_tests.py",
            ]
 
 for script_name in scripts:
