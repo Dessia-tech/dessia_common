@@ -1168,7 +1168,7 @@ class Sum(Block):
         """
         Sum input values.
 
-        TODO : This cannot work, we are summing a dictionnary
+        TODO : This cannot work, we are summing a dictionary
         """
         return [sum(values)]
 

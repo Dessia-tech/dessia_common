@@ -1,9 +1,11 @@
+argspecs
 backend
 BinaryFile
 bool
 builtins
 classmethod
 config
+csv
 cvar
 dataset
 dbscan
@@ -17,10 +19,14 @@ docstring
 filepath
 frontend
 init
+itertools
+json
 JSON
 jsonschema
 kwargs
+Mahalanobis
 matplotlib
+Minkowski
 nbv
 networkx
 numpy
@@ -31,6 +37,7 @@ serializable
 sklearn
 str
 StringFile
+submodule
 traceback
 uuid
 uuids

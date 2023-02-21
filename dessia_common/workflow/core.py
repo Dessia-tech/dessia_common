@@ -2076,7 +2076,7 @@ class WorkflowRun(WorkflowState):
 
     def _get_from_path(self, path: str):
         """
-        Extract subobject at given path. Tries the generic function, then applies specific cases if it fails.
+        Extract sub-object at given path. Tries the generic function, then applies specific cases if it fails.
 
         Returns found object
         """
@@ -2104,7 +2104,7 @@ class WorkflowRun(WorkflowState):
         """
         Compute WorkflowRun display settings.
 
-        Concatenate WorkflowState display_settings and instering Workflow ones.
+        Concatenate WorkflowState display_settings and Workflow ones.
         """
         workflow_settings = self.workflow.display_settings()
         doc_setting = workflow_settings[0]
