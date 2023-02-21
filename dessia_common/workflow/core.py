@@ -256,7 +256,7 @@ class Block(DessiaObject):
 
     def equivalent(self, other):
         """
-        Custom eq of block that does not overwrite __eq__ as we do not want to lose python default equality behavior.
+        Custom equal of block that does not overwrite __eq__ as we do not want to lose python default equality behavior.
 
         Used by workflow module only.
         """
@@ -1054,10 +1054,10 @@ class Workflow(Block):
 
     def variable_indices(self, variable: Variable) -> Optional[Union[Tuple[int, int, int], int]]:
         """
-        Return global adress of given variable as a tuple or an int.
+        Return global address of given variable as a tuple or an int.
 
         If variable is non block, return index of variable in variables sequence
-        Else returns global adress (ib, i, ip)
+        Else returns global address (index_block, index, index_port)
         """
         if variable is None:
             return None
@@ -1929,7 +1929,7 @@ class WorkflowState(DessiaObject):
         self.activated_items[variable] = True
 
     def _activate_input(self, input_: TypedVariable, value):  # Inputs must always be Typed
-        """ Typecheck, activate the variable and propagate the value to its pipe. """
+        """ Type-check, activate the variable and propagate the value to its pipe. """
         # Type checking
         value_type_check(value, input_.type_)
         input_index = self.workflow.input_index(input_)
@@ -2076,7 +2076,7 @@ class WorkflowRun(WorkflowState):
 
     def _get_from_path(self, path: str):
         """
-        Extract subobject at given path. Tries the generic function, then applies specific cases if it fails.
+        Extract sub-object at given path. Tries the generic function, then applies specific cases if it fails.
 
         Returns found object
         """
@@ -2104,12 +2104,14 @@ class WorkflowRun(WorkflowState):
         """
         Compute WorkflowRun display settings.
 
-        Concatenate WorkflowState display_settings and instering Workflow ones.
+        Concatenate WorkflowState display_settings and Workflow ones.
         """
         workflow_settings = self.workflow.display_settings()
+        doc_setting = workflow_settings[0]
+        workflow_setting = workflow_settings[1]
         display_settings = WorkflowState.display_settings(self)
         display_settings.pop(0)
-        return workflow_settings + display_settings
+        return [doc_setting, workflow_setting.compose("workflow")] + display_settings
 
     def method_dict(self, method_name: str = None, method_jsonschema: Any = None):
         """ Get run again default dict. """

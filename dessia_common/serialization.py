@@ -18,8 +18,9 @@ import dessia_common.utils.types as dcty
 from dessia_common.utils.helpers import full_classname, get_python_class_from_class_name
 from dessia_common.abstract import CoreDessiaObject
 from dessia_common.typings import InstanceOf, JsonSerializable
+
 from dessia_common.graph import explore_tree_from_leaves
-from dessia_common.breakdown import get_in_object_from_path
+from dessia_common.breakdown import get_in_object_from_path, set_in_object_from_path
 from dessia_common.schemas.core import TYPING_EQUIVALENCES, is_typing, serialize_typing
 
 fullargsspec_cache = {}
@@ -153,7 +154,7 @@ def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=
 
     if isinstance(value, SerializableObject):
         if value in memo:
-            path_value, serialized_value, id_ = memo[value]
+            path_value, serialized_value, id_, _ = memo[value]
             id_memo[id_] = serialized_value
             return {'$ref': path_value}, memo
         try:
@@ -161,20 +162,21 @@ def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=
         except TypeError:
             warnings.warn('specific to_dict should implement use_pointers, memo, path and id_memo arguments', Warning)
             serialized = value.to_dict()
+
         if id_method:
             id_ = str(uuid.uuid1())
             path_value = f"#/_references/{id_}"
-            memo[value] = path_value, serialized, id_
+            memo[value] = path_value, serialized, id_, path
             if value._standalone_in_db:
                 id_memo[id_] = serialized
                 serialized = {'$ref': path_value}
         else:
-            memo[value] = path, serialized, None
+            memo[value] = path, serialized, None, path
 
     elif isinstance(value, type):
         # TODO Why do we serialize types with pointers ? These are only just strings.
         if value in memo:
-            path_value, serialized_value, id_ = memo[value]
+            path_value, serialized_value, id_, _ = memo[value]
             id_memo[id_] = serialized_value
             return {'$ref': memo[value]}, memo
         serialized = serialize_typing(value)
@@ -182,7 +184,7 @@ def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=
     # Regular object
     elif hasattr(value, 'to_dict'):
         if value in memo:
-            path_value, serialized_value, id_ = memo[value]
+            path_value, serialized_value, id_, _ = memo[value]
             id_memo[id_] = serialized_value
             return {'$ref': path}, memo
         serialized = value.to_dict()
@@ -190,9 +192,9 @@ def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=
         if id_method:
             id_ = str(uuid.uuid1())
             path_value = f"#/_references/{id_}"
-            memo[value] = path_value, serialized, id_
+            memo[value] = path_value, serialized, id_, path
         else:
-            memo[value] = path, serialized, None
+            memo[value] = path, serialized, None, path
 
     elif isinstance(value, dict):
         serialized, memo = serialize_dict_with_pointers(value, memo=memo, path=path, id_method=id_method,
@@ -212,9 +214,7 @@ def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=
         serialized = value
 
     if path == '#' and id_method:
-        # adding _references
-        serialized['_references'] = id_memo
-
+        add_references(serialized, memo, id_memo)
     return serialized, memo
 
 
@@ -254,9 +254,19 @@ def serialize_dict_with_pointers(dict_, memo, path, id_method, id_memo):
                                                                   id_method=id_method, id_memo=id_memo)
 
     if path == '#':
-        # adding _references
-        serialized_dict['_references'] = id_memo
+        add_references(serialized_dict, memo, id_memo)
     return serialized_dict, memo
+
+
+def add_references(dict_, memo, id_memo):
+    """ Add _references to a dict given the memos. """
+    dict_['_references'] = id_memo
+
+    # Rewriting $refs
+    for _, serialized, id_, object_path in memo.values():
+        if not object_path.startswith('#/_references') and id_ in id_memo:
+            if '$ref' not in serialized:
+                set_in_object_from_path(dict_, object_path, {'$ref': f'#/_references/{id_}'})
 
 
 def serialize_sequence_with_pointers(seq, memo, path, id_method, id_memo):
@@ -616,7 +626,7 @@ def pointer_graph(value):
 def update_pointers_data(global_dict, current_dict, pointers_memo):
     """
     Update pointers according to current dict.
-    
+
     :returns: the global dict and a pointer memo
     """
     if global_dict is None or pointers_memo is None:
@@ -630,7 +640,7 @@ def update_pointers_data(global_dict, current_dict, pointers_memo):
 
 
 def deserialization_order(dict_):
-    """ Analyse a dict representing an object and give a deserialization order. """
+    """ Analyze a dict representing an object and give a deserialization order. """
     graph = pointer_graph(dict_)
     if '#' not in graph.nodes:
         return []

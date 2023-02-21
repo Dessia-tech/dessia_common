@@ -21,7 +21,7 @@ class Measure(float):
 
     @classmethod
     def dict_to_object(cls, dict_):
-        """ Unserializes the dict into an object. """
+        """ Deserialize the dict into an object. """
         class_ = get_python_class_from_class_name(dict_['object_class'])
         return class_(dict_['value'])
 

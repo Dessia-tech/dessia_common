@@ -34,7 +34,7 @@ def concatenate(values):
 
 
 def prettyname(name: str) -> str:
-    """ Creates a pretty name from as str. """
+    """ Create a pretty name from a string. """
     pretty_name = ''
     if name:
         strings = name.split('_')
