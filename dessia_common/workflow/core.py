@@ -2107,9 +2107,11 @@ class WorkflowRun(WorkflowState):
         Concatenate WorkflowState display_settings and instering Workflow ones.
         """
         workflow_settings = self.workflow.display_settings()
+        doc_setting = workflow_settings[0]
+        workflow_setting = workflow_settings[1]
         display_settings = WorkflowState.display_settings(self)
         display_settings.pop(0)
-        return workflow_settings + display_settings
+        return [doc_setting, workflow_setting.compose("workflow")] + display_settings
 
     def method_dict(self, method_name: str = None, method_jsonschema: Any = None):
         """ Get run again default dict. """
