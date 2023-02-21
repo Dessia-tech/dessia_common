@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fix
 - Handle serialization pointers of non-standalone objects
 
+## 0.13.1
+
+### Fix
+
+- WorkflowRun settings now sets the right method to call for workflow display
+
 ## 0.13.0
 
 ### Fix
