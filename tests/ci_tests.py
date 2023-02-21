@@ -17,6 +17,7 @@ scripts = [
     "sampling.py",
     "markdowns.py",
     "checks.py",
+    "unit_tests.py",
 
     # Schemas
     "schemas/default_values.py",
@@ -54,11 +55,7 @@ scripts = [
     "type_matching.py",
 
     # Data structures
-    "data-structures/1.py",
-
-    # Unit tests
-    "unit_tests.py",
-    "bson_valid.py"
+    "data-structures/1.py"
 ]
 
 for script_name in scripts:
