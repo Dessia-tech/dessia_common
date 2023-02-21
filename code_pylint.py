@@ -18,7 +18,7 @@ from datetime import date
 from pylint import __version__
 from pylint.lint import Run
 
-MIN_NOTE = 8.55
+MIN_NOTE = 8.80
 
 EFFECTIVE_DATE = date(2023, 1, 18)
 WEEKLY_DECREASE = 0.03
@@ -26,7 +26,7 @@ WEEKLY_DECREASE = 0.03
 UNWATCHED_ERRORS = ["fixme", "trailing-whitespace", "import-error"]
 
 MAX_ERROR_BY_TYPE = {
-    "wrong-spelling-in-docstring": 243,
+    "wrong-spelling-in-docstring": 238,
     "wrong-spelling-in-comment": 44,
     "protected-access": 43,  # Highly dependant on our "private" conventions. Keeps getting raised
     "arguments-differ": 1,
