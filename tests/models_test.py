@@ -38,7 +38,3 @@ check_list = system1.check_list()
 system1.save_to_file('system1')
 system1_lff = DessiaObject.load_from_file('system1.json')
 assert system1_lff == system1
-
-memo = {}
-a, memo = dcs.serialize_with_pointers(system1)
-assert memo

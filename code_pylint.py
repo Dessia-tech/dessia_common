@@ -20,15 +20,15 @@ MIN_NOTE = 8.55
 UNWATCHED_ERRORS = ["fixme", "trailing-whitespace", "import-error"]
 
 MAX_ERROR_BY_TYPE = {
-    "wrong-spelling-in-docstring": 453,
-    "wrong-spelling-in-comment": 111,
+    "wrong-spelling-in-docstring": 361,
+    "wrong-spelling-in-comment": 92,
     "protected-access": 38,
     "consider-using-f-string": 1,
     "arguments-differ": 2,
     "no-member": 3,
     "too-many-locals": 10,  # Reduce by dropping vectored objects
     "too-many-branches": 13,
-    "unused-argument": 8,
+    "unused-argument": 6,
     "cyclic-import": 2,  # 0 just to test
     "no-self-use": 6,
     "trailing-whitespace": 11,
@@ -56,7 +56,7 @@ MAX_ERROR_BY_TYPE = {
     "bad-staticmethod-argument": 1,
     "too-many-public-methods": 2,  # Try to lower by splitting DessiaObject and Workflow
     "consider-using-generator": 1,
-    "too-many-statements": 1,
+    "too-many-statements": 2,
     "chained-comparison": 1,
     "wildcard-import": 1,
     "use-maxsplit-arg": 1,

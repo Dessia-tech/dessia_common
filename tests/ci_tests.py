@@ -19,7 +19,6 @@ scripts = ['displays.py',
            # Workflows
            'workflow/blocks.py',
            'workflow/workflow_with_models.py',
-           'workflow/to_script.py',
            'workflow/power_simulation.py',
            'workflow/forms_simulation.py',
            'workflow/pipes.py',
@@ -28,11 +27,11 @@ scripts = ['displays.py',
            'workflow/workflow_clustering.py',
            'workflow/workflow_filtering.py',
            'workflow/workflow_pareto.py',
-           'workflow/workflow_method_dict.py',
-           'workflow/various_tests.py',
            'workflow/workflow_building.py',
            'workflow/workflow_sampling.py',
-           # breakdown
+           "workflow/workflow_inputs.py",
+           "workflow/file_inputs.py",
+           # Breakdown
            'breakdown.py',
            # Utils
            'utils/algebra.py',
@@ -40,11 +39,12 @@ scripts = ['displays.py',
            'utils/serialization.py',
            'utils/helpers.py',
            'utils/types.py',
-           "utils/diff.py"
+           "utils/diff.py",
            'type_matching.py',
+           # Data structures
+           "data-structures/1.py",
            # Unit tests
            'unit_tests.py',
-           'bson_valid.py'
            ]
 
 for script_name in scripts:

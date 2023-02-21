@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Code for breakdowns.
-"""
+""" Code for breakdowns. """
 
 import sys
 from ast import literal_eval
@@ -99,6 +97,23 @@ def get_in_object_from_path(object_, path, evaluate_pointers=True):
             raise ExtractionError(err_msg) from err
 
     return element
+
+
+def set_in_object_from_path(object_, path, value, evaluate_pointers=True):
+    """ Set deep attribute from an object to the given value. Argument 'path' represents path to deep attribute. """
+    reduced_path = '/'.join(path.lstrip('#/').split('/')[:-1])
+    last_segment = path.split('/')[-1]
+    if reduced_path:
+        last_object = get_in_object_from_path(object_, reduced_path, evaluate_pointers=evaluate_pointers)
+    else:
+        last_object = object_
+
+    if dct.is_sequence(last_object):
+        last_object[int(last_segment)] = value
+    elif isinstance(last_object, dict):
+        last_object[last_segment] = value
+    else:
+        setattr(last_object, last_segment, value)
 
 
 def merge_breakdown_dicts(dict1, dict2):
@@ -213,7 +228,6 @@ def deep_getsizeof(obj, ids=None):
     :param ids:
     :return:
     """
-
     if ids is None:
         ids = set()
 

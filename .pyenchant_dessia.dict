@@ -14,4 +14,7 @@ docstring
 matplotlib
 deserialization
 serializable
+deserialize
 visjs
+config
+builtins
