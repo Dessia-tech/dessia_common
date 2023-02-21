@@ -256,12 +256,12 @@ def serialize_dict_with_pointers(dict_, memo, path, id_method, id_memo):
 
 
 def add_references(dict_, memo, id_memo):
-    # adding _references
+    """ Add _references to a dict given the memos. """
     dict_['_references'] = id_memo
 
+    # Rewriting $refs
     for _, serialized, id_, object_path in memo.values():
         if not object_path.startswith('#/_references') and id_ in id_memo:
-
             if '$ref' not in serialized:
                 set_in_object_from_path(dict_, object_path, {'$ref': f'#/_references/{id_}'})
 

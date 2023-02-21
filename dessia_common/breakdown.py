@@ -100,7 +100,7 @@ def get_in_object_from_path(object_, path, evaluate_pointers=True):
 
 
 def set_in_object_from_path(object_, path, value, evaluate_pointers=True):
-    """ Get deep attributes from an object. Argument 'path' represents path to deep attribute. """
+    """ Set deep attribute from an object to the given value. Argument 'path' represents path to deep attribute. """
     reduced_path = '/'.join(path.lstrip('#/').split('/')[:-1])
     last_segment = path.split('/')[-1]
     last_object = get_in_object_from_path(object_, reduced_path, evaluate_pointers=evaluate_pointers)
