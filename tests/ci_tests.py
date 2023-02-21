@@ -44,9 +44,11 @@ scripts = ['displays.py',
            'utils/types.py',
            "utils/diff.py",
            'type_matching.py',
+
            # Unit tests
            'unit_tests.py',
            'bson_valid.py'
+           "workflow/test_workflow_displays"
            ]
 
 for script_name in scripts:
