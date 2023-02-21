@@ -74,7 +74,7 @@ class TreeGenerator(Generator):
 
         :param model: Model generated
 
-        :return: True if valid and False othewise
+        :return: True if valid and False otherwise
         :rtype: bool
         """
         raise NotImplementedError('the method is_model_valid must be overloaded by subclassing class')
@@ -144,7 +144,7 @@ class DecisionTreeGenerator(TreeGenerator):
 
         :param model: Model generated
 
-        :return: True if valid and False othewise
+        :return: True if valid and False otherwise
         :rtype: bool
         """
         raise NotImplementedError('the method is_model_valid must be overloaded by subclassing class')
@@ -217,7 +217,7 @@ class RegularDecisionTreeGenerator(TreeGenerator):
 
         :param model: Model generated
 
-        :return: True if valid and False othewise
+        :return: True if valid and False otherwise
         :rtype: bool
         """
         raise NotImplementedError('the method is_model_valid must be overloaded by subclassing class')

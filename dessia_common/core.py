@@ -426,7 +426,7 @@ class DessiaObject(SerializableObject):
         return copy(self)
 
     def __copy__(self):
-        """ Generic copy use inits of objects. """
+        """ Generic copy use init of objects. """
         class_name = self.full_classname
         if class_name in _fullargsspec_cache:
             class_argspec = _fullargsspec_cache[class_name]

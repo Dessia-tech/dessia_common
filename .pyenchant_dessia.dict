@@ -14,6 +14,7 @@ dessia
 DessiaObject
 dict
 docstring
+filepath
 frontend
 init
 JSON
@@ -28,6 +29,7 @@ schemas
 scipy
 serializable
 sklearn
+str
 StringFile
 traceback
 uuid

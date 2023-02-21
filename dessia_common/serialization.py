@@ -640,7 +640,7 @@ def update_pointers_data(global_dict, current_dict, pointers_memo):
 
 
 def deserialization_order(dict_):
-    """ Analyse a dict representing an object and give a deserialization order. """
+    """ Analyze a dict representing an object and give a deserialization order. """
     graph = pointer_graph(dict_)
     if '#' not in graph.nodes:
         return []

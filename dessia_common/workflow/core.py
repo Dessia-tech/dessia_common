@@ -256,7 +256,7 @@ class Block(DessiaObject):
 
     def equivalent(self, other):
         """
-        Custom eq of block that does not overwrite __eq__ as we do not want to lose python default equality behavior.
+        Custom equal of block that does not overwrite __eq__ as we do not want to lose python default equality behavior.
 
         Used by workflow module only.
         """
@@ -1054,10 +1054,10 @@ class Workflow(Block):
 
     def variable_indices(self, variable: Variable) -> Optional[Union[Tuple[int, int, int], int]]:
         """
-        Return global adress of given variable as a tuple or an int.
+        Return global address of given variable as a tuple or an int.
 
         If variable is non block, return index of variable in variables sequence
-        Else returns global adress (ib, i, ip)
+        Else returns global address (index_block, index, index_port)
         """
         if variable is None:
             return None
@@ -1929,7 +1929,7 @@ class WorkflowState(DessiaObject):
         self.activated_items[variable] = True
 
     def _activate_input(self, input_: TypedVariable, value):  # Inputs must always be Typed
-        """ Typecheck, activate the variable and propagate the value to its pipe. """
+        """ Type-check, activate the variable and propagate the value to its pipe. """
         # Type checking
         value_type_check(value, input_.type_)
         input_index = self.workflow.input_index(input_)
