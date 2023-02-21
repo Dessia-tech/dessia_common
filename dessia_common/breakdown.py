@@ -103,7 +103,10 @@ def set_in_object_from_path(object_, path, value, evaluate_pointers=True):
     """ Set deep attribute from an object to the given value. Argument 'path' represents path to deep attribute. """
     reduced_path = '/'.join(path.lstrip('#/').split('/')[:-1])
     last_segment = path.split('/')[-1]
-    last_object = get_in_object_from_path(object_, reduced_path, evaluate_pointers=evaluate_pointers)
+    if reduced_path:
+        last_object = get_in_object_from_path(object_, reduced_path, evaluate_pointers=evaluate_pointers)
+    else:
+        last_object = object_
 
     if dct.is_sequence(last_object):
         last_object[int(last_segment)] = value
