@@ -12,8 +12,8 @@ print(standalone_object.to_markdown())
 dataset = HeterogeneousList(all_cars_no_feat)
 cars_md = dataset.to_markdown()
 
-clustered_dataset = CategorizedList(all_cars_no_feat)
-clustered_dataset.to_markdown()
+# clustered_dataset = CategorizedList(all_cars_no_feat)
+# clustered_dataset.to_markdown()
 
 funky_md = MarkdownWriter().matrix_table([[all_cars_no_feat[0:2], 2, all_cars_no_feat[0]],
                                          [all_cars_no_feat[:5], 3, all_cars_no_feat[10]]],
