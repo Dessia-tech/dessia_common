@@ -269,7 +269,7 @@ class TypingProperty(Property):
 
     @property
     def args_schemas(self) -> List[Property]:
-        """ Get schema for each arg. """
+        """ Get schema for each argument. """
         return [get_schema(annotation=a, attribute=f"{self.attribute}/{i}") for i, a in enumerate(self.args)]
 
     @cached_property
@@ -722,7 +722,7 @@ class HomogeneousSequence(TypingProperty):
         return chunk
 
     def default_value(self):
-        """ Default of a sequnce. Always return None as default mutable is prohibited. """
+        """ Default of a sequence. Always return None as default mutable is prohibited. """
         return None
 
     def check_list(self) -> CheckList:
@@ -954,7 +954,7 @@ class ClassProperty(TypingProperty):
     """
     Schema class for 'Type' type hints.
 
-    Non DessiaObject subclasses validated against this type.
+    Non DessiaObject sub-classes validated against this type.
     """
 
     def __init__(self, annotation: Type[Class], attribute: str, definition_default: Class = None):

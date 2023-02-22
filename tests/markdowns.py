@@ -25,3 +25,5 @@ ref_funky_md = ("| Subobject_list | Object_list | Carname |\n| ------ | ------ |
 
 assert(all(assertion in cars_md for assertion in ['Model', "0.119", "2625.0"]))
 assert(funky_md == ref_funky_md)
+
+print("script 'markdowns.py' has passed")

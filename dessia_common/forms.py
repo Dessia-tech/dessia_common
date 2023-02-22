@@ -1,7 +1,7 @@
 """
 A module that aims to list all possibilities of data formats offered by Dessia.
 
-It should be used as a repertory of rules and available typings.
+It should be used as a repertory of rules and available typing.
 
 Some general rules :
 
@@ -9,7 +9,7 @@ Some general rules :
   contain several types of elements
     ex : List[int], List[str], List[CustomClass], ...
 - Tuples can, therefore, be used as heterogeneous sequences,
-  thanks to the fact that they are immutables.
+  thanks to the fact that they are immutable.
     ex : Tuple[str, int, CustomClass] is a tuple like this :
         t = ('tuple', 1, custom_class_object)
 - Dict is used whenever a dynamic structure should be defined.
@@ -72,7 +72,7 @@ class EmbeddedBuiltinsSubobject(PhysicalObject):
 
     @classmethod
     def generate(cls, seed: int) -> 'EmbeddedBuiltinsSubobject':
-        """ Generate an embedded subobject with default values computed from a seed. """
+        """ Generate an embedded sub-object with default values computed from a seed. """
         floatarg = 0.3
         distarg = Distance(1.7 * floatarg * seed)
         intarg = seed
@@ -86,7 +86,7 @@ class EmbeddedBuiltinsSubobject(PhysicalObject):
         return [cls.generate((i + 1) * 1000) for i in range(seed)]
 
     def contour(self):
-        """ Square contour of an embedded subobject, for testing purpose. """
+        """ Square contour of an embedded sub-object, for testing purpose. """
         origin = self.floatarg
         points = [vm.Point2D(origin, origin), vm.Point2D(origin, origin + 1),
                   vm.Point2D(origin + 1, origin + 1), vm.Point2D(origin + 1, origin)]
@@ -131,7 +131,7 @@ DEF_SBS = StandaloneBuiltinsSubobject.generate(1)
 
 
 class EnhancedStandaloneSubobject(StandaloneBuiltinsSubobject):
-    """ Overwrite StandaloneSubobject, principally for InstanceOf and Union typings testing purpose. """
+    """ Overwrite StandaloneSubobject, principally for InstanceOf and Union typing testing purpose. """
 
     def __init__(self, floatarg: Distance, name: str = 'Standalone Subobject'):
         StandaloneBuiltinsSubobject.__init__(self, distarg=floatarg, floatarg=floatarg, intarg=floor(floatarg),
@@ -139,7 +139,7 @@ class EnhancedStandaloneSubobject(StandaloneBuiltinsSubobject):
 
     @classmethod
     def generate(cls, seed: int) -> 'EnhancedStandaloneSubobject':
-        """ Generate an enhanced subobject with default values computed from a seed. """
+        """ Generate an enhanced sub-object with default values computed from a seed. """
         floatarg = Distance(1.2 * seed)
         name = f"EnhancedStandaloneSubobject{seed}"
         return cls(floatarg=floatarg, name=name)
@@ -149,7 +149,7 @@ DEF_ESS = EnhancedStandaloneSubobject.generate(1)
 
 
 class InheritingStandaloneSubobject(StandaloneBuiltinsSubobject):
-    """ Overwrite StandaloneSubobject, principally for InstanceOf and Union typings testing purpose. """
+    """ Overwrite StandaloneSubobject, principally for InstanceOf and Union typing testing purpose. """
 
     def __init__(self, distarg: Distance, floatarg: float, intarg: int, boolarg: bool, strarg: str,
                  name: str = 'Inheriting Standalone Subobject'):
@@ -160,7 +160,7 @@ class InheritingStandaloneSubobject(StandaloneBuiltinsSubobject):
 
     @classmethod
     def generate(cls, seed: int) -> 'InheritingStandaloneSubobject':
-        """ Generate an inheriting subobject with default values computed from a seed. """
+        """ Generate an inheriting sub-object with default values computed from a seed. """
         distarg = Distance(0.7 * seed)
         floatarg = 0.1 * seed
         strarg = str(-seed)
@@ -186,7 +186,7 @@ class EmbeddedSubobject(DessiaObject):
 
     @classmethod
     def generate(cls, seed: int) -> 'EmbeddedSubobject':
-        """ Generate an embedded subobject with default values computed from a seed. """
+        """ Generate an embedded sub-object with default values computed from a seed. """
         if not bool(seed % 2):
             embedded_list = list(range(int(seed / 2)))
         else:
@@ -201,7 +201,7 @@ class EmbeddedSubobject(DessiaObject):
 
 
 class EnhancedEmbeddedSubobject(EmbeddedSubobject):
-    """ Overwrite EmbeddedSubobject, principally for InstanceOf and Union typings testing purpose. """
+    """ Overwrite EmbeddedSubobject, principally for InstanceOf and Union typing testing purpose. """
 
     def __init__(self, embedded_list: List[int] = None, embedded_array: List[List[float]] = None,
                  name: str = 'Enhanced Embedded Subobject'):
@@ -211,7 +211,7 @@ class EnhancedEmbeddedSubobject(EmbeddedSubobject):
 
     @classmethod
     def generate(cls, seed: int) -> 'EnhancedEmbeddedSubobject':
-        """ Generate an embedded subobject with default values computed from a seed. """
+        """ Generate an embedded sub-object with default values computed from a seed. """
         embedded_list = [seed]
         embedded_array = [[seed, seed * 10, seed * 10]] * seed
         name = f"Embedded Subobject{seed}"
@@ -229,8 +229,8 @@ class StandaloneObject(MovingObject):
     """
     Standalone Object for testing purpose.
 
-    :param standalone_subobject: A dev subobject that is standalone_in_db
-    :param embedded_subobject: A dev subobject that isn't standalone_in_db
+    :param standalone_subobject: A dev sub-object that is standalone_in_db
+    :param embedded_subobject: A dev sub-object that isn't standalone_in_db
     :param dynamic_dict: A variable length dict
     :param tuple_arg: A heterogeneous sequence
     """
@@ -326,7 +326,7 @@ class StandaloneObject(MovingObject):
 
     def add_float(self, value: float) -> StandaloneBuiltinsSubobject:
         """
-        Add value to its standalone subobject floatarg property and return it.
+        Add value to its standalone sub-object floatarg property and return it.
 
         API should replace standalone_subobject as it is returned
         """
@@ -521,7 +521,7 @@ class StandaloneObject(MovingObject):
 
     def count_until(self, duration: float, raise_error: bool = False):
         """
-        Test long execution with a customizable duration.
+        Test long execution with a user-input duration.
 
         :param duration: Duration of the method in s
         :param raise_error: Wether the computation should raise an error or not at the end

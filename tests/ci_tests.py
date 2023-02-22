@@ -17,6 +17,7 @@ scripts = [
     "sampling.py",
     "markdowns.py",
     "checks.py",
+    "unit_tests.py",
 
     # Schemas
     "schemas/default_values.py",
@@ -27,7 +28,6 @@ scripts = [
     # Workflows
     "workflow/blocks.py",
     "workflow/workflow_with_models.py",
-    "workflow/to_script.py",
     "workflow/power_simulation.py",
     "workflow/forms_simulation.py",
     "workflow/pipes.py",
@@ -36,8 +36,6 @@ scripts = [
     "workflow/workflow_clustering.py",
     "workflow/workflow_filtering.py",
     "workflow/workflow_pareto.py",
-    "workflow/workflow_method_dict.py",
-    "workflow/various_tests.py",
     "workflow/workflow_building.py",
     "workflow/workflow_sampling.py",
     "workflow/workflow_inputs.py",
@@ -55,12 +53,8 @@ scripts = [
     "utils/diff.py",
     "type_matching.py",
 
-    # Unit tests
-    "unit_tests.py",
-    "bson_valid.py",
-
-    # Schema Unit Tests
-    "schemas/test_annotation_serialization.py"
+    # Data structures
+    "data-structures/1.py"
 ]
 
 for script_name in scripts:
