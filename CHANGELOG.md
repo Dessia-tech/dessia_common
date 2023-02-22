@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Remove Any support in schemas
 - Use of Schemas to serialize typings
 - Change serialize_typing function name to serialize_annotation
+- Change tests. Unittests are in 'tests' folder. Other tests in scripts
 
 
 ## 0.13.1
