@@ -5,24 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 0.13.1 [Unreleased yet]
 
-### Fix
-- Handle serialization pointers of non-standalone objects
+## 0.14.0
+
+### Added
+
+- Schemas refactor: add support of Ellipsed tuple (Tuple[T, ...])
+
+
+### Fixed
+
+- Schemas refactor : allow incomplete schemas
+- Schemas refactor : old jsonschema with magic Method Type serialized value
+- Schemas refactor : Sequence schema uses args_schemas instead of unique items_schemas
+
+
+### Refactored
+
+- Refactor the whole jsonschema generation process. It now uses Oriented Object algorithms. Most of jsonschema module is now deprecated
+- Remove Any support in schemas
+- Use of Schemas to serialize typings
+- Change serialize_typing function name to serialize_annotation
+
 
 ## 0.13.1
 
 ### Fix
 
+- Handle serialization pointers of non-standalone objects
 - WorkflowRun settings now sets the right method to call for workflow display
-
-## Unreleased => 0.14.0
-
-### Refactor
-
-- Refactor the whole jsonschema generation process. It now uses Oriented Object algorithms. Most of jsonschema module is now deprecated
-- Remove Any support in schemas
-- Use of Schemas to serialize typings
 
 
 ## 0.13.0

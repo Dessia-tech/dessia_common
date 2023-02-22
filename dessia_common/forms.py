@@ -338,7 +338,7 @@ class StandaloneObject(MovingObject):
         self.union_arg.append(object_)
 
     def method_without_arg(self):
-        """ This should be ok and be in method_schema. """
+        """ It should be ok and be in method_schema. """
         return self
 
     def contour(self):

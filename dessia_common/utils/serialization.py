@@ -33,7 +33,7 @@ def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=
 
 def serialize_dict_with_pointers(dict_, memo, path, id_method, id_memo):
     """
-    Serialize a dictionary recursively with JSON pointers
+    Serialize a dictionary recursively with JSON pointers.
 
     use a memo dictionary at a given path of the top level object.
     """

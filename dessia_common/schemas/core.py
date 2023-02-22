@@ -1081,6 +1081,7 @@ SERIALIZED_TO_SCHEMA_CLASS = {
 
 
 def serialize_annotation(annotation: Type[T], attribute: str = "") -> str:
+    """ Make use of schema to serialized annotations. """
     schema = get_schema(annotation=annotation, attribute=attribute)
     return schema.serialized
 
