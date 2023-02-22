@@ -18,7 +18,7 @@ from datetime import date
 from pylint import __version__
 from pylint.lint import Run
 
-MIN_NOTE = 8.55
+MIN_NOTE = 9
 
 EFFECTIVE_DATE = date(2023, 1, 18)
 WEEKLY_DECREASE = 0.03
@@ -26,9 +26,9 @@ WEEKLY_DECREASE = 0.03
 UNWATCHED_ERRORS = ["fixme", "trailing-whitespace", "import-error"]
 
 MAX_ERROR_BY_TYPE = {
-    "wrong-spelling-in-docstring": 396,
-    "wrong-spelling-in-comment": 87,
-    "protected-access": 67,  # Highly dependant on our "private" conventions. Keeps getting raised
+    "wrong-spelling-in-docstring": 237,
+    "wrong-spelling-in-comment": 44,
+    "protected-access": 43,  # Highly dependant on our "private" conventions. Keeps getting raised
     "arguments-differ": 1,
     "too-many-locals": 10,  # Reduce by dropping vectored objects
     "too-many-branches": 13,  # Huge refactor needed. Will be reduced by schema refactor
@@ -49,11 +49,11 @@ MAX_ERROR_BY_TYPE = {
     "consider-using-generator": 1,
 }
 
-ERRORS_WITHOUT_TIME_DECREASE = ["protected-access", "arguments-differ", "too-many-locals", "too-many-branches",
-                                "unused-argument", "cyclic-import", "too-many-arguments", "too-few-public-methods",
-                                "too-many-return-statements", "import-outside-toplevel",
-                                "too-many-instance-attributes", "broad-except", "bare-except",
-                                "too-many-public-methods", "too-many-statements", "undefined-loop-variable"]
+ERRORS_WITHOUT_TIME_DECREASE = ['protected-access', 'arguments-differ', 'too-many-locals', 'too-many-branches',
+                                'unused-argument', 'cyclic-import', 'too-many-arguments', 'too-few-public-methods',
+                                'too-many-return-statements', 'import-outside-toplevel',
+                                'too-many-instance-attributes', 'broad-except', 'bare-except', "broad-exception-caught",
+                                'too-many-public-methods', 'too-many-statements', 'undefined-loop-variable']
 
 print("pylint version: ", __version__)
 

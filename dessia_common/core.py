@@ -359,7 +359,7 @@ class DessiaObject(SerializableObject):
         """
         Save object to a JSON file.
 
-        :param filepath: either a string reprensenting the filepath or a stream
+        :param filepath: either a string representing the filepath or a stream
         """
         if not filepath.endswith('.json'):
             filepath += '.json'
@@ -391,7 +391,7 @@ class DessiaObject(SerializableObject):
         """
         Load object from a JSON file.
 
-        :param filepath: either a string reprensenting the filepath or a stream
+        :param filepath: either a string representing the filepath or a stream
         """
         with open(filepath, 'r', encoding='utf-8') as file:
             dict_ = json.load(file)
@@ -426,7 +426,7 @@ class DessiaObject(SerializableObject):
         return copy(self)
 
     def __copy__(self):
-        """ Generic copy use inits of objects. """
+        """ Generic copy use init of objects. """
         class_name = self.full_classname
         if class_name in _fullargsspec_cache:
             class_argspec = _fullargsspec_cache[class_name]
@@ -900,7 +900,7 @@ class DessiaFilter(DessiaObject):
     @staticmethod
     def booleanlist_to_indexlist(booleans_list: List[int]):  # TODO: Should it exist ?
         """
-        Transform a boolean list to an index list.
+        Transform a Boolean list to an index list.
 
         :param booleans_list: list of length `len(values)` where elements are `True` if kept, otherwise `False`.
         :type booleans_list: List[int]

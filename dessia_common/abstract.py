@@ -2,4 +2,4 @@
 
 
 class CoreDessiaObject:
-    """ Base DessiaObject for checking inheritance purpose (isinstance, issubclass,...). """
+    """ Base DessiaObject for checking inheritance purpose. """

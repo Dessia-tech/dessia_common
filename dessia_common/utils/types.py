@@ -324,7 +324,7 @@ def complex_first_type_match(type_: Type, match_against: Type) -> bool:
         return typematch(type_args[0], match_against_args[0])
 
     if type_origin is tuple:
-        # Order matters, all args should match
+        # Order matters, all arguments should match
         return all(typematch(a, b) for a, b in zip(type_args, match_against_args))
 
     if type_origin is dict:
@@ -332,7 +332,7 @@ def complex_first_type_match(type_: Type, match_against: Type) -> bool:
         return typematch(type_args[0], match_against_args[0]) and typematch(type_args[1], match_against_args[1])
 
     if type_origin is Union:
-        # type args must be a subset of match_against args set
+        # type arguments must be a subset of match_against arguments set
         type_argsset = set(type_args)
         match_against_argsset = set(match_against_args)
         return type_argsset.issubset(match_against_argsset)
@@ -348,7 +348,7 @@ def heal_type(type_: Type):
     For now, only checks wether the type is an 'Optional' / Union[T, NoneType], which should be flattened and not
     considered.
 
-    Returns the cleaned type, origin and args.
+    Returns the cleaned type, origin and arguments.
     """
     type_origin = get_origin(type_)
     type_args = get_args(type_)

@@ -1,4 +1,4 @@
-""" Typings for dessia_common. """
+""" Typing for dessia_common. """
 from typing import TypeVar, Generic, Dict, Any, Tuple
 
 
