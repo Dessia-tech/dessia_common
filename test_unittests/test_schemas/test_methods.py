@@ -13,15 +13,12 @@ class TestMethodSchemas(unittest.TestCase):
         ("generate_from_text", 1),
         ("generate_from_bin", 1),
         ("method_without_arg", 0),
-        ("ill_defined_method", 1)
+        ("ill_defined_method", 4)
     ])
     def test_number_of_arguments(self, method_name, expected_number):
         method = getattr(StandaloneObject, method_name)
         schema = MethodSchema(method)
         self.assertEqual(len(schema.property_schemas), expected_number)
-
-        computed_schema = schema.to_dict()
-        self.assertEqual(len(computed_schema["properties"]), expected_number)
 
     @parameterized.expand([
         ("add_standalone_object", True),
@@ -91,6 +88,20 @@ class TestComputedSchemas(unittest.TestCase):
             "description": "Wether the computation should raise an error or not at the end",
             "python_typing": "bool"
         })
+
+    @parameterized.expand([
+        ("add_standalone_object", 1),
+        ("add_embedded_object", 1),
+        ("count_until", 2),
+        ("add_float", 1),
+        ("generate_from_text", 1),
+        ("generate_from_bin", 1),
+        ("method_without_arg", 0),
+        ("ill_defined_method", 1)
+    ])
+    def test_number_of_properties(self, method_name, expected_number):
+        computed_schema = self.schemas[method_name]
+        self.assertEqual(len(computed_schema["properties"]), expected_number)
 
 
 if __name__ == '__main__':
