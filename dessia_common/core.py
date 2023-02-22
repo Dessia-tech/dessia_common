@@ -137,10 +137,10 @@ class DessiaObject(SerializableObject):
         Behavior can be controled by class attribute _eq_is_data_eq to tell if we must use python equality (based on
         memory addresses) (_eq_is_data_eq = False) or a data equality (True).
         """
+        if hash(self) != hash(other_object):
+            return False
         if self._eq_is_data_eq:
             if self.__class__.__name__ != other_object.__class__.__name__:
-                return False
-            if self._data_hash() != other_object._data_hash():
                 return False
             return self._data_eq(other_object)
         return object.__eq__(self, other_object)
@@ -157,7 +157,8 @@ class DessiaObject(SerializableObject):
     def _data_hash(self):
         """ Generic computation of hash based on data. """
         forbidden_keys = (self._non_data_eq_attributes + self._non_data_hash_attributes + ['package_version', 'name'])
-        hash_ = sum(choose_hash(v) for k, v in self._serializable_dict().items() if k not in forbidden_keys)
+        hash_ = (sum(choose_hash(v) for k, v in self._serializable_dict().items() if k not in forbidden_keys) 
+                 + len(forbidden_keys))
         return int(hash_ % 1e5)
 
     def _data_diff(self, other_object):
