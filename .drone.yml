@@ -78,7 +78,6 @@ steps:
   commands:
   - git fetch --tags
   - python setup.py install
-#  - python scripts/dessia_object.py
   - pip install sphinx sphinx-rtd-theme coverage volmdlr nbformat nbconvert
   - pip install plot_data --no-cache-dir
   - pip show coverage
@@ -87,10 +86,12 @@ steps:
   - make html
   - cd ../tests
   - coverage run --source dessia_common ci_tests.py
+  - cd ../test_unittests
+  - coverage run --source dessia_common -m unittest discover -v
   - cd ../tutorials
   - coverage run --source dessia_common ci_tutorials.py
   - cd ..
-  - coverage combine tests/.coverage tutorials/.coverage
+  - coverage combine tests/.coverage test_unittests/.coverage tutorials/.coverage
   - coverage json
   - coverage report
   - coverage html
