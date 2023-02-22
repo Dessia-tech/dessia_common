@@ -3,7 +3,6 @@
 """ Module to define Blocks for workflows. """
 
 import inspect
-import warnings
 
 from zipfile import ZipFile
 from typing import List, Type, Any, Dict, Tuple, get_type_hints, TypeVar
