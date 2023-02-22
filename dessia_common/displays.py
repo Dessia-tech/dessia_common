@@ -132,50 +132,25 @@ def networkx_to_visjs_data(networkx_graph: Graph):
         index1 = list_nodes.index(edge[0])
         index2 = list_nodes.index(edge[1])
         edge_nx_data = networkx_graph.get_edge_data(*edge)
-<<<<<<< HEAD
-
-        edge_data = {'from': index1, 'to': index2, 'font': {'align': 'middle'}}
-
-=======
         edge_data = {"from": index1, "to": index2, "font": {"align": "middle"}}
->>>>>>> feat/display-by-default
         if is_digraph:
             if "head_type" in edge_nx_data:
                 edge_data["arrows"] = {"to": {"enabled": True, "type": edge_nx_data["head_type"]}}
             else:
-<<<<<<< HEAD
-                edge_data['arrows'] = 'to'
-
-        if 'color' in edge_nx_data:
-            edge_data['color'] = {'color': edge_nx_data['color']}
-        visjs_data['edges'].append(edge_data)
-=======
                 edge_data["arrows"] = "to"
         if "color" in edge_nx_data:
             edge_data["color"] = {"color": edge_nx_data["color"]}
         visjs_data["edges"].append(edge_data)
->>>>>>> feat/display-by-default
     return visjs_data
 
 
 def draw_networkx_graph(networkx_graph: Graph):
     """ Draw a networkx graph in a browser using VisJS library. """
     visjs_data = networkx_to_visjs_data(networkx_graph)
-<<<<<<< HEAD
-    content = visjs_template.substitute(nodes=json.dumps(visjs_data['nodes']),
-                                        edges=json.dumps(visjs_data['edges']),
-                                        name=visjs_data['name'])
-    with tempfile.NamedTemporaryFile(suffix=".html",
-                                     delete=False) as file:
-        file.write(bytes(content, 'utf8'))
-    webbrowser.open('file://' + os.path.realpath(file.name))
-=======
     content = visjs_template.substitute(nodes=json.dumps(visjs_data["nodes"]),
                                         edges=json.dumps(visjs_data["edges"]),
                                         name=visjs_data["name"])
     with tempfile.NamedTemporaryFile(suffix=".html", delete=False) as file:
         file.write(bytes(content, "utf8"))
-
     webbrowser.open("file://" + os.path.realpath(file.name))
->>>>>>> feat/display-by-default
     return file.name
