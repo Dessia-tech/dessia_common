@@ -823,37 +823,21 @@ class Display(Block):
     _displayable_input = 0
     _non_editable_attributes = ['inputs']
 
-    def __init__(self, inputs: List[Variable] = None, order: int = None, name: str = '',
+    def __init__(self, inputs: List[Variable], load_by_default: bool = False, name: str = '',
                  position: Tuple[float, float] = None):
-        if order is not None:
-            warnings.warn("Display Block : order argument is deprecated and will be removed in a future version."
-                          "You can safely remove it from your block definition", DeprecationWarning)
-        self.order = order
-        if inputs is None:
-            self.warn_deprecation()
-            inputs = [TypedVariable(type_=DessiaObject, name='Model to Display')]
         output = TypedVariable(type_=DisplayObject, name="Display Object")
         Block.__init__(self, inputs=inputs, outputs=[output], name=name, position=position)
 
+        self.load_by_default = load_by_default
         self._type = None
         self._selector = None
         self.serialize = False
-
-    @staticmethod
-    def warn_deprecation():
-        """ Warn Deprecation. """
-        warnings.warn("Display Block used as a generator for the displays of an object is deprecated."
-                      "ts display behavior will be faulty. Please use the specific block"
-                      "to generate wanted displays (MultiPlot, CadView, PlotData, Markdown)", DeprecationWarning)
 
     @property
     def type_(self) -> str:
         """ Get display's type_. """
         if self._type:
             return self._type
-        if self.__class__ is Display:
-            self.warn_deprecation()
-            return ""
         raise NotImplementedError(f"type_ attribute is not implemented for block of type '{type(self)}'")
 
     @property
@@ -861,16 +845,13 @@ class Display(Block):
         """ Get display's selector. """
         if self._selector:
             return self._selector
-        if self.__class__ is Display:
-            self.warn_deprecation()
-            return ""
         raise NotImplementedError(f"selector attribute is not implemented for block of type '{type(self)}'")
 
     def _display_settings(self, block_index: int, reference_path: str = "#") -> DisplaySetting:
         """ Compute block's display settings. """
         arguments = {"block_index": block_index, "reference_path": reference_path}
-        return DisplaySetting(selector=None, type_=self.type_, method="block_display",
-                              serialize_data=self.serialize, arguments=arguments)
+        return DisplaySetting(selector=None, type_=self.type_, method="block_display", serialize_data=self.serialize,
+                              arguments=arguments, load_by_default=self.load_by_default)
 
     def evaluate(self, values, **kwargs):
         """ Run method defined by selector's display_setting and compute corresponding DisplayObject. """
@@ -894,13 +875,11 @@ class MultiPlot(Display):
     :param position: Position of the block in canvas.
     """
 
-    def __init__(self, attributes: List[str], order: int = None, name: str = '', position: Tuple[float, float] = None):
-        if order is not None:
-            warnings.warn("Display Block : order argument is deprecated and will be removed in a future version."
-                          "You can safely remove it from your block definition", DeprecationWarning)
-        self.order = order
+    def __init__(self, attributes: List[str], load_by_default: bool = True,
+                 name: str = '', position: Tuple[float, float] = None):
         self.attributes = attributes
-        Display.__init__(self, inputs=[TypedVariable(List[DessiaObject])], name=name, position=position)
+        Display.__init__(self, inputs=[TypedVariable(List[DessiaObject])], load_by_default=load_by_default,
+                         name=name, position=position)
         self.inputs[0].name = 'Input List'
         self._type = "plot_data"
         self._selector = None
@@ -970,9 +949,9 @@ class CadView(Display):
     :param position: Position of the block in canvas.
     """
 
-    def __init__(self, name: str = '', position: Tuple[float, float] = None):
+    def __init__(self, name: str = "", load_by_default: bool = False, position: Tuple[float, float] = None):
         input_ = TypedVariable(DessiaObject, name="Model to display")
-        Display.__init__(self, inputs=[input_], name=name, position=position)
+        Display.__init__(self, inputs=[input_], load_by_default=load_by_default, name=name, position=position)
 
         self._type = "babylon_data"
         self._selector = "cad"
@@ -986,9 +965,9 @@ class Markdown(Display):
     :param position: Position of the block in canvas.
     """
 
-    def __init__(self, name: str = '', position: Tuple[float, float] = None):
+    def __init__(self, name: str = "", load_by_default: bool = False, position: Tuple[float, float] = None):
         input_ = TypedVariable(DessiaObject, name="Model to display")
-        Display.__init__(self, inputs=[input_], name=name, position=position)
+        Display.__init__(self, inputs=[input_], load_by_default=load_by_default, name=name, position=position)
 
         self._type = "markdown"
         self._selector = "markdown"
@@ -1002,9 +981,9 @@ class PlotData(Display):
     :param position: Position of the block in canvas.
     """
 
-    def __init__(self, name: str = '', position: Tuple[float, float] = None):
+    def __init__(self, name: str = '', load_by_default: bool = False, position: Tuple[float, float] = None):
         input_ = TypedVariable(DessiaObject, name="Model to display")
-        Display.__init__(self, inputs=[input_], name=name, position=position)
+        Display.__init__(self, inputs=[input_], load_by_default=load_by_default, name=name, position=position)
 
         self._type = "plot_data"
         self._selector = "plot_data"
