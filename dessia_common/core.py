@@ -458,7 +458,7 @@ class DessiaObject(SerializableObject):
         """ Generic plot getting plot_data function to plot. """
         if hasattr(self, 'plot_data'):
             import plot_data
-            for data in self.plot_data(reference_path, **kwargs):
+            for data in self.plot_data():
                 plot_data.plot_canvas(plot_data_object=data,
                                       canvas_id='canvas',
                                       width=1400, height=900,
