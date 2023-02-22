@@ -21,7 +21,7 @@ SERIALIZED_BUILTINS = ['float', 'builtins.float', 'int', 'builtins.int', 'str', 
 
 
 def is_classname_transform(string: str):
-    """ Check if string is classname and return class if yes. """
+    """ Check if string is class name and return class if yes. """
     if '.' in string:
         split_string = string.split('.')
         if len(split_string) >= 2:
@@ -320,7 +320,7 @@ def complex_first_type_match(type_: Type, match_against: Type) -> bool:
         return False
 
     if type_origin is list:
-        # Can only have one arg, should match
+        # Can only have one argument, should match
         return typematch(type_args[0], match_against_args[0])
 
     if type_origin is tuple:

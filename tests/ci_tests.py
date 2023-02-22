@@ -21,13 +21,6 @@ scripts = [
     "datatools_modeler.py",
     "unit_tests.py",
 
-    # Schemas
-    "schemas/default_values.py",
-    "schemas/classes.py",
-    "schemas/methods.py",
-    "schemas/workflows.py",
-    "schemas/annotation_deserialization.py",
-
     # Workflows
     "workflow/blocks.py",
     "workflow/workflow_with_models.py",
@@ -52,7 +45,6 @@ scripts = [
     "utils/interpolation.py",
     "utils/serialization.py",
     "utils/helpers.py",
-    # "utils/test_types.py",
     "utils/diff.py",
     "type_matching.py",
 

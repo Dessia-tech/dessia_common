@@ -95,7 +95,7 @@ def manhattan_distance(list_a, list_b):
 
 def euclidian_distance(list_a, list_b):
     """
-    Compute the euclidian distance between list_a and list_b, i.e. the l2-norm of difference between list_a and list_b.
+    Compute the euclidean distance between list_a and list_b, i.e. the l2-norm of difference between list_a and list_b.
 
     It is the natural distance of 3D space.
 

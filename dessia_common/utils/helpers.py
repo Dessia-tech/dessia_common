@@ -65,19 +65,16 @@ def minimums(matrix: List[List[float]]) -> List[float]:
     return [min(column) for column in zip(*matrix)]
 
 def full_classname(object_, compute_for: str = 'instance'):
-    """ Get full class name of object_ (module + classname). """
+    """ Get full class name of object_ (module + class name). """
     if compute_for == 'instance':
         return f"{object_.__class__.__module__}.{object_.__class__.__name__}"
     if compute_for == 'class':
-        try:
-            return f"{object_.__module__}.{object_.__name__}"
-        except:
-            print(object_)
+        return f"{object_.__module__}.{object_.__name__}"
     raise NotImplementedError(f"Cannot compute '{compute_for}' full classname for object '{object_}'")
 
 
 def get_python_class_from_class_name(full_class_name: str):
-    """ Get python class object corresponging to given classname. """
+    """ Get python class object corresponging to given class name. """
     cached_value = _PYTHON_CLASS_CACHE.get(full_class_name, None)
     # TODO : this is just quick fix, it will be modified soon with another.
     sys.setrecursionlimit(3000)

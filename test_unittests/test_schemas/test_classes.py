@@ -131,7 +131,7 @@ assert computed_schema == {'additionalItems': False,
                            'description': 'Testing Tuple with no arg',
                            'python_typing': 'Tuple'}
 assert checked_schema.checks_above_level("error")
-assert len(checked_schema) == 1
+assert len(checked_schema) == 2
 assert checked_schema[0].level == "error"
 
 # TODO Should object be allowed here ?

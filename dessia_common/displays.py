@@ -126,15 +126,12 @@ def networkx_to_visjs_data(networkx_graph: Graph):
 
     list_nodes = list(networkx_graph.nodes)
     is_digraph = isinstance(networkx_graph, DiGraph)
-    # print(is_digraph)
     for edge in networkx_graph.edges:
         index1 = list_nodes.index(edge[0])
         index2 = list_nodes.index(edge[1])
         edge_nx_data = networkx_graph.get_edge_data(*edge)
 
-        edge_data = {'from': index1,
-                     'to': index2,
-                     'font': {'align': 'middle'}}
+        edge_data = {'from': index1, 'to': index2, 'font': {'align': 'middle'}}
 
         if is_digraph:
             if 'head_type' in edge_nx_data:
@@ -144,9 +141,7 @@ def networkx_to_visjs_data(networkx_graph: Graph):
 
         if 'color' in edge_nx_data:
             edge_data['color'] = {'color': edge_nx_data['color']}
-
         visjs_data['edges'].append(edge_data)
-
     return visjs_data
 
 
@@ -159,8 +154,5 @@ def draw_networkx_graph(networkx_graph: Graph):
     with tempfile.NamedTemporaryFile(suffix=".html",
                                      delete=False) as file:
         file.write(bytes(content, 'utf8'))
-
-    # with open('graph_visJS.html', 'wb') as file:
-    #     file.write(s.encode('utf-8'))
     webbrowser.open('file://' + os.path.realpath(file.name))
     return file.name

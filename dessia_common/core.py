@@ -62,7 +62,7 @@ class DessiaObject(SerializableObject):
 
     :cvar bool _eq_is_data_eq:
         Indicates which type of equality check is used: strict equality or equality based on data.
-        If False, Python's object __eq__ method is used (ie. strict), else, user custom data_eq is used (ie. data)
+        If False, Python's object __eq__ method is used (strict), else, user custom data_eq is used (data)
 
     :cvar List[str] _non_serializable_attributes:
         [Advanced] List of instance attributes that should not be part of serialization with to_dict method.
@@ -418,7 +418,7 @@ class DessiaObject(SerializableObject):
         """
         Copy object.
 
-        :param deep: If False, perform a shallow copy. If True, perform a deepcopy.
+        :param deep: If False, perform a shallow copy. If True, perform a deep copy.
         :param memo: A dict that keep track of references.
         """
         if deep:
