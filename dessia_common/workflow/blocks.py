@@ -3,10 +3,8 @@
 """ Module to define Blocks for workflows. """
 
 import inspect
-
 from zipfile import ZipFile
 from typing import List, Type, Any, Dict, Tuple, get_type_hints, TypeVar
-
 import itertools
 from dessia_common.core import DessiaFilter, FiltersList, type_from_annotation, DessiaObject
 from dessia_common.schemas.core import split_argspecs, parse_docstring, EMPTY_PARSED_ATTRIBUTE
@@ -17,7 +15,6 @@ from dessia_common.files import StringFile, BinaryFile
 from dessia_common.utils.helpers import concatenate, full_classname, get_python_class_from_class_name
 from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
 from dessia_common.exports import ExportFormat
-
 from dessia_common.workflow.core import Block, Variable, TypedVariable, TypedVariableWithDefaultValue,\
     set_block_variable_names_from_dict, Workflow
 from dessia_common.workflow.utils import ToScriptElement
@@ -1069,7 +1066,6 @@ class Archive(Block):
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
         """ Custom dict_to_object method. """
-
         return cls(number_exports=dict_["number_exports"], filename=dict_["filename"],
                    name=dict_['name'], position=dict_.get('position'))
 

@@ -262,17 +262,6 @@ class Block(DessiaObject):
         """
         return self.__class__.__name__ == other.__class__.__name__
 
-    def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#', id_method=True, id_memo=None):
-        """ Serialize the block with custom logic. """
-        dict_ = DessiaObject.base_dict(self)
-        dict_['inputs'] = [i.to_dict() for i in self.inputs]
-        dict_['outputs'] = [o.to_dict() for o in self.outputs]
-        if self.position is not None:
-            dict_['position'] = list(self.position)
-        else:
-            dict_['position'] = self.position
-        return dict_
-
     def jointjs_data(self):
         """ Deprecated HTML computation. """
         data = {'block_class': self.__class__.__name__}
