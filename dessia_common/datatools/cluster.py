@@ -121,9 +121,9 @@ class ClusteredDataset(Dataset):
         ClusteredDataset ex_split: 3 samples, 2 features, 3 clusters
         |   n°   |   Name   |   Common_attributes   |
         ---------------------------------------------
-        |      0 |     ex_0 |['mpg', 'displacemen...|
-        |      1 |     ex_1 |['mpg', 'displacemen...|
-        |      2 |     ex_2 |['mpg', 'displacemen...|
+        |      0 |     ex_0 |['mpg', 'displacement...|
+        |      1 |     ex_1 |['mpg', 'displacement...|
+        |      2 |     ex_2 |['mpg', 'displacement...|
         >>> print(split_clist[3][:3])
         Dataset ex_3: 3 samples, 5 features
         |   Mpg   |   Displacement   |   Horsepower   |   Weight   |   Acceleration   |

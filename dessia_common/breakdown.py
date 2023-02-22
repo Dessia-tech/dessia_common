@@ -127,7 +127,6 @@ def merge_breakdown_dicts(dict1, dict2):
                         dict3[class_name][obj] = path
                 else:
                     dict3[class_name][obj] = path
-            # dict3[class_name].update(refs)
         else:
             dict3[class_name] = refs
     return dict3
@@ -239,9 +238,6 @@ def deep_getsizeof(obj, ids=None):
 
     if isinstance(obj, str):
         return result
-
-    # if isinstance(o, collections.Mapping):
-    #     return r + sum(d(k, ids) + d(v, ids) for k, v in o.items())
 
     if isinstance(obj, collections.abc.Mapping):
         return result + sum(dgso(k, ids) + dgso(v, ids) for k, v in obj.items())

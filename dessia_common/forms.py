@@ -237,15 +237,15 @@ class StandaloneObject(MovingObject):
 
     _standalone_in_db = True
     _generic_eq = True
-    _allowed_methods = ['add_standalone_object', 'add_embedded_object', "count_until",
-                        'add_float', 'generate_from_text', 'generate_from_bin']
+    _allowed_methods = ["add_standalone_object", "add_embedded_object", "count_until", "add_float",
+                        "generate_from_text", "generate_from_bin", "method_without_arg", "ill_defined_method"]
 
     def __init__(self, standalone_subobject: StandaloneBuiltinsSubobject, embedded_subobject: EmbeddedSubobject,
                  dynamic_dict: Dict[str, bool], float_dict: Dict[str, float], string_dict: Dict[str, str],
                  tuple_arg: Tuple[str, int], object_list: List[StandaloneBuiltinsSubobject],
                  subobject_list: List[EmbeddedSubobject], builtin_list: List[int], union_arg: List[UnionArg],
                  subclass_arg: InstanceOf[StandaloneBuiltinsSubobject], array_arg: List[List[float]],
-                 name: str = 'Standalone Object Demo'):
+                 name: str = "Standalone Object Demo"):
         self.union_arg = union_arg
         self.builtin_list = builtin_list
         self.subobject_list = subobject_list
@@ -262,7 +262,7 @@ class StandaloneObject(MovingObject):
         MovingObject.__init__(self, name=name)
 
     @classmethod
-    def generate(cls, seed: int, name: str = 'Standalone Object Demo') -> 'StandaloneObject':
+    def generate(cls, seed: int, name: str = "Standalone Object Demo") -> 'StandaloneObject':
         """ Generate an object with default values computed from a seed. """
         dynamic_dict = {'n' + str(i): bool(seed % 2) for i in range(seed)}
         float_dict = {'k' + str(i): seed * 1.09 for i in range(seed)}
@@ -324,7 +324,7 @@ class StandaloneObject(MovingObject):
         """
         self.subobject_list.append(object_)
 
-    def add_float(self, value: float) -> StandaloneBuiltinsSubobject:
+    def add_float(self, value: float = 1) -> StandaloneBuiltinsSubobject:
         """
         Add value to its standalone sub-object floatarg property and return it.
 
@@ -336,6 +336,10 @@ class StandaloneObject(MovingObject):
     def append_union_arg(self, object_: UnionArg):
         """ Append an object with corresponding type to union_arg, for testing purpose. """
         self.union_arg.append(object_)
+
+    def method_without_arg(self):
+        """ It should be ok and be in method_schema. """
+        return self
 
     def contour(self):
         """ Squared contour. """
@@ -412,7 +416,7 @@ class StandaloneObject(MovingObject):
         custom_dataset = plot_data.Dataset(elements=elements1, name='I = f(t)', tooltip=tooltip,
                                            point_style=point_style, edge_style=edge_style)
 
-        # Now let's create another dataset for the purpose of this exercice
+        # Now let's create another dataset for the purpose of this exercise
         timesteps = linspace(0, 20, 100)
         current2 = [100 * (1 + cos(t)) for t in timesteps]
         elements2 = []

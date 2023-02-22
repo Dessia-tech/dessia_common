@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """ Schema generation functions. """
 import re
+import warnings
 from copy import deepcopy
 import inspect
 import collections.abc
@@ -38,7 +39,7 @@ class Schema:
     Right now Schema doesn't inherit from any DessiaObject class (SerializableObject ?), but could, in the future.
     That is why it implements methods with the same name.
 
-    TODO We might want to define our 'own argspecs', in order to fully support workflow natively.
+    TODO We might want to define our 'own argspecs', in order to full native support of workflow.
      We could translate inspect argspecs into a dessia_common pseudo-language.
     """
 
@@ -57,12 +58,11 @@ class Schema:
 
         self.property_schemas = {}
         for attribute in self.attributes:
-            default = self.default_arguments.get(attribute, None)
-            annotation = self.annotations[attribute]
-            schema = get_schema(annotation=annotation, attribute=attribute, definition_default=default)
-            self.property_schemas[attribute] = schema
-
-        self.check_list().raise_if_above_level("error")
+            if attribute in self.annotations:
+                default = self.default_arguments.get(attribute, None)
+                annotation = self.annotations[attribute]
+                schema = get_schema(annotation=annotation, attribute=attribute, definition_default=default)
+                self.property_schemas[attribute] = schema
 
     @property
     def editable_attributes(self):
@@ -71,7 +71,7 @@ class Schema:
 
     def chunk(self, attribute: str):
         """ Extract and compute a schema from one of the attributes. """
-        schema = self.property_schemas[attribute]
+        schema = self.property_schemas.get(attribute, None)
 
         if self.parsed_attributes is not None and attribute in self.parsed_attributes:
             try:
@@ -82,14 +82,15 @@ class Schema:
             description = ""
 
         editable = attribute in self.editable_attributes
-        chunk = schema.to_dict(title=prettyname(attribute), editable=editable, description=description)
+        if schema is not None:
+            return schema.to_dict(title=prettyname(attribute), editable=editable, description=description)
 
         # if attribute in self.default_arguments:
-        #     # TODO Could use this and Optional proxy in order to inject real default values for mutables
+        #     # TODO Could use this and Optional proxy in order to inject real default values for mutable
         #     default = self.default_arguments.get(attribute, None)
         #     print("Default", default)
         #     chunk["default_value"] = schema.default_value(definition_default=default)
-        return chunk
+        return {}
 
     @property
     def chunks(self):
@@ -125,12 +126,13 @@ class Schema:
 
         for attribute in self.attributes:
             # Is typed
-            check = self.attribute_is_annotated(attribute)
-            issues += CheckList([check])
+            is_typed_check = self.attribute_is_annotated(attribute)
+            issues += CheckList([is_typed_check])
 
-            # Specific check
-            schema = self.property_schemas[attribute]
-            issues += schema.check_list()
+            if is_typed_check.level != "error":
+                # Specific check
+                schema = self.property_schemas[attribute]
+                issues += schema.check_list()
         return issues
 
     def is_valid(self) -> bool:
@@ -276,9 +278,9 @@ class TypingProperty(Property):
         serialized = self.origin.__name__
         if serialized in ["list", "dict", "tuple", "type"]:
             # TODO Dirty quickfix. Find a generic way to automatize this
-            serialized = self.origin.__name__.capitalize()
+            serialized = serialized.capitalize()
         if self.args:
-            serialized = f"{serialized}[{', '.join([s.serialized for s in self.args_schemas])}]"
+            return compute_typing_schema_serialization(serialized_typing=serialized, args_schemas=self.args_schemas)
         return serialized
 
     @classmethod
@@ -566,6 +568,11 @@ class UnionProperty(TypingProperty):
         else:
             self.standalone = None
 
+    @property
+    def serialized(self) -> str:
+        """ Generic serialization with 'Union' enforced, because Union annotation has no __name__ attribute. """
+        return compute_typing_schema_serialization(serialized_typing="Union", args_schemas=self.args_schemas)
+
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
         """ Deserialize Union annotation. """
@@ -616,7 +623,25 @@ class HeterogeneousSequence(TypingProperty):
     def __init__(self, annotation: Type[Tuple], attribute: str, definition_default: Tuple = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
-        self.item_schemas = [get_schema(annotation=a, attribute=f"{attribute}/{i}") for i, a in enumerate(self.args)]
+        self.additional_items = Ellipsis in self.args
+
+    @property
+    def args_schemas(self) -> List[Property]:
+        """
+        If length is undefined (additional_items is True), then we only have one possible argument type.
+
+        Otherwise, each argument is ordered and strictly defined by its type
+        """
+        if self.additional_items:
+            return [get_schema(annotation=self.args[0], attribute=f"{self.attribute}/0")]
+        return [get_schema(annotation=a, attribute=f"{self.attribute}/{i}") for i, a in enumerate(self.args)]
+
+    @property
+    def serialized(self) -> str:
+        """ If additional items, concatenate ellipsis. """
+        if self.additional_items:
+            return f"Tuple[{self.args_schemas[0].serialized}, ...]"
+        return super().serialized
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
@@ -631,8 +656,8 @@ class HeterogeneousSequence(TypingProperty):
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write HeterogeneousSequence as a Dict. """
         chunk = super().to_dict(title=title, editable=editable, description=description)
-        items = [sp.to_dict(title=f"{title}/{i}", editable=editable) for i, sp in enumerate(self.item_schemas)]
-        chunk.update({'type': 'array', 'additionalItems': False, 'items': items})
+        items = [sp.to_dict(title=f"{title}/{i}", editable=editable) for i, sp in enumerate(self.args_schemas)]
+        chunk.update({'type': 'array', 'additionalItems': self.additional_items, 'items': items})
         return chunk
 
     def default_value(self):
@@ -643,12 +668,12 @@ class HeterogeneousSequence(TypingProperty):
         """
         if self.definition_default is not None:
             return self.definition_default
-        return tuple(s.default_value() for s in self.item_schemas)
+        return tuple(s.default_value() for s in self.args_schemas)
 
     def check_list(self) -> CheckList:
         """ Check validity of Tuple Type Hint. """
         issues = super().check_list()
-        issues += CheckList([self.has_enough_args()])
+        issues += CheckList([self.has_enough_args(), self.ellipsis_has_exactly_two_args()])
         return issues
 
     def has_enough_args(self) -> PassedCheck:
@@ -658,6 +683,18 @@ class HeterogeneousSequence(TypingProperty):
                   f"Expected 'Tuple[T0, T1, ..., Tn]', got '{self.annotation}'."
             return FailedCheck(msg)
         return PassedCheck(f"{self.check_prefix}has at least one argument : '{self.annotation}'.")
+
+    def ellipsis_has_exactly_two_args(self) -> PassedCheck:
+        """
+        Tuple can be ellipsed (Tuple[T, ...]), meaning that it contains any number of element.
+
+        In this case it MUST have exactly two arguments.
+        """
+        if self.additional_items and len(self.args) != 2:
+            msg = f"{self.check_prefix}is typed as an ellipsed 'Tuple' which requires at exactaly 2 arguments. " \
+                  f"Expected 'Tuple[T, ...]', got '{self.annotation}'."
+            return FailedCheck(msg)
+        return PassedCheck(f"{self.check_prefix}is not an ill-defined ellipsed tuple : '{self.annotation}'.")
 
 
 class HomogeneousSequence(TypingProperty):
@@ -670,8 +707,6 @@ class HomogeneousSequence(TypingProperty):
     def __init__(self, annotation: Type[List[T]], attribute: str, definition_default: List[T] = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
-        self.item_schemas = [get_schema(annotation=a, attribute=f"{attribute}/{i}") for i, a in enumerate(self.args)]
-
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
         """ Deserialize List annotation. """
@@ -682,7 +717,7 @@ class HomogeneousSequence(TypingProperty):
         if not title:
             title = 'Items'
         chunk = super().to_dict(title=title, editable=editable, description=description)
-        items = [sp.to_dict(title=f"{title}/{i}", editable=editable) for i, sp in enumerate(self.item_schemas)]
+        items = [sp.to_dict(title=f"{title}/{i}", editable=editable) for i, sp in enumerate(self.args_schemas)]
         chunk.update({'type': 'array', "items": items[0]})
         return chunk
 
@@ -1006,7 +1041,6 @@ def split_default_args(argspecs: inspect.FullArgSpec, merge: bool = False):
 def split_argspecs(argspecs: inspect.FullArgSpec) -> Tuple[int, int]:
     """ Get number of regular arguments as well as arguments with default values. """
     nargs = len(argspecs.args) - 1
-
     if argspecs.defaults is not None:
         ndefault_args = len(argspecs.defaults)
     else:
@@ -1044,6 +1078,12 @@ SERIALIZED_TO_SCHEMA_CLASS = {
     "Union": UnionProperty, "Dict": DynamicDict, "InstanceOf": InstanceOfProperty, "Subclass": SubclassProperty,
     "MethodType": MethodTypeProperty, "ClassMethodType": MethodTypeProperty, "Type": ClassProperty
 }
+
+
+def serialize_annotation(annotation: Type[T], attribute: str = "") -> str:
+    """ Make use of schema to serialized annotations. """
+    schema = get_schema(annotation=annotation, attribute=attribute)
+    return schema.serialized
 
 
 def deserialize_annotation(serialized: str) -> Type[T]:
@@ -1102,10 +1142,16 @@ def object_default(definition_default: CoreDessiaObject = None, class_schema: Cl
     return None
 
 
+def compute_typing_schema_serialization(serialized_typing: str, args_schemas: List[Property]) -> str:
+    """ Build final typing serialized string. """
+    return f"{serialized_typing}[{', '.join([s.serialized for s in args_schemas])}]"
+
+
 def serialize_typing(typing_, attribute: str = "") -> str:
     """ Make use of schema to serialized annotations. """
-    schema = get_schema(annotation=typing_, attribute=attribute)
-    return schema.serialized
+    warnings.warn("Function serialize_typing have been renamed serialize_annotation. Please use it instead.",
+                  DeprecationWarning)
+    return serialize_annotation(annotation=typing_, attribute=attribute)
 
 
 def union_is_default_value(typing_: Type) -> bool:
@@ -1129,7 +1175,7 @@ def extract_args(string: str) -> List[str]:
     opened_brackets = 0
     closed_brackets = 0
     current_arg = ""
-    args = []
+    arguments = []
     for character in string.replace(" ", ""):
         if character == "[":
             opened_brackets += 1
@@ -1137,13 +1183,18 @@ def extract_args(string: str) -> List[str]:
             closed_brackets += 1
         split_by_comma = closed_brackets == opened_brackets
         if split_by_comma and character == ",":
-            args.append(current_arg)
+            # We are at first level, because we closed as much brackets as we have opened
+            # Current argument is complete, we append it to args sequence and reset current_args
+            arguments.append(current_arg)
             current_arg = ""
         else:
+            # We are at a deeper level, because all opened brackets haven't been closed.
+            # We build current argument
             current_arg += character
     if current_arg:
-        args.append(current_arg)
-    return args
+        # Append last argument to arguments sequence
+        arguments.append(current_arg)
+    return arguments
 
 
 class ParsedAttribute(TypedDict):
@@ -1190,7 +1241,8 @@ def parse_attribute(param, annotations) -> Tuple[str, ParsedAttribute]:
         param = param.split(":type ")[0]
     argname, argdesc = param.split(":", maxsplit=1)
     annotation = annotations[argname]
-    parsed_attribute = {'desc': argdesc.strip(), 'type_': serialize_typing(annotation), 'annotation': str(annotation)}
+    parsed_attribute = {'desc': argdesc.strip(), 'type_': serialize_annotation(annotation),
+                        'annotation': str(annotation)}
     return argname, parsed_attribute
 
 

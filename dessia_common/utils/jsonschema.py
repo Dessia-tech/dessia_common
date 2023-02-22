@@ -14,7 +14,7 @@ from dessia_common.files import BinaryFile, StringFile
 from dessia_common.typings import Subclass, MethodType, ClassMethodType, Any
 from dessia_common.measures import Measure
 from dessia_common.utils.helpers import prettyname
-from dessia_common.schemas.core import FAILED_ATTRIBUTE_PARSING, is_typing, serialize_typing
+from dessia_common.schemas.core import FAILED_ATTRIBUTE_PARSING, is_typing, serialize_annotation
 
 JSONSCHEMA_HEADER = {"definitions": {},
                      "$schema": "http://json-schema.org/draft-07/schema#",
@@ -142,7 +142,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element, order, editable=N
 
     # Compute base entries
     jsonschema_element[key] = {'title': title, 'editable': editable, 'order': order, 'description': description,
-                               'python_typing': serialize_typing(typing_)}
+                               'python_typing': serialize_annotation(typing_)}
 
     if typing_ in TYPING_EQUIVALENCES:
         # Python Built-in type
@@ -165,7 +165,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element, order, editable=N
             jsonschema_element[key].update(jsonschema_sequence_recursion(value=typing_, order=order,
                                                                          title=title, editable=editable))
         elif origin is tuple:
-            # Heterogenous sequences (tuples)
+            # Heterogeneous sequences (tuples)
             items = []
             for type_ in args:
                 items.append({'type': TYPING_EQUIVALENCES[type_]})
@@ -239,7 +239,7 @@ def jsonschema_sequence_recursion(value, order: int, title: str = None,
     if title is None:
         title = 'Items'
     jsonschema_element = {'type': 'array', 'order': order,
-                          'python_typing': serialize_typing(value)}
+                          'python_typing': serialize_annotation(value)}
 
     items_type = get_args(value)[0]
     if is_typing(items_type) and get_origin(items_type) is list:
