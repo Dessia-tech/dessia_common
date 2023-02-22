@@ -100,12 +100,7 @@ class InstantiateModel(Block):
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
         """ Custom dict_to_object method. """
-        if 'model_class_module' in dict_:  # TODO Retro-compatibility. Remove this in future versions
-            module_name = dict_['model_class_module']
-            classname = module_name + '.' + dict_['model_class']
-        else:
-            classname = dict_['model_class']
-        class_ = get_python_class_from_class_name(classname)
+        class_ = get_python_class_from_class_name(dict_['model_class'])
         return cls(class_, name=dict_['name'], position=dict_.get('position'))
 
     def evaluate(self, values, **kwargs):
@@ -182,17 +177,9 @@ class ClassMethod(Block):
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'ClassMethod':
         """ Custom dict_to_object method. """
-        if 'method_type' in dict_:
-            classname = dict_['method_type']['class_']
-            method_name = dict_['method_type']['name']
-        else:
-            # Retro-compatibility
-            classname = dict_['model_class']
-            method_name = dict_['method_name']
-        class_ = get_python_class_from_class_name(classname)
-        name = dict_['name']
-        method_type = ClassMethodType(class_=class_, name=method_name)
-        return cls(method_type=method_type, name=name, position=dict_.get('position'))
+        class_ = get_python_class_from_class_name(dict_['method_type']['class_'])
+        method_type = ClassMethodType(class_=class_, name=dict_['method_type']['name'])
+        return cls(method_type=method_type, name=dict_['name'], position=dict_.get('position'))
 
     def evaluate(self, values, **kwargs):
         """ Run given classmethod with arguments that are in values. """
@@ -276,17 +263,9 @@ class ModelMethod(Block):
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'ModelMethod':
         """ Custom dict_to_object method. """
-        if 'method_type' in dict_:
-            classname = dict_['method_type']['class_']
-            method_name = dict_['method_type']['name']
-        else:
-            # Retro-compatibility
-            classname = dict_['model_class']
-            method_name = dict_['method_name']
-        class_ = get_python_class_from_class_name(classname)
-        name = dict_['name']
-        method_type = MethodType(class_=class_, name=method_name)
-        return cls(method_type=method_type, name=name, position=dict_.get('position'))
+        class_ = get_python_class_from_class_name(dict_['method_type']['class_'])
+        method_type = MethodType(class_=class_, name=dict_['method_type']['name'])
+        return cls(method_type=method_type, name=dict_['name'], position=dict_.get('position'))
 
     def evaluate(self, values, **kwargs):
         """ Run given method with arguments that are in values. """
@@ -343,27 +322,6 @@ class Sequence(Block):
         """ Return whether the block is equivalent to the other given or not. """
         return Block.equivalent(self, other) and self.number_arguments == other.number_arguments
 
-    def to_dict(self, use_pointers=True, memo=None, path: str = '#', id_method=True, id_memo=None):
-        """
-        Serialize the block with custom logic.
-
-        TODO To remove ?
-        """
-        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
-        dict_['number_arguments'] = self.number_arguments
-        return dict_
-
-    @classmethod
-    @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
-        """
-        Custom dict_to_object method.
-
-        TODO To remove ?
-        """
-        return cls(dict_['number_arguments'], dict_['name'], position=dict_.get('position'))
-
     def evaluate(self, values, **kwargs):
         """ Pack values into a sequence. """
         return [[values[var] for var in self.inputs]]
@@ -396,27 +354,6 @@ class Concatenate(Block):
     def equivalent(self, other):
         """ Return whether the block is equivalent to the other given or not. """
         return Block.equivalent(self, other) and self.number_arguments == other.number_arguments
-
-    def to_dict(self, use_pointers=True, memo=None, path: str = '#', id_method=True, id_memo=None):
-        """
-        Serialize the block with custom logic.
-
-        TODO To remove ?
-        """
-        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
-        dict_['number_arguments'] = self.number_arguments
-        return dict_
-
-    @classmethod
-    @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
-        """
-        Custom dict_to_object method.
-
-        TODO To remove ?
-        """
-        return cls(dict_['number_arguments'], dict_['name'], position=dict_.get('position'))
 
     def evaluate(self, values: Dict[Variable, Any], **kwargs):
         """ Concatenate elements that are in values. """
@@ -464,24 +401,6 @@ class WorkflowBlock(Block):
         if not Block.equivalent(self, other):
             return False
         return self.workflow == other.workflow
-
-    def to_dict(self, use_pointers=True, memo=None, path: str = '#', id_method=True, id_memo=None):
-        """ Serialize the block with custom logic. """
-        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
-        dict_.update({'workflow': self.workflow.to_dict(use_pointers=use_pointers, memo=memo, path=f'{path}/workflow')})
-        return dict_
-
-    @classmethod
-    @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'WorkflowBlock':
-        """
-        Custom dict_to_object method.
-
-        TODO To remove ?
-        """
-        workflow = Workflow.dict_to_object(dict_=dict_["workflow"])
-        return cls(workflow=workflow, name=dict_['name'], position=dict_.get('position'))
 
     def evaluate(self, values, **kwargs):
         """ Format subworkflow arguments and run it. """
@@ -557,26 +476,6 @@ class ForEach(Block):
         wb_eq = self.workflow_block.equivalent(other.workflow_block)
         return Block.equivalent(self, other) and wb_eq and input_eq
 
-    def to_dict(self, use_pointers=True, memo=None, path: str = '#', id_method=True, id_memo=None):
-        """ Serialize the block with custom logic. """
-        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
-        wb_dict = self.workflow_block.to_dict(use_pointers=use_pointers, memo=memo, path=f"{path}/worklow_block")
-        dict_.update({'workflow_block': wb_dict, 'iter_input_index': self.iter_input_index})
-        return dict_
-
-    @classmethod
-    @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
-        """
-        Custom dict_to_object method.
-
-        TODO To remove ?
-        """
-        workflow_block = WorkflowBlock.dict_to_object(dict_=dict_['workflow_block'])
-        return cls(workflow_block=workflow_block, iter_input_index=dict_['iter_input_index'], name=dict_['name'],
-                   position=dict_.get('position'))
-
     def evaluate(self, values, **kwargs):
         """ Loop on input list and run subworkflow on each. """
         values_workflow = {var2: values[var1] for var1, var2 in zip(self.inputs, self.workflow_block.inputs)}
@@ -629,26 +528,6 @@ class Unpacker(Block):
         """ Custom hash function. Related to 'equivalent' method. """
         return len(self.indices)
 
-    def to_dict(self, use_pointers=True, memo=None, path: str = '#', id_method=True, id_memo=None):
-        """
-        Serialize the block with custom logic.
-
-        TODO To remove ?
-        """
-        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
-        dict_['indices'] = self.indices
-        return dict_
-
-    @classmethod
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'Unpacker':
-        """
-        Custom dict_to_object method.
-
-        TODO To remove ?
-        """
-        return cls(dict_['indices'], dict_['name'], position=dict_.get('position'))
-
     def evaluate(self, values, **kwargs):
         """ Unpack input list elements into n outputs. """
         return [values[self.inputs[0]][i] for i in self.indices]
@@ -675,16 +554,6 @@ class Flatten(Block):
     def equivalent_hash(self):
         """ Custom hash function. Related to 'equivalent' method. """
         return 1
-
-    @classmethod
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'Flatten':
-        """
-        Custom dict_to_object method.
-
-        TODO To remove ?
-        """
-        return cls(dict_['name'], position=dict_.get('position'))
 
     def evaluate(self, values, **kwargs):
         """ Extract the first element of a list and flatten it. """
@@ -715,28 +584,6 @@ class Product(Block):
     def equivalent(self, other):
         """ Return whether the block is equivalent to the other given or not. """
         return Block.equivalent(self, other) and self.number_list == other.number_list
-
-    def to_dict(self, use_pointers=True, memo=None, path: str = '#', id_method=True, id_memo=None):
-        """
-        Serialize the block with custom logic.
-
-        TODO To remove ?
-        """
-        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
-        dict_['number_list'] = self.number_list
-        return dict_
-
-    @classmethod
-    @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
-        """
-        Custom dict_to_object method.
-
-        TODO To remove ?
-        """
-        number_list = dict_['number_list']
-        return cls(number_list=number_list, name=dict_['name'], position=dict_.get('position'))
 
     def evaluate(self, values, **kwargs):
         """ Compute the block: use itertools.product. """
@@ -775,29 +622,6 @@ class Filter(Block):
         """ Custom hash function. Related to 'equivalent' method. """
         hashes = [hash(f) for f in self.filters]
         return int(sum(hashes) % 10e5)
-
-    def to_dict(self, use_pointers=True, memo=None, path: str = '#', id_method=True, id_memo=None):
-        """
-        Serialize the block with custom logic.
-
-        TODO To remove ?
-        """
-        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
-        filters_dict = [f.to_dict(use_pointers=use_pointers, memo=memo, path=f"{path}/filters/{i}")
-                        for i, f in enumerate(self.filters)]
-        dict_.update({"filters": filters_dict, "logical_operator": self.logical_operator})
-        return dict_
-
-    @classmethod
-    @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
-        """ Custom dict_to_object method. """
-        filters = [DessiaFilter.dict_to_object(dict_=d, force_generic=force_generic, global_dict=global_dict,
-                                               pointers_memo=pointers_memo, path=f"{path}/filters/{i}")
-                   for i, d in enumerate(dict_['filters'])]
-        return cls(filters=filters, logical_operator=dict_["logical_operator"], name=dict_["name"],
-                   position=dict_.get('position'))
 
     def evaluate(self, values, **kwargs):
         """ Apply given filters to input list. """
@@ -892,23 +716,6 @@ class MultiPlot(Display):
     def equivalent_hash(self):
         """ Custom hash function. Related to 'equivalent' method. """
         return sum(len(a) for a in self.attributes)
-
-    def to_dict(self, use_pointers=True, memo=None, path: str = '#', id_method=True, id_memo=None):
-        """Serialize the block with custom logic."""
-        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
-        dict_['attributes'] = self.attributes
-        return dict_
-
-    @classmethod
-    @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
-        """
-        Custom dict_to_object method.
-
-        TODO To remove ?
-        """
-        return cls(attributes=dict_['attributes'], name=dict_['name'], position=dict_.get('position'))
 
     def evaluate(self, values, **kwargs):
         """ Create MultiPlot from block configuration. Handle reference path. """
@@ -1012,27 +819,6 @@ class ModelAttribute(Block):
         """ Return whether the block is equivalent to the other given or not. """
         return Block.equivalent(self, other) and self.attribute_name == other.attribute_name
 
-    def to_dict(self, use_pointers=True, memo=None, path: str = '#', id_method=True, id_memo=None):
-        """
-        Serialize the block with custom logic.
-
-        TODO To remove ?
-        """
-        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
-        dict_.update({'attribute_name': self.attribute_name})
-        return dict_
-
-    @classmethod
-    @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
-        """
-        Custom dict_to_object method.
-
-        TODO To remove ?
-        """
-        return cls(dict_['attribute_name'], dict_['name'], position=dict_.get('position'))
-
     def evaluate(self, values, **kwargs):
         """ Get input object's deep attribute. """
         return [get_in_object_from_path(values[self.inputs[0]], f'#/{self.attribute_name}')]
@@ -1065,27 +851,6 @@ class SetModelAttribute(Block):
     def equivalent(self, other):
         """ Returns whether the block is equivalent to the other given or not. """
         return Block.equivalent(self, other) and self.attribute_name == other.attribute_name
-
-    def to_dict(self, use_pointers=True, memo=None, path: str = '#', id_method=True, id_memo=None):
-        """
-        Serialize the block with custom logic.
-
-        TODO To remove ?
-        """
-        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
-        dict_.update({'attribute_name': self.attribute_name})
-        return dict_
-
-    @classmethod
-    @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
-        """
-        Custom dict_to_object method.
-
-        TODO To remove ?
-        """
-        return cls(dict_['attribute_name'], dict_['name'], position=dict_.get('position'))
 
     def evaluate(self, values, **kwargs):
         """ Set input object's deep attribute with input value. """
@@ -1120,27 +885,6 @@ class Sum(Block):
     def equivalent(self, other):
         """ Returns whether the block is equivalent to the other given or not. """
         return Block.equivalent(self, other) and self.number_elements == other.number_elements
-
-    def to_dict(self, use_pointers=True, memo=None, path: str = '#', id_method=True, id_memo=None):
-        """
-        Serialize the block with custom logic.
-
-        TODO To remove ?
-        """
-        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
-        dict_.update({'number_elements': self.number_elements})
-        return dict_
-
-    @classmethod
-    @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
-        """
-        Custom dict_to_object method.
-
-        TODO To remove ?
-        """
-        return cls(dict_['number_elements'], dict_['name'], position=dict_.get('position'))
 
     def evaluate(self, values, **kwargs):
         """
@@ -1201,27 +945,6 @@ class ConcatenateStrings(Block):
         same_number = self.number_elements == other.number_elements
         same_separator = self.separator == other.separator
         return Block.equivalent(self, other) and same_number and same_separator
-
-    def to_dict(self, use_pointers=True, memo=None, path: str = '#', id_method=True, id_memo=None):
-        """
-        Serialize the block with custom logic.
-
-        TODO To remove ?
-        """
-        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
-        dict_.update({'number_elements': self.number_elements, "separator": self.separator})
-        return dict_
-
-    @classmethod
-    @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
-        """
-        Custom dict_to_object method.
-
-        TODO To remove ?
-        """
-        return cls(number_elements=dict_['number_elements'], separator=dict_["separator"], name=dict_['name'])
 
     def evaluate(self, values, **kwargs):
         """ Concatenate input strings with configured separator. """
@@ -1284,12 +1007,7 @@ class Export(Block):
         """ Custom dict_to_object method. """
         class_ = get_python_class_from_class_name(dict_['method_type']['class_'])
         method_type = MethodType(class_=class_, name=dict_['method_type']['name'])
-        if "export_name" in dict_:
-            # RetroCompat
-            filename = dict_["export_name"]
-        else:
-            filename = dict_["filename"]
-        return cls(method_type=method_type, text=dict_['text'], filename=filename,
+        return cls(method_type=method_type, text=dict_['text'], filename=dict_["filename"],
                    extension=dict_["extension"], name=dict_["name"], position=dict_.get('position'))
 
     def evaluate(self, values, **kwargs):
@@ -1340,11 +1058,7 @@ class Archive(Block):
         Block.__init__(self, inputs=inputs, outputs=[Variable(name="zip archive")], name=name, position=position)
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#', id_method=True, id_memo=None):
-        """
-        Serialize the block with custom logic.
-
-        TODO To remove ?
-        """
+        """ Serialize the block with custom logic. """
         dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         dict_['number_exports'] = len(self.inputs) - 1   # Filename is also a block input
         dict_["filename"] = self.filename
@@ -1355,13 +1069,9 @@ class Archive(Block):
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
         """ Custom dict_to_object method. """
-        if "export_name" in dict_:
-            # RetroCompat
-            filename = dict_["export_name"]
-        else:
-            filename = dict_["filename"]
-        return cls(number_exports=dict_["number_exports"], filename=filename, name=dict_['name'],
-                   position=dict_.get('position'))
+
+        return cls(number_exports=dict_["number_exports"], filename=dict_["filename"],
+                   name=dict_['name'], position=dict_.get('position'))
 
     def evaluate(self, values, **kwargs):
         """ Generate archive stream for input streams. """
