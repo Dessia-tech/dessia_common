@@ -685,7 +685,7 @@ class DecisionTreeRegressor(Model):
         Generic method (shared between trees) to set self attributes from scikit-learn model attributes.
         """
         return {'name': name,
-                'tree_': Tree._instantiate_dessia(model.tree_),
+                'tree_': Tree._instantiate_dessia(model.tree_, None),
                 'n_outputs_': model.n_outputs_,
                 'params': params}
 

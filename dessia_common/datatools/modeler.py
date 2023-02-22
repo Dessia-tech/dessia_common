@@ -315,7 +315,9 @@ class ModeledDataset(Dataset):
         self.input_names = input_names
         self.output_names = output_names
         Dataset.__init__(self, dessia_objects=dessia_objects, name=name)
-        self._common_attributes = input_names + output_names
+        self._common_attributes = None
+        if input_names is not None and output_names is not None:
+            self._common_attributes = input_names + output_names
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#', id_method=True,
                 id_memo=None) -> JsonSerializable:
@@ -341,8 +343,8 @@ class ModeledDataset(Dataset):
     def _printed_attributes(self):
         return self.common_attributes
 
-    def _get_printed_value(self, dessia_object: Sample, attr: str):
-        return dessia_object.values[attr]
+    # def _get_printed_value(self, dessia_object: Sample, attr: str):
+    #     return dessia_object.values[attr]
 
     @classmethod
     def from_predicted_dataset(cls, modeler: Modeler, dataset: Dataset, input_names: List[str], output_names: List[str],

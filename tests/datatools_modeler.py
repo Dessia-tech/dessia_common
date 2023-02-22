@@ -95,6 +95,8 @@ json_dict = json.dumps(modeled_dict)
 decoded_json = json.loads(json_dict)
 deserialized_object = modeled_dataset.dict_to_object(decoded_json)
 
+assert(all(string in modeled_dataset.__str__() for string in ["0.141", "90.0", "Horsepower"]))
+
 # # Visuals to check test and train data are correctly separated in cross validations and modeler stuff
 # for mdlr, cv in zip(mdlrs, cvs):
 #     if 'lassifier' in type(mdlr.model).__name__:
