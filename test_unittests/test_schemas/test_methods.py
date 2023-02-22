@@ -13,7 +13,7 @@ class TestMethodSchemas(unittest.TestCase):
         ("generate_from_text", 1),
         ("generate_from_bin", 1),
         ("method_without_arg", 0),
-        ("ill_defined_method", 4)
+        ("ill_defined_method", 1)
     ])
     def test_number_of_arguments(self, method_name, expected_number):
         method = getattr(StandaloneObject, method_name)
@@ -97,7 +97,7 @@ class TestComputedSchemas(unittest.TestCase):
         ("generate_from_text", 1),
         ("generate_from_bin", 1),
         ("method_without_arg", 0),
-        ("ill_defined_method", 1)
+        ("ill_defined_method", 4)
     ])
     def test_number_of_properties(self, method_name, expected_number):
         computed_schema = self.schemas[method_name]
