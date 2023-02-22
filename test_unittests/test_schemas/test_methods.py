@@ -15,14 +15,13 @@ class TestMethodSchemas(unittest.TestCase):
         ("method_without_arg", 0),
         ("ill_defined_method", 4)
     ])
-    def test_number_of_arguments(self, method_name, expected_number_of_arguments):
+    def test_number_of_arguments(self, method_name, expected_number):
         method = getattr(StandaloneObject, method_name)
         schema = MethodSchema(method)
-        self.assertEqual(len(schema.check_list()), expected_number_of_arguments)
-        self.assertEqual(len(schema.property_schemas), expected_number_of_arguments)
+        self.assertEqual(len(schema.property_schemas), expected_number)
 
         computed_schema = schema.to_dict()
-        self.assertEqual(len(computed_schema["properties"]), expected_number_of_arguments)
+        self.assertEqual(len(computed_schema["properties"]), expected_number)
 
     @parameterized.expand([
         ("add_standalone_object", True),
@@ -41,6 +40,21 @@ class TestMethodSchemas(unittest.TestCase):
             self.assertFalse(schema.check_list().checks_above_level("error"))
         else:
             self.assertTrue(schema.check_list().checks_above_level("error"))
+
+    @parameterized.expand([
+        ("add_standalone_object", 2),
+        ("add_embedded_object", 2),
+        ("count_until", 2),
+        ("add_float", 1),
+        ("generate_from_text", 2),
+        ("generate_from_bin", 2),
+        ("method_without_arg", 0),
+        ("ill_defined_method", 4)
+    ])
+    def test_check_list(self, method_name, expected_number):
+        method = getattr(StandaloneObject, method_name)
+        schema = MethodSchema(method)
+        self.assertEqual(len(schema.check_list()), expected_number)
 
 
 class TestComputedSchemas(unittest.TestCase):
