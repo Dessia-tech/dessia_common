@@ -324,7 +324,7 @@ class StandaloneObject(MovingObject):
         """
         self.subobject_list.append(object_)
 
-    def add_float(self, value: float) -> StandaloneBuiltinsSubobject:
+    def add_float(self, value: float = 1) -> StandaloneBuiltinsSubobject:
         """
         Add value to its standalone sub-object floatarg property and return it.
 
