@@ -639,8 +639,8 @@ class Workflow(Block):
     @staticmethod
     def display_settings() -> List[DisplaySetting]:
         """ Compute the displays settings of the workflow. """
-        return [DisplaySetting(selector='documentation', type_='markdown', method='to_markdown'),
-                DisplaySetting(selector='workflow', type_='workflow', method='to_dict')]
+        return [DisplaySetting(selector="documentation", type_="markdown", method="to_markdown", load_by_default=True),
+                DisplaySetting(selector="workflow", type_="workflow", method="to_dict")]
 
     @property
     def export_blocks(self):
@@ -1793,7 +1793,7 @@ class WorkflowState(DessiaObject):
 
     def display_settings(self) -> List[DisplaySetting]:
         """ Compute the displays settings of the objects. """
-        display_settings = [DisplaySetting('workflow-state', 'workflow_state', 'state_display', None)]
+        display_settings = [DisplaySetting(selector="workflow_state", type_="workflow_state", method="state_display")]
 
         # Displayable blocks
         display_settings.extend(self.workflow.blocks_display_settings)

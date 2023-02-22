@@ -29,12 +29,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Change tests. Unittests are in 'tests' folder. Other tests in scripts
 
 
+## 0.13.2 [Unreleased yet]
+
+### Added 
+
+- Display settings now have load_by_default config option
+
+### Fix
+
 ## 0.13.1
 
 ### Fix
 
 - Handle serialization pointers of non-standalone objects
 - WorkflowRun settings now sets the right method to call for workflow display
+- Handle serialization pointers of non-standalone objects
 
 
 ## 0.13.0

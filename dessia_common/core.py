@@ -502,7 +502,7 @@ class DessiaObject(SerializableObject):
     @staticmethod
     def display_settings() -> List[DisplaySetting]:
         """ Return a list of objects describing how to call subdisplays. """
-        return [DisplaySetting(selector="markdown", type_="markdown", method="to_markdown"),
+        return [DisplaySetting(selector="markdown", type_="markdown", method="to_markdown", load_by_default=True),
                 DisplaySetting(selector="plot_data", type_="plot_data", method="plot_data", serialize_data=True)]
 
     def _display_from_selector(self, selector: str) -> DisplayObject:
