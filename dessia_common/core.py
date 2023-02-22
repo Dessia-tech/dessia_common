@@ -157,8 +157,7 @@ class DessiaObject(SerializableObject):
     def _data_hash(self):
         """ Generic computation of hash based on data. """
         forbidden_keys = (self._non_data_eq_attributes + self._non_data_hash_attributes + ['package_version', 'name'])
-        hash_ = (sum(choose_hash(v) for k, v in self._serializable_dict().items() if k not in forbidden_keys) 
-                 + len(forbidden_keys))
+        hash_ = sum(choose_hash(v) for k, v in self._serializable_dict().items() if k not in forbidden_keys)
         return int(hash_ % 1e5)
 
     def _data_diff(self, other_object):

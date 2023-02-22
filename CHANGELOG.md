@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fix
 - Handle serialization pointers of non-standalone objects
+- hash fix: calling hash instead of data hash in eq.
 
 ## 0.13.1
 
