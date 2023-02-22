@@ -283,7 +283,7 @@ def dict_hash(dict_):
     """
     Returns hash of a dict value.
 
-    If keys are orderable, only checks for first and last elements hashes if defined for performance purpose.
+    If keys can be ordered, only checks for first and last elements hashes if defined for performance purpose.
     """
     if not dict_:
         return 0
@@ -293,7 +293,7 @@ def dict_hash(dict_):
         # Try and sort keys in order to get first and last elements.
         sorted_keys = sorted(dict_.keys())
     except TypeError:
-        # Old less efficient hash for non orderable keys.
+        # Old less efficient hash for non ordered keys.
         for key, value in dict_.items():
             hash_ += hash(key) + choose_hash(value)
         return hash_

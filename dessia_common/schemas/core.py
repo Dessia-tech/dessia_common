@@ -39,7 +39,7 @@ class Schema:
     Right now Schema doesn't inherit from any DessiaObject class (SerializableObject ?), but could, in the future.
     That is why it implements methods with the same name.
 
-    TODO We might want to define our 'own argspecs', in order to fully support workflow natively.
+    TODO We might want to define our 'own argspecs', in order to full native support of workflow.
      We could translate inspect argspecs into a dessia_common pseudo-language.
     """
 
@@ -86,7 +86,7 @@ class Schema:
             return schema.to_dict(title=prettyname(attribute), editable=editable, description=description)
 
         # if attribute in self.default_arguments:
-        #     # TODO Could use this and Optional proxy in order to inject real default values for mutables
+        #     # TODO Could use this and Optional proxy in order to inject real default values for mutable
         #     default = self.default_arguments.get(attribute, None)
         #     print("Default", default)
         #     chunk["default_value"] = schema.default_value(definition_default=default)
@@ -1174,7 +1174,7 @@ def extract_args(string: str) -> List[str]:
     opened_brackets = 0
     closed_brackets = 0
     current_arg = ""
-    args = []
+    arguments = []
     for character in string.replace(" ", ""):
         if character == "[":
             opened_brackets += 1
@@ -1182,18 +1182,18 @@ def extract_args(string: str) -> List[str]:
             closed_brackets += 1
         split_by_comma = closed_brackets == opened_brackets
         if split_by_comma and character == ",":
-            # We are a first level, because we closed as much brackets as we have opened
-            # Current arg is complete, we append it to args sequence and reset current_args
-            args.append(current_arg)
+            # We are at first level, because we closed as much brackets as we have opened
+            # Current argument is complete, we append it to args sequence and reset current_args
+            arguments.append(current_arg)
             current_arg = ""
         else:
             # We are at a deeper level, because all opened brackets haven't been closed.
-            # We build current arg
+            # We build current argument
             current_arg += character
     if current_arg:
-        # Append last argument to args sequence
-        args.append(current_arg)
-    return args
+        # Append last argument to arguments sequence
+        arguments.append(current_arg)
+    return arguments
 
 
 class ParsedAttribute(TypedDict):

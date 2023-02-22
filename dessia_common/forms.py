@@ -416,7 +416,7 @@ class StandaloneObject(MovingObject):
         custom_dataset = plot_data.Dataset(elements=elements1, name='I = f(t)', tooltip=tooltip,
                                            point_style=point_style, edge_style=edge_style)
 
-        # Now let's create another dataset for the purpose of this exercice
+        # Now let's create another dataset for the purpose of this exercise
         timesteps = linspace(0, 20, 100)
         current2 = [100 * (1 + cos(t)) for t in timesteps]
         elements2 = []

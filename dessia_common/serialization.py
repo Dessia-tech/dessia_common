@@ -94,17 +94,17 @@ class SerializableObject(CoreDessiaObject):
 
     @property
     def full_classname(self):
-        """ Full classname of class like: package.module.submodule.classname. """
+        """ Full class name of class like: package.module.submodule.classname. """
         return full_classname(self)
 
 
 def serialize_dict(dict_):
-    """ Serialize a dict into a dict (values are serialized). """
+    """ Serialize dictionary values. """
     return {k: serialize(v) for k, v in dict_.items()}
 
 
 def serialize_sequence(seq):
-    """ Serialize a sequence (list or sequence) into a list of dicts. """
+    """ Serialize a sequence (list or sequence) into a list of dictionaries. """
     return [serialize(v) for v in seq]
 
 
@@ -219,7 +219,11 @@ def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=
 
 
 def serialize_dict_with_pointers(dict_, memo, path, id_method, id_memo):
-    """ Serialize a dict recursively with JSON pointers using a memo dict at a given path of the top level object. """
+    """
+    Recursively serialize a dictionary with JSON pointers.
+
+    Use a memo dict at a given path of the top level object.
+    """
     if memo is None:
         memo = {}
     if id_memo is None:
@@ -242,7 +246,7 @@ def serialize_dict_with_pointers(dict_, memo, path, id_method, id_memo):
         value_path = f'{path}/{key}'
         serialized_dict[key], memo = serialize_with_pointers(dict_[key], memo=memo, path=value_path,
                                                              id_memo=id_memo)
-    # Handle seq & dicts afterwards
+    # Handle sequence & dictionaries afterwards
     for key in seq_attrs_keys:
         value_path = f'{path}/{key}'
         serialized_dict[key], memo = serialize_sequence_with_pointers(dict_[key], memo=memo, path=value_path,

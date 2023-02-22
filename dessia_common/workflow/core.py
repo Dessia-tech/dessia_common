@@ -215,7 +215,7 @@ NAME_VARIABLE = TypedVariable(type_=str, name="Result Name")
 
 
 def set_block_variable_names_from_dict(func):
-    """ Inspect func arguments to compute black variable names. """
+    """ Inspect function arguments to compute black variable names. """
     def func_wrapper(cls, dict_):
         obj = func(cls, dict_)
         if 'input_names' in dict_:
@@ -831,7 +831,7 @@ class Workflow(Block):
 
     def dict_to_arguments(self, dict_: JsonSerializable, method: str, global_dict=None, pointers_memo=None, path='#'):
         """ Process a JSON of arguments and deserialize them. """
-        dict_ = {int(k): v for k, v in dict_.items()}  # serialisation set keys as strings
+        dict_ = {int(k): v for k, v in dict_.items()}  # Serialization set keys as strings
         if method in self._allowed_methods:
             name = None
             arguments_values = {}
@@ -881,7 +881,7 @@ class Workflow(Block):
         return {}
 
     def method_dict(self, method_name: str = None, method_jsonschema: Any = None) -> Dict:
-        """ Wrapper method to get dicts of run and start_run methods. """
+        """ Wrapper method to get dictionaries of run and start_run methods. """
         if method_name == 'run':
             return self._run_dict()
         if method_name == 'start_run':
@@ -1220,7 +1220,7 @@ class Workflow(Block):
 
     def layout(self):
         """
-        Stores a workflow gaph layout.
+        Stores a workflow graph layout.
 
         :returns: list[GraphLayout] where GraphLayout is list[ColumnLayout] and ColumnLayout is list[node_index]
         """
@@ -1306,7 +1306,7 @@ class Workflow(Block):
         if len(elements_by_distance) != 0:
             max_distance = max(elements_by_distance.keys())
         else:
-            max_distance = 3  # TODO: this is an awfull quick fix
+            max_distance = 3  # TODO: this is an awful quick fix
 
         horizontal_spacing = max(min_horizontal_spacing, max_length / max_distance)
 
@@ -1401,7 +1401,7 @@ class Workflow(Block):
                     else:
                         package_mix[package_name] = fraction
 
-        # Adimension
+        # Make dimensionless
         fraction_sum = sum(package_mix.values())
         return {pn: f / fraction_sum for pn, f in package_mix.items()}
 
@@ -1610,14 +1610,6 @@ class WorkflowState(DessiaObject):
             if self.activated_items[pipe] != other_object.activated_items[other_pipe]:
                 # Check pipe progress state
                 return False
-
-            # Not comparing values, to avoid comparing cleaned values
-            # if self.activated_items[pipe] and pipe in self.values:
-            #     # Not comparing values if ther
-            #     if not is_dessia_file(self.values[pipe]) and not is_dessia_file(other_object.values[other_pipe]):
-            #         if self.values[pipe] != other_object.values[other_pipe]:
-            #             # Check variable values for evaluated ones
-            #             return False
         return True
 
     @property
@@ -1695,12 +1687,6 @@ class WorkflowState(DessiaObject):
         dict_['evaluated_variables_indices'] = [self.workflow.variable_indices(v) for v in self.workflow.variables
                                                 if v in self.activated_items and self.activated_items[v]]
         dict_["_references"] = id_memo
-        # Uncomment when refs are handled as dict keys
-        # activated_items = {}
-        # for key, activated in self.activated_items.items():
-        #     s_key, memo = serialize_with_pointers(key, memo=memo, path=f'{path}/activated_items/{key}')
-        #     print('s_key', s_key)
-        #     activated_items[s_key] = activated
         return dict_
 
     def state_display(self):
@@ -1770,7 +1756,7 @@ class WorkflowState(DessiaObject):
         var_indices = []
         for variable_indices in dict_['evaluated_variables_indices']:
             if is_sequence(variable_indices):
-                var_indices.append(tuple(variable_indices))  # json serialisation loses tuples
+                var_indices.append(tuple(variable_indices))  # JSON serialization loses tuples
             else:
                 var_indices.append(variable_indices)
         activated_items.update({v: workflow.variable_indices(v) in var_indices for v in workflow.variables})
@@ -1801,7 +1787,7 @@ class WorkflowState(DessiaObject):
 
     def add_block_input_values(self, block_index: int, values):
         """ Add inputs values for given block. """
-        values = {int(k): v for k, v in values.items()}  # serialisation set keys as strings
+        values = {int(k): v for k, v in values.items()}  # Serialization set keys as strings
         indices = self.workflow.block_inputs_global_indices(block_index)
         self.add_several_input_values(indices=indices, values=values)
 

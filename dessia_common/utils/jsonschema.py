@@ -165,7 +165,7 @@ def jsonschema_from_annotation(annotation, jsonschema_element, order, editable=N
             jsonschema_element[key].update(jsonschema_sequence_recursion(value=typing_, order=order,
                                                                          title=title, editable=editable))
         elif origin is tuple:
-            # Heterogenous sequences (tuples)
+            # Heterogeneous sequences (tuples)
             items = []
             for type_ in args:
                 items.append({'type': TYPING_EQUIVALENCES[type_]})

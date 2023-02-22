@@ -4,6 +4,7 @@ BinaryFile
 bool
 builtins
 classmethod
+cls
 config
 csv
 cvar
@@ -30,6 +31,7 @@ Minkowski
 nbv
 networkx
 numpy
+orjson
 rtype
 schemas
 scipy
