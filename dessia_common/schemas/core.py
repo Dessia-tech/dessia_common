@@ -135,9 +135,10 @@ class Schema:
                 issues += schema.check_list()
         return issues
 
+    @property
     def is_valid(self) -> bool:
         """ Return whether the class definition is valid or not. """
-        return self.check_list().checks_above_level("error")
+        return not self.check_list().checks_above_level("error")
 
     def attribute_is_annotated(self, attribute: str) -> PassedCheck:
         """ Check whether given attribute is annotated in function definition or not. """
@@ -189,10 +190,27 @@ class MethodSchema(Schema):
 
         annotations = get_type_hints(method)
         members = inspect.getfullargspec(method)
+        self.return_annotation = annotations.get("return", None)
         docstring = method.__doc__
-        Schema.__init__(self, annotations=annotations, argspec=members, docstring=docstring)
+        super().__init__(annotations=annotations, argspec=members, docstring=docstring)
 
         self.required_arguments = [str(self.attributes.index(a)) for a in self.required_arguments]
+
+    @property
+    def serialized(self):
+        return {k: s.serialized for k, s in self.property_schemas.items()}
+
+    @property
+    def return_schema(self):
+        return get_schema(annotation=self.return_annotation, attribute="return")
+
+    @property
+    def return_serialized(self):
+        try:
+            return_schema = self.return_schema
+        except NotImplementedError:
+            return_schema = get_schema(annotation=None, attribute="return")
+        return return_schema.serialized
 
     def to_dict(self):
         """ Write the whole schema. """
@@ -201,6 +219,32 @@ class MethodSchema(Schema):
         schema.update({"required": self.required_arguments, "properties": properties,
                        "description": self.parsed_docstring["description"]})
         return schema
+
+    def check_list(self) -> CheckList:
+        """
+        Browse all properties and List potential issues.
+
+        Checks performed for each argument :
+        - Is typed in method definition
+        - Schema specific check
+        """
+        issues = super().check_list()
+        issues += CheckList([self.return_is_annotated(), self.return_type_is_valid()])
+        return issues
+
+    def return_is_annotated(self) -> PassedCheck:
+        """ Check whether method return is annotated in definition or not. """
+        if "return" not in self.annotations:
+            return CheckWarning(f"Method return : is not annotated")
+        return PassedCheck(f"Method return : is annotated")
+
+    def return_type_is_valid(self) -> PassedCheck:
+        """ Check whether given attribute is annotated in function definition or not. """
+        try:
+            _ = self.return_schema
+            return PassedCheck(f"Method return : annotated as '{self.return_annotation}' is valid")
+        except NotImplementedError:
+            return CheckWarning(f"Method : annotated as '{self.return_annotation} is not valid")
 
 
 class Property:

@@ -2,13 +2,14 @@
 # -*- coding: utf-8 -*-
 """ Types tools. """
 
+import warnings
 from collections.abc import Iterator, Sequence
 from typing import Any, Dict, List, Tuple, Type, Union, get_origin, get_args
 import orjson
 from dessia_common.abstract import CoreDessiaObject
 from dessia_common.typings import InstanceOf, MethodType, ClassMethodType
 from dessia_common.files import BinaryFile, StringFile
-from dessia_common.schemas.core import get_schema, TYPING_EQUIVALENCES, union_is_default_value, is_typing
+from dessia_common.schemas.core import TYPING_EQUIVALENCES, union_is_default_value, is_typing, serialize_annotation
 from dessia_common.utils.helpers import get_python_class_from_class_name
 
 SIMPLE_TYPES = [int, str]
@@ -110,8 +111,8 @@ def unfold_deep_annotation(typing_=None):
 
 def serialize_typing(typing_):
     """ Compute a string from a type. """
-    schema = get_schema(annotation=typing_)
-    return schema.serialized
+    warnings.warn("Function serialize_typing is deprecated. Use serialize_annotation instead", DeprecationWarning)
+    return serialize_annotation(typing_)
 
 
 def type_from_argname(argname):
