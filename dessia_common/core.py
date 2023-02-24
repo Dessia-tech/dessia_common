@@ -125,7 +125,17 @@ class DessiaObject(SerializableObject):
     def base_dict(self):
         """ Base dict of the object, with just its name. """
         dict_ = SerializableObject.base_dict(self)
-        dict_['name'] = self.name
+        return dict_
+
+    def _serializable_dict(self):
+        """
+        Return a dict of attribute_name, values (still python, not serialized).
+
+        Keys are filtered with non serializable attributes controls.
+        """
+        dict_ = SerializableObject()._serializable_dict()
+        if not self.name:
+            del dict_['name']
         return dict_
 
     def __hash__(self):
