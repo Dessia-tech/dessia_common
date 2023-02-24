@@ -12,7 +12,7 @@ from dessia_common.displays import DisplaySetting, DisplayObject
 from dessia_common.errors import UntypedArgumentError
 from dessia_common.typings import JsonSerializable, MethodType, ClassMethodType
 from dessia_common.files import StringFile, BinaryFile
-from dessia_common.utils.helpers import concatenate, full_classname, get_python_class_from_class_name
+from dessia_common.utils.helpers import concatenate, full_classname
 from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
 from dessia_common.exports import ExportFormat
 from dessia_common.workflow.core import Block, Variable, TypedVariable, TypedVariableWithDefaultValue,\
@@ -86,20 +86,6 @@ class InstantiateModel(Block):
         other_classname = other.model_class.__class__.__name__
         return Block.equivalent(self, other) and classname == other_classname
 
-    def to_dict(self, use_pointers=True, memo=None, path: str = '#', id_method=True, id_memo=None):
-        """ Serialize the block with custom logic. """
-        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
-        dict_['model_class'] = full_classname(object_=self.model_class, compute_for='class')
-        return dict_
-
-    @classmethod
-    @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
-        """ Custom dict_to_object method. """
-        class_ = get_python_class_from_class_name(dict_['model_class'])
-        return cls(class_, name=dict_['name'], position=dict_.get('position'))
-
     def evaluate(self, values, **kwargs):
         """ Instantiate a model of given class with arguments that are in values. """
         arguments = {var.name: values[var] for var in self.inputs}
@@ -135,6 +121,7 @@ class ClassMethod(Block):
     :param name: Name of the block.
     :param position: Position of the block in canvas.
     """
+    _non_serializable_attributes = ["method"]
 
     def __init__(self, method_type: ClassMethodType[Type], name: str = '', position: Tuple[float, float] = None):
         self.method_type = method_type
@@ -161,23 +148,6 @@ class ClassMethod(Block):
         same_method = self.method_type.name == other.method_type.name
         return Block.equivalent(self, other) and same_class and same_method
 
-    def to_dict(self, use_pointers=True, memo=None, path: str = '#', id_method=True, id_memo=None):
-        """ Serialize the block with custom logic. """
-        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
-        classname = full_classname(object_=self.method_type.class_, compute_for='class')
-        method_type_dict = {'class_': classname, 'name': self.method_type.name}
-        dict_.update({'method_type': method_type_dict})
-        return dict_
-
-    @classmethod
-    @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'ClassMethod':
-        """ Custom dict_to_object method. """
-        class_ = get_python_class_from_class_name(dict_['method_type']['class_'])
-        method_type = ClassMethodType(class_=class_, name=dict_['method_type']['name'])
-        return cls(method_type=method_type, name=dict_['name'], position=dict_.get('position'))
-
     def evaluate(self, values, **kwargs):
         """ Run given classmethod with arguments that are in values. """
         arguments = {arg_name: values[var] for arg_name, var in zip(self.argument_names, self.inputs) if var in values}
@@ -185,9 +155,8 @@ class ClassMethod(Block):
 
     def _docstring(self):
         """ Parse given method's docstring. """
-        method = self.method_type.get_method()
-        docstring = method.__doc__
-        annotations = get_type_hints(method)
+        docstring = self.method.__doc__
+        annotations = get_type_hints(self.method)
         parsed_docstring = parse_docstring(docstring=docstring, annotations=annotations)
         parsed_attributes = parsed_docstring["attributes"]
         block_docstring = {i: parsed_attributes[i.name] if i.name in parsed_attributes
@@ -214,18 +183,19 @@ class ModelMethod(Block):
     :param name: Name of the block.
     :param position: Position of the block in canvas.
     """
+    _non_serializable_attributes = ["method"]
 
     def __init__(self, method_type: MethodType[Type], name: str = '', position: Tuple[float, float] = None):
         self.method_type = method_type
         inputs = [TypedVariable(type_=method_type.class_, name='model at input')]
-        method = method_type.get_method()
-        inputs = set_inputs_from_function(method, inputs)
+        self.method = method_type.get_method()
+        inputs = set_inputs_from_function(self.method, inputs)
 
         # Storing argument names
         self.argument_names = [i.name for i in inputs[1:]]
 
         return_output_name = f"method result of {method_type.name}"
-        return_output = output_from_function(function=method, name=return_output_name)
+        return_output = output_from_function(function=self.method, name=return_output_name)
 
         model_output_name = f"model at output {method_type.name}"
         model_output = TypedVariable(type_=method_type.class_, name=model_output_name)
@@ -247,23 +217,6 @@ class ModelMethod(Block):
         same_method = self.method_type.name == other.method_type.name
         return Block.equivalent(self, other) and same_model and same_method
 
-    def to_dict(self, use_pointers=True, memo=None, path: str = '#', id_method=True, id_memo=None):
-        """ Serialize the block with custom logic. """
-        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
-        classname = full_classname(object_=self.method_type.class_, compute_for='class')
-        method_type_dict = {'class_': classname, 'name': self.method_type.name}
-        dict_.update({'method_type': method_type_dict})
-        return dict_
-
-    @classmethod
-    @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'ModelMethod':
-        """ Custom dict_to_object method. """
-        class_ = get_python_class_from_class_name(dict_['method_type']['class_'])
-        method_type = MethodType(class_=class_, name=dict_['method_type']['name'])
-        return cls(method_type=method_type, name=dict_['name'], position=dict_.get('position'))
-
     def evaluate(self, values, **kwargs):
         """ Run given method with arguments that are in values. """
         arguments = {n: values[v] for n, v in zip(self.argument_names, self.inputs[1:]) if v in values}
@@ -275,9 +228,8 @@ class ModelMethod(Block):
 
     def _docstring(self):
         """ Parse given method's docstring. """
-        method = self.method_type.get_method()
-        docstring = method.__doc__
-        annotations = get_type_hints(method)
+        docstring = self.method.__doc__
+        annotations = get_type_hints(self.method)
         parsed_docstring = parse_docstring(docstring=docstring, annotations=annotations)
         parsed_attributes = parsed_docstring["attributes"]
         block_docstring = {i: parsed_attributes[i.name] if i.name in parsed_attributes
@@ -977,9 +929,7 @@ class Export(Block):
         if not filename:
             filename = "export"
         self.filename = filename
-
         method = method_type.get_method()
-
         self.extension = extension
         self.text = text
 
@@ -987,25 +937,6 @@ class Export(Block):
         inputs = [TypedVariable(type_=method_type.class_, name="model_to_export"),
                   TypedVariableWithDefaultValue(type_=str, default_value=filename, name="filename")]
         Block.__init__(self, inputs=inputs, outputs=[output], name=name, position=position)
-
-    def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#', id_method=True, id_memo=None):
-        """ Serialize the block with custom logic. """
-        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
-        classname = full_classname(object_=self.method_type.class_, compute_for='class')
-        method_type_dict = {'class_': classname, 'name': self.method_type.name}
-        dict_.update({"method_type": method_type_dict, "extension": self.extension,
-                      "text": self.text, "filename": self.filename})
-        return dict_
-
-    @classmethod
-    @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'Export':
-        """ Custom dict_to_object method. """
-        class_ = get_python_class_from_class_name(dict_['method_type']['class_'])
-        method_type = MethodType(class_=class_, name=dict_['method_type']['name'])
-        return cls(method_type=method_type, text=dict_['text'], filename=dict_["filename"],
-                   extension=dict_["extension"], name=dict_["name"], position=dict_.get('position'))
 
     def evaluate(self, values, **kwargs):
         """ Generate to-be-exported stream from corresponding method. """
