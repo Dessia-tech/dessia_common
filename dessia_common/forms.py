@@ -125,6 +125,10 @@ class StandaloneBuiltinsSubobject(EmbeddedBuiltinsSubobject):
         EmbeddedBuiltinsSubobject.__init__(self, distarg=distarg, floatarg=floatarg,
                                            intarg=intarg, boolarg=boolarg, name=name)
 
+    @property
+    def property_method(self):
+        return self.floatarg * self.intarg
+
 
 DEF_EBS = EmbeddedBuiltinsSubobject.generate(1)
 DEF_SBS = StandaloneBuiltinsSubobject.generate(1)
