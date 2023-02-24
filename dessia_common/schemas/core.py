@@ -27,25 +27,6 @@ TYPES_FROM_STRING = {'unicode': str, 'str': str, 'float': float, 'int': int, 'bo
 _fullargsspec_cache = {}
 
 
-class UntypedArgument(FailedCheck):
-    """ Used when an argument is not typed in function or class definition. """
-
-    def __init__(self, attribute: str):
-        super().__init__(f"Attribute '{attribute}' : has no typing")
-
-
-class WrongNumberOfArguments(FailedCheck):
-    """ Used when a typing does not have the right amount of arguments. """
-
-
-class WrongType(FailedCheck):
-    """ Used when an annotation does not have the right type. """
-
-
-class UnsupportedDefault(FailedCheck):
-    """ Used when an argument defines a default that is not supported. """
-
-
 class Schema:
     """
     Abstraction of a Schema.
@@ -62,10 +43,9 @@ class Schema:
      We could translate inspect argspecs into a dessia_common pseudo-language.
     """
 
-    def __init__(self, annotations: Annotations, argspec: inspect.FullArgSpec, docstring: str, name: str = ""):
+    def __init__(self, annotations: Annotations, argspec: inspect.FullArgSpec, docstring: str):
         self.annotations = annotations
         self.attributes = [a for a in argspec.args if a not in RESERVED_ARGNAMES]
-        self.name = name
 
         try:  # Parse docstring
             self.parsed_docstring = parse_docstring(docstring=docstring, annotations=annotations)
@@ -163,7 +143,7 @@ class Schema:
     def attribute_is_annotated(self, attribute: str) -> PassedCheck:
         """ Check whether given attribute is annotated in function definition or not. """
         if attribute not in self.annotations:
-            return UntypedArgument(attribute)
+            return FailedCheck(f"Attribute '{attribute}' : has no typing")
         return PassedCheck(f"Attribute '{attribute}' : is annotated")
 
 
@@ -183,8 +163,7 @@ class ClassSchema(Schema):
         members = inspect.getfullargspec(self.class_.__init__)
         docstring = class_.__doc__
 
-        Schema.__init__(self, annotations=annotations, argspec=members, docstring=docstring,
-                        name=full_classname(class_))
+        Schema.__init__(self, annotations=annotations, argspec=members, docstring=docstring)
 
     @property
     def editable_attributes(self):
@@ -207,15 +186,13 @@ class MethodSchema(Schema):
     """
 
     def __init__(self, method: Callable):
-        if isinstance(method, property):
-            method = method.fget
         self.method = method
 
         annotations = get_type_hints(method)
         members = inspect.getfullargspec(method)
         self.return_annotation = annotations.get("return", None)
         docstring = method.__doc__
-        super().__init__(annotations=annotations, argspec=members, docstring=docstring, name=method.__name__)
+        super().__init__(annotations=annotations, argspec=members, docstring=docstring)
 
         self.required_arguments = [str(self.attributes.index(a)) for a in self.required_arguments]
 
@@ -230,9 +207,10 @@ class MethodSchema(Schema):
     @property
     def return_serialized(self):
         try:
-            return self.return_schema.serialized
+            return_schema = self.return_schema
         except NotImplementedError:
-            return None
+            return_schema = get_schema(annotation=None, attribute="return")
+        return return_schema.serialized
 
     def to_dict(self):
         """ Write the whole schema. """
@@ -241,10 +219,6 @@ class MethodSchema(Schema):
         schema.update({"required": self.required_arguments, "properties": properties,
                        "description": self.parsed_docstring["description"]})
         return schema
-
-    def definition_json(self):
-        return {"name": self.name, "return": self.return_serialized, "arguments": self.serialized,
-                "valid": self.is_valid, "checks": self.check_list().to_dict()["checks"]}
 
     def check_list(self) -> CheckList:
         """
@@ -268,9 +242,9 @@ class MethodSchema(Schema):
         """ Check whether given attribute is annotated in function definition or not. """
         try:
             _ = self.return_schema
-            return PassedCheck(f"Method return : '{self.return_annotation}' is valid")
+            return PassedCheck(f"Method return : annotated as '{self.return_annotation}' is valid")
         except NotImplementedError:
-            return CheckWarning(f"Method return : '{self.return_annotation} is not valid")
+            return CheckWarning(f"Method : annotated as '{self.return_annotation} is not valid")
 
 
 class Property:
@@ -391,7 +365,7 @@ class TypingProperty(Property):
             pretty_origin = prettyname(self.origin.__name__)
             msg = f"{self.check_prefix}is typed as a '{pretty_origin}' which requires exactly 1 argument. " \
                   f"Expected '{pretty_origin}[T]', got '{self.annotation}'."
-            return WrongNumberOfArguments(msg)
+            return FailedCheck(msg)
         return PassedCheck(f"{self.check_prefix}has exactly one arg in its definition.")
 
 
@@ -619,7 +593,7 @@ class CustomClass(Property):
     def is_dessia_object_typed(self) -> PassedCheck:
         """ Check whether if typing for given attribute annotates a subclass of DessiaObject or not . """
         if not issubclass(self.annotation, CoreDessiaObject):
-            return WrongType(f"{self.check_prefix}Class '{self.serialized}' is not a subclass of DessiaObject.")
+            return FailedCheck(f"{self.check_prefix}Class '{self.serialized}' is not a subclass of DessiaObject.")
         msg = f"{self.check_prefix}Class '{self.serialized}' is properly typed as a subclass of DessiaObject."
         return PassedCheck(msg)
 
@@ -680,7 +654,7 @@ class UnionProperty(TypingProperty):
             return PassedCheck(msg)
         msg = f"{self.check_prefix}'standalone_in_db' values for arguments of Union type '{self.annotation}'" \
               f"are not consistent. They should be all standalone in db or none of them should."
-        return WrongType(msg)
+        return FailedCheck(msg)
 
 
 class HeterogeneousSequence(TypingProperty):
@@ -751,7 +725,7 @@ class HeterogeneousSequence(TypingProperty):
         if len(self.args) == 0:
             msg = f"{self.check_prefix}is typed as a 'Tuple' which requires at least 1 argument. " \
                   f"Expected 'Tuple[T0, T1, ..., Tn]', got '{self.annotation}'."
-            return WrongNumberOfArguments(msg)
+            return FailedCheck(msg)
         return PassedCheck(f"{self.check_prefix}has at least one argument : '{self.annotation}'.")
 
     def ellipsis_has_exactly_two_args(self) -> PassedCheck:
@@ -763,7 +737,7 @@ class HeterogeneousSequence(TypingProperty):
         if self.additional_items and len(self.args) != 2:
             msg = f"{self.check_prefix}is typed as an ellipsed 'Tuple' which requires at exactaly 2 arguments. " \
                   f"Expected 'Tuple[T, ...]', got '{self.annotation}'."
-            return WrongNumberOfArguments(msg)
+            return FailedCheck(msg)
         return PassedCheck(f"{self.check_prefix}is not an ill-defined ellipsed tuple : '{self.annotation}'.")
 
 
@@ -806,7 +780,7 @@ class HomogeneousSequence(TypingProperty):
         if self.definition_default is not None:
             msg = f"{self.check_prefix}Mutable List input defines a default value other than None," \
                   f"which will lead to unexpected behavior and therefore, is not supported."
-            return UnsupportedDefault(msg)
+            return FailedCheck(msg)
         msg = f"{self.check_prefix}Mutable List doesn't define a default value other than None."
         return PassedCheck(msg)
 
@@ -861,7 +835,7 @@ class DynamicDict(TypingProperty):
         if len(self.args) != 2:
             msg = f"{self.check_prefix}is typed as a 'Dict' which requires exactly 2 arguments. " \
                   f"Expected 'Dict[KeyType, ValueType]', got '{self.annotation}'."
-            return WrongNumberOfArguments(msg)
+            return FailedCheck(msg)
         return PassedCheck(f"{self.check_prefix}has two args in its definition : '{self.annotation}'.")
 
     def has_string_keys(self):
@@ -871,7 +845,7 @@ class DynamicDict(TypingProperty):
             # Should we support other types ? Numeric ?
             msg = f"{self.check_prefix}is typed as a 'Dict[{key_type}, {value_type}]' " \
                   f"which requires str as its key type. Expected 'Dict[str, ValueType]', got '{self.annotation}'."
-            return WrongType(msg)
+            return FailedCheck(msg)
         return PassedCheck(f"{self.check_prefix}has str keys : '{self.annotation}'.")
 
     def has_simple_values(self):
@@ -881,7 +855,7 @@ class DynamicDict(TypingProperty):
             msg = f"{self.check_prefix}is typed as a 'Dict[{key_type}, {value_type}]' " \
                   f"which requires a builtin type as its value type. " \
                   f"Expected 'int', 'float', 'bool' or 'str', got '{value_type}'."
-            return WrongType(msg)
+            return FailedCheck(msg)
         return PassedCheck(f"{self.check_prefix}has simple values : '{self.annotation}'.")
 
     def has_no_default(self) -> PassedCheck:
@@ -889,7 +863,7 @@ class DynamicDict(TypingProperty):
         if self.definition_default is not None:
             msg = f"{self.check_prefix}Mutable Dict input defines a default value other than None," \
                   f"which will lead to unexpected behavior and therefore, is not supported."
-            return UnsupportedDefault(msg)
+            return FailedCheck(msg)
         msg = f"{self.check_prefix}Mutable Dict doesn't define a default value other than None."
         return PassedCheck(msg)
 
@@ -1074,18 +1048,6 @@ class GenericTypeProperty(Property):
         return chunk
 
 
-class AnyProperty(Property):
-    """ Handle Any typed (cannot be form inputs). """
-
-    def __init__(self, attribute: str):
-        super().__init__(annotation=Any, attribute=attribute, definition_default=None)
-
-    def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
-        chunk = super().to_dict(title=title, editable=editable, description=description)
-        chunk.update({"properties": {".*": ".*"}, "type": "object"})
-        return chunk
-
-
 def inspect_arguments(method: Callable, merge: bool = False):
     """ Wrapper around 'split_default_argument' method in order to call it from a method object. """
     method_full_name = f'{method.__module__}.{method.__qualname__}'
@@ -1141,8 +1103,6 @@ def get_schema(annotation: Type[T], attribute: str = "", definition_default: Opt
     if hasattr(annotation, '__origin__') and annotation.__origin__ is type:
         # Type is not considered a Typing as it has no arguments
         return ClassProperty(annotation=annotation, attribute=attribute, definition_default=definition_default)
-    if annotation is Any:
-        return AnyProperty(attribute)
     if inspect.isclass(annotation):
         return custom_class_schema(annotation=annotation, attribute=attribute, definition_default=definition_default)
     if isinstance(annotation, TypeVar):
