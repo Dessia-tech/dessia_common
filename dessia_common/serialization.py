@@ -57,6 +57,8 @@ class SerializableObject(CoreDessiaObject):
         """
         dict_ = {k: v for k, v in self.__dict__.items()
                  if k not in self._non_serializable_attributes and not k.startswith('_')}
+        if not self.name:
+            del dict_['name']
         return dict_
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#',
