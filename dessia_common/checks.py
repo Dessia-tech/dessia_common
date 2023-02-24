@@ -3,7 +3,6 @@
 """ General checks & checklists. """
 
 from typing import List
-from dessia_common.utils.helpers import full_classname
 
 
 LEVEL_TO_INT = {'debug': 0, 'info': 1, 'warning': 2, 'error': 3}
