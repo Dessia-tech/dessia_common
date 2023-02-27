@@ -4,7 +4,7 @@
 
 import inspect
 from zipfile import ZipFile
-from typing import List, Type, Any, Dict, Tuple, get_type_hints, TypeVar
+from typing import List, Type, Any, Dict, Tuple, get_type_hints, TypeVar, Optional
 import itertools
 from dessia_common.core import DessiaFilter, FiltersList, type_from_annotation, DessiaObject
 from dessia_common.schemas.core import split_argspecs, parse_docstring, EMPTY_PARSED_ATTRIBUTE
@@ -595,14 +595,14 @@ class Display(Block):
     _displayable_input = 0
     _non_editable_attributes = ['inputs']
 
-    def __init__(self, inputs: List[Variable], load_by_default: bool = False, name: str = '',
-                 position: Tuple[float, float] = None):
+    def __init__(self, inputs: List[Variable], load_by_default: bool = False, name: str = "",
+                 selector: Optional[str] = None, type_: Optional[str] = None, position: Tuple[float, float] = None):
         output = TypedVariable(type_=DisplayObject, name="Display Object")
         Block.__init__(self, inputs=inputs, outputs=[output], name=name, position=position)
 
         self.load_by_default = load_by_default
-        self._type = None
-        self._selector = None
+        self._type = type_
+        self._selector = selector
         self.serialize = False
 
     @property
@@ -648,13 +648,11 @@ class MultiPlot(Display):
     """
 
     def __init__(self, attributes: List[str], load_by_default: bool = True,
-                 name: str = '', position: Tuple[float, float] = None):
+                 name: str = "", position: Tuple[float, float] = None):
         self.attributes = attributes
         Display.__init__(self, inputs=[TypedVariable(List[DessiaObject])], load_by_default=load_by_default,
-                         name=name, position=position)
-        self.inputs[0].name = 'Input List'
-        self._type = "plot_data"
-        self._selector = None
+                         type_="plot_data", name=name, position=position)
+        self.inputs[0].name = "Input List"
         self.serialize = True
 
     def equivalent(self, other):
@@ -704,12 +702,11 @@ class CadView(Display):
     :param position: Position of the block in canvas.
     """
 
-    def __init__(self, name: str = "", load_by_default: bool = False, position: Tuple[float, float] = None):
+    def __init__(self, name: str = "", load_by_default: bool = False, selector: str = "cad",
+                 type_: str = "babylon_data", position: Tuple[float, float] = None):
         input_ = TypedVariable(DessiaObject, name="Model to display")
-        Display.__init__(self, inputs=[input_], load_by_default=load_by_default, name=name, position=position)
-
-        self._type = "babylon_data"
-        self._selector = "cad"
+        Display.__init__(self, inputs=[input_], load_by_default=load_by_default, selector=selector,
+                         type_=type_, name=name, position=position)
 
 
 class Markdown(Display):
@@ -720,12 +717,11 @@ class Markdown(Display):
     :param position: Position of the block in canvas.
     """
 
-    def __init__(self, name: str = "", load_by_default: bool = False, position: Tuple[float, float] = None):
+    def __init__(self, name: str = "", load_by_default: bool = False, selector: str = "markdown",
+                 type_: str = "markdown", position: Tuple[float, float] = None):
         input_ = TypedVariable(DessiaObject, name="Model to display")
-        Display.__init__(self, inputs=[input_], load_by_default=load_by_default, name=name, position=position)
-
-        self._type = "markdown"
-        self._selector = "markdown"
+        Display.__init__(self, inputs=[input_], load_by_default=load_by_default, name=name,
+                         selector=selector, type_=type_, position=position)
 
 
 class PlotData(Display):
@@ -736,12 +732,11 @@ class PlotData(Display):
     :param position: Position of the block in canvas.
     """
 
-    def __init__(self, name: str = '', load_by_default: bool = False, position: Tuple[float, float] = None):
+    def __init__(self, name: str = '', load_by_default: bool = False, selector: str = "plot_data",
+                 type_: str = "plot_data", position: Tuple[float, float] = None):
         input_ = TypedVariable(DessiaObject, name="Model to display")
-        Display.__init__(self, inputs=[input_], load_by_default=load_by_default, name=name, position=position)
-
-        self._type = "plot_data"
-        self._selector = "plot_data"
+        Display.__init__(self, inputs=[input_], load_by_default=load_by_default, name=name,
+                         selector=selector, type_=type_, position=position)
         self.serialize = True
 
 
