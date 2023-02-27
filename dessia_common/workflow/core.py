@@ -745,15 +745,15 @@ class Workflow(Block):
         schemas["start_run"]["required"] = []
         return schemas
 
-    def to_dict(self, use_pointers=True, memo=None, path="#", id_method=True, id_memo=None):
+    def to_dict(self, use_pointers=False, memo=None, path="#", id_method=True, id_memo=None):
         """ Compute a dict from the object content. """
         if memo is None:
             memo = {}
 
         # self.refresh_blocks_positions()
-        dict_ = Block.to_dict(self)
+        dict_ = Block.to_dict(self, use_pointers=False)
         dict_['object_class'] = 'dessia_common.workflow.core.Workflow'  # Force migrating from dessia_common.workflow
-        blocks = [b.to_dict() for b in self.blocks]
+        blocks = [b.to_dict(use_pointers=False) for b in self.blocks]
 
         pipes = [self.pipe_variable_indices(p) for p in self.pipes]
 
