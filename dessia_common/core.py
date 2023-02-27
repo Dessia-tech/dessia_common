@@ -403,7 +403,7 @@ class DessiaObject(SerializableObject):
         check_list = dcc.CheckList([])
 
         if check_platform:
-            check_list += self.check_platform(level=level)
+            check_list += self.check_platform()
         return check_list
 
     def is_valid(self, level: str = 'error') -> bool:
@@ -569,28 +569,34 @@ class DessiaObject(SerializableObject):
     def _check_platform(self, level='error'):
         return self.check_platform().raise_if_above_level(level=level)
 
-    def check_platform(self, level='error'):
+    def check_platform(self):
         """ Reproduce lifecycle on platform (serialization, display). Raise an error if something is wrong. """
-        checks = []
+        serializable_results = dcc.check_serialization_process(object_=self, use_pointers=True)
+        dict_ = serializable_results.pop("dict_")
 
-        # serializable =
+        copy_results = dcc.check_copy(self)
 
-        copied_object = self.copy()
-        if not copied_object._data_eq(self):
-            try:
-                print('data diff: ', self._data_diff(copied_object))
-            except:
-                pass
-            checks.append(dcc.FailedCheck('Object is not equal to itself after copy.'))
+        # Not refactoring this due to dependencies and cyclic imports
+        print("Checking BSON validity...")
+        start = time.time()
+        valid, hint = is_bson_valid(stringify_dict_keys(dict_))
+        if not valid:
+            print("Failed.\n")
+            check = dcc.FailedCheck(f"Object is not BSON valid {hint}")
+        else:
+            print("Object is BSON valid.")
+            check = dcc.PassedCheck("Object is BSON valid")
+        duration = time.time() - start
+        print(f"Checked BSON validity in {duration}s.\n")
+        bson_results = {"check": check, "duration": duration}
 
-        # valid, hint = is_bson_valid(stringify_dict_keys(dict_))
-        # if not valid:
-        #     checks.append(dcc.FailedCheck(f'Object is not bson valid {hint}'))
+        display_results = dcc.check_displays(self)
+        schemas_results = dcc.check_schemas(self)
 
-        json.dumps(self._displays())
-        json.dumps(self.method_schemas)
-
-        return dcc.CheckList(checks)
+        results = [serializable_results, copy_results, bson_results, display_results, schemas_results]
+        duration = sum([r["duration"] for r in results])
+        print(f"\nCompleted Platform Check in {duration}s.\n")
+        return dcc.CheckList([r["check"] for r in results])
 
     def to_xlsx(self, filepath: str):
         """ Export the object to an XLSX file given by the filepath. """
