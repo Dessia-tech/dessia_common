@@ -156,7 +156,7 @@ def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=
         if value in memo:
             path_value, serialized_value, id_, _ = memo[value]
             id_memo[id_] = serialized_value
-            return {'$ref': path_value}, memo
+            return {'dc__ref': path_value}, memo
         try:
             serialized = value.to_dict(use_pointers=True, memo=memo, path=path, id_memo=id_memo)
         except TypeError:
@@ -169,7 +169,7 @@ def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=
             memo[value] = path_value, serialized, id_, path
             if value._standalone_in_db:
                 id_memo[id_] = serialized
-                serialized = {'$ref': path_value}
+                serialized = {'dc__ref': path_value}
         else:
             memo[value] = path, serialized, None, path
 
@@ -178,7 +178,7 @@ def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=
         if value in memo:
             path_value, serialized_value, id_, _ = memo[value]
             id_memo[id_] = serialized_value
-            return {'$ref': memo[value]}, memo
+            return {'dc__ref': memo[value]}, memo
         serialized = serialize_annotation(value)
 
     # Regular object
@@ -186,7 +186,7 @@ def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=
         if value in memo:
             path_value, serialized_value, id_, _ = memo[value]
             id_memo[id_] = serialized_value
-            return {'$ref': path}, memo
+            return {'dc__ref': path}, memo
         serialized = value.to_dict()
 
         if id_method:
@@ -266,11 +266,11 @@ def add_references(dict_, memo, id_memo):
     """ Add _references to a dict given the memos. """
     dict_['_references'] = id_memo
 
-    # Rewriting $refs
+    # Rewriting dc__refs
     for _, serialized, id_, object_path in memo.values():
         if not object_path.startswith('#/_references') and id_ in id_memo:
-            if '$ref' not in serialized:
-                set_in_object_from_path(dict_, object_path, {'$ref': f'#/_references/{id_}'})
+            if 'dc__ref' not in serialized:
+                set_in_object_from_path(dict_, object_path, {'dc__ref': f'#/_references/{id_}'})
 
 
 def serialize_sequence_with_pointers(seq, memo, path, id_method, id_memo):
@@ -323,14 +323,14 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False, global_dict=
         global_dict, pointers_memo = update_pointers_data(global_dict=global_dict, current_dict=dict_,
                                                           pointers_memo=pointers_memo)
 
-    if '$ref' in dict_:
+    if 'dc__ref' in dict_:
         try:
-            return pointers_memo[dict_['$ref']]
+            return pointers_memo[dict_['dc__ref']]
         except KeyError as err:
             print('keys in memo:')
             for key in sorted(pointers_memo.keys()):
                 print(f'\t{key}')
-            raise RuntimeError(f"Pointer {dict_['$ref']} not in memo, at path {path}") from err
+            raise RuntimeError(f"Pointer {dict_['dc__ref']} not in memo, at path {path}") from err
 
     if class_ is None and 'object_class' in dict_:
         class_ = get_python_class_from_class_name(dict_['object_class'])
@@ -534,9 +534,9 @@ def find_references_sequence(seq, path):
 
 def find_references_dict(dict_, path):
     """ Find dc refs recursively in dict. """
-    if '$ref' in dict_:
+    if 'dc__ref' in dict_:
 
-        return [(path, dict_['$ref'])]
+        return [(path, dict_['dc__ref'])]
 
     references = []
     for key, value in dict_.items():
@@ -727,8 +727,8 @@ def pointer_graph_elements_sequence(seq, path='#'):
 
 def pointer_graph_elements_dict(dict_, path='#'):
     """ Compute graph from dict. """
-    if '$ref' in dict_:
-        return [path, dict_['$ref']], [(path, dict_['$ref'], True)]
+    if 'dc__ref' in dict_:
+        return [path, dict_['dc__ref']], [(path, dict_['dc__ref'], True)]
 
     edges = []
     nodes = []

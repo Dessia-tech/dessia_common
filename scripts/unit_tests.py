@@ -28,7 +28,7 @@ assert DEF_SO == obj
 
 # Test serialization
 d = DEF_SO.to_dict(use_pointers=True)
-assert '$ref' in d['union_arg'][1]
+assert 'dc__ref' in d['union_arg'][1]
 o = StandaloneObject.dict_to_object(d)
 assert not isinstance(o.union_arg[1], dict)
 
