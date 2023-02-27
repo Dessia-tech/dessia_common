@@ -74,12 +74,12 @@ class Schema:
 
         self.parsed_attributes = self.parsed_docstring['attributes']
 
-        self.required_arguments, self.default_arguments = split_default_args(argspecs=argspec, merge=False)
+        self.required_arguments, default_arguments = split_default_args(argspecs=argspec, merge=False)
 
         self.property_schemas = {}
         for attribute in self.attributes:
             if attribute in self.annotations:
-                default = self.default_arguments.get(attribute, None)
+                default = default_arguments.get(attribute, None)
                 annotation = self.annotations[attribute]
                 schema = get_schema(annotation=annotation, attribute=attribute, definition_default=default)
                 self.property_schemas[attribute] = schema
@@ -261,8 +261,8 @@ class MethodSchema(Schema):
     def return_is_annotated(self) -> PassedCheck:
         """ Check whether method return is annotated in definition or not. """
         if "return" not in self.annotations:
-            return CheckWarning(f"Method return : is not annotated")
-        return PassedCheck(f"Method return : is annotated")
+            return CheckWarning("Method return : is not annotated")
+        return PassedCheck("Method return : is annotated")
 
     def return_type_is_valid(self) -> PassedCheck:
         """ Check whether given attribute is annotated in function definition or not. """
