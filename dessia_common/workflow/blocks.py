@@ -121,6 +121,7 @@ class ClassMethod(Block):
     :param name: Name of the block.
     :param position: Position of the block in canvas.
     """
+
     _non_serializable_attributes = ["method"]
 
     def __init__(self, method_type: ClassMethodType[Type], name: str = '', position: Tuple[float, float] = None):
@@ -183,6 +184,7 @@ class ModelMethod(Block):
     :param name: Name of the block.
     :param position: Position of the block in canvas.
     """
+
     _non_serializable_attributes = ["method"]
 
     def __init__(self, method_type: MethodType[Type], name: str = '', position: Tuple[float, float] = None):

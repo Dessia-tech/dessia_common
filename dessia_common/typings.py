@@ -30,12 +30,14 @@ class MethodType(Generic[T]):
         return getattr(self.class_, self.name)
 
     def to_dict(self):
+        """ Write Method Type as a dictionary. """
         classname = full_classname(object_=self.class_, compute_for='class')
         method_type_classname = full_classname(object_=self.__class__, compute_for="class")
         return {"class_": classname, "name": self.name, "object_class": method_type_classname}
 
     @classmethod
     def dict_to_object(cls, dict_) -> 'MethodType':
+        """ Deserialize dictionary as a Method Type. """
         class_ = get_python_class_from_class_name(dict_["class_"])
         return cls(class_=class_, name=dict_["name"])
 
