@@ -39,14 +39,14 @@ class TestMethodSchemas(unittest.TestCase):
             self.assertTrue(schema.check_list().checks_above_level("error"))
 
     @parameterized.expand([
-        ("add_standalone_object", 2),
-        ("add_embedded_object", 2),
-        ("count_until", 2),
-        ("add_float", 1),
-        ("generate_from_text", 2),
-        ("generate_from_bin", 2),
-        ("method_without_arg", 0),
-        ("ill_defined_method", 4)
+        ("add_standalone_object", 4),
+        ("add_embedded_object", 4),
+        ("count_until", 4),
+        ("add_float", 3),
+        ("generate_from_text", 4),
+        ("generate_from_bin", 4),
+        ("method_without_arg", 2),
+        ("ill_defined_method", 6)
     ])
     def test_check_list(self, method_name, expected_number):
         method = getattr(StandaloneObject, method_name)
