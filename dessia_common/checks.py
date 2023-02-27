@@ -2,7 +2,10 @@
 # -*- coding: utf-8 -*-
 """ General checks & checklists. """
 
-from typing import List
+import time
+import json
+from typing import List, Tuple
+from dessia_common.abstract import CoreDessiaObject
 
 
 LEVEL_TO_INT = {'debug': 0, 'info': 1, 'warning': 2, 'error': 3}
@@ -38,6 +41,10 @@ class BadType(FailedCheck):
 
 class GeometricInconsistance(FailedCheck):
     """ Denote a failed check due to a geometric inconsistency. """
+
+
+class NonSerializable(FailedCheck):
+    """ Used when a class or an instance is not serializable. """
 
 
 class CheckList:
@@ -121,3 +128,25 @@ def type_check(value, expected_type, level: str = 'error'):
         return CheckList([PassedCheck(f'value {value} is of expected type {expected_type}')])
 
     return CheckList([])
+
+
+def check_serialization_process(object_: CoreDessiaObject, use_pointers: bool = True) -> Tuple[PassedCheck, float]:
+    """ Simulate platform serialization/deserialization process to guarantee viability of given object. """
+    start = time.time()
+    try:
+        dict_ = object_.to_dict(use_pointers=use_pointers)
+    except TypeError as exc:
+        if use_pointers:
+            # Trying without pointers if it failed with.
+            dict_ = object_.to_dict(use_pointers=False)
+        else:
+            raise exc
+
+    json_dict = json.dumps(dict_)
+    decoded_json = json.loads(json_dict)
+    deserialized_object = object_.dict_to_object(decoded_json)
+
+    if not deserialized_object._data_eq(object_):
+        print('data diff: ', object_._data_diff(deserialized_object))
+        return FailedCheck('Object is not equal to itself after serialization/deserialization'), time.time() - start
+

@@ -572,18 +572,9 @@ class DessiaObject(SerializableObject):
     def check_platform(self, level='error'):
         """ Reproduce lifecycle on platform (serialization, display). Raise an error if something is wrong. """
         checks = []
-        try:
-            dict_ = self.to_dict(use_pointers=True)
-        except TypeError:
-            dict_ = self.to_dict()
-        json_dict = json.dumps(dict_)
 
-        decoded_json = json.loads(json_dict)
-        deserialized_object = self.dict_to_object(decoded_json)
+        serializable =
 
-        if not deserialized_object._data_eq(self):
-            print('data diff: ', self._data_diff(deserialized_object))
-            checks.append(dcc.FailedCheck('Object is not equal to itself after serialization/deserialization'))
         copied_object = self.copy()
         if not copied_object._data_eq(self):
             try:
