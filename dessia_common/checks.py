@@ -20,6 +20,7 @@ class PassedCheck:
         return f'[{self.level.upper()}: {self.__class__.__name__}] - {self.message}'
 
     def to_dict(self):
+        """ Write check as a dict. Used for frontend display. """
         return {"level": self.level, "message": self.message, "object_class": self.__class__.__name__}
 
 
@@ -78,6 +79,7 @@ class CheckList:
             raise ValueError(f'Check: {check} is above level "{level}"')
 
     def to_dict(self):
+        """ Write CheckList as a dict. Used for frontend display. """
         return {"checks": [c.to_dict() for c in self.checks]}
 
 
