@@ -236,14 +236,15 @@ def check_schemas(object_: CoreDessiaObject):
     print("Checking schemas...")
     start = time.time()
     try:
-        displays = object_.method_schemas()
+        schemas = object_.method_schemas
         print("Computed schemas. Serializing schemas...")
-    except Exception:
+    except Exception as exc:
         print("Failed.\n")
-        return {"check": BadStructure("Schemas computation failed."), "duration": time.time() - start}
+        return {"check": BadStructure(f"Schemas computation failed with following error : \n\n{exc}\n\n"),
+                "duration": time.time() - start}
 
     try:
-        json.dumps(displays)
+        json.dumps(schemas)
         print("Serialized schemas.")
     except Exception:
         print("Failed.\n")
