@@ -127,6 +127,7 @@ class StandaloneBuiltinsSubobject(EmbeddedBuiltinsSubobject):
 
     @property
     def property_method(self):
+        """ Property method for low-code testing purpose. """
         return self.floatarg * self.intarg
 
 

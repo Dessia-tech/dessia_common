@@ -221,14 +221,17 @@ class MethodSchema(Schema):
 
     @property
     def serialized(self):
+        """ Get a dictionary with serialized annotations of method arguments. """
         return {k: s.serialized for k, s in self.property_schemas.items()}
 
     @property
     def return_schema(self):
+        """ Get the schema of the return annotation. """
         return get_schema(annotation=self.return_annotation, attribute="return")
 
     @property
     def return_serialized(self):
+        """ Get the serialized annotation of the return annotation. """
         try:
             return self.return_schema.serialized
         except NotImplementedError:
@@ -243,6 +246,7 @@ class MethodSchema(Schema):
         return schema
 
     def definition_json(self):
+        """ Dictionary that denotes the good definition of the method. Useful for low-code features. """
         return {"name": self.name, "return": self.return_serialized, "arguments": self.serialized,
                 "valid": self.is_valid, "checks": self.check_list().to_dict()["checks"]}
 
@@ -1081,6 +1085,7 @@ class AnyProperty(Property):
         super().__init__(annotation=Any, attribute=attribute, definition_default=None)
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
+        """ Write chunk of Any property. Useful for low-code features. """
         chunk = super().to_dict(title=title, editable=editable, description=description)
         chunk.update({"properties": {".*": ".*"}, "type": "object"})
         return chunk
