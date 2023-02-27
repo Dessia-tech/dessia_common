@@ -22,6 +22,10 @@ class PassedCheck:
     def __repr__(self):
         return f'[{self.level.upper()}: {self.__class__.__name__}] - {self.message}'
 
+    def to_dict(self):
+        """ Write check as a dict. Used for frontend display. """
+        return {"level": self.level, "message": self.message, "object_class": self.__class__.__name__}
+
 
 class CheckWarning(PassedCheck):
     """ Denote a check warning. """
@@ -80,6 +84,10 @@ class CheckList:
         """ Raise an error if some checks have a level above given one. """
         for check in self.checks_above_level(level=level):
             raise ValueError(f'Check: {check} is above level "{level}"')
+
+    def to_dict(self):
+        """ Write CheckList as a dict. Used for frontend display. """
+        return {"checks": [c.to_dict() for c in self.checks]}
 
 
 def is_int(value, level: str = 'error'):
