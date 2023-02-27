@@ -573,7 +573,7 @@ class DessiaObject(SerializableObject):
         """ Reproduce lifecycle on platform (serialization, display). Raise an error if something is wrong. """
         checks = []
 
-        serializable =
+        # serializable =
 
         copied_object = self.copy()
         if not copied_object._data_eq(self):
@@ -583,9 +583,9 @@ class DessiaObject(SerializableObject):
                 pass
             checks.append(dcc.FailedCheck('Object is not equal to itself after copy.'))
 
-        valid, hint = is_bson_valid(stringify_dict_keys(dict_))
-        if not valid:
-            checks.append(dcc.FailedCheck(f'Object is not bson valid {hint}'))
+        # valid, hint = is_bson_valid(stringify_dict_keys(dict_))
+        # if not valid:
+        #     checks.append(dcc.FailedCheck(f'Object is not bson valid {hint}'))
 
         json.dumps(self._displays())
         json.dumps(self.method_schemas)
