@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Blocks : display blocks are now more configurable (custom selector and type)
 - Schemas refactor: add support of Ellipsed tuple (Tuple[T, ...])
+- Schemas refactor: add more Error Checks
+- Schemas refactor: add a json export to method schemas for low-code implementations
 
 
 ### Fixed
@@ -28,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Use of Schemas to serialize typings
 - Change serialize_typing function name to serialize_annotation
 - Change tests. Unittests are in 'tests' folder. Other tests in scripts
+- Check Platform is now verbose and split into several functions
 - Workflow : to_dict method do not use pointers anymore
 
 ### Chore

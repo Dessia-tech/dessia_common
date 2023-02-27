@@ -2,7 +2,10 @@
 # -*- coding: utf-8 -*-
 """ General checks & checklists. """
 
+import time
+import json
 from typing import List
+from dessia_common.abstract import CoreDessiaObject
 
 
 LEVEL_TO_INT = {'debug': 0, 'info': 1, 'warning': 2, 'error': 3}
@@ -19,6 +22,13 @@ class PassedCheck:
     def __repr__(self):
         return f'[{self.level.upper()}: {self.__class__.__name__}] - {self.message}'
 
+    def __bool__(self):
+        return True
+
+    def to_dict(self):
+        """ Write check as a dict. Used for frontend display. """
+        return {"level": self.level, "message": self.message, "object_class": self.__class__.__name__}
+
 
 class CheckWarning(PassedCheck):
     """ Denote a check warning. """
@@ -31,6 +41,9 @@ class FailedCheck(PassedCheck):
 
     level = 'error'
 
+    def __bool__(self):
+        return False
+
 
 class BadType(FailedCheck):
     """ Denote a failed check due to a bad type. """
@@ -38,6 +51,22 @@ class BadType(FailedCheck):
 
 class GeometricInconsistance(FailedCheck):
     """ Denote a failed check due to a geometric inconsistency. """
+
+
+class NonSerializable(FailedCheck):
+    """ Used when a class or an instance is not serializable. """
+
+
+class NonCopyable(FailedCheck):
+    """ Used when an instance can not be copied. """
+
+
+class NonDisplayable(FailedCheck):
+    """ Used when an instance can not be displayed. """
+
+
+class BadStructure(FailedCheck):
+    """ Used when a class or method is badly designed (regarding schemas for example). """
 
 
 class CheckList:
@@ -73,6 +102,10 @@ class CheckList:
         """ Raise an error if some checks have a level above given one. """
         for check in self.checks_above_level(level=level):
             raise ValueError(f'Check: {check} is above level "{level}"')
+
+    def to_dict(self):
+        """ Write CheckList as a dict. Used for frontend display. """
+        return {"checks": [c.to_dict() for c in self.checks]}
 
 
 def is_int(value, level: str = 'error'):
@@ -121,3 +154,101 @@ def type_check(value, expected_type, level: str = 'error'):
         return CheckList([PassedCheck(f'value {value} is of expected type {expected_type}')])
 
     return CheckList([])
+
+
+def check_serialization_process(object_: CoreDessiaObject, use_pointers: bool = True):
+    """ Simulate platform serialization/deserialization process to guarantee viability of given object. """
+    print("Checking serialization process...")
+    start = time.time()
+    try:
+        dict_ = object_.to_dict(use_pointers=use_pointers)
+        print("Serialized. Deserializing...")
+    except TypeError as exc:
+        if use_pointers:
+            # Trying without pointers if it failed with.
+            dict_ = object_.to_dict(use_pointers=False)
+            print("Serialized without pointers. Deserializing...")
+        else:
+            print("Failed.\n")
+            raise exc
+
+    json_dict = json.dumps(dict_)
+    decoded_json = json.loads(json_dict)
+    deserialized_object = object_.dict_to_object(decoded_json)
+    print("Deserialized. Checking equality...")
+
+    if not deserialized_object._data_eq(object_):
+        print('Failed.\nData Diff: ', object_._data_diff(deserialized_object))
+        check = NonSerializable('Object is not equal to itself after serialization/deserialization')
+    else:
+        check = PassedCheck("Object is serializable")
+    duration = time.time() - start
+    if check:
+        print(f"Checked serialization process in {duration}s.\n")
+    return {"check": check, "duration": duration, "dict_": dict_}
+
+
+def check_copy(object_: CoreDessiaObject):
+    """ Simulate the copy performed by the platform. """
+    print("Copying...")
+    start = time.time()
+    copied_object = object_.copy()
+    print("Copied. Checking equality...")
+    if not copied_object._data_eq(object_):
+        print("Failed.\n")
+        try:
+            print('Data Diff: ', object_._data_diff(copied_object))
+        except Exception:
+            pass
+        check = FailedCheck('Object is not equal to itself after copy.')
+    else:
+        check = PassedCheck("Object can be copied and equal to itself after copy.")
+    duration = time.time() - start
+    if check:
+        print(f"Checked copying process in {duration}s.\n")
+    return {"check": check, "duration": duration}
+
+
+def check_displays(object_: CoreDessiaObject):
+    """ Simulate displays computation performed by the platform. """
+    print("Checking displays...")
+    start = time.time()
+    try:
+        displays = object_._displays()
+        print("Computed displays. Serializing displays...")
+    except Exception:
+        print("Failed.\n")
+        return {"check": NonDisplayable("Object displays failed."), "duration": time.time() - start}
+
+    try:
+        json.dumps(displays)
+        print("Serialized displays.")
+    except Exception:
+        print("Failed.\n")
+        return {"check": NonSerializable("Object displays serialization failed."), "duration": time.time() - start}
+    duration = time.time() - start
+    print(f"Checked displays computation process in {duration}s.\n")
+    return {"check": PassedCheck("Object displays checks succeeded"), "duration": duration}
+
+
+def check_schemas(object_: CoreDessiaObject):
+    """ Simulate schemas computation performed by the platform. """
+    print("Checking schemas...")
+    start = time.time()
+    try:
+        schemas = object_.method_schemas
+        print("Computed schemas. Serializing schemas...")
+    except Exception as exc:
+        print("Failed.\n")
+        return {"check": BadStructure(f"Schemas computation failed with following error : \n\n{exc}\n\n"),
+                "duration": time.time() - start}
+
+    try:
+        json.dumps(schemas)
+        print("Serialized schemas.")
+    except Exception:
+        print("Failed.\n")
+        return {"check": NonSerializable("Schemas serialization failed."), "duration": time.time() - start}
+    duration = time.time() - start
+    print(f"Checked schemas computation process in {duration}s.\n")
+    return {"check": PassedCheck("Object displays checks succeeded"), "duration": duration}
