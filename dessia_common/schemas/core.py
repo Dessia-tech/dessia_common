@@ -277,7 +277,7 @@ class TypingProperty(Property):
         """ Recursively stringify annotation. """
         serialized = self.origin.__name__
         if serialized in ["list", "dict", "tuple", "type"]:
-            # TODO Dirty quickfix. Find a generic way to automatize this
+            # TODO Dirty quick-fix. Find a generic way to automatize this
             serialized = serialized.capitalize()
         if self.args:
             return compute_typing_schema_serialization(serialized_typing=serialized, args_schemas=self.args_schemas)
@@ -1184,7 +1184,7 @@ def extract_args(string: str) -> List[str]:
         split_by_comma = closed_brackets == opened_brackets
         if split_by_comma and character == ",":
             # We are at first level, because we closed as much brackets as we have opened
-            # Current argument is complete, we append it to args sequence and reset current_args
+            # Current argument is complete, we append it to arguments sequence and reset current arguments
             arguments.append(current_arg)
             current_arg = ""
         else:

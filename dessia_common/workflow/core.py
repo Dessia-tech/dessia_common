@@ -2174,7 +2174,7 @@ def value_type_check(value, type_):
 
     Check if the value as the specified type.
     """
-    try:  # TODO: Subscripted generics cannot be used...
+    try:  # TODO: Sub-scripted generics cannot be used...
         if not isinstance(value, type_):
             return False
     except TypeError:

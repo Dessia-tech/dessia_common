@@ -1,7 +1,6 @@
 """ Typing for dessia_common. """
 from typing import TypeVar, Generic, Dict, Any, Tuple
 
-import dessia_common.typings
 from dessia_common.utils.helpers import full_classname, get_python_class_from_class_name
 
 
