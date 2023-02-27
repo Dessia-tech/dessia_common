@@ -39,6 +39,7 @@ serializable
 sklearn
 str
 StringFile
+Stringify
 submodule
 traceback
 uuid
