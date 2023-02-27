@@ -32,6 +32,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fix Spelling
 
+### Perf
+
+- use dc_ref instead of $ref in serialization to avoid overhead during CRUD operation on platform
+
+
 
 ## 0.13.1
 
