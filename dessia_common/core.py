@@ -594,7 +594,7 @@ class DessiaObject(SerializableObject):
         schemas_results = dcc.check_schemas(self)
 
         results = [serializable_results, copy_results, bson_results, display_results, schemas_results]
-        duration = sum([r["duration"] for r in results])
+        duration = sum(r["duration"] for r in results)
         print(f"\nCompleted Platform Check in {duration}s.\n")
         return dcc.CheckList([r["check"] for r in results])
 

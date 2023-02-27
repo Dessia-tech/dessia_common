@@ -12,7 +12,7 @@ class CoreDessiaObject:
         raise ABSTRACT_ERROR
 
     @classmethod
-    def dict_to_object(cls, dict_=None, force_generic: bool = False, global_dict=None,
+    def dict_to_object(cls, dict_, force_generic: bool = False, global_dict=None,
                        pointers_memo=None, path: str = '#'):
         """ Abstract dict_to_object method. """
         raise ABSTRACT_ERROR
