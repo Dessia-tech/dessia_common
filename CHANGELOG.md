@@ -30,6 +30,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Change serialize_typing function name to serialize_annotation
 - Change tests. Unittests are in 'tests' folder. Other tests in scripts
 
+### Chore
+
+- Fix Spelling
+
 
 ## 0.13.1
 
