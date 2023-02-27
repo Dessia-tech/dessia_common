@@ -228,8 +228,8 @@ class StandaloneObject(MovingObject):
     """
     Standalone Object for testing purpose.
 
-    :param standalone_subobject: A dev sub-object that is standalone_in_db
-    :param embedded_subobject: A dev sub-object that isn't standalone_in_db
+    :param standalone_subobject: A sub-object that is standalone_in_db, for development purpose
+    :param embedded_subobject: A sub-object that isn't standalone_in_db, for development purpose
     :param dynamic_dict: A variable length dict
     :param tuple_arg: A heterogeneous sequence
     """
@@ -337,7 +337,7 @@ class StandaloneObject(MovingObject):
         self.union_arg.append(object_)
 
     def method_without_arg(self):
-        """ It should be ok and be in method_schema. """
+        """ It should be OK and be in method_schema. """
         return self
 
     def contour(self):
@@ -543,7 +543,7 @@ DEF_SO = StandaloneObject.generate(1)
 
 
 class StandaloneObjectWithDefaultValues(StandaloneObject):
-    """ Overwrite StandaloneObject to set default values to it. For frontend's forms testing purpose. """
+    """ Overwrite StandaloneObject to set default values to it. For frontend forms testing purpose. """
 
     _non_editable_attributes = ['intarg', 'strarg']
 
@@ -585,15 +585,6 @@ class StandaloneObjectWithDefaultValues(StandaloneObject):
 
 
 DEF_SOWDV = StandaloneObjectWithDefaultValues()
-
-# class ObjectWithFaultyTyping(DessiaObject):
-#     """
-#     Dummy class to test faulty typing jsonschema
-#     """
-#     def __init__(self, faulty_attribute: Iterator[int], name: str = ""):
-#         self.faulty_attribute = faulty_attribute
-#
-#         DessiaObject.__init__(self, name=name)
 
 
 class ObjectWithOtherTypings(DessiaObject):

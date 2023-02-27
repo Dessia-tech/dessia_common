@@ -501,7 +501,7 @@ class DessiaObject(SerializableObject):
 
     @staticmethod
     def display_settings() -> List[DisplaySetting]:
-        """ Return a list of objects describing how to call subdisplays. """
+        """ Return a list of objects describing how to call object displays. """
         return [DisplaySetting(selector="markdown", type_="markdown", method="to_markdown", load_by_default=True),
                 DisplaySetting(selector="plot_data", type_="plot_data", method="plot_data", serialize_data=True)]
 
@@ -1027,7 +1027,7 @@ class FiltersList(DessiaObject):
 
         :raises NotImplementedError: If logical_operator is not one of `'and'`, `'or'`, `'xor'`, raises an error
 
-        :return: Booleans index of the filtered data
+        :return: Boolean indices of the filtered data
         :rtype: List[bool]
 
         :Examples:
@@ -1072,12 +1072,10 @@ class FiltersList(DessiaObject):
         """
         Apply a FiltersList on a list of DessiaObjects.
 
-        :param dobjects_list:
-            List of DessiaObjects to filter
+        :param dobjects_list: List of DessiaObjects to filter
         :type dobjects_list: List[DessiaObject]
 
-        :return:
-            List of filtered values
+        :return: List of filtered values
         :rtype: List[DessiaObject]
 
         :Examples:
@@ -1103,15 +1101,14 @@ def dict_merge(old_dct, merge_dct, add_keys=True, extend_lists=True):
     """
     Recursive dict merge.
 
-    Inspired by :meth:``dict.update()``, instead of updating only top-level keys, dict_merge recurses down into dicts
-    nested to an arbitrary depth, updating keys. The ``merge_dct`` is merged into ``dct``.
+    Inspired by :meth:``dict.update()``, instead of updating only top-level keys, dict_merge goes down
+    recursively into dictionaries nested to an arbitrary depth, updating keys.
+    The ``merge_dct`` is merged into ``dct``.
 
-    This version will return a copy of the dictionary and leave the original
-    arguments untouched.
+    This version will return a copy of the dictionary and leave the original arguments untouched.
 
-    The optional argument ``add_keys``, determines whether keys which are
-    present in ``merge_dct`` but not ``dct`` should be included in the
-    new dict.
+    The optional argument ``add_keys``, determines whether keys which are present in ``merge_dct``
+    but not ``dct`` should be included in the new dict.
 
     :param old_dct: Onto which the merge is executed
     :type old_dct: Dict
@@ -1119,8 +1116,7 @@ def dict_merge(old_dct, merge_dct, add_keys=True, extend_lists=True):
     :type merge_dct: Dict
     :param add_keys: Whether to add new keys. Default value is True
     :type add_keys: bool, optional
-    :param extend_lists: Whether to extend lists if keys are updated and
-        value is a list. Default value is True
+    :param extend_lists: Whether to extend lists if keys are updated and value is a list. Default value is True
     :type extend_lists: bool, optional
     :return: Updated dict
     :rtype: Dict

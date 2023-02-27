@@ -416,7 +416,7 @@ class ClusteredDataset(Dataset):
         The k-means algorithm divides a set of samples into disjoint clusters , each described by the mean
         of the samples in the cluster. The means are commonly called the cluster “centroids”; note that
         they are not, in general, points from, although they live in the same space.
-        The K-means algorithm aims to choose centroids that minimise the inertia, or within-cluster
+        The K-means algorithm aims to choose centroids that minimize the inertia, or within-cluster
         sum-of-squares criterion.
 
         See more : https://scikit-learn.org/stable/modules/clustering.html#k-means
