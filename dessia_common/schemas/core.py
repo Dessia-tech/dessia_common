@@ -371,7 +371,7 @@ class TypingProperty(Property):
 
     @classmethod
     def _raw_args_from_serialized(cls, serialized: str) -> str:
-        """ Get args as str from serialized value. """
+        """ Get arguments as str from serialized value. """
         if "[" in serialized and "]" in serialized:
             args = re.match(cls.SERIALIZED_REGEXP, serialized).group(2)
             return args.replace(" ", "")
@@ -379,7 +379,7 @@ class TypingProperty(Property):
 
     @classmethod
     def _args_from_serialized(cls, serialized: str) -> Tuple[Type[T]]:
-        """ Deserialize args. """
+        """ Deserialize arguments. """
         rawargs = cls._raw_args_from_serialized(serialized)
         args = extract_args(rawargs)
         return tuple([deserialize_annotation(a) for a in args])
@@ -403,7 +403,7 @@ class ProxyProperty(TypingProperty):
     """
     Schema Class for Proxies.
 
-    Proxies are just intermediate types which actual schemas if its args. For example OptionalProperty proxy.
+    Proxies are just intermediate types which actual schemas if its arguments. For example OptionalProperty proxy.
     """
 
     def __init__(self, annotation: Type[T], attribute: str, definition_default: T = None):
@@ -433,7 +433,7 @@ class OptionalProperty(ProxyProperty):
     Proxy Schema class for OptionalProperty properties.
 
     OptionalProperty is only a catch for arguments that default to None.
-    Arguments with default values other than None are not considered Optionals
+    Arguments with default values other than None are not considered Optional.
     """
 
     def __init__(self, annotation: Type[T], attribute: str, definition_default: T = None):
@@ -667,7 +667,7 @@ class UnionProperty(TypingProperty):
         Check validity of UnionProperty Type Hint.
 
         Checks performed :
-        - Subobject are all standalone or none of them are. TODO : What happen if args are not DessiaObjects ?
+        - Subobject are all standalone or none of them are. TODO : What happen if arguments are not DessiaObjects ?
         """
         issues = super().check_list()
         issues += CheckList([self.classes_are_standalone_consistent()])

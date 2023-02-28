@@ -344,7 +344,7 @@ def complex_first_type_match(type_: Type, match_against: Type) -> bool:
 
 def heal_type(type_: Type):
     """
-    Inspect type and returns its params.
+    Inspect type and returns its parameters.
 
     For now, only checks wether the type is an 'Optional' / Union[T, NoneType], which should be flattened and not
     considered.
