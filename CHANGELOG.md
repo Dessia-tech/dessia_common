@@ -14,14 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fix
 - Handle serialization pointers of non-standalone objects
-
-## 0.13.1
-
-### Fix
-
 - WorkflowRun settings now sets the right method to call for workflow display
 
-## 0.13.0
+## 0.13.0 [02/14/2023]
 
 ### Fix
 - Do not take into account non-eq attributes
@@ -51,7 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - fix str of Dataset
 
-## 0.12.0
+## 0.12.0 [released 01/20/2023]
 
 ### Changed
 
@@ -101,7 +96,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - More docs
 
 
-## 0.11.0
+## 0.11.0 [released 12/19/2022]
 
 ### Fixed
 
