@@ -53,12 +53,12 @@ class DessiaObject(SerializableObject):
     Gathers generic methods and attributes
 
     :cvar bool _standalone_in_db:
-        Indicates wether class objects should be independent in database or not.
+        Indicates whether class objects should be independent in database or not.
         If False, object will only exist inside its parent.
 
     :cvar bool _eq_is_data_eq:
         Indicates which type of equality check is used: strict equality or equality based on data.
-        If False, Python's object __eq__ method is used (ie. strict), else, user custom data_eq is used (ie. data)
+        If False, Python's object __eq__ method is used (IE. strict), else, user custom data_eq is used (IE. data)
 
     :cvar List[str] _non_serializable_attributes:
         [Advanced] List of instance attributes that should not be part of serialization with to_dict method.
@@ -92,7 +92,7 @@ class DessiaObject(SerializableObject):
     :cvar List[str] _whitelist_attributes: List[str]
 
     :ivar str name: Name of object.
-    :ivar Any kwargs: Additionnal user metadata
+    :ivar Any kwargs: Additional user metadata
     """
 
     _non_editable_attributes = []
@@ -134,7 +134,7 @@ class DessiaObject(SerializableObject):
         """
         Generic equality of two objects.
 
-        Behavior can be controled by class attribute _eq_is_data_eq to tell if we must use python equality (based on
+        Behavior can be controlled by class attribute _eq_is_data_eq to tell if we must use python equality (based on
         memory addresses) (_eq_is_data_eq = False) or a data equality (True).
         """
         if self._eq_is_data_eq:
@@ -486,7 +486,7 @@ class DessiaObject(SerializableObject):
 
     @staticmethod
     def display_settings() -> List[DisplaySetting]:
-        """ Return a list of objects describing how to call subdisplays. """
+        """ Return a list of objects describing how to call sub displays. """
         return [DisplaySetting(selector="markdown", type_="markdown", method="to_markdown"),
                 DisplaySetting(selector="plot_data", type_="plot_data", method="plot_data", serialize_data=True)]
 
@@ -697,12 +697,6 @@ class PhysicalObject(DessiaObject):
         :param filepath: a str representing a filepath
         """
         return self.volmdlr_volume_model().to_stl(filepath=filepath)
-
-    # def _displays(self, **kwargs):
-    #     """
-    #     Compute the list of displays
-    #     """
-    #     return DessiaObject._displays(self, **kwargs)
 
     def babylonjs(self, use_cdn=True, debug=False, **kwargs):
         """ Show the 3D volmdlr of an object by calling volmdlr_volume_model method and plot in in browser. """

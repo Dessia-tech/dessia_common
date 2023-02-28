@@ -293,7 +293,7 @@ class Pipe(DessiaObject):
     """
     Bind two variables of a Workflow.
 
-    :param input_variable: The input varaible of the pipe correspond to the start of the arrow, its tail.
+    :param input_variable: The input variable of the pipe correspond to the start of the arrow, its tail.
     :type input_variable: Variable
     :param output_variable: The output variable of the pipe correspond to the end of the arrow, its hat.
     :type output_variable: Variable
@@ -1045,7 +1045,7 @@ class Workflow(Block):
 
     def variable_indices(self, variable: Variable) -> Optional[Union[Tuple[int, int, int], int]]:
         """
-        Return global adress of given variable as a tuple or an int.
+        Return global address of given variable as a tuple or an int.
 
         If variable is non block, return index of variable in variables sequence
         Else returns global adress (ib, i, ip)

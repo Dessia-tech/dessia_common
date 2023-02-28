@@ -117,7 +117,7 @@ def set_in_object_from_path(object_, path, value, evaluate_pointers=True):
 
 
 def merge_breakdown_dicts(dict1, dict2):
-    """ Merge strategy of breakdown dictionnaries. """
+    """ Merge strategy of breakdown dictionaries. """
     dict3 = dict1.copy()
     for class_name, refs in dict2.items():
         if class_name in dict3:

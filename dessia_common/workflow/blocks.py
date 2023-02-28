@@ -1177,7 +1177,7 @@ class Sum(Block):
 
 
 class Substraction(Block):
-    """ Block that substract input values. First is +, second is -. """
+    """ Block that subtract input values. First is +, second is -. """
 
     def __init__(self, name: str = '', position: Tuple[float, float] = None):
         Block.__init__(self, [Variable(name='+'), Variable(name='-')], [Variable(name='Substraction')], name=name,
