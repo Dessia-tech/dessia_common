@@ -49,7 +49,7 @@ class TestStandaloneObjectWithDefaultValues(unittest.TestCase):
     @parameterized.expand([
         ("standalone_subobject", {
             "name": "EmbeddedSubobject1", "object_class": "dessia_common.forms.StandaloneBuiltinsSubobject",
-            "floatarg": 0.3, "distarg": {"value": 0.51}
+            "floatarg": 0.3, "distarg": {"object_class": "dessia_common.measures.Distance", "value": 0.51}
         }),
         ("embedded_subobject", {
             "name": "Embedded Subobject10", "object_class": "dessia_common.forms.EmbeddedSubobject",
@@ -58,7 +58,7 @@ class TestStandaloneObjectWithDefaultValues(unittest.TestCase):
         ("subclass_arg", {
             "name": "Inheriting Standalone Subobject1",
             "object_class": "dessia_common.forms.InheritingStandaloneSubobject",
-            "floatarg": 0.1, "distarg": {"value": 0.7}
+            "floatarg": 0.1, "distarg": {"object_class": "dessia_common.measures.Distance", "value": 0.7}
         })
     ])
     def test_complex_default_values(self, attribute, expected_partial_dict):
