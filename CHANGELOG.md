@@ -44,7 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix Spelling
 
 
-## 0.13.2 [Unreleased yet]
+## 0.13.2
 
 ### Added 
 
@@ -58,7 +58,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Handle serialization pointers of non-standalone objects
 - WorkflowRun settings now sets the right method to call for workflow display
-- Handle serialization pointers of non-standalone objects
 
 
 ## 0.13.0
