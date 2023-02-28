@@ -34,7 +34,7 @@ from dessia_common.errors import SerializationError
 from dessia_common.warnings import SerializationWarning
 from dessia_common.exports import ExportFormat
 from dessia_common.serialization import deserialize, serialize_with_pointers, serialize, update_pointers_data, \
-    serialize_dict  # , is_serializable
+    serialize_dict, add_references  # , is_serializable
 
 from dessia_common.workflow.utils import ToScriptElement
 
@@ -1682,7 +1682,8 @@ class WorkflowState(DessiaObject):
 
         dict_['evaluated_variables_indices'] = [self.workflow.variable_indices(v) for v in self.workflow.variables
                                                 if v in self.activated_items and self.activated_items[v]]
-        dict_["_references"] = id_memo
+        if path == '#':
+            add_references(dict_, memo, id_memo)
         # Uncomment when refs are handled as dict keys
         # activated_items = {}
         # for key, activated in self.activated_items.items():
