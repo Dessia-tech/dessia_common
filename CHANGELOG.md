@@ -32,6 +32,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Change tests. Unittests are in 'tests' folder. Other tests in scripts
 - Check Platform is now verbose and split into several functions
 - Workflow : to_dict method do not use pointers anymore
+- Workflow : Remove some attributes from serialization
+
+
+### Removed
+
+- Serialization : remove warning for dict_to_object if class is not inheriting from SerializableObject
 
 ### Chore
 
