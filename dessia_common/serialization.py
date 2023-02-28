@@ -342,10 +342,10 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False, global_dict=
             try:
                 obj = class_.dict_to_object(dict_, global_dict=global_dict, pointers_memo=pointers_memo, path=path)
             except TypeError:
-                warnings.warn(f'specific to_dict of class {class_.__name__} '
-                              'should implement use_pointers, memo and path arguments', Warning)
+                if issubclass(class_, SerializableObject):
+                    warnings.warn(f'specific to_dict of class {class_.__name__} '
+                                  'should implement use_pointers, memo and path arguments', Warning)
                 obj = class_.dict_to_object(dict_)
-
             return obj
 
         if class_ in fullargsspec_cache:
