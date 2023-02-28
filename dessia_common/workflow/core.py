@@ -354,7 +354,9 @@ class Workflow(Block):
 
     _standalone_in_db = True
     _eq_is_data_eq = True
-    _allowed_methods = ['run', 'start_run']
+    _allowed_methods = ["run", "start_run"]
+    _non_serializable_attributes = ["block_selectors", "branch_by_display_selector", "branch_by_export_format",
+                                    "memorized_pipes", "coordinates"]
 
     def __init__(self, blocks, pipes, output, *, imposed_variable_values=None,
                  detached_variables: List[TypedVariable] = None, description: str = "",
