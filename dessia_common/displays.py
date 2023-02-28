@@ -7,7 +7,7 @@ import inspect
 import json
 
 
-from typing import Union, List
+from typing import Union, List, Optional
 from networkx import DiGraph, Graph, kamada_kawai_layout
 from dessia_common.templates import visjs_template
 from dessia_common.typings import JsonSerializable
@@ -17,7 +17,8 @@ from dessia_common.utils.types import is_sequence
 class DisplaySetting:
     """ Describe which method to call to get a display. """
 
-    def __init__(self, selector, type_, method, arguments=None, serialize_data: bool = False):
+    def __init__(self, selector: Optional[str], type_: str, method: str, arguments=None,
+                 serialize_data: bool = False, load_by_default: bool = False):
         self.selector = selector
         self.type = type_
         self.method = method
@@ -25,6 +26,7 @@ class DisplaySetting:
             arguments = {}
         self.arguments = arguments
         self.serialize_data = serialize_data
+        self.load_by_default = load_by_default
 
     @property
     def reference_path(self) -> str:
@@ -43,8 +45,8 @@ class DisplaySetting:
 
     def to_dict(self):
         """ Serialization: make a dict from class instance attributes. """
-        return {'selector': self.selector, 'type': self.type, 'method': self.method,
-                'serialize_data': self.serialize_data, 'arguments': self.arguments}
+        return {"selector": self.selector, "type": self.type, "method": self.method, "arguments": self.arguments,
+                "serialize_data": self.serialize_data, "load_by_default": self.load_by_default}
 
     def compose(self, attribute: str, serialize_data: bool = False):
         """
@@ -53,8 +55,9 @@ class DisplaySetting:
         In case of a parent getting the display settings of a children this methods allow
         to inject the attribute name to method name.
         """
-        return DisplaySetting(selector=self.selector, type_=self.type, method=f'{attribute}.{self.method}',
-                              arguments=self.arguments, serialize_data=serialize_data)
+        return DisplaySetting(selector=self.selector, type_=self.type, method=f"{attribute}.{self.method}",
+                              arguments=self.arguments, serialize_data=serialize_data,
+                              load_by_default=self.load_by_default)
 
 
 class DisplayObject:
@@ -73,7 +76,7 @@ class DisplayObject:
         self.reference_path = reference_path
         self.name = name
 
-        if data and type_ == 'markdown':
+        if data and type_ == "markdown":
             self.data_cleaning()
 
     def data_cleaning(self):
@@ -82,47 +85,46 @@ class DisplayObject:
 
     def to_dict(self):
         """ Simple serialization. """
-        return {'type_': self.type_, 'data': self.data, 'traceback': self.traceback,
-                'reference_path': self.reference_path, 'name': self.name}
+        return {"type_": self.type_, "data": self.data, "traceback": self.traceback,
+                "reference_path": self.reference_path, "name": self.name}
 
 
 def networkx_to_visjs_data(networkx_graph: Graph):
     """ Compute visjs data to plot from a networkx graph. """
-    visjs_data = {'name': networkx_graph.name, 'nodes': [], 'edges': []}
+    visjs_data = {"name": networkx_graph.name, "nodes": [], "edges": []}
 
     pos = kamada_kawai_layout(networkx_graph)
 
     for i, node in enumerate(networkx_graph.nodes):
         node_dict = networkx_graph.nodes[node]
-        node_data = {'id': i}
+        node_data = {"id": i}
 
         if node in pos:
-            node_data['x'], node_data['y'] = pos[node]
+            node_data["x"], node_data["y"] = pos[node]
 
-        if 'name' not in node_dict and 'label' not in node_dict:
+        if "name" not in node_dict and "label" not in node_dict:
             if isinstance(node, str):
-                node_data['label'] = node
+                node_data["label"] = node
             elif isinstance(node, int):
-                node_data['label'] = str(node)
+                node_data["label"] = str(node)
             else:
-                node_data['label'] = ''
-            node_data['title'] = node_data['label']
-            if len(node_data['label']) > 10:
-                node_data['label'] = '[ ]'
-        elif 'name' in node_dict and 'label' not in node_dict:
-            node_data['label'] = node_dict['name']
+                node_data["label"] = ''
+            node_data["title"] = node_data["label"]
+            if len(node_data["label"]) > 10:
+                node_data["label"] = "[ ]"
+        elif "name" in node_dict and "label" not in node_dict:
+            node_data["label"] = node_dict["name"]
         else:
-            node_data['label'] = node_dict['name'] + node_dict['label']
+            node_data["label"] = node_dict["name"] + node_dict["label"]
 
-        if 'shape' not in node_dict:
-            node_data['shape'] = 'circular'
+        if "shape" not in node_dict:
+            node_data["shape"] = "circular"
         else:
-            node_data['shape'] = node_dict['shape']
+            node_data["shape"] = node_dict["shape"]
 
-        if 'color' in node_dict:
-            node_data['color'] = node_dict['color']
-
-        visjs_data['nodes'].append(node_data)
+        if "color" in node_dict:
+            node_data["color"] = node_dict["color"]
+        visjs_data["nodes"].append(node_data)
 
     list_nodes = list(networkx_graph.nodes)
     is_digraph = isinstance(networkx_graph, DiGraph)
@@ -130,29 +132,25 @@ def networkx_to_visjs_data(networkx_graph: Graph):
         index1 = list_nodes.index(edge[0])
         index2 = list_nodes.index(edge[1])
         edge_nx_data = networkx_graph.get_edge_data(*edge)
-
-        edge_data = {'from': index1, 'to': index2, 'font': {'align': 'middle'}}
-
+        edge_data = {"from": index1, "to": index2, "font": {"align": "middle"}}
         if is_digraph:
-            if 'head_type' in edge_nx_data:
-                edge_data['arrows'] = {'to': {'enabled': True, 'type': edge_nx_data['head_type']}}
+            if "head_type" in edge_nx_data:
+                edge_data["arrows"] = {"to": {"enabled": True, "type": edge_nx_data["head_type"]}}
             else:
-                edge_data['arrows'] = 'to'
-
-        if 'color' in edge_nx_data:
-            edge_data['color'] = {'color': edge_nx_data['color']}
-        visjs_data['edges'].append(edge_data)
+                edge_data["arrows"] = "to"
+        if "color" in edge_nx_data:
+            edge_data["color"] = {"color": edge_nx_data["color"]}
+        visjs_data["edges"].append(edge_data)
     return visjs_data
 
 
 def draw_networkx_graph(networkx_graph: Graph):
     """ Draw a networkx graph in a browser using VisJS library. """
     visjs_data = networkx_to_visjs_data(networkx_graph)
-    content = visjs_template.substitute(nodes=json.dumps(visjs_data['nodes']),
-                                        edges=json.dumps(visjs_data['edges']),
-                                        name=visjs_data['name'])
-    with tempfile.NamedTemporaryFile(suffix=".html",
-                                     delete=False) as file:
-        file.write(bytes(content, 'utf8'))
-    webbrowser.open('file://' + os.path.realpath(file.name))
+    content = visjs_template.substitute(nodes=json.dumps(visjs_data["nodes"]),
+                                        edges=json.dumps(visjs_data["edges"]),
+                                        name=visjs_data["name"])
+    with tempfile.NamedTemporaryFile(suffix=".html", delete=False) as file:
+        file.write(bytes(content, "utf8"))
+    webbrowser.open("file://" + os.path.realpath(file.name))
     return file.name

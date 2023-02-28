@@ -18,7 +18,7 @@ from datetime import date
 from pylint import __version__
 from pylint.lint import Run
 
-MIN_NOTE = 9.1
+MIN_NOTE = 9.2
 
 EFFECTIVE_DATE = date(2023, 1, 18)
 WEEKLY_DECREASE = 0.03
@@ -26,15 +26,15 @@ WEEKLY_DECREASE = 0.03
 UNWATCHED_ERRORS = ["fixme", "trailing-whitespace", "import-error"]
 
 MAX_ERROR_BY_TYPE = {
-    "wrong-spelling-in-docstring": 196,
-    "wrong-spelling-in-comment": 26,
+    "wrong-spelling-in-docstring": 179,
+    "wrong-spelling-in-comment": 19,
     "protected-access": 46,  # Highly dependant on our "private" conventions. Keeps getting raised
     "arguments-differ": 1,
     "too-many-locals": 10,  # Reduce by dropping vectored objects
     "too-many-branches": 13,  # Huge refactor needed. Will be reduced by schema refactor
     "unused-argument": 6,  # Some abstract functions have unused arguments (plot_data). Hence cannot decrease
     "cyclic-import": 2,  # Still work to do on Specific based DessiaObject
-    "too-many-arguments": 21,  # Huge refactor needed
+    "too-many-arguments": 22,  # Huge refactor needed
     "too-few-public-methods": 4,  # Abstract classes (Errors, Checks,...)
     "too-many-return-statements": 9,  # Huge refactor needed. Will be reduced by schema refactor
     "import-outside-toplevel": 4,  # TODO : will reduced in a future work (when tests are ready)

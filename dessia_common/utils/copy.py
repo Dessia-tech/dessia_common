@@ -58,7 +58,7 @@ def deepcopy_value(value, memo):
         try:
             copied_value = copy.deepcopy(value, memo=memo)
         except TypeError:
-            # Memo arg not handled
+            # Memo not handled
             copied_value = copy.deepcopy(value)
         memo[value] = copied_value
         return copied_value

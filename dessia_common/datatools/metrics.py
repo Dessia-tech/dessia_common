@@ -65,7 +65,7 @@ def lp_norm(vector, mink_power=2):
 
 def inf_norm(vector):
     """
-    Inifinite norm of vector.
+    Infinite norm of vector.
 
     :param vector: vector to get norm
     :type vector: List[float]

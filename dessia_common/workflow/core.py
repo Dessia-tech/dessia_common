@@ -262,17 +262,6 @@ class Block(DessiaObject):
         """
         return self.__class__.__name__ == other.__class__.__name__
 
-    def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#', id_method=True, id_memo=None):
-        """ Serialize the block with custom logic. """
-        dict_ = DessiaObject.base_dict(self)
-        dict_['inputs'] = [i.to_dict() for i in self.inputs]
-        dict_['outputs'] = [o.to_dict() for o in self.outputs]
-        if self.position is not None:
-            dict_['position'] = list(self.position)
-        else:
-            dict_['position'] = self.position
-        return dict_
-
     def jointjs_data(self):
         """ Deprecated HTML computation. """
         data = {'block_class': self.__class__.__name__}
@@ -365,7 +354,9 @@ class Workflow(Block):
 
     _standalone_in_db = True
     _eq_is_data_eq = True
-    _allowed_methods = ['run', 'start_run']
+    _allowed_methods = ["run", "start_run"]
+    _non_serializable_attributes = ["block_selectors", "branch_by_display_selector", "branch_by_export_format",
+                                    "memorized_pipes", "coordinates", "detached_variables", "variables"]
 
     def __init__(self, blocks, pipes, output, *, imposed_variable_values=None,
                  detached_variables: List[TypedVariable] = None, description: str = "",
@@ -639,8 +630,8 @@ class Workflow(Block):
     @staticmethod
     def display_settings() -> List[DisplaySetting]:
         """ Compute the displays settings of the workflow. """
-        return [DisplaySetting(selector='documentation', type_='markdown', method='to_markdown'),
-                DisplaySetting(selector='workflow', type_='workflow', method='to_dict')]
+        return [DisplaySetting(selector="documentation", type_="markdown", method="to_markdown", load_by_default=True),
+                DisplaySetting(selector="workflow", type_="workflow", method="to_dict")]
 
     @property
     def export_blocks(self):
@@ -756,15 +747,15 @@ class Workflow(Block):
         schemas["start_run"]["required"] = []
         return schemas
 
-    def to_dict(self, use_pointers=True, memo=None, path="#", id_method=True, id_memo=None):
+    def to_dict(self, use_pointers=False, memo=None, path="#", id_method=True, id_memo=None):
         """ Compute a dict from the object content. """
         if memo is None:
             memo = {}
 
         # self.refresh_blocks_positions()
-        dict_ = Block.to_dict(self)
+        dict_ = Block.to_dict(self, use_pointers=False)
         dict_['object_class'] = 'dessia_common.workflow.core.Workflow'  # Force migrating from dessia_common.workflow
-        blocks = [b.to_dict() for b in self.blocks]
+        blocks = [b.to_dict(use_pointers=False) for b in self.blocks]
 
         pipes = [self.pipe_variable_indices(p) for p in self.pipes]
 
@@ -1793,7 +1784,7 @@ class WorkflowState(DessiaObject):
 
     def display_settings(self) -> List[DisplaySetting]:
         """ Compute the displays settings of the objects. """
-        display_settings = [DisplaySetting('workflow-state', 'workflow_state', 'state_display', None)]
+        display_settings = [DisplaySetting(selector="workflow_state", type_="workflow_state", method="state_display")]
 
         # Displayable blocks
         display_settings.extend(self.workflow.blocks_display_settings)
@@ -2185,7 +2176,7 @@ def value_type_check(value, type_):
 
     Check if the value as the specified type.
     """
-    try:  # TODO: Subscripted generics cannot be used...
+    try:  # TODO: Sub-scripted generics cannot be used...
         if not isinstance(value, type_):
             return False
     except TypeError:
