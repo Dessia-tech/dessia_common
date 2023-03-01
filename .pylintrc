@@ -229,7 +229,7 @@ indent-string='    '
 max-line-length=120
 
 # Maximum number of lines in a module.
-max-module-lines=2000
+max-module-lines=2250
 
 # Allow the body of a class to be on the same line as the declaration if body
 # contains single statement.
@@ -247,13 +247,13 @@ max-spelling-suggestions=4
 
 # Spelling dictionary name. Available dictionaries: none. To make it work,
 # install the python-enchant package.
-spelling-dict=
+spelling-dict=en_US
 
 # List of comma separated words that should not be checked.
 spelling-ignore-words=
 
 # A path to a file that contains the private dictionary; one word per line.
-spelling-private-dict-file=
+spelling-private-dict-file=.pyenchant_dessia.dict
 
 # Tells whether to store unknown words to the private dictionary (see the
 # --spelling-private-dict-file option) instead of raising a message.
@@ -352,7 +352,7 @@ function-naming-style=snake_case
 
 # Good variable names which should always be accepted, separated by a comma.
 good-names=i,j,k,n,ie,x,xi,x0,v1,v2,
-	   ax,
+	   ax,_probA,_probB,C,
            _
 
 # Good variable names regexes, separated by a comma. If names match any regex,
@@ -504,5 +504,5 @@ valid-metaclass-classmethod-first-arg=cls
 
 # Exceptions that will emit a warning when being caught. Defaults to
 # "BaseException, Exception".
-overgeneral-exceptions=BaseException,
-                       Exception
+overgeneral-exceptions=builtins.BaseException,
+                       builtins.Exception

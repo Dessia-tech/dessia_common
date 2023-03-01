@@ -129,10 +129,9 @@ class ClassSampler(DessiaObject):
 
     def make_doe(self, samples: int, method: str = 'fullfact', lhs_criterion: str = 'center', name: str = ''):
         """
-        Generate all `DessiaObject` with the choosen method and store them in a `Dataset`.
+        Generate all `DessiaObject` with the chosen method and store them in a `Dataset`.
 
-        :param samples:
-            Targert number of `DessiaObject` in the DOE. Not used for `'fullfact'` method.
+        :param samples: Targets number of `DessiaObject` in the DOE. Not used for `'fullfact'` method.
         :type samples: `int`
 
         :param method:

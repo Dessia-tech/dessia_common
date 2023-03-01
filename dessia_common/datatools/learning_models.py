@@ -1,6 +1,4 @@
-"""
-Tools and base classes for machine learning methods.
-"""
+""" Tools and base classes for machine learning methods. """
 from typing import List, Dict, Any, Tuple, Union
 import random
 
@@ -16,7 +14,8 @@ Matrix = List[Vector]
 #                                                     S C A L E R S
 # ======================================================================================================================
 class Scaler(DessiaObject):
-    """Base object for handling a scikit-learn Scaler."""
+    """ Base object for handling a scikit-learn Scaler. """
+
     _rebuild_attributes = []
 
     def __init__(self, name: str = ''):
@@ -38,7 +37,7 @@ class Scaler(DessiaObject):
     @staticmethod
     def _set_name(modeler_name: str, in_out: str, is_scaled: bool) -> str:
         name = f"{modeler_name}_"
-        return name + (f"{in_out}_scaler" if is_scaled else "indentity_scaler")
+        return name + (f"{in_out}_scaler" if is_scaled else "identity_scaler")
 
     @classmethod
     def set_in_modeler(cls, modeler_name: str, in_out: str, is_scaled: bool) -> 'Scaler':
@@ -48,7 +47,7 @@ class Scaler(DessiaObject):
         return class_, name
 
     def instantiate_skl(self):
-        """Instantiate scikit-learn Scaler from Scaler object, or children."""
+        """ Instantiate scikit-learn `Scaler` from `Scaler` dessia object, or children. """
         scaler = self._init_empty()
         for attr in self._rebuild_attributes:
             setattr(scaler, attr, getattr(self, attr))
@@ -56,7 +55,7 @@ class Scaler(DessiaObject):
 
     @classmethod
     def instantiate_dessia(cls, scaler, name: str = '') -> 'Scaler':
-        """Instantiate Scaler object, or children, from scikit-learn scaler."""
+        """ Instantiate `Scaler` dessia object, or children, from scikit-learn scaler. """
         kwargs = {attr: get_scaler_attr(scaler, attr) for attr in cls._rebuild_attributes}
         kwargs["name"] = name
         return cls(**kwargs)
@@ -115,9 +114,7 @@ class Scaler(DessiaObject):
 
     @classmethod
     def fit_transform(cls, matrix: Matrix, name: str = '') -> Tuple['Scaler', Matrix]:
-        """
-        Fit scaler with data stored in matrix and transform it. It is the succession of fit and transform methods.
-        """
+        """ Fit scaler with data of matrix and transform it. It is the succession of fit and transform methods. """
         reshaped_matrix = vector_to_2d_matrix(matrix)
         scaler = cls.fit(reshaped_matrix, name)
         return scaler, scaler.transform(reshaped_matrix)
@@ -139,7 +136,7 @@ class Scaler(DessiaObject):
 
 class StandardScaler(Scaler):
     """
-    Data scaler that standardly scale data. The operation made by this scaler is `new_X = (X - mean(X))/std(X)`.
+    Data scaler that standard scale data. The operation made by this scaler is `new_X = (X - mean(X))/std(X)`.
 
     :param mean_:
         List of means
@@ -153,6 +150,7 @@ class StandardScaler(Scaler):
         List of variances
     :type var_: List[float], `optional`, defaults to `None`
     """
+
     _rebuild_attributes = ['mean_', 'scale_', 'var_']
     _standalone_in_db = True
 
@@ -168,7 +166,7 @@ class StandardScaler(Scaler):
 
 
 class IdentityScaler(StandardScaler):
-    """Data scaler that scales nothing."""
+    """ Data scaler that scales nothing. """
 
     def __init__(self, mean_: Vector = None, scale_: Vector = None, var_: Vector = None, name: str = 'identity_scaler'):
         StandardScaler.__init__(self, mean_=mean_, scale_=scale_, var_=var_, name=name)
@@ -179,7 +177,7 @@ class IdentityScaler(StandardScaler):
 
 class LabelBinarizer(Scaler):
     """
-    Data scaler used in MLPClassifier to standardize class labels. Only implemented for MLPClassifier to work correctly.
+    Data scaler used in `MLPClassifier` to standardize class labels. Only implemented for `MLPClassifier` to work.
 
     :param classes_:
         List of classes to standardize. Can be any int.
@@ -193,6 +191,7 @@ class LabelBinarizer(Scaler):
         Specify if the inputs are a sparse matrix or not.
     :type sparse_input_: bool, defaults to `False`
     """
+
     _rebuild_attributes = ['classes_', 'y_type_', 'sparse_input_']
 
     def __init__(self, classes_: List[int] = None, y_type_: str = 'multiclass', sparse_input_: bool = False,
@@ -207,7 +206,7 @@ class LabelBinarizer(Scaler):
         return preprocessing._label.LabelBinarizer
 
     def instantiate_skl(self):
-        """Instantiate scikit-learn LabelBinarizer from LabelBinarizer object."""
+        """ Instantiate scikit-learn `LabelBinarizer` from `LabelBinarizer` object. """
         scaler = self._init_empty()
         scaler.classes_ = npy.array(self.classes_)
         scaler.y_type_ = self.y_type_
@@ -219,12 +218,10 @@ class LabelBinarizer(Scaler):
 #                                                        M O D E L S
 # ======================================================================================================================
 class Model(DessiaObject):
-    """
-    Base object for handling a scikit-learn models (classifier and regressor).
-    """
+    """ Base object for handling a scikit-learn models (classifier and regressor). """
 
-    def __init__(self, params: Dict[str, Any], name: str = ''):
-        self.params = params
+    def __init__(self, parameters: Dict[str, Any], name: str = ''):
+        self.parameters = parameters
         DessiaObject.__init__(self, name=name)
 
     @classmethod
@@ -232,34 +229,30 @@ class Model(DessiaObject):
         raise NotImplementedError(f'Method _skl_class not implemented for {cls.__name__}.')
 
     def _call_skl_model(self):
-        return self._skl_class()(**self.params)
+        return self._skl_class()(**self.parameters)
 
     def _instantiate_skl(self):
         raise NotImplementedError(f'Method _instantiate_skl not implemented for {type(self).__name__}.')
 
     @classmethod
-    def _instantiate_dessia(cls, model, params: Dict[str, Any], name: str = ''):
+    def _instantiate_dessia(cls, model, parameters: Dict[str, Any], name: str = ''):
         raise NotImplementedError(f'Method _instantiate_dessia not implemented for {cls.__name__}.')
 
     @classmethod
-    def init_for_modeler_(cls, **params: Dict[str, Any]) -> Tuple['Model', Dict[str, Any], str]:
-        """
-        Initialize class of Model with its name and hyperparemeters to fit in Modeler.
-        """
-        return cls(params=params)
+    def init_for_modeler_(cls, **parameters: Dict[str, Any]) -> Tuple['Model', Dict[str, Any], str]:
+        """ Initialize class of Model with its name and hyperparemeters to fit in Modeler. """
+        return cls(parameters=parameters)
 
     @classmethod
     def fit_(cls, inputs: Matrix, outputs: Matrix, name: str = '', **hyperparameters) -> 'Model':
-        """
-        Standard method to fit outputs to inputs thanks to a scikit-learn model.
-        """
+        """ Standard method to fit outputs to inputs thanks to a scikit-learn model. """
         model = cls._skl_class()(**hyperparameters)
         model.fit(inputs, outputs)
         return cls._instantiate_dessia(model, hyperparameters, name)
 
     def predict(self, inputs: Matrix) -> Union[Vector, Matrix]:
         """
-        Standard method to predict outputs from inputs with a Model or children.
+        Standard method to predict outputs from inputs with a `Model` or children.
 
         :param inputs:
             Matrix of data of dimension `n_samples x n_features`
@@ -275,15 +268,13 @@ class Model(DessiaObject):
     @classmethod
     def fit_predict_(cls, inputs: Matrix, outputs: Matrix, predicted_inputs: Matrix, name: str = '',
                      **hyperparameters) -> Tuple['Model', Union[Vector, Matrix]]:
-        """
-        Fit outputs to inputs and predict outputs for predicted_inputs. It is the succession of fit and predict methods.
-        """
+        """ Fit outputs to inputs and predict outputs for `predicted_inputs`: succession of fit and predict. """
         model = cls.fit_(inputs, outputs, name, **hyperparameters)
         return model, model.predict(predicted_inputs)
 
     def score(self, inputs: Matrix, outputs: Matrix) -> float:
         """
-        Compute the score of Model or children.
+        Compute the score of `Model` or children.
 
         Please be sure to fit the model before computing its score and use test data and not train data.
         Train data is data used to train the model and shall not be used to evaluate its quality.
@@ -297,7 +288,7 @@ class Model(DessiaObject):
             Matrix of data of dimension `n_samples x n_features`
         :type outputs: List[List[float]]
 
-        :return: The score of Model or children (DessiaObject).
+        :return: The score of `Model` or children (DessiaObject).
         :rtype: float
         """
         model = self._instantiate_skl()
@@ -305,14 +296,12 @@ class Model(DessiaObject):
 
 
 class LinearModel(Model):
-    """
-    Abstract class for linear models.
-    """
+    """ Abstract class for linear models. """
 
-    def __init__(self, params: Dict[str, Any], coef_: Matrix = None, intercept_: Matrix = None, name: str = ''):
+    def __init__(self, parameters: Dict[str, Any], coef_: Matrix = None, intercept_: Matrix = None, name: str = ''):
         self.coef_ = coef_
         self.intercept_ = intercept_
-        Model.__init__(self, params=params, name=name)
+        Model.__init__(self, parameters=parameters, name=name)
 
     @classmethod
     def _skl_class(cls):
@@ -326,15 +315,15 @@ class LinearModel(Model):
         return model
 
     @classmethod
-    def _instantiate_dessia(cls, model, params: Dict[str, Any], name: str = ''):
-        return cls(coef_=model.coef_.tolist(), intercept_=model.intercept_.tolist(), params=params, name=name)
+    def _instantiate_dessia(cls, model, parameters: Dict[str, Any], name: str = ''):
+        return cls(coef_=model.coef_.tolist(), intercept_=model.intercept_.tolist(), parameters=parameters, name=name)
 
 
 class Ridge(LinearModel):
     """
-    Ridge regression. It is a linear or least square regression but computed with a regularization term `alpha`.
+    `Ridge` regression. It is a linear or least square regression but computed with a regularization term `alpha`.
 
-    The model searched with this method is of the form `Y = A.X + B`, where `Y` are the ouputs, `X` the inputs, `A` and
+    The model searched with this method is of the form `Y = A.X + B`, where `Y` are the outputs, `X` the inputs, `A` and
     `B` the matrices of the model.
 
     The function minimized to get the linear model is `|| Y - A.X + B || + alpha.|| A || = 0`. This means setting
@@ -342,9 +331,9 @@ class Ridge(LinearModel):
 
     More information: https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Ridge.html
 
-    :param params:
+    :param parameters:
         Hyperparameters of the used scikit-learn object.
-    :type params: dict[str, Any], `optional`
+    :type parameters: dict[str, Any], `optional`
 
     :param coef_:
         List of coefficients of the model. Each element (i, j) of coef_ is the slope of the linear model predicting
@@ -357,13 +346,14 @@ class Ridge(LinearModel):
     :type intercept_: List[float]
 
     :param name:
-        Name of Ridge regression
+        Name of `Ridge` regression
     :type name: str, `optional`, defaults to `''`
     """
+
     _standalone_in_db = True
 
-    def __init__(self, params: Dict[str, Any], coef_: Matrix = None, intercept_: Matrix = None, name: str = ''):
-        LinearModel.__init__(self, coef_=coef_, intercept_=intercept_, params=params, name=name)
+    def __init__(self, parameters: Dict[str, Any], coef_: Matrix = None, intercept_: Matrix = None, name: str = ''):
+        LinearModel.__init__(self, coef_=coef_, intercept_=intercept_, parameters=parameters, name=name)
 
     @classmethod
     def _skl_class(cls):
@@ -373,13 +363,13 @@ class Ridge(LinearModel):
     def init_for_modeler(cls, alpha: float = 1., fit_intercept: bool = True,
                          tol: float = 0.001) -> Tuple['Ridge', Dict[str, Any], str]:
         """
-        Initialize class Ridge with its name and hyperparemeters to fit in Modeler.
+        Initialize class `Ridge` with its name and hyperparemeters to fit in Modeler.
 
         :param alpha:
             Constant that multiplies the L2 term, controlling regularization strength. alpha must be a non-negative
             float i.e. in [0, inf[. When alpha = 0, the objective is equivalent to ordinary least squares,
-            solved by the LinearRegression object. For numerical reasons, using `alpha = 0` with the Ridge object is
-            not advised. Instead, you should use the LinearRegression object. If an array is passed, penalties are
+            solved by the `LinearRegression` object. For numerical reasons, using `alpha = 0` with the `Ridge` object is
+            not advised. Instead, you should use the `LinearRegression` object. If an array is passed, penalties are
             assumed to be specific to the targets. Hence they must correspond in number.
         :type alpha: float, `optional`, defaults to 1.
 
@@ -392,7 +382,7 @@ class Ridge(LinearModel):
             Precision of the solution.
         :type tol: float, `optional`, defaults to 0.001
 
-        :return: The Ridge class, the hyperparameters to instantiate it and the future name of instance.
+        :return: The `Ridge` class, the hyperparameters to instantiate it and the future name of instance.
         :rtype: Tuple['Ridge', Dict[str, Any], str]
         """
         return cls.init_for_modeler_(alpha=alpha, fit_intercept=fit_intercept, tol=tol)
@@ -401,7 +391,7 @@ class Ridge(LinearModel):
     def fit(cls, inputs: Matrix, outputs: Matrix, alpha: float = 1., fit_intercept: bool = True, tol: float = 0.001,
             name: str = '') -> 'Ridge':
         """
-        Standard method to fit outputs to inputs thanks to Ridge linear model from scikit-learn.
+        Standard method to fit outputs to inputs thanks to `Ridge` linear model from scikit-learn.
 
         More information: https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Ridge.html
 
@@ -416,8 +406,8 @@ class Ridge(LinearModel):
         :param alpha:
             Constant that multiplies the L2 term, controlling regularization strength. alpha must be a non-negative
             float i.e. in [0, inf[. When alpha = 0, the objective is equivalent to ordinary least squares,
-            solved by the LinearRegression object. For numerical reasons, using `alpha = 0` with the Ridge object is
-            not advised. Instead, you should use the LinearRegression object. If an array is passed, penalties are
+            solved by the `LinearRegression` object. For numerical reasons, using `alpha = 0` with the `Ridge` object is
+            not advised. Instead, you should use the `LinearRegression` object. If an array is passed, penalties are
             assumed to be specific to the targets. Hence they must correspond in number.
         :type alpha: float, `optional`, defaults to 1.
 
@@ -431,11 +421,11 @@ class Ridge(LinearModel):
         :type tol: float, `optional`, defaults to 0.001
 
         :param name:
-            Name of Ridge model
+            Name of `Ridge` model
         :type name: str, `optional`, defaults to `''`
 
-        :return: The Ridge model fit on inputs and outputs.
-        :rtype: Ridge
+        :return: The `Ridge` model fit on inputs and outputs.
+        :rtype: `Ridge`
         """
         return cls.fit_(inputs, outputs, name=name, alpha=alpha, fit_intercept=fit_intercept, tol=tol)
 
@@ -443,9 +433,7 @@ class Ridge(LinearModel):
     def fit_predict(cls, inputs: Matrix, outputs: Matrix, predicted_inputs: Matrix, alpha: float = 1.,
                     fit_intercept: bool = True, tol: float = 0.001,
                     name: str = '') -> Tuple['Ridge', Union[Vector, Matrix]]:
-        """
-        Fit outputs to inputs and predict outputs for predicted_inputs. It is the succession of fit and predict methods.
-        """
+        """ Fit outputs to inputs and predict outputs for `predicted_inputs`: succession of fit and predict. """
         return cls.fit_predict_(inputs, outputs, predicted_inputs, name=name,
                                 alpha=alpha, fit_intercept=fit_intercept, tol=tol)
 
@@ -454,16 +442,16 @@ class LinearRegression(LinearModel):
     """
     Linear regression.
 
-    The model searched with this method is of the form `Y = A.X + B`, where `Y` are the ouputs, `X` the inputs, `A` and
+    The model searched with this method is of the form `Y = A.X + B`, where `Y` are the outputs, `X` the inputs, `A` and
     `B` the matrices of the model.
 
     The function minimized to get the linear model is `|| Y - A.X + B || = 0`.
 
     More information: https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html
 
-    :param params:
+    :param parameters:
         Hyperparameters of the used scikit-learn object.
-    :type params: dict[str, Any], `optional`
+    :type parameters: dict[str, Any], `optional`
 
     :param coef_:
         List of coefficients of the model. Each element (i, j) of coef_ is the slope of the linear model predicting
@@ -479,10 +467,11 @@ class LinearRegression(LinearModel):
         Name of Linear regression
     :type name: str, `optional`, defaults to `''`
     """
+
     _standalone_in_db = True
 
-    def __init__(self, params: Dict[str, Any], coef_: Matrix = None, intercept_: Matrix = None, name: str = ''):
-        LinearModel.__init__(self, coef_=coef_, intercept_=intercept_, params=params, name=name)
+    def __init__(self, parameters: Dict[str, Any], coef_: Matrix = None, intercept_: Matrix = None, name: str = ''):
+        LinearModel.__init__(self, coef_=coef_, intercept_=intercept_, parameters=parameters, name=name)
 
     @classmethod
     def _skl_class(cls):
@@ -492,7 +481,7 @@ class LinearRegression(LinearModel):
     def init_for_modeler(cls, fit_intercept: bool = True,
                          positive: bool = False) -> Tuple['LinearRegression', Dict[str, Any], str]:
         """
-        Initialize class LinearRegression with its name and hyperparemeters to fit in Modeler.
+        Initialize class `LinearRegression` with its name and hyperparemeters to fit in Modeler.
 
         :param fit_intercept:
             Whether to fit the intercept for this model. If set to False, no intercept will be used in calculations
@@ -503,7 +492,7 @@ class LinearRegression(LinearModel):
             When set to True, forces the coefficients to be positive. This option is only supported for dense arrays.
         :type positive: bool, `optional`, defaults to False
 
-        :return: The LinearRegression model fit on inputs and outputs.
+        :return: The `LinearRegression` model fit on inputs and outputs.
         :rtype: Tuple['LinearRegression', Dict[str, Any], str]
         """
         return cls.init_for_modeler_(fit_intercept=fit_intercept, positive=positive)
@@ -534,20 +523,18 @@ class LinearRegression(LinearModel):
         :type positive: bool, `optional`, defaults to False
 
         :param name:
-            Name of LinearRegression model
+            Name of `LinearRegression` model
         :type name: str, `optional`, defaults to `''`
 
         :return: The Linear model fit on inputs and outputs.
-        :rtype: LinearRegression
+        :rtype: `LinearRegression`
         """
         return cls.fit_(inputs, outputs, name=name, fit_intercept=fit_intercept, positive=positive)
 
     @classmethod
     def fit_predict(cls, inputs: Matrix, outputs: Matrix, predicted_inputs: Matrix, fit_intercept: bool = True,
                     positive: bool = False, name: str = '') -> Tuple['LinearRegression', Union[Vector, Matrix]]:
-        """
-        Fit outputs to inputs and predict outputs for predicted_inputs. It is the succession of fit and predict methods.
-        """
+        """ Fit outputs to inputs and predict outputs for `predicted_inputs`: succession of fit and predict. """
         return cls.fit_predict_(inputs, outputs, predicted_inputs, name=name,
                                 fit_intercept=fit_intercept, positive=positive)
 
@@ -581,12 +568,12 @@ class Tree(Model):
     """
 
     def __init__(self, n_classes: List[int] = None, n_features: int = None, n_outputs: int = None,
-                 tree_state: Dict[str, Any] = None, params: Dict[str, Any] = None, name: str = ''):
+                 tree_state: Dict[str, Any] = None, parameters: Dict[str, Any] = None, name: str = ''):
         self.n_classes = n_classes
         self.n_features = n_features
         self.n_outputs = n_outputs
         self.tree_state = tree_state
-        Model.__init__(self, params=None, name=name)
+        Model.__init__(self, parameters=None, name=name)
 
     def _data_hash(self):
         hash_ = npy.linalg.norm(self.tree_state['values'][0])
@@ -626,7 +613,7 @@ class Tree(Model):
         return model
 
     @classmethod
-    def _instantiate_dessia(cls, model, name: str = ''):
+    def _instantiate_dessia(cls, model, parameters: Dict[str, Any], name: str = ''):
         kwargs = {'name': name,
                   'tree_state': cls._getstate_dessia(model),
                   'n_classes': model.n_classes.tolist(),
@@ -637,13 +624,13 @@ class Tree(Model):
 
 class DecisionTreeRegressor(Model):
     """
-    Base class for handling scikit-learn DecisionTreeRegressor.
+    Base class for handling scikit-learn `DecisionTreeRegressor`.
 
     More information: https://scikit-learn.org/stable/modules/tree.html#tree
 
-    :param params:
+    :param parameters:
         Hyperparameters of the used scikit-learn object.
-    :type params: dict[str, Any], `optional`
+    :type parameters: dict[str, Any], `optional`
 
     :param n_outputs_:
         The number of outputs when fit is performed.
@@ -656,45 +643,42 @@ class DecisionTreeRegressor(Model):
     :type tree_: Tree, `optional`, defaults to `None`
 
     :param name:
-        Name of DecisionTreeRegressor
+        Name of `DecisionTreeRegressor`
     :type name: str, `optional`, defaults to `''`
     """
+
     _standalone_in_db = True
 
-    def __init__(self, params: Dict[str, Any], n_outputs_: int = None, tree_: Tree = None, name: str = ''):
+    def __init__(self, parameters: Dict[str, Any], n_outputs_: int = None, tree_: Tree = None, name: str = ''):
         self.n_outputs_ = n_outputs_
         self.tree_ = tree_
-        Model.__init__(self, params=params, name=name)
+        Model.__init__(self, parameters=parameters, name=name)
 
     @classmethod
     def _skl_class(cls):
         return tree.DecisionTreeRegressor
 
     def generic_skl_attributes(self):
-        """
-        Generic method (shared between trees) to set scikit-learn model attributes from self attributes.
-        """
+        """ Generic method to set scikit-learn model attributes from self attributes. """
         model = self._call_skl_model()
         model.n_outputs_ = self.n_outputs_
         model.tree_ = self.tree_._instantiate_skl()
         return model
 
     @classmethod
-    def generic_dessia_attributes(cls, model, params: Dict[str, Any], name: str = ''):
-        """
-        Generic method (shared between trees) to set self attributes from scikit-learn model attributes.
-        """
+    def generic_dessia_attributes(cls, model, parameters: Dict[str, Any], name: str = ''):
+        """ Generic method to set self attributes from scikit-learn model attributes. """
         return {'name': name,
-                'tree_': Tree._instantiate_dessia(model.tree_),
+                'tree_': Tree._instantiate_dessia(model.tree_, None),
                 'n_outputs_': model.n_outputs_,
-                'params': params}
+                'parameters': parameters}
 
     def _instantiate_skl(self):
         return self.generic_skl_attributes()
 
     @classmethod
-    def _instantiate_dessia(cls, model, params: Dict[str, Any], name: str = ''):
-        return cls(**cls.generic_dessia_attributes(model, params=params, name=name))
+    def _instantiate_dessia(cls, model, parameters: Dict[str, Any], name: str = ''):
+        return cls(**cls.generic_dessia_attributes(model, parameters=parameters, name=name))
 
     @classmethod
     def _check_criterion(cls, criterion: str):
@@ -706,14 +690,14 @@ class DecisionTreeRegressor(Model):
     def init_for_modeler(cls, criterion: str = 'squared_error',
                          max_depth: int = None) -> Tuple['DecisionTreeRegressor', Dict[str, Any], str]:
         """
-        Initialize class DecisionTreeRegressor with its name and hyperparemeters to fit in Modeler.
+        Initialize class `DecisionTreeRegressor` with its name and hyperparemeters to fit in Modeler.
 
         :param criterion:
             The function to measure the quality of a split. Supported criteria are “squared_error” for the mean
             squared error, which is equal to variance reduction as feature selection criterion and minimizes the L2
             loss using the mean of each terminal node, “friedman_mse”, which uses mean squared error with Friedman’s
             improvement score for potential splits, “absolute_error” for the mean absolute error, which minimizes the
-            L1 loss using the median of each terminal node, and “poisson” which uses reduction in Poisson deviance to
+            L1 loss using the median of each terminal node, and “Poisson” which uses reduction in Poisson deviance to
             find splits.
         :type criterion: str, `optional`, defaults to 'squared_error'
 
@@ -722,7 +706,7 @@ class DecisionTreeRegressor(Model):
             leaves contain less than min_samples_split samples.
         :type max_depth: int, `optional`, defaults to `None`
 
-        :return: The DecisionTreeRegressor model fit on inputs and outputs.
+        :return: The `DecisionTreeRegressor` model fit on inputs and outputs.
         :rtype: Tuple['DecisionTreeRegressor', Dict[str, Any], str]
         """
         return cls.init_for_modeler_(criterion=criterion, max_depth=max_depth)
@@ -731,7 +715,7 @@ class DecisionTreeRegressor(Model):
     def fit(cls, inputs: Matrix, outputs: Matrix, criterion: str = 'squared_error', max_depth: int = None,
             name: str = '') -> 'DecisionTreeRegressor':
         """
-        Standard method to fit outputs to inputs thanks to DecisionTreeRegressor model from scikit-learn.
+        Standard method to fit outputs to inputs thanks to `DecisionTreeRegressor` model from scikit-learn.
 
         More information: https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeRegressor.html
 
@@ -758,11 +742,11 @@ class DecisionTreeRegressor(Model):
         :type max_depth: int, `optional`, defaults to `None`
 
         :param name:
-            Name of DecisionTreeRegressor model
+            Name of `DecisionTreeRegressor` model
         :type name: str, `optional`, defaults to `''`
 
-        :return: The DecisionTreeRegressor model fit on inputs and outputs.
-        :rtype: DecisionTreeRegressor
+        :return: The `DecisionTreeRegressor` model fit on inputs and outputs.
+        :rtype: `DecisionTreeRegressor`
         """
         criterion = cls._check_criterion(criterion)
         return cls.fit_(inputs, outputs, name=name, criterion=criterion, max_depth=max_depth)
@@ -770,22 +754,20 @@ class DecisionTreeRegressor(Model):
     @classmethod
     def fit_predict(cls, inputs: Matrix, outputs: Matrix, predicted_inputs: Matrix, criterion: str = 'squared_error',
                     max_depth: int = None, name: str = '') -> Tuple['DecisionTreeRegressor', Union[Vector, Matrix]]:
-        """
-        Succession of fit and predict methods: fit outputs to inputs and predict outputs for predicted_inputs.
-        """
+        """ Fit outputs to inputs and predict outputs for `predicted_inputs`: succession of fit and predict. """
         criterion = cls._check_criterion(criterion)
         return cls.fit_predict_(inputs, outputs, predicted_inputs, name=name, criterion=criterion, max_depth=max_depth)
 
 
 class DecisionTreeClassifier(DecisionTreeRegressor):
     """
-    Base class for handling scikit-learn DecisionTreeClassifier.
+    Base class for handling scikit-learn `DecisionTreeClassifier`.
 
     More information: https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeClassifier.html
 
-    :param params:
+    :param parameters:
         Hyperparameters of the used scikit-learn object.
-    :type params: dict[str, Any], `optional`
+    :type parameters: dict[str, Any], `optional`
 
     :param n_classes_:
         The number of classes (for single output problems), or a list containing the number of classes for each output
@@ -807,15 +789,15 @@ class DecisionTreeClassifier(DecisionTreeRegressor):
     :type tree_: Tree, `optional`, defaults to `None`
 
     :param name:
-        Name of DecisionTreeClassifier
+        Name of `DecisionTreeClassifier`
     :type name: str, `optional`, defaults to `''`
     """
 
-    def __init__(self, params: Dict[str, Any], n_classes_: Union[int, List[int]] = None, classes_: List[int] = None,
+    def __init__(self, parameters: Dict[str, Any], n_classes_: Union[int, List[int]] = None, classes_: List[int] = None,
                  n_outputs_: int = None, tree_: Tree = None, name: str = ''):
         self.n_classes_ = n_classes_
         self.classes_ = classes_
-        DecisionTreeRegressor.__init__(self, n_outputs_=n_outputs_, tree_=tree_, params=params, name=name)
+        DecisionTreeRegressor.__init__(self, n_outputs_=n_outputs_, tree_=tree_, parameters=parameters, name=name)
 
     @classmethod
     def _skl_class(cls):
@@ -831,8 +813,8 @@ class DecisionTreeClassifier(DecisionTreeRegressor):
         return model
 
     @classmethod
-    def _instantiate_dessia(cls, model, params: Dict[str, Any], name: str = ''):
-        kwargs = cls.generic_dessia_attributes(model, params=params, name=name)
+    def _instantiate_dessia(cls, model, parameters: Dict[str, Any], name: str = ''):
+        kwargs = cls.generic_dessia_attributes(model, parameters=parameters, name=name)
         kwargs.update({'n_classes_': (model.n_classes_ if isinstance(model.n_classes_, (int, list))
                                       else model.n_classes_.tolist()),
                        'classes_': (model.classes_.tolist() if isinstance(model.classes_, npy.ndarray)
@@ -841,7 +823,7 @@ class DecisionTreeClassifier(DecisionTreeRegressor):
 
     def score(self, inputs: Matrix, outputs: Matrix) -> float:
         """
-        Compute the score of Model or children.
+        Compute the score of `Model` or children.
 
         Please be sure to fit the model before computing its score and use test data and not train data.
         Train data is data used to train the model and shall not be used to evaluate its quality.
@@ -855,7 +837,7 @@ class DecisionTreeClassifier(DecisionTreeRegressor):
             Matrix of data of dimension `n_samples x n_features`
         :type outputs: List[List[float]]
 
-        :return: The score of Model or children (DessiaObject).
+        :return: The score of `Model` or children (`DessiaObject`).
         :rtype: float
         """
         model = self._instantiate_skl()
@@ -867,16 +849,16 @@ class DecisionTreeClassifier(DecisionTreeRegressor):
 
 class RandomForest(Model):
     """
-    Base object for handling a scikit-learn RandomForest object.
+    Base object for handling a scikit-learn `RandomForest` object.
 
-    Please refer to https://scikit-learn.org/stable/modules/ensemble.html#forest for more information on RandomForest.
+    More information: https://scikit-learn.org/stable/modules/ensemble.html#forest
     """
 
-    def __init__(self, params: Dict[str, Any], n_outputs_: int = None, estimators_: List[DecisionTreeRegressor] = None,
-                 name: str = ''):
+    def __init__(self, parameters: Dict[str, Any], n_outputs_: int = None, 
+                 estimators_: List[DecisionTreeRegressor] = None, name: str = ''):
         self.estimators_ = estimators_
         self.n_outputs_ = n_outputs_
-        Model.__init__(self, params=params, name=name)
+        Model.__init__(self, parameters=parameters, name=name)
 
     @classmethod
     def _skl_class(cls):
@@ -884,22 +866,18 @@ class RandomForest(Model):
                                   'RandomForestClassifier or RandomForestRegressor.')
 
     def generic_skl_attributes(self):
-        """
-        Generic method (shared between RandomForest) to set scikit-learn model attributes from self attributes.
-        """
+        """ Generic method to set scikit-learn model attributes from self attributes. """
         model = self._call_skl_model()
         model.estimators_ = [tree._instantiate_skl() for tree in self.estimators_]
         model.n_outputs_ = self.n_outputs_
         return model
 
     @classmethod
-    def generic_dessia_attributes(cls, model, params: Dict[str, Any], name: str = ''):
-        """
-        Generic method (shared between RandomForest) to set self attributes from scikit-learn model attributes.
-        """
+    def generic_dessia_attributes(cls, model, parameters: Dict[str, Any], name: str = ''):
+        """ Generic method to set self attributes from scikit-learn model attributes. """
         return {'name': name,
                 'n_outputs_': model.n_outputs_,
-                'params': params}
+                'parameters': parameters}
 
     @classmethod
     def _check_criterion(cls, criterion: str):
@@ -911,10 +889,10 @@ class RandomForest(Model):
     def init_for_modeler(cls, n_estimators: int = 100, criterion: str = 'squared_error',
                          max_depth: int = None) -> Tuple['RandomForest', Dict[str, Any], str]:
         """
-        Initialize class RandomForest with its name and hyperparemeters to fit in Modeler.
+        Initialize class `RandomForest` with its name and hyperparemeters to fit in `Modeler`.
 
         :param n_estimators:
-            Number of DecisionTree contained in RandomForestRegressor or RandomForestClassifier
+            Number of `DecisionTree` contained in `RandomForestRegressor` or `RandomForestClassifier`
         :type n_estimators: int, `optional`, defaults to 100
 
         :param criterion:
@@ -935,7 +913,7 @@ class RandomForest(Model):
             leaves contain less than min_samples_split samples.
         :type max_depth: int, `optional`, defaults to `None`
 
-        :return: The RandomForest model fit on inputs and outputs.
+        :return: The `RandomForest` model fit on inputs and outputs.
         :rtype: Tuple['RandomForest', Dict[str, Any], str]
         """
         return cls.init_for_modeler_(n_estimators=n_estimators, criterion=criterion, max_depth=max_depth)
@@ -944,7 +922,7 @@ class RandomForest(Model):
     def fit(cls, inputs: Matrix, outputs: Matrix, n_estimators: int = 100, criterion: str = 'squared_error',
             max_depth: int = None, name: str = '') -> 'RandomForest':
         """
-        Standard method to fit outputs to inputs thanks to RandomForest model from scikit-learn.
+        Standard method to fit outputs to inputs thanks to `RandomForest` model from scikit-learn.
 
         More information:
             - Classifier: https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html
@@ -959,7 +937,7 @@ class RandomForest(Model):
         :type outputs: List[List[float]]
 
         :param n_estimators:
-            Number of DecisionTree contained in RandomForestRegressor or RandomForestClassifier
+            Number of DecisionTree contained in `RandomForestRegressor` or `RandomForestClassifier`
         :type n_estimators: int, `optional`, defaults to 100
 
         :param criterion:
@@ -981,10 +959,10 @@ class RandomForest(Model):
         :type max_depth: int, `optional`, defaults to `None`
 
         :param name:
-            Name of RandomForestRegressor or RandomForestClassifier model
+            Name of RandomForestRegressor or `RandomForestClassifier` model
         :type name: str, `optional`, defaults to `''`
 
-        :return: The RandomForestRegressor or RandomForestClassifier model fit on inputs and outputs.
+        :return: The RandomForestRegressor or `RandomForestClassifier` model fit on inputs and outputs.
         :rtype: RandomForest
         """
         criterion = cls._check_criterion(criterion)
@@ -995,9 +973,7 @@ class RandomForest(Model):
     def fit_predict(cls, inputs: Matrix, outputs: Matrix, predicted_inputs: Matrix, n_estimators: int = 100,
                     criterion: str = 'squared_error', max_depth: int = None,
                     name: str = '') -> Tuple['RandomForest', Union[Vector, Matrix]]:
-        """
-        Fit outputs to inputs and predict outputs for predicted_inputs. It is the succession of fit and predict methods.
-        """
+        """ Fit outputs to inputs and predict outputs for `predicted_inputs`: succession of fit and predict. """
         criterion = cls._check_criterion(criterion)
         return cls.fit_predict_(inputs, outputs, predicted_inputs, name=name, n_estimators=n_estimators,
                                 criterion=criterion, max_depth=max_depth, n_jobs=1)
@@ -1005,14 +981,14 @@ class RandomForest(Model):
 
 class RandomForestRegressor(RandomForest):
     """
-    Base class for handling scikit-learn RandomForestRegressor.
+    Base class for handling scikit-learn `RandomForestRegressor`.
 
     Please refer to https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestRegressor.html for
-    more information on RandomForestRegressor.
+    more information on `RandomForestRegressor`.
 
-    :param params:
+    :param parameters:
         Hyperparameters of the used scikit-learn object.
-    :type params: dict[str, Any], `optional`
+    :type parameters: dict[str, Any], `optional`
 
     :param n_outputs_:
         The number of outputs when fit is performed.
@@ -1023,14 +999,15 @@ class RandomForestRegressor(RandomForest):
     :type estimators_: List[DecisionTreeRegressor], `optional`, defaults to `None`
 
     :param name:
-        Name of RandomForestRegressor
+        Name of `RandomForestRegressor`
     :type name: str, `optional`, defaults to `''`
     """
+
     _standalone_in_db = True
 
-    def __init__(self, params: Dict[str, Any], n_outputs_: int = None, estimators_: List[DecisionTreeRegressor] = None,
-                 name: str = ''):
-        RandomForest.__init__(self, estimators_=estimators_, n_outputs_=n_outputs_, params=params, name=name)
+    def __init__(self, parameters: Dict[str, Any], n_outputs_: int = None, 
+                 estimators_: List[DecisionTreeRegressor] = None, name: str = ''):
+        RandomForest.__init__(self, estimators_=estimators_, n_outputs_=n_outputs_, parameters=parameters, name=name)
 
     @classmethod
     def _skl_class(cls):
@@ -1040,8 +1017,8 @@ class RandomForestRegressor(RandomForest):
         return self.generic_skl_attributes()
 
     @classmethod
-    def _instantiate_dessia(cls, model, params: Dict[str, Any], name: str = ''):
-        kwargs = cls.generic_dessia_attributes(model, params=params, name=name)
+    def _instantiate_dessia(cls, model, parameters: Dict[str, Any], name: str = ''):
+        kwargs = cls.generic_dessia_attributes(model, parameters=parameters, name=name)
         kwargs.update({'estimators_': [DecisionTreeRegressor._instantiate_dessia(tree, {})
                                        for tree in model.estimators_]})
         return cls(**kwargs)
@@ -1049,14 +1026,14 @@ class RandomForestRegressor(RandomForest):
 
 class RandomForestClassifier(RandomForest):
     """
-    Base class for handling scikit-learn RandomForestClassifier.
+    Base class for handling scikit-learn `RandomForestClassifier`.
 
     Please refer to https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html for
-    more information on RandomForestClassifier.
+    more information on `RandomForestClassifier`.
 
-    :param params:
+    :param parameters:
         Hyperparameters of the used scikit-learn object.
-    :type params: dict[str, Any], `optional`
+    :type parameters: dict[str, Any], `optional`
 
     :param n_classes_:
         The number of classes (for single output problems), or a list containing the number of classes for each output
@@ -1076,16 +1053,17 @@ class RandomForestClassifier(RandomForest):
     :type estimators_: List[DecisionTreeClassifier], `optional`, defaults to `None`
 
     :param name:
-        Name of RandomForestClassifier
+        Name of `RandomForestClassifier`
     :type name: str, `optional`, defaults to `''`
     """
+
     _standalone_in_db = True
 
-    def __init__(self, params: Dict[str, Any], n_classes_: int = None, classes_: List[int] = None,
+    def __init__(self, parameters: Dict[str, Any], n_classes_: int = None, classes_: List[int] = None,
                  n_outputs_: int = None, estimators_: List[DecisionTreeRegressor] = None, name: str = ''):
         self.n_classes_ = n_classes_
         self.classes_ = classes_
-        RandomForest.__init__(self, estimators_=estimators_, n_outputs_=n_outputs_, params=params, name=name)
+        RandomForest.__init__(self, estimators_=estimators_, n_outputs_=n_outputs_, parameters=parameters, name=name)
 
     @classmethod
     def _skl_class(cls):
@@ -1101,8 +1079,8 @@ class RandomForestClassifier(RandomForest):
         return model
 
     @classmethod
-    def _instantiate_dessia(cls, model, params: Dict[str, Any], name: str = ''):
-        kwargs = cls.generic_dessia_attributes(model, params=params, name=name)
+    def _instantiate_dessia(cls, model, parameters: Dict[str, Any], name: str = ''):
+        kwargs = cls.generic_dessia_attributes(model, parameters=parameters, name=name)
         kwargs.update({'estimators_': [DecisionTreeClassifier._instantiate_dessia(tree, {})
                                        for tree in model.estimators_],
                        'n_classes_': (model.n_classes_ if isinstance(model.n_classes_, (int, list))
@@ -1113,7 +1091,7 @@ class RandomForestClassifier(RandomForest):
 
     def score(self, inputs: Matrix, outputs: Matrix) -> float:
         """
-        Compute the score of Model or children.
+        Compute the score of `Model` or children.
 
         Please be sure to fit the model before computing its score and use test data and not train data.
         Train data is data used to train the model and shall not be used to evaluate its quality.
@@ -1127,7 +1105,7 @@ class RandomForestClassifier(RandomForest):
             Matrix of data of dimension `n_samples x n_features`
         :type outputs: List[List[float]]
 
-        :return: The score of Model or children (DessiaObject).
+        :return: The score of `Model` or children (DessiaObject).
         :rtype: float
         """
         model = self._instantiate_skl()
@@ -1136,13 +1114,13 @@ class RandomForestClassifier(RandomForest):
 
 class SupportVectorMachine(Model):
     """
-    Base object for handling a scikit-learn SupportVectorMachine objects.
+    Base object for handling a scikit-learn `SupportVectorMachine` objects.
 
     Please refer to https://scikit-learn.org/stable/modules/svm.html for more
-    information on SupportVectorMachine object and understanding the SupportVectorMachine for basic usage.
+    information on `SupportVectorMachine` object and understanding the `SupportVectorMachine` for basic usage.
     """
 
-    def __init__(self, params: Dict[str, Any], raw_coef_: Matrix = None, _dual_coef_: Matrix = None,
+    def __init__(self, parameters: Dict[str, Any], raw_coef_: Matrix = None, _dual_coef_: Matrix = None,
                  _intercept_: Vector = None, support_: List[int] = 1, support_vectors_: Matrix = None,
                  _n_support: List[int] = None, _probA: Vector = None, _probB: Vector = None, _gamma: float = 1.,
                  _sparse: bool = False, name: str = ''):
@@ -1156,7 +1134,7 @@ class SupportVectorMachine(Model):
         self._probB = _probB
         self._gamma = _gamma
         self._sparse = _sparse
-        Model.__init__(self, params=params, name=name)
+        Model.__init__(self, parameters=parameters, name=name)
 
     @classmethod
     def _skl_class(cls):
@@ -1164,9 +1142,7 @@ class SupportVectorMachine(Model):
                                   'SupportVectorClassifier or SupportVectorRegressor.')
 
     def generic_skl_attributes(self):
-        """
-        Generic method (shared between SupportVectorMachine) to set scikit-learn model attributes from self attributes.
-        """
+        """ Generic method to set scikit-learn model attributes from self attributes. """
         model = self._call_skl_model()
         model.raw_coef_ = npy.array(self.raw_coef_)
         model._dual_coef_ = npy.array(self._dual_coef_)
@@ -1181,12 +1157,10 @@ class SupportVectorMachine(Model):
         return model
 
     @classmethod
-    def generic_dessia_attributes(cls, model, params: Dict[str, Any], name: str = ''):
-        """
-        Generic method (shared between SupportVectorMachine) to set self attributes from scikit-learn model attributes.
-        """
+    def generic_dessia_attributes(cls, model, parameters: Dict[str, Any], name: str = ''):
+        """ Generic method to set self attributes from scikit-learn model attributes. """
         return {'name': name,
-                'params': params,
+                'parameters': parameters,
                 'raw_coef_': model._get_coef().tolist(),
                 '_dual_coef_': model._dual_coef_.tolist(),
                 '_intercept_': model._intercept_.tolist(),
@@ -1201,7 +1175,7 @@ class SupportVectorMachine(Model):
     @classmethod
     def init_for_modeler(cls, C: float = 1., kernel: str = 'rbf') -> Tuple['SupportVectorMachine', Dict[str, Any], str]:
         """
-        Initialize class SupportVectorMachine with its name and hyperparemeters to fit in Modeler.
+        Initialize class `SupportVectorMachine` with its name and hyperparemeters to fit in Modeler.
 
         :param C:
             Regularization parameter. The strength of the regularization is inversely proportional to C.
@@ -1210,12 +1184,12 @@ class SupportVectorMachine(Model):
 
         :param kernel:
             Specifies the kernel type to be used in the algorithm.
-            Can be one of `[‘linear’, ‘poly’, ‘rbf’, ‘sigmoid’, ‘precomputed’]`. If `None` is given, ‘rbf’ will be used.
-            If a callable is given it is used to pre-compute the kernel matrix from data matrices; that matrix should be
-            an matrix of shape `n_samples x n_samples`
+            Can be one of `[‘linear’, ‘poly’, ‘rbf’, ‘sigmoid’, ‘precomputed’]`. If `None` is given, `‘rbf’` will be 
+            used. If a callable is given it is used to pre-compute the kernel matrix from data matrices; that matrix 
+            should be an matrix of shape `n_samples x n_samples`.
         :type kernel: str, `optional`, defaults to `'rbf'`
 
-        :return: The SupportVectorMachine model fit on inputs and outputs.
+        :return: The `SupportVectorMachine` model fit on inputs and outputs.
         :rtype: Tuple['SupportVectorMachine', Dict[str, Any], str]
         """
         return cls.init_for_modeler_(C=C, kernel=kernel)
@@ -1224,7 +1198,7 @@ class SupportVectorMachine(Model):
     def fit(cls, inputs: Matrix, outputs: Vector, C: float = 1., kernel: str = 'rbf',
             name: str = '') -> 'SupportVectorMachine':
         """
-        Standard method to fit outputs to inputs thanks to SupportVectorMachine model from scikit-learn.
+        Standard method to fit outputs to inputs thanks to `SupportVectorMachine` model from scikit-learn.
 
         More information:
             - Classifier: https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html
@@ -1251,10 +1225,10 @@ class SupportVectorMachine(Model):
         :type kernel: str, `optional`, defaults to `'rbf'`
 
         :param name:
-            Name of SupportVectorRegressor or SupportVectorClassifier model
+            Name of `SupportVectorRegressor` or `SupportVectorClassifier` model
         :type name: str, `optional`, defaults to `''`
 
-        :return: The SupportVectorRegressor or SupportVectorClassifier model fit on inputs and outputs.
+        :return: The `SupportVectorRegressor` or `SupportVectorClassifier` model fit on inputs and outputs.
         :rtype: SupportVectorMachine
         """
         return cls.fit_(inputs, outputs, name=name, C=C, kernel=kernel)
@@ -1262,22 +1236,20 @@ class SupportVectorMachine(Model):
     @classmethod
     def fit_predict(cls, inputs: Matrix, outputs: Vector, predicted_inputs: Matrix, C: float = 1., kernel: str = 'rbf',
                     name: str = '') -> Tuple['SupportVectorMachine', Union[Vector, Matrix]]:
-        """
-        Fit outputs to inputs and predict outputs for predicted_inputs. It is the succession of fit and predict methods.
-        """
+        """ Fit outputs to inputs and predict outputs for `predicted_inputs`: succession of fit and predict. """
         return cls.fit_predict_(inputs, outputs, predicted_inputs, name=name, C=C, kernel=kernel)
 
 
 class SupportVectorRegressor(SupportVectorMachine):
     """
-    Base object for handling a scikit-learn SupportVectorRegressor objects.
+    Base object for handling a scikit-learn `SupportVectorRegressor` objects.
 
     Please refer to https://scikit-learn.org/stable/modules/svm.html#svm-regression for more
-    information on SupportVectorRegressor object and understanding the SupportVectorRegressor for basic usage.
+    information on `SupportVectorRegressor` object and understanding the `SupportVectorRegressor` for basic usage.
 
-    :param params:
+    :param parameters:
         Hyperparameters of the used scikit-learn object.
-    :type params: dict[str, Any], `optional`
+    :type parameters: dict[str, Any], `optional`
 
     :param raw_coef_:
         The number of classes (for single output problems), or a list containing the number of classes for each output
@@ -1324,16 +1296,17 @@ class SupportVectorRegressor(SupportVectorMachine):
         Specify if the inputs are a sparse matrix or not.
     :type _sparse: bool, `optional`, defaults to `False`
     """
+
     _standalone_in_db = True
 
-    def __init__(self, params: Dict[str, Any], raw_coef_: Matrix = None, _dual_coef_: Matrix = None,
+    def __init__(self, parameters: Dict[str, Any], raw_coef_: Matrix = None, _dual_coef_: Matrix = None,
                  _intercept_: Vector = None, support_: List[int] = 1, support_vectors_: Matrix = None,
                  _n_support: List[int] = None, _probA: Vector = None, _probB: Vector = None, _gamma: float = 1.,
                  _sparse: bool = False, name: str = ''):
         SupportVectorMachine.__init__(self, raw_coef_=raw_coef_, _dual_coef_=_dual_coef_,
                                       support_vectors_=support_vectors_, _sparse=_sparse,
                                       _n_support=_n_support, support_=support_, _intercept_=_intercept_, _probA=_probA,
-                                      _probB=_probB, _gamma=_gamma, params=params, name=name)
+                                      _probB=_probB, _gamma=_gamma, parameters=parameters, name=name)
 
     @classmethod
     def _skl_class(cls):
@@ -1343,20 +1316,20 @@ class SupportVectorRegressor(SupportVectorMachine):
         return self.generic_skl_attributes()
 
     @classmethod
-    def _instantiate_dessia(cls, model, params: Dict[str, Any], name: str = ''):
-        return cls(**cls.generic_dessia_attributes(model, params=params, name=name))
+    def _instantiate_dessia(cls, model, parameters: Dict[str, Any], name: str = ''):
+        return cls(**cls.generic_dessia_attributes(model, parameters=parameters, name=name))
 
 
 class SupportVectorClassifier(SupportVectorMachine):
     """
-    Base object for handling a scikit-learn SupportVectorClassifier objects.
+    Base object for handling a scikit-learn `SupportVectorClassifier` objects.
 
     Please refer to https://scikit-learn.org/stable/modules/svm.html#svm-classification for more
-    information on SupportVectorClassifier object and understanding the SupportVectorClassifier for basic usage.
+    information on `SupportVectorClassifier` object and understanding the `SupportVectorClassifier` for basic usage.
 
-    :param params:
+    :param parameters:
         Hyperparameters of the used scikit-learn object.
-    :type params: dict[str, Any], `optional`
+    :type parameters: dict[str, Any], `optional`
 
     :param raw_coef_:
         The number of classes (for single output problems), or a list containing the number of classes for each output
@@ -1407,9 +1380,10 @@ class SupportVectorClassifier(SupportVectorMachine):
         The classes labels.
     :type classes_: List[int], `optional`, defaults to `None`
     """
+
     _standalone_in_db = True
 
-    def __init__(self, params: Dict[str, Any], raw_coef_: Matrix = None, _dual_coef_: Matrix = None,
+    def __init__(self, parameters: Dict[str, Any], raw_coef_: Matrix = None, _dual_coef_: Matrix = None,
                  _intercept_: Vector = None, support_: List[int] = 1, support_vectors_: Matrix = None,
                  _n_support: List[int] = None, _probA: Vector = None, _probB: Vector = None, _gamma: float = 1.,
                  _sparse: bool = False, classes_: List[int] = None, name: str = ''):
@@ -1417,7 +1391,7 @@ class SupportVectorClassifier(SupportVectorMachine):
         SupportVectorMachine.__init__(self, raw_coef_=raw_coef_, _dual_coef_=_dual_coef_,
                                       support_vectors_=support_vectors_, _sparse=_sparse,
                                       _n_support=_n_support, support_=support_, _intercept_=_intercept_, _probA=_probA,
-                                      _probB=_probB, _gamma=_gamma, params=params, name=name)
+                                      _probB=_probB, _gamma=_gamma, parameters=parameters, name=name)
 
     @classmethod
     def _skl_class(cls):
@@ -1429,28 +1403,28 @@ class SupportVectorClassifier(SupportVectorMachine):
         return model
 
     @classmethod
-    def _instantiate_dessia(cls, model, params: Dict[str, Any], name: str = ''):
-        kwargs = cls.generic_dessia_attributes(model, params=params, name=name)
+    def _instantiate_dessia(cls, model, parameters: Dict[str, Any], name: str = ''):
+        kwargs = cls.generic_dessia_attributes(model, parameters=parameters, name=name)
         kwargs['classes_'] = model.classes_.tolist()
         return cls(**kwargs)
 
 
 class MultiLayerPerceptron(Model):
     """
-    Base object for handling a scikit-learn MultiLayerPerceptron (dense neural network).
+    Base object for handling a scikit-learn `MultiLayerPerceptron` (dense neural network).
 
     Please refer to https://scikit-learn.org/stable/modules/neural_networks_supervised.html for more
-    information on MultiLayerPerceptron.
+    information on `MultiLayerPerceptron`.
     """
 
-    def __init__(self, params: Dict[str, Any], coefs_: List[Matrix] = None, intercepts_: Matrix = None,
+    def __init__(self, parameters: Dict[str, Any], coefs_: List[Matrix] = None, intercepts_: Matrix = None,
                  n_layers_: int = None, activation: str = 'relu', out_activation_: str = 'identity', name: str = ''):
         self.coefs_ = coefs_
         self.intercepts_ = intercepts_
         self.n_layers_ = n_layers_
         self.activation = activation
         self.out_activation_ = out_activation_
-        Model.__init__(self, params=params, name=name)
+        Model.__init__(self, parameters=parameters, name=name)
 
     @classmethod
     def _skl_class(cls):
@@ -1458,9 +1432,7 @@ class MultiLayerPerceptron(Model):
                                   'MLPRegressor or MLPClassifier.')
 
     def generic_skl_attributes(self):
-        """
-        Generic method (shared between MultiLayerPerceptron) to set scikit-learn model attributes from self attributes.
-        """
+        """ Generic method to set scikit-learn model attributes from self attributes. """
         model = self._call_skl_model()
         model.coefs_ = [npy.array(coefs_) for coefs_ in self.coefs_]
         model.intercepts_ = [npy.array(intercepts_) for intercepts_ in self.intercepts_]
@@ -1470,12 +1442,10 @@ class MultiLayerPerceptron(Model):
         return model
 
     @classmethod
-    def generic_dessia_attributes(cls, model, params: Dict[str, Any], name: str = ''):
-        """
-        Generic method (shared between MultiLayerPerceptron) to set self attributes from scikit-learn model attributes.
-        """
+    def generic_dessia_attributes(cls, model, parameters: Dict[str, Any], name: str = ''):
+        """ Generic method to set self attributes from scikit-learn model attributes. """
         return {'name': name,
-                'params': params,
+                'parameters': parameters,
                 'coefs_': [coefs_.tolist() for coefs_ in model.coefs_],
                 'intercepts_': [intercepts_.tolist() for intercepts_ in model.intercepts_],
                 'n_layers_': model.n_layers_,
@@ -1487,10 +1457,10 @@ class MultiLayerPerceptron(Model):
                          solver: str = 'adam', max_iter: int = 200,
                          tol: float = 0.0001) -> Tuple['MultiLayerPerceptron', Dict[str, Any], str]:
         """
-        Initialize class MultiLayerPerceptron with its name and hyperparemeters to fit in Modeler.
+        Initialize class `MultiLayerPerceptron` with its name and hyperparemeters to fit in `Modeler`.
 
         :param hidden_layer_sizes:
-            Regularization parameter. The strength of the regularization is inversely proportional to C.
+            Regularization parameter. The strength of the regularization is inversely proportional to `C`.
             Must be strictly positive. The penalty is a squared l2 penalty.
         :type hidden_layer_sizes: List[int]
 
@@ -1504,7 +1474,7 @@ class MultiLayerPerceptron(Model):
 
         :param alpha:
             Constant that multiplies the L2 term, controlling regularization strength. alpha must be a non-negative
-            float i.e. in [0, inf[.
+            float i.e. in `[0, inf[`.
         :type alpha: float, `optional`, defaults to `0.0001`
 
         :param solver:
@@ -1529,7 +1499,7 @@ class MultiLayerPerceptron(Model):
             considered to be reached and training stops.
         :type tol: float, `optional`, defaults to `0.0001`
 
-        :return: The MultiLayerPerceptron model fit on inputs and outputs.
+        :return: The `MultiLayerPerceptron` model fit on inputs and outputs.
         :rtype: Tuple['MultiLayerPerceptron', Dict[str, Any], str]
         """
         return cls.init_for_modeler_(hidden_layer_sizes=hidden_layer_sizes, activation=activation, alpha=alpha,
@@ -1540,7 +1510,7 @@ class MultiLayerPerceptron(Model):
             alpha: float = 0.0001, solver: str = 'adam', max_iter: int = 200, tol: float = 0.0001,
             name: str = '') -> 'MultiLayerPerceptron':
         """
-        Standard method to fit outputs to inputs thanks to MLPRegressor or MLPClassifier models from scikit-learn.
+        Standard method to fit outputs to inputs thanks to `MLPRegressor` or `MLPClassifier` models from scikit-learn.
 
         More information:
             - Classifier: https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPClassifier.html
@@ -1577,7 +1547,7 @@ class MultiLayerPerceptron(Model):
                 - `‘lbfgs’` is an optimizer in the family of quasi-Newton methods.
                 - `‘sgd’` refers to stochastic gradient descent.
                 - `‘adam’` refers to a stochastic gradient-based optimizer proposed in https://arxiv.org/abs/1412.6980
-            Note: The default solver ‘adam’ works pretty well on relatively large datasets (with thousands of training
+            Note: The default solver `‘adam’` works pretty well on relatively large datasets (with thousands of training
             samples or more) in terms of both training time and validation score. For small datasets, however,
             `‘lbfgs’` can converge faster and perform better.
         :type solver: str, `optional`, defaults to `'adam'`
@@ -1594,7 +1564,7 @@ class MultiLayerPerceptron(Model):
             considered to be reached and training stops.
         :type tol: float, `optional`, defaults to `0.0001`
 
-        :return: The MLPRegressor or MLPClassifier model fit on inputs and outputs.
+        :return: The `MLPRegressor` or `MLPClassifier` model fit on inputs and outputs.
         :rtype: MultiLayerPerceptron
         """
         outputs = matrix_1d_to_vector(outputs)
@@ -1605,23 +1575,21 @@ class MultiLayerPerceptron(Model):
     def fit_predict(cls, inputs: Matrix, outputs: Vector, predicted_inputs: Matrix, hidden_layer_sizes: List[int],
                     activation: str = 'relu', alpha: float = 0.0001, solver: str = 'adam', max_iter: int = 200,
                     tol: float = 0.0001, name: str = '') -> Tuple['MultiLayerPerceptron', Union[Vector, Matrix]]:
-        """
-        Fit outputs to inputs and predict outputs for predicted_inputs. It is the succession of fit and predict methods.
-        """
+        """ Fit outputs to inputs and predict outputs for `predicted_inputs`: succession of fit and predict. """
         return cls.fit_predict_(inputs, outputs, predicted_inputs, name=name, hidden_layer_sizes=hidden_layer_sizes,
                                 activation=activation, alpha=alpha, solver=solver, max_iter=max_iter, tol=tol)
 
 
 class MLPRegressor(MultiLayerPerceptron):
     """
-    Base object for handling a scikit-learn MLPRegressor (dense neural network) object.
+    Base object for handling a scikit-learn `MLPRegressor` (dense neural network) object.
 
     Please refer to https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPRegressor.html for more
-    information on MLPRegressor.
+    information on `MLPRegressor`.
 
-    :param params:
+    :param parameters:
         Hyperparameters of the used scikit-learn object.
-    :type params: dict[str, Any], `optional`
+    :type parameters: dict[str, Any], `optional`
 
     :param coef_:
         List of coefficients of the model.
@@ -1632,7 +1600,7 @@ class MLPRegressor(MultiLayerPerceptron):
     :type intercept_: List[List[float]], `optional`, defaults to `None`
 
     :param n_layers_:
-        Number of hidden layers contained in the current MLPRegressor.
+        Number of hidden layers contained in the current `MLPRegressor`.
     :type n_layers_: int, `optional`, defaults to `None`
 
     :param activation:
@@ -1644,15 +1612,17 @@ class MLPRegressor(MultiLayerPerceptron):
     :type out_activation_: str, `optional`, defaults to `'identity'`
 
     :param name:
-        Name of MLPRegressor
+        Name of `MLPRegressor`
     :type name: str, `optional`, defaults to `''`
     """
+
     _standalone_in_db = True
 
-    def __init__(self, params: Dict[str, Any], coefs_: List[Matrix] = None, intercepts_: Matrix = None,
+    def __init__(self, parameters: Dict[str, Any], coefs_: List[Matrix] = None, intercepts_: Matrix = None,
                  n_layers_: int = None, activation: str = 'relu', out_activation_: str = 'identity', name: str = ''):
         MultiLayerPerceptron.__init__(self, coefs_=coefs_, intercepts_=intercepts_, n_layers_=n_layers_,
-                                      activation=activation, out_activation_=out_activation_, params=params, name=name)
+                                      activation=activation, out_activation_=out_activation_, parameters=parameters,
+                                      name=name)
 
     @classmethod
     def _skl_class(cls):
@@ -1662,20 +1632,20 @@ class MLPRegressor(MultiLayerPerceptron):
         return self.generic_skl_attributes()
 
     @classmethod
-    def _instantiate_dessia(cls, model, params: Dict[str, Any], name: str = ''):
-        return cls(**cls.generic_dessia_attributes(model, params=params, name=name))
+    def _instantiate_dessia(cls, model, parameters: Dict[str, Any], name: str = ''):
+        return cls(**cls.generic_dessia_attributes(model, parameters=parameters, name=name))
 
 
 class MLPClassifier(MultiLayerPerceptron):
     """
-    Base object for handling a scikit-learn MLPClassifier (dense neural network) object.
+    Base object for handling a scikit-learn `MLPClassifier` (dense neural network) object.
 
     Please refer to https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPClassifier.html for more
-    information on MLPClassifier.
+    information on `MLPClassifier`.
 
-    :param params:
+    :param parameters:
         Hyperparameters of the used scikit-learn object.
-    :type params: dict[str, Any], `optional`
+    :type parameters: dict[str, Any], `optional`
 
     :param coef_:
         List of coefficients of the model.
@@ -1686,7 +1656,7 @@ class MLPClassifier(MultiLayerPerceptron):
     :type intercept_: List[List[float]], `optional`, defaults to `None`
 
     :param n_layers_:
-        Number of hidden layers contained in the current MLPClassifier.
+        Number of hidden layers contained in the current `MLPClassifier`.
     :type n_layers_: int, `optional`, defaults to `None`
 
     :param activation:
@@ -1702,22 +1672,24 @@ class MLPClassifier(MultiLayerPerceptron):
     :type n_outputs_: int, `optional`, defaults to `None`
 
     :param _label_binarizer:
-        Data scaler used in MLPClassifier to standardize class labels.
-    :type _label_binarizer: LabelBinarizer, `optional`, defaults to `None`
+        Data scaler used in `MLPClassifier` to standardize class labels.
+    :type _label_binarizer: `LabelBinarizer`, `optional`, defaults to `None`
 
     :param name:
-        Name of MLPClassifier
+        Name of `MLPClassifier`
     :type name: str, `optional`, defaults to `''`
     """
+
     _standalone_in_db = True
 
-    def __init__(self, params: Dict[str, Any], coefs_: List[Matrix] = None, intercepts_: Matrix = None,
+    def __init__(self, parameters: Dict[str, Any], coefs_: List[Matrix] = None, intercepts_: Matrix = None,
                  n_layers_: int = None, activation: str = 'relu', out_activation_: str = 'identity',
                  n_outputs_: int = None, _label_binarizer: LabelBinarizer = None, name: str = ''):
         self.n_outputs_ = n_outputs_
         self._label_binarizer = _label_binarizer
         MultiLayerPerceptron.__init__(self, coefs_=coefs_, intercepts_=intercepts_, n_layers_=n_layers_,
-                                      activation=activation, out_activation_=out_activation_, params=params, name=name)
+                                      activation=activation, out_activation_=out_activation_, parameters=parameters,
+                                      name=name)
 
     @classmethod
     def _skl_class(cls):
@@ -1730,60 +1702,22 @@ class MLPClassifier(MultiLayerPerceptron):
         return model
 
     @classmethod
-    def _instantiate_dessia(cls, model, params: Dict[str, Any], name: str = ''):
-        kwargs = cls.generic_dessia_attributes(model, params=params, name=name)
+    def _instantiate_dessia(cls, model, parameters: Dict[str, Any], name: str = ''):
+        kwargs = cls.generic_dessia_attributes(model, parameters=parameters, name=name)
         kwargs.update({'n_outputs_': model.n_outputs_,
                        '_label_binarizer': LabelBinarizer.instantiate_dessia(model._label_binarizer)})
         return cls(**kwargs)
 
-    # Experimental for multiclass multioutput but does not give good results when binarized label does not exist in
-    # train data.
-    # @staticmethod
-    # def _binarize_outputs(outputs: Matrix) -> Matrix:
-    #     if isinstance(outputs[0], list):
-    #         if len(outputs[0]) > 1:
-    #             multioutput_binarizer = preprocessing.MultiLabelBinarizer()
-    #             mono_outputs = multioutput_binarizer.fit_transform(outputs)
-    #             return multioutput_binarizer, mono_outputs
-    #         else:
-    #             return IdentityScaler(), matrix_1d_to_vector(outputs)
-    #     return IdentityScaler(), outputs
-
-    # @classmethod
-    # def fit(cls, inputs: Matrix, outputs: Vector, hidden_layer_sizes: List[int], activation: str = 'relu',
-    #         alpha: float = 0.0001, solver: str = 'adam', max_iter: int = 200, tol: float = 0.0001,
-    #         name: str = '') -> 'MultiLayerPerceptron':
-    #     multioutput_binarizer, outputs = cls._binarize_outputs(outputs)
-    #     modeler = cls.fit_(inputs, outputs, name=name, hidden_layer_sizes=hidden_layer_sizes, activation=activation,
-    #                        alpha=alpha, solver=solver, max_iter=max_iter, tol=tol)
-    #     modeler.mulitoutput_binarizer = multioutput_binarizer
-    #     return modeler
-
-    # @classmethod
-    # def fit_predict(cls, inputs: Matrix, outputs: Vector, predicted_inputs: Matrix, hidden_layer_sizes: List[int],
-    #                 activation: str = 'relu', alpha: float = 0.0001, solver: str = 'adam', max_iter: int = 200,
-    #                 tol: float = 0.0001, name: str = '') -> Tuple['MultiLayerPerceptron', Union[Vector, Matrix]]:
-    #     multioutput_binarizer, b_outputs = cls._binarize_outputs(outputs)
-    #     modeler = cls.fit_(inputs, b_outputs, name=name, hidden_layer_sizes=hidden_layer_sizes, activation=activation,
-    #                        alpha=alpha, solver=solver, max_iter=max_iter, tol=tol)
-    #     modeler.mulitoutput_binarizer = multioutput_binarizer
-    #     return modeler, multioutput_binarizer.inverse_transform(npy.array(modeler.predict(predicted_inputs)))
-
-
 
 def get_scaler_attr(scaler, attr: str):
-    """
-    Get attribute attr of scikit-learn scaler with an exception for numpy arrays (in order to instantiate a Scaler).
-    """
+    """ Get attribute attr of scikit-learn scaler with an exception for numpy arrays (to instantiate a Scaler). """
     scaler_attr = getattr(scaler, attr)
     if isinstance(scaler_attr, npy.ndarray):
         return scaler_attr.tolist()
     return scaler_attr
 
 def get_split_indexes(len_matrix: int, ratio: float = 0.8, shuffled: bool = True) -> Tuple[Vector, Vector]:
-    """
-    Get two lists of indexes to split randomly a matrix in two matrices.
-    """
+    """ Get two lists of indexes to split randomly a matrix in two matrices. """
     if ratio > 1:
         len_train = int(ratio)
     else:
@@ -1832,18 +1766,14 @@ def train_test_split(*matrices: List[Matrix], ratio: float = 0.8, shuffled: bool
     return sum(train_test_split_matrices, [])
 
 def matrix_1d_to_vector(matrix: Matrix) -> Union[Vector, Matrix]:
-    """
-    Transform a List[List[float]] of shape (n, 1) into a List[float] of shape (n,).
-    """
+    """ Transform a `List[List[float]]` of shape `(n, 1)` into a `List[float]` of shape `(n,)`. """
     if isinstance(matrix[0], list):
         if len(matrix[0]) == 1:
             return sum(matrix, [])
     return matrix
 
 def vector_to_2d_matrix(matrix: Union[Vector, Matrix]) -> Matrix:
-    """
-    Transform a List[float] of shape (n,) into a List[List[float]] of shape (n, 1).
-    """
+    """ Transform a `List[float]` of shape `(n,)` into a `List[List[float]]` of shape `(n, 1)`. """
     if not isinstance(matrix[0], list):
         return [[x] for x in matrix]
     return matrix

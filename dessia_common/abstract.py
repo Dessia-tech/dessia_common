@@ -1,23 +1,31 @@
 """ Abstract module that defines a base DessiaObject in order to avoid circular imports. """
 
 
-class CoreDessiaObject:
-    """ Base DessiaObject for checking inheritance purpose (isinstance, issubclass,...). """
+ABSTRACT_ERROR = NotImplementedError("CoreDessiaObject is an abstract class and should not be use directly.")
 
-    # @abstractmethod
-    # def to_dict(self):
-    #     pass
-    #
-    # @classmethod
-    # @abstractmethod
-    # def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
-    #                    pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'CoreDessiaObject':
-    #     pass
-    #
-    # @abstractmethod
-    # def copy(self):
-    #     pass
-    #
-    # @abstractmethod
-    # def _serializable_dict(self):
-    #     pass
+
+class CoreDessiaObject:
+    """ Base DessiaObject for checking inheritance purpose. """
+
+    def to_dict(self, use_pointers: bool = True, memo=None, path: str = "#", id_method: bool = True, id_memo=None):
+        """ Abstract to_dict method. """
+        raise ABSTRACT_ERROR
+
+    @classmethod
+    def dict_to_object(cls, dict_, force_generic: bool = False, global_dict=None,
+                       pointers_memo=None, path: str = '#'):
+        """ Abstract dict_to_object method. """
+        raise ABSTRACT_ERROR
+
+    def _data_diff(self, other_object: 'CoreDessiaObject'):
+        """ Abstract _data_diff method. """
+        raise ABSTRACT_ERROR
+
+    @property
+    def method_schemas(self):
+        """ Abstract method_schemas method. """
+        raise ABSTRACT_ERROR
+
+    def _displays(self):
+        """ Abstract _displays method. """
+        raise ABSTRACT_ERROR

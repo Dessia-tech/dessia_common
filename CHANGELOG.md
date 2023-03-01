@@ -6,21 +6,107 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## 0.13.0
+## 0.14.0
+
+### Added
+
+- Schemas refactor: add support of Ellipsed tuple (Tuple[T, ...])
+- Schemas refactor: add more Error Checks
+- Schemas refactor: add a json export to method schemas for low-code implementations
+- files: .doc & .docx files typings
+
+### Fixed
+
+- Schemas refactor : allow incomplete schemas
+- Schemas refactor : old jsonschema with magic Method Type serialized value
+- Schemas refactor : Sequence schema uses args_schemas instead of unique items_schemas
+
+
+### Refactored
+
+- Refactor the whole jsonschema generation process. It now uses Oriented Object algorithms. Most of jsonschema module is now deprecated
+- Remove Any support in schemas
+- Use of Schemas to serialize typings
+- Change serialize_typing function name to serialize_annotation
+- Change tests. Unittests are in 'tests' folder. Other tests in scripts
+- Check Platform is now verbose and split into several functions
 
 ### Chore
 
-- Toggle some D2xx errors 
+- Fix Spelling
+
+### Perf
+
+- use dc_ref instead of $ref in serialization to avoid overhead during CRUD operation on platform
+
+
+
+## 0.13.2
+
+### Added 
+
+- Display settings now have load_by_default config option
+
+### Fix
+
+- Workflow state/run to_dict fix on adding references
+- Handle serialization pointers of non-standalone objects
+- hash fix: calling hash instead of data hash in eq.
+
+## 0.13.1
+
+### Fix
+
+- Handle serialization pointers of non-standalone objects
+- WorkflowRun settings now sets the right method to call for workflow display
+- Handle serialization pointers of non-standalone objects
+
+
+## 0.13.0 [02/14/2023]
+
+
+### Chore
+
+- Tag for release candidate
+- Toggle some D2xx errors
+
+### Fix
+
+- Do not take into account non-eq attributes
 
 ### CI
 
 - tutorials/ci_tutorials.py added to check runnability of .ipynb files inside this new folder
+- automatic upload of coverage
+- spellcheck with pyenchant integrated to pylint
+- fixing versions of pylint and pydocstyle to avoid uncontrolled new errors
 
-## 0.12.0
+### Performance
+
+- Change sequence hash to check only first and last element recursively
+- Change dict hash to check only first and last element recursively
+- Refactor search_memo function to improve copy performance
+- Add pre-checks for non list-like element in is_sequence function
+- For is_serializable, not using pointers while trying to_dict
+- Refactor workflow run values for serializability checks
+
+
+### Chore
+
+- Toggle some D2xx errors
+- Tag for release candidate
+
+### Fixed
+
+- fix str of Dataset
+
+## 0.12.0 [released 01/20/2023]
+
 
 ### Changed
 
 - Reference path is now given all the way down to plot_data
+- DessiaObject kwargs in init are deprecated
 
 ### Fixed
 
@@ -39,6 +125,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - add a check to enforce update of changelog in PR
 - code_pydocstyle.py checks daily instead of weekly
+- Add a time decrease effect for pylint
 
 ### Added
 - modeling.py file in datatools which contains:
@@ -73,7 +160,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - More docs
 
 
-## 0.11.0
+## 0.11.0 [released 12/19/2022]
 
 ### Fixed
 
