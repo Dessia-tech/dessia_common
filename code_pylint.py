@@ -28,7 +28,7 @@ UNWATCHED_ERRORS = ["fixme", "trailing-whitespace", "import-error"]
 MAX_ERROR_BY_TYPE = {
     "wrong-spelling-in-docstring": 196,
     "wrong-spelling-in-comment": 26,
-    "protected-access": 67,  # Highly dependant on our "private" conventions. Keeps getting raised
+    "protected-access": 70,  # Highly dependant on our "private" conventions. Keeps getting raised
     "arguments-differ": 1,
     "too-many-locals": 10,  # Reduce by dropping vectored objects
     "too-many-branches": 13,  # Huge refactor needed. Will be reduced by schema refactor

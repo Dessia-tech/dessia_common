@@ -32,13 +32,13 @@ INV_POINT_STYLE = PointStyle(WHITE, WHITE, 0.1, 1, 'crux')
 
 class Modeler(DessiaObject):
     """
-    Object that encapsulate standard processes in machine learning modelisations.
+    Object that encapsulate standard processes in machine learning modelings.
 
     Modeler object allows to:
         * fit a model from models
-        * prescale input and output data before fit or predict
+        * pre-scale input and output data before fit or predict
         * score a model from models
-        * validate a modelisation process with cross_validation method
+        * validate a modeling process with cross_validation method
         * plot performances and predictions of a model stored in Modeler
         * store a fitted model and associated fitted scalers in a Modeler element that can be re-used in another
         workflow as an already trained machine learning model
@@ -52,7 +52,7 @@ class Modeler(DessiaObject):
     :type input_scaler: models.Scaler
 
     :param output_scaler:
-        caler for output data.
+        Scaler for output data.
     :type output_scaler: models.Scaler
 
     :param name:
@@ -307,7 +307,7 @@ class Modeler(DessiaObject):
 
 
 class ModeledDataset(Dataset):
-    """ Class allowing to plot and study data generated from a DOE and its prediction from a modeler modelisation. """
+    """ Class allowing to plot and study data generated from a DOE and its prediction from a modeler modeling. """
     _standalone_in_db = True
 
     def __init__(self, dessia_objects: List[Sample] = None, input_names: List[str] = None,
@@ -624,16 +624,16 @@ class ModelValidation(DessiaObject):
 
 class CrossValidation(DessiaObject):
     """
-    Class to cross validate a Modeler modelisation.
+    Class to cross validate a Modeler modeling.
 
-    The purpose of cross validation is to validate a modelisation process for a specific type of machine learning
+    The purpose of cross validation is to validate a modeling process for a specific type of machine learning
     method, set with specific hyperparameters.
     The first step of cross validation is to split data into train and test data. Then the model is fitted with
     train data and scored with test data. Furthermore, train and test inputs are predicted with the model and
     plotted in a graph that plots these predictions versus reference values. In this plot, the more red points are
     near the black line, the more the model can predict new data precisely.
     This process of cross validation is ran nb_tests times. If all of them show a good score and a nice train test
-    plot, then the tested modelisation is validated and can be used in other, but similar, processes for
+    plot, then the tested modeling is validated and can be used in other, but similar, processes for
     predictions.
     """
     _non_data_eq_attributes = ['_scores']

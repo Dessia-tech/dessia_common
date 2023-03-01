@@ -20,23 +20,20 @@ class ClusteredDataset(Dataset):
     """
     Base object for handling a categorized (clustered) list of DessiaObjects.
 
-    **ClusteredDataset should be instantiated with** `from_...` **methods.**
+    **`ClusteredDataset` should be instantiated with** `from_...` **methods.**
 
-    **Do not use** `__init__` **to instantiate a ClusteredDataset.**
+    **Do not use** `__init__` **to instantiate a `ClusteredDataset`.**
 
     :param dessia_objects:
-        --------
-        List of DessiaObjects to store in ClusteredDataset
+        List of DessiaObjects to store in `ClusteredDataset`
     :type dessia_objects: `List[DessiaObject]`, `optional`, defaults to `None`
 
     :param labels:
-        --------
-        Labels of DessiaObjects' cluster stored in ClusteredDataset
+        Labels of DessiaObjects' cluster stored in `ClusteredDataset`
     :type labels: `List[int]`, `optional`, defaults to `None`
 
     :param name:
-        --------
-        Name of ClusteredDataset
+        Name of `ClusteredDataset`
     :type name: `str`, `optional`, defaults to `""`
 
     :Properties:
@@ -104,11 +101,11 @@ class ClusteredDataset(Dataset):
 
     def clustered_sublists(self):
         """
-        Split a ClusteredDataset of labeled DessiaObjects into a ClusteredDatasetet of labeled Datasets.
+        Split a `ClusteredDataset` of labeled DessiaObjects into a `ClusteredDataset` of labeled Datasets.
 
-        :return: A ClusteredDataset of length n_cluster that store each cluster in a Dataset. Labels are \
+        :return: A `ClusteredDataset` of length n_cluster that store each cluster in a Dataset. Labels are \
             the labels of each cluster, i.e. stored Dataset
-        :rtype: ClusteredDataset[Dataset]
+        :rtype: `ClusteredDataset`[Dataset]
 
         :Examples:
         >>> from dessia_common.datatools.dataset import Dataset
