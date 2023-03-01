@@ -1,6 +1,4 @@
-"""
-Tools and base classes for machine learning methods.
-"""
+""" Tools and base classes for machine learning methods. """
 from typing import List, Dict, Any, Tuple, Union
 import random
 
@@ -16,7 +14,7 @@ Matrix = List[Vector]
 #                                                     S C A L E R S
 # ======================================================================================================================
 class Scaler(DessiaObject):
-    """Base object for handling a scikit-learn Scaler."""
+    """ Base object for handling a scikit-learn Scaler. """
     _rebuild_attributes = []
 
     def __init__(self, name: str = ''):
@@ -48,7 +46,7 @@ class Scaler(DessiaObject):
         return class_, name
 
     def instantiate_skl(self):
-        """Instantiate scikit-learn Scaler from Scaler object, or children."""
+        """ Instantiate scikit-learn `Scaler` from `Scaler` dessia object, or children. """
         scaler = self._init_empty()
         for attr in self._rebuild_attributes:
             setattr(scaler, attr, getattr(self, attr))
@@ -56,7 +54,7 @@ class Scaler(DessiaObject):
 
     @classmethod
     def instantiate_dessia(cls, scaler, name: str = '') -> 'Scaler':
-        """Instantiate Scaler object, or children, from scikit-learn scaler."""
+        """ Instantiate `Scaler` dessia object, or children, from scikit-learn scaler. """
         kwargs = {attr: get_scaler_attr(scaler, attr) for attr in cls._rebuild_attributes}
         kwargs["name"] = name
         return cls(**kwargs)
@@ -115,9 +113,7 @@ class Scaler(DessiaObject):
 
     @classmethod
     def fit_transform(cls, matrix: Matrix, name: str = '') -> Tuple['Scaler', Matrix]:
-        """
-        Fit scaler with data stored in matrix and transform it. It is the succession of fit and transform methods.
-        """
+        """ Fit scaler with data of matrix and transform it. It is the succession of fit and transform methods. """
         reshaped_matrix = vector_to_2d_matrix(matrix)
         scaler = cls.fit(reshaped_matrix, name)
         return scaler, scaler.transform(reshaped_matrix)
@@ -168,7 +164,7 @@ class StandardScaler(Scaler):
 
 
 class IdentityScaler(StandardScaler):
-    """Data scaler that scales nothing."""
+    """ Data scaler that scales nothing. """
 
     def __init__(self, mean_: Vector = None, scale_: Vector = None, var_: Vector = None, name: str = 'identity_scaler'):
         StandardScaler.__init__(self, mean_=mean_, scale_=scale_, var_=var_, name=name)
@@ -207,7 +203,7 @@ class LabelBinarizer(Scaler):
         return preprocessing._label.LabelBinarizer
 
     def instantiate_skl(self):
-        """Instantiate scikit-learn `LabelBinarizer` from `LabelBinarizer` object."""
+        """ Instantiate scikit-learn `LabelBinarizer` from `LabelBinarizer` object. """
         scaler = self._init_empty()
         scaler.classes_ = npy.array(self.classes_)
         scaler.y_type_ = self.y_type_
@@ -219,9 +215,7 @@ class LabelBinarizer(Scaler):
 #                                                        M O D E L S
 # ======================================================================================================================
 class Model(DessiaObject):
-    """
-    Base object for handling a scikit-learn models (classifier and regressor).
-    """
+    """ Base object for handling a scikit-learn models (classifier and regressor). """
 
     def __init__(self, parameters: Dict[str, Any], name: str = ''):
         self.parameters = parameters
@@ -243,16 +237,12 @@ class Model(DessiaObject):
 
     @classmethod
     def init_for_modeler_(cls, **parameters: Dict[str, Any]) -> Tuple['Model', Dict[str, Any], str]:
-        """
-        Initialize class of Model with its name and hyperparemeters to fit in Modeler.
-        """
+        """ Initialize class of Model with its name and hyperparemeters to fit in Modeler. """
         return cls(parameters=parameters)
 
     @classmethod
     def fit_(cls, inputs: Matrix, outputs: Matrix, name: str = '', **hyperparameters) -> 'Model':
-        """
-        Standard method to fit outputs to inputs thanks to a scikit-learn model.
-        """
+        """ Standard method to fit outputs to inputs thanks to a scikit-learn model. """
         model = cls._skl_class()(**hyperparameters)
         model.fit(inputs, outputs)
         return cls._instantiate_dessia(model, hyperparameters, name)
@@ -275,9 +265,7 @@ class Model(DessiaObject):
     @classmethod
     def fit_predict_(cls, inputs: Matrix, outputs: Matrix, predicted_inputs: Matrix, name: str = '',
                      **hyperparameters) -> Tuple['Model', Union[Vector, Matrix]]:
-        """
-        Fit outputs to inputs and predict outputs for predicted_inputs. It is the succession of fit and predict methods.
-        """
+        """ Fit outputs to inputs and predict outputs for `predicted_inputs`: succession of fit and predict. """
         model = cls.fit_(inputs, outputs, name, **hyperparameters)
         return model, model.predict(predicted_inputs)
 
@@ -441,9 +429,7 @@ class Ridge(LinearModel):
     def fit_predict(cls, inputs: Matrix, outputs: Matrix, predicted_inputs: Matrix, alpha: float = 1.,
                     fit_intercept: bool = True, tol: float = 0.001,
                     name: str = '') -> Tuple['Ridge', Union[Vector, Matrix]]:
-        """
-        Fit outputs to inputs and predict outputs for predicted_inputs. It is the succession of fit and predict methods.
-        """
+        """ Fit outputs to inputs and predict outputs for `predicted_inputs`: succession of fit and predict. """
         return cls.fit_predict_(inputs, outputs, predicted_inputs, name=name,
                                 alpha=alpha, fit_intercept=fit_intercept, tol=tol)
 
@@ -543,9 +529,7 @@ class LinearRegression(LinearModel):
     @classmethod
     def fit_predict(cls, inputs: Matrix, outputs: Matrix, predicted_inputs: Matrix, fit_intercept: bool = True,
                     positive: bool = False, name: str = '') -> Tuple['LinearRegression', Union[Vector, Matrix]]:
-        """
-        Fit outputs to inputs and predict outputs for predicted_inputs. It is the succession of fit and predict methods.
-        """
+        """ Fit outputs to inputs and predict outputs for `predicted_inputs`: succession of fit and predict. """
         return cls.fit_predict_(inputs, outputs, predicted_inputs, name=name,
                                 fit_intercept=fit_intercept, positive=positive)
 
@@ -669,9 +653,7 @@ class DecisionTreeRegressor(Model):
         return tree.DecisionTreeRegressor
 
     def generic_skl_attributes(self):
-        """
-        Generic method (shared between trees) to set scikit-learn model attributes from self attributes.
-        """
+        """ Generic method to set scikit-learn model attributes from self attributes. """
         model = self._call_skl_model()
         model.n_outputs_ = self.n_outputs_
         model.tree_ = self.tree_._instantiate_skl()
@@ -679,9 +661,7 @@ class DecisionTreeRegressor(Model):
 
     @classmethod
     def generic_dessia_attributes(cls, model, parameters: Dict[str, Any], name: str = ''):
-        """
-        Generic method (shared between trees) to set self attributes from scikit-learn model attributes.
-        """
+        """ Generic method to set self attributes from scikit-learn model attributes. """
         return {'name': name,
                 'tree_': Tree._instantiate_dessia(model.tree_, None),
                 'n_outputs_': model.n_outputs_,
@@ -768,9 +748,7 @@ class DecisionTreeRegressor(Model):
     @classmethod
     def fit_predict(cls, inputs: Matrix, outputs: Matrix, predicted_inputs: Matrix, criterion: str = 'squared_error',
                     max_depth: int = None, name: str = '') -> Tuple['DecisionTreeRegressor', Union[Vector, Matrix]]:
-        """
-        Succession of fit and predict methods: fit outputs to inputs and predict outputs for predicted_inputs.
-        """
+        """ Fit outputs to inputs and predict outputs for `predicted_inputs`: succession of fit and predict. """
         criterion = cls._check_criterion(criterion)
         return cls.fit_predict_(inputs, outputs, predicted_inputs, name=name, criterion=criterion, max_depth=max_depth)
 
@@ -882,9 +860,7 @@ class RandomForest(Model):
                                   'RandomForestClassifier or RandomForestRegressor.')
 
     def generic_skl_attributes(self):
-        """
-        Generic method (shared between `RandomForest`) to set scikit-learn model attributes from self attributes.
-        """
+        """ Generic method to set scikit-learn model attributes from self attributes. """
         model = self._call_skl_model()
         model.estimators_ = [tree._instantiate_skl() for tree in self.estimators_]
         model.n_outputs_ = self.n_outputs_
@@ -892,9 +868,7 @@ class RandomForest(Model):
 
     @classmethod
     def generic_dessia_attributes(cls, model, parameters: Dict[str, Any], name: str = ''):
-        """
-        Generic method (shared between `RandomForest`) to set self attributes from scikit-learn model attributes.
-        """
+        """ Generic method to set self attributes from scikit-learn model attributes. """
         return {'name': name,
                 'n_outputs_': model.n_outputs_,
                 'parameters': parameters}
@@ -993,7 +967,7 @@ class RandomForest(Model):
     def fit_predict(cls, inputs: Matrix, outputs: Matrix, predicted_inputs: Matrix, n_estimators: int = 100,
                     criterion: str = 'squared_error', max_depth: int = None,
                     name: str = '') -> Tuple['RandomForest', Union[Vector, Matrix]]:
-        """ Fit outputs to inputs and predict outputs for predicted_inputs: succession of fit and predict methods. """
+        """ Fit outputs to inputs and predict outputs for `predicted_inputs`: succession of fit and predict. """
         criterion = cls._check_criterion(criterion)
         return cls.fit_predict_(inputs, outputs, predicted_inputs, name=name, n_estimators=n_estimators,
                                 criterion=criterion, max_depth=max_depth, n_jobs=1)
@@ -1254,7 +1228,7 @@ class SupportVectorMachine(Model):
     @classmethod
     def fit_predict(cls, inputs: Matrix, outputs: Vector, predicted_inputs: Matrix, C: float = 1., kernel: str = 'rbf',
                     name: str = '') -> Tuple['SupportVectorMachine', Union[Vector, Matrix]]:
-        """ Fit outputs to inputs and predict outputs for predicted_inputs: succession of fit and predict methods. """
+        """ Fit outputs to inputs and predict outputs for `predicted_inputs`: succession of fit and predict. """
         return cls.fit_predict_(inputs, outputs, predicted_inputs, name=name, C=C, kernel=kernel)
 
 
@@ -1591,9 +1565,7 @@ class MultiLayerPerceptron(Model):
     def fit_predict(cls, inputs: Matrix, outputs: Vector, predicted_inputs: Matrix, hidden_layer_sizes: List[int],
                     activation: str = 'relu', alpha: float = 0.0001, solver: str = 'adam', max_iter: int = 200,
                     tol: float = 0.0001, name: str = '') -> Tuple['MultiLayerPerceptron', Union[Vector, Matrix]]:
-        """
-        Fit outputs to inputs and predict outputs for predicted_inputs. It is the succession of fit and predict methods.
-        """
+        """ Fit outputs to inputs and predict outputs for `predicted_inputs`: succession of fit and predict. """
         return cls.fit_predict_(inputs, outputs, predicted_inputs, name=name, hidden_layer_sizes=hidden_layer_sizes,
                                 activation=activation, alpha=alpha, solver=solver, max_iter=max_iter, tol=tol)
 
