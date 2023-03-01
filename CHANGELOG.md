@@ -11,11 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Blocks : display blocks are now more configurable (custom selector and type)
+- Files: .doc & .docx files typings
 - Schemas refactor: add support of Ellipsed tuple (Tuple[T, ...])
 - Schemas refactor: add more Error Checks
 - Schemas refactor: add a json export to method schemas for low-code implementations
 - Schemas refactor: add default value to method types
-
 
 ### Fixed
 
