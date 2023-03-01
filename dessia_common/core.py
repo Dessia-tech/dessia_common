@@ -16,7 +16,7 @@ from copy import deepcopy, copy
 import inspect
 import json
 
-from typing import List, Tuple, get_type_hints
+from typing import List, Tuple
 import traceback as tb
 
 from importlib import import_module
@@ -26,8 +26,6 @@ import dessia_common.errors
 from dessia_common.utils.diff import data_eq, diff, choose_hash
 from dessia_common.utils.types import is_sequence, is_bson_valid
 from dessia_common.utils.copy import deepcopy_value
-from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotation, JSONSCHEMA_HEADER,\
-    set_default_value
 import dessia_common.schemas.core as dcs
 from dessia_common.serialization import SerializableObject, deserialize_argument, serialize
 from dessia_common.exports import XLSXWriter, MarkdownWriter, ExportFormat
@@ -76,8 +74,6 @@ class DessiaObject(SerializableObject):
         [Advanced] List of instance attributes that should not be part of hash computation with data__hash__ method
         (if _eq_is_data_eq is True).
 
-    :cvar List[str] _ordered_attributes: Documentation not available yet.
-
     :cvar List[str] _titled_attributes: Documentation not available yet.
 
     :cvar List[str] _init_variables: Documentation not available yet.
@@ -87,9 +83,6 @@ class DessiaObject(SerializableObject):
 
     :cvar List[str] _allowed_methods: List of all methods that are runnable from platform.
 
-    :cvar List[str] _whitelist_attributes: Documentation not available yet.
-    :cvar List[str] _whitelist_attributes: List[str]
-
     :ivar str name: Name of object.
     :ivar Any kwargs: Additional user metadata
     """
@@ -97,14 +90,12 @@ class DessiaObject(SerializableObject):
     _non_editable_attributes = []
     _non_data_eq_attributes = ['name']
     _non_data_hash_attributes = ['name']
-    _ordered_attributes = []
     _titled_attributes = []
     _eq_is_data_eq = True
     _vector_features = None
 
     _init_variables = None
     _allowed_methods = []
-    _whitelist_attributes = []
 
     def __init__(self, name: str = '', **kwargs):
         self.name = name
@@ -172,17 +163,7 @@ class DessiaObject(SerializableObject):
         return get_in_object_from_path(self, path)
 
     @classmethod
-    def base_jsonschema(cls):
-        """ Return jsonschema header and base schema. """
-        warnings.warn("base_jsonschema method is deprecated and will be removed in a future version",
-                      DeprecationWarning)
-        schema = deepcopy(dcs.SCHEMA_HEADER)
-        schema['properties']['name'] = {"type": 'string', "title": "Object Name", "description": "Object name",
-                                        "editable": True, "default_value": "Object Name"}
-        return schema
-
-    @classmethod
-    def schema(cls):
+    def raw_schema(cls):
         """ Schema of class: transfer python data structure to web standard. """
         if hasattr(cls, '_jsonschema'):
             warnings.warn("Jsonschema is fully deprecated and you may want to use the new generic schema feature."
@@ -192,125 +173,39 @@ class DessiaObject(SerializableObject):
         return schema
 
     @classmethod
+    def schema(cls):
+        """ Serialized Schema as a dict. """
+        return cls.raw_schema().to_dict()
+
+    @classmethod
     def jsonschema(cls):
         """ Jsonschema of class: transfer python data structure to web standard. """
-        warnings.warn("base_jsonschema method is deprecated. Use schema instead", DeprecationWarning)
-        if hasattr(cls, '_jsonschema'):
-            _jsonschema = cls._jsonschema
-            return _jsonschema
-
-        # Get __init__ method and its annotations
-        init = cls.__init__
-        if cls._init_variables is None:
-            annotations = get_type_hints(init)
-        else:
-            annotations = cls._init_variables
-
-        # Get ordered variables
-        if cls._ordered_attributes:
-            ordered_attributes = cls._ordered_attributes
-        else:
-            ordered_attributes = list(annotations.keys())
-
-        unordered_count = 0
-
-        # Parse docstring
-        try:
-            docstring = cls.__doc__
-            parsed_docstring = dcs.parse_docstring(docstring=docstring, annotations=annotations)
-        except Exception:
-            parsed_docstring = dcs.FAILED_DOCSTRING_PARSING
-        parsed_attributes = parsed_docstring['attributes']
-
-        # Initialize jsonschema
-        _jsonschema = deepcopy(JSONSCHEMA_HEADER)
-
-        required_arguments, default_arguments = dcs.inspect_arguments(method=init, merge=False)
-        _jsonschema['required'] = required_arguments
-        _jsonschema['standalone_in_db'] = cls._standalone_in_db
-        _jsonschema['description'] = parsed_docstring['description']
-        _jsonschema['python_typing'] = str(cls)
-
-        # Set jsonschema
-        for annotation in annotations.items():
-            name = annotation[0]
-            if name in ordered_attributes:
-                order = ordered_attributes.index(name)
-            else:
-                order = len(ordered_attributes) + unordered_count
-                unordered_count += 1
-            if name in cls._titled_attributes:
-                title = cls._titled_attributes[name]
-            else:
-                title = None
-
-            if name != 'return':
-                editable = name not in cls._non_editable_attributes
-                annotation_type = type_from_annotation(annotation[1], cls)
-                annotation = (name, annotation_type)
-                jss_elt = jsonschema_from_annotation(annotation=annotation, jsonschema_element={}, order=order,
-                                                     editable=editable, title=title,
-                                                     parsed_attributes=parsed_attributes)
-                _jsonschema['properties'].update(jss_elt)
-                if name in default_arguments:
-                    default = set_default_value(_jsonschema["properties"], name, default_arguments[name])
-                    _jsonschema['properties'].update(default)
-
-        _jsonschema['classes'] = [cls.__module__ + '.' + cls.__name__]
-        _jsonschema['whitelist_attributes'] = cls._whitelist_attributes
-        return _jsonschema
+        warnings.warn("'jsonschema' method is deprecated. Use schema instead", DeprecationWarning)
+        return cls.schema()
 
     @property
-    def method_schemas(self):  # TODO This should be a classmethod, but is a property to avoid collision with workflow.
+    def raw_method_schemas(self):
         """ Generate dynamic schemas for methods of class. """
+        # TODO This should be a classmethod, but is a property to avoid collision with workflow.
         cls = self.__class__
         valid_method_names = [m for m in dir(cls) if not m.startswith('_') and m in cls._allowed_methods]
         schemas = {}
         for method_name in valid_method_names:
             method = getattr(cls, method_name)
             schema = dcs.MethodSchema(method)
-            schemas[method_name] = schema.to_dict()
+            schemas[method_name] = schema
         return schemas
+
+    @property
+    def method_schemas(self):
+        """ Generate dynamic schemas for methods of class. """
+        return {method_name: schema.to_dict() for method_name, schema in self.method_schemas.items()}
 
     @property
     def _method_jsonschemas(self):
         """ Generates dynamic jsonschemas for methods of class. """
         warnings.warn("method_jsonschema method is deprecated. Use method_schema instead", DeprecationWarning)
-        jsonschemas = {}
-        class_ = self.__class__
-
-        # TOCHECK Backward compatibility. Will need to be changed
-        if hasattr(class_, '_dessia_methods'):
-            allowed_methods = class_._dessia_methods
-        else:
-            allowed_methods = class_._allowed_methods
-
-        valid_method_names = [m for m in dir(class_) if not m.startswith('_') and m in allowed_methods]
-
-        for method_name in valid_method_names:
-            method = getattr(class_, method_name)
-
-            if not isinstance(method, property):
-                required_args, default_args = dcs.inspect_arguments(method=method, merge=False)
-                annotations = get_type_hints(method)
-                if annotations:
-                    jsonschemas[method_name] = deepcopy(JSONSCHEMA_HEADER)
-                    jsonschemas[method_name]['required'] = []
-                    jsonschemas[method_name]['is_method'] = True
-                    for i, annotation in enumerate(annotations.items()):
-                        # TOCHECK Not actually ordered
-                        argname = annotation[0]
-                        if argname not in dcs.RESERVED_ARGNAMES:
-                            if argname in required_args:
-                                jsonschemas[method_name]['required'].append(str(i))
-                            jsonschema_element = jsonschema_from_annotation(annotation, {}, i)[argname]
-
-                            jsonschemas[method_name]['properties'][str(i)] = jsonschema_element
-                            if argname in default_args:
-                                default = set_default_value(jsonschemas[method_name]['properties'], str(i),
-                                                            default_args[argname])
-                                jsonschemas[method_name]['properties'].update(default)
-        return jsonschemas
+        return self.method_schemas
 
     def method_dict(self, method_name=None, method_jsonschema=None):
         """ Return a jsonschema of a method arguments. """
@@ -319,10 +214,9 @@ class DessiaObject(SerializableObject):
             raise NotImplementedError(msg)
 
         if method_name is not None and method_jsonschema is None:
-            method_jsonschema = self._method_jsonschemas[method_name]
-
-        dict_ = default_dict(method_jsonschema)
-        return dict_
+            method_jsonschema = self.method_schemas[method_name]
+            # TODO CHeck this
+        return method_jsonschema.to_dict()
 
     def dict_to_arguments(self, dict_, method):
         """ Transform serialized argument of a method to python objects ready to use in method evaluation. """
