@@ -41,13 +41,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
-## 0.13.2 [Unreleased yet]
+## 0.13.2
+
+### Added 
+
+- Display settings now have load_by_default config option
 
 ### Fix
+
 - Workflow state/run to_dict fix on adding references
 - Handle serialization pointers of non-standalone objects
 - hash fix: calling hash instead of data hash in eq.
-
 
 ## 0.13.1
 
