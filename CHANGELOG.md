@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## 0.13.2 [Unreleased yet]
 
 ### Fix
+- Workflow state/run to_dict fix on adding references
+
+## 0.13.1 [released 02/21/2023]
+
+### Fix
 - hash fix: calling hash instead of data hash in eq.
 
 ## 0.13.1
