@@ -114,11 +114,11 @@ class Modeler(DessiaObject):
         :type outputs: List[List[float]]
 
         :param input_is_scaled:
-            Whether to standardize inputs or not with a models.StandardScaler
+            Whether to standardize inputs or not with a `models.StandardScaler`
         :type input_is_scaled: bool, `optional`, True
 
         :param output_is_scaled:
-            Whether to standardize outputs or not with a models.StandardScaler
+            Whether to standardize outputs or not with a `models.StandardScaler`
         :type output_is_scaled: bool, `optional`, False
 
         :param name:
@@ -149,11 +149,11 @@ class Modeler(DessiaObject):
         :type output_names: List[str]
 
         :param input_is_scaled:
-            Whether to standardize inputs or not with a models.StandardScaler
+            Whether to standardize inputs or not with a `models.StandardScaler`
         :type input_is_scaled: bool, `optional`, True
 
         :param output_is_scaled:
-            Whether to standardize outputs or not with a models.StandardScaler
+            Whether to standardize outputs or not with a `models.StandardScaler`
         :type output_is_scaled: bool, `optional`, False
 
         :param name:
@@ -205,7 +205,7 @@ class Modeler(DessiaObject):
     def _fit_predict(cls, inputs: Matrix, outputs: Matrix, predicted_inputs: Matrix, model: models.Model,
                      input_is_scaled: bool = True, output_is_scaled: bool = False,
                      name: str = '') -> Tuple['Modeler', Union[Vector, Matrix]]:
-        """ Private method to fit outputs to inputs and predict predicted_inputs for a Dataset (fit then predict). """
+        """Private method to fit outputs to inputs and predict `predicted_inputs` for a Dataset (fit then predict)."""
         modeler = cls._fit(inputs, outputs, model, input_is_scaled, output_is_scaled, name)
         return modeler, modeler._predict(predicted_inputs)
 
@@ -213,7 +213,7 @@ class Modeler(DessiaObject):
     def fit_predict_matrix(cls, inputs: Matrix, outputs: Matrix, predicted_inputs: Matrix, model: models.Model,
                            input_is_scaled: bool = True, output_is_scaled: bool = False,
                            name: str = '') -> Tuple['Modeler', Matrix]:
-        """ Fit outputs to inputs and predict predicted_inputs for matrix data (fit then predict). """
+        """ Fit outputs to inputs and predict `predicted_inputs` for matrix data (fit then predict). """
         modeler, predictions = cls._fit_predict(inputs, outputs, predicted_inputs, model, input_is_scaled,
                                                 output_is_scaled, name)
         return modeler, modeler._format_output(predictions)
@@ -222,7 +222,7 @@ class Modeler(DessiaObject):
     def fit_predict_dataset(cls, fit_dataset: Dataset, to_predict_dataset: Dataset, input_names: List[str],
                             output_names: List[str], model: models.Model, input_is_scaled: bool = True,
                             output_is_scaled: bool = False, name: str = '') -> Tuple['Modeler', Matrix]:
-        """ Fit outputs to inputs and predict outputs of to_predict_dataset (fit then predict). """
+        """ Fit outputs to inputs and predict outputs of `to_predict_dataset` (fit then predict). """
         modeler = cls.fit_dataset(fit_dataset, input_names, output_names, model, input_is_scaled, output_is_scaled,
                                   name)
         return modeler, modeler.predict_dataset(to_predict_dataset, input_names)
@@ -331,7 +331,7 @@ class ModeledDataset(Dataset):
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
                        pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'SerializableObject':
-        """ Specific dict_to_object method. """
+        """ Specific `dict_to_object` method. """
         dessia_objects = []
         for dessia_object in dict_['dessia_objects']:
             dessia_objects.append(Sample(dessia_object['values'],
@@ -360,7 +360,7 @@ class ModeledDataset(Dataset):
 
     @property
     def matrix(self) -> Matrix:
-        """ Get equivalent matrix of dessia_objects (`len(dessia_objects) x len(common_attributes)`). """
+        """ Get equivalent matrix of `dessia_objects` (`len(dessia_objects) x len(common_attributes)`). """
         if self._matrix is None:
             matrix = []
             for sample in self:
@@ -374,7 +374,7 @@ class ModeledDataset(Dataset):
                              input_names: List[str], output_names: List[str], input_is_scaled: bool = True,
                              output_is_scaled: bool = False, nb_tests: int = 5, ratio: float = 0.8, name: str = '') \
         -> Tuple['ModeledDataset', 'Modeler', 'CrossValidation']:
-        """ Train and validate a modeler with train_dataset and predict to_predict_dataset. """
+        """ Train and validate a modeler with `train_dataset` and predict `to_predict_dataset`. """
         modeler = Modeler.fit_dataset(dataset=train_dataset, input_names=input_names, output_names=output_names,
                                       model=model, input_is_scaled=input_is_scaled, output_is_scaled=output_is_scaled,
                                       name=name + "_modeler")
@@ -391,7 +391,7 @@ class ModeledDataset(Dataset):
 
 class ValidationData(DessiaObject):
     """
-    Object that stores data as 6 matrices: input_train, output_train, pred_train, input_test, output_test and pred_test.
+    Object that stores data as 6 matrices.
 
     :param input_train:
         Matrix of input data used to train the modeler to validate.
@@ -402,19 +402,19 @@ class ValidationData(DessiaObject):
     :type input_test: List[List[float]]
 
     :param output_train:
-        Matrix of reference output data corresponding to input_train.
+        Matrix of reference output data corresponding to `input_train`.
     :type output_train: List[List[float]]
 
     :param output_test:
-        Matrix of reference output data corresponding to input_test.
+        Matrix of reference output data corresponding to `input_test`.
     :type output_test: List[List[float]]
 
     :param pred_train:
-        Matrix of prediction of input_train made with the modeler to validate.
+        Matrix of prediction of `input_train` made with the modeler to validate.
     :type pred_train: List[List[float]]
 
     :param pred_test:
-        Matrix of prediction of input_test made with the modeler to validate.
+        Matrix of prediction of `input_test` made with the modeler to validate.
     :type pred_test: List[List[float]]
 
     :param input_names:
@@ -485,7 +485,7 @@ class ValidationData(DessiaObject):
         return points_train, points_test, self._bisectrice_points()
 
     def build_graphs(self, reference_path: str) -> List[Graph2D]:
-        """ Build elements and graphs for plot_data method. """
+        """ Build elements and graphs for `plot_data` method. """
         points_train, points_test, points_bisectrice = self._to_val_points(reference_path)
         pl_datasets = self._ref_val_datasets(points_train, points_test)
         pl_datasets.append(pl_Dataset(points_bisectrice, point_style=LIN_POINT_STYLE, edge_style=STD_LINE,
@@ -497,13 +497,13 @@ class ValidationData(DessiaObject):
         return graphs, points_train + points_test + points_bisectrice
 
     def plot_data(self, reference_path: str = '#', **_):
-        """ Plot data method for ValidationData. """
+        """ Plot data method for `ValidationData`. """
         graphs, elements = self.build_graphs(reference_path)
         return [MultiplePlots(elements=elements, plots=graphs, initial_view_on=True)]
 
 
 class ModelValidation(DessiaObject):
-    """ Class to handle a modeler and the ValidationData used to train and test it. """
+    """ Class to handle a modeler and the `ValidationData` used to train and test it. """
     _non_data_eq_attributes = ['_score']
     _standalone_in_db = True
 
@@ -516,7 +516,7 @@ class ModelValidation(DessiaObject):
 
     @property
     def score(self) -> float:
-        """ Score of fitted Modeler stored in attribute modeler. """
+        """ Score of fitted `Modeler` stored in attribute modeler. """
         if self._score is None:
             self._score = self.modeler.score_matrix(self.data.input_test, self.data.output_test)
         return self._score
@@ -537,11 +537,11 @@ class ModelValidation(DessiaObject):
     def from_matrix(cls, modeler: Modeler, inputs: Matrix, outputs: Matrix, input_names: List[str],
                     output_names: List[str], ratio: float = 0.8, name: str = '') -> 'ModelValidation':
         """
-        Create a ModelValidation object from inputs and outputs matrices.
+        Create a `ModelValidation` object from inputs and outputs matrices.
 
         :param modeler:
-            Modeler type and its hyperparameters, stored in a Modeler object for the sake of simplicity. Here, modeler
-             does not need to be fitted.
+            Modeler type and its hyperparameters, stored in a `Modeler` object for the sake of simplicity. Here,
+             modeler does not need to be fitted.
         :type modeler: Modeler
 
         :param inputs:
@@ -561,16 +561,16 @@ class ModelValidation(DessiaObject):
         :type output_names: List[str]
 
         :param ratio:
-            Ratio on which to split matrix. If ratio > 1, ind_train will be of length `int(ratio)` and ind_test of
+            Ratio on which to split matrix. If ratio > 1, `in_train` will be of length `int(ratio)` and `in_test` of
             length `len_matrix - int(ratio)`.
         :type ratio: float, `optional`, defaults to 0.8
 
         :param name:
-            Name of ModelValidation
+            Name of `ModelValidation`
         :type name: str, `optional`, defaults to `''`
 
-        :return: A ModelValidation object, containing the fitted modeler, its score, train and test data and their
-         predictions for input, stored in a ValidationData object.
+        :return: A `ModelValidation` object, containing the fitted modeler, its score, train and test data and their
+         predictions for input, stored in a `ValidationData` object.
         :rtype: ModelValidation
         """
         in_train, in_test, out_train, out_test = models.train_test_split(inputs, outputs, ratio=ratio)
@@ -580,11 +580,11 @@ class ModelValidation(DessiaObject):
     def from_dataset(cls, modeler: Modeler, dataset: Dataset, input_names: List[str], output_names: List[str],
                      ratio: float = 0.8, name: str = '') -> 'ModelValidation':
         """
-        Create a ModelValidation object from a dataset.
+        Create a `ModelValidation` object from a dataset.
 
         :param modeler:
-            Modeler type and its hyperparameters, stored in a Modeler object for the sake of simplicity. Here, modeler
-             does not need to be fitted.
+            Modeler type and its hyperparameters, stored in a `Modeler` object for the sake of simplicity. Here,
+             modeler does not need to be fitted.
         :type modeler: Modeler
 
         :param dataset:
@@ -600,15 +600,15 @@ class ModelValidation(DessiaObject):
         :type output_names: List[str]
 
         :param ratio:
-            Ratio on which to split matrix. If ratio > 1, ind_train will be of length `int(ratio)` and ind_test of
+            Ratio on which to split matrix. If ratio > 1, `in_train` will be of length `int(ratio)` and `in_test` of
             length `len_matrix - int(ratio)`.
         :type ratio: float, `optional`, defaults to 0.8
 
         :param name:
-            Name of ModelValidation
+            Name of `ModelValidation`
         :type name: str, `optional`, defaults to `''`
 
-        :return: A ModelValidation object, containing the fitted modeler, its score, train and test data and their
+        :return: A `ModelValidation` object, containing the fitted modeler, its score, train and test data and their
          predictions for input, stored in a ValidationData object.
         :rtype: ModelValidation
         """
@@ -618,13 +618,13 @@ class ModelValidation(DessiaObject):
         return cls._build(modeler, in_train, in_test, out_train, out_test, input_names, output_names, name)
 
     def plot_data(self, reference_path: str = '#', **_):
-        """ Plot data method for ModelValidation. """
+        """ Plot data method for `ModelValidation`. """
         return self.data.plot_data(reference_path=reference_path)
 
 
 class CrossValidation(DessiaObject):
     """
-    Class to cross validate a Modeler modeling.
+    Class to cross validate a `Modeler` modeling.
 
     The purpose of cross validation is to validate a modeling process for a specific type of machine learning
     method, set with specific hyperparameters.
@@ -632,7 +632,7 @@ class CrossValidation(DessiaObject):
     train data and scored with test data. Furthermore, train and test inputs are predicted with the model and
     plotted in a graph that plots these predictions versus reference values. In this plot, the more red points are
     near the black line, the more the model can predict new data precisely.
-    This process of cross validation is ran nb_tests times. If all of them show a good score and a nice train test
+    This process of cross validation is ran `nb_tests` times. If all of them show a good score and a nice train test
     plot, then the tested modeling is validated and can be used in other, but similar, processes for
     predictions.
     """
@@ -646,7 +646,7 @@ class CrossValidation(DessiaObject):
 
     @property
     def scores(self) -> Vector:
-        """ List of scores of modelers contained in model_validations. """
+        """ List of scores of modelers contained in `model_validations`. """
         if self._scores is None:
             self._scores = [model_val.score for model_val in self.model_validations]
             return self._scores
@@ -677,7 +677,7 @@ class CrossValidation(DessiaObject):
     def from_matrix(cls, modeler: Modeler, inputs: Matrix, outputs: Matrix, input_names: List[str],
                     output_names: List[str], nb_tests: int = 5, ratio: float = 0.8,
                     name: str = '') -> 'CrossValidation':
-        """ Cross Validation of modeler from inputs and outputs matrices, given input_names and output_names. """
+        """ Cross validation of modeler from inputs and outputs matrices, given `input_names` and `output_names`. """
         validations = []
         for idx in range(nb_tests):
             name = f"{name}_val_{idx}"
@@ -689,11 +689,11 @@ class CrossValidation(DessiaObject):
     def from_dataset(cls, modeler: Modeler, dataset: Dataset, input_names: List[str], output_names: List[str],
                      nb_tests: int = 5, ratio: float = 0.8) -> 'CrossValidation':
         """
-        Cross Validation of modeler from a Dataset object, given input_names and output_names.
+        Cross validation of modeler from a Dataset object, given `input_names` and `output_names`.
 
         :param modeler:
-            Modeler type and its hyperparameters, stored in a Modeler object for the sake of simplicity. Here, modeler
-             does not need to be fitted.
+            Modeler type and its hyperparameters, stored in a `Modeler` object for the sake of simplicity. Here,
+             modeler does not need to be fitted.
         :type modeler: List[List[float]]
 
         :param dataset:
@@ -713,7 +713,7 @@ class CrossValidation(DessiaObject):
         :type nb_tests: int, `optional`, defaults to 1
 
         :param ratio:
-            Ratio on which to split matrix. If ratio > 1, ind_train will be of length `int(ratio)` and ind_test of
+            Ratio on which to split matrix. If ratio > 1, `in_train` will be of length `int(ratio)` and `in_test` of
             length `len_matrix - int(ratio)`.
         :type ratio: float, `optional`, defaults to 0.8
         """
@@ -724,7 +724,7 @@ class CrossValidation(DessiaObject):
         return cls(validations, f"{name}_crossval")
 
     def plot_data(self, reference_path: str = '#', **_):
-        """ Plot data method for CrossValidation. """
+        """ Plot data method for `CrossValidation`. """
         graphs = []
         for idx, validation in enumerate(self.model_validations):
             graphs += validation.data.build_graphs(reference_path=f"{reference_path}/model_validations/{idx}")[0]
@@ -734,23 +734,9 @@ class CrossValidation(DessiaObject):
         return [self._plot_score(reference_path=reference_path),
                 MultiplePlots(graphs, elements=[{"factice_key":0}], initial_view_on=True)]
 
-    # Kept in case of a better multiplot
-    # def plot_data(self, **_):
-    #     WIDTH_CANVAS = 1400
-    #     HEIGHT_CANVAS = 900
-    #     width = WIDTH_CANVAS / len(self.model_validations)
-    #     height = HEIGHT_CANVAS / len(self.model_validations[0].data.output_names)
-    #     coords = []
-    #     graphs = []
-    #     for idx, validation in enumerate(self.model_validations):
-    #         graphs += validation.data.build_graphs()[0]
-    #         coords += [[width * idx, 0], [width * idx, height]]
-    #     scores_graph = [self._plot_score()]
-    #     return scores_graph+[MultiplePlots(graphs,elements=[{"factice_key":0}],coords=coords,initial_view_on=False)]
-
 
 def matrix_ranges(matrix: Matrix, nb_points: int = 20) -> Matrix:
-    """ Dessia linspace of nb_points points between extremum of each column of matrix. """
+    """ Dessia linspace of `nb_points` points between extremum of each column of matrix. """
     ranges = []
     for feature_column in zip(*matrix):
         min_value = min(feature_column)
@@ -760,7 +746,7 @@ def matrix_ranges(matrix: Matrix, nb_points: int = 20) -> Matrix:
     return ranges
 
 def axis_style(nb_x: int = 10, nb_y: int = 10) -> Axis:
-    """ Set axis style for Modeler objects. """
+    """ Set axis style for `Modeler` objects. """
     return Axis(nb_points_x=nb_x, nb_points_y=nb_y, axis_style=STD_LINE, grid_on=True)
 
 def scores_limits(number: int) -> Points:

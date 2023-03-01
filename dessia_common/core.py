@@ -1009,9 +1009,9 @@ class FiltersList(DessiaObject):
     @staticmethod
     def combine_booleans_lists(booleans_lists: List[List[bool]], logical_operator: str = "and"):
         """
-        Combine a list of `n` booleans indexes with the logical operator into a simple boolean index.
+        Combine a list of `n` boolean indexes with the logical operator into a simple boolean index.
 
-        :param booleans_lists: List of `n` booleans indexes
+        :param booleans_lists: List of `n` boolean indexes
         :type booleans_lists: List[List[bool]]
 
         :param logical_operator: Logical operator to combine filters (`'or'`, `'and'` or `'xor'`)
@@ -1038,12 +1038,12 @@ class FiltersList(DessiaObject):
 
     def get_booleans_index(self, dobjects_list: List[DessiaObject]):
         """
-        Compute all the filters of `self.filters` on `dobjects_list` and returns a booleans index of `dobjects_list`.
+        Compute all the filters of `self.filters` on `dobjects_list` and returns a boolean index of `dobjects_list`.
 
         :param dobject_list: List of data to filter
         :type dobject_list: List[DessiaObject]
 
-        :return: A `booleans index` of `dobjects_list` of the list of data to filter (`dobjects_list`)
+        :return: A boolean index of `dobjects_list` of the list of data to filter (`dobjects_list`)
         :rtype: List[bool]
 
         :Examples:
