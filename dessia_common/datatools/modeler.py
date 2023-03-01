@@ -96,7 +96,7 @@ class Modeler(DessiaObject):
         """ Private method to fit outputs to inputs with a machine learning method from datatools.models objects. """
         in_scaler, out_scaler, scaled_inputs, scaled_outputs = cls._compute_scalers(inputs, outputs, input_is_scaled,
                                                                                     output_is_scaled, name)
-        fit_model = model.fit(scaled_inputs, scaled_outputs, **model.params, name=name + '_model')
+        fit_model = model.fit(scaled_inputs, scaled_outputs, **model.parameters, name=name + '_model')
         return cls(fit_model, in_scaler, out_scaler, name)
 
     @classmethod

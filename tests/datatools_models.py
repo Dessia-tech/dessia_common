@@ -117,10 +117,10 @@ for key, model in skl_models.items():
         else:
             local_outputs = labelled_outputs
 
-    params = hyperparameters[key]
+    parameters = hyperparameters[key]
     dessia_models[key], preds = dessia_classes[key].fit_predict(std_inputs[:-10], local_outputs[:-10], std_inputs[-10:],
-                                                                **params)
-    dessia_models[key] = dessia_classes[key].fit(std_inputs[:-10], local_outputs[:-10], **params)
+                                                                **parameters)
+    dessia_models[key] = dessia_classes[key].fit(std_inputs[:-10], local_outputs[:-10], **parameters)
     try:
         assert(isinstance(dessia_models[key].score(std_inputs[-10:], local_outputs[-10:]), float))
     except ValueError as e:
