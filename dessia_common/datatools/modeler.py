@@ -57,6 +57,7 @@ class Modeler(DessiaObject):
         Name of Modeler.
     :type name: str, `optional`, defaults to `''`
     """
+
     _standalone_in_db = True
 
     def __init__(self, model: models.Model, input_scaler: models.Scaler, output_scaler: models.Scaler, name: str = ''):
@@ -306,6 +307,7 @@ class Modeler(DessiaObject):
 
 class ModeledDataset(Dataset):
     """ Class allowing to plot and study data generated from a DOE and its prediction from a modeler modeling. """
+    
     _standalone_in_db = True
 
     def __init__(self, dessia_objects: List[Sample] = None, input_names: List[str] = None,
@@ -502,6 +504,7 @@ class ValidationData(DessiaObject):
 
 class ModelValidation(DessiaObject):
     """ Class to handle a modeler and the `ValidationData` used to train and test it. """
+
     _non_data_eq_attributes = ['_score']
     _standalone_in_db = True
 
@@ -634,6 +637,7 @@ class CrossValidation(DessiaObject):
     plot, then the tested modeling is validated and can be used in other, but similar, processes for
     predictions.
     """
+
     _non_data_eq_attributes = ['_scores']
     _standalone_in_db = True
 

@@ -15,6 +15,7 @@ Matrix = List[Vector]
 # ======================================================================================================================
 class Scaler(DessiaObject):
     """ Base object for handling a scikit-learn Scaler. """
+
     _rebuild_attributes = []
 
     def __init__(self, name: str = ''):
@@ -149,6 +150,7 @@ class StandardScaler(Scaler):
         List of variances
     :type var_: List[float], `optional`, defaults to `None`
     """
+
     _rebuild_attributes = ['mean_', 'scale_', 'var_']
     _standalone_in_db = True
 
@@ -189,6 +191,7 @@ class LabelBinarizer(Scaler):
         Specify if the inputs are a sparse matrix or not.
     :type sparse_input_: bool, defaults to `False`
     """
+
     _rebuild_attributes = ['classes_', 'y_type_', 'sparse_input_']
 
     def __init__(self, classes_: List[int] = None, y_type_: str = 'multiclass', sparse_input_: bool = False,
@@ -346,6 +349,7 @@ class Ridge(LinearModel):
         Name of `Ridge` regression
     :type name: str, `optional`, defaults to `''`
     """
+
     _standalone_in_db = True
 
     def __init__(self, parameters: Dict[str, Any], coef_: Matrix = None, intercept_: Matrix = None, name: str = ''):
@@ -463,6 +467,7 @@ class LinearRegression(LinearModel):
         Name of Linear regression
     :type name: str, `optional`, defaults to `''`
     """
+
     _standalone_in_db = True
 
     def __init__(self, parameters: Dict[str, Any], coef_: Matrix = None, intercept_: Matrix = None, name: str = ''):
@@ -641,6 +646,7 @@ class DecisionTreeRegressor(Model):
         Name of `DecisionTreeRegressor`
     :type name: str, `optional`, defaults to `''`
     """
+
     _standalone_in_db = True
 
     def __init__(self, parameters: Dict[str, Any], n_outputs_: int = None, tree_: Tree = None, name: str = ''):
@@ -996,6 +1002,7 @@ class RandomForestRegressor(RandomForest):
         Name of `RandomForestRegressor`
     :type name: str, `optional`, defaults to `''`
     """
+
     _standalone_in_db = True
 
     def __init__(self, parameters: Dict[str, Any], n_outputs_: int = None, 
@@ -1049,6 +1056,7 @@ class RandomForestClassifier(RandomForest):
         Name of `RandomForestClassifier`
     :type name: str, `optional`, defaults to `''`
     """
+
     _standalone_in_db = True
 
     def __init__(self, parameters: Dict[str, Any], n_classes_: int = None, classes_: List[int] = None,
@@ -1288,6 +1296,7 @@ class SupportVectorRegressor(SupportVectorMachine):
         Specify if the inputs are a sparse matrix or not.
     :type _sparse: bool, `optional`, defaults to `False`
     """
+
     _standalone_in_db = True
 
     def __init__(self, parameters: Dict[str, Any], raw_coef_: Matrix = None, _dual_coef_: Matrix = None,
@@ -1371,6 +1380,7 @@ class SupportVectorClassifier(SupportVectorMachine):
         The classes labels.
     :type classes_: List[int], `optional`, defaults to `None`
     """
+
     _standalone_in_db = True
 
     def __init__(self, parameters: Dict[str, Any], raw_coef_: Matrix = None, _dual_coef_: Matrix = None,
@@ -1605,6 +1615,7 @@ class MLPRegressor(MultiLayerPerceptron):
         Name of `MLPRegressor`
     :type name: str, `optional`, defaults to `''`
     """
+
     _standalone_in_db = True
 
     def __init__(self, parameters: Dict[str, Any], coefs_: List[Matrix] = None, intercepts_: Matrix = None,
@@ -1668,6 +1679,7 @@ class MLPClassifier(MultiLayerPerceptron):
         Name of `MLPClassifier`
     :type name: str, `optional`, defaults to `''`
     """
+    
     _standalone_in_db = True
 
     def __init__(self, parameters: Dict[str, Any], coefs_: List[Matrix] = None, intercepts_: Matrix = None,
