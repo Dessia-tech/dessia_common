@@ -57,8 +57,7 @@ class DessiaObject(SerializableObject):
 
     Gathers generic methods and attributes
 
-    :cvar bool _standalone_in_db:
-        Indicates wether class objects should be independent in database or not.
+    :cvar bool _standalone_in_db: Indicates whether class objects should be independent in database or not.
         If False, object will only exist inside its parent.
 
     :cvar bool _eq_is_data_eq:
@@ -77,23 +76,18 @@ class DessiaObject(SerializableObject):
         [Advanced] List of instance attributes that should not be part of hash computation with data__hash__ method
         (if _eq_is_data_eq is True).
 
-    :cvar List[str] _ordered_attributes:
-        Documentation not available yet.
+    :cvar List[str] _ordered_attributes: Documentation not available yet.
 
-    :cvar List[str] _titled_attributes:
-        Documentation not available yet.
+    :cvar List[str] _titled_attributes: Documentation not available yet.
 
-    :cvar List[str] _init_variables:
-        Documentation not available yet.
+    :cvar List[str] _init_variables: Documentation not available yet.
 
     :cvar List[str] _export_formats:
         List of all available export formats. Class must define a export_[format] for each format in _export_formats
 
-    :cvar List[str] _allowed_methods:
-        List of all methods that are runnable from platform.
+    :cvar List[str] _allowed_methods: List of all methods that are runnable from platform.
 
-    :cvar List[str] _whitelist_attributes:
-        Documentation not available yet.
+    :cvar List[str] _whitelist_attributes: Documentation not available yet.
     :cvar List[str] _whitelist_attributes: List[str]
 
     :ivar str name: Name of object.
@@ -142,10 +136,10 @@ class DessiaObject(SerializableObject):
         Behavior can be controlled by class attribute _eq_is_data_eq to tell if we must use python equality (based on
         memory addresses) (_eq_is_data_eq = False) or a data equality (True).
         """
+        if hash(self) != hash(other_object):
+            return False
         if self._eq_is_data_eq:
             if self.__class__.__name__ != other_object.__class__.__name__:
-                return False
-            if self._data_hash() != other_object._data_hash():
                 return False
             return self._data_eq(other_object)
         return object.__eq__(self, other_object)
@@ -503,7 +497,7 @@ class DessiaObject(SerializableObject):
     @staticmethod
     def display_settings() -> List[DisplaySetting]:
         """ Return a list of objects describing how to call object displays. """
-        return [DisplaySetting(selector="markdown", type_="markdown", method="to_markdown"),
+        return [DisplaySetting(selector="markdown", type_="markdown", method="to_markdown", load_by_default=True),
                 DisplaySetting(selector="plot_data", type_="plot_data", method="plot_data", serialize_data=True)]
 
     def _display_from_selector(self, selector: str) -> DisplayObject:

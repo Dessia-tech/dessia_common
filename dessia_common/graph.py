@@ -13,7 +13,7 @@ def explore_tree_from_leaves(graph):
 
 
 def cut_tree_final_branches(graph: nx.DiGraph):
-    """ Cut final branches of a decision tree. """ # TODO: Check this
+    """ Cut final branches of a decision tree. """  # TODO: Check this
     number_node_removed = 1
     while number_node_removed:
         nodes_to_delete = []
@@ -44,7 +44,7 @@ def extract_region(networkx_graph: nx.Graph, nodes, distance: int = 5):
         succs = list(nx.dfs_successors(networkx_graph, source=node, depth_limit=distance))
         preds = list(nx.dfs_predecessors(networkx_graph, source=node, depth_limit=distance))
         ancs = list(nx.ancestors(networkx_graph, source=node))
-        print(f'found {len(succs)} successors and {len(preds)} predecesors {len(ancs)} ancestors')
+        print(f'found {len(succs)} successors and {len(preds)} predecessors {len(ancs)} ancestors')
         region_nodes.extend(succs)
         region_nodes.extend(preds)
         region_nodes.extend(ancs)
