@@ -47,6 +47,7 @@ def __getattr__(name):
         return dcs.RESERVED_ARGNAMES
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 
+
 _fullargsspec_cache = {}
 
 
@@ -677,14 +678,14 @@ class PhysicalObject(DessiaObject):
 
     def to_step_stream(self, stream):
         """
-        Export object CAD to given stream in .stp format.
+        Export object CAD to given stream in STEP format.
 
         Works if the class define a custom volmdlr model.
         """
         return self.volmdlr_volume_model().to_step_stream(stream=stream)
 
     def to_html_stream(self, stream: dcf.StringFile):
-        """ Exports Object CAD to given stream in the .html format. """
+        """ Exports Object CAD to given stream in the HTML format. """
         model = self.volmdlr_volume_model()
         babylon_data = model.babylon_data()
         script = model.babylonjs_script(babylon_data)
@@ -1008,7 +1009,7 @@ class FiltersList(DessiaObject):
     @staticmethod
     def combine_booleans_lists(booleans_lists: List[List[bool]], logical_operator: str = "and"):
         """
-        Combine a list of `n` booleans indexes with the logical operator into a simple booleans index.
+        Combine a list of `n` booleans indexes with the logical operator into a simple boolean index.
 
         :param booleans_lists: List of `n` booleans indexes
         :type booleans_lists: List[List[bool]]

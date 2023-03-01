@@ -176,3 +176,15 @@ class JsonFile(StringFile):
     """ A .json extended file. """
 
     extension = "json"
+
+
+class DocFile(BinaryFile):
+    """ Base class for Word files in old format. """
+
+    extension = 'doc'
+
+
+class DocxFile(BinaryFile):
+    """ Base class for Word files in new XML format. """
+
+    extension = 'docx'
