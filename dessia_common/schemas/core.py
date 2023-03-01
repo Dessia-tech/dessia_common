@@ -295,6 +295,10 @@ class Property:
         """ Stringified annotation. """
         return str(self.annotation)
 
+    @property
+    def standalone_in_db(self) -> bool:
+        return False
+
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
         """ Simple get class from its name. """
@@ -598,11 +602,14 @@ class CustomClass(Property):
         """ Full class name. """
         return full_classname(object_=self.annotation, compute_for='class')
 
+    @property
+    def standalone_in_db(self) -> bool:
+        return self.annotation._standalone_in_db
+
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write CustomClass as a Dict. """
         chunk = super().to_dict(title=title, editable=editable, description=description)
-        chunk.update({'type': 'object', 'standalone_in_db': self.annotation._standalone_in_db,
-                      "classes": [self.serialized]})
+        chunk.update({'type': 'object', 'standalone_in_db': self.standalone_in_db, "classes": [self.serialized]})
         return chunk
 
     def default_value(self):
@@ -634,18 +641,20 @@ class UnionProperty(TypingProperty):
     def __init__(self, annotation: Type[Union[T]], attribute: str, definition_default: Union[T] = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
-        standalone_args = [a._standalone_in_db for a in self.args]
-        if all(standalone_args):
-            self.standalone = True
-        elif not any(standalone_args):
-            self.standalone = False
-        else:
-            self.standalone = None
-
     @property
     def serialized(self) -> str:
         """ Generic serialization with 'Union' enforced, because Union annotation has no __name__ attribute. """
         return compute_typing_schema_serialization(serialized_typing="Union", args_schemas=self.args_schemas)
+
+    @property
+    def standalone_in_db(self) -> bool:
+        standalone_args = [a._standalone_in_db for a in self.args]
+        if all(standalone_args):
+            return True
+        elif not any(standalone_args):
+            return False
+        else:
+            return None
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
@@ -655,7 +664,7 @@ class UnionProperty(TypingProperty):
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write Union as a Dict. """
         chunk = super().to_dict(title=title, editable=editable, description=description)
-        chunk.update({'type': 'object', 'classes': [self.serialized], 'standalone_in_db': self.standalone})
+        chunk.update({'type': 'object', 'classes': [self.serialized], 'standalone_in_db': self.standalone_in_db})
         return chunk
 
     def default_value(self):
@@ -923,11 +932,14 @@ class InstanceOfProperty(TypingProperty):
         """ Get Schema of base class. """
         return ClassSchema(self.args[0])
 
+    @property
+    def standalone_in_db(self) -> bool:
+        return self.args[0]._standalone_in_db
+
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write InstanceOf as a Dict. """
         chunk = super().to_dict(title=title, editable=editable, description=description)
-        class_ = self.args[0]
-        chunk.update({'type': 'object', 'instance_of': self.serialized, 'standalone_in_db': class_._standalone_in_db})
+        chunk.update({'type': 'object', 'instance_of': self.serialized, 'standalone_in_db': self.standalone_in_db})
         return chunk
 
     def default_value(self) -> BaseClass:
@@ -957,6 +969,10 @@ class SubclassProperty(TypingProperty):
     def annotation_from_serialized(cls, serialized: str):
         """ Deserialize Subclass annotation. """
         return Subclass[TypingProperty._args_from_serialized(serialized)]
+
+    @property
+    def standalone_in_db(self) -> bool:
+        return self.args[0]._standalone_in_db
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write Subclass as a Dict. """
