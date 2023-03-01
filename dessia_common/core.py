@@ -137,10 +137,10 @@ class DessiaObject(SerializableObject):
         Behavior can be controled by class attribute _eq_is_data_eq to tell if we must use python equality (based on
         memory addresses) (_eq_is_data_eq = False) or a data equality (True).
         """
+        if hash(self) != hash(other_object):
+            return False
         if self._eq_is_data_eq:
             if self.__class__.__name__ != other_object.__class__.__name__:
-                return False
-            if self._data_hash() != other_object._data_hash():
                 return False
             return self._data_eq(other_object)
         return object.__eq__(self, other_object)
