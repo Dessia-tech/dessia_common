@@ -867,11 +867,11 @@ class RandomForest(Model):
     """
     Base object for handling a scikit-learn `RandomForest` object.
 
-    Please refer to https://scikit-learn.org/stable/modules/ensemble.html#forest for more information on `RandomForest`.
+    More information: https://scikit-learn.org/stable/modules/ensemble.html#forest
     """
 
-    def __init__(self, parameters: Dict[str, Any], n_outputs_: int = None, estimators_: List[DecisionTreeRegressor] = None,
-                 name: str = ''):
+    def __init__(self, parameters: Dict[str, Any], n_outputs_: int = None, 
+                 estimators_: List[DecisionTreeRegressor] = None, name: str = ''):
         self.estimators_ = estimators_
         self.n_outputs_ = n_outputs_
         Model.__init__(self, parameters=parameters, name=name)

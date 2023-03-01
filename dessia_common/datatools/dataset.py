@@ -267,7 +267,7 @@ class Dataset(DessiaObject):
         return string
 
     def to_markdown(self) -> str:
-        """Render a markdown of the object output type: string."""
+        """ Render a markdown of the object output type: string. """
         md_writer = MarkdownWriter(print_limit=25, table_limit=12)
         name = md_writer.print_name(self)
         class_ = md_writer.print_class(self)
@@ -284,12 +284,12 @@ class Dataset(DessiaObject):
             return self.matrix[index][self.common_attributes.index(attr)]
 
     def __len__(self):
-        """Length of Dataset is len(Dataset.dessia_objects)."""
+        """ Length of Dataset is len(Dataset.dessia_objects). """
         return len(self.dessia_objects)
 
     @property
     def common_attributes(self):
-        """List of common attributes of stored dessia_objects."""
+        """ List of common attributes of stored dessia_objects. """
         if self._common_attributes is None:
             if len(self) == 0:
                 return []
@@ -392,15 +392,11 @@ class Dataset(DessiaObject):
         return list(map(list, zip(*transposed_submatrix)))
 
     def to_input_output(self, input_names: List[str], output_names: List[str]) -> List[Matrix]:
-        """
-        Split matrix of Dataset in two matrices inputs and outputs according to input_names and output_names.
-        """
+        """ Split matrix of Dataset in two matrices inputs and outputs according to input_names and output_names. """
         return self.sub_matrix(input_names), self.sub_matrix(output_names)
 
     def train_test_split(self, ratio: float = 0.8, shuffled: bool = True) -> List[Matrix]:
-        """
-        Generate train and test Datasets from current Dataset.
-        """
+        """ Generate train and test Datasets from current Dataset. """
         ind_train, ind_test = models.get_split_indexes(len(self), ratio=ratio, shuffled=shuffled)
         return Dataset(self[ind_train], name=self.name + '_train'), Dataset(self[ind_test], name=self.name + '_test')
 
@@ -453,16 +449,12 @@ class Dataset(DessiaObject):
 
     @property
     def maximums(self):
-        """
-        Compute maximum values and store it in a list of length n_features.
-        """
+        """ Compute maximum values and store it in a list of length `n_features`. """
         return helpers.maximums(self.matrix)
 
     @property
     def minimums(self):
-        """
-        Compute minimum values and store it in a list of length n_features.
-        """
+        """ Compute minimum values and store it in a list of length `n_features`. """
         return helpers.minimums(self.matrix)
 
     def mean(self):
