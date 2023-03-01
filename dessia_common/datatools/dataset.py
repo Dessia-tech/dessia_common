@@ -71,7 +71,7 @@ class Dataset(DessiaObject):
             >>> Dataset(all_cars_wi_feat)[0:2]
             returns Dataset(all_cars_wi_feat[0:2])
             >>> Dataset(all_cars_wi_feat)[[0,5,6]]
-            returns Dataset([all_cars_wi_feat[idx] for idx in [0,5,6]])
+            returns Dataset([all_cars_wi_feat[i] for i in [0,5,6]])
             >>> booleans_list = [True, False,..., True] of length len(all_cars_wi_feat)
             >>> Dataset(all_cars_wi_feat)[booleans_list]
             returns Dataset([car for car, boolean in zip(all_cars_wi_feat, booleans_list) if boolean])

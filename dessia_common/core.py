@@ -403,7 +403,7 @@ class DessiaObject(SerializableObject):
         check_list = dcc.CheckList([])
 
         if check_platform:
-            check_list += self.check_platform(level=level)
+            check_list += self.check_platform()
         return check_list
 
     def is_valid(self, level: str = 'error') -> bool:
@@ -501,7 +501,7 @@ class DessiaObject(SerializableObject):
 
     @staticmethod
     def display_settings() -> List[DisplaySetting]:
-        """ Return a list of objects describing how to call subdisplays. """
+        """ Return a list of objects describing how to call object displays. """
         return [DisplaySetting(selector="markdown", type_="markdown", method="to_markdown"),
                 DisplaySetting(selector="plot_data", type_="plot_data", method="plot_data", serialize_data=True)]
 
@@ -569,37 +569,34 @@ class DessiaObject(SerializableObject):
     def _check_platform(self, level='error'):
         return self.check_platform().raise_if_above_level(level=level)
 
-    def check_platform(self, level='error'):
+    def check_platform(self):
         """ Reproduce lifecycle on platform (serialization, display). Raise an error if something is wrong. """
-        checks = []
-        try:
-            dict_ = self.to_dict(use_pointers=True)
-        except TypeError:
-            dict_ = self.to_dict()
-        json_dict = json.dumps(dict_)
+        serializable_results = dcc.check_serialization_process(object_=self, use_pointers=True)
+        dict_ = serializable_results.pop("dict_")
 
-        decoded_json = json.loads(json_dict)
-        deserialized_object = self.dict_to_object(decoded_json)
+        copy_results = dcc.check_copy(self)
 
-        if not deserialized_object._data_eq(self):
-            print('data diff: ', self._data_diff(deserialized_object))
-            checks.append(dcc.FailedCheck('Object is not equal to itself after serialization/deserialization'))
-        copied_object = self.copy()
-        if not copied_object._data_eq(self):
-            try:
-                print('data diff: ', self._data_diff(copied_object))
-            except:
-                pass
-            checks.append(dcc.FailedCheck('Object is not equal to itself after copy.'))
-
+        # Not refactoring this due to dependencies and cyclic imports
+        print("Checking BSON validity...")
+        start = time.time()
         valid, hint = is_bson_valid(stringify_dict_keys(dict_))
         if not valid:
-            checks.append(dcc.FailedCheck(f'Object is not bson valid {hint}'))
+            print("Failed.\n")
+            check = dcc.FailedCheck(f"Object is not BSON valid {hint}")
+        else:
+            print("Object is BSON valid.")
+            check = dcc.PassedCheck("Object is BSON valid")
+        duration = time.time() - start
+        print(f"Checked BSON validity in {duration}s.\n")
+        bson_results = {"check": check, "duration": duration}
 
-        json.dumps(self._displays())
-        json.dumps(self.method_schemas)
+        display_results = dcc.check_displays(self)
+        schemas_results = dcc.check_schemas(self)
 
-        return dcc.CheckList(checks)
+        results = [serializable_results, copy_results, bson_results, display_results, schemas_results]
+        duration = sum(r["duration"] for r in results)
+        print(f"\nCompleted Platform Check in {duration}s.\n")
+        return dcc.CheckList([r["check"] for r in results])
 
     def to_xlsx(self, filepath: str):
         """ Export the object to an XLSX file given by the filepath. """
@@ -1027,7 +1024,7 @@ class FiltersList(DessiaObject):
 
         :raises NotImplementedError: If logical_operator is not one of `'and'`, `'or'`, `'xor'`, raises an error
 
-        :return: Booleans index of the filtered data
+        :return: Boolean indices of the filtered data
         :rtype: List[bool]
 
         :Examples:
@@ -1072,12 +1069,10 @@ class FiltersList(DessiaObject):
         """
         Apply a FiltersList on a list of DessiaObjects.
 
-        :param dobjects_list:
-            List of DessiaObjects to filter
+        :param dobjects_list: List of DessiaObjects to filter
         :type dobjects_list: List[DessiaObject]
 
-        :return:
-            List of filtered values
+        :return: List of filtered values
         :rtype: List[DessiaObject]
 
         :Examples:
@@ -1103,15 +1098,14 @@ def dict_merge(old_dct, merge_dct, add_keys=True, extend_lists=True):
     """
     Recursive dict merge.
 
-    Inspired by :meth:``dict.update()``, instead of updating only top-level keys, dict_merge recurses down into dicts
-    nested to an arbitrary depth, updating keys. The ``merge_dct`` is merged into ``dct``.
+    Inspired by :meth:``dict.update()``, instead of updating only top-level keys, dict_merge goes down
+    recursively into dictionaries nested to an arbitrary depth, updating keys.
+    The ``merge_dct`` is merged into ``dct``.
 
-    This version will return a copy of the dictionary and leave the original
-    arguments untouched.
+    This version will return a copy of the dictionary and leave the original arguments untouched.
 
-    The optional argument ``add_keys``, determines whether keys which are
-    present in ``merge_dct`` but not ``dct`` should be included in the
-    new dict.
+    The optional argument ``add_keys``, determines whether keys which are present in ``merge_dct``
+    but not ``dct`` should be included in the new dict.
 
     :param old_dct: Onto which the merge is executed
     :type old_dct: Dict
@@ -1119,8 +1113,7 @@ def dict_merge(old_dct, merge_dct, add_keys=True, extend_lists=True):
     :type merge_dct: Dict
     :param add_keys: Whether to add new keys. Default value is True
     :type add_keys: bool, optional
-    :param extend_lists: Whether to extend lists if keys are updated and
-        value is a list. Default value is True
+    :param extend_lists: Whether to extend lists if keys are updated and value is a list. Default value is True
     :type extend_lists: bool, optional
     :return: Updated dict
     :rtype: Dict

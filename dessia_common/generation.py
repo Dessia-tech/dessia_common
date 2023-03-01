@@ -156,7 +156,7 @@ class DecisionTreeGenerator(TreeGenerator):
 
 class RegularDecisionTreeGenerator(TreeGenerator):
     """
-    Abstract class, to be subclassed by real class.
+    Abstract class, to be inherited by real class.
 
     This is still experimental and might be buggy
     """
