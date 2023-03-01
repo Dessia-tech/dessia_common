@@ -353,7 +353,7 @@ class Workflow(Block):
     """
     Class Block of Workflows.
 
-    :param blocks: A List with all the Blocks used by the Worklow.
+    :param blocks: A List with all the Blocks used by the Workflow.
     :param pipes: A List of Pipe objects.
     :param imposed_variable_values: A dictionary of imposed variable values.
     :param description: A short description that will be displayed on workflow card (frontend).
