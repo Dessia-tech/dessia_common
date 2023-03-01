@@ -57,12 +57,16 @@ class DessiaObject(SerializableObject):
     Gathers generic methods and attributes
 
     :cvar bool _standalone_in_db:
-        Indicates wether class objects should be independent in database or not.
+        Indicates whether class objects should be independent in database or not.
         If False, object will only exist inside its parent.
 
     :cvar bool _eq_is_data_eq:
         Indicates which type of equality check is used: strict equality or equality based on data.
+<<<<<<< HEAD
         If False, Python's object __eq__ method is used (strict), else, user custom data_eq is used (data)
+=======
+        If False, Python's object __eq__ method is used (IE. strict), else, user custom data_eq is used (IE. data)
+>>>>>>> origin/master
 
     :cvar List[str] _non_serializable_attributes:
         [Advanced] List of instance attributes that should not be part of serialization with to_dict method.
@@ -141,10 +145,10 @@ class DessiaObject(SerializableObject):
         Behavior can be controlled by class attribute _eq_is_data_eq to tell if we must use python equality (based on
         memory addresses) (_eq_is_data_eq = False) or a data equality (True).
         """
+        if hash(self) != hash(other_object):
+            return False
         if self._eq_is_data_eq:
             if self.__class__.__name__ != other_object.__class__.__name__:
-                return False
-            if self._data_hash() != other_object._data_hash():
                 return False
             return self._data_eq(other_object)
         return object.__eq__(self, other_object)
