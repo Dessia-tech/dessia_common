@@ -20,8 +20,8 @@ MIN_NOTE = 8.55
 UNWATCHED_ERRORS = ["fixme", "trailing-whitespace", "import-error"]
 
 MAX_ERROR_BY_TYPE = {
-    "wrong-spelling-in-docstring": 361,
-    "wrong-spelling-in-comment": 92,
+    "wrong-spelling-in-docstring": 306,
+    "wrong-spelling-in-comment": 87,
     "protected-access": 38,
     "consider-using-f-string": 1,
     "arguments-differ": 2,
