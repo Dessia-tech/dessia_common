@@ -5,6 +5,7 @@ bool
 builtins
 classmethod
 cls
+CMA
 config
 csv
 cvar
@@ -41,6 +42,7 @@ str
 StringFile
 Stringify
 submodule
+subobjects
 traceback
 uuid
 uuids
