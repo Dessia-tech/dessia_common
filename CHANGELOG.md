@@ -5,16 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 0.13.2 [unreleased]
+## 0.13.2 [Unreleased yet]
 
 ### Fix
 - Workflow state/run to_dict fix on adding references
+- Handle serialization pointers of non-standalone objects
+- hash fix: calling hash instead of data hash in eq.
 
-## 0.13.1 [released 02/21/2023]
+## 0.13.1
 
 ### Fix
-- Handle serialization pointers of non-standalone objects
+
 - WorkflowRun settings now sets the right method to call for workflow display
+- Handle serialization pointers of non-standalone objects
 
 ## 0.13.0 [02/14/2023]
 
