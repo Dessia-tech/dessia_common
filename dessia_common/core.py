@@ -199,7 +199,7 @@ class DessiaObject(SerializableObject):
     @property
     def method_schemas(self):
         """ Generate dynamic schemas for methods of class. """
-        return {method_name: schema.to_dict() for method_name, schema in self.method_schemas.items()}
+        return {method_name: schema.to_dict() for method_name, schema in self.raw_method_schemas.items()}
 
     @property
     def _method_jsonschemas(self):
