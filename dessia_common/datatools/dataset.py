@@ -50,7 +50,7 @@ class Dataset(DessiaObject):
         * __init__
             >>> from dessia_common.datatools.dataset import Dataset
             >>> from dessia_common.models import all_cars_wi_feat
-            >>> hlist = Dataset(all_cars_wi_feat, name="init")
+            >>> dataset = Dataset(all_cars_wi_feat, name="init")
 
         * __str__
             >>> print(Dataset(all_cars_wi_feat[:3], name='printed'))
@@ -132,14 +132,14 @@ class Dataset(DessiaObject):
             raise TypeError("Addition only defined for Dataset. A specific __add__ method is required for "
                             f"{self.__class__}")
 
-        sum_hlist = self.__class__(dessia_objects=self.dessia_objects + other.dessia_objects,
+        sum_dataset = self.__class__(dessia_objects=self.dessia_objects + other.dessia_objects,
                                    name=self.name[:5] + '_+_' + other.name[:5])
 
         if all(item in self.common_attributes for item in other.common_attributes):
-            sum_hlist._common_attributes = self.common_attributes
+            sum_dataset._common_attributes = self.common_attributes
             if self._matrix is not None and other._matrix is not None:
-                sum_hlist._matrix = self._matrix + other._matrix
-        return sum_hlist
+                sum_dataset._matrix = self._matrix + other._matrix
+        return sum_dataset
 
     def extend(self, other: 'Dataset'):
         """
@@ -163,13 +163,13 @@ class Dataset(DessiaObject):
         return self.dessia_objects[idx]
 
     def _pick_from_slice(self, key: slice):
-        new_hlist = self.__class__(dessia_objects=self.dessia_objects[key], name=self.name)
-        new_hlist._common_attributes = copy(self._common_attributes)
-        new_hlist.dessia_objects = self.dessia_objects[key]
+        new_dataset = self.__class__(dessia_objects=self.dessia_objects[key], name=self.name)
+        new_dataset._common_attributes = copy(self._common_attributes)
+        new_dataset.dessia_objects = self.dessia_objects[key]
         if self._matrix is not None:
-            new_hlist._matrix = self._matrix[key]
-        # new_hlist.name += f"_{key.start if key.start is not None else 0}_{key.stop}")
-        return new_hlist
+            new_dataset._matrix = self._matrix[key]
+        # new_dataset.name += f"_{key.start if key.start is not None else 0}_{key.stop}")
+        return new_dataset
 
     def _indexlist_to_booleanlist(self, index_list: List[int]):
         boolean_list = [False] * len(self)
@@ -178,12 +178,12 @@ class Dataset(DessiaObject):
         return boolean_list
 
     def _pick_from_boolist(self, key: List[bool]):
-        new_hlist = self.__class__(dessia_objects=DessiaFilter.apply(self.dessia_objects, key), name=self.name)
-        new_hlist._common_attributes = copy(self._common_attributes)
+        new_dataset = self.__class__(dessia_objects=DessiaFilter.apply(self.dessia_objects, key), name=self.name)
+        new_dataset._common_attributes = copy(self._common_attributes)
         if self._matrix is not None:
-            new_hlist._matrix = DessiaFilter.apply(self._matrix, key)
-        # new_hlist.name += "_list")
-        return new_hlist
+            new_dataset._matrix = DessiaFilter.apply(self._matrix, key)
+        # new_dataset.name += "_list")
+        return new_dataset
 
     def __str__(self):
         """ Print Dataset as a table. """

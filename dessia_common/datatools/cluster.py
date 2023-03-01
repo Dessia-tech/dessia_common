@@ -75,16 +75,16 @@ class ClusteredDataset(Dataset):
         writer.save_to_stream(stream)
 
     def _pick_from_slice(self, key: slice):
-        new_hlist = Dataset._pick_from_slice(self, key)
-        new_hlist.labels = self.labels[key]
-        # new_hlist.name += f"_{key.start if key.start is not None else 0}_{key.stop}")
-        return new_hlist
+        new_dataset = Dataset._pick_from_slice(self, key)
+        new_dataset.labels = self.labels[key]
+        # new_dataset.name += f"_{key.start if key.start is not None else 0}_{key.stop}")
+        return new_dataset
 
     def _pick_from_boolist(self, key: List[bool]):
-        new_hlist = Dataset._pick_from_boolist(self, key)
-        new_hlist.labels = DessiaFilter.apply(self.labels, key)
-        # new_hlist.name += "_list")
-        return new_hlist
+        new_dataset = Dataset._pick_from_boolist(self, key)
+        new_dataset.labels = DessiaFilter.apply(self.labels, key)
+        # new_dataset.name += "_list")
+        return new_dataset
 
     def _printed_attributes(self):
         return ["label"] + Dataset._printed_attributes(self)
@@ -111,17 +111,17 @@ class ClusteredDataset(Dataset):
         >>> from dessia_common.datatools.dataset import Dataset
         >>> from dessia_common.datatools.cluster import ClusteredDataset
         >>> from dessia_common.models import all_cars_wi_feat
-        >>> hlist = Dataset(all_cars_wi_feat, name="cars")
-        >>> clist = ClusteredDataset.from_agglomerative_clustering(hlist, n_clusters=10, name="ex")
-        >>> split_clist = clist.clustered_sublists()
-        >>> print(split_clist[:3])
+        >>> dataset = Dataset(all_cars_wi_feat, name="cars")
+        >>> clustered_dataset = ClusteredDataset.from_agglomerative_clustering(dataset, n_clusters=10, name="ex")
+        >>> split_clustered_dataset = clustered_dataset.clustered_sublists()
+        >>> print(split_clustered_dataset[:3])
         ClusteredDataset ex_split: 3 samples, 2 features, 3 clusters
         |   n°   |   Name   |   Common_attributes   |
         ---------------------------------------------
         |      0 |     ex_0 |['mpg', 'displacement...|
         |      1 |     ex_1 |['mpg', 'displacement...|
         |      2 |     ex_2 |['mpg', 'displacement...|
-        >>> print(split_clist[3][:3])
+        >>> print(split_clustered_dataset[3][:3])
         Dataset ex_3: 3 samples, 5 features
         |   Mpg   |   Displacement   |   Horsepower   |   Weight   |   Acceleration   |
         -------------------------------------------------------------------------------
@@ -168,16 +168,16 @@ class ClusteredDataset(Dataset):
         >>> from dessia_common.datatools.dataset import Dataset
         >>> from dessia_common.datatools.cluster import ClusteredDataset
         >>> from dessia_common.models import all_cars_wi_feat
-        >>> hlist = Dataset(all_cars_wi_feat, name="cars")
-        >>> clist = ClusteredDataset.from_agglomerative_clustering(hlist, n_clusters=10, name="ex")
-        >>> means = clist.mean_clusters()
+        >>> dataset = Dataset(all_cars_wi_feat, name="cars")
+        >>> clustered_dataset = ClusteredDataset.from_agglomerative_clustering(dataset, n_clusters=10, name="ex")
+        >>> means = clustered_dataset.mean_clusters()
         >>> print(means[0])
         [28.83333333333334, 0.10651785714285714, 79.16666666666667, 2250.3571428571427, 16.075000000000006]
         """
         clustered_sublists = self._check_transform_sublists()
         means = []
-        for hlist in clustered_sublists:
-            means.append(hlist.mean())
+        for dataset in clustered_sublists:
+            means.append(dataset.mean())
         return means
 
     def cluster_distances(self, method: str = 'minkowski', **kwargs):
@@ -214,9 +214,9 @@ class ClusteredDataset(Dataset):
         >>> from dessia_common.datatools.dataset import Dataset
         >>> from dessia_common.datatools.cluster import ClusteredDataset
         >>> from dessia_common.models import all_cars_wi_feat
-        >>> hlist = Dataset(all_cars_wi_feat, name="cars")
-        >>> clist = ClusteredDataset.from_agglomerative_clustering(hlist, n_clusters=10, name="ex")
-        >>> cluster_distances = clist.cluster_distances()
+        >>> dataset = Dataset(all_cars_wi_feat, name="cars")
+        >>> clustered_dataset = ClusteredDataset.from_agglomerative_clustering(dataset, n_clusters=10, name="ex")
+        >>> cluster_distances = clustered_dataset.cluster_distances()
         >>> print(list(map(int, cluster_distances[6])))
         [180, 62, 162, 47, 347, 161, 160, 67, 164, 206, 114, 138, 97, 159, 124, 139]
         """
@@ -224,8 +224,8 @@ class ClusteredDataset(Dataset):
         kwargs = self._set_distance_kwargs(method, kwargs)
         means = clustered_sublists.mean_clusters()
         cluster_distances = []
-        for mean_, hlist in zip(means, clustered_sublists):
-            cluster_distances.append(cdist([mean_], hlist.matrix, method, **kwargs).tolist()[0])
+        for mean_, dataset in zip(means, clustered_sublists):
+            cluster_distances.append(cdist([mean_], dataset.matrix, method, **kwargs).tolist()[0])
         return cluster_distances
 
     def cluster_real_centroids(self, method: str = 'minkowski', **kwargs):
@@ -260,9 +260,9 @@ class ClusteredDataset(Dataset):
         >>> from dessia_common.datatools.dataset import Dataset
         >>> from dessia_common.datatools.cluster import ClusteredDataset
         >>> from dessia_common.models import all_cars_wi_feat
-        >>> hlist = Dataset(all_cars_wi_feat, name="cars")
-        >>> clist = ClusteredDataset.from_agglomerative_clustering(hlist, n_clusters=10, name="ex")
-        >>> cluster_real_centroids = clist.cluster_real_centroids()
+        >>> dataset = Dataset(all_cars_wi_feat, name="cars")
+        >>> clustered_dataset = ClusteredDataset.from_agglomerative_clustering(dataset, n_clusters=10, name="ex")
+        >>> cluster_real_centroids = clustered_dataset.cluster_real_centroids()
         >>> print(Dataset([cluster_real_centroids[0]]))
         Dataset 0x7f752654a0a0: 1 samples, 5 features
         |   Name   |   Mpg   |   Displacement   |   Horsepower   |   Weight   |   Acceleration   |
@@ -280,13 +280,13 @@ class ClusteredDataset(Dataset):
         return real_centroids
 
     def _merge_sublists(self):
-        merged_hlists = self.dessia_objects[0][:]
-        merged_labels = [self.labels[0]] * len(merged_hlists)
+        merged_datasets = self.dessia_objects[0][:]
+        merged_labels = [self.labels[0]] * len(merged_datasets)
         for dobject, label in zip(self.dessia_objects[1:], self.labels[1:]):
-            merged_hlists.extend(dobject)
+            merged_datasets.extend(dobject)
             merged_labels.extend([label] * len(dobject))
-        plotted_clist = self.__class__(dessia_objects=merged_hlists.dessia_objects, labels=merged_labels)
-        return plotted_clist
+        plotted_clustered_dataset = self.__class__(dessia_objects=merged_datasets.dessia_objects, labels=merged_labels)
+        return plotted_clustered_dataset
 
     def _tooltip_attributes(self):
         return self.common_attributes + ["Cluster Label"]
@@ -298,8 +298,8 @@ class ClusteredDataset(Dataset):
         If dessia_objects are Dataset, merge all Dataset to plot them in one.
         """
         if isinstance(self.dessia_objects[0], Dataset):
-            plotted_clist = self._merge_sublists()
-            return plotted_clist.plot_data(reference_path=reference_path, **kwargs)
+            plotted_clustered_dataset = self._merge_sublists()
+            return plotted_clustered_dataset.plot_data(reference_path=reference_path, **kwargs)
         return Dataset.plot_data(self, reference_path=reference_path, **kwargs)
 
     def _object_to_sample(self, dessia_object: DessiaObject, row: int, reference_path: str = '#'):
@@ -392,7 +392,7 @@ class ClusteredDataset(Dataset):
             Formula is `scaled_x = ( x - mean )/standard_deviation`
         :type scaling: `bool`, `optional`, default to `False`
 
-        :return: a ClusteredDataset that knows the data and their labels
+        :return: a `ClusteredDataset` that knows the data and their labels
         :rtype: ClusteredDataset
         """
         skl_cluster = cluster.AgglomerativeClustering(
@@ -441,7 +441,7 @@ class ClusteredDataset(Dataset):
             Formula is `scaled_x = ( x - mean )/standard_deviation`
         :type scaling: `bool`, `optional`, default to `False`
 
-        :return: a ClusteredDataset that knows the data and their labels
+        :return: a `ClusteredDataset` that knows the data and their labels
         :rtype: ClusteredDataset
         """
         skl_cluster = cluster.KMeans(n_clusters=n_clusters, n_init=n_init, tol=tol)
@@ -503,7 +503,7 @@ class ClusteredDataset(Dataset):
             Formula is `scaled_x = ( x - mean )/standard_deviation`
         :type scaling: `bool`, `optional`, default to `False`
 
-        :return: a ClusteredDataset that knows the data and their labels
+        :return: a `ClusteredDataset` that knows the data and their labels
         :rtype: ClusteredDataset
         """
         skl_cluster = cluster.DBSCAN(eps=eps, min_samples=min_samples, p=mink_power, leaf_size=leaf_size, metric=metric)
@@ -526,7 +526,7 @@ class ClusteredDataset(Dataset):
         :param nb_sheets: Number of Pareto sheets to pick
         :type nb_sheets: `int`, `optional`, default to `1`
 
-        :return: a ClusteredDataset where each element is labelled with its pareto_sheet. Elements outside a
+        :return: a `ClusteredDataset` where each element is labelled with its pareto_sheet. Elements outside a
             pareto_sheet are labeled `n_sheets`
         :rtype: ClusteredDataset
         """
@@ -543,7 +543,7 @@ class ClusteredDataset(Dataset):
     @staticmethod
     def fit_cluster(skl_cluster: cluster, matrix: List[List[float]], scaling: bool):
         """
-        Find clusters in data set for skl_cluster model.
+        Find clusters in data set for `skl_cluster` model.
 
         :param skl_cluster: sklearn.cluster object to compute clusters.
         :type data: cluster
@@ -588,18 +588,3 @@ class ClusteredDataset(Dataset):
         """ Does the same as `from_dbscan` method but data is a `List[DessiaObject]`. """
         return cls.from_dbscan(Dataset(data), eps=eps, min_samples=min_samples, mink_power=mink_power,
                                leaf_size=leaf_size, metric=metric, scaling=scaling, name=name)
-
-# Function to implement, to find a good eps parameter for dbscan
-# def nearestneighbors(self):
-#     vectors = []
-#     for machine in self.machines:
-#         vector = machine.to_vector()
-#         vectors.append(vector)
-#     neigh = NearestNeighbors(n_neighbors=14)
-#     vectors = StandardScaler().fit_transform(vectors)
-#     nbrs = neigh.fit(vectors)
-#     distances, indices = nbrs.kneighbors(vectors)
-#     distances = npy.sort(distances, axis=0)
-#     distances = distances[:, 1]
-#     plt.plot(distances)
-#     plt.show()

@@ -45,11 +45,11 @@ clustered_cars_without.labels[0] = 15000
 clustered_cars_without.labels[1] = -1
 clustered_cars_without.labels[2:100] = [999999] * len(clustered_cars_without[2:100])
 print(clustered_cars_without)
-hlist = Dataset(all_cars_wi_feat, name="cars")
-clist = ClusteredDataset.from_agglomerative_clustering(hlist, n_clusters=10, name="cars")
-split_clist = clist.clustered_sublists()
-split_clist[0].name = "15g6e4rg84reh56rt4h56j458hrt56gb41rth674r68jr6"
-print(split_clist)
+dataset = Dataset(all_cars_wi_feat, name="cars")
+clustered_dataset = ClusteredDataset.from_agglomerative_clustering(dataset, n_clusters=10, name="cars")
+split_clustered_dataset = clustered_dataset.clustered_sublists()
+split_clustered_dataset[0].name = "15g6e4rg84reh56rt4h56j458hrt56gb41rth674r68jr6"
+print(split_clustered_dataset)
 
 # Test ClusterResults instances on platform
 clustered_cars_without._check_platform()

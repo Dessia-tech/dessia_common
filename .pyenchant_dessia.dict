@@ -1,9 +1,11 @@
 argspecs
 backend
+BallTree
 binarized
 BinaryFile
 bool
 builtins
+cKDTree
 classmethod
 cls
 ClusteredDataset
@@ -40,6 +42,7 @@ json
 JSON
 jsonschema
 kernel
+KMeans
 kwargs
 hyperparameter
 hyperparameters
@@ -50,6 +53,7 @@ LinearModel
 LinearRegression
 linf
 linspace
+lt
 Mahalanobis
 matplotlib
 Minkowski
@@ -85,6 +89,7 @@ StringFile
 Stringify
 submodule
 subobjects
+SVD
 traceback
 uuid
 uuids

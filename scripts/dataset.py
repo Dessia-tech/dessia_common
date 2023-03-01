@@ -25,9 +25,9 @@ class Bidon(DessiaObject):
 
 
 bidon = Bidon()
-bidon_hlist = Dataset([bidon] * 10)
-bidon_hlist.plot_data()
-assert(bidon_hlist.common_attributes == ['attr1'])
+bidon_dataset = Dataset([bidon] * 10)
+bidon_dataset.plot_data()
+assert(bidon_dataset.common_attributes == ['attr1'])
 
 # Tests on common_attributes
 class Bidon(DessiaObject):
@@ -46,10 +46,10 @@ class Bidon(DessiaObject):
         return [self.attr1, self.attr2, self.prop1, random.randint(0, 32)]
 
 bidon = Bidon()
-bidon_hlist = Dataset([bidon] * 10)
-bidon_hlist.plot_data()
-assert(all(value in bidon_hlist._print_object(6, [12, 12, 12, 12, 12]) for value in ["1.2", "2.4", "3.59999..."]))
-assert(bidon_hlist.common_attributes == ['attr1', 'attr2', 'prop1', 'in_to_vector'])
+bidon_dataset = Dataset([bidon] * 10)
+bidon_dataset.plot_data()
+assert(all(value in bidon_dataset._print_object(6, [12, 12, 12, 12, 12]) for value in ["1.2", "2.4", "3.59999..."]))
+assert(bidon_dataset.common_attributes == ['attr1', 'attr2', 'prop1', 'in_to_vector'])
 
 # When attribute _features is not specified in class Car
 all_cars_without_features = Dataset(all_cars_no_feat)
@@ -90,14 +90,14 @@ assert(all(item in all_cars_without_features.matrix[idx]
                         for attr in all_cars_without_features.common_attributes]))
 
 # Tests for displays
-hlist_cars_plot_data = all_cars_without_features.plot_data()
+dataset_cars_plot_data = all_cars_without_features.plot_data()
 # all_cars_without_features.plot()
 # all_cars_with_features.plot()
 # RandData_heterogeneous.plot()
-# assert(json.dumps(hlist_cars_plot_data[0].to_dict())[150:200] == 'acceleration": 12.0, "model": 70.0}, {"mpg": 15.0,')
-# assert(json.dumps(hlist_cars_plot_data[1].to_dict())[10500:10548] == 'celeration": 12.5, "model": 72.0},
+# assert(json.dumps(dataset_cars_plot_data[0].to_dict())[150:200] == 'acceleration": 12.0, "model": 70.0}, {"mpg": 15.0,')
+# assert(json.dumps(dataset_cars_plot_data[1].to_dict())[10500:10548] == 'celeration": 12.5, "model": 72.0},
 #        {"mpg": 13.0,')
-# assert(json.dumps(hlist_cars_plot_data[2].to_dict())[50:100] == 'te_names": ["Index of reduced basis vector", "Sing')
+# assert(json.dumps(dataset_cars_plot_data[2].to_dict())[50:100] == 'te_names": ["Index of reduced basis vector", "Sing')
 print(all_cars_with_features)
 
 # Tests for metrics

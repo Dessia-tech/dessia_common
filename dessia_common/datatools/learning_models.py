@@ -1722,40 +1722,6 @@ class MLPClassifier(MultiLayerPerceptron):
                        '_label_binarizer': LabelBinarizer.instantiate_dessia(model._label_binarizer)})
         return cls(**kwargs)
 
-    # Experimental for multiclass multioutput but does not give good results when binarized label does not exist in
-    # train data.
-    #` @staticmethod
-    # def _binarize_outputs(outputs: Matrix) -> Matrix:
-    #     if isinstance(outputs[0], list):
-    #         if len(outputs[0]) > 1:
-    #             multioutput_binarizer = preprocessing.MultiLabelBinarizer()
-    #             mono_outputs = multioutput_binarizer.fit_transform(outputs)
-    #             return multioutput_binarizer, mono_outputs
-    #         else:
-    #             return IdentityScaler(), matrix_1d_to_vector(outputs)
-    #     return IdentityScaler(), outputs
-
-    # @classmethod
-    # def fit(cls, inputs: Matrix, outputs: Vector, hidden_layer_sizes: List[int], activation: str = 'relu',
-    #         alpha: float = 0.0001, solver: str = 'adam', max_iter: int = 200, tol: float = 0.0001,
-    #         name: str = '') -> 'MultiLayerPerceptron':
-    #     multioutput_binarizer, outputs = cls._binarize_outputs(outputs)
-    #     modeler = cls.fit_(inputs, outputs, name=name, hidden_layer_sizes=hidden_layer_sizes, activation=activation,
-    #                        alpha=alpha, solver=solver, max_iter=max_iter, tol=tol)
-    #     modeler.mulitoutput_binarizer = multioutput_binarizer
-    #     return modeler
-
-    # @classmethod
-    # def fit_predict(cls, inputs: Matrix, outputs: Vector, predicted_inputs: Matrix, hidden_layer_sizes: List[int],
-    #                 activation: str = 'relu', alpha: float = 0.0001, solver: str = 'adam', max_iter: int = 200,
-    #                 tol: float = 0.0001, name: str = '') -> Tuple['MultiLayerPerceptron', Union[Vector, Matrix]]:
-    #     multioutput_binarizer, b_outputs = cls._binarize_outputs(outputs)
-    #     modeler = cls.fit_(inputs, b_outputs, name=name, hidden_layer_sizes=hidden_layer_sizes, activation=activation,
-    #                        alpha=alpha, solver=solver, max_iter=max_iter, tol=tol)
-    #     modeler.mulitoutput_binarizer = multioutput_binarizer
-    #     return modeler, multioutput_binarizer.inverse_transform(npy.array(modeler.predict(predicted_inputs)))`
-
-
 
 def get_scaler_attr(scaler, attr: str):
     """ Get attribute attr of scikit-learn scaler with an exception for numpy arrays (to instantiate a Scaler). """
