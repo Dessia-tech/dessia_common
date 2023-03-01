@@ -697,7 +697,7 @@ class DecisionTreeRegressor(Model):
             squared error, which is equal to variance reduction as feature selection criterion and minimizes the L2
             loss using the mean of each terminal node, “friedman_mse”, which uses mean squared error with Friedman’s
             improvement score for potential splits, “absolute_error” for the mean absolute error, which minimizes the
-            L1 loss using the median of each terminal node, and “poisson” which uses reduction in Poisson deviance to
+            L1 loss using the median of each terminal node, and “Poisson” which uses reduction in Poisson deviance to
             find splits.
         :type criterion: str, `optional`, defaults to 'squared_error'
 
@@ -1547,7 +1547,7 @@ class MultiLayerPerceptron(Model):
                 - `‘lbfgs’` is an optimizer in the family of quasi-Newton methods.
                 - `‘sgd’` refers to stochastic gradient descent.
                 - `‘adam’` refers to a stochastic gradient-based optimizer proposed in https://arxiv.org/abs/1412.6980
-            Note: The default solver ‘adam’ works pretty well on relatively large datasets (with thousands of training
+            Note: The default solver `‘adam’` works pretty well on relatively large datasets (with thousands of training
             samples or more) in terms of both training time and validation score. For small datasets, however,
             `‘lbfgs’` can converge faster and perform better.
         :type solver: str, `optional`, defaults to `'adam'`
@@ -1679,7 +1679,7 @@ class MLPClassifier(MultiLayerPerceptron):
         Name of `MLPClassifier`
     :type name: str, `optional`, defaults to `''`
     """
-    
+
     _standalone_in_db = True
 
     def __init__(self, parameters: Dict[str, Any], coefs_: List[Matrix] = None, intercepts_: Matrix = None,

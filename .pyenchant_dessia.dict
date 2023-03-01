@@ -21,7 +21,7 @@ DecisionTree
 DecisionTreeClassifier
 DecisionTreeRegressor
 dectree
-dendogram
+dendrogram
 deserialization
 deserialize
 dessia
@@ -33,11 +33,13 @@ DOE
 filepath
 frobenius
 frontend
+ge
 getitem
 gini
+gte
 init
 itertools
-i-th
+th
 json
 JSON
 jsonschema
@@ -90,8 +92,11 @@ Stringify
 submodule
 subobjects
 SVD
+tol
 traceback
 uuid
 uuids
 visjs
 volmdlr
+XLS
+XLSX

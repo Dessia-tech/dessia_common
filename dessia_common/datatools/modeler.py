@@ -32,13 +32,13 @@ class Modeler(DessiaObject):
     """
     Object that encapsulate standard processes in machine learning modelings.
 
-    Modeler object allows to:
+    `Modeler` object allows to:
         * fit a model from models
         * pre-scale input and output data before fit or predict
         * score a model from models
         * validate a modeling process with cross_validation method
-        * plot performances and predictions of a model stored in Modeler
-        * store a fitted model and associated fitted scalers in a Modeler element that can be re-used in another
+        * plot performances and predictions of a model stored in `Modeler`
+        * store a fitted model and associated fitted scaler in a `Modeler` element that can be re-used in another
         workflow as an already trained machine learning model
 
     :param model:
@@ -54,7 +54,7 @@ class Modeler(DessiaObject):
     :type output_scaler: models.Scaler
 
     :param name:
-        Name of Modeler.
+        Name of `Modeler`.
     :type name: str, `optional`, defaults to `''`
     """
 
@@ -307,7 +307,7 @@ class Modeler(DessiaObject):
 
 class ModeledDataset(Dataset):
     """ Class allowing to plot and study data generated from a DOE and its prediction from a modeler modeling. """
-    
+
     _standalone_in_db = True
 
     def __init__(self, dessia_objects: List[Sample] = None, input_names: List[str] = None,
