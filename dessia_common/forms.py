@@ -490,7 +490,7 @@ class StandaloneObject(MovingObject):
 
         ## Ponderis venit veteris mihi tofis
 
-        Propensum discedunt, iacere dedisti; lene potest caelo,
+        Propensum discedunt, iacere dedisti; lens potest caelo,
         felix flamma caecus decet excipit.
         *Aurum occiderat*, retro cum, quorum *Diana timuere At*.
         Ait Labros hasta mundi, **ut est** ruit nosse o gravet!
@@ -503,7 +503,7 @@ class StandaloneObject(MovingObject):
         Gratia verba incesto, sed visa contigit
         saepe adicit trepidant.
         [Siqua radiis quod](http://www.naris-pectebant.org/comeset)
-        ad duabus alienisque, sponte; dum.
+        ad duabus alienisque, sponte; dumb.
 
         Occidit Babylonia dubitare. Vultus cui: erat dea!
         Iam ense forma est se, tibi pedem adfectat nec nostra.
@@ -528,7 +528,7 @@ class StandaloneObject(MovingObject):
         Test long execution with a user-input duration.
 
         :param duration: Duration of the method in s
-        :param raise_error: Wether the computation should raise an error or not at the end
+        :param raise_error: Whether the computation should raise an error or not at the end
         """
         starting_time = time.time()
         current_time = time.time()

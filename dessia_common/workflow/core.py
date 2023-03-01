@@ -36,7 +36,7 @@ from dessia_common.errors import SerializationError
 from dessia_common.warnings import SerializationWarning
 from dessia_common.exports import ExportFormat
 from dessia_common.serialization import deserialize, serialize_with_pointers, serialize, update_pointers_data, \
-    serialize_dict, deserialize_argument
+    serialize_dict, add_references, deserialize_argument
 
 from dessia_common.workflow.utils import ToScriptElement
 
@@ -314,7 +314,7 @@ class Pipe(DessiaObject):
     """
     Bind two variables of a Workflow.
 
-    :param input_variable: The input varaible of the pipe correspond to the start of the arrow, its tail.
+    :param input_variable: The input variable of the pipe correspond to the start of the arrow, its tail.
     :type input_variable: Variable
     :param output_variable: The output variable of the pipe correspond to the end of the arrow, its hat.
     :type output_variable: Variable
@@ -1677,7 +1677,8 @@ class WorkflowState(DessiaObject):
 
         dict_['evaluated_variables_indices'] = [self.workflow.variable_indices(v) for v in self.workflow.variables
                                                 if v in self.activated_items and self.activated_items[v]]
-        dict_["_references"] = id_memo
+        if path == '#':
+            add_references(dict_, memo, id_memo)
         return dict_
 
     def state_display(self):

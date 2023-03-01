@@ -85,7 +85,7 @@ class TestComputedSchemas(unittest.TestCase):
                                         "description": "Duration of the method in s", "type": "number"})
         self.assertDictEqual(raise_error, {
             "title": "Raise Error", "editable": True, "type": "boolean", "default_value": False,
-            "description": "Wether the computation should raise an error or not at the end",
+            "description": "Whether the computation should raise an error or not at the end",
             "python_typing": "bool"
         })
 
