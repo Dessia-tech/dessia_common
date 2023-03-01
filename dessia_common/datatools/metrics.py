@@ -65,7 +65,7 @@ def lp_norm(vector, mink_power=2):
 
 def inf_norm(vector):
     """
-    Inifinite norm of vector.
+    Infinite norm of vector.
 
     :param vector: vector to get norm
     :type vector: List[float]
@@ -93,7 +93,7 @@ def manhattan_distance(list_a, list_b):
     return l1_norm(diff_list(list_a, list_b))
 
 
-def euclidian_distance(list_a, list_b):
+def euclidean_distance(list_a, list_b):
     """
     Compute the euclidean distance between list_a and list_b, i.e. the l2-norm of difference between list_a and list_b.
 
@@ -155,7 +155,7 @@ def variance(vector):
     :return: the variance of vector
     :rtype: float
     """
-    # faster than euclidian_distance(vector, [mean(vector)] * len(vector))**2 / len(vector)
+    # faster than euclidean_distance(vector, [mean(vector)] * len(vector))**2 / len(vector)
     return float(npy.var(vector))
 
 
@@ -209,7 +209,7 @@ def std(vector):
     :return: the standard deviation of vector
     :rtype: float
     """
-    # faster than euclidian_distance(vector, [mean(vector)] * len(vector)) / math.sqrt(len(vector))
+    # faster than euclidean_distance(vector, [mean(vector)] * len(vector)) / math.sqrt(len(vector))
     return float(npy.std(vector))
 
 

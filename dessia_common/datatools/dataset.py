@@ -5,19 +5,23 @@ import itertools
 
 from scipy.spatial.distance import pdist, squareform
 import numpy as npy
-from sklearn import preprocessing
+from sklearn import preprocessing, ensemble, inspection
 
 try:
     from plot_data.core import Scatter, Histogram, MultiplePlots, Tooltip, ParallelPlot, PointFamily, EdgeStyle, Axis, \
-        PointStyle, Sample
-    from plot_data.colors import BLUE, GREY
+        PointStyle, SurfaceStyle, Sample
+    from plot_data.colors import BLUE, GREY, DARK_BLUE
 except ImportError:
     pass
+from dessia_common.utils import helpers
 from dessia_common.core import DessiaObject, DessiaFilter, FiltersList
 from dessia_common.exports import MarkdownWriter
 from dessia_common import templates
 from dessia_common.datatools.metrics import mean, std, variance, covariance_matrix
+from dessia_common.datatools import learning_models as models
 
+Vector = List[float]
+Matrix = List[Vector]
 
 class Dataset(DessiaObject):
     """
@@ -46,7 +50,7 @@ class Dataset(DessiaObject):
         * __init__
             >>> from dessia_common.datatools.dataset import Dataset
             >>> from dessia_common.models import all_cars_wi_feat
-            >>> hlist = Dataset(all_cars_wi_feat, name="init")
+            >>> dataset = Dataset(all_cars_wi_feat, name="init")
 
         * __str__
             >>> print(Dataset(all_cars_wi_feat[:3], name='printed'))
@@ -86,7 +90,6 @@ class Dataset(DessiaObject):
     _non_data_eq_attributes = ["name", "_common_attributes", "_matrix"]
 
     def __init__(self, dessia_objects: List[DessiaObject] = None, name: str = ''):
-        """ See class docstring. """
         if dessia_objects is None:
             dessia_objects = []
         self.dessia_objects = dessia_objects
@@ -128,14 +131,14 @@ class Dataset(DessiaObject):
             raise TypeError("Addition only defined for Dataset. A specific __add__ method is required for "
                             f"{self.__class__}")
 
-        sum_hlist = self.__class__(dessia_objects=self.dessia_objects + other.dessia_objects,
+        sum_dataset = self.__class__(dessia_objects=self.dessia_objects + other.dessia_objects,
                                    name=self.name[:5] + '_+_' + other.name[:5])
 
         if all(item in self.common_attributes for item in other.common_attributes):
-            sum_hlist._common_attributes = self.common_attributes
+            sum_dataset._common_attributes = self.common_attributes
             if self._matrix is not None and other._matrix is not None:
-                sum_hlist._matrix = self._matrix + other._matrix
-        return sum_hlist
+                sum_dataset._matrix = self._matrix + other._matrix
+        return sum_dataset
 
     def extend(self, other: 'Dataset'):
         """
@@ -159,13 +162,13 @@ class Dataset(DessiaObject):
         return self.dessia_objects[idx]
 
     def _pick_from_slice(self, key: slice):
-        new_hlist = self.__class__(dessia_objects=self.dessia_objects[key], name=self.name)
-        new_hlist._common_attributes = copy(self._common_attributes)
-        new_hlist.dessia_objects = self.dessia_objects[key]
+        new_dataset = self.__class__(dessia_objects=self.dessia_objects[key], name=self.name)
+        new_dataset._common_attributes = copy(self._common_attributes)
+        new_dataset.dessia_objects = self.dessia_objects[key]
         if self._matrix is not None:
-            new_hlist._matrix = self._matrix[key]
-        # new_hlist.name += f"_{key.start if key.start is not None else 0}_{key.stop}")
-        return new_hlist
+            new_dataset._matrix = self._matrix[key]
+        # new_dataset.name += f"_{key.start if key.start is not None else 0}_{key.stop}")
+        return new_dataset
 
     def _indexlist_to_booleanlist(self, index_list: List[int]):
         boolean_list = [False] * len(self)
@@ -174,12 +177,12 @@ class Dataset(DessiaObject):
         return boolean_list
 
     def _pick_from_boolist(self, key: List[bool]):
-        new_hlist = self.__class__(dessia_objects=DessiaFilter.apply(self.dessia_objects, key), name=self.name)
-        new_hlist._common_attributes = copy(self._common_attributes)
+        new_dataset = self.__class__(dessia_objects=DessiaFilter.apply(self.dessia_objects, key), name=self.name)
+        new_dataset._common_attributes = copy(self._common_attributes)
         if self._matrix is not None:
-            new_hlist._matrix = DessiaFilter.apply(self._matrix, key)
-        # new_hlist.name += "_list")
-        return new_hlist
+            new_dataset._matrix = DessiaFilter.apply(self._matrix, key)
+        # new_dataset.name += "_list")
+        return new_dataset
 
     def __str__(self):
         """ Print Dataset as a table. """
@@ -233,8 +236,8 @@ class Dataset(DessiaObject):
                 indentation = 3
             else:
                 indentation = min_col_length - len(attr)
-                odd_incr = int(indentation % 2)
-                indentation = int(indentation / 2)
+            odd_incr = int(indentation % 2)
+            indentation = int(indentation / 2)
 
             name_attr = " " * indentation + " " * odd_incr + f"{attr.capitalize()}" + " " * indentation
             attr_space.append(len(name_attr))
@@ -263,7 +266,7 @@ class Dataset(DessiaObject):
         return string
 
     def to_markdown(self) -> str:
-        """Render a markdown of the object output type: string."""
+        """ Render a markdown of the object output type: string. """
         md_writer = MarkdownWriter(print_limit=25, table_limit=12)
         name = md_writer.print_name(self)
         class_ = md_writer.print_class(self)
@@ -280,12 +283,12 @@ class Dataset(DessiaObject):
             return self.matrix[index][self.common_attributes.index(attr)]
 
     def __len__(self):
-        """Length of Dataset is len(Dataset.dessia_objects)."""
+        """ Length of Dataset is len(Dataset.dessia_objects). """
         return len(self.dessia_objects)
 
     @property
     def common_attributes(self):
-        """List of common attributes of stored dessia_objects."""
+        """ List of common attributes of stored dessia_objects. """
         if self._common_attributes is None:
             if len(self) == 0:
                 return []
@@ -387,6 +390,15 @@ class Dataset(DessiaObject):
         transposed_submatrix = [self.attribute_values(column_name) for column_name in columns_names]
         return list(map(list, zip(*transposed_submatrix)))
 
+    def to_input_output(self, input_names: List[str], output_names: List[str]) -> List[Matrix]:
+        """ Split matrix of Dataset in two matrices inputs and outputs according to input_names and output_names. """
+        return self.sub_matrix(input_names), self.sub_matrix(output_names)
+
+    def train_test_split(self, ratio: float = 0.8, shuffled: bool = True) -> List[Matrix]:
+        """ Generate train and test Datasets from current Dataset. """
+        ind_train, ind_test = models.get_split_indexes(len(self), ratio=ratio, shuffled=shuffled)
+        return Dataset(self[ind_train], name=self.name + '_train'), Dataset(self[ind_test], name=self.name + '_test')
+
     def sort(self, key: Any, ascend: bool = True):  # TODO : Replace numpy with faster algorithms
         """
         Sort the current Dataset along the given key.
@@ -432,8 +444,17 @@ class Dataset(DessiaObject):
                 sort_indexes = npy.argsort(self.attribute_values(key))
             self.dessia_objects = [self.dessia_objects[idx] for idx in (sort_indexes if ascend else sort_indexes[::-1])]
             if self._matrix is not None:
-                self._matrix = [self._matrix[idx] for idx in
-                                (sort_indexes if ascend else sort_indexes[::-1])]
+                self._matrix = [self._matrix[idx] for idx in (sort_indexes if ascend else sort_indexes[::-1])]
+
+    @property
+    def maximums(self):
+        """ Compute maximum values and store it in a list of length `n_features`. """
+        return helpers.maximums(self.matrix)
+
+    @property
+    def minimums(self):
+        """ Compute minimum values and store it in a list of length `n_features`. """
+        return helpers.minimums(self.matrix)
 
     def mean(self):
         """
@@ -599,7 +620,7 @@ class Dataset(DessiaObject):
         This indicates that the used features can be combined into less new features, which do not necessarily \
             make sense for engineers.
 
-        More informations: https://en.wikipedia.org/wiki/Singular_value_decomposition
+        More information: https://en.wikipedia.org/wiki/Singular_value_decomposition
 
         :return:
             **normalized_singular_values**: list of normalized singular values
@@ -618,7 +639,7 @@ class Dataset(DessiaObject):
         return normalized_singular_values, singular_points
 
     @staticmethod
-    def _scale_data(data_matrix: List[List[float]]):
+    def _scale_data(data_matrix: Matrix) -> Matrix: # TODO : replace it with the models Scaler ?
         scaled_matrix = preprocessing.StandardScaler().fit_transform(data_matrix)
         return [list(map(float, row.tolist())) for row in scaled_matrix]
 
@@ -635,7 +656,10 @@ class Dataset(DessiaObject):
                                                    point_style=dimensionality_plot.point_style)
             # Parallel plot
             parallel_plot = self._parallel_plot(data_list)
-            return [parallel_plot, scatter_matrix]  # , dimensionality_plot]
+
+            # Features Importance
+            # importances = self._importances_to_histogram(input_attributes, importances)
+            return [parallel_plot, scatter_matrix] #, dimensionality_plot]
 
         plot_mono_attr = self._histogram_unic_value(0, name_attr=self.common_attributes[0])
         plot_mono_attr.elements = data_list
@@ -784,7 +808,7 @@ class Dataset(DessiaObject):
         return dimensionality_plot
 
     @staticmethod
-    def _check_costs(len_data: int, costs: List[List[float]]):
+    def _check_costs(len_data: int, costs: Matrix) -> Matrix:
         if len(costs) != len_data:
             if len(costs[0]) == len_data:
                 return list(map(list, zip(*costs)))
@@ -793,7 +817,7 @@ class Dataset(DessiaObject):
         return costs
 
     @staticmethod
-    def pareto_indexes(costs: List[List[float]]):
+    def pareto_indexes(costs: Matrix) -> List[bool]:
         """
         Find the Pareto-efficient points.
 
@@ -828,8 +852,7 @@ class Dataset(DessiaObject):
         return pareto_frontiers
 
     @staticmethod
-    def _pareto_frontier_2d(x_dim: int, y_dim: int, pareto_costs: List[List[float]], max_x_dim: float,
-                            super_mini: List[float]):
+    def _pareto_frontier_2d(x_dim: int, y_dim: int, pareto_costs: Matrix, max_x_dim: float, super_mini: Vector):
         # Experimental
         minidx = npy.argmin(pareto_costs[:, y_dim])
         x_coord = pareto_costs[minidx, x_dim]
@@ -890,3 +913,41 @@ class Dataset(DessiaObject):
             non_optimal_points = list(itertools.compress(non_optimal_points, map(lambda x: not x, pareto_sheet)))
             non_optimal_costs = list(itertools.compress(non_optimal_costs, map(lambda x: not x, pareto_sheet)))
         return pareto_sheets, Dataset(non_optimal_points, self.name)
+
+    def features_importances(self, input_attributes: List[str], output_attributes: List[str]):
+        """
+        Features importances of input_attributes to predict output_attributes.
+
+        The method used here is the Permutation Importance method proposed by scikit-learn.
+        More information: https://scikit-learn.org/stable/auto_examples/inspection/plot_permutation_importance.html
+        """
+        inputs, outputs = self.to_input_output(input_attributes, output_attributes)
+        scaled_inputs = self._scale_data(inputs)
+        input_train, input_test, output_train, output_test = models.train_test_split(scaled_inputs, outputs, ratio=0.8)
+
+        random_forest = ensemble.RandomForestRegressor()
+        random_forest.fit(input_train, output_train)
+
+        result = inspection.permutation_importance(random_forest, input_test, output_test)
+        return result.importances_mean #, result.importances_std TODO: when plot_data is refactored
+
+    def _importances_to_histogram(self, input_attributes: List[str], importances: List[float]):
+        normed_importances = importances * 100 / npy.linalg.norm(importances, ord=1)
+        normed_rounded_importances = (round(importance) for importance in normed_importances)
+        bars = []
+        for attr, number in zip(input_attributes, normed_rounded_importances):
+            bars.append([{'feature': attr}] * (number + 1))
+        return Histogram(x_variable='feature', elements=sum(bars, []), surface_style=SurfaceStyle(DARK_BLUE))
+
+    def features_mrmr(self):
+        """
+        Future features_mrmr method, maybe to put in dataset.
+        """
+        return
+
+    def _correlation_matrix(self):
+        """
+        Future method to build a correlation matrix of the matrix of Dataset.
+        """
+        return
+

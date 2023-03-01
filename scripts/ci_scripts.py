@@ -17,6 +17,8 @@ scripts = [
     "sampling.py",
     "markdowns.py",
     "checks.py",
+    "datatools_models.py",
+    "datatools_modeler.py",
     "unit_tests.py",
 
     # Workflows

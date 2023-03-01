@@ -31,3 +31,11 @@ ClusteredDataset includes, among others, a plot_data method, user friendly clust
 
 .. autoclass:: dessia_common.datatools.cluster.ClusteredDataset
    :members:
+
+Modeling
+===============
+
+Modeling objects from sklearn.
+
+.. automodule:: dessia_common.datatools.modeling
+   :members:

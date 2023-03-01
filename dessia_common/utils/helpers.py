@@ -9,6 +9,7 @@ That way, we can avoid cyclic imports.
 """
 
 import sys
+from typing import List
 from importlib import import_module
 
 _PYTHON_CLASS_CACHE = {}
@@ -47,6 +48,17 @@ def prettyname(name: str) -> str:
                 pretty_name += ' '
     return pretty_name
 
+def maximums(matrix: List[List[float]]) -> List[float]:
+    """ Compute maximum values and store it in a list of length `len(matrix[0])`. """
+    if not isinstance(matrix[0], list):
+        return [max(matrix)]
+    return [max(column) for column in zip(*matrix)]
+
+def minimums(matrix: List[List[float]]) -> List[float]:
+    """ Compute minimum values and store it in a list of length `len(matrix[0])`. """
+    if not isinstance(matrix[0], list):
+        return [min(matrix)]
+    return [min(column) for column in zip(*matrix)]
 
 def full_classname(object_, compute_for: str = 'instance'):
     """ Get full class name of object_ (module + class name). """
