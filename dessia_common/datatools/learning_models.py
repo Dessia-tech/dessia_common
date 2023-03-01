@@ -179,7 +179,7 @@ class IdentityScaler(StandardScaler):
 
 class LabelBinarizer(Scaler):
     """
-    Data scaler used in `MLPClassifier` to standardize class labels. Only implemented for `MLPClassifier` to work correctly.
+    Data scaler used in `MLPClassifier` to standardize class labels. Only implemented for `MLPClassifier` to work.
 
     :param classes_:
         List of classes to standardize. Can be any int.
@@ -1724,7 +1724,7 @@ class MLPClassifier(MultiLayerPerceptron):
 
     # Experimental for multiclass multioutput but does not give good results when binarized label does not exist in
     # train data.
-    # @staticmethod
+    #` @staticmethod
     # def _binarize_outputs(outputs: Matrix) -> Matrix:
     #     if isinstance(outputs[0], list):
     #         if len(outputs[0]) > 1:
@@ -1753,7 +1753,7 @@ class MLPClassifier(MultiLayerPerceptron):
     #     modeler = cls.fit_(inputs, b_outputs, name=name, hidden_layer_sizes=hidden_layer_sizes, activation=activation,
     #                        alpha=alpha, solver=solver, max_iter=max_iter, tol=tol)
     #     modeler.mulitoutput_binarizer = multioutput_binarizer
-    #     return modeler, multioutput_binarizer.inverse_transform(npy.array(modeler.predict(predicted_inputs)))
+    #     return modeler, multioutput_binarizer.inverse_transform(npy.array(modeler.predict(predicted_inputs)))`
 
 
 

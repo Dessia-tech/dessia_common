@@ -1,5 +1,6 @@
 argspecs
 backend
+binarized
 BinaryFile
 bool
 builtins
@@ -46,7 +47,9 @@ matplotlib
 Minkowski
 MLPClassifier
 MLPRegressor
+multiclass
 MultiLayerPerceptron
+multioutput
 nbv
 ndarray
 networkx
