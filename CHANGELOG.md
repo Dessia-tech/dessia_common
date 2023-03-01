@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Schemas refactor: add support of Ellipsed tuple (Tuple[T, ...])
+- Schemas refactor: add more Error Checks
+- Schemas refactor: add a json export to method schemas for low-code implementations
 
 
 ### Fixed
@@ -27,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Use of Schemas to serialize typings
 - Change serialize_typing function name to serialize_annotation
 - Change tests. Unittests are in 'tests' folder. Other tests in scripts
+- Check Platform is now verbose and split into several functions
 
 ### Chore
 
@@ -38,15 +41,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## 0.13.2 [Unreleased yet]
+
+### Fix
+- Workflow state/run to_dict fix on adding references
+- Handle serialization pointers of non-standalone objects
+- hash fix: calling hash instead of data hash in eq.
+
+
 ## 0.13.1
 
 ### Fix
 
 - Handle serialization pointers of non-standalone objects
 - WorkflowRun settings now sets the right method to call for workflow display
+- Handle serialization pointers of non-standalone objects
 
 
-## 0.13.0
+## 0.13.0 [02/14/2023]
+
 
 ### Chore
 
@@ -83,7 +96,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - fix str of Dataset
 
-## 0.12.0
+## 0.12.0 [released 01/20/2023]
 
 
 ### Changed
@@ -135,7 +148,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - More docs
 
 
-## 0.11.0
+## 0.11.0 [released 12/19/2022]
 
 ### Fixed
 

@@ -26,21 +26,21 @@ WEEKLY_DECREASE = 0.03
 UNWATCHED_ERRORS = ["fixme", "trailing-whitespace", "import-error"]
 
 MAX_ERROR_BY_TYPE = {
-    "wrong-spelling-in-docstring": 211,
-    "wrong-spelling-in-comment": 28,
-    "protected-access": 43,  # Highly dependant on our "private" conventions. Keeps getting raised
+    "wrong-spelling-in-docstring": 196,
+    "wrong-spelling-in-comment": 26,
+    "protected-access": 46,  # Highly dependant on our "private" conventions. Keeps getting raised
     "arguments-differ": 1,
     "too-many-locals": 10,  # Reduce by dropping vectored objects
     "too-many-branches": 13,  # Huge refactor needed. Will be reduced by schema refactor
     "unused-argument": 6,  # Some abstract functions have unused arguments (plot_data). Hence cannot decrease
     "cyclic-import": 2,  # Still work to do on Specific based DessiaObject
     "too-many-arguments": 21,  # Huge refactor needed
-    "too-few-public-methods": 9,  # Abstract classes (Errors, Checks,...)
-    "too-many-return-statements": 8,  # Huge refactor needed. Will be reduced by schema refactor
+    "too-few-public-methods": 4,  # Abstract classes (Errors, Checks,...)
+    "too-many-return-statements": 9,  # Huge refactor needed. Will be reduced by schema refactor
     "import-outside-toplevel": 4,  # TODO : will reduced in a future work (when tests are ready)
     "too-many-instance-attributes": 7,  # Huge refactor needed (workflow, etc...)
-    "broad-exception-caught": 7,  # Necessary in order not to raise non critical errors. Will be reduced by schema refactor
-    "bare-except": 2,  # Necessary in order not to raise non critical errors. Will be reduced by schema refactor
+    "broad-exception-caught": 12,  # Necessary in order not to raise non critical errors. Will be reduced by schema refactor
+    "bare-except": 1,  # Necessary in order not to raise non critical errors. Will be reduced by schema refactor
     "too-many-public-methods": 2,  # Try to lower by splitting DessiaObject and Workflow
     "too-many-statements": 2,  # Will be solved by schema refactor and jsonchema removal
     "undefined-loop-variable": 1,  # Fearing to break the code by solving it

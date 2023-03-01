@@ -56,8 +56,7 @@ class DessiaObject(SerializableObject):
 
     Gathers generic methods and attributes
 
-    :cvar bool _standalone_in_db:
-        Indicates wether class objects should be independent in database or not.
+    :cvar bool _standalone_in_db: Indicates whether class objects should be independent in database or not.
         If False, object will only exist inside its parent.
 
     :cvar bool _eq_is_data_eq:
@@ -76,23 +75,18 @@ class DessiaObject(SerializableObject):
         [Advanced] List of instance attributes that should not be part of hash computation with data__hash__ method
         (if _eq_is_data_eq is True).
 
-    :cvar List[str] _ordered_attributes:
-        Documentation not available yet.
+    :cvar List[str] _ordered_attributes: Documentation not available yet.
 
-    :cvar List[str] _titled_attributes:
-        Documentation not available yet.
+    :cvar List[str] _titled_attributes: Documentation not available yet.
 
-    :cvar List[str] _init_variables:
-        Documentation not available yet.
+    :cvar List[str] _init_variables: Documentation not available yet.
 
     :cvar List[str] _export_formats:
         List of all available export formats. Class must define a export_[format] for each format in _export_formats
 
-    :cvar List[str] _allowed_methods:
-        List of all methods that are runnable from platform.
+    :cvar List[str] _allowed_methods: List of all methods that are runnable from platform.
 
-    :cvar List[str] _whitelist_attributes:
-        Documentation not available yet.
+    :cvar List[str] _whitelist_attributes: Documentation not available yet.
     :cvar List[str] _whitelist_attributes: List[str]
 
     :ivar str name: Name of object.
@@ -141,10 +135,10 @@ class DessiaObject(SerializableObject):
         Behavior can be controlled by class attribute _eq_is_data_eq to tell if we must use python equality (based on
         memory addresses) (_eq_is_data_eq = False) or a data equality (True).
         """
+        if hash(self) != hash(other_object):
+            return False
         if self._eq_is_data_eq:
             if self.__class__.__name__ != other_object.__class__.__name__:
-                return False
-            if self._data_hash() != other_object._data_hash():
                 return False
             return self._data_eq(other_object)
         return object.__eq__(self, other_object)
@@ -403,7 +397,7 @@ class DessiaObject(SerializableObject):
         check_list = dcc.CheckList([])
 
         if check_platform:
-            check_list += self.check_platform(level=level)
+            check_list += self.check_platform()
         return check_list
 
     def is_valid(self, level: str = 'error') -> bool:
@@ -569,37 +563,34 @@ class DessiaObject(SerializableObject):
     def _check_platform(self, level='error'):
         return self.check_platform().raise_if_above_level(level=level)
 
-    def check_platform(self, level='error'):
+    def check_platform(self):
         """ Reproduce lifecycle on platform (serialization, display). Raise an error if something is wrong. """
-        checks = []
-        try:
-            dict_ = self.to_dict(use_pointers=True)
-        except TypeError:
-            dict_ = self.to_dict()
-        json_dict = json.dumps(dict_)
+        serializable_results = dcc.check_serialization_process(object_=self, use_pointers=True)
+        dict_ = serializable_results.pop("dict_")
 
-        decoded_json = json.loads(json_dict)
-        deserialized_object = self.dict_to_object(decoded_json)
+        copy_results = dcc.check_copy(self)
 
-        if not deserialized_object._data_eq(self):
-            print('data diff: ', self._data_diff(deserialized_object))
-            checks.append(dcc.FailedCheck('Object is not equal to itself after serialization/deserialization'))
-        copied_object = self.copy()
-        if not copied_object._data_eq(self):
-            try:
-                print('data diff: ', self._data_diff(copied_object))
-            except:
-                pass
-            checks.append(dcc.FailedCheck('Object is not equal to itself after copy.'))
-
+        # Not refactoring this due to dependencies and cyclic imports
+        print("Checking BSON validity...")
+        start = time.time()
         valid, hint = is_bson_valid(stringify_dict_keys(dict_))
         if not valid:
-            checks.append(dcc.FailedCheck(f'Object is not bson valid {hint}'))
+            print("Failed.\n")
+            check = dcc.FailedCheck(f"Object is not BSON valid {hint}")
+        else:
+            print("Object is BSON valid.")
+            check = dcc.PassedCheck("Object is BSON valid")
+        duration = time.time() - start
+        print(f"Checked BSON validity in {duration}s.\n")
+        bson_results = {"check": check, "duration": duration}
 
-        json.dumps(self._displays())
-        json.dumps(self.method_schemas)
+        display_results = dcc.check_displays(self)
+        schemas_results = dcc.check_schemas(self)
 
-        return dcc.CheckList(checks)
+        results = [serializable_results, copy_results, bson_results, display_results, schemas_results]
+        duration = sum(r["duration"] for r in results)
+        print(f"\nCompleted Platform Check in {duration}s.\n")
+        return dcc.CheckList([r["check"] for r in results])
 
     def to_xlsx(self, filepath: str):
         """ Export the object to an XLSX file given by the filepath. """
