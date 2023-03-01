@@ -6,8 +6,9 @@ from dessia_common.core import DessiaObject
 import dessia_common.datatools.dataset as DS
 import dessia_common.datatools.cluster as DC
 
-# Imports for retrocompatibility
+# Imports for retro-compatibility
 # TODO: Remove it kindly in next releases.
+
 
 class HeterogeneousList(DS.Dataset):
     def __init__(self, dessia_objects: List[DessiaObject] = None, name: str = ''):

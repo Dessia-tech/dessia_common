@@ -11,7 +11,7 @@ generate_method = MethodType(class_=Generator, name='generate')
 generator_generate = ModelMethod(method_type=generate_method, name='Generator Generate')
 attribute_selection = ModelAttribute(attribute_name='models', name='Attribute Selection')
 
-# Subworkflow of model optimization
+# Sub-Workflow of model optimization
 instanciate_optimizer = InstantiateModel(model_class=Optimizer, name='Instantiate Optimizer')
 
 

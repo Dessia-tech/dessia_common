@@ -6,23 +6,25 @@ import inspect
 import warnings
 
 from zipfile import ZipFile
-from typing import List, Type, Any, Dict, Tuple, get_type_hints
+from typing import List, Type, Any, Dict, Tuple, get_type_hints, TypeVar
 
 import itertools
-from dessia_common.core import DessiaFilter, FiltersList, split_argspecs, type_from_annotation, DessiaObject
-from dessia_common.utils.types import get_python_class_from_class_name, full_classname
-from dessia_common.utils.docstrings import parse_docstring, EMPTY_PARSED_ATTRIBUTE
+from dessia_common.core import DessiaFilter, FiltersList, type_from_annotation, DessiaObject
+from dessia_common.schemas.core import split_argspecs, parse_docstring, EMPTY_PARSED_ATTRIBUTE
 from dessia_common.displays import DisplaySetting, DisplayObject
 from dessia_common.errors import UntypedArgumentError
 from dessia_common.typings import JsonSerializable, MethodType, ClassMethodType
 from dessia_common.files import StringFile, BinaryFile
-from dessia_common.utils.helpers import concatenate
+from dessia_common.utils.helpers import concatenate, full_classname, get_python_class_from_class_name
 from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
 from dessia_common.exports import ExportFormat
 
 from dessia_common.workflow.core import Block, Variable, TypedVariable, TypedVariableWithDefaultValue,\
     set_block_variable_names_from_dict, Workflow
 from dessia_common.workflow.utils import ToScriptElement
+
+
+T = TypeVar("T")
 
 
 def set_inputs_from_function(method, inputs=None):
@@ -331,7 +333,7 @@ class Sequence(Block):
     def __init__(self, number_arguments: int, name: str = '', position: Tuple[float, float] = None):
         self.number_arguments = number_arguments
         inputs = [Variable(name=f"Sequence element {i}") for i in range(self.number_arguments)]
-        outputs = [TypedVariable(type_=list, name='sequence')]
+        outputs = [TypedVariable(type_=List[T], name='sequence')]
         Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
@@ -385,7 +387,7 @@ class Concatenate(Block):
     def __init__(self, number_arguments: int = 2, name: str = '', position: Tuple[float, float] = None):
         self.number_arguments = number_arguments
         inputs = [Variable(name=f"Sequence element {i}") for i in range(self.number_arguments)]
-        outputs = [TypedVariable(type_=list, name='sequence')]
+        outputs = [TypedVariable(type_=List[T], name='sequence')]
         Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
@@ -1166,7 +1168,7 @@ class Sum(Block):
         """
         Sum input values.
 
-        TODO : This cannot work, we are summing a dictionnary
+        TODO : This cannot work, we are summing a dictionary
         """
         return [sum(values)]
 
@@ -1177,14 +1179,14 @@ class Sum(Block):
 
 
 class Substraction(Block):
-    """ Block that substract input values. First is +, second is -. """
+    """ Block that subtract input values. First is +, second is -. """
 
     def __init__(self, name: str = '', position: Tuple[float, float] = None):
         Block.__init__(self, [Variable(name='+'), Variable(name='-')], [Variable(name='Substraction')], name=name,
                        position=position)
 
     def evaluate(self, values, **kwargs):
-        """ Substract input values. """
+        """ Subtract input values. """
         return [values[self.inputs[0]] - values[self.inputs[1]]]
 
     def _to_script(self, _) -> ToScriptElement:
