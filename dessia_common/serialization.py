@@ -3,7 +3,6 @@
 """ Serialization Tools. """
 
 import uuid
-import sys
 import warnings
 import inspect
 import collections
