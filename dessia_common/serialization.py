@@ -31,19 +31,7 @@ class SerializableObject(CoreDessiaObject):
 
     def base_dict(self):
         """ A base dict for to_dict: set up a dict with object class and version. """
-        package_name = self.__module__.split('.', maxsplit=1)[0]
-        if package_name in sys.modules:
-            package = sys.modules[package_name]
-            if hasattr(package, '__version__'):
-                package_version = package.__version__
-            else:
-                package_version = None
-        else:
-            package_version = None
-
         dict_ = {'object_class': self.full_classname}
-        if package_version:
-            dict_['package_version'] = package_version
         return dict_
 
     def _serializable_dict(self):
