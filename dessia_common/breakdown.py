@@ -89,7 +89,7 @@ def get_in_object_from_path(object_, path, evaluate_pointers=True):
                     except RecursionError as err:
                         err_msg = f'Cannot get segment {segment} from path {path} in element {str(element)[:500]}'
                         raise RecursionError(err_msg) from err
-                elif OLD_REF_MARKER in element:  # Retrocompatibility to be remove sometime
+                elif OLD_REF_MARKER in element:  # Retro-compatibility to be remove sometime
                     try:
                         element = get_in_object_from_path(object_, element[OLD_REF_MARKER])
                     except RecursionError as err:

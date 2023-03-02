@@ -324,7 +324,7 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False, global_dict=
         global_dict, pointers_memo = update_pointers_data(global_dict=global_dict, current_dict=dict_,
                                                           pointers_memo=pointers_memo)
 
-    for marker in [REF_MARKER, OLD_REF_MARKER]:  # Retrocompatibility started on v0.13. When to remove?
+    for marker in [REF_MARKER, OLD_REF_MARKER]:  # Retro-compatibility started on v0.13. When to remove?
         if marker in dict_:
             try:
                 return pointers_memo[dict_[marker]]
@@ -539,7 +539,7 @@ def find_references_dict(dict_, path):
     if REF_MARKER in dict_:
         return [(path, dict_[REF_MARKER])]
 
-    # Retrocompatibility. Remove at some point.
+    # Retro-compatibility. Remove at some point.
     if OLD_REF_MARKER in dict_:
         return [(path, dict_[OLD_REF_MARKER])]
 
