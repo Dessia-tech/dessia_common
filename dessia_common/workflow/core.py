@@ -34,7 +34,7 @@ from dessia_common.errors import SerializationError
 from dessia_common.warnings import SerializationWarning
 from dessia_common.exports import ExportFormat
 from dessia_common.serialization import deserialize, serialize_with_pointers, serialize, update_pointers_data, \
-    serialize_dict  # , is_serializable
+    serialize_dict, add_references  # , is_serializable
 
 from dessia_common.workflow.utils import ToScriptElement
 
@@ -332,7 +332,7 @@ class Pipe(DessiaObject):
     """
     Bind two variables of a Workflow.
 
-    :param input_variable: The input varaible of the pipe correspond to the start of the arrow, its tail.
+    :param input_variable: The input variable of the pipe correspond to the start of the arrow, its tail.
     :type input_variable: Variable
     :param output_variable: The output variable of the pipe correspond to the end of the arrow, its hat.
     :type output_variable: Variable
@@ -859,8 +859,7 @@ class Workflow(Block):
                    imposed_variable_values=imposed_variable_values, description=description,
                    documentation=documentation, name=dict_["name"])
 
-    def dict_to_arguments(self, dict_: JsonSerializable, method: str, global_dict=None,
-                          pointers_memo=None, path='#'):
+    def dict_to_arguments(self, dict_: JsonSerializable, method: str, global_dict=None, pointers_memo=None, path='#'):
         """ Process a JSON of arguments and deserialize them. """
         dict_ = {int(k): v for k, v in dict_.items()}  # serialisation set keys as strings
         if method in self._allowed_methods:
@@ -1085,7 +1084,7 @@ class Workflow(Block):
 
     def variable_indices(self, variable: Variable) -> Optional[Union[Tuple[int, int, int], int]]:
         """
-        Return global adress of given variable as a tuple or an int.
+        Return global address of given variable as a tuple or an int.
 
         If variable is non block, return index of variable in variables sequence
         Else returns global adress (ib, i, ip)
@@ -1722,7 +1721,8 @@ class WorkflowState(DessiaObject):
 
         dict_['evaluated_variables_indices'] = [self.workflow.variable_indices(v) for v in self.workflow.variables
                                                 if v in self.activated_items and self.activated_items[v]]
-        dict_["_references"] = id_memo
+        if path == '#':
+            add_references(dict_, memo, id_memo)
         # Uncomment when refs are handled as dict keys
         # activated_items = {}
         # for key, activated in self.activated_items.items():
@@ -1968,7 +1968,11 @@ class WorkflowState(DessiaObject):
             self._activate_pipe(pipe=pipe, value=value)
 
     def _activable_blocks(self):
-        """ Return a list of all activable blocks, IE blocks that have all inputs ready for evaluation. """
+        """
+        Returns a list of all activable blocks.
+
+        Activable blocks are blocks that have all inputs ready for evaluation.
+        """
         return [b for b in self.workflow.blocks if self._block_activable_by_inputs(b)
                 and (not self.activated_items[b] or b not in self.workflow.runtime_blocks)]
 
@@ -2109,11 +2113,6 @@ class WorkflowRun(WorkflowState):
             end_time = time.time()
         self.end_time = end_time
         self.execution_time = end_time - start_time
-        # filtered_input_values = input_values
-        # if workflow.has_file_inputs:
-        #     filtered_input_values = {i: v for i, v in input_values.items()
-        #                              if workflow.inputs[i] not in workflow.file_inputs}
-        # filtered_values = {p: values[p] for p in workflow.memorized_pipes if is_serializable(values[p])}
         filtered_values = {p: values[p] for p in workflow.memorized_pipes}
         WorkflowState.__init__(self, workflow=workflow, input_values=input_values,
                                activated_items=activated_items, values=filtered_values,
@@ -2164,9 +2163,11 @@ class WorkflowRun(WorkflowState):
         Concatenate WorkflowState display_settings and instering Workflow ones.
         """
         workflow_settings = self.workflow.display_settings()
+        doc_setting = workflow_settings[0]
+        workflow_setting = workflow_settings[1]
         display_settings = WorkflowState.display_settings(self)
         display_settings.pop(0)
-        return workflow_settings + display_settings
+        return [doc_setting, workflow_setting.compose("workflow")] + display_settings
 
     def method_dict(self, method_name: str = None, method_jsonschema: Any = None):
         """ Get run again default dict. """

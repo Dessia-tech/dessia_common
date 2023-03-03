@@ -17,3 +17,9 @@ serializable
 deserialize
 visjs
 config
+builtins
+subobjects
+filepath
+CMA
+volmdlr
+networkx

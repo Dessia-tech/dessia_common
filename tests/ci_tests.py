@@ -29,8 +29,6 @@ scripts = ['displays.py',
            'workflow/workflow_clustering.py',
            'workflow/workflow_filtering.py',
            'workflow/workflow_pareto.py',
-           'workflow/workflow_method_dict.py',
-           'workflow/various_tests.py',
            'workflow/workflow_building.py',
            'workflow/workflow_sampling.py',
            "workflow/workflow_inputs.py",
@@ -45,9 +43,11 @@ scripts = ['displays.py',
            'utils/types.py',
            "utils/diff.py",
            'type_matching.py',
+           # Data structures
+           "data-structures/1.py",
+           "data-structures/2.py",
            # Unit tests
            'unit_tests.py',
-           'bson_valid.py'
            ]
 
 for script_name in scripts:

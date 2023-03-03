@@ -97,10 +97,10 @@ class ClusteredDataset(Dataset):
         prefix += (f"{len(self)} samples, {len(self.common_attributes)} features, {self.n_clusters} clusters")
         return prefix
 
-    def _get_printed_value(self, dessia_object: DessiaObject, attr: str):
+    def _get_printed_value(self, index: int, attr: str):
         if attr not in ["label"]:
-            return Dataset._get_printed_value(self, dessia_object, attr)
-        return self.labels[self.dessia_objects.index(dessia_object)]
+            return super()._get_printed_value(index, attr)
+        return self.labels[index]
 
     def clustered_sublists(self):
         """
@@ -533,7 +533,7 @@ class ClusteredDataset(Dataset):
         :type nb_sheets: `int`, `optional`, default to `1`
 
         :return: a ClusteredDataset where each element is labelled with its pareto_sheet. Elements outside a
-        pareto_sheet are labelled `n_sheets`
+        pareto_sheet are labeled `n_sheets`
         :rtype: ClusteredDataset
         """
         labels = []

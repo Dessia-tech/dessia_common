@@ -5,14 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 0.14.0 [now dev]
+## 0.13.2 [Unreleased yet]
 
-### CI
+### Fix
+- Workflow state/run to_dict fix on adding references
+- Handle serialization pointers of non-standalone objects
+- hash fix: calling hash instead of data hash in eq.
 
-- fixing versions of pylint and pydocstyle to avoid uncontrolled new errors
+## 0.13.1
 
-## 0.13.0
+### Fix
 
+- WorkflowRun settings now sets the right method to call for workflow display
+- Handle serialization pointers of non-standalone objects
+
+## 0.13.0 [02/14/2023]
 
 ### Fix
 - Do not take into account non-eq attributes
@@ -21,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - tutorials/ci_tutorials.py added to check runnability of .ipynb files inside this new folder
 - automatic upload of coverage
+- fixing versions of pylint and pydocstyle to avoid uncontrolled new errors
 
 ### Performance
 
@@ -37,8 +45,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Toggle some D2xx errors
 - Tag for release candidate
 
+### Fixed
 
-## 0.12.0
+- fix str of Dataset
+
+## 0.12.0 [released 01/20/2023]
 
 ### Changed
 
@@ -88,7 +99,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - More docs
 
 
-## 0.11.0
+## 0.11.0 [released 12/19/2022]
 
 ### Fixed
 

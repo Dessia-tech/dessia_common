@@ -20,14 +20,14 @@ MIN_NOTE = 8.55
 UNWATCHED_ERRORS = ["fixme", "trailing-whitespace", "import-error"]
 
 MAX_ERROR_BY_TYPE = {
-    "wrong-spelling-in-docstring": 453,
-    "wrong-spelling-in-comment": 111,
+    "wrong-spelling-in-docstring": 306,
+    "wrong-spelling-in-comment": 87,
     "protected-access": 38,
     "consider-using-f-string": 1,
     "arguments-differ": 2,
     "no-member": 3,
-    "too-many-locals": 11,
-    "too-many-branches": 14,
+    "too-many-locals": 10,  # Reduce by dropping vectored objects
+    "too-many-branches": 13,
     "unused-argument": 6,
     "cyclic-import": 2,  # 0 just to test
     "no-self-use": 6,
