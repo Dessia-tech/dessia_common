@@ -725,10 +725,10 @@ class PhysicalObject(DessiaObject):
 
     def to_zip_stream(self, archive: dcf.BinaryFile) -> List[dcf.BinaryFile]:
         """ Creates a zip archive containing several files representing the export of a 3D object. """
-        step_stream = dcf.StringFile("export_step")
+        step_stream = dcf.StringFile("export_step.stp")
         self.to_step_stream(step_stream)
-        html_stream = self.to_html_stream(dcf.StringFile(filename="export_html"))
-        stl_stream = dcf.BinaryFile("export_stl")
+        html_stream = self.to_html_stream(dcf.StringFile(filename="export_html.html"))
+        stl_stream = dcf.BinaryFile("export_stl.stl")
         self.to_stl_stream(stl_stream)
 
         list_stream = [step_stream, html_stream, stl_stream]
