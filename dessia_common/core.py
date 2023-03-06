@@ -21,12 +21,13 @@ import traceback as tb
 
 from importlib import import_module
 from ast import literal_eval
+from zipfile import ZipFile
 
 import dessia_common.errors
 from dessia_common.utils.diff import data_eq, diff, choose_hash
 from dessia_common.utils.types import is_sequence, is_bson_valid
 from dessia_common.utils.copy import deepcopy_value
-from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotation, JSONSCHEMA_HEADER,\
+from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotation, JSONSCHEMA_HEADER, \
     set_default_value
 import dessia_common.schemas.core as dcs
 from dessia_common.serialization import SerializableObject, deserialize_argument, serialize
@@ -722,13 +723,41 @@ class PhysicalObject(DessiaObject):
         """
         self.volmdlr_volume_model(**kwargs).save_babylonjs_to_file(filename=filename, use_cdn=use_cdn, debug=debug)
 
+    def to_zip_stream(self, archive: dcf.BinaryFile) -> List[dcf.BinaryFile]:
+        """
+        Creates a zip archive containing several files representing the export of a 3D object.
+        """
+        step_stream = dcf.StringFile("export_step")
+        self.to_step_stream(step_stream)
+        html_stream = self.to_html_stream(dcf.StringFile(filename="export_html"))
+        stl_stream = dcf.BinaryFile("export_stl")
+        self.to_stl_stream(stl_stream)
+
+        list_stream = [stl_stream, html_stream, stl_stream]
+        archive_name = 'export_zip'
+        archive.filename = archive_name
+        with ZipFile(archive, 'w') as zip_archive:
+            for value in list_stream:
+                if isinstance(value, dcf.StringFile):
+                    with zip_archive.open(value.filename, 'w') as file:
+                        file.write(value.getvalue().encode('utf-8'))
+                elif isinstance(value, dcf.BinaryFile):
+                    with zip_archive.open(value.filename, 'w') as file:
+                        file.write(value.getbuffer())
+                else:
+                    raise ValueError(
+                        f"Archive input is not a file-like object. Got '{value}' of type {type(value)}")
+        return [archive]
+
     def _export_formats(self) -> List[ExportFormat]:
         """ Return a list of objects describing how to call 3D exports. """
         formats = DessiaObject._export_formats(self)
         formats3d = [ExportFormat(selector="step", extension="step", method_name="to_step_stream", text=True),
                      ExportFormat(selector="stl", extension="stl", method_name="to_stl_stream", text=False),
                      ExportFormat(selector="html", extension="html", method_name="to_html_stream", text=True)]
+        export_zip = ExportFormat(selector="zip", extension="zip", method_name="save_to_zip", text=False)
         formats.extend(formats3d)
+        formats.append(export_zip)
         return formats
 
 
