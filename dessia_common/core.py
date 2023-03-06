@@ -724,9 +724,7 @@ class PhysicalObject(DessiaObject):
         self.volmdlr_volume_model(**kwargs).save_babylonjs_to_file(filename=filename, use_cdn=use_cdn, debug=debug)
 
     def to_zip_stream(self, archive: dcf.BinaryFile) -> List[dcf.BinaryFile]:
-        """
-        Creates a zip archive containing several files representing the export of a 3D object.
-        """
+        """ Creates a zip archive containing several files representing the export of a 3D object. """
         step_stream = dcf.StringFile("export_step")
         self.to_step_stream(step_stream)
         html_stream = self.to_html_stream(dcf.StringFile(filename="export_html"))
@@ -755,7 +753,7 @@ class PhysicalObject(DessiaObject):
         formats3d = [ExportFormat(selector="step", extension="step", method_name="to_step_stream", text=True),
                      ExportFormat(selector="stl", extension="stl", method_name="to_stl_stream", text=False),
                      ExportFormat(selector="html", extension="html", method_name="to_html_stream", text=True)]
-        export_zip = ExportFormat(selector="zip", extension="zip", method_name="save_to_zip", text=False)
+        export_zip = ExportFormat(selector="zip", extension="zip", method_name="to_zip_stream", text=False)
         formats.extend(formats3d)
         formats.append(export_zip)
         return formats
