@@ -9,7 +9,7 @@ Some general rules :
   contain several types of elements
     ex : List[int], List[str], List[CustomClass], ...
 - Tuples can, therefore, be used as heterogeneous sequences,
-  thanks to the fact that they are immutables.
+  thanks to the fact that they are immutable.
     ex : Tuple[str, int, CustomClass] is a tuple like this :
         t = ('tuple', 1, custom_class_object)
 - Dict is used whenever a dynamic structure should be defined.
