@@ -156,9 +156,9 @@ DEF_ESS = EnhancedStandaloneSubobject.generate(1)
 class InheritingStandaloneSubobject(StandaloneBuiltinsSubobject):
     """ Overwrite StandaloneSubobject, principally for InstanceOf and Union typing testing purpose. """
 
-    def __init__(self, distarg: Distance, floatarg: float, intarg: int, boolarg: bool, strarg: str,
+    def __init__(self, distarg: Distance, floatarg: float, intarg: int, boolarg: bool,
                  name: str = 'Inheriting Standalone Subobject'):
-        self.strarg = strarg
+        self.strarg = name
 
         StandaloneBuiltinsSubobject.__init__(self, distarg=distarg, floatarg=floatarg, intarg=intarg,
                                              boolarg=boolarg, name=name)
@@ -168,11 +168,10 @@ class InheritingStandaloneSubobject(StandaloneBuiltinsSubobject):
         """ Generate an inheriting sub-object with default values computed from a seed. """
         distarg = Distance(0.7 * seed)
         floatarg = 0.1 * seed
-        strarg = str(-seed)
         intarg = seed * 3
         boolarg = bool(intarg % 2)
         name = 'Inheriting Standalone Subobject' + str(seed)
-        return cls(floatarg=floatarg, distarg=distarg, intarg=seed * 3, boolarg=boolarg, strarg=strarg, name=name)
+        return cls(floatarg=floatarg, distarg=distarg, intarg=seed * 3, boolarg=boolarg, name=name)
 
 
 DEF_ISS = InheritingStandaloneSubobject.generate(1)

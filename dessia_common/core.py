@@ -565,7 +565,7 @@ class DessiaObject(SerializableObject):
         return self.check_platform().raise_if_above_level(level=level)
 
     def check_platform(self):
-        """ Reproduce lifecycle on platform (serialization, display). Raise an error if something is wrong. """
+        """ Reproduce life-cycle on platform (serialization, display). Raise an error if something is wrong. """
         serializable_results = dcc.check_serialization_process(object_=self, use_pointers=True)
         dict_ = serializable_results.pop("dict_")
 
@@ -653,7 +653,7 @@ class PhysicalObject(DessiaObject):
 
     @staticmethod
     def display_settings():
-        """ Returns a list of DisplaySettings objects describing how to call subdisplays. """
+        """ Returns a list of DisplaySettings objects describing how to call sub-displays. """
         display_settings = DessiaObject.display_settings()
         display_settings.append(DisplaySetting(selector='cad', type_='babylon_data',
                                                method='volmdlr_volume_model().babylon_data', serialize_data=True))
@@ -685,7 +685,7 @@ class PhysicalObject(DessiaObject):
         return self.volmdlr_volume_model().to_step_stream(stream=stream)
 
     def to_html_stream(self, stream: dcf.StringFile):
-        """ Exports Object CAD to given stream in the HTML format. """
+        """ Exports Object CAD to given stream as HTML. """
         model = self.volmdlr_volume_model()
         babylon_data = model.babylon_data()
         script = model.babylonjs_script(babylon_data)
@@ -694,7 +694,7 @@ class PhysicalObject(DessiaObject):
         return stream
 
     def to_stl_stream(self, stream):
-        """ Export Object CAD to given stream in .stl format. """
+        """ Export Object CAD to given stream as STL. """
         return self.volmdlr_volume_model().to_stl_stream(stream=stream)
 
     def to_stl(self, filepath):
@@ -1038,7 +1038,7 @@ class FiltersList(DessiaObject):
 
     def get_booleans_index(self, dobjects_list: List[DessiaObject]):
         """
-        Compute all the filters of `self.filters` on `dobjects_list` and returns a booleans index of `dobjects_list`.
+        Compute all the filters of `self.filters` on `dobjects_list` and return boolean indices of `dobjects_list`.
 
         :param dobject_list: List of data to filter
         :type dobject_list: List[DessiaObject]

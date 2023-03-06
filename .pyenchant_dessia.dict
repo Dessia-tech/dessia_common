@@ -38,8 +38,10 @@ schemas
 scipy
 serializable
 sklearn
+STL
 str
 StringFile
+stringified
 Stringify
 submodule
 subobjects

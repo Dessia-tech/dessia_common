@@ -7,7 +7,7 @@ import inspect
 import json
 
 
-from typing import Union, List
+from typing import Union, List, Optional
 from networkx import DiGraph, Graph, kamada_kawai_layout
 from dessia_common.templates import visjs_template
 from dessia_common.typings import JsonSerializable
@@ -17,7 +17,7 @@ from dessia_common.utils.types import is_sequence
 class DisplaySetting:
     """ Describe which method to call to get a display. """
 
-    def __init__(self, selector: str, type_: str, method: str, arguments=None,
+    def __init__(self, selector: Optional[str], type_: str, method: str, arguments=None,
                  serialize_data: bool = False, load_by_default: bool = False):
         self.selector = selector
         self.type = type_
@@ -152,6 +152,5 @@ def draw_networkx_graph(networkx_graph: Graph):
                                         name=visjs_data["name"])
     with tempfile.NamedTemporaryFile(suffix=".html", delete=False) as file:
         file.write(bytes(content, "utf8"))
-
     webbrowser.open("file://" + os.path.realpath(file.name))
     return file.name
