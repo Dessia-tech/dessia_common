@@ -731,7 +731,7 @@ class PhysicalObject(DessiaObject):
         stl_stream = dcf.BinaryFile("export_stl")
         self.to_stl_stream(stl_stream)
 
-        list_stream = [stl_stream, html_stream, stl_stream]
+        list_stream = [step_stream, html_stream, stl_stream]
         archive_name = 'export_zip'
         archive.filename = archive_name
         with ZipFile(archive, 'w') as zip_archive:
