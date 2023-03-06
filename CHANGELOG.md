@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Blocks : display blocks are now more configurable (custom selector and type)
+- DessiaObject: add type to load_from_file method
 - Files: .doc & .docx files typings
 - Schemas refactor: add support of Ellipsed tuple (Tuple[T, ...])
 - Schemas refactor: add more Error Checks
@@ -46,7 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Perf
 
-- use dc_ref instead of $ref in serialization to avoid overhead during CRUD operation on platform
+- use ref__ instead of $ref in serialization to avoid overhead during CRUD operation on platform. Retrocompatibility for old marker.
 
 
 ## 0.13.2

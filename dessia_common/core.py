@@ -372,7 +372,7 @@ class DessiaObject(SerializableObject):
         json.dump(dict_, stream, indent=indent)
 
     @classmethod
-    def load_from_stream(cls, stream):
+    def load_from_stream(cls, stream: dcf.JsonFile):
         """
         Generate object from stream using utf-8 encoding.
 
