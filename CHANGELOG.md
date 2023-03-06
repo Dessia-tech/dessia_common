@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Schemas refactor: add more Error Checks
 - Schemas refactor: add a json export to method schemas for low-code implementations
 - files: .doc & .docx files typings
+- DessiaObject: add type to load_from_file method
 
 ### Fixed
 
