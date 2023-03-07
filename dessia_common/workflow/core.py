@@ -2121,7 +2121,7 @@ class WorkflowRun(WorkflowState):
         """
         Compute WorkflowRun display settings.
 
-        Concatenate WorkflowState display_settings and instering Workflow ones.
+        Concatenate WorkflowState display_settings and inserting Workflow ones.
         """
         workflow_settings = self.workflow.display_settings()
         doc_setting = workflow_settings[0]
