@@ -638,8 +638,7 @@ class DessiaObject(SerializableObject):
         return [archive]
 
     def to_zip(self, filepath: str):
-        """ Creates a zip archive at the specified path containing several files representing the export of
-        DessiaObject. """
+        """ Creates a zip archive containing several files representing the export of DessiaObject. """
         if not filepath.endswith('.zip'):
             filepath += '.zip'
             print(f'Changing name to {filepath}')
