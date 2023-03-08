@@ -764,22 +764,14 @@ class PhysicalObject(DessiaObject):
     def zip_settings(self):
         """ Returns a list of streams containing different representations of the object. """
         streams = DessiaObject.zip_settings(self)
-        step_stream = dcf.StringFile("export_step")
+        step_stream = dcf.StringFile("step_export.stp")
         self.to_step_stream(step_stream)
-        html_stream = self.to_html_stream(dcf.StringFile(filename="export_html"))
-        stl_stream = dcf.BinaryFile("export_stl")
+        html_stream = self.to_html_stream(dcf.StringFile(filename="html_export.html"))
+        stl_stream = dcf.BinaryFile("stl_export.stl")
         self.to_stl_stream(stl_stream)
 
         streams.extend([step_stream, html_stream, stl_stream])
         return streams
-
-    def to_zip_stream(self, archive: dcf.BinaryFile) -> List[dcf.BinaryFile]:
-        """ Creates a zip archive containing several files representing the export of PhysicalObject. """
-        super().to_zip_stream(archive=archive)
-
-    def to_zip(self, filepath: str):
-        """ Creates a zip archive containing several files representing the export of PhysicalObject. """
-        super().to_zip(filepath=filepath)
 
     def _export_formats(self) -> List[ExportFormat]:
         """ Return a list of objects describing how to call 3D exports. """
