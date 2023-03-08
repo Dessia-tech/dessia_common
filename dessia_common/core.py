@@ -608,10 +608,51 @@ class DessiaObject(SerializableObject):
         writer = XLSXWriter(self)
         writer.save_to_stream(stream)
 
+    def zip_settings(self):
+        """ Returns a list of streams containing different representations of the object. """
+        excel_stream = dcf.BinaryFile("excel_export.xlsx")
+        self.to_xlsx_stream(excel_stream)
+
+        json_stream = dcf.JsonFile("json_export.json")
+        self.save_to_stream(json_stream)
+
+        list_stream = [excel_stream, json_stream]
+        return list_stream
+
+    def to_zip_stream(self, archive: dcf.BinaryFile) -> List[dcf.BinaryFile]:
+        """ Creates a zip archive containing several files representing the export of DessiaObject. """
+        list_stream = self.zip_settings()
+        archive_name = 'export_zip'
+        archive.filename = archive_name
+        with ZipFile(archive, 'w') as zip_archive:
+            for value in list_stream:
+                if isinstance(value, dcf.StringFile):
+                    with zip_archive.open(value.filename, 'w') as file:
+                        file.write(value.getvalue().encode('utf-8'))
+                elif isinstance(value, dcf.BinaryFile):
+                    with zip_archive.open(value.filename, 'w') as file:
+                        file.write(value.getbuffer())
+                else:
+                    raise ValueError(
+                        f"Archive input is not a file-like object. Got '{value}' of type {type(value)}")
+        return [archive]
+
+    def to_zip(self, filepath: str):
+        """ Creates a zip archive at the specified path containing several files representing the export of
+        DessiaObject. """
+        if not filepath.endswith('.zip'):
+            filepath += '.zip'
+            print(f'Changing name to {filepath}')
+        archive = dcf.BinaryFile()
+        self.to_zip_stream(archive)
+        with open(filepath, 'wb') as file:
+            file.write(archive.getbuffer())
+
     def _export_formats(self) -> List[ExportFormat]:
         """ Return a list of objects describing how to call generic exports (.json, .xlsx). """
         formats = [ExportFormat(selector="json", extension="json", method_name="save_to_stream", text=True),
-                   ExportFormat(selector="xlsx", extension="xlsx", method_name="to_xlsx_stream", text=False)]
+                   ExportFormat(selector="xlsx", extension="xlsx", method_name="to_xlsx_stream", text=False),
+                   ExportFormat(selector="zip", extension="zip", method_name="to_zip_stream", text=False)]
         return formats
 
     def save_export_to_file(self, selector: str, filepath: str):
@@ -723,39 +764,13 @@ class PhysicalObject(DessiaObject):
         """
         self.volmdlr_volume_model(**kwargs).save_babylonjs_to_file(filename=filename, use_cdn=use_cdn, debug=debug)
 
-    def to_zip_stream(self, archive: dcf.BinaryFile) -> List[dcf.BinaryFile]:
-        """ Creates a zip archive containing several files representing the export of a 3D object. """
-        step_stream = dcf.StringFile("export_step.stp")
-        self.to_step_stream(step_stream)
-        html_stream = self.to_html_stream(dcf.StringFile(filename="export_html.html"))
-        stl_stream = dcf.BinaryFile("export_stl.stl")
-        self.to_stl_stream(stl_stream)
-
-        list_stream = [step_stream, html_stream, stl_stream]
-        archive_name = 'export_zip'
-        archive.filename = archive_name
-        with ZipFile(archive, 'w') as zip_archive:
-            for value in list_stream:
-                if isinstance(value, dcf.StringFile):
-                    with zip_archive.open(value.filename, 'w') as file:
-                        file.write(value.getvalue().encode('utf-8'))
-                elif isinstance(value, dcf.BinaryFile):
-                    with zip_archive.open(value.filename, 'w') as file:
-                        file.write(value.getbuffer())
-                else:
-                    raise ValueError(
-                        f"Archive input is not a file-like object. Got '{value}' of type {type(value)}")
-        return [archive]
-
     def _export_formats(self) -> List[ExportFormat]:
         """ Return a list of objects describing how to call 3D exports. """
         formats = DessiaObject._export_formats(self)
         formats3d = [ExportFormat(selector="step", extension="step", method_name="to_step_stream", text=True),
                      ExportFormat(selector="stl", extension="stl", method_name="to_stl_stream", text=False),
                      ExportFormat(selector="html", extension="html", method_name="to_html_stream", text=True)]
-        export_zip = ExportFormat(selector="zip", extension="zip", method_name="to_zip_stream", text=False)
         formats.extend(formats3d)
-        formats.append(export_zip)
         return formats
 
 
