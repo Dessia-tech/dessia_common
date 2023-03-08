@@ -616,16 +616,15 @@ class DessiaObject(SerializableObject):
         json_stream = dcf.JsonFile("json_export.json")
         self.save_to_stream(json_stream)
 
-        list_stream = [excel_stream, json_stream]
-        return list_stream
+        return [excel_stream, json_stream]
 
     def to_zip_stream(self, archive: dcf.BinaryFile) -> List[dcf.BinaryFile]:
         """ Creates a zip archive containing several files representing the export of DessiaObject. """
-        list_stream = self.zip_settings()
+        streams = self.zip_settings()
         archive_name = 'export_zip'
         archive.filename = archive_name
         with ZipFile(archive, 'w') as zip_archive:
-            for value in list_stream:
+            for value in streams:
                 if isinstance(value, dcf.StringFile):
                     with zip_archive.open(value.filename, 'w') as file:
                         file.write(value.getvalue().encode('utf-8'))
@@ -633,8 +632,7 @@ class DessiaObject(SerializableObject):
                     with zip_archive.open(value.filename, 'w') as file:
                         file.write(value.getbuffer())
                 else:
-                    raise ValueError(
-                        f"Archive input is not a file-like object. Got '{value}' of type {type(value)}")
+                    raise ValueError(f"Archive input is not a file-like object. Got '{value}' of type {type(value)}")
         return [archive]
 
     def to_zip(self, filepath: str):
@@ -762,6 +760,26 @@ class PhysicalObject(DessiaObject):
         :type debug: bool, optional
         """
         self.volmdlr_volume_model(**kwargs).save_babylonjs_to_file(filename=filename, use_cdn=use_cdn, debug=debug)
+
+    def zip_settings(self):
+        """ Returns a list of streams containing different representations of the object. """
+        streams = DessiaObject.zip_settings(self)
+        step_stream = dcf.StringFile("export_step")
+        self.to_step_stream(step_stream)
+        html_stream = self.to_html_stream(dcf.StringFile(filename="export_html"))
+        stl_stream = dcf.BinaryFile("export_stl")
+        self.to_stl_stream(stl_stream)
+
+        streams.extend([step_stream, html_stream, stl_stream])
+        return streams
+
+    def to_zip_stream(self, archive: dcf.BinaryFile) -> List[dcf.BinaryFile]:
+        """ Creates a zip archive containing several files representing the export of PhysicalObject. """
+        super().to_zip_stream(archive=archive)
+
+    def to_zip(self, filepath: str):
+        """ Creates a zip archive containing several files representing the export of PhysicalObject. """
+        super().to_zip(filepath=filepath)
 
     def _export_formats(self) -> List[ExportFormat]:
         """ Return a list of objects describing how to call 3D exports. """
