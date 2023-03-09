@@ -125,20 +125,21 @@ class TypedVariable(Variable):
 
         return ToSriptElement
         """
-        types = ["Dict", "Tuple"]
+        types = {"Dict", "Tuple"}
         try:
             script.declaration += f", type_={self.type_.__name__}"
         except AttributeError:
             if is_typing(self.type_):
                 args = get_args(self.type_)
-                # TODO : fix this (len(args)!!)
                 if len(args) == 1:
                     try:
                         args_sub = args[0].__name__
                     except AttributeError:
                         args_sub = f"{get_origin(args[0]).__name__.capitalize()}[{get_args(args[0])[0].__name__}]"
-                elif len(args) != 1:
+                elif len(args) > 1:
                     args_sub = f"{args[0].__name__}, {args[0].__name__}"
+                else:
+                    args_sub = ""
                 script.declaration += f", type_={serialize_annotation(self.type_).split('[')[0]}" \
                                       f"[{args_sub}]"
                 try:
@@ -146,14 +147,15 @@ class TypedVariable(Variable):
                         script.imports.append(f"{args[0].__module__}.{args[0].__name__}")
                 except AttributeError:
                     script.imports.append(f"{args[0].__module__}.{args[0].__origin__.__name__.capitalize()}")
-        if "builtins" not in serialize_annotation(self.type_) or any(type_ in serialize_annotation(self.type_)
-                                                                 for type_ in types):
+        if not ("builtins" in serialize_annotation(self.type_) or types & set(
+                serialize_annotation(self.type_).split("."))):
             try:
                 module = get_origin(self.type_).__name__
                 module = module[0].upper() + module[1:]
                 script.imports.append(f"{self.type_.__module__}.{module}")
             except AttributeError:
-                script.imports.append(serialize_annotation(self.type_))
+                if self.type_.__module__ != "builtins":
+                    script.imports.append(serialize_annotation(self.type_))
         return script
 
     def _get_to_script_elements(self) -> ToScriptElement:
