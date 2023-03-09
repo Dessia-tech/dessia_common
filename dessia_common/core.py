@@ -632,7 +632,8 @@ class DessiaObject(SerializableObject):
                     with zip_archive.open(value.filename, 'w') as file:
                         file.write(value.getbuffer())
                 else:
-                    raise ValueError(f"Archive input is not a file-like object. Got '{value}' of type {type(value)}")
+                    raise ValueError(
+                        f"Archive input is not a file-like object. Got '{value}' of type {type(value)}")
         return [archive]
 
     def to_zip(self, filepath: str):
