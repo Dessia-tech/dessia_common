@@ -114,7 +114,7 @@ class ComponentConnection(DessiaObject):
 
 
 class SystemUsage(DessiaObject):
-    """  Mock a simulation result of a system, e.g. the response of the battery pack to a certain use case. """
+    """  Mock a simulation result of a system, e.g. the response of the battery pack to a certain use-case. """
 
     _standalone_in_db = True
 
