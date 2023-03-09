@@ -533,7 +533,7 @@ class ClusteredDataset(Dataset):
         :type nb_sheets: `int`, `optional`, default to `1`
 
         :return: a ClusteredDataset where each element is labelled with its pareto_sheet. Elements outside a
-        pareto_sheet are labelled `n_sheets`
+        pareto_sheet are labeled `n_sheets`
         :rtype: ClusteredDataset
         """
         labels = []

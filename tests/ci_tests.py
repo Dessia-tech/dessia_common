@@ -43,6 +43,7 @@ scripts = ['displays.py',
            'type_matching.py',
            # Data structures
            "data-structures/1.py",
+           "data-structures/2.py",
            # Unit tests
            'unit_tests.py',
            ]

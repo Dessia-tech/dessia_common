@@ -18,3 +18,10 @@ deserialize
 visjs
 config
 builtins
+subobjects
+filepath
+CMA
+orjson
+uuids
+volmdlr
+networkx
