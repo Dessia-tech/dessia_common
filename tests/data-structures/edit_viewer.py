@@ -6,7 +6,7 @@ Created on Tue Mar 07 2023
 @author: gvouaillat
 """
 
-# import io
+import io
 import math
 import random
 from typing import List
@@ -88,7 +88,7 @@ def data2d_rotation_angle(frame: wires.Contour2D):
 
         center = frame_.center_of_mass()
         new_frame = frame_.rotation(center, x_param)
-        xmini, xmaxi, ymini, ymaxi = new_frame.bounding_rectangle()
+        xmini, xmaxi, ymini, ymaxi = new_frame.bounding_rectangle
         bounding_box = wires.Contour2D.from_bounding_rectangle(xmini, xmaxi, ymini, ymaxi)
         return abs(new_frame.area() - bounding_box.area())
 
@@ -106,7 +106,7 @@ def data2d_rotation_angle(frame: wires.Contour2D):
     to_break = False
     for angle in [math.pi / 2, math.pi, 3 * math.pi / 2, 2 * math.pi]:
         frame_new = frame_new.rotation(center=frame_new.center_of_mass(), angle=math.pi / 2)
-        _, _, ymin, _ = frame_new.bounding_rectangle()
+        _, _, ymin, _ = frame_new.bounding_rectangle
         for prim in frame_new.primitives:
             # TODO: Check abs_tol=0.1, when the Bug #699 volmdlr is fixed
             if math.isclose(prim.middle_point().y, ymin, abs_tol=0.1):
@@ -465,7 +465,7 @@ class Data2D(PhysicalObject):
 
         stringer = self.stringers2d[stringer_index].primitives[0].to_line()
         intersections = self.frame2d.line_intersections(stringer)
-        xmin, xmax, ymin, ymax = self.frame2d.bounding_rectangle().bounds()
+        xmin, xmax, ymin, ymax = self.frame2d.bounding_rectangle.bounds()
         bounding_contour = wires.Contour2D.from_bounding_rectangle(xmin, xmax, ymin, ymax)
         bounding_intersection_points = bounding_contour.line_intersections(stringer)
         for (point, edge) in bounding_intersection_points:
@@ -823,16 +823,17 @@ class Intersection(DessiaObject):
 # radius = SectionZRadius(interior_radius=0.002, exterior_radius=0.0005)
 # section_z = SectionZ(semelle=semelle_dimensions, talon=talon_dimensions, middle=middle_dimensions, radius=radius)
 #
-# file_path = io.FileIO('./input_data/frame_1.step')
+# file_path = io.FileIO('./models/data/frame_1.step')
 # inputdata = InputData.from_step_file(file_path)
 # frame = Frame.from_input_data(inputdata)
 #
-# file_path = io.FileIO('./input_data/stringers_1.step')
+# file_path = io.FileIO('./models/data/stringers_1.step')
 # inputdata = InputData.from_step_file(file_path)
 # stringers = Stringer.from_input_data(inputdata)
 #
 # data3d_2 = Data3D(frame, stringers)
 # data2d_2 = Data2D.from_data3d(data3d_2)
+#
 # data_for_pockets_2 = DataForPockets.from_data2d_and_initial_sections(
 #     data2d=data2d_2,
 #     sections_initial=[section_z] * len(data2d_2.stringers2d)

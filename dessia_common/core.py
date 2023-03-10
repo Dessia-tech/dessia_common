@@ -698,6 +698,9 @@ class PhysicalObject(DessiaObject):
         """
         return self.volmdlr_volume_model().to_stl(filepath=filepath)
 
+    def babylon_data(self):
+        return self.volmdlr_volume_model().babylon_data()
+
     def babylonjs(self, use_cdn=True, debug=False, **kwargs):
         """ Show the 3D volmdlr of an object by calling volmdlr_volume_model method and plot in in browser. """
         self.volmdlr_volume_model(**kwargs).babylonjs(use_cdn=use_cdn, debug=debug)
