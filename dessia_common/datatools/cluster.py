@@ -591,18 +591,3 @@ class ClusteredDataset(Dataset):
         """ Does the same as `from_dbscan` method but data is a `List[DessiaObject]`. """
         return cls.from_dbscan(Dataset(data), eps=eps, min_samples=min_samples, mink_power=mink_power,
                                leaf_size=leaf_size, metric=metric, scaling=scaling, name=name)
-
-# Function to implement, to find a good eps parameter for dbscan
-# def nearestneighbors(self):
-#     vectors = []
-#     for machine in self.machines:
-#         vector = machine.to_vector()
-#         vectors.append(vector)
-#     neigh = NearestNeighbors(n_neighbors=14)
-#     vectors = StandardScaler().fit_transform(vectors)
-#     nbrs = neigh.fit(vectors)
-#     distances, indices = nbrs.kneighbors(vectors)
-#     distances = npy.sort(distances, axis=0)
-#     distances = distances[:, 1]
-#     plt.plot(distances)
-#     plt.show()
