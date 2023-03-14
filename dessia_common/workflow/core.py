@@ -22,8 +22,7 @@ from dessia_common.core import DessiaObject
 from dessia_common.schemas.core import get_schema, FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE,\
     serialize_annotation, is_typing
 
-from dessia_common.utils.types import deserialize_typing, recursive_type, typematch, is_sequence, is_dessia_file, \
-    serialize_typing
+from dessia_common.utils.types import deserialize_typing, recursive_type, typematch, is_sequence, is_dessia_file
 from dessia_common.utils.copy import deepcopy_value
 from dessia_common.utils.diff import choose_hash
 from dessia_common.utils.helpers import prettyname
