@@ -372,3 +372,19 @@ class MarkdownWriter:
     def element_details(self, elements: List[Any]) -> str:
         """Print sequence of elements."""
         return self._sequence_to_str(elements)
+
+    @staticmethod
+    def write_to_file(filename: str, content: str) -> None:
+        with open(filename, 'w') as f:
+            f.write(content)
+
+    @staticmethod
+    def table_of_contents(headings: List[str]) -> str:
+        toc = '## Table of Contents\n\n'
+        for heading in headings:
+            toc += f'- [{heading}](#{heading.lower().replace(" ", "-")})\n'
+        return toc
+
+    @staticmethod
+    def header(title: str, level: int = 1) -> str:
+        return '#' * level + ' ' + title + '\n\n'
