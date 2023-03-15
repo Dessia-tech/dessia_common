@@ -375,11 +375,13 @@ class MarkdownWriter:
 
     @staticmethod
     def write_to_file(filename: str, content: str) -> None:
+        """ Writes the given content to the specified file. """
         with open(filename, 'w', encoding='utf-8') as file:
             file.write(content)
 
     @staticmethod
     def table_of_contents(headings: List[str]) -> str:
+        """ Generates a table of contents based on the given list of headings. """
         toc = '## Table of Contents\n\n'
         for heading in headings:
             toc += f'- [{heading}](#{heading.lower().replace(" ", "-")})\n'
@@ -387,4 +389,5 @@ class MarkdownWriter:
 
     @staticmethod
     def header(title: str, level: int = 1) -> str:
+        """ Generates a markdown header with the specified title and level. """
         return '#' * level + ' ' + title + '\n\n'
