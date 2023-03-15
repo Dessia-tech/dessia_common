@@ -375,8 +375,8 @@ class MarkdownWriter:
 
     @staticmethod
     def write_to_file(filename: str, content: str) -> None:
-        with open(filename, 'w') as f:
-            f.write(content)
+        with open(filename, 'w', encoding='utf-8') as file:
+            file.write(content)
 
     @staticmethod
     def table_of_contents(headings: List[str]) -> str:
