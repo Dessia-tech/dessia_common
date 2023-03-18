@@ -8,6 +8,7 @@ import operator
 import math
 import random
 import itertools
+import zipfile
 
 from functools import reduce
 import collections
@@ -623,7 +624,7 @@ class DessiaObject(SerializableObject):
         streams = self.zip_settings()
         archive_name = 'export_zip'
         archive.filename = archive_name
-        with ZipFile(archive, 'w') as zip_archive:
+        with ZipFile(archive, 'w', compression=zipfile.ZIP_DEFLATED) as zip_archive:
             for value in streams:
                 if isinstance(value, dcf.StringFile):
                     with zip_archive.open(value.filename, 'w') as file:
