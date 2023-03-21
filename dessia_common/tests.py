@@ -91,7 +91,7 @@ class Optimizer(DessiaObject):
 
 
 class Component(DessiaObject):
-    """ MBSE to be tested. Mock a real usecase. For example, a module in a battery pack. """
+    """ MBSE to be tested. Mock a real use case. For example, a module in a battery pack. """
 
     _standalone_in_db = True
 
