@@ -751,7 +751,7 @@ class ModelAttribute(Block):
     :param position: Position of the block in canvas.
     """
 
-    def __init__(self, attribute_name: int, name: str = '', position: Tuple[float, float] = None):
+    def __init__(self, attribute_name: str, name: str = '', position: Tuple[float, float] = None):
         self.attribute_name = attribute_name
         inputs = [Variable(name='Model')]
         outputs = [Variable(name='Model attribute')]
