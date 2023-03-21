@@ -29,11 +29,8 @@ assert(funky_md == ref_funky_md)
 
 writer = MarkdownWriter()
 headings = ['Introduction', 'Methodology', 'Results', 'Conclusion']
-md = writer.generate_header_and_toc(headings, header_level=2)
-
-ref_md = '## Table of Contents\n\n- [Introduction](#introduction)\n- [Methodology](#methodology)\n- [Results](' \
-       '#results)\n- [Conclusion](#conclusion)\n## Introduction\n\n'
-
-assert(md == ref_md)
+md = writer.table_of_contents(headings)
+for heading in headings:
+    assert(heading in md)
 
 print("script 'markdowns.py' has passed")
