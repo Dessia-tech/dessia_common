@@ -391,3 +391,9 @@ class MarkdownWriter:
     def header(title: str, level: int = 1) -> str:
         """ Generates a markdown header with the specified title and level. """
         return '#' * level + ' ' + title + '\n\n'
+
+    def generate_header_and_toc(self, headings: List[str], header_level: int = 1) -> str:
+        """ Generates a table of contents followed by a header using the first heading in the list. """
+        toc = self.table_of_contents(headings)
+        header = self.header(headings[0], header_level)
+        return toc + header

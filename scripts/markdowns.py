@@ -26,4 +26,14 @@ ref_funky_md = ("| Subobject_list | Object_list | Carname |\n| ------ | ------ |
 assert(all(assertion in cars_md for assertion in ['Model', "0.119", "2625.0"]))
 assert(funky_md == ref_funky_md)
 
+
+writer = MarkdownWriter()
+headings = ['Introduction', 'Methodology', 'Results', 'Conclusion']
+md = writer.generate_header_and_toc(headings, header_level=2)
+
+ref_md = '## Table of Contents\n\n- [Introduction](#introduction)\n- [Methodology](#methodology)\n- [Results](' \
+       '#results)\n- [Conclusion](#conclusion)\n## Introduction\n\n'
+
+assert(md == ref_md)
+
 print("script 'markdowns.py' has passed")
