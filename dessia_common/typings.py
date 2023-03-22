@@ -1,7 +1,7 @@
 """ Typing for dessia_common. """
 from typing import TypeVar, Generic, Dict, Any, Tuple
 
-from dessia_common.utils.helpers import full_classname, get_python_class_from_class_name, get_class_attributes
+from dessia_common.utils.helpers import full_classname, get_python_class_from_class_name
 
 
 T = TypeVar('T')
@@ -59,9 +59,6 @@ class AttributeType(Generic[T]):
     def __deepcopy__(self, memo=None):
         return AttributeType(self.class_, self.name)
 
-    def get_attribute(self):
-        """ Helper to get real attribute from class_ and attribute name. """
-        return getattr(self.class_, self.name)
 
     def to_dict(self):
         """ Write Attribute Type as a dictionary. """

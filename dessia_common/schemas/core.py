@@ -12,7 +12,7 @@ from functools import cached_property
 from dessia_common.utils.helpers import full_classname, get_python_class_from_class_name
 from dessia_common.abstract import CoreDessiaObject
 from dessia_common.files import BinaryFile, StringFile
-from dessia_common.typings import MethodType, ClassMethodType, InstanceOf, Subclass
+from dessia_common.typings import MethodType, ClassMethodType, InstanceOf, Subclass, AttributeType
 from dessia_common.measures import Measure
 from dessia_common.utils.helpers import prettyname
 from dessia_common.schemas.interfaces import Annotations, T
@@ -1170,7 +1170,7 @@ def get_schema(annotation: Type[T], attribute: str = "", definition_default: Opt
 ORIGIN_TO_SCHEMA_CLASS = {
     tuple: HeterogeneousSequence, list: HomogeneousSequence, collections.abc.Iterator: HomogeneousSequence,
     Union: UnionProperty, dict: DynamicDict, InstanceOf: InstanceOfProperty,
-    MethodType: MethodTypeProperty, ClassMethodType: MethodTypeProperty, type: ClassProperty
+    MethodType: MethodTypeProperty, ClassMethodType: MethodTypeProperty, type: ClassProperty, AttributeType: MethodTypeProperty
 }
 
 SERIALIZED_TO_SCHEMA_CLASS = {
