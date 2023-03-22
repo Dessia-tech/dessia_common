@@ -28,9 +28,9 @@ class BinaryFile(io.BytesIO):
         return template
 
     @classmethod
-    def from_file(cls, filename):
+    def from_file(cls, filepath: str):
         """ Get a file from a binary file. """
-        with open(filename, 'rb') as file:
+        with open(filepath, 'rb') as file:
             stream = cls()
             stream.write(file.read())
             stream.seek(0)
@@ -88,9 +88,9 @@ class StringFile(io.StringIO):
         return stream
 
     @classmethod
-    def from_file(cls, filename):
+    def from_file(cls, filepath: str):
         """ Get a file from a file. """
-        with open(filename, 'r', encoding='utf-8') as file:
+        with open(filepath, 'r', encoding='utf-8') as file:
             stream = cls()
             stream.write(file.read())
             stream.seek(0)
