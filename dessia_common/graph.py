@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """ Graph helpers. """
 import networkx as nx
+import numpy as np
 
 
 def explore_tree_from_leaves(graph):
@@ -56,6 +57,13 @@ def get_longest_path(graph: nx.DiGraph, begin, end):
     """ Get longest path of graph. """
     return list(nx.shortest_simple_paths(graph, begin, end))[-1]
 
+def get_shortest_path(graph: nx.DiGraph, begin, end):
+    """ Get the shortest path. """
+    try:
+        path = nx.shortest_path(graph, begin, end)
+    except nx.exception.NetworkXNoPath:
+        path = None
+    return path
 
 def get_paths_from_to(graph: nx.DiGraph, origins, destinations):
     """
