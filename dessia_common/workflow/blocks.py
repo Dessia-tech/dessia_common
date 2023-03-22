@@ -10,7 +10,7 @@ from dessia_common.core import DessiaFilter, FiltersList, type_from_annotation, 
 from dessia_common.schemas.core import split_argspecs, parse_docstring, EMPTY_PARSED_ATTRIBUTE
 from dessia_common.displays import DisplaySetting, DisplayObject
 from dessia_common.errors import UntypedArgumentError
-from dessia_common.typings import JsonSerializable, MethodType, ClassMethodType
+from dessia_common.typings import JsonSerializable, MethodType, ClassMethodType, AttributeType, ClassAttributeType
 from dessia_common.files import StringFile, BinaryFile
 from dessia_common.utils.helpers import concatenate, full_classname
 from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
@@ -751,7 +751,8 @@ class ModelAttribute(Block):
     :param position: Position of the block in canvas.
     """
 
-    def __init__(self, attribute_name: str, name: str = '', position: Tuple[float, float] = None):
+    def __init__(self, attribute_type: AttributeType[Type], attribute_name: str, name: str = '', position: Tuple[float, float] = None):
+        self.attribute_type=attribute_type
         self.attribute_name = attribute_name
         inputs = [Variable(name='Model')]
         outputs = [Variable(name='Model attribute')]
@@ -759,19 +760,24 @@ class ModelAttribute(Block):
 
     def equivalent_hash(self):
         """ Custom hash function. Related to 'equivalent' method. """
-        return len(self.attribute_name)
+        classname = self.attribute_type.class_.__name__
+        return len(classname) + 7 * len(self.attribute_type.name)
 
     def equivalent(self, other):
         """ Return whether the block is equivalent to the other given or not. """
-        return Block.equivalent(self, other) and self.attribute_name == other.attribute_name
+        classname = self.attribute_type.class_.__name__
+        other_classname = other.attribute_type.class_.__name__
+        same_model = classname == other_classname
+        same_method = self.attribute_type.name == other.attribute_type.name
+        return Block.equivalent(self, other) and same_model and same_method
 
     def evaluate(self, values, **kwargs):
         """ Get input object's deep attribute. """
-        return [get_in_object_from_path(values[self.inputs[0]], f'#/{self.attribute_name}')]
+        return [get_in_object_from_path(values[self.inputs[0]], f'#/{self.attribute_type.name}')]
 
     def _to_script(self, _) -> ToScriptElement:
         """ Write block config into a chunk of script. """
-        script = f"ModelAttribute(attribute_name='{self.attribute_name}', {self.base_script()})"
+        script = f"ModelAttribute(attribute_name='{self.attribute_type.name}', {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
 
