@@ -124,7 +124,7 @@ setup(
     long_description=readme(),
     long_description_content_type='text/markdown',
     keywords=["Dessia", "SDK", "engineering"],
-    url="https://github.com/Dessia-tech/dessia-common",
+    url="https://github.com/Dessia-tech/dessia_common",
     author="Dessia Technologies SAS",
     author_email="root@dessia.tech",
     include_package_data=True,
