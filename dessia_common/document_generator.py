@@ -89,4 +89,5 @@ class DocxWriter:
         return new_writer
 
     def save_file(self):
+        """ Saves the document to a file. """
         self.doc.save(self.filename)
