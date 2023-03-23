@@ -152,7 +152,9 @@ setup(
         "parameterized",
         "matplotlib",
         "scikit-learn>=1.2.0",
-        "cma"
+        "cma",
+        "docx",
+        "python-docx"
     ],
     python_requires=">=3.8",
 )
