@@ -1,7 +1,6 @@
 from typing import List, Tuple
 
 import docx
-from docx.enum.style import WD_STYLE_TYPE
 
 
 class DocxWriter:
