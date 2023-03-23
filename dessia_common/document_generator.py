@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+""" Write document file. """
 from typing import List, Tuple
 
 import docx
