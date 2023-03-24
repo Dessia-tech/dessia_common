@@ -874,7 +874,7 @@ class DessiaFilter(DessiaObject):
         :param values: List of DessiaObjects to filter
         :type values: List[DessiaObject]
 
-        :return: `list of length `len(values)` where the elements are `True` if kept by the filter, otherwise `False`.
+        :return: `list of length `len(values)` where elements are `True` if kept by the filter, otherwise `False`.
         :rtype: List[bool]
 
         :Examples:
