@@ -17,6 +17,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Schemas refactor: add more Error Checks
 - Schemas refactor: add a json export to method schemas for low-code implementations
 - Schemas refactor: add default value to method types
+- Typings : add AttributeType and ClassAttributeType
+
+
+### Changed
+
+- Blocks : change ModelAttribute input attribute_name : str to attribute_type : AtributeType 
 
 ### Fixed
 
