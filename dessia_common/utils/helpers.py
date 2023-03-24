@@ -74,7 +74,7 @@ def get_python_class_from_class_name(full_class_name: str):
     return class_
 
 def get_class_attributes(object_):
-    """ Get attributs name and type of object_ """
+    """ Get attributs name and type of object_. """
     attributes = [attr for attr in dir(object_) if not callable(getattr(object_, attr)) and not attr.startswith("__")]
     types = [type(getattr(object_, attr)).__name__ for attr in attributes]
 
