@@ -23,6 +23,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Blocks : change ModelAttribute input attribute_name : str to attribute_type : AtributeType 
+- files: add functions to init StringFile and BinaryFile from local path
+- MarkdownWriter: add some functions (table_of_contents, header)
+
 
 ### Fixed
 
