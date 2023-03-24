@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 """ Graph helpers. """
 import networkx as nx
-import numpy as np
 
 
 def explore_tree_from_leaves(graph):
