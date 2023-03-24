@@ -10,8 +10,6 @@ import random
 import itertools
 
 from functools import reduce
-import collections
-import collections.abc
 from copy import deepcopy, copy
 import inspect
 import json
