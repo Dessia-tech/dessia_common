@@ -106,7 +106,7 @@ class InstantiatingModelOptimizer(Optimizer):
         raise NotImplementedError('the method instantiate_model must be overloaded by subclassing class')
 
     def dimensionless_vector_to_vector(self, dl_vector):
-        """ Returns the vector from the adimensioned one. """
+        """ Returns the vector from the dimensionless one. """
         return [bound.dimensionless_to_value(dl_xi) for dl_xi, bound in zip(dl_vector, self.optimization_bounds)]
 
     def vector_to_attributes_values(self, vector: List[float]):
