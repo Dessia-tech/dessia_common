@@ -65,6 +65,31 @@ def get_shortest_path(graph: nx.DiGraph, begin, end):
         path = None
     return path
 
+
+def calculate_centrality(graph: nx.Graph, centrality_measure='degree'):
+    """ Calculate centrality of nodes in the graph using a given centrality measure. """
+    if centrality_measure == 'degree':
+        centrality = nx.degree_centrality(graph)
+    elif centrality_measure == 'closeness':
+        centrality = nx.closeness_centrality(graph)
+    elif centrality_measure == 'betweenness':
+        centrality = nx.betweenness_centrality(graph)
+    else:
+        raise ValueError(f'Invalid centrality measure "{centrality_measure}"')
+
+    return centrality
+
+
+def find_connected_components(graph: nx.Graph):
+    """ Find the connected components of the graph. """
+    return list(nx.connected_components(graph))
+
+
+def find_minimum_spanning_tree(graph: nx.Graph):
+    """ Find the minimum spanning tree of the graph. """
+    return nx.minimum_spanning_tree(graph)
+
+
 def get_paths_from_to(graph: nx.DiGraph, origins, destinations):
     """
     Get all paths from origins to destinations.
