@@ -78,8 +78,7 @@ class DocxWriter:
         writer.headings = self.headings
         return writer
 
-    def add_picture(self, image_path: str, width: int = None, height: int = None) \
-            -> 'DocxWriter':
+    def add_picture(self, image_path: str, width: int = None, height: int = None) -> 'DocxWriter':
         """ Add an image to the document. """
         document = self.document
         document.add_picture(image_path, width=width, height=height)
