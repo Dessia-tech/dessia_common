@@ -1719,7 +1719,7 @@ class WorkflowState(DessiaObject):
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'WorkflowState':
-        """ Compute Workflow State from diven dict. Handles pointers. """
+        """ Compute Workflow State from given dict. Handles pointers. """
         if pointers_memo is None or global_dict is None:
             global_dict, pointers_memo = update_pointers_data(global_dict=global_dict, current_dict=dict_,
                                                               pointers_memo=pointers_memo)
