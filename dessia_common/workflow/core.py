@@ -2073,7 +2073,7 @@ class WorkflowRun(WorkflowState):
         raise NotImplementedError(f"WorkflowRun : Specific object from path method is not defined for path '{path}'")
 
     def dict_to_arguments(self, dict_: JsonSerializable, method: str):
-        """ Compute run method's args from serialized ones. """
+        """ Compute run method's arguments from serialized ones. """
         if method in self._allowed_methods:
             return self.workflow.dict_to_arguments(dict_=dict_, method='run')
         raise NotImplementedError(f"Method {method} not in WorkflowRun allowed methods")

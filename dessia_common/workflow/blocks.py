@@ -438,7 +438,7 @@ class ForEach(Block):
         return [output_values]
 
     def _docstring(self):
-        """ Recursively get docstring of subworkflow. """
+        """ Recursively get docstring of sub-workflow. """
         wb_docstring = self.workflow_block._docstring()
         block_docstring = {}
         for input_, workflow_input in zip(self.inputs, self.workflow_block.workflow.inputs):
