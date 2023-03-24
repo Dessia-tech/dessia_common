@@ -28,15 +28,15 @@ class DocxWriter:
     def add_paragraphs(self, paragraphs: List[str]) -> 'DocxWriter':
         """ Add a list of paragraphs to the document. """
         document = self.document
-        new_headings = self.headings
+        headings = self.headings
         for paragraph in paragraphs:
-            if new_headings:
-                document.add_heading(new_headings[0][0], new_headings[0][1])
-                new_headings = new_headings[1:]
+            if headings:
+                document.add_heading(headings[0][0], headings[0][1])
+                headings = headings[1:]
             document.add_paragraph(paragraph)
         writer = DocxWriter(self.filename)
         writer.document = document
-        writer.headings = new_headings
+        writer.headings = headings
         return writer
 
     def add_page_breaks(self, num_page_breaks: int):
