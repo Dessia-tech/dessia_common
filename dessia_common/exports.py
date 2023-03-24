@@ -382,12 +382,13 @@ class MarkdownWriter:
     @staticmethod
     def table_of_contents(headings: List[str]) -> str:
         """ Generates a table of contents based on the given list of headings. """
-        toc = '## Table of Contents\n\n'
+        table_of_contents = '## Table of Contents\n\n'
         for heading in headings:
-            toc += f'- [{heading}](#{heading.lower().replace(" ", "-")})\n'
-        return toc
+            table_of_contents += f'- [{heading}](#{heading.lower().replace(" ", "-")})\n'
+        return table_of_contents
 
     @staticmethod
     def header(title: str, level: int = 1) -> str:
         """ Generates a markdown header with the specified title and level. """
-        return '#' * level + ' ' + title + '\n\n'
+        header_level = "#" * level
+        return f"{header_level} {title}\n\n"
