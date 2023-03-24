@@ -14,7 +14,7 @@ import dessia_common.tests as dctests
 
 instanciate_generator = InstantiateModel(model_class=dctests.Generator, name='Instantiate Generator')
 generator_generate = ModelMethod(dct.MethodType(dctests.Generator, 'generate'), name='Generator Generate')
-attribute_selection = ModelAttribute(attribute_type=dct.AttributeType(dctests.Generator, name='model')
+attribute_selection = ModelAttribute(attribute_type=dct.AttributeType(dctests.Generator, name='models')
                                      , name='Attribute Selection')
 
 # Subworkflow of model optimization
