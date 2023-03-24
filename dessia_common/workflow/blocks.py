@@ -10,7 +10,7 @@ from dessia_common.core import DessiaFilter, FiltersList, type_from_annotation, 
 from dessia_common.schemas.core import split_argspecs, parse_docstring, EMPTY_PARSED_ATTRIBUTE
 from dessia_common.displays import DisplaySetting, DisplayObject
 from dessia_common.errors import UntypedArgumentError
-from dessia_common.typings import JsonSerializable, MethodType, ClassMethodType, AttributeType, ClassAttributeType
+from dessia_common.typings import JsonSerializable, MethodType, ClassMethodType, AttributeType
 from dessia_common.files import StringFile, BinaryFile
 from dessia_common.utils.helpers import concatenate, full_classname
 from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path

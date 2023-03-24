@@ -59,7 +59,6 @@ class AttributeType(Generic[T]):
     def __deepcopy__(self, memo=None):
         return AttributeType(self.class_, self.name)
 
-
     def to_dict(self):
         """ Write Attribute Type as a dictionary. """
         classname = full_classname(object_=self.class_, compute_for='class')
@@ -71,7 +70,6 @@ class AttributeType(Generic[T]):
         """ Deserialize dictionary as a Attribute Type. """
         class_ = get_python_class_from_class_name(dict_["class_"])
         return cls(class_=class_, name=dict_["name"])
-
 
 
 class ClassAttributeType(AttributeType[T]):

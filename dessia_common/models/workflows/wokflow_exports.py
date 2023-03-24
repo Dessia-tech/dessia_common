@@ -4,13 +4,14 @@ from dessia_common.workflow.core import TypedVariable, Pipe, Workflow
 from dessia_common.workflow.blocks import InstantiateModel, ModelMethod, ModelAttribute, WorkflowBlock, ForEach,\
     Export, Unpacker, Archive, MultiPlot
 from dessia_common.forms import Generator, Optimizer, StandaloneObject
-from dessia_common.typings import MethodType
+from dessia_common.typings import MethodType, AttributeType
 
 inst = InstantiateModel(model_class=Generator, name='Instantiate Generator')
 
 generate_method = MethodType(class_=Generator, name='generate')
 gene = ModelMethod(method_type=generate_method, name='Generator Generate')
-attr = ModelAttribute(attribute_name='models', name='Attribute Selection')
+generate_attribute = AttributeType(class_=Generator, name='models')
+attr = ModelAttribute(attribute_type=generate_attribute, name='Attribute Selection')
 
 # Sub Workflow of model optimization
 opti = InstantiateModel(model_class=Optimizer, name='Instantiate Optimizer')
@@ -18,8 +19,8 @@ opti = InstantiateModel(model_class=Optimizer, name='Instantiate Optimizer')
 
 optimize_method = MethodType(class_=Optimizer, name='optimize')
 optimization = ModelMethod(method_type=optimize_method, name='Optimization')
-
-model_fetcher = ModelAttribute(attribute_name='model_to_optimize', name='Model Fetcher')
+generate_attribute = AttributeType(class_=Optimizer, name='model_to_optimize')
+model_fetcher = ModelAttribute(attribute_type=generate_attribute, name='Model Fetcher')
 
 pipe1_opt = Pipe(input_variable=opti.outputs[0], output_variable=optimization.inputs[0])
 pipe2_opt = Pipe(input_variable=optimization.outputs[1], output_variable=model_fetcher.inputs[0])
