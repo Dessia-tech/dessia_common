@@ -272,7 +272,7 @@ class Block(DessiaObject):
         return data
 
     def _docstring(self):
-        """ Base function for submodel docstring computing. """
+        """ Base function for sub model docstring computing. """
         block_docstring = {i: EMPTY_PARSED_ATTRIBUTE for i in self.inputs}
         return block_docstring
 
