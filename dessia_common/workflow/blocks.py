@@ -354,7 +354,7 @@ class WorkflowBlock(Block):
         return self.workflow == other.workflow
 
     def evaluate(self, values, **kwargs):
-        """ Format subworkflow arguments and run it. """
+        """ Format sub workflow arguments and run it. """
         arguments = {self.inputs.index(input_): v for input_, v in values.items()}
         workflow_run = self.workflow.run(arguments)
         return [workflow_run.output_value]
@@ -364,7 +364,7 @@ class WorkflowBlock(Block):
         return self.workflow.package_mix()
 
     def _docstring(self):
-        """ Recursively get docstring of subworkflow. """
+        """ Recursively get docstring of sub workflow. """
         workflow_docstrings = self.workflow._docstring()
         docstring = {}
         for block_docstring in workflow_docstrings:

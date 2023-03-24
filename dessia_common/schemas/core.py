@@ -1051,7 +1051,7 @@ class AttributeTypeProperty(TypingProperty):
     def annotation_from_serialized(cls, serialized: str):
         """ Deserialize Attribute annotation. Support Class and Instance methods. """
         type_ = TypingProperty.type_from_serialized(serialized)
-        if type_ == "MethodType":
+        if type_ == "AttributType":
             return AttributeType[TypingProperty._args_from_serialized(serialized)]
         return ClassAttributeType[TypingProperty._args_from_serialized(serialized)]
 
@@ -1230,14 +1230,14 @@ ORIGIN_TO_SCHEMA_CLASS = {
     tuple: HeterogeneousSequence, list: HomogeneousSequence, collections.abc.Iterator: HomogeneousSequence,
     Union: UnionProperty, dict: DynamicDict, InstanceOf: InstanceOfProperty,
     MethodType: MethodTypeProperty, ClassMethodType: MethodTypeProperty, 
-    type: ClassProperty, AttributeType: MethodTypeProperty
+    type: ClassProperty, AttributeType: AttributeTypeProperty
 }
 
 SERIALIZED_TO_SCHEMA_CLASS = {
     "int": BuiltinProperty, "float": BuiltinProperty, "bool": BuiltinProperty, "str": BuiltinProperty,
     "Tuple": HeterogeneousSequence, "List": HomogeneousSequence, "Iterator": HomogeneousSequence,
     "Union": UnionProperty, "Dict": DynamicDict, "InstanceOf": InstanceOfProperty, "Subclass": SubclassProperty,
-    "MethodType": MethodTypeProperty, "ClassMethodType": MethodTypeProperty, "Type": ClassProperty
+    "MethodType": MethodTypeProperty, "ClassMethodType": MethodTypeProperty, "Type": ClassProperty, "AttributeType": AttributeTypeProperty
 }
 
 

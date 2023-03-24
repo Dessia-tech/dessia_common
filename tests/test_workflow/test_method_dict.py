@@ -1,5 +1,5 @@
 from dessia_common.forms import Optimizer, StandaloneObject
-from dessia_common.typings import MethodType
+from dessia_common.typings import MethodType, AttributeType
 from dessia_common.workflow.core import Pipe, Workflow
 from dessia_common.workflow.blocks import InstantiateModel, ModelMethod, ModelAttribute
 from dessia_common.serialization import serialize
@@ -12,7 +12,9 @@ instantiate = InstantiateModel(model_class=Optimizer, name='Instantiate Optimize
 optimize = ModelMethod(
     method_type=MethodType(class_=Optimizer, name='optimize'),
     name="Optimization")
-model_fetcher = ModelAttribute(attribute_name='model_to_optimize', name='Model Fetcher')
+model_fetcher = ModelAttribute(
+    attribute_type=AttributeType(class_=Optimizer, name='model_to_optimize' ), 
+    name='Model Fetcher')
 
 blocks = [instantiate, optimize, model_fetcher]
 pipes = [
