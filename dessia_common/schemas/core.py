@@ -1227,8 +1227,9 @@ def get_schema(annotation: Type[T], attribute: str = "", definition_default: Opt
 
 
 ORIGIN_TO_SCHEMA_CLASS = {
-    tuple: HeterogeneousSequence, list: HomogeneousSequence, collections.abc.Iterator: HomogeneousSequence,
-    Union: UnionProperty, dict: DynamicDict, InstanceOf: InstanceOfProperty,
+    tuple: HeterogeneousSequence, list: HomogeneousSequence,
+    collections.abc.Iterator: HomogeneousSequence, Union: UnionProperty,
+    dict: DynamicDict, InstanceOf: InstanceOfProperty,
     MethodType: MethodTypeProperty, ClassMethodType: MethodTypeProperty, 
     type: ClassProperty, AttributeType: AttributeTypeProperty
 }
@@ -1237,7 +1238,8 @@ SERIALIZED_TO_SCHEMA_CLASS = {
     "int": BuiltinProperty, "float": BuiltinProperty, "bool": BuiltinProperty, "str": BuiltinProperty,
     "Tuple": HeterogeneousSequence, "List": HomogeneousSequence, "Iterator": HomogeneousSequence,
     "Union": UnionProperty, "Dict": DynamicDict, "InstanceOf": InstanceOfProperty, "Subclass": SubclassProperty,
-    "MethodType": MethodTypeProperty, "ClassMethodType": MethodTypeProperty, "Type": ClassProperty, "AttributeType": AttributeTypeProperty
+    "MethodType": MethodTypeProperty, "ClassMethodType": MethodTypeProperty, "Type": ClassProperty,
+    "AttributeType": AttributeTypeProperty
 }
 
 
