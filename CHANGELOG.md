@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Schemas refactor: add more Error Checks
 - Schemas refactor: add a json export to method schemas for low-code implementations
 - Schemas refactor: add default value to method types
+- files: add functions to init StringFile and BinaryFile from local path
+- document generator: add new module to write in docx file
+- MarkdownWriter: add some functions (table_of_contents, header)
+
 
 ### Fixed
 
@@ -43,7 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Chore
 
-- Fix Spelling
+- Fix Spelling (x2)
 
 ### Perf
 
