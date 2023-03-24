@@ -15,7 +15,7 @@ class WorkflowToScriptTest(unittest.TestCase):
     def test_simple_equality(self):
         instantiate_optimizer = InstantiateModel(model_class=dctests.Optimizer, name='Instantiate Optimizer')
         optimization = ModelMethod(dct.MethodType(dctests.Optimizer, 'optimize'), name='Optimization')
-        model_fetcher = ModelAttribute(attribute_name='model_to_optimize', name='Model Fetcher')
+        model_fetcher = ModelAttribute(attribute_type=dct.AttributeType(dctests.Optimizer, name='model_to_optimize'), name='Model Fetcher')
         optimization_blocks = [instantiate_optimizer, optimization, model_fetcher]
 
         pipe1_opt = Pipe(input_variable=instantiate_optimizer.outputs[0], output_variable=optimization.inputs[0])
@@ -69,7 +69,7 @@ class WorkflowToScriptTest(unittest.TestCase):
            "\n# --- Subworkflow --- " \
            "\nsub_block_0 = InstantiateModel(model_class=Optimizer, name='Instantiate Optimizer', position=(0, 0))" \
            "\nsub_block_1 = ModelMethod(method_type=MethodType(Optimizer, 'optimize'), name='Optimization', position=(0, 0))" \
-           "\nsub_block_2 = ModelAttribute(attribute_name='model_to_optimize', name='Model Fetcher', position=(0, 0))" \
+           "\nsub_block_2 = ModelAttribute(attribute_type=AttributeType(Optimizer, 'model_to_optimize'), name='Model Fetcher', position=(0, 0))" \
            "\nsub_blocks = [sub_block_0, sub_block_1, sub_block_2]" \
            "\n\n" \
            "\nsub_pipe_0 = Pipe(sub_block_0.outputs[0], sub_block_1.inputs[0])" \
@@ -84,10 +84,10 @@ class WorkflowToScriptTest(unittest.TestCase):
            "\nblock_1 = Archive(number_exports=1, filename='archive', name='', position=(22.22, 33))" \
            "\nblock_2 = ClassMethod(method_type=ClassMethodType(Car, 'from_csv'), name='car_from_csv', position=(33.33, 44))" \
            "\nblock_3 = InstantiateModel(model_class=Car, name='Instantiate Car', position=(44.44, 55))" \
-           "\nblock_4 = ModelAttribute(attribute_name='model_to_optimize', name='Model Fetcher', position=(55.55, 66))" \
+           "\nblock_4 = ModelAttribute(attribute_type=AttributeType(Optimizer, name='model_to_optimize'), name='Model Fetcher', position=(55.55, 66))" \
            "\nblock_5 = ModelMethod(method_type=MethodType(Car, 'to_vector'), name='car_to_vector', position=(66.66, 77))" \
            "\nblock_6 = Sequence(number_arguments=3, name='sequence_name', position=(77.77, 88))" \
-           "\nblock_7 = SetModelAttribute(attribute_name='name', name='name_Name', position=(88.88, 99))" \
+           "\nblock_7 = SetModelAttribute(attribute_type=.AttributeType(Optimizer, name='model_to_optimize'), name='name_Name', position=(88.88, 99))" \
            "\nblock_8 = Substraction(name='substraction_name', position=(99.99, 11.11))" \
            "\nblock_9 = Sum(number_elements=2, name='sum_name', position=(22, 11.11))" \
            "\nblock_10 = Flatten(name='flatten_name', position=(33, 22.22))" \
