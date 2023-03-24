@@ -506,7 +506,7 @@ class BuiltinProperty(Property):
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
-        """ Get real Type from types dictionnary. """
+        """ Get real Type from types dictionary. """
         return TYPES_FROM_STRING[serialized]
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
@@ -667,7 +667,7 @@ class UnionProperty(TypingProperty):
         Check validity of UnionProperty Type Hint.
 
         Checks performed :
-        - Subobject are all standalone or none of them are. TODO : What happen if arguments are not DessiaObjects ?
+        - Sub-objects are all standalone or none of them are. TODO : What happen if arguments are not DessiaObjects ?
         """
         issues = super().check_list()
         issues += CheckList([self.classes_are_standalone_consistent()])
@@ -945,7 +945,7 @@ class SubclassProperty(TypingProperty):
     """
     Schema class for Subclass type hints.
 
-    Datatype that can be seen as a union of classes that inherits from the only arg given.
+    Datatype that can be seen as a union of classes that inherits from the only argument given.
     Classes validate against this type.
     """
 

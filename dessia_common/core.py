@@ -10,8 +10,6 @@ import random
 import itertools
 
 from functools import reduce
-import collections
-import collections.abc
 from copy import deepcopy, copy
 import inspect
 import json
@@ -274,7 +272,7 @@ class DessiaObject(SerializableObject):
 
     @property
     def _method_jsonschemas(self):
-        """ Generates dynamic jsonschemas for methods of class. """
+        """ Generates dynamic 'jsonschemas' for methods of class. """
         warnings.warn("method_jsonschema method is deprecated. Use method_schema instead", DeprecationWarning)
         jsonschemas = {}
         class_ = self.__class__
@@ -780,7 +778,7 @@ class Parameter(DessiaObject):
 
 
 class ParameterSet(DessiaObject):
-    """ Object that can provide utils features around values Dataset. """
+    """ Object that can provide miscellaneous features around values Dataset. """
 
     def __init__(self, values, name=''):
         self.values = values
@@ -1083,43 +1081,6 @@ class FiltersList(DessiaObject):
         """
         booleans_index = self.get_booleans_index(dobjects_list)
         return DessiaFilter.apply(dobjects_list, booleans_index)
-
-
-def dict_merge(old_dct, merge_dct, add_keys=True, extend_lists=True):
-    """
-    Recursive dict merge.
-
-    Inspired by :meth:``dict.update()``, instead of updating only top-level keys, dict_merge goes down
-    recursively into dictionaries nested to an arbitrary depth, updating keys.
-    The ``merge_dct`` is merged into ``dct``.
-
-    This version will return a copy of the dictionary and leave the original arguments untouched.
-
-    The optional argument ``add_keys``, determines whether keys which are present in ``merge_dct``
-    but not ``dct`` should be included in the new dict.
-
-    :param old_dct: Onto which the merge is executed
-    :type old_dct: Dict
-    :param merge_dct: Dct merged into dct
-    :type merge_dct: Dict
-    :param add_keys: Whether to add new keys. Default value is True
-    :type add_keys: bool, optional
-    :param extend_lists: Whether to extend lists if keys are updated and value is a list. Default value is True
-    :type extend_lists: bool, optional
-    :return: Updated dict
-    :rtype: Dict
-    """
-    dct = deepcopy(old_dct)
-    if not add_keys:
-        merge_dct = {k: merge_dct[k] for k in set(dct).intersection(set(merge_dct))}
-    for key, value in merge_dct.items():
-        if isinstance(dct.get(key), dict) and isinstance(value, collections.abc.Mapping):
-            dct[key] = dict_merge(dct[key], merge_dct[key], add_keys=add_keys, extend_lists=extend_lists)
-        elif isinstance(dct.get(key), list) and extend_lists:
-            dct[key].extend(value)
-        else:
-            dct[key] = value
-    return dct
 
 
 def stringify_dict_keys(obj):
