@@ -142,7 +142,7 @@ def diff(value1, value2, path='#'):
 
 
 def dict_diff(dict1, dict2, path='#'):
-    """ Returns diff between two dicts. """
+    """ Returns diff between two dictionaries. """
     diff_object = Diff([], [], [])
 
     dict_ = dict1
