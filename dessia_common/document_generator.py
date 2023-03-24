@@ -30,9 +30,10 @@ class DocxWriter:
         document = self.document
         headings = self.headings
         for paragraph in paragraphs:
-            if headings:
-                document.add_heading(headings[0][0], headings[0][1])
-                headings = headings[1:]
+            # TODO: add heading for each paragraph
+            # if headings:
+            #     document.add_heading(headings[0][0], headings[0][1])
+            #     headings = headings[1:]
             document.add_paragraph(paragraph)
         writer = DocxWriter(self.filename)
         writer.document = document
