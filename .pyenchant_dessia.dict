@@ -4,6 +4,7 @@ BinaryFile
 bool
 builtins
 classmethod
+classname
 cls
 CMA
 config
@@ -42,10 +43,12 @@ STL
 str
 StringFile
 stringified
+stringify
 Stringify
 submodule
 subobjects
 traceback
+typings
 uuid
 uuids
 visjs
