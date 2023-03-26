@@ -91,7 +91,7 @@ class Optimizer(DessiaObject):
 
 
 class Component(DessiaObject):
-    """ MBSE to be tested. Mock a real usecase. For example, a module in a battery pack. """
+    """ MBSE to be tested. Mock a real use case. For example, a module in a battery pack. """
 
     _standalone_in_db = True
 
@@ -326,7 +326,7 @@ class RandDataD4(RandDataD1):
 
     @property
     def test_prop(self):
-        """Factice property for some tests."""
+        """ Fake property for some tests. """
         if self._test_prop is None:
             self._test_prop = 3
         return self._test_prop
@@ -348,7 +348,7 @@ class RandDataD5(RandDataD1):
 
     @property
     def test_prop(self):
-        """Factice property for some tests."""
+        """Dummy property for some tests."""
         if self._test_prop is None:
             self._test_prop = 3
         return self._test_prop
@@ -371,7 +371,7 @@ class RandDataD6(RandDataD1):
 
     @property
     def test_prop(self):
-        """ Factice property for some tests. """
+        """ Dummy property for some tests. """
         if self._test_prop is None:
             self._test_prop = 3
         return self._test_prop

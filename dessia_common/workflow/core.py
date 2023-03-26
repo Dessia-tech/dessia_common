@@ -1760,7 +1760,7 @@ class WorkflowState(DessiaObject):
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'WorkflowState':
-        """ Compute Workflow State from diven dict. Handles pointers. """
+        """ Compute Workflow State from given dict. Handles pointers. """
         if pointers_memo is None or global_dict is None:
             global_dict, pointers_memo = update_pointers_data(global_dict=global_dict, current_dict=dict_,
                                                               pointers_memo=pointers_memo)
@@ -2114,7 +2114,7 @@ class WorkflowRun(WorkflowState):
         raise NotImplementedError(f"WorkflowRun : Specific object from path method is not defined for path '{path}'")
 
     def dict_to_arguments(self, dict_: JsonSerializable, method: str):
-        """ Compute run method's args from serialized ones. """
+        """ Compute run method's arguments from serialized ones. """
         if method in self._allowed_methods:
             return self.workflow.dict_to_arguments(dict_=dict_, method='run')
         raise NotImplementedError(f"Method {method} not in WorkflowRun allowed methods")
