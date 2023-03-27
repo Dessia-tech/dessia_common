@@ -12,7 +12,7 @@ from dessia_common.optimization import FixedAttributeValue, BoundedAttributeValu
 
 class ClassSampler(DessiaObject):
     """
-    Base object to build a DOE from a class and choosen limits for all specified sampled_class attributes.
+    Base object to build a DOE from a class and chosen limits for all specified sampled_class attributes.
 
     :param sampled_class: Class type to sample
     :type sampled_class: `type`
@@ -129,7 +129,7 @@ class ClassSampler(DessiaObject):
 
     def make_doe(self, samples: int, method: str = 'fullfact', lhs_criterion: str = 'center', name: str = ''):
         """
-        Generate all `DessiaObject` with the choosen method and store them in a `Dataset`.
+        Generate all `DessiaObject` with the chosen method and store them in a `Dataset`.
 
         :param samples: Targets number of `DessiaObject` in the DOE. Not used for `'fullfact'` method.
         :type samples: `int`

@@ -67,7 +67,7 @@ class Dataset(DessiaObject):
             >>> Dataset(all_cars_wi_feat)[0:2]
             returns Dataset(all_cars_wi_feat[0:2])
             >>> Dataset(all_cars_wi_feat)[[0,5,6]]
-            returns Dataset([all_cars_wi_feat[idx] for idx in [0,5,6]])
+            returns Dataset([all_cars_wi_feat[i] for i in [0,5,6]])
             >>> booleans_list = [True, False,..., True] of length len(all_cars_wi_feat)
             >>> Dataset(all_cars_wi_feat)[booleans_list]
             returns Dataset([car for car, boolean in zip(all_cars_wi_feat, booleans_list) if boolean])
@@ -208,11 +208,11 @@ class Dataset(DessiaObject):
             return self.common_attributes
         return ['name'] + self.common_attributes
 
-    def _print_objects_slice(self, key: slice, attr_space: int):
+    def _print_objects_slice(self, key: slice, attr_space: List[int]):
         string = ""
-        for dessia_object in self.dessia_objects[key]:
+        for index in range(len(self[key])):
             string += "\n"
-            string += self._print_object(dessia_object, attr_space)
+            string += self._print_object(index, attr_space)
         return string
 
     def _write_str_prefix(self):
@@ -220,7 +220,7 @@ class Dataset(DessiaObject):
         prefix += f"{len(self)} samples, {len(self.common_attributes)} features"
         return prefix
 
-    def _print_titles(self, attr_space: int):
+    def _print_titles(self, attr_space: List[int]):
         min_col_length = 16
         printed_attributes = self._printed_attributes()
         string = ""
@@ -241,7 +241,7 @@ class Dataset(DessiaObject):
             string += "|" + name_attr + end_bar
         return string
 
-    def _print_object(self, dessia_object: DessiaObject, attr_space: int):
+    def _print_object(self, index: int, attr_space: List[int]):
         printed_attributes = self._printed_attributes()
         string = ""
         for idx, attr in enumerate(printed_attributes):
@@ -249,7 +249,7 @@ class Dataset(DessiaObject):
             if idx == len(printed_attributes) - 1:
                 end_bar = "|"
 
-            attr_value = self._get_printed_value(dessia_object, attr)
+            attr_value = self._get_printed_value(index, attr)
 
             string += "|" + " " * max((attr_space[idx] - len(str(attr_value)) - 1), 1)
             string += f"{attr_value}"[:attr_space[idx] - 4]
@@ -273,8 +273,11 @@ class Dataset(DessiaObject):
         return templates.dataset_markdown_template.substitute(name=name, class_=class_, element_details=element_details,
                                                               table=table)
 
-    def _get_printed_value(self, dessia_object: DessiaObject, attr: str):
-        return getattr(dessia_object, attr)
+    def _get_printed_value(self, index: int, attr: str):
+        try:
+            return getattr(self[index], attr)
+        except AttributeError:
+            return self.matrix[index][self.common_attributes.index(attr)]
 
     def __len__(self):
         """Length of Dataset is len(Dataset.dessia_objects)."""
@@ -627,7 +630,7 @@ class Dataset(DessiaObject):
             # correlation_matrix = []
             # Dimensionality plot
             dimensionality_plot = self._plot_dimensionality()
-            # Scattermatrix
+            # Scatter Matrix
             scatter_matrix = self._build_multiplot(data_list, self._tooltip_attributes(), axis=dimensionality_plot.axis,
                                                    point_style=dimensionality_plot.point_style)
             # Parallel plot
@@ -652,7 +655,6 @@ class Dataset(DessiaObject):
         return scatter_matrix
 
     def _histogram_unic_value(self, idx_col: int, name_attr: str):
-        # unic_values = set((getattr(dobject, line) for dobject in self.dessia_objects))
         unic_values = set((row_matrix[idx_col] for row_matrix in self.matrix))
         if len(unic_values) == 1:  # TODO (plot_data linspace axis between two same values)
             plot_obj = Scatter(x_variable=name_attr, y_variable=name_attr)
@@ -823,7 +825,6 @@ class Dataset(DessiaObject):
                     frontier_2d = Dataset._pareto_frontier_2d(x_dim, y_dim, pareto_costs,
                                                               npy.max(array_costs[:, x_dim]), super_mini)
                     pareto_frontiers.append(frontier_2d)
-
         return pareto_frontiers
 
     @staticmethod

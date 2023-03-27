@@ -1,27 +1,23 @@
 """
 A module that aims to list all possibilities of data formats offered by Dessia.
 
-It should be used as a repertory of rules and available typings.
+It should be used as a repertory of rules and available typing.
 
 Some general rules :
 
-- Lists are homogeneous, IE, they should not
-  contain several types of elements
+- Lists are homogeneous, IE, they should not contain several types of elements
     ex : List[int], List[str], List[CustomClass], ...
-- Tuples can, therefore, be used as heterogeneous sequences,
-  thanks to the fact that they are immutables.
+- Tuples can, therefore, be used as heterogeneous sequences, thanks to the fact that they are immutable.
     ex : Tuple[str, int, CustomClass] is a tuple like this :
         t = ('tuple', 1, custom_class_object)
-- Dict is used whenever a dynamic structure should be defined.
-  It takes only one possible type for keys
+- Dict is used whenever a dynamic structure should be defined. It takes only one possible type for keys
   and one possible type for values.
     ex : Dict[str, bool] is a dict like :
         d = {'key0': True, 'key1': False, 'another_key': False,...}
 - As opposed to this, a non-standalone_in_db class defines a static structure,
   with a defined number of given, expected keys & types of their values.
 
-In addition to types & genericity (brought by DessiaObject),
-this module can also be seen as a template for Dessia's
+In addition to types & generics (brought by DessiaObject), this module can also be seen as a template for Dessia
 coding/naming style & convention.
 """
 
@@ -72,7 +68,7 @@ class EmbeddedBuiltinsSubobject(PhysicalObject):
 
     @classmethod
     def generate(cls, seed: int) -> 'EmbeddedBuiltinsSubobject':
-        """ Generate an embedded subobject with default values computed from a seed. """
+        """ Generate an embedded sub-object with default values computed from a seed. """
         floatarg = 0.3
         distarg = Distance(1.7 * floatarg * seed)
         intarg = seed
@@ -86,7 +82,7 @@ class EmbeddedBuiltinsSubobject(PhysicalObject):
         return [cls.generate((i + 1) * 1000) for i in range(seed)]
 
     def contour(self):
-        """ Square contour of an embedded subobject, for testing purpose. """
+        """ Square contour of an embedded sub-object, for testing purpose. """
         origin = self.floatarg
         points = [vm.Point2D(origin, origin), vm.Point2D(origin, origin + 1),
                   vm.Point2D(origin + 1, origin + 1), vm.Point2D(origin + 1, origin)]
@@ -125,13 +121,18 @@ class StandaloneBuiltinsSubobject(EmbeddedBuiltinsSubobject):
         EmbeddedBuiltinsSubobject.__init__(self, distarg=distarg, floatarg=floatarg,
                                            intarg=intarg, boolarg=boolarg, name=name)
 
+    @property
+    def property_method(self):
+        """ Property method for low-code testing purpose. """
+        return self.floatarg * self.intarg
+
 
 DEF_EBS = EmbeddedBuiltinsSubobject.generate(1)
 DEF_SBS = StandaloneBuiltinsSubobject.generate(1)
 
 
 class EnhancedStandaloneSubobject(StandaloneBuiltinsSubobject):
-    """ Overwrite StandaloneSubobject, principally for InstanceOf and Union typings testing purpose. """
+    """ Overwrite StandaloneSubobject, principally for InstanceOf and Union typing testing purpose. """
 
     def __init__(self, floatarg: Distance, name: str = 'Standalone Subobject'):
         StandaloneBuiltinsSubobject.__init__(self, distarg=floatarg, floatarg=floatarg, intarg=floor(floatarg),
@@ -139,7 +140,7 @@ class EnhancedStandaloneSubobject(StandaloneBuiltinsSubobject):
 
     @classmethod
     def generate(cls, seed: int) -> 'EnhancedStandaloneSubobject':
-        """ Generate an enhanced subobject with default values computed from a seed. """
+        """ Generate an enhanced sub-object with default values computed from a seed. """
         floatarg = Distance(1.2 * seed)
         name = f"EnhancedStandaloneSubobject{seed}"
         return cls(floatarg=floatarg, name=name)
@@ -149,25 +150,24 @@ DEF_ESS = EnhancedStandaloneSubobject.generate(1)
 
 
 class InheritingStandaloneSubobject(StandaloneBuiltinsSubobject):
-    """ Overwrite StandaloneSubobject, principally for InstanceOf and Union typings testing purpose. """
+    """ Overwrite StandaloneSubobject, principally for InstanceOf and Union typing testing purpose. """
 
-    def __init__(self, distarg: Distance, floatarg: float, intarg: int, boolarg: bool, strarg: str,
+    def __init__(self, distarg: Distance, floatarg: float, intarg: int, boolarg: bool,
                  name: str = 'Inheriting Standalone Subobject'):
-        self.strarg = strarg
+        self.strarg = name
 
         StandaloneBuiltinsSubobject.__init__(self, distarg=distarg, floatarg=floatarg, intarg=intarg,
                                              boolarg=boolarg, name=name)
 
     @classmethod
     def generate(cls, seed: int) -> 'InheritingStandaloneSubobject':
-        """ Generate an inheriting subobject with default values computed from a seed. """
+        """ Generate an inheriting sub-object with default values computed from a seed. """
         distarg = Distance(0.7 * seed)
         floatarg = 0.1 * seed
-        strarg = str(-seed)
         intarg = seed * 3
         boolarg = bool(intarg % 2)
         name = 'Inheriting Standalone Subobject' + str(seed)
-        return cls(floatarg=floatarg, distarg=distarg, intarg=seed * 3, boolarg=boolarg, strarg=strarg, name=name)
+        return cls(floatarg=floatarg, distarg=distarg, intarg=seed * 3, boolarg=boolarg, name=name)
 
 
 DEF_ISS = InheritingStandaloneSubobject.generate(1)
@@ -186,7 +186,7 @@ class EmbeddedSubobject(DessiaObject):
 
     @classmethod
     def generate(cls, seed: int) -> 'EmbeddedSubobject':
-        """ Generate an embedded subobject with default values computed from a seed. """
+        """ Generate an embedded sub-object with default values computed from a seed. """
         if not bool(seed % 2):
             embedded_list = list(range(int(seed / 2)))
         else:
@@ -201,7 +201,7 @@ class EmbeddedSubobject(DessiaObject):
 
 
 class EnhancedEmbeddedSubobject(EmbeddedSubobject):
-    """ Overwrite EmbeddedSubobject, principally for InstanceOf and Union typings testing purpose. """
+    """ Overwrite EmbeddedSubobject, principally for InstanceOf and Union typing testing purpose. """
 
     def __init__(self, embedded_list: List[int] = None, embedded_array: List[List[float]] = None,
                  name: str = 'Enhanced Embedded Subobject'):
@@ -211,7 +211,7 @@ class EnhancedEmbeddedSubobject(EmbeddedSubobject):
 
     @classmethod
     def generate(cls, seed: int) -> 'EnhancedEmbeddedSubobject':
-        """ Generate an embedded subobject with default values computed from a seed. """
+        """ Generate an embedded sub-object with default values computed from a seed. """
         embedded_list = [seed]
         embedded_array = [[seed, seed * 10, seed * 10]] * seed
         name = f"Embedded Subobject{seed}"
@@ -229,23 +229,23 @@ class StandaloneObject(MovingObject):
     """
     Standalone Object for testing purpose.
 
-    :param standalone_subobject: A dev subobject that is standalone_in_db
-    :param embedded_subobject: A dev subobject that isn't standalone_in_db
+    :param standalone_subobject: A sub-object that is standalone_in_db, for development purpose
+    :param embedded_subobject: A sub-object that isn't standalone_in_db, for development purpose
     :param dynamic_dict: A variable length dict
     :param tuple_arg: A heterogeneous sequence
     """
 
     _standalone_in_db = True
     _generic_eq = True
-    _allowed_methods = ['add_standalone_object', 'add_embedded_object', "count_until",
-                        'add_float', 'generate_from_text', 'generate_from_bin']
+    _allowed_methods = ["add_standalone_object", "add_embedded_object", "count_until", "add_float",
+                        "generate_from_text", "generate_from_bin", "method_without_arg", "ill_defined_method"]
 
     def __init__(self, standalone_subobject: StandaloneBuiltinsSubobject, embedded_subobject: EmbeddedSubobject,
                  dynamic_dict: Dict[str, bool], float_dict: Dict[str, float], string_dict: Dict[str, str],
                  tuple_arg: Tuple[str, int], object_list: List[StandaloneBuiltinsSubobject],
                  subobject_list: List[EmbeddedSubobject], builtin_list: List[int], union_arg: List[UnionArg],
                  subclass_arg: InstanceOf[StandaloneBuiltinsSubobject], array_arg: List[List[float]],
-                 name: str = 'Standalone Object Demo'):
+                 name: str = "Standalone Object Demo"):
         self.union_arg = union_arg
         self.builtin_list = builtin_list
         self.subobject_list = subobject_list
@@ -262,7 +262,7 @@ class StandaloneObject(MovingObject):
         MovingObject.__init__(self, name=name)
 
     @classmethod
-    def generate(cls, seed: int, name: str = 'Standalone Object Demo') -> 'StandaloneObject':
+    def generate(cls, seed: int, name: str = "Standalone Object Demo") -> 'StandaloneObject':
         """ Generate an object with default values computed from a seed. """
         dynamic_dict = {'n' + str(i): bool(seed % 2) for i in range(seed)}
         float_dict = {'k' + str(i): seed * 1.09 for i in range(seed)}
@@ -324,9 +324,9 @@ class StandaloneObject(MovingObject):
         """
         self.subobject_list.append(object_)
 
-    def add_float(self, value: float) -> StandaloneBuiltinsSubobject:
+    def add_float(self, value: float = 1) -> StandaloneBuiltinsSubobject:
         """
-        Add value to its standalone subobject floatarg property and return it.
+        Add value to its standalone sub-object floatarg property and return it.
 
         API should replace standalone_subobject as it is returned
         """
@@ -336,6 +336,10 @@ class StandaloneObject(MovingObject):
     def append_union_arg(self, object_: UnionArg):
         """ Append an object with corresponding type to union_arg, for testing purpose. """
         self.union_arg.append(object_)
+
+    def method_without_arg(self):
+        """ It should be OK and be in method_schema. """
+        return self
 
     def contour(self):
         """ Squared contour. """
@@ -412,7 +416,7 @@ class StandaloneObject(MovingObject):
         custom_dataset = plot_data.Dataset(elements=elements1, name='I = f(t)', tooltip=tooltip,
                                            point_style=point_style, edge_style=edge_style)
 
-        # Now let's create another dataset for the purpose of this exercice
+        # Now let's create another dataset for the purpose of this exercise
         timesteps = linspace(0, 20, 100)
         current2 = [100 * (1 + cos(t)) for t in timesteps]
         elements2 = []
@@ -436,7 +440,7 @@ class StandaloneObject(MovingObject):
         computation = nok_string + 'or' + ok_string
 
         return computation
-
+        
     def to_markdown(self):
         """ Write a standard markdown of StandaloneObject. """
         contents = """
@@ -482,7 +486,7 @@ class StandaloneObject(MovingObject):
 
         ## Ponderis venit veteris mihi tofis
 
-        Propensum discedunt, iacere dedisti; lene potest caelo,
+        Propensum discedunt, iacere dedisti; lens potest caelo,
         felix flamma caecus decet excipit.
         *Aurum occiderat*, retro cum, quorum *Diana timuere At*.
         Ait Labros hasta mundi, **ut est** ruit nosse o gravet!
@@ -495,7 +499,7 @@ class StandaloneObject(MovingObject):
         Gratia verba incesto, sed visa contigit
         saepe adicit trepidant.
         [Siqua radiis quod](http://www.naris-pectebant.org/comeset)
-        ad duabus alienisque, sponte; dum.
+        ad duabus alienisque, sponte; dumb.
 
         Occidit Babylonia dubitare. Vultus cui: erat dea!
         Iam ense forma est se, tibi pedem adfectat nec nostra.
@@ -517,10 +521,10 @@ class StandaloneObject(MovingObject):
 
     def count_until(self, duration: float, raise_error: bool = False):
         """
-        Test long execution with a customizable duration.
+        Test long execution with a user-input duration.
 
         :param duration: Duration of the method in s
-        :param raise_error: Wether the computation should raise an error or not at the end
+        :param raise_error: Whether the computation should raise an error or not at the end
         """
         starting_time = time.time()
         current_time = time.time()
@@ -540,7 +544,7 @@ DEF_SO = StandaloneObject.generate(1)
 
 
 class StandaloneObjectWithDefaultValues(StandaloneObject):
-    """ Overwrite StandaloneObject to set default values to it. For frontend's forms testing purpose. """
+    """ Overwrite StandaloneObject to set default values to it. For frontend forms testing purpose. """
 
     _non_editable_attributes = ['intarg', 'strarg']
 
@@ -582,15 +586,6 @@ class StandaloneObjectWithDefaultValues(StandaloneObject):
 
 
 DEF_SOWDV = StandaloneObjectWithDefaultValues()
-
-# class ObjectWithFaultyTyping(DessiaObject):
-#     """
-#     Dummy class to test faulty typing jsonschema
-#     """
-#     def __init__(self, faulty_attribute: Iterator[int], name: str = ""):
-#         self.faulty_attribute = faulty_attribute
-#
-#         DessiaObject.__init__(self, name=name)
 
 
 class ObjectWithOtherTypings(DessiaObject):

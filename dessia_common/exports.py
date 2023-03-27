@@ -36,7 +36,7 @@ def is_builtins_list(list_):
 
 class ExportFormat:
     """ Define which method of an object should be called for each Export. """
-    
+
     def __init__(self, selector: Optional[str], extension: str, method_name: str, text: bool,
                  export_name: str = "", args: Dict[str, Any] = None):
         self.selector = selector
@@ -236,8 +236,7 @@ class XLSXWriter:
 
     @staticmethod
     def autosize_sheet_columns(sheet, min_width=5, max_width=30):
-        """ Autosize the sheet columns by analyzing the content. Min and max width must be specified. """
-        # Autosize columns
+        """ Auto-size the sheet columns by analyzing the content. Min and max width must be specified. """
         for col in sheet.columns:
             width = min_width
             column = col[1].column_letter  # Get the column name
@@ -373,3 +372,23 @@ class MarkdownWriter:
     def element_details(self, elements: List[Any]) -> str:
         """Print sequence of elements."""
         return self._sequence_to_str(elements)
+
+    @staticmethod
+    def write_to_file(filename: str, content: str) -> None:
+        """ Writes the given content to the specified file. """
+        with open(filename, 'w', encoding='utf-8') as file:
+            file.write(content)
+
+    @staticmethod
+    def table_of_contents(headings: List[str]) -> str:
+        """ Generates a table of contents based on the given list of headings. """
+        table_of_contents = '## Table of Contents\n\n'
+        for heading in headings:
+            table_of_contents += f'- [{heading}](#{heading.lower().replace(" ", "-")})\n'
+        return table_of_contents
+
+    @staticmethod
+    def header(title: str, level: int = 1) -> str:
+        """ Generates a markdown header with the specified title and level. """
+        header_level = "#" * level
+        return f"{header_level} {title}\n\n"

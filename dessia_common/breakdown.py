@@ -8,6 +8,7 @@ import collections
 import collections.abc
 import numpy as npy
 
+from dessia_common import REF_MARKER, OLD_REF_MARKER
 import dessia_common.serialization as dcs
 import dessia_common.utils.types as dct
 
@@ -79,15 +80,21 @@ def get_in_object_from_path(object_, path, evaluate_pointers=True):
     segments = path.lstrip('#/').split('/')
     element = object_
     for segment in segments:
-        if isinstance(element, dict) and '$ref' in element:
-            # Going down in the object and it is a reference
-            # Evaluating subreference
+        if isinstance(element, dict):
+            # Going down in the object and it is a reference : evaluating sub-reference
             if evaluate_pointers:
-                try:
-                    element = get_in_object_from_path(object_, element['$ref'])
-                except RecursionError as err:
-                    err_msg = f'Cannot get segment {segment} from path {path} in element {str(element)[:500]}'
-                    raise RecursionError(err_msg) from err
+                if REF_MARKER in element:
+                    try:
+                        element = get_in_object_from_path(object_, element[REF_MARKER])
+                    except RecursionError as err:
+                        err_msg = f'Cannot get segment {segment} from path {path} in element {str(element)[:500]}'
+                        raise RecursionError(err_msg) from err
+                elif OLD_REF_MARKER in element:  # Retro-compatibility to be remove sometime
+                    try:
+                        element = get_in_object_from_path(object_, element[OLD_REF_MARKER])
+                    except RecursionError as err:
+                        err_msg = f'Cannot get segment {segment} from path {path} in element {str(element)[:500]}'
+                        raise RecursionError(err_msg) from err
 
         try:
             element = extract_segment_from_object(element, segment)
@@ -99,8 +106,25 @@ def get_in_object_from_path(object_, path, evaluate_pointers=True):
     return element
 
 
+def set_in_object_from_path(object_, path, value, evaluate_pointers=True):
+    """ Set deep attribute from an object to the given value. Argument 'path' represents path to deep attribute. """
+    reduced_path = '/'.join(path.lstrip('#/').split('/')[:-1])
+    last_segment = path.split('/')[-1]
+    if reduced_path:
+        last_object = get_in_object_from_path(object_, reduced_path, evaluate_pointers=evaluate_pointers)
+    else:
+        last_object = object_
+
+    if dct.is_sequence(last_object):
+        last_object[int(last_segment)] = value
+    elif isinstance(last_object, dict):
+        last_object[last_segment] = value
+    else:
+        setattr(last_object, last_segment, value)
+
+
 def merge_breakdown_dicts(dict1, dict2):
-    """ Merge strategy of breakdown dictionnaries. """
+    """ Merge strategy of breakdown dictionaries. """
     dict3 = dict1.copy()
     for class_name, refs in dict2.items():
         if class_name in dict3:
@@ -111,7 +135,6 @@ def merge_breakdown_dicts(dict1, dict2):
                         dict3[class_name][obj] = path
                 else:
                     dict3[class_name][obj] = path
-            # dict3[class_name].update(refs)
         else:
             dict3[class_name] = refs
     return dict3
@@ -223,9 +246,6 @@ def deep_getsizeof(obj, ids=None):
 
     if isinstance(obj, str):
         return result
-
-    # if isinstance(o, collections.Mapping):
-    #     return r + sum(d(k, ids) + d(v, ids) for k, v in o.items())
 
     if isinstance(obj, collections.abc.Mapping):
         return result + sum(dgso(k, ids) + dgso(v, ids) for k, v in obj.items())
