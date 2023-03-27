@@ -742,7 +742,6 @@ class PlotData(Display):
         self.serialize = True
 
 
-
 class ModelAttribute(Block):
     """
     Fetch attribute of given object during workflow execution.
@@ -774,6 +773,7 @@ class ModelAttribute(Block):
         """ Write block config into a chunk of script. """
         script = f"ModelAttribute(attribute_name='{self.attribute_name}', {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
+    
     
 class GetModelAttribute(Block):
     """
@@ -816,6 +816,7 @@ class GetModelAttribute(Block):
                    full_classname(object_=self.attribute_type.class_, compute_for='class'),
                    self.full_classname]
         return ToScriptElement(declaration=script, imports=imports)
+
 
 class SetModelAttribute(Block):
     """
