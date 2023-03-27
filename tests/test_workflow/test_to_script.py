@@ -15,7 +15,7 @@ class WorkflowToScriptTest(unittest.TestCase):
     def test_simple_equality(self):
         instantiate_optimizer = InstantiateModel(model_class=dctests.Optimizer, name='Instantiate Optimizer')
         optimization = ModelMethod(dct.MethodType(dctests.Optimizer, 'optimize'), name='Optimization')
-        model_fetcher = ModelAttribute(attribute_type=dct.AttributeType(dctests.Optimizer, name='model_to_optimize'), name='Model Fetcher')
+        model_fetcher = ModelAttribute(dct.AttributeType(dctests.Optimizer, name='model_to_optimize'), name='Model Fetcher')
         optimization_blocks = [instantiate_optimizer, optimization, model_fetcher]
 
         pipe1_opt = Pipe(input_variable=instantiate_optimizer.outputs[0], output_variable=optimization.inputs[0])
@@ -33,7 +33,7 @@ class WorkflowToScriptTest(unittest.TestCase):
                     dctests.Car, 'from_csv'), name='car_from_csv', position=(
                     33.33, 44)),
             InstantiateModel(dctests.Car, name='Instantiate Car', position=(44.44, 55)),
-            ModelAttribute('model_to_optimize', name='Model Fetcher', position=(55.55, 66)),
+            ModelAttribute(attribute_type=dct.AttributeType(dctests.Optimizer, name='model_to_optimize'), name='Model Fetcher', position=(55.55, 66)),
             ModelMethod(
                 method_type=dct.MethodType(
                     dctests.Car,
@@ -103,4 +103,5 @@ class WorkflowToScriptTest(unittest.TestCase):
            "\n" \
            "\nworkflow = Workflow(blocks, pipes, output=block_0.outputs[0], name='script_workflow')" \
            "\n"
+        print(workflow.to_script())
         self.assertEqual(workflow.to_script(), expected_script_value)
