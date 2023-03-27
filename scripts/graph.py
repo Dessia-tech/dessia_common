@@ -15,4 +15,5 @@ reg = dcg.extract_region(G, [1, 2])
 assert 1 in reg
 
 order = dcg.explore_tree_from_leaves(G)
+centrality = dcg.calculate_centrality(graph=G)
 graph2 = dcg.cut_tree_final_branches(reg)
