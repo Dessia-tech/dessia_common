@@ -2192,6 +2192,14 @@ class WorkflowRun(WorkflowState):
         return schemas
 
 
+    def _export_formats(self):
+        """ Export !. """
+        export_formats = super()._export_formats()
+        script_export = ExportFormat(selector="py", extension="py", method_name="save_script_to_stream", text=True)
+        export_formats.append(script_export)
+        return export_formats
+
+
 def initialize_workflow(dict_, global_dict, pointers_memo) -> Workflow:
     """ Generate blocks, pipes, detached_variables and output from a serialized state. """
     blocks = [deserialize(serialized_element=d, global_dict=global_dict, pointers_memo=pointers_memo)
