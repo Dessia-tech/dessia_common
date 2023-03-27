@@ -23,7 +23,7 @@ class Header:
 
 
 class Footer:
-    """ Represents a header in a docx document. """
+    """ Represents a footer in a docx document. """
 
     def __init__(self, text: str, align: str = 'center'):
         self.text = text
@@ -51,7 +51,7 @@ class Heading:
 
 
 class Paragraph:
-    """ Represents a heading in a docx Paragraph. """
+    """ Represents a paragraph in a docx document. """
 
     def __init__(self, text: str):
         self.text = text
@@ -119,6 +119,22 @@ class DocxWriter:
             paragraph = footer.paragraphs[0] if footer.paragraphs else footer.add_paragraph()
             paragraph.text = self.footer.text
         paragraph.alignment = getattr(docx.enum.text.WD_ALIGN_PARAGRAPH, self.footer.align.upper())
+        return self
+
+    def add_bullet_list(self, items: List[str]) -> 'DocxWriter':
+        """ Add a bullet list to the document. """
+        document = self.document
+        for item in items:
+            document.add_paragraph(item, style='List Bullet')
+        self.document = document
+        return self
+
+    def add_numbered_list(self, items: List[str]) -> 'DocxWriter':
+        """ Add a numbered list to the document. """
+        document = self.document
+        for item in items:
+            document.add_paragraph(item, style='List Number')
+        self.document = document
         return self
 
     def add_header_footer_picture(self, image_path: str, is_header: bool = True, width: int = None, height: int = None)\
