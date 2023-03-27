@@ -19,7 +19,7 @@ import dessia_common.errors
 from dessia_common.graph import get_column_by_node
 from dessia_common.templates import workflow_template
 from dessia_common.core import DessiaObject
-from dessia_common.schemas.core import get_schema, FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE,\
+from dessia_common.schemas.core import get_schema, FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE, \
     serialize_annotation, is_typing
 
 from dessia_common.utils.types import deserialize_typing, recursive_type, typematch, is_sequence, is_dessia_file
@@ -216,6 +216,7 @@ NAME_VARIABLE = TypedVariable(type_=str, name="Result Name")
 
 def set_block_variable_names_from_dict(func):
     """ Inspect function arguments to compute black variable names. """
+
     def func_wrapper(cls, dict_):
         obj = func(cls, dict_)
         if 'input_names' in dict_:
@@ -2119,7 +2120,6 @@ class WorkflowRun(WorkflowState):
         jsonschemas['run_again']['classes'] = ["dessia_common.workflow.WorkflowRun"]
         return jsonschemas
 
-
     def to_script(self):
         """
         Computes a script representing the workflowrun.
@@ -2138,7 +2138,8 @@ class WorkflowRun(WorkflowState):
                         "\tfile_bin = io.FileIO(f, 'r')\n" \
                         "\tlist_files_{}_{}.append(file_bin)\n"
 
-        # Add Block input
+        values = list(self.input_values.values())
+
         for j, block in enumerate(self.workflow.blocks):
             for i, input_ in enumerate(block.inputs):
                 if not input_.has_default_value and not \
@@ -2146,42 +2147,9 @@ class WorkflowRun(WorkflowState):
                     input_str += f"    workflow.input_index(" \
                                  f"{var.format(j, i)}):" \
                                  f" value_{str(j) + '_' + str(i)},\n"
-                    default_value_ = f"\nvalue_{j}_{i} = 0"
-                    try:
-                        if input_.type_.__name__ not in types:
-                            module_ = input_._get_to_script_elements().get_import_dict()
-                            key, value = list(module_.items())[0]
-                            default_value_ = f"\nvalue_{j}_{i} = {value[0]}()"
-                            if not any(value[0] in lst for lst in (add_import, workflow_script_import)):
-                                add_import += f"from {key} import {value[0]}\n"
-                        else:
-                            if input_.type_ is str:
-                                default_value_ = f"\nvalue_{j}_{i} = 'str'"
-                            elif input_.type_ is float or input_.type_ is int:
-                                default_value_ = f"\nvalue_{j}_{i} = 0"
+                    default_value_ = f"\nvalue_{j}_{i} = {values[i]}"
 
-                    # Input has list of objects or files
-                    except AttributeError:
-                        if input_.type_.__origin__ is list:
-                            if input_.type_.__args__[0].__name__ == 'BinaryFile':
-                                default_value += for_each_file.format(j, i, j, i)
-                                default_value_ = f"\nvalue_{j}_{i} = list_files_{j}_{i}"
-                                if "os" not in add_import:
-                                    add_import += "import os\n"
-                                    add_import += "import io\n"
-                    default_value += default_value_
-
-        # Add NBV input
-        for k, nbv in enumerate(self.workflow.nonblock_variables):
-            if not nbv.has_default_value:
-                if nbv.type_ == str:
-                    default_value += f"\nvalue_nbv_{k} = 'str'"
-                if nbv.type_ == int:
-                    default_value += f"\nvalue_nbv_{k} = 'int'"
-                input_str += f"    workflow.input_index(" \
-                             f"{('variable_' + str(k))}):" \
-                             f" value_nbv_{str(k)},\n"
-
+        default_value += default_value_
         input_str = add_import + workflow_script + "\n" + default_value + "\ninput_values = {\n" + input_str + "}"
         return input_str + "\n" + "\nworkflow_run = workflow.run(input_values=input_values)\n"
 
@@ -2202,7 +2170,7 @@ class WorkflowRun(WorkflowState):
             print(f'Changing filename to {filename}')
         with open(filename, 'w', encoding='utf-8') as file:
             self.save_script_to_stream(file)
-            
+
     @property
     def method_schemas(self):
         """ Copy old method_jsonschema behavior. Probably to be refactored. """
