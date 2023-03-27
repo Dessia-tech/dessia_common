@@ -782,7 +782,7 @@ class ModelAttribute(Block):
         imports = [full_classname(object_=self.attribute_type, compute_for='instance'),
                    full_classname(object_=self.attribute_type.class_, compute_for='class'),
                    self.full_classname]
-        return ToScriptElement(declaration=script, imports=[self.full_classname])
+        return ToScriptElement(declaration=script, imports=imports)
     
 
 class SetModelAttribute(Block):
@@ -794,29 +794,31 @@ class SetModelAttribute(Block):
     :param position: Position of the block in canvas.
     """
 
-    def __init__(self, attribute_name: str, name: str = '', position: Tuple[float, float] = None):
-        self.attribute_name = attribute_name
-        inputs = [Variable(name='Model'), Variable(name=f'Value to insert for attribute {attribute_name}')]
-        outputs = [Variable(name=f'Model with changed attribute {attribute_name}')]
+    def __init__(self, attribute_type: AttributeType[Type], name: str = '', position: Tuple[float, float] = None):
+        self.attribute_type = attribute_type
+        inputs = [Variable(name='Model'), Variable(name=f'Value to insert for attribute {self.attribute_type.name}')]
+        outputs = [Variable(name=f'Model with changed attribute {self.attribute_type.name}')]
         Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
         """ Custom hash function. Related to 'equivalent' method. """
-        return 3 + len(self.attribute_name)
+        return 3 + len(self.attribute_type.name)
 
     def equivalent(self, other):
         """ Returns whether the block is equivalent to the other given or not. """
-        return Block.equivalent(self, other) and self.attribute_name == other.attribute_name
+        return Block.equivalent(self, other) and self.attribute_type.name == other.attribute_type.name
 
     def evaluate(self, values, **kwargs):
         """ Set input object's deep attribute with input value. """
         model = values[self.inputs[0]]
-        setattr(model, self.attribute_name, values[self.inputs[1]])
+        setattr(model, self.attribute_type.name, values[self.inputs[1]])
         return [model]
 
     def _to_script(self, _) -> ToScriptElement:
         """ Write block config into a chunk of script. """
-        script = f"SetModelAttribute(attribute_name='{self.attribute_name}', {self.base_script()})"
+        script = f"SetModelAttribute(attribute_type=.AttributeType(" \
+                 f"{self.attribute_type.class_.__name__}, name='{self.attribute_type.name}')" \
+                 f", {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
 

@@ -43,7 +43,7 @@ class WorkflowToScriptTest(unittest.TestCase):
                     66.66,
                     77)),
             Sequence(3, "sequence_name", position=(77.77, 88)),
-            SetModelAttribute('name', 'name_Name', position=(88.88, 99)),
+            SetModelAttribute(dct.AttributeType(dctests.Optimizer, name='model_to_optimize'), 'name_Name', position=(88.88, 99)),
             Substraction("substraction_name", position=(99.99, 11.11)),
             Sum(name="sum_name", position=(22, 11.11)),
             Flatten('flatten_name', position=(33, 22.22)),
@@ -61,7 +61,7 @@ class WorkflowToScriptTest(unittest.TestCase):
 
         expected_script_value = "from dessia_common.tests import Optimizer, Car, Model" \
            "\nfrom dessia_common.workflow.blocks import InstantiateModel, ModelMethod, ModelAttribute, WorkflowBlock, ForEach, Archive, ClassMethod, Sequence, SetModelAttribute, Substraction, Sum, Flatten, Filter, Unpacker, MultiPlot, Product, Export" \
-           "\nfrom dessia_common.typings import MethodType, ClassMethodType" \
+           "\nfrom dessia_common.typings import MethodType, AttributeType, ClassMethodType" \
            "\nfrom dessia_common.workflow.core import Pipe, Workflow" \
            "\nfrom dessia_common.core import DessiaFilter" \
            "\n" \
@@ -69,7 +69,7 @@ class WorkflowToScriptTest(unittest.TestCase):
            "\n# --- Subworkflow --- " \
            "\nsub_block_0 = InstantiateModel(model_class=Optimizer, name='Instantiate Optimizer', position=(0, 0))" \
            "\nsub_block_1 = ModelMethod(method_type=MethodType(Optimizer, 'optimize'), name='Optimization', position=(0, 0))" \
-           "\nsub_block_2 = ModelAttribute(attribute_type=AttributeType(Optimizer, 'model_to_optimize'), name='Model Fetcher', position=(0, 0))" \
+           "\nsub_block_2 = ModelAttribute(attribute_type=AttributeType(Optimizer, name='model_to_optimize'), name='Model Fetcher', position=(0, 0))" \
            "\nsub_blocks = [sub_block_0, sub_block_1, sub_block_2]" \
            "\n\n" \
            "\nsub_pipe_0 = Pipe(sub_block_0.outputs[0], sub_block_1.inputs[0])" \
@@ -103,5 +103,4 @@ class WorkflowToScriptTest(unittest.TestCase):
            "\n" \
            "\nworkflow = Workflow(blocks, pipes, output=block_0.outputs[0], name='script_workflow')" \
            "\n"
-        print(workflow.to_script())
         self.assertEqual(workflow.to_script(), expected_script_value)
