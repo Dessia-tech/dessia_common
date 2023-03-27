@@ -742,7 +742,40 @@ class PlotData(Display):
         self.serialize = True
 
 
+
 class ModelAttribute(Block):
+    """
+    Fetch attribute of given object during workflow execution.
+
+    :param attribute_name: The name of the attribute to select.
+    :param name: Name of the block.
+    :param position: Position of the block in canvas.
+    """
+
+    def __init__(self, attribute_name: str, name: str = '', position: Tuple[float, float] = None):
+        self.attribute_name = attribute_name
+        inputs = [Variable(name='Model')]
+        outputs = [Variable(name='Model attribute')]
+        Block.__init__(self, inputs, outputs, name=name, position=position)
+
+    def equivalent_hash(self):
+        """ Custom hash function. Related to 'equivalent' method. """
+        return len(self.attribute_name)
+
+    def equivalent(self, other):
+        """ Return whether the block is equivalent to the other given or not. """
+        return Block.equivalent(self, other) and self.attribute_name == other.attribute_name
+
+    def evaluate(self, values, **kwargs):
+        """ Get input object's deep attribute. """
+        return [get_in_object_from_path(values[self.inputs[0]], f'#/{self.attribute_name}')]
+
+    def _to_script(self, _) -> ToScriptElement:
+        """ Write block config into a chunk of script. """
+        script = f"ModelAttribute(attribute_name='{self.attribute_name}', {self.base_script()})"
+        return ToScriptElement(declaration=script, imports=[self.full_classname])
+    
+class GetModelAttribute(Block):
     """
     Fetch attribute of given object during workflow execution.
 
@@ -783,7 +816,6 @@ class ModelAttribute(Block):
                    full_classname(object_=self.attribute_type.class_, compute_for='class'),
                    self.full_classname]
         return ToScriptElement(declaration=script, imports=imports)
-    
 
 class SetModelAttribute(Block):
     """
@@ -816,7 +848,7 @@ class SetModelAttribute(Block):
 
     def _to_script(self, _) -> ToScriptElement:
         """ Write block config into a chunk of script. """
-        script = f"SetModelAttribute(attribute_type=.AttributeType(" \
+        script = f"SetModelAttribute(attribute_type=AttributeType(" \
                  f"{self.attribute_type.class_.__name__}, name='{self.attribute_type.name}')" \
                  f", {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])

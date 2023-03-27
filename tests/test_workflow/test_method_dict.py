@@ -12,9 +12,7 @@ instantiate = InstantiateModel(model_class=Optimizer, name='Instantiate Optimize
 optimize = ModelMethod(
     method_type=MethodType(class_=Optimizer, name='optimize'),
     name="Optimization")
-model_fetcher = ModelAttribute(
-    attribute_type=AttributeType(class_=Optimizer, name='model_to_optimize' ), 
-    name='Model Fetcher')
+model_fetcher = ModelAttribute(attribute_name='model_to_optimize', name='Model Fetcher')
 
 blocks = [instantiate, optimize, model_fetcher]
 pipes = [

@@ -14,14 +14,12 @@ import dessia_common.tests as dctests
 
 instanciate_generator = InstantiateModel(model_class=dctests.Generator, name='Instantiate Generator')
 generator_generate = ModelMethod(dct.MethodType(dctests.Generator, 'generate'), name='Generator Generate')
-attribute_selection = ModelAttribute(attribute_type=dct.AttributeType(dctests.Generator, name='models')
-                                     , name='Attribute Selection')
+attribute_selection = ModelAttribute(attribute_name='models', name='Attribute Selection')
 
 # Subworkflow of model optimization
 instanciate_optimizer = InstantiateModel(model_class=dctests.Optimizer, name='Instantiate Optimizer')
 optimization = ModelMethod(dct.MethodType(dctests.Optimizer, 'optimize'), name='Optimization')
-model_fetcher = ModelAttribute(attribute_type=dct.AttributeType(dctests.Optimizer, name='model_to_optimize'),
-                                name='Model Fetcher')
+model_fetcher = ModelAttribute(attribute_name='model_to_optimize', name='Model Fetcher')
 
 pipe1_opt = Pipe(input_variable=instanciate_optimizer.outputs[0], output_variable=optimization.inputs[0])
 pipe2_opt = Pipe(input_variable=optimization.outputs[1], output_variable=model_fetcher.inputs[0])
