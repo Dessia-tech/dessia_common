@@ -35,6 +35,7 @@ from dessia_common.breakdown import ExtractionError
 from dessia_common.errors import SerializationError
 from dessia_common.warnings import SerializationWarning
 from dessia_common.exports import ExportFormat
+import dessia_common.files as dcf
 from dessia_common.serialization import deserialize, serialize_with_pointers, serialize, update_pointers_data, \
     serialize_dict, add_references, deserialize_argument
 
@@ -2139,17 +2140,29 @@ class WorkflowRun(WorkflowState):
                         "\tlist_files_{}_{}.append(file_bin)\n"
 
         values = list(self.input_values.values())
-
+        liste_input = []
         for j, block in enumerate(self.workflow.blocks):
             for i, input_ in enumerate(block.inputs):
-                if not input_.has_default_value and not \
-                        var.format(j, i) in workflow_script:
-                    input_str += f"    workflow.input_index(" \
-                                 f"{var.format(j, i)}):" \
-                                 f" value_{str(j) + '_' + str(i)},\n"
-                    default_value_ = f"\nvalue_{j}_{i} = {values[i]}"
+                if not input_.has_default_value and not var.format(j, i) in workflow_script:
+                    liste_input.append(input_)
 
-        default_value += default_value_
+        for i, input_ in enumerate(liste_input):
+            input_str += f"    workflow.input_index(" \
+                         f"{var.format(j, i)}):" \
+                         f" value_{str(j) + '_' + str(i)},\n"
+            if values[i].__class__.__base__.__name__ == 'PhysicalObject' or values[i].__class__.__base__.__name__ == 'DessiaObject':
+                filename = f'{values[i].__class__.__name__}_{i}'
+                stream = dcf.JsonFile(filename=filename)
+                values[i].save_to_stream(stream=stream)
+                default_value_ = f"\nvalue_{j}_{i} = {values[i].__class__.__name__}.load_from_file({filename})"
+            elif isinstance(values[i], (int, str)):
+                value = values[i]
+                default_value_ = f"\nvalue_{j}_{i} = {value}"
+            else:
+                value = values[i]
+                default_value_ = f"\nvalue_{j}_{i} = {value}"
+
+            default_value += default_value_
         input_str = add_import + workflow_script + "\n" + default_value + "\ninput_values = {\n" + input_str + "}"
         return input_str + "\n" + "\nworkflow_run = workflow.run(input_values=input_values)\n"
 
