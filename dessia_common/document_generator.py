@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """ Write document file. """
-from typing import List, Tuple
+from typing import List
 
 import docx
 
@@ -159,7 +159,7 @@ class DocxWriter:
         return self
 
     def delete_header_footer(self):
-        """remove the header and footer from all sections in a Word document. """
+        """ remove the header and footer from all sections in a Word document. """
         for section in self.document.sections:
             section.different_first_page_header_footer = False
             section.header.is_linked_to_previous = True
