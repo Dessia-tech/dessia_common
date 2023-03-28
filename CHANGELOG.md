@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
  
 - files: add functions to init StringFile and BinaryFile from local path
+- document generator: add new module to write in docx file
 - MarkdownWriter: add some functions (table_of_contents, header)
 
 
