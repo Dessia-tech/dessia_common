@@ -12,7 +12,7 @@ from dessia_common.displays import DisplaySetting, DisplayObject
 from dessia_common.errors import UntypedArgumentError
 from dessia_common.typings import JsonSerializable, MethodType, ClassMethodType, AttributeType
 from dessia_common.files import StringFile, BinaryFile
-from dessia_common.utils.helpers import concatenate, full_classname, get_attributes_type
+from dessia_common.utils.helpers import concatenate, full_classname
 from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
 from dessia_common.exports import ExportFormat
 from dessia_common.workflow.core import Block, Variable, TypedVariable, TypedVariableWithDefaultValue,\
@@ -787,7 +787,7 @@ class GetModelAttribute(Block):
     def __init__(self, attribute_type: AttributeType[Type], name: str = '', position: Tuple[float, float] = None):
         self.attribute_type = attribute_type
         inputs = [TypedVariable(self.attribute_type.class_, name=self.attribute_type.name)]
-        type_var = get_attributes_type(self.attribute_type.class_, self.attribute_type.name)
+        type_var = GetModelAttribute.get_attributes_type(self.attribute_type.class_, self.attribute_type.name)
         if type_var is None:
             outputs=[Variable(name='Model attribute')]
         else:
@@ -820,6 +820,15 @@ class GetModelAttribute(Block):
                    full_classname(object_=self.attribute_type.class_, compute_for='class'),
                    self.full_classname]
         return ToScriptElement(declaration=script, imports=imports)
+    
+    @classmethod
+    def get_attributes_type(cls, classe_name: str ,attribute_name: str):
+        """ Get type of attribute name of class."""
+        var_type = None
+        var_param = inspect.signature(classe_name).parameters.get(attribute_name)
+        if var_param:
+            var_type = var_param.annotation
+        return var_type
 
 
 class SetModelAttribute(Block):

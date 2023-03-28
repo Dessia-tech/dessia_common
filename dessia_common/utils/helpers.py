@@ -77,14 +77,3 @@ def get_python_class_from_class_name(full_class_name: str):
     # Storing in cache
     _PYTHON_CLASS_CACHE[full_class_name] = class_
     return class_
-
-
-def get_attributes_type(class_: Generic[T], name: str):
-    """ Get type of attribute name of class."""
-    var_type = None
-    var_sig = inspect.signature(class_)
-    var_params = var_sig.parameters
-    var_param = var_params.get(name)
-    if var_param:
-        var_type = var_param.annotation
-    return var_type

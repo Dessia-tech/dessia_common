@@ -19,7 +19,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Schemas refactor: add default value to method types
 - Typings : add AttributeType and ClassAttributeType
 - Blocks : add GetModelAttribute which will replace ModelAttribute in few release
-- Helpers : add function to get type of attribute name of class
 
 
 ### Changed
