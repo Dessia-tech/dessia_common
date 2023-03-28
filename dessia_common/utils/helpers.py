@@ -10,8 +10,13 @@ That way, we can avoid cyclic imports.
 
 import sys
 from importlib import import_module
+from typing import Generic, TypeVar
+import inspect
 
 _PYTHON_CLASS_CACHE = {}
+
+
+T=TypeVar('T')
 
 
 def concatenate(values):
@@ -73,10 +78,26 @@ def get_python_class_from_class_name(full_class_name: str):
     _PYTHON_CLASS_CACHE[full_class_name] = class_
     return class_
 
-def get_class_attributes(object_):
-    """ Get attributes name and type of object_. """
-    attributes = [attr for attr in dir(object_) if not callable(getattr(object_, attr)) and not attr.startswith("__")]
-    types = [type(getattr(object_, attr)).__name__ for attr in attributes]
 
-    attributes_with_types = [f"{attr}: {typ}" for attr, typ in zip(attributes, types)]
-    return {", ".join(attributes_with_types)}
+def get_attributes(object_: Generic[T], method: str = None):
+    """ Get attributes name and type of object_. """
+    arg={}
+    members = inspect.getmembers(T)
+    for member in members:
+        if method is None and member[0]=='__init__':
+            arg["__init__"]=inspect.getclosurevars(members[1])
+        elif member[0]=='__init__':
+            arg[method]=inspect.getclosurevars(members[1])
+        
+    return arg
+
+
+def get_attributes_type(class_: Generic[T], name: str):
+    """ Get type of attribute name of class."""
+    var_type = None
+    var_sig = inspect.signature(class_)
+    var_params = var_sig.parameters
+    var_param = var_params.get(name)
+    if var_param:
+        var_type = var_param.annotation
+    return var_type
