@@ -79,19 +79,6 @@ def get_python_class_from_class_name(full_class_name: str):
     return class_
 
 
-def get_attributes(object_: Generic[T], method: str = None):
-    """ Get attributes name and type of object_. """
-    arg={}
-    members = inspect.getmembers(T)
-    for member in members:
-        if method is None and member[0]=='__init__':
-            arg["__init__"]=inspect.getclosurevars(members[1])
-        elif member[0]=='__init__':
-            arg[method]=inspect.getclosurevars(members[1])
-        
-    return arg
-
-
 def get_attributes_type(class_: Generic[T], name: str):
     """ Get type of attribute name of class."""
     var_type = None
