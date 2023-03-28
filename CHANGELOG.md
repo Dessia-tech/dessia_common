@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Blocks : add GetModelAttribute which will replace ModelAttribute in few release
 - Blocks : display blocks are now more configurable (custom selector and type)
 - DessiaObject: add type to load_from_file method
 - Files: .doc & .docx files typings
@@ -18,7 +19,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Schemas refactor: add a json export to method schemas for low-code implementations
 - Schemas refactor: add default value to method types
 - Typings : add AttributeType and ClassAttributeType
-- Blocks : add GetModelAttribute which will replace ModelAttribute in few release
 
 
 ### Changed

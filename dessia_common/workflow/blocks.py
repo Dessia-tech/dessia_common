@@ -12,7 +12,7 @@ from dessia_common.displays import DisplaySetting, DisplayObject
 from dessia_common.errors import UntypedArgumentError
 from dessia_common.typings import JsonSerializable, MethodType, ClassMethodType, AttributeType
 from dessia_common.files import StringFile, BinaryFile
-from dessia_common.utils.helpers import concatenate, full_classname
+from dessia_common.utils.helpers import concatenate, full_classname, get_python_class_from_class_name
 from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
 from dessia_common.exports import ExportFormat
 from dessia_common.workflow.core import Block, Variable, TypedVariable, TypedVariableWithDefaultValue,\
@@ -773,8 +773,8 @@ class ModelAttribute(Block):
         """ Write block config into a chunk of script. """
         script = f"ModelAttribute(attribute_name='{self.attribute_name}', {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
-    
-    
+
+   
 class GetModelAttribute(Block):
     """
     Fetch attribute of given object during workflow execution.
@@ -786,7 +786,8 @@ class GetModelAttribute(Block):
 
     def __init__(self, attribute_type: AttributeType[Type], name: str = '', position: Tuple[float, float] = None):
         self.attribute_type = attribute_type
-        inputs = [TypedVariable(self.attribute_type.class_, name=self.attribute_type.name)]
+        real_class_name = get_python_class_from_class_name(full_classname(self.attribute_type.class_))
+        inputs = [TypedVariable(type_=real_class_name, name=self.attribute_type.name)]
         type_var = GetModelAttribute.get_attributes_type(self.attribute_type.class_, self.attribute_type.name)
         if type_var is None:
             outputs=[Variable(name='Model attribute')]
