@@ -825,11 +825,11 @@ class GetModelAttribute(Block):
     @classmethod
     def get_attributes_type(cls, classe_name: str ,attribute_name: str):
         """ Get type of attribute name of class."""
-        var_type = None
-        var_param = inspect.signature(classe_name).parameters.get(attribute_name)
-        if var_param:
-            var_type = var_param.annotation
-        return var_type
+        type_ = None
+        type_parameter = inspect.signature(classe_name).parameters.get(attribute_name)
+        if type_:
+            type_ = type_parameter.annotation
+        return type_
 
 
 class SetModelAttribute(Block):
