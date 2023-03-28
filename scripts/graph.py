@@ -14,6 +14,8 @@ reg = dcg.extract_region(G, [1, 2])
 
 assert 1 in reg
 
-order = dcg.explore_tree_from_leaves(G)
+order = dcg.explore_tree_from_leaves(graph=G)
 centrality = dcg.calculate_centrality(graph=G)
+connected_components = dcg.find_connected_components(graph=G)
+minimum_spanning_tree = dcg.find_minimum_spanning_tree(graph=G)
 graph2 = dcg.cut_tree_final_branches(reg)
