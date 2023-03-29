@@ -827,7 +827,7 @@ class GetModelAttribute(Block):
     def get_attributes_type(cls, classe_name: str ,attribute_name: str):
         """ Get type of attribute name of class."""
         type_parameter = inspect.signature(classe_name).parameters.get(attribute_name,None)
-        if not(type_parameter):
+        if not type_parameter:
             type_ = None
         if type_parameter.annotation == inspect.Parameter.empty:
             type_ = None 
