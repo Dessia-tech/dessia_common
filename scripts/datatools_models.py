@@ -1,6 +1,5 @@
 """
 Tests for dessia_common.datatools.models file
-
 """
 import time
 import numpy as npy
@@ -34,7 +33,6 @@ idty_scaler, idty_matrix = models.IdentityScaler().fit_transform(dataset_example
 std_scaler = models.StandardScaler().fit(inputs)
 std_inputs = std_scaler.transform(inputs)
 std_scaler, std_inputs = models.StandardScaler().fit_transform(inputs)
-
 
 # Hyperparameters
 ridge_hyperparams = {'alpha': 0.1, 'tol': 0.00001, 'fit_intercept': True}
@@ -129,7 +127,7 @@ for key, model in skl_models.items():
                                                models.SupportVectorClassifier, models.RandomForestClassifier)))
     t=time.time()
     dessia_models[key]._check_platform()
-    print(key, time.time()-t)
+    assert(time.time() - t <= 5.)
 
 
 # Tests errors and base objects

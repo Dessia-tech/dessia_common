@@ -343,9 +343,6 @@ class ModeledDataset(Dataset):
     def _printed_attributes(self):
         return self.common_attributes
 
-    # def _get_printed_value(self, dessia_object: Sample, attr: str):
-    #     return dessia_object.values[attr]
-
     @classmethod
     def from_predicted_dataset(cls, modeler: Modeler, dataset: Dataset, input_names: List[str], output_names: List[str],
                                name: str = ''):

@@ -285,7 +285,7 @@ class Model(DessiaObject):
         :type inputs: List[List[float]]
 
         :param outputs:
-            Matrix of data of dimension `n_samples x n_features`
+            Matrix of data of dimension `n_samples x n_outputs`
         :type outputs: List[List[float]]
 
         :return: The score of `Model` or children (DessiaObject).
@@ -400,7 +400,7 @@ class Ridge(LinearModel):
         :type inputs: List[List[float]]
 
         :param outputs:
-            Matrix of data of dimension `n_samples x n_features`
+            Matrix of data of dimension `n_samples x n_outputs`
         :type outputs: List[List[float]]
 
         :param alpha:
@@ -510,7 +510,7 @@ class LinearRegression(LinearModel):
         :type inputs: List[List[float]]
 
         :param outputs:
-            Matrix of data of dimension `n_samples x n_features`
+            Matrix of data of dimension `n_samples x n_outputs`
         :type outputs: List[List[float]]
 
         :param fit_intercept:
@@ -724,7 +724,7 @@ class DecisionTreeRegressor(Model):
         :type inputs: List[List[float]]
 
         :param outputs:
-            Matrix of data of dimension `n_samples x n_features`
+            Matrix of data of dimension `n_samples x n_outputs`
         :type outputs: List[List[float]]
 
         :param criterion:
@@ -834,7 +834,7 @@ class DecisionTreeClassifier(DecisionTreeRegressor):
         :type inputs: List[List[float]]
 
         :param outputs:
-            Matrix of data of dimension `n_samples x n_features`
+            Matrix of data of dimension `n_samples x n_outputs`
         :type outputs: List[List[float]]
 
         :return: The score of `Model` or children (`DessiaObject`).
@@ -854,7 +854,7 @@ class RandomForest(Model):
     More information: https://scikit-learn.org/stable/modules/ensemble.html#forest
     """
 
-    def __init__(self, parameters: Dict[str, Any], n_outputs_: int = None, 
+    def __init__(self, parameters: Dict[str, Any], n_outputs_: int = None,
                  estimators_: List[DecisionTreeRegressor] = None, name: str = ''):
         self.estimators_ = estimators_
         self.n_outputs_ = n_outputs_
@@ -933,7 +933,7 @@ class RandomForest(Model):
         :type inputs: List[List[float]]
 
         :param outputs:
-            Matrix of data of dimension `n_samples x n_features`
+            Matrix of data of dimension `n_samples x n_outputs`
         :type outputs: List[List[float]]
 
         :param n_estimators:
@@ -1005,7 +1005,7 @@ class RandomForestRegressor(RandomForest):
 
     _standalone_in_db = True
 
-    def __init__(self, parameters: Dict[str, Any], n_outputs_: int = None, 
+    def __init__(self, parameters: Dict[str, Any], n_outputs_: int = None,
                  estimators_: List[DecisionTreeRegressor] = None, name: str = ''):
         RandomForest.__init__(self, estimators_=estimators_, n_outputs_=n_outputs_, parameters=parameters, name=name)
 
@@ -1102,7 +1102,7 @@ class RandomForestClassifier(RandomForest):
         :type inputs: List[List[float]]
 
         :param outputs:
-            Matrix of data of dimension `n_samples x n_features`
+            Matrix of data of dimension `n_samples x n_outputs`
         :type outputs: List[List[float]]
 
         :return: The score of `Model` or children (DessiaObject).
@@ -1184,8 +1184,8 @@ class SupportVectorMachine(Model):
 
         :param kernel:
             Specifies the kernel type to be used in the algorithm.
-            Can be one of `[‘linear’, ‘poly’, ‘rbf’, ‘sigmoid’, ‘precomputed’]`. If `None` is given, `‘rbf’` will be 
-            used. If a callable is given it is used to pre-compute the kernel matrix from data matrices; that matrix 
+            Can be one of `[‘linear’, ‘poly’, ‘rbf’, ‘sigmoid’, ‘precomputed’]`. If `None` is given, `‘rbf’` will be
+            used. If a callable is given it is used to pre-compute the kernel matrix from data matrices; that matrix
             should be an matrix of shape `n_samples x n_samples`.
         :type kernel: str, `optional`, defaults to `'rbf'`
 
@@ -1209,7 +1209,7 @@ class SupportVectorMachine(Model):
         :type inputs: List[List[float]]
 
         :param outputs:
-            Matrix of data of dimension `n_samples x n_features`
+            Matrix of data of dimension `n_samples x 1`
         :type outputs: List[List[float]]
 
         :param C:
@@ -1231,13 +1231,13 @@ class SupportVectorMachine(Model):
         :return: The `SupportVectorRegressor` or `SupportVectorClassifier` model fit on inputs and outputs.
         :rtype: SupportVectorMachine
         """
-        return cls.fit_(inputs, outputs, name=name, C=C, kernel=kernel)
+        return cls.fit_(inputs, npy.array(outputs).ravel(), name=name, C=C, kernel=kernel)
 
     @classmethod
     def fit_predict(cls, inputs: Matrix, outputs: Vector, predicted_inputs: Matrix, C: float = 1., kernel: str = 'rbf',
                     name: str = '') -> Tuple['SupportVectorMachine', Union[Vector, Matrix]]:
         """ Fit outputs to inputs and predict outputs for `predicted_inputs`: succession of fit and predict. """
-        return cls.fit_predict_(inputs, outputs, predicted_inputs, name=name, C=C, kernel=kernel)
+        return cls.fit_predict_(inputs, npy.array(outputs).ravel(), predicted_inputs, name=name, C=C, kernel=kernel)
 
 
 class SupportVectorRegressor(SupportVectorMachine):
@@ -1521,7 +1521,7 @@ class MultiLayerPerceptron(Model):
         :type inputs: List[List[float]]
 
         :param outputs:
-            Matrix of data of dimension `n_samples x n_features`
+            Matrix of data of dimension `n_samples x n_outputs`
         :type outputs: List[List[float]]
 
         :param hidden_layer_sizes:
