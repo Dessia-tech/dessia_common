@@ -5,23 +5,19 @@ It should be used as a repertory of rules and available typing.
 
 Some general rules :
 
-- Lists are homogeneous, IE, they should not
-  contain several types of elements
+- Lists are homogeneous, IE, they should not contain several types of elements
     ex : List[int], List[str], List[CustomClass], ...
-- Tuples can, therefore, be used as heterogeneous sequences,
-  thanks to the fact that they are immutable.
+- Tuples can, therefore, be used as heterogeneous sequences, thanks to the fact that they are immutable.
     ex : Tuple[str, int, CustomClass] is a tuple like this :
         t = ('tuple', 1, custom_class_object)
-- Dict is used whenever a dynamic structure should be defined.
-  It takes only one possible type for keys
+- Dict is used whenever a dynamic structure should be defined. It takes only one possible type for keys
   and one possible type for values.
     ex : Dict[str, bool] is a dict like :
         d = {'key0': True, 'key1': False, 'another_key': False,...}
 - As opposed to this, a non-standalone_in_db class defines a static structure,
   with a defined number of given, expected keys & types of their values.
 
-In addition to types & genericity (brought by DessiaObject),
-this module can also be seen as a template for Dessia's
+In addition to types & generics (brought by DessiaObject), this module can also be seen as a template for Dessia
 coding/naming style & convention.
 """
 
@@ -156,9 +152,9 @@ DEF_ESS = EnhancedStandaloneSubobject.generate(1)
 class InheritingStandaloneSubobject(StandaloneBuiltinsSubobject):
     """ Overwrite StandaloneSubobject, principally for InstanceOf and Union typing testing purpose. """
 
-    def __init__(self, distarg: Distance, floatarg: float, intarg: int, boolarg: bool, strarg: str,
+    def __init__(self, distarg: Distance, floatarg: float, intarg: int, boolarg: bool,
                  name: str = 'Inheriting Standalone Subobject'):
-        self.strarg = strarg
+        self.strarg = name
 
         StandaloneBuiltinsSubobject.__init__(self, distarg=distarg, floatarg=floatarg, intarg=intarg,
                                              boolarg=boolarg, name=name)
@@ -168,11 +164,10 @@ class InheritingStandaloneSubobject(StandaloneBuiltinsSubobject):
         """ Generate an inheriting sub-object with default values computed from a seed. """
         distarg = Distance(0.7 * seed)
         floatarg = 0.1 * seed
-        strarg = str(-seed)
         intarg = seed * 3
         boolarg = bool(intarg % 2)
         name = 'Inheriting Standalone Subobject' + str(seed)
-        return cls(floatarg=floatarg, distarg=distarg, intarg=seed * 3, boolarg=boolarg, strarg=strarg, name=name)
+        return cls(floatarg=floatarg, distarg=distarg, intarg=seed * 3, boolarg=boolarg, name=name)
 
 
 DEF_ISS = InheritingStandaloneSubobject.generate(1)

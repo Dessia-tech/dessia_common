@@ -10,8 +10,6 @@ import random
 import itertools
 
 from functools import reduce
-import collections
-import collections.abc
 from copy import deepcopy, copy
 import inspect
 import json
@@ -274,7 +272,7 @@ class DessiaObject(SerializableObject):
 
     @property
     def _method_jsonschemas(self):
-        """ Generates dynamic jsonschemas for methods of class. """
+        """ Generates dynamic 'jsonschemas' for methods of class. """
         warnings.warn("method_jsonschema method is deprecated. Use method_schema instead", DeprecationWarning)
         jsonschemas = {}
         class_ = self.__class__
@@ -372,7 +370,7 @@ class DessiaObject(SerializableObject):
         json.dump(dict_, stream, indent=indent)
 
     @classmethod
-    def load_from_stream(cls, stream):
+    def load_from_stream(cls, stream: dcf.JsonFile):
         """
         Generate object from stream using utf-8 encoding.
 
@@ -565,7 +563,7 @@ class DessiaObject(SerializableObject):
         return self.check_platform().raise_if_above_level(level=level)
 
     def check_platform(self):
-        """ Reproduce lifecycle on platform (serialization, display). Raise an error if something is wrong. """
+        """ Reproduce life-cycle on platform (serialization, display). Raise an error if something is wrong. """
         serializable_results = dcc.check_serialization_process(object_=self, use_pointers=True)
         dict_ = serializable_results.pop("dict_")
 
@@ -653,7 +651,7 @@ class PhysicalObject(DessiaObject):
 
     @staticmethod
     def display_settings():
-        """ Returns a list of DisplaySettings objects describing how to call subdisplays. """
+        """ Returns a list of DisplaySettings objects describing how to call sub-displays. """
         display_settings = DessiaObject.display_settings()
         display_settings.append(DisplaySetting(selector='cad', type_='babylon_data',
                                                method='volmdlr_volume_model().babylon_data', serialize_data=True))
@@ -685,7 +683,7 @@ class PhysicalObject(DessiaObject):
         return self.volmdlr_volume_model().to_step_stream(stream=stream)
 
     def to_html_stream(self, stream: dcf.StringFile):
-        """ Exports Object CAD to given stream in the HTML format. """
+        """ Exports Object CAD to given stream as HTML. """
         model = self.volmdlr_volume_model()
         babylon_data = model.babylon_data()
         script = model.babylonjs_script(babylon_data)
@@ -694,7 +692,7 @@ class PhysicalObject(DessiaObject):
         return stream
 
     def to_stl_stream(self, stream):
-        """ Export Object CAD to given stream in .stl format. """
+        """ Export Object CAD to given stream as STL. """
         return self.volmdlr_volume_model().to_stl_stream(stream=stream)
 
     def to_stl(self, filepath):
@@ -784,7 +782,7 @@ class Parameter(DessiaObject):
 
 
 class ParameterSet(DessiaObject):
-    """ Object that can provide utils features around values Dataset. """
+    """ Object that can provide miscellaneous features around values Dataset. """
 
     def __init__(self, values, name=''):
         self.values = values
@@ -876,7 +874,7 @@ class DessiaFilter(DessiaObject):
         :param values: List of DessiaObjects to filter
         :type values: List[DessiaObject]
 
-        :return: `list of length `len(values)` where elements are `True` if kept by the filter, otherwise `False`.
+        :return: `list of length `len(values)` where the elements are `True` if kept by the filter, otherwise `False`.
         :rtype: List[bool]
 
         :Examples:
@@ -1038,7 +1036,7 @@ class FiltersList(DessiaObject):
 
     def get_booleans_index(self, dobjects_list: List[DessiaObject]):
         """
-        Compute all the filters of `self.filters` on `dobjects_list` and returns a boolean index of `dobjects_list`.
+        Compute all the filters of `self.filters` on `dobjects_list` and return boolean indices of `dobjects_list`.
 
         :param dobject_list: List of data to filter
         :type dobject_list: List[DessiaObject]
@@ -1087,43 +1085,6 @@ class FiltersList(DessiaObject):
         """
         booleans_index = self.get_booleans_index(dobjects_list)
         return DessiaFilter.apply(dobjects_list, booleans_index)
-
-
-def dict_merge(old_dct, merge_dct, add_keys=True, extend_lists=True):
-    """
-    Recursive dict merge.
-
-    Inspired by :meth:``dict.update()``, instead of updating only top-level keys, dict_merge goes down
-    recursively into dictionaries nested to an arbitrary depth, updating keys.
-    The ``merge_dct`` is merged into ``dct``.
-
-    This version will return a copy of the dictionary and leave the original arguments untouched.
-
-    The optional argument ``add_keys``, determines whether keys which are present in ``merge_dct``
-    but not ``dct`` should be included in the new dict.
-
-    :param old_dct: Onto which the merge is executed
-    :type old_dct: Dict
-    :param merge_dct: Dct merged into dct
-    :type merge_dct: Dict
-    :param add_keys: Whether to add new keys. Default value is True
-    :type add_keys: bool, optional
-    :param extend_lists: Whether to extend lists if keys are updated and value is a list. Default value is True
-    :type extend_lists: bool, optional
-    :return: Updated dict
-    :rtype: Dict
-    """
-    dct = deepcopy(old_dct)
-    if not add_keys:
-        merge_dct = {k: merge_dct[k] for k in set(dct).intersection(set(merge_dct))}
-    for key, value in merge_dct.items():
-        if isinstance(dct.get(key), dict) and isinstance(value, collections.abc.Mapping):
-            dct[key] = dict_merge(dct[key], merge_dct[key], add_keys=add_keys, extend_lists=extend_lists)
-        elif isinstance(dct.get(key), list) and extend_lists:
-            dct[key].extend(value)
-        else:
-            dct[key] = value
-    return dct
 
 
 def stringify_dict_keys(obj):

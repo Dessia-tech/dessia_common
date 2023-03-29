@@ -262,17 +262,6 @@ class Block(DessiaObject):
         """
         return self.__class__.__name__ == other.__class__.__name__
 
-    def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#', id_method=True, id_memo=None):
-        """ Serialize the block with custom logic. """
-        dict_ = DessiaObject.base_dict(self)
-        dict_['inputs'] = [i.to_dict() for i in self.inputs]
-        dict_['outputs'] = [o.to_dict() for o in self.outputs]
-        if self.position is not None:
-            dict_['position'] = list(self.position)
-        else:
-            dict_['position'] = self.position
-        return dict_
-
     def jointjs_data(self):
         """ Deprecated HTML computation. """
         data = {'block_class': self.__class__.__name__}
@@ -365,7 +354,9 @@ class Workflow(Block):
 
     _standalone_in_db = True
     _eq_is_data_eq = True
-    _allowed_methods = ['run', 'start_run']
+    _allowed_methods = ["run", "start_run"]
+    _non_serializable_attributes = ["block_selectors", "branch_by_display_selector", "branch_by_export_format",
+                                    "memorized_pipes", "coordinates", "detached_variables", "variables"]
 
     def __init__(self, blocks, pipes, output, *, imposed_variable_values=None,
                  detached_variables: List[TypedVariable] = None, description: str = "",
@@ -756,15 +747,15 @@ class Workflow(Block):
         schemas["start_run"]["required"] = []
         return schemas
 
-    def to_dict(self, use_pointers=True, memo=None, path="#", id_method=True, id_memo=None):
+    def to_dict(self, use_pointers=False, memo=None, path="#", id_method=True, id_memo=None):
         """ Compute a dict from the object content. """
         if memo is None:
             memo = {}
 
         # self.refresh_blocks_positions()
-        dict_ = Block.to_dict(self)
+        dict_ = Block.to_dict(self, use_pointers=False)
         dict_['object_class'] = 'dessia_common.workflow.core.Workflow'  # Force migrating from dessia_common.workflow
-        blocks = [b.to_dict() for b in self.blocks]
+        blocks = [b.to_dict(use_pointers=False) for b in self.blocks]
 
         pipes = [self.pipe_variable_indices(p) for p in self.pipes]
 
@@ -1728,7 +1719,7 @@ class WorkflowState(DessiaObject):
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'WorkflowState':
-        """ Compute Workflow State from diven dict. Handles pointers. """
+        """ Compute Workflow State from given dict. Handles pointers. """
         if pointers_memo is None or global_dict is None:
             global_dict, pointers_memo = update_pointers_data(global_dict=global_dict, current_dict=dict_,
                                                               pointers_memo=pointers_memo)
@@ -2082,7 +2073,7 @@ class WorkflowRun(WorkflowState):
         raise NotImplementedError(f"WorkflowRun : Specific object from path method is not defined for path '{path}'")
 
     def dict_to_arguments(self, dict_: JsonSerializable, method: str):
-        """ Compute run method's args from serialized ones. """
+        """ Compute run method's arguments from serialized ones. """
         if method in self._allowed_methods:
             return self.workflow.dict_to_arguments(dict_=dict_, method='run')
         raise NotImplementedError(f"Method {method} not in WorkflowRun allowed methods")
@@ -2186,7 +2177,7 @@ def value_type_check(value, type_):
 
     Check if the value as the specified type.
     """
-    try:  # TODO: Subscripted generics cannot be used...
+    try:  # TODO: Sub-scripted generics cannot be used...
         if not isinstance(value, type_):
             return False
     except TypeError:

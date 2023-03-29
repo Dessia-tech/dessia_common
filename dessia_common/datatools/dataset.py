@@ -652,7 +652,7 @@ class Dataset(DessiaObject):
             # correlation_matrix = []
             # Dimensionality plot
             dimensionality_plot = self._plot_dimensionality()
-            # Scattermatrix
+            # Scatter Matrix
             scatter_matrix = self._build_multiplot(data_list, self._tooltip_attributes(), axis=dimensionality_plot.axis,
                                                    point_style=dimensionality_plot.point_style)
             # Parallel plot

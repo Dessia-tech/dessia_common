@@ -18,7 +18,7 @@ from datetime import date
 from pylint import __version__
 from pylint.lint import Run
 
-MIN_NOTE = 9.1
+MIN_NOTE = 9.2
 
 EFFECTIVE_DATE = date(2023, 1, 18)
 WEEKLY_DECREASE = 0.03
@@ -26,9 +26,9 @@ WEEKLY_DECREASE = 0.03
 UNWATCHED_ERRORS = ["fixme", "trailing-whitespace", "import-error"]
 
 MAX_ERROR_BY_TYPE = {
-    "wrong-spelling-in-docstring": 196,
-    "wrong-spelling-in-comment": 26,
-    "protected-access": 70,  # Highly dependant on our "private" conventions. Keeps getting raised
+    "wrong-spelling-in-docstring": 164,
+    "wrong-spelling-in-comment": 13,
+    "protected-access": 46,  # Highly dependant on our "private" conventions. Keeps getting raised
     "arguments-differ": 1,
     "too-many-locals": 10,  # Reduce by dropping vectored objects
     "too-many-branches": 13,  # Huge refactor needed. Will be reduced by schema refactor

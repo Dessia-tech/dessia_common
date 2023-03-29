@@ -10,10 +10,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Blocks : display blocks are now more configurable (custom selector and type)
+- DessiaObject: add type to load_from_file method
+- Files: .doc & .docx files typings
 - Schemas refactor: add support of Ellipsed tuple (Tuple[T, ...])
 - Schemas refactor: add more Error Checks
 - Schemas refactor: add a json export to method schemas for low-code implementations
-- files: .doc & .docx files typings
+- Schemas refactor: add default value to method types
+- files: add functions to init StringFile and BinaryFile from local path
+- document generator: add new module to write in docx file
+- MarkdownWriter: add some functions (table_of_contents, header)
+
 
 ### Fixed
 
@@ -30,15 +37,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Change serialize_typing function name to serialize_annotation
 - Change tests. Unittests are in 'tests' folder. Other tests in scripts
 - Check Platform is now verbose and split into several functions
+- Workflow : to_dict method do not use pointers anymore
+- Workflow : Remove some attributes from serialization
+
+
+### Removed
+
+- Serialization : remove warning for dict_to_object if class is not inheriting from SerializableObject
 
 ### Chore
 
-- Fix Spelling
+- Fix Spelling (x2)
 
 ### Perf
 
-- use dc_ref instead of $ref in serialization to avoid overhead during CRUD operation on platform
-
+- use ref__ instead of $ref in serialization to avoid overhead during CRUD operation on platform. Retrocompatibility for old marker.
 
 
 ## 0.13.2
@@ -59,7 +72,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Handle serialization pointers of non-standalone objects
 - WorkflowRun settings now sets the right method to call for workflow display
-- Handle serialization pointers of non-standalone objects
 
 
 ## 0.13.0 [02/14/2023]

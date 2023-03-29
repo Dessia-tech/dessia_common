@@ -7,6 +7,7 @@ bool
 builtins
 cKDTree
 classmethod
+classname
 cls
 ClusteredDataset
 CMA
@@ -86,14 +87,18 @@ sklearn
 SupportVectorClassifier
 SupportVectorMachine
 SupportVectorRegressor
+STL
 str
 StringFile
+stringified
+stringify
 Stringify
 submodule
 subobjects
 SVD
 tol
 traceback
+typings
 uuid
 uuids
 visjs

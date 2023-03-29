@@ -28,6 +28,15 @@ class BinaryFile(io.BytesIO):
         return template
 
     @classmethod
+    def from_file(cls, filepath: str):
+        """ Get a file from a binary file. """
+        with open(filepath, 'rb') as file:
+            stream = cls()
+            stream.write(file.read())
+            stream.seek(0)
+            return stream
+
+    @classmethod
     def save_template_to_file(cls, filename):
         """ Save template of class into a file. """
         if cls.extension and not filename.endswith(cls.extension):
@@ -77,6 +86,15 @@ class StringFile(io.StringIO):
         stream.write(stream_file.read().decode('utf-8'))
         stream.seek(0)
         return stream
+
+    @classmethod
+    def from_file(cls, filepath: str):
+        """ Get a file from a file. """
+        with open(filepath, 'r', encoding='utf-8') as file:
+            stream = cls()
+            stream.write(file.read())
+            stream.seek(0)
+            return stream
 
     @classmethod
     def save_template_to_file(cls, filename):

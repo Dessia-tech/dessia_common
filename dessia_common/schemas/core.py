@@ -351,7 +351,7 @@ class TypingProperty(Property):
         """ Recursively stringify annotation. """
         serialized = self.origin.__name__
         if serialized in ["list", "dict", "tuple", "type"]:
-            # TODO Dirty quickfix. Find a generic way to automatize this
+            # TODO Dirty quick-fix. Find a generic way to automatize this
             serialized = serialized.capitalize()
         if self.args:
             return compute_typing_schema_serialization(serialized_typing=serialized, args_schemas=self.args_schemas)
@@ -371,7 +371,7 @@ class TypingProperty(Property):
 
     @classmethod
     def _raw_args_from_serialized(cls, serialized: str) -> str:
-        """ Get args as str from serialized value. """
+        """ Get arguments as str from serialized value. """
         if "[" in serialized and "]" in serialized:
             args = re.match(cls.SERIALIZED_REGEXP, serialized).group(2)
             return args.replace(" ", "")
@@ -379,7 +379,7 @@ class TypingProperty(Property):
 
     @classmethod
     def _args_from_serialized(cls, serialized: str) -> Tuple[Type[T]]:
-        """ Deserialize args. """
+        """ Deserialize arguments. """
         rawargs = cls._raw_args_from_serialized(serialized)
         args = extract_args(rawargs)
         return tuple([deserialize_annotation(a) for a in args])
@@ -403,7 +403,7 @@ class ProxyProperty(TypingProperty):
     """
     Schema Class for Proxies.
 
-    Proxies are just intermediate types which actual schemas if its args. For example OptionalProperty proxy.
+    Proxies are just intermediate types which actual schemas if its arguments. For example OptionalProperty proxy.
     """
 
     def __init__(self, annotation: Type[T], attribute: str, definition_default: T = None):
@@ -433,7 +433,7 @@ class OptionalProperty(ProxyProperty):
     Proxy Schema class for OptionalProperty properties.
 
     OptionalProperty is only a catch for arguments that default to None.
-    Arguments with default values other than None are not considered Optionals
+    Arguments with default values other than None are not considered Optional.
     """
 
     def __init__(self, annotation: Type[T], attribute: str, definition_default: T = None):
@@ -506,7 +506,7 @@ class BuiltinProperty(Property):
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
-        """ Get real Type from types dictionnary. """
+        """ Get real Type from types dictionary. """
         return TYPES_FROM_STRING[serialized]
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
@@ -667,7 +667,7 @@ class UnionProperty(TypingProperty):
         Check validity of UnionProperty Type Hint.
 
         Checks performed :
-        - Subobject are all standalone or none of them are. TODO : What happen if args are not DessiaObjects ?
+        - Sub-objects are all standalone or none of them are. TODO : What happen if arguments are not DessiaObjects ?
         """
         issues = super().check_list()
         issues += CheckList([self.classes_are_standalone_consistent()])
@@ -945,7 +945,7 @@ class SubclassProperty(TypingProperty):
     """
     Schema class for Subclass type hints.
 
-    Datatype that can be seen as a union of classes that inherits from the only arg given.
+    Datatype that can be seen as a union of classes that inherits from the only argument given.
     Classes validate against this type.
     """
 
@@ -1010,6 +1010,18 @@ class MethodTypeProperty(TypingProperty):
             }
         })
         return chunk
+    
+    def default_value(self):
+        """ Sets MethodType object_class and argument class_ if it is different than Type. """
+        if self.definition_default:
+            return self.definition_default.to_dict()
+        
+        if self.class_ is not Type and issubclass(self.class_, CoreDessiaObject):
+            classname = full_classname(object_=self.class_, compute_for="class")
+        else:
+            classname = None
+        return {"object_class": full_classname(object_=self.origin, compute_for="class"),
+                "class_": classname, "name": None}
 
     def check_list(self) -> CheckList:
         """
@@ -1273,7 +1285,7 @@ def extract_args(string: str) -> List[str]:
         split_by_comma = closed_brackets == opened_brackets
         if split_by_comma and character == ",":
             # We are at first level, because we closed as much brackets as we have opened
-            # Current argument is complete, we append it to args sequence and reset current_args
+            # Current argument is complete, we append it to arguments sequence and reset current arguments
             arguments.append(current_arg)
             current_arg = ""
         else:
