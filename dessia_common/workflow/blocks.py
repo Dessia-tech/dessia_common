@@ -786,13 +786,14 @@ class GetModelAttribute(Block):
 
     def __init__(self, attribute_type: AttributeType[Type], name: str = '', position: Tuple[float, float] = None):
         self.attribute_type = attribute_type
-        real_class_name = get_python_class_from_class_name(full_classname(self.attribute_type.class_))
+        real_class_name = self.attribute_type.class_
         inputs = [TypedVariable(type_=real_class_name, name=self.attribute_type.name)]
         type_var = GetModelAttribute.get_attributes_type(self.attribute_type.class_, self.attribute_type.name)
+        print(type_var)
         if type_var is None:
             outputs=[Variable(name='Model attribute')]
         else:
-            outputs = [TypedVariable(type_var, name=self.attribute_type.name)]
+            outputs = [TypedVariable(type_=type_var, name=self.attribute_type.name)]
         Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
@@ -825,9 +826,10 @@ class GetModelAttribute(Block):
     @classmethod
     def get_attributes_type(cls, classe_name: str ,attribute_name: str):
         """ Get type of attribute name of class."""
-        type_ = None
         type_parameter = inspect.signature(classe_name).parameters.get(attribute_name)
-        if type_:
+        if type_parameter == inspect._empty:
+            type_ = None
+        else:
             type_ = type_parameter.annotation
         return type_
 
