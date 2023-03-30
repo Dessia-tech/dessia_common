@@ -791,7 +791,7 @@ class GetModelAttribute(Block):
         type_var = GetModelAttribute.get_attributes_type(self.attribute_type.class_, self.attribute_type.name)
         self.type_var = type_var
         if type_var:
-            outputs = [TypedVariable(type_=type_var, name=self.attribute_type.name)]  
+            outputs = [TypedVariable(type_=type_var, name='Model attribute')]  
         else:
             outputs=[Variable(name='Model attribute')]
         Block.__init__(self, inputs, outputs, name=name, position=position)
