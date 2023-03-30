@@ -50,7 +50,7 @@ class ClassMethodType(MethodType[T]):
 
 class AttributeType(Generic[T]):
     """ Typing that denotes an attribute of class T. """
-
+    
     def __init__(self, class_: T, name: str):
         self.class_ = class_
         self.name = name
