@@ -787,8 +787,12 @@ class GetModelAttribute(Block):
     def __init__(self, attribute_type: AttributeType[Type], name: str = '', position: Tuple[float, float] = None):
         self.attribute_type = attribute_type
         real_class_name = self.attribute_type.class_
-        inputs = [TypedVariable(type_=real_class_name, name=self.attribute_type.name)]
-        type_var = GetModelAttribute.get_attributes_type(self.attribute_type.class_, self.attribute_type.name)
+        dict_parameters = {}
+        for el in inspect.getmembers(self.attribute_type.class_, inspect.isfunction):
+            dict_parameters.update(inspect.signature(el[1]).parameters)
+        self.dict_parameters = dict_parameters
+        inputs = [TypedVariable(type_=real_class_name, name='Model')]
+        type_var = GetModelAttribute.get_attributes_type(self.attribute_type.class_, self.attribute_type.name, self.dict_parameters)
         self.type_var = type_var
         if type_var:
             outputs = [TypedVariable(type_=type_var, name='Model attribute')]  
@@ -824,9 +828,9 @@ class GetModelAttribute(Block):
         return ToScriptElement(declaration=script, imports=imports)
     
     @classmethod
-    def get_attributes_type(cls, classe_name: str ,attribute_name: str):
+    def get_attributes_type(cls, classe_name: str ,attribute_name: str, dict_parameters: dict):
         """ Get type of attribute name of class."""
-        type_parameter = inspect.signature(classe_name).parameters.get(attribute_name)
+        type_parameter = dict_parameters.get(attribute_name)
         if not type_parameter:
             type_ = None
         elif type_parameter.annotation == inspect.Parameter.empty:
