@@ -2132,36 +2132,23 @@ class WorkflowRun(WorkflowState):
         default_value = ""
         add_import = ""
         var = "block_{}.inputs[{}]"
-        types = ["str", "int", "float"]
-        for_each_file = "\nlist_files_{}_{} = []\n" \
-                        "for filename in os.listdir('Dir_file'):\n" \
-                        "\tf = os.path.join('Dir_file', filename)\n" \
-                        "\tfile_bin = io.FileIO(f, 'r')\n" \
-                        "\tlist_files_{}_{}.append(file_bin)\n"
 
-        values = list(self.input_values.values())
+        values_dict = self.input_values
+        sorted_dict = {k: values_dict[k] for k in sorted(values_dict)}
+        values = list(sorted_dict.values())
         liste_input = []
+
         for j, block in enumerate(self.workflow.blocks):
             for i, input_ in enumerate(block.inputs):
-                if not input_.has_default_value and not var.format(j, i) in workflow_script:
+                if not var.format(j, i) in workflow_script:
                     liste_input.append((input_, j))
 
         for i, input_ in enumerate(liste_input):
             input_str += f"    workflow.input_index(" \
                          f"{var.format(input_[1], i)}):" \
                          f" value_{str(input_[1]) + '_' + str(i)},\n"
-            if values[i].__class__.__base__.__name__ == 'PhysicalObject' or values[i].__class__.__base__.__name__ == 'DessiaObject':
-                filename = f'{values[i].__class__.__name__}_{i}'
-                stream = dcf.JsonFile(filename=filename)
-                values[i].save_to_stream(stream=stream)
-                default_value_ = f"\nvalue_{input_[1]}_{i} = {values[i].__class__.__name__}.load_from_file({filename})"
-            elif isinstance(values[i], (int, str)):
-                value = values[i]
-                default_value_ = f"\nvalue_{input_[1]}_{i} = {value}"
-            else:
-                value = values[i]
-                default_value_ = f"\nvalue_{input_[1]}_{i} = {value}"
 
+            default_value_ = f"\nvalue_{input_[1]}_{i} = {values[i]}"
             default_value += default_value_
         input_str = add_import + workflow_script + "\n" + default_value + "\ninput_values = {\n" + input_str + "}"
         return input_str + "\n" + "\nworkflow_run = workflow.run(input_values=input_values)\n"
