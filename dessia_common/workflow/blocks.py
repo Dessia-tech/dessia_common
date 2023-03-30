@@ -786,16 +786,13 @@ class GetModelAttribute(Block):
 
     def __init__(self, attribute_type: AttributeType[Type], name: str = '', position: Tuple[float, float] = None):
         self.attribute_type = attribute_type
-        real_class_name = self.attribute_type.class_
-        dict_parameters = {}
+        parameters = {}
         for class_name in inspect.getmembers(self.attribute_type.class_, inspect.isfunction):
-            dict_parameters.update(inspect.signature(class_name[1]).parameters)
-        self.dict_parameters = dict_parameters
-        inputs = [TypedVariable(type_=real_class_name, name='Model')]
-        type_var = GetModelAttribute.get_attributes_type(self.attribute_type.name, self.dict_parameters)
-        self.type_var = type_var
-        if type_var:
-            outputs = [TypedVariable(type_=type_var, name='Model attribute')]  
+            parameters.update(inspect.signature(class_name[1]).parameters)
+        inputs = [TypedVariable(type_=self.attribute_type.class_, name='Model')]
+        type_ = GetModelAttribute.get_attributes_type(self.attribute_type.name, parameters)
+        if type_:
+            outputs = [TypedVariable(type_=type_, name='Model attribute')]  
         else:
             outputs=[Variable(name='Model attribute')]
         Block.__init__(self, inputs, outputs, name=name, position=position)
@@ -828,9 +825,9 @@ class GetModelAttribute(Block):
         return ToScriptElement(declaration=script, imports=imports)
     
     @classmethod
-    def get_attributes_type(cls, attribute_name: str, dict_parameters: dict):
+    def get_attributes_type(cls, attribute_name: str, parameters: dict):
         """ Get type of attribute name of class."""
-        type_parameter = dict_parameters.get(attribute_name)
+        type_parameter = parameters.get(attribute_name)
         if not type_parameter:
             type_ = None
         elif type_parameter.annotation == inspect.Parameter.empty:
@@ -851,8 +848,21 @@ class SetModelAttribute(Block):
 
     def __init__(self, attribute_type: AttributeType[Type], name: str = '', position: Tuple[float, float] = None):
         self.attribute_type = attribute_type
-        inputs = [Variable(name='Model'), Variable(name=f'Value to insert for attribute {self.attribute_type.name}')]
-        outputs = [Variable(name=f'Model with changed attribute {self.attribute_type.name}')]
+        self.real_class_name = self.attribute_type.class_
+        parameters = {}
+        for class_name in inspect.getmembers(self.attribute_type.class_, inspect.isfunction):
+            parameters.update(inspect.signature(class_name[1]).parameters)
+        type_ = SetModelAttribute.get_attributes_type(self.attribute_type.name, parameters)
+        if type_:
+            inputs = [TypedVariable(type_= self.attribute_type.class_, name='Model'),
+                      TypedVariable(type_=type_,
+                                    name=f'Value to insert for attribute {self.attribute_type.name}')]
+            outputs = [TypedVariable(type_=self.attribute_type.class_,
+                                     name=f'Model with changed attribute {self.attribute_type.name}')]
+        else:
+            inputs = [TypedVariable(type_=self.real_class_name, name='Model'), 
+                      Variable(name=f'Value to insert for attribute {self.attribute_type.name}')]
+            outputs = [Variable(name=f'Model with changed attribute {self.attribute_type.name}')]
         Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
@@ -875,6 +885,18 @@ class SetModelAttribute(Block):
                  f"{self.attribute_type.class_.__name__}, name='{self.attribute_type.name}')" \
                  f", {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
+    
+    @classmethod
+    def get_attributes_type(cls, attribute_name: str, parameters: dict):
+        """ Get type of attribute name of class."""
+        type_parameter = parameters.get(attribute_name)
+        if not type_parameter:
+            type_ = None
+        elif type_parameter.annotation == inspect.Parameter.empty:
+            type_ = None 
+        else:
+            type_ = type_parameter.annotation
+        return type_
 
 
 class Sum(Block):
