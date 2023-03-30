@@ -792,7 +792,8 @@ class GetModelAttribute(Block):
             dict_parameters.update(inspect.signature(class_name[1]).parameters)
         self.dict_parameters = dict_parameters
         inputs = [TypedVariable(type_=real_class_name, name='Model')]
-        type_var = GetModelAttribute.get_attributes_type(self.attribute_type.class_, self.attribute_type.name, self.dict_parameters)
+        type_var = GetModelAttribute.get_attributes_type(self.attribute_type.class_,
+                                                          self.attribute_type.name, self.dict_parameters)
         self.type_var = type_var
         if type_var:
             outputs = [TypedVariable(type_=type_var, name='Model attribute')]  
