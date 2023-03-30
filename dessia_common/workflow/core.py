@@ -2125,7 +2125,6 @@ class WorkflowRun(WorkflowState):
         """
         Computes a script representing the workflowrun.
         """
-        # TODO : Use self instead of workflow !!
         workflow_script = self.workflow.to_script()
         workflow_script_import = self.workflow._to_script().imports
         input_str = ""
@@ -2137,6 +2136,7 @@ class WorkflowRun(WorkflowState):
         sorted_dict = {k: values_dict[k] for k in sorted(values_dict)}
         values = list(sorted_dict.values())
         liste_input = []
+        liste_input_nbv = []
 
         for j, block in enumerate(self.workflow.blocks):
             for i, input_ in enumerate(block.inputs):
@@ -2148,8 +2148,25 @@ class WorkflowRun(WorkflowState):
                          f"{var.format(input_[1], i)}):" \
                          f" value_{str(input_[1]) + '_' + str(i)},\n"
 
-            default_value_ = f"\nvalue_{input_[1]}_{i} = {values[i]}"
+            if isinstance(values[i], str):
+                default_value_ = f"\nvalue_{input_[1]}_{i} = '{values[i]}'"
+            else:
+                default_value_ = f"\nvalue_{input_[1]}_{i} = {values[i]}"
             default_value += default_value_
+
+
+        for k, nbv in enumerate(self.workflow.nonblock_variables):
+           if not nbv.has_default_value:
+               liste_input_nbv.append((input_, k+j))
+
+        for i, input_ in enumerate(liste_input_nbv):
+            input_str += f"    workflow.input_index(" \
+                         f"variable_{i}):" \
+                         f" value_{i},\n"
+            default_value_ = f"\nvalue_{i} = '{values[input_[1]]}'"
+
+            default_value += default_value_
+
         input_str = add_import + workflow_script + "\n" + default_value + "\ninput_values = {\n" + input_str + "}"
         return input_str + "\n" + "\nworkflow_run = workflow.run(input_values=input_values)\n"
 
