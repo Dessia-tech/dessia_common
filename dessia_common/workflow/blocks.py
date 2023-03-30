@@ -786,9 +786,7 @@ class GetModelAttribute(Block):
 
     def __init__(self, attribute_type: AttributeType[Type], name: str = '', position: Tuple[float, float] = None):
         self.attribute_type = attribute_type
-        parameters = {}
-        for class_name in inspect.getmembers(self.attribute_type.class_, inspect.isfunction):
-            parameters.update(inspect.signature(class_name[1]).parameters)
+        parameters = inspect.signature(self.attribute_type.class_).parameters
         inputs = [TypedVariable(type_=self.attribute_type.class_, name='Model')]
         type_ = GetModelAttribute.get_attributes_type(self.attribute_type.name, parameters)
         if type_:
@@ -848,10 +846,7 @@ class SetModelAttribute(Block):
 
     def __init__(self, attribute_type: AttributeType[Type], name: str = '', position: Tuple[float, float] = None):
         self.attribute_type = attribute_type
-        self.real_class_name = self.attribute_type.class_
-        parameters = {}
-        for class_name in inspect.getmembers(self.attribute_type.class_, inspect.isfunction):
-            parameters.update(inspect.signature(class_name[1]).parameters)
+        parameters = inspect.signature(self.attribute_type.class_).parameters
         type_ = SetModelAttribute.get_attributes_type(self.attribute_type.name, parameters)
         if type_:
             inputs = [TypedVariable(type_= self.attribute_type.class_, name='Model'),
