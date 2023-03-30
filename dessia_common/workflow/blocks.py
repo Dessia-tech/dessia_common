@@ -855,7 +855,7 @@ class SetModelAttribute(Block):
             outputs = [TypedVariable(type_=self.attribute_type.class_,
                                      name=f'Model with changed attribute {self.attribute_type.name}')]
         else:
-            inputs = [TypedVariable(type_=self.real_class_name, name='Model'), 
+            inputs = [TypedVariable(type_=self.attribute_type.class_, name='Model'), 
                       Variable(name=f'Value to insert for attribute {self.attribute_type.name}')]
             outputs = [Variable(name=f'Model with changed attribute {self.attribute_type.name}')]
         Block.__init__(self, inputs, outputs, name=name, position=position)
