@@ -829,7 +829,7 @@ class GetModelAttribute(Block):
         return ToScriptElement(declaration=script, imports=imports)
     
     @classmethod
-    def get_attributes_type(cls, classe_name: str ,attribute_name: str, dict_parameters: dict):
+    def get_attributes_type(cls, attribute_name: str, dict_parameters: dict):
         """ Get type of attribute name of class."""
         type_parameter = dict_parameters.get(attribute_name)
         if not type_parameter:
