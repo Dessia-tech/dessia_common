@@ -788,8 +788,8 @@ class GetModelAttribute(Block):
         self.attribute_type = attribute_type
         real_class_name = self.attribute_type.class_
         dict_parameters = {}
-        for el in inspect.getmembers(self.attribute_type.class_, inspect.isfunction):
-            dict_parameters.update(inspect.signature(el[1]).parameters)
+        for class_name in inspect.getmembers(self.attribute_type.class_, inspect.isfunction):
+            dict_parameters.update(inspect.signature(class_name[1]).parameters)
         self.dict_parameters = dict_parameters
         inputs = [TypedVariable(type_=real_class_name, name='Model')]
         type_var = GetModelAttribute.get_attributes_type(self.attribute_type.class_, self.attribute_type.name, self.dict_parameters)
