@@ -44,13 +44,14 @@ class MethodType(Generic[T]):
 
 class ClassMethodType(MethodType[T]):
     """ Typing that denotes a classmethod of class T. """
+    
     def __init__(self, class_: T, name: str):
         MethodType.__init__(self, class_=class_, name=name)
 
 
 class AttributeType(Generic[T]):
     """ Typing that denotes an attribute of class T. """
-    
+
     def __init__(self, class_: T, name: str):
         self.class_ = class_
         self.name = name
