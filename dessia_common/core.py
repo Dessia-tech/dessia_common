@@ -618,16 +618,14 @@ class DessiaObject(SerializableObject):
         paragraph = Paragraph(text=text)
         header = Header(text="DessIA Technologies", align="center")
 
-        dict_items = self.__dict__.items()
-        list_of_lists = []
-        for key, value in dict_items:
-            list_of_lists.append([key, str(value)])
+        table_md = MarkdownWriter()
+        table_str = [table_md.object_titles()] + table_md.object_matrix(self)
 
         docxwriter = DocxWriter(filename="my_doc.docx", paragraphs=[paragraph], header=header)
 
         docxwriter.add_paragraphs()
         docxwriter.add_header_footer(is_header=True)
-        docxwriter.add_table(rows=list_of_lists)
+        docxwriter.add_table(rows=table_str)
 
         return docxwriter
 
