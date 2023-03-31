@@ -636,6 +636,9 @@ class DessiaObject(SerializableObject):
 
     def to_docx(self, filepath: str):
         """ Saves the document to a file. """
+        if not filepath.endswith('.docx'):
+            filepath += '.docx'
+            print(f'Changing name to {filepath}')
         self.to_docx_stream(filepath)
 
     def _export_formats(self) -> List[ExportFormat]:
