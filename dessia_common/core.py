@@ -606,7 +606,7 @@ class DessiaObject(SerializableObject):
         writer.save_to_stream(stream)
 
     def to_docx_markdown(self):
-        """"""
+        """ Generates a docx document from the object attributes, using a markdown-like syntax."""
         text = f"This is a markdown file https://www.markdownguide.org/cheat-sheet The good practice is to create a" \
                " string python template and move the template to another python module (like templates.py) to avoid " \
                "mix python code" \
