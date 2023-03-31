@@ -36,6 +36,7 @@ from dessia_common.displays import DisplayObject, DisplaySetting
 from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
 import dessia_common.utils.helpers as dch
 import dessia_common.files as dcf
+from dessia_common.document_generator import DocxWriter, Paragraph, Header
 
 
 def __getattr__(name):
@@ -604,6 +605,41 @@ class DessiaObject(SerializableObject):
         """ Export the object to an XLSX to a given stream. """
         writer = XLSXWriter(self)
         writer.save_to_stream(stream)
+
+    def to_docx_markdown(self):
+        """ Generates a docx document from the object attributes, using a markdown-like syntax."""
+        text = f"This is a markdown file https://www.markdownguide.org/cheat-sheet The good practice is to create a" \
+               " string python template and move the template to another python module (like templates.py) to avoid " \
+               "mix python code" \
+               " and markdown,as python syntax conflicts with markdown You can substitute values with object " \
+               "attributes like the " \
+               f"name of the object: {self.name}"
+
+        paragraph = Paragraph(text=text)
+        header = Header(text="DessIA Technologies", align="center")
+
+        table_md = MarkdownWriter()
+        table_str = [table_md.object_titles()] + table_md.object_matrix(self)
+
+        docxwriter = DocxWriter(filename="my_doc.docx", paragraphs=[paragraph], header=header)
+
+        docxwriter.add_paragraphs()
+        docxwriter.add_header_footer(is_header=True)
+        docxwriter.add_table(rows=table_str)
+
+        return docxwriter
+
+    def to_docx_stream(self, stream: dcf.BinaryFile):
+        """ Saves the document to a binary stream. """
+        document = self.to_docx_markdown()
+        document.save_to_stream(stream=stream)
+
+    def to_docx(self, filepath: str):
+        """ Saves the document to a file. """
+        if not filepath.endswith('.docx'):
+            filepath += '.docx'
+            print(f'Changing name to {filepath}')
+        self.to_docx_stream(filepath)
 
     def _export_formats(self) -> List[ExportFormat]:
         """ Return a list of objects describing how to call generic exports (.json, .xlsx). """
