@@ -5,6 +5,7 @@
 import inspect
 from zipfile import ZipFile
 from typing import List, Type, Any, Dict, Tuple, get_type_hints, TypeVar, Optional
+from types import  GenericAlias
 import itertools
 from dessia_common.core import DessiaFilter, FiltersList, type_from_annotation, DessiaObject
 from dessia_common.schemas.core import split_argspecs, parse_docstring, EMPTY_PARSED_ATTRIBUTE
@@ -827,12 +828,15 @@ class GetModelAttribute(Block):
         """ Get type of attribute name of class."""
         type_parameter = parameters.get(attribute_name)
         if not type_parameter:
-            type_ = None
-        elif type_parameter.annotation == inspect.Parameter.empty:
-            type_ = None 
+            return None
+        try:
+            type_parameter.annotation
+        except Exception:
+            return type_parameter
+        if type_parameter.annotation == inspect.Parameter.empty:
+            return None 
         else:
-            type_ = type_parameter.annotation
-        return type_
+            return type_parameter.annotation
 
 
 class SetModelAttribute(Block):
@@ -857,7 +861,7 @@ class SetModelAttribute(Block):
         else:
             inputs = [TypedVariable(type_=self.attribute_type.class_, name='Model'), 
                       Variable(name=f'Value to insert for attribute {self.attribute_type.name}')]
-            outputs = [Variable(name=f'Model with changed attribute {self.attribute_type.name}')]
+            outputs = [TypedVariable(type_=self.attribute_type.class_, name=f'Model with changed attribute {self.attribute_type.name}')]
         Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
@@ -882,16 +886,19 @@ class SetModelAttribute(Block):
         return ToScriptElement(declaration=script, imports=[self.full_classname])
     
     @classmethod
-    def get_attributes_type(cls, attribute_name: str, parameters: dict):
+    def get_attributes_type(cls, attribute_name: str, parameters: Dict[str,str]):
         """ Get type of attribute name of class."""
         type_parameter = parameters.get(attribute_name)
         if not type_parameter:
-            type_ = None
-        elif type_parameter.annotation == inspect.Parameter.empty:
-            type_ = None 
+            return None
+        try:
+            type_parameter.annotation
+        except Exception:
+            return type_parameter
+        if type_parameter.annotation == inspect.Parameter.empty:
+            return None 
         else:
-            type_ = type_parameter.annotation
-        return type_
+            return type_parameter.annotation
 
 
 class Sum(Block):
