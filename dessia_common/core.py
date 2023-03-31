@@ -2,40 +2,41 @@
 # -*- coding: utf-8 -*-
 """ Module to handle serialization for engineering objects. """
 
-import inspect
-import itertools
-import json
-import math
-import operator
-import random
 import time
-import traceback as tb
 import warnings
-from ast import literal_eval
-from copy import copy, deepcopy
-from functools import reduce
-from importlib import import_module
-from typing import List, Tuple, get_type_hints
+import operator
+import math
+import random
+import itertools
 
-import dessia_common.checks as dcc
+from functools import reduce
+from copy import deepcopy, copy
+import inspect
+import json
+
+from typing import List, Tuple, get_type_hints
+import traceback as tb
+
+from importlib import import_module
+from ast import literal_eval
+
 import dessia_common.errors
-import dessia_common.files as dcf
-import dessia_common.schemas.core as dcs
-import dessia_common.utils.helpers as dch
-from dessia_common import templates
-from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
-from dessia_common.displays import DisplayObject, DisplaySetting
-from dessia_common.document_generator import DocxWriter, Header, Paragraph
-from dessia_common.exports import ExportFormat, MarkdownWriter, XLSXWriter
-from dessia_common.serialization import (SerializableObject,
-                                         deserialize_argument, serialize)
-from dessia_common.typings import JsonSerializable
+from dessia_common.utils.diff import data_eq, diff, choose_hash
+from dessia_common.utils.types import is_sequence, is_bson_valid
 from dessia_common.utils.copy import deepcopy_value
-from dessia_common.utils.diff import choose_hash, data_eq, diff
-from dessia_common.utils.jsonschema import (JSONSCHEMA_HEADER, default_dict,
-                                            jsonschema_from_annotation,
-                                            set_default_value)
-from dessia_common.utils.types import is_bson_valid, is_sequence
+from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotation, JSONSCHEMA_HEADER,\
+    set_default_value
+import dessia_common.schemas.core as dcs
+from dessia_common.serialization import SerializableObject, deserialize_argument, serialize
+from dessia_common.exports import XLSXWriter, MarkdownWriter, ExportFormat
+from dessia_common.typings import JsonSerializable
+from dessia_common import templates
+import dessia_common.checks as dcc
+from dessia_common.displays import DisplayObject, DisplaySetting
+from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
+import dessia_common.utils.helpers as dch
+import dessia_common.files as dcf
+from dessia_common.document_generator import DocxWriter, Paragraph, Header
 
 
 def __getattr__(name):
