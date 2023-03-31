@@ -142,7 +142,7 @@ class DocxWriter:
         self.document = document
         return self
 
-    def add_header_footer_picture(self, image_path: str, is_header: bool = True, width: int = None, height: int = None) \
+    def add_header_footer_picture(self, image_path: str, is_header: bool = True, width: int = None, height: int = None)\
             -> 'DocxWriter':
         """ Add a picture to the header or footer of the document. """
         section = self.document.sections[-1]
