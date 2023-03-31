@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - files: add functions to init StringFile and BinaryFile from local path
 - document generator: add new module to write in docx file
 - MarkdownWriter: add some functions (table_of_contents, header)
+- graph: add some functions (get_shortest_path, calculate_centrality, find_connected_components, find_minimum_spanning_tree)
 
 
 ### Fixed
