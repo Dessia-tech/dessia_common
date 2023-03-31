@@ -28,7 +28,7 @@ class UnrealClassForTesting(DessiaObject):
         self.combine = self.int_+self.two
         return 
 
-        
+
 class TestGetModelAttribute(unittest.TestCase):          
     def setUp(self):
         pass
