@@ -5,7 +5,6 @@
 import inspect
 from zipfile import ZipFile
 from typing import List, Type, Any, Dict, Tuple, get_type_hints, TypeVar, Optional
-from types import  GenericAlias
 import itertools
 from dessia_common.core import DessiaFilter, FiltersList, type_from_annotation, DessiaObject
 from dessia_common.schemas.core import split_argspecs, parse_docstring, EMPTY_PARSED_ATTRIBUTE
@@ -831,12 +830,11 @@ class GetModelAttribute(Block):
             return None
         try:
             type_parameter.annotation
-        except Exception:
+        except AttributeError:
             return type_parameter
         if type_parameter.annotation == inspect.Parameter.empty:
             return None 
-        else:
-            return type_parameter.annotation
+        return type_parameter.annotation
 
 
 class SetModelAttribute(Block):
@@ -861,7 +859,8 @@ class SetModelAttribute(Block):
         else:
             inputs = [TypedVariable(type_=self.attribute_type.class_, name='Model'), 
                       Variable(name=f'Value to insert for attribute {self.attribute_type.name}')]
-            outputs = [TypedVariable(type_=self.attribute_type.class_, name=f'Model with changed attribute {self.attribute_type.name}')]
+            outputs = [TypedVariable(type_=self.attribute_type.class_, 
+                                     name=f'Model with changed attribute {self.attribute_type.name}')]
         Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
@@ -893,12 +892,11 @@ class SetModelAttribute(Block):
             return None
         try:
             type_parameter.annotation
-        except Exception:
+        except AttributeError:
             return type_parameter
         if type_parameter.annotation == inspect.Parameter.empty:
             return None 
-        else:
-            return type_parameter.annotation
+        return type_parameter.annotation
 
 
 class Sum(Block):

@@ -81,19 +81,6 @@ class TestGetModelAttribute(unittest.TestCase):
         for el in instanciate:
             self.assertTrue(el.equivalent(el.__deepcopy__()))
 
-    def test_time(self):
-        models_to_test = inspect.getmembers(tests, inspect.isclass)
-        for el in inspect.getmembers(core, inspect.isclass):
-            models_to_test.append(el)
-            total_time = 0
-        for el in models_to_test:
-            t0=time.time()
-            GetModelAttribute(AttributeType(el[1],'name'))
-            t1=time.time()
-            total_time += t1-t0
-        print(f"All models of tests and core take {total_time} seconds to instanciate")
-        pass
-
 
 class TestSetModelAttribute(unittest.TestCase):          
     def setUp(self):
