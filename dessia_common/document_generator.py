@@ -5,6 +5,8 @@ from typing import List
 
 import docx
 
+from dessia_common.files import BinaryFile
+
 
 class Header:
     """ Represents a header in a docx document. """
@@ -60,7 +62,7 @@ class Paragraph:
 class DocxWriter:
     """ write a docx file. """
 
-    def __init__(self, filename: str, paragraphs: List[Paragraph], headings: List[Heading], footer: Footer = None
+    def __init__(self, filename: str, paragraphs: List[Paragraph], headings: List[Heading] = None, footer: Footer = None
                  , header: Header = None):
         self.filename = filename
         self.headings = headings
@@ -113,12 +115,15 @@ class DocxWriter:
         if is_header:
             header = section.header
             paragraph = header.paragraphs[0] if header.paragraphs else header.add_paragraph()
-            paragraph.text = self.header.text
+            if self.header is not None:
+                paragraph.text = self.header.text
+                paragraph.alignment = getattr(docx.enum.text.WD_ALIGN_PARAGRAPH, self.header.align.upper())
         else:
             footer = section.footer
             paragraph = footer.paragraphs[0] if footer.paragraphs else footer.add_paragraph()
-            paragraph.text = self.footer.text
-        paragraph.alignment = getattr(docx.enum.text.WD_ALIGN_PARAGRAPH, self.footer.align.upper())
+            if self.footer is not None:
+                paragraph.text = self.footer.text
+                paragraph.alignment = getattr(docx.enum.text.WD_ALIGN_PARAGRAPH, self.footer.align.upper())
         return self
 
     def add_bullet_list(self, items: List[str]) -> 'DocxWriter':
@@ -137,7 +142,7 @@ class DocxWriter:
         self.document = document
         return self
 
-    def add_header_footer_picture(self, image_path: str, is_header: bool = True, width: int = None, height: int = None)\
+    def add_header_footer_picture(self, image_path: str, is_header: bool = True, width: int = None, height: int = None) \
             -> 'DocxWriter':
         """ Add a picture to the header or footer of the document. """
         section = self.document.sections[-1]
@@ -168,3 +173,7 @@ class DocxWriter:
     def save_file(self):
         """ Saves the document to a file. """
         self.document.save(self.filename)
+
+    def save_to_stream(self, stream: BinaryFile):
+        """ Saves the document to a binary stream. """
+        self.document.save(stream)

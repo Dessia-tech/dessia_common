@@ -2,40 +2,40 @@
 # -*- coding: utf-8 -*-
 """ Module to handle serialization for engineering objects. """
 
-import time
-import warnings
-import operator
-import math
-import random
-import itertools
-
-from functools import reduce
-from copy import deepcopy, copy
 import inspect
+import itertools
 import json
-
-from typing import List, Tuple, get_type_hints
+import math
+import operator
+import random
+import time
 import traceback as tb
-
-from importlib import import_module
+import warnings
 from ast import literal_eval
+from copy import copy, deepcopy
+from functools import reduce
+from importlib import import_module
+from typing import List, Tuple, get_type_hints
 
-import dessia_common.errors
-from dessia_common.utils.diff import data_eq, diff, choose_hash
-from dessia_common.utils.types import is_sequence, is_bson_valid
-from dessia_common.utils.copy import deepcopy_value
-from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotation, JSONSCHEMA_HEADER,\
-    set_default_value
-import dessia_common.schemas.core as dcs
-from dessia_common.serialization import SerializableObject, deserialize_argument, serialize
-from dessia_common.exports import XLSXWriter, MarkdownWriter, ExportFormat
-from dessia_common.typings import JsonSerializable
-from dessia_common import templates
 import dessia_common.checks as dcc
-from dessia_common.displays import DisplayObject, DisplaySetting
-from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
-import dessia_common.utils.helpers as dch
+import dessia_common.errors
 import dessia_common.files as dcf
+import dessia_common.schemas.core as dcs
+import dessia_common.utils.helpers as dch
+from dessia_common import templates
+from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
+from dessia_common.displays import DisplayObject, DisplaySetting
+from dessia_common.document_generator import DocxWriter, Header, Paragraph
+from dessia_common.exports import ExportFormat, MarkdownWriter, XLSXWriter
+from dessia_common.serialization import (SerializableObject,
+                                         deserialize_argument, serialize)
+from dessia_common.typings import JsonSerializable
+from dessia_common.utils.copy import deepcopy_value
+from dessia_common.utils.diff import choose_hash, data_eq, diff
+from dessia_common.utils.jsonschema import (JSONSCHEMA_HEADER, default_dict,
+                                            jsonschema_from_annotation,
+                                            set_default_value)
+from dessia_common.utils.types import is_bson_valid, is_sequence
 
 
 def __getattr__(name):
@@ -604,6 +604,40 @@ class DessiaObject(SerializableObject):
         """ Export the object to an XLSX to a given stream. """
         writer = XLSXWriter(self)
         writer.save_to_stream(stream)
+
+    def to_docx_markdown(self):
+        """"""
+        text = f"This is a markdown file https://www.markdownguide.org/cheat-sheet The good practice is to create a" \
+               " string python template and move the template to another python module (like templates.py) to avoid " \
+               "mix python code" \
+               " and markdown,as python syntax conflicts with markdown You can substitute values with object " \
+               "attributes like the " \
+               f"name of the object: {self.name}"
+
+        paragraph = Paragraph(text=text)
+        header = Header(text="DessIA Technologies", align="center")
+
+        dict_items = self.__dict__.items()
+        list_of_lists = []
+        for key, value in dict_items:
+            list_of_lists.append([key, str(value)])
+
+        docxwriter = DocxWriter(filename="my_doc.docx", paragraphs=[paragraph], header=header)
+
+        docxwriter.add_paragraphs()
+        docxwriter.add_header_footer(is_header=True)
+        docxwriter.add_table(rows=list_of_lists)
+
+        return docxwriter
+
+    def to_docx_stream(self, stream: dcf.BinaryFile):
+        """ Saves the document to a binary stream. """
+        document = self.to_docx_markdown()
+        document.save_to_stream(stream=stream)
+
+    def to_docx(self, filepath: str):
+        """ Saves the document to a file. """
+        self.to_docx_stream(filepath)
 
     def _export_formats(self) -> List[ExportFormat]:
         """ Return a list of objects describing how to call generic exports (.json, .xlsx). """
