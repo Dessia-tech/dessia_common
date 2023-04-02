@@ -126,19 +126,19 @@ class DocxWriter:
                 paragraph.alignment = getattr(docx.enum.text.WD_ALIGN_PARAGRAPH, self.footer.align.upper())
         return self
 
-    def add_bullet_list(self, items: List[str]) -> 'DocxWriter':
-        """ Add a bullet list to the document. """
-        document = self.document
-        for item in items:
-            document.add_paragraph(item, style='List Bullet')
-        self.document = document
-        return self
+    def add_list_items(self, items: List[str], style: str = 'List Bullet'):
+        """
+        Add a list (bullet or numbered) to the document.
 
-    def add_numbered_list(self, items: List[str]) -> 'DocxWriter':
-        """ Add a numbered list to the document. """
+        :param items: A list of strings to be added as list items
+        :type items: List[str]
+
+        :param style: The style of the list. Valid values are 'List Bullet' (default) or 'List Number'
+        :type style: str
+         """
         document = self.document
         for item in items:
-            document.add_paragraph(item, style='List Number')
+            document.add_paragraph(item, style=style)
         self.document = document
         return self
 
