@@ -99,7 +99,7 @@ class DocxWriter:
     def add_table(self, rows: List[List[str]]) -> 'DocxWriter':
         """ Add table to the document. """
         document = self.document
-        table = document.add_table(rows=1, cols=len(rows[0]))
+        table = document.add_table(rows=1, cols=len(rows[0]), style="TableGrid")
         for i, cell in enumerate(table.rows[0].cells):
             cell.text = rows[0][i]
         for row in rows[1:]:
