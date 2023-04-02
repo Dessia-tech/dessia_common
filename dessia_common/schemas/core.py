@@ -765,7 +765,7 @@ class HeterogeneousSequence(TypingProperty):
         In this case it MUST have exactly two arguments.
         """
         if self.additional_items and len(self.args) != 2:
-            msg = f"{self.check_prefix}is typed as an ellipsed 'Tuple' which requires at exactaly 2 arguments. " \
+            msg = f"{self.check_prefix}is typed as an ellipsed 'Tuple' which requires at exactly 2 arguments. " \
                   f"Expected 'Tuple[T, ...]', got '{self.annotation}'."
             return WrongNumberOfArguments(msg)
         return PassedCheck(f"{self.check_prefix}is not an ill-defined ellipsed tuple : '{self.annotation}'.")
