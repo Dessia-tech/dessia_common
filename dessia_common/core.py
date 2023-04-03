@@ -631,11 +631,7 @@ class DessiaObject(SerializableObject):
         """ Compute vector from object. """
         vectored_objects = []
         for feature in self.vector_features():
-            vectored_objects.append(getattr(self, feature.lower()))
-            if not hasattr(self, feature.lower()):
-                raise NotImplementedError(f"{feature} is not an attribute for {self.__class__.__name__} objects. " +
-                                          f"<to_vector> method must be customized in {self.__class__.__name__} to " +
-                                          "handle computed values that are not class or instance attributes.")
+            vectored_objects.append(get_in_object_from_path(self, feature.lower()))
         return vectored_objects
 
     @classmethod

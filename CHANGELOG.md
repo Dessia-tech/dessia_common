@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Schemas refactor : allow incomplete schemas
 - Schemas refactor : old jsonschema with magic Method Type serialized value
 - Schemas refactor : Sequence schema uses args_schemas instead of unique items_schemas
+- Dataset : allow to specify attributes of subojects for creating dataset matrix ('subobject/attr')
 
 
 ### Refactored
