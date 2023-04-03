@@ -168,7 +168,7 @@ class DocxWriter:
         return self
 
     def delete_header_footer(self):
-        """ remove the header and footer from all sections in a Word document. """
+        """ Remove the header and footer from all sections in a Word document. """
         for section in self.document.sections:
             section.different_first_page_header_footer = False
             section.header.is_linked_to_previous = True
