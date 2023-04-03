@@ -122,7 +122,7 @@ class DocxWriter:
         section = self.document.sections[-1]
         if is_header and self.header is not None:
             self.header.add_to_section(section=section, is_header=is_header)
-        elif not is_header and self.header is not None:
+        elif not is_header and self.footer is not None:
             self.footer.add_to_section(section=section, is_header=is_header)
         else:
             raise ValueError("Cannot add header/footer. Header/Footer object is not defined.")
