@@ -16,7 +16,7 @@ class HeaderFooter:
         self.align = align
 
     def add_to_section(self, section, is_header):
-        """ Add the header to the document. """
+        """ Add the header/footer to the document. """
         if is_header:
             header = section.header
         else:
@@ -36,7 +36,7 @@ class Header(HeaderFooter):
 
 
 class Footer(HeaderFooter):
-    """ Represents a footer in a docx document. """
+    """ Represents a footer in document. """
 
     def add_to_document(self, document: docx.Document):
         """ Add the footer to the document. """
@@ -45,7 +45,7 @@ class Footer(HeaderFooter):
 
 
 class Heading:
-    """ Represents a heading in a docx document. """
+    """ Represents a heading in document. """
 
     def __init__(self, text: str, level: int):
         self.text = text
