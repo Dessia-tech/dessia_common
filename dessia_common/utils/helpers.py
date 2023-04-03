@@ -15,9 +15,6 @@ from typing import TypeVar
 _PYTHON_CLASS_CACHE = {}
 
 
-T=TypeVar('T')
-
-
 def concatenate(values):
     """ Concatenate values of class class_ into a class_ containing all concatenated values. """
     types_set = set(type(value) for value in values)
