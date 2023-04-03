@@ -1049,18 +1049,18 @@ class AttributeTypeProperty(TypingProperty):
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
-        """ Deserialize Attribute annotation. Support Class and Instance methods. """
+        """ Deserialize Attribute annotation. Support Class and Instance attributes. """
         type_ = TypingProperty.type_from_serialized(serialized)
-        if type_ == "AttributType":
+        if type_ == "AttributeType":
             return AttributeType[TypingProperty._args_from_serialized(serialized)]
         return ClassAttributeType[TypingProperty._args_from_serialized(serialized)]
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write AttributeType as a Dict. """
         chunk = super().to_dict(title=title, editable=editable, description=description)
-        classattribute_ = self.origin is ClassAttributeType
+        is_class_attribute = self.origin is ClassAttributeType
         chunk.update({
-            'type': 'object', 'is_attribute': True, 'classattribute_': classattribute_,
+            'type': 'object', 'is_attribute': True, 'classattribute_': is_class_attribute,
             'properties': {
                 'class_': self.class_schema.to_dict(title=title, editable=editable, description=description),
                 'name': {
