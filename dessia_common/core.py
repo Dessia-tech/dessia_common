@@ -508,11 +508,23 @@ class DessiaObject(SerializableObject):
 
     @classmethod
     def _plot_data_settings(cls) -> List[DisplaySetting]:
-        """ Return a list of objects describing how to call object displays. """
+        """ Return a list of objects describing how to call plot data displays. """
         class_lines = dch.get_class_and_super_class_text(cls)
         method_names = []
         for i in range(len(class_lines)):
             match = re.search(r"(^    )@plotdata", class_lines[i])
+            if match:
+                method_name = re.search(r"(?<=^    def )(\w+)", class_lines[i+1]).group()
+                method_names.append(DisplaySetting(selector=method_name, type_=method_name, method=method_name, serialize_data=True))
+        return method_names
+    
+    @classmethod
+    def _markdown_settings(cls) -> List[DisplaySetting]:
+        """ Return a list of objects describing how to call markdown displays. """
+        class_lines = dch.get_class_and_super_class_text(cls)
+        method_names = []
+        for i in range(len(class_lines)):
+            match = re.search(r"(^    )@markdown", class_lines[i])
             if match:
                 method_name = re.search(r"(?<=^    def )(\w+)", class_lines[i+1]).group()
                 method_names.append(DisplaySetting(selector=method_name, type_=method_name, method=method_name))
