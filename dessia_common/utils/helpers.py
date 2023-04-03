@@ -10,7 +10,6 @@ That way, we can avoid cyclic imports.
 
 import sys
 from importlib import import_module
-from typing import TypeVar
 
 _PYTHON_CLASS_CACHE = {}
 
