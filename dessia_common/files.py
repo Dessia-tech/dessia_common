@@ -209,6 +209,7 @@ class DocxFile(BinaryFile):
 
 
 def generate_archive(zip_archive, value):
+    """ Write the contents of a file-like object to a ZipFile archive. """
     if isinstance(value, StringFile):
         with zip_archive.open(value.filename, 'w') as file:
             file.write(value.getvalue().encode('utf-8'))
