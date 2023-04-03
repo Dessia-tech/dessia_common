@@ -58,6 +58,10 @@ class Paragraph:
     def __init__(self, text: str):
         self.text = text
 
+    def add_to_document(self, document: docx.Document):
+        """ Add paragraph to the document. """
+        document.add_paragraph(self.text)
+
 
 class DocxWriter:
     """ write a docx file. """
