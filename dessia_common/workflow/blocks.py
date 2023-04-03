@@ -11,7 +11,7 @@ from dessia_common.schemas.core import split_argspecs, parse_docstring, EMPTY_PA
 from dessia_common.displays import DisplaySetting, DisplayObject
 from dessia_common.errors import UntypedArgumentError
 from dessia_common.typings import JsonSerializable, MethodType, ClassMethodType
-from dessia_common.files import StringFile, BinaryFile
+from dessia_common.files import StringFile, BinaryFile, generate_archive
 from dessia_common.utils.helpers import concatenate, full_classname
 from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
 from dessia_common.exports import ExportFormat
@@ -1005,14 +1005,7 @@ class Archive(Block):
         with ZipFile(archive, 'w') as zip_archive:
             for input_ in self.inputs[:-1]:  # Filename is last block input
                 value = values[input_]
-                if isinstance(value, StringFile):
-                    with zip_archive.open(value.filename, 'w') as file:
-                        file.write(value.getvalue().encode('utf-8'))
-                elif isinstance(value, BinaryFile):
-                    with zip_archive.open(value.filename, 'w') as file:
-                        file.write(value.getbuffer())
-                else:
-                    raise ValueError(f"Archive input is not a file-like object. Got '{value}' of type {type(value)}")
+                archive = generate_archive(zip_archive=zip_archive, value=value)
         return [archive]
 
     def _export_format(self, block_index: int) -> ExportFormat:

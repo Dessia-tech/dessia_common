@@ -624,15 +624,7 @@ class DessiaObject(SerializableObject):
         archive.filename = archive_name
         with ZipFile(archive, 'w', compression=zipfile.ZIP_DEFLATED) as zip_archive:
             for value in streams:
-                if isinstance(value, dcf.StringFile):
-                    with zip_archive.open(value.filename, 'w') as file:
-                        file.write(value.getvalue().encode('utf-8'))
-                elif isinstance(value, dcf.BinaryFile):
-                    with zip_archive.open(value.filename, 'w') as file:
-                        file.write(value.getbuffer())
-                else:
-                    raise ValueError(
-                        f"Archive input is not a file-like object. Got '{value}' of type {type(value)}")
+                archive = dcf.generate_archive(zip_archive=zip_archive, value=value)
         return [archive]
 
     def to_zip(self, filepath: str):
