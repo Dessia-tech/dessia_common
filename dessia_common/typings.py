@@ -29,7 +29,7 @@ class MethodType(Generic[T]):
         """ Helper to get real method from class_ and method name. """
         return getattr(self.class_, self.name)
 
-    def to_dict(self) -> 'Dict':
+    def to_dict(self):
         """ Write Method Type as a dictionary. """
         classname = full_classname(object_=self.class_, compute_for='class')
         method_type_classname = full_classname(object_=self.__class__, compute_for="class")
