@@ -8,36 +8,40 @@ import docx
 from dessia_common.files import BinaryFile
 
 
-class Header:
+class HeaderFooter:
+    """ Represents a header or footer in a docx document. """
+
+    def __init__(self, text: str, align: str = 'center'):
+        self.text = text
+        self.align = align
+
+    def add_to_section(self, section, is_header):
+        """ Add the header to the document. """
+        if is_header:
+            header = section.header
+        else:
+            footer = section.footer
+        paragraph = header.add_paragraph() if is_header else footer.add_paragraph()
+        paragraph.text = self.text
+        paragraph.alignment = getattr(docx.enum.text.WD_ALIGN_PARAGRAPH, self.align.upper())
+
+
+class Header(HeaderFooter):
     """ Represents a header in a docx document. """
 
-    def __init__(self, text: str, align: str = 'center'):
-        self.text = text
-        self.align = align
-
     def add_to_document(self, document: docx.Document):
         """ Add the header to the document. """
         section = document.sections[-1]
-        header = section.header
-        paragraph = header.add_paragraph()
-        paragraph.text = self.text
-        paragraph.alignment = getattr(docx.enum.text.WD_ALIGN_PARAGRAPH, self.align.upper())
+        super().add_to_section(section, is_header=True)
 
 
-class Footer:
+class Footer(HeaderFooter):
     """ Represents a footer in a docx document. """
 
-    def __init__(self, text: str, align: str = 'center'):
-        self.text = text
-        self.align = align
-
     def add_to_document(self, document: docx.Document):
-        """ Add the header to the document. """
+        """ Add the footer to the document. """
         section = document.sections[-1]
-        footer = section.footer
-        paragraph = footer.add_paragraph()
-        paragraph.text = self.text
-        paragraph.alignment = getattr(docx.enum.text.WD_ALIGN_PARAGRAPH, self.align.upper())
+        super().add_to_section(section, is_header=False)
 
 
 class Heading:
@@ -116,18 +120,13 @@ class DocxWriter:
     def add_header_footer(self, is_header: bool = True) -> 'DocxWriter':
         """ Add a header or footer to the document. """
         section = self.document.sections[-1]
-        if is_header:
-            header = section.header
-            paragraph = header.paragraphs[0] if header.paragraphs else header.add_paragraph()
-            if self.header is not None:
-                paragraph.text = self.header.text
-                paragraph.alignment = getattr(docx.enum.text.WD_ALIGN_PARAGRAPH, self.header.align.upper())
+        if is_header and self.header is not None:
+            self.header.add_to_section(section=section, is_header=is_header)
+        elif not is_header and self.header is not None:
+            self.footer.add_to_section(section=section, is_header=is_header)
         else:
-            footer = section.footer
-            paragraph = footer.paragraphs[0] if footer.paragraphs else footer.add_paragraph()
-            if self.footer is not None:
-                paragraph.text = self.footer.text
-                paragraph.alignment = getattr(docx.enum.text.WD_ALIGN_PARAGRAPH, self.footer.align.upper())
+            raise ValueError("Cannot add header/footer. Header/Footer object is not defined.")
+
         return self
 
     def add_list_items(self, items: List[str], style: str = 'List Bullet'):
