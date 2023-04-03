@@ -20,7 +20,6 @@ import traceback as tb
 
 from importlib import import_module
 from ast import literal_eval
-from zipfile import ZipFile
 
 import dessia_common.errors
 from dessia_common.utils.diff import data_eq, diff, choose_hash
@@ -622,7 +621,7 @@ class DessiaObject(SerializableObject):
         streams = self.zip_settings()
         archive_name = 'export_zip'
         archive.filename = archive_name
-        with ZipFile(archive, 'w', compression=zipfile.ZIP_DEFLATED) as zip_archive:
+        with zipfile.ZipFile(archive, 'w', compression=zipfile.ZIP_DEFLATED) as zip_archive:
             for value in streams:
                 archive = dcf.generate_archive(zip_archive=zip_archive, value=value)
         return [archive]
