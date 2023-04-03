@@ -10,6 +10,7 @@ That way, we can avoid cyclic imports.
 
 import sys
 from importlib import import_module
+import inspect
 
 _PYTHON_CLASS_CACHE = {}
 
@@ -72,3 +73,16 @@ def get_python_class_from_class_name(full_class_name: str):
     # Storing in cache
     _PYTHON_CLASS_CACHE[full_class_name] = class_
     return class_
+
+
+def plotdata(function):
+    """ Decorator to plot data. """
+    return function
+
+def get_class_and_super_class_text(class_name) -> str:
+        text_informations =[]
+        for c in inspect.getmro(class_name):
+            if c.__name__!='object':
+                source_lines = inspect.getsourcelines(c)
+                text_informations.extend(source_lines[0])
+        return text_informations

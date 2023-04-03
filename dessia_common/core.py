@@ -8,6 +8,7 @@ import operator
 import math
 import random
 import itertools
+import re
 
 from functools import reduce
 from copy import deepcopy, copy
@@ -491,12 +492,31 @@ class DessiaObject(SerializableObject):
             msg = f"Class '{self.__class__.__name__}' does not implement a plot_data method to define what to plot"
             raise NotImplementedError(msg)
         return axs
-
+    
+    @classmethod
+    def display_settings(cls) -> List[DisplaySetting]:
+        """ Return a list of objects describing how to call object displays. """
+        list_display_settings = cls._display_settings()
+        list_display_settings.extend(cls._plot_data_settings())
+        return list_display_settings
+    
     @staticmethod
-    def display_settings() -> List[DisplaySetting]:
+    def _display_settings() -> List[DisplaySetting]:
         """ Return a list of objects describing how to call object displays. """
         return [DisplaySetting(selector="markdown", type_="markdown", method="to_markdown", load_by_default=True),
                 DisplaySetting(selector="plot_data", type_="plot_data", method="plot_data", serialize_data=True)]
+
+    @classmethod
+    def _plot_data_settings(cls) -> List[DisplaySetting]:
+        """ Return a list of objects describing how to call object displays. """
+        class_lines = dch.get_class_and_super_class_text(cls)
+        method_names = []
+        for i in range(len(class_lines)):
+            match = re.search(r"(^    )@plotdata", class_lines[i])
+            if match:
+                method_name = re.search(r"(?<=^    def )(\w+)", class_lines[i+1]).group()
+                method_names.append(DisplaySetting(selector=method_name, type_=method_name, method=method_name))
+        return method_names
 
     def _display_from_selector(self, selector: str) -> DisplayObject:
         """ Generate the display from the selector. """
