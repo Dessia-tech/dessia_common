@@ -139,7 +139,7 @@ class DocxWriter:
 
         :param style: The style of the list. Valid values are 'List Bullet' (default) or 'List Number'
         :type style: str
-         """
+        """
         document = self.document
         for item in items:
             document.add_paragraph(item, style=style)
