@@ -64,7 +64,7 @@ class TestGetModelAttribute(unittest.TestCase):
                 self.assertTrue(el[0].outputs[0].type_ == el[1].type_)
         pass
 
-    def test_is_equal(self):
+    def test_getmethod_equivalent(self):
         instanciate = [GetModelAttribute(AttributeType(UnrealClassForTesting,'int_')),
                         GetModelAttribute(AttributeType(UnrealClassForTesting,'float_')),
                         GetModelAttribute(AttributeType(UnrealClassForTesting,'str_')),
@@ -127,7 +127,7 @@ class TestSetModelAttribute(unittest.TestCase):
                 self.assertTrue(el[0].inputs[1].type_ == el[2].type_)
         pass
 
-    def test_is_equal(self):
+    def test_setmethod_equivalent(self):
         instanciate = [SetModelAttribute(AttributeType(UnrealClassForTesting,'int_')),
                         SetModelAttribute(AttributeType(UnrealClassForTesting,'float_')),
                         SetModelAttribute(AttributeType(UnrealClassForTesting,'str_')),
