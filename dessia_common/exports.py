@@ -261,6 +261,7 @@ class MarkdownWriter:
 
     @staticmethod
     def object_titles():
+        """ Return a list of strings representing the titles for the object matrix. """
         return ['Attribute', 'Type', 'Value']  # , 'Subvalues']
 
     @staticmethod
@@ -306,6 +307,7 @@ class MarkdownWriter:
         return string[:self.print_limit] + ('...' if len(string) > self.print_limit else '')
 
     def object_matrix(self, object_):
+        """ Return a matrix representing the object passed as argument. """
         matrix = []
         for attr, value in object_.__dict__.items():
             matrix.append([attr,
