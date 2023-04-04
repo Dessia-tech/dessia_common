@@ -1063,7 +1063,14 @@ class Archive(Block):
         with ZipFile(archive, 'w') as zip_archive:
             for input_ in self.inputs[:-1]:  # Filename is last block input
                 value = values[input_]
-                archive = generate_archive(zip_archive=zip_archive, value=value)
+                if isinstance(value, StringFile):
+                    with zip_archive.open(value.filename, 'w') as file:
+                        file.write(value.getvalue().encode('utf-8'))
+                elif isinstance(value, BinaryFile):
+                    with zip_archive.open(value.filename, 'w') as file:
+                        file.write(value.getbuffer())
+                else:
+                    raise ValueError(f"Archive input is not a file-like object. Got '{value}' of type {type(value)}")
         return [archive]
 
     def _export_format(self, block_index: int) -> ExportFormat:
@@ -1079,12 +1086,12 @@ class Archive(Block):
 
 
 def get_attribute_type(attribute_name: str, parameters):
-        """ Get type of attribute name of class."""
-        parameter = parameters.get(attribute_name)
-        if not parameter:
-            return None
-        if not hasattr(parameter, "annotation"):
-            return parameter
-        if parameter.annotation == inspect.Parameter.empty:
-            return None 
-        return parameter.annotation
+    """ Get type of attribute name of class."""
+    parameter = parameters.get(attribute_name)
+    if not parameter:
+        return None
+    if not hasattr(parameter, "annotation"):
+        return parameter
+    if parameter.annotation == inspect.Parameter.empty:
+        return None 
+    return parameter.annotation
