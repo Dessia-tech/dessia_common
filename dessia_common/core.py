@@ -508,18 +508,16 @@ class DessiaObject(SerializableObject):
         class_functions = inspect.getmembers(cls, inspect.isfunction)
         method_names = []
         for function_name, function in class_functions:
-            try:
-                function.__dict__['decorators']
+            if 'decorators' in function.__dict__.keys():
                 selector = function.__dict__['selector']
                 if selector is None:
                     selector = function_name
                 serialize_data= function.__dict__['serialize_data']
                 load_by_default = function.__dict__['load_by_default']
-                method_names.append(DisplaySetting(selector=selector, type_=function_name, 
-                                                   method=function_name, serialize_data=serialize_data, 
-                                                   load_by_default=load_by_default))
-            except KeyError:
-                continue
+            method_names.append(DisplaySetting(selector=selector, type_=function_name, 
+                                                method=function_name, serialize_data=serialize_data, 
+                                                load_by_default=load_by_default))
+
         return method_names
 
     def _display_from_selector(self, selector: str) -> DisplayObject:
