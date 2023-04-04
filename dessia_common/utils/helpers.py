@@ -96,6 +96,7 @@ def markdown(selector: str = None, serialize_data: bool = False, load_by_default
         return functions
     return decorator
 
+
 def get_class_and_super_class_text(class_name) -> str:
         text_informations =[]
         for class_ in inspect.getmro(class_name):
