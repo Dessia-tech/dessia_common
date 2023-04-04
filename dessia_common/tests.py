@@ -217,7 +217,7 @@ class Car(DessiaObject):
         return cars
     
     @plotdata()
-    def plot_data1(self, reference_path: str = "#", **kwargs):
+    def plot_data1(self):
         """
         Base plot_data method. Overwrite this to display 2D or graphs on platform.
 
@@ -227,7 +227,7 @@ class Car(DessiaObject):
         return []
     
     @markdown(selector='markdown')
-    def plot_data2(self, reference_path: str = "#", **kwargs):
+    def plot_data2(self):
         """
         Base plot_data method. Overwrite this to display 2D or graphs on platform.
 

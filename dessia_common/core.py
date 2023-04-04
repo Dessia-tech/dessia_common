@@ -515,7 +515,7 @@ class DessiaObject(SerializableObject):
                     selector = function_name
                 serialize_data= function.__dict__['serialize_data']
                 load_by_default = function.__dict__['load_by_default']
-                method_names.append(DisplaySetting(selector=function_name, type_=function_name, 
+                method_names.append(DisplaySetting(selector=selector, type_=function_name, 
                                                    method=function_name, serialize_data=serialize_data, 
                                                    load_by_default=load_by_default))
             except KeyError:
