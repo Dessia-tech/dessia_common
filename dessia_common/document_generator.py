@@ -8,8 +8,13 @@ import docx
 from dessia_common.files import BinaryFile
 
 
-class HeaderFooter:
-    """ Represents a header or footer in a docx document. """
+class LayoutElement:
+    """
+    Represents a header or footer in document.
+
+    This class is used to create headers and footers for a docx document. Subclasses
+    `Header` and `Footer` are available for convenience.
+    """
 
     def __init__(self, text: str, align: str = 'center'):
         self.text = text
@@ -26,7 +31,7 @@ class HeaderFooter:
         paragraph.alignment = getattr(docx.enum.text.WD_ALIGN_PARAGRAPH, self.align.upper())
 
 
-class Header(HeaderFooter):
+class Header(LayoutElement):
     """ Represents a header in a docx document. """
 
     def add_to_document(self, document: docx.Document):
@@ -35,7 +40,7 @@ class Header(HeaderFooter):
         super().add_to_section(section, is_header=True)
 
 
-class Footer(HeaderFooter):
+class Footer(LayoutElement):
     """ Represents a footer in document. """
 
     def add_to_document(self, document: docx.Document):
