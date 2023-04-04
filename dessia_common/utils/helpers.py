@@ -75,15 +75,26 @@ def get_python_class_from_class_name(full_class_name: str):
     return class_
 
 
-def plotdata(function):
-    """ Decorator to plot data. """
-    return function
+def plotdata(selector: str = None, serialize_data: bool = True, load_by_default: bool = False):
+    def decorator(functions):   
+        """ Decorator to plot data. """
+        functions.__dict__['decorators'] = 'plotdata'
+        functions.__dict__['selector'] = selector
+        functions.__dict__['serialize_data'] = serialize_data
+        functions.__dict__['load_by_default'] = load_by_default
+        return functions
+    return decorator
 
 
-def markdown(function):
-    """ Decorator to markdown. """
-    return function
-
+def markdown(selector: str = None, serialize_data: bool = False, load_by_default: bool = False):
+    def decorator(functions):   
+        """ Decorator to markdown. """
+        functions.__dict__['decorators'] = 'markdown'
+        functions.__dict__['selector'] = selector
+        functions.__dict__['serialize_data'] = serialize_data
+        functions.__dict__['load_by_default'] = load_by_default
+        return functions
+    return decorator
 
 def get_class_and_super_class_text(class_name) -> str:
         text_informations =[]

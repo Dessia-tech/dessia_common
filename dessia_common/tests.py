@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from dessia_common.core import DessiaObject
 import dessia_common.measures as dcm
 import dessia_common.files as dcf
-from dessia_common.utils.helpers import plotdata
+from dessia_common.utils.helpers import plotdata, markdown
 
 
 class Submodel(DessiaObject):
@@ -216,8 +216,18 @@ class Car(DessiaObject):
                 cars.append(cls(*attr_list))
         return cars
     
-    @plotdata
-    def plot_data(self, reference_path: str = "#", **kwargs):
+    @plotdata()
+    def plot_data1(self, reference_path: str = "#", **kwargs):
+        """
+        Base plot_data method. Overwrite this to display 2D or graphs on platform.
+
+        Should return a list of plot_data's objects.
+        """
+        print("it's me")
+        return []
+    
+    @markdown(selector='markdown')
+    def plot_data2(self, reference_path: str = "#", **kwargs):
         """
         Base plot_data method. Overwrite this to display 2D or graphs on platform.
 
