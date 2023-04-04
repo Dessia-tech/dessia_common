@@ -681,8 +681,8 @@ class DessiaObject(SerializableObject):
         """ Return a list of objects describing how to call generic exports (.json, .xlsx). """
         formats = [ExportFormat(selector="json", extension="json", method_name="save_to_stream", text=True),
                    ExportFormat(selector="xlsx", extension="xlsx", method_name="to_xlsx_stream", text=False),
+                   ExportFormat(selector="zip", extension="zip", method_name="to_zip_stream", text=False),
                    ExportFormat(selector="docx", extension="docx", method_name="to_docx_stream", text=False)]
-                   ExportFormat(selector="zip", extension="zip", method_name="to_zip_stream", text=False)]
         return formats
 
     def save_export_to_file(self, selector: str, filepath: str):
