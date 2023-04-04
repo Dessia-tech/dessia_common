@@ -1063,14 +1063,7 @@ class Archive(Block):
         with ZipFile(archive, 'w') as zip_archive:
             for input_ in self.inputs[:-1]:  # Filename is last block input
                 value = values[input_]
-                if isinstance(value, StringFile):
-                    with zip_archive.open(value.filename, 'w') as file:
-                        file.write(value.getvalue().encode('utf-8'))
-                elif isinstance(value, BinaryFile):
-                    with zip_archive.open(value.filename, 'w') as file:
-                        file.write(value.getbuffer())
-                else:
-                    raise ValueError(f"Archive input is not a file-like object. Got '{value}' of type {type(value)}")
+                archive = generate_archive(zip_archive=zip_archive, value=value)
         return [archive]
 
     def _export_format(self, block_index: int) -> ExportFormat:

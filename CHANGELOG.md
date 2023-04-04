@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Blocks : add the possibility to have TypedValue in SetModelAttribute
 - files: add functions to init StringFile and BinaryFile from local path
 - document generator: add new module to write in docx file
+- Export: export all 3d formats in zip file
 - MarkdownWriter: add some functions (table_of_contents, header)
 
 
