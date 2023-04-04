@@ -43,14 +43,14 @@ class TestGetModelAttribute(unittest.TestCase):
         (None, 'combine'),
         (None, 'kwargs')])
     def test_outputs(self, type_, name):
-        GMA = GetModelAttribute(AttributeType(DummyClassForTesting,name))
+        block = GetModelAttribute(AttributeType(DummyClassForTesting,name))
         if type_:
-            TV = TypedVariable(type_=type_, name='Model attribute')
-            self.assertTrue(GMA.outputs[0].name == TV.name)
-            self.assertTrue(GMA.outputs[0].type_ == TV.type_)
+            typed_varible = TypedVariable(type_=type_, name='Model attribute')
+            self.assertTrue(block.outputs[0].name == typed_varible.name)
+            self.assertTrue(block.outputs[0].type_ == typed_varible.type_)
         else:
-            V = Variable(name='Model attribute')
-            self.assertTrue(GMA.outputs[0]._data_eq(V))
+            variable = Variable(name='Model attribute')
+            self.assertTrue(block.outputs[0]._data_eq(variable))
 
 
     @parameterized.expand([
@@ -68,8 +68,8 @@ class TestGetModelAttribute(unittest.TestCase):
         'tuple_',
         'list_of_tuple'])
     def test_getmethod_equivalent(self, name):
-        GMA = GetModelAttribute(AttributeType(DummyClassForTesting,name))
-        self.assertTrue(GMA.equivalent(GMA.__deepcopy__()))
+        block = GetModelAttribute(AttributeType(DummyClassForTesting,name))
+        self.assertTrue(block.equivalent(block.__deepcopy__()))
 
 
 class TestSetModelAttribute(unittest.TestCase):          
@@ -89,17 +89,17 @@ class TestSetModelAttribute(unittest.TestCase):
         (None, 'combine'),
         (None, 'kwargs')])
     def test_outputs(self, type_, name):
-        SMA = SetModelAttribute(AttributeType(DummyClassForTesting, name))
-        TV_output = TypedVariable(type_=DummyClassForTesting, name='Model with changed attribute '+name)
-        self.assertTrue(SMA.outputs[0].name == TV_output.name)
-        self.assertTrue(SMA.outputs[0].type_ == TV_output.type_)
+        block = SetModelAttribute(AttributeType(DummyClassForTesting, name))
+        typed_varible_output = TypedVariable(type_=DummyClassForTesting, name='Model with changed attribute '+name)
+        self.assertTrue(block.outputs[0].name == typed_varible_output.name)
+        self.assertTrue(block.outputs[0].type_ == typed_varible_output.type_)
         if type_:
-            TV_input = TypedVariable(type_=type_, name='Value to insert for attribute '+name)
-            self.assertTrue(SMA.inputs[1].name == TV_input.name)
-            self.assertTrue(SMA.inputs[1].type_ == TV_input.type_)
+            typed_varible_input = TypedVariable(type_=type_, name='Value to insert for attribute '+name)
+            self.assertTrue(block.inputs[1].name == typed_varible_input.name)
+            self.assertTrue(block.inputs[1].type_ == typed_varible_input.type_)
         else:
-            V_input = Variable(name='Value to insert for attribute '+name)
-            self.assertTrue(SMA.inputs[1]._data_eq(V_input))
+            variable_input = Variable(name='Value to insert for attribute '+name)
+            self.assertTrue(block.inputs[1]._data_eq(variable_input))
         pass
 
     @parameterized.expand([
@@ -117,8 +117,8 @@ class TestSetModelAttribute(unittest.TestCase):
         'tuple_',
         'list_of_tuple'])
     def test_setmethod_equivalent(self, name):
-        SMA = SetModelAttribute(AttributeType(DummyClassForTesting,name))
-        self.assertTrue(SMA.equivalent(SMA.__deepcopy__()))
+        block = SetModelAttribute(AttributeType(DummyClassForTesting,name))
+        self.assertTrue(block.equivalent(block.__deepcopy__()))
 
 if __name__ == '__main__':
     unittest.main()
