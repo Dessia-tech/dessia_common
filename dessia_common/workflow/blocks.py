@@ -788,7 +788,7 @@ class GetModelAttribute(Block):
         self.attribute_type = attribute_type
         parameters = inspect.signature(self.attribute_type.class_).parameters
         inputs = [TypedVariable(type_=self.attribute_type.class_, name='Model')]
-        type_ = GetModelAttribute.get_attributes_type(self.attribute_type.name, parameters)
+        type_ = get_attribute_type(self.attribute_type.name, parameters)
         if type_:
             outputs = [TypedVariable(type_=type_, name='Model attribute')]  
         else:
@@ -821,20 +821,6 @@ class GetModelAttribute(Block):
                    full_classname(object_=self.attribute_type.class_, compute_for='class'),
                    self.full_classname]
         return ToScriptElement(declaration=script, imports=imports)
-    
-    @classmethod
-    def get_attributes_type(cls, attribute_name: str, parameters: dict):
-        """ Get type of attribute name of class."""
-        type_parameter = parameters.get(attribute_name)
-        if not type_parameter:
-            return None
-        try:
-            type_parameter.annotation
-        except AttributeError:
-            return type_parameter
-        if type_parameter.annotation == inspect.Parameter.empty:
-            return None 
-        return type_parameter.annotation
 
 
 class SetModelAttribute(Block):
@@ -849,18 +835,15 @@ class SetModelAttribute(Block):
     def __init__(self, attribute_type: AttributeType[Type], name: str = '', position: Tuple[float, float] = None):
         self.attribute_type = attribute_type
         parameters = inspect.signature(self.attribute_type.class_).parameters
-        type_ = SetModelAttribute.get_attributes_type(self.attribute_type.name, parameters)
+        type_ = get_attribute_type(self.attribute_type.name, parameters)
+        inputs = [TypedVariable(type_= self.attribute_type.class_, name='Model')]
         if type_:
-            inputs = [TypedVariable(type_= self.attribute_type.class_, name='Model'),
-                      TypedVariable(type_=type_,
-                                    name=f'Value to insert for attribute {self.attribute_type.name}')]
-            outputs = [TypedVariable(type_=self.attribute_type.class_,
-                                     name=f'Model with changed attribute {self.attribute_type.name}')]
+            inputs.append(TypedVariable(type_=type_, 
+                                        name=f'Value to insert for attribute {self.attribute_type.name}'))
         else:
-            inputs = [TypedVariable(type_=self.attribute_type.class_, name='Model'), 
-                      Variable(name=f'Value to insert for attribute {self.attribute_type.name}')]
-            outputs = [TypedVariable(type_=self.attribute_type.class_, 
-                                     name=f'Model with changed attribute {self.attribute_type.name}')]
+            inputs.append(Variable(name=f'Value to insert for attribute {self.attribute_type.name}'))
+        outputs = [TypedVariable(type_=self.attribute_type.class_, 
+                                    name=f'Model with changed attribute {self.attribute_type.name}')]
         Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
@@ -883,20 +866,6 @@ class SetModelAttribute(Block):
                  f"{self.attribute_type.class_.__name__}, name='{self.attribute_type.name}')" \
                  f", {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
-    
-    @classmethod
-    def get_attributes_type(cls, attribute_name: str, parameters: Dict[str,str]):
-        """ Get type of attribute name of class."""
-        type_parameter = parameters.get(attribute_name)
-        if not type_parameter:
-            return None
-        try:
-            type_parameter.annotation
-        except AttributeError:
-            return type_parameter
-        if type_parameter.annotation == inspect.Parameter.empty:
-            return None 
-        return type_parameter.annotation
 
 
 class Sum(Block):
@@ -1114,3 +1083,15 @@ class Archive(Block):
         """ Write block config into a chunk of script. """
         script = f"Archive(number_exports={self.number_exports}, filename='{self.filename}', {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
+
+
+def get_attribute_type(attribute_name: str, parameters):
+        """ Get type of attribute name of class."""
+        parameter = parameters.get(attribute_name)
+        if not parameter:
+            return None
+        if not hasattr(parameter, "annotation"):
+            return parameter
+        if parameter.annotation == inspect.Parameter.empty:
+            return None 
+        return parameter.annotation
