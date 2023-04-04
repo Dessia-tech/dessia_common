@@ -8,7 +8,6 @@ import operator
 import math
 import random
 import itertools
-import re
 
 from functools import reduce
 from copy import deepcopy, copy
