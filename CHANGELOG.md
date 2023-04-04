@@ -40,6 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Check Platform is now verbose and split into several functions
 - Workflow : to_dict method do not use pointers anymore
 - Workflow : Remove some attributes from serialization
+- document generator : Refactor document_generator module
 
 
 ### Removed
