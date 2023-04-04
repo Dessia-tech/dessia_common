@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """ Write document file. """
+import re
 from typing import List
 
 import docx
@@ -75,14 +76,19 @@ class Paragraph:
 class DocxWriter:
     """ write a docx file. """
 
-    def __init__(self, filename: str, paragraphs: List[Paragraph], headings: List[Heading] = None, footer: Footer = None
-                 , header: Header = None):
+    def __init__(self, paragraphs: List[Paragraph], filename: str = None,  headings: List[Heading] = None,
+                 footer: Footer = None, header: Header = None):
+        if filename is None:
+            filename = "document.docx"
         self.filename = filename
         self.headings = headings
         self.footer = footer
         self.header = header
         self.paragraphs = paragraphs
         self.document = docx.Document()
+
+        self.add_headings()
+        self.add_paragraphs()
 
     def add_headings(self) -> 'DocxWriter':
         """ Add a list of headings to the document. """
@@ -177,6 +183,41 @@ class DocxWriter:
             section.different_first_page_header_footer = False
             section.header.is_linked_to_previous = True
             section.footer.is_linked_to_previous = True
+
+    @classmethod
+    def from_markdown(cls, markdown: str):
+        """ Create a DocxWriter instance from a Markdown string. """
+        paragraphs = []
+        headings = []
+        current_paragraph = ''
+        table_rows = []
+
+        table_pattern = re.compile(r'^\|.*\|$')
+        horizontal_line_pattern = re.compile(r'^\s*\|?\s*:?-+:?\s*\|?\s*$')
+
+        for line in markdown.split('\n'):
+            if line.startswith('#'):
+                if current_paragraph:
+                    paragraphs.append(Paragraph(current_paragraph))
+                    current_paragraph = ''
+                heading_level = line.count('#')
+                heading_text = line.strip('#').strip()
+                headings.append(Heading(heading_text, heading_level))
+            elif table_pattern.match(line):
+                if not horizontal_line_pattern.match(line):
+                    row = line.strip('|').split('|')
+                    if row != [' ------ '] * len(row):
+                        table_rows.append(row)
+            else:
+                current_paragraph += line + '\n'
+
+        if table_rows:
+            docx_writer = cls(paragraphs=paragraphs, headings=headings)
+            docx_writer.add_table(table_rows)
+        else:
+            docx_writer = cls(paragraphs=paragraphs, headings=headings)
+
+        return docx_writer
 
     def save_file(self):
         """ Saves the document to a file. """

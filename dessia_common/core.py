@@ -609,25 +609,7 @@ class DessiaObject(SerializableObject):
 
     def to_docx_markdown(self):
         """ Generates a docx document from the object attributes, using a markdown-like syntax."""
-        text = f"This is a markdown file https://www.markdownguide.org/cheat-sheet The good practice is to create a" \
-               " string python template and move the template to another python module (like templates.py) to avoid " \
-               "mix python code" \
-               " and markdown,as python syntax conflicts with markdown You can substitute values with object " \
-               "attributes like the " \
-               f"name of the object: {self.name}"
-
-        paragraph = Paragraph(text=text)
-        header = Header(text="DessIA Technologies", align="center")
-
-        table_md = MarkdownWriter()
-        table_str = [table_md.object_titles()] + table_md.object_matrix(self)
-
-        docxwriter = DocxWriter(filename="my_doc.docx", paragraphs=[paragraph], header=header)
-
-        docxwriter.add_paragraphs()
-        docxwriter.add_header_footer(is_header=True)
-        docxwriter.add_table(rows=table_str)
-
+        docxwriter = DocxWriter.from_markdown(markdown=self.to_markdown())
         return docxwriter
 
     def to_docx_stream(self, stream: dcf.BinaryFile):
