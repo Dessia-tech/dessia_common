@@ -98,9 +98,9 @@ def markdown(selector: str = None, serialize_data: bool = False, load_by_default
 
 
 def get_class_and_super_class_text(class_name) -> str:
-        text_informations =[]
-        for class_ in inspect.getmro(class_name):
-            if class_.__name__!='object':
-                source_lines = inspect.getsourcelines(class_)
-                text_informations.extend(source_lines[0])
-        return text_informations
+    text_informations =[]
+    for class_ in inspect.getmro(class_name):
+        if class_.__name__!='object':
+            source_lines = inspect.getsourcelines(class_)
+            text_informations.extend(source_lines[0])
+    return text_informations
