@@ -9,7 +9,6 @@ import matplotlib.pyplot as plt
 from dessia_common.core import DessiaObject
 import dessia_common.measures as dcm
 import dessia_common.files as dcf
-from dessia_common.utils.helpers import plotdata, markdown
 
 
 class Submodel(DessiaObject):
