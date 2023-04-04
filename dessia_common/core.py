@@ -495,8 +495,10 @@ class DessiaObject(SerializableObject):
     @classmethod
     def display_settings(cls) -> List[DisplaySetting]:
         """ Return a list of objects describing how to call object displays. """
-        list_display_settings = [DisplaySetting(selector="markdown", type_="markdown", method="to_markdown", load_by_default=True),
-                                DisplaySetting(selector="plot_data", type_="plot_data", method="plot_data", serialize_data=True)]
+        list_display_settings = [DisplaySetting(selector="markdown", type_="markdown", 
+                                                method="to_markdown", load_by_default=True),
+                                DisplaySetting(selector="plot_data", type_="plot_data", 
+                                               method="plot_data", serialize_data=True)]
         list_display_settings.extend(cls._decorators_settings())
         return list_display_settings
     
