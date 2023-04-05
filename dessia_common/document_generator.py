@@ -21,13 +21,15 @@ class LayoutElement:
         self.text = text
         self.align = align
 
-    def add_to_section(self, section, is_header):
-        """ Add the header/footer to the document. """
-        if is_header:
-            header = section.header
-        else:
-            footer = section.footer
-        paragraph = header.add_paragraph() if is_header else footer.add_paragraph()
+    def add_to_section(self, section, type_: str):
+        """
+        Add the header or footer to the specified section.
+
+        :param section: The `docx.section.Section` object to add the header/footer to.
+        :param type_: The type of element to add, either "header" or "footer".
+        """
+        element = getattr(section, type_)
+        paragraph = element.add_paragraph()
         paragraph.text = self.text
         paragraph.alignment = getattr(docx.enum.text.WD_ALIGN_PARAGRAPH, self.align.upper())
 
@@ -38,7 +40,7 @@ class Header(LayoutElement):
     def add_to_document(self, document: docx.Document):
         """ Add the header to the document. """
         section = document.sections[-1]
-        super().add_to_section(section, is_header=True)
+        super().add_to_section(section, type_='header')
 
 
 class Footer(LayoutElement):
@@ -47,7 +49,7 @@ class Footer(LayoutElement):
     def add_to_document(self, document: docx.Document):
         """ Add the footer to the document. """
         section = document.sections[-1]
-        super().add_to_section(section, is_header=False)
+        super().add_to_section(section, type_='footer')
 
 
 class Heading:
@@ -63,7 +65,7 @@ class Heading:
 
 
 class Paragraph:
-    """ Represents a paragraph in a docx document. """
+    """ Represents a paragraph in the document. """
 
     def __init__(self, text: str):
         self.text = text
@@ -73,22 +75,45 @@ class Paragraph:
         document.add_paragraph(self.text)
 
 
+class Section:
+    """
+    Represents a section in the document.
+
+    A section is a part of the document with its own headers, footers.
+    """
+
+    def __init__(self):
+        self.headers = []
+        self.footers = []
+
+    def add_header(self, header: Header):
+        """ Add a header to the section. """
+        self.headers.append(header)
+
+    def add_footer(self, footer: Footer):
+        """ Add a footer to the section. """
+        self.footers.append(footer)
+
+    def add_to_document(self, document: docx.Document):
+        """ Add the section to the document. """
+        section = document.sections[-1]
+        for header in self.headers:
+            header.add_to_section(section, type_='header')
+        for footer in self.footers:
+            footer.add_to_section(section, type_='footer')
+
+
 class DocxWriter:
     """ write a docx file. """
 
-    def __init__(self, paragraphs: List[Paragraph], filename: str = None,  headings: List[Heading] = None,
-                 footer: Footer = None, header: Header = None):
-        if filename is None:
-            filename = "document.docx"
+    def __init__(self, filename: str, paragraphs: List[Paragraph], section: Section, headings: List[Heading] = None):
         self.filename = filename
         self.headings = headings
-        self.footer = footer
-        self.header = header
+        self.section = section
         self.paragraphs = paragraphs
         self.document = docx.Document()
 
-        self.add_headings()
-        self.add_paragraphs()
+        self.section.add_to_document(document=self.document)
 
     def add_headings(self) -> 'DocxWriter':
         """ Add a list of headings to the document. """
@@ -129,18 +154,6 @@ class DocxWriter:
                 else:
                     cell.text = ""
         self.document = document
-        return self
-
-    def add_header_footer(self, is_header: bool = True) -> 'DocxWriter':
-        """ Add a header or footer to the document. """
-        section = self.document.sections[-1]
-        if is_header and self.header is not None:
-            self.header.add_to_section(section=section, is_header=is_header)
-        elif not is_header and self.footer is not None:
-            self.footer.add_to_section(section=section, is_header=is_header)
-        else:
-            raise ValueError("Cannot add header/footer. Header/Footer object is not defined.")
-
         return self
 
     def add_list_items(self, items: List[str], style: str = 'List Bullet'):
@@ -213,6 +226,7 @@ class DocxWriter:
                         table_rows.append(row)
             else:
                 current_paragraph += line + '\n'
+
 
         if table_rows:
             docx_writer = cls(paragraphs=paragraphs, headings=headings)

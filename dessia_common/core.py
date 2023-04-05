@@ -37,7 +37,8 @@ from dessia_common.displays import DisplayObject, DisplaySetting
 from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
 import dessia_common.utils.helpers as dch
 import dessia_common.files as dcf
-from dessia_common.document_generator import DocxWriter
+from dessia_common.document_generator import DocxWriter, Paragraph, Header, Section
+
 
 
 def __getattr__(name):
