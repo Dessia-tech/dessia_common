@@ -499,7 +499,6 @@ class DessiaObject(SerializableObject):
                                                 method="to_markdown", load_by_default=True),
                                 DisplaySetting(selector="plot_data", type_="plot_data", 
                                                method="plot_data", serialize_data=True)]
-        list_display_settings.extend(cls._decorators_settings())
         return list_display_settings
     
     @classmethod
@@ -508,15 +507,18 @@ class DessiaObject(SerializableObject):
         class_functions = inspect.getmembers(cls, inspect.isfunction)
         method_names = []
         for function_name, function in class_functions:
+            selector = 'plotdata'
+            serialize_data= ''
+            load_by_default = ''
             if 'decorators' in function.__dict__.keys():
                 selector = function.__dict__['selector']
                 if selector is None:
                     selector = function_name
                 serialize_data= function.__dict__['serialize_data']
                 load_by_default = function.__dict__['load_by_default']
-            method_names.append(DisplaySetting(selector=selector, type_=function_name, 
-                                                method=function_name, serialize_data=serialize_data, 
-                                                load_by_default=load_by_default))
+                method_names.append(DisplaySetting(selector=selector, type_=function_name, 
+                                                    method=function_name, serialize_data=serialize_data, 
+                                                    load_by_default=load_by_default))
 
         return method_names
 
