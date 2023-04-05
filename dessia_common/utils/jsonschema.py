@@ -11,7 +11,8 @@ from dessia_common.abstract import CoreDessiaObject
 import dessia_common.utils.types as dc_types
 from dessia_common.utils.helpers import full_classname
 from dessia_common.files import BinaryFile, StringFile
-from dessia_common.typings import Subclass, MethodType, ClassMethodType, Any
+from dessia_common.typings import Subclass, MethodType, ClassMethodType,\
+                                Any, AttributeType, ClassAttributeType
 from dessia_common.measures import Measure
 from dessia_common.utils.helpers import prettyname
 from dessia_common.schemas.core import FAILED_ATTRIBUTE_PARSING, is_typing, serialize_annotation
@@ -205,6 +206,16 @@ def jsonschema_from_annotation(annotation, jsonschema_element, order, editable=N
                                                    order=order, editable=editable, title='Class')
             jsonschema_element[key].update({'type': 'object', 'is_method': True,
                                             'classmethod_': classmethod_,
+                                            'properties': {
+                                                'class_': class_jss['class_'],
+                                                'name': {'type': 'string'}}})
+        elif origin is AttributeType or origin is ClassAttributeType:
+            class_type = get_args(typing_)[0]
+            classattribute_ = origin is ClassAttributeType
+            class_jss = jsonschema_from_annotation(annotation=('class_', class_type), jsonschema_element={},
+                                                   order=order, editable=editable, title='Class')
+            jsonschema_element[key].update({'type': 'object', 'is_attribute': True,
+                                            'classattribute_': classattribute_,
                                             'properties': {
                                                 'class_': class_jss['class_'],
                                                 'name': {'type': 'string'}}})

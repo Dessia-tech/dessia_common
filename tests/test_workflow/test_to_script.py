@@ -4,7 +4,7 @@ import dessia_common.typings as dct
 from dessia_common.workflow.core import Pipe, Workflow
 from dessia_common.workflow.blocks import InstantiateModel, ModelMethod, ModelAttribute, WorkflowBlock, ForEach,\
     Archive, ClassMethod, Sequence, SetModelAttribute, Substraction, Sum, Flatten, Filter, Unpacker, Product,\
-    MultiPlot, Export
+    MultiPlot, Export, GetModelAttribute
 import dessia_common.tests as dctests
 
 from dessia_common.core import DessiaFilter
@@ -43,7 +43,8 @@ class WorkflowToScriptTest(unittest.TestCase):
                     66.66,
                     77)),
             Sequence(3, "sequence_name", position=(77.77, 88)),
-            SetModelAttribute('name', 'name_Name', position=(88.88, 99)),
+            SetModelAttribute(dct.AttributeType(dctests.Optimizer, name='model_to_optimize'), 'name_Name', position=(88.88, 99)),
+            GetModelAttribute(dct.AttributeType(dctests.Optimizer, name='model_to_optimize'), 'name_Name', position=(12.34, 56.78)),
             Substraction("substraction_name", position=(99.99, 11.11)),
             Sum(name="sum_name", position=(22, 11.11)),
             Flatten('flatten_name', position=(33, 22.22)),
@@ -60,8 +61,8 @@ class WorkflowToScriptTest(unittest.TestCase):
         workflow = Workflow(blocks, pipes, blocks[0].outputs[0], name="script_workflow")
 
         expected_script_value = "from dessia_common.tests import Optimizer, Car, Model" \
-           "\nfrom dessia_common.workflow.blocks import InstantiateModel, ModelMethod, ModelAttribute, WorkflowBlock, ForEach, Archive, ClassMethod, Sequence, SetModelAttribute, Substraction, Sum, Flatten, Filter, Unpacker, MultiPlot, Product, Export" \
-           "\nfrom dessia_common.typings import MethodType, ClassMethodType" \
+           "\nfrom dessia_common.workflow.blocks import InstantiateModel, ModelMethod, ModelAttribute, WorkflowBlock, ForEach, Archive, ClassMethod, Sequence, SetModelAttribute, GetModelAttribute, Substraction, Sum, Flatten, Filter, Unpacker, MultiPlot, Product, Export" \
+           "\nfrom dessia_common.typings import MethodType, ClassMethodType, AttributeType" \
            "\nfrom dessia_common.workflow.core import Pipe, Workflow" \
            "\nfrom dessia_common.core import DessiaFilter" \
            "\n" \
@@ -87,16 +88,17 @@ class WorkflowToScriptTest(unittest.TestCase):
            "\nblock_4 = ModelAttribute(attribute_name='model_to_optimize', name='Model Fetcher', position=(55.55, 66))" \
            "\nblock_5 = ModelMethod(method_type=MethodType(Car, 'to_vector'), name='car_to_vector', position=(66.66, 77))" \
            "\nblock_6 = Sequence(number_arguments=3, name='sequence_name', position=(77.77, 88))" \
-           "\nblock_7 = SetModelAttribute(attribute_name='name', name='name_Name', position=(88.88, 99))" \
-           "\nblock_8 = Substraction(name='substraction_name', position=(99.99, 11.11))" \
-           "\nblock_9 = Sum(number_elements=2, name='sum_name', position=(22, 11.11))" \
-           "\nblock_10 = Flatten(name='flatten_name', position=(33, 22.22))" \
-           "\nblock_11 = Filter(filters=[DessiaFilter(attribute='attributeFilter', comparison_operator='operatorFilter', bound=3.1415, name='')], logical_operator='and', name='', position=(44, 33.33))" \
-           "\nblock_12 = Unpacker(indices=[1, 3], name='unpacker_name', position=(55, 44.44))" \
-           "\nblock_13 = MultiPlot(attributes=['multiplot0', 'multiplot1'], name='', position=(77, 66.66))" \
-           "\nblock_14 = Product(number_list=4, name='product_name', position=(88, 77.77))" \
-           "\nblock_15 = Export(method_type=MethodType(Model, 'save_to_stream'), filename='filename', extension='json', text=True, name='Export', position=(99, 88.88))" \
-           "\nblocks = [block_0, block_1, block_2, block_3, block_4, block_5, block_6, block_7, block_8, block_9, block_10, block_11, block_12, block_13, block_14, block_15]" \
+           "\nblock_7 = SetModelAttribute(attribute_type=AttributeType(Optimizer, name='model_to_optimize'), name='name_Name', position=(88.88, 99))" \
+           "\nblock_8 = GetModelAttribute(attribute_type=AttributeType(Optimizer, name='model_to_optimize'), name='name_Name', position=(12.34, 56.78))" \
+           "\nblock_9 = Substraction(name='substraction_name', position=(99.99, 11.11))" \
+           "\nblock_10 = Sum(number_elements=2, name='sum_name', position=(22, 11.11))" \
+           "\nblock_11 = Flatten(name='flatten_name', position=(33, 22.22))" \
+           "\nblock_12 = Filter(filters=[DessiaFilter(attribute='attributeFilter', comparison_operator='operatorFilter', bound=3.1415, name='')], logical_operator='and', name='', position=(44, 33.33))" \
+           "\nblock_13 = Unpacker(indices=[1, 3], name='unpacker_name', position=(55, 44.44))" \
+           "\nblock_14 = MultiPlot(attributes=['multiplot0', 'multiplot1'], name='', position=(77, 66.66))" \
+           "\nblock_15 = Product(number_list=4, name='product_name', position=(88, 77.77))" \
+           "\nblock_16 = Export(method_type=MethodType(Model, 'save_to_stream'), filename='filename', extension='json', text=True, name='Export', position=(99, 88.88))" \
+           "\nblocks = [block_0, block_1, block_2, block_3, block_4, block_5, block_6, block_7, block_8, block_9, block_10, block_11, block_12, block_13, block_14, block_15, block_16]" \
            "\n\n" \
            "\npipe_0 = Pipe(block_0.outputs[0], block_3.inputs[0])" \
            "\npipes = [pipe_0]" \
