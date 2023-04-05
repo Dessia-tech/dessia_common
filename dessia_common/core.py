@@ -495,6 +495,7 @@ class DessiaObject(SerializableObject):
     @classmethod
     def display_settings(cls) -> List[DisplaySetting]:
         """ Return a list of objects describing how to call object displays. """
+        print("display setting:",cls.__name__)
         list_display_settings = [DisplaySetting(selector="markdown", type_="markdown", 
                                                 method="to_markdown", load_by_default=True),
                                 DisplaySetting(selector="plot_data", type_="plot_data", 
@@ -505,7 +506,9 @@ class DessiaObject(SerializableObject):
     @classmethod
     def _decorators_settings(cls) -> List[DisplaySetting]:
         """ Return a list of objects describing how to call plot data displays. """
+        print("decorator", cls.__name__)
         class_functions = inspect.getmembers(cls, inspect.isfunction)
+        print(len(class_functions) , class_functions)
         method_names = []
         for function_name, function in class_functions:
             selector = 'plotdata'
@@ -670,10 +673,10 @@ class DessiaObject(SerializableObject):
 class PhysicalObject(DessiaObject):
     """ Represent an object with CAD capabilities. """
 
-    @staticmethod
-    def display_settings():
+    @classmethod
+    def display_settings(cls):
         """ Returns a list of DisplaySettings objects describing how to call sub-displays. """
-        display_settings = DessiaObject.display_settings()
+        display_settings = super().display_settings()
         display_settings.append(DisplaySetting(selector='cad', type_='babylon_data',
                                                method='volmdlr_volume_model().babylon_data', serialize_data=True))
         return display_settings
