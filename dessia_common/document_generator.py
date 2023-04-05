@@ -124,10 +124,10 @@ class DocxWriter:
         for row in rows[1:]:
             row_cells = table.add_row().cells
             for i, cell in enumerate(row_cells):
-                try:
+                if i < len(row):
                     cell.text = row[i]
-                except:
-                    print('error')
+                else:
+                    cell.text = ""
         self.document = document
         return self
 
