@@ -499,6 +499,7 @@ class DessiaObject(SerializableObject):
                                                 method="to_markdown", load_by_default=True),
                                 DisplaySetting(selector="plot_data", type_="plot_data", 
                                                method="plot_data", serialize_data=True)]
+        list_display_settings.extend(cls._decorators_settings())
         return list_display_settings
     
     @classmethod

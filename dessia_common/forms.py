@@ -43,6 +43,8 @@ from dessia_common.exports import MarkdownWriter
 
 from dessia_common.files import BinaryFile, StringFile
 
+from dessia_common.utils.helpers import plotdata, markdown
+
 
 class EmbeddedBuiltinsSubobject(PhysicalObject):
     """
@@ -514,6 +516,25 @@ class StandaloneObject(MovingObject):
         [modo](http://pondere.com/aquis) dimittere ubi neque es!
         Sua qua ac ire una facit Alcmene coepere
         arduus quae vestigia aliquis; meritorum Dorylas, scindunt.
+        """
+        contents += "\n## Attribute Table\n\n"
+        contents += MarkdownWriter(print_limit=25, table_limit=None).object_table(self)
+        return contents
+    
+    @plotdata('2DTest')
+    def plot_data_test(self):
+        """
+        Base plot_data method. Overwrite this to display 2D or graphs on platform.
+
+        Should return a list of plot_data's objects.
+        """
+        return []
+    
+    @markdown('MDTest')
+    def markdown_test(self):
+        """ Write a standard markdown of StandaloneObject. """
+        contents = """
+        # Ceci est un markdown test
         """
         contents += "\n## Attribute Table\n\n"
         contents += MarkdownWriter(print_limit=25, table_limit=None).object_table(self)
