@@ -124,7 +124,10 @@ class DocxWriter:
         for row in rows[1:]:
             row_cells = table.add_row().cells
             for i, cell in enumerate(row_cells):
-                cell.text = row[i]
+                try:
+                    cell.text = row[i]
+                except:
+                    print('error')
         self.document = document
         return self
 
@@ -193,7 +196,7 @@ class DocxWriter:
         table_rows = []
 
         table_pattern = re.compile(r'^\|.*\|$')
-        horizontal_line_pattern = re.compile(r'^\s*\|?\s*:?-+:?\s*\|?\s*$')
+        horizontal_line_pattern = re.compile(r'^\s*\|?\s*-+\s*\|?\s*(-+\s*\|?)*\s*$')
 
         for line in markdown.split('\n'):
             if line.startswith('#'):
