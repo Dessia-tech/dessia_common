@@ -64,7 +64,7 @@ class Heading:
 
 
 class Paragraph:
-    """ Represents a paragraph in a docx document. """
+    """ Represents a paragraph in the document. """
 
     def __init__(self, text: str):
         self.text = text
@@ -76,7 +76,7 @@ class Paragraph:
 
 class Section:
     """
-    Represents a section in a docx document.
+    Represents a section in the document.
 
     A section is a part of the document with its own headers, footers.
     """
