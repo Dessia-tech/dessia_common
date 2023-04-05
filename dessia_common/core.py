@@ -495,7 +495,6 @@ class DessiaObject(SerializableObject):
     @classmethod
     def display_settings(cls) -> List[DisplaySetting]:
         """ Return a list of objects describing how to call object displays. """
-        print("display setting:",cls.__name__)
         list_display_settings = [DisplaySetting(selector="markdown", type_="markdown", 
                                                 method="to_markdown", load_by_default=True),
                                 DisplaySetting(selector="plot_data", type_="plot_data", 
@@ -506,9 +505,7 @@ class DessiaObject(SerializableObject):
     @classmethod
     def _decorators_settings(cls) -> List[DisplaySetting]:
         """ Return a list of objects describing how to call plot data displays. """
-        print("decorator", cls.__name__)
         class_functions = inspect.getmembers(cls, inspect.isfunction)
-        print(len(class_functions) , class_functions)
         method_names = []
         for function_name, function in class_functions:
             selector = 'plotdata'

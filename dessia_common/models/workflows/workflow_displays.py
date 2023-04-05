@@ -11,8 +11,8 @@ cmb = ClassMethod(method_type=cmt, name="Generator")
 cadview = CadView("3D")
 plotdata = PlotData("2D")
 markdown = Markdown("MD")
-plotdatatest = PlotData("2DTest", selector="2DTest", type_="plot_data_test")
-markdowntest = Markdown("MDTest", selector="MDTest", type_="markdown_test")
+plotdatatest = PlotData(name="2DTest", selector="2DTest", type_="plot_data_test")
+markdowntest = Markdown(name="MDTest", selector="MDTest", type_="markdown_test")
 
 
 blocks = [cmb, cadview, plotdata, markdown, plotdatatest, markdowntest]

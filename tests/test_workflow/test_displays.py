@@ -50,6 +50,8 @@ class TestWorkflowDisplays(unittest.TestCase):
         ("3D (1)", dict),
         ("2D (2)", list),
         ("MD (3)", str),
+        ("2DTest (4)", list),
+        ("MDTest (5)", str),
     ])
     def test_data_types(self, selector, expected_type):
         display = self.workflow_run._display_from_selector(selector)
