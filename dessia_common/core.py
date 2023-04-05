@@ -37,7 +37,7 @@ from dessia_common.displays import DisplayObject, DisplaySetting
 from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
 import dessia_common.utils.helpers as dch
 import dessia_common.files as dcf
-from dessia_common.document_generator import DocxWriter, Paragraph, Header
+from dessia_common.document_generator import DocxWriter, Paragraph, Header, Section
 
 
 def __getattr__(name):
@@ -618,14 +618,15 @@ class DessiaObject(SerializableObject):
 
         paragraph = Paragraph(text=text)
         header = Header(text="DessIA Technologies", align="center")
+        section = Section()
+        section.add_header(header)
 
         table_md = MarkdownWriter()
         table_str = [table_md.object_titles()] + table_md.object_matrix(self)
 
-        docxwriter = DocxWriter(filename="my_doc.docx", paragraphs=[paragraph], header=header)
+        docxwriter = DocxWriter(filename="my_doc.docx", paragraphs=[paragraph], section=section)
 
         docxwriter.add_paragraphs()
-        docxwriter.add_header_footer(is_header=True)
         docxwriter.add_table(rows=table_str)
 
         return docxwriter
