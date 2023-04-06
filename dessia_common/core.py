@@ -607,7 +607,7 @@ class DessiaObject(SerializableObject):
         writer = XLSXWriter(self)
         writer.save_to_stream(stream)
 
-    def to_docx_markdown(self):
+    def to_markdown_docx(self):
         """ Generates a docx document from the object attributes, using a markdown-like syntax."""
         text = f"This is a markdown file https://www.markdownguide.org/cheat-sheet The good practice is to create a" \
                " string python template and move the template to another python module (like templates.py) to avoid " \
@@ -619,7 +619,7 @@ class DessiaObject(SerializableObject):
         paragraph = Paragraph(text=text)
         header = Header(text="DessIA Technologies", align="center")
         section = Section()
-        section.add_header(header)
+        section.add_element(header)
 
         table_md = MarkdownWriter()
         table_str = [table_md.object_titles()] + table_md.object_matrix(self)
