@@ -633,7 +633,7 @@ class DessiaObject(SerializableObject):
 
     def to_docx_stream(self, stream: dcf.BinaryFile):
         """ Saves the document to a binary stream. """
-        document = self.to_docx_markdown()
+        document = self.to_markdown_docx()
         document.save_to_stream(stream=stream)
 
     def to_docx(self, filepath: str):
