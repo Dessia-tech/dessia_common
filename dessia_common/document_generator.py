@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """ Write document file. """
-from typing import List
+from typing import List, Union
 
 import docx
 
@@ -20,7 +20,7 @@ class LayoutElement:
         self.text = text
         self.align = align
 
-    def add_to_section(self, section, type_: str):
+    def _add_to_section(self, section, type_: str):
         """
         Add the header or footer to the specified section.
 
@@ -32,14 +32,29 @@ class LayoutElement:
         paragraph.text = self.text
         paragraph.alignment = getattr(docx.enum.text.WD_ALIGN_PARAGRAPH, self.align.upper())
 
+    def _add_picture(self, section, type_: str, image_path: str, width: int = None, height: int = None):
+        """ Add the header or footer picture to the specified section. """
+        element = getattr(section, type_)
+        paragraph = element.paragraphs[0] if element.paragraphs else element.add_paragraph()
+        run = paragraph.add_run()
+        run.add_picture(image_path, width=width, height=height)
+
 
 class Header(LayoutElement):
     """ Represents a header in a docx document. """
 
     def add_to_document(self, document: docx.Document):
         """ Add the header to the document. """
-        section = document.sections[-1]
-        super().add_to_section(section, type_='header')
+        section = document.sections[0]
+        super()._add_to_section(section, type_='header')
+
+    def add_to_section(self, section):
+        """ Add header to section. """
+        super()._add_to_section(section=section, type_='header')
+
+    def add_picture(self, section, image_path: str, width: int = None, height: int = None):
+        """ Add picture for header. """
+        super()._add_picture(section=section, type_='header', image_path=image_path, width=width, height=height)
 
 
 class Footer(LayoutElement):
@@ -47,8 +62,16 @@ class Footer(LayoutElement):
 
     def add_to_document(self, document: docx.Document):
         """ Add the footer to the document. """
-        section = document.sections[-1]
-        super().add_to_section(section, type_='footer')
+        section = document.sections[0]
+        super()._add_to_section(section, type_='footer')
+
+    def add_to_section(self, section):
+        """ Add footer to section. """
+        super()._add_to_section(section=section, type_='footer')
+
+    def add_picture(self, section, image_path: str, width: int = None, height: int = None):
+        """ Add picture for footer. """
+        super()._add_picture(section=section, type_='footer', image_path=image_path, width=width, height=height)
 
 
 class Heading:
@@ -82,24 +105,23 @@ class Section:
     """
 
     def __init__(self):
-        self.headers = []
-        self.footers = []
+        self.elements = []
 
-    def add_header(self, header: Header):
+    def add_element(self, element: Union[Header, Footer]):
         """ Add a header to the section. """
-        self.headers.append(header)
-
-    def add_footer(self, footer: Footer):
-        """ Add a footer to the section. """
-        self.footers.append(footer)
+        self.elements.append(element)
 
     def add_to_document(self, document: docx.Document):
         """ Add the section to the document. """
-        section = document.sections[-1]
-        for header in self.headers:
-            header.add_to_section(section, type_='header')
-        for footer in self.footers:
-            footer.add_to_section(section, type_='footer')
+        section = document.sections[0]
+        for element in self.elements:
+            element.add_to_section(section)
+
+    def add_picture_to_document(self, document: docx.Document, image_path, width, height):
+        """ Add picture to the section. """
+        section = document.sections[0]
+        if self.elements:
+            self.elements[0].add_picture(section, image_path, width, height)
 
 
 class DocxWriter:
@@ -168,20 +190,10 @@ class DocxWriter:
         self.document = document
         return self
 
-    def add_header_footer_picture(self, image_path: str, is_header: bool = True, width: int = None, height: int = None)\
+    def add_header_footer_picture(self, image_path: str, width: int = None, height: int = None)\
             -> 'DocxWriter':
         """ Add a picture to the header or footer of the document. """
-        section = self.document.sections[-1]
-        if is_header:
-            header = section.header
-            paragraph = header.paragraphs[0] if header.paragraphs else header.add_paragraph()
-            run = paragraph.add_run()
-            run.add_picture(image_path, width=width, height=height)
-        else:
-            footer = section.footer
-            paragraph = footer.paragraphs[0] if footer.paragraphs else footer.add_paragraph()
-            run = paragraph.add_run()
-            run.add_picture(image_path, width=width, height=height)
+        self.section.add_picture_to_document(document=self.document, image_path=image_path, width=width, height=height)
         return self
 
     def add_picture(self, image_path: str, width: int = None, height: int = None) -> 'DocxWriter':
