@@ -11,7 +11,7 @@ _REGEX = {"def_function": r"(?<=def )\w+", #def funcionts r"(\.\w|\w)+(?=\(.+?\)
           "all_functions": r"(\w*\.?\[(\"|')\w+(\"|')\]\.?|\w)+\w+\.?\w*(?=\()",
           "not_def_1": r"(?<!def )",
           "not_def_2": r"(?=\()",
-          "return": r"(?<=return )\w+"}
+          "return": r"(?<=return )(\w*\.?\[(\"|')\w+(\"|')\]\.?|\w)*\w+\.?\w*(\(.*\))*"}
 
 def test(a: int, b: List[int], c: Dict[str, int]) -> int:
     """Test function"""
@@ -39,10 +39,9 @@ class Function:
         self.is_called = is_called
         self.is_def = is_def
         if is_called or is_def:
-            self.is_object = True
-        else:
             self.is_object = False
-            self.caller = None
+        else:
+            self.is_object = True
         self.inputs = self.find_inputs()
         self.outputs = self.find_outputs()
         self.modifications = self.find_modifications()
@@ -60,24 +59,24 @@ class Function:
             if re.search(_REGEX["def_function"],line):
                 if reg.group()==self.name:
                     continue
-                function_to_add = Function(globals()["reg.group()"], is_def=True)
+                function_to_add = Function(globals()[reg.group()], is_def=True)
                 if not self.is_there(function_to_add):
                     print("Already added")
                     continue
                 try:
-                    used_functions["defined"][reg.group()].append(function_to_add)
+                    used_functions["defined"][reg.group()].append(line)
                 except KeyError:
                     used_functions["defined"][reg.group()] = [function_to_add]
             elif re.search(_REGEX["not_def_1"]+escape_regex(reg.group())+_REGEX["not_def_2"],line):
                 try:
-                    used_functions["called"][reg.group()].append(Function(globals()["reg.group()"], is_called=True))
+                    used_functions["called"][reg.group()].append(line)
                 except KeyError:
-                    used_functions["called"][reg.group()] = [Function(globals()["reg.group()"], is_called=True)]
+                    used_functions["called"][reg.group()] = [line]
             else:
                 try:
-                    used_functions["object"][reg.group()].append(Function(globals()["reg.group()"]))
+                    used_functions["object"][reg.group()].append(line)
                 except KeyError:
-                    used_functions["object"][reg.group()] = [Function(globals()["reg.group()"])]
+                    used_functions["object"][reg.group()] = [line]
         return used_functions
         
     def find_inputs(self):
@@ -94,7 +93,10 @@ class Function:
         for line in self.sourcelines[0]:
             reg = re.search(_REGEX["return"], line)
             if reg:
-                outputs["return"] = reg.group()
+                try:
+                    outputs["return"].append(reg.group())
+                except KeyError:
+                    outputs["return"] = [reg.group()]
         return outputs
 
     def find_modifications(self):
@@ -105,13 +107,10 @@ class Function:
     def test_function(self):
         """Compare two functions"""
         diff_getmembers(self.function, self.function)
-        def atrrec():
-            print("dncek")
-
         a = 1
         b = 2
-
-        return
+        c = a + b
+        return c
     
     def is_there(self, function) -> bool:
         """Add a function to the list of functions"""
@@ -172,7 +171,7 @@ def inspect_object(object_):
 def hash_function(function) -> int:
     """Hash function"""
     try:
-        my_bytes = inspect.getfile(function).encode('utf-8')
+        my_bytes = f"{inspect.getfile(function)}{function.__name__}".encode('utf-8')
     except NameError:
         print("NameError")
         return 0
