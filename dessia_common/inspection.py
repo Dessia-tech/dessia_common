@@ -4,8 +4,7 @@ import inspect
 import re
 import hashlib
 
-from typing import List, Dict
-from deepdiff import DeepDiff
+from typing import Dict
 
 
 _REGEX = {"def_function": r"(?<=def )\w+", #def functions r"(\.\w|\w)+(?=\(.+?\)\:)"
@@ -13,16 +12,6 @@ _REGEX = {"def_function": r"(?<=def )\w+", #def functions r"(\.\w|\w)+(?=\(.+?\)
           "not_def_1": r"(?<!def )",
           "not_def_2": r"(?=\()",
           "return": r"(?<=return ).*(?=(\\n)?)"}
-
-def test(test1: int, test2: List[int], test3: Dict[str, int]) -> int:
-    """Test function."""
-    return test1 + test2[0] + test3['a']
-
-def escape_regex(string):
-    """Escape regex special characters in a string."""
-    special_chars = r'[\\.*+?|(){}\[\]^$]'
-    return re.sub(special_chars, r'\\\g<0>', string)
-
 
 class Function:
     """Class to store a function and its inputs, outputs and modifications."""
@@ -100,14 +89,6 @@ class Function:
         modifications = {}
         return modifications
 
-    def test_function(self):
-        """Compare two functions."""
-        diff_getmembers(self.function, self.function)
-        gotit = 1
-        nashit = 2
-        summit = gotit + nashit
-        return summit
-
     @property
     def hash_function(self) -> int:
         """Hash function."""
@@ -120,14 +101,6 @@ class Function:
         hash_object.update(my_bytes)
         return int.from_bytes(hash_object.digest(), byteorder='big')
 
-
-def diff_getmembers(oldfunction, newfunction):
-    """Compare two functions."""
-    for el1 in inspect.getmembers(oldfunction):
-        for el2 in inspect.getmembers(newfunction):
-            if el1[0] == el2[0]:
-                print(f"Parametre : {el1[0]}")
-                print(f"{DeepDiff(el1[1], el2[1])} \n")
 
 def get_function_by_name(function_name):
     """Get function by name."""
@@ -149,3 +122,9 @@ def get_function_by_name(function_name):
                 return obj
         current_frame = current_frame.f_back
     return function_name
+
+
+def escape_regex(string):
+    """Escape regex special characters in a string."""
+    special_chars = r'[\\.*+?|(){}\[\]^$]'
+    return re.sub(special_chars, r'\\\g<0>', string)
