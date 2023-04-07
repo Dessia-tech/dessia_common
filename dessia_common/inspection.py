@@ -2,9 +2,11 @@
 
 import inspect
 import re
+import hashlib
+
 from typing import List, Dict
 from deepdiff import DeepDiff
-import hashlib
+
 
 
 _REGEX = {"def_function": r"(?<=def )\w+", #def funcionts r"(\.\w|\w)+(?=\(.+?\)\:)"
@@ -13,10 +15,9 @@ _REGEX = {"def_function": r"(?<=def )\w+", #def funcionts r"(\.\w|\w)+(?=\(.+?\)
           "not_def_2": r"(?=\()",
           "return": r"(?<=return )(\w*\.?\[(\"|')\w+(\"|')\]\.?|\w)*\w+\.?\w*(\(.*\))*"}
 
-def test(a: int, b: List[int], c: Dict[str, int]) -> int:
+def test(test1: int, test2: List[int], test3: Dict[str, int]) -> int:
     """Test function"""
-
-    return a + b[0] + c['a']
+    return test1 + test2[0] + test3['a']
 
 def escape_regex(string):
     """Escape regex special characters in a string"""
@@ -107,10 +108,10 @@ class Function:
     def test_function(self):
         """Compare two functions"""
         diff_getmembers(self.function, self.function)
-        a = 1
-        b = 2
-        c = a + b
-        return c
+        gotit = 1
+        nashit = 2
+        summit = gotit + nashit
+        return summit
     
     def is_there(self, function) -> bool:
         """Add a function to the list of functions"""
