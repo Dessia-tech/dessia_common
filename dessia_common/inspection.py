@@ -12,7 +12,7 @@ _REGEX = {"def_function": r"(?<=def )\w+", #def functions r"(\.\w|\w)+(?=\(.+?\)
           "all_functions": r"[\w+\.\[\](\)\"']+(?=\()",
           "not_def_1": r"(?<!def )",
           "not_def_2": r"(?=\()",
-          "return": r"(?<=return ).*(?=\\n?)"}
+          "return": r"(?<=return ).*(?=(\\n)?)"}
 
 def test(test1: int, test2: List[int], test3: Dict[str, int]) -> int:
     """Test function"""
@@ -130,13 +130,18 @@ def diff_getmembers(oldfunction, newfunction):
 
 def get_function_by_name(function_name):
     current_frame = inspect.currentframe()
+    name = function_name.rsplit('.')[-1]
+    print(name)
+    i=0
     while current_frame:
+        i+=1
         for _, obj in current_frame.f_locals.items():
-            if inspect.isfunction(obj) and obj.__name__ == function_name:
+            if inspect.isfunction(obj) and obj.__name__ == name:
                 if inspect.isbuiltin(obj):
                     return function_name
+                return obj
         for _, obj in current_frame.f_globals.items():
-            if inspect.isfunction(obj) and obj.__name__ == function_name:
+            if inspect.isfunction(obj) and obj.__name__ == name:
                 if inspect.isbuiltin(obj):
                     return function_name
                 return obj
