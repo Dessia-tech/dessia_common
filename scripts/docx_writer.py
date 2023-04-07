@@ -24,12 +24,10 @@ section = Section()
 section.add_footer(footer=footer)
 section.add_footer(footer=footer_2)
 
-<<<<<<< HEAD
-writer = DocxWriter(paragraphs=paragraphs, filename="test_docx.docx", headings=headings, footer=footer)
-=======
+
 
 writer = DocxWriter("test_docx.docx", paragraphs=paragraphs, headings=headings, section=section)
->>>>>>> dev_docx_update
+
 
 writer.add_headings()
 writer.add_paragraphs()
