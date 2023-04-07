@@ -8,12 +8,11 @@ from typing import List, Dict
 from deepdiff import DeepDiff
 
 
-
-_REGEX = {"def_function": r"(?<=def )\w+", #def funcionts r"(\.\w|\w)+(?=\(.+?\)\:)"
-          "all_functions": r"(\w*\.?\[(\"|')\w+(\"|')\]\.?|\w)+\w+\.?\w*(?=\()",
+_REGEX = {"def_function": r"(?<=def )\w+", #def functions r"(\.\w|\w)+(?=\(.+?\)\:)"
+          "all_functions": r"[\w+\.\[\](\)\"']+(?=\()",
           "not_def_1": r"(?<!def )",
           "not_def_2": r"(?=\()",
-          "return": r"(?<=return )(\w*\.?\[(\"|')\w+(\"|')\]\.?|\w)*\w+\.?\w*(\(.*\))*"}
+          "return": r"(?<=return ).*(?=\\n?)"}
 
 def test(test1: int, test2: List[int], test3: Dict[str, int]) -> int:
     """Test function"""
@@ -24,25 +23,15 @@ def escape_regex(string):
     special_chars = r'[\\.*+?|(){}\[\]^$]'
     return re.sub(special_chars, r'\\\g<0>', string)
 
+
 class Function:
     """Class to store a function and its inputs, outputs and modifications"""
 
-    functions = []
-
-    def __init__(self, function, is_called=False, is_def=False):
+    def __init__(self, function):
         self.function = function
-        self.name = function.__name__
         self.files = inspect.getfile(self.function)
-        self.hash_ = hash_function(self.function)
-        self.hashes = [self.hash_]
+        self.hashes = [self.hash_function]
         self.sourcelines = inspect.getsourcelines(self.function)
-        self.signature = inspect.signature(self.function)
-        self.is_called = is_called
-        self.is_def = is_def
-        if is_called or is_def:
-            self.is_object = False
-        else:
-            self.is_object = True
         self.inputs = self.find_inputs()
         self.outputs = self.find_outputs()
         self.modifications = self.find_modifications()
@@ -57,40 +46,46 @@ class Function:
             reg=re.search(_REGEX["all_functions"], str(line))
             if not reg:
                 continue
+            if reg.group()==self.function.__name__:
+                continue
+            to_try = get_function_by_name(reg.group())
+            if isinstance(to_try, str):
+                function_to_add = line
+            else:
+                function_to_add = Function(to_try)
+                hash_= function_to_add.hash_function
+                self.hashes.append(hash_)
             if re.search(_REGEX["def_function"],line):
-                if reg.group()==self.name:
-                    continue
-                function_to_add = Function(globals()[reg.group()], is_def=True)
-                if not self.is_there(function_to_add):
+                if hash_ in [self.hashes]:
                     print("Already added")
                     continue
                 try:
-                    used_functions["defined"][reg.group()].append(line)
+                    used_functions["defined"][reg.group()].append(function_to_add)
                 except KeyError:
                     used_functions["defined"][reg.group()] = [function_to_add]
             elif re.search(_REGEX["not_def_1"]+escape_regex(reg.group())+_REGEX["not_def_2"],line):
                 try:
-                    used_functions["called"][reg.group()].append(line)
+                    used_functions["called"][reg.group()].append(function_to_add)
                 except KeyError:
-                    used_functions["called"][reg.group()] = [line]
+                    used_functions["called"][reg.group()] = [function_to_add]
             else:
                 try:
-                    used_functions["object"][reg.group()].append(line)
+                    used_functions["object"][reg.group()].append(function_to_add)
                 except KeyError:
-                    used_functions["object"][reg.group()] = [line]
+                    used_functions["object"][reg.group()] = [function_to_add]
         return used_functions
-       
+
     def find_inputs(self):
         """Find all inputs of the function"""
-        return dict(self.signature.parameters)
+        return dict(inspect.signature(self.function).parameters)
 
     def find_outputs(self):
         """Find all outputs of the function"""
         outputs = {}
-        if self.signature.return_annotation == inspect._empty:
+        if inspect.signature(self.function).return_annotation == inspect._empty:
             outputs["type"] = ""
         else:
-            outputs["type"] = self.signature.return_annotation
+            outputs["type"] = inspect.signature(self.function).return_annotation
         for line in self.sourcelines[0]:
             reg = re.search(_REGEX["return"], line)
             if reg:
@@ -113,15 +108,17 @@ class Function:
         summit = gotit + nashit
         return summit
 
-    def is_there(self, function) -> bool:
-        """Add a function to the list of functions"""
-        is_there = False
-        function_hash = hash_function(function)
-        if function_hash in self.hashes:
-            is_there = True
-        else:
-            self.hashes.append(function_hash)
-        return is_there
+    @property
+    def hash_function(self) -> int:
+        """Hash function"""
+        try:
+            my_bytes = f"{inspect.getfile(self.function)}{self.function.__name__}".encode('utf-8')
+        except NameError:
+            print("NameError")
+            return 0
+        hash_object = hashlib.blake2b(digest_size=3)
+        hash_object.update(my_bytes)
+        return int.from_bytes(hash_object.digest(), byteorder='big')
 
 
 def diff_getmembers(oldfunction, newfunction):
@@ -131,13 +128,17 @@ def diff_getmembers(oldfunction, newfunction):
                 print(f"Parametre : {el1[0]}")
                 print(f"{DeepDiff(el1[1], el2[1])} \n")
 
-def hash_function(function) -> int:
-    """Hash function"""
-    try:
-        my_bytes = f"{inspect.getfile(function)}{function.__name__}".encode('utf-8')
-    except NameError:
-        print("NameError")
-        return 0
-    hash_object = hashlib.blake2b(digest_size=3)
-    hash_object.update(my_bytes)
-    return int.from_bytes(hash_object.digest(), byteorder='big')
+def get_function_by_name(function_name):
+    current_frame = inspect.currentframe()
+    while current_frame:
+        for _, obj in current_frame.f_locals.items():
+            if inspect.isfunction(obj) and obj.__name__ == function_name:
+                if inspect.isbuiltin(obj):
+                    return function_name
+        for _, obj in current_frame.f_globals.items():
+            if inspect.isfunction(obj) and obj.__name__ == function_name:
+                if inspect.isbuiltin(obj):
+                    return function_name
+                return obj
+        current_frame = current_frame.f_back
+    return function_name
