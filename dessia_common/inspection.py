@@ -52,7 +52,7 @@ class Function:
         """Find all functions used in the function"""
         used_functions = {"called" : {},
                           "defined" : {},
-                          "object" : {}} #object is just initialised, it'll be filled later
+                          "object" : {}} #object is just initialized, it'll be filled later
         for line in self.sourcelines[0]:
             reg=re.search(_REGEX["all_functions"], str(line))
             if not reg:
@@ -79,7 +79,7 @@ class Function:
                 except KeyError:
                     used_functions["object"][reg.group()] = [line]
         return used_functions
-        
+       
     def find_inputs(self):
         """Find all inputs of the function"""
         return dict(self.signature.parameters)
@@ -112,7 +112,7 @@ class Function:
         nashit = 2
         summit = gotit + nashit
         return summit
-    
+
     def is_there(self, function) -> bool:
         """Add a function to the list of functions"""
         is_there = False
@@ -130,44 +130,6 @@ def diff_getmembers(oldfunction, newfunction):
             if el1[0] == el2[0]:
                 print(f"Parametre : {el1[0]}")
                 print(f"{DeepDiff(el1[1], el2[1])} \n")
-
-def inspect_object(object_):
-    """Inspect an object"""
-    print("uifbfbzzbjenzeb")
-    if inspect.ismodule(object_):
-        print("ismodule")
-    if inspect.isclass(object_):
-        print("isclass")
-    if inspect.isfunction(object_):
-        print("isfunction")
-    if inspect.ismethod(object_):
-        print("ismethod")
-    if inspect.ismethoddescriptor(object_):
-        print("ismethoddescriptor")
-    if inspect.isdatadescriptor(object_):
-        print("isdatadescriptor")
-    if inspect.isgeneratorfunction(object_):
-        print("isgeneratorfunction")
-    if inspect.isgenerator(object_):
-        print("isgenerator")
-    if inspect.iscoroutinefunction(object_):
-        print("iscoroutinefunction")
-    if inspect.iscoroutine(object_):
-        print("iscoroutine")
-    if inspect.isasyncgenfunction(object_):
-        print("isasyncgenfunction")
-    if inspect.isasyncgen(object_):
-        print("isasyncgen")
-    if inspect.istraceback(object_):
-        print("istraceback")
-    if inspect.isframe(object_):
-        print("isframe")
-    if inspect.iscode(object_):
-        print("iscode")
-    if inspect.isbuiltin(object_):
-        print("isbuiltin")
-    if inspect.isroutine(object_):
-        print("isroutine")
 
 def hash_function(function) -> int:
     """Hash function"""
