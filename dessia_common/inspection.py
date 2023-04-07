@@ -1,4 +1,4 @@
-"""Module to inspect functions and classes"""
+"""Module to inspect functions and classes."""
 
 import inspect
 import re
@@ -15,17 +15,17 @@ _REGEX = {"def_function": r"(?<=def )\w+", #def functions r"(\.\w|\w)+(?=\(.+?\)
           "return": r"(?<=return ).*(?=(\\n)?)"}
 
 def test(test1: int, test2: List[int], test3: Dict[str, int]) -> int:
-    """Test function"""
+    """Test function."""
     return test1 + test2[0] + test3['a']
 
 def escape_regex(string):
-    """Escape regex special characters in a string"""
+    """Escape regex special characters in a string."""
     special_chars = r'[\\.*+?|(){}\[\]^$]'
     return re.sub(special_chars, r'\\\g<0>', string)
 
 
 class Function:
-    """Class to store a function and its inputs, outputs and modifications"""
+    """Class to store a function and its inputs, outputs and modifications."""
 
     def __init__(self, function):
         self.function = function
@@ -38,7 +38,7 @@ class Function:
         self.used_functions = self.find_used_functions()
 
     def find_used_functions(self) -> Dict:
-        """Find all functions used in the function"""
+        """Find all functions used in the function."""
         used_functions = {"called" : {},
                           "defined" : {},
                           "object" : {}} #object is just initialized, it'll be filled later
@@ -76,11 +76,11 @@ class Function:
         return used_functions
 
     def find_inputs(self):
-        """Find all inputs of the function"""
+        """Find all inputs of the function."""
         return dict(inspect.signature(self.function).parameters)
 
     def find_outputs(self):
-        """Find all outputs of the function"""
+        """Find all outputs of the function."""
         outputs = {}
         if inspect.signature(self.function).return_annotation == inspect._empty:
             outputs["type"] = ""
@@ -96,12 +96,12 @@ class Function:
         return outputs
 
     def find_modifications(self):
-        """Find all modifications of the function"""
+        """Find all modifications of the function."""
         modifications = {}
         return modifications
 
     def test_function(self):
-        """Compare two functions"""
+        """Compare two functions."""
         diff_getmembers(self.function, self.function)
         gotit = 1
         nashit = 2
@@ -110,7 +110,7 @@ class Function:
 
     @property
     def hash_function(self) -> int:
-        """Hash function"""
+        """Hash function."""
         try:
             my_bytes = f"{inspect.getfile(self.function)}{self.function.__name__}".encode('utf-8')
         except NameError:
@@ -122,6 +122,7 @@ class Function:
 
 
 def diff_getmembers(oldfunction, newfunction):
+    """Compare two functions."""
     for el1 in inspect.getmembers(oldfunction):
         for el2 in inspect.getmembers(newfunction):
             if el1[0] == el2[0]:
@@ -129,6 +130,7 @@ def diff_getmembers(oldfunction, newfunction):
                 print(f"{DeepDiff(el1[1], el2[1])} \n")
 
 def get_function_by_name(function_name):
+    """Get function by name."""
     current_frame = inspect.currentframe()
     name = function_name.rsplit('.')[-1]
     print(name)
