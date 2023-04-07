@@ -7,11 +7,6 @@ from deepdiff import DeepDiff
 import hashlib
 
 
-
-
-"""(\w*\.?\[(\"|')\w+(\"|')\]\.?|\w)+\w+\.?\w*(?=\()
-(\w*\.?\[(\"|')\w+(\"|')\]\.?|\w)+(?=\(.*\)\:)
-"""
 _REGEX = {"def_function": r"(?<=def )\w+", #def funcionts r"(\.\w|\w)+(?=\(.+?\)\:)"
           "all_functions": r"(\w*\.?\[(\"|')\w+(\"|')\]\.?|\w)+\w+\.?\w*(?=\()",
           "not_def_1": r"(?<!def )",
