@@ -26,8 +26,8 @@ WEEKLY_DECREASE = 0.03
 UNWATCHED_ERRORS = ["fixme", "trailing-whitespace", "import-error"]
 
 MAX_ERROR_BY_TYPE = {
-    "wrong-spelling-in-docstring": 164,
-    "wrong-spelling-in-comment": 13,
+    "wrong-spelling-in-docstring": 161,
+    "wrong-spelling-in-comment": 12,
     "protected-access": 46,  # Highly dependant on our "private" conventions. Keeps getting raised
     "arguments-differ": 1,
     "too-many-locals": 10,  # Reduce by dropping vectored objects
@@ -35,7 +35,7 @@ MAX_ERROR_BY_TYPE = {
     "unused-argument": 6,  # Some abstract functions have unused arguments (plot_data). Hence cannot decrease
     "cyclic-import": 2,  # Still work to do on Specific based DessiaObject
     "too-many-arguments": 22,  # Huge refactor needed
-    "too-few-public-methods": 4,  # Abstract classes (Errors, Checks,...)
+    "too-few-public-methods": 3,  # Abstract classes (Errors, Checks,...)
     "too-many-return-statements": 9,  # Huge refactor needed. Will be reduced by schema refactor
     "import-outside-toplevel": 4,  # TODO : will reduced in a future work (when tests are ready)
     "too-many-instance-attributes": 7,  # Huge refactor needed (workflow, etc...)
@@ -53,7 +53,8 @@ ERRORS_WITHOUT_TIME_DECREASE = ['protected-access', 'arguments-differ', 'too-man
                                 'unused-argument', 'cyclic-import', 'too-many-arguments', 'too-few-public-methods',
                                 'too-many-return-statements', 'import-outside-toplevel',
                                 'too-many-instance-attributes', 'broad-except', 'bare-except', "broad-exception-caught",
-                                'too-many-public-methods', 'too-many-statements', 'undefined-loop-variable']
+                                'too-many-public-methods', 'too-many-statements', 'undefined-loop-variable',
+                                'attribute-defined-outside-init']
 
 print("pylint version: ", __version__)
 

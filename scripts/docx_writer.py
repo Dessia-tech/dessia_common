@@ -21,13 +21,10 @@ headings = [heading_1, heading_2, heading_3, heading_4]
 footer = Footer(text="DessIA Technologies", align="left")
 footer_2 = Footer(text="DessIA Technologies", align="right")
 section = Section()
-section.add_footer(footer=footer)
-section.add_footer(footer=footer_2)
-
-
+section.add_element(element=footer)
+section.add_element(element=footer_2)
 
 writer = DocxWriter("test_docx.docx", paragraphs=paragraphs, headings=headings, section=section)
-
 
 writer.add_headings()
 writer.add_paragraphs()
