@@ -150,32 +150,37 @@ class Section:
 class DocxWriter:
     """ write a docx file. """
 
-    def __init__(self, paragraphs: List[Paragraph], section: Section = None, filename: str = None,
+    def __init__(self, paragraphs: List[Paragraph] = None, section: Section = None, filename: str = None,
                  headings: List[Heading] = None):
         if filename is None:
             filename = "document.docx"
         self.filename = filename
+        if headings is None:
+            headings = []
         self.headings = headings
         self.section = section
+        if paragraphs is None:
+            paragraphs = []
         self.paragraphs = paragraphs
         self.document = docx.Document()
 
         if self.section:
             self.section.add_to_document(document=self.document)
 
-    def add_headings(self) -> 'DocxWriter':
+    def add_headings(self, page_break: bool = True) -> 'DocxWriter':
         """ Add a list of headings to the document. """
         for heading in self.headings:
             self.document.add_heading(heading.text, level=heading.level)
-        self.add_page_breaks(num_page_breaks=1)
+        if page_break:
+            self.add_page_breaks(num_page_breaks=1)
         return self
 
-    def add_paragraphs(self) -> 'DocxWriter':
+    def add_paragraphs(self, add_heading: bool = True) -> 'DocxWriter':
         """ Add a list of paragraphs to the document. """
         document = self.document
         headings = self.headings
         for paragraph in self.paragraphs:
-            if headings:
+            if headings and add_heading:
                 document.add_heading(headings[0].text, headings[0].level)
                 headings = headings[1:]
             document.add_paragraph(paragraph.text)
@@ -245,6 +250,7 @@ class DocxWriter:
         current_paragraph = ''
         table_pattern = re.compile(r'^\|.*\|$')
         horizontal_line_pattern = re.compile(r'^\s*\|?\s*-+\s*\|?\s*(-+\s*\|?)*\s*$')
+        elements = []
 
         for line in markdown_text.split('\n'):
             line = line.strip()
@@ -252,26 +258,26 @@ class DocxWriter:
 
                 if line.startswith('#'):
                     if current_paragraph:
-                        paragraphs.append(Paragraph(current_paragraph))
+                        elements.append(Paragraph(current_paragraph))
                         current_paragraph = ''
                     headings.append(Heading.from_markdown(line))
 
                 elif table_pattern.match(line) and not horizontal_line_pattern.match(line):
                     row = line.strip('|').split('|')
                     if row != [' ------ '] * len(row):
-                        table_rows.append(row)
+                        elements.append(row)
 
                 else:
-                    current_paragraph += line
+                    elements.append(Paragraph(line))
 
-        if current_paragraph:
-            paragraphs.append(Paragraph(current_paragraph))
-        docx_writer = cls(paragraphs=paragraphs, headings=headings)
+        docx_writer = cls(headings=headings)
         docx_writer.add_headings()
-        docx_writer.add_paragraphs()
-
-        if table_rows:
-            docx_writer.add_table(table_rows)
+        for item in elements:
+            if isinstance(item, Paragraph):
+                docx_writer.paragraphs = [item]
+                docx_writer.add_paragraphs(add_heading=False)
+            if isinstance(item, list):
+                docx_writer.add_table([item])
 
         return docx_writer
 
