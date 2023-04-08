@@ -188,6 +188,10 @@ class DocxWriter:
         self.headings = headings
         return self
 
+    def add_paragraph_as_heading(self, text: str):
+        self.document.add_heading(text, level=text.count('#'))
+        return self
+
     def add_page_breaks(self, num_page_breaks: int):
         """ Add an empty page to the document. """
         for _ in range(num_page_breaks):
@@ -243,11 +247,14 @@ class DocxWriter:
             section.header.is_linked_to_previous = True
             section.footer.is_linked_to_previous = True
 
-    @classmethod
-    def from_markdown(cls, markdown_text: str):
-        """ Create a DocxWriter instance from a Markdown string. """
+    @staticmethod
+    def parse_markdown(markdown_text: str):
+        """
+        Parses the given markdown text and returns a tuple containing a list of headings,
+        a list of paragraphs and tables.
+        """
         paragraphs, headings, table_rows = [], [], []
-        current_paragraph = ''
+        # current_paragraph = ''
         table_pattern = re.compile(r'^\|.*\|$')
         horizontal_line_pattern = re.compile(r'^\s*\|?\s*-+\s*\|?\s*(-+\s*\|?)*\s*$')
         elements = []
@@ -257,25 +264,36 @@ class DocxWriter:
             if line:
 
                 if line.startswith('#'):
-                    if current_paragraph:
-                        elements.append(Paragraph(current_paragraph))
-                        current_paragraph = ''
                     headings.append(Heading.from_markdown(line))
+                    elements.append(Paragraph(text=line))
 
                 elif table_pattern.match(line) and not horizontal_line_pattern.match(line):
                     row = line.strip('|').split('|')
-                    if row != [' ------ '] * len(row):
-                        elements.append(row)
+                    elements.append(row)
 
                 else:
-                    elements.append(Paragraph(line))
+                    # if '---' not in line:
+                    #     current_paragraph += line
+                    if '---' not in line:
+                        elements.append(Paragraph(text=line))
 
+        # if current_paragraph:
+        #     elements.append(Paragraph(current_paragraph, heading=heading))
+        return headings, elements
+
+    @classmethod
+    def from_markdown(cls, markdown_text: str):
+        """ Converts the given markdown text into a DocxWriter instance."""
+        headings, elements = cls.parse_markdown(markdown_text=markdown_text)
         docx_writer = cls(headings=headings)
         docx_writer.add_headings()
         for item in elements:
             if isinstance(item, Paragraph):
                 docx_writer.paragraphs = [item]
-                docx_writer.add_paragraphs(add_heading=False)
+                if item.text.startswith('#'):
+                    docx_writer.add_paragraph_as_heading(text=item.text.strip(' # '))
+                else:
+                    docx_writer.add_paragraphs(add_heading=False)
             if isinstance(item, list):
                 docx_writer.add_table([item])
 
