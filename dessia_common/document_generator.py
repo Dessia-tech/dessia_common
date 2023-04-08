@@ -3,11 +3,10 @@
 """ Write document file. """
 
 import re
-from typing import List
 from typing import List, Union
-
-
 import docx
+import markdown
+from bs4 import BeautifulSoup
 
 from dessia_common.files import BinaryFile
 
@@ -89,6 +88,18 @@ class Heading:
         """ Add the heading to the document. """
         document.add_heading(self.text, self.level)
 
+    @classmethod
+    def from_markdown(cls, markdown_text: str):
+        html = markdown.markdown(markdown_text)
+        soup = BeautifulSoup(html, 'html.parser')
+        heading_tag = soup.find(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
+        if heading_tag is not None:
+            text = heading_tag.text.strip()
+            level = int(heading_tag.name[1])
+            return cls(text, level)
+        else:
+            return None
+
 
 class Paragraph:
     """ Represents a paragraph in the document. """
@@ -99,6 +110,13 @@ class Paragraph:
     def add_to_document(self, document: docx.Document):
         """ Add paragraph to the document. """
         document.add_paragraph(self.text)
+
+    @classmethod
+    def from_markdown(cls, markdown_text: str):
+        html_text = markdown.markdown(markdown_text)
+        soup = BeautifulSoup(html_text, 'html.parser')
+        plain_text = soup.get_text("\n", strip=True)
+        return cls(plain_text)
 
 
 class Section:
@@ -131,14 +149,18 @@ class Section:
 class DocxWriter:
     """ write a docx file. """
 
-    def __init__(self, filename: str, paragraphs: List[Paragraph], section: Section, headings: List[Heading] = None):
+    def __init__(self, paragraphs: List[Paragraph], section: Section = None, filename: str = None,
+                 headings: List[Heading] = None):
+        if filename is None:
+            filename = "document.docx"
         self.filename = filename
         self.headings = headings
         self.section = section
         self.paragraphs = paragraphs
         self.document = docx.Document()
 
-        self.section.add_to_document(document=self.document)
+        if self.section:
+            self.section.add_to_document(document=self.document)
 
     def add_headings(self) -> 'DocxWriter':
         """ Add a list of headings to the document. """
@@ -218,36 +240,37 @@ class DocxWriter:
     @classmethod
     def from_markdown(cls, markdown: str):
         """ Create a DocxWriter instance from a Markdown string. """
-        paragraphs = []
-        headings = []
+        paragraphs, headings, table_rows = [], [], []
         current_paragraph = ''
-        table_rows = []
-
         table_pattern = re.compile(r'^\|.*\|$')
         horizontal_line_pattern = re.compile(r'^\s*\|?\s*-+\s*\|?\s*(-+\s*\|?)*\s*$')
 
         for line in markdown.split('\n'):
-            if line.startswith('#'):
-                if current_paragraph:
-                    paragraphs.append(Paragraph(current_paragraph))
-                    current_paragraph = ''
-                heading_level = line.count('#')
-                heading_text = line.strip('#').strip()
-                headings.append(Heading(heading_text, heading_level))
-            elif table_pattern.match(line):
-                if not horizontal_line_pattern.match(line):
+            line = line.strip()
+            if line:
+
+                if line.startswith('#'):
+                    if current_paragraph:
+                        paragraphs.append(Paragraph(current_paragraph))
+                        current_paragraph = ''
+                    headings.append(Heading.from_markdown(line))
+
+                elif table_pattern.match(line) and not horizontal_line_pattern.match(line):
                     row = line.strip('|').split('|')
                     if row != [' ------ '] * len(row):
                         table_rows.append(row)
-            else:
-                current_paragraph += line + '\n'
 
+                else:
+                    current_paragraph += line
+
+        if current_paragraph:
+            paragraphs.append(Paragraph(current_paragraph))
+        docx_writer = cls(paragraphs=paragraphs, headings=headings)
+        docx_writer.add_headings()
+        docx_writer.add_paragraphs()
 
         if table_rows:
-            docx_writer = cls(paragraphs=paragraphs, headings=headings)
             docx_writer.add_table(table_rows)
-        else:
-            docx_writer = cls(paragraphs=paragraphs, headings=headings)
 
         return docx_writer
 
