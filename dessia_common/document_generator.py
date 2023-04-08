@@ -44,7 +44,7 @@ class LayoutElement:
 
 
 class Header(LayoutElement):
-    """ Represents a header in a docx document. """
+    """ Represents a header in document. """
 
     def add_to_document(self, document: docx.Document):
         """ Add the header to the document. """
@@ -97,8 +97,7 @@ class Heading:
             text = heading_tag.text.strip()
             level = int(heading_tag.name[1])
             return cls(text, level)
-        else:
-            return None
+        return None
 
 
 class Paragraph:
@@ -238,14 +237,14 @@ class DocxWriter:
             section.footer.is_linked_to_previous = True
 
     @classmethod
-    def from_markdown(cls, markdown: str):
+    def from_markdown(cls, markdown_text: str):
         """ Create a DocxWriter instance from a Markdown string. """
         paragraphs, headings, table_rows = [], [], []
         current_paragraph = ''
         table_pattern = re.compile(r'^\|.*\|$')
         horizontal_line_pattern = re.compile(r'^\s*\|?\s*-+\s*\|?\s*(-+\s*\|?)*\s*$')
 
-        for line in markdown.split('\n'):
+        for line in markdown_text.split('\n'):
             line = line.strip()
             if line:
 
