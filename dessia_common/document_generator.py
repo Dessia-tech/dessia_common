@@ -90,6 +90,7 @@ class Heading:
 
     @classmethod
     def from_markdown(cls, markdown_text: str):
+        """ Create a new Heading object from Markdown text. """
         html = markdown.markdown(markdown_text)
         soup = BeautifulSoup(html, 'html.parser')
         heading_tag = soup.find(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
@@ -112,6 +113,7 @@ class Paragraph:
 
     @classmethod
     def from_markdown(cls, markdown_text: str):
+        """ Create a new Paragraph object from Markdown text. """
         html_text = markdown.markdown(markdown_text)
         soup = BeautifulSoup(html_text, 'html.parser')
         plain_text = soup.get_text("\n", strip=True)
