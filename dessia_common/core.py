@@ -611,7 +611,7 @@ class DessiaObject(SerializableObject):
     def to_markdown_docx(self):
         """ Generates a docx document from the object attributes, using a markdown-like syntax."""
 
-        docxwriter = DocxWriter.from_markdown(markdown=self.to_markdown())
+        docxwriter = DocxWriter.from_markdown(markdown_text=self.to_markdown())
         return docxwriter
 
     def to_docx_stream(self, stream: dcf.BinaryFile):
