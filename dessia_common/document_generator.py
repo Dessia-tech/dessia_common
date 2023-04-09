@@ -255,8 +255,11 @@ class DocxWriter:
 
     @staticmethod
     def parse_markdown(markdown_text: str):
-        """ Parses the given markdown text and returns a tuple containing a list of headings, a list of paragraphs
-        and tables. """
+        """
+        Parses the given markdown text.
+
+        :return: Tuple containing a list of headings, a list of paragraphs and tables.
+        """
         elements, headings = [], []
         # current_paragraph = ''
         table_pattern = re.compile(r'^\|.*\|$')
