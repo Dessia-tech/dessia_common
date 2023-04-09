@@ -259,11 +259,10 @@ class DocxWriter:
         Parses the given markdown text and returns a tuple containing a list of headings,
         a list of paragraphs and tables.
         """
-        paragraphs, headings, table_rows = [], [], []
+        elements, headings = [], []
         # current_paragraph = ''
         table_pattern = re.compile(r'^\|.*\|$')
         horizontal_line_pattern = re.compile(r'^\s*\|?\s*-+\s*\|?\s*(-+\s*\|?)*\s*$')
-        elements = []
 
         for line in markdown_text.split('\n'):
             line = line.strip()
