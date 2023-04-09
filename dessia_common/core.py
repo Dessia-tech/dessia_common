@@ -642,6 +642,21 @@ class DessiaObject(SerializableObject):
             filepath += '.docx'
             print(f'Changing name to {filepath}')
         self.to_docx_stream(filepath)
+
+    def to_pdf_stream(self, stream: dcf.BinaryFile):
+        """ Save the PDF version of the document to a binary file stream. """
+        document = self.to_markdown_docx()
+        document.save_pdf_stream(stream=stream)
+
+    def to_pdf(self, filepath: str):
+        """ Save the PDF version of the document to a file. """
+        if not filepath.endswith('.pdf'):
+            filepath += '.pdf'
+            print(f'Changing name to {filepath}')
+        with open(filepath, 'wb') as f:
+            pdf_stream = dcf.BinaryFile()
+            self.to_pdf_stream(pdf_stream)
+            f.write(pdf_stream.getvalue())
         
     def zip_settings(self):
         """
@@ -683,7 +698,8 @@ class DessiaObject(SerializableObject):
         formats = [ExportFormat(selector="json", extension="json", method_name="save_to_stream", text=True),
                    ExportFormat(selector="xlsx", extension="xlsx", method_name="to_xlsx_stream", text=False),
                    ExportFormat(selector="zip", extension="zip", method_name="to_zip_stream", text=False),
-                   ExportFormat(selector="docx", extension="docx", method_name="to_docx_stream", text=False)]
+                   ExportFormat(selector="docx", extension="docx", method_name="to_docx_stream", text=False),
+                   ExportFormat(selector="pdf", extension="pdf", method_name="to_pdf_stream", text=False)]
         return formats
 
     def save_export_to_file(self, selector: str, filepath: str):

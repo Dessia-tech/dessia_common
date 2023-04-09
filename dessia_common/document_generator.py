@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """ Write document file. """
+import os
+import tempfile
 from typing import List, Union
 
 import docx
@@ -208,6 +210,18 @@ class DocxWriter:
             section.header.is_linked_to_previous = True
             section.footer.is_linked_to_previous = True
 
+    def convert_to_pdf(self) -> bytes:
+        """ Convert the document content to a PDF byte stream. """
+        with tempfile.NamedTemporaryFile(suffix=".docx") as temp_file:
+            self.document.save(temp_file.name)
+
+            pdf_file = BinaryFile()
+            os.system(f"libreoffice --convert-to pdf --outdir {os.path.dirname(temp_file.name)} {temp_file.name}")
+            with open(temp_file.name.replace(".docx", ".pdf"), "rb") as f:
+                pdf_file.write(f.read())
+
+            return pdf_file.getvalue()
+
     def save_file(self):
         """ Saves the document to a file. """
         self.document.save(self.filename)
@@ -215,3 +229,17 @@ class DocxWriter:
     def save_to_stream(self, stream: BinaryFile):
         """ Saves the document to a binary stream. """
         self.document.save(stream)
+
+    def save_pdf_file(self, filepath: str):
+        """ Save the PDF version of the document to a file."""
+        if not filepath.endswith('pdf'):
+            filepath += '.pdf'
+        with open(filepath, 'wb') as f:
+            pdf_stream = BinaryFile()
+            self.save_pdf_stream(pdf_stream)
+            f.write(pdf_stream.getvalue())
+
+    def save_pdf_stream(self, stream: BinaryFile):
+        """ Save the PDF version of the document to a binary file stream. """
+        pdf_bytes = self.convert_to_pdf()
+        stream.write(pdf_bytes)
