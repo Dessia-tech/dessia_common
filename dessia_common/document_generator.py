@@ -189,6 +189,12 @@ class DocxWriter:
         return self
 
     def add_paragraph_as_heading(self, text: str):
+        """
+        Adds a new heading to the document, using the specified text as the heading text.
+
+        The level of the heading is determined by the number of '#' characters in the text.
+        For example, a single '#' character at the beginning of the text will create a level 1 heading.
+        """
         self.document.add_heading(text, level=text.count('#'))
         return self
 
@@ -269,7 +275,8 @@ class DocxWriter:
 
                 elif table_pattern.match(line) and not horizontal_line_pattern.match(line):
                     row = line.strip('|').split('|')
-                    elements.append(row)
+                    if '---' not in line:
+                        elements.append(row)
 
                 else:
                     # if '---' not in line:
@@ -301,6 +308,8 @@ class DocxWriter:
 
     def save_file(self):
         """ Saves the document to a file. """
+        if not self.filename.endswith('.docx'):
+            self.filename += '.docx'
         self.document.save(self.filename)
 
     def save_to_stream(self, stream: BinaryFile):
