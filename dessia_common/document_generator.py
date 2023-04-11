@@ -13,7 +13,7 @@ class LayoutElement:
     """
     Represents a header or footer in document.
 
-    This class is used to create headers and footers for a docx document. Subclasses
+    This class is used to create headers and footers for document. Subclasses
     `Header` and `Footer` are available for convenience.
     """
 

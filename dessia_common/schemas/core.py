@@ -52,7 +52,7 @@ class Schema:
 
     It reads the user-defined type hints and then writes into a Dict the recursive structure of an object
     that can be handled by dessia_common.
-    This dictionnary can then be translated as a json to be read by the frontend in order to compute edit forms,
+    This dictionary can then be translated as a json to be read by the frontend in order to compute edit forms,
     for example.
 
     Right now Schema doesn't inherit from any DessiaObject class (SerializableObject ?), but could, in the future.
