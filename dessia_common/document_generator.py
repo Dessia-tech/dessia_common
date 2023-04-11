@@ -216,7 +216,7 @@ class DocxWriter:
             self.document.save(temp_file.name)
 
             pdf_file = BinaryFile()
-            os.system(f"libreoffice --convert-to pdf --outdir {os.path.dirname(temp_file.name)} {temp_file.name}")
+            os.system(f"soffice --convert-to pdf --outdir {os.path.dirname(temp_file.name)} {temp_file.name}")
             with open(temp_file.name.replace(".docx", ".pdf"), "rb") as f:
                 pdf_file.write(f.read())
 
