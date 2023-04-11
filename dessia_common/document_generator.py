@@ -258,7 +258,7 @@ class DocxWriter:
 
                 if line.startswith('#'):
                     headings.append(Heading.from_markdown(line))
-                    elements.append(Paragraph(text=line))
+                    elements.append(Paragraph.from_markdown(markdown_text=line))
 
                 elif table_pattern.match(line) and not horizontal_line_pattern.match(line):
                     row = line.strip('|').split('|')
