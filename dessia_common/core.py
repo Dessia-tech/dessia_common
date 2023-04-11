@@ -37,7 +37,8 @@ from dessia_common.displays import DisplayObject, DisplaySetting
 from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
 import dessia_common.utils.helpers as dch
 import dessia_common.files as dcf
-from dessia_common.document_generator import DocxWriter, Paragraph, Header, Section
+from dessia_common.document_generator import DocxWriter
+
 
 
 def __getattr__(name):
@@ -608,28 +609,9 @@ class DessiaObject(SerializableObject):
         writer.save_to_stream(stream)
 
     def to_markdown_docx(self):
-        """ Generates a docx document from the object attributes, using a markdown-like syntax."""
-        text = f"This is a markdown file https://www.markdownguide.org/cheat-sheet The good practice is to create a" \
-               " string python template and move the template to another python module (like templates.py) to avoid " \
-               "mix python code" \
-               " and markdown,as python syntax conflicts with markdown You can substitute values with object " \
-               "attributes like the " \
-               f"name of the object: {self.name}"
-
-        paragraph = Paragraph(text=text)
-        header = Header(text="DessIA Technologies", align="center")
-        section = Section()
-        section.add_element(header)
-
-        table_md = MarkdownWriter()
-        table_str = [table_md.object_titles()] + table_md.object_matrix(self)
-
-        docxwriter = DocxWriter(filename="my_doc.docx", paragraphs=[paragraph], section=section)
-
-        docxwriter.add_paragraphs()
-        docxwriter.add_table(rows=table_str)
-
-        return docxwriter
+        """ Generates a docx document from the object attributes, using a markdown-like syntax. """
+        docx_writer = DocxWriter.from_markdown(markdown_text=self.to_markdown())
+        return docx_writer
 
     def to_docx_stream(self, stream: dcf.BinaryFile):
         """ Saves the document to a binary stream. """

@@ -25,7 +25,7 @@ section.add_element(element=footer)
 section.add_element(element=footer_2)
 
 
-writer = DocxWriter("test_docx.docx", paragraphs=paragraphs, headings=headings, section=section)
+writer = DocxWriter(filename="test_docx.docx", paragraphs=paragraphs, headings=headings, section=section)
 
 writer.add_headings()
 writer.add_paragraphs()

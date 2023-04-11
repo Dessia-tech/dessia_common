@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """ Write document file. """
-from typing import List, Union
 
+import re
+from typing import List, Union
 import docx
+import markdown
+from bs4 import BeautifulSoup
 
 from dessia_common.files import BinaryFile
 
@@ -41,7 +44,7 @@ class LayoutElement:
 
 
 class Header(LayoutElement):
-    """ Represents a header in a docx document. """
+    """ Represents a header in document. """
 
     def add_to_document(self, document: docx.Document):
         """ Add the header to the document. """
@@ -85,6 +88,18 @@ class Heading:
         """ Add the heading to the document. """
         document.add_heading(self.text, self.level)
 
+    @classmethod
+    def from_markdown(cls, markdown_text: str):
+        """ Create a new Heading object from Markdown text. """
+        html = markdown.markdown(markdown_text)
+        soup = BeautifulSoup(html, 'html.parser')
+        heading_tag = soup.find(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
+        if heading_tag is not None:
+            text = heading_tag.text.strip()
+            level = int(heading_tag.name[1])
+            return cls(text, level)
+        return None
+
 
 class Paragraph:
     """ Represents a paragraph in the document. """
@@ -95,6 +110,14 @@ class Paragraph:
     def add_to_document(self, document: docx.Document):
         """ Add paragraph to the document. """
         document.add_paragraph(self.text)
+
+    @classmethod
+    def from_markdown(cls, markdown_text: str):
+        """ Create a new Paragraph object from Markdown text. """
+        html_text = markdown.markdown(markdown_text)
+        soup = BeautifulSoup(html_text, 'html.parser')
+        plain_text = soup.get_text("\n", strip=True)
+        return cls(plain_text)
 
 
 class Section:
@@ -127,33 +150,52 @@ class Section:
 class DocxWriter:
     """ write a docx file. """
 
-    def __init__(self, filename: str, paragraphs: List[Paragraph], section: Section, headings: List[Heading] = None):
+    def __init__(self, paragraphs: List[Paragraph] = None, section: Section = None, filename: str = None,
+                 headings: List[Heading] = None):
+        if filename is None:
+            filename = "document.docx"
         self.filename = filename
+        if headings is None:
+            headings = []
         self.headings = headings
         self.section = section
+        if paragraphs is None:
+            paragraphs = []
         self.paragraphs = paragraphs
         self.document = docx.Document()
 
-        self.section.add_to_document(document=self.document)
+        if self.section:
+            self.section.add_to_document(document=self.document)
 
-    def add_headings(self) -> 'DocxWriter':
+    def add_headings(self, page_break: bool = True) -> 'DocxWriter':
         """ Add a list of headings to the document. """
         for heading in self.headings:
             self.document.add_heading(heading.text, level=heading.level)
-        self.add_page_breaks(num_page_breaks=1)
+        if page_break:
+            self.add_page_breaks(num_page_breaks=1)
         return self
 
-    def add_paragraphs(self) -> 'DocxWriter':
+    def add_paragraphs(self, add_heading: bool = True) -> 'DocxWriter':
         """ Add a list of paragraphs to the document. """
         document = self.document
         headings = self.headings
         for paragraph in self.paragraphs:
-            if headings:
+            if headings and add_heading:
                 document.add_heading(headings[0].text, headings[0].level)
                 headings = headings[1:]
             document.add_paragraph(paragraph.text)
         self.document = document
         self.headings = headings
+        return self
+
+    def add_paragraph_as_heading(self, text: str):
+        """
+        Adds a new heading to the document, using the specified text as the heading text.
+
+        The level of the heading is determined by the number of '#' characters in the text.
+        For example, a single '#' character at the beginning of the text will create a level 1 heading.
+        """
+        self.document.add_heading(text, level=text.count('#'))
         return self
 
     def add_page_breaks(self, num_page_breaks: int):
@@ -170,7 +212,10 @@ class DocxWriter:
         for row in rows[1:]:
             row_cells = table.add_row().cells
             for i, cell in enumerate(row_cells):
-                cell.text = row[i]
+                if i < len(row):
+                    cell.text = row[i]
+                else:
+                    cell.text = ""
         self.document = document
         return self
 
@@ -208,8 +253,58 @@ class DocxWriter:
             section.header.is_linked_to_previous = True
             section.footer.is_linked_to_previous = True
 
+    @staticmethod
+    def parse_markdown(markdown_text: str):
+        """
+        Parses the given markdown text.
+
+        :return: Tuple containing a list of headings, a list of paragraphs and tables.
+        """
+        elements, headings = [], []
+        table_pattern = re.compile(r'^\|.*\|$')
+        horizontal_line_pattern = re.compile(r'^\s*\|?\s*-+\s*\|?\s*(-+\s*\|?)*\s*$')
+
+        for line in markdown_text.split('\n'):
+            line = line.strip()
+            if line:
+
+                if line.startswith('#'):
+                    headings.append(Heading.from_markdown(line))
+                    elements.append(Paragraph(text=line))
+
+                elif table_pattern.match(line) and not horizontal_line_pattern.match(line):
+                    row = line.strip('|').split('|')
+                    if '---' not in line:
+                        elements.append(row)
+
+                else:
+                    if '---' not in line:
+                        elements.append(Paragraph(text=line))
+
+        return headings, elements
+
+    @classmethod
+    def from_markdown(cls, markdown_text: str):
+        """ Converts the given markdown text into a DocxWriter instance."""
+        headings, elements = cls.parse_markdown(markdown_text=markdown_text)
+        docx_writer = cls(headings=headings)
+        docx_writer.add_headings()
+        for item in elements:
+            if isinstance(item, Paragraph):
+                docx_writer.paragraphs = [item]
+                if item.text.startswith('#'):
+                    docx_writer.add_paragraph_as_heading(text=item.text.strip(' # '))
+                else:
+                    docx_writer.add_paragraphs(add_heading=False)
+            if isinstance(item, list):
+                docx_writer.add_table([item])
+
+        return docx_writer
+
     def save_file(self):
         """ Saves the document to a file. """
+        if not self.filename.endswith('.docx'):
+            self.filename += '.docx'
         self.document.save(self.filename)
 
     def save_to_stream(self, stream: BinaryFile):
