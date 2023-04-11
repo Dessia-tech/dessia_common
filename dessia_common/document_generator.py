@@ -261,7 +261,6 @@ class DocxWriter:
         :return: Tuple containing a list of headings, a list of paragraphs and tables.
         """
         elements, headings = [], []
-        # current_paragraph = ''
         table_pattern = re.compile(r'^\|.*\|$')
         horizontal_line_pattern = re.compile(r'^\s*\|?\s*-+\s*\|?\s*(-+\s*\|?)*\s*$')
 
@@ -279,13 +278,9 @@ class DocxWriter:
                         elements.append(row)
 
                 else:
-                    # if '---' not in line:
-                    #     current_paragraph += line
                     if '---' not in line:
                         elements.append(Paragraph(text=line))
 
-        # if current_paragraph:
-        #     elements.append(Paragraph(current_paragraph, heading=heading))
         return headings, elements
 
     @classmethod
