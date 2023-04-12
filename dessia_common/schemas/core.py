@@ -52,7 +52,7 @@ class Schema:
 
     It reads the user-defined type hints and then writes into a Dict the recursive structure of an object
     that can be handled by dessia_common.
-    This dictionnary can then be translated as a json to be read by the frontend in order to compute edit forms,
+    This dictionary can then be translated as a json to be read by the frontend in order to compute edit forms,
     for example.
 
     Right now Schema doesn't inherit from any DessiaObject class (SerializableObject ?), but could, in the future.
@@ -765,7 +765,7 @@ class HeterogeneousSequence(TypingProperty):
         In this case it MUST have exactly two arguments.
         """
         if self.additional_items and len(self.args) != 2:
-            msg = f"{self.check_prefix}is typed as an ellipsed 'Tuple' which requires at exactaly 2 arguments. " \
+            msg = f"{self.check_prefix}is typed as an ellipsed 'Tuple' which requires at exactly 2 arguments. " \
                   f"Expected 'Tuple[T, ...]', got '{self.annotation}'."
             return WrongNumberOfArguments(msg)
         return PassedCheck(f"{self.check_prefix}is not an ill-defined ellipsed tuple : '{self.annotation}'.")

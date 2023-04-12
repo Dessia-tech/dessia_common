@@ -641,7 +641,7 @@ class Display(Block):
 
 class MultiPlot(Display):
     """
-    Generate a Multiplot which axes will be the given attributes.
+    Generate a Multi plot which axes will be the given attributes.
 
     :param attributes: A List of all attributes that will be shown on axes in the ParallelPlot window.
         Can be deep attributes with the '/' separator.

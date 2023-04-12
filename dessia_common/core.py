@@ -37,6 +37,8 @@ from dessia_common.displays import DisplayObject, DisplaySetting
 from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
 import dessia_common.utils.helpers as dch
 import dessia_common.files as dcf
+from dessia_common.document_generator import DocxWriter
+
 
 
 def __getattr__(name):
@@ -606,6 +608,23 @@ class DessiaObject(SerializableObject):
         writer = XLSXWriter(self)
         writer.save_to_stream(stream)
 
+    def to_markdown_docx(self):
+        """ Generates a docx document from the object attributes, using a markdown-like syntax. """
+        docx_writer = DocxWriter.from_markdown(markdown_text=self.to_markdown())
+        return docx_writer
+
+    def to_docx_stream(self, stream: dcf.BinaryFile):
+        """ Saves the document to a binary stream. """
+        document = self.to_markdown_docx()
+        document.save_to_stream(stream=stream)
+
+    def to_docx(self, filepath: str):
+        """ Saves the document to a file. """
+        if not filepath.endswith('.docx'):
+            filepath += '.docx'
+            print(f'Changing name to {filepath}')
+        self.to_docx_stream(filepath)
+        
     def zip_settings(self):
         """
         Returns a list of streams containing different representations of the object.
@@ -645,7 +664,8 @@ class DessiaObject(SerializableObject):
         """ Return a list of objects describing how to call generic exports (.json, .xlsx). """
         formats = [ExportFormat(selector="json", extension="json", method_name="save_to_stream", text=True),
                    ExportFormat(selector="xlsx", extension="xlsx", method_name="to_xlsx_stream", text=False),
-                   ExportFormat(selector="zip", extension="zip", method_name="to_zip_stream", text=False)]
+                   ExportFormat(selector="zip", extension="zip", method_name="to_zip_stream", text=False),
+                   ExportFormat(selector="docx", extension="docx", method_name="to_docx_stream", text=False)]
         return formats
 
     def save_export_to_file(self, selector: str, filepath: str):

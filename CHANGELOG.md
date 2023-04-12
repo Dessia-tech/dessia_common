@@ -46,6 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Change serialize_typing function name to serialize_annotation
 - Change tests. Unittests are in 'tests' folder. Other tests in scripts
 - Check Platform is now verbose and split into several functions
+- Document generator : Refactor document_generator module
 - Workflow : to_dict method do not use pointers anymore
 - Workflow : Remove some attributes from serialization
 

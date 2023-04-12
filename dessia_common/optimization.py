@@ -31,7 +31,7 @@ class BoundedAttributeValue(DessiaObject):
     :param attribute_name: Name of attribute to bound.
     :param min_value: Minimum value for this attribute.
     :param max_value: Maximum value for this attribute.
-    :param number: Number of values to generate betwwen those bounds.
+    :param number: Number of values to generate between those bounds.
         Only used for sampling. ClassSampler.full_fact method.
     :param name: Name of BoundedAttributeValue.
     """
