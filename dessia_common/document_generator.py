@@ -47,7 +47,7 @@ class Header(LayoutElement):
     def add_to_document(self, document: docx.Document):
         """ Add the header to the document. """
         section = document.sections[0]
-        super()._add_to_section(section, type_='header')
+        super()._add_to_section(section=section, type_='header')
 
     def add_to_section(self, section):
         """ Add header to section. """
@@ -64,7 +64,7 @@ class Footer(LayoutElement):
     def add_to_document(self, document: docx.Document):
         """ Add the footer to the document. """
         section = document.sections[0]
-        super()._add_to_section(section, type_='footer')
+        super()._add_to_section(section=section, type_='footer')
 
     def add_to_section(self, section):
         """ Add footer to section. """
@@ -138,10 +138,8 @@ class Section:
 class DocxWriter:
     """ write a docx file. """
 
-    def __init__(self, paragraphs: List[Paragraph] = None, section: Section = None, filename: str = None,
+    def __init__(self, paragraphs: List[Paragraph] = None, section: Section = None, filename: str = "document.docx",
                  headings: List[Heading] = None):
-        if filename is None:
-            filename = "document.docx"
         self.filename = filename
         if headings is None:
             headings = []
@@ -165,15 +163,11 @@ class DocxWriter:
 
     def add_paragraphs(self, add_heading: bool = True) -> 'DocxWriter':
         """ Add a list of paragraphs to the document. """
-        document = self.document
-        headings = self.headings
         for paragraph in self.paragraphs:
-            if headings and add_heading:
-                document.add_heading(headings[0].text, headings[0].level)
-                headings = headings[1:]
-            document.add_paragraph(paragraph.text)
-        self.document = document
-        self.headings = headings
+            if self.headings and add_heading:
+                self.document.add_heading(self.headings[0].text, self.headings[0].level)
+                self.headings = self.headings[1:]
+            self.document.add_paragraph(paragraph.text)
         return self
 
     def add_paragraph_as_heading(self, text: str):
@@ -193,8 +187,7 @@ class DocxWriter:
 
     def add_table(self, rows: List[List[str]]) -> 'DocxWriter':
         """ Add table to the document. """
-        document = self.document
-        table = document.add_table(rows=1, cols=len(rows[0]), style="TableGrid")
+        table = self.document.add_table(rows=1, cols=len(rows[0]), style="TableGrid")
         for i, cell in enumerate(table.rows[0].cells):
             cell.text = rows[0][i]
         for row in rows[1:]:
@@ -204,7 +197,6 @@ class DocxWriter:
                     cell.text = row[i]
                 else:
                     cell.text = ""
-        self.document = document
         return self
 
     def add_list_items(self, items: List[str], style: str = 'List Bullet'):
@@ -217,10 +209,8 @@ class DocxWriter:
         :param style: The style of the list. Valid values are 'List Bullet' (default) or 'List Number'
         :type style: str
         """
-        document = self.document
         for item in items:
-            document.add_paragraph(item, style=style)
-        self.document = document
+            self.document.add_paragraph(item, style=style)
         return self
 
     def add_header_footer_picture(self, image_path: str, width: int = None, height: int = None)\
@@ -234,7 +224,7 @@ class DocxWriter:
         self.document.add_picture(image_path, width=width, height=height)
         return self
 
-    def delete_header_footer(self):
+    def delete_layout_element(self):
         """ Remove the header and footer from all sections in a Word document. """
         for section in self.document.sections:
             section.different_first_page_header_footer = False
@@ -255,7 +245,6 @@ class DocxWriter:
         for line in markdown_text.split('\n'):
             line = line.strip()
             if line:
-
                 if line.startswith('#'):
                     headings.append(Heading.from_markdown(line))
                     elements.append(Paragraph.from_markdown(markdown_text=line))
@@ -268,7 +257,6 @@ class DocxWriter:
                 else:
                     if '---' not in line:
                         elements.append(Paragraph(text=line))
-
         return headings, elements
 
     @classmethod
@@ -286,7 +274,6 @@ class DocxWriter:
                     docx_writer.add_paragraphs(add_heading=False)
             if isinstance(item, list):
                 docx_writer.add_table([item])
-
         return docx_writer
 
     def save_file(self):
