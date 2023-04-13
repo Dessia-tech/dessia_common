@@ -373,6 +373,32 @@ class DessiaObject(SerializableObject):
         json.dump(dict_, stream, indent=indent)
 
     @classmethod
+    def load_from_stream(cls, stream: dcf.JsonFile):
+        """
+        Generate object from stream using utf-8 encoding.
+
+        Should be consistent with save_to_stream method.
+        """
+        warnings.warn("This method is deprecated and will be removed in a future version."
+                      " Please use the `from_json_stream` method instead.", DeprecationWarning)
+        dict_ = json.loads(stream.read().decode('utf-8'))
+        return cls.dict_to_object(dict_)
+
+    @classmethod
+    def load_from_file(cls, filepath: str):
+        """
+        Load object from a JSON file.
+
+        :param filepath: either a string representing the filepath or a stream
+        """
+        warnings.warn("This method is deprecated and will be removed in a future version."
+                      " Please use the `from_json` method instead.", DeprecationWarning)
+        with open(filepath, 'r', encoding='utf-8') as file:
+            dict_ = json.load(file)
+
+        return cls.dict_to_object(dict_)
+
+    @classmethod
     def from_json_stream(cls, stream: dcf.JsonFile):
         """
         Generate object from stream using utf-8 encoding.
