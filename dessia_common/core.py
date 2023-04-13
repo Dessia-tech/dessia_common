@@ -510,12 +510,10 @@ class DessiaObject(SerializableObject):
         for function_name, function in methods:
             serialize_data = function.__dict__.get("serialize_data", False)
             load_by_default = function.__dict__.get("load_by_default", False)
-            if 'decorator' in function.__dict__.keys():
-                selector = function.__dict__['decorator']
+            if 'selector' in function.__dict__.keys():
+                selector = function.__dict__['selector']
                 if selector is None:
                     selector = function_name
-                serialize_data = function.__dict__['serialize_data']
-                load_by_default = function.__dict__['load_by_default']
                 display_settings.append(DisplaySetting(selector=selector, type_=function_name, 
                                                     method=function_name, serialize_data=serialize_data, 
                                                     load_by_default=load_by_default))
