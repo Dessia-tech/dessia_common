@@ -77,33 +77,33 @@ def get_python_class_from_class_name(full_class_name: str):
 
 def plotdata(selector: str = None, serialize_data: bool = True, load_by_default: bool = False):
     """ Decorator to plot data."""
-    def decorator(functions):   
+    def decorator(function):   
         """ Decorator to plot data. """
-        functions.__dict__['decorators'] = 'plotdata'
-        functions.__dict__['selector'] = selector
-        functions.__dict__['serialize_data'] = serialize_data
-        functions.__dict__['load_by_default'] = load_by_default
-        return functions
+        function.__dict__['decorator'] = 'plotdata'
+        function.__dict__['selector'] = selector
+        function.__dict__['serialize_data'] = serialize_data
+        function.__dict__['load_by_default'] = load_by_default
+        return function
     return decorator
 
 
 def markdown(selector: str = None, serialize_data: bool = False, load_by_default: bool = False):
     """ Decorator to markdown."""
-    def decorator(functions):   
+    def decorator(function):   
         """ Decorator to markdown. """
-        functions.__dict__['decorators'] = 'markdown'
-        functions.__dict__['selector'] = selector
-        functions.__dict__['serialize_data'] = serialize_data
-        functions.__dict__['load_by_default'] = load_by_default
-        return functions
+        function.__dict__['decorator'] = 'markdown'
+        function.__dict__['selector'] = selector
+        function.__dict__['serialize_data'] = serialize_data
+        function.__dict__['load_by_default'] = load_by_default
+        return function
     return decorator
 
 
 def get_class_and_super_class_text(class_name) -> str:
     """ Get class and super class text. """
-    text_informations =[]
+    text_informations = []
     for class_ in inspect.getmro(class_name):
-        if class_.__name__!='object':
+        if class_.__name__ != 'object':
             source_lines = inspect.getsourcelines(class_)
             text_informations.extend(source_lines[0])
     return text_informations
