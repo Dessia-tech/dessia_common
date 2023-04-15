@@ -2,7 +2,7 @@
 Tests for document generator
 """
 
-from dessia_common.document_generator import DocxWriter, Paragraph, Heading, Header, Footer, Section
+from dessia_common.document_generator import DocxWriter, Paragraph, Heading, Header, Footer, Section, Table
 
 paragraph_1 = Paragraph(text="This is the first paragraph.")
 paragraph_2 = Paragraph(text="The second paragraph is here.")
@@ -24,12 +24,13 @@ section = Section()
 section.add_element(element=footer)
 section.add_element(element=footer_2)
 
+table = Table([['Librairie', 'Platform'], ['dessia_common', 'testing'], ['volmdlr', 'dev']])
 
-writer = DocxWriter(filename="test_docx.docx", paragraphs=paragraphs, headings=headings, section=section)
+writer = DocxWriter(filename="test_docx.docx", paragraphs=paragraphs, headings=headings, section=section, table=table)
 
 writer.add_headings()
 writer.add_paragraphs()
-writer.add_table([['Librairie', 'Platform'], ['dessia_common', 'testing'], ['volmdlr', 'dev']])
+writer.add_table()
 writer.save_file()
 
 document = writer.document
