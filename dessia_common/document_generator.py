@@ -108,6 +108,20 @@ class Paragraph:
         return cls(text=markdown_text)
 
 
+class Table:
+    """ Represents a table in the document. """
+
+    def __init__(self, rows: List[List[str]]):
+        self.rows = rows
+
+    def add_to_document(self, document: docx.Document):
+        """ Add the table to the document. """
+        table = document.add_table(rows=len(self.rows), cols=len(self.rows[0]))
+        for i, row in enumerate(self.rows):
+            for j, cell in enumerate(row):
+                table.cell(i, j).text = cell
+
+
 class Section:
     """
     Represents a section in the document.
@@ -252,11 +266,11 @@ class DocxWriter:
                 elif table_pattern.match(line) and not horizontal_line_pattern.match(line):
                     row = line.strip('|').split('|')
                     if '---' not in line:
-                        elements.append(row)
+                        elements.append(Table(rows=[row]))
 
                 else:
                     if '---' not in line:
-                        elements.append(Paragraph(text=line))
+                        elements.append(Paragraph.from_markdown(markdown_text=line))
         return headings, elements
 
     @classmethod
@@ -272,8 +286,8 @@ class DocxWriter:
                     docx_writer.add_paragraph_as_heading(text=item.text.strip(' # '))
                 else:
                     docx_writer.add_paragraphs(add_heading=False)
-            if isinstance(item, list):
-                docx_writer.add_table([item])
+            if isinstance(item, Table):
+                docx_writer.add_table(item.rows)
         return docx_writer
 
     def save_file(self):
