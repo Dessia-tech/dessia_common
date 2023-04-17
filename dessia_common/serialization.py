@@ -554,10 +554,10 @@ def find_references_dict(dict_, path):
 
 def pointer_graph(value):
     """
-    Create a graph of subattributes of an object.
+    Create a graph of sub-attributes of an object.
 
     Edges representing either:
-     * the hierarchy of an subattribute to an attribute
+     * the hierarchy of an sub-attribute to an attribute
      * the pointer link between the 2 elements
     """
     nodes = set()
