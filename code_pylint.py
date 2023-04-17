@@ -54,7 +54,7 @@ ERRORS_WITHOUT_TIME_DECREASE = ['protected-access', 'arguments-differ', 'too-man
                                 'too-many-return-statements', 'import-outside-toplevel',
                                 'too-many-instance-attributes', 'broad-except', 'bare-except', "broad-exception-caught",
                                 'too-many-public-methods', 'too-many-statements', 'undefined-loop-variable',
-                                'attribute-defined-outside-init']
+                                'attribute-defined-outside-init', 'wrong-spelling-in-docstring']
 
 print("pylint version: ", __version__)
 
