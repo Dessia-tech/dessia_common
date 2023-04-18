@@ -43,7 +43,7 @@ class MethodType(Generic[T]):
 
 
 class ClassMethodType(MethodType[T]):
-    """ Typing that denotes a classmethod of class T. """
+    """ Typing that denotes a class method of class T. """
     
     def __init__(self, class_: T, name: str):
         MethodType.__init__(self, class_=class_, name=name)
@@ -67,7 +67,7 @@ class AttributeType(Generic[T]):
 
     @classmethod
     def dict_to_object(cls, dict_) -> 'AttributeType':
-        """ Deserialize dictionary as a Attribute Type. """
+        """ Deserialize dictionary as an Attribute Type. """
         class_ = get_python_class_from_class_name(dict_["class_"])
         return cls(class_=class_, name=dict_["name"])
 

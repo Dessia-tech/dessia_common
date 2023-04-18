@@ -29,7 +29,7 @@ writer = DocxWriter(filename="test_docx.docx", paragraphs=paragraphs, headings=h
 
 writer.add_headings()
 writer.add_paragraphs()
-writer.add_table([['Librairie', 'Platform'], ['dessia_common', 'testing'], ['volmdlr', 'dev']])
+writer.add_table([['Library', 'Platform'], ['dessia_common', 'testing'], ['volmdlr', 'dev']])
 writer.save_file()
 
 document = writer.document
@@ -54,7 +54,7 @@ assert document.paragraphs[14].text == 'Finally, the sixth and last paragraph co
 
 # Check the table
 table = document.tables[0]
-assert table.cell(0, 0).text == 'Librairie'
+assert table.cell(0, 0).text == 'Library'
 assert table.cell(0, 1).text == 'Platform'
 assert table.cell(1, 0).text == 'dessia_common'
 assert table.cell(1, 1).text == 'testing'

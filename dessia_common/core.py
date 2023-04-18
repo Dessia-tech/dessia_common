@@ -299,7 +299,7 @@ class DessiaObject(SerializableObject):
                     jsonschemas[method_name]['required'] = []
                     jsonschemas[method_name]['is_method'] = True
                     for i, annotation in enumerate(annotations.items()):
-                        # TOCHECK Not actually ordered
+                        # TODO: CHECK Not actually ordered
                         argname = annotation[0]
                         if argname not in dcs.RESERVED_ARGNAMES:
                             if argname in required_args:
@@ -1246,7 +1246,7 @@ def enhanced_get_attr(obj, attr):
                 msg = f"'{classname}' object has no attribute '{attr}'."
         except TypeError:
             track += tb.format_exc()
-            msg = f"Object of type '{classname}' is not subscriptable. Failed to deeply get '{attr}' from it"
+            msg = f"Object of type '{classname}' is not sub scriptable. Failed to deeply get '{attr}' from it"
     raise dessia_common.errors.DeepAttributeError(message=msg, traceback_=track)
 
 
