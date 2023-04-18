@@ -381,8 +381,7 @@ class DessiaObject(SerializableObject):
         """
         warnings.warn("This method is deprecated and will be removed in a future version."
                       " Please use the `from_json_stream` method instead.", DeprecationWarning)
-        dict_ = json.loads(stream.read().decode('utf-8'))
-        return cls.dict_to_object(dict_)
+        return cls.from_json_stream(stream=stream)
 
     @classmethod
     def load_from_file(cls, filepath: str):
@@ -393,10 +392,7 @@ class DessiaObject(SerializableObject):
         """
         warnings.warn("This method is deprecated and will be removed in a future version."
                       " Please use the `from_json` method instead.", DeprecationWarning)
-        with open(filepath, 'r', encoding='utf-8') as file:
-            dict_ = json.load(file)
-
-        return cls.dict_to_object(dict_)
+        return cls.from_json(filepath=filepath)
 
     @classmethod
     def from_json_stream(cls, stream: dcf.JsonFile):
