@@ -26,11 +26,11 @@ section.add_element(element=footer_2)
 
 table = Table([['Librairie', 'Platform'], ['dessia_common', 'testing'], ['volmdlr', 'dev']])
 
-writer = DocxWriter(filename="test_docx.docx", paragraphs=paragraphs, headings=headings, section=section, table=table)
+writer = DocxWriter(filename="test_docx.docx", paragraphs=paragraphs, headings=headings, section=section, table=[table])
 
 writer.add_headings()
 writer.add_paragraphs()
-writer.add_table()
+writer.add_table(table_index=0)
 writer.save_file()
 
 document = writer.document

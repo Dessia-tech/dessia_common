@@ -166,7 +166,7 @@ class DocxWriter:
     """ write a docx file. """
 
     def __init__(self, paragraphs: List[Paragraph] = None, section: Section = None, filename: str = "document.docx",
-                 headings: List[Heading] = None, table: Table = None):
+                 headings: List[Heading] = None, table: List[Table] = None):
         self.filename = filename
         if headings is None:
             headings = []
@@ -213,9 +213,14 @@ class DocxWriter:
         for _ in range(num_page_breaks):
             self.document.add_page_break()
 
-    def add_table(self) -> 'DocxWriter':
+    def add_table(self, add_all_table: bool = False, table_index: int = 0) -> 'DocxWriter':
         """ Add table to the document. """
-        self.table.add_to_document(self.document)
+        if add_all_table:
+            for table in self.table:
+                table.add_to_document(self.document)
+                self.document.add_paragraph()
+        else:
+            self.table[table_index].add_to_document(self.document)
         return self
 
     def add_list_items(self, items: List[str], style: str = 'List Bullet'):
