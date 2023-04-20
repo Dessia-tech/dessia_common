@@ -297,7 +297,7 @@ class DocxWriter:
                 else:
                     docx_writer.add_paragraphs(add_heading=False)
             if isinstance(item, Table):
-                docx_writer.table = item
+                docx_writer.table = [item]
                 docx_writer.add_table()
         return docx_writer
 
