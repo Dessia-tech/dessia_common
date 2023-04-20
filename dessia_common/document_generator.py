@@ -114,12 +114,11 @@ class Table:
     def __init__(self, rows: List[List[str]]):
         self.rows = rows
 
-    def add_to_document(self, document: docx.Document, style="TableGrid"):
+    def add_to_document(self, document: docx.Document, style: str = "TableGrid"):
         """
         Add the table to the document.
 
         :param document: The document to which the table will be added.
-        :type document: docx.Document
         :param style: The table style to use. Default is "TableGrid". Other available styles include:
                         - "LightShading": adds light shading to the table cells.
                         - "LightGrid": similar to "TableGrid", but with lighter grid lines.
@@ -129,7 +128,6 @@ class Table:
                         - "ColorfulGrid": uses bright, contrasting colors for the table borders and cell backgrounds.
                         - "LightList": displays the table as a bulleted list, with a light background color for each
                         item.
-        :type style: str
         """
         table = document.add_table(rows=len(self.rows), cols=len(self.rows[0]), style=style)
         for i, row in enumerate(self.rows):
