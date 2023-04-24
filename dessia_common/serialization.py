@@ -340,8 +340,10 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False, global_dict=
         else:
             class_argspec = inspect.getfullargspec(class_)
             fullargsspec_cache[class_] = class_argspec
-
-        init_dict = {k: v for k, v in dict_.items() if k in class_argspec.args + class_argspec.kwonlyargs}
+        try:
+            init_dict = {k: v for k, v in dict_.items() if k in class_argspec.args + class_argspec.kwonlyargs}
+        except Exception as e:
+            raise Exception(f"error in {init_dict}") from e
         # TOCHECK Class method to generate init_dict ??
     else:
         init_dict = dict_
