@@ -24,7 +24,7 @@ section = Section()
 section.add_element(element=footer)
 section.add_element(element=footer_2)
 
-table = Table([['Librairie', 'Platform'], ['dessia_common', 'testing'], ['volmdlr', 'dev']])
+table = Table([['Library', 'Platform'], ['dessia_common', 'testing'], ['volmdlr', 'dev']])
 
 writer = DocxWriter(filename="test_docx.docx", paragraphs=paragraphs, headings=headings, section=section, table=[table])
 
