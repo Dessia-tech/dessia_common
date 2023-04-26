@@ -19,6 +19,8 @@ dessia
 DessiaObject
 dict
 docstring
+Dessia's
+DessiaFilter
 filepath
 frontend
 init
@@ -47,9 +49,11 @@ stringify
 Stringify
 submodule
 subobjects
+subscriptable
 traceback
 typings
 uuid
 uuids
 visjs
 volmdlr
+XLS
