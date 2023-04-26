@@ -299,7 +299,7 @@ class DessiaObject(SerializableObject):
                     jsonschemas[method_name]['required'] = []
                     jsonschemas[method_name]['is_method'] = True
                     for i, annotation in enumerate(annotations.items()):
-                        # TOCHECK Not actually ordered
+                        # TODO: CHECK Not actually ordered
                         argname = annotation[0]
                         if argname not in dcs.RESERVED_ARGNAMES:
                             if argname in required_args:
@@ -379,11 +379,33 @@ class DessiaObject(SerializableObject):
 
         Should be consistent with save_to_stream method.
         """
+        warnings.warn("This method is deprecated and will be removed in a future version."
+                      " Please use the `from_json_stream` method instead.", DeprecationWarning)
+        return cls.from_json_stream(stream=stream)
+
+    @classmethod
+    def load_from_file(cls, filepath: str):
+        """
+        Load object from a JSON file.
+
+        :param filepath: either a string representing the filepath or a stream
+        """
+        warnings.warn("This method is deprecated and will be removed in a future version."
+                      " Please use the `from_json` method instead.", DeprecationWarning)
+        return cls.from_json(filepath=filepath)
+
+    @classmethod
+    def from_json_stream(cls, stream: dcf.JsonFile):
+        """
+        Generate object from stream using utf-8 encoding.
+
+        Should be consistent with save_to_stream method.
+        """
         dict_ = json.loads(stream.read().decode('utf-8'))
         return cls.dict_to_object(dict_)
 
     @classmethod
-    def load_from_file(cls, filepath: str):
+    def from_json(cls, filepath: str):
         """
         Load object from a JSON file.
 
@@ -1224,7 +1246,7 @@ def enhanced_get_attr(obj, attr):
                 msg = f"'{classname}' object has no attribute '{attr}'."
         except TypeError:
             track += tb.format_exc()
-            msg = f"Object of type '{classname}' is not subscriptable. Failed to deeply get '{attr}' from it"
+            msg = f"Object of type '{classname}' is not sub scriptable. Failed to deeply get '{attr}' from it"
     raise dessia_common.errors.DeepAttributeError(message=msg, traceback_=track)
 
 

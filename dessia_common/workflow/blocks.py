@@ -115,7 +115,7 @@ class InstantiateModel(Block):
 
 class ClassMethod(Block):
     """
-    Run given classmethod during workflow execution. Handle static method as well.
+    Run given class method during workflow execution. Handle static method as well.
 
     :param method_type: Denotes the class and method to run.
     :param name: Name of the block.

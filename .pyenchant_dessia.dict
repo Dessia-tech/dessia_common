@@ -49,6 +49,7 @@ stringify
 Stringify
 submodule
 subobjects
+subscriptable
 traceback
 typings
 uuid

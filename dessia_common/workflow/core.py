@@ -411,7 +411,7 @@ class Workflow(Block):
 
     @property
     def nodes(self):
-        """ Return the list of blocks and nonblock_variables (nodes) of the Workflow. """
+        """ Return the list of blocks and non_block_variables (nodes) of the Workflow. """
         return self.blocks + self.nonblock_variables
 
     @cached_property
@@ -1995,7 +1995,7 @@ class WorkflowState(DessiaObject):
         return export_formats
 
     def export_format_from_selector(self, selector: str):
-        """ Get WorflowState format from given selector. """
+        """ Get Workflow State format from given selector. """
         for export_format in self.workflow.blocks_export_formats:
             if export_format["selector"] == selector:
                 return export_format
