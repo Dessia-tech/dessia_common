@@ -248,12 +248,9 @@ def sequence_data_eq(seq1, seq2):
 
 def choose_hash(object_):
     """ Base function to return hash. """
-    if is_sequence(object_):
-        return sequence_hash(object_)
-    if isinstance(object_, dict):
-        return dict_hash(object_)
-    if isinstance(object_, str):
-        return sum(ord(e) for e in object_)
+    if is_sequence(object_) or isinstance(object_, dict) or isinstance(object_, str):
+        return len(object_)
+
     return hash(object_)
 
 
@@ -267,6 +264,7 @@ def sequence_hash(sequence):
     """
     if not sequence:
         return 0
+    return len(sequence)
 
     # Recursively compute hash of first and last element for performance purpose
     hash_ = len(sequence)*choose_hash(sequence[0])
