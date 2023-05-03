@@ -76,7 +76,7 @@ class WorkflowToScriptTest(unittest.TestCase):
            "\nsub_pipe_1 = Pipe(sub_block_1.outputs[1], sub_block_2.inputs[0])" \
            "\nsub_pipes = [sub_pipe_0, sub_pipe_1]" \
            "\n" \
-           "\nsub_workflow = Workflow(sub_blocks, sub_pipes, output=sub_block_2.outputs[0], name='Optimization Workflow')" \
+           "\nsub_workflow = Workflow(sub_blocks, sub_pipes, output=sub_block_2.outputs[0], name=\"Optimization Workflow\")" \
            "\n# --- End Subworkflow --- " \
            "\n" \
            "\nwfblock = WorkflowBlock(workflow=sub_workflow, name='Workflow Block', position=(0, 0))" \
@@ -101,6 +101,6 @@ class WorkflowToScriptTest(unittest.TestCase):
            "\npipe_0 = Pipe(block_0.outputs[0], block_3.inputs[0])" \
            "\npipes = [pipe_0]" \
            "\n" \
-           "\nworkflow = Workflow(blocks, pipes, output=block_0.outputs[0], name='script_workflow')" \
+           "\nworkflow = Workflow(blocks, pipes, output=block_0.outputs[0], name=\"script_workflow\")" \
            "\n"
         self.assertEqual(workflow.to_script(), expected_script_value)
