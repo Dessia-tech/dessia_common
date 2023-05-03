@@ -1455,7 +1455,7 @@ class Workflow(Block):
                       f"{nbvs_str}\n" \
                       f"{pipes_str}\n" \
                       f"{prefix}workflow = " \
-                      f"Workflow({prefix}blocks, {prefix}pipes, output={output_name}, name='{self.name}')\n"
+                      f"Workflow({prefix}blocks, {prefix}pipes, output={output_name}, name=\"{self.name}\")\n"
 
         for key, value in self.imposed_variable_values.items():
             variable_indice = self.variable_indices(key)
