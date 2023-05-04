@@ -22,7 +22,7 @@ class WorkflowToScriptTest(unittest.TestCase):
         pipe2_opt = Pipe(input_variable=optimization.outputs[1], output_variable=model_fetcher.inputs[0])
         optimization_pipes = [pipe1_opt, pipe2_opt]
         optimization_workflow = Workflow(blocks=optimization_blocks, pipes=optimization_pipes,
-                                         output=model_fetcher.outputs[0], name='Optimization Workflow')
+                                         output=model_fetcher.outputs[0], name="Optimization's Workflow")
         optimization_workflow_block = WorkflowBlock(workflow=optimization_workflow, name='Workflow Block')
 
         blocks = [
@@ -76,7 +76,7 @@ class WorkflowToScriptTest(unittest.TestCase):
            "\nsub_pipe_1 = Pipe(sub_block_1.outputs[1], sub_block_2.inputs[0])" \
            "\nsub_pipes = [sub_pipe_0, sub_pipe_1]" \
            "\n" \
-           "\nsub_workflow = Workflow(sub_blocks, sub_pipes, output=sub_block_2.outputs[0], name=\"Optimization Workflow\")" \
+           "\nsub_workflow = Workflow(sub_blocks, sub_pipes, output=sub_block_2.outputs[0], name=\"Optimization's Workflow\")" \
            "\n# --- End Subworkflow --- " \
            "\n" \
            "\nwfblock = WorkflowBlock(workflow=sub_workflow, name=\"Workflow Block\", position=(0, 0))" \
