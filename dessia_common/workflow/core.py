@@ -275,7 +275,7 @@ class Block(DessiaObject):
 
     def base_script(self) -> str:
         """ Generate a chunk of script that denotes the arguments of a base block. """
-        return f"name='{self.name}', position={self.position}"
+        return f"name=\"{self.name}\", position={self.position}"
 
     def evaluate(self, values, **kwargs):
         """ Not implemented for abstract block class 'evaluate' method. """
