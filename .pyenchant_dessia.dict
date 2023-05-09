@@ -12,6 +12,7 @@ config
 csv
 cvar
 ColumnLayout
+datatools
 dataset
 dbscan
 dectree

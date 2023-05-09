@@ -135,7 +135,7 @@ class TypedVariable(Variable):
                     script.declaration += f", type_={name}[{args.__name__}]"
                     script.imports.append(f"{args.__module__}.{args.__name__}")
 
-                except:
+                except AttributeError:
                     script.declaration += f", type_={type_str}"
                     script.imports.append(f"{args.__module__}.{args.__origin__.__name__.capitalize()}")
             else:
