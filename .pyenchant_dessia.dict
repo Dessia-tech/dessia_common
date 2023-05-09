@@ -33,6 +33,7 @@ JSON
 jsonschema
 jsonschemas
 kwargs
+len
 Mahalanobis
 matplotlib
 Minkowski

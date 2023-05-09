@@ -262,7 +262,7 @@ class MarkdownWriter:
     @staticmethod
     def object_titles():
         """ Return a list of strings representing the titles for the object matrix. """
-        return ['Attribute', 'Type', 'Value']  # , 'Subvalues']
+        return ['Attribute', 'Type', 'Value']  # , 'Sub values']
 
     @staticmethod
     def _sequence_to_str(value: Sequence):
