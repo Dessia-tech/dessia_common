@@ -10,7 +10,7 @@ import json
 import webbrowser
 from functools import cached_property
 import io
-from typing import List, Union, Type, Any, Dict, Tuple, Optional, TypeVar, get_args, get_origin
+from typing import List, Union, Type, Any, Dict, Tuple, Optional, TypeVar, get_args, get_origin, _GenericAlias
 from copy import deepcopy
 import warnings
 import networkx as nx
@@ -118,55 +118,34 @@ class TypedVariable(Variable):
         """ Copies and gives a new object with no linked data. """
         return TypedVariable(type_=self.type_, name=self.name)
 
-    def get_script_elements(self, script: ToScriptElement) -> ToScriptElement:
-        """
-        Update elements of the script representing the workflow.
-
-        return ToSriptElement
-        """
-        types = {"Dict", "Tuple"}
-        try:
-            script.declaration += f", type_={self.type_.__name__}"
-        except AttributeError:
-            if is_typing(self.type_):
-                args = get_args(self.type_)
-                if len(args) == 1:
-                    try:
-                        args_sub = args[0].__name__
-                    except AttributeError:
-                        args_sub = f"{get_origin(args[0]).__name__.capitalize()}[{get_args(args[0])[0].__name__}]"
-                elif len(args) > 1:
-                    args_sub = f"{args[0].__name__}, {args[0].__name__}"
-                else:
-                    args_sub = ""
-                script.declaration += f", type_={serialize_annotation(self.type_).split('[')[0]}" \
-                                      f"[{args_sub}]"
-                try:
-                    if args[0].__module__ != 'builtins':
-                        script.imports.append(f"{args[0].__module__}.{args[0].__name__}")
-                except AttributeError:
-                    script.imports.append(f"{args[0].__module__}.{args[0].__origin__.__name__.capitalize()}")
-        if not ("builtins" in serialize_annotation(self.type_) or types & set(
-                serialize_annotation(self.type_).split("."))):
-            try:
-                module = get_origin(self.type_).__name__
-                module = module[0].upper() + module[1:]
-                script.imports.append(f"{self.type_.__module__}.{module}")
-            except AttributeError:
-                if self.type_.__module__ != "builtins":
-                    script.imports.append(serialize_annotation(self.type_))
-        return script
-
     def _get_to_script_elements(self) -> ToScriptElement:
-        """
-        Compute elements of the script representing the workflow.
-
-        return ToSriptElement
-        """
         script = super()._get_to_script_elements()
-        script_ = self.get_script_elements(script)
+        type_ = self.type_
 
-        return script_
+        if isinstance(type_, _GenericAlias):
+            origin = get_origin(type_)
+            name = origin.__name__[0].upper() + origin.__name__[1:] if origin \
+                else type_.__name__[0].upper() + type_.__name__[1:]
+            type_str = f"{type_}".replace('typing.', '')
+            args = type_.__args__[0]
+            script.imports.append(f"{type_.__module__}.{name}")
+
+            if args.__module__ != 'builtins':
+                try:
+                    script.declaration += f", type_={name}[{args.__name__}]"
+                    script.imports.append(f"{args.__module__}.{args.__name__}")
+
+                except:
+                    script.declaration += f", type_={type_str}"
+                    script.imports.append(f"{args.__module__}.{args.__origin__.__name__.capitalize()}")
+            else:
+                script.declaration += f", type_={type_str}"
+        else:
+            script.declaration += f", type_={type_.__name__}"
+            if type_.__module__ != 'builtins':
+                script.imports.append(serialize_annotation(type_))
+
+        return script
 
     def is_file_type(self) -> bool:
         """ Return whether a variable is of type File given its type_ attribute. """
