@@ -228,7 +228,7 @@ def data_eq(value1, value2):
 
 
 def dict_data_eq(dict1, dict2):
-    """ Returns if two dicts are equal on data equality. """
+    """ Returns True if two dictionaries are equal on data equality, False otherwise. """
     for key, value in dict1.items():
         if key not in dict2:
             return False

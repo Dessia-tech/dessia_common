@@ -18,7 +18,6 @@ opti = InstantiateModel(model_class=Optimizer, name='Instantiate Optimizer')
 
 optimize_method = MethodType(class_=Optimizer, name='optimize')
 optimization = ModelMethod(method_type=optimize_method, name='Optimization')
-
 model_fetcher = ModelAttribute(attribute_name='model_to_optimize', name='Model Fetcher')
 
 pipe1_opt = Pipe(input_variable=opti.outputs[0], output_variable=optimization.inputs[0])
