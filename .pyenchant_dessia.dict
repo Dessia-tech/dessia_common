@@ -11,6 +11,7 @@ CMA
 config
 csv
 cvar
+ColumnLayout
 dataset
 dbscan
 dectree
@@ -22,6 +23,7 @@ dict
 docstring
 Dessia's
 DessiaFilter
+docx
 filepath
 frontend
 init
