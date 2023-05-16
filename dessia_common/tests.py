@@ -6,7 +6,7 @@ from typing import List, Tuple
 import random
 import numpy as npy
 import matplotlib.pyplot as plt
-from dessia_common.core import DessiaObject
+from dessia_common.core import DessiaObject, PhysicalObject
 import dessia_common.measures as dcm
 import dessia_common.files as dcf
 
@@ -95,7 +95,7 @@ class Component(DessiaObject):
 
     _standalone_in_db = True
 
-    def __init__(self, efficiency, name: str = ''):
+    def __init__(self, efficiency: float, name: str = ''):
         self.efficiency = efficiency
         DessiaObject.__init__(self, name=name)
 
@@ -446,3 +446,46 @@ class RandDataD10(RandDataD1):
         self.p_8 = p_8
         self.p_9 = p_9
         self.p_10 = p_10
+
+
+class Cube(PhysicalObject):
+    """ Dummy class that is represented by a cube. """
+    _standalone_in_db = True
+
+    def __init__(self, length: dcm.Distance, name: str = "Cube"):
+        self.length = length
+
+        super().__init__(name=name)
+
+    def volmdlr_primitives(self, **kwargs):
+        """ Volmdlr primitives of a cube. """
+        import volmdlr as vm
+        import volmdlr.primitives2d as p2d
+        import volmdlr.primitives3d as p3d
+        big_points = [vm.Point2D(0, 0), vm.Point2D(0, self.length),
+                      vm.Point2D(self.length, self.length), vm.Point2D(self.length, 0)]
+        big_contour = p2d.ClosedRoundedLineSegments2D(points=big_points, radius={})
+        big_cube = p3d.ExtrudedProfile(plane_origin=vm.Point3D(0, 1, 1), x=vm.X3D, y=vm.Z3D,
+                                       outer_contour2d=big_contour, inner_contours2d=[],
+                                       extrusion_vector=vm.Y3D * self.length)
+
+        medium_origin = self.length * 1.01
+        medium_points = [vm.Point2D(medium_origin, 0),
+                         vm.Point2D(medium_origin, self.length*0.10),
+                         vm.Point2D(medium_origin + self.length*0.10, self.length*0.10),
+                         vm.Point2D(medium_origin + self.length*0.10, 0)]
+        medium_contour = p2d.ClosedRoundedLineSegments2D(points=medium_points, radius={})
+        medium_cube = p3d.ExtrudedProfile(plane_origin=vm.Point3D(0, 1, 1), x=vm.X3D, y=vm.Z3D,
+                                          outer_contour2d=medium_contour, inner_contours2d=[],
+                                          extrusion_vector=vm.Y3D * self.length*0.1)
+
+        small_origin = self.length * 1.12
+        small_points = [vm.Point2D(small_origin, 0),
+                        vm.Point2D(small_origin, self.length*0.01),
+                        vm.Point2D(small_origin + self.length*0.01, self.length*0.01),
+                        vm.Point2D(small_origin + self.length*0.01, 0)]
+        small_contour = p2d.ClosedRoundedLineSegments2D(points=small_points, radius={})
+        small_cube = p3d.ExtrudedProfile(plane_origin=vm.Point3D(0, 1, 1), x=vm.X3D, y=vm.Z3D,
+                                         outer_contour2d=small_contour, inner_contours2d=[],
+                                         extrusion_vector=vm.Y3D * self.length*0.01)
+        return [big_cube, medium_cube, small_cube]
