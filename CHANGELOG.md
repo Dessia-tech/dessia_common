@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - package_version is removed from serialization
+- License changed from GPL to Lesser GPL 
+
+### Fix
+- Workflow name correction: correct the name if it contains an apostrophe.
 
 ## 0.13.2 [released 03/01/2023]
 
