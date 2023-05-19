@@ -24,11 +24,13 @@ DessiaFilter
 filepath
 frontend
 init
+inits
 itertools
 json
 JSON
 jsonschema
 kwargs
+len
 Mahalanobis
 matplotlib
 Minkowski
@@ -41,6 +43,7 @@ schemas
 scipy
 serializable
 sklearn
+sqrt
 STL
 str
 StringFile
