@@ -144,7 +144,7 @@ def breakdown(obj, path=''):
     """ Breakdown object as a dict. """
     bd_dict = {}
 
-    if obj is None or isinstance(obj, (str, float, int)) or isinstance(obj, npy.ndarray):
+    if obj is None or isinstance(obj, (str, float, int, npy.ndarray)):
         return bd_dict
 
     if isinstance(obj, (list, tuple, set)):
