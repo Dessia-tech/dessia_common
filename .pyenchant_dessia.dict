@@ -17,7 +17,9 @@ deserialization
 deserialize
 dessia
 DessiaObject
+Dicts
 dict
+dicts
 docstring
 Dessia's
 DessiaFilter
@@ -29,6 +31,7 @@ itertools
 json
 JSON
 jsonschema
+jsonschemas
 kwargs
 len
 Mahalanobis
@@ -60,3 +63,4 @@ uuids
 visjs
 volmdlr
 XLS
+xlsx
