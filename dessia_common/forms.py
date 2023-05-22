@@ -589,7 +589,7 @@ DEF_SOWDV = StandaloneObjectWithDefaultValues()
 
 
 class ObjectWithOtherTypings(DessiaObject):
-    """ Dummy class to test some typing jsonschemas. """
+    """ Dummy class to test some typing schemas. """
 
     def __init__(self, undefined_type_attribute: Any, name: str = ""):
         self.undefined_type_attribute = undefined_type_attribute
