@@ -5,6 +5,7 @@ bool
 builtins
 classmethod
 classname
+clist
 cls
 CMA
 config
@@ -21,10 +22,12 @@ Dicts
 dict
 dicts
 docstring
+docx
 Dessia's
 DessiaFilter
 filepath
 frontend
+hlist
 init
 inits
 itertools
